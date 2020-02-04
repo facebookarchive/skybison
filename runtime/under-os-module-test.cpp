@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "file.h"
 #include "test-utils.h"
 

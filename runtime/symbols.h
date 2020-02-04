@@ -99,7 +99,6 @@ class Runtime;
   V(_HashInfo)                                                                 \
   V(_IOBase)                                                                   \
   V(_RawIOBase)                                                                \
-  V(_StringIO_closed_guard)                                                    \
   V(_TextIOBase)                                                               \
   V(_Unbound)                                                                  \
   V(_UserBytes__value)                                                         \
@@ -126,7 +125,6 @@ class Runtime;
   V(__cached__)                                                                \
   V(__call__)                                                                  \
   V(__cause__)                                                                 \
-  V(__ceil__)                                                                  \
   V(__class__)                                                                 \
   V(__classcell__)                                                             \
   V(__code__)                                                                  \
@@ -148,7 +146,6 @@ class Runtime;
   V(__file__)                                                                  \
   V(__flags__)                                                                 \
   V(__float__)                                                                 \
-  V(__floor__)                                                                 \
   V(__floordiv__)                                                              \
   V(__format__)                                                                \
   V(__func__)                                                                  \
@@ -215,7 +212,6 @@ class Runtime;
   V(__rmod__)                                                                  \
   V(__rmul__)                                                                  \
   V(__ror__)                                                                   \
-  V(__round__)                                                                 \
   V(__rpow__)                                                                  \
   V(__rrshift__)                                                               \
   V(__rshift__)                                                                \
@@ -227,98 +223,42 @@ class Runtime;
   V(__set__)                                                                   \
   V(__setattr__)                                                               \
   V(__setitem__)                                                               \
-  V(__sizeof__)                                                                \
   V(__spec__)                                                                  \
   V(__str__)                                                                   \
   V(__sub__)                                                                   \
-  V(__subclasses__)                                                            \
   V(__suppress_context__)                                                      \
   V(__thisclass__)                                                             \
   V(__traceback__)                                                             \
   V(__truediv__)                                                               \
-  V(__trunc__)                                                                 \
   V(__weaklink__next)                                                          \
   V(__weaklink__prev)                                                          \
   V(__xor__)                                                                   \
-  V(_address)                                                                  \
   V(_appending)                                                                \
-  V(_ascii_decode)                                                             \
-  V(_ascii_encode)                                                             \
   V(_b2cratio)                                                                 \
   V(_base_dir)                                                                 \
   V(_bool_check)                                                               \
   V(_bool_guard)                                                               \
-  V(_bootstrap)                                                                \
-  V(_bound_method)                                                             \
   V(_buffer)                                                                   \
   V(_buffer_num_bytes)                                                         \
   V(_buffer_size)                                                              \
-  V(_buffered_reader_clear_buffer)                                             \
-  V(_buffered_reader_init)                                                     \
-  V(_buffered_reader_peek)                                                     \
-  V(_buffered_reader_read)                                                     \
-  V(_buffered_reader_readline)                                                 \
   V(_builtins)                                                                 \
   V(_bytearray__bytes)                                                         \
   V(_bytearray__num_items)                                                     \
-  V(_bytearray_append)                                                         \
   V(_bytearray_check)                                                          \
-  V(_bytearray_clear)                                                          \
-  V(_bytearray_contains)                                                       \
-  V(_bytearray_delitem)                                                        \
-  V(_bytearray_delslice)                                                       \
-  V(_bytearray_getitem)                                                        \
-  V(_bytearray_getslice)                                                       \
   V(_bytearray_guard)                                                          \
-  V(_bytearray_join)                                                           \
   V(_bytearray_len)                                                            \
-  V(_bytearray_setitem)                                                        \
-  V(_bytearray_setslice)                                                       \
-  V(_bytearray_string_append)                                                  \
   V(_bytes_check)                                                              \
-  V(_bytes_contains)                                                           \
-  V(_bytes_decode)                                                             \
-  V(_bytes_decode_ascii)                                                       \
-  V(_bytes_decode_utf_8)                                                       \
-  V(_bytes_from_bytes)                                                         \
-  V(_bytes_from_ints)                                                          \
-  V(_bytes_getitem)                                                            \
-  V(_bytes_getslice)                                                           \
   V(_bytes_guard)                                                              \
-  V(_bytes_join)                                                               \
   V(_bytes_len)                                                                \
-  V(_bytes_maketrans)                                                          \
   V(_bytes_new)                                                                \
-  V(_bytes_repeat)                                                             \
-  V(_bytes_split)                                                              \
-  V(_bytes_split_whitespace)                                                   \
   V(_byteslike_check)                                                          \
-  V(_byteslike_compare_digest)                                                 \
-  V(_byteslike_count)                                                          \
-  V(_byteslike_endswith)                                                       \
-  V(_byteslike_find_byteslike)                                                 \
-  V(_byteslike_find_int)                                                       \
   V(_byteslike_guard)                                                          \
-  V(_byteslike_rfind_byteslike)                                                \
-  V(_byteslike_rfind_int)                                                      \
-  V(_byteslike_startswith)                                                     \
   V(_capi_dict_setitem)                                                        \
-  V(_classmethod)                                                              \
-  V(_classmethod_isabstract)                                                   \
   V(_closed)                                                                   \
   V(_closefd)                                                                  \
-  V(_code_check)                                                               \
-  V(_code_guard)                                                               \
-  V(_code_set_posonlyargcount)                                                 \
   V(_codecs)                                                                   \
   V(_compile_flags_mask)                                                       \
   V(_complex_check)                                                            \
-  V(_complex_checkexact)                                                       \
-  V(_complex_imag)                                                             \
-  V(_complex_new)                                                              \
-  V(_complex_new_from_str)                                                     \
-  V(_complex_real)                                                             \
-  V(_create_dynamic)                                                           \
   V(_created)                                                                  \
   V(_decoded_chars)                                                            \
   V(_decoded_chars_used)                                                       \
@@ -327,42 +267,21 @@ class Runtime;
   V(_dict__data)                                                               \
   V(_dict__num_items)                                                          \
   V(_dict__num_usable_items)                                                   \
-  V(_dict_bucket_insert)                                                       \
-  V(_dict_bucket_key)                                                          \
-  V(_dict_bucket_set_value)                                                    \
-  V(_dict_bucket_value)                                                        \
   V(_dict_check)                                                               \
   V(_dict_check_exact)                                                         \
-  V(_dict_get)                                                                 \
   V(_dict_getitem)                                                             \
   V(_dict_guard)                                                               \
   V(_dict_len)                                                                 \
-  V(_dict_lookup)                                                              \
-  V(_dict_lookup_next)                                                         \
-  V(_dict_popitem)                                                             \
-  V(_dict_setitem)                                                             \
-  V(_dict_update)                                                              \
-  V(_divmod)                                                                   \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
   V(_errors)                                                                   \
-  V(_escape_decode)                                                            \
   V(_escape_decode_stateful)                                                   \
   V(_exception_new)                                                            \
-  V(_exec)                                                                     \
   V(_fd)                                                                       \
-  V(_finish_setup)                                                             \
-  V(_fix_co_filename)                                                          \
   V(_float)                                                                    \
   V(_float_check)                                                              \
   V(_float_check_exact)                                                        \
-  V(_float_divmod)                                                             \
-  V(_float_format)                                                             \
   V(_float_guard)                                                              \
-  V(_float_new_from_byteslike)                                                 \
-  V(_float_new_from_float)                                                     \
-  V(_float_new_from_str)                                                       \
-  V(_float_signbit)                                                            \
   V(_frozen_importlib)                                                         \
   V(_frozen_importlib_external)                                                \
   V(_frozenset__data)                                                          \
@@ -370,49 +289,19 @@ class Runtime;
   V(_frozenset_check)                                                          \
   V(_frozenset_guard)                                                          \
   V(_function__dict)                                                           \
-  V(_function_globals)                                                         \
   V(_function_guard)                                                           \
-  V(_gc)                                                                       \
-  V(_get_member_byte)                                                          \
-  V(_get_member_char)                                                          \
-  V(_get_member_double)                                                        \
-  V(_get_member_float)                                                         \
-  V(_get_member_int)                                                           \
-  V(_get_member_long)                                                          \
-  V(_get_member_pyobject)                                                      \
-  V(_get_member_short)                                                         \
-  V(_get_member_string)                                                        \
-  V(_get_member_ubyte)                                                         \
-  V(_get_member_uint)                                                          \
-  V(_get_member_ulong)                                                         \
-  V(_get_member_ushort)                                                        \
-  V(_getframe_function)                                                        \
-  V(_getframe_lineno)                                                          \
-  V(_getframe_locals)                                                          \
   V(_has_read1)                                                                \
   V(_imp)                                                                      \
   V(_index)                                                                    \
   V(_init)                                                                     \
-  V(_instance_delattr)                                                         \
-  V(_instance_getattr)                                                         \
-  V(_instance_guard)                                                           \
-  V(_instance_overflow_dict)                                                   \
-  V(_instance_setattr)                                                         \
   V(_int)                                                                      \
   V(_int_check)                                                                \
   V(_int_check_exact)                                                          \
-  V(_int_from_bytes)                                                           \
   V(_int_guard)                                                                \
-  V(_int_new_from_bytearray)                                                   \
-  V(_int_new_from_bytes)                                                       \
-  V(_int_new_from_int)                                                         \
   V(_int_new_from_str)                                                         \
   V(_io)                                                                       \
-  V(_iter)                                                                     \
   V(_iterator__index)                                                          \
   V(_iterator__iterable)                                                       \
-  V(_latin_1_decode)                                                           \
-  V(_latin_1_encode)                                                           \
   V(_layout__described_type)                                                   \
   V(_layout__in_object_attributes)                                             \
   V(_layout__overflow_attributes)                                              \
@@ -424,44 +313,18 @@ class Runtime;
   V(_list__num_items)                                                          \
   V(_list_check)                                                               \
   V(_list_check_exact)                                                         \
-  V(_list_delitem)                                                             \
-  V(_list_delslice)                                                            \
-  V(_list_extend)                                                              \
   V(_list_getitem)                                                             \
-  V(_list_getslice)                                                            \
   V(_list_guard)                                                               \
   V(_list_len)                                                                 \
-  V(_list_new)                                                                 \
   V(_list_setitem)                                                             \
-  V(_list_setslice)                                                            \
-  V(_list_sort)                                                                \
-  V(_list_swap)                                                                \
   V(_lookup_text)                                                              \
   V(_lt)                                                                       \
   V(_mappingproxy__mapping)                                                    \
-  V(_mappingproxy_guard)                                                       \
-  V(_mappingproxy_mapping)                                                     \
-  V(_mappingproxy_set_mapping)                                                 \
-  V(_memoryview_check)                                                         \
   V(_memoryview_guard)                                                         \
-  V(_memoryview_itemsize)                                                      \
-  V(_memoryview_nbytes)                                                        \
-  V(_memoryview_setitem)                                                       \
-  V(_memoryview_setslice)                                                      \
   V(_module__def)                                                              \
   V(_module__dict)                                                             \
   V(_module__proxy)                                                            \
   V(_module__name)                                                             \
-  V(_module_dir)                                                               \
-  V(_module_proxy)                                                             \
-  V(_module_proxy_check)                                                       \
-  V(_module_proxy_delitem)                                                     \
-  V(_module_proxy_get)                                                         \
-  V(_module_proxy_guard)                                                       \
-  V(_module_proxy_keys)                                                        \
-  V(_module_proxy_len)                                                         \
-  V(_module_proxy_setitem)                                                     \
-  V(_module_proxy_values)                                                      \
   V(_mutablebytes)                                                             \
   V(_mutabletuple)                                                             \
   V(_new_member_get_bool)                                                      \
@@ -487,25 +350,14 @@ class Runtime;
   V(_new_member_set_readonly)                                                  \
   V(_new_member_set_readonly_strings)                                          \
   V(_number_check)                                                             \
-  V(_object_keys)                                                              \
-  V(_object_type_getattr)                                                      \
-  V(_object_type_hasattr)                                                      \
   V(_os)                                                                       \
-  V(_os_write)                                                                 \
   V(_patch)                                                                    \
   V(_pendingcr)                                                                \
   V(_pos)                                                                      \
-  V(_property)                                                                 \
-  V(_property_isabstract)                                                      \
-  V(_pyobject_offset)                                                          \
   V(_python_path)                                                              \
   V(_range_check)                                                              \
   V(_range_guard)                                                              \
-  V(_range_len)                                                                \
   V(_raw)                                                                      \
-  V(_read_buf)                                                                 \
-  V(_read_lock)                                                                \
-  V(_read_null)                                                                \
   V(_read_pos)                                                                 \
   V(_readable)                                                                 \
   V(_reader)                                                                   \
@@ -515,8 +367,6 @@ class Runtime;
   V(_ref__referent)                                                            \
   V(_ref__callback)                                                            \
   V(_ref__link)                                                                \
-  V(_repr_enter)                                                               \
-  V(_repr_leave)                                                               \
   V(_run_module_as_main)                                                       \
   V(_seekable)                                                                 \
   V(_seennl)                                                                   \
@@ -529,62 +379,25 @@ class Runtime;
   V(_set_check)                                                                \
   V(_set_guard)                                                                \
   V(_set_len)                                                                  \
-  V(_set_member_double)                                                        \
-  V(_set_member_float)                                                         \
-  V(_set_member_integral)                                                      \
-  V(_set_member_pyobject)                                                      \
-  V(_sigabrt)                                                                  \
-  V(_sigfpe)                                                                   \
   V(_signal)                                                                   \
-  V(_sigsegv)                                                                  \
   V(_slice_check)                                                              \
   V(_slice_guard)                                                              \
   V(_slice_index)                                                              \
   V(_slice_index_not_none)                                                     \
-  V(_slice_start)                                                              \
-  V(_slice_start_long)                                                         \
-  V(_slice_step)                                                               \
-  V(_slice_step_long)                                                          \
-  V(_slice_stop)                                                               \
-  V(_slice_stop_long)                                                          \
   V(_snapshot)                                                                 \
-  V(_staticmethod_isabstract)                                                  \
   V(_stderr_fd)                                                                \
   V(_stdin_fd)                                                                 \
   V(_stdout_fd)                                                                \
   V(_stop_iteration_ctor)                                                      \
   V(_str_check)                                                                \
   V(_str_check_exact)                                                          \
-  V(_str_compare_digest)                                                       \
-  V(_str_count)                                                                \
-  V(_str_encode)                                                               \
-  V(_str_encode_ascii)                                                         \
-  V(_str_endswith)                                                             \
-  V(_str_escape_non_ascii)                                                     \
-  V(_str_find)                                                                 \
-  V(_str_from_str)                                                             \
-  V(_str_getitem)                                                              \
-  V(_str_getslice)                                                             \
   V(_str_guard)                                                                \
-  V(_str_ischr)                                                                \
-  V(_str_join)                                                                 \
   V(_str_len)                                                                  \
   V(_str_mod)                                                                  \
-  V(_str_mod_fast_path)                                                        \
-  V(_str_partition)                                                            \
-  V(_str_replace)                                                              \
-  V(_str_rfind)                                                                \
-  V(_str_rpartition)                                                           \
-  V(_str_split)                                                                \
-  V(_str_splitlines)                                                           \
-  V(_str_startswith)                                                           \
   V(_strarray)                                                                 \
-  V(_strarray_clear)                                                           \
   V(_strarray_ctor)                                                            \
-  V(_strarray_iadd)                                                            \
   V(_structseq_field)                                                          \
   V(_structseq_field_names)                                                    \
-  V(_structseq_getitem)                                                        \
   V(_structseq_new)                                                            \
   V(_structseq_repr)                                                           \
   V(_telling)                                                                  \
@@ -598,10 +411,8 @@ class Runtime;
   V(_tuple_check)                                                              \
   V(_tuple_check_exact)                                                        \
   V(_tuple_getitem)                                                            \
-  V(_tuple_getslice)                                                           \
   V(_tuple_guard)                                                              \
   V(_tuple_len)                                                                \
-  V(_tuple_new)                                                                \
   V(_type)                                                                     \
   V(_typecode)                                                                 \
   V(_type__abstract_methods)                                                   \
@@ -612,58 +423,28 @@ class Runtime;
   V(_type__proxy)                                                              \
   V(_type__slots)                                                              \
   V(_type__subclasses)                                                         \
-  V(_type_abstractmethods_del)                                                 \
-  V(_type_abstractmethods_get)                                                 \
-  V(_type_abstractmethods_set)                                                 \
-  V(_type_bases_del)                                                           \
-  V(_type_bases_get)                                                           \
-  V(_type_bases_set)                                                           \
   V(_type_check)                                                               \
   V(_type_check_exact)                                                         \
   V(_type_dunder_call)                                                         \
   V(_type_guard)                                                               \
-  V(_type_init)                                                                \
-  V(_type_issubclass)                                                          \
-  V(_type_new)                                                                 \
-  V(_type_proxy)                                                               \
-  V(_type_proxy_check)                                                         \
-  V(_type_proxy_get)                                                           \
-  V(_type_proxy_guard)                                                         \
-  V(_type_proxy_keys)                                                          \
-  V(_type_proxy_len)                                                           \
-  V(_type_proxy_values)                                                        \
   V(_type_subclass_guard)                                                      \
-  V(_unicode_escape_decode)                                                    \
   V(_unicode_escape_decode_stateful)                                           \
-  V(_unimplemented)                                                            \
-  V(_updatepath)                                                               \
-  V(_utf_16_encode)                                                            \
-  V(_utf_32_encode)                                                            \
-  V(_utf_8_decode)                                                             \
-  V(_utf_8_encode)                                                             \
   V(_valgrind)                                                                 \
   V(_valuecell__value)                                                         \
   V(_valuecell__dependency_link)                                               \
-  V(_warn)                                                                     \
   V(_warnings)                                                                 \
   V(_weaklink)                                                                 \
   V(_weakref)                                                                  \
-  V(_weakref_callback)                                                         \
   V(_weakref_check)                                                            \
   V(_weakref_guard)                                                            \
-  V(_weakref_hash)                                                             \
-  V(_weakref_referent)                                                         \
-  V(_weakref_set_hash)                                                         \
   V(_writable)                                                                 \
   V(_write_buf)                                                                \
   V(_write_lock)                                                               \
   V(_writenl)                                                                  \
   V(_writetranslate)                                                           \
   V(abs)                                                                       \
-  V(acquire_lock)                                                              \
   V(add)                                                                       \
   V(and_)                                                                      \
-  V(append)                                                                    \
   V(args)                                                                      \
   V(argv)                                                                      \
   V(array)                                                                     \
@@ -672,8 +453,6 @@ class Runtime;
   V(ascii_encode)                                                              \
   V(async_generator)                                                           \
   V(big)                                                                       \
-  V(bin)                                                                       \
-  V(bit_length)                                                                \
   V(bool)                                                                      \
   V(buffer_size)                                                               \
   V(builtin_module_names)                                                      \
@@ -683,17 +462,8 @@ class Runtime;
   V(byteorder)                                                                 \
   V(bytes)                                                                     \
   V(bytes_iterator)                                                            \
-  V(callable)                                                                  \
   V(callable_iterator)                                                         \
-  V(callgrind_dump_stats)                                                      \
-  V(callgrind_start_instrumentation)                                           \
-  V(callgrind_stop_instrumentation)                                            \
-  V(callgrind_zero_stats)                                                      \
-  V(cast)                                                                      \
-  V(chr)                                                                       \
   V(classmethod)                                                               \
-  V(clear)                                                                     \
-  V(close)                                                                     \
   V(co_argcount)                                                               \
   V(co_cellvars)                                                               \
   V(co_code)                                                                   \
@@ -713,16 +483,11 @@ class Runtime;
   V(code)                                                                      \
   V(compile)                                                                   \
   V(complex)                                                                   \
-  V(conjugate)                                                                 \
   V(contains)                                                                  \
-  V(copy)                                                                      \
   V(coroutine)                                                                 \
   V(countOf)                                                                   \
   V(cr_running)                                                                \
-  V(create_builtin)                                                            \
   V(decode)                                                                    \
-  V(delattr)                                                                   \
-  V(deleter)                                                                   \
   V(dict)                                                                      \
   V(dict_itemiterator)                                                         \
   V(dict_items)                                                                \
@@ -730,27 +495,18 @@ class Runtime;
   V(dict_keys)                                                                 \
   V(dict_valueiterator)                                                        \
   V(dict_values)                                                               \
-  V(dir)                                                                       \
-  V(disable)                                                                   \
-  V(discard)                                                                   \
   V(displayhook)                                                               \
   V(divmod)                                                                    \
   V(dummy)                                                                     \
-  V(dump_traceback)                                                            \
   V(ellipsis)                                                                  \
-  V(enable)                                                                    \
   V(encode)                                                                    \
   V(encoding)                                                                  \
   V(end)                                                                       \
   V(eval)                                                                      \
-  V(exc_info)                                                                  \
   V(excepthook)                                                                \
   V(exec)                                                                      \
-  V(exec_builtin)                                                              \
-  V(exec_dynamic)                                                              \
   V(executable)                                                                \
   V(extend)                                                                    \
-  V(extension_suffixes)                                                        \
   V(faulthandler)                                                              \
   V(filename)                                                                  \
   V(fileno)                                                                    \
@@ -760,20 +516,11 @@ class Runtime;
   V(format)                                                                    \
   V(frame)                                                                     \
   V(frozenset)                                                                 \
-  V(fstat_size)                                                                \
-  V(ftruncate)                                                                 \
   V(function)                                                                  \
   V(generator)                                                                 \
-  V(get_frozen_object)                                                         \
-  V(getattr)                                                                   \
   V(getsizeof)                                                                 \
-  V(getter)                                                                    \
-  V(getvalue)                                                                  \
   V(gi_running)                                                                \
-  V(hasattr)                                                                   \
-  V(hash)                                                                      \
   V(hash_info)                                                                 \
-  V(hex)                                                                       \
   V(iadd)                                                                      \
   V(iand)                                                                      \
   V(iconcat)                                                                   \
@@ -785,39 +532,18 @@ class Runtime;
   V(imod)                                                                      \
   V(imul)                                                                      \
   V(indexOf)                                                                   \
-  V(insert)                                                                    \
   V(instance)                                                                  \
   V(instance_proxy)                                                            \
   V(int)                                                                       \
-  V(intern)                                                                    \
-  V(intersection)                                                              \
   V(invert)                                                                    \
   V(ior)                                                                       \
   V(ipow)                                                                      \
   V(irepeat)                                                                   \
   V(irshift)                                                                   \
-  V(is_builtin)                                                                \
-  V(is_enabled)                                                                \
-  V(is_frozen)                                                                 \
-  V(is_frozen_package)                                                         \
-  V(isalnum)                                                                   \
-  V(isalpha)                                                                   \
-  V(isatty)                                                                    \
-  V(isdecimal)                                                                 \
-  V(isdigit)                                                                   \
-  V(isdir)                                                                     \
-  V(isdisjoint)                                                                \
   V(isidentifier)                                                              \
   V(isinstance)                                                                \
-  V(islower)                                                                   \
-  V(isnumeric)                                                                 \
-  V(isprintable)                                                               \
-  V(isspace)                                                                   \
   V(issubclass)                                                                \
-  V(istitle)                                                                   \
   V(isub)                                                                      \
-  V(isupper)                                                                   \
-  V(items)                                                                     \
   V(iterator)                                                                  \
   V(itruediv)                                                                  \
   V(ixor)                                                                      \
@@ -839,12 +565,8 @@ class Runtime;
   V(list)                                                                      \
   V(list_iterator)                                                             \
   V(little)                                                                    \
-  V(loads)                                                                     \
   V(longrange_iterator)                                                        \
-  V(lower)                                                                     \
-  V(lseek)                                                                     \
   V(lshift)                                                                    \
-  V(lstrip)                                                                    \
   V(mappingproxy)                                                              \
   V(marshal)                                                                   \
   V(matmul)                                                                    \
@@ -857,7 +579,6 @@ class Runtime;
   V(module)                                                                    \
   V(module_proxy)                                                              \
   V(modules)                                                                   \
-  V(mro)                                                                       \
   V(msg)                                                                       \
   V(mul)                                                                       \
   V(n_fields)                                                                  \
@@ -866,18 +587,13 @@ class Runtime;
   V(name)                                                                      \
   V(neg)                                                                       \
   V(object)                                                                    \
-  V(oct)                                                                       \
   V(offset)                                                                    \
-  V(open)                                                                      \
   V(operator)                                                                  \
   V(or_)                                                                       \
-  V(ord)                                                                       \
   V(owner)                                                                     \
-  V(parse_mode)                                                                \
   V(partition)                                                                 \
   V(path)                                                                      \
   V(platform)                                                                  \
-  V(pop)                                                                       \
   V(pos)                                                                       \
   V(pow)                                                                       \
   V(print_file_and_line)                                                       \
@@ -887,26 +603,19 @@ class Runtime;
   V(range_iterator)                                                            \
   V(read)                                                                      \
   V(readall)                                                                   \
-  V(readline)                                                                  \
   V(readonly)                                                                  \
   V(reason)                                                                    \
   V(ref)                                                                       \
-  V(release_lock)                                                              \
-  V(remove)                                                                    \
   V(replace)                                                                   \
   V(repr)                                                                      \
   V(rpartition)                                                                \
   V(rshift)                                                                    \
   V(rsplit)                                                                    \
-  V(rstrip)                                                                    \
   V(runpy)                                                                     \
   V(self)                                                                      \
   V(send)                                                                      \
   V(set)                                                                       \
   V(set_iterator)                                                              \
-  V(set_noinheritable)                                                         \
-  V(setattr)                                                                   \
-  V(setter)                                                                    \
   V(single)                                                                    \
   V(siphash24)                                                                 \
   V(slice)                                                                     \
@@ -926,7 +635,6 @@ class Runtime;
   V(str_iterator)                                                              \
   V(strict)                                                                    \
   V(strict_errors)                                                             \
-  V(strip)                                                                     \
   V(sub)                                                                       \
   V(super)                                                                     \
   V(surrogateescape)                                                           \
@@ -934,25 +642,18 @@ class Runtime;
   V(text)                                                                      \
   V(throw)                                                                     \
   V(time)                                                                      \
-  V(title)                                                                     \
-  V(to_bytes)                                                                  \
   V(traceback)                                                                 \
-  V(translate)                                                                 \
   V(truediv)                                                                   \
-  V(truncate)                                                                  \
   V(tuple)                                                                     \
   V(tuple_iterator)                                                            \
   V(type)                                                                      \
   V(type_proxy)                                                                \
-  V(update)                                                                    \
-  V(upper)                                                                     \
   V(utf_16_encode)                                                             \
   V(utf_32_encode)                                                             \
   V(utf_8_decode)                                                              \
   V(utf_8_encode)                                                              \
   V(value)                                                                     \
   V(valuecell)                                                                 \
-  V(values)                                                                    \
   V(version)                                                                   \
   V(version_info)                                                              \
   V(warn)                                                                      \

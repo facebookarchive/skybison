@@ -1,5 +1,6 @@
 #include "under-warnings-module.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
@@ -10,13 +11,7 @@
 
 namespace py {
 
-const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
-    {ID(warn), FUNC(_warnings, warn)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void UnderWarningsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kUnderWarningsModuleData, module);
 }
 

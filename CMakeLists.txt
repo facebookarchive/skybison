@@ -1624,6 +1624,8 @@ target_link_libraries(
   gmock
   gtest
   runtime)
+target_include_directories(runtime-tests PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}
+  ${CMAKE_SOURCE_DIR}/runtime)
 
 set(
   EXTENSION_TESTS

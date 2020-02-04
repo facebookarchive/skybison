@@ -1,5 +1,6 @@
 #include "function-builtins.h"
 
+#include "builtins.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -118,11 +119,6 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
   }
   return *function;
 }
-
-const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
-    {ID(__get__), METH(function, __get__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     // TODO(T44845145) Support assignment to __code__.

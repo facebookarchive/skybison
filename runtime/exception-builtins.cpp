@@ -5,6 +5,7 @@
 #include <cinttypes>
 
 #include "builtins-module.h"
+#include "builtins.h"
 #include "frame.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
@@ -523,11 +524,6 @@ const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinMethod BaseExceptionBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), METH(BaseException, __init__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -549,11 +545,6 @@ RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
 const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
     {ID(value), RawStopIteration::kValueOffset},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod StopIterationBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), METH(StopIteration, __init__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
@@ -579,11 +570,6 @@ RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
 const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
     {ID(value), RawSystemExit::kCodeOffset},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), METH(SystemExit, __init__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute SyntaxErrorBuiltins::kAttributes[] = {

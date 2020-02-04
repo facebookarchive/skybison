@@ -1,5 +1,6 @@
 #include "bytes-builtins.h"
 
+#include "builtins.h"
 #include "bytearray-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
@@ -377,29 +378,6 @@ const BuiltinAttribute BytesBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, 0},
 };
 
-// clang-format off
-const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), METH(bytes, __add__)},
-    {ID(__eq__), METH(bytes, __eq__)},
-    {ID(__ge__), METH(bytes, __ge__)},
-    {ID(__gt__), METH(bytes, __gt__)},
-    {ID(__hash__), METH(bytes, __hash__)},
-    {ID(__iter__), METH(bytes, __iter__)},
-    {ID(__le__), METH(bytes, __le__)},
-    {ID(__len__), METH(bytes, __len__)},
-    {ID(__lt__), METH(bytes, __lt__)},
-    {ID(__mul__), METH(bytes, __mul__)},
-    {ID(__ne__), METH(bytes, __ne__)},
-    {ID(__repr__), METH(bytes, __repr__)},
-    {ID(hex), METH(bytes, hex)},
-    {ID(lstrip), METH(bytes, lstrip)},
-    {ID(rstrip), METH(bytes, rstrip)},
-    {ID(strip), METH(bytes, strip)},
-    {ID(translate), METH(bytes, translate)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
-
 void BytesBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kBytes);
 }
@@ -760,13 +738,6 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseWithFmt(
       LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &del);
 }
-
-const BuiltinMethod BytesIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(bytes_iterator, __iter__)},
-    {ID(__length_hint__), METH(bytes_iterator, __length_hint__)},
-    {ID(__next__), METH(bytes_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(bytes_iterator, __iter__)(Thread* thread, Frame* frame,
                                          word nargs) {

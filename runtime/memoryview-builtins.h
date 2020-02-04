@@ -12,17 +12,10 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                              word stop, word step, word slice_len,
                              const Object& value);
 
-RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(memoryview, __getitem__)(Thread* thread, Frame* frame,
-                                        word nargs);
-RawObject METH(memoryview, __len__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs);
-
 class MemoryViewBuiltins : public Builtins<MemoryViewBuiltins, ID(memoryview),
                                            LayoutId::kMemoryView> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(MemoryViewBuiltins);

@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "os.h"
 #include "runtime.h"

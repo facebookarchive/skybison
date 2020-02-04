@@ -2,6 +2,7 @@
 
 #include <signal.h>
 
+#include "builtins.h"
 #include "frozen-modules.h"
 #include "module-builtins.h"
 #include "modules.h"

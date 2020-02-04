@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 
+#include "builtins.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -366,17 +367,6 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
   return *result;
 }
 
-// clang-format off
-const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
-    {ID(__hash__), METH(object, __hash__)},
-    {ID(__init__), METH(object, __init__)},
-    {ID(__new__), METH(object, __new__)},
-    {ID(__setattr__), METH(object, __setattr__)},
-    {ID(__sizeof__), METH(object, __sizeof__)},
-    // no sentinel needed because the iteration below is manual
-};
-// clang-format on
-
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
@@ -390,11 +380,6 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   object_type.setInstanceLayout(*layout);
   object_type.setBases(runtime->emptyTuple());
   runtime->layoutAtPut(LayoutId::kObject, *layout);
-
-  for (uword i = 0; i < ARRAYSIZE(kBuiltinMethods); i++) {
-    runtime->typeAddBuiltinFunction(object_type, kBuiltinMethods[i].name,
-                                    kBuiltinMethods[i].address);
-  }
 
   postInitialize(runtime, object_type);
 }
@@ -510,12 +495,6 @@ RawObject METH(object, __sizeof__)(Thread* thread, Frame* frame, word nargs) {
   }
   return SmallInt::fromWord(kPointerSize);
 }
-
-const BuiltinMethod NoneBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), METH(NoneType, __new__)},
-    {ID(__repr__), METH(NoneType, __repr__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(NoneType, __new__)(Thread*, Frame*, word) {
   return NoneType::object();

@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "dict-builtins.h"
 #include "handles.h"
 #include "ic.h"

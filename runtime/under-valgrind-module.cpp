@@ -2,6 +2,7 @@
 
 #include "valgrind/callgrind.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
@@ -11,18 +12,7 @@
 
 namespace py {
 
-const BuiltinFunction UnderValgrindModule::kBuiltinFunctions[] = {
-    {ID(callgrind_dump_stats), FUNC(_valgrind, callgrind_dump_stats)},
-    {ID(callgrind_start_instrumentation),
-     FUNC(_valgrind, callgrind_start_instrumentation)},
-    {ID(callgrind_stop_instrumentation),
-     FUNC(_valgrind, callgrind_stop_instrumentation)},
-    {ID(callgrind_zero_stats), FUNC(_valgrind, callgrind_zero_stats)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void UnderValgrindModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kUnderValgrindModuleData, module);
 }
 

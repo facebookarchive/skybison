@@ -1,5 +1,6 @@
 #include "module-builtins.h"
 
+#include "builtins.h"
 #include "capi-handles.h"
 #include "dict-builtins.h"
 #include "frame.h"
@@ -296,14 +297,6 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_module__name), RawModule::kNameOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
-    {ID(__getattribute__), METH(module, __getattribute__)},
-    {ID(__init__), METH(module, __init__)},
-    {ID(__new__), METH(module, __new__)},
-    {ID(__setattr__), METH(module, __setattr__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,

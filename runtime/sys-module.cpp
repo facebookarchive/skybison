@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "builtins-module.h"
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
@@ -28,16 +29,7 @@ namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
-const BuiltinFunction SysModule::kBuiltinFunctions[] = {
-    {ID(exc_info), FUNC(sys, exc_info)},
-    {ID(excepthook), FUNC(sys, excepthook)},
-    {ID(intern), FUNC(sys, intern)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void SysModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object modules(&scope, runtime->modules());

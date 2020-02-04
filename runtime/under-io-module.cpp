@@ -1,5 +1,6 @@
 #include "under-io-module.h"
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -14,17 +15,6 @@
 #include "thread.h"
 
 namespace py {
-
-const BuiltinFunction UnderIoModule::kBuiltinFunctions[] = {
-    {ID(_StringIO_closed_guard), FUNC(_io, _StringIO_closed_guard)},
-    {ID(_buffered_reader_clear_buffer),
-     FUNC(_io, _buffered_reader_clear_buffer)},
-    {ID(_buffered_reader_init), FUNC(_io, _buffered_reader_init)},
-    {ID(_buffered_reader_peek), FUNC(_io, _buffered_reader_peek)},
-    {ID(_buffered_reader_read), FUNC(_io, _buffered_reader_read)},
-    {ID(_buffered_reader_readline), FUNC(_io, _buffered_reader_readline)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {ID(BufferedRandom), LayoutId::kBufferedRandom},
@@ -44,7 +34,6 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
 };
 
 void UnderIoModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
   executeFrozenModule(thread, &kUnderIoModuleData, module);
 }
@@ -1127,17 +1116,6 @@ RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs) {
   Str str(&scope, strUnderlying(*value));
   return stringIOWrite(thread, string_io, str);
 }
-
-const BuiltinMethod StringIOBuiltins::kBuiltinMethods[] = {
-    {ID(getvalue), METH(StringIO, getvalue)},
-    {ID(__init__), METH(StringIO, __init__)},
-    {ID(__next__), METH(StringIO, __next__)},
-    {ID(read), METH(StringIO, read)},
-    {ID(readline), METH(StringIO, readline)},
-    {ID(truncate), METH(StringIO, truncate)},
-    {ID(write), METH(StringIO, write)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
     {ID(_b2cratio), TextIOWrapper::kB2cratioOffset},

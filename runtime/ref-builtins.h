@@ -8,13 +8,9 @@
 
 namespace py {
 
-RawObject METH(ref, __call__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(ref, __new__)(Thread* thread, Frame* frame, word nargs);
-
 class RefBuiltins : public Builtins<RefBuiltins, ID(ref), LayoutId::kWeakRef> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RefBuiltins);

@@ -46,29 +46,21 @@ RawObject displayException(Thread* thread, const Object& value,
 // exception.
 void handleSystemExit(Thread* thread);
 
-RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
-                                        word nargs);
-
 class BaseExceptionBuiltins
     : public Builtins<BaseExceptionBuiltins, ID(BaseException),
                       LayoutId::kBaseException> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BaseExceptionBuiltins);
 };
-
-RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
-                                        word nargs);
 
 class StopIterationBuiltins
     : public Builtins<StopIterationBuiltins, ID(StopIteration),
                       LayoutId::kStopIteration, LayoutId::kException> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StopIterationBuiltins);
@@ -84,14 +76,11 @@ class SyntaxErrorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(SyntaxErrorBuiltins);
 };
 
-RawObject METH(SystemExit, __init__)(Thread* thread, Frame* frame, word nargs);
-
 class SystemExitBuiltins
     : public Builtins<SystemExitBuiltins, ID(SystemExit), LayoutId::kSystemExit,
                       LayoutId::kBaseException> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExitBuiltins);

@@ -1,6 +1,7 @@
 #include "under-imp-module.h"
 
 #include "builtins-module.h"
+#include "builtins.h"
 #include "capi-handles.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -13,20 +14,7 @@
 
 namespace py {
 
-const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
-    {ID(_create_dynamic), FUNC(_imp, _create_dynamic)},
-    {ID(acquire_lock), FUNC(_imp, acquire_lock)},
-    {ID(create_builtin), FUNC(_imp, create_builtin)},
-    {ID(exec_builtin), FUNC(_imp, exec_builtin)},
-    {ID(extension_suffixes), FUNC(_imp, extension_suffixes)},
-    {ID(is_builtin), FUNC(_imp, is_builtin)},
-    {ID(is_frozen), FUNC(_imp, is_frozen)},
-    {ID(release_lock), FUNC(_imp, release_lock)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void UnderImpModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kUnderImpModuleData, module);
 }
 

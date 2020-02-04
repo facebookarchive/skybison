@@ -3,6 +3,7 @@
 from builtins import _index, _strarray
 
 from _builtins import (
+    _builtin,
     _bytes_check,
     _bytes_decode,
     _bytes_decode_ascii,
@@ -11,7 +12,6 @@ from _builtins import (
     _byteslike_guard,
     _int_check,
     _object_type_hasattr,
-    _patch,
     _str_check,
     _str_encode,
     _str_encode_ascii,
@@ -121,9 +121,8 @@ def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:
         raise TypeError("encoder must return a tuple (object, integer)")
 
 
-@_patch
 def _ascii_decode(data: str, errors: str, index: int, out: _strarray):
-    pass
+    _builtin()
 
 
 def ascii_decode(data: bytes, errors: str = "strict"):
@@ -152,7 +151,6 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     return str(result), i
 
 
-@_patch
 def _ascii_encode(data: str, errors: str, index: int, out: bytearray):
     """Tries to encode `data`, starting from `index`, into the `out` bytearray.
     If it encounters any codepoints above 127, it tries using the `errors`
@@ -160,7 +158,7 @@ def _ascii_encode(data: str, errors: str, index: int, out: bytearray):
     and last index of the error on failure.
     If it finishes encoding, it returns a tuple of the final bytes and length.
     """
-    pass
+    _builtin()
 
 
 def ascii_encode(data: str, errors: str = "strict"):
@@ -204,7 +202,6 @@ def ascii_encode(data: str, errors: str = "strict"):
     return bytes(result), i
 
 
-@_patch
 def _escape_decode(data: bytes, errors: str, recode_encoding: str):
     """Tries to decode `data`.
     If it runs into any errors, it raises and returns the message to throw.
@@ -214,7 +211,7 @@ def _escape_decode(data: bytes, errors: str, recode_encoding: str):
     invalid escape sequence, or -1 if none occur.
     Will eventually have to handle the recode_encoding argument.
     """
-    pass
+    _builtin()
 
 
 def _escape_decode_stateful(
@@ -254,9 +251,8 @@ def idna_encode(data: str, errors: str):
     return ascii_encode(data, errors)
 
 
-@_patch
 def _latin_1_decode(data: bytes):
-    pass
+    _builtin()
 
 
 def latin_1_decode(data: bytes, errors: str = "strict"):
@@ -269,7 +265,6 @@ def latin_1_decode(data: bytes, errors: str = "strict"):
     return _latin_1_decode(data)
 
 
-@_patch
 def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
     """Tries to encode `data`, starting from `index`, into the `out` bytearray.
     If it encounters any codepoints above 255, it tries using the `errors`
@@ -277,7 +272,7 @@ def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
     and last index of the error on failure.
     If it finishes encoding, it returns a tuple of the final bytes and length.
     """
-    pass
+    _builtin()
 
 
 def latin_1_encode(data: str, errors: str = "strict"):
@@ -318,7 +313,6 @@ def latin_1_encode(data: str, errors: str = "strict"):
     return bytes(result), i
 
 
-@_patch
 def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _strarray):
     """Tries to decode `data`, starting from `index`, into the `out` _strarray.
     If it runs into any errors, it returns a tuple of
@@ -328,7 +322,7 @@ def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _strarray)
     If it finishes encoding, it returns a tuple of
     (decoded, length, "", first_invalid_escape)
     """
-    pass
+    _builtin()
 
 
 def _unicode_escape_decode_stateful(data: bytes, errors: str = "strict"):
@@ -362,7 +356,6 @@ def unicode_escape_decode(data, errors: str = "strict"):
     return escaped, length
 
 
-@_patch
 def _utf_8_decode(data: bytes, errors: str, index: int, out: _strarray, is_final: bool):
     """Tries to decode `data`, starting from `index`, into the `out` _strarray.
     If it runs into any errors, it returns a tuple of
@@ -370,7 +363,7 @@ def _utf_8_decode(data: bytes, errors: str, index: int, out: _strarray, is_final
     If it finishes encoding, it returns a tuple of
     (decoded, length, "")
     """
-    pass
+    _builtin()
 
 
 def utf_8_decode(data: bytes, errors: str = "strict", is_final: bool = False):
@@ -404,7 +397,6 @@ def utf_8_decode(data: bytes, errors: str = "strict", is_final: bool = False):
     return str(result), i
 
 
-@_patch
 def _utf_8_encode(data: str, errors: str, index: int, out: bytearray):
     """Tries to encode `data`, starting from `index`, into the `out` bytearray.
     If it encounters an error, it tries using the `errors` error handler to
@@ -412,7 +404,7 @@ def _utf_8_encode(data: str, errors: str, index: int, out: bytearray):
     the error.
     If it finishes encoding, it returns a tuple of the final bytes and length.
     """
-    pass
+    _builtin()
 
 
 def utf_8_encode(data: str, errors: str = "strict"):
@@ -453,9 +445,8 @@ def utf_8_encode(data: str, errors: str = "strict"):
     return bytes(result), i
 
 
-@_patch
 def _utf_16_encode(data: str, errors: str, index: int, out: bytearray, byteorder: int):
-    pass
+    _builtin()
 
 
 def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noqa: C901
@@ -522,9 +513,8 @@ def utf_16_be_encode(data: str, errors: str = "strict"):
     return utf_16_encode(data, errors, 1)
 
 
-@_patch
 def _utf_32_encode(data: str, errors: str, index: int, out: bytearray, byteorder: int):
-    pass
+    _builtin()
 
 
 def utf_32_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noqa: C901
@@ -760,9 +750,8 @@ def _call_encode_errorhandler(
 _codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
 
 
-@_patch
 def _bytearray_string_append(dst: bytearray, data: str):
-    pass
+    _builtin()
 
 
 # NOTE: This should behave the same as codecs.IncrementalEncoder.

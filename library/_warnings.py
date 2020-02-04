@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """_warnings provides basic warning filtering support."""
 
-from _builtins import _patch
+from _builtins import _builtin
 
 
-@_patch
 def warn(message, category=None, stacklevel=1, source=None):
-    pass
+    _builtin()
 
 
 # TODO(T43357250): These need to be real things, not stubbed out

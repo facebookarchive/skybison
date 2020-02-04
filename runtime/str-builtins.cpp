@@ -2,6 +2,7 @@
 
 #include <cwchar>
 
+#include "builtins.h"
 #include "formatter.h"
 #include "frame.h"
 #include "globals.h"
@@ -403,42 +404,6 @@ void LargeStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
 const BuiltinAttribute StrBuiltins::kAttributes[] = {
     {ID(_UserStr__value), UserStrBase::kValueOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
-};
-
-const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), METH(str, __add__)},
-    {ID(__bool__), METH(str, __bool__)},
-    {ID(__contains__), METH(str, __contains__)},
-    {ID(__eq__), METH(str, __eq__)},
-    {ID(__format__), METH(str, __format__)},
-    {ID(__ge__), METH(str, __ge__)},
-    {ID(__gt__), METH(str, __gt__)},
-    {ID(__hash__), METH(str, __hash__)},
-    {ID(__iter__), METH(str, __iter__)},
-    {ID(__le__), METH(str, __le__)},
-    {ID(__len__), METH(str, __len__)},
-    {ID(__lt__), METH(str, __lt__)},
-    {ID(__mul__), METH(str, __mul__)},
-    {ID(__ne__), METH(str, __ne__)},
-    {ID(__repr__), METH(str, __repr__)},
-    {ID(isalnum), METH(str, isalnum)},
-    {ID(isalpha), METH(str, isalpha)},
-    {ID(isdecimal), METH(str, isdecimal)},
-    {ID(isdigit), METH(str, isdigit)},
-    {ID(isidentifier), METH(str, isidentifier)},
-    {ID(islower), METH(str, islower)},
-    {ID(isnumeric), METH(str, isnumeric)},
-    {ID(isprintable), METH(str, isprintable)},
-    {ID(isspace), METH(str, isspace)},
-    {ID(istitle), METH(str, istitle)},
-    {ID(isupper), METH(str, isupper)},
-    {ID(lstrip), METH(str, lstrip)},
-    {ID(lower), METH(str, lower)},
-    {ID(title), METH(str, title)},
-    {ID(rstrip), METH(str, rstrip)},
-    {ID(strip), METH(str, strip)},
-    {ID(upper), METH(str, upper)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 void StrBuiltins::postInitialize(Runtime*, const Type& new_type) {
@@ -1485,13 +1450,6 @@ RawObject METH(str, strip)(Thread* thread, Frame* frame, word nargs) {
   Str chars(&scope, strUnderlying(*other_obj));
   return strStrip(thread, str, chars);
 }
-
-const BuiltinMethod StrIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(str_iterator, __iter__)},
-    {ID(__length_hint__), METH(str_iterator, __length_hint__)},
-    {ID(__next__), METH(str_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(str_iterator, __iter__)(Thread* thread, Frame* frame,
                                        word nargs) {

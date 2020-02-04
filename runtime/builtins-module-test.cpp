@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "dict-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"

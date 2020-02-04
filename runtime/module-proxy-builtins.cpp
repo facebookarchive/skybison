@@ -1,5 +1,7 @@
 #include "module-proxy-builtins.h"
 
+#include "builtins.h"
+
 namespace py {
 
 const BuiltinAttribute ModuleProxyBuiltins::kAttributes[] = {

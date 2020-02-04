@@ -1,5 +1,6 @@
 #include "tuple-builtins.h"
 
+#include "builtins.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -68,18 +69,6 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
-
-// clang-format off
-const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), METH(tuple, __add__)},
-    {ID(__contains__), METH(tuple, __contains__)},
-    {ID(__hash__), METH(tuple, __hash__)},
-    {ID(__iter__), METH(tuple, __iter__)},
-    {ID(__len__), METH(tuple, __len__)},
-    {ID(__mul__), METH(tuple, __mul__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
 
 RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
@@ -212,13 +201,6 @@ RawObject METH(tuple, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Tuple tuple(&scope, tupleUnderlying(*self));
   return runtime->newTupleIterator(tuple, tuple.length());
 }
-
-const BuiltinMethod TupleIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(tuple_iterator, __iter__)},
-    {ID(__length_hint__), METH(tuple_iterator, __length_hint__)},
-    {ID(__next__), METH(tuple_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(tuple_iterator, __iter__)(Thread* thread, Frame* frame,
                                          word nargs) {

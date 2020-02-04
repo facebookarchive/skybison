@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "bytearray-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"

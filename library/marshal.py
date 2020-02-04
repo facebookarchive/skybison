@@ -27,9 +27,8 @@ load() -- read value from a file
 dumps() -- marshal value as a bytes object
 loads() -- read value from a bytes-like object"""
 
-from _builtins import _patch
+from _builtins import _builtin
 
 
-@_patch
 def loads(bytes):
-    pass
+    _builtin()

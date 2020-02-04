@@ -31,6 +31,7 @@ from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
 from _builtins import (
     _address,
+    _builtin,
     _bytearray_len,
     _bytes_check,
     _bytes_len,
@@ -43,7 +44,6 @@ from _builtins import (
     _object_type_getattr,
     _object_type_hasattr,
     _os_write,
-    _patch,
     _str_check,
     _str_len,
     _type,
@@ -74,34 +74,28 @@ from _thread import Lock as _thread_Lock
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
-@_patch
 def _StringIO_closed_guard(obj):
-    pass
+    _builtin()
 
 
-@_patch
 def _buffered_reader_clear_buffer(self):
-    pass
+    _builtin()
 
 
-@_patch
 def _buffered_reader_init(self, buffer_size):
-    pass
+    _builtin()
 
 
-@_patch
 def _buffered_reader_peek(self, size=0):
-    pass
+    _builtin()
 
 
-@_patch
 def _buffered_reader_read(self, size=None):
-    pass
+    _builtin()
 
 
-@_patch
 def _buffered_reader_readline(self, size=None):
-    pass
+    _builtin()
 
 
 def _detached_guard(self):
@@ -2069,10 +2063,10 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
 
 class StringIO(_TextIOBase, bootstrap=True):
     def __init__(self, initial_value="", newline="\n"):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
     def __repr__(self):
         return f"<_io.StringIO object at {_address(self):#x}>"
@@ -2086,7 +2080,7 @@ class StringIO(_TextIOBase, bootstrap=True):
         return None
 
     def getvalue(self):
-        pass
+        _builtin()
 
     def readable(self):
         _StringIO_closed_guard(self)
@@ -2128,10 +2122,10 @@ class StringIO(_TextIOBase, bootstrap=True):
         )[self._seennl]
 
     def read(self, size=None):
-        pass
+        _builtin()
 
     def readline(self, size=None):
-        pass
+        _builtin()
 
     # TODO(T59698607): implement this in native code.
     def seek(self, cookie, whence=0):  # noqa: C901
@@ -2165,10 +2159,10 @@ class StringIO(_TextIOBase, bootstrap=True):
         return self._pos
 
     def truncate(self, size=None):
-        pass
+        _builtin()
 
     def write(self, value):
-        pass
+        _builtin()
 
 
 def _fspath(obj):

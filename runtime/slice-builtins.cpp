@@ -1,5 +1,6 @@
 #include "slice-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "objects.h"
@@ -12,11 +13,6 @@ const BuiltinAttribute SliceBuiltins::kAttributes[] = {
     {ID(stop), Slice::kStopOffset, AttributeFlags::kReadOnly},
     {ID(step), Slice::kStepOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod SliceBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), METH(slice, __new__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(slice, __new__)(Thread* thread, Frame* frame, word nargs) {

@@ -1,5 +1,6 @@
 #include "super-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "object-builtins.h"
@@ -60,13 +61,6 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
 
   return objectGetAttribute(thread, super, name);
 }
-
-const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
-    {ID(__getattribute__), METH(super, __getattribute__)},
-    {ID(__init__), METH(super, __init__)},
-    {ID(__new__), METH(super, __new__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 const BuiltinAttribute SuperBuiltins::kAttributes[] = {
     {ID(__thisclass__), RawSuper::kTypeOffset, AttributeFlags::kReadOnly},

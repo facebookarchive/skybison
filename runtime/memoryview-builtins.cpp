@@ -1,5 +1,6 @@
 #include "memoryview-builtins.h"
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "float-builtins.h"
 #include "int-builtins.h"
@@ -10,14 +11,6 @@ const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
     {ID(format), RawMemoryView::kFormatOffset, AttributeFlags::kReadOnly},
     {ID(readonly), RawMemoryView::kReadOnlyOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
-    {ID(cast), METH(memoryview, cast)},
-    {ID(__getitem__), METH(memoryview, __getitem__)},
-    {ID(__len__), METH(memoryview, __len__)},
-    {ID(__new__), METH(memoryview, __new__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 static char formatChar(const Str& format) {

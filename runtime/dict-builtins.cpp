@@ -1,5 +1,6 @@
 #include "dict-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -495,21 +496,6 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-// clang-format off
-const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
-    {ID(clear), METH(dict, clear)},
-    {ID(__delitem__), METH(dict, __delitem__)},
-    {ID(__eq__), METH(dict, __eq__)},
-    {ID(__iter__), METH(dict, __iter__)},
-    {ID(__len__), METH(dict, __len__)},
-    {ID(__new__), METH(dict, __new__)},
-    {ID(items), METH(dict, items)},
-    {ID(keys), METH(dict, keys)},
-    {ID(values), METH(dict, values)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
-
 RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -674,12 +660,6 @@ RawObject METH(dict, __new__)(Thread* thread, Frame* frame, word nargs) {
 // TODO(T35787656): Instead of re-writing everything for every class, make a
 // helper function that takes a member function (type check) and string for the
 // Python symbol name
-const BuiltinMethod DictItemIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(dict_itemiterator, __iter__)},
-    {ID(__length_hint__), METH(dict_itemiterator, __length_hint__)},
-    {ID(__next__), METH(dict_itemiterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(dict_itemiterator, __iter__)(Thread* thread, Frame* frame,
                                             word nargs) {
@@ -721,11 +701,6 @@ RawObject METH(dict_itemiterator, __length_hint__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-const BuiltinMethod DictItemsBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(dict_items, __iter__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -737,13 +712,6 @@ RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, DictItems::cast(*self).dict());
   return thread->runtime()->newDictItemIterator(thread, dict);
 }
-
-const BuiltinMethod DictKeyIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(dict_keyiterator, __iter__)},
-    {ID(__length_hint__), METH(dict_keyiterator, __length_hint__)},
-    {ID(__next__), METH(dict_keyiterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Frame* frame,
                                            word nargs) {
@@ -785,11 +753,6 @@ RawObject METH(dict_keyiterator, __length_hint__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-const BuiltinMethod DictKeysBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(dict_keys, __iter__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -801,13 +764,6 @@ RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, DictKeys::cast(*self).dict());
   return thread->runtime()->newDictKeyIterator(thread, dict);
 }
-
-const BuiltinMethod DictValueIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(dict_valueiterator, __iter__)},
-    {ID(__length_hint__), METH(dict_valueiterator, __length_hint__)},
-    {ID(__next__), METH(dict_valueiterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Frame* frame,
                                              word nargs) {
@@ -848,11 +804,6 @@ RawObject METH(dict_valueiterator, __length_hint__)(Thread* thread,
   Dict dict(&scope, iter.iterable());
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
-
-const BuiltinMethod DictValuesBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(dict_values, __iter__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(dict_values, __iter__)(Thread* thread, Frame* frame,
                                       word nargs) {

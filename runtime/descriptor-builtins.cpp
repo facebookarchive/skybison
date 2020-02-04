@@ -1,5 +1,6 @@
 #include "descriptor-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -9,13 +10,6 @@
 namespace py {
 
 // classmethod
-
-const BuiltinMethod ClassMethodBuiltins::kBuiltinMethods[] = {
-    {ID(__get__), METH(classmethod, __get__)},
-    {ID(__init__), METH(classmethod, __init__)},
-    {ID(__new__), METH(classmethod, __new__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(classmethod, __new__)(Thread* thread, Frame*, word) {
   return thread->runtime()->newClassMethod();
@@ -43,13 +37,6 @@ RawObject METH(classmethod, __get__)(Thread* thread, Frame* frame, word nargs) {
 
 // staticmethod
 
-const BuiltinMethod StaticMethodBuiltins::kBuiltinMethods[] = {
-    {ID(__get__), METH(staticmethod, __get__)},
-    {ID(__init__), METH(staticmethod, __init__)},
-    {ID(__new__), METH(staticmethod, __new__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame,
                                       word nargs) {
   HandleScope scope(thread);
@@ -74,20 +61,6 @@ RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
 }
 
 // property
-
-// clang-format off
-const BuiltinMethod PropertyBuiltins::kBuiltinMethods[] = {
-    {ID(__delete__), METH(property, __delete__)},
-    {ID(__get__), METH(property, __get__)},
-    {ID(__init__), METH(property, __init__)},
-    {ID(__new__), METH(property, __new__)},
-    {ID(__set__), METH(property, __set__)},
-    {ID(deleter), METH(property, deleter)},
-    {ID(getter), METH(property, getter)},
-    {ID(setter), METH(property, setter)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
 
 RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

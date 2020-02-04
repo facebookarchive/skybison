@@ -1,15 +1,9 @@
 #include "strarray-builtins.h"
 
+#include "builtins.h"
 #include "runtime.h"
 
 namespace py {
-
-const BuiltinMethod StrArrayBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), METH(_strarray, __init__)},
-    {ID(__new__), METH(_strarray, __new__)},
-    {ID(__str__), METH(_strarray, __str__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(_strarray, __init__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

@@ -6,6 +6,7 @@
 
 #include <cerrno>
 
+#include "builtins.h"
 #include "file.h"
 #include "frozen-modules.h"
 #include "module-builtins.h"
@@ -15,22 +16,7 @@
 
 namespace py {
 
-const BuiltinFunction UnderOsModule::kBuiltinFunctions[] = {
-    {ID(close), FUNC(_os, close)},
-    {ID(fstat_size), FUNC(_os, fstat_size)},
-    {ID(ftruncate), FUNC(_os, ftruncate)},
-    {ID(isatty), FUNC(_os, isatty)},
-    {ID(isdir), FUNC(_os, isdir)},
-    {ID(lseek), FUNC(_os, lseek)},
-    {ID(open), FUNC(_os, open)},
-    {ID(parse_mode), FUNC(_os, parse_mode)},
-    {ID(read), FUNC(_os, read)},
-    {ID(set_noinheritable), FUNC(_os, set_noinheritable)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void UnderOsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kUnderOsModuleData, module);
 }
 

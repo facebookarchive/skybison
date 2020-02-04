@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from _builtins import (
+    _builtin,
     _getframe_function,
     _int_check,
     _int_guard,
     _os_write,
-    _patch,
     _Unbound,
 )
 
@@ -142,14 +142,12 @@ def displayhook(value):
 dont_write_bytecode = False
 
 
-@_patch
 def exc_info():
-    pass
+    _builtin()
 
 
-@_patch
 def excepthook(exc, value, tb):
-    pass
+    _builtin()
 
 
 # TODO(cshapiro): assign a meaningful value in the runtime
@@ -195,9 +193,8 @@ def getsizeof(object, default=_Unbound):
 implementation = _ImplementationType()
 
 
-@_patch
 def intern(string):
-    pass
+    _builtin()
 
 
 meta_path = []

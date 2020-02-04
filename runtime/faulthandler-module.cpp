@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <csignal>
 
+#include "builtins.h"
 #include "file.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
@@ -16,20 +17,7 @@
 
 namespace py {
 
-const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
-    {ID(_read_null), FUNC(faulthandler, _read_null)},
-    {ID(_sigabrt), FUNC(faulthandler, _sigabrt)},
-    {ID(_sigfpe), FUNC(faulthandler, _sigfpe)},
-    {ID(_sigsegv), FUNC(faulthandler, _sigsegv)},
-    {ID(disable), FUNC(faulthandler, disable)},
-    {ID(dump_traceback), FUNC(faulthandler, dump_traceback)},
-    {ID(enable), FUNC(faulthandler, enable)},
-    {ID(is_enabled), FUNC(faulthandler, is_enabled)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void FaulthandlerModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kFaulthandlerModuleData, module);
 }
 

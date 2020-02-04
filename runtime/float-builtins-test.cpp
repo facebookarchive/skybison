@@ -4,6 +4,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "objects.h"

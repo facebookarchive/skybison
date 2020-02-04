@@ -1,5 +1,6 @@
 #include "marshal-module.h"
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -12,13 +13,7 @@
 
 namespace py {
 
-const BuiltinFunction MarshalModule::kBuiltinFunctions[] = {
-    {ID(loads), FUNC(marshal, loads)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void MarshalModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kMarshalModuleData, module);
 }
 

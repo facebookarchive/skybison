@@ -1,5 +1,6 @@
 #include "under-codecs-module.h"
 
+#include "builtins.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
@@ -14,23 +15,7 @@ extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
 
 namespace py {
 
-const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
-    {ID(_ascii_decode), FUNC(_codecs, _ascii_decode)},
-    {ID(_ascii_encode), FUNC(_codecs, _ascii_encode)},
-    {ID(_bytearray_string_append), FUNC(_codecs, _bytearray_string_append)},
-    {ID(_escape_decode), FUNC(_codecs, _escape_decode)},
-    {ID(_latin_1_decode), FUNC(_codecs, _latin_1_decode)},
-    {ID(_latin_1_encode), FUNC(_codecs, _latin_1_encode)},
-    {ID(_unicode_escape_decode), FUNC(_codecs, _unicode_escape_decode)},
-    {ID(_utf_16_encode), FUNC(_codecs, _utf_16_encode)},
-    {ID(_utf_32_encode), FUNC(_codecs, _utf_32_encode)},
-    {ID(_utf_8_decode), FUNC(_codecs, _utf_8_decode)},
-    {ID(_utf_8_encode), FUNC(_codecs, _utf_8_encode)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 void UnderCodecsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   executeFrozenModule(thread, &kUnderCodecsModuleData, module);
 }
 

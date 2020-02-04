@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "builtins-module.h"
+#include "builtins.h"
 #include "bytearray-builtins.h"
 #include "dict-builtins.h"
 #include "int-builtins.h"

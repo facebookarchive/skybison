@@ -2118,11 +2118,17 @@ void Runtime::initializeSymbols() {
 }
 
 void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
+  HandleScope scope(thread);
+  Object none(&scope, NoneType::object());
+  moduleAtPutById(thread, builtins, ID(__build_class__), none);
   build_class_ = moduleValueCellAtById(thread, builtins, ID(__build_class__));
   CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
 }
 
 void Runtime::cacheDunderImport(Thread* thread, const Module& builtins) {
+  HandleScope scope(thread);
+  Object none(&scope, NoneType::object());
+  moduleAtPutById(thread, builtins, ID(__import__), none);
   dunder_import_ = moduleValueCellAtById(thread, builtins, ID(__import__));
   CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
 }

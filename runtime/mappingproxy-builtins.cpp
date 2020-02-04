@@ -1,5 +1,7 @@
 #include "mappingproxy-builtins.h"
 
+#include "builtins.h"
+
 namespace py {
 
 const BuiltinAttribute MappingProxyBuiltins::kAttributes[] = {

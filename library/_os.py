@@ -3,7 +3,7 @@
 process. It is used primarily by the _io module before it is possible to bring
 up the usual CPython os module."""
 
-from _builtins import _patch
+from _builtins import _builtin
 
 
 # TODO(emacs): Detect if "posix" or "nt" is in sys.builtin_module_names and set
@@ -12,53 +12,43 @@ name = "posix"
 linesep = "\n"
 
 
-@_patch
 def close(fd):
-    pass
+    _builtin()
 
 
-@_patch
 def fstat_size(fd):
     """Equivalent to os.stat(fd).st_size, but without having to reflect the
 stat struct into Python."""
-    pass
+    _builtin()
 
 
-@_patch
 def ftruncate(fd, size):
-    pass
+    _builtin()
 
 
-@_patch
 def isatty(fd):
-    pass
+    _builtin()
 
 
-@_patch
 def isdir(fd):
-    pass
+    _builtin()
 
 
-@_patch
 def lseek(fd, offset, whence):
-    pass
+    _builtin()
 
 
-@_patch
 def open(fd, flags, mode=0o777, dir_fd=None):
-    pass
+    _builtin()
 
 
-@_patch
 def parse_mode(mode):
-    pass
+    _builtin()
 
 
-@_patch
 def read(fd, count):
-    pass
+    _builtin()
 
 
-@_patch
 def set_noinheritable(fd):
-    pass
+    _builtin()

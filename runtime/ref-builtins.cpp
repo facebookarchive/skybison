@@ -1,5 +1,6 @@
 #include "ref-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -13,12 +14,6 @@ const BuiltinAttribute RefBuiltins::kAttributes[] = {
     {ID(_ref__callback), WeakRef::kCallbackOffset, AttributeFlags::kHidden},
     {ID(_ref__link), WeakRef::kLinkOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), METH(ref, __new__)},
-    {ID(__call__), METH(ref, __call__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(ref, __call__)(Thread* thread, Frame* frame, word nargs) {

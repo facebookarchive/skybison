@@ -55,79 +55,26 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter);
 
 RawSmallInt frozensetHash(Thread* thread, const Object& frozenset);
 
-RawObject METH(set, __and__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __contains__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __eq__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __ge__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __gt__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __iand__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __init__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __iter__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __le__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __len__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __lt__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __ne__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, __new__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, add)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, clear)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, copy)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, discard)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, intersection)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, isdisjoint)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, pop)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, remove)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(set, update)(Thread* thread, Frame* frame, word nargs);
-
 class SetBuiltins : public Builtins<SetBuiltins, ID(set), LayoutId::kSet> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetBuiltins);
 };
 
-RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __contains__)(Thread* thread, Frame* frame,
-                                        word nargs);
-RawObject METH(frozenset, __eq__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __ge__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __gt__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __hash__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __iter__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __le__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __len__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __lt__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __ne__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, copy)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(frozenset, intersection)(Thread* thread, Frame* frame,
-                                        word nargs);
-RawObject METH(frozenset, isdisjoint)(Thread* thread, Frame* frame, word nargs);
-
 class FrozenSetBuiltins
     : public Builtins<FrozenSetBuiltins, ID(frozenset), LayoutId::kFrozenSet> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(FrozenSetBuiltins);
 };
 
-RawObject METH(set_iterator, __iter__)(Thread* thread, Frame* frame,
-                                       word nargs);
-RawObject METH(set_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                              word nargs);
-RawObject METH(set_iterator, __next__)(Thread* thread, Frame* frame,
-                                       word nargs);
-
 class SetIteratorBuiltins
     : public Builtins<SetIteratorBuiltins, ID(set_iterator),
                       LayoutId::kSetIterator> {
- public:
-  static const BuiltinMethod kBuiltinMethods[];
-
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);
 };

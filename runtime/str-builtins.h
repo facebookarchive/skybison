@@ -117,65 +117,19 @@ class LargeStrBuiltins : public Builtins<LargeStrBuiltins, ID(largestr),
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStrBuiltins);
 };
 
-RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __bool__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __contains__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __eq__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __format__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __ge__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __gt__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __hash__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __iter__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __le__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __len__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __lt__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __mul__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __ne__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __new__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isalnum)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isalpha)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isdecimal)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isdigit)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, islower)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isnumeric)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isprintable)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isspace)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, istitle)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, isupper)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, join)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, lstrip)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, rstrip)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, strip)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(str, upper)(Thread* thread, Frame* frame, word nargs);
-
 class StrBuiltins : public Builtins<StrBuiltins, ID(str), LayoutId::kStr> {
  public:
   static void postInitialize(Runtime*, const Type& new_type);
 
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
 };
 
-RawObject METH(str_iterator, __iter__)(Thread* thread, Frame* frame,
-                                       word nargs);
-RawObject METH(str_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                              word nargs);
-RawObject METH(str_iterator, __next__)(Thread* thread, Frame* frame,
-                                       word nargs);
-
 class StrIteratorBuiltins
     : public Builtins<StrIteratorBuiltins, ID(str_iterator),
                       LayoutId::kStrIterator> {
- public:
-  static const BuiltinMethod kBuiltinMethods[];
-
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
 };

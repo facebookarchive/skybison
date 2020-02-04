@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 
+#include "builtins.h"
 #include "float-conversion.h"
 #include "frame.h"
 #include "globals.h"
@@ -33,31 +34,6 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
   }
   return NotImplementedType::object();
 }
-
-// clang-format off
-const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
-    {ID(__abs__), METH(float, __abs__)},
-    {ID(__add__), METH(float, __add__)},
-    {ID(__bool__), METH(float, __bool__)},
-    {ID(__eq__), METH(float, __eq__)},
-    {ID(__float__), METH(float, __float__)},
-    {ID(__ge__), METH(float, __ge__)},
-    {ID(__gt__), METH(float, __gt__)},
-    {ID(__hash__), METH(float, __hash__)},
-    {ID(__int__), METH(float, __int__)},
-    {ID(__le__), METH(float, __le__)},
-    {ID(__lt__), METH(float, __lt__)},
-    {ID(__mul__), METH(float, __mul__)},
-    {ID(__neg__), METH(float, __neg__)},
-    {ID(__pow__), METH(float, __pow__)},
-    {ID(__round__), METH(float, __round__)},
-    {ID(__rtruediv__), METH(float, __rtruediv__)},
-    {ID(__sub__), METH(float, __sub__)},
-    {ID(__truediv__), METH(float, __truediv__)},
-    {ID(__trunc__), METH(float, __trunc__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
 
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
     {ID(_UserFloat__value), UserFloatBase::kValueOffset,

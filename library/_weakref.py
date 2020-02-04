@@ -4,7 +4,7 @@
 from builtins import _index
 
 from _builtins import (
-    _patch,
+    _builtin,
     _property,
     _unimplemented,
     _weakref_callback,
@@ -41,14 +41,12 @@ def _remove_dead_weakref(object):
     _unimplemented()
 
 
-@_patch
 def _weakref_hash(self):
-    pass
+    _builtin()
 
 
-@_patch
 def _weakref_set_hash(self, hash):
-    pass
+    _builtin()
 
 
 def getweakrefs(object):
@@ -68,7 +66,7 @@ def proxy(object, callback=None):
 
 class ref(bootstrap=True):
     def __call__(self):
-        pass
+        _builtin()
 
     __callback__ = _property(_weakref_callback)
 
@@ -109,7 +107,7 @@ class ref(bootstrap=True):
         return self_referent != other_referent
 
     def __new__(cls, referent, callback=None):
-        pass
+        _builtin()
 
     def __init__(self, referent, callback=None):
         return None

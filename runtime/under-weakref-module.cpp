@@ -1,5 +1,6 @@
 #include "under-weakref-module.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -8,19 +9,12 @@
 
 namespace py {
 
-const BuiltinFunction UnderWeakrefModule::kBuiltinFunctions[] = {
-    {ID(_weakref_hash), FUNC(_weakref, _weakref_hash)},
-    {ID(_weakref_set_hash), FUNC(_weakref, _weakref_set_hash)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
     {ID(ref), LayoutId::kWeakRef},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
 void UnderWeakrefModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
   executeFrozenModule(thread, &kUnderWeakrefModuleData, module);
 }

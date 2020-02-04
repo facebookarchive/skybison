@@ -30,16 +30,9 @@ void writeStderrV(Thread* thread, const char* format, va_list va);
 
 RawObject initialSysPath(Thread* thread);
 
-RawObject FUNC(sys, exc_info)(Thread* thread, Frame* frame, word nargs);
-RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs);
-RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs);
-
 class SysModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
- private:
-  static const BuiltinFunction kBuiltinFunctions[];
 };
 
 }  // namespace py

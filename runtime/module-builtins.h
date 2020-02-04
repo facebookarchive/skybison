@@ -64,17 +64,10 @@ bool nextModuleDictItem(RawTuple data, word* idx);
 // Runs the executable functions found in the PyModuleDef
 int execDef(Thread* thread, const Module& module, PyModuleDef* def);
 
-RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,
-                                         word nargs);
-RawObject METH(module, __init__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(module, __new__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(module, __setattr__)(Thread* thread, Frame* frame, word nargs);
-
 class ModuleBuiltins
     : public Builtins<ModuleBuiltins, ID(module), LayoutId::kModule> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleBuiltins);

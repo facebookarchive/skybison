@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "objects.h"
 #include "runtime.h"

@@ -1,5 +1,6 @@
 #include "array-module.h"
 
+#include "builtins.h"
 #include "frozen-modules.h"
 #include "handles.h"
 #include "modules.h"

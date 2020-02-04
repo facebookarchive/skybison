@@ -46,14 +46,11 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
                                       void* meth, const char* c_doc,
                                       ExtensionMethodType type);
 
-RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs);
-
 class FunctionBuiltins
     : public Builtins<FunctionBuiltins, ID(function), LayoutId::kFunction> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
-  static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
 
  private:

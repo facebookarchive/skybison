@@ -1,5 +1,7 @@
 #include "iterator-builtins.h"
 
+#include "builtins.h"
+
 namespace py {
 const BuiltinAttribute SeqIteratorBuiltins::kAttributes[] = {
     {ID(_iterator__iterable), RawSeqIterator::kIterableOffset,

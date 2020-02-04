@@ -2,6 +2,7 @@
 
 #include "cpython-data.h"
 
+#include "builtins.h"
 #include "bytecode.h"
 #include "capi-handles.h"
 #include "dict-builtins.h"
@@ -1171,14 +1172,6 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {ID(_type__subclasses), RawType::kSubclassesOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
-    {ID(__getattribute__), METH(type, __getattribute__)},
-    {ID(__setattr__), METH(type, __setattr__)},
-    {ID(__subclasses__), METH(type, __subclasses__)},
-    {ID(mro), METH(type, mro)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,

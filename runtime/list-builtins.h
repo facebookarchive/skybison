@@ -38,42 +38,17 @@ RawObject listSort(Thread* thread, const List& list);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
 
-RawObject METH(list, append)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __add__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __iter__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __imul__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __len__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __mul__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, insert)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, pop)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, remove)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(list, sort)(Thread* thread, Frame* frame, word nargs);
-
 class ListBuiltins : public Builtins<ListBuiltins, ID(list), LayoutId::kList> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListBuiltins);
 };
 
-RawObject METH(list_iterator, __iter__)(Thread* thread, Frame* frame,
-                                        word nargs);
-RawObject METH(list_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                               word nargs);
-RawObject METH(list_iterator, __next__)(Thread* thread, Frame* frame,
-                                        word nargs);
-
 class ListIteratorBuiltins
     : public Builtins<ListIteratorBuiltins, ID(list_iterator),
                       LayoutId::kListIterator> {
- public:
-  static const BuiltinMethod kBuiltinMethods[];
-
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIteratorBuiltins);
 };

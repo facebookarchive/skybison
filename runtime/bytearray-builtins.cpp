@@ -1,5 +1,6 @@
 #include "bytearray-builtins.h"
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "int-builtins.h"
 #include "runtime.h"
@@ -25,29 +26,6 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
     {ID(_bytearray__num_items), ByteArray::kNumItemsOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), METH(bytearray, __add__)},
-    {ID(__eq__), METH(bytearray, __eq__)},
-    {ID(__ge__), METH(bytearray, __ge__)},
-    {ID(__gt__), METH(bytearray, __gt__)},
-    {ID(__iadd__), METH(bytearray, __iadd__)},
-    {ID(__imul__), METH(bytearray, __imul__)},
-    {ID(__iter__), METH(bytearray, __iter__)},
-    {ID(__le__), METH(bytearray, __le__)},
-    {ID(__len__), METH(bytearray, __len__)},
-    {ID(__lt__), METH(bytearray, __lt__)},
-    {ID(__mul__), METH(bytearray, __mul__)},
-    {ID(__ne__), METH(bytearray, __ne__)},
-    {ID(__new__), METH(bytearray, __new__)},
-    {ID(__repr__), METH(bytearray, __repr__)},
-    {ID(hex), METH(bytearray, hex)},
-    {ID(lstrip), METH(bytearray, lstrip)},
-    {ID(rstrip), METH(bytearray, rstrip)},
-    {ID(strip), METH(bytearray, strip)},
-    {ID(translate), METH(bytearray, translate)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {
@@ -641,13 +619,6 @@ RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
   }
   return *result;
 }
-
-const BuiltinMethod ByteArrayIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(bytearray_iterator, __iter__)},
-    {ID(__length_hint__), METH(bytearray_iterator, __length_hint__)},
-    {ID(__next__), METH(bytearray_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(bytearray_iterator, __iter__)(Thread* thread, Frame* frame,
                                              word nargs) {

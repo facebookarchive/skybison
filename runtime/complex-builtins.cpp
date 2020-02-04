@@ -1,5 +1,6 @@
 #include "complex-builtins.h"
 
+#include "builtins.h"
 #include "float-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
@@ -42,18 +43,6 @@ static RawObject unpackNumber(Thread* thread, const Object& obj, double* real,
   }
   return NotImplementedType::object();
 }
-
-// clang-format off
-const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), METH(complex, __add__)},
-    {ID(__hash__), METH(complex, __hash__)},
-    {ID(__neg__), METH(complex, __neg__)},
-    {ID(__pos__), METH(complex, __pos__)},
-    {ID(__rsub__), METH(complex, __rsub__)},
-    {ID(__sub__), METH(complex, __sub__)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
 
 void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kComplex);

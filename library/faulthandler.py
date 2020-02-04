@@ -2,7 +2,7 @@
 
 import sys
 
-from _builtins import _patch, _unimplemented
+from _builtins import _builtin, _unimplemented
 
 
 def _fatal_error(message):
@@ -18,24 +18,20 @@ def _raise_exception(code, flags=0):
     _unimplemented()
 
 
-@_patch
 def _read_null():
-    pass
+    _builtin()
 
 
-@_patch
 def _sigabrt():
-    pass
+    _builtin()
 
 
-@_patch
 def _sigfpe():
-    pass
+    _builtin()
 
 
-@_patch
 def _sigsegv(release_gil=False):
-    pass
+    _builtin()
 
 
 def _stack_overflow():
@@ -46,28 +42,24 @@ def cancel_dump_traceback_later():
     _unimplemented()
 
 
-@_patch
 def disable():
-    pass
+    _builtin()
 
 
-@_patch
 def dump_traceback(file=sys.stderr, all_threads=True):
-    pass
+    _builtin()
 
 
 def dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False):
     _unimplemented()
 
 
-@_patch
 def enable(file=sys.stderr, all_threads=True):
-    pass
+    _builtin()
 
 
-@_patch
 def is_enabled():
-    pass
+    _builtin()
 
 
 def register(signum, file=sys.stderr, all_threads=True, chain=False):

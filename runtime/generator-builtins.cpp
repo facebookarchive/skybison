@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
 
@@ -173,16 +174,6 @@ static RawObject genThrowImpl(Thread* thread, Frame* frame, word nargs) {
   return genThrowImpl(thread, gen, exc, value, tb);
 }
 
-const BuiltinMethod GeneratorBuiltins::kBuiltinMethods[] = {
-    // clang-format off
-    {ID(__iter__), METH(generator, __iter__)},
-    {ID(__next__), METH(generator, __next__)},
-    {ID(send), METH(generator, send)},
-    {ID(throw), METH(generator, throw)},
-    {SymbolId::kSentinelId, nullptr},
-    // clang-format on
-};
-
 const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
     {ID(__qualname__), RawGeneratorBase::kQualnameOffset},
     {ID(gi_running), RawGenerator::kRunningOffset, AttributeFlags::kReadOnly},
@@ -222,11 +213,6 @@ RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
   return genThrowImpl<ID(generator), LayoutId::kGenerator>(thread, frame,
                                                            nargs);
 }
-
-const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {
-    {ID(send), METH(coroutine, send)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
     {ID(__qualname__), RawGeneratorBase::kQualnameOffset},

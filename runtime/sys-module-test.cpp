@@ -7,6 +7,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "test-utils.h"

@@ -2,6 +2,7 @@
 
 #include <cerrno>
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
 #include "exception-builtins.h"
@@ -66,26 +67,6 @@ RawObject setAttribute(Thread* thread, const Object& self,
   if (result.isErrorException()) return *result;
   return NoneType::object();
 }
-
-// clang-format off
-const BuiltinFunction BuiltinsModule::kBuiltinFunctions[] = {
-    {ID(__build_class__), FUNC(builtins, __build_class__)},
-    {ID(__import__), FUNC(builtins, __import__)},
-    {ID(bin), FUNC(builtins, bin)},
-    {ID(callable), FUNC(builtins, callable)},
-    {ID(chr), FUNC(builtins, chr)},
-    {ID(delattr), FUNC(builtins, delattr)},
-    {ID(getattr), FUNC(builtins, getattr)},
-    {ID(hasattr), FUNC(builtins, hasattr)},
-    {ID(hash), FUNC(builtins, hash)},
-    {ID(hex), FUNC(builtins, hex)},
-    {ID(id), FUNC(builtins, id)},
-    {ID(oct), FUNC(builtins, oct)},
-    {ID(ord), FUNC(builtins, ord)},
-    {ID(setattr), FUNC(builtins, setattr)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
 
 const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(ArithmeticError), LayoutId::kArithmeticError},
@@ -216,7 +197,6 @@ const SymbolId BuiltinsModule::kIntrinsicIds[] = {
 };
 
 void BuiltinsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
 
   Runtime* runtime = thread->runtime();

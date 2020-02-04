@@ -4,6 +4,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "test-utils.h"
 
 namespace py {

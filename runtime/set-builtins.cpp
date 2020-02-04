@@ -1,5 +1,6 @@
 #include "set-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -589,25 +590,6 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
-    {ID(__and__), METH(frozenset, __and__)},
-    {ID(__contains__), METH(frozenset, __contains__)},
-    {ID(__eq__), METH(frozenset, __eq__)},
-    {ID(__ge__), METH(frozenset, __ge__)},
-    {ID(__gt__), METH(frozenset, __gt__)},
-    {ID(__hash__), METH(frozenset, __hash__)},
-    {ID(__iter__), METH(frozenset, __iter__)},
-    {ID(__le__), METH(frozenset, __le__)},
-    {ID(__len__), METH(frozenset, __len__)},
-    {ID(__lt__), METH(frozenset, __lt__)},
-    {ID(__ne__), METH(frozenset, __ne__)},
-    {ID(__new__), METH(frozenset, __new__)},
-    {ID(copy), METH(frozenset, copy)},
-    {ID(intersection), METH(frozenset, intersection)},
-    {ID(isdisjoint), METH(frozenset, isdisjoint)},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -750,32 +732,6 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
     {ID(_set__data), Set::kDataOffset, AttributeFlags::kHidden},
     {ID(_set__num_items), Set::kNumItemsOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
-    {ID(__and__), METH(set, __and__)},
-    {ID(__contains__), METH(set, __contains__)},
-    {ID(__eq__), METH(set, __eq__)},
-    {ID(__ge__), METH(set, __ge__)},
-    {ID(__gt__), METH(set, __gt__)},
-    {ID(__iand__), METH(set, __iand__)},
-    {ID(__init__), METH(set, __init__)},
-    {ID(__iter__), METH(set, __iter__)},
-    {ID(__le__), METH(set, __le__)},
-    {ID(__len__), METH(set, __len__)},
-    {ID(__lt__), METH(set, __lt__)},
-    {ID(__ne__), METH(set, __ne__)},
-    {ID(__new__), METH(set, __new__)},
-    {ID(add), METH(set, add)},
-    {ID(clear), METH(set, clear)},
-    {ID(copy), METH(set, copy)},
-    {ID(discard), METH(set, discard)},
-    {ID(intersection), METH(set, intersection)},
-    {ID(isdisjoint), METH(set, isdisjoint)},
-    {ID(pop), METH(set, pop)},
-    {ID(remove), METH(set, remove)},
-    {ID(update), METH(set, update)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject setCopy(Thread* thread, const SetBase& set) {
@@ -1106,13 +1062,6 @@ RawObject METH(set, update)(Thread* thread, Frame* frame, word nargs) {
   }
   return NoneType::object();
 }
-
-const BuiltinMethod SetIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(set_iterator, __iter__)},
-    {ID(__length_hint__), METH(set_iterator, __length_hint__)},
-    {ID(__next__), METH(set_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(set_iterator, __iter__)(Thread* thread, Frame* frame,
                                        word nargs) {

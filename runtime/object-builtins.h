@@ -56,11 +56,6 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
                         const Object& value);
 
 RawObject METH(object, __getattribute__)(Thread*, Frame*, word);
-RawObject METH(object, __hash__)(Thread*, Frame*, word);
-RawObject METH(object, __init__)(Thread*, Frame*, word);
-RawObject METH(object, __new__)(Thread*, Frame*, word);
-RawObject METH(object, __setattr__)(Thread*, Frame*, word);
-RawObject METH(object, __sizeof__)(Thread*, Frame*, word);
 
 class ObjectBuiltins
     : public ImmediateBuiltins<ObjectBuiltins, ID(object), LayoutId::kObject,
@@ -70,20 +65,12 @@ class ObjectBuiltins
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
  private:
-  static const BuiltinMethod kBuiltinMethods[];
-
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
 };
-
-RawObject METH(NoneType, __new__)(Thread*, Frame*, word);
-RawObject METH(NoneType, __repr__)(Thread*, Frame*, word);
 
 class NoneBuiltins
     : public ImmediateBuiltins<NoneBuiltins, ID(NoneType), LayoutId::kNoneType,
                                LayoutId::kObject> {
- public:
-  static const BuiltinMethod kBuiltinMethods[];
-
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);
 };

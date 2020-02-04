@@ -8,25 +8,11 @@
 
 namespace py {
 
-RawObject FUNC(_io, _buffered_reader_clear_buffer)(Thread* thread, Frame* frame,
-                                                   word nargs);
-RawObject FUNC(_io, _buffered_reader_init)(Thread* thread, Frame* frame,
-                                           word nargs);
-RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Frame* frame,
-                                           word nargs);
-RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
-                                           word nargs);
-RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
-                                               word nargs);
-RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
-                                            word nargs);
-
 class UnderIoModule {
  public:
   static void initialize(Thread* thread, const Module& module);
 
  private:
-  static const BuiltinFunction kBuiltinFunctions[];
   static const BuiltinType kBuiltinTypes[];
 };
 
@@ -117,20 +103,11 @@ class TextIOWrapperBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
-RawObject METH(StringIO, __init__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(StringIO, __next__)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(StringIO, getvalue)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(StringIO, read)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(StringIO, readline)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(StringIO, truncate)(Thread* thread, Frame* frame, word nargs);
-RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs);
-
 class StringIOBuiltins
     : public Builtins<StringIOBuiltins, ID(StringIO), LayoutId::kStringIO,
                       LayoutId::kUnderTextIOBase> {
  public:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StringIOBuiltins);

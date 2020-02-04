@@ -1,5 +1,7 @@
 #include "traceback-builtins.h"
 
+#include "builtins.h"
+
 namespace py {
 
 const BuiltinAttribute TracebackBuiltins::kAttributes[] = {

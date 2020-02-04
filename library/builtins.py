@@ -3,15 +3,10 @@
 isort:skip_file"""
 
 
-# Indicate to the linter that `_patch` is indeed defined at this point.
-_patch = _patch  # noqa: F821
-
-
-@_patch
 def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     """This function is used for builtins.__import__ during early bootstrap
     until importlib is fully initialized."""
-    pass
+    _builtin()  # noqa: F821
 
 
 # TODO(T61007763): We currently have to split the `from import` statement into
@@ -300,7 +295,7 @@ class function(bootstrap=True):
         return _instance_overflow_dict(self)
 
     def __get__(self, instance, owner):
-        pass
+        _builtin()
 
     def __repr__(self):
         _function_guard(self)
@@ -311,56 +306,56 @@ class classmethod(bootstrap=True):
     __func__ = _unimplemented
 
     def __get__(self, instance, owner):
-        pass
+        _builtin()
 
     def __init__(self, fn):
-        pass
+        _builtin()
 
     __isabstractmethod__ = _property(_classmethod_isabstract)
 
     def __new__(cls, fn):
-        pass
+        _builtin()
 
 
 class property(bootstrap=True):
     def __delete__(self, instance):
-        pass
+        _builtin()
 
     def __get__(self, instance, owner=None):
-        pass
+        _builtin()
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        pass
+        _builtin()
 
     __isabstractmethod__ = _property(_property_isabstract)
 
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
-        pass
+        _builtin()
 
     def __set__(self, instance, value):
-        pass
+        _builtin()
 
     def deleter(self, fn):
-        pass
+        _builtin()
 
     def getter(self, fn):
-        pass
+        _builtin()
 
     def setter(self, fn):
-        pass
+        _builtin()
 
 
 class staticmethod(bootstrap=True):
     def __get__(self, instance, owner):
-        pass
+        _builtin()
 
     def __init__(self, fn):
-        pass
+        _builtin()
 
     __isabstractmethod__ = _property(_staticmethod_isabstract)
 
     def __new__(cls, fn):
-        pass
+        _builtin()
 
 
 class _traceback(bootstrap=True):
@@ -390,7 +385,7 @@ class type(bootstrap=True):
         return list(result)
 
     def __getattribute__(self, name):
-        pass
+        _builtin()
 
     def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
         # Not a patch; just empty
@@ -420,13 +415,13 @@ class type(bootstrap=True):
         return f"<class '{self.__name__}'>"
 
     def __setattr__(self, name, value):
-        pass
+        _builtin()
 
     def __subclasscheck__(self, subclass) -> bool:
         return _issubclass(subclass, self)
 
     def __subclasses__(self):
-        pass
+        _builtin()
 
     def _merge_class_dict_keys(self, result):
         result.update(self.__dict__.keys())
@@ -434,7 +429,7 @@ class type(bootstrap=True):
             type._merge_class_dict_keys(base, result)
 
     def mro(self):
-        pass
+        _builtin()
 
 
 class object(bootstrap=True):  # noqa: E999
@@ -468,10 +463,10 @@ class object(bootstrap=True):  # noqa: E999
         return NotImplemented
 
     def __hash__(self):
-        pass
+        _builtin()
 
     def __init__(self, *args, **kwargs):
-        pass
+        _builtin()
 
     def __le__(self, other):
         return NotImplemented
@@ -486,7 +481,7 @@ class object(bootstrap=True):  # noqa: E999
         return not res
 
     def __new__(cls, *args, **kwargs):
-        pass
+        _builtin()
 
     def __reduce__(self):
         _unimplemented()
@@ -495,10 +490,10 @@ class object(bootstrap=True):  # noqa: E999
         return f"<{_type(self).__name__} object at {_address(self):#x}>"
 
     def __setattr__(self, name, value):
-        pass
+        _builtin()
 
     def __sizeof__(self):
-        pass
+        _builtin()
 
     def __str__(self):
         dunder_repr = _object_type_getattr(self, "__repr__")
@@ -552,7 +547,7 @@ class BaseException(bootstrap=True):
     __context__ = _maybe_unbound_property("context", "__context__", BaseException)
 
     def __init__(self, *args):
-        pass
+        _builtin()
 
     def __repr__(self):
         if not isinstance(self, BaseException):
@@ -717,10 +712,10 @@ class NoneType(bootstrap=True):
     __class__ = NoneType  # noqa: F821
 
     def __new__(cls):
-        pass
+        _builtin()
 
     def __repr__(self):
-        pass
+        _builtin()
 
 
 class NotADirectoryError(OSError, bootstrap=True):
@@ -810,7 +805,7 @@ class StopAsyncIteration(Exception, bootstrap=True):
 
 class StopIteration(Exception, bootstrap=True):
     def __init__(self, *args, **kwargs):
-        pass
+        _builtin()
 
 
 class SyntaxError(Exception, bootstrap=True):
@@ -856,7 +851,7 @@ class SystemError(Exception, bootstrap=True):
 
 class SystemExit(BaseException, bootstrap=True):
     def __init__(self, *args, **kwargs):
-        pass
+        _builtin()
 
 
 class TabError(IndentationError, bootstrap=True):
@@ -1349,12 +1344,12 @@ def _slice_index_not_none(num) -> int:
 
 class _strarray(bootstrap=True):  # noqa: F821
     def __init__(self, source=_Unbound) -> None:
-        pass
+        _builtin()
 
     __hash__ = None
 
     def __new__(cls, source=_Unbound) -> _strarray:  # noqa: F821
-        pass
+        _builtin()
 
     def __repr__(self) -> str:
         if _type(self) is not _strarray:
@@ -1362,7 +1357,7 @@ class _strarray(bootstrap=True):  # noqa: F821
         return f"_strarray('{self.__str__()}')"
 
     def __str__(self) -> str:  # noqa: T484
-        pass
+        _builtin()
 
 
 class _structseq_field:
@@ -1462,9 +1457,8 @@ def ascii(obj):
     return _str_escape_non_ascii(repr(obj))
 
 
-@_patch
 def bin(number) -> str:
-    pass
+    _builtin()
 
 
 class bool(int, bootstrap=True):
@@ -1477,10 +1471,10 @@ class bool(int, bootstrap=True):
         return NotImplemented
 
     def __new__(cls, val=False):
-        pass
+        _builtin()
 
     def __or__(self, other):
-        pass
+        _builtin()
 
     def __rand__(self, other):
         return bool.__and__(self, other)
@@ -1489,7 +1483,7 @@ class bool(int, bootstrap=True):
         return "True" if self else "False"
 
     def __ror__(self, other):
-        pass
+        _builtin()
 
     def __rxor__(self, other):
         _unimplemented()
@@ -1503,7 +1497,7 @@ class bool(int, bootstrap=True):
 
 class bytearray(bootstrap=True):
     def __add__(self, other) -> bytearray:
-        pass
+        _builtin()
 
     def __alloc__(self):
         _unimplemented()
@@ -1535,10 +1529,10 @@ class bytearray(bootstrap=True):
         raise TypeError("bytearray indices must be integers or slices")
 
     def __eq__(self, value):
-        pass
+        _builtin()
 
     def __ge__(self, value):
-        pass
+        _builtin()
 
     def __getitem__(self, key):
         result = _bytearray_getitem(self, key)
@@ -1559,15 +1553,15 @@ class bytearray(bootstrap=True):
     __getattribute__ = object.__getattribute__
 
     def __gt__(self, value):
-        pass
+        _builtin()
 
     __hash__ = None
 
     def __iadd__(self, other) -> bytearray:
-        pass
+        _builtin()
 
     def __imul__(self, n: int) -> bytearray:
-        pass
+        _builtin()
 
     def __init__(self, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         _bytearray_guard(self)
@@ -1590,28 +1584,28 @@ class bytearray(bootstrap=True):
             _bytearray_setslice(self, 0, 0, 1, _bytes_new(source))
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, value):
-        pass
+        _builtin()
 
     def __len__(self) -> int:
-        pass
+        _builtin()
 
     def __lt__(self, value):
-        pass
+        _builtin()
 
     def __mod__(self, value):
         _unimplemented()
 
     def __mul__(self, n: int) -> bytearray:
-        pass
+        _builtin()
 
     def __ne__(self, value):
-        pass
+        _builtin()
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
-        pass
+        _builtin()
 
     def __reduce__(self):
         _unimplemented()
@@ -1620,7 +1614,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def __repr__(self):
-        pass
+        _builtin()
 
     def __rmod__(self, value):
         _unimplemented()
@@ -1751,7 +1745,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def hex(self) -> str:
-        pass
+        _builtin()
 
     def index(self, sub, start=None, end=None) -> int:
         _bytearray_guard(self)
@@ -1798,7 +1792,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def lstrip(self, bytes=None):
-        pass
+        _builtin()
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
@@ -1858,7 +1852,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def rstrip(self, bytes=None):
-        pass
+        _builtin()
 
     def split(self, sep=None, maxsplit=-1):
         _unimplemented()
@@ -1878,7 +1872,7 @@ class bytearray(bootstrap=True):
         return False
 
     def strip(self, bytes=None):
-        pass
+        _builtin()
 
     def swapcase(self):
         _unimplemented()
@@ -1887,7 +1881,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def translate(self, table, delete=b""):
-        pass
+        _builtin()
 
     def upper(self):
         _unimplemented()
@@ -1898,18 +1892,18 @@ class bytearray(bootstrap=True):
 
 class bytearray_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 class bytes(bootstrap=True):
     def __add__(self, other: bytes) -> bytes:
-        pass
+        _builtin()
 
     def __contains__(self, key):
         result = _bytes_contains(self, key)
@@ -1923,10 +1917,10 @@ class bytes(bootstrap=True):
         return _byteslike_find_byteslike(self, key, 0, _bytes_len(self)) != -1
 
     def __eq__(self, other):
-        pass
+        _builtin()
 
     def __ge__(self, other):
-        pass
+        _builtin()
 
     __getattribute__ = object.__getattribute__
 
@@ -1950,31 +1944,31 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def __gt__(self, other):
-        pass
+        _builtin()
 
     def __hash__(self):
-        pass
+        _builtin()
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
-        pass
+        _builtin()
 
     def __len__(self) -> int:
-        pass
+        _builtin()
 
     def __lt__(self, other):
-        pass
+        _builtin()
 
     def __mod__(self, n):
         _unimplemented()
 
     def __mul__(self, n: int) -> bytes:
-        pass
+        _builtin()
 
     def __ne__(self, other):
-        pass
+        _builtin()
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, bytes)
@@ -2007,7 +2001,7 @@ class bytes(bootstrap=True):
         return _bytes_from_bytes(cls, _bytes_new(source))
 
     def __repr__(self) -> str:  # noqa: T484
-        pass
+        _builtin()
 
     def __rmod__(self, n):
         _unimplemented()
@@ -2130,7 +2124,7 @@ class bytes(bootstrap=True):
         return cls(result)
 
     def hex(self) -> str:
-        pass
+        _builtin()
 
     def index(self, sub, start=None, end=None) -> int:
         _bytes_guard(self)
@@ -2188,7 +2182,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def lstrip(self, bytes=None):
-        pass
+        _builtin()
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
@@ -2257,7 +2251,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def rstrip(self, bytes=None):
-        pass
+        _builtin()
 
     def split(self, sep=None, maxsplit=-1):
         _bytes_guard(self)
@@ -2283,7 +2277,7 @@ class bytes(bootstrap=True):
         return False
 
     def strip(self, bytes=None):
-        pass
+        _builtin()
 
     def swapcase(self):
         _unimplemented()
@@ -2292,7 +2286,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def translate(self, table, delete=b""):
-        pass
+        _builtin()
 
     def upper(self):
         _unimplemented()
@@ -2303,23 +2297,21 @@ class bytes(bootstrap=True):
 
 class bytes_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
-@_patch
 def callable(f):
-    pass
+    _builtin()
 
 
-@_patch
 def chr(c):
-    pass
+    _builtin()
 
 
 class code(bootstrap=True):
@@ -2359,7 +2351,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __add__(self, other):
-        pass
+        _builtin()
 
     def __divmod__(self, other):
         _unimplemented()
@@ -2393,7 +2385,7 @@ class complex(bootstrap=True):
         return NotImplemented
 
     def __hash__(self) -> int:
-        pass
+        _builtin()
 
     def __int__(self):
         _unimplemented()
@@ -2414,7 +2406,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __neg__(self):
-        pass
+        _builtin()
 
     def __new__(cls, real=0.0, imag=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, complex)
@@ -2457,7 +2449,7 @@ class complex(bootstrap=True):
         return _complex_new(cls, real, imag)
 
     def __pos__(self):
-        pass
+        _builtin()
 
     def __pow__(self, other):
         _unimplemented()
@@ -2483,7 +2475,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __rsub__(self, other):
-        pass
+        _builtin()
 
     def __rtruediv__(self, other):
         _unimplemented()
@@ -2492,7 +2484,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __sub__(self, other):
-        pass
+        _builtin()
 
     def __truediv__(self, other):
         _unimplemented()
@@ -2510,7 +2502,7 @@ copyright = ""
 
 class coroutine(bootstrap=True):
     def send(self, value):
-        pass
+        _builtin()
 
     def throw(self, exc, value=_Unbound, tb=_Unbound):
         pass
@@ -2522,9 +2514,8 @@ class coroutine(bootstrap=True):
 credits = ""
 
 
-@_patch
 def delattr(obj, name):
-    pass
+    _builtin()
 
 
 class dict(bootstrap=True):
@@ -2533,10 +2524,10 @@ class dict(bootstrap=True):
         return _dict_get(self, key, _Unbound) is not _Unbound  # noqa: T484
 
     def __delitem__(self, key):
-        pass
+        _builtin()
 
     def __eq__(self, other):
-        pass
+        _builtin()
 
     def __ge__(self, other):
         _unimplemented()
@@ -2565,19 +2556,19 @@ class dict(bootstrap=True):
         dict.update(self, other, **kwargs)
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
         _unimplemented()
 
     def __len__(self):
-        pass
+        _builtin()
 
     def __lt__(self, other):
         _unimplemented()
 
     def __new__(cls, *args, **kwargs):
-        pass
+        _builtin()
 
     def __repr__(self):
         if _repr_enter(self):
@@ -2589,7 +2580,7 @@ class dict(bootstrap=True):
     __setitem__ = _dict_setitem
 
     def clear(self):
-        pass
+        _builtin()
 
     def copy(self):
         _dict_guard(self)
@@ -2603,10 +2594,10 @@ class dict(bootstrap=True):
     get = _dict_get
 
     def items(self):
-        pass
+        _builtin()
 
     def keys(self):
-        pass
+        _builtin()
 
     def pop(self, key, default=_Unbound):
         _dict_guard(self)
@@ -2653,18 +2644,18 @@ class dict(bootstrap=True):
             _dict_setitem(self, key, value)
 
     def values(self):
-        pass
+        _builtin()
 
 
 class dict_itemiterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 class dict_items(bootstrap=True):
@@ -2674,18 +2665,18 @@ class dict_items(bootstrap=True):
         return _sequence_repr("dict_items([", self, "])")
 
     def __iter__(self):
-        pass
+        _builtin()
 
 
 class dict_keyiterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 class dict_keys(bootstrap=True):
@@ -2695,18 +2686,18 @@ class dict_keys(bootstrap=True):
         return _sequence_repr("dict_keys([", self, "])")
 
     def __iter__(self):
-        pass
+        _builtin()
 
 
 class dict_valueiterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 class dict_values(bootstrap=True):
@@ -2716,7 +2707,7 @@ class dict_values(bootstrap=True):
         return _sequence_repr("dict_values([", self, "])")
 
     def __iter__(self):
-        pass
+        _builtin()
 
 
 def dir(obj=_Unbound):
@@ -2876,16 +2867,16 @@ class filter:
 
 class float(bootstrap=True):
     def __abs__(self) -> float:
-        pass
+        _builtin()
 
     def __add__(self, n: float) -> float:
-        pass
+        _builtin()
 
     def __bool__(self) -> bool:
-        pass
+        _builtin()
 
     def __eq__(self, n: float) -> bool:  # noqa: T484
-        pass
+        _builtin()
 
     def __divmod__(self, n) -> float:
         _float_guard(self)
@@ -2896,7 +2887,7 @@ class float(bootstrap=True):
         return NotImplemented
 
     def __float__(self) -> float:
-        pass
+        _builtin()
 
     def __floordiv__(self, n) -> float:
         _float_guard(self)
@@ -2907,7 +2898,7 @@ class float(bootstrap=True):
         return NotImplemented
 
     def __ge__(self, n: float) -> bool:
-        pass
+        _builtin()
 
     __getattribute__ = object.__getattribute__
 
@@ -2924,19 +2915,19 @@ class float(bootstrap=True):
         _unimplemented()
 
     def __gt__(self, n: float) -> bool:
-        pass
+        _builtin()
 
     def __hash__(self) -> int:
-        pass
+        _builtin()
 
     def __int__(self) -> int:
-        pass
+        _builtin()
 
     def __le__(self, n: float) -> bool:
-        pass
+        _builtin()
 
     def __lt__(self, n: float) -> bool:
-        pass
+        _builtin()
 
     def __mod__(self, n) -> float:
         _float_guard(self)
@@ -2947,7 +2938,7 @@ class float(bootstrap=True):
         return NotImplemented
 
     def __mul__(self, n: float) -> float:
-        pass
+        _builtin()
 
     def __ne__(self, n: float) -> float:  # noqa: T484
         _float_guard(self)
@@ -2956,7 +2947,7 @@ class float(bootstrap=True):
         return not float.__eq__(self, n)  # noqa: T484
 
     def __neg__(self) -> float:
-        pass
+        _builtin()
 
     def __new__(cls, arg=0.0) -> float:
         _type_subclass_guard(cls, float)
@@ -2994,7 +2985,7 @@ class float(bootstrap=True):
         _unimplemented()
 
     def __pow__(self, other, mod=None) -> float:
-        pass
+        _builtin()
 
     def __radd__(self, n: float) -> float:
         # The addition for floating point numbers is commutative:
@@ -3041,7 +3032,7 @@ class float(bootstrap=True):
         return NotImplemented
 
     def __round__(self, ndigits=None):
-        pass
+        _builtin()
 
     def __rpow__(self, other, mod=None):
         _float_guard(self)
@@ -3056,7 +3047,7 @@ class float(bootstrap=True):
         return float.__neg__(self).__add__(n)
 
     def __rtruediv__(self, n: float) -> float:
-        pass
+        _builtin()
 
     @classmethod
     def __setformat__(cls, fmt):
@@ -3071,13 +3062,13 @@ class float(bootstrap=True):
         return _float_format(self, "r", 0, False, True, False)
 
     def __sub__(self, n: float) -> float:
-        pass
+        _builtin()
 
     def __truediv__(self, n: float) -> float:
-        pass
+        _builtin()
 
     def __trunc__(self) -> int:
-        pass
+        _builtin()
 
     def as_integer_ratio(self):
         _unimplemented()
@@ -3117,42 +3108,42 @@ def format(obj, fmt_spec):
 
 class frozenset(bootstrap=True):
     def __and__(self, other):
-        pass
+        _builtin()
 
     def __contains__(self, value):
-        pass
+        _builtin()
 
     def __eq__(self, other):
-        pass
+        _builtin()
 
     def __ge__(self, other):
-        pass
+        _builtin()
 
     __getattribute__ = object.__getattribute__
 
     def __gt__(self, other):
-        pass
+        _builtin()
 
     def __hash__(self) -> int:
-        pass
+        _builtin()
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
-        pass
+        _builtin()
 
     def __len__(self):
-        pass
+        _builtin()
 
     def __lt__(self, other):
-        pass
+        _builtin()
 
     def __ne__(self, other):
-        pass
+        _builtin()
 
     def __new__(cls, iterable=_Unbound):
-        pass
+        _builtin()
 
     def __or__(self, other):
         _unimplemented()
@@ -3182,16 +3173,16 @@ class frozenset(bootstrap=True):
         _unimplemented()
 
     def copy(self):
-        pass
+        _builtin()
 
     def difference(self, other):
         _unimplemented()
 
     def intersection(self, other):
-        pass
+        _builtin()
 
     def isdisjoint(self, other):
-        pass
+        _builtin()
 
     def issubset(self, other):
         _unimplemented()
@@ -3211,52 +3202,47 @@ class frozenset(bootstrap=True):
 
 class generator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
     def send(self, value):
-        pass
+        _builtin()
 
     def throw(self, exc, value=_Unbound, tb=_Unbound):
-        pass
+        _builtin()
 
     def __repr__(self):
         return f"<generator object {self.__qualname__} at {_address(self):#x}>"
 
 
-@_patch
 def getattr(obj, key, default=_Unbound):
-    pass
+    _builtin()
 
 
 def globals():
     return _getframe_function(1).__module_object__.__dict__
 
 
-@_patch
 def hasattr(obj, name):
-    pass
+    _builtin()
 
 
-@_patch
 def hash(obj) -> int:
-    pass
+    _builtin()
 
 
 def help(obj=_Unbound):
     _unimplemented()
 
 
-@_patch
 def hex(number) -> str:
-    pass
+    _builtin()
 
 
-@_patch
 def id(obj):
-    pass
+    _builtin()
 
 
 def input(prompt=None):
@@ -3370,40 +3356,40 @@ class instance_proxy:
 
 class int(bootstrap=True):
     def __abs__(self) -> int:
-        pass
+        _builtin()
 
     def __add__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __and__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __bool__(self) -> bool:
-        pass
+        _builtin()
 
     def __ceil__(self) -> int:
-        pass
+        _builtin()
 
     def __divmod__(self, n: int):
-        pass
+        _builtin()
 
     def __eq__(self, n: int) -> bool:  # noqa: T484
-        pass
+        _builtin()
 
     def __float__(self) -> float:
-        pass
+        _builtin()
 
     def __floor__(self) -> int:
-        pass
+        _builtin()
 
     def __floordiv__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __format__(self, format_spec: str) -> str:
-        pass
+        _builtin()
 
     def __ge__(self, n: int) -> bool:
-        pass
+        _builtin()
 
     __getattribute__ = object.__getattribute__
 
@@ -3411,40 +3397,40 @@ class int(bootstrap=True):
         _unimplemented()
 
     def __gt__(self, n: int) -> bool:
-        pass
+        _builtin()
 
     def __hash__(self) -> int:
-        pass
+        _builtin()
 
     def __index__(self) -> int:
-        pass
+        _builtin()
 
     def __int__(self) -> int:
-        pass
+        _builtin()
 
     def __invert__(self) -> int:
-        pass
+        _builtin()
 
     def __le__(self, n: int) -> bool:
-        pass
+        _builtin()
 
     def __lshift__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __lt__(self, n: int) -> bool:
-        pass
+        _builtin()
 
     def __mod__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __mul__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __ne__(self, n: int) -> int:  # noqa: T484
-        pass
+        _builtin()
 
     def __neg__(self) -> int:
-        pass
+        _builtin()
 
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
         if cls is bool:
@@ -3493,10 +3479,10 @@ class int(bootstrap=True):
         raise TypeError("int() can't convert non-string with explicit base")
 
     def __or__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __pos__(self) -> int:
-        pass
+        _builtin()
 
     def __pow__(self, other, modulo=None) -> int:
         # TODO(T42359066): Re-write this in C++ if we need a speed boost.
@@ -3552,7 +3538,7 @@ class int(bootstrap=True):
         return int.__divmod__(n, self)  # noqa: T484
 
     def __repr__(self) -> str:  # noqa: T484
-        pass
+        _builtin()
 
     def __rfloordiv__(self, n: int) -> int:
         _int_guard(self)
@@ -3585,7 +3571,7 @@ class int(bootstrap=True):
         return int.__or__(n, self)
 
     def __round__(self) -> int:
-        pass
+        _builtin()
 
     def __rpow__(self, n: int, *, mod=None):
         _int_guard(self)
@@ -3600,7 +3586,7 @@ class int(bootstrap=True):
         return int.__rshift__(n, self)
 
     def __rshift__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __rsub__(self, n: int) -> int:
         _int_guard(self)
@@ -3621,25 +3607,25 @@ class int(bootstrap=True):
         return int.__xor__(n, self)
 
     def __str__(self) -> str:  # noqa: T484
-        pass
+        _builtin()
 
     def __sub__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def __truediv__(self, other):
-        pass
+        _builtin()
 
     def __trunc__(self) -> int:
-        pass
+        _builtin()
 
     def __xor__(self, n: int) -> int:
-        pass
+        _builtin()
 
     def bit_length(self) -> int:
-        pass
+        _builtin()
 
     def conjugate(self) -> int:
-        pass
+        _builtin()
 
     @_property
     def denominator(self) -> int:
@@ -3682,7 +3668,7 @@ class int(bootstrap=True):
     real = property(__int__)
 
     def to_bytes(self, length, byteorder, signed=False):
-        pass
+        _builtin()
 
 
 def isinstance(obj, type_or_tuple) -> bool:
@@ -3780,10 +3766,10 @@ license = ""
 
 class list(bootstrap=True):
     def __add__(self, other):
-        pass
+        _builtin()
 
     def __contains__(self, value):
-        pass
+        _builtin()
 
     def __delitem__(self, key) -> None:
         _list_guard(self)
@@ -3862,13 +3848,13 @@ class list(bootstrap=True):
         self.extend(iterable)
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
         _unimplemented()
 
     def __len__(self):
-        pass
+        _builtin()
 
     def __lt__(self, other):
         _list_guard(self)
@@ -3888,13 +3874,13 @@ class list(bootstrap=True):
         return len_self < len_other
 
     def __mul__(self, other):
-        pass
+        _builtin()
 
     def __imul__(self, other):
-        pass
+        _builtin()
 
     def __new__(cls, iterable=()):
-        pass
+        _builtin()
 
     def __repr__(self):
         if _repr_enter(self):
@@ -3930,10 +3916,10 @@ class list(bootstrap=True):
         )
 
     def append(self, other):
-        pass
+        _builtin()
 
     def clear(self):
-        pass
+        _builtin()
 
     def copy(self):
         _list_guard(self)
@@ -3987,13 +3973,13 @@ class list(bootstrap=True):
         raise ValueError(f"{repr(obj)} is not in list")
 
     def insert(self, index, value):
-        pass
+        _builtin()
 
     def pop(self, index=_Unbound):
-        pass
+        _builtin()
 
     def remove(self, value):
-        pass
+        _builtin()
 
     def reverse(self):
         _list_guard(self)
@@ -4031,13 +4017,13 @@ class list(bootstrap=True):
 
 class list_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 def locals():
@@ -4046,13 +4032,13 @@ def locals():
 
 class longrange_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 class map:
@@ -4205,13 +4191,13 @@ class memoryview(bootstrap=True):
         memoryview.release(self)
 
     def __getitem__(self, index):
-        pass
+        _builtin()
 
     def __len__(self) -> int:
-        pass
+        _builtin()
 
     def __new__(cls, object):
-        pass
+        _builtin()
 
     def __setitem__(self, key, value):
         result = _memoryview_setitem(self, key, value)
@@ -4244,7 +4230,7 @@ class memoryview(bootstrap=True):
         raise TypeError("memoryview: invalid slice key")
 
     def cast(self, format: str) -> memoryview:
-        pass
+        _builtin()
 
     itemsize = _property(_memoryview_itemsize)
 
@@ -4323,19 +4309,19 @@ class module(bootstrap=True):
         return _module_dir(self)
 
     def __getattribute__(self, name):
-        pass
+        _builtin()
 
     def __init__(self, name):
-        pass
+        _builtin()
 
     def __new__(cls, *args, **kwargs):
-        pass
+        _builtin()
 
     def __repr__(self):
         return _module_repr(self)
 
     def __setattr__(self, name, value):
-        pass
+        _builtin()
 
 
 class module_proxy(bootstrap=True):
@@ -4470,14 +4456,12 @@ def next(iterator, default=_Unbound):
         return default
 
 
-@_patch
 def oct(number) -> str:
-    pass
+    _builtin()
 
 
-@_patch
 def ord(c):
-    pass
+    _builtin()
 
 
 def pow(x, y, z=None):
@@ -4599,14 +4583,14 @@ class range(bootstrap=True):
         return tuple.__hash__((range_len, self.start, self.step))
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
         _range_guard(self)
         return NotImplemented
 
     def __len__(self):
-        pass
+        _builtin()
 
     def __lt__(self, other):
         _range_guard(self)
@@ -4630,7 +4614,7 @@ class range(bootstrap=True):
         return not self.step == other.step
 
     def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
-        pass
+        _builtin()
 
     def __reduce__(self):
         return (range, (self.start, self.stop, self.step))
@@ -4673,13 +4657,13 @@ class range(bootstrap=True):
 
 class range_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 def repr(obj):
@@ -4742,29 +4726,29 @@ def round(number, ndigits=None):
 
 class set(bootstrap=True):
     def __and__(self, other):
-        pass
+        _builtin()
 
     def __contains__(self, value):
-        pass
+        _builtin()
 
     def __eq__(self, other):
-        pass
+        _builtin()
 
     def __ge__(self, other):
-        pass
+        _builtin()
 
     __getattribute__ = object.__getattribute__
 
     def __gt__(self, other):
-        pass
+        _builtin()
 
     __hash__ = None
 
     def __iand__(self, other):
-        pass
+        _builtin()
 
     def __init__(self, iterable=()):
-        pass
+        _builtin()
 
     def __isub__(self, other):
         _set_guard(self)
@@ -4774,25 +4758,25 @@ class set(bootstrap=True):
         return self
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __ixor__(self, other):
         _unimplemented()
 
     def __le__(self, other):
-        pass
+        _builtin()
 
     def __len__(self):
-        pass
+        _builtin()
 
     def __lt__(self, other):
-        pass
+        _builtin()
 
     def __ne__(self, other):
-        pass
+        _builtin()
 
     def __new__(cls, iterable=()):
-        pass
+        _builtin()
 
     def __ior__(self, other):
         _set_guard(self)
@@ -4849,13 +4833,13 @@ class set(bootstrap=True):
         _unimplemented()
 
     def add(self, value):
-        pass
+        _builtin()
 
     def clear(self):
-        pass
+        _builtin()
 
     def copy(self):
-        pass
+        _builtin()
 
     def difference(self, *others):
         _set_guard(self)
@@ -4875,16 +4859,16 @@ class set(bootstrap=True):
                 set.discard(self, item)
 
     def discard(self, elem):
-        pass
+        _builtin()
 
     def intersection(self, other):
-        pass
+        _builtin()
 
     def intersection_update(self, other):
         _unimplemented()
 
     def isdisjoint(self, other):
-        pass
+        _builtin()
 
     def issubset(self, other):
         _unimplemented()
@@ -4896,10 +4880,10 @@ class set(bootstrap=True):
         return set.__ge__(self, other)
 
     def pop(self):
-        pass
+        _builtin()
 
     def remove(self, elt):
-        pass
+        _builtin()
 
     def symmetric_difference(self, other):
         _unimplemented()
@@ -4921,23 +4905,22 @@ class set(bootstrap=True):
         return result
 
     def update(self, *args):
-        pass
+        _builtin()
 
 
 class set_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
-@_patch
 def setattr(obj, name, value):
-    pass
+    _builtin()
 
 
 class slice(bootstrap=True):
@@ -4964,7 +4947,7 @@ class slice(bootstrap=True):
         _unimplemented()
 
     def __new__(cls, start_or_stop, stop=_Unbound, step=None):
-        pass
+        _builtin()
 
     def __reduce__(self):
         _unimplemented()
@@ -4991,22 +4974,22 @@ def sorted(iterable, *, key=None, reverse=False):
 
 class str(bootstrap=True):
     def __add__(self, other):
-        pass
+        _builtin()
 
     def __bool__(self):
-        pass
+        _builtin()
 
     def __contains__(self, other):
-        pass
+        _builtin()
 
     def __eq__(self, other):
-        pass
+        _builtin()
 
     def __format__(self, format_spec: str) -> str:
-        pass
+        _builtin()
 
     def __ge__(self, other):
-        pass
+        _builtin()
 
     __getattribute__ = object.__getattribute__
 
@@ -5030,22 +5013,22 @@ class str(bootstrap=True):
         _unimplemented()
 
     def __gt__(self, other):
-        pass
+        _builtin()
 
     def __hash__(self):
-        pass
+        _builtin()
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
-        pass
+        _builtin()
 
     def __len__(self) -> int:
-        pass
+        _builtin()
 
     def __lt__(self, other):
-        pass
+        _builtin()
 
     def __mod__(self, other):
         result = _str_mod_fast_path(self, other)
@@ -5060,10 +5043,10 @@ class str(bootstrap=True):
         return _str_mod_format(self, other)
 
     def __mul__(self, n: int) -> str:
-        pass
+        _builtin()
 
     def __ne__(self, other):
-        pass
+        _builtin()
 
     def __new__(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, str)
@@ -5102,7 +5085,7 @@ class str(bootstrap=True):
         return _str_from_str(cls, _codecs.decode(obj, encoding, errors))
 
     def __repr__(self):
-        pass
+        _builtin()
 
     def __rmod__(self, n):
         _unimplemented()
@@ -5254,37 +5237,37 @@ class str(bootstrap=True):
         return res
 
     def isalnum(self):
-        pass
+        _builtin()
 
     def isalpha(self):
-        pass
+        _builtin()
 
     def isdecimal(self):
-        pass
+        _builtin()
 
     def isdigit(self):
-        pass
+        _builtin()
 
     def isidentifier(self):
-        pass
+        _builtin()
 
     def islower(self):
-        pass
+        _builtin()
 
     def isnumeric(self):
-        pass
+        _builtin()
 
     def isprintable(self):
-        pass
+        _builtin()
 
     def isspace(self):
-        pass
+        _builtin()
 
     def istitle(self):
-        pass
+        _builtin()
 
     def isupper(self):
-        pass
+        _builtin()
 
     def join(self, items) -> str:
         _str_guard(self)
@@ -5309,10 +5292,10 @@ class str(bootstrap=True):
         return self + fillchar * padding if padding > 0 else self
 
     def lower(self):
-        pass
+        _builtin()
 
     def lstrip(self, other=None):
-        pass
+        _builtin()
 
     @staticmethod
     def maketrans(frm, to=_Unbound, to_none=_Unbound):
@@ -5404,7 +5387,7 @@ class str(bootstrap=True):
         return [s[::-1] for s in self[::-1].split(sep[::-1], maxsplit)[::-1]]
 
     def rstrip(self, other=None):
-        pass
+        _builtin()
 
     def split(self, sep=None, maxsplit=-1):
         _str_guard(self)
@@ -5447,13 +5430,13 @@ class str(bootstrap=True):
         )
 
     def strip(self, other=None):
-        pass
+        _builtin()
 
     def swapcase(self):
         _unimplemented()
 
     def title(self):
-        pass
+        _builtin()
 
     def translate(self, table):
         _dict_guard(table)
@@ -5470,7 +5453,7 @@ class str(bootstrap=True):
         return str(result)
 
     def upper(self):
-        pass
+        _builtin()
 
     def zfill(self, width):
         _unimplemented()
@@ -5478,13 +5461,13 @@ class str(bootstrap=True):
 
 class str_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 def sum(iterable, start=0):
@@ -5503,21 +5486,21 @@ def sum(iterable, start=0):
 
 class super(bootstrap=True):
     def __init__(self, type=_Unbound, type_or_obj=_Unbound):
-        pass
+        _builtin()
 
     def __getattribute__(self, name):
-        pass
+        _builtin()
 
     def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
-        pass
+        _builtin()
 
 
 class tuple(bootstrap=True):
     def __add__(self, other):
-        pass
+        _builtin()
 
     def __contains__(self, key):
-        pass
+        _builtin()
 
     def __eq__(self, other):
         _tuple_guard(self)
@@ -5595,10 +5578,10 @@ class tuple(bootstrap=True):
         return len_self > len_other
 
     def __hash__(self):
-        pass
+        _builtin()
 
     def __iter__(self):
-        pass
+        _builtin()
 
     def __le__(self, other):
         _tuple_guard(self)
@@ -5619,7 +5602,7 @@ class tuple(bootstrap=True):
         return len_self <= len_other
 
     def __len__(self):
-        pass
+        _builtin()
 
     def __lt__(self, other):
         _tuple_guard(self)
@@ -5640,7 +5623,7 @@ class tuple(bootstrap=True):
         return len_self < len_other
 
     def __mul__(self, other):
-        pass
+        _builtin()
 
     def __ne__(self, other):
         _tuple_guard(self)
@@ -5692,13 +5675,13 @@ class tuple(bootstrap=True):
 
 class tuple_iterator(bootstrap=True):
     def __iter__(self):
-        pass
+        _builtin()
 
     def __length_hint__(self):
-        pass
+        _builtin()
 
     def __next__(self):
-        pass
+        _builtin()
 
 
 class type_proxy(bootstrap=True):

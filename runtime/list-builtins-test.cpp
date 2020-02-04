@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 #include "builtins-module.h"
+#include "builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"

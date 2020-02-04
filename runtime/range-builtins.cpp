@@ -1,5 +1,6 @@
 #include "range-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -46,13 +47,6 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
   }
   return SmallInt::fromWord(0);
 }
-
-const BuiltinMethod LongRangeIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(longrange_iterator, __iter__)},
-    {ID(__length_hint__), METH(longrange_iterator, __length_hint__)},
-    {ID(__next__), METH(longrange_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(longrange_iterator, __iter__)(Thread* thread, Frame* frame,
                                              word nargs) {
@@ -105,13 +99,6 @@ const BuiltinAttribute RangeBuiltins::kAttributes[] = {
     {ID(step), Range::kStepOffset, AttributeFlags::kReadOnly},
     {ID(stop), Range::kStopOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(range, __iter__)},
-    {ID(__len__), METH(range, __len__)},
-    {ID(__new__), METH(range, __new__)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(range, __iter__)(Thread* thread, Frame* frame, word nargs) {
@@ -216,13 +203,6 @@ RawObject METH(range, __new__)(Thread* thread, Frame* frame, word nargs) {
   }
   return runtime->newRange(start, stop, step);
 }
-
-const BuiltinMethod RangeIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(range_iterator, __iter__)},
-    {ID(__length_hint__), METH(range_iterator, __length_hint__)},
-    {ID(__next__), METH(range_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(range_iterator, __iter__)(Thread* thread, Frame* frame,
                                          word nargs) {

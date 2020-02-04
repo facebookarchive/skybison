@@ -1,5 +1,7 @@
 #include "layout-builtins.h"
 
+#include "builtins.h"
+
 namespace py {
 
 const BuiltinAttribute LayoutBuiltins::kAttributes[] = {

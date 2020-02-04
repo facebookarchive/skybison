@@ -1,5 +1,7 @@
 #include "code-builtins.h"
 
+#include "builtins.h"
+
 namespace py {
 
 const BuiltinAttribute CodeBuiltins::kAttributes[] = {

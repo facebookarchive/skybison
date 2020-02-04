@@ -4,6 +4,7 @@
 #include <climits>
 #include <cmath>
 
+#include "builtins.h"
 #include "bytes-builtins.h"
 #include "formatter.h"
 #include "frame.h"
@@ -151,49 +152,6 @@ const BuiltinAttribute IntBuiltins::kAttributes[] = {
     {ID(_UserInt__value), UserIntBase::kValueOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
 };
-
-// clang-format off
-const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
-    {ID(__abs__), METH(int, __abs__)},
-    {ID(__add__), METH(int, __add__)},
-    {ID(__and__), METH(int, __and__)},
-    {ID(__bool__), METH(int, __bool__)},
-    {ID(__ceil__), METH(int, __ceil__)},
-    {ID(__divmod__), METH(int, __divmod__)},
-    {ID(__eq__), METH(int, __eq__)},
-    {ID(__float__), METH(int, __float__)},
-    {ID(__floor__), METH(int, __floor__)},
-    {ID(__floordiv__), METH(int, __floordiv__)},
-    {ID(__format__), METH(int, __format__)},
-    {ID(__ge__), METH(int, __ge__)},
-    {ID(__gt__), METH(int, __gt__)},
-    {ID(__hash__), METH(int, __hash__)},
-    {ID(__index__), METH(int, __index__)},
-    {ID(__int__), METH(int, __int__)},
-    {ID(__invert__), METH(int, __invert__)},
-    {ID(__le__), METH(int, __le__)},
-    {ID(__lshift__), METH(int, __lshift__)},
-    {ID(__lt__), METH(int, __lt__)},
-    {ID(__mod__), METH(int, __mod__)},
-    {ID(__mul__), METH(int, __mul__)},
-    {ID(__ne__), METH(int, __ne__)},
-    {ID(__neg__), METH(int, __neg__)},
-    {ID(__or__), METH(int, __or__)},
-    {ID(__pos__), METH(int, __pos__)},
-    {ID(__repr__), METH(int, __repr__)},
-    {ID(__round__), METH(int, __round__)},
-    {ID(__rshift__), METH(int, __rshift__)},
-    {ID(__str__), METH(int, __str__)},
-    {ID(__sub__), METH(int, __sub__)},
-    {ID(__truediv__), METH(int, __truediv__)},
-    {ID(__trunc__), METH(int, __trunc__)},
-    {ID(__xor__), METH(int, __xor__)},
-    {ID(bit_length), METH(int, bit_length)},
-    {ID(conjugate), METH(int, conjugate)},
-    {ID(to_bytes), METH(int, to_bytes)},
-    {SymbolId::kSentinelId, nullptr},
-};
-// clang-format on
 
 RawObject convertBoolToInt(RawObject object) {
   DCHECK(object.isBool(), "conversion from bool to int requires a bool object");
@@ -695,13 +653,6 @@ RawObject METH(int, to_bytes)(Thread* thread, Frame* frame, word nargs) {
   return toBytesImpl(thread, self, length, byteorder,
                      Bool::cast(args.get(3)).value());
 }
-
-const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), METH(bool, __new__)},
-    {ID(__or__), METH(bool, __or__)},
-    {ID(__ror__), METH(bool, __ror__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(bool, __new__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 
+#include "builtins.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"

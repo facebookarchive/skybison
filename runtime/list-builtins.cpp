@@ -1,5 +1,6 @@
 #include "list-builtins.h"
 
+#include "builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -161,22 +162,6 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {ID(_list__items), RawList::kItemsOffset, AttributeFlags::kHidden},
     {ID(_list__num_items), RawList::kNumItemsOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), METH(list, __new__)},
-    {ID(__add__), METH(list, __add__)},
-    {ID(__contains__), METH(list, __contains__)},
-    {ID(__imul__), METH(list, __imul__)},
-    {ID(__iter__), METH(list, __iter__)},
-    {ID(__len__), METH(list, __len__)},
-    {ID(__mul__), METH(list, __mul__)},
-    {ID(append), METH(list, append)},
-    {ID(clear), METH(list, clear)},
-    {ID(insert), METH(list, insert)},
-    {ID(pop), METH(list, pop)},
-    {ID(remove), METH(list, remove)},
-    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {
@@ -433,13 +418,6 @@ RawObject METH(list, __iter__)(Thread* thread, Frame* frame, word nargs) {
   }
   return thread->runtime()->newListIterator(self);
 }
-
-const BuiltinMethod ListIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), METH(list_iterator, __iter__)},
-    {ID(__length_hint__), METH(list_iterator, __length_hint__)},
-    {ID(__next__), METH(list_iterator, __next__)},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject METH(list_iterator, __iter__)(Thread* thread, Frame* frame,
                                         word nargs) {
