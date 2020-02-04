@@ -104,7 +104,7 @@ TEST_F(ConfigExtensionApiTest, ImportUnderSslReturnsModule) {
 
 TEST_F(ConfigExtensionApiTest, ImportUnderSslModuleMethods) {
   PyRun_SimpleString(R"(
-import ssl 
+import ssl
 ssl.create_default_context()
 )");
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -202,6 +202,13 @@ TEST_F(ConfigExtensionApiTest, ImportPwdReturnsModule) {
 
 TEST_F(ConfigExtensionApiTest, ImportSelectReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("select"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportSyslogReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("syslog"));
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyModule_Check(module));

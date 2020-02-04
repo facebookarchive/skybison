@@ -25,6 +25,7 @@ extern "C" PyObject* PyInit_math();
 extern "C" PyObject* PyInit_posix();
 extern "C" PyObject* PyInit_pwd();
 extern "C" PyObject* PyInit_select();
+extern "C" PyObject* PyInit_syslog();
 extern "C" PyObject* PyInit_termios();
 extern "C" PyObject* PyInit_time();
 extern "C" PyObject* PyInit_unicodedata();
@@ -65,6 +66,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"posix", PyInit_posix},
     {"pwd", PyInit_pwd},
     {"select", PyInit_select},
+    {"syslog", PyInit_syslog},
     {"termios", PyInit_termios},
     {"time", PyInit_time},
     {"unicodedata", PyInit_unicodedata},
