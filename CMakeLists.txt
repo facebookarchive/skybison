@@ -36,12 +36,18 @@ add_subdirectory(third-party/googletest-1.8.1)
 add_subdirectory(third-party/siphash-20170224)
 add_subdirectory(third-party/valgrind-3.15.0)
 
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
+  set(WARN_MISSING_DECLARATIONS -Wmissing-prototypes)
+else()
+  set(WARN_MISSING_DECLARATIONS -Wmissing-declarations)
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(OS_DEFINE "-DOS_OSX")
   set(WHOLE_ARCHIVE -Wl,-force_load)
   set(NO_WHOLE_ARCHIVE)
   set(OPENSSL_ROOT_DIR /opt/homebrew)
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(OS_DEFINE "-DOS_LINUX")
   set(WHOLE_ARCHIVE -Wl,--whole-archive)
   set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
@@ -373,7 +379,7 @@ target_compile_options(
   runtime
   PRIVATE
   ${PYRO_COMPILE_OPTIONS}
-  -Wmissing-declarations)
+  ${WARN_MISSING_DECLARATIONS})
 target_link_libraries(
   runtime
   PUBLIC
