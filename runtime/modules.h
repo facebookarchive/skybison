@@ -11,11 +11,6 @@ namespace py {
 
 #define FUNC(module, name) module##_##name##_func
 
-struct BuiltinFunction {
-  SymbolId name;
-  NativeMethodType address;
-};
-
 struct BuiltinType {
   SymbolId name;
   LayoutId type;
@@ -51,8 +46,6 @@ NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
 
 bool isBuiltinModule(Thread* thread, const Str& name);
 
-void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
-                               const BuiltinFunction* functions);
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            const BuiltinType* types);
 

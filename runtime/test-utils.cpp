@@ -402,6 +402,37 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   return *result;
 }
 
+void addBuiltin(const char* name_cstr, Function::Entry entry,
+                View<const char*> parameter_names, word flags) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Module main(&scope, findMainModule(runtime));
+  word num_parameters = parameter_names.length();
+  Object parameter_names_tuple(&scope, NoneType::object());
+  if (num_parameters > 0) {
+    MutableTuple parameter_names_mtuple(
+        &scope, runtime->newMutableTuple(num_parameters));
+    for (word i = 0; i < num_parameters; i++) {
+      parameter_names_mtuple.atPut(
+          i, Runtime::internStrFromCStr(thread, parameter_names.get(i)));
+    }
+    parameter_names_tuple = parameter_names_mtuple.becomeImmutable();
+  } else {
+    parameter_names_tuple = runtime->emptyTuple();
+  }
+  Object name(&scope, Runtime::internStrFromCStr(thread, name_cstr));
+  word argcount = num_parameters - ((flags & Code::Flags::kVarargs) != 0) -
+                  ((flags & Code::Flags::kVarkeyargs) != 0);
+  Code code(&scope, runtime->newBuiltinCode(
+                        /*argcount=*/argcount, /*posonlyargcount=*/0,
+                        /*kwonlyargcount=*/0, flags, entry,
+                        /*parameter_names=*/parameter_names_tuple, name));
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, name, code, main));
+  moduleAtPut(thread, main, name, function);
+}
+
 // Equivalent to evaluating "list(range(start, stop))" in Python
 RawObject listFromRange(word start, word stop) {
   Thread* thread = Thread::current();

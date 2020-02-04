@@ -177,6 +177,9 @@ NODISCARD RawObject runCodeNoBytecodeRewriting(const Code& code);
 // Helper to compile and run a snippet of Python code.
 NODISCARD RawObject runFromCStr(Runtime* runtime, const char* c_str);
 
+void addBuiltin(const char* name, Function::Entry entry,
+                View<const char*> parameter_names, word code_flags);
+
 template <typename... Args>
 RawObject runBuiltin(NativeMethodType method, const Args&... args) {
   using ref = std::reference_wrapper<const Object>;

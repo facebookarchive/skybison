@@ -196,26 +196,6 @@ bool isBuiltinModule(Thread* thread, const Str& name) {
          extensionModuleIndex(name) >= 0;
 }
 
-void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
-                               const BuiltinFunction* functions) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object parameter_names(&scope, runtime->emptyTuple());
-  Object name(&scope, NoneType::object());
-  Object function(&scope, NoneType::object());
-  Object globals(&scope, NoneType::object());
-  for (word i = 0; functions[i].name != SymbolId::kSentinelId; i++) {
-    name = runtime->symbols()->at(functions[i].name);
-    Code code(&scope,
-              runtime->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                      /*kwonlyargcount=*/0,
-                                      /*flags=*/0, functions[i].address,
-                                      parameter_names, name));
-    function = runtime->newFunctionWithCode(thread, name, code, globals);
-    moduleAtPut(thread, module, name, function);
-  }
-}
-
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            const BuiltinType* types) {
   HandleScope scope(thread);

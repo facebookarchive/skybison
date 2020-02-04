@@ -242,18 +242,10 @@ TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
   ASSERT_FALSE(runFromCStr(runtime_, "").isError());
   Object main_obj(&scope, runtime_->findModuleById(ID(__main__)));
   ASSERT_TRUE(main_obj.isModule());
-  Module main(&scope, *main_obj);
 
-  BuiltinFunction functions[] = {
-      {ID(traceback), testPrintStacktrace},
-      {SymbolId::kSentinelId, nullptr},
-  };
-
-  moduleAddBuiltinFunctions(thread_, main, functions);
-
-  ASSERT_FALSE(runFromCStr(runtime_, R"(@_patch
-def traceback():
-  pass
+  addBuiltin("traceback", testPrintStacktrace, View<const char*>(nullptr, 0),
+             0);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(x, y):
   # emptyline
   result = bar(y, x)
@@ -269,10 +261,10 @@ result = foo('a', 99)
   Dl_info info = Dl_info();
   std::stringstream expected;
   expected << R"(Traceback (most recent call last):
-  File "<test string>", line 11, in <module>
-  File "<test string>", line 6, in foo
-  File "<test string>", line 10, in bar
-  File "<test string>", in traceback  <native function at )"
+  File "<test string>", line 9, in <module>
+  File "<test string>", line 4, in foo
+  File "<test string>", line 8, in bar
+  File "", in traceback  <native function at )"
            << fptr << " (";
   if (dladdr(fptr, &info) && info.dli_sname != nullptr) {
     EXPECT_NE(std::strstr(info.dli_sname, "testPrintStacktrace"), nullptr);
