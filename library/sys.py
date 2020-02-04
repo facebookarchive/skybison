@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
-from _builtins import _int_check, _os_write, _patch, _Unbound
+from _builtins import (
+    _getframe_function,
+    _int_check,
+    _int_guard,
+    _os_write,
+    _patch,
+    _Unbound,
+)
 
 
 # These values are all injected by our boot process. flake8 has no knowledge
@@ -30,6 +37,12 @@ class _Flags(tuple):
     isolated = _structseq_field("isolated", 12)
     dev_mode = _structseq_field("dev_mode", 13)
     utf8_mode = _structseq_field("utf8_mode", 14)
+
+
+class _Frame(tuple):
+    f_builtins = _structseq_field("f_builtins", 0)
+    f_code = _structseq_field("f_code", 1)
+    f_globals = _structseq_field("f_globals", 2)
 
 
 class _HashInfo(tuple):
@@ -77,6 +90,18 @@ class _VersionInfo(tuple):
     micro = _structseq_field("micro", 2)
     releaselevel = _structseq_field("releaselevel", 3)
     serial = _structseq_field("serial", 4)
+
+
+def _getframe(depth=0):
+    _int_guard(depth)
+    if depth < 0:
+        depth = 0
+    function = _getframe_function(depth + 1)
+    module = function.__module_object__
+    f_builtins = module.__builtins__.__dict__
+    f_code = function.__code__
+    f_globals = module.__dict__
+    return _Frame((f_builtins, f_code, f_globals))
 
 
 abiflags = ""

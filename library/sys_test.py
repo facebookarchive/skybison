@@ -167,6 +167,29 @@ class SysTests(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "can't intern NewString")
 
+    def test_under_getframe_returns_frame(self):
+        frame = sys._getframe(0)
+        self.assertTrue(frame.f_globals is not None)
+        self.assertEqual(frame.f_globals["__name__"], "__main__")
+        self.assertTrue(frame.f_builtins is not None)
+        self.assertEqual(frame.f_builtins["__name__"], "builtins")
+        self.assertTrue(frame.f_code is not None)
+
+    def test_under_getframe_with_noninteger_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            sys._getframe(None)
+
+    def test_under_getframe_with_high_depth_raises_valueerror(self):
+        with self.assertRaises(ValueError) as context:
+            sys._getframe(1000)
+        self.assertEqual(str(context.exception), "call stack is not deep enough")
+
+    def test_under_getframe_with_negative_integer_returns_top_frame(self):
+        self.assertEqual(sys._getframe(-1), sys._getframe(0))
+
+    def test_under_getframe_with_no_argument_returns_top_frame(self):
+        self.assertEqual(sys._getframe(), sys._getframe(0))
+
     def test_version(self):
         self.assertTrue(sys.version)
         self.assertEqual(len(sys.version_info), 5)
