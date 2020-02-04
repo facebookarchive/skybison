@@ -31,7 +31,7 @@ const BuiltinFunction UnderOsModule::kBuiltinFunctions[] = {
 
 void UnderOsModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kUnderOsModuleData, module);
+  executeFrozenModule(thread, &kUnderOsModuleData, module);
 }
 
 RawObject FUNC(_os, close)(Thread* thread, Frame* frame, word nargs) {

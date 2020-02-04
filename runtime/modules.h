@@ -21,6 +21,11 @@ struct BuiltinType {
   LayoutId type;
 };
 
+struct FrozenModule {
+  word marshalled_code_length;
+  const byte* marshalled_code;
+};
+
 struct ModuleInitializer {
   SymbolId name;
   void (*init)(Thread*, const Module&);
@@ -32,7 +37,7 @@ RawObject ensureBuiltinModuleById(Thread* thread, SymbolId id);
 
 // Execute a frozen module by marshalling it into a code object and then
 // executing it. Aborts if module execution is unsuccessful.
-void executeFrozenModule(Thread* thread, const char* buffer,
+void executeFrozenModule(Thread* thread, const FrozenModule* frozen_module,
                          const Module& module);
 
 // Execute the code object that represents the code for the top-level module

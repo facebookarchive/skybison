@@ -27,7 +27,7 @@ const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
 
 void UnderImpModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kUnderImpModuleData, module);
+  executeFrozenModule(thread, &kUnderImpModuleData, module);
 }
 
 static Thread* import_lock_holder;

@@ -22,7 +22,7 @@ void UnderSignalModule::initialize(Thread* thread, const Module& module) {
   Object sig_ign(&scope, SmallInt::fromWord(reinterpret_cast<word>(SIG_IGN)));
   moduleAtPutById(thread, module, ID(SIG_IGN), sig_ign);
 
-  executeFrozenModule(thread, kUnderSignalModuleData, module);
+  executeFrozenModule(thread, &kUnderSignalModuleData, module);
 }
 
 }  // namespace py

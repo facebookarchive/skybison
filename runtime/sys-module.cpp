@@ -119,7 +119,7 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   Object builtins(&scope, builtins_tuple.becomeImmutable());
   moduleAtPutById(thread, module, ID(builtin_module_names), builtins);
 
-  executeFrozenModule(thread, kSysModuleData, module);
+  executeFrozenModule(thread, &kSysModuleData, module);
 
   // Fill in hash_info.
   Tuple hash_info_data(&scope, runtime->newMutableTuple(9));

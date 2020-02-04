@@ -249,7 +249,7 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
     moduleAtPutById(thread, module, ID(_patch), value);
   }
 
-  executeFrozenModule(thread, kBuiltinsModuleData, module);
+  executeFrozenModule(thread, &kBuiltinsModuleData, module);
   runtime->cacheBuiltinsInstances(thread);
 
   // Populate some builtin types with shortcut constructors.

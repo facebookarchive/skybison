@@ -46,7 +46,7 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
 void UnderIoModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
-  executeFrozenModule(thread, kUnderIoModuleData, module);
+  executeFrozenModule(thread, &kUnderIoModuleData, module);
 }
 
 RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,

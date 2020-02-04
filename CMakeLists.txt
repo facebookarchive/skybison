@@ -189,14 +189,6 @@ add_custom_target(
   frozen-sources
   DEPENDS
   ${FROZEN_MODULE_OUTPUT})
-add_library(
-  frozen-modules
-  STATIC
-  ${FROZEN_MODULE_OUTPUT})
-target_include_directories(
-  frozen-modules
-  INTERFACE
-  ${FROZEN_MODULE_OUTPUT_DIR})
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(
@@ -373,6 +365,7 @@ add_library(
   runtime/version.h
   runtime/view.h
   runtime/visitor.h
+  ${FROZEN_MODULE_OUTPUT}
   ${RUNTIME_OS_SOURCES}
   ${RUNTIME_ARCH_SOURCES})
 target_compile_options(
@@ -385,13 +378,14 @@ target_link_libraries(
   PUBLIC
   capi-headers
   PRIVATE
-  frozen-modules
   dl
   modules
   siphash
   valgrind)
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
 target_compile_definitions(runtime PRIVATE PYRO_BASEDIR="${CMAKE_SOURCE_DIR}")
+target_include_directories(runtime PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}
+  ${CMAKE_SOURCE_DIR}/runtime)
 
 # Prepare build dir with CPython's directories
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Modules")

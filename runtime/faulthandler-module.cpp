@@ -30,7 +30,7 @@ const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
 
 void FaulthandlerModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kFaulthandlerModuleData, module);
+  executeFrozenModule(thread, &kFaulthandlerModuleData, module);
 }
 
 struct FaultHandler {

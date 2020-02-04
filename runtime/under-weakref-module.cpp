@@ -22,7 +22,7 @@ const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
 void UnderWeakrefModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
-  executeFrozenModule(thread, kUnderWeakrefModuleData, module);
+  executeFrozenModule(thread, &kUnderWeakrefModuleData, module);
 }
 
 RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Frame* frame,

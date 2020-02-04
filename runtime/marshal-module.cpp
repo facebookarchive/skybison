@@ -19,7 +19,7 @@ const BuiltinFunction MarshalModule::kBuiltinFunctions[] = {
 
 void MarshalModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kMarshalModuleData, module);
+  executeFrozenModule(thread, &kMarshalModuleData, module);
 }
 
 RawObject FUNC(marshal, loads)(Thread* thread, Frame* frame, word nargs) {

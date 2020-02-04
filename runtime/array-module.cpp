@@ -17,7 +17,7 @@ const BuiltinType ArrayModule::kBuiltinTypes[] = {
 
 void ArrayModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
-  executeFrozenModule(thread, kArrayModuleData, module);
+  executeFrozenModule(thread, &kArrayModuleData, module);
 }
 
 const BuiltinAttribute ArrayBuiltins::kAttributes[] = {

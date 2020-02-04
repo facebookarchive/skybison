@@ -27,7 +27,7 @@ namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
-template <const char* data>
+template <const FrozenModule* data>
 static void initializeFrozenModule(Thread* thread, const Module& module) {
   executeFrozenModule(thread, data, module);
 }
@@ -35,15 +35,16 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 const ModuleInitializer kBuiltinModules[] = {
     {ID(_builtins), &UnderBuiltinsModule::initialize},
     {ID(_codecs), &UnderCodecsModule::initialize},
-    {ID(_frozen_importlib), &initializeFrozenModule<kUnderBootstrapModuleData>},
+    {ID(_frozen_importlib),
+     &initializeFrozenModule<&kUnderBootstrapModuleData>},
     {ID(_frozen_importlib_external),
-     &initializeFrozenModule<kUnderBootstrapUnderExternalModuleData>},
+     &initializeFrozenModule<&kUnderBootstrapExternalModuleData>},
     {ID(_imp), &UnderImpModule::initialize},
     {ID(_io), &UnderIoModule::initialize},
     {ID(_os), &UnderOsModule::initialize},
     {ID(_signal), &UnderSignalModule::initialize},
-    {ID(_str_mod), &initializeFrozenModule<kUnderStrUnderModModuleData>},
-    {ID(_thread), &initializeFrozenModule<kUnderThreadModuleData>},
+    {ID(_str_mod), &initializeFrozenModule<&kUnderStrModModuleData>},
+    {ID(_thread), &initializeFrozenModule<&kUnderThreadModuleData>},
     {ID(_valgrind), &UnderValgrindModule::initialize},
     {ID(_warnings), &UnderWarningsModule::initialize},
     {ID(_weakref), &UnderWeakrefModule::initialize},
@@ -51,9 +52,9 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(builtins), &BuiltinsModule::initialize},
     {ID(faulthandler), &FaulthandlerModule::initialize},
     {ID(marshal), &MarshalModule::initialize},
-    {ID(operator), &initializeFrozenModule<kOperatorModuleData>},
+    {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
     {ID(sys), &SysModule::initialize},
-    {ID(warnings), &initializeFrozenModule<kWarningsModuleData>},
+    {ID(warnings), &initializeFrozenModule<&kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -151,13 +152,11 @@ RawObject ensureBuiltinModuleById(Thread* thread, SymbolId id) {
   return createBuiltinModule(thread, name);
 }
 
-void executeFrozenModule(Thread* thread, const char* buffer,
+void executeFrozenModule(Thread* thread, const FrozenModule* frozen_module,
                          const Module& module) {
   HandleScope scope(thread);
-  // TODO(matthiasb): 12 is a minimum, we should be using the actual
-  // length here!
-  word length = 12;
-  View<byte> data(reinterpret_cast<const byte*>(buffer), length);
+  View<byte> data(reinterpret_cast<const byte*>(frozen_module->marshalled_code),
+                  frozen_module->marshalled_code_length);
   Marshal::Reader reader(&scope, thread->runtime(), data);
   Str filename(&scope, module.name());
   CHECK(!reader.readPycHeader(filename).isErrorException(),

@@ -415,7 +415,7 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
   // `__builtins__` to this module instead.
   moduleAtPutById(thread, module, ID(__builtins__), module);
 
-  executeFrozenModule(thread, kUnderBuiltinsModuleData, module);
+  executeFrozenModule(thread, &kUnderBuiltinsModuleData, module);
 }
 
 // Attempts to unpack a possibly-slice key. Returns true and sets start, stop if

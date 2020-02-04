@@ -23,7 +23,7 @@ const BuiltinFunction UnderValgrindModule::kBuiltinFunctions[] = {
 
 void UnderValgrindModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kUnderValgrindModuleData, module);
+  executeFrozenModule(thread, &kUnderValgrindModuleData, module);
 }
 
 RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread, Frame* frame,

@@ -17,7 +17,7 @@ const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
 
 void UnderWarningsModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kUnderWarningsModuleData, module);
+  executeFrozenModule(thread, &kUnderWarningsModuleData, module);
 }
 
 namespace {

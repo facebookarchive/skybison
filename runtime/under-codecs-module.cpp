@@ -31,7 +31,7 @@ const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
 
 void UnderCodecsModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
-  executeFrozenModule(thread, kUnderCodecsModuleData, module);
+  executeFrozenModule(thread, &kUnderCodecsModuleData, module);
 }
 
 const int32_t kLowSurrogateStart = 0xDC00;
