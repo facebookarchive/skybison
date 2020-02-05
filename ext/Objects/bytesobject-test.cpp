@@ -471,6 +471,12 @@ TEST_F(BytesExtensionApiTest,
   EXPECT_EQ(PyBytes_Size(bytes), 0);
 }
 
+TEST_F(BytesExtensionApiTest, FromStringAndSizeWithZeroSizeReturnsEmptyBytes) {
+  PyObjectPtr bytes(PyBytes_FromStringAndSize(nullptr, 0));
+  EXPECT_TRUE(PyBytes_CheckExact(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 0);
+}
+
 TEST_F(BytesExtensionApiTest, FromStringAndSizeWithNegativeSizeReturnsNull) {
   EXPECT_EQ(PyBytes_FromStringAndSize("foo", -1), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);

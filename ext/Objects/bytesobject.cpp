@@ -345,7 +345,7 @@ PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
                          "Negative size passed to PyBytes_FromStringAndSize");
     return nullptr;
   }
-  if (str == nullptr) {
+  if (str == nullptr && size > 0) {
     UNIMPLEMENTED("mutable, uninitialized bytes");
   }
   return ApiHandle::newReference(
