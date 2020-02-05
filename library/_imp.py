@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """_imp provides basic importlib support."""
 
-from _builtins import _builtin, _str_guard, _unimplemented
+from _builtins import _builtin, _str_guard, _str_rpartition, _unimplemented
 
 
 def create_builtin(spec):
@@ -15,7 +15,11 @@ def _create_dynamic(name, path):
 def create_dynamic(spec):
     _str_guard(spec.name)
     _str_guard(spec.origin)
-    return _create_dynamic(spec.name, spec.origin)
+    name = spec.name
+    # Remove the import path from the extension module name
+    if "." in name:
+        name = _str_rpartition(name, ".")[-1]
+    return _create_dynamic(name, spec.origin)
 
 
 def exec_builtin(module):

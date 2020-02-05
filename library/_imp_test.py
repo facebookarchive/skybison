@@ -135,6 +135,44 @@ PyObject* PyInit_imptestsoloads() {
             self.assertEqual(imptestsoloads.__name__, "imptestsoloads")
             sys.path.pop()
 
+    def test_create_nested_dynamic_returns_module(self):
+        # Create C file
+        with tempfile.TemporaryDirectory() as dir_path:
+            library_path = f"{dir_path}/nestedtest"
+            os.mkdir(library_path)
+            file_path = f"{library_path}/foo.c"
+            with open(file_path, "w") as c_file:
+                c_file.write(
+                    """\
+#include "Python.h"
+PyObject* PyInit_foo() {
+  static PyModuleDef def;
+  def.m_name = "foo";
+  return PyModule_Create(&def);
+}
+"""
+                )
+
+            # Create shared object
+            dist = self.compile_so("foo", library_path, file_path)
+            self.assertIsInstance(dist, Distribution)
+
+            # Check directory contents
+            dir_contents = sorted(os.listdir(library_path))
+            self.assertEqual(len(dir_contents), 2)
+            self.assertTrue(dir_contents[0].endswith(".c"))
+            self.assertTrue(dir_contents[1].endswith(".so"))
+
+            # Load shared_object
+            sys.path.append(dir_path)
+            try:
+                import nestedtest.foo
+            except Exception:
+                pass
+
+            self.assertIn("foo", nestedtest.foo.__name__)
+            sys.path.pop()
+
 
 if __name__ == "__main__":
     unittest.main()
