@@ -88,8 +88,7 @@ mark_as_advanced(
     CMAKE_CXX_FLAGS_DEBUGOPT
     CMAKE_C_FLAGS_DEBUGOPT
     CMAKE_EXE_LINKER_FLAGS_DEBUGOPT
-    CMAKE_SHARED_LINKER_FLAGS_DEBUGOPT
-)
+    CMAKE_SHARED_LINKER_FLAGS_DEBUGOPT)
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
   "Debug" "DebugOpt" "Release" "RelWithDebInfo" "MinSizeRel")
 
@@ -110,8 +109,7 @@ set(
   -fno-exceptions
   -fno-omit-frame-pointer
   -fno-optimize-sibling-calls
-  -fno-rtti
-)
+  -fno-rtti)
 
 set(BINARY_DIR_HEADERS "${CMAKE_BINARY_DIR}/Include")
 file(MAKE_DIRECTORY "${BINARY_DIR_HEADERS}")
@@ -1530,8 +1528,7 @@ target_link_libraries(
 set_target_properties(
   python
   PROPERTIES
-  ENABLE_EXPORTS 1
-)
+  ENABLE_EXPORTS 1)
 
 add_executable(
   test_lldb_support
@@ -1612,8 +1609,7 @@ add_library(
   runtime/under-valgrind-module-test.cpp
   runtime/under-warnings-module-test.cpp
   runtime/utils-test.cpp
-  runtime/vector-test.cpp
-)
+  runtime/vector-test.cpp)
 target_compile_options(
   runtime-tests
   PRIVATE
