@@ -202,7 +202,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     if (type_attr.isProperty()) {
       Object getter(&scope, Property::cast(*type_attr).getter());
       DCHECK(!object.isNoneType(), "object cannot be NoneType");
-      if (!getter.isNoneType()) {
+      if (getter.isFunction()) {
+        // We cache only function objects as a getter to simplify its usage.
         if (location_out != nullptr) {
           *location_out = *getter;
           *kind = LoadAttrKind::kInstanceProperty;

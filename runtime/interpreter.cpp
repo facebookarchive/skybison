@@ -173,6 +173,20 @@ RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   return result;
 }
 
+ALWAYS_INLINE RawObject Interpreter::callPreparedFunction(Thread* thread,
+                                                          Frame* frame,
+                                                          RawObject function,
+                                                          word nargs) {
+  DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
+  RawObject* sp = frame->valueStackTop() + nargs + 1;
+  DCHECK(function == frame->peek(nargs),
+         "frame->peek(nargs) is expected to be the given function");
+  RawObject result = Function::cast(function).entry()(thread, frame, nargs);
+  // Clear the stack of the function object and return.
+  frame->setValueStackTop(sp);
+  return result;
+}
+
 RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
@@ -505,7 +519,7 @@ RawObject Interpreter::callMethod1(Thread* thread, Frame* frame,
   frame->pushValue(*method);
   if (method.isFunction()) {
     frame->pushValue(*self);
-    nargs += 1;
+    return callPreparedFunction(thread, frame, *method, nargs + 1);
   }
   return call(thread, frame, nargs);
 }
@@ -517,7 +531,8 @@ RawObject Interpreter::callMethod2(Thread* thread, Frame* frame,
   frame->pushValue(*method);
   if (method.isFunction()) {
     frame->pushValue(*self);
-    nargs += 1;
+    frame->pushValue(*other);
+    return callPreparedFunction(thread, frame, *method, nargs + 1);
   }
   frame->pushValue(*other);
   return call(thread, frame, nargs);
@@ -530,7 +545,9 @@ RawObject Interpreter::callMethod3(Thread* thread, Frame* frame,
   frame->pushValue(*method);
   if (method.isFunction()) {
     frame->pushValue(*self);
-    nargs += 1;
+    frame->pushValue(*arg1);
+    frame->pushValue(*arg2);
+    return callPreparedFunction(thread, frame, *method, nargs + 1);
   }
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
@@ -545,7 +562,10 @@ RawObject Interpreter::callMethod4(Thread* thread, Frame* frame,
   frame->pushValue(*method);
   if (method.isFunction()) {
     frame->pushValue(*self);
-    nargs += 1;
+    frame->pushValue(*arg1);
+    frame->pushValue(*arg2);
+    frame->pushValue(*arg3);
+    return callPreparedFunction(thread, frame, *method, nargs + 1);
   }
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
@@ -562,8 +582,9 @@ Continue Interpreter::tailcallMethod1(Thread* thread, RawObject method,
   if (method.isFunction()) {
     frame->pushValue(self);
     nargs++;
+    return tailcallPreparedFunction(thread, frame, method, nargs);
   }
-  return tailcallfunction(thread, nargs);
+  return tailcallFunction(thread, nargs);
 }
 
 HANDLER_INLINE
@@ -575,12 +596,13 @@ Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
   if (method.isFunction()) {
     frame->pushValue(self);
     nargs++;
+    return tailcallPreparedFunction(thread, frame, method, nargs);
   }
   frame->pushValue(arg1);
-  return tailcallfunction(thread, nargs);
+  return tailcallFunction(thread, nargs);
 }
 
-HANDLER_INLINE Continue Interpreter::tailcallfunction(Thread* thread,
+HANDLER_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
                                                       word arg) {
   return handleCall(thread, arg, arg, 0, preparePositionalCall,
                     &Function::entry);
@@ -883,6 +905,7 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* frame,
 HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     Thread* thread, Frame* frame, RawObject method, BinaryOpFlags flags,
     RawObject left, RawObject right) {
+  DCHECK(method.isFunction(), "function is expected");
   frame->pushValue(method);
   if (flags & kBinaryOpReflected) {
     frame->pushValue(right);
@@ -891,8 +914,10 @@ HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     frame->pushValue(left);
     frame->pushValue(right);
   }
-  // TODO(T59474005): Skip call.
-  return call(thread, frame, 2);
+  RawObject* sp = frame->valueStackTop() + /*nargs=*/2 + /*callable=*/1;
+  RawObject result = Function::cast(method).entry()(thread, frame, 2);
+  frame->setValueStackTop(sp);
+  return result;
 }
 
 RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
@@ -1448,7 +1473,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     getitem = resolveDescriptorGet(thread, getitem, container, type);
     if (getitem.isErrorException()) return Continue::UNWIND;
     frame->setValueAt(*getitem, 1);
-    return tailcallfunction(thread, 1);
+    return tailcallFunction(thread, 1);
   }
   if (index >= 0) {
     // TODO(T55274956): Make this into a separate function to be shared.
@@ -1467,7 +1492,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   }
   frame->setValueAt(*getitem, 1);
   frame->insertValueAt(*container, 1);
-  return tailcallfunction(thread, 2);
+  return tailcallPreparedFunction(thread, frame, *getitem, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
@@ -1485,9 +1510,8 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
   if (!is_found) {
     return binarySubscrUpdateCache(thread, arg);
   }
-  DCHECK(cached.isFunction(), "expected function");
   frame->insertValueAt(cached, 2);
-  return tailcallfunction(thread, 2);
+  return tailcallPreparedFunction(thread, frame, cached, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
@@ -1500,9 +1524,8 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
   if (!is_found) {
     return binarySubscrUpdateCache(thread, arg);
   }
-  DCHECK(cached.isFunction(), "expected function");
   frame->insertValueAt(cached, 2);
-  return tailcallfunction(thread, 2);
+  return tailcallPreparedFunction(thread, frame, cached, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
@@ -2084,7 +2107,7 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   frame->pushValue(*exc);
   frame->pushValue(*value);
   frame->pushValue(*traceback);
-  return tailcallfunction(thread, 3);
+  return tailcallFunction(thread, 3);
 }
 
 HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
@@ -3428,7 +3451,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   }
   frame->pushValue(receiver);
   frame->setValueAt(cached, 1);
-  return tailcallfunction(thread, 1);
+  return tailcallPreparedFunction(thread, frame, cached, 1);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
@@ -3615,7 +3638,7 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   frame->pushValue(*locals);
   frame->pushValue(*fromlist);
   frame->pushValue(*level);
-  return tailcallfunction(thread, 5);
+  return tailcallFunction(thread, 5);
 }
 
 static RawObject tryImportFromSysModules(Thread* thread, const Object& from,
@@ -4022,6 +4045,19 @@ Interpreter::handleCall(Thread* thread, word nargs, word callable_idx,
 
   return callInterpretedImpl(thread, nargs, caller_frame, function,
                              post_call_sp, prepare_args);
+}
+
+ALWAYS_INLINE Continue Interpreter::tailcallPreparedFunction(
+    Thread* thread, Frame* frame, RawObject function_obj, word nargs) {
+  RawObject* sp = frame->valueStackTop() + nargs + 1;
+  DCHECK(function_obj == frame->peek(nargs),
+         "frame->peek(nargs) is expected to be the given function");
+  RawFunction function = Function::cast(function_obj);
+  if (!function.isInterpreted()) {
+    return callTrampoline(thread, function.entry(), nargs, sp);
+  }
+  return callInterpretedImpl(thread, nargs, frame, function, sp,
+                             preparePositionalCall);
 }
 
 HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {
@@ -4616,12 +4652,9 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
     return handleCall(thread, arg, arg, 1, preparePositionalCall,
                       &Function::entry);
   }
-  DCHECK(maybe_method.isFunction(),
-         "The pushed method should be either a function or Unbound");
   // Add one to bind receiver to the self argument. See doLoadMethod()
   // for details on the stack's shape.
-  return handleCall(thread, arg + 1, arg + 1, 0, preparePositionalCall,
-                    &Function::entry);
+  return tailcallPreparedFunction(thread, frame, maybe_method, arg + 1);
 }
 
 HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(

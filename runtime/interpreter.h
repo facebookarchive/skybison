@@ -90,8 +90,10 @@ class Interpreter {
                                             const Object& traceback);
 
   static RawObject call(Thread* thread, Frame* frame, word nargs);
-  static RawObject callKw(Thread* thread, Frame* frame, word nargs);
   static RawObject callEx(Thread* thread, Frame* frame, word flags);
+  static RawObject callKw(Thread* thread, Frame* frame, word nargs);
+  static RawObject callPreparedFunction(Thread* thread, Frame* frame,
+                                        RawObject function, word nargs);
 
   // Calls __hash__ on `value`, checks result and postprocesses.  Returns a
   // SmallInt or Error::exception().
@@ -564,7 +566,13 @@ class Interpreter {
 
   // Call function with `arg` parameters at the end of an opcode handler. Use
   // this when the number of parameters is more than 2.
-  static Continue tailcallfunction(Thread* thread, word arg);
+  static Continue tailcallFunction(Thread* thread, word arg);
+
+  // Fast path for calling a function object at frame[nargs] skipping all
+  // callable checks. The result from calling the function gets available on top
+  // of the stack.
+  static Continue tailcallPreparedFunction(Thread* thread, Frame* frame,
+                                           RawObject function_obj, word nargs);
 
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's
