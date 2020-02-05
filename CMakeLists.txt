@@ -166,6 +166,7 @@ set(
   library/importlib/_bootstrap_external.py
   library/marshal.py
   library/operator.py
+  library/readline.py
   library/sys.py
   library/warnings.py)
 set(
