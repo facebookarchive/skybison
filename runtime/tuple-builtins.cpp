@@ -47,7 +47,7 @@ RawObject tupleHash(Thread* thread, const Tuple& tuple) {
   Object elt(&scope, NoneType::object());
   Object elt_hash(&scope, NoneType::object());
   uword result = 0x345678UL;
-  uword mult = 1000003UL /* 0xf4243 */;
+  uword mult = 1000003UL;  // 0xf4243
   word len = tuple.length();
   for (word i = len - 1; i >= 0; i--) {
     elt = tuple.at(i);

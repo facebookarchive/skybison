@@ -39,7 +39,7 @@ enum {
   TYPE_UNKNOWN = '?',
   TYPE_SET = '<',
   TYPE_FROZENSET = '>',
-  FLAG_REF = '\x80', /* with a type, add obj to index */
+  FLAG_REF = '\x80',  // with a type, add obj to index
 
   TYPE_ASCII = 'a',
   TYPE_ASCII_INTERNED = 'A',

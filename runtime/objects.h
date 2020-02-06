@@ -607,25 +607,23 @@ enum class ObjectFormat {
   kObjects = 1,
 };
 
-/**
- * RawHeader objects
- *
- * Headers are located in first logical word of a heap allocated object and
- * contain metadata related to the object its part of.  A header is not
- * really object that the user will interact with directly.  Nevertheless, we
- * tag them as immediate object.  This allows the runtime to identify the start
- * of an object when scanning the heap.
- *
- * Headers encode the following information
- *
- * Name      Size  Description
- * ----------------------------------------------------------------------------
- * Tag          3   tag for a header object
- * Format       1   enumeration describing the object encoding
- * LayoutId    20   identifier for the layout, allowing 2^20 unique layouts
- * Count        8   number of array elements or instance variables
- * Hash        32   bits to use for an identity hash code
- */
+// RawHeader objects
+//
+// Headers are located in first logical word of a heap allocated object and
+// contain metadata related to the object its part of.  A header is not
+// really object that the user will interact with directly.  Nevertheless, we
+// tag them as immediate object.  This allows the runtime to identify the start
+// of an object when scanning the heap.
+//
+// Headers encode the following information
+//
+// Name      Size  Description
+// ----------------------------------------------------------------------------
+// Tag          3   tag for a header object
+// Format       1   enumeration describing the object encoding
+// LayoutId    20   identifier for the layout, allowing 2^20 unique layouts
+// Count        8   number of array elements or instance variables
+// Hash        32   bits to use for an identity hash code
 class RawHeader : public RawObject {
  public:
   word hashCode() const;
@@ -1375,15 +1373,13 @@ class RawMutableBytes : public RawLargeBytes {
   RAW_OBJECT_COMMON(MutableBytes);
 };
 
-/**
- * A mutable array, for the array module
- *
- * RawLayout:
- *   [Header  ]
- *   [Buffer  ] - Pointer to a RawMutableBytes with the underlying data.
- *   [Length  ] - Number of bytes currently in the array.
- *   [Typecode] - Typecode of the array
- */
+// A mutable array, for the array module
+//
+// RawLayout:
+//   [Header  ]
+//   [Buffer  ] - Pointer to a RawMutableBytes with the underlying data.
+//   [Length  ] - Number of bytes currently in the array.
+//   [Typecode] - Typecode of the array
 class RawArray : public RawInstance {
  public:
   // Getters and setters
@@ -1812,14 +1808,13 @@ class RawBytesIterator : public RawIteratorBase {
 class RawDictIteratorBase : public RawIteratorBase {
  public:
   // Getters and setters.
-  /*
-   * This looks similar to index but is different and required in order to
-   * implement interators properly. We cannot use index in __length_hint__
-   * because index describes the position inside the internal buckets list of
-   * our implementation of dict -- not the logical number of iterms. Therefore
-   * we need an additional piece of state that refers to the logical number of
-   * items seen so far.
-   */
+
+  // This looks similar to index but is different and required in order to
+  // implement interators properly. We cannot use index in __length_hint__
+  // because index describes the position inside the internal buckets list of
+  // our implementation of dict -- not the logical number of iterms. Therefore
+  // we need an additional piece of state that refers to the logical number of
+  // items seen so far.
   word numFound() const;
   void setNumFound(word num_found) const;
 
@@ -2057,24 +2052,20 @@ class RawCode : public RawInstance {
 class Frame;
 class Thread;
 
-/**
- * A function object.
- *
- * This may contain a user-defined function or a built-in function.
- *
- * RawFunction objects have a set of pre-defined attributes, only some of which
- * are writable outside of the runtime. The full set is defined at
- *
- *     https://docs.python.org/3/reference/datamodel.html
- */
+// A function object.
+//
+// This may contain a user-defined function or a built-in function.
+//
+// RawFunction objects have a set of pre-defined attributes, only some of which
+// are writable outside of the runtime. The full set is defined at
+//
+//     https://docs.python.org/3/reference/datamodel.html
 class RawFunction : public RawInstance {
  public:
-  /**
-   * An entry point into a function.
-   *
-   * The entry point is called with the current thread, the caller's stack
-   * frame, and the number of arguments that have been pushed onto the stack.
-   */
+  // An entry point into a function.
+  //
+  // The entry point is called with the current thread, the caller's stack
+  // frame, and the number of arguments that have been pushed onto the stack.
   using Entry = RawObject (*)(Thread*, Frame*, word);
 
   enum Flags {
@@ -2370,17 +2361,15 @@ class RawModuleProxy : public RawInstance {
   RAW_OBJECT_COMMON(ModuleProxy);
 };
 
-/**
- * A mutable array of bytes.
- *
- * Invariant: All allocated bytes past the end of the array are 0.
- * Invariant: bytes() is a MutableBytes.
- *
- * RawLayout:
- *   [Header  ]
- *   [Bytes   ] - Pointer to a RawMutableBytes with the underlying data.
- *   [NumItems] - Number of bytes currently in the array.
- */
+// A mutable array of bytes.
+//
+// Invariant: All allocated bytes past the end of the array are 0.
+// Invariant: bytes() is a MutableBytes.
+//
+// RawLayout:
+//   [Header  ]
+//   [Bytes   ] - Pointer to a RawMutableBytes with the underlying data.
+//   [NumItems] - Number of bytes currently in the array.
 class RawByteArray : public RawInstance {
  public:
   // Getters and setters
@@ -2417,16 +2406,14 @@ class RawByteArray : public RawInstance {
   RAW_OBJECT_COMMON(ByteArray);
 };
 
-/**
- * A mutable Unicode array, for internal string building.
- *
- * Invariant: The allocated code units form valid UTF-8.
- *
- * RawLayout:
- *   [Header  ]
- *   [Items   ] - Pointer to a RawMutableBytes with the underlying data.
- *   [NumItems] - Number of bytes currently in the array.
- */
+// A mutable Unicode array, for internal string building.
+//
+// Invariant: The allocated code units form valid UTF-8.
+//
+// RawLayout:
+//   [Header  ]
+//   [Items   ] - Pointer to a RawMutableBytes with the underlying data.
+//   [NumItems] - Number of bytes currently in the array.
 class RawStrArray : public RawInstance {
  public:
   // Getters and setters
@@ -2449,22 +2436,19 @@ class RawStrArray : public RawInstance {
   RAW_OBJECT_COMMON(StrArray);
 };
 
-/**
- * A simple dict that uses open addressing and linear probing.
- *
- * RawLayout:
- *
- *   [Header        ]
- *   [NumItems      ] - Number of items currently in the dict
- *   [Items         ] - Pointer to an RawTuple that stores the underlying
- * data.
- *   [NumUsableItems] - Usable items for insertion.
- *
- * RawDict entries are stored in buckets as a triple of (hash, key, value).
- * Empty buckets are stored as (RawNoneType, RawNoneType, RawNoneType).
- * Tombstone buckets are stored as (RawNoneType, <not RawNoneType>, <Any>).
- *
- */
+// A simple dict that uses open addressing and linear probing.
+//
+// RawLayout:
+//
+//   [Header        ]
+//   [NumItems      ] - Number of items currently in the dict
+//   [Items         ] - Pointer to an RawTuple that stores the underlying
+// data.
+//   [NumUsableItems] - Usable items for insertion.
+//
+// RawDict entries are stored in buckets as a triple of (hash, key, value).
+// Empty buckets are stored as (RawNoneType, RawNoneType, RawNoneType).
+// Tombstone buckets are stored as (RawNoneType, <not RawNoneType>, <Any>).
 class RawDict : public RawInstance {
  public:
   class Bucket;
@@ -2644,9 +2628,7 @@ class RawDictValues : public RawDictViewBase {
   RAW_OBJECT_COMMON(DictValues);
 };
 
-/**
- * A simple set implementation. Used by set and frozenset.
- */
+// A simple set implementation. Used by set and frozenset.
 class RawSetBase : public RawInstance {
  public:
   class Bucket;
@@ -2747,15 +2729,13 @@ class RawSetBase::Bucket {
   DISALLOW_HEAP_ALLOCATION();
 };
 
-/**
- * A growable array
- *
- * RawLayout:
- *
- *   [Header]
- *   [Length] - Number of elements currently in the list
- *   [Elems ] - Pointer to an RawTuple that contains list elements
- */
+// A growable array
+//
+// RawLayout:
+//
+//   [Header]
+//   [Length] - Number of elements currently in the list
+//   [Elems ] - Pointer to an RawTuple that contains list elements
 class RawList : public RawInstance {
  public:
   // Getters and setters.
@@ -2854,13 +2834,11 @@ class RawWeakRef : public RawInstance {
   RAW_OBJECT_COMMON(WeakRef);
 };
 
-/**
- * RawWeakLink objects are used to form double linked lists where the elements
- * can still be garbage collected.
- *
- * A main usage of this is to maintain a list of function objects
- * to be notified of global variable cache invalidation.
- */
+// RawWeakLink objects are used to form double linked lists where the elements
+// can still be garbage collected.
+//
+// A main usage of this is to maintain a list of function objects
+// to be notified of global variable cache invalidation.
 class RawWeakLink : public RawWeakRef {
  public:
   // Getters and setters.
@@ -2877,29 +2855,27 @@ class RawWeakLink : public RawWeakRef {
   RAW_OBJECT_COMMON(WeakLink);
 };
 
-/**
- * A RawBoundMethod binds a RawFunction and its first argument (called `self`).
- *
- * These are typically created as a temporary object during a method call,
- * though they may be created and passed around freely.
- *
- * Consider the following snippet of python code:
- *
- *   class Foo:
- *     def bar(self):
- *       return self
- *   f = Foo()
- *   f.bar()
- *
- * The Python 3.6 bytecode produced for the line `f.bar()` is:
- *
- *   LOAD_FAST                0 (f)
- *   LOAD_ATTR                1 (bar)
- *   CALL_FUNCTION            0
- *
- * The LOAD_ATTR for `f.bar` creates a `RawBoundMethod`, which is then called
- * directly by the subsequent CALL_FUNCTION opcode.
- */
+// A RawBoundMethod binds a RawFunction and its first argument (called `self`).
+//
+// These are typically created as a temporary object during a method call,
+// though they may be created and passed around freely.
+//
+// Consider the following snippet of python code:
+//
+//   class Foo:
+//     def bar(self):
+//       return self
+//   f = Foo()
+//   f.bar()
+//
+// The Python 3.6 bytecode produced for the line `f.bar()` is:
+//
+//   LOAD_FAST                0 (f)
+//   LOAD_ATTR                1 (bar)
+//   CALL_FUNCTION            0
+//
+// The LOAD_ATTR for `f.bar` creates a `RawBoundMethod`, which is then called
+// directly by the subsequent CALL_FUNCTION opcode.
 class RawBoundMethod : public RawInstance {
  public:
   // Getters and setters
@@ -2933,45 +2909,42 @@ class RawClassMethod : public RawInstance {
   RAW_OBJECT_COMMON(ClassMethod);
 };
 
-/**
- * A RawLayout describes the in-memory shape of an instance.
- *
- * RawInstance attributes are split into two classes: in-object attributes,
- * which exist directly in the instance, and overflow attributes, which are
- * stored in an object array pointed to by the last word of the instance.
- * Graphically, this looks like:
- *
- *   RawInstance                                   RawTuple
- *   +---------------------------+     +------->+--------------------------+
- *   | First in-object attribute |     |        | First overflow attribute |
- *   +---------------------------+     |        +--------------------------+
- *   |            ...            |     |        |           ...            |
- *   +---------------------------+     |        +--------------------------+
- *   | Last in-object attribute  |     |        | Last overflow attribute  |
- *   +---------------------------+     |        +--------------------------+
- *   | Overflow Attributes       +-----+
- *   +---------------------------+
- *
- * Each instance is associated with a layout (whose id is stored in the header
- * word). The layout acts as a roadmap for the instance; it describes where to
- * find each attribute.
- *
- * In general, instances of the same class will have the same shape. Idiomatic
- * Python typically initializes attributes in the same order for instances of
- * the same class. Ideally, we would be able to share the same concrete
- * RawLayout between two instances of the same shape. This both reduces memory
- * overhead and enables effective caching of attribute location.
- *
- * To achieve structural sharing, layouts form an immutable DAG. Every class
- * has a root layout that contains only in-object attributes. When an instance
- * is created, it is assigned the root layout of its class. When a shape
- * altering mutation to the instance occurs (e.g. adding an attribute), the
- * current layout is searched for a corresponding edge. If such an edge exists,
- * it is followed and the instance is assigned the resulting layout. If there
- * is no such edge, a new layout is created, an edge is inserted between
- * the two layouts, and the instance is assigned the new layout.
- *
- */
+// A RawLayout describes the in-memory shape of an instance.
+//
+// RawInstance attributes are split into two classes: in-object attributes,
+// which exist directly in the instance, and overflow attributes, which are
+// stored in an object array pointed to by the last word of the instance.
+// Graphically, this looks like:
+//
+//   RawInstance                                   RawTuple
+//   +---------------------------+     +------->+--------------------------+
+//   | First in-object attribute |     |        | First overflow attribute |
+//   +---------------------------+     |        +--------------------------+
+//   |            ...            |     |        |           ...            |
+//   +---------------------------+     |        +--------------------------+
+//   | Last in-object attribute  |     |        | Last overflow attribute  |
+//   +---------------------------+     |        +--------------------------+
+//   | Overflow Attributes       +-----+
+//   +---------------------------+
+//
+// Each instance is associated with a layout (whose id is stored in the header
+// word). The layout acts as a roadmap for the instance; it describes where to
+// find each attribute.
+//
+// In general, instances of the same class will have the same shape. Idiomatic
+// Python typically initializes attributes in the same order for instances of
+// the same class. Ideally, we would be able to share the same concrete
+// RawLayout between two instances of the same shape. This both reduces memory
+// overhead and enables effective caching of attribute location.
+//
+// To achieve structural sharing, layouts form an immutable DAG. Every class
+// has a root layout that contains only in-object attributes. When an instance
+// is created, it is assigned the root layout of its class. When a shape
+// altering mutation to the instance occurs (e.g. adding an attribute), the
+// current layout is searched for a corresponding edge. If such an edge exists,
+// it is followed and the instance is assigned the resulting layout. If there
+// is no such edge, a new layout is created, an edge is inserted between
+// the two layouts, and the instance is assigned the new layout.
 class RawLayout : public RawInstance {
  public:
   // Getters and setters.
@@ -3087,32 +3060,30 @@ class RawSuper : public RawInstance {
   RAW_OBJECT_COMMON(Super);
 };
 
-/**
- * A Frame in a HeapObject, with space allocated before and after for stack and
- * locals, respectively. It looks almost exactly like the ascii art diagram for
- * Frame (from frame.h), except that there is a fixed amount of space allocated
- * for the value stack, which comes from stacksize() on the Code object this is
- * created from:
- *
- *   +----------------------+  <--+
- *   | Arg 0                |     |
- *   | ...                  |     |
- *   | Arg N                |     |
- *   | Local 0              |     | (totalArgs() + totalVars()) * kPointerSize
- *   | ...                  |     |
- *   | Local N              |     |
- *   +----------------------+  <--+
- *   |                      |     |
- *   | Frame                |     | Frame::kSize
- *   |                      |     |
- *   +----------------------+  <--+  <-- frame()
- *   |                      |     |
- *   | Value stack          |     | maxStackSize() * kPointerSize
- *   |                      |     |
- *   +----------------------+  <--+
- *   | maxStackSize         |
- *   +----------------------+
- */
+// A Frame in a HeapObject, with space allocated before and after for stack and
+// locals, respectively. It looks almost exactly like the ascii art diagram for
+// Frame (from frame.h), except that there is a fixed amount of space allocated
+// for the value stack, which comes from stacksize() on the Code object this is
+// created from:
+//
+//   +----------------------+  <--+
+//   | Arg 0                |     |
+//   | ...                  |     |
+//   | Arg N                |     |
+//   | Local 0              |     | (totalArgs() + totalVars()) * kPointerSize
+//   | ...                  |     |
+//   | Local N              |     |
+//   +----------------------+  <--+
+//   |                      |     |
+//   | Frame                |     | Frame::kSize
+//   |                      |     |
+//   +----------------------+  <--+  <-- frame()
+//   |                      |     |
+//   | Value stack          |     | maxStackSize() * kPointerSize
+//   |                      |     |
+//   +----------------------+  <--+
+//   | maxStackSize         |
+//   +----------------------+
 class RawHeapFrame : public RawInstance {
  public:
   // The size of the embedded frame + stack and locals, in words.
@@ -3152,14 +3123,12 @@ class RawHeapFrame : public RawInstance {
   Frame* frame() const;
 };
 
-/**
- * The exception currently being handled. Every Generator and Coroutine has its
- * own exception state that is installed while it's running, to allow yielding
- * from an except block without losing track of the caught exception.
- *
- * TODO(T38009294): This class won't exist forever. Think very hard about
- * adding any more bits of state to it.
- */
+// The exception currently being handled. Every Generator and Coroutine has its
+// own exception state that is installed while it's running, to allow yielding
+// from an except block without losing track of the caught exception.
+//
+// TODO(T38009294): This class won't exist forever. Think very hard about
+// adding any more bits of state to it.
 class RawExceptionState : public RawInstance {
  public:
   // Getters and setters.
@@ -3184,10 +3153,8 @@ class RawExceptionState : public RawInstance {
   RAW_OBJECT_COMMON(ExceptionState);
 };
 
-/**
- * Base class containing functionality needed by all objects representing a
- * suspended execution frame: RawGenerator, RawCoroutine, and AsyncGenerator.
- */
+// Base class containing functionality needed by all objects representing a
+// suspended execution frame: RawGenerator, RawCoroutine, and AsyncGenerator.
 class RawGeneratorBase : public RawInstance {
  public:
   // Get or set the RawHeapFrame embedded in this RawGeneratorBase.
