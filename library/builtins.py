@@ -5662,8 +5662,7 @@ class tuple(bootstrap=True):
             return f"({elt},)"
         return _sequence_repr("(", self, ")")
 
-    def __rmul__(self, other):
-        _unimplemented()
+    __rmul__ = __mul__
 
     def count(self, other):
         _unimplemented()

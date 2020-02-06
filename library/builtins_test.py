@@ -11029,6 +11029,40 @@ class TupleTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             tuple(C())
 
+    def test_dunder_rmul_with_one_element(self):
+        left = (1,)
+        result = tuple.__rmul__(left, 4)
+        self.assertTupleEqual(result, (1, 1, 1, 1))
+
+    def test_dunder_rmul_with_length_greater_than_one_and_times_is_one(self):
+        left = (1, 2, 3)
+        result = tuple.__rmul__(left, 1)
+        self.assertIs(result, left)
+
+    def test_dunder_rmul_with_length_greater_than_one_and_times_greater_than_one(self):
+        left = (1, 2, 3)
+        result = tuple.__rmul__(left, 2)
+        self.assertTupleEqual(result, (1, 2, 3, 1, 2, 3))
+
+    def test_dunder_rmul_with_empty_tuple(self):
+        left = ()
+        result = tuple.__rmul__(left, 5)
+        self.assertIs(result, left)
+
+    def test_dunder_rmul_with_negative_times(self):
+        left = (1, 2, 3)
+        result = tuple.__rmul__(left, -2)
+        self.assertIs(result, ())
+
+    def test_dunder_rmul_with_tuple_subclass_returns_tuple(self):
+        class C(tuple):
+            pass
+
+        instance = C((1, 2, 3))
+        result = tuple.__rmul__(instance, 2)
+        self.assertEqual(result.__class__, tuple)
+        self.assertTupleEqual(result, (1, 2, 3, 1, 2, 3))
+
 
 class TypeTests(unittest.TestCase):
     def test_abstract_methods_get_with_builtin_type_raises_attribute_error(self):
