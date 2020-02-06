@@ -10569,6 +10569,28 @@ class SuperTests(unittest.TestCase):
 
         self.assertIs(D().get_super().__self_class__, D)
 
+    def test_dunder_init_resolves_cell_vars(self):
+        class C:
+            def foo(self, a1):
+                def compute():
+                    # This turns self, a1 into freevars in `compute` and
+                    # cellvars in `foo`. I am also using a1 here to have
+                    # `self` move at the end of the freevar/cellvar list to
+                    # make the test more interesting.
+                    self.dummy = a1
+
+                compute()
+                s = super()
+                return s
+
+        self.assertIn("self", C.foo.__code__.co_cellvars)
+
+        instance = C()
+        s = instance.foo(None)
+        self.assertEqual(s.__self__, instance)
+        self.assertEqual(s.__self_class__, C)
+        self.assertEqual(s.__thisclass__, C)
+
 
 class SyntaxErrorTests(unittest.TestCase):
     def test_dunder_init_with_no_args_sets_msg_to_none(self):

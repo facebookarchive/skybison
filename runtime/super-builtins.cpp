@@ -144,8 +144,18 @@ RawObject METH(super, __init__)(Thread* thread, Frame* frame, word nargs) {
                                   "super(): __class__ cell not found");
     }
     type_obj = ValueCell::cast(cell).value();
-    // TODO(zekun): handle cell2arg case
     obj = caller_frame->local(0);
+    // The parameter value may have been moved into a value cell.
+    if (obj.isNoneType() && !code.cell2arg().isNoneType()) {
+      Tuple cell2arg(&scope, code.cell2arg());
+      for (word i = 0, length = cell2arg.length(); i < length; i++) {
+        if (cell2arg.at(i) == SmallInt::fromWord(0)) {
+          obj =
+              ValueCell::cast(caller_frame->local(code.nlocals() + i)).value();
+          break;
+        }
+      }
+    }
   } else {
     if (args.get(2).isUnbound()) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
