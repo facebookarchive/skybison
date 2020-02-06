@@ -1,5 +1,3 @@
-#include "faulthandler-module.h"
-
 #include <signal.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -16,10 +14,6 @@
 #include "sys-module.h"
 
 namespace py {
-
-void FaulthandlerModule::initialize(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kFaulthandlerModuleData, module);
-}
 
 struct FaultHandler {
   int signum;

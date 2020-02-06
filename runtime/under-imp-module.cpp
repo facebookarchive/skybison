@@ -14,10 +14,6 @@
 
 namespace py {
 
-void UnderImpModule::initialize(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnderImpModuleData, module);
-}
-
 static Thread* import_lock_holder;
 static word import_lock_count;
 

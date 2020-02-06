@@ -1,5 +1,3 @@
-#include "marshal-module.h"
-
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
@@ -12,10 +10,6 @@
 #include "thread.h"
 
 namespace py {
-
-void MarshalModule::initialize(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kMarshalModuleData, module);
-}
 
 RawObject FUNC(marshal, loads)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

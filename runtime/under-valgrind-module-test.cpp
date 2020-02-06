@@ -1,5 +1,3 @@
-#include "under-valgrind-module.h"
-
 #include <cmath>
 
 #include "gtest/gtest.h"

@@ -1,5 +1,3 @@
-#include "under-warnings-module.h"
-
 #include "gtest/gtest.h"
 
 #include "runtime.h"

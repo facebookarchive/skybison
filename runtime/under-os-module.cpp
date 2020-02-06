@@ -1,5 +1,3 @@
-#include "under-os-module.h"
-
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -15,10 +13,6 @@
 #include "symbols.h"
 
 namespace py {
-
-void UnderOsModule::initialize(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnderOsModuleData, module);
-}
 
 RawObject FUNC(_os, close)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

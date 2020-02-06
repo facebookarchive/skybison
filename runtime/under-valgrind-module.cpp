@@ -1,5 +1,3 @@
-#include "under-valgrind-module.h"
-
 #include "valgrind/callgrind.h"
 
 #include "builtins.h"
@@ -11,10 +9,6 @@
 #include "thread.h"
 
 namespace py {
-
-void UnderValgrindModule::initialize(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnderValgrindModuleData, module);
-}
 
 RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread, Frame* frame,
                                                 word nargs) {

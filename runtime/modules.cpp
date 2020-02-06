@@ -4,10 +4,8 @@
 #include "builtins-module.h"
 #include "builtins.h"
 #include "capi-handles.h"
-#include "faulthandler-module.h"
 #include "frozen-modules.h"
 #include "globals.h"
-#include "marshal-module.h"
 #include "marshal.h"
 #include "module-builtins.h"
 #include "runtime.h"
@@ -15,13 +13,8 @@
 #include "sys-module.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
-#include "under-codecs-module.h"
-#include "under-imp-module.h"
 #include "under-io-module.h"
-#include "under-os-module.h"
 #include "under-signal-module.h"
-#include "under-valgrind-module.h"
-#include "under-warnings-module.h"
 #include "under-weakref-module.h"
 
 namespace py {
@@ -35,24 +28,24 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 
 const ModuleInitializer kBuiltinModules[] = {
     {ID(_builtins), &UnderBuiltinsModule::initialize},
-    {ID(_codecs), &UnderCodecsModule::initialize},
+    {ID(_codecs), &initializeFrozenModule<&kUnderCodecsModuleData>},
     {ID(_frozen_importlib),
      &initializeFrozenModule<&kUnderBootstrapModuleData>},
     {ID(_frozen_importlib_external),
      &initializeFrozenModule<&kUnderBootstrapExternalModuleData>},
-    {ID(_imp), &UnderImpModule::initialize},
+    {ID(_imp), &initializeFrozenModule<&kUnderImpModuleData>},
     {ID(_io), &UnderIoModule::initialize},
-    {ID(_os), &UnderOsModule::initialize},
+    {ID(_os), &initializeFrozenModule<&kUnderOsModuleData>},
     {ID(_signal), &UnderSignalModule::initialize},
     {ID(_str_mod), &initializeFrozenModule<&kUnderStrModModuleData>},
     {ID(_thread), &initializeFrozenModule<&kUnderThreadModuleData>},
-    {ID(_valgrind), &UnderValgrindModule::initialize},
-    {ID(_warnings), &UnderWarningsModule::initialize},
+    {ID(_valgrind), &initializeFrozenModule<&kUnderValgrindModuleData>},
+    {ID(_warnings), &initializeFrozenModule<&kUnderWarningsModuleData>},
     {ID(_weakref), &UnderWeakrefModule::initialize},
     {ID(array), &ArrayModule::initialize},
     {ID(builtins), &BuiltinsModule::initialize},
-    {ID(faulthandler), &FaulthandlerModule::initialize},
-    {ID(marshal), &MarshalModule::initialize},
+    {ID(faulthandler), &initializeFrozenModule<&kFaulthandlerModuleData>},
+    {ID(marshal), &initializeFrozenModule<&kMarshalModuleData>},
     {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
     {ID(readline), &initializeFrozenModule<&kReadlineModuleData>},
     {ID(sys), &SysModule::initialize},

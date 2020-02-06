@@ -1,5 +1,3 @@
-#include "faulthandler-module.h"
-
 #include <stdlib.h>
 #include <unistd.h>
 

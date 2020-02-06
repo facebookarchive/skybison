@@ -248,7 +248,6 @@ add_library(
   runtime/exception-builtins.cpp
   runtime/exception-builtins.h
   runtime/faulthandler-module.cpp
-  runtime/faulthandler-module.h
   runtime/file.h
   runtime/float-builtins.cpp
   runtime/float-builtins.h
@@ -284,7 +283,6 @@ add_library(
   runtime/mappingproxy-builtins.cpp
   runtime/mappingproxy-builtins.h
   runtime/marshal-module.cpp
-  runtime/marshal-module.h
   runtime/marshal.cpp
   runtime/marshal.h
   runtime/memory-region.cpp
@@ -341,19 +339,15 @@ add_library(
   runtime/under-builtins-module.cpp
   runtime/under-builtins-module.h
   runtime/under-codecs-module.cpp
-  runtime/under-codecs-module.h
   runtime/under-imp-module.cpp
   runtime/under-imp-module.h
   runtime/under-io-module.cpp
   runtime/under-io-module.h
   runtime/under-os-module.cpp
-  runtime/under-os-module.h
   runtime/under-signal-module.cpp
   runtime/under-signal-module.h
   runtime/under-valgrind-module.cpp
-  runtime/under-valgrind-module.h
   runtime/under-warnings-module.cpp
-  runtime/under-warnings-module.h
   runtime/under-weakref-module.cpp
   runtime/under-weakref-module.h
   runtime/unicode.h

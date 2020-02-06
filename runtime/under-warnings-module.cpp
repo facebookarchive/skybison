@@ -1,5 +1,3 @@
-#include "under-warnings-module.h"
-
 #include "builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -10,10 +8,6 @@
 #include "type-builtins.h"
 
 namespace py {
-
-void UnderWarningsModule::initialize(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnderWarningsModuleData, module);
-}
 
 namespace {
 RawObject getCategory(Thread* thread, const Object& message,
