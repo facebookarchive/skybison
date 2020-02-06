@@ -10,8 +10,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using MarshalReaderDeathTest = RuntimeFixture;
 using MarshalReaderTest = RuntimeFixture;
@@ -630,4 +629,5 @@ TEST_F(MarshalReaderTest,
   EXPECT_TRUE(isIntEqualsWord(*result, -0x8000000000000000));
 }
 
+}  // namespace testing
 }  // namespace py

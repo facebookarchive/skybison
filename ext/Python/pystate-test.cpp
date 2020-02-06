@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using PystateExtensionApiTest = ExtensionApi;
 using PystateExtensionApiTestDeathTest = ExtensionApi;
@@ -156,4 +155,5 @@ TEST_F(PystateExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_RecursionError));
 }
 
+}  // namespace testing
 }  // namespace py

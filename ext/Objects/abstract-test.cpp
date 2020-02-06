@@ -7,8 +7,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using AbstractExtensionApiTest = ExtensionApi;
 
@@ -3724,4 +3723,5 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+}  // namespace testing
 }  // namespace py

@@ -4,8 +4,7 @@
 #include "capi-fixture.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ObmallocExtensionApiTest = ExtensionApi;
 
@@ -100,4 +99,5 @@ except:
   PyObject_Free(ptr);
 }
 
+}  // namespace testing
 }  // namespace py

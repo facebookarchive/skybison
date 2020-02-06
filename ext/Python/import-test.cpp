@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ImportExtensionApiTest = ExtensionApi;
 
@@ -179,4 +178,5 @@ TEST_F(ImportExtensionApiTest,
   Py_DECREF(name);
 }
 
+}  // namespace testing
 }  // namespace py

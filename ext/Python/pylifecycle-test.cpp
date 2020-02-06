@@ -7,8 +7,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using PylifecycleExtensionApiTest = ExtensionApi;
 
@@ -72,4 +71,5 @@ TEST_F(PylifecycleExtensionApiTest, RestoreSignalRestoresToDefault) {
   EXPECT_EQ(PyOS_getsig(SIGXFSZ), SIG_DFL);
 }
 
+}  // namespace testing
 }  // namespace py

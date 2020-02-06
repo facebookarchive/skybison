@@ -12,8 +12,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using FloatConversionTest = RuntimeFixture;
 
@@ -101,4 +100,5 @@ TEST_F(FloatConversionTest, ParseFloatWithInfinityReturnsDouble) {
   EXPECT_TRUE(std::isinf(value));
 }
 
+}  // namespace testing
 }  // namespace py

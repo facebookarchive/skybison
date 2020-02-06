@@ -8,8 +8,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using UnderValgrindModuleTest = RuntimeFixture;
 
@@ -49,4 +48,5 @@ _valgrind.callgrind_zero_stats()
                    .isError());
 }
 
+}  // namespace testing
 }  // namespace py

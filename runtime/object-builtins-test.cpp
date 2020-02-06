@@ -10,8 +10,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using NoneBuiltinsTest = RuntimeFixture;
 using ObjectBuiltinsTest = RuntimeFixture;
@@ -1017,4 +1016,5 @@ i.foo = 0
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 11));
 }
 
+}  // namespace testing
 }  // namespace py

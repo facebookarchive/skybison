@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using StrBuiltinsTest = RuntimeFixture;
 using StrIterTest = RuntimeFixture;
@@ -2262,4 +2261,5 @@ substr = SubStr("some string")
   EXPECT_TRUE(isStrEqualsCStr(*underlying, "some string"));
 }
 
+}  // namespace testing
 }  // namespace py

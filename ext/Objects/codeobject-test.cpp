@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CodeExtensionApiTest = ExtensionApi;
 
@@ -538,4 +537,5 @@ TEST_F(CodeExtensionApiTest, NewWithNonBytesLnotabRaisesSystemError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+}  // namespace testing
 }  // namespace py

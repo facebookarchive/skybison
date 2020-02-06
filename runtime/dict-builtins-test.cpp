@@ -10,8 +10,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using DictBuiltinsTest = RuntimeFixture;
 using DictItemIteratorBuiltinsTest = RuntimeFixture;
@@ -1076,4 +1075,5 @@ TEST_F(DictBuiltinsTest, NumAttributesMatchesObjectSize) {
             (RawDict::kSize - RawHeapObject::kSize) / kPointerSize);
 }
 
+}  // namespace testing
 }  // namespace py

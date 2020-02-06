@@ -8,8 +8,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 using ErrorsExtensionApiTest = ExtensionApi;
 
 TEST_F(ErrorsExtensionApiTest, CompareErrorMessageOnThread) {
@@ -847,4 +846,5 @@ except ValueError as exc:
   EXPECT_EQ(PyException_GetContext(inner_exc), nullptr);
 }
 
+}  // namespace testing
 }  // namespace py

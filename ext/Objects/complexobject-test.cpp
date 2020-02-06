@@ -8,8 +8,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ComplexExtensionApiTest = ExtensionApi;
 
@@ -191,4 +190,5 @@ TEST_F(ComplexExtensionApiTest, RealAsDoubleWithNonFloatRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+}  // namespace testing
 }  // namespace py

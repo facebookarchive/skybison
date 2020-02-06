@@ -6,8 +6,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using BytecodeTest = RuntimeFixture;
 
@@ -599,4 +598,5 @@ TEST_F(BytecodeTest,
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));
 }
 
+}  // namespace testing
 }  // namespace py

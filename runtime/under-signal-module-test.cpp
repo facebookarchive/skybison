@@ -10,8 +10,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using UnderSignalModuleTest = RuntimeFixture;
 
@@ -39,4 +38,5 @@ TEST_F(UnderSignalModuleTest, TestSigIgnExists) {
   ASSERT_EQ(SmallInt::cast(*sig_dfl).value(), reinterpret_cast<word>(SIG_IGN));
 }
 
+}  // namespace testing
 }  // namespace py

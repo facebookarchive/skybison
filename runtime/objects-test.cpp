@@ -7,8 +7,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ByteArrayTest = RuntimeFixture;
 using LargeBytesTest = RuntimeFixture;
@@ -1573,4 +1572,5 @@ TEST(ErrorTest, ErrorHasCorrectKind) {
   EXPECT_EQ(Error::outOfBounds().kind(), ErrorKind::kOutOfBounds);
 }
 
+}  // namespace testing
 }  // namespace py

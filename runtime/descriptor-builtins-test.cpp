@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using DescriptorBuiltinsTest = RuntimeFixture;
 
@@ -347,4 +346,5 @@ result = foo.y
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
+}  // namespace testing
 }  // namespace py

@@ -7,8 +7,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ByteArrayExtensionApiTest = ExtensionApi;
 
@@ -219,4 +218,5 @@ TEST_F(ByteArrayExtensionApiTest, ResizeSmallerThenLarger) {
   EXPECT_EQ(PyByteArray_Size(array), len + 1);
 }
 
+}  // namespace testing
 }  // namespace py

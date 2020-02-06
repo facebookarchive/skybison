@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using GcModuleExtensionApiTest = ExtensionApi;
 
@@ -104,4 +103,5 @@ TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
   EXPECT_EQ(Py_SIZE(instance.get()), 5);
 }
 
+}  // namespace testing
 }  // namespace py

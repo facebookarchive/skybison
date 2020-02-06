@@ -6,8 +6,7 @@
 #include "gtest/gtest.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 class MainExtensionApiTest : public ::testing::Test {
  protected:
@@ -38,4 +37,5 @@ TEST_F(MainExtensionApiTest, RunCommand) {
   EXPECT_EQ(::testing::internal::GetCapturedStdout(), "1600\n");
 }
 
+}  // namespace testing
 }  // namespace py

@@ -11,8 +11,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using FaulthandlerModuleDeathTest = RuntimeFixture;
 using FaulthandlerModuleTest = RuntimeFixture;
@@ -65,4 +64,5 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
   unlink(name.get());
 }
 
+}  // namespace testing
 }  // namespace py

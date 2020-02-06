@@ -4,8 +4,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CodeBuiltinsTest = RuntimeFixture;
 
@@ -182,4 +181,5 @@ TEST_F(CodeBuiltinsTest, CoLnotabReturnsLnotab) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "lnotab"));
 }
 
+}  // namespace testing
 }  // namespace py

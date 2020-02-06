@@ -8,8 +8,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using TupleBuiltinsTest = RuntimeFixture;
 using TupleIteratorBuiltinsTest = RuntimeFixture;
@@ -625,4 +624,5 @@ tuple.__lt__(t1, t2)
   EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 
+}  // namespace testing
 }  // namespace py

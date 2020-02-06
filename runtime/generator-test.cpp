@@ -5,8 +5,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CoroutineTest = RuntimeFixture;
 using GeneratorTest = RuntimeFixture;
@@ -228,4 +227,5 @@ ag = async_gen()
   EXPECT_TRUE(result.isAsyncGenerator());
 }
 
+}  // namespace testing
 }  // namespace py

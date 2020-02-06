@@ -7,8 +7,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using BytesExtensionApiTest = ExtensionApi;
 using BytesWriterExtensionApiTest = ExtensionApi;
@@ -909,4 +908,5 @@ TEST_F(BytesWriterExtensionApiTest, WriteBytesGrowsAndWrites) {
   EXPECT_STREQ(PyBytes_AsString(result), "Hello");
 }
 
+}  // namespace testing
 }  // namespace py

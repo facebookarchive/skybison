@@ -6,8 +6,7 @@
 #include "node.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CompileExtensionApiTest = ExtensionApi;
 
@@ -110,4 +109,5 @@ TEST_F(CompileExtensionApiTest, PyAstCompileObjectReturnsCodeObject) {
   PyArena_Free(arena);
 }
 
+}  // namespace testing
 }  // namespace py

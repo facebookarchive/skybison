@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ConfigExtensionApiTest = ExtensionApi;
 
@@ -255,4 +254,5 @@ TEST_F(ConfigExtensionApiTest, ImportZlibReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+}  // namespace testing
 }  // namespace py

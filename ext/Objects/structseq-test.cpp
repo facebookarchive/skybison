@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using StructSeqExtensionApiTest = ExtensionApi;
 
@@ -499,4 +498,5 @@ TEST_F(StructSeqExtensionApiTest, GetSlotNewOnStructSeqReturnsSlot) {
   EXPECT_TRUE(isLongEqualsLong(third, 333));
 }
 
+}  // namespace testing
 }  // namespace py

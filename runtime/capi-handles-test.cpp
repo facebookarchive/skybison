@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CApiHandlesDeathTest = RuntimeFixture;
 using CApiHandlesTest = RuntimeFixture;
@@ -309,4 +308,5 @@ sys.exit()
               ::testing::ExitedWithCode(0), "");
 }
 
+}  // namespace testing
 }  // namespace py

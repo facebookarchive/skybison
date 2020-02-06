@@ -6,8 +6,7 @@
 #include "structmember.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using TypeExtensionApiTest = ExtensionApi;
 using TypeExtensionApiDeathTest = ExtensionApi;
@@ -3815,4 +3814,5 @@ TEST_F(TypeExtensionApiTest, TypeCheckWithDifferentTypesReturnsFalse) {
             0);
 }
 
+}  // namespace testing
 }  // namespace py

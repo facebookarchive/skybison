@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using SliceExtensionApiTest = ExtensionApi;
 
@@ -198,4 +197,5 @@ TEST_F(SliceExtensionApiTest, UnpackWithIndicesSetsValues) {
   EXPECT_EQ(step, 10);
 }
 
+}  // namespace testing
 }  // namespace py

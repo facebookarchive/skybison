@@ -15,8 +15,7 @@
 #include "trampolines.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using UnderBuiltinsModuleTest = RuntimeFixture;
 using UnderBuiltinsModuleDeathTest = RuntimeFixture;
@@ -2447,4 +2446,5 @@ foobar()
                ".*'_unimplemented' called in function 'foobar'.");
 }
 
+}  // namespace testing
 }  // namespace py

@@ -8,9 +8,6 @@
 
 namespace py {
 
-// Returns true if function is found on a value cell's dependency list.
-bool icDependentIncluded(RawObject dependent, RawObject link);
-
 // Looks for a cache entry for an attribute with a `layout_id` key in the
 // polymorphic cache at `index`.
 // Returns the cached value. Returns `ErrorNotFound` if none was found.

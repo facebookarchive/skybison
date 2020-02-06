@@ -6,8 +6,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using StrArrayBuiltinsTest = RuntimeFixture;
 
@@ -61,4 +60,5 @@ TEST_F(StrArrayBuiltinsTest, DunderStrWithSimpleStrArrayReturnsStr) {
   EXPECT_TRUE(isStrEqualsCStr(*repr, test_str));
 }
 
+}  // namespace testing
 }  // namespace py

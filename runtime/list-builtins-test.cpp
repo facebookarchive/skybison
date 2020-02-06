@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ListBuiltinsTest = RuntimeFixture;
 using ListIteratorBuiltinsTest = RuntimeFixture;
@@ -1108,4 +1107,5 @@ l = [C()]
   EXPECT_EQ(ref.referent(), NoneType::object());
 }
 
+}  // namespace testing
 }  // namespace py

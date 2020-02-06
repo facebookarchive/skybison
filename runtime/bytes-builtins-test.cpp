@@ -6,8 +6,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using BytesBuiltinsTest = RuntimeFixture;
 using BytesIteratorBuiltinsTest = RuntimeFixture;
@@ -1637,4 +1636,5 @@ TEST_F(BytesIteratorBuiltinsTest, DunderNextReturnsNextElement) {
                      LayoutId::kStopIteration));
 }
 
+}  // namespace testing
 }  // namespace py

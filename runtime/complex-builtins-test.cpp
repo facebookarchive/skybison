@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ComplexBuiltinsTest = RuntimeFixture;
 
@@ -52,4 +51,5 @@ TEST_F(ComplexBuiltinsTest, BuiltinBaseIsComplex) {
   EXPECT_EQ(complex_type.builtinBase(), LayoutId::kComplex);
 }
 
+}  // namespace testing
 }  // namespace py

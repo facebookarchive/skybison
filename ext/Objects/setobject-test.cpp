@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using SetExtensionApiTest = ExtensionApi;
 
@@ -354,4 +353,5 @@ TEST_F(SetExtensionApiTest, DiscardWithSetRemovesItem) {
   EXPECT_EQ(PySet_Size(set), 0);
 }
 
+}  // namespace testing
 }  // namespace py

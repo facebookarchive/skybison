@@ -6,8 +6,7 @@
 
 namespace py {
 namespace x64 {
-
-using namespace testing;
+namespace testing {
 
 template <size_t N>
 ::testing::AssertionResult assemblerContainsBytes(Assembler* a,
@@ -246,5 +245,6 @@ TEST(AssemblerTest, TestqWithSignedLongImm) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+}  // namespace testing
 }  // namespace x64
 }  // namespace py

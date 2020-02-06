@@ -8,8 +8,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CodecsModuleTest = RuntimeFixture;
 
@@ -1424,4 +1423,5 @@ codec = _codecs.lookup("iso_ir_6")
   EXPECT_TRUE(codec.isHeapObject());
 }
 
+}  // namespace testing
 }  // namespace py

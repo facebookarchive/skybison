@@ -8,8 +8,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using SuperBuiltinsTest = RuntimeFixture;
 
@@ -417,4 +416,5 @@ s = C().foo()
   EXPECT_EQ(superGetAttribute(thread_, s, name), super_type);
 }
 
+}  // namespace testing
 }  // namespace py

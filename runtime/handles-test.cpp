@@ -14,8 +14,7 @@
 #define USE(x) static_cast<void>(x)
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using HandlesTest = RuntimeFixture;
 
@@ -287,4 +286,5 @@ BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   }
 }
 
+}  // namespace testing
 }  // namespace py

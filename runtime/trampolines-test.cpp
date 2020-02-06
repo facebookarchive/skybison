@@ -12,7 +12,7 @@
 #include "test-utils.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using CallTest = RuntimeFixture;
 using TrampolinesTest = RuntimeFixture;
@@ -2550,4 +2550,5 @@ TEST_F(TrampolinesTest, ModuleTrampolineFastCallEx) {
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 }
 
+}  // namespace testing
 }  // namespace py

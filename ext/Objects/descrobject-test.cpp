@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using DescrExtensionApiTest = ExtensionApi;
 
@@ -202,4 +201,5 @@ r1 = bar.foo()
   EXPECT_EQ(PyTuple_Size(arg1), 0);
 }
 
+}  // namespace testing
 }  // namespace py

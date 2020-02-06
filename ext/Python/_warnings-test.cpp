@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using UnderWarningsExtensionApiTest = ExtensionApi;
 
@@ -113,4 +112,5 @@ TEST_F(UnderWarningsExtensionApiTest,
             "bar:1: FutureWarning: foo\nbar:1: FutureWarning: foo\n");
 }
 
+}  // namespace testing
 }  // namespace py

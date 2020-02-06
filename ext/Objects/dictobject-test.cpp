@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using DictExtensionApiTest = ExtensionApi;
 
@@ -1405,4 +1404,5 @@ TEST_F(DictExtensionApiTest, UpdateOverwritesKeys) {
   EXPECT_EQ(PyDict_GetItem(lhs, three), four);
 }
 
+}  // namespace testing
 }  // namespace py

@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using MemoryViewExtensionApiTest = ExtensionApi;
 
@@ -44,4 +43,5 @@ TEST_F(MemoryViewExtensionApiTest, FromMemoryReturnsMemoryView) {
   EXPECT_TRUE(PyMemoryView_Check(result));
 }
 
+}  // namespace testing
 }  // namespace py

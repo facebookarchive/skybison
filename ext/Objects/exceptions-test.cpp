@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ExceptionsExtensionApiTest = ExtensionApi;
 
@@ -957,4 +956,5 @@ exc = ErrorSubclass("object", 2, 4, "reason")
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foobar"), 0);
 }
 
+}  // namespace testing
 }  // namespace py

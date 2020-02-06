@@ -19,7 +19,7 @@
 #include "type-builtins.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using InterpreterDeathTest = RuntimeFixture;
 using InterpreterTest = RuntimeFixture;
@@ -5642,4 +5642,5 @@ TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
   EXPECT_EQ(frame->peek(0), *obj);
 }
 
+}  // namespace testing
 }  // namespace py

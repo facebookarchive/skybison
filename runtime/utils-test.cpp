@@ -13,8 +13,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using UtilsTest = RuntimeFixture;
 
@@ -307,4 +306,5 @@ TEST(UtilsTestNoFixture, FailedDcheckWithNoThread) {
               ::testing::KilledBySignal(SIGABRT), "something went wrong!");
 }
 
+}  // namespace testing
 }  // namespace py

@@ -7,8 +7,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using FrozenSetBuiltinsTest = RuntimeFixture;
 using SetBuiltinsTest = RuntimeFixture;
@@ -1362,4 +1361,5 @@ TEST_F(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
   EXPECT_TRUE(setIncludes(thread, result, three));
 }
 
+}  // namespace testing
 }  // namespace py

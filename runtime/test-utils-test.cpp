@@ -6,8 +6,7 @@
 #include "runtime.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using TestUtils = RuntimeFixture;
 
@@ -195,4 +194,5 @@ TEST_F(TestUtils, NewEmptyCode) {
   EXPECT_TRUE(code.varnames().isTuple());
 }
 
+}  // namespace testing
 }  // namespace py

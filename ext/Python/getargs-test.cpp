@@ -4,8 +4,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using GetArgsExtensionApiTest = ExtensionApi;
 
@@ -511,4 +510,5 @@ TEST_F(GetArgsExtensionApiTest, NoPositionalWithNonEmptyTupleRaisesTypeError) {
 }
 #pragma pop_macro("_PyArg_NoPositional")
 
+}  // namespace testing
 }  // namespace py

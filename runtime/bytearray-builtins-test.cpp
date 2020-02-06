@@ -6,8 +6,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ByteArrayBuiltinsTest = RuntimeFixture;
 
@@ -1248,4 +1247,5 @@ it = iter(ba)
                      LayoutId::kStopIteration));
 }
 
+}  // namespace testing
 }  // namespace py

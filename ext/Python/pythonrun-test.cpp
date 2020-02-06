@@ -17,8 +17,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using PythonrunExtensionApiTest = ExtensionApi;
 
@@ -455,4 +454,5 @@ TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsPrintsUncaughtException) {
   EXPECT_NE(streams.err().find("RuntimeError: boom\n"), std::string::npos);
 }
 
+}  // namespace testing
 }  // namespace py

@@ -10,8 +10,7 @@ extern "C" wchar_t* _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 extern "C" int _Py_normalize_encoding(const char*, char*, size_t);
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using UnicodeExtensionApiTest = ExtensionApi;
 
@@ -2393,4 +2392,5 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8SurrogateEscapeReturnsWideString) {
 
 #endif  // __APPLE__ or __ANDROID__
 
+}  // namespace testing
 }  // namespace py

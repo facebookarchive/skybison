@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using WeakRefExtensionApiTest = ExtensionApi;
 
@@ -123,4 +122,5 @@ obj = C()
   EXPECT_EQ(referent, obj);
 }
 
+}  // namespace testing
 }  // namespace py

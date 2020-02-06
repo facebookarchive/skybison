@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ClassExtensionApiTest = ExtensionApi;
 
@@ -56,4 +55,5 @@ def foo(x):
   EXPECT_EQ(PyMethod_Check(func.get()), 1);
 }
 
+}  // namespace testing
 }  // namespace py

@@ -12,8 +12,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using FloatBuiltinsTest = testing::RuntimeFixture;
 
@@ -1081,4 +1080,5 @@ two = C(2)
   EXPECT_EQ(runBuiltin(METH(float, __lt__), self, two), Bool::trueObj());
 }
 
+}  // namespace testing
 }  // namespace py

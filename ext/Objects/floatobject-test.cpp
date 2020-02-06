@@ -7,8 +7,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using FloatExtensionApiTest = ExtensionApi;
 
@@ -141,4 +140,5 @@ TEST_F(FloatExtensionApiTest, Pack8) {
   EXPECT_EQ(_PyFloat_Unpack8(ptr, /* le */ true), 1.5);
 }
 
+}  // namespace testing
 }  // namespace py

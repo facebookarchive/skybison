@@ -12,8 +12,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using TypeBuiltinsDeathTest = RuntimeFixture;
 using TypeBuiltinsTest = RuntimeFixture;
@@ -1091,4 +1090,5 @@ C.__setattr__ = lambda self, key: 5
                "unimplemented cache invalidation for type.__setattr__ update");
 }
 
+}  // namespace testing
 }  // namespace py

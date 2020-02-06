@@ -11,8 +11,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ModuleBuiltinsDeathTest = RuntimeFixture;
 using ModuleBuiltinsTest = RuntimeFixture;
@@ -393,4 +392,5 @@ result = sys.__repr__()
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
 }
 
+}  // namespace testing
 }  // namespace py

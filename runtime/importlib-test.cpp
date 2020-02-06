@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ImportlibTest = RuntimeFixture;
 
@@ -204,4 +203,5 @@ meta_path = sys.meta_path
   ASSERT_TRUE(meta_path.isList());
 }
 
+}  // namespace testing
 }  // namespace py

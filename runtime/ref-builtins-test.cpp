@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using RefBuiltinsTest = RuntimeFixture;
 
@@ -106,4 +105,5 @@ ref = _weakref.ref(c)
                             LayoutId::kException, "foo"));
 }
 
+}  // namespace testing
 }  // namespace py

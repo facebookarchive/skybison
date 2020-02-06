@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ListExtensionApiTest = ExtensionApi;
 
@@ -503,4 +502,5 @@ TEST_F(ListExtensionApiTest, SortWithNonComparableElementsRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+}  // namespace testing
 }  // namespace py

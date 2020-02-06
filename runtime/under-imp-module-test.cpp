@@ -8,7 +8,7 @@
 #include "test-utils.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using UnderImpModuleTest = RuntimeFixture;
 using ImportBuiltinsDeathTest = RuntimeFixture;
@@ -238,4 +238,5 @@ result2 = _imp.create_builtin(*spec)
   EXPECT_EQ(*result1, *result2);
 }
 
+}  // namespace testing
 }  // namespace py

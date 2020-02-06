@@ -5,10 +5,9 @@
 #include "capi-testing.h"
 
 namespace py {
+namespace testing {
 
 using ObjectExtensionApiTest = ExtensionApi;
-
-using namespace testing;
 
 TEST_F(ObjectExtensionApiTest, PyNoneIdentityIsEqual) {
   // Test Identitiy
@@ -1179,4 +1178,5 @@ obj.__dir__ = new_dir.__get__(obj, C)
   EXPECT_EQ(PySequence_Contains(result, foo), 1);
 }
 
+}  // namespace testing
 }  // namespace py

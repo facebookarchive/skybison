@@ -17,7 +17,7 @@
 #include "type-builtins.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using BuildSlice = RuntimeFixture;
 using BuildString = RuntimeFixture;
@@ -2207,4 +2207,5 @@ TEST_F(ThreadTest, RaiseWithFmtFormatsString) {
       LayoutId::kTypeError, "hello dict"));
 }
 
+}  // namespace testing
 }  // namespace py

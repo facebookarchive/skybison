@@ -5,10 +5,9 @@
 #include "capi-testing.h"
 
 namespace py {
+namespace testing {
 
 using FileObjectExtensionApiTest = ExtensionApi;
-
-using namespace testing;
 
 TEST_F(FileObjectExtensionApiTest, AsFileDescriptorWithSmallIntReturnsInt) {
   PyObjectPtr obj(PyLong_FromLong(5));
@@ -148,4 +147,5 @@ TEST_F(FileObjectExtensionApiTest, WriteStringWithSetExceptionFails) {
   EXPECT_EQ(PyErr_ExceptionMatches(PyExc_TypeError), 1);
 }
 
+}  // namespace testing
 }  // namespace py

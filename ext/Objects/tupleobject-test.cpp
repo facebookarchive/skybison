@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using TupleExtensionApiTest = ExtensionApi;
 
@@ -303,4 +302,5 @@ TEST_F(TupleExtensionApiTest, GetSliceReturnsSmallerTuple) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), two);
 }
 
+}  // namespace testing
 }  // namespace py

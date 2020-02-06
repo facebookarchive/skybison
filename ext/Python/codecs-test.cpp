@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using CodecsExtensionApiTest = ExtensionApi;
 
@@ -97,4 +96,5 @@ TEST_F(CodecsExtensionApiTest, StrictErrorsWithExceptionRaisesIt) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeDecodeError));
 }
 
+}  // namespace testing
 }  // namespace py

@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using IterExtensionApiTest = ExtensionApi;
 
@@ -43,4 +42,5 @@ TEST_F(IterExtensionApiTest, SeqIterNewWithSequenceReturnsIterator) {
   Py_DECREF(seq);
 }
 
+}  // namespace testing
 }  // namespace py

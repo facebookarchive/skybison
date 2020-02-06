@@ -4,7 +4,12 @@
 extern std::string FLAGS_benchmark_filter;
 
 namespace {
-using namespace testing;
+
+using testing::EmptyTestEventListener;
+using testing::TestCase;
+using testing::TestInfo;
+using testing::TestPartResult;
+using testing::UnitTest;
 
 // TestEventListener that ignores any events related to successful tests.
 class FailurePrinter : public EmptyTestEventListener {

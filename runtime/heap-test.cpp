@@ -8,7 +8,7 @@
 #include "test-utils.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using HeapTest = RuntimeFixture;
 
@@ -113,4 +113,5 @@ TEST(HeapTestNoFixture, VisitAllObjectsVisitsAllObjects) {
   EXPECT_EQ(visitor.count(), 3);
 }
 
+}  // namespace testing
 }  // namespace py

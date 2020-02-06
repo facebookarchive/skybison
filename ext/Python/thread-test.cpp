@@ -6,8 +6,7 @@
 #include "pythread.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ThreadExtensionApiTest = ExtensionApi;
 
@@ -36,4 +35,5 @@ TEST_F(ThreadExtensionApiTest, ReleaseWithBusyLockAllowsItToBeAcquiredAgain) {
   PyThread_free_lock(lock);
 }
 
+}  // namespace testing
 }  // namespace py

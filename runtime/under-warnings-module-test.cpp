@@ -6,7 +6,7 @@
 #include "test-utils.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using UnderWarningsModuleTest = RuntimeFixture;
 
@@ -69,4 +69,5 @@ _warnings.warn("hello", stack_level=3)
                     "warn() got an unexpected keyword argument 'stack_level'"));
 }
 
+}  // namespace testing
 }  // namespace py

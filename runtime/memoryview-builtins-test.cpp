@@ -7,8 +7,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using MemoryViewBuiltinsTest = RuntimeFixture;
 
@@ -730,4 +729,5 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithInvalidTypeRaisesTypeError) {
                             "memoryview.__new__(X): X is not 'memoryview'"));
 }
 
+}  // namespace testing
 }  // namespace py

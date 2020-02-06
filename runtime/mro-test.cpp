@@ -5,7 +5,7 @@
 #include "test-utils.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using MroTest = RuntimeFixture;
 
@@ -93,4 +93,5 @@ class B(A): pass
                             "order (MRO) for bases A, B"));
 }
 
+}  // namespace testing
 }  // namespace py

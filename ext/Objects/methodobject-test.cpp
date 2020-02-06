@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using MethodExtensionApiTest = ExtensionApi;
 
@@ -70,4 +69,5 @@ result = f(C)
   EXPECT_TRUE(isLongEqualsLong(result, 1234));
 }
 
+}  // namespace testing
 }  // namespace py

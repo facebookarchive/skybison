@@ -6,8 +6,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 using CevalExtensionApiTest = ExtensionApi;
 
 TEST_F(CevalExtensionApiTest, EvalCodeWithNullGlobalsRaisesSystemError) {
@@ -147,4 +146,5 @@ TEST_F(CevalExtensionApiTest, MergeCompilerFlagsMergesCodeFlags) {
   EXPECT_TRUE(isLongEqualsLong(result, 0xfba0000 | CO_FUTURE_BARRY_AS_BDFL));
 }
 
+}  // namespace testing
 }  // namespace py

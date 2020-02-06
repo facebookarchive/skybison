@@ -20,7 +20,7 @@
 #include "type-builtins.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using RuntimeAttributeTest = RuntimeFixture;
 using RuntimeByteArrayTest = RuntimeFixture;
@@ -3262,4 +3262,5 @@ TEST_F(RuntimeStrArrayTest, AddASCIIAppendsASCII) {
   EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array), "hi"));
 }
 
+}  // namespace testing
 }  // namespace py

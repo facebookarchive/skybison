@@ -8,8 +8,7 @@
 #include "type-builtins.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using IcTest = RuntimeFixture;
 
@@ -202,7 +201,7 @@ static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
   return value_cell.dependencyLink();
 }
 
-bool icDependentIncluded(RawObject dependent, RawObject link) {
+static bool icDependentIncluded(RawObject dependent, RawObject link) {
   for (; !link.isNoneType(); link = WeakLink::cast(link).next()) {
     if (WeakLink::cast(link).referent() == dependent) {
       return true;
@@ -2044,4 +2043,5 @@ TEST_F(IcTest,
                   .isErrorNotFound());
 }
 
+}  // namespace testing
 }  // namespace py

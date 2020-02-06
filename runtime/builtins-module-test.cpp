@@ -10,8 +10,7 @@
 #include "trampolines.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using BuiltinsModuleTest = RuntimeFixture;
 using BuiltinsModuleDeathTest = RuntimeFixture;
@@ -1500,4 +1499,5 @@ update(2, self = 3)
   EXPECT_EQ(mainModuleAt(runtime_, "res2"), SmallInt::fromWord(3));
 }
 
+}  // namespace testing
 }  // namespace py

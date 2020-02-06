@@ -14,8 +14,7 @@
 #include "under-builtins-module.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using SysModuleTest = RuntimeFixture;
 
@@ -254,4 +253,5 @@ TEST_F(SysModuleTest, ByteorderIsCorrectString) {
       *byteorder, endian::native == endian::little ? "little" : "big"));
 }
 
+}  // namespace testing
 }  // namespace py

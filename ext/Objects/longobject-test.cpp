@@ -7,8 +7,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using LongExtensionApiTest = ExtensionApi;
 
@@ -729,4 +728,5 @@ TEST_F(LongExtensionApiTest, FromDoubleRaisesAndReturnsNull) {
   EXPECT_EQ(pylong, nullptr);
 }
 
+}  // namespace testing
 }  // namespace py

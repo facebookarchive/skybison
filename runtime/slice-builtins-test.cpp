@@ -7,8 +7,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using SliceBuiltinsTest = RuntimeFixture;
 
@@ -194,4 +193,5 @@ TEST_F(SliceBuiltinsTest, IndicesTruncatesToLength) {
   EXPECT_EQ(indices.at(2), SmallInt::fromWord(2));
 }
 
+}  // namespace testing
 }  // namespace py

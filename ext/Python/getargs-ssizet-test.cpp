@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using GetArgsSsizeTExtensionApiTest = ExtensionApi;
 
@@ -39,4 +38,5 @@ TEST_F(GetArgsSsizeTExtensionApiTest, ParseTupleStringWithSize) {
   EXPECT_EQ(7, size2);
 }
 
+}  // namespace testing
 }  // namespace py

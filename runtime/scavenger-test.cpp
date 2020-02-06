@@ -7,7 +7,7 @@
 #include "trampolines.h"
 
 namespace py {
-using namespace testing;
+namespace testing {
 
 using ScavengerTest = RuntimeFixture;
 
@@ -436,4 +436,5 @@ class C:
   EXPECT_EQ(c.instanceLayout(), runtime_->layoutAt(c_layout_id));
 }
 
+}  // namespace testing
 }  // namespace py

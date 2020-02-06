@@ -10,8 +10,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using DebuggingTests = RuntimeFixture;
 
@@ -772,4 +771,5 @@ TEST_F(DebuggingTests, FormatValueCellPlaceHolder) {
   EXPECT_EQ(ss.str(), "<value_cell placeholder>");
 }
 
+}  // namespace testing
 }  // namespace py

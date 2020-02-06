@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using PosixExtensionApiTest = ExtensionApi;
 
@@ -71,4 +70,5 @@ foo = Foo()
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "/some/path"));
 }
 
+}  // namespace testing
 }  // namespace py

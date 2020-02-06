@@ -10,8 +10,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using SysModuleExtensionApiTest = ExtensionApi;
 
@@ -344,4 +343,5 @@ TEST_F(SysModuleExtensionApiTest,
   std::free(abs_realpath);
 }
 
+}  // namespace testing
 }  // namespace py

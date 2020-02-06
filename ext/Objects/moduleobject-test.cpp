@@ -5,8 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using ModuleExtensionApiTest = ExtensionApi;
 // Used to convert non-capturing closures into function pointers.
@@ -939,4 +938,5 @@ x = foo.kwArgs(value=40)
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+}  // namespace testing
 }  // namespace py

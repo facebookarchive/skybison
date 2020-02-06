@@ -13,8 +13,7 @@
 #include "type-builtins.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using BoolBuiltinsTest = RuntimeFixture;
 using IntBuiltinsTest = RuntimeFixture;
@@ -3213,4 +3212,5 @@ TEST_F(IntBuiltinsTest, CompareWithBigNegativeNumber) {
   EXPECT_GT(b.compare(*a), 0);
 }
 
+}  // namespace testing
 }  // namespace py

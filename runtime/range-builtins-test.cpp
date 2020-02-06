@@ -9,8 +9,7 @@
 #include "test-utils.h"
 
 namespace py {
-
-using namespace testing;
+namespace testing {
 
 using LongRangeIteratorBuiltinsTest = RuntimeFixture;
 using RangeBuiltinsTest = RuntimeFixture;
@@ -211,4 +210,5 @@ TEST_F(RangeIteratorBuiltinsTest, DunderNextModifiesPendingLength) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
+}  // namespace testing
 }  // namespace py
