@@ -269,6 +269,12 @@ class Thread {
   }
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
+  // Returns thread ID.
+  word id() {
+    // Currently we only ever have a single thread.
+    return 0;
+  }
+
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }

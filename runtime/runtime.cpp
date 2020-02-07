@@ -2149,62 +2149,64 @@ void Runtime::visitRoots(PointerVisitor* visitor) {
 void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit builtin layouts
   for (word i = 0; i <= static_cast<word>(LayoutId::kLastBuiltinId); ++i) {
-    visitor->visitPointer(reinterpret_cast<RawObject*>(
-        Tuple::cast(layouts_).address() + i * kPointerSize));
+    visitor->visitPointer(
+        reinterpret_cast<RawObject*>(Tuple::cast(layouts_).address() +
+                                     i * kPointerSize),
+        PointerKind::kLayout);
   }
 
   // Visit internal types that are not described by a layout
-  visitor->visitPointer(&large_bytes_);
-  visitor->visitPointer(&large_int_);
-  visitor->visitPointer(&large_str_);
-  visitor->visitPointer(&small_bytes_);
-  visitor->visitPointer(&small_int_);
-  visitor->visitPointer(&small_str_);
+  visitor->visitPointer(&large_bytes_, PointerKind::kRuntime);
+  visitor->visitPointer(&large_int_, PointerKind::kRuntime);
+  visitor->visitPointer(&large_str_, PointerKind::kRuntime);
+  visitor->visitPointer(&small_bytes_, PointerKind::kRuntime);
+  visitor->visitPointer(&small_int_, PointerKind::kRuntime);
+  visitor->visitPointer(&small_str_, PointerKind::kRuntime);
 
   // Visit instances
-  visitor->visitPointer(&build_class_);
-  visitor->visitPointer(&display_hook_);
-  visitor->visitPointer(&dunder_import_);
-  visitor->visitPointer(&ellipsis_);
-  visitor->visitPointer(&empty_frozen_set_);
-  visitor->visitPointer(&empty_mutable_bytes_);
-  visitor->visitPointer(&empty_tuple_);
-  visitor->visitPointer(&implicit_bases_);
-  visitor->visitPointer(&module_dunder_getattribute_);
-  visitor->visitPointer(&object_dunder_getattribute_);
-  visitor->visitPointer(&object_dunder_init_);
-  visitor->visitPointer(&object_dunder_new_);
-  visitor->visitPointer(&object_dunder_setattr_);
-  visitor->visitPointer(&str_dunder_eq_);
-  visitor->visitPointer(&str_dunder_hash_);
-  visitor->visitPointer(&sys_stderr_);
-  visitor->visitPointer(&sys_stdin_);
-  visitor->visitPointer(&sys_stdout_);
-  visitor->visitPointer(&type_dunder_getattribute_);
+  visitor->visitPointer(&build_class_, PointerKind::kRuntime);
+  visitor->visitPointer(&display_hook_, PointerKind::kRuntime);
+  visitor->visitPointer(&dunder_import_, PointerKind::kRuntime);
+  visitor->visitPointer(&ellipsis_, PointerKind::kRuntime);
+  visitor->visitPointer(&empty_frozen_set_, PointerKind::kRuntime);
+  visitor->visitPointer(&empty_mutable_bytes_, PointerKind::kRuntime);
+  visitor->visitPointer(&empty_tuple_, PointerKind::kRuntime);
+  visitor->visitPointer(&implicit_bases_, PointerKind::kRuntime);
+  visitor->visitPointer(&module_dunder_getattribute_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_getattribute_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_init_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_new_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_setattr_, PointerKind::kRuntime);
+  visitor->visitPointer(&str_dunder_eq_, PointerKind::kRuntime);
+  visitor->visitPointer(&str_dunder_hash_, PointerKind::kRuntime);
+  visitor->visitPointer(&sys_stderr_, PointerKind::kRuntime);
+  visitor->visitPointer(&sys_stdin_, PointerKind::kRuntime);
+  visitor->visitPointer(&sys_stdout_, PointerKind::kRuntime);
+  visitor->visitPointer(&type_dunder_getattribute_, PointerKind::kRuntime);
 
   // Visit interned strings.
-  visitor->visitPointer(&interned_);
+  visitor->visitPointer(&interned_, PointerKind::kRuntime);
 
   // Visit canonical empty slice.
-  visitor->visitPointer(&empty_slice_);
+  visitor->visitPointer(&empty_slice_, PointerKind::kRuntime);
 
   // Visit modules
-  visitor->visitPointer(&modules_);
-  visitor->visitPointer(&modules_by_index_);
+  visitor->visitPointer(&modules_, PointerKind::kRuntime);
+  visitor->visitPointer(&modules_by_index_, PointerKind::kRuntime);
 
   // Visit C-API data.
-  visitor->visitPointer(&api_handles_);
+  visitor->visitPointer(&api_handles_, PointerKind::kRuntime);
   ApiHandle::visitReferences(apiHandles(), visitor);
-  visitor->visitPointer(&api_caches_);
+  visitor->visitPointer(&api_caches_, PointerKind::kRuntime);
 
   // Visit symbols
   symbols_->visit(visitor);
 
   // Visit GC callbacks
-  visitor->visitPointer(&callbacks_);
+  visitor->visitPointer(&callbacks_, PointerKind::kRuntime);
 
   // Visit finalizable native instances
-  visitor->visitPointer(&finalizable_references_);
+  visitor->visitPointer(&finalizable_references_, PointerKind::kRuntime);
 }
 
 void Runtime::visitThreadRoots(PointerVisitor* visitor) {

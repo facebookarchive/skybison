@@ -14,6 +14,7 @@
 #include "float-builtins.h"
 #include "float-conversion.h"
 #include "frozen-modules.h"
+#include "heap-profiler.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
 #include "memoryview-builtins.h"
@@ -2162,6 +2163,15 @@ RawObject FUNC(_builtins, _get_member_ushort)(Thread* thread, Frame* frame,
   unsigned short value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
+}
+
+RawObject FUNC(_builtins, _heap_dump)(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Str filename(&scope, args.get(0));
+  unique_c_ptr<char> filename_str(filename.toCStr());
+  return heapDump(thread, filename_str.get());
 }
 
 RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Frame* frame,

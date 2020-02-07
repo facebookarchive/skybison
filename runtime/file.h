@@ -44,11 +44,20 @@ class File {
   // Return number of bytes written. Return -errno on error.
   static int write(int fd, const void* buffer, size_t size);
 
+  // TODO(T61930691): Remove these flags in favor of a simpler interface like a
+  // mode string
+
   // This should be non-zero (O_BINARY) on NT.
   static const word kBinaryFlag;
 
+  static const word kCreate;
+
   // This should be O_CLOEXEC on posix and O_NOINHERIT on NT.
   static const word kNoInheritFlag;
+
+  static const word kTruncate;
+
+  static const word kWriteOnly;
 };
 
 }  // namespace py

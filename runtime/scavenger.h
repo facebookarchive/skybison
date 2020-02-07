@@ -13,7 +13,7 @@ class ScavengeVisitor : public PointerVisitor {
  public:
   explicit ScavengeVisitor(Scavenger* scavenger) : scavenger_(scavenger) {}
 
-  void visitPointer(RawObject* pointer) override;
+  void visitPointer(RawObject* pointer, PointerKind kind) override;
 
  private:
   Scavenger* scavenger_;

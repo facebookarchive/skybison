@@ -10,7 +10,7 @@
 
 namespace py {
 
-void ScavengeVisitor::visitPointer(RawObject* pointer) {
+void ScavengeVisitor::visitPointer(RawObject* pointer, PointerKind) {
   scavenger_->scavengePointer(pointer);
 }
 

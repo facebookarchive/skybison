@@ -70,6 +70,9 @@ int File::write(int fd, const void* buffer, size_t size) {
 }
 
 const word File::kBinaryFlag = 0;
+const word File::kCreate = O_CREAT;
 const word File::kNoInheritFlag = O_CLOEXEC;
+const word File::kTruncate = O_TRUNC;
+const word File::kWriteOnly = O_WRONLY;
 
 }  // namespace py

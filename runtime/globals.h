@@ -37,6 +37,7 @@ const int32_t kMinInt32 = INT32_MIN;
 const int64_t kMaxInt64 = INT64_MAX;
 const int64_t kMinInt64 = INT64_MIN;
 const uint64_t kMaxUint64 = UINT64_MAX;
+const uint32_t kMaxUint32 = UINT32_MAX;
 
 const byte kMaxByte = 0xFF;
 

@@ -254,7 +254,7 @@ void writeFile(const std::string& path, const std::string& contents);
 // Simple PointerVisitor that remembers the objects visited.
 class RememberingVisitor : public PointerVisitor {
  public:
-  virtual void visitPointer(RawObject* pointer) {
+  virtual void visitPointer(RawObject* pointer, PointerKind) {
     pointers_.push_back(*pointer);
   }
 

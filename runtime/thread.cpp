@@ -25,7 +25,7 @@ namespace py {
 void Handles::visitPointers(PointerVisitor* visitor) {
   for (Object* handle = head_; handle != nullptr;
        handle = handle->nextHandle()) {
-    visitor->visitPointer(handle);
+    visitor->visitPointer(handle, PointerKind::kHandle);
   }
 }
 
@@ -65,11 +65,11 @@ Thread::~Thread() { delete[] start_; }
 void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);
-  visitor->visitPointer(&api_repr_list_);
-  visitor->visitPointer(&pending_exc_type_);
-  visitor->visitPointer(&pending_exc_value_);
-  visitor->visitPointer(&pending_exc_traceback_);
-  visitor->visitPointer(&caught_exc_stack_);
+  visitor->visitPointer(&api_repr_list_, PointerKind::kThread);
+  visitor->visitPointer(&pending_exc_type_, PointerKind::kThread);
+  visitor->visitPointer(&pending_exc_value_, PointerKind::kThread);
+  visitor->visitPointer(&pending_exc_traceback_, PointerKind::kThread);
+  visitor->visitPointer(&caught_exc_stack_, PointerKind::kThread);
 }
 
 void Thread::visitStackRoots(PointerVisitor* visitor) {
@@ -77,7 +77,8 @@ void Thread::visitStackRoots(PointerVisitor* visitor) {
   auto end = reinterpret_cast<uword>(end_);
   std::memset(start_, 0, reinterpret_cast<byte*>(address) - start_);
   for (; address < end; address += kPointerSize) {
-    visitor->visitPointer(reinterpret_cast<RawObject*>(address));
+    visitor->visitPointer(reinterpret_cast<RawObject*>(address),
+                          PointerKind::kStack);
   }
 }
 

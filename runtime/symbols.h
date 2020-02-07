@@ -291,6 +291,7 @@ class Runtime;
   V(_function__dict)                                                           \
   V(_function_guard)                                                           \
   V(_has_read1)                                                                \
+  V(_heap_dump)                                                                \
   V(_imp)                                                                      \
   V(_index)                                                                    \
   V(_init)                                                                     \
@@ -527,6 +528,7 @@ class Runtime;
   V(ifloordiv)                                                                 \
   V(ignore)                                                                    \
   V(ilshift)                                                                   \
+  V(imag)                                                                      \
   V(imatmul)                                                                   \
   V(imod)                                                                      \
   V(imul)                                                                      \
@@ -604,6 +606,7 @@ class Runtime;
   V(readall)                                                                   \
   V(readline)                                                                  \
   V(readonly)                                                                  \
+  V(real)                                                                      \
   V(reason)                                                                    \
   V(ref)                                                                       \
   V(replace)                                                                   \

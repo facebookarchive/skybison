@@ -27,7 +27,7 @@ Symbols::~Symbols() { std::free(symbols_); }
 
 void Symbols::visit(PointerVisitor* visitor) {
   for (word i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
-    visitor->visitPointer(&symbols_[i]);
+    visitor->visitPointer(&symbols_[i], PointerKind::kRuntime);
   }
 }
 

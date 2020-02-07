@@ -217,7 +217,8 @@ void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
     }
     ApiHandle* handle = castFromObject(*value);
     if (ApiHandle::hasExtensionReference(handle)) {
-      visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_));
+      visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
+                            PointerKind::kApiHandle);
     }
   }
 }

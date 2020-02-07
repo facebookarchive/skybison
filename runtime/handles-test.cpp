@@ -252,7 +252,7 @@ BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
 
 class NothingVisitor : public PointerVisitor {
  public:
-  virtual void visitPointer(RawObject*) { visit_count++; }
+  virtual void visitPointer(RawObject*, PointerKind) { visit_count++; }
 
   int visit_count = 0;
 };

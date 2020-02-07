@@ -417,6 +417,10 @@ def _getframe_locals(depth):
     _builtin()
 
 
+def _heap_dump(filename):
+    _builtin()
+
+
 def _instance_delattr(obj, name):
     _builtin()
 
