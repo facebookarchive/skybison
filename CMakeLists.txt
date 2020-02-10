@@ -1543,6 +1543,7 @@ target_include_directories(
 add_library(
   runtime-tests
   STATIC
+  runtime/array-module-test.cpp
   runtime/assembler-x64-test.cpp
   runtime/builtins-module-test.cpp
   runtime/bytearray-builtins-test.cpp

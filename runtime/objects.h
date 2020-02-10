@@ -4978,7 +4978,7 @@ inline void RawArray::setLength(word new_length) const {
 }
 
 inline RawObject RawArray::typecode() const {
-  return RawSmallInt::cast(instanceVariableAt(kTypecodeOffset));
+  return instanceVariableAt(kTypecodeOffset);
 }
 
 inline void RawArray::setTypecode(RawObject new_typecode) const {

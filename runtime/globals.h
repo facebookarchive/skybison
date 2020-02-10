@@ -12,9 +12,16 @@ typedef uintptr_t uword;
 static_assert(sizeof(word) == sizeof(size_t),
               "word must be the same size as size_t");
 
-const int kWordSize = sizeof(word);
-const int kPointerSize = sizeof(void*);
+const int kByteSize = sizeof(byte);
 const int kDoubleSize = sizeof(double);
+const int kFloatSize = sizeof(float);
+const int kIntSize = sizeof(int);
+const int kLongSize = sizeof(long);
+const int kLongLongSize = sizeof(long long);
+const int kPointerSize = sizeof(void*);
+const int kShortSize = sizeof(short);
+const int kWcharSize = sizeof(wchar_t);
+const int kWordSize = sizeof(word);
 
 const int kWordSizeLog2 = 3;
 

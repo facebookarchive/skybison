@@ -234,6 +234,8 @@ class Runtime;
   V(__weaklink__prev)                                                          \
   V(__xor__)                                                                   \
   V(_appending)                                                                \
+  V(_array__buffer)                                                            \
+  V(_array__length)                                                            \
   V(_b2cratio)                                                                 \
   V(_base_dir)                                                                 \
   V(_bool_check)                                                               \
@@ -414,7 +416,6 @@ class Runtime;
   V(_tuple_guard)                                                              \
   V(_tuple_len)                                                                \
   V(_type)                                                                     \
-  V(_typecode)                                                                 \
   V(_type__abstract_methods)                                                   \
   V(_type__attributes)                                                         \
   V(_type__attributes_remaining)                                               \
@@ -651,6 +652,7 @@ class Runtime;
   V(tuple_iterator)                                                            \
   V(type)                                                                      \
   V(type_proxy)                                                                \
+  V(typecode)                                                                  \
   V(utf_16_encode)                                                             \
   V(utf_32_encode)                                                             \
   V(utf_8_decode)                                                              \

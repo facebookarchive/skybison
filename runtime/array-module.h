@@ -14,6 +14,8 @@ class ArrayModule {
 
  private:
   static const BuiltinType kBuiltinTypes[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ArrayModule);
 };
 
 class ArrayBuiltins

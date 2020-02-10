@@ -11,7 +11,6 @@ class Handle;
 // in-progress migration.
 #define HANDLE_TYPES(V)                                                        \
   V(Object)                                                                    \
-  V(Array)                                                                     \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \
@@ -94,6 +93,7 @@ class Handle;
 
 // The handles for certain types allow user-defined subtypes.
 #define SUBTYPE_HANDLE_TYPES(V)                                                \
+  V(Array)                                                                     \
   V(BaseException)                                                             \
   V(ByteArray)                                                                 \
   V(Dict)                                                                      \
