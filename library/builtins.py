@@ -5344,12 +5344,17 @@ class str(bootstrap=True):
             raise TypeError(
                 f"replace() argument 2 must be str, not {_type(new).__name__}"
             )
-        if count:
+        if _float_check(count):
+            raise TypeError("integer argument expected, got float")
+
+        if count is not None:
             count = _index(count)
+            if count == 0:
+                return _str_from_str(str, self)
         else:
             count = -1
         result = _str_replace(self, old, new, count)
-        return str(result) if self is result else result
+        return _str_from_str(str, result) if self is result else result
 
     def rfind(self, sub, start=None, end=None):
         _str_guard(self)

@@ -9360,6 +9360,21 @@ class StrTests(unittest.TestCase):
         self.assertIs(type(str.lower(C(""))), str)
         self.assertIs(type(str.lower(C("lower"))), str)
 
+    def test_replace(self):
+        test = "mississippi"
+        self.assertEqual(test.replace("i", "a"), "massassappa")
+        self.assertEqual(test.replace("i", "vv"), "mvvssvvssvvppvv")
+        self.assertEqual(test.replace("ss", "x"), "mixixippi")
+
+    def test_replace_with_count(self):
+        test = "mississippi"
+        self.assertEqual(test.replace("i", "a", 0), "mississippi")
+        self.assertEqual(test.replace("i", "a", 2), "massassippi")
+
+    def test_replace_int_error(self):
+        test = "a b"
+        self.assertRaises(TypeError, test.replace, 32, "")
+
     def test_rjust_returns_justified_string(self):
         self.assertEqual(str.rjust("abc", -1), "abc")
         self.assertEqual(str.rjust("abc", 0), "abc")
