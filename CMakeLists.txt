@@ -569,6 +569,7 @@ set(
   ${CPYTHON_DIR}/Modules/_hashopenssl.c
   ${CPYTHON_DIR}/Modules/_heapqmodule.c
   ${CPYTHON_DIR}/Modules/_localemodule.c
+  ${CPYTHON_DIR}/Modules/_lzmamodule.c
   ${CPYTHON_DIR}/Modules/_math.c
   ${CPYTHON_DIR}/Modules/_math.h
   ${CPYTHON_DIR}/Modules/_opcode.c
@@ -598,6 +599,7 @@ set(
   ${CPYTHON_DIR}/Modules/clinic/_cryptmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_datetimemodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_hashopenssl.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_lzmamodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_opcode.c.h
   ${CPYTHON_DIR}/Modules/clinic/_sre.c.h
   ${CPYTHON_DIR}/Modules/clinic/_ssl.c.h
