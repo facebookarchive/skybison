@@ -5,8 +5,8 @@ project(python)
 # Note that setting CMAKE_C_FLAGS directly in util/*.cmake is problematic
 # because using `-DCMAKE_C_FLAGS=` would unintentionally override the platform
 # flags.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PLATFORM_COMPILER_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PLATFORM_COMPILER_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread ${PLATFORM_COMPILER_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ${PLATFORM_COMPILER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
@@ -15,17 +15,8 @@ set(CMAKE_SHARED_LINKER_FLAGS
 if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
   if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl -lpthread -lrt")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl -lrt")
   endif()
-endif()
-
-option(PYRO_STATIC "Link all dependencies statically" OFF)
-if (PYRO_STATIC)
-  set(PYRO_STATIC_LINKING "-static")
-endif()
-option(PYRO_STATIC_LIBSTDCXX "Link libstdc++ statically" OFF)
-if (PYRO_STATIC_LIBSTDCXX)
-  set(PYRO_STATIC_LINKING "-static-libstdc++")
 endif()
 
 set(BENCHMARK_ENABLE_TESTING CACHE BOOL OFF)
@@ -46,25 +37,31 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(OS_DEFINE "-DOS_OSX")
   set(WHOLE_ARCHIVE -Wl,-force_load)
   set(NO_WHOLE_ARCHIVE)
-  set(OPENSSL_ROOT_DIR /opt/homebrew)
   set(BZIP2_INCLUDE_DIRS)
   set(BZIP2_LIBRARIES bz2)
   set(LIBLZMA_INCLUDE_DIRS /opt/homebrew/include)
   set(LIBLZMA_LIBRARIES /opt/homebrew/lib/liblzma.a)
+  set(OPENSSL_PREFIX /opt/homebrew)
+  set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include)
+  set(OPENSSL_LIB
+      ${OPENSSL_PREFIX}/lib/libcrypto.dylib
+      ${OPENSSL_PREFIX}/lib/libssl.dylib)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(OS_DEFINE "-DOS_LINUX")
   set(WHOLE_ARCHIVE -Wl,--whole-archive)
   set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
-  set(OPENSSL_ROOT_DIR /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
   set(BZIP2_INCLUDE_DIRS /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/include)
   set(BZIP2_LIBRARIES /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/lib/libbz2.a)
   set(LIBLZMA_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include)
   set(LIBLZMA_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/lib/liblzma.a)
+  set(OPENSSL_PREFIX /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
+  set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include)
+  set(OPENSSL_LIB
+      ${OPENSSL_PREFIX}/lib/libcrypto.so
+      ${OPENSSL_PREFIX}/lib/libssl.so)
 else()
   message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
 endif()
-
-find_package(OpenSSL REQUIRED)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
@@ -695,7 +692,6 @@ add_custom_target(
   ${CPYTHON_HEADERS_OUTPUT}
   ${CPYTHON_SOURCES})
 
-find_package(Threads)
 add_library(
   extension-modules
   STATIC
@@ -729,9 +725,7 @@ target_link_libraries(
   extension
   ${BZIP2_LIBRARIES}
   ${LIBLZMA_LIBRARIES}
-  Threads::Threads
-  OpenSSL::Crypto
-  OpenSSL::SSL)
+  ${OPENSSL_LIB})
 
 add_library(
   extension
@@ -1533,8 +1527,7 @@ target_link_libraries(
   PRIVATE
   ${WHOLE_ARCHIVE} extension ${NO_WHOLE_ARCHIVE}
   runtime
-  modules
-  ${PYRO_STATIC_LINKING})
+  modules)
 set_target_properties(
   python
   PROPERTIES
@@ -1734,13 +1727,6 @@ target_link_libraries(
   ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE})
 
 # Extension tests with CPython
-set(CPYTHON_ASSERTIONS_FLAG "")
-set(CPYTHON_CFLAGS "")
-set(CPYTHON_LDFLAGS "")
-set(CPYTHON_OPENSSL_FLAG "--with-openssl=${OPENSSL_ROOT_DIR}")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set(CPYTHON_LDFLAGS "LDFLAGS='-Wl,-rpath=${OPENSSL_ROOT_DIR}/lib'")
-endif()
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
   set(CPYTHON_ASSERTIONS_FLAG "--with-assertions")
   set(CPYTHON_CFLAGS "CFLAGS=-O0")
@@ -1751,8 +1737,11 @@ file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
 file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)
 add_custom_command(
   OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
-  COMMAND ${CPYTHON_CFLAGS} ${CPYTHON_DIR}/configure ${CPYTHON_OPENSSL_FLAG}
-    ${CPYTHON_LDFLAGS} ${CPYTHON_ASSERTIONS_FLAG}
+  COMMAND ${CPYTHON_CFLAGS}
+    ${CPYTHON_DIR}/configure
+    "LDFLAGS=-Wl,-rpath,${OPENSSL_PREFIX}/lib"
+    "--with-openssl=${OPENSSL_PREFIX}"
+    ${CPYTHON_ASSERTIONS_FLAG}
   COMMAND make -j
   DEPENDS ${CPYTHON_FILES}
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR})
@@ -1765,51 +1754,35 @@ set_target_properties(
   libpython
   PROPERTIES IMPORTED_LOCATION ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
 
-add_library(
-  cpython-extension-tests
-  STATIC
-  EXCLUDE_FROM_ALL
-  ${EXTENSION_TESTS})
-target_compile_options(
-  cpython-extension-tests
-  PUBLIC
-  ${OS_DEFINE}
-  PRIVATE
-  ${PYRO_COMPILE_OPTIONS})
-
-target_include_directories(
-  cpython-extension-tests
-  PRIVATE
-  ext/test
-  ext/config
-  third-party/cpython/Include)
-target_link_libraries(
-  cpython-extension-tests
-  PRIVATE
-  benchmark
-  gmock
-  gtest
-  libpython)
-
 add_executable(
   cpython-tests
   EXCLUDE_FROM_ALL
+  ${EXTENSION_TESTS}
   runtime/python-test.cpp)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set(CPYTHON_LINK_FLAGS -lpthread -ldl -lutil -lm -Xlinker -export-dynamic)
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-  set(CPYTHON_LINK_FLAGS -ldl)
-else()
-  message(FATAL_ERROR "Unsupported system")
-endif()
+target_compile_options(
+  cpython-tests
+  PUBLIC
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
+target_include_directories(
+  cpython-tests
+  PRIVATE
+  ${CMAKE_BINARY_DIR}/third-party/cpython
+  ext/test
+  third-party/cpython/Include)
 target_link_libraries(
   cpython-tests
   PRIVATE
   benchmark
+  dl
+  gmock
   gtest
-  ${WHOLE_ARCHIVE} cpython-extension-tests ${NO_WHOLE_ARCHIVE}
-  ${CPYTHON_LINK_FLAGS})
+  libpython
+  util)
+set_target_properties(
+  cpython-tests
+  PROPERTIES
+  ENABLE_EXPORTS 1)
 # Lib/ is needed for cpython-test, copy it into the build directory
 add_custom_command(
   TARGET cpython-tests
