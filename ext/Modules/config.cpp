@@ -6,6 +6,7 @@ extern "C" PyObject* PyInit__blake2();
 extern "C" PyObject* PyInit__capsule();
 extern "C" PyObject* PyInit__compile();
 extern "C" PyObject* PyInit__hashlib();
+extern "C" PyObject* PyInit__lzma();
 extern "C" PyObject* PyInit__myreadline();
 extern "C" PyObject* PyInit__posixsubprocess();
 extern "C" PyObject* PyInit__random();
@@ -47,6 +48,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_compile", PyInit__compile},
     {"_empty", PyInit__empty},
     {"_hashlib", PyInit__hashlib},
+    {"_lzma", PyInit__lzma},
     {"_myreadline", PyInit__myreadline},
     {"_posixsubprocess", PyInit__posixsubprocess},
     {"_random", PyInit__random},

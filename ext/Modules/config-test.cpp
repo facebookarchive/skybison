@@ -52,6 +52,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderHashlibReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderLzmaReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_lzma"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderMyReadlineReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_myreadline"));
   ASSERT_NE(module, nullptr);
