@@ -38,6 +38,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderBlake2ReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderBz2ReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_bz2"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderCapsuleReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_capsule"));
   ASSERT_NE(module, nullptr);
