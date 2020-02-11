@@ -562,6 +562,7 @@ set(
   CPYTHON_SOURCES
   ${CPYTHON_DIR}/Modules/_asynciomodule.c
   ${CPYTHON_DIR}/Modules/_bisectmodule.c
+  ${CPYTHON_DIR}/Modules/_bz2module.c
   ${CPYTHON_DIR}/Modules/_codecsmodule.c
   ${CPYTHON_DIR}/Modules/_collectionsmodule.c
   ${CPYTHON_DIR}/Modules/_cryptmodule.c
@@ -597,6 +598,7 @@ set(
   ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2b_impl.c.h
   ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_asynciomodule.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_bz2module.c.h
   ${CPYTHON_DIR}/Modules/clinic/_codecsmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_cryptmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_datetimemodule.c.h
