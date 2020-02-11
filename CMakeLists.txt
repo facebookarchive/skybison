@@ -47,6 +47,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(WHOLE_ARCHIVE -Wl,-force_load)
   set(NO_WHOLE_ARCHIVE)
   set(OPENSSL_ROOT_DIR /opt/homebrew)
+  set(LIBLZMA_INCLUDE_DIRS /opt/homebrew/include)
+  set(LIBLZMA_LIBRARIES /opt/homebrew/lib/liblzma.a)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(OS_DEFINE "-DOS_LINUX")
   set(WHOLE_ARCHIVE -Wl,--whole-archive)
@@ -54,6 +56,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # This is the path to OpenSSL on machines with gvfs. On other Linux systems,
   # CMake should automatically fall back to the system OpenSSL.
   set(OPENSSL_ROOT_DIR /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
+  set(LIBLZMA_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include)
+  set(LIBLZMA_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/lib/liblzma.a)
 else()
   message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
 endif()
@@ -698,6 +702,7 @@ target_include_directories(
   ${CPYTHON_DIR}/Modules
   ${CPYTHON_DIR}/Modules/_sha3
   ${CPYTHON_DIR}/Modules/zlib
+  ${LIBLZMA_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIR})
 target_compile_options(
   extension-modules
@@ -715,6 +720,7 @@ target_link_libraries(
   PRIVATE
   util
   extension
+  ${LIBLZMA_LIBRARIES}
   Threads::Threads
   OpenSSL::Crypto
   OpenSSL::SSL)
