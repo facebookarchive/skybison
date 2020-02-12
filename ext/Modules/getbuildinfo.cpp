@@ -1,5 +1,6 @@
 #include "cpython-func.h"
 
+#include "globals.h"
 #include "version.h"
 
 namespace py {

@@ -624,7 +624,6 @@ set(
   ${CPYTHON_DIR}/Modules/fcntlmodule.c
   ${CPYTHON_DIR}/Modules/fpectlmodule.c
   ${CPYTHON_DIR}/Modules/fpetestmodule.c
-  ${CPYTHON_DIR}/Modules/getbuildinfo.c
   ${CPYTHON_DIR}/Modules/getpath.c
   ${CPYTHON_DIR}/Modules/grpmodule.c
   ${CPYTHON_DIR}/Modules/hashlib.h
@@ -742,6 +741,7 @@ add_library(
   ext/Modules/_compile/symtable.h
   ext/Modules/_compile/wordcode_helpers.h
   ext/Modules/gcmodule.cpp
+  ext/Modules/getbuildinfo.cpp
   ext/Modules/main.cpp
   ext/Modules/signalmodule.cpp
   ext/Objects/abstract.cpp
