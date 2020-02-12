@@ -380,7 +380,7 @@ static void errInput(perrdetail* err) {
   switch (err->error) {
     case E_ERROR:
       errInputCleanup(msg_obj, err);
-      break;
+      return;
     case E_SYNTAX:
       errtype = PyExc_IndentationError;
       if (err->expected == INDENT) {
@@ -409,11 +409,11 @@ static void errInput(perrdetail* err) {
     case E_INTR:
       if (!PyErr_Occurred()) PyErr_SetNone(PyExc_KeyboardInterrupt);
       errInputCleanup(msg_obj, err);
-      break;
+      return;
     case E_NOMEM:
       PyErr_NoMemory();
       errInputCleanup(msg_obj, err);
-      break;
+      return;
     case E_EOF:
       msg = "unexpected EOF while parsing";
       break;
