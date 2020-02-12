@@ -39,11 +39,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(NO_WHOLE_ARCHIVE)
   set(BZIP2_INCLUDE_DIRS)
   set(BZIP2_LIBRARIES bz2)
-  set(LIBLZMA_INCLUDE_DIRS /opt/homebrew/include)
-  set(LIBLZMA_LIBRARIES /opt/homebrew/lib/liblzma.a)
+  set(XZ_INCLUDE_DIRS /opt/homebrew/include)
+  set(XZ_LIBRARIES /opt/homebrew/lib/liblzma.a)
   set(OPENSSL_PREFIX /opt/homebrew)
   set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include)
-  set(OPENSSL_LIB
+  set(OPENSSL_LIBRARIES
       ${OPENSSL_PREFIX}/lib/libcrypto.dylib
       ${OPENSSL_PREFIX}/lib/libssl.dylib)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -52,11 +52,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
   set(BZIP2_INCLUDE_DIRS /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/include)
   set(BZIP2_LIBRARIES /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/lib/libbz2.a)
-  set(LIBLZMA_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include)
-  set(LIBLZMA_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/lib/liblzma.a)
+  set(XZ_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include)
+  set(XZ_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/lib/liblzma.a)
   set(OPENSSL_PREFIX /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
   set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include)
-  set(OPENSSL_LIB
+  set(OPENSSL_LIBRARIES
       ${OPENSSL_PREFIX}/lib/libcrypto.so
       ${OPENSSL_PREFIX}/lib/libssl.so)
 else()
@@ -704,7 +704,7 @@ target_include_directories(
   ${CPYTHON_DIR}/Modules/_sha3
   ${CPYTHON_DIR}/Modules/zlib
   ${BZIP2_INCLUDE_DIRS}
-  ${LIBLZMA_INCLUDE_DIRS}
+  ${XZ_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIR})
 target_compile_options(
   extension-modules
@@ -723,8 +723,8 @@ target_link_libraries(
   util
   extension
   ${BZIP2_LIBRARIES}
-  ${LIBLZMA_LIBRARIES}
-  ${OPENSSL_LIB})
+  ${XZ_LIBRARIES}
+  ${OPENSSL_LIBRARIES})
 
 add_library(
   extension
