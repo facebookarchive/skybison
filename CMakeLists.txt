@@ -577,7 +577,6 @@ set(
   ${CPYTHON_DIR}/Modules/_posixsubprocess.c
   ${CPYTHON_DIR}/Modules/_randommodule.c
   ${CPYTHON_DIR}/Modules/_sha3/sha3module.c
-  ${CPYTHON_DIR}/Modules/_sre.c
   ${CPYTHON_DIR}/Modules/_ssl.c
   ${CPYTHON_DIR}/Modules/_ssl_data.h
   ${CPYTHON_DIR}/Modules/_stat.c
@@ -602,7 +601,6 @@ set(
   ${CPYTHON_DIR}/Modules/clinic/_hashopenssl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_lzmamodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_opcode.c.h
-  ${CPYTHON_DIR}/Modules/clinic/_sre.c.h
   ${CPYTHON_DIR}/Modules/clinic/_ssl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_weakref.c.h
   ${CPYTHON_DIR}/Modules/clinic/arraymodule.c.h
@@ -640,9 +638,6 @@ set(
   ${CPYTHON_DIR}/Modules/selectmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.h
-  ${CPYTHON_DIR}/Modules/sre.h
-  ${CPYTHON_DIR}/Modules/sre_constants.h
-  ${CPYTHON_DIR}/Modules/sre_lib.h
   ${CPYTHON_DIR}/Modules/symtablemodule.c
   ${CPYTHON_DIR}/Modules/syslogmodule.c
   ${CPYTHON_DIR}/Modules/termios.c
@@ -740,6 +735,7 @@ add_library(
   ext/Modules/_compile/peephole.cpp
   ext/Modules/_compile/symtable.h
   ext/Modules/_compile/wordcode_helpers.h
+  ext/Modules/_sre/_sre.cpp
   ext/Modules/gcmodule.cpp
   ext/Modules/getbuildinfo.cpp
   ext/Modules/main.cpp
