@@ -1,23 +1,9 @@
-# TODO(emacs): Remove this file after pyro-perf (in configerator) is updated
-# not to use it.
-
 # Toolchain settings for facebook platform007
 # This should be used with the `-C` option. Example:
-#     $ cmake -C util/platform007.cmake ..
+#     $ cmake -C util/platform007-clang.cmake ..
 #
 # See also:
 #   fbsource/tools/buckconfigs/fbcode/platforms/*/cxx.bcfg
-
-# This is the same as `string(JOIN)` which is only available in cmake >= 3.12
-function(string_join GLUE OUT_VAR)
-  set(result "")
-  set(glue "")
-  foreach(e ${ARGN})
-    set(result "${result}${glue}${e}")
-    set(glue "${GLUE}")
-  endforeach()
-  set(${OUT_VAR} "${result}" PARENT_SCOPE)
-endfunction()
 
 # Determine fbcode checkout directory.
 execute_process(COMMAND hg root WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
@@ -29,9 +15,6 @@ endif()
 
 set(FBCODE_DIR "${FBSOURCE_DIR}/fbcode")
 set(LLVM_BIN "${FBCODE_DIR}/third-party-buck/platform007/build/llvm-fb/bin")
-
-# Default to release build
-set(CMAKE_BUILD_TYPE "Release" CACHE STRING "")
 
 set(CMAKE_C_COMPILER "/usr/local/fbcode/platform007/bin/clang.par" CACHE STRING "")
 set(CMAKE_CXX_COMPILER "/usr/local/fbcode/platform007/bin/clang++.par" CACHE STRING "")

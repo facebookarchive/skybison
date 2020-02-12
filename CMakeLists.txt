@@ -14,9 +14,6 @@ set(CMAKE_SHARED_LINKER_FLAGS
 # Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
 if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl -lrt")
-  endif()
 endif()
 
 set(BENCHMARK_ENABLE_TESTING CACHE BOOL OFF)
@@ -34,31 +31,9 @@ else()
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(OS_DEFINE "-DOS_OSX")
-  set(WHOLE_ARCHIVE -Wl,-force_load)
-  set(NO_WHOLE_ARCHIVE)
-  set(BZIP2_INCLUDE_DIRS)
-  set(BZIP2_LIBRARIES bz2)
-  set(XZ_INCLUDE_DIRS /opt/homebrew/include)
-  set(XZ_LIBRARIES /opt/homebrew/lib/liblzma.a)
-  set(OPENSSL_PREFIX /opt/homebrew)
-  set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include)
-  set(OPENSSL_LIBRARIES
-      ${OPENSSL_PREFIX}/lib/libcrypto.dylib
-      ${OPENSSL_PREFIX}/lib/libssl.dylib)
+  set(OS_DEFINE "-DOS_OSX" CACHE STRING "")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(OS_DEFINE "-DOS_LINUX")
-  set(WHOLE_ARCHIVE -Wl,--whole-archive)
-  set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
-  set(BZIP2_INCLUDE_DIRS /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/include)
-  set(BZIP2_LIBRARIES /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/lib/libbz2.a)
-  set(XZ_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include)
-  set(XZ_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/lib/liblzma.a)
-  set(OPENSSL_PREFIX /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
-  set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include)
-  set(OPENSSL_LIBRARIES
-      ${OPENSSL_PREFIX}/lib/libcrypto.so
-      ${OPENSSL_PREFIX}/lib/libssl.so)
+  set(OS_DEFINE "-DOS_LINUX" CACHE STRING "")
 else()
   message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
 endif()
