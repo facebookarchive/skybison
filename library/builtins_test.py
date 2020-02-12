@@ -2980,6 +2980,20 @@ class DictItemsTests(unittest.TestCase):
             "dict_items([('hello', dict_items([('hello', ...)]))])",
         )
 
+    def test_dunder_len_with_non_dict_items_raises_type_error(self):
+        dict_items = type({}.items())
+        with self.assertRaisesRegex(
+            TypeError, "requires a 'dict_items' object but .+ 'int'"
+        ):
+            dict_items.__len__(5)
+
+    def test_dunder_len_returns_length_of_underlying_dict(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        items = mapping.items()
+        self.assertEqual(items.__len__(), 2)
+        mapping["szechuan"] = "broccoli"
+        self.assertEqual(items.__len__(), 3)
+
 
 class DictKeysTests(unittest.TestCase):
     def test_dunder_repr_prints_keys(self):
@@ -3017,6 +3031,20 @@ class DictKeysTests(unittest.TestCase):
         circular_mapping[C(circular_mapping.keys())] = 10
         self.assertEqual(repr(circular_mapping.keys()), "dict_keys([dict_keys([...])])")
 
+    def test_dunder_len_with_non_dict_keys_raises_type_error(self):
+        dict_keys = type({}.keys())
+        with self.assertRaisesRegex(
+            TypeError, "requires a 'dict_keys' object but .+ 'int'"
+        ):
+            dict_keys.__len__(5)
+
+    def test_dunder_len_returns_length_of_underlying_dict(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        keys = mapping.keys()
+        self.assertEqual(keys.__len__(), 2)
+        mapping["szechuan"] = "broccoli"
+        self.assertEqual(keys.__len__(), 3)
+
 
 class DictValuesTests(unittest.TestCase):
     def test_dunder_repr_prints_values(self):
@@ -3043,6 +3071,20 @@ class DictValuesTests(unittest.TestCase):
         self.assertEqual(
             repr(circular_mapping.values()), "dict_values([dict_values([...])])"
         )
+
+    def test_dunder_len_with_non_dict_values_raises_type_error(self):
+        dict_values = type({}.values())
+        with self.assertRaisesRegex(
+            TypeError, "requires a 'dict_values' object but .+ 'int'"
+        ):
+            dict_values.__len__(5)
+
+    def test_dunder_len_returns_length_of_underlying_dict(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        values = mapping.values()
+        self.assertEqual(values.__len__(), 2)
+        mapping["szechuan"] = "broccoli"
+        self.assertEqual(values.__len__(), 3)
 
 
 class DirTests(unittest.TestCase):

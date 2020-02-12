@@ -2666,6 +2666,9 @@ class dict_items(bootstrap=True):
     def __iter__(self):
         _builtin()
 
+    def __len__(self):
+        _builtin()
+
 
 class dict_keyiterator(bootstrap=True):
     def __iter__(self):
@@ -2687,6 +2690,9 @@ class dict_keys(bootstrap=True):
     def __iter__(self):
         _builtin()
 
+    def __len__(self):
+        _builtin()
+
 
 class dict_valueiterator(bootstrap=True):
     def __iter__(self):
@@ -2706,6 +2712,9 @@ class dict_values(bootstrap=True):
         return _sequence_repr("dict_values([", self, "])")
 
     def __iter__(self):
+        _builtin()
+
+    def __len__(self):
         _builtin()
 
 

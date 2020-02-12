@@ -713,6 +713,18 @@ RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newDictItemIterator(thread, dict);
 }
 
+RawObject METH(dict_items, __len__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isDictItems()) {
+    return thread->raiseRequiresType(self, ID(dict_items));
+  }
+
+  Dict dict(&scope, DictItems::cast(*self).dict());
+  return thread->runtime()->newInt(dict.numItems());
+}
+
 RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Frame* frame,
                                            word nargs) {
   Arguments args(frame, nargs);
@@ -763,6 +775,18 @@ RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs) {
 
   Dict dict(&scope, DictKeys::cast(*self).dict());
   return thread->runtime()->newDictKeyIterator(thread, dict);
+}
+
+RawObject METH(dict_keys, __len__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isDictKeys()) {
+    return thread->raiseRequiresType(self, ID(dict_keys));
+  }
+
+  Dict dict(&scope, DictKeys::cast(*self).dict());
+  return thread->runtime()->newInt(dict.numItems());
 }
 
 RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Frame* frame,
@@ -816,6 +840,18 @@ RawObject METH(dict_values, __iter__)(Thread* thread, Frame* frame,
 
   Dict dict(&scope, DictValues::cast(*self).dict());
   return thread->runtime()->newDictValueIterator(thread, dict);
+}
+
+RawObject METH(dict_values, __len__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isDictValues()) {
+    return thread->raiseRequiresType(self, ID(dict_values));
+  }
+
+  Dict dict(&scope, DictValues::cast(*self).dict());
+  return thread->runtime()->newInt(dict.numItems());
 }
 
 }  // namespace py
