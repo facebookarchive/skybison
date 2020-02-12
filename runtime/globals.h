@@ -61,9 +61,9 @@ const int kMiB = kKiB * kKiB;
 const int kGiB = kKiB * kKiB * kKiB;
 
 const int kMillisecondsPerSecond = 1000;
-const int kMillsecondsPerMicrosecond = 1000;
+const int kMicrosecondsPerMillisecond = 1000;
 const int kMicrosecondsPerSecond =
-    kMillisecondsPerSecond * kMillsecondsPerMicrosecond;
+    kMillisecondsPerSecond * kMicrosecondsPerMillisecond;
 const int kNanosecondsPerMicrosecond = 1000;
 const int kNanosecondsPerSecond =
     kMicrosecondsPerSecond * kNanosecondsPerMicrosecond;
