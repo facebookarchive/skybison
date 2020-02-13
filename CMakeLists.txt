@@ -675,7 +675,7 @@ target_include_directories(
   ${CPYTHON_DIR}/Modules/zlib
   ${BZIP2_INCLUDE_DIRS}
   ${XZ_INCLUDE_DIRS}
-  ${OPENSSL_INCLUDE_DIR})
+  ${OPENSSL_INCLUDE_DIRS})
 target_compile_options(
   extension-modules
   PUBLIC

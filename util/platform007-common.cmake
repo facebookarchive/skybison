@@ -41,7 +41,7 @@ set(BZIP2_LIBRARIES /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfe
 set(XZ_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include CACHE STRING "")
 set(XZ_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/lib/liblzma.a CACHE STRING "")
 set(OPENSSL_PREFIX /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d CACHE STRING "")
-set(OPENSSL_INCLUDE_DIR ${OPENSSL_PREFIX}/include CACHE STRING "")
+set(OPENSSL_INCLUDE_DIRS ${OPENSSL_PREFIX}/include CACHE STRING "")
 set(OPENSSL_LIBRARIES
     ${OPENSSL_PREFIX}/lib/libcrypto.so
     ${OPENSSL_PREFIX}/lib/libssl.so CACHE STRING "")

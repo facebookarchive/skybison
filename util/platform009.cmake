@@ -60,3 +60,15 @@ string_join(" " FLAGS_RELEASE
 )
 set(CMAKE_C_FLAGS_RELEASE "${FLAGS_RELEASE}" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "${FLAGS_RELEASE}" CACHE STRING "")
+
+set(WHOLE_ARCHIVE -Wl,--whole-archive CACHE STRING "")
+set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive CACHE STRING "")
+set(BZIP2_INCLUDE_DIRS /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform009/7f3b187/include CACHE STRING "")
+set(BZIP2_LIBRARIES /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform009/7f3b187/lib/libbz2.a CACHE STRING "")
+set(XZ_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform009/7f3b187/include CACHE STRING "")
+set(XZ_LIBRARIES /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform009/7f3b187/lib/liblzma.a CACHE STRING "")
+set(OPENSSL_PREFIX /mnt/gvfs/third-party2/openssl/8a158fe898db0360047d8be7a5e21ff068243393/1.1.1/platform009/7f3b187 CACHE STRING "")
+set(OPENSSL_INCLUDE_DIRS ${OPENSSL_PREFIX}/include CACHE STRING "")
+set(OPENSSL_LIBRARIES
+    ${OPENSSL_PREFIX}/lib/libcrypto.so
+    ${OPENSSL_PREFIX}/lib/libssl.so CACHE STRING "")
