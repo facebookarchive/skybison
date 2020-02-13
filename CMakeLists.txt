@@ -11,6 +11,10 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
 
+# Add an option to disable cpython-tests to avoid source files getting compiled
+# for two targets and confusing the compilation database used by clang-tidy.
+option(ENABLE_CPYTHON_TESTS "Add cpython-tests target" ON)
+
 # Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
 if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
@@ -1676,37 +1680,39 @@ set_target_properties(
   libpython
   PROPERTIES IMPORTED_LOCATION ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
 
-add_executable(
-  cpython-tests
-  EXCLUDE_FROM_ALL
-  ${EXTENSION_TESTS}
-  runtime/python-test.cpp)
-target_compile_options(
-  cpython-tests
-  PUBLIC
-  PRIVATE
-  ${PYRO_COMPILE_OPTIONS})
-target_include_directories(
-  cpython-tests
-  PRIVATE
-  ${CMAKE_BINARY_DIR}/third-party/cpython
-  ext/test
-  third-party/cpython/Include)
-target_link_libraries(
-  cpython-tests
-  PRIVATE
-  benchmark
-  dl
-  gmock
-  gtest
-  libpython
-  util)
-set_target_properties(
-  cpython-tests
-  PROPERTIES
-  ENABLE_EXPORTS 1)
-# Lib/ is needed for cpython-test, copy it into the build directory
-add_custom_command(
-  TARGET cpython-tests
-  POST_BUILD
-  COMMAND cp -a ${CPYTHON_DIR}/Lib/. ${CPYTHON_BUILD_DIR}/Lib/)
+if (ENABLE_CPYTHON_TESTS)
+  add_executable(
+    cpython-tests
+    EXCLUDE_FROM_ALL
+    ${EXTENSION_TESTS}
+    runtime/python-test.cpp)
+  target_compile_options(
+    cpython-tests
+    PUBLIC
+    PRIVATE
+    ${PYRO_COMPILE_OPTIONS})
+  target_include_directories(
+    cpython-tests
+    PRIVATE
+    ${CMAKE_BINARY_DIR}/third-party/cpython
+    ext/test
+    third-party/cpython/Include)
+  target_link_libraries(
+    cpython-tests
+    PRIVATE
+    benchmark
+    dl
+    gmock
+    gtest
+    libpython
+    util)
+  set_target_properties(
+    cpython-tests
+    PROPERTIES
+    ENABLE_EXPORTS 1)
+  # Lib/ is needed for cpython-test, copy it into the build directory
+  add_custom_command(
+    TARGET cpython-tests
+    POST_BUILD
+    COMMAND cp -a ${CPYTHON_DIR}/Lib/. ${CPYTHON_BUILD_DIR}/Lib/)
+endif()
