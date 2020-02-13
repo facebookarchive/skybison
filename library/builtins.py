@@ -1030,6 +1030,18 @@ def _dunder_bases_tuple_check(obj, msg) -> None:
         raise TypeError(msg)
 
 
+def _err_program_text(filename, lineno: int) -> str:
+    # TODO(T42106571): protect against modified open()
+    with open(filename, "rb") as file:
+        line = ""
+        while lineno > 0:
+            line = file.readline()
+            if not line:
+                break
+            lineno -= 1
+        return line
+
+
 def _float(value) -> float:
     # Equivalent to PyFloat_AsDouble() (if it would return a float object).
     if _float_check(value):

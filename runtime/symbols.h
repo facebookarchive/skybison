@@ -276,6 +276,7 @@ class Runtime;
   V(_dict_len)                                                                 \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
+  V(_err_program_text)                                                         \
   V(_errors)                                                                   \
   V(_escape_decode_stateful)                                                   \
   V(_exception_new)                                                            \
