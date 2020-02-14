@@ -117,7 +117,8 @@ class Handle;
   V(UserFloatBase)                                                             \
   V(UserIntBase)                                                               \
   V(UserStrBase)                                                               \
-  V(UserTupleBase)
+  V(UserTupleBase)                                                             \
+  V(UserWeakRefBase)
 
 #define HANDLE_ALIAS(ty) using ty = Handle<class Raw##ty>;
 HANDLE_TYPES(HANDLE_ALIAS)

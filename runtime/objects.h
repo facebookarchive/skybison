@@ -2834,6 +2834,21 @@ class RawWeakRef : public RawInstance {
   RAW_OBJECT_COMMON(WeakRef);
 };
 
+class RawUserWeakRefBase : public RawInstance {
+ public:
+  // Getters and setters.
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // RawLayout.
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserWeakRefBase);
+};
+
+RawWeakRef weakRefUnderlying(RawObject object);
+
 // RawWeakLink objects are used to form double linked lists where the elements
 // can still be garbage collected.
 //
@@ -6325,6 +6340,24 @@ inline RawObject RawWeakRef::hash() const {
 
 inline void RawWeakRef::setHash(RawObject hash) const {
   instanceVariableAtPut(kHashOffset, hash);
+}
+
+// RawUserWeakRefBase
+
+inline RawObject RawUserWeakRefBase::value() const {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline void RawUserWeakRefBase::setValue(RawObject value) const {
+  DCHECK(value.isWeakRef(), "Only tuple type is permitted as a value");
+  instanceVariableAtPut(kValueOffset, value);
+}
+
+inline RawWeakRef weakRefUnderlying(RawObject object) {
+  if (object.isWeakRef()) {
+    return RawWeakRef::cast(object);
+  }
+  return RawWeakRef::cast(object.rawCast<RawUserWeakRefBase>().value());
 }
 
 // RawWeakLink

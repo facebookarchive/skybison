@@ -4723,7 +4723,7 @@ RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(ref));
   }
-  WeakRef self(&scope, *self_obj);
+  WeakRef self(&scope, weakRefUnderlying(*self_obj));
   return self.referent();
 }
 

@@ -590,6 +590,7 @@ class Runtime {
   DEFINE_IS_USER_INSTANCE(Int)
   DEFINE_IS_USER_INSTANCE(Str)
   DEFINE_IS_USER_INSTANCE(Tuple)
+  DEFINE_IS_USER_INSTANCE(WeakRef)
 #undef DEFINE_IS_USER_INSTANCE
 
   bool isNativeProxy(RawObject obj) {

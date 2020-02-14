@@ -133,6 +133,33 @@ class WeakRefTests(unittest.TestCase):
         not_a_ref = object()
         self.assertIs(ref.__ne__(not_a_ref), NotImplemented)
 
+    def test_dunder_new_with_subtype_return_subtype_instance(self):
+        class SubRef(weakref.ref):
+            pass
+
+        class C:
+            def __eq__(self, other):
+                return "C.__eq__"
+
+        c = C()
+        sub_ref = SubRef(c)
+        self.assertIsInstance(sub_ref, SubRef)
+        self.assertIsInstance(sub_ref, weakref.ref)
+
+        ref = weakref.ref(c)
+        self.assertEqual(sub_ref.__eq__(ref), "C.__eq__")
+
+        sub_ref.new_attribute = 50
+        self.assertIs(sub_ref.new_attribute, 50)
+
+    def test_dunder_new_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            weakref.ref.__new__("not a type object")
+
+    def test_dunder_new_with_non_ref_subtype_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            weakref.ref.__new__(list)
+
     def test_hash_on_proxy_not_callable_object_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
 

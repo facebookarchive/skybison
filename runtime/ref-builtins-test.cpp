@@ -105,5 +105,44 @@ ref = _weakref.ref(c)
                             LayoutId::kException, "foo"));
 }
 
+TEST_F(RefBuiltinsTest, WeakRefUnderlyingReturnsUnderlyingRef) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import _weakref
+class SubRef(_weakref.ref):
+  pass
+
+class C:
+  pass
+
+c = C()
+sub_ref = SubRef(c)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object sub_ref_obj(&scope, mainModuleAt(runtime_, "sub_ref"));
+  WeakRef ref(&scope, weakRefUnderlying(*sub_ref_obj));
+  EXPECT_EQ(ref.referent(), mainModuleAt(runtime_, "c"));
+}
+
+TEST_F(RefBuiltinsTest, RefSubclassReferentSetsToNone) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import _weakref
+class SubRef(_weakref.ref):
+  pass
+
+class C:
+  pass
+
+c = C()
+sub_ref = SubRef(c)
+c = None
+)")
+                   .isError());
+  runtime_->collectGarbage();
+  HandleScope scope(thread_);
+  WeakRef ref(&scope, weakRefUnderlying(mainModuleAt(runtime_, "sub_ref")));
+  EXPECT_EQ(ref.referent(), NoneType::object());
+}
+
 }  // namespace testing
 }  // namespace py
