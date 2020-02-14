@@ -2145,6 +2145,11 @@ _special = ('__module__', '__name__', '__qualname__', '__annotations__')
 
 class NamedTupleMeta(type):
 
+    # TODO(T44040673): Remove this once `dict` starts keeping insertion order.
+    @_classmethod
+    def __prepare__(cls, typename, bases,  **kwargs):
+        return {"__annotations__" : collections.OrderedDict()}
+
     def __new__(cls, typename, bases, ns):
         if ns.get('_root', False):
             return super().__new__(cls, typename, bases, ns)
