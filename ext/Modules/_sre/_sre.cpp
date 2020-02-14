@@ -4587,7 +4587,7 @@ getstring(PyObject* string, Py_ssize_t* p_length,
         if (PyUnicode_READY(string) == -1)
             return NULL;
         *p_length = PyUnicode_GET_LENGTH(string);
-        *p_charsize = PyUnicode_KIND(string);
+        *p_charsize = 1;
         *p_isbytes = 0;
         return PyUnicode_DATA(string);
     }
@@ -4647,6 +4647,64 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
         goto err;
     }
 
+    if (!isbytes) {
+        Py_ssize_t codepointlen = 0;
+        charsize = 1;
+        int codeunitsize = 0;
+        for (; codepointlen < length; codepointlen++, codeunitsize++) {
+          unsigned char ch = ((unsigned char*)ptr)[codeunitsize];
+          if (ch <= 0x80) {
+            continue;
+          }
+          charsize = 4;
+          if ((ch & 0xdf) == ch) {
+            codeunitsize++;
+            continue;
+          }
+          if ((ch & 0xef) == ch) {
+            codeunitsize += 2;
+            continue;
+          }
+          codeunitsize += 3;
+        }
+
+        void* ucs4buf = PyMem_Malloc(codeunitsize);
+        if (charsize == 1) {
+          memcpy(ucs4buf, ptr, codeunitsize);
+          ptr = ucs4buf;
+        } else {
+          for (int i = 0, j = 0; i < codepointlen; i++) {
+            unsigned char ch = ((unsigned char*)ptr)[j];
+            if (ch <= 0x80) {
+              ((Py_UCS4*)ucs4buf)[i] = ch;
+              j++;
+              continue;
+            }
+            unsigned char ch2 = ((unsigned char*)ptr)[j+1];
+            if ((ch & 0xdf) == ch) {
+              ((Py_UCS4*)ucs4buf)[i] = ((ch & 0x1f) << 6) | (ch2 & 0x3f);
+              j += 2;
+              continue;
+            }
+            unsigned char ch3 = ((unsigned char*)ptr)[j+2];
+            if ((ch & 0xef) == ch) {
+              ((Py_UCS4*)ucs4buf)[i] = ((ch & 0x0f) << 12) |
+                                       ((ch2 & 0x3f) << 6) |
+                                        (ch3 & 0x3f);
+              j += 3;
+              continue;
+            }
+            unsigned char ch4 = ((unsigned char*)ptr)[j+3];
+            ((Py_UCS4*)ucs4buf)[i] = ((ch & 0x07) << 18) |
+                                     ((ch2 & 0x3f) << 12) |
+                                     ((ch3 & 0x3F) << 6) |
+                                      (ch4 & 0x3f);
+            j += 4;
+          }
+        }
+        ptr = ucs4buf;
+    }
+
     /* adjust boundaries */
     if (start < 0)
         start = 0;
@@ -4701,6 +4759,9 @@ state_fini(SRE_STATE* state)
     Py_XDECREF(state->string);
     data_stack_dealloc(state);
     PyMem_Free(state->mark);
+    if (!state->isbytes) {
+        PyMem_Free(state->beginning);
+    }
     state->mark = NULL;
 }
 
