@@ -15,6 +15,8 @@ extern "C" {
 #define PyMODINIT_FUNC PyObject*
 #endif
 
+#define _Py_NO_RETURN __attribute__((__noreturn__))
+
 /* Singletons */
 PyAPI_FUNC(PyTypeObject*) PyAsyncGen_Type_Ptr();
 PyAPI_FUNC(PyTypeObject*) PyBaseObject_Type_Ptr();
@@ -936,7 +938,7 @@ PyAPI_FUNC(wchar_t*) Py_DecodeLocale(const char*, size_t*);
 PyAPI_FUNC(char*) Py_EncodeLocale(const wchar_t*, size_t*);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState*);
 PyAPI_FUNC(void) Py_Exit(int);
-PyAPI_FUNC(void) Py_FatalError(const char*);
+PyAPI_FUNC(void) Py_FatalError(const char*) _Py_NO_RETURN;
 PyAPI_FUNC(void) Py_Finalize();
 PyAPI_FUNC(int) Py_FinalizeEx();
 PyAPI_FUNC(const char*) Py_GetBuildInfo();

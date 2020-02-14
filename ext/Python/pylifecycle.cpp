@@ -65,7 +65,7 @@ PY_EXPORT void Py_Exit(int status_code) {
   std::exit(status_code);
 }
 
-PY_EXPORT void Py_FatalError(const char* msg) {
+PY_EXPORT void _Py_NO_RETURN Py_FatalError(const char* msg) {
   // TODO(T39151288): Correctly print exceptions when the current thread holds
   // the GIL
   std::fprintf(stderr, "Fatal Python error: %s\n", msg);
