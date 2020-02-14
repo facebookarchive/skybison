@@ -16,6 +16,28 @@ extern "C" {
 #endif
 
 /* Singletons */
+PyAPI_FUNC(PyTypeObject*) PyAsyncGen_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyBaseObject_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyBool_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyByteArrayIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyByteArray_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyBytesIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyBytes_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyClassMethod_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyCode_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyComplex_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyCoro_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictItems_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictIterItem_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictIterKey_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictIterValue_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictKeys_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictProxy_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDictValues_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyDict_Type_Ptr();
+PyAPI_FUNC(PyObject*) PyEllipsis_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyEllipsis_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyEnum_Type_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_ArithmeticError_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_AssertionError_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_AttributeError_Ptr();
@@ -80,11 +102,37 @@ PyAPI_FUNC(PyObject*) PyExc_UserWarning_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_ValueError_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_Warning_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_ZeroDivisionError_Ptr();
-PyAPI_FUNC(PyObject*) PyEllipsis_Ptr();
 PyAPI_FUNC(PyObject*) PyFalse_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyFloat_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyFrozenSet_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyFunction_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyGen_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyListIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyList_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyLongRangeIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyLong_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyMemoryView_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyMethod_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyModule_Type_Ptr();
 PyAPI_FUNC(PyObject*) PyNone_Ptr();
 PyAPI_FUNC(PyObject*) PyNotImplemented_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyProperty_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyRangeIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyRange_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PySeqIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PySetIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PySet_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PySlice_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyStaticMethod_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PySuper_Type_Ptr();
 PyAPI_FUNC(PyObject*) PyTrue_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyTupleIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyTuple_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyType_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyUnicodeIter_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) PyUnicode_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) _PyNone_Type_Ptr();
+PyAPI_FUNC(PyTypeObject*) _PyNotImplemented_Type_Ptr();
 
 /* C-API functions */
 PyAPI_FUNC(int) PyArena_AddPyObject(PyArena*, PyObject*);

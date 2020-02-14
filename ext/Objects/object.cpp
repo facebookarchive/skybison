@@ -17,9 +17,21 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyBaseObject_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kObject)));
+}
+
 PY_EXPORT PyObject* PyEllipsis_Ptr() {
   Thread* thread = Thread::current();
   return ApiHandle::borrowedReference(thread, thread->runtime()->ellipsis());
+}
+
+PY_EXPORT PyTypeObject* PyEllipsis_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kEllipsis)));
 }
 
 PY_EXPORT PyObject* PyNone_Ptr() {
@@ -551,6 +563,18 @@ PY_EXPORT PyVarObject* _PyObject_NewVar(PyTypeObject* type, Py_ssize_t nitems) {
       static_cast<PyObject*>(PyObject_MALLOC(_PyObject_VAR_SIZE(type, nitems)));
   if (obj == nullptr) return reinterpret_cast<PyVarObject*>(PyErr_NoMemory());
   return PyObject_INIT_VAR(obj, type, nitems);
+}
+
+PY_EXPORT PyTypeObject* _PyNone_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kNoneType)));
+}
+
+PY_EXPORT PyTypeObject* _PyNotImplemented_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kNotImplementedType)));
 }
 
 PY_EXPORT int _PyObject_SetAttrId(PyObject* /* v */, _Py_Identifier* /* e */,

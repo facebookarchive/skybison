@@ -11,6 +11,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyBytesIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kBytesIterator)));
+}
+
 PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isBytes();
 }
@@ -393,6 +399,12 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
 
   Bytes bytes(&scope, bytesUnderlying(*bytes_obj));
   return bytes.length();
+}
+
+PY_EXPORT PyTypeObject* PyBytes_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kBytes)));
 }
 
 PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {

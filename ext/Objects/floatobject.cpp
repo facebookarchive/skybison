@@ -59,6 +59,12 @@ PY_EXPORT double PyFloat_GetMax() { return DBL_MAX; }
 
 PY_EXPORT double PyFloat_GetMin() { return DBL_MIN; }
 
+PY_EXPORT PyTypeObject* PyFloat_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kFloat)));
+}
+
 // _PyFloat_{Pack,Unpack}{2,4,8}.  See floatobject.h.
 // To match the NPY_HALF_ROUND_TIES_TO_EVEN behavior in:
 // https://github.com/numpy/numpy/blob/master/numpy/core/src/npymath/halffloat.c

@@ -41,4 +41,10 @@ PY_EXPORT PyObject* PyMemoryView_GetContiguous(PyObject* /* j */, int /* e */,
   UNIMPLEMENTED("PyMemoryView_GetContiguous");
 }
 
+PY_EXPORT PyTypeObject* PyMemoryView_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kMemoryView)));
+}
+
 }  // namespace py

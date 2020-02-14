@@ -28,4 +28,10 @@ PY_EXPORT PyObject* PyMethod_New(PyObject* callable, PyObject* self) {
   return ApiHandle::newReference(thread, *result);
 }
 
+PY_EXPORT PyTypeObject* PyMethod_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kBoundMethod)));
+}
+
 }  // namespace py

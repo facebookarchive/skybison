@@ -22,6 +22,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PySuper_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kSuper)));
+}
+
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isType();
 }
@@ -1571,6 +1577,12 @@ PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
 
 PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
   UNIMPLEMENTED("PyType_Modified");
+}
+
+PY_EXPORT PyTypeObject* PyType_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kType)));
 }
 
 PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,

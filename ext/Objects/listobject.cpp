@@ -10,6 +10,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyListIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kListIterator)));
+}
+
 PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
   if (size < 0) {
     return nullptr;
@@ -25,6 +31,12 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
     list.setNumItems(size);
   }
   return ApiHandle::newReference(thread, *list);
+}
+
+PY_EXPORT PyTypeObject* PyList_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kList)));
 }
 
 PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {

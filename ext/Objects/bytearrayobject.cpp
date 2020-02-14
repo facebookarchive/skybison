@@ -4,6 +4,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyByteArrayIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kByteArrayIterator)));
+}
+
 PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   DCHECK(pyobj != nullptr, "null argument to PyByteArray_AsString");
   Thread* thread = Thread::current();
@@ -120,6 +126,12 @@ PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
   DCHECK(thread->runtime()->isInstanceOfByteArray(*obj),
          "argument to PyByteArray_Size is not a bytearray");
   return static_cast<Py_ssize_t>(ByteArray::cast(*obj).numItems());
+}
+
+PY_EXPORT PyTypeObject* PyByteArray_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kByteArray)));
 }
 
 }  // namespace py

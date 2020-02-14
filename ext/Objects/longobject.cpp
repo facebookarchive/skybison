@@ -315,6 +315,12 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
   return 0;
 }
 
+PY_EXPORT PyTypeObject* PyLong_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kInt)));
+}
+
 PY_EXPORT double _PyLong_Frexp(PyLongObject*, Py_ssize_t*) {
   UNIMPLEMENTED("_PyLong_Frexp");
 }

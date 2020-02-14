@@ -6,24 +6,22 @@
 
 namespace py {
 
-PY_EXPORT PyTypeObject* PyAsyncGen_Type_Ptr() {
+PY_EXPORT PyTypeObject* PyLongRangeIter_Type_Ptr() {
   Thread* thread = Thread::current();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kAsyncGenerator)));
+      thread, thread->runtime()->typeAt(LayoutId::kLongRangeIterator)));
 }
 
-PY_EXPORT int PyAsyncGen_ClearFreeLists() { return 0; }
-
-PY_EXPORT PyTypeObject* PyCoro_Type_Ptr() {
+PY_EXPORT PyTypeObject* PyRangeIter_Type_Ptr() {
   Thread* thread = Thread::current();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kCoroutine)));
+      thread, thread->runtime()->typeAt(LayoutId::kRangeIterator)));
 }
 
-PY_EXPORT PyTypeObject* PyGen_Type_Ptr() {
+PY_EXPORT PyTypeObject* PyRange_Type_Ptr() {
   Thread* thread = Thread::current();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kGenerator)));
+      thread, thread->runtime()->typeAt(LayoutId::kRange)));
 }
 
 }  // namespace py

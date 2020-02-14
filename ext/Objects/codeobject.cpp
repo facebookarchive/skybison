@@ -103,6 +103,12 @@ PY_EXPORT PyCodeObject* PyCode_NewEmpty(const char* filename,
                                /*lnotab=*/empty_bytes)));
 }
 
+PY_EXPORT PyTypeObject* PyCode_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kCode)));
+}
+
 PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
   DCHECK(code != nullptr, "code must not be null");
   Thread* thread = Thread::current();

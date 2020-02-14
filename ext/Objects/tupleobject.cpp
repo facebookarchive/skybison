@@ -9,6 +9,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyTupleIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kTupleIterator)));
+}
+
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
@@ -92,6 +98,12 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 
   tuple.atPut(pos, *newitem);
   return 0;
+}
+
+PY_EXPORT PyTypeObject* PyTuple_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kTuple)));
 }
 
 PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {

@@ -33,6 +33,18 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   return ApiHandle::newReference(thread, *set);
 }
 
+PY_EXPORT PyTypeObject* PyFrozenSet_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kFrozenSet)));
+}
+
+PY_EXPORT PyTypeObject* PySetIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kSetIterator)));
+}
+
 PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
@@ -186,6 +198,12 @@ PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
 
   SetBase set(&scope, *set_obj);
   return set.numItems();
+}
+
+PY_EXPORT PyTypeObject* PySet_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kSet)));
 }
 
 }  // namespace py

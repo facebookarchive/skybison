@@ -135,6 +135,12 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
   return floatUnderlying(*obj).value();
 }
 
+PY_EXPORT PyTypeObject* PyComplex_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kComplex)));
+}
+
 PY_EXPORT PyObject* PyComplex_FromDoubles(double real, double imag) {
   Thread* thread = Thread::current();
   return ApiHandle::newReference(thread,

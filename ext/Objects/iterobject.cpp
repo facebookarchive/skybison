@@ -15,6 +15,12 @@ PY_EXPORT PyObject* PySeqIter_New(PyObject* seq) {
   return ApiHandle::newReference(thread, runtime->newSeqIterator(seq_obj));
 }
 
+PY_EXPORT PyTypeObject* PySeqIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kSeqIterator)));
+}
+
 PY_EXPORT PyObject* PyCallIter_New(PyObject* pycallable, PyObject* pysentinel) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

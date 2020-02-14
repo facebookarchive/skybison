@@ -11,6 +11,42 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyDictItems_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDictItems)));
+}
+
+PY_EXPORT PyTypeObject* PyDictIterItem_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDictItemIterator)));
+}
+
+PY_EXPORT PyTypeObject* PyDictIterKey_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDictKeyIterator)));
+}
+
+PY_EXPORT PyTypeObject* PyDictIterValue_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDictValueIterator)));
+}
+
+PY_EXPORT PyTypeObject* PyDictKeys_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDictKeys)));
+}
+
+PY_EXPORT PyTypeObject* PyDictValues_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDictValues)));
+}
+
 PY_EXPORT int PyDict_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isDict();
 }
@@ -65,6 +101,12 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
                 thread->invokeFunction3(ID(builtins), ID(_capi_dict_setitem),
                                         dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
+}
+
+PY_EXPORT PyTypeObject* PyDict_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kDict)));
 }
 
 PY_EXPORT PyObject* PyDict_New() {

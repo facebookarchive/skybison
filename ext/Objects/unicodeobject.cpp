@@ -60,6 +60,12 @@ typedef uint16_t Py_UCS2;
 static const int kMaxLongLongChars = 19;  // len(str(2**63-1))
 static const int kOverallocateFactor = 4;
 
+PY_EXPORT PyTypeObject* PyUnicodeIter_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kStrIterator)));
+}
+
 static RawObject symbolFromError(Thread* thread, const char* error) {
   Runtime* runtime = thread->runtime();
   Symbols* symbols = runtime->symbols();
@@ -1968,6 +1974,12 @@ PY_EXPORT Py_ssize_t PyUnicode_Tailmatch(PyObject* /* r */, PyObject* /* r */,
 PY_EXPORT PyObject* PyUnicode_Translate(PyObject* /* r */, PyObject* /* g */,
                                         const char* /* s */) {
   UNIMPLEMENTED("PyUnicode_Translate");
+}
+
+PY_EXPORT PyTypeObject* PyUnicode_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kStr)));
 }
 
 PY_EXPORT int PyUnicode_WriteChar(PyObject* /* e */, Py_ssize_t /* x */,

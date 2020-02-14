@@ -30,6 +30,12 @@ PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
       thread, thread->runtime()->newSlice(start_obj, stop_obj, step_obj));
 }
 
+PY_EXPORT PyTypeObject* PySlice_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kSlice)));
+}
+
 PY_EXPORT Py_ssize_t PySlice_AdjustIndices(Py_ssize_t length,
                                            Py_ssize_t* start_ptr,
                                            Py_ssize_t* stop_ptr,

@@ -8,6 +8,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyDictProxy_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kMappingProxy)));
+}
+
 PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
                                            PyMethodDef* def) {
   Thread* thread = Thread::current();
@@ -56,6 +62,12 @@ PY_EXPORT PyObject* PyDescr_NewMethod(PyTypeObject* /* type */,
                                   def->ml_flags & ~METH_CLASS & ~METH_STATIC)));
   DCHECK(!function.isError(), "should have ignored METH_CLASS and METH_STATIC");
   return ApiHandle::newReference(thread, *function);
+}
+
+PY_EXPORT PyTypeObject* PyProperty_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kProperty)));
 }
 
 PY_EXPORT PyObject* PyWrapper_New(PyObject* /* d */, PyObject* /* f */) {

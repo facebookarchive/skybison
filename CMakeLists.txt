@@ -697,6 +697,7 @@ add_library(
   ext/Objects/object.cpp
   ext/Objects/obmalloc.cpp
   ext/Objects/odictobject.cpp
+  ext/Objects/rangeobject.cpp
   ext/Objects/setobject.cpp
   ext/Objects/sliceobject.cpp
   ext/Objects/structseq.cpp

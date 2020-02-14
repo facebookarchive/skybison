@@ -232,4 +232,10 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
   return 0;
 }
 
+PY_EXPORT PyTypeObject* PyModule_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kModule)));
+}
+
 }  // namespace py

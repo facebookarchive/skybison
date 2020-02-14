@@ -8,6 +8,12 @@
 
 namespace py {
 
+PY_EXPORT PyTypeObject* PyBool_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kBool)));
+}
+
 PY_EXPORT PyObject* PyTrue_Ptr() {
   return ApiHandle::borrowedReference(Thread::current(), Bool::trueObj());
 }
