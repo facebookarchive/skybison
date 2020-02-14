@@ -376,10 +376,6 @@ TEST_F(UnicodeExtensionApiTest, CheckWithUnrelatedTypeReturnsFalse) {
   EXPECT_FALSE(PyUnicode_CheckExact(pylong));
 }
 
-TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
-}
-
 TEST_F(UnicodeExtensionApiTest, DATAReturnsCStringContainingStrContents) {
   const char* cstr = "hello";
   PyObjectPtr str(PyUnicode_FromString(cstr));

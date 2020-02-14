@@ -950,8 +950,6 @@ PY_EXPORT PyObject* PyUnicode_BuildEncodingMap(PyObject* /* g */) {
   UNIMPLEMENTED("PyUnicode_BuildEncodingMap");
 }
 
-PY_EXPORT int PyUnicode_ClearFreeList() { return 0; }
-
 PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
   Thread* thread = Thread::current();
   if (left == nullptr || right == nullptr) {

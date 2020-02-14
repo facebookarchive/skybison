@@ -47,8 +47,6 @@ PY_EXPORT int PyFloat_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-PY_EXPORT int PyFloat_ClearFreeList() { return 0; }
-
 PY_EXPORT PyObject* PyFloat_FromString(PyObject* /* v */) {
   UNIMPLEMENTED("PyFloat_FromString");
 }

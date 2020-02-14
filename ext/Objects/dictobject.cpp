@@ -181,8 +181,6 @@ PY_EXPORT void PyDict_Clear(PyObject* pydict) {
   dict.setData(runtime->emptyTuple());
 }
 
-PY_EXPORT int PyDict_ClearFreeList() { return 0; }
-
 PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

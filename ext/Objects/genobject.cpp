@@ -12,8 +12,6 @@ PY_EXPORT PyTypeObject* PyAsyncGen_Type_Ptr() {
       thread, thread->runtime()->typeAt(LayoutId::kAsyncGenerator)));
 }
 
-PY_EXPORT int PyAsyncGen_ClearFreeLists() { return 0; }
-
 PY_EXPORT PyTypeObject* PyCoro_Type_Ptr() {
   Thread* thread = Thread::current();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(

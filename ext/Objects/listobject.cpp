@@ -164,8 +164,6 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
   return 0;
 }
 
-PY_EXPORT int PyList_ClearFreeList() { return 0; }
-
 PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
                                     Py_ssize_t high) {
   Thread* thread = Thread::current();

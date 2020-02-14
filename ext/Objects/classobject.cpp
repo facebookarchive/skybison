@@ -11,8 +11,6 @@ PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* /* c */) {
   UNIMPLEMENTED("PyInstanceMethod_New");
 }
 
-PY_EXPORT int PyMethod_ClearFreeList() { return 0; }
-
 PY_EXPORT PyObject* PyMethod_New(PyObject* callable, PyObject* self) {
   DCHECK(callable != nullptr, "callable must be initialized");
   Thread* thread = Thread::current();

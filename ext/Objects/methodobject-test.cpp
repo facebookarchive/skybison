@@ -9,10 +9,6 @@ namespace testing {
 
 using MethodExtensionApiTest = ExtensionApi;
 
-TEST_F(MethodExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyCFunction_ClearFreeList(), 0);
-}
-
 TEST_F(MethodExtensionApiTest, NeCFunctionWithModuleReturnsFunction) {
   PyObjectPtr module(PyModule_New("mod"));
   ASSERT_NE(module, nullptr);

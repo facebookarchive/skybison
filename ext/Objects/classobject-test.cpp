@@ -9,10 +9,6 @@ namespace testing {
 
 using ClassExtensionApiTest = ExtensionApi;
 
-TEST_F(ClassExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyMethod_ClearFreeList(), 0);
-}
-
 TEST_F(ClassExtensionApiTest, MethodNewWithNullSelfRaisesRuntimeError) {
   PyRun_SimpleString(R"(
 def foo(x):

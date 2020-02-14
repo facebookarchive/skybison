@@ -90,10 +90,6 @@ subfloat_foo = subfloat.foo
   EXPECT_EQ(3, PyLong_AsLong(subfloat_foo));
 }
 
-TEST_F(FloatExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyFloat_ClearFreeList(), 0);
-}
-
 TEST_F(FloatExtensionApiTest, GetMaxReturnsDblMax) {
   EXPECT_EQ(PyFloat_GetMax(), DBL_MAX);
 }

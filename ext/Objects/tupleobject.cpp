@@ -141,8 +141,6 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   return ApiHandle::newReference(thread, *tuple);
 }
 
-PY_EXPORT int PyTuple_ClearFreeList() { return 0; }
-
 PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
                                      Py_ssize_t high) {
   Thread* thread = Thread::current();

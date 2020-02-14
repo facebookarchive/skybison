@@ -58,10 +58,6 @@ TEST_F(ListExtensionApiTest, AppendReturnsZero) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(ListExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyList_ClearFreeList(), 0);
-}
-
 TEST_F(ListExtensionApiTest, SizeIncreasesAfterAppend) {
   Py_ssize_t length = 4;
   PyObject* list = PyList_New(length);

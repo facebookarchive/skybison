@@ -59,10 +59,6 @@ TEST_F(SetExtensionApiTest, FrozenSetCheckExactWithFrozenSetReturnsTrue) {
   EXPECT_TRUE(PyFrozenSet_CheckExact(set));
 }
 
-TEST_F(SetExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PySet_ClearFreeList(), 0);
-}
-
 TEST_F(SetExtensionApiTest, ContainsReturnsPositiveAfterAdd) {
   PyObjectPtr set(PySet_New(nullptr));
   PyObjectPtr key(PyLong_FromLong(1));

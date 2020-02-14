@@ -164,10 +164,6 @@ TEST_F(TupleExtensionApiTest, PackTwoValues) {
   EXPECT_EQ(PyLong_AsLong(pyresult2), int_value2);
 }
 
-TEST_F(TupleExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyTuple_ClearFreeList(), 0);
-}
-
 TEST_F(TupleExtensionApiTest, GetSliceWithNullRaisesSystemError) {
   ASSERT_EQ(PyTuple_GetSlice(nullptr, 0, 0), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);

@@ -9,10 +9,6 @@ namespace testing {
 
 using DictExtensionApiTest = ExtensionApi;
 
-TEST_F(DictExtensionApiTest, ClearFreeListReturnsZeroPyro) {
-  EXPECT_EQ(PyDict_ClearFreeList(), 0);
-}
-
 TEST_F(DictExtensionApiTest, GetItemFromNonDictReturnsNull) {
   // Pass a non dictionary
   PyObject* result = PyDict_GetItem(Py_None, Py_None);

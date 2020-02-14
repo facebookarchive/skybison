@@ -4,8 +4,6 @@
 
 namespace py {
 
-PY_EXPORT int PyCFunction_ClearFreeList() { return 0; }
-
 PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* method, PyObject* self,
                                       PyObject* module) {
   DCHECK(self != nullptr || module != nullptr,

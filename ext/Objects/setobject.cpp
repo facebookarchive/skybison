@@ -107,8 +107,6 @@ PY_EXPORT int PySet_Clear(PyObject* anyset) {
   return 0;
 }
 
-PY_EXPORT int PySet_ClearFreeList() { return 0; }
-
 PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
