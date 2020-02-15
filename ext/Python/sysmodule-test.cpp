@@ -48,7 +48,7 @@ class C:
 o = C()
 )");
   PyObjectPtr object(moduleGet("__main__", "o"));
-  EXPECT_EQ(_PySys_GetSizeOf(object), 10);
+  EXPECT_EQ(_PySys_GetSizeOf(object), size_t{10});
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -60,7 +60,7 @@ class C:
 o = C()
 )");
   PyObjectPtr object(moduleGet("__main__", "o"));
-  EXPECT_EQ(_PySys_GetSizeOf(object), 10);
+  EXPECT_EQ(_PySys_GetSizeOf(object), size_t{10});
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -117,7 +117,7 @@ del sys.stdout
 }
 
 TEST_F(SysModuleExtensionApiTest, WriteStdoutTruncatesLongOutput) {
-  static const int max_out_len = 1000;
+  const size_t max_out_len = 1000;
   std::string long_str;
   for (int i = 0; i < 100; i++) {
     long_str += "0123456789";
@@ -144,7 +144,7 @@ TEST_F(SysModuleExtensionApiTest,
   PySys_SetArgv(0, wargv + 1);
 
   PyObject* argv = PySys_GetObject("argv");
-  EXPECT_EQ(PyList_Size(argv), size_t{1});
+  EXPECT_EQ(PyList_Size(argv), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 0), ""));
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
@@ -159,7 +159,7 @@ TEST_F(SysModuleExtensionApiTest,
   wchar_t* wargv[] = {arg0, arg1, arg2};
   PySys_SetArgv(3, wargv);
   PyObject* argv = PySys_GetObject("argv");
-  EXPECT_EQ(PyList_Size(argv), size_t{3});
+  EXPECT_EQ(PyList_Size(argv), 3);
   EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 0), "script.py"));
   EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 1), "3"));
   EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 2), "2"));

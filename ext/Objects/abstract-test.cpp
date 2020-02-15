@@ -1,3 +1,4 @@
+#include <climits>
 #include <cstring>
 
 #include "Python.h"
@@ -511,7 +512,7 @@ TEST_F(AbstractExtensionApiTest,
   PyObjectPtr num(_PyLong_FromByteArray(bytes, sizeof(bytes), false, true));
   Py_ssize_t result = PyNumber_AsSsize_t(num, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(result, -0x8000000000000000);
+  EXPECT_EQ(result, INT64_MIN);
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithOverflowSetsGivenError) {

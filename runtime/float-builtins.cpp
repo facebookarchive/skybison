@@ -144,7 +144,7 @@ RawObject METH(float, __gt__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa) {
+void decodeDouble(double value, bool* is_neg, int* exp, int64_t* mantissa) {
   const uint64_t man_mask = (uint64_t{1} << kDoubleMantissaBits) - 1;
   const int num_exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   const uint64_t exp_mask = (uint64_t{1} << num_exp_bits) - 1;
@@ -158,7 +158,7 @@ void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa) {
 static RawObject intFromDouble(Thread* thread, double value) {
   bool is_neg;
   int exp;
-  uint64_t man;
+  int64_t man;
   decodeDouble(value, &is_neg, &exp, &man);
   const int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   const int max_exp = 1 << (exp_bits - 1);
@@ -210,7 +210,7 @@ static RawObject intFromDouble(Thread* thread, double value) {
 word doubleHash(double value) {
   bool is_neg;
   int exp;
-  uint64_t mantissa;
+  int64_t mantissa;
   decodeDouble(value, &is_neg, &exp, &mantissa);
   const int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   const int max_exp = 1 << (exp_bits - 1);
@@ -237,7 +237,7 @@ word doubleHash(double value) {
 
   // Add implicit one to mantissa if the number is not a subnormal.
   if (exp > min_exp) {
-    mantissa |= uint64_t{1} << kDoubleMantissaBits;
+    mantissa |= int64_t{1} << kDoubleMantissaBits;
   } else if (mantissa == 0) {
     // Shortcut for 0.0 / -0.0.
     return 0;

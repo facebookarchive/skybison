@@ -185,7 +185,7 @@ TEST_F(UnderOsModuleTest, OpenReturnsInt) {
   struct stat statbuf;
   int result = ::fstat(fd, &statbuf);
   ASSERT_EQ(result, 0);
-  EXPECT_EQ(statbuf.st_mode & 0777, 0755);
+  EXPECT_EQ(statbuf.st_mode & 0777, mode_t{0755});
 
   // It set no inheritable
   flags = ::fcntl(fd, F_GETFD);

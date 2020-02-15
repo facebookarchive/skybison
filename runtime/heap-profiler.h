@@ -134,10 +134,10 @@ class HeapProfiler {
     Tag tag() const { return tag_; }
 
     // Returns a millisecond time delta, always 0.
-    uint8_t time() const { return 0; }
+    byte time() const { return 0; }
 
     // Returns the record length in bytes.
-    uint32_t length() const { return body_.size(); }
+    word length() const { return body_.size(); }
 
     // Returns the record body.
     const byte* body() const { return body_.data(); }

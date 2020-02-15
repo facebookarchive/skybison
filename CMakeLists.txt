@@ -104,10 +104,12 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-linux.h
   ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-osx.h
   ${CMAKE_SOURCE_DIR}/ext/config/pyconfig.h)
-string(
-  REGEX
-  REPLACE "(${CMAKE_SOURCE_DIR}\/)" "${CMAKE_BINARY_DIR}/"
-  C_API_HEADERS_OUTPUT "${C_API_HEADERS_INPUT}")
+set(
+  C_API_HEADERS_OUTPUT
+  ${CMAKE_BINARY_DIR}/Include/Python.h
+  ${CMAKE_BINARY_DIR}/Include/pyconfig-linux.h
+  ${CMAKE_BINARY_DIR}/Include/pyconfig-osx.h
+  ${CMAKE_BINARY_DIR}/Include/pyconfig.h)
 add_custom_command(
   OUTPUT ${C_API_HEADERS_OUTPUT}
   COMMAND
@@ -352,6 +354,10 @@ target_compile_options(
   PRIVATE
   ${PYRO_COMPILE_OPTIONS}
   ${WARN_MISSING_DECLARATIONS})
+target_include_directories(
+  runtime
+  INTERFACE
+  runtime)
 target_link_libraries(
   runtime
   PUBLIC
@@ -490,50 +496,6 @@ add_custom_command(
     util/generate_cpython_sources.py
   COMMENT "Generating CPython Headers")
 
-add_library(
-  cpython-parser
-  ${CPYTHON_HEADERS_OUTPUT}
-  ${CPYTHON_DIR}/Parser/acceler.c
-  ${CPYTHON_DIR}/Parser/bitset.c
-  ${CPYTHON_DIR}/Parser/firstsets.c
-  ${CPYTHON_DIR}/Parser/grammar.c
-  ${CPYTHON_DIR}/Parser/grammar1.c
-  ${CPYTHON_DIR}/Parser/listnode.c
-  ${CPYTHON_DIR}/Parser/metagrammar.c
-  ${CPYTHON_DIR}/Parser/myreadline.c
-  ${CPYTHON_DIR}/Parser/node.c
-  ${CPYTHON_DIR}/Parser/parser.c
-  ${CPYTHON_DIR}/Parser/parser.h
-  ${CPYTHON_DIR}/Parser/parsetok.c
-  ${CPYTHON_DIR}/Parser/pgen.c
-  ${CPYTHON_DIR}/Parser/printgrammar.c
-  ${CPYTHON_DIR}/Parser/tokenizer.c
-  ${CPYTHON_DIR}/Parser/tokenizer.h
-  ${CPYTHON_DIR}/Python/Python-ast.c
-  ${CPYTHON_DIR}/Python/asdl.c
-  ${CPYTHON_DIR}/Python/ast.c
-  ${CPYTHON_DIR}/Python/dtoa.c
-  ${CPYTHON_DIR}/Python/future.c
-  ${CPYTHON_DIR}/Python/graminit.c
-  ${CPYTHON_DIR}/Python/mystrtoul.c
-  ${CPYTHON_DIR}/Python/pyarena.c
-  ${CPYTHON_DIR}/Python/pyctype.c
-  ${CPYTHON_DIR}/Python/pyhash.c
-  ${CPYTHON_DIR}/Python/pystrcmp.c
-  ${CPYTHON_DIR}/Python/pystrhex.c
-  ${CPYTHON_DIR}/Python/pystrtod.c
-  ${CPYTHON_DIR}/Python/pytime.c
-  ${CPYTHON_DIR}/Python/symtable.c
-  ${CPYTHON_DIR}/Python/wordcode_helpers.h)
-target_include_directories(
-  cpython-parser
-  PUBLIC
-  ${BINARY_DIR_HEADERS})
-target_link_libraries(
-  cpython-parser
-  PUBLIC
-  capi-headers)
-
 set(
   CPYTHON_SOURCES
   ${CPYTHON_DIR}/Modules/_bz2module.c
@@ -605,7 +567,39 @@ set(
   ${CPYTHON_DIR}/Objects/capsule.c
   ${CPYTHON_DIR}/Objects/unicodectype.c
   ${CPYTHON_DIR}/Objects/unicodetype_db.h
-  ${CPYTHON_DIR}/Python/fileutils.c)
+  ${CPYTHON_DIR}/Parser/acceler.c
+  ${CPYTHON_DIR}/Parser/bitset.c
+  ${CPYTHON_DIR}/Parser/firstsets.c
+  ${CPYTHON_DIR}/Parser/grammar.c
+  ${CPYTHON_DIR}/Parser/grammar1.c
+  ${CPYTHON_DIR}/Parser/listnode.c
+  ${CPYTHON_DIR}/Parser/metagrammar.c
+  ${CPYTHON_DIR}/Parser/myreadline.c
+  ${CPYTHON_DIR}/Parser/node.c
+  ${CPYTHON_DIR}/Parser/parser.c
+  ${CPYTHON_DIR}/Parser/parser.h
+  ${CPYTHON_DIR}/Parser/parsetok.c
+  ${CPYTHON_DIR}/Parser/pgen.c
+  ${CPYTHON_DIR}/Parser/printgrammar.c
+  ${CPYTHON_DIR}/Parser/tokenizer.c
+  ${CPYTHON_DIR}/Parser/tokenizer.h
+  ${CPYTHON_DIR}/Python/Python-ast.c
+  ${CPYTHON_DIR}/Python/asdl.c
+  ${CPYTHON_DIR}/Python/ast.c
+  ${CPYTHON_DIR}/Python/dtoa.c
+  ${CPYTHON_DIR}/Python/fileutils.c
+  ${CPYTHON_DIR}/Python/future.c
+  ${CPYTHON_DIR}/Python/graminit.c
+  ${CPYTHON_DIR}/Python/mystrtoul.c
+  ${CPYTHON_DIR}/Python/pyarena.c
+  ${CPYTHON_DIR}/Python/pyctype.c
+  ${CPYTHON_DIR}/Python/pyhash.c
+  ${CPYTHON_DIR}/Python/pystrcmp.c
+  ${CPYTHON_DIR}/Python/pystrhex.c
+  ${CPYTHON_DIR}/Python/pystrtod.c
+  ${CPYTHON_DIR}/Python/pytime.c
+  ${CPYTHON_DIR}/Python/symtable.c
+  ${CPYTHON_DIR}/Python/wordcode_helpers.h)
 
 # This target is built in util/run_clang_tidy.py:create_compile_commands() to
 # ensure all generated files are present when clang-tidy runs.
@@ -646,14 +640,13 @@ target_link_libraries(
   capi-headers
   PRIVATE
   util
-  extension
   ${BZIP2_LIBRARIES}
   ${XZ_LIBRARIES}
   ${OPENSSL_LIBRARIES})
 
 add_library(
   extension
-  STATIC
+  OBJECT
   ext/Modules/_compile/Python-ast.h
   ext/Modules/_compile/asdl.h
   ext/Modules/_compile/ast.h
@@ -736,13 +729,11 @@ target_compile_options(
 target_include_directories(
   extension
   PRIVATE
+  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
   runtime
   ${BINARY_DIR_HEADERS})
-target_link_libraries(
-  extension
-  PRIVATE
-  cpython-parser
-  runtime)
+add_dependencies(extension cpython-sources)
 
 set(BINARY_DIR_LIB "${CMAKE_BINARY_DIR}/Lib")
 set(CPYTHON_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/third-party/cpython/Lib")
@@ -1438,21 +1429,20 @@ target_link_libraries(
 
 add_executable(
   python
-  main.cpp)
+  main.cpp
+  $<TARGET_OBJECTS:extension>)
 target_compile_options(
   python
   PRIVATE
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   python
-  INTERFACE
-  capi
   PRIVATE
+  capi-headers
   runtime)
 target_link_libraries(
   python
   PRIVATE
-  ${WHOLE_ARCHIVE} extension ${NO_WHOLE_ARCHIVE}
   runtime
   modules)
 set_target_properties(
@@ -1476,7 +1466,7 @@ target_include_directories(
 
 add_library(
   runtime-tests
-  STATIC
+  OBJECT
   runtime/array-module-test.cpp
   runtime/assembler-x64-test.cpp
   runtime/builtins-module-test.cpp
@@ -1546,15 +1536,17 @@ target_compile_options(
   runtime-tests
   PRIVATE
   ${PYRO_COMPILE_OPTIONS})
-target_link_libraries(
+target_include_directories(
   runtime-tests
   PRIVATE
-  benchmark
-  gmock
-  gtest
-  runtime)
-target_include_directories(runtime-tests PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}
-  ${CMAKE_SOURCE_DIR}/runtime)
+  $<TARGET_PROPERTY:benchmark,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:runtime,INTERFACE_INCLUDE_DIRECTORIES>
+  ${FROZEN_MODULE_OUTPUT_DIR})
+add_dependencies(
+  runtime-tests
+  frozen-sources)
 
 set(
   EXTENSION_TESTS
@@ -1617,7 +1609,7 @@ set(
   ext/test/capi-testing.h)
 add_library(
   extension-tests
-  STATIC
+  OBJECT
   ${EXTENSION_TESTS})
 target_compile_options(
   extension-tests
@@ -1627,18 +1619,19 @@ target_include_directories(
   extension-tests
   PRIVATE
   ext/test
+  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
   ${BINARY_DIR_HEADERS})
-target_link_libraries(
+add_dependencies(
   extension-tests
-  PRIVATE
-  benchmark
-  gmock
-  gtest
-  modules)
+  frozen-sources)
 
 add_executable(
   python-tests
-  runtime/python-test.cpp)
+  runtime/python-test.cpp
+  $<TARGET_OBJECTS:extension>
+  $<TARGET_OBJECTS:runtime-tests>
+  $<TARGET_OBJECTS:extension-tests>)
 target_compile_options(
   python-tests
   PRIVATE
@@ -1648,8 +1641,7 @@ target_link_libraries(
   PRIVATE
   benchmark
   gtest
-  ${WHOLE_ARCHIVE} runtime-tests ${NO_WHOLE_ARCHIVE}
-  ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE})
+  runtime)
 
 # Extension tests with CPython
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")

@@ -34,8 +34,6 @@ string_join(" " FLAGS_RELEASE
 set(CMAKE_C_FLAGS_RELEASE "${FLAGS_RELEASE}" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "${FLAGS_RELEASE}" CACHE STRING "")
 
-set(WHOLE_ARCHIVE -Wl,--whole-archive CACHE STRING "")
-set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive CACHE STRING "")
 set(BZIP2_INCLUDE_DIRS /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/include CACHE STRING "")
 set(BZIP2_LIBRARIES /mnt/gvfs/third-party2/bzip2/73a237ac5bc0a5f5d67b39b8d253cfebaab88684/1.0.6/platform007/ca4da3d/lib/libbz2.a CACHE STRING "")
 set(XZ_INCLUDE_DIRS /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7/5.2.2/platform007/ca4da3d/include CACHE STRING "")

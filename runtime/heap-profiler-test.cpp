@@ -34,39 +34,57 @@ static void testWriter(const void* data, word size, void* stream) {
   }
 }
 
-uint8_t read8(const Vector<byte>& result, word* pos) {
-  EXPECT_LT(*pos, result.size());
-  return result[(*pos)++];
+static uint8_t read8(const Vector<byte>& src, word* pos) {
+  EXPECT_LT(*pos, src.size());
+  return src[(*pos)++];
 }
 
-uint16_t read16(const Vector<byte>& result, word* pos) {
-  EXPECT_LT(*pos + 1, result.size());
-  uint8_t lo = read8(result, pos);
-  uint8_t hi = read8(result, pos);
-  if (endian::native == endian::little) {
-    return (static_cast<uint16_t>(lo) << 8) | hi;
-  }
-  return (static_cast<uint16_t>(hi) << 8) | lo;
+static int16_t read16(const Vector<byte>& src, word* pos) {
+  EXPECT_LT(*pos + 1, src.size());
+  uint16_t result = src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  return result;
 }
 
-uint32_t read32(const Vector<byte>& result, word* pos) {
-  EXPECT_LT(*pos + 3, result.size());
-  uint16_t lo = read16(result, pos);
-  uint16_t hi = read16(result, pos);
-  if (endian::native == endian::little) {
-    return (static_cast<uint32_t>(lo) << 16) | hi;
-  }
-  return (static_cast<uint32_t>(hi) << 16) | lo;
+static int32_t read32(const Vector<byte>& src, word* pos) {
+  EXPECT_LT(*pos + 3, src.size());
+  int32_t result = src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  return result;
 }
 
-uint64_t read64(const Vector<byte>& result, word* pos) {
-  EXPECT_LT(*pos + 7, result.size());
-  uint32_t lo = read32(result, pos);
-  uint32_t hi = read32(result, pos);
-  if (endian::native == endian::little) {
-    return (static_cast<uint64_t>(lo) << 32) | hi;
-  }
-  return (static_cast<uint64_t>(hi) << 32) | lo;
+static uint32_t readu32(const Vector<byte>& src, word* pos) {
+  return read32(src, pos);
+}
+
+static int64_t read64(const Vector<byte>& src, word* pos) {
+  EXPECT_LT(*pos + 7, src.size());
+  int64_t result = src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  result <<= 8;
+  result |= src[(*pos)++];
+  return result;
+}
+
+static uint64_t readu64(const Vector<byte>& data, word* pos) {
+  return read64(data, pos);
 }
 
 TEST_F(HeapProfilerTest, WriteCallsWriteCallback) {
@@ -135,8 +153,8 @@ static ::testing::AssertionResult readStringInUtf8(const Vector<byte>& result,
                                                    const char* value) {
   EXPECT_TRUE(readTag(result, pos, HeapProfiler::kStringInUtf8));
   EXPECT_EQ(read32(result, pos), 0);
-  EXPECT_EQ(read32(result, pos), std::strlen(value) + kPointerSize);
-  EXPECT_EQ(read64(result, pos), address);
+  EXPECT_EQ(readu32(result, pos), std::strlen(value) + kPointerSize);
+  EXPECT_EQ(readu64(result, pos), address);
   EXPECT_TRUE(readStringLiteral(result, pos, value));
   return ::testing::AssertionSuccess();
 }
@@ -160,12 +178,12 @@ static ::testing::AssertionResult readLoadClass(const Vector<byte>& result,
                                                 word* pos, uword id,
                                                 uword name_id) {
   EXPECT_TRUE(readTag(result, pos, HeapProfiler::kLoadClass));
-  EXPECT_EQ(read32(result, pos), 0);        // time
-  EXPECT_EQ(read32(result, pos), 24);       // data length
-  EXPECT_EQ(read32(result, pos), 1);        // class serial number
-  EXPECT_EQ(read64(result, pos), id);       // class object ID
-  EXPECT_EQ(read32(result, pos), 0);        // stack trace serial number
-  EXPECT_EQ(read64(result, pos), name_id);  // class name string ID
+  EXPECT_EQ(read32(result, pos), 0);         // time
+  EXPECT_EQ(read32(result, pos), 24);        // data length
+  EXPECT_EQ(read32(result, pos), 1);         // class serial number
+  EXPECT_EQ(readu64(result, pos), id);       // class object ID
+  EXPECT_EQ(read32(result, pos), 0);         // stack trace serial number
+  EXPECT_EQ(readu64(result, pos), name_id);  // class name string ID
   return ::testing::AssertionSuccess();
 }
 
@@ -300,9 +318,9 @@ static ::testing::AssertionResult readSubtag(const Vector<byte>& result,
 
 static ::testing::AssertionResult readClassDumpPrelude(
     const Vector<byte>& result, word* pos, uword layout, uword super_layout) {
-  EXPECT_EQ(read64(result, pos), layout);  // class object ID
-  EXPECT_EQ(read32(result, pos), 0);       // stack trace serial number
-  EXPECT_EQ(read64(result, pos),
+  EXPECT_EQ(readu64(result, pos), layout);  // class object ID
+  EXPECT_EQ(read32(result, pos), 0);        // stack trace serial number
+  EXPECT_EQ(readu64(result, pos),
             super_layout);            // super class object ID
   EXPECT_EQ(read64(result, pos), 0);  // class loader object ID
   EXPECT_EQ(read64(result, pos), 0);  // signers object ID
@@ -358,7 +376,7 @@ TEST_F(HeapProfilerTest, WriteClassDumpWritesClassDumpSubRecord) {
 
   // TODO(T61661597): Remove _UserTuple__value field from tuple layout
   // Field 0 (u8 name, u1 type)
-  EXPECT_EQ(read64(result, &pos), user_tuple_value_address);
+  EXPECT_EQ(readu64(result, &pos), user_tuple_value_address);
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kObject);
 
   EXPECT_EQ(pos, result.size());
@@ -433,7 +451,7 @@ instance = C()
   EXPECT_EQ(read64(result, &pos), b_address);
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kObject);
   // * Field 2 (u8 name, u1 type)
-  EXPECT_EQ(read64(result, &pos),
+  EXPECT_EQ(readu64(result, &pos),
             reinterpret_cast<uword>(HeapProfiler::kOverflow));
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kObject);
 
@@ -504,7 +522,7 @@ TEST_F(HeapProfilerTest, WriteClassDumpWithOverflowAttributes) {
   EXPECT_EQ(read16(result, &pos), 0);  // number of static fields
   EXPECT_EQ(read16(result, &pos), 1);  // number of instance fields
   // * Field 0 (u8 name, u1 type)
-  EXPECT_EQ(read64(result, &pos),
+  EXPECT_EQ(readu64(result, &pos),
             reinterpret_cast<uword>(HeapProfiler::kOverflow));
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kObject);
 
@@ -598,11 +616,11 @@ TEST_F(HeapProfilerDeathTest, WriteInstanceWithDictOverflow) {
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), instance.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);               // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), layout.raw());    // class object ID
+  EXPECT_EQ(readu64(result, &pos), instance.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);              // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos), kPointerSize);  // number of bytes that follow
-  EXPECT_EQ(read64(result, &pos), NoneType::object().raw());  // padding
+  EXPECT_EQ(readu64(result, &pos), NoneType::object().raw());  // padding
 
   EXPECT_EQ(pos, result.size());
 }
@@ -647,9 +665,9 @@ TEST_F(HeapProfilerTest, WriteInstanceWithOverflowAttributes) {
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), instance.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);               // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), layout.raw());    // class object ID
+  EXPECT_EQ(readu64(result, &pos), instance.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);              // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos),
             kPointerSize);  // number of bytes that follow
   uword overflow_raw = read64(result, &pos);
@@ -703,7 +721,7 @@ TEST_F(HeapProfilerTest,
   EXPECT_EQ(read16(result, &pos), 1);  // number of instance fields
 
   // Field 0 (u8 name, u1 type)
-  EXPECT_EQ(read64(result, &pos), value_address);
+  EXPECT_EQ(readu64(result, &pos), value_address);
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kDouble);
 
   EXPECT_EQ(pos, result.size());
@@ -745,14 +763,14 @@ instance = C()
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), instance.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);               // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), c_layout.raw());  // class object ID
+  EXPECT_EQ(readu64(result, &pos), instance.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);  // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), c_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos),
             3 * kPointerSize);  // number of bytes that follow
-  EXPECT_EQ(read64(result, &pos), SmallInt::fromWord(1).raw());
-  EXPECT_EQ(read64(result, &pos), SmallInt::fromWord(2).raw());
-  EXPECT_EQ(read64(result, &pos), runtime_->emptyTuple().raw());  // overflow
+  EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(1).raw());
+  EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(2).raw());
+  EXPECT_EQ(readu64(result, &pos), runtime_->emptyTuple().raw());  // overflow
 
   EXPECT_EQ(pos, result.size());
 }
@@ -788,15 +806,15 @@ TEST_F(HeapProfilerTest, WriteInstanceDumpForDictWritesInstanceDumpRecord) {
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), dict.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);           // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), dict_layout.raw());  // class object ID
+  EXPECT_EQ(readu64(result, &pos), dict.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);            // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), dict_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos),
             3 * kPointerSize);  // number of bytes that follow
-  EXPECT_EQ(read64(result, &pos), SmallInt::fromWord(1).raw());  // num items
-  EXPECT_EQ(read64(result, &pos), dict.data().raw());            // data
+  EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(1).raw());  // num items
+  EXPECT_EQ(readu64(result, &pos), dict.data().raw());            // data
   EXPECT_EQ(
-      read64(result, &pos),
+      readu64(result, &pos),
       SmallInt::fromWord(dict.numUsableItems()).raw());  // num usable items
 
   EXPECT_EQ(pos, result.size());
@@ -829,9 +847,9 @@ TEST_F(HeapProfilerTest, WriteInstanceDumpForFloatWritesInstanceDumpRecord) {
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), obj.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);          // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), float_layout.raw());  // class object ID
+  EXPECT_EQ(readu64(result, &pos), obj.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);           // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), float_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos),
             1 * kPointerSize);  // number of bytes that follow
   uint64_t value = read64(result, &pos);
@@ -868,11 +886,11 @@ TEST_F(HeapProfilerTest, WriteEllipsisWritesInstanceDumpRecord) {
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), instance.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);               // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), ellipsis_layout.raw());  // class object ID
+  EXPECT_EQ(readu64(result, &pos), instance.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);  // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), ellipsis_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos), kPointerSize);  // number of bytes that follow
-  EXPECT_EQ(read64(result, &pos), Unbound::object().raw());  // padding
+  EXPECT_EQ(readu64(result, &pos), Unbound::object().raw());  // padding
 
   EXPECT_EQ(pos, result.size());
 }
@@ -903,9 +921,9 @@ TEST_F(HeapProfilerTest, WriteImmediateWritesInstanceDump) {
 
   // Instance dump for 1337
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), obj.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);          // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), smallint_layout.raw());  // class object ID
+  EXPECT_EQ(readu64(result, &pos), obj.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);           // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), smallint_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos), 0);  // number of bytes to follow
 
   EXPECT_EQ(pos, result.size());
@@ -1011,14 +1029,14 @@ TEST_F(HeapProfilerTest, RecordDestructorWritesRecord) {
   HeapProfiler profiler(thread_, testWriter, &result);
   {
     HeapProfiler::Record record(static_cast<HeapProfiler::Tag>(10), &profiler);
-    record.write32(0xdeadbeef);
+    record.write32(0x12345678);
   }
   word pos = 0;
 
   EXPECT_EQ(read8(result, &pos), 0xa);
   EXPECT_EQ(read32(result, &pos), 0);  // time
   EXPECT_EQ(read32(result, &pos), 4);  // length
-  EXPECT_EQ(read32(result, &pos), 0xdeadbeef);
+  EXPECT_EQ(read32(result, &pos), 0x12345678);
 
   EXPECT_EQ(pos, result.size());
 }
@@ -1060,15 +1078,15 @@ TEST_F(HeapProfilerTest, WriteObjectArrayWritesObjectArrayRecord) {
 
   // Object array
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kObjectArrayDump));
-  EXPECT_EQ(read64(result, &pos), tuple.raw());  // array object ID
-  EXPECT_EQ(read32(result, &pos), 0);            // stack trace serial number
-  EXPECT_EQ(read32(result, &pos), 3);            // number of elements
-  EXPECT_EQ(read64(result, &pos),
+  EXPECT_EQ(readu64(result, &pos), tuple.raw());  // array object ID
+  EXPECT_EQ(read32(result, &pos), 0);             // stack trace serial number
+  EXPECT_EQ(read32(result, &pos), 3);             // number of elements
+  EXPECT_EQ(readu64(result, &pos),
             static_cast<uword>(
                 HeapProfiler::FakeClass::kObjectArray));  // array class ID
-  EXPECT_EQ(read64(result, &pos), SmallInt::fromWord(0).raw());  // element 0
-  EXPECT_EQ(read64(result, &pos), SmallInt::fromWord(1).raw());  // element 1
-  EXPECT_EQ(read64(result, &pos), SmallInt::fromWord(2).raw());  // element 2
+  EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(0).raw());  // element 0
+  EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(1).raw());  // element 1
+  EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(2).raw());  // element 2
 
   EXPECT_EQ(pos, result.size());
 }
@@ -1095,9 +1113,9 @@ TEST_F(HeapProfilerTest, WriteBytesWritesPrimitiveArrayRecord) {
   // Byte array
   EXPECT_TRUE(
       readSubtag(result, &pos, HeapProfiler::Subtag::kPrimitiveArrayDump));
-  EXPECT_EQ(read64(result, &pos), bytes.raw());     // array object ID
-  EXPECT_EQ(read32(result, &pos), 0);               // stack trace serial number
-  EXPECT_EQ(read32(result, &pos), sizeof(source));  // number of elements
+  EXPECT_EQ(readu64(result, &pos), bytes.raw());  // array object ID
+  EXPECT_EQ(read32(result, &pos), 0);             // stack trace serial number
+  EXPECT_EQ(readu32(result, &pos), sizeof(source));  // number of elements
   EXPECT_EQ(read8(result, &pos),
             HeapProfiler::BasicType::kByte);  // element type
   EXPECT_EQ(read8(result, &pos), 'h');        // element 0
@@ -1161,11 +1179,11 @@ TEST_F(HeapProfilerTest,
   EXPECT_EQ(read16(result, &pos), 2);  // number of instance fields
 
   // Field 0 (u8 name, u1 type)
-  EXPECT_EQ(read64(result, &pos), real_address);
+  EXPECT_EQ(readu64(result, &pos), real_address);
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kDouble);
 
   // Field 1 (u8 name, u1 type)
-  EXPECT_EQ(read64(result, &pos), imag_address);
+  EXPECT_EQ(readu64(result, &pos), imag_address);
   EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kDouble);
 
   EXPECT_EQ(pos, result.size());
@@ -1198,14 +1216,14 @@ TEST_F(HeapProfilerTest, WriteComplexWritesInstanceDump) {
 
   // Complex "instance" dump
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
-  EXPECT_EQ(read64(result, &pos), obj.raw());  // object ID
-  EXPECT_EQ(read32(result, &pos), 0);          // stack trace serial number
-  EXPECT_EQ(read64(result, &pos), complex_layout.raw());  // class object ID
+  EXPECT_EQ(readu64(result, &pos), obj.raw());  // object ID
+  EXPECT_EQ(read32(result, &pos), 0);           // stack trace serial number
+  EXPECT_EQ(readu64(result, &pos), complex_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos),
-            2 * kDoubleSize);            // number of bytes that follow
-  uint64_t real = read64(result, &pos);  // real
+            2 * kDoubleSize);             // number of bytes that follow
+  uint64_t real = readu64(result, &pos);  // real
   EXPECT_EQ(bit_cast<double>(real), 1.0);
-  uint64_t imag = read64(result, &pos);  // imag
+  uint64_t imag = readu64(result, &pos);  // imag
   EXPECT_EQ(bit_cast<double>(imag), 2.0);
 
   EXPECT_EQ(pos, result.size());
@@ -1235,13 +1253,13 @@ TEST_F(HeapProfilerTest, WriteLargeIntWritesPrimitiveArrayRecord) {
   // Long array
   EXPECT_TRUE(
       readSubtag(result, &pos, HeapProfiler::Subtag::kPrimitiveArrayDump));
-  EXPECT_EQ(read64(result, &pos), obj.raw());  // array object ID
-  EXPECT_EQ(read32(result, &pos), 0);          // stack trace serial number
-  EXPECT_EQ(read32(result, &pos), 2);          // number of elements
+  EXPECT_EQ(readu64(result, &pos), obj.raw());  // array object ID
+  EXPECT_EQ(read32(result, &pos), 0);           // stack trace serial number
+  EXPECT_EQ(read32(result, &pos), 2);           // number of elements
   EXPECT_EQ(read8(result, &pos),
-            HeapProfiler::BasicType::kLong);            // element type
-  EXPECT_EQ(read64(result, &pos), 0xfffffffffffffffe);  // element 0
-  EXPECT_EQ(read64(result, &pos), 0x0);                 // element 1
+            HeapProfiler::BasicType::kLong);  // element type
+  EXPECT_EQ(read64(result, &pos), -2);        // element 0
+  EXPECT_EQ(read64(result, &pos), 0);         // element 1
 
   EXPECT_EQ(pos, result.size());
 }
@@ -1267,9 +1285,9 @@ TEST_F(HeapProfilerTest, WriteLargeStrWritesPrimitiveArrayRecord) {
   // Byte array
   EXPECT_TRUE(
       readSubtag(result, &pos, HeapProfiler::Subtag::kPrimitiveArrayDump));
-  EXPECT_EQ(read64(result, &pos), obj.raw());  // array object ID
-  EXPECT_EQ(read32(result, &pos), 0);          // stack trace serial number
-  EXPECT_EQ(read32(result, &pos), 9);          // number of elements
+  EXPECT_EQ(readu64(result, &pos), obj.raw());  // array object ID
+  EXPECT_EQ(read32(result, &pos), 0);           // stack trace serial number
+  EXPECT_EQ(read32(result, &pos), 9);           // number of elements
   EXPECT_EQ(read8(result, &pos),
             HeapProfiler::BasicType::kByte);  // element type
   EXPECT_EQ(read8(result, &pos), 'f');        // element 0

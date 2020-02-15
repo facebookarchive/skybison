@@ -1954,7 +1954,7 @@ r2 = b.t_uint
             std::numeric_limits<unsigned int>::max());
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
-  EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321);
+  EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321UL);
 }
 
 TEST_F(TypeExtensionApiTest, MemberLong) {
@@ -1989,7 +1989,7 @@ r2 = b.t_ulong
             std::numeric_limits<unsigned long>::max());
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
-  EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321);
+  EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321UL);
 }
 
 TEST_F(TypeExtensionApiTest, MemberLongLong) {
@@ -2024,7 +2024,7 @@ r2 = b.t_ulonglong
             std::numeric_limits<unsigned long long>::max());
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
-  EXPECT_EQ(PyLong_AsUnsignedLongLong(r2), 4321);
+  EXPECT_EQ(PyLong_AsUnsignedLongLong(r2), 4321UL);
 }
 
 TEST_F(TypeExtensionApiTest, MemberFloat) {
@@ -2507,8 +2507,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNumberSlots) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_nb_add), &emptyBinaryFunc);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_nb_subtract), empty_binary_func2);
+  EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_nb_add)),
+            &emptyBinaryFunc);
+  EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_nb_subtract)),
+            empty_binary_func2);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsAsyncSlots) {
@@ -2521,8 +2523,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsAsyncSlots) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_am_await), &emptyUnaryFunc);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_am_aiter), empty_unary_func2);
+  EXPECT_EQ(reinterpret_cast<unaryfunc>(PyType_GetSlot(tp, Py_am_await)),
+            &emptyUnaryFunc);
+  EXPECT_EQ(reinterpret_cast<unaryfunc>(PyType_GetSlot(tp, Py_am_aiter)),
+            empty_unary_func2);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSequenceSlots) {
@@ -2537,8 +2541,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSequenceSlots) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_sq_concat), &emptyBinaryFunc);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_sq_repeat), empty_sizearg_func);
+  EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_sq_concat)),
+            &emptyBinaryFunc);
+  EXPECT_EQ(reinterpret_cast<ssizeargfunc>(PyType_GetSlot(tp, Py_sq_repeat)),
+            empty_sizearg_func);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMappingSlots) {
@@ -2550,8 +2556,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMappingSlots) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_mp_subscript), &emptyBinaryFunc);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_mp_length), &emptyLenFunc);
+  EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_mp_subscript)),
+            &emptyBinaryFunc);
+  EXPECT_EQ(reinterpret_cast<lenfunc>(PyType_GetSlot(tp, Py_mp_length)),
+            &emptyLenFunc);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsTypeSlots) {
@@ -2563,7 +2571,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsTypeSlots) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_call), &emptyTernaryFunc);
+  EXPECT_EQ(reinterpret_cast<ternaryfunc>(PyType_GetSlot(tp, Py_tp_call)),
+            &emptyTernaryFunc);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMixedSlots) {
@@ -2575,8 +2584,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMixedSlots) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_nb_add), &emptyBinaryFunc);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_mp_length), &emptyLenFunc);
+  EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_nb_add)),
+            &emptyBinaryFunc);
+  EXPECT_EQ(reinterpret_cast<lenfunc>(PyType_GetSlot(tp, Py_mp_length)),
+            &emptyLenFunc);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritGetAttrIfDefined) {
@@ -2590,7 +2601,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritGetAttrIfDefined) {
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattro), nullptr);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattr), empty_getattr_func);
+  EXPECT_EQ(reinterpret_cast<getattrfunc>(PyType_GetSlot(tp, Py_tp_getattr)),
+            empty_getattr_func);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsGetAttrIfNotDefined) {
@@ -2602,7 +2614,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsGetAttrIfNotDefined) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattro), &emptyBinaryFunc);
+  EXPECT_EQ(reinterpret_cast<getattrofunc>(PyType_GetSlot(tp, Py_tp_getattro)),
+            &emptyBinaryFunc);
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattr), nullptr);
 }
 
@@ -2618,7 +2631,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritSetAttrIfDefined) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattro), &emptySetattroFunc);
+  EXPECT_EQ(reinterpret_cast<setattrofunc>(PyType_GetSlot(tp, Py_tp_setattro)),
+            &emptySetattroFunc);
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattr), nullptr);
 }
 
@@ -2631,7 +2645,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSetAttrIfNotDefined) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattro), &emptySetattroFunc);
+  EXPECT_EQ(reinterpret_cast<setattrofunc>(PyType_GetSlot(tp, Py_tp_setattro)),
+            &emptySetattroFunc);
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattr), nullptr);
 }
 
@@ -2647,7 +2662,8 @@ TEST_F(TypeExtensionApiTest,
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_richcompare), nullptr);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_hash), empty_hash_func);
+  EXPECT_EQ(reinterpret_cast<hashfunc>(PyType_GetSlot(tp, Py_tp_hash)),
+            empty_hash_func);
 }
 
 TEST_F(TypeExtensionApiTest,
@@ -2660,7 +2676,9 @@ TEST_F(TypeExtensionApiTest,
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_richcompare), &emptyCompareFunc);
+  EXPECT_EQ(
+      reinterpret_cast<richcmpfunc>(PyType_GetSlot(tp, Py_tp_richcompare)),
+      &emptyCompareFunc);
 }
 
 TEST_F(TypeExtensionApiTest,
@@ -2723,7 +2741,8 @@ TEST_F(TypeExtensionApiTest,
   ASSERT_EQ(PyType_CheckExact(type), 1);
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_finalize), &emptyDestructorFunc);
+  EXPECT_EQ(reinterpret_cast<destructor>(PyType_GetSlot(tp, Py_tp_finalize)),
+            &emptyDestructorFunc);
 }
 
 TEST_F(TypeExtensionApiTest,
@@ -2749,7 +2768,8 @@ TEST_F(TypeExtensionApiTest,
   ASSERT_EQ(PyType_CheckExact(type), 1);
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
-  EXPECT_NE(PyType_GetSlot(tp, Py_tp_free), empty_free_func);
+  EXPECT_NE(reinterpret_cast<freefunc>(PyType_GetSlot(tp, Py_tp_free)),
+            empty_free_func);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsFreeIfBothHaveGCFlagSet) {
@@ -2811,7 +2831,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsIfGcFlagIsPresentOnBoth) {
   ASSERT_EQ(PyType_CheckExact(type), 1);
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_free), empty_free_func);
+  EXPECT_EQ(reinterpret_cast<freefunc>(PyType_GetSlot(tp, Py_tp_free)),
+            empty_free_func);
 }
 
 TEST_F(TypeExtensionApiTest, MethodIsInheirtedFromClassFromWinningParent) {
@@ -2887,8 +2908,8 @@ a_mro = A.__mro__
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(a_type.get());
   void* int_slot = PyType_GetSlot(tp, Py_nb_int);
   ASSERT_NE(int_slot, nullptr);
-  EXPECT_NE(int_slot, c_int_func);
-  EXPECT_EQ(int_slot, d_int_func);
+  EXPECT_NE(reinterpret_cast<unaryfunc>(int_slot), c_int_func);
+  EXPECT_EQ(reinterpret_cast<unaryfunc>(int_slot), d_int_func);
 }
 
 TEST_F(TypeExtensionApiTest,
@@ -2926,9 +2947,11 @@ TEST_F(TypeExtensionApiTest,
   ASSERT_EQ(PyType_CheckExact(type), 1);
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(base_type.get());
-  EXPECT_NE(PyType_GetFlags(tp) & Py_TPFLAGS_HAVE_GC, 0);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_traverse), empty_traverse_func);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_clear), empty_clear_func);
+  EXPECT_NE(PyType_GetFlags(tp) & Py_TPFLAGS_HAVE_GC, 0UL);
+  EXPECT_EQ(reinterpret_cast<traverseproc>(PyType_GetSlot(tp, Py_tp_traverse)),
+            empty_traverse_func);
+  EXPECT_EQ(reinterpret_cast<inquiry>(PyType_GetSlot(tp, Py_tp_clear)),
+            empty_clear_func);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
@@ -2943,7 +2966,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
   PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_new), empty_new_func);
+  EXPECT_EQ(reinterpret_cast<newfunc>(PyType_GetSlot(tp, Py_tp_new)),
+            empty_new_func);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithoutBasicSizeInheritsDefaultBasicSize) {
@@ -2958,7 +2982,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutBasicSizeInheritsDefaultBasicSize) {
   ASSERT_EQ(PyType_CheckExact(type), 1);
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
-  EXPECT_EQ(_PyObject_SIZE(tp), sizeof(PyObject));
+  EXPECT_EQ(_PyObject_SIZE(tp), static_cast<Py_ssize_t>(sizeof(PyObject)));
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithoutAllocInheritsDefaultAlloc) {
@@ -2973,7 +2997,8 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutAllocInheritsDefaultAlloc) {
   ASSERT_EQ(PyType_CheckExact(type), 1);
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
-  ASSERT_EQ(PyType_GetSlot(tp, Py_tp_alloc), &PyType_GenericAlloc);
+  ASSERT_EQ(reinterpret_cast<allocfunc>(PyType_GetSlot(tp, Py_tp_alloc)),
+            &PyType_GenericAlloc);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithoutNewInheritsDefaultNew) {

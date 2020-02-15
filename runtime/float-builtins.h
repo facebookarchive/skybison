@@ -20,7 +20,7 @@ class FloatBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(FloatBuiltins);
 };
 
-void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa);
+void decodeDouble(double value, bool* is_neg, int* exp, int64_t* mantissa);
 
 inline word floatHash(RawObject value) {
   return doubleHash(Float::cast(value).value());

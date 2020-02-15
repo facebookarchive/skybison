@@ -239,7 +239,7 @@ TEST_F(UnicodeExtensionApiTest,
   Py_UCS4* ucs4_string =
       PyUnicode_AsUCS4(unicode, target, 2, 0 /* copy_null */);
   EXPECT_EQ(nullptr, ucs4_string);
-  EXPECT_EQ(1, target[0]);
+  EXPECT_EQ(Py_UCS4{1}, target[0]);
 }
 
 TEST_F(UnicodeExtensionApiTest,
@@ -250,7 +250,7 @@ TEST_F(UnicodeExtensionApiTest,
   Py_UCS4* ucs4_string =
       PyUnicode_AsUCS4(unicode, target, 2, 1 /* copy_null */);
   EXPECT_EQ(nullptr, ucs4_string);
-  EXPECT_EQ(0, target[0]);
+  EXPECT_EQ(Py_UCS4{0}, target[0]);
 }
 
 TEST_F(UnicodeExtensionApiTest, AsUCS4WithoutCopyNullReturnsNotNullTerminated) {
@@ -262,12 +262,12 @@ TEST_F(UnicodeExtensionApiTest, AsUCS4WithoutCopyNullReturnsNotNullTerminated) {
   Py_UCS4* ucs4_string =
       PyUnicode_AsUCS4(unicode, target, 5, 0 /* copy_null */);
   EXPECT_EQ(target, ucs4_string);
-  EXPECT_EQ(0x1f192, ucs4_string[0]);
-  EXPECT_EQ('h', ucs4_string[1]);
-  EXPECT_EQ(0xe4, ucs4_string[2]);
-  EXPECT_EQ('l', ucs4_string[3]);
-  EXPECT_EQ(0x2cc0, ucs4_string[4]);
-  EXPECT_EQ(1, ucs4_string[5]);
+  EXPECT_EQ(Py_UCS4{0x1F192}, ucs4_string[0]);
+  EXPECT_EQ(Py_UCS4{'h'}, ucs4_string[1]);
+  EXPECT_EQ(Py_UCS4{0xE4}, ucs4_string[2]);
+  EXPECT_EQ(Py_UCS4{'l'}, ucs4_string[3]);
+  EXPECT_EQ(Py_UCS4{0x2CC0}, ucs4_string[4]);
+  EXPECT_EQ(Py_UCS4{1}, ucs4_string[5]);
 }
 
 TEST_F(UnicodeExtensionApiTest, AsUCS4WithCopyNullReturnsNullTerminated) {
@@ -279,12 +279,12 @@ TEST_F(UnicodeExtensionApiTest, AsUCS4WithCopyNullReturnsNullTerminated) {
   Py_UCS4* ucs4_string =
       PyUnicode_AsUCS4(unicode, target, 6, 1 /* copy_null */);
   EXPECT_EQ(target, ucs4_string);
-  EXPECT_EQ(0x1f192, ucs4_string[0]);
-  EXPECT_EQ('h', ucs4_string[1]);
-  EXPECT_EQ(0xe4, ucs4_string[2]);
-  EXPECT_EQ('l', ucs4_string[3]);
-  EXPECT_EQ(0x2cc0, ucs4_string[4]);
-  EXPECT_EQ(0, ucs4_string[5]);
+  EXPECT_EQ(Py_UCS4{0x1F192}, ucs4_string[0]);
+  EXPECT_EQ(Py_UCS4{'h'}, ucs4_string[1]);
+  EXPECT_EQ(Py_UCS4{0xE4}, ucs4_string[2]);
+  EXPECT_EQ(Py_UCS4{'l'}, ucs4_string[3]);
+  EXPECT_EQ(Py_UCS4{0x2CC0}, ucs4_string[4]);
+  EXPECT_EQ(Py_UCS4{0}, ucs4_string[5]);
 }
 
 TEST_F(UnicodeExtensionApiTest,
@@ -298,10 +298,10 @@ substr = SubStr("foo")
   Py_UCS4 target[4];
   Py_UCS4* ucs4_string =
       PyUnicode_AsUCS4(unicode, target, 4, 1 /* copy_null */);
-  EXPECT_EQ('f', ucs4_string[0]);
-  EXPECT_EQ('o', ucs4_string[1]);
-  EXPECT_EQ('o', ucs4_string[2]);
-  EXPECT_EQ(0, ucs4_string[3]);
+  EXPECT_EQ(Py_UCS4{'f'}, ucs4_string[0]);
+  EXPECT_EQ(Py_UCS4{'o'}, ucs4_string[1]);
+  EXPECT_EQ(Py_UCS4{'o'}, ucs4_string[2]);
+  EXPECT_EQ(Py_UCS4{0}, ucs4_string[3]);
 }
 
 // Delegating testing to AsUCS4.
@@ -309,11 +309,11 @@ TEST_F(UnicodeExtensionApiTest,
        AsUCS4WithNonAsciiReturnsCodePointsNullTerminated) {
   PyObjectPtr unicode(PyUnicode_FromString("ab\u00e4p"));
   Py_UCS4* ucs4_string = PyUnicode_AsUCS4Copy(unicode);
-  EXPECT_EQ('a', ucs4_string[0]);
-  EXPECT_EQ('b', ucs4_string[1]);
-  EXPECT_EQ(0xe4, ucs4_string[2]);
-  EXPECT_EQ('p', ucs4_string[3]);
-  EXPECT_EQ(0, ucs4_string[4]);
+  EXPECT_EQ(Py_UCS4{'a'}, ucs4_string[0]);
+  EXPECT_EQ(Py_UCS4{'b'}, ucs4_string[1]);
+  EXPECT_EQ(Py_UCS4{0xE4}, ucs4_string[2]);
+  EXPECT_EQ(Py_UCS4{'p'}, ucs4_string[3]);
+  EXPECT_EQ(Py_UCS4{0}, ucs4_string[4]);
   PyMem_Free(ucs4_string);
 }
 
@@ -618,56 +618,58 @@ TEST_F(UnicodeExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
 
 TEST_F(UnicodeExtensionApiTest, READWithOneByteKindReturnsCharAtIndex) {
   const char* str = "foo";
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 0), 'f');
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 1), 'o');
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 2), 'o');
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 0), Py_UCS4{'f'});
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 1), Py_UCS4{'o'});
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 2), Py_UCS4{'o'});
 }
 
 TEST_F(UnicodeExtensionApiTest, READWithTwoByteKindReturnsCharAtIndex) {
   const char* str = "quux";
   // This assumes little-endian architecture. No static assert because we can't
   // include that enum and macro in these tests.
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_2BYTE_KIND, str, 0), 0x7571);  // qu
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_2BYTE_KIND, str, 1), 0x7875);  // ux
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_2BYTE_KIND, str, 0),
+            Py_UCS4{0x7571});  // qu
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_2BYTE_KIND, str, 1),
+            Py_UCS4{0x7875});  // ux
 }
 
 TEST_F(UnicodeExtensionApiTest, READWithFourByteKindReturnsCharAtIndex) {
   const char* str = "quux";
   // This assumes little-endian architecture. No static assert because we can't
   // include that enum and macro in these tests.
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_4BYTE_KIND, str, 0), 0x78757571);
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_4BYTE_KIND, str, 0), Py_UCS4{0x78757571});
 }
 
 TEST_F(UnicodeExtensionApiTest, READCHARReturnsCharAtIndex) {
   PyObjectPtr str(PyUnicode_FromString("foo"));
-  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), 'f');
-  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 1), 'o');
-  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 2), 'o');
-  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 3), '\0');
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), Py_UCS4{'f'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 1), Py_UCS4{'o'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 2), Py_UCS4{'o'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 3), Py_UCS4{'\0'});
 }
 
 TEST_F(UnicodeExtensionApiTest, READCHARReturnsUnicodeCodePointAtIndex) {
   PyObjectPtr str(PyUnicode_FromString("\xF0\x90\x8D\x88"));
   EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), 1);
-  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), 0x10348);
-  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 1), '\0');
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), Py_UCS4{0x10348});
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 1), Py_UCS4{'\0'});
 
   PyObjectPtr dessert(PyUnicode_FromString("cr\xc3\xa9me"));
   EXPECT_EQ(PyUnicode_GET_LENGTH(dessert.get()), 5);
-  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 0), 'c');
-  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 1), 'r');
-  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 2), 0xe9);
-  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 3), 'm');
-  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 4), 'e');
-  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 5), '\0');
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 0), Py_UCS4{'c'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 1), Py_UCS4{'r'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 2), Py_UCS4{0xE9});
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 3), Py_UCS4{'m'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 4), Py_UCS4{'e'});
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 5), Py_UCS4{'\0'});
 }
 
 TEST_F(UnicodeExtensionApiTest, READReadsCharsFromDATA) {
   PyObjectPtr str(PyUnicode_FromString("foo"));
   void* data = PyUnicode_DATA(str.get());
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 0), 'f');
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 1), 'o');
-  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 2), 'o');
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 0), Py_UCS4{'f'});
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 1), Py_UCS4{'o'});
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 2), Py_UCS4{'o'});
 }
 
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {

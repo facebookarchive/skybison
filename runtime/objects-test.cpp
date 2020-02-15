@@ -511,7 +511,7 @@ TEST_F(IntTest, AsIntWithTrueReturnsOne) {
 TEST_F(IntTest, AsIntWithFalseReturnsZero) {
   HandleScope scope(thread_);
   Int value(&scope, Bool::falseObj());
-  EXPECT_VALID(value.asInt<uword>(), 0);
+  EXPECT_VALID(value.asInt<uword>(), uword{0});
   EXPECT_VALID(value.asInt<int32_t>(), 0);
 }
 
@@ -1147,7 +1147,7 @@ TEST_F(LargeStrTest, CodePointLengthAscii) {
 
   Str str(&scope, runtime_->newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
-  EXPECT_EQ(str.charLength(), std::strlen(code_units));
+  EXPECT_EQ(str.charLength(), static_cast<word>(std::strlen(code_units)));
   EXPECT_EQ(str.codePointLength(), 17);
 }
 
@@ -1161,7 +1161,7 @@ TEST_F(LargeStrTest, CodePointLength) {
 
   Str str(&scope, runtime_->newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
-  EXPECT_EQ(str.charLength(), std::strlen(code_units));
+  EXPECT_EQ(str.charLength(), static_cast<word>(std::strlen(code_units)));
   EXPECT_EQ(str.codePointLength(), 23);
 }
 
