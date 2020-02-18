@@ -23,18 +23,12 @@ PY_EXPORT void _PyWeakref_ClearRef(PyWeakReference* self) {
   ref.setReferent(NoneType::object());
 }
 
-static PyObject* getObject(Thread* thread, const Object& obj) {
-  // ref is assumed to be a WeakRef already
-  HandleScope scope(thread);
-  WeakRef ref(&scope, *obj);
-  return ApiHandle::borrowedReference(thread, ref.referent());
-}
-
 PY_EXPORT PyObject* PyWeakref_GET_OBJECT_Func(PyObject* ref) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object obj(&scope, ApiHandle::fromPyObject(ref)->asObject());
-  return getObject(thread, obj);
+  // ref is assumed to be a WeakRef already
+  WeakRef weakref(&scope, ApiHandle::fromPyObject(ref)->asObject());
+  return ApiHandle::borrowedReference(thread, weakref.referent());
 }
 
 PY_EXPORT PyObject* PyWeakref_GetObject(PyObject* ref) {
@@ -51,7 +45,8 @@ PY_EXPORT PyObject* PyWeakref_GetObject(PyObject* ref) {
                          "PyWeakref_GetObject expected weakref");
     return nullptr;
   }
-  return getObject(thread, obj);
+  WeakRef weakref(&scope, *obj);
+  return ApiHandle::borrowedReference(thread, weakref.referent());
 }
 
 PY_EXPORT PyObject* PyWeakref_NewProxy(PyObject* ob, PyObject* callback) {
