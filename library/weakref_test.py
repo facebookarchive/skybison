@@ -150,7 +150,7 @@ class WeakRefTests(unittest.TestCase):
         self.assertEqual(sub_ref.__eq__(ref), "C.__eq__")
 
         sub_ref.new_attribute = 50
-        self.assertIs(sub_ref.new_attribute, 50)
+        self.assertEqual(sub_ref.new_attribute, 50)
 
     def test_dunder_new_with_non_type_raises_type_error(self):
         with self.assertRaises(TypeError):
