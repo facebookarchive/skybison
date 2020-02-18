@@ -172,8 +172,9 @@ TempDirectory::TempDirectory(const char* prefix) {
 
 TempDirectory::~TempDirectory() {
   std::string cleanup = "rm -rf " + path;
-  system(cleanup.c_str());
-  assert(system(cleanup.c_str()) == 0);
+  int result = system(cleanup.c_str());
+  (void)result;
+  assert(result == 0);
 }
 
 }  // namespace testing
