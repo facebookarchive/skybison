@@ -21,14 +21,114 @@ namespace testing {
 
 using PythonrunExtensionApiTest = ExtensionApi;
 
-TEST_F(PythonrunExtensionApiTest, SimpleStringReturnsZero) {
+TEST_F(PythonrunExtensionApiTest, PyRunAnyFileReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(print(f"good morning by {__file__}"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  int returncode = PyRun_AnyFile(fp, "test string");
+  fclose(fp);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "good morning by test string\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunAnyFileExReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(print(f"I am {__file__}"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  int returncode = PyRun_AnyFileEx(fp, "test string", /*closeit=*/1);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "I am test string\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunAnyFileExFlagsReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(x = 2 <> 3; print(f"{x} by {__file__}"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  int returncode = PyRun_AnyFileExFlags(fp, nullptr, /*closeit=*/1, &flags);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "True by ???\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunAnyFileFlagsReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(x = 4 <> 4; print(f"{x} by {__file__}"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  int returncode = PyRun_AnyFileFlags(fp, "a test", &flags);
+  fclose(fp);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "False by a test\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunFileReturnsStr) {
+  PyObjectPtr module(PyModule_New("testmodule"));
+  PyModule_AddStringConstant(module, "shout", "ya!");
+  PyObject* module_dict = PyModule_GetDict(module);
+  const char* buffer = R"("hey " + shout)";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyObjectPtr result(
+      PyRun_File(fp, "a test", Py_eval_input, module_dict, module_dict));
+  fclose(fp);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "hey ya!"));
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunFileExReturnsStr) {
+  PyObjectPtr module(PyModule_New("testmodule"));
+  PyModule_AddStringConstant(module, "shout", "ya!");
+  PyObject* module_dict = PyModule_GetDict(module);
+  const char* buffer = R"("hey " + shout)";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyObjectPtr result(PyRun_FileEx(fp, "a test", Py_eval_input, module_dict,
+                                  module_dict, /*closeit=*/1));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "hey ya!"));
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunFileExFlagsReturnsTrue) {
+  PyObjectPtr module(PyModule_New("testmodule"));
+  PyModule_AddIntConstant(module, "number", 42);
+  PyObject* module_dict = PyModule_GetDict(module);
+  const char* buffer = R"(7 <> number)";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  PyObjectPtr result(PyRun_FileExFlags(fp, "a test", Py_eval_input, module_dict,
+                                       module_dict, /*closeit=*/1, &flags));
+  EXPECT_EQ(result, Py_True);
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunFileFlagsReturnsFalse) {
+  PyObjectPtr module(PyModule_New("testmodule"));
+  PyModule_AddIntConstant(module, "number", 9);
+  PyObject* module_dict = PyModule_GetDict(module);
+  const char* buffer = R"(number <> 9)";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  PyObjectPtr result(PyRun_FileFlags(fp, "a test", Py_eval_input, module_dict,
+                                     module_dict, &flags));
+  fclose(fp);
+  EXPECT_EQ(result, Py_False);
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringReturnsInt) {
   EXPECT_EQ(PyRun_SimpleString("a = 42"), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr value(moduleGet("__main__", "a"));
   EXPECT_TRUE(isLongEqualsLong(value, 42));
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleStringPrintsSyntaxError) {
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringPrintsSyntaxError) {
   CaptureStdStreams streams;
   EXPECT_EQ(PyRun_SimpleString(",,,"), -1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -36,7 +136,7 @@ TEST_F(PythonrunExtensionApiTest, SimpleStringPrintsSyntaxError) {
             std::string::npos);
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleStringPrintsUncaughtException) {
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringPrintsUncaughtException) {
   CaptureStdStreams streams;
   ASSERT_EQ(PyRun_SimpleString("raise RuntimeError('boom')"), -1);
   // TODO(T39919701): Check the whole string once we have tracebacks.
@@ -44,7 +144,7 @@ TEST_F(PythonrunExtensionApiTest, SimpleStringPrintsUncaughtException) {
   EXPECT_EQ(streams.out(), "");
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleStringFlagsReturnsZero) {
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringFlagsReturnsTrue) {
   PyCompilerFlags flags;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   EXPECT_EQ(PyRun_SimpleStringFlags("foo = 13 <> 42", &flags), 0);
@@ -53,7 +153,16 @@ TEST_F(PythonrunExtensionApiTest, SimpleStringFlagsReturnsZero) {
   EXPECT_EQ(value, Py_True);
 }
 
-TEST_F(PythonrunExtensionApiTest, StringFlagsReturnsResult) {
+TEST_F(PythonrunExtensionApiTest, PyRunStringReturnsString) {
+  PyObjectPtr module(PyModule_New("testmodule"));
+  PyModule_AddStringConstant(module, "name", "tester");
+  PyObject* module_dict = PyModule_GetDict(module);
+  PyObjectPtr result(PyRun_String(R"(f"hello {name}")", Py_eval_input,
+                                  module_dict, module_dict));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "hello tester"));
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunStringFlagsReturnsResult) {
   PyObject* module = PyImport_AddModule("__main__");
   ASSERT_NE(module, nullptr);
   PyObject* module_proxy = PyModule_GetDict(module);
@@ -393,7 +502,28 @@ TEST_F(PythonrunExtensionApiTest,
   PyNode_Free(node);
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsWithPyFileReturnsZero) {
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleFileReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(print(f"Greetings from {__file__}"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  int returncode = PyRun_SimpleFile(fp, "test string");
+  fclose(fp);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "Greetings from test string\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleFileExReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(print(f"This is {__file__}"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  int returncode = PyRun_SimpleFileEx(fp, "zombocom", /*closeit=*/1);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "This is zombocom\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleFileExFlagsWithPyFileReturnsZero) {
   CaptureStdStreams streams;
   const char* buffer = R"(print("pyhello"))";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
@@ -405,7 +535,8 @@ TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsWithPyFileReturnsZero) {
   EXPECT_EQ(streams.out(), "pyhello\n");
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsSetsAndUnsetsDunderFile) {
+TEST_F(PythonrunExtensionApiTest,
+       PyRunSimpleFileExFlagsSetsAndUnsetsDunderFile) {
   CaptureStdStreams streams;
   const char* buffer = R"(print(__file__))";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
@@ -422,7 +553,7 @@ TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsSetsAndUnsetsDunderFile) {
   EXPECT_FALSE(PyObject_HasAttr(main_mod, dunder_file));
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsPrintsSyntaxError) {
+TEST_F(PythonrunExtensionApiTest, PyRunSimpleFileExFlagsPrintsSyntaxError) {
   CaptureStdStreams streams;
   const char* buffer = ",,,";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
@@ -440,7 +571,8 @@ SyntaxError: invalid syntax
             std::string::npos);
 }
 
-TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsPrintsUncaughtException) {
+TEST_F(PythonrunExtensionApiTest,
+       PyRunSimpleFileExFlagsPrintsUncaughtException) {
   CaptureStdStreams streams;
   const char* buffer = "raise RuntimeError('boom')";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),

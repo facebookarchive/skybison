@@ -120,7 +120,6 @@
 #include "osmodule.h"
 #include "pyarena.h"
 #include "pylifecycle.h"
-#include "pythonrun.h"
 #include "sysmodule.h"
 
 #include "abstract.h"

@@ -37,6 +37,14 @@ extern grammar _PyParser_Grammar;
 
 namespace py {
 
+PY_EXPORT int PyRun_AnyFile(FILE* fp, const char* filename) {
+  return PyRun_AnyFileExFlags(fp, filename, /*closeit=*/0, /*flags=*/nullptr);
+}
+
+PY_EXPORT int PyRun_AnyFileEx(FILE* fp, const char* filename, int closeit) {
+  return PyRun_AnyFileExFlags(fp, filename, closeit, /*flags=*/nullptr);
+}
+
 PY_EXPORT int PyRun_AnyFileExFlags(FILE* fp, const char* filename, int closeit,
                                    PyCompilerFlags* flags) {
   if (filename == nullptr) {
@@ -48,6 +56,11 @@ PY_EXPORT int PyRun_AnyFileExFlags(FILE* fp, const char* filename, int closeit,
     return err;
   }
   return PyRun_SimpleFileExFlags(fp, filename, closeit, flags);
+}
+
+PY_EXPORT int PyRun_AnyFileFlags(FILE* fp, const char* filename,
+                                 PyCompilerFlags* flags) {
+  return PyRun_AnyFileExFlags(fp, filename, /*closeit=*/0, flags);
 }
 
 static PyObject* runMod(mod_ty mod, PyObject* filename, PyObject* globals,
@@ -202,6 +215,10 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
   return 0;
 }
 
+PY_EXPORT int PyRun_InteractiveLoop(FILE* fp, const char* filename) {
+  return PyRun_InteractiveLoopFlags(fp, filename, /*flags=*/nullptr);
+}
+
 PY_EXPORT int PyRun_InteractiveLoopFlags(FILE* fp, const char* filename,
                                          PyCompilerFlags* flags) {
   PyObject* filename_str = PyUnicode_DecodeFSDefault(filename);
@@ -257,6 +274,15 @@ static void setMainLoader(Thread* thread, Module& module, const char* filename,
   moduleAtPutById(thread, module, ID(__loader__), loader);
 }
 
+PY_EXPORT int PyRun_SimpleFile(FILE* fp, const char* filename) {
+  return PyRun_SimpleFileExFlags(fp, filename, /*closeit=*/0,
+                                 /*flags=*/nullptr);
+}
+
+PY_EXPORT int PyRun_SimpleFileEx(FILE* fp, const char* filename, int closeit) {
+  return PyRun_SimpleFileExFlags(fp, filename, closeit, /*flags=*/nullptr);
+}
+
 PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
                                       int closeit, PyCompilerFlags* flags) {
   Thread* thread = Thread::current();
@@ -307,6 +333,10 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
   }
 
   return returncode;
+}
+
+PY_EXPORT int PyRun_SimpleString(const char* str) {
+  return PyRun_SimpleStringFlags(str, nullptr);
 }
 
 PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
@@ -526,6 +556,19 @@ PY_EXPORT struct symtable* Py_SymtableString(const char* /* r */,
   UNIMPLEMENTED("Py_SymtableString");
 }
 
+PY_EXPORT PyObject* PyRun_File(FILE* fp, const char* filename, int start,
+                               PyObject* globals, PyObject* locals) {
+  return PyRun_FileExFlags(fp, filename, start, globals, locals,
+                           /*closeit=*/0, /*flags=*/nullptr);
+}
+
+PY_EXPORT PyObject* PyRun_FileEx(FILE* fp, const char* filename, int start,
+                                 PyObject* globals, PyObject* locals,
+                                 int closeit) {
+  return PyRun_FileExFlags(fp, filename, start, globals, locals, closeit,
+                           /*flags=*/nullptr);
+}
+
 PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
                                       int start, PyObject* globals,
                                       PyObject* locals, int closeit,
@@ -538,12 +581,25 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
+  int iflags = flags != nullptr ? flags->cf_flags : 0;
+
   View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
   Object source(&scope, runtime->newStrWithAll(data));
   Str filename(&scope, runtime->newStrFromCStr(filename_cstr));
-  CHECK(start == Py_file_input, "Start token should be Py_file_input");
-  RawObject code =
-      compile(thread, source, filename, ID(exec), flags->cf_flags, -1);
+  SymbolId mode_id;
+  if (start == Py_single_input) {
+    mode_id = ID(single);
+  } else if (start == Py_file_input) {
+    mode_id = ID(exec);
+  } else if (start == Py_eval_input) {
+    mode_id = ID(eval);
+  } else {
+    thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "mode must be 'Py_single_input', 'Py_file_input' or 'Py_eval_input'");
+    return nullptr;
+  }
+  RawObject code = compile(thread, source, filename, mode_id, iflags, -1);
   if (code.isError()) {
     return nullptr;
   }
@@ -562,6 +618,18 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   Object implicit_globals(&scope, ApiHandle::fromPyObject(locals)->asObject());
   RawObject result = thread->exec(code_code, module, implicit_globals);
   return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
+}
+
+PY_EXPORT PyObject* PyRun_FileFlags(FILE* fp, const char* filename, int start,
+                                    PyObject* globals, PyObject* locals,
+                                    PyCompilerFlags* flags) {
+  return PyRun_FileExFlags(fp, filename, start, globals, locals,
+                           /*closeit=*/0, flags);
+}
+
+PY_EXPORT PyObject* PyRun_String(const char* str, int start, PyObject* globals,
+                                 PyObject* locals) {
+  return PyRun_StringFlags(str, start, globals, locals, /*flags=*/nullptr);
 }
 
 PY_EXPORT PyObject* PyRun_StringFlags(const char* str, int start,

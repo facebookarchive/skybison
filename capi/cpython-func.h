@@ -633,14 +633,27 @@ PyAPI_FUNC(struct _node*)
     PyParser_SimpleParseStringFlags(const char*, int, int);
 PyAPI_FUNC(struct _node*)
     PyParser_SimpleParseStringFlagsFilename(const char*, const char*, int, int);
+PyAPI_FUNC(int) PyRun_AnyFile(FILE*, const char*);
+PyAPI_FUNC(int) PyRun_AnyFileEx(FILE*, const char*, int);
 PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE*, const char*, int, PyCompilerFlags*);
+PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE*, const char*, PyCompilerFlags*);
+PyAPI_FUNC(int) PyRun_InteractiveLoop(FILE*, const char*);
 PyAPI_FUNC(int)
     PyRun_InteractiveLoopFlags(FILE*, const char*, PyCompilerFlags*);
+PyAPI_FUNC(PyObject*) PyRun_File(FILE*, const char*, int, PyObject*, PyObject*);
+PyAPI_FUNC(PyObject*)
+    PyRun_FileEx(FILE*, const char*, int, PyObject*, PyObject*, int);
 PyAPI_FUNC(PyObject*) PyRun_FileExFlags(FILE*, const char*, int, PyObject*,
                                         PyObject*, int, PyCompilerFlags*);
+PyAPI_FUNC(PyObject*) PyRun_FileFlags(FILE*, const char*, int, PyObject*,
+                                      PyObject*, PyCompilerFlags*);
+PyAPI_FUNC(int) PyRun_SimpleFile(FILE*, const char*);
+PyAPI_FUNC(int) PyRun_SimpleFileEx(FILE*, const char*, int);
 PyAPI_FUNC(int)
     PyRun_SimpleFileExFlags(FILE*, const char*, int, PyCompilerFlags*);
+PyAPI_FUNC(int) PyRun_SimpleString(const char*);
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char*, PyCompilerFlags*);
+PyAPI_FUNC(PyObject*) PyRun_String(const char*, int, PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*)
     PyRun_StringFlags(const char*, int, PyObject*, PyObject*, PyCompilerFlags*);
 PyAPI_FUNC(PyObject*) PySeqIter_New(PyObject*);
@@ -999,8 +1012,8 @@ PyAPI_FUNC(struct _mod*)
     PyParser_ASTFromStringObject(const char*, PyObject*, int, PyCompilerFlags*,
                                  PyArena*);
 PyAPI_FUNC(struct _mod*)
-    PyParser_ASTFromFileObject(FILE*, PyObject*, const char*, int, const char*,
-                               const char*, PyCompilerFlags*, int*, PyArena*);
+    PyParser_ASTFromFile(FILE*, const char*, const char*, int, const char*,
+                         const char*, PyCompilerFlags*, int*, PyArena*);
 PyAPI_FUNC(struct _mod*)
     PyParser_ASTFromFileObject(FILE*, PyObject*, const char*, int, const char*,
                                const char*, PyCompilerFlags*, int*, PyArena*);
