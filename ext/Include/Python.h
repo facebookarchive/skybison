@@ -66,8 +66,6 @@
 #endif
 #include "pymath.h"
 
-#include "object.h"
-#include "objimpl.h"
 #include "typeslots.h"
 
 #include "pydebug.h"

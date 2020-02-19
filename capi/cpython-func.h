@@ -1184,6 +1184,7 @@ PyAPI_FUNC(int) PyUnicode_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyWeakref_Check_Func(PyObject*);
 
+PyAPI_FUNC(void) _Py_Dealloc(PyObject*);
 PyAPI_FUNC(void) Py_DECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
@@ -1208,6 +1209,7 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
                                           PyObject* value, Py_hash_t hash);
 PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
+PyAPI_FUNC(Py_ssize_t) Py_SIZE_Func(PyVarObject*);
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
 PyAPI_FUNC(Py_ssize_t) PySequence_Fast_GET_SIZE_Func(PyObject*);
 PyAPI_FUNC(PyObject*) PySequence_Fast_GET_ITEM_Func(PyObject*, Py_ssize_t);
@@ -1250,7 +1252,6 @@ PyAPI_FUNC(int) _PyTime_localtime(time_t, struct tm*);
 PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 
 /* Macros */
-#define _Py_Dealloc (*_Py_Dealloc_Func)
 
 #ifdef PY_SSIZE_T_CLEAN
 #define PyArg_Parse _PyArg_Parse_SizeT
@@ -1340,6 +1341,9 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define PyTuple_GET_ITEM(op, i) PyTuple_GetItem((PyObject*)op, i)
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SET_ITEM_Func((PyObject*)op, i, v)
 
+#define PyType_HasFeature(t, f) ((PyType_GetFlags(t) & (f)) != 0)
+#define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
+
 #define PyStructSequence_GET_ITEM(op, i)                                       \
   PyStructSequence_GetItem((PyObject*)op, i)
 #define PyStructSequence_SET_ITEM(op, i, v)                                    \
@@ -1411,10 +1415,22 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define PyObject_NewVar(type, typeobj, n)                                      \
   ((type*)_PyObject_NewVar((PyTypeObject*)typeobj, n))
 #define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
+#define Py_SIZE(obj) Py_SIZE_Func((PyVarObject*)(obj))
 #define Py_TYPE(obj) Py_TYPE_Func((PyObject*)(obj))
 #define PyExceptionInstance_Class(obj)                                         \
   ((PyObject*)Py_TYPE_Func((PyObject*)(obj)))
 #define PyExceptionInstance_Check(x) PyExceptionInstance_Check_Func(x)
+
+#define PyObject_GC_New(type, typeobj) ((type*)_PyObject_GC_New(typeobj))
+#define PyObject_GC_NewVar(type, typeobj, n)                                   \
+  ((type*)_PyObject_GC_NewVar((typeobj), (n)))
+#define Py_VISIT(op)                                                           \
+  do {                                                                         \
+    if (op) {                                                                  \
+      int vret = visit((PyObject*)(op), arg);                                  \
+      if (vret) return vret;                                                   \
+    }                                                                          \
+  } while (0)
 
 /* Memory macros from pymem.h */
 #define PyMem_DEL(p) PyMem_Del(p)

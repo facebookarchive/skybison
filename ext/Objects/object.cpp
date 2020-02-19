@@ -43,11 +43,11 @@ PY_EXPORT PyObject* PyNotImplemented_Ptr() {
                                       NotImplementedType::object());
 }
 
-PY_EXPORT void _Py_Dealloc_Func(PyObject*) {
+PY_EXPORT void _Py_Dealloc(PyObject*) {
   // Do nothing, since this function is only relevant for functions that define
   // their own memory allocation. Right now we don't support this and all
   // object memory is tracked by the GC.
-  UNIMPLEMENTED("_Py_Dealloc_Func");
+  UNIMPLEMENTED("_Py_Dealloc");
 }
 
 PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
@@ -67,7 +67,13 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
   // an object to have its reference go below 1.
   DCHECK(obj->ob_refcnt > 1, "Reference count underflowed");
   obj->ob_refcnt--;
-  if (obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);
+  if (obj->ob_refcnt == 0) _Py_Dealloc(obj);
+}
+
+PY_EXPORT Py_ssize_t Py_SIZE_Func(PyVarObject* obj) {
+  DCHECK(!ApiHandle::isManaged(reinterpret_cast<PyObject*>(obj)),
+         "Py_SIZE should only be necessary for user-defined extension types");
+  return obj->ob_size;
 }
 
 PY_EXPORT int PyCallable_Check(PyObject* obj) {
