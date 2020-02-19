@@ -1703,7 +1703,7 @@ loghelper(PyObject* arg, double (*func)(double), const char *funcname)
         Py_ssize_t e;
 
         /* Negative or zero inputs give a ValueError. */
-        if (Py_SIZE(arg) <= 0) {
+        if (_PyLong_Sign(arg) <= 0) {
             PyErr_SetString(PyExc_ValueError,
                             "math domain error");
             return NULL;
