@@ -95,14 +95,33 @@ TEST_F(PythonrunExtensionApiTest, PyRunFileExReturnsStr) {
 TEST_F(PythonrunExtensionApiTest, PyRunFileExFlagsReturnsTrue) {
   PyObjectPtr module(PyModule_New("testmodule"));
   PyModule_AddIntConstant(module, "number", 42);
-  PyObject* module_dict = PyModule_GetDict(module);
-  const char* buffer = R"(7 <> number)";
-  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
-                        std::strlen(buffer), "r");
+  PyObjectPtr module_dict(PyModule_GetDict(module));
+  Py_INCREF(module_dict);
+  char buffer[] = R"(7 != number)";
+  FILE* fp =
+      ::fmemopen(reinterpret_cast<void*>(buffer), std::strlen(buffer), "r");
   PyCompilerFlags flags;
-  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
-  PyObjectPtr result(PyRun_FileExFlags(fp, "a test", Py_eval_input, module_dict,
-                                       module_dict, /*closeit=*/1, &flags));
+  flags.cf_flags = 0;
+  PyObjectPtr result(PyRun_FileExFlags(fp, "a test", Py_eval_input,
+                                       module_dict.get(), module_dict.get(),
+                                       /*closeit=*/1, &flags));
+  EXPECT_EQ(result, Py_True);
+}
+
+TEST_F(PythonrunExtensionApiTest, PyRunFileExFlagsWithUserLocalsReturnsTrue) {
+  PyObjectPtr module(PyModule_New("testmodule"));
+  PyModule_AddIntConstant(module, "number", 42);
+  PyObjectPtr module_dict(PyModule_GetDict(module));
+  Py_INCREF(module_dict);
+  char buffer[] = R"(7 != number)";
+  FILE* fp =
+      ::fmemopen(reinterpret_cast<void*>(buffer), std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  PyObjectPtr locals(PyDict_New());
+  PyObjectPtr result(PyRun_FileExFlags(fp, "a test", Py_eval_input,
+                                       module_dict.get(), locals.get(),
+                                       /*closeit=*/1, &flags));
   EXPECT_EQ(result, Py_True);
 }
 

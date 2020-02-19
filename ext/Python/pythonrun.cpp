@@ -614,8 +614,15 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
     thread->raiseBadInternalCall();
     return nullptr;
   }
+  Object implicit_globals(&scope, NoneType::object());
+  if (locals != nullptr && globals != locals) {
+    implicit_globals = ApiHandle::fromPyObject(locals)->asObject();
+    if (!runtime->isMapping(thread, implicit_globals)) {
+      thread->raiseBadInternalCall();
+      return nullptr;
+    }
+  }
   Module module(&scope, *module_obj);
-  Object implicit_globals(&scope, ApiHandle::fromPyObject(locals)->asObject());
   RawObject result = thread->exec(code_code, module, implicit_globals);
   return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
 }
