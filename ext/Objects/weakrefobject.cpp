@@ -11,18 +11,6 @@ PY_EXPORT void PyObject_ClearWeakRefs(PyObject* /* obj */) {
   // Do nothing and delegated to the garbage collector.
 }
 
-PY_EXPORT void _PyWeakref_ClearRef(PyWeakReference* self) {
-  DCHECK(self != nullptr, "_PyWeakref_ClearRef expects self to be not null");
-  HandleScope scope;
-  Object self_obj(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(self))->asObject());
-  DCHECK(self_obj.isWeakRef(),
-         "_PyWeakref_ClearRef expects self to be a weakref object");
-  WeakRef ref(&scope, *self_obj);
-  ref.setReferent(NoneType::object());
-}
-
 PY_EXPORT PyObject* PyWeakref_GET_OBJECT_Func(PyObject* ref) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

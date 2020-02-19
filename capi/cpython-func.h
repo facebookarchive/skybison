@@ -1024,6 +1024,7 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(Py_UCS4);
 PyAPI_FUNC(PyObject*) PyWeakref_GetObject(PyObject*);
 PyAPI_FUNC(PyObject*) PyWeakref_NewProxy(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyWeakref_NewRef(PyObject*, PyObject*);
+PyAPI_FUNC(PyObject*) PyWeakref_GET_OBJECT_Func(PyObject*);
 PyAPI_FUNC(PyObject*) PyWrapper_New(PyObject*, PyObject*);
 PyAPI_FUNC(int) Py_AddPendingCall(int (*)(void*), void*);
 PyAPI_FUNC(int) Py_AtExit(void (*)(void));
@@ -1373,6 +1374,9 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
   PyUnicode_WRITE_Func(kind, data, index, value)
 #define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII_Func((PyObject*)op)
 #define PyUnicode_IS_COMPACT_ASCII(op) PyUnicode_IS_ASCII_Func((PyObject*)op)
+
+#define PyWeakref_GET_OBJECT(ref)                                              \
+  PyWeakref_GET_OBJECT_Func((PyWeakReference*)ref)
 
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))

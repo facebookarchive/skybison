@@ -35,7 +35,6 @@ struct stat;
 #define PyVarObject_HEAD_INIT(type, size) \
     { PyObject_HEAD_INIT(NULL) 0 },
 
-#define PyWeakref_GET_OBJECT(ref) PyWeakref_GetObject(ref)
 /* clang-format on */
 
 typedef struct _longobject PyLongObject;

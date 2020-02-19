@@ -94,7 +94,6 @@
 #include "sliceobject.h"
 #include "tupleobject.h"
 #include "warnings.h"
-#include "weakrefobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
