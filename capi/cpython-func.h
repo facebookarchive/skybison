@@ -421,6 +421,10 @@ PyAPI_FUNC(PyFrameObject*)
     PyFrame_New(PyThreadState*, PyCodeObject*, PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyFrozenSet_New(PyObject*);
 PyAPI_FUNC(Py_ssize_t) PyGC_Collect();
+PyAPI_FUNC(PyGILState_STATE) PyGILState_Ensure();
+PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
+PyAPI_FUNC(PyThreadState*) PyGILState_GetThisThreadState();
+PyAPI_FUNC(int) PyGILState_Check();
 PyAPI_FUNC(PyObject*) PyImport_AddModule(const char*);
 PyAPI_FUNC(PyObject*) PyImport_AddModuleObject(PyObject*);
 PyAPI_FUNC(int) PyImport_AppendInittab(const char*, PyObject* (*)(void));
@@ -782,6 +786,7 @@ PyAPI_FUNC(PyThreadState*) PyThreadState_Get();
 PyAPI_FUNC(PyObject*) PyThreadState_GetDict();
 PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState*);
 PyAPI_FUNC(PyThreadState*) PyThreadState_New(PyInterpreterState*);
+PyAPI_FUNC(PyThreadState*) PyThreadState_Next(PyThreadState*);
 PyAPI_FUNC(PyThreadState*) _PyThreadState_Prealloc(PyInterpreterState*);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject*);
 PyAPI_FUNC(PyThreadState*) PyThreadState_Swap(PyThreadState*);

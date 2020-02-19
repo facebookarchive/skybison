@@ -382,6 +382,8 @@ typedef struct {
   double resolution;
 } _Py_clock_info_t;
 
+typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
+
 #ifdef __cplusplus
 }
 #endif

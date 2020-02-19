@@ -93,15 +93,12 @@
 #include "rangeobject.h"
 #include "setobject.h"
 #include "sliceobject.h"
-#include "traceback.h"
 #include "tupleobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
-
-#include "pystate.h"
 
 #include "import.h"
 #include "intrcheck.h"

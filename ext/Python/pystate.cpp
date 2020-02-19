@@ -6,8 +6,6 @@
 
 namespace py {
 
-typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
-
 PY_EXPORT int PyGILState_Check() {
   // TODO(T44861733): Make this do something intelligent
   CHECK(Thread::current()->next() == nullptr,
@@ -106,6 +104,10 @@ PY_EXPORT PyObject* PyThreadState_GetDict() {
 
 PY_EXPORT PyThreadState* PyThreadState_New(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyThreadState_New");
+}
+
+PY_EXPORT PyThreadState* PyThreadState_Next(PyThreadState* /* p */) {
+  UNIMPLEMENTED("PyThreadState_Next");
 }
 
 PY_EXPORT int PyThreadState_SetAsyncExc(long /* d */, PyObject* /* c */) {
