@@ -431,6 +431,14 @@ class type(bootstrap=True):
         _builtin()
 
 
+def _object_reduce(self, proto):
+    if proto >= 2:
+        _unimplemented()
+    from copyreg import _reduce_ex
+
+    return _reduce_ex(self, proto)
+
+
 class object(bootstrap=True):  # noqa: E999
     __class__ = _property(_type)
 
@@ -483,7 +491,19 @@ class object(bootstrap=True):  # noqa: E999
         _builtin()
 
     def __reduce__(self):
-        _unimplemented()
+        return _object_reduce(self, 0)
+
+    def __reduce_ex__(self, proto):
+        try:
+            reduce = self.__reduce__
+        except BaseException:
+            return _object_reduce(self, proto)
+
+        clsreduce = _type(self).__reduce__
+        if clsreduce is not object.__reduce__:  # it's been overridden
+            return reduce()
+
+        return _object_reduce(self, proto)
 
     def __repr__(self):
         return f"<{_type(self).__name__} object at {_address(self):#x}>"
@@ -4650,6 +4670,9 @@ class range(bootstrap=True):
         new_stop = self.start - self.step
         new_start = new_stop + (self_len * self.step)
         return range.__iter__(range(new_start, new_stop, -self.step))
+
+    def __setstate__(self):
+        _unimplemented()
 
     def count(self, value):
         _range_guard(self)

@@ -6990,6 +6990,145 @@ class NotImplementedTypeTests(unittest.TestCase):
 
 
 class ObjectTests(unittest.TestCase):
+    def test_reduce_with_object(self):
+        o = object()
+        result = o.__reduce__()
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[1], (object, object, None))
+
+    def test_reduce_with_custom_type_without_attributes(self):
+        class Foo:
+            pass
+
+        o = Foo()
+        result = o.__reduce__()
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[1], (Foo, object, None))
+
+    def test_reduce_with_custom_type(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+        o = Foo()
+        result = o.__reduce__()
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[1], (Foo, object, None), {"a": 1})
+
+    def test_reduce_with_custom_base(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+        class Bar(Foo):
+            def __init__(self):
+                Foo.__init__(self)
+                self.b = 1
+
+        o = Bar()
+        result = o.__reduce__()
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[1], (Bar, object, None), {"a": 1, "b": 2})
+
+    def test_reduce_with_getstate(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+            def __getstate__(self):
+                return {"b": 2}
+
+        o = Foo()
+        result = o.__reduce__()
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[1], (Foo, object, None), {"b": 2})
+
+    def test_reduce_ex_with_object(self):
+        o = object()
+        result = o.__reduce_ex__(0)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[1], (object, object, None))
+
+    def test_reduce_ex_with_custom_type_without_attributes(self):
+        class Foo:
+            pass
+
+        o = Foo()
+        result = o.__reduce_ex__(0)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[1], (Foo, object, None))
+
+    def test_reduce_ex_with_custom_type(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+        o = Foo()
+        result = o.__reduce_ex__(0)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[1], (Foo, object, None), {"a": 1})
+
+    def test_reduce_ex_with_custom_base(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+        class Bar(Foo):
+            def __init__(self):
+                Foo.__init__(self)
+                self.b = 1
+
+        o = Bar()
+        result = o.__reduce_ex__(0)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[1], (Bar, object, None), {"a": 1, "b": 2})
+
+    def test_reduce_ex_with_custom_reduce(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+            def __reduce__(self):
+                return (Foo, (self.a))
+
+        o = Foo()
+        result = o.__reduce_ex__(0)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result, (Foo, 1))
+
+    def test_reduce_ex_with_getstate(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+            def __getstate__(self):
+                return {"b": 2}
+
+        o = Foo()
+        result = o.__reduce_ex__(1)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[1], (Foo, object, None), {"b": 2})
+
+    def test_reduce_ex_ignores_instance_reduce(self):
+        class Foo:
+            def __init__(self):
+                self.a = 123
+
+        def reconstruct_foo(a):
+            foo = Foo()
+            foo.a = a
+            return foo
+
+        def reduce_foo(self):
+            return (reconstruct_foo, (self.a))
+
+        foo = Foo()
+        foo.__reduce__ = reduce_foo.__get__(foo, Foo)
+        self.assertEqual(foo.__reduce__()[0], reconstruct_foo)
+        import copyreg
+
+        self.assertEqual(foo.__reduce_ex__(1)[0], copyreg._reconstructor)
+
     def test_dir_without_dict_returns_type_attributes(self):
         o = dir(object())
         self.assertIn("__class__", o)
