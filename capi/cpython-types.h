@@ -41,6 +41,7 @@ struct stat;
 typedef struct _longobject PyLongObject;
 typedef struct _typeobject PyTypeObject;
 typedef struct _PyWeakReference PyWeakReference;
+typedef struct _structsequence PyStructSequence;
 
 typedef struct _object {
   _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
