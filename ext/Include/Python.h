@@ -125,7 +125,6 @@
 #include "eval.h"
 
 #include "dtoa.h"
-#include "fileutils.h"
 #include "pyctype.h"
 #include "pystrcmp.h"
 

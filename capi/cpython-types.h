@@ -13,6 +13,9 @@ typedef ssize_t Py_ssize_t;
 
 typedef Py_ssize_t Py_hash_t;
 
+struct stat;
+#define _Py_stat_struct stat
+
 #define _PyObject_HEAD_EXTRA uintptr_t reference_;
 
 #define _PyObject_EXTRA_INIT 0,

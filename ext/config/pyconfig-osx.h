@@ -1371,6 +1371,14 @@
 /* Specifier to use for uintptr_t in PyArg_Parse and related functions. */
 #define _Py_PARSE_UINTPTR "k"
 
+/* The biggest value for the `nbyte` parameter of `read()` that does not
+ * trigger EINVAL. */
+#define _PY_READ_MAX INT_MAX
+
+/* The biggest value for the `nbyte` parameter of `write()` that does not
+ * trigger EINVAL. */
+#define _PY_WRITE_MAX INT_MAX
+
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 #define _ALL_SOURCE 1

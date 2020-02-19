@@ -1025,7 +1025,31 @@ PyAPI_FUNC(int) _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
 PyAPI_FUNC(int) _Py_normalize_encoding(const char*, char*, size_t);
 PyAPI_FUNC(void) _PyImport_AcquireLock();
 PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
+PyAPI_FUNC(wchar_t*) _Py_DecodeLocaleEx(const char*, size_t*, int);
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
+PyAPI_FUNC(PyObject*) _Py_device_encoding(int);
+PyAPI_FUNC(char*) _Py_EncodeLocaleEx(const wchar_t*, size_t*, int);
+PyAPI_FUNC(int) _Py_fstat(int, struct _Py_stat_struct*);
+PyAPI_FUNC(int) _Py_fstat_noraise(int, struct _Py_stat_struct*);
+PyAPI_FUNC(int) _Py_stat(PyObject*, struct stat*);
+PyAPI_FUNC(int) _Py_open(const char*, int);
+PyAPI_FUNC(int) _Py_open_noraise(const char*, int);
+PyAPI_FUNC(FILE*) _Py_wfopen(const wchar_t*, const wchar_t*);
+PyAPI_FUNC(FILE*) _Py_fopen(const char*, const char*);
+PyAPI_FUNC(FILE*) _Py_fopen_obj(PyObject*, const char*);
+PyAPI_FUNC(Py_ssize_t) _Py_read(int, void*, size_t);
+PyAPI_FUNC(Py_ssize_t) _Py_write(int, const void*, size_t);
+PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
+PyAPI_FUNC(int) _Py_wreadlink(const wchar_t*, wchar_t*, size_t);
+PyAPI_FUNC(wchar_t*) _Py_wrealpath(const wchar_t*, wchar_t*, size_t);
+PyAPI_FUNC(wchar_t*) _Py_wgetcwd(wchar_t*, size_t);
+PyAPI_FUNC(int) _Py_get_inheritable(int);
+PyAPI_FUNC(int) _Py_set_inheritable(int, int, int*);
+PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int, int, int*);
+PyAPI_FUNC(int) _Py_dup(int);
+PyAPI_FUNC(int) _Py_get_blocking(int);
+PyAPI_FUNC(int) _Py_set_blocking(int, int);
+PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(PyObject**, PyObject**, const char**);
 PyAPI_FUNC(struct _mod*) PyParser_ASTFromString(const char*, const char*, int,
                                                 PyCompilerFlags*, PyArena*);
 PyAPI_FUNC(struct _mod*)
@@ -1312,6 +1336,8 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 
 #define Py_EnterRecursiveCall(where) Py_EnterRecursiveCall_Func(where)
 #define Py_LeaveRecursiveCall() Py_LeaveRecursiveCall_Func()
+
+#define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 
 /* Define identity macro so `generate_cpython_sources.py` deletes the cpython
  * macro. TODO(T56488016): Remove this macro when the generator is gone. */
