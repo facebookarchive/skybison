@@ -1881,13 +1881,13 @@ static PyObject *
 statresult_new(PyTypeObject *type, PyObject *args)
 {
     PyObject *sequence, *kwds;
-    PyStructSequence *result;
+    PyObject *result;
     int i;
 
     /* Remove the cls object from the argument list */
     sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
     kwds = PyDict_New();
-    result = (PyStructSequence*)_posixstate_global->structseq_new(type, sequence, kwds);
+    result = _posixstate_global->structseq_new(type, sequence, kwds);
     Py_DECREF(sequence);
     Py_DECREF(kwds);
     if (!result)
@@ -1896,13 +1896,14 @@ statresult_new(PyTypeObject *type, PyObject *args)
        st_?time might be set to None. Initialize it
        from the int slots.  */
     for (i = 7; i <= 9; i++) {
-        if (result->ob_item[i+3] == Py_None) {
+        if (PyStructSequence_GET_ITEM(result, i+3) == Py_None) {
             Py_DECREF(Py_None);
-            Py_INCREF(result->ob_item[i]);
-            result->ob_item[i+3] = result->ob_item[i];
+            PyObject* item = PyStructSequence_GET_ITEM(result, i);
+            Py_INCREF(item);
+            PyStructSequence_SET_ITEM(result, i+3, item);
         }
     }
-    return (PyObject*)result;
+    return result;
 }
 
 static int
