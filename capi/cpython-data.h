@@ -161,6 +161,7 @@ extern const unsigned char _Py_ascii_whitespace[128];
 extern const unsigned int _Py_ctype_table[256];
 extern const unsigned char _Py_ctype_tolower[256];
 extern const unsigned char _Py_ctype_toupper[256];
+extern const unsigned char _PyLong_DigitValue[256];
 
 #define Py_CLEANUP_SUPPORTED 0x20000
 

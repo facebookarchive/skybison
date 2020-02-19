@@ -1362,6 +1362,15 @@
 /* Define to use the C99 inline keyword. */
 #define USE_INLINE 1
 
+/* Specifier to use for pid_t in PyArg_Parse and related functions. */
+#define _Py_PARSE_PID "i"
+
+/* Specifier to use for intptr_t in PyArg_Parse and related functions. */
+#define _Py_PARSE_INTPTR "l"
+
+/* Specifier to use for uintptr_t in PyArg_Parse and related functions. */
+#define _Py_PARSE_UINTPTR "k"
+
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 #define _ALL_SOURCE 1

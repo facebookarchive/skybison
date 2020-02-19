@@ -89,8 +89,6 @@
 #include "genobject.h"
 #include "iterobject.h"
 #include "listobject.h"
-#include "longintrepr.h"
-#include "longobject.h"
 #include "memoryobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"

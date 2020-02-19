@@ -1,8 +1,9 @@
 #ifndef CPYTHON_TYPES_H
 #define CPYTHON_TYPES_H
 
-#include <stdint.h> /* For uintptr_t */
-#include <stdio.h>  /* For FILE */
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {

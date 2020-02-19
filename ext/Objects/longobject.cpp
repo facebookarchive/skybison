@@ -1,5 +1,6 @@
 // longobject.c implementation
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 
 #include "capi-handles.h"
@@ -15,7 +16,7 @@
 // Note that when converting a base B string, a char c is a legitimate
 // base B digit iff _PyLong_DigitValue[Py_CHARMASK(c)] < B.
 // clang-format off
-unsigned char _PyLong_DigitValue[256] = {
+const unsigned char _PyLong_DigitValue[256] = { // NOLINT
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
@@ -56,6 +57,11 @@ PY_EXPORT PyObject* PyLong_FromLong(long ival) {
 
 PY_EXPORT PyObject* PyLong_FromLongLong(long long ival) {
   static_assert(sizeof(ival) <= sizeof(long), "Unsupported long long size");
+  return PyLong_FromLong(ival);
+}
+
+PY_EXPORT PyObject* PyLong_FromPid(pid_t ival) {
+  static_assert(sizeof(ival) <= sizeof(long), "Unsupported pid_t size");
   return PyLong_FromLong(ival);
 }
 
@@ -174,6 +180,10 @@ PY_EXPORT long PyLong_AsLong(PyObject* pylong) {
 
 PY_EXPORT long long PyLong_AsLongLong(PyObject* val) {
   return asInt<long long>(val, "long long", nullptr);
+}
+
+PY_EXPORT pid_t PyLong_AsPid(PyObject* val) {
+  return asInt<pid_t>(val, "pid_t", nullptr);
 }
 
 PY_EXPORT Py_ssize_t PyLong_AsSsize_t(PyObject* val) {
