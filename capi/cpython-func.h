@@ -266,13 +266,13 @@ PyAPI_FUNC(PyObject*) PyCodec_StreamReader(const char*, PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyCodec_StreamWriter(const char*, PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyCodec_StrictErrors(PyObject*);
 PyAPI_FUNC(PyObject*) PyCodec_XMLCharRefReplaceErrors(PyObject*);
-PyAPI_FUNC(Py_complex) _Py_c_sum(Py_complex, Py_complex);
+PyAPI_FUNC(double) _Py_c_abs(Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_diff(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_neg(Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_pow(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_prod(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_quot(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) _Py_c_pow(Py_complex, Py_complex);
-PyAPI_FUNC(double) _Py_c_abs(Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_sum(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) PyComplex_AsCComplex(PyObject*);
 PyAPI_FUNC(PyObject*) PyComplex_FromCComplex(Py_complex);
 PyAPI_FUNC(PyObject*) PyComplex_FromDoubles(double, double);
@@ -988,6 +988,30 @@ PyAPI_FUNC(int) _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter*,
 PyAPI_FUNC(int) _PyUnicodeWriter_WriteStr(_PyUnicodeWriter*, PyObject*);
 PyAPI_FUNC(int) _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter*, PyObject*,
                                                 Py_ssize_t, Py_ssize_t);
+PyAPI_FUNC(int) _PyUnicode_IsAlpha(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsCaseIgnorable(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsCased(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsDecimalDigit(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsDigit(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsLinebreak(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsLowercase(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsNumeric(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsPrintable(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsTitlecase(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsUppercase(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsWhitespace(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsXidContinue(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_IsXidStart(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_ToDecimalDigit(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_ToDigit(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_ToFoldedFull(Py_UCS4, Py_UCS4*);
+PyAPI_FUNC(int) _PyUnicode_ToLowerFull(Py_UCS4, Py_UCS4*);
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(Py_UCS4);
+PyAPI_FUNC(double) _PyUnicode_ToNumeric(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_ToTitleFull(Py_UCS4, Py_UCS4*);
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(Py_UCS4);
+PyAPI_FUNC(int) _PyUnicode_ToUpperFull(Py_UCS4, Py_UCS4*);
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(Py_UCS4);
 PyAPI_FUNC(PyObject*) PyWeakref_GetObject(PyObject*);
 PyAPI_FUNC(PyObject*) PyWeakref_NewProxy(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyWeakref_NewRef(PyObject*, PyObject*);
@@ -1322,6 +1346,9 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define PyUnicode_IS_READY(op) 1
 #define PyUnicode_KIND(op) PyUnicode_KIND_Func((PyObject*)op)
 #define PyUnicode_DATA(op) PyUnicode_DATA_Func((PyObject*)op)
+#define PyUnicode_1BYTE_DATA(op) ((Py_UCS1*)PyUnicode_DATA(op))
+#define PyUnicode_2BYTE_DATA(op) ((Py_UCS2*)PyUnicode_DATA(op))
+#define PyUnicode_4BYTE_DATA(op) ((Py_UCS4*)PyUnicode_DATA(op))
 #define PyUnicode_READ(kind, data, index)                                      \
   PyUnicode_READ_Func(kind, (void*)data, index)
 #define PyUnicode_READ_CHAR(op, index)                                         \
@@ -1418,6 +1445,34 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 
 #define _PYTIME_FROMSECONDS(seconds) _PyTime_FromSeconds(seconds)
+
+#define Py_UNICODE_ISALNUM(ch)                                                 \
+  (Py_UNICODE_ISALPHA(ch) || Py_UNICODE_ISDECIMAL(ch) ||                       \
+   Py_UNICODE_ISDIGIT(ch) || Py_UNICODE_ISNUMERIC(ch))
+#define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
+#define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
+#define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
+#define Py_UNICODE_ISLINEBREAK(ch) _PyUnicode_IsLinebreak(ch)
+#define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
+#define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
+#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
+#define Py_UNICODE_ISSPACE(ch)                                                 \
+  ((ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
+#define Py_UNICODE_ISTITLE(ch) _PyUnicode_IsTitlecase(ch)
+#define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)
+#define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDBFF)
+#define Py_UNICODE_IS_LOW_SURROGATE(ch) (0xDC00 <= (ch) && (ch) <= 0xDFFF)
+#define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
+#define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
+#define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
+#define Py_UNICODE_TOLOWER(ch) _PyUnicode_ToLowercase(ch)
+#define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
+#define Py_UNICODE_TOTITLE(ch) _PyUnicode_ToTitlecase(ch)
+#define Py_UNICODE_TOUPPER(ch) _PyUnicode_ToUppercase(ch)
+#define Py_UNICODE_JOIN_SURROGATES(high, low)                                  \
+  (((((Py_UCS4)(high)&0x03FF) << 10) | ((Py_UCS4)(low)&0x03FF)) + 0x10000)
+#define Py_UNICODE_HIGH_SURROGATE(ch) (0xD800 - (0x10000 >> 10) + ((ch) >> 10))
+#define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch)&0x3FF))
 
 /* Define identity macro so `generate_cpython_sources.py` deletes the cpython
  * macro. TODO(T56488016): Remove this macro when the generator is gone. */

@@ -98,7 +98,6 @@
 #include "sliceobject.h"
 #include "traceback.h"
 #include "tupleobject.h"
-#include "unicodeobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 

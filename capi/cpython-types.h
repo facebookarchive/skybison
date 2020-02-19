@@ -3,8 +3,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/types.h> /* for struct stat and pid_t. */
 #include <time.h>
+#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -269,7 +270,12 @@ typedef struct {
   double imag;
 } Py_complex;
 
-typedef unsigned int Py_UCS4;
+#define Py_UNICODE_SIZE __SIZEOF_WCHAR_T__
+#define PY_UNICODE_TYPE wchar_t
+
+typedef uint32_t Py_UCS4;
+typedef uint16_t Py_UCS2;
+typedef uint8_t Py_UCS1;
 typedef wchar_t Py_UNICODE;
 
 typedef struct {

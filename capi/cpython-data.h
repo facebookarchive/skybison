@@ -10,6 +10,12 @@ extern "C" {
 #define PyAPI_DATA(RTYPE) extern RTYPE
 
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
+#define Py_USING_UNICODE
+#define Py_UNICODE_WIDE
+
+#if __SIZEOF_WCHAR_T__ < 4
+#error sizeof(wchar_t) < 4 not supported
+#endif
 
 /* Singletons */
 #define PyAsyncGen_Type (*PyAsyncGen_Type_Ptr())
@@ -417,6 +423,8 @@ extern const char* Py_hexdigits;
 #define Py_HASH_EXTERNAL 0
 #define Py_HASH_SIPHASH24 1
 #define Py_HASH_FNV 2
+
+#define Py_UNICODE_REPLACEMENT_CHARACTER ((Py_UCS4)0xFFFD)
 
 #ifdef __cplusplus
 }

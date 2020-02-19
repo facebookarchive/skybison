@@ -43,6 +43,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <cctype>
 
 #include "Python.h"
 #include "structmember.h" /* offsetof */
