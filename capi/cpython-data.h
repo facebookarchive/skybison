@@ -377,6 +377,17 @@ extern const char* Py_hexdigits;
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
 
+#define _PyHASH_MULTIPLIER 1000003UL
+#define _PyHASH_BITS (sizeof(void*) < 8 ? 31 : 61)
+#define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
+#define _PyHASH_INF 314159
+#define _PyHASH_NAN 0
+#define _PyHASH_IMAG _PyHASH_MULTIPLIER
+
+#define Py_HASH_EXTERNAL 0
+#define Py_HASH_SIPHASH24 1
+#define Py_HASH_FNV 2
+
 #ifdef __cplusplus
 }
 #endif

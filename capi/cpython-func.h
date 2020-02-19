@@ -1093,6 +1093,9 @@ PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
 PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
+PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
+PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
+PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)

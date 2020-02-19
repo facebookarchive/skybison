@@ -70,7 +70,6 @@
 
 #include "object.h"
 #include "objimpl.h"
-#include "pyhash.h"
 #include "typeslots.h"
 
 #include "pydebug.h"

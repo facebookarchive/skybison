@@ -272,7 +272,7 @@ class Runtime {
   // implement `xxxHash()` functions.
   word valueHash(RawObject object);
 
-  word siphash24(View<byte> array);
+  word bytesHash(View<byte> array);
 
   uword random();
 
@@ -784,6 +784,8 @@ class Runtime {
 
   word identityHash(RawObject object);
   word immediateHash(RawObject object);
+
+  word siphash24(View<byte> array);
 
   void growInternSet(Thread* thread);
 

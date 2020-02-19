@@ -593,7 +593,6 @@ set(
   ${CPYTHON_DIR}/Python/mystrtoul.c
   ${CPYTHON_DIR}/Python/pyarena.c
   ${CPYTHON_DIR}/Python/pyctype.c
-  ${CPYTHON_DIR}/Python/pyhash.c
   ${CPYTHON_DIR}/Python/pystrcmp.c
   ${CPYTHON_DIR}/Python/pystrhex.c
   ${CPYTHON_DIR}/Python/pystrtod.c
@@ -713,6 +712,7 @@ add_library(
   ext/Python/modsupport.cpp
   ext/Python/mysnprintf.cpp
   ext/Python/pathconfig.cpp
+  ext/Python/pyhash.cpp
   ext/Python/pylifecycle.cpp
   ext/Python/pystate.cpp
   ext/Python/pythonrun.cpp
@@ -1596,6 +1596,7 @@ set(
   ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp
+  ext/Python/pyhash-test.cpp
   ext/Python/pylifecycle-test.cpp
   ext/Python/pystate-test.cpp
   ext/Python/pythonrun-test.cpp

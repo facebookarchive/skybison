@@ -1349,9 +1349,7 @@ RawObject Runtime::internStrFromAll(Thread* thread, View<byte> bytes) {
 
   Runtime* runtime = thread->runtime();
   RawMutableTuple data = MutableTuple::cast(runtime->interned_);
-  word hash = runtime->siphash24(bytes);
-  hash &= RawHeader::kHashCodeMask;
-  hash = (hash == RawHeader::kUninitializedHash) ? hash + 1 : hash;
+  word hash = runtime->bytesHash(bytes);
 
   word mask = data.length() - 1;
   word idx = hash & mask;
@@ -1530,15 +1528,19 @@ word Runtime::siphash24(View<byte> array) {
   return result;
 }
 
+word Runtime::bytesHash(View<byte> array) {
+  word result = siphash24(array);
+  result &= RawHeader::kHashCodeMask;
+  return (result == RawHeader::kUninitializedHash) ? result + 1 : result;
+}
+
 word Runtime::valueHash(RawObject object) {
   RawHeapObject src = HeapObject::cast(object);
   RawHeader header = src.header();
   word code = header.hashCode();
   if (code == RawHeader::kUninitializedHash) {
     word size = src.headerCountOrOverflow();
-    code = siphash24(View<byte>(reinterpret_cast<byte*>(src.address()), size));
-    code &= RawHeader::kHashCodeMask;
-    code = (code == RawHeader::kUninitializedHash) ? code + 1 : code;
+    code = bytesHash(View<byte>(reinterpret_cast<byte*>(src.address()), size));
     src.setHeader(header.withHashCode(code));
     DCHECK(code == src.header().hashCode(), "hash failure");
   }

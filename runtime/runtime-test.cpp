@@ -738,8 +738,8 @@ TEST_F(RuntimeTest, HashLargeBytes) {
   EXPECT_NE(arr1.header().hashCode(), 0);
   EXPECT_EQ(arr1.header().hashCode(), hash1);
 
-  word code1 = runtime_->siphash24(src1);
-  EXPECT_EQ(code1 & RawHeader::kHashCodeMask, static_cast<uword>(hash1));
+  word code1 = runtime_->bytesHash(src1);
+  EXPECT_EQ(code1, hash1);
 
   // LargeBytes with different values should (ideally) hash differently.
   const byte src2[] = {0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
@@ -747,8 +747,8 @@ TEST_F(RuntimeTest, HashLargeBytes) {
   word hash2 = runtime_->hash(*arr2);
   EXPECT_NE(hash1, hash2);
 
-  word code2 = runtime_->siphash24(src2);
-  EXPECT_EQ(code2 & RawHeader::kHashCodeMask, static_cast<uword>(hash2));
+  word code2 = runtime_->bytesHash(src2);
+  EXPECT_EQ(code2, hash2);
 
   // LargeBytes with the same value should hash the same.
   LargeBytes arr3(&scope, runtime_->newBytesWithAll(src1));
