@@ -423,6 +423,18 @@ typedef struct {
 
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
+typedef void* PyThread_type_lock;
+typedef void* PyThread_type_sema;
+
+typedef enum PyLockStatus {
+  PY_LOCK_FAILURE = 0,
+  PY_LOCK_ACQUIRED = 1,
+  PY_LOCK_INTR
+} PyLockStatus;
+
+#define PY_TIMEOUT_T long long
+#define PY_TIMEOUT_MAX LLONG_MAX
+
 #ifdef __cplusplus
 }
 #endif

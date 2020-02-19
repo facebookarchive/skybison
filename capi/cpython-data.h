@@ -450,6 +450,9 @@ extern const char* Py_hexdigits;
 
 #define Py_UNICODE_REPLACEMENT_CHARACTER ((Py_UCS4)0xFFFD)
 
+#define WAIT_LOCK 1
+#define NOWAIT_LOCK 0
+
 #ifdef __cplusplus
 }
 #endif
