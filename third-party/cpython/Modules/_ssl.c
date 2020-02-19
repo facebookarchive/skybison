@@ -465,14 +465,20 @@ PyDoc_STRVAR(SSLEOFError_doc,
 "SSL/TLS connection terminated abruptly.");
 
 static PyObject *
-SSLError_str(PyOSErrorObject *self)
+SSLError_str(PyObject *self)
 {
-    if (self->strerror != NULL && PyUnicode_Check(self->strerror)) {
-        Py_INCREF(self->strerror);
-        return self->strerror;
+    PyObject* strerror = PyObject_GetAttrString(self, "strerror");
+    if (strerror != NULL) {
+        if (PyUnicode_Check(strerror))
+            return strerror;
+        Py_DECREF(strerror);
     }
-    else
-        return PyObject_Str(self->args);
+    PyObject* args = PyObject_GetAttrString(self, "args");
+    if (args == NULL)
+        return NULL;
+    PyObject* result = PyObject_Str(args);
+    Py_DECREF(args);
+    return result;
 }
 
 static PyMethodDef SSLError_dunder_str = {

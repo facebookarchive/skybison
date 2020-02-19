@@ -91,7 +91,6 @@
 #include "warnings.h"
 
 #include "codecs.h"
-#include "pyerrors.h"
 
 #include "import.h"
 #include "intrcheck.h"
