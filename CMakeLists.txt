@@ -97,13 +97,13 @@ set(BINARY_DIR_HEADERS "${CMAKE_BINARY_DIR}/Include")
 file(MAKE_DIRECTORY "${BINARY_DIR_HEADERS}")
 set(
   C_API_HEADERS_INPUT
+  ${CMAKE_SOURCE_DIR}/capi/Python.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
-  ${CMAKE_SOURCE_DIR}/ext/Include/Python.h
-  ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-linux.h
-  ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-osx.h
-  ${CMAKE_SOURCE_DIR}/ext/config/pyconfig.h)
+  ${CMAKE_SOURCE_DIR}/capi/pyconfig-linux.h
+  ${CMAKE_SOURCE_DIR}/capi/pyconfig-osx.h
+  ${CMAKE_SOURCE_DIR}/capi/pyconfig.h)
 set(
   C_API_HEADERS_OUTPUT
   ${CMAKE_BINARY_DIR}/Include/Python.h
@@ -624,6 +624,7 @@ target_include_directories(
   ${BZIP2_INCLUDE_DIRS}
   ${XZ_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIRS})
+target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
 target_compile_options(
   extension-modules
   PUBLIC

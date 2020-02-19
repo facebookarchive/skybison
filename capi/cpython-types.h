@@ -9,6 +9,8 @@
 #include <time.h>
 #include <wchar.h>
 
+#include "pyconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

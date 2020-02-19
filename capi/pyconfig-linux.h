@@ -1376,27 +1376,6 @@
  * trigger EINVAL. */
 #define _PY_WRITE_MAX PY_SSIZE_T_MAX
 
-/* Enable extensions on AIX 3, Interix.  */
-#ifndef _ALL_SOURCE
-#define _ALL_SOURCE 1
-#endif
-/* Enable GNU extensions on systems that have them.  */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
-#endif
-/* Enable threading extensions on Solaris.  */
-#ifndef _POSIX_PTHREAD_SEMANTICS
-#define _POSIX_PTHREAD_SEMANTICS 1
-#endif
-/* Enable extensions on HP NonStop.  */
-#ifndef _TANDEM_SOURCE
-#define _TANDEM_SOURCE 1
-#endif
-/* Enable general extensions on Solaris.  */
-#ifndef __EXTENSIONS__
-#define __EXTENSIONS__ 1
-#endif
-
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 /* #undef WANT_SIGFPE_HANDLER */
 

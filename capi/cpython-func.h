@@ -5,6 +5,8 @@
 
 #include "cpython-types.h"
 
+#include "pyconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1150,8 +1152,11 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int, int);
 
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
-PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
+PyAPI_FUNC(char*) _Py_dg_dtoa(double, int, int, int*, int*, char**);
+PyAPI_FUNC(void) _Py_dg_freedtoa(char*);
 PyAPI_FUNC(double) _Py_dg_infinity(int sign);
+PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
+PyAPI_FUNC(double) _Py_dg_strtod(const char*, char**);
 PyAPI_FUNC(void) _Py_FreeCharPArray(char* const array[]);
 
 /* Non C-API functions */

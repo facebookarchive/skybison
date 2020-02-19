@@ -3,6 +3,8 @@
 
 #include "cpython-func.h"
 
+#include "pyconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
