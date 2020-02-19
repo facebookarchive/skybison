@@ -196,6 +196,7 @@ PyAPI_FUNC(void) PyBytes_ConcatAndDel(PyObject**, PyObject*);
 PyAPI_FUNC(PyObject*)
     _PyBytes_DecodeEscape(const char*, Py_ssize_t, const char*, Py_ssize_t,
                           const char*, const char**);
+PyAPI_FUNC(PyObject*) _PyBytes_Join(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyBytes_DecodeEscape(const char*, Py_ssize_t, const char*,
                                            Py_ssize_t, const char*);
 PyAPI_FUNC(PyObject*) PyBytes_FromFormat(const char*, ...);
@@ -501,6 +502,7 @@ PyAPI_FUNC(int) PyMapping_SetItemString(PyObject*, const char*, PyObject*);
 PyAPI_FUNC(Py_ssize_t) PyMapping_Size(PyObject*);
 PyAPI_FUNC(PyObject*) PyMapping_Values(PyObject*);
 PyAPI_FUNC(void*) PyMem_Calloc(size_t, size_t);
+PyAPI_FUNC(void) PyMem_Del(void*);
 PyAPI_FUNC(void) PyMem_Free(void*);
 PyAPI_FUNC(void*) PyMem_Malloc(size_t);
 PyAPI_FUNC(void*) PyMem_RawCalloc(size_t, size_t);
@@ -757,6 +759,7 @@ PyAPI_FUNC(int)
 PyAPI_FUNC(PyObject*) PyStructSequence_New(PyTypeObject*);
 PyAPI_FUNC(PyTypeObject*) PyStructSequence_NewType(PyStructSequence_Desc*);
 PyAPI_FUNC(void) PyStructSequence_SetItem(PyObject*, Py_ssize_t, PyObject*);
+PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject*);
 PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t*);
 PyAPI_FUNC(void) PySys_AddWarnOptionUnicode(PyObject*);
 PyAPI_FUNC(void) PySys_AddXOption(const wchar_t*);
@@ -1062,6 +1065,7 @@ PyAPI_FUNC(char*) Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*);
 PyAPI_FUNC(PyObject*) Py_VaBuildValue(const char*, va_list);
 PyAPI_FUNC(PyObject*) _Py_VaBuildValue_SizeT(const char*, va_list);
 PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(PyObject*, const char*);
+PyAPI_FUNC(char*) _PyMem_RawStrdup(const char*);
 PyAPI_FUNC(char*) _PyMem_Strdup(const char*);
 PyAPI_FUNC(int) _PyBytes_Resize(PyObject**, Py_ssize_t);
 PyAPI_FUNC(int) _PyImport_ReleaseLock();
@@ -1506,6 +1510,16 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
     Py_INCREF(return_value_);                                                  \
     return return_value_;                                                      \
   } while (0)
+
+#define Py_BEGIN_ALLOW_THREADS                                                 \
+  {                                                                            \
+    PyThreadState* _save;                                                      \
+    _save = PyEval_SaveThread();
+#define Py_BLOCK_THREADS PyEval_RestoreThread(_save);
+#define Py_UNBLOCK_THREADS _save = PyEval_SaveThread();
+#define Py_END_ALLOW_THREADS                                                   \
+  PyEval_RestoreThread(_save);                                                 \
+  }
 
 #ifdef __cplusplus
 }

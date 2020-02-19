@@ -65,7 +65,6 @@
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
 #include "pymath.h"
-#include "pymem.h"
 
 #include "object.h"
 #include "objimpl.h"
@@ -108,13 +107,11 @@
 
 #include "pystate.h"
 
-#include "ceval.h"
 #include "import.h"
 #include "intrcheck.h"
 #include "osmodule.h"
 #include "pyarena.h"
 #include "pylifecycle.h"
-#include "sysmodule.h"
 
 #include "bltinmodule.h"
 

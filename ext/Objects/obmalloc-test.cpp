@@ -8,7 +8,7 @@ namespace testing {
 
 using ObmallocExtensionApiTest = ExtensionApi;
 
-TEST_F(ObmallocExtensionApiTest, RawStrdupDuplicatesStr) {
+TEST_F(ObmallocExtensionApiTest, PyMemRawStrdupDuplicatesStr) {
   const char* str = "hello, world";
   char* dup = _PyMem_RawStrdup(str);
   EXPECT_NE(dup, str);
@@ -16,7 +16,7 @@ TEST_F(ObmallocExtensionApiTest, RawStrdupDuplicatesStr) {
   PyMem_RawFree(dup);
 }
 
-TEST_F(ObmallocExtensionApiTest, StrdupDuplicatesStr) {
+TEST_F(ObmallocExtensionApiTest, PyMemStrdupDuplicatesStr) {
   const char* str = "hello, world";
   char* dup = _PyMem_Strdup(str);
   EXPECT_NE(dup, str);
@@ -24,14 +24,14 @@ TEST_F(ObmallocExtensionApiTest, StrdupDuplicatesStr) {
   PyMem_Free(dup);
 }
 
-TEST_F(ObmallocExtensionApiTest, MemResizeAssignsToPointer) {
+TEST_F(ObmallocExtensionApiTest, PyMemMemResizeAssignsToPointer) {
   void* ptr = nullptr;
   PyMem_Resize(ptr, int, 128);
   EXPECT_NE(ptr, nullptr);
   PyMem_Free(ptr);
 }
 
-TEST_F(ObmallocExtensionApiTest, MemResizeMovesContents) {
+TEST_F(ObmallocExtensionApiTest, PyMemMemResizeMovesContents) {
   char* ptr = PyMem_New(char, 1);
   ASSERT_NE(ptr, nullptr);
   *ptr = 98;
@@ -51,19 +51,19 @@ TEST_F(ObmallocExtensionApiTest, MemResizeMovesContents) {
   PyMem_FREE(ptr);
 }
 
-TEST_F(ObmallocExtensionApiTest, MallocAllocatesMemory) {
+TEST_F(ObmallocExtensionApiTest, PyMemMallocAllocatesMemory) {
   void* ptr = PyObject_Malloc(1);
   EXPECT_NE(ptr, nullptr);
   PyObject_Free(ptr);
 }
 
-TEST_F(ObmallocExtensionApiTest, CallocAllocatesMemory) {
+TEST_F(ObmallocExtensionApiTest, PyMemCallocAllocatesMemory) {
   void* ptr = PyObject_Calloc(1, 1);
   EXPECT_NE(ptr, nullptr);
   PyObject_Free(ptr);
 }
 
-TEST_F(ObmallocExtensionApiTest, ReallocAllocatesMemory) {
+TEST_F(ObmallocExtensionApiTest, PyMemReallocAllocatesMemory) {
   auto* ptr = reinterpret_cast<char*>(PyObject_Malloc(1));
   ASSERT_NE(ptr, nullptr);
   *ptr = 98;
@@ -76,7 +76,7 @@ TEST_F(ObmallocExtensionApiTest, ReallocAllocatesMemory) {
   PyObject_Free(ptr);
 }
 
-TEST_F(ObmallocExtensionApiTest, ReallocOnlyRetracksPyObjects) {
+TEST_F(ObmallocExtensionApiTest, PyMemReallocOnlyRetracksPyObjects) {
   auto* ptr = reinterpret_cast<char*>(PyObject_Malloc(1));
   ASSERT_NE(ptr, nullptr);
   *ptr = 98;
@@ -97,6 +97,26 @@ except:
   EXPECT_EQ(*ptr, 98);
   EXPECT_EQ(ptr[1], 87);
   PyObject_Free(ptr);
+}
+
+TEST_F(ObmallocExtensionApiTest, PyMemNewAllocatesAndPyMemDelFreesMemory) {
+  struct FooBar {
+    char x[7];
+  };
+  void* memory = PyMem_New(FooBar, 3);
+  ASSERT_NE(memory, nullptr);
+  memset(memory, 8, 3 * sizeof(FooBar));
+  PyMem_Del(memory);
+}
+
+TEST_F(ObmallocExtensionApiTest, PyMemNEWAllocatesAndPyMemDELFreesMemory) {
+  struct FooBar {
+    char x[7];
+  };
+  void* memory = PyMem_NEW(FooBar, 3);
+  ASSERT_NE(memory, nullptr);
+  memset(memory, 8, 3 * sizeof(FooBar));
+  PyMem_DEL(memory);
 }
 
 }  // namespace testing

@@ -13,6 +13,8 @@ PY_EXPORT void* PyObject_Malloc(size_t size) {
   return reinterpret_cast<void*>(entry + 1);
 }
 
+PY_EXPORT void PyMem_Del(void* ptr) { return PyMem_RawFree(ptr); }
+
 PY_EXPORT void* PyObject_Calloc(size_t nelem, size_t size) {
   if (size == 0 || nelem == 0) {
     nelem = 1;
