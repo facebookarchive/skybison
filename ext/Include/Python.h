@@ -78,7 +78,6 @@
 #include "bytesobject.h"
 #include "cellobject.h"
 #include "classobject.h"
-#include "complexobject.h"
 #include "descrobject.h"
 #include "dictobject.h"
 #include "enumobject.h"
