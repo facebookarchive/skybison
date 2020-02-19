@@ -15,6 +15,7 @@ extern "C" {
 #define PyMODINIT_FUNC PyObject*
 #endif
 
+#define Py_UNUSED(name) _unused_##name __attribute__((unused))
 #define _Py_NO_RETURN __attribute__((__noreturn__))
 
 /* Singletons */
@@ -1381,6 +1382,20 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define Py_ABS(x) ((x) < 0 ? -(x) : (x))
+
+#define Py_BUILD_ASSERT_EXPR(cond) (sizeof(char[1 - 2 * !(cond)]) - 1)
+#define Py_BUILD_ASSERT(cond)                                                  \
+  do {                                                                         \
+    (void)Py_BUILD_ASSERT_EXPR(cond);                                          \
+  } while (0)
+
+#define _Py_SIZE_ROUND_DOWN(n, a) ((size_t)(n) & ~(size_t)((a)-1))
+#define _Py_SIZE_ROUND_UP(n, a)                                                \
+  (((size_t)(n) + (size_t)((a)-1)) & ~(size_t)((a)-1))
+#define _Py_ALIGN_DOWN(p, a) ((void*)((uintptr_t)(p) & ~(uintptr_t)((a)-1)))
+#define _Py_ALIGN_UP(p, a)                                                     \
+  ((void*)(((uintptr_t)(p) + (uintptr_t)((a)-1)) & ~(uintptr_t)((a)-1)))
+#define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a)-1)))
 
 #define Py_CLEAR(op)                                                           \
   do {                                                                         \

@@ -50,7 +50,6 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
-#include "pymacro.h"
 #include "pyport.h"
 
 #include "pyatomic.h"

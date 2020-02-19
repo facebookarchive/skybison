@@ -26,6 +26,9 @@ struct stat;
 
 #define PyObject_VAR_HEAD PyVarObject ob_base;
 
+#define Py_MEMBER_SIZE(type, member) sizeof(((type*)0)->member)
+#define Py_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+
 /* clang-format off */
 #define PyObject_HEAD_INIT(type) \
     { _PyObject_EXTRA_INIT 1},

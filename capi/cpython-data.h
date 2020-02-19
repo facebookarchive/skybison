@@ -8,6 +8,9 @@ extern "C" {
 #endif
 
 #define PyAPI_DATA(RTYPE) extern RTYPE
+#define PyDoc_VAR(name) static char name[]
+#define PyDoc_STRVAR(name, str) PyDoc_VAR(name) = PyDoc_STR(str)
+#define PyDoc_STR(str) str
 
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 #define Py_USING_UNICODE
@@ -16,6 +19,9 @@ extern "C" {
 #if __SIZEOF_WCHAR_T__ < 4
 #error sizeof(wchar_t) < 4 not supported
 #endif
+
+#define _Py_XSTRINGIFY(x) #x
+#define Py_STRINGIFY(x) _Py_XSTRINGIFY(x)
 
 /* Singletons */
 #define PyAsyncGen_Type (*PyAsyncGen_Type_Ptr())

@@ -243,7 +243,6 @@ static const char copyright[] =
 #define SRE_CODE_BITS (8 * sizeof(SRE_CODE))
 #define SRE_MODULE "sre"
 #define SRE_PY_MODULE "re"
-#define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
 
 /* defining this one enables tracing */
 #undef VERBOSE
