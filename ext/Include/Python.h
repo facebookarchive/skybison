@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 #ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
+#error "Python.h requires that stdio.h define NULL."
 #endif
 
 #include <string.h>
@@ -46,11 +46,12 @@
  */
 #include <assert.h>
 
-#include "cpython-types.h"
 #include "cpython-data.h"
-#include "pyport.h"
 #include "cpython-func.h"
+#include "cpython-types.h"
+
 #include "pymacro.h"
+#include "pyport.h"
 
 #include "pyatomic.h"
 
@@ -64,63 +65,64 @@
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
 #include "pymath.h"
-#include "pytime.h"
 #include "pymem.h"
+#include "pytime.h"
 
 #include "object.h"
 #include "objimpl.h"
-#include "typeslots.h"
 #include "pyhash.h"
+#include "typeslots.h"
 
 #include "pydebug.h"
 
+#include "boolobject.h"
 #include "bytearrayobject.h"
 #include "bytesobject.h"
-#include "unicodeobject.h"
-#include "longobject.h"
-#include "longintrepr.h"
-#include "boolobject.h"
-#include "floatobject.h"
+#include "cellobject.h"
+#include "classobject.h"
 #include "complexobject.h"
-#include "rangeobject.h"
-#include "memoryobject.h"
-#include "tupleobject.h"
-#include "listobject.h"
+#include "descrobject.h"
 #include "dictobject.h"
-#include "odictobject.h"
 #include "enumobject.h"
-#include "setobject.h"
+#include "fileobject.h"
+#include "floatobject.h"
+#include "funcobject.h"
+#include "genobject.h"
+#include "iterobject.h"
+#include "listobject.h"
+#include "longintrepr.h"
+#include "longobject.h"
+#include "memoryobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "funcobject.h"
-#include "classobject.h"
-#include "fileobject.h"
+#include "namespaceobject.h"
+#include "odictobject.h"
 #include "pycapsule.h"
-#include "traceback.h"
+#include "rangeobject.h"
+#include "setobject.h"
 #include "sliceobject.h"
-#include "cellobject.h"
-#include "iterobject.h"
-#include "genobject.h"
-#include "descrobject.h"
+#include "traceback.h"
+#include "tupleobject.h"
+#include "unicodeobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
+
 #include "structseq.h"
-#include "namespaceobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
 
 #include "pystate.h"
 
-#include "pyarena.h"
-#include "modsupport.h"
-#include "pythonrun.h"
-#include "pylifecycle.h"
 #include "ceval.h"
-#include "sysmodule.h"
-#include "osmodule.h"
-#include "intrcheck.h"
 #include "import.h"
+#include "intrcheck.h"
+#include "modsupport.h"
+#include "osmodule.h"
+#include "pyarena.h"
+#include "pylifecycle.h"
+#include "pythonrun.h"
+#include "sysmodule.h"
 
 #include "abstract.h"
 #include "bltinmodule.h"
@@ -128,11 +130,11 @@
 #include "compile.h"
 #include "eval.h"
 
-#include "pyctype.h"
-#include "pystrtod.h"
-#include "pystrcmp.h"
 #include "dtoa.h"
 #include "fileutils.h"
+#include "pyctype.h"
 #include "pyfpe.h"
+#include "pystrcmp.h"
+#include "pystrtod.h"
 
 #endif /* !Py_PYTHON_H */

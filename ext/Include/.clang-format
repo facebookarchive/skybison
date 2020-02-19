@@ -1,0 +1,19 @@
+BasedOnStyle: Google
+AlignEscapedNewlinesLeft: false
+DerivePointerAlignment: false
+PointerAlignment: Left
+IncludeBlocks: Preserve
+IncludeCategories:
+  # C system headers
+  - Regex:           '^<.*\.h?>'
+    Priority:        1
+  # C++ standard library headers
+  - Regex:           '^<.*'
+    Priority:        2
+  # third-party headers
+  - Regex:           'Python\.h|cpython-.*\.h|.*/.*'
+    Priority:        3
+  # Pyro headers
+  - Regex:           '.*'
+    Priority:        4
+IncludeIsMainRegex: "(-linux)?(-darwin)?(-x64)?(-test)?$"
