@@ -5,6 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
+namespace testing {
 
 using BoolExtensionApiTest = ExtensionApi;
 
@@ -29,4 +30,23 @@ TEST_F(BoolExtensionApiTest, CheckBoolIdentity) {
   EXPECT_EQ(pybool_false, pybool2);
 }
 
+TEST_F(BoolExtensionApiTest, TestPyReturnTrueReturnsTrue) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_TRUE; };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_EQ(result, Py_True);
+}
+
+TEST_F(BoolExtensionApiTest, TestPyReturnTrueReturnsFalse) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_FALSE; };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_EQ(result, Py_False);
+}
+
+}  // namespace testing
 }  // namespace py

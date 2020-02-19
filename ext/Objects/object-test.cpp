@@ -1178,5 +1178,23 @@ obj.__dir__ = new_dir.__get__(obj, C)
   EXPECT_EQ(PySequence_Contains(result, foo), 1);
 }
 
+TEST_F(ObjectExtensionApiTest, PyReturnNoneReturnsNone) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_NONE; };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(ObjectExtensionApiTest, PyReturnNotImplementedReturnsNotImplemented) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_NOTIMPLEMENTED; };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_EQ(result, Py_NotImplemented);
+}
+
 }  // namespace testing
 }  // namespace py

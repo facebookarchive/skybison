@@ -1272,6 +1272,34 @@ PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
 #define _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)                      \
   _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)
 
+#define Py_RETURN_FALSE                                                        \
+  do {                                                                         \
+    PyObject* return_value_ = Py_False;                                        \
+    Py_INCREF(return_value_);                                                  \
+    return return_value_;                                                      \
+  } while (0)
+#define Py_RETURN_INF(sign)                                                    \
+  return PyFloat_FromDouble(copysign(Py_HUGE_VAL, (sign)))
+#define Py_RETURN_NAN return PyFloat_FromDouble(Py_NAN)
+#define Py_RETURN_NONE                                                         \
+  do {                                                                         \
+    PyObject* return_value_ = Py_None;                                         \
+    Py_INCREF(return_value_);                                                  \
+    return return_value_;                                                      \
+  } while (0)
+#define Py_RETURN_NOTIMPLEMENTED                                               \
+  do {                                                                         \
+    PyObject* return_value_ = Py_NotImplemented;                               \
+    Py_INCREF(return_value_);                                                  \
+    return return_value_;                                                      \
+  } while (0)
+#define Py_RETURN_TRUE                                                         \
+  do {                                                                         \
+    PyObject* return_value_ = Py_True;                                         \
+    Py_INCREF(return_value_);                                                  \
+    return return_value_;                                                      \
+  } while (0)
+
 #ifdef __cplusplus
 }
 #endif

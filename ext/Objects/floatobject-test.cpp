@@ -1,4 +1,5 @@
 #include <cfloat>
+#include <cmath>
 
 #include "Python.h"
 #include "gtest/gtest.h"
@@ -134,6 +135,35 @@ TEST_F(FloatExtensionApiTest, Pack8) {
   ASSERT_EQ(ptr[6], 248);
   ASSERT_EQ(ptr[7], 63);
   EXPECT_EQ(_PyFloat_Unpack8(ptr, /* le */ true), 1.5);
+}
+
+TEST_F(FloatExtensionApiTest, PyReturnNanReturnsNan) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_NAN; };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_TRUE(std::isnan(PyFloat_AsDouble(result)));
+}
+
+TEST_F(FloatExtensionApiTest, PyReturnINFReturnsInf) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_INF(0); };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_TRUE(std::isinf(PyFloat_AsDouble(result)));
+  EXPECT_GT(PyFloat_AsDouble(result), 0.);
+}
+
+TEST_F(FloatExtensionApiTest, PyReturnINFReturnsNegativeInf) {
+  PyObjectPtr module(PyModule_New("mod"));
+  binaryfunc meth = [](PyObject*, PyObject*) { Py_RETURN_INF(-1); };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_TRUE(std::isinf(PyFloat_AsDouble(result)));
+  EXPECT_LT(PyFloat_AsDouble(result), 0.);
 }
 
 }  // namespace testing
