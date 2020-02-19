@@ -1497,7 +1497,7 @@ math_factorial(PyObject *self, PyObject *arg)
 
     if (PyFloat_Check(arg)) {
         PyObject *lx;
-        double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
+        double dx = PyFloat_AS_DOUBLE(arg);
         if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
             PyErr_SetString(PyExc_ValueError,
                             "factorial() only accepts integral values");

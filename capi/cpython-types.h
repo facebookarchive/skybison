@@ -43,6 +43,9 @@ typedef int Py_ssize_clean_t;
 #define Py_LL(x) x##LL
 #define Py_ULL(x) Py_LL(x##U)
 
+#define Py_HUGE_VAL HUGE_VAL
+#define Py_NAN __builtin_nan("")
+
 #define PY_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 #define PY_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 

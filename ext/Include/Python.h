@@ -61,7 +61,6 @@
 #if defined(PYMALLOC_DEBUG) && !defined(WITH_PYMALLOC)
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
-#include "pymath.h"
 
 #include "typeslots.h"
 
@@ -76,7 +75,6 @@
 #include "dictobject.h"
 #include "enumobject.h"
 #include "fileobject.h"
-#include "floatobject.h"
 #include "funcobject.h"
 #include "genobject.h"
 #include "iterobject.h"

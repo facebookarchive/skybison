@@ -1346,6 +1346,8 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define PyBytes_AS_STRING(op) PyBytes_AsString((PyObject*)op)
 #define PyBytes_GET_SIZE(op) PyBytes_Size((PyObject*)op)
 
+#define PyFloat_AS_DOUBLE(op) PyFloat_AsDouble((PyObject*)op)
+
 #define PyList_GET_ITEM(op, i) PyList_GetItem((PyObject*)op, i)
 #define PyList_GET_SIZE(op) PyList_Size((PyObject*)op)
 #define PyList_SET_ITEM(op, i, v) PyList_SET_ITEM_Func((PyObject*)op, i, v)
@@ -1574,6 +1576,23 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
     } else if (errno == ERANGE)                                                \
       errno = 0;                                                               \
   } while (0)
+
+#define Py_FORCE_DOUBLE(X) (X)
+#define Py_IS_NAN(X) isnan(X)
+#define Py_IS_INFINITY(X) isinf(X)
+#define Py_IS_FINITE(X) isfinite(X)
+#define Py_OVERFLOWED(X)                                                       \
+  ((X) != 0.0 && (errno == ERANGE || (X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL))
+
+#define _Py_IntegralTypeSigned(type) ((type)(-1) < 0)
+#define _Py_IntegralTypeMax(type)                                              \
+  ((_Py_IntegralTypeSigned(type))                                              \
+       ? (((((type)1 << (sizeof(type) * CHAR_BIT - 2)) - 1) << 1) + 1)         \
+       : ~(type)0)
+#define _Py_IntegralTypeMin(type)                                              \
+  ((_Py_IntegralTypeSigned(type)) ? -_Py_IntegralTypeMax(type) - 1 : 0)
+#define _Py_InIntegralTypeRange(type, v)                                       \
+  (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 
 #define Py_RETURN_FALSE                                                        \
   do {                                                                         \
