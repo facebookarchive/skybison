@@ -114,7 +114,6 @@
 #include "ceval.h"
 #include "import.h"
 #include "intrcheck.h"
-#include "modsupport.h"
 #include "osmodule.h"
 #include "pyarena.h"
 #include "pylifecycle.h"

@@ -132,6 +132,11 @@ extern "C" {
 #define _PyNone_Type (*_PyNone_Type_Ptr())
 #define _PyNotImplemented_Type (*_PyNotImplemented_Type_Ptr())
 
+#define PYTHON_ABI_STRING "3"
+#define PYTHON_ABI_VERSION 3
+#define PYTHON_API_STRING "1013"
+#define PYTHON_API_VERSION 1013
+
 extern int Py_BytesWarningFlag;
 extern int Py_DebugFlag;
 extern int Py_DontWriteBytecodeFlag;

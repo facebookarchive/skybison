@@ -2054,8 +2054,6 @@ PY_EXPORT int PyArg_UnpackTuple(PyObject* args, const char* name,
   return 1;
 }
 
-#pragma push_macro("_PyArg_NoKeywords")
-#undef _PyArg_NoKeywords
 PY_EXPORT int _PyArg_NoKeywords(const char* funcname, PyObject* kwargs) {
   if (kwargs == nullptr) {
     return 1;
@@ -2071,10 +2069,7 @@ PY_EXPORT int _PyArg_NoKeywords(const char* funcname, PyObject* kwargs) {
                funcname);
   return 0;
 }
-#pragma pop_macro("_PyArg_NoKeywords")
 
-#pragma push_macro("_PyArg_NoPositional")
-#undef _PyArg_NoPositional
 PY_EXPORT int _PyArg_NoPositional(const char* funcname, PyObject* args) {
   if (args == nullptr) {
     return 1;
@@ -2090,7 +2085,6 @@ PY_EXPORT int _PyArg_NoPositional(const char* funcname, PyObject* args) {
                funcname);
   return 0;
 }
-#pragma pop_macro("_PyArg_NoPositional")
 
 PY_EXPORT int PyArg_ValidateKeywordArguments(PyObject*) {
   UNIMPLEMENTED("PyArg_ValidateKeywordArguments");

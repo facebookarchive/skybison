@@ -142,19 +142,42 @@ PyAPI_FUNC(void) PyArena_Free(PyArena*);
 PyAPI_FUNC(void*) PyArena_Malloc(PyArena*, size_t);
 PyAPI_FUNC(PyArena*) PyArena_New();
 PyAPI_FUNC(int) PyArg_Parse(PyObject*, const char*, ...);
+PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject*, const char*, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject* args, const char* format, ...);
 PyAPI_FUNC(int)
+    _PyArg_ParseTuple_SizeT(PyObject* args, const char* format, ...);
+PyAPI_FUNC(int)
     PyArg_ParseTupleAndKeywords(PyObject*, PyObject*, const char*, char**, ...);
+PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject*, PyObject*,
+                                                   const char*, char**, ...);
 PyAPI_FUNC(int)
     PyArg_UnpackTuple(PyObject*, const char*, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack(PyObject**, Py_ssize_t, PyObject*,
                                   struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject**, Py_ssize_t, PyObject*,
+                                        struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject*, PyObject*,
                                                  struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int)
+    _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject*, PyObject*,
+                                           struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int)
+    _PyArg_VaParseTupleAndKeywordsFast(PyObject*, PyObject*,
+                                       struct _PyArg_Parser*, va_list);
+PyAPI_FUNC(int)
+    _PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject*, PyObject*,
+                                             struct _PyArg_Parser*, va_list);
 PyAPI_FUNC(int) PyArg_VaParse(PyObject*, const char*, va_list);
+PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject*, const char*, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject*, PyObject*, const char*,
                                               char**, va_list);
+PyAPI_FUNC(int)
+    _PyArg_VaParseTupleAndKeywords_SizeT(PyObject*, PyObject*, const char*,
+                                         char**, va_list);
 PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject*);
+PyAPI_FUNC(int) _PyArg_NoKeywords(const char* funcname, PyObject* kw);
+PyAPI_FUNC(int) _PyArg_NoPositional(const char* funcname, PyObject* args);
+PyAPI_FUNC(void) _PyArg_Fini();
 PyAPI_FUNC(PyObject*) PyBool_FromLong(long);
 PyAPI_FUNC(int)
     PyBuffer_FillInfo(Py_buffer*, PyObject*, void*, Py_ssize_t, int, int);
@@ -965,6 +988,7 @@ PyAPI_FUNC(PyObject*) PyWrapper_New(PyObject*, PyObject*);
 PyAPI_FUNC(int) Py_AddPendingCall(int (*)(void*), void*);
 PyAPI_FUNC(int) Py_AtExit(void (*)(void));
 PyAPI_FUNC(PyObject*) Py_BuildValue(const char*, ...);
+PyAPI_FUNC(PyObject*) _Py_BuildValue_SizeT(const char*, ...);
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char*);
 PyAPI_FUNC(void) Py_DecRef(PyObject*);
 PyAPI_FUNC(wchar_t*) Py_DecodeLocale(const char*, size_t*);
@@ -1005,6 +1029,7 @@ PyAPI_FUNC(struct symtable*) Py_SymtableString(const char*, const char*, int);
 PyAPI_FUNC(size_t) Py_UNICODE_strlen(const Py_UNICODE*);
 PyAPI_FUNC(char*) Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*);
 PyAPI_FUNC(PyObject*) Py_VaBuildValue(const char*, va_list);
+PyAPI_FUNC(PyObject*) _Py_VaBuildValue_SizeT(const char*, va_list);
 PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(PyObject*, const char*);
 PyAPI_FUNC(char*) _PyMem_Strdup(const char*);
 PyAPI_FUNC(int) _PyBytes_Resize(PyObject**, Py_ssize_t);
@@ -1159,6 +1184,20 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
 
+#ifdef PY_SSIZE_T_CLEAN
+#define PyArg_Parse _PyArg_Parse_SizeT
+#define PyArg_ParseTuple _PyArg_ParseTuple_SizeT
+#define PyArg_ParseTupleAndKeywords _PyArg_ParseTupleAndKeywords_SizeT
+#define PyArg_VaParse _PyArg_VaParse_SizeT
+#define PyArg_VaParseTupleAndKeywords _PyArg_VaParseTupleAndKeywords_SizeT
+#define Py_BuildValue _Py_BuildValue_SizeT
+#define Py_VaBuildValue _Py_VaBuildValue_SizeT
+#define _PyArg_ParseStack _PyArg_ParseStack_SizeT
+#define _PyArg_ParseTupleAndKeywordsFast _PyArg_ParseTupleAndKeywordsFast_SizeT
+#define _PyArg_VaParseTupleAndKeywordsFast                                     \
+  _PyArg_VaParseTupleAndKeywordsFast_SizeT
+#endif
+
 /* Parentheses around the whole expressions are needed to compile
  * "if PyDict_CheckExact(other) {". Parentheses around "op" are needed for
  * "PyBytes_Check(state = PyTuple_GET_ITEM(args, 0))" */
@@ -1207,7 +1246,6 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 #define PyFPE_START_PROTECT(err_string, leave_stmt)
 #define PyFPE_END_PROTECT(v)
 
-#define PYTHON_API_VERSION 1013
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_Create(module) PyModule_Create2(module, PYTHON_API_VERSION)
 
