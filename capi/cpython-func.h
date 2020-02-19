@@ -215,6 +215,7 @@ PyAPI_FUNC(PyCodeObject*)
     PyCode_New(int, int, int, int, int, PyObject*, PyObject*, PyObject*,
                PyObject*, PyObject*, PyObject*, PyObject*, PyObject*, int,
                PyObject*);
+PyAPI_FUNC(PyCodeObject*) PyCode_NewEmpty(const char*, const char*, int);
 PyAPI_FUNC(PyCodeObject*)
     PyCode_NewWithPosOnlyArgs(int, int, int, int, int, int, PyObject*,
                               PyObject*, PyObject*, PyObject*, PyObject*,
@@ -549,6 +550,13 @@ PyAPI_FUNC(int) PyOS_mystrnicmp(const char*, const char*, Py_ssize_t);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 PyAPI_FUNC(int) PyOS_snprintf(char*, size_t, const char*, ...);
 PyAPI_FUNC(double) PyOS_string_to_double(const char*, char**, PyObject*);
+PyAPI_FUNC(char*) PyOS_double_to_string(double, char, int, int, int*);
+PyAPI_FUNC(PyObject*)
+    _Py_string_to_number_with_underscores(const char*, Py_ssize_t, const char*,
+                                          PyObject*, void*,
+                                          PyObject* (*)(const char*, Py_ssize_t,
+                                                        void*));
+PyAPI_FUNC(double) _Py_parse_inf_or_nan(const char*, char**);
 PyAPI_FUNC(long) PyOS_strtol(const char*, char**, int);
 PyAPI_FUNC(int) PyOS_vsnprintf(char*, size_t, const char*, va_list);
 PyAPI_FUNC(PyObject*) PyObject_ASCII(PyObject*);
@@ -1168,6 +1176,9 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 #define PyUnicode_Check(op) (PyUnicode_Check_Func((PyObject*)(op)))
 #define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)(op)))
 #define PyWeakref_Check(op) (PyWeakref_Check_Func((PyObject*)(op)))
+
+#define PyFPE_START_PROTECT(err_string, leave_stmt)
+#define PyFPE_END_PROTECT(v)
 
 #define PYTHON_API_VERSION 1013
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)

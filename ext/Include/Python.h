@@ -124,14 +124,11 @@
 
 #include "bltinmodule.h"
 
-#include "compile.h"
 #include "eval.h"
 
 #include "dtoa.h"
 #include "fileutils.h"
 #include "pyctype.h"
-#include "pyfpe.h"
 #include "pystrcmp.h"
-#include "pystrtod.h"
 
 #endif /* !Py_PYTHON_H */

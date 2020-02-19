@@ -7,9 +7,9 @@
 #include "ast.h"
 #include "compile.h"
 
-static PyObject* Py_CompileStringObject(const char* str, PyObject* filename,
-                                        int start, PyCompilerFlags* flags,
-                                        int optimize) {
+static PyObject* compile_string_object(const char* str, PyObject* filename,
+                                       int start, PyCompilerFlags* flags,
+                                       int optimize) {
   PyArena* arena = PyArena_New();
   if (arena == nullptr) return nullptr;
 
@@ -147,7 +147,7 @@ static PyObject* _compile_compile_impl(PyObject*, PyObject* source,
 
   static const int start[] = {Py_file_input, Py_eval_input, Py_single_input};
   result =
-      Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+      compile_string_object(str, filename, start[compile_mode], &cf, optimize);
   Py_XDECREF(source_copy);
   Py_DECREF(filename);
   return result;

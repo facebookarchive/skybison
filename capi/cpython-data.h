@@ -9,6 +9,8 @@ extern "C" {
 
 #define PyAPI_DATA(RTYPE) extern RTYPE
 
+#define PY_PARSER_REQUIRES_FUTURE_KEYWORD
+
 /* Singletons */
 #define PyAsyncGen_Type (*PyAsyncGen_Type_Ptr())
 #define PyBaseObject_Type (*PyBaseObject_Type_Ptr())
@@ -301,6 +303,14 @@ extern const unsigned char _Py_ctype_toupper[256];
 /* Flag bits for printing: */
 #define Py_PRINT_RAW 1 /* No string quotes etc. */
 
+#define Py_DTSF_SIGN 0x01
+#define Py_DTSF_ADD_DOT_0 0x02
+#define Py_DTSF_ALT 0x04
+
+#define Py_DTST_FINITE 0
+#define Py_DTST_INFINITE 1
+#define Py_DTST_NAN 2
+
 extern char* PyStructSequence_UnnamedField;
 
 extern const char* Py_FileSystemDefaultEncodeErrors;
@@ -360,7 +370,21 @@ extern const char* Py_hexdigits;
 #define CO_FUTURE_BARRY_AS_BDFL 0x40000
 #define CO_FUTURE_GENERATOR_STOP 0x80000
 
+#define CO_CELL_NOT_AN_ARG 255
+
 #define CO_MAXBLOCKS 20
+
+#define FUTURE_NESTED_SCOPES "nested_scopes"
+#define FUTURE_GENERATORS "generators"
+#define FUTURE_DIVISION "division"
+#define FUTURE_ABSOLUTE_IMPORT "absolute_import"
+#define FUTURE_WITH_STATEMENT "with_statement"
+#define FUTURE_PRINT_FUNCTION "print_function"
+#define FUTURE_UNICODE_LITERALS "unicode_literals"
+#define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
+#define FUTURE_GENERATOR_STOP "generator_stop"
+
+#define PY_INVALID_STACK_EFFECT INT_MAX
 
 /* Compiler Flags */
 #define Py_single_input 256
