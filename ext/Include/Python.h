@@ -66,7 +66,6 @@
 #endif
 #include "pymath.h"
 #include "pymem.h"
-#include "pytime.h"
 
 #include "object.h"
 #include "objimpl.h"

@@ -1181,6 +1181,39 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
 PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 
+PyAPI_FUNC(PyObject*) _PyLong_FromTime_t(time_t);
+PyAPI_FUNC(time_t) _PyLong_AsTime_t(PyObject*);
+PyAPI_FUNC(int) _PyTime_ObjectToTime_t(PyObject*, time_t*, _PyTime_round_t);
+PyAPI_FUNC(int)
+    _PyTime_ObjectToTimeval(PyObject*, time_t*, long*, _PyTime_round_t);
+PyAPI_FUNC(int)
+    _PyTime_ObjectToTimespec(PyObject*, time_t*, long*, _PyTime_round_t);
+
+PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
+PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(long long ns);
+PyAPI_FUNC(int)
+    _PyTime_FromSecondsObject(_PyTime_t*, PyObject*, _PyTime_round_t);
+PyAPI_FUNC(int)
+    _PyTime_FromMillisecondsObject(_PyTime_t*, PyObject*, _PyTime_round_t);
+PyAPI_FUNC(double) _PyTime_AsSecondsDouble(_PyTime_t);
+PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t, _PyTime_round_t);
+PyAPI_FUNC(_PyTime_t) _PyTime_AsMicroseconds(_PyTime_t, _PyTime_round_t);
+PyAPI_FUNC(PyObject*) _PyTime_AsNanosecondsObject(_PyTime_t);
+PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t, struct timeval*, _PyTime_round_t);
+PyAPI_FUNC(int)
+    _PyTime_AsTimeval_noraise(_PyTime_t, struct timeval*, _PyTime_round_t);
+PyAPI_FUNC(int)
+    _PyTime_AsTimevalTime_t(_PyTime_t, time_t*, int*, _PyTime_round_t);
+PyAPI_FUNC(int) _PyTime_AsTimespec(_PyTime_t, struct timespec*);
+PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock();
+PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock();
+PyAPI_FUNC(int) _PyTime_GetSystemClockWithInfo(_PyTime_t*, _Py_clock_info_t*);
+PyAPI_FUNC(int)
+    _PyTime_GetMonotonicClockWithInfo(_PyTime_t*, _Py_clock_info_t*);
+PyAPI_FUNC(int) _PyTime_Init();
+PyAPI_FUNC(int) _PyTime_localtime(time_t, struct tm*);
+PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
+
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
 
@@ -1376,6 +1409,8 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 #define Py_LeaveRecursiveCall() Py_LeaveRecursiveCall_Func()
 
 #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
+
+#define _PYTIME_FROMSECONDS(seconds) _PyTime_FromSeconds(seconds)
 
 /* Define identity macro so `generate_cpython_sources.py` deletes the cpython
  * macro. TODO(T56488016): Remove this macro when the generator is gone. */

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -354,6 +355,25 @@ typedef struct _ts PyThreadState;
 typedef void (*PyOS_sighandler_t)(int);
 typedef void (*PyCapsule_Destructor)(PyObject*);
 typedef int (*Py_tracefunc)(PyObject*, PyFrameObject*, int, PyObject*);
+
+typedef int64_t _PyTime_t;
+#define _PyTime_MIN INT64_MIN
+#define _PyTime_MAX INT64_MAX
+
+typedef enum {
+  _PyTime_ROUND_FLOOR = 0,
+  _PyTime_ROUND_CEILING = 1,
+  _PyTime_ROUND_HALF_EVEN = 2,
+  _PyTime_ROUND_UP = 3,
+  _PyTime_ROUND_TIMEOUT = _PyTime_ROUND_UP
+} _PyTime_round_t;
+
+typedef struct {
+  const char* implementation;
+  int monotonic;
+  int adjustable;
+  double resolution;
+} _Py_clock_info_t;
 
 #ifdef __cplusplus
 }
