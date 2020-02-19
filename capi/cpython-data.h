@@ -15,6 +15,7 @@ extern "C" {
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 #define Py_USING_UNICODE
 #define Py_UNICODE_WIDE
+#define HAVE_PY_SET_53BIT_PRECISION 0
 
 #if __SIZEOF_WCHAR_T__ < 4
 #error sizeof(wchar_t) < 4 not supported
@@ -22,6 +23,7 @@ extern "C" {
 
 #define _Py_XSTRINGIFY(x) #x
 #define Py_STRINGIFY(x) _Py_XSTRINGIFY(x)
+#define Py_FORCE_EXPANSION(X) X
 
 /* Singletons */
 #define PyAsyncGen_Type (*PyAsyncGen_Type_Ptr())
@@ -181,13 +183,6 @@ extern const unsigned char _Py_ctype_toupper[256];
 extern const unsigned char _PyLong_DigitValue[256];
 
 #define Py_CLEANUP_SUPPORTED 0x20000
-
-#define PY_SIZE_MAX SIZE_MAX
-#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1) >> 1))
-#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX - 1)
-
-/* Define to printf format modifier for Py_ssize_t */
-#define PY_FORMAT_SIZE_T "z"
 
 /* Flags for getting buffers */
 #define PyBUF_SIMPLE 0

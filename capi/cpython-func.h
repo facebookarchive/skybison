@@ -1,6 +1,8 @@
 #ifndef CPYTHON_FUNC_H
 #define CPYTHON_FUNC_H
 
+#include <math.h>
+
 #include "cpython-types.h"
 
 #ifdef __cplusplus
@@ -14,7 +16,12 @@ extern "C" {
 #else
 #define PyMODINIT_FUNC PyObject*
 #endif
+#define Py_LOCAL(type) static type
+#define Py_LOCAL_INLINE(type) static type
 
+#define Py_GCC_ATTRIBUTE(x) __attribute__(x)
+#define Py_ALIGNED(x) __attribute__((aligned(x)))
+#define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
 #define Py_UNUSED(name) _unused_##name __attribute__((unused))
 #define _Py_NO_RETURN __attribute__((__noreturn__))
 
@@ -1324,6 +1331,13 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define PyFPE_START_PROTECT(err_string, leave_stmt)
 #define PyFPE_END_PROTECT(v)
 
+#define _Py_BEGIN_SUPPRESS_IPH
+#define _Py_END_SUPPRESS_IPH
+
+#define _Py_SET_53BIT_PRECISION_HEADER
+#define _Py_SET_53BIT_PRECISION_START
+#define _Py_SET_53BIT_PRECISION_END
+
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_Create(module) PyModule_Create2(module, PYTHON_API_VERSION)
 
@@ -1524,6 +1538,42 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
  * macro. TODO(T56488016): Remove this macro when the generator is gone. */
 #define _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)                      \
   _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)
+
+#define Py_MEMCPY memcpy
+#define Py_VA_COPY va_copy
+#define Py_ARITHMETIC_RIGHT_SHIFT(TYPE, I, J) ((I) >> (J))
+#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+
+#define _Py_SET_EDOM_FOR_NAN(X) ;
+
+#define Py_SET_ERRNO_ON_MATH_ERROR(X)                                          \
+  do {                                                                         \
+    if (errno == 0) {                                                          \
+      if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL)                           \
+        errno = ERANGE;                                                        \
+      else                                                                     \
+        _Py_SET_EDOM_FOR_NAN(X)                                                \
+    }                                                                          \
+  } while (0)
+
+#define Py_SET_ERANGE_IF_OVERFLOW(X) Py_SET_ERRNO_ON_MATH_ERROR(X)
+
+#define Py_ADJUST_ERANGE1(X)                                                   \
+  do {                                                                         \
+    if (errno == 0) {                                                          \
+      if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL) errno = ERANGE;           \
+    } else if (errno == ERANGE && (X) == 0.0)                                  \
+      errno = 0;                                                               \
+  } while (0)
+
+#define Py_ADJUST_ERANGE2(X, Y)                                                \
+  do {                                                                         \
+    if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL || (Y) == Py_HUGE_VAL ||     \
+        (Y) == -Py_HUGE_VAL) {                                                 \
+      if (errno == 0) errno = ERANGE;                                          \
+    } else if (errno == ERANGE)                                                \
+      errno = 0;                                                               \
+  } while (0)
 
 #define Py_RETURN_FALSE                                                        \
   do {                                                                         \

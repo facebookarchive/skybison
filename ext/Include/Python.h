@@ -50,8 +50,6 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
-#include "pyport.h"
-
 #include "pyatomic.h"
 
 /* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.

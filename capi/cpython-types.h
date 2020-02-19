@@ -1,6 +1,8 @@
 #ifndef CPYTHON_TYPES_H
 #define CPYTHON_TYPES_H
 
+#include <inttypes.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h> /* for struct stat and pid_t. */
@@ -11,9 +13,38 @@
 extern "C" {
 #endif
 
-typedef ssize_t Py_ssize_t;
+#define PY_UINT32_T uint32_t
+#define PY_UINT64_T uint64_t
+#define PY_INT32_T int32_t
+#define PY_INT64_T int64_t
 
+typedef ssize_t Py_ssize_t;
+typedef uintptr_t Py_uintptr_t;
+typedef intptr_t Py_intptr_t;
 typedef Py_ssize_t Py_hash_t;
+typedef size_t Py_uhash_t;
+
+#ifdef PY_SSIZE_T_CLEAN
+typedef Py_ssize_t Py_ssize_clean_t;
+#else
+typedef int Py_ssize_clean_t;
+#endif
+
+#define PY_LONG_LONG long long
+#define PY_LLONG_MIN LLONG_MIN
+#define PY_LLONG_MAX LLONG_MAX
+#define PY_ULLONG_MAX ULLONG_MAX
+#define PY_SIZE_MAX SIZE_MAX
+#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1) >> 1))
+#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX - 1)
+
+#define PY_FORMAT_SIZE_T "z"
+
+#define Py_LL(x) x##LL
+#define Py_ULL(x) Py_LL(x##U)
+
+#define PY_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define PY_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 
 struct stat;
 #define _Py_stat_struct stat

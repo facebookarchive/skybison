@@ -1264,9 +1264,6 @@
 /* Define as the preferred size in bits of long digits */
 /* #undef PYLONG_BITS_IN_DIGIT */
 
-/* Define to printf format modifier for Py_ssize_t */
-#define PY_FORMAT_SIZE_T "z"
-
 /* Define if you want to build an interpreter with many run-time checks. */
 /* #undef Py_DEBUG */
 
