@@ -4737,8 +4737,20 @@ class IntDunderFormatTests(unittest.TestCase):
             "78957136519217238320723531223",
         )
 
+    def test_empty_format_calls_dunder_str(self):
+        self.assertEqual(int.__format__(True, ""), "True")
+        self.assertEqual(int.__format__(False, ""), "False")
+
+        class C(int):
+            def __str__(self):
+                return "foobar"
+
+        self.assertEqual(int.__format__(C(), ""), "foobar")
+
     def test_c_format_returns_str(self):
         self.assertEqual(int.__format__(0, "c"), "\0")
+        self.assertEqual(int.__format__(False, "c"), "\0")
+        self.assertEqual(int.__format__(True, "c"), "\01")
         self.assertEqual(int.__format__(80, "c"), "P")
         self.assertEqual(int.__format__(128013, "c"), "\U0001f40d")
         import sys
@@ -4747,8 +4759,10 @@ class IntDunderFormatTests(unittest.TestCase):
 
     def test_d_format_returns_str(self):
         self.assertEqual(int.__format__(0, "d"), "0")
+        self.assertEqual(int.__format__(False, "d"), "0")
         self.assertEqual(int.__format__(-1, "d"), "-1")
         self.assertEqual(int.__format__(1, "d"), "1")
+        self.assertEqual(int.__format__(True, "d"), "1")
         self.assertEqual(int.__format__(42, "d"), "42")
         self.assertEqual(
             int.__format__(0x2B3EFBA733D579B55A9074934, "d"),
@@ -4761,8 +4775,10 @@ class IntDunderFormatTests(unittest.TestCase):
 
     def test_x_format_returns_str(self):
         self.assertEqual(int.__format__(0, "x"), "0")
+        self.assertEqual(int.__format__(False, "x"), "0")
         self.assertEqual(int.__format__(-1, "x"), "-1")
         self.assertEqual(int.__format__(1, "x"), "1")
+        self.assertEqual(int.__format__(True, "x"), "1")
         self.assertEqual(int.__format__(42, "x"), "2a")
         self.assertEqual(
             int.__format__(214143955543398893443684452660, "x"),

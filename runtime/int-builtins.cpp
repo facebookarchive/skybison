@@ -372,7 +372,23 @@ RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs) {
   Str spec(&scope, strUnderlying(*spec_obj));
 
   if (spec.charLength() == 0) {
-    return formatIntDecimalSimple(thread, self);
+    // We return the equivalent of `str(self)` for an empty spec.
+    if (self_obj.isSmallInt() || self_obj.isLargeInt()) {
+      return formatIntDecimalSimple(thread, self);
+    }
+    if (self_obj.isBool()) {
+      return runtime->symbols()->at(Bool::cast(*self_obj).value() ? ID(True)
+                                                                  : ID(False));
+    }
+    Object value(&scope, thread->invokeMethod1(self_obj, ID(__str__)));
+    DCHECK(!value.isErrorNotFound(), "`__str__` should always exist");
+    if (value.isErrorException()) return *value;
+    if (!runtime->isInstanceOfStr(*value)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__str__ returned non-string (type %T)",
+                                  &value);
+    }
+    return *value;
   }
 
   FormatSpec format;
