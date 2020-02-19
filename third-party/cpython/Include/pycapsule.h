@@ -18,17 +18,16 @@
 extern "C" {
 #endif
 
-PyAPI_DATA(PyTypeObject) PyCapsule_Type;
-
 typedef void (*PyCapsule_Destructor)(PyObject *);
 
-#define PyCapsule_CheckExact(op) (Py_TYPE(op) == (PyTypeObject *)capsulestate_global->PyCapsule_Type)
-
+#define PyCapsule_CheckExact(op) PyCapsule_CheckExact_Func((PyObject*)op)
 
 PyAPI_FUNC(PyObject *) PyCapsule_New(
     void *pointer,
     const char *name,
     PyCapsule_Destructor destructor);
+
+PyAPI_FUNC(int) PyCapsule_CheckExact_Func(PyObject *o);
 
 PyAPI_FUNC(void *) PyCapsule_GetPointer(PyObject *capsule, const char *name);
 

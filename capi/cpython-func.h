@@ -223,6 +223,7 @@ PyAPI_FUNC(PyObject*) PyCFunction_GetSelf(PyObject*);
 PyAPI_FUNC(PyObject*) PyCFunction_NewEx(PyMethodDef*, PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyCallIter_New(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyCallable_Check(PyObject*);
+PyAPI_FUNC(int) PyCapsule_CheckExact_Func(PyObject*);
 PyAPI_FUNC(void*) PyCapsule_GetContext(PyObject*);
 PyAPI_FUNC(PyCapsule_Destructor) PyCapsule_GetDestructor(PyObject*);
 PyAPI_FUNC(const char*) PyCapsule_GetName(PyObject*);
@@ -1281,6 +1282,7 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
   (PyByteArray_CheckExact_Func((PyObject*)(op)))
 #define PyBytes_Check(op) (PyBytes_Check_Func((PyObject*)(op)))
 #define PyBytes_CheckExact(op) (PyBytes_CheckExact_Func((PyObject*)(op)))
+#define PyCapsule_CheckExact(op) (PyCapsule_CheckExact_Func((PyObject*)(op)))
 #define PyCode_Check(op) (PyCode_Check_Func((PyObject*)(op)))
 #define PyCode_GetNumFree(op) PyCode_GetNumFree_Func((PyObject*)op)
 #define PyCode_GetName(op) PyCode_GetName_Func(op)

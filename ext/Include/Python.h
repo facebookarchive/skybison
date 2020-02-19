@@ -89,7 +89,6 @@
 #include "moduleobject.h"
 #include "namespaceobject.h"
 #include "odictobject.h"
-#include "pycapsule.h"
 #include "rangeobject.h"
 #include "setobject.h"
 #include "sliceobject.h"

@@ -102,6 +102,13 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
 
 
 int
+PyCapsule_CheckExact_Func(PyObject *op)
+{
+    return Py_TYPE(op) == (PyTypeObject *)capsulestate_global->PyCapsule_Type;
+}
+
+
+int
 PyCapsule_IsValid(PyObject *o, const char *name)
 {
     PyCapsule *capsule = (PyCapsule *)o;
