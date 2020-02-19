@@ -128,6 +128,46 @@ c = C()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ObjectExtensionApiTest, DelAttrStringRemovesAttribute) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+obj = C()
+obj.a = 42
+obj.b = 13
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
+  EXPECT_EQ(PyObject_DelAttrString(obj, "a"), 0);
+  EXPECT_FALSE(PyObject_HasAttrString(obj, "a"));
+  EXPECT_TRUE(PyObject_HasAttrString(obj, "b"));
+}
+
+TEST_F(ObjectExtensionApiTest, DelAttrRemovesAttribute) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+obj = C()
+obj.a = 42
+obj.b = 13
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  EXPECT_EQ(PyObject_DelAttr(obj, name), 0);
+  EXPECT_FALSE(PyObject_HasAttrString(obj, "a"));
+  EXPECT_TRUE(PyObject_HasAttrString(obj, "b"));
+}
+
+TEST_F(ObjectExtensionApiTest, DelAttrRaisesAttributeError) {
+  PyObjectPtr obj(Py_None);
+  EXPECT_EQ(PyObject_DelAttrString(obj, "does_not_exist"), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
   PyObjectPtr key(PyUnicode_FromString("a_key"));
   PyObjectPtr value(PyLong_FromLong(5));
@@ -155,6 +195,39 @@ TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
   PyObjectPtr key(PyUnicode_FromString("a_key"));
   PyObjectPtr value(PyLong_FromLong(5));
   EXPECT_EQ(PyObject_SetAttr(module, key, value), 0);
+}
+
+TEST_F(ObjectExtensionApiTest, SetAttrStringWithNullRemovesAttribute) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+obj = C()
+obj.a = 42
+obj.b = 13
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
+  EXPECT_EQ(PyObject_SetAttrString(obj, "a", nullptr), 0);
+  EXPECT_FALSE(PyObject_HasAttrString(obj, "a"));
+  EXPECT_TRUE(PyObject_HasAttrString(obj, "b"));
+}
+
+TEST_F(ObjectExtensionApiTest, SetAttrWithNullRemovesAttribute) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+obj = C()
+obj.a = 42
+obj.b = 13
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
+  ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  EXPECT_EQ(PyObject_SetAttr(obj, name, nullptr), 0);
+  EXPECT_FALSE(PyObject_HasAttrString(obj, "a"));
+  EXPECT_TRUE(PyObject_HasAttrString(obj, "b"));
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {

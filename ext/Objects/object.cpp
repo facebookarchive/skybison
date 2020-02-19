@@ -166,6 +166,23 @@ PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* self) {
   return -1;
 }
 
+PY_EXPORT int PyObject_DelAttr(PyObject* obj, PyObject* attr_name) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(attr_name)->asObject());
+  Object result(&scope, delAttribute(thread, object, name_obj));
+  return result.isErrorException() ? -1 : 0;
+}
+
+PY_EXPORT int PyObject_DelAttrString(PyObject* obj, const char* attr_name) {
+  PyObject* str = PyUnicode_FromString(attr_name);
+  if (str == nullptr) return -1;
+  int result = PyObject_DelAttr(obj, str);
+  Py_DECREF(str);
+  return result;
+}
+
 PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
@@ -476,13 +493,16 @@ PY_EXPORT PyObject* PyObject_SelfIter(PyObject* obj) {
 }
 
 PY_EXPORT int PyObject_SetAttr(PyObject* obj, PyObject* name, PyObject* value) {
+  if (value == nullptr) {
+    return PyObject_DelAttr(obj, name);
+  }
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
-  return result.isError() ? -1 : 0;
+  return result.isErrorException() ? -1 : 0;
 }
 
 PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,

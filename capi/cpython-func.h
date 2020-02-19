@@ -457,6 +457,8 @@ PyAPI_FUNC(PyObject*) PyLong_FromVoidPtr(void*);
 PyAPI_FUNC(PyObject*) PyLong_GetInfo();
 PyAPI_FUNC(int) PyMapping_Check(PyObject*);
 PyAPI_FUNC(PyObject*) PyMapping_GetItemString(PyObject*, const char*);
+PyAPI_FUNC(int) PyMapping_DelItem(PyObject*, PyObject*);
+PyAPI_FUNC(int) PyMapping_DelItemString(PyObject*, const char*);
 PyAPI_FUNC(int) PyMapping_HasKey(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyMapping_Items(PyObject*);
@@ -571,8 +573,13 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject*);
 PyAPI_FUNC(int) PyObject_DelItem(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyObject_DelItemString(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyObject_Dir(PyObject*);
+PyAPI_FUNC(PyObject*) _PyObject_CallArg1(PyObject*, PyObject*);
+PyAPI_FUNC(PyObject*) _PyObject_CallNoArg(PyObject*);
+PyAPI_FUNC(PyObject*) _PyObject_FastCall(PyObject*, PyObject**, Py_ssize_t);
 PyAPI_FUNC(PyObject*)
     _PyObject_FastCallDict(PyObject*, PyObject**, Py_ssize_t, PyObject*);
+PyAPI_FUNC(PyObject*)
+    _PyObject_FastCallKeywords(PyObject*, PyObject**, Py_ssize_t, PyObject*);
 PyAPI_FUNC(PyObject*) PyObject_Format(PyObject*, PyObject*);
 PyAPI_FUNC(void) PyObject_Free(void*);
 PyAPI_FUNC(void) PyObject_GC_Del(void*);
@@ -611,6 +618,8 @@ PyAPI_FUNC(PyObject*)
 PyAPI_FUNC(void*) PyObject_Malloc(size_t);
 PyAPI_FUNC(PyObject*) _PyObject_New(PyTypeObject*);
 PyAPI_FUNC(PyVarObject*) _PyObject_NewVar(PyTypeObject*, Py_ssize_t);
+PyAPI_FUNC(int) PyObject_DelAttr(PyObject*, PyObject*);
+PyAPI_FUNC(int) PyObject_DelAttrString(PyObject*, const char*);
 PyAPI_FUNC(int) PyObject_Not(PyObject*);
 PyAPI_FUNC(int) PyObject_Print(PyObject*, FILE*, int);
 PyAPI_FUNC(void*) PyObject_Realloc(void*, size_t);
@@ -1105,6 +1114,8 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
+PyAPI_FUNC(Py_ssize_t) PySequence_Fast_GET_SIZE_Func(PyObject*);
+PyAPI_FUNC(PyObject*) PySequence_Fast_GET_ITEM_Func(PyObject*, Py_ssize_t);
 PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
@@ -1173,7 +1184,12 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 
 #define PyLong_AS_LONG(op) PyLong_AsLong(op)
 
+#define PySequence_Fast_GET_SIZE(op)                                           \
+  PySequence_Fast_GET_SIZE_Func((PyObject*)op)
+#define PySequence_Fast_GET_ITEM(op, i)                                        \
+  PySequence_Fast_GET_ITEM_Func((PyObject*)op, i)
 #define PySequence_ITEM(op, i) PySequence_ITEM_Func((PyObject*)op, i)
+
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)

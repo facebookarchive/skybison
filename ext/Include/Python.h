@@ -122,7 +122,6 @@
 #include "pylifecycle.h"
 #include "sysmodule.h"
 
-#include "abstract.h"
 #include "bltinmodule.h"
 
 #include "compile.h"

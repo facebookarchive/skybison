@@ -235,6 +235,14 @@ PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
   return thread->runtime()->isMapping(thread, obj);
 }
 
+PY_EXPORT int PyMapping_DelItemString(PyObject* obj, const char* attr_name) {
+  return PyObject_DelItemString(obj, attr_name);
+}
+
+PY_EXPORT int PyMapping_DelItem(PyObject* obj, PyObject* attr_name) {
+  return PyObject_DelItem(obj, attr_name);
+}
+
 PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* obj, const char* key) {
   Thread* thread = Thread::current();
   if (obj == nullptr || key == nullptr) {
@@ -293,6 +301,10 @@ PY_EXPORT PyObject* PyMapping_Keys(PyObject* mapping) {
   PyObject* fast = PySequence_Fast(keys, "mapping.keys() are not iterable");
   Py_DECREF(keys);
   return fast;
+}
+
+PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT int PyMapping_SetItemString(PyObject* obj, const char* key,
@@ -799,6 +811,19 @@ PY_EXPORT int PyObject_DelItemString(PyObject* /* o */, const char* /* y */) {
   UNIMPLEMENTED("PyObject_DelItemString");
 }
 
+PY_EXPORT PyObject* _PyObject_CallArg1(PyObject* callable, PyObject* arg) {
+  return _PyObject_FastCall(callable, &arg, 1);
+}
+
+PY_EXPORT PyObject* _PyObject_CallNoArg(PyObject* callable) {
+  return _PyObject_FastCall(callable, nullptr, 0);
+}
+
+PY_EXPORT PyObject* _PyObject_FastCall(PyObject* callable, PyObject** pyargs,
+                                       Py_ssize_t n_args) {
+  return _PyObject_FastCallDict(callable, pyargs, n_args, nullptr);
+}
+
 PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
                                            PyObject** pyargs, Py_ssize_t n_args,
                                            PyObject* kwargs) {
@@ -838,7 +863,7 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
 }
 
 PY_EXPORT PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,
-                                               PyObject* const* /* k */,
+                                               PyObject** /* k */,
                                                Py_ssize_t /* s */,
                                                PyObject* /* s */) {
   UNIMPLEMENTED("_PyObject_FastCallKeywords");
@@ -1222,6 +1247,16 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
+}
+
+PY_EXPORT Py_ssize_t PySequence_Fast_GET_SIZE_Func(PyObject* seq) {
+  return PyList_Check(seq) ? PyList_GET_SIZE(seq) : PyTuple_GET_SIZE(seq);
+}
+
+PY_EXPORT PyObject* PySequence_Fast_GET_ITEM_Func(PyObject* seq,
+                                                  Py_ssize_t idx) {
+  return PyList_Check(seq) ? PyList_GET_ITEM(seq, idx)
+                           : PyTuple_GET_ITEM(seq, idx);
 }
 
 PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {

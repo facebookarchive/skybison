@@ -2744,6 +2744,40 @@ TEST_F(AbstractExtensionApiTest, PySequenceFastWithNonIterableRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(AbstractExtensionApiTest, PySequenceFastGetSizeWithTupleReturnsSize) {
+  PyObjectPtr tuple(PyTuple_Pack(3, Py_None, Py_None, Py_None));
+  PyObjectPtr fast_seq(PySequence_Fast(tuple, ""));
+  EXPECT_EQ(PySequence_Fast_GET_SIZE(fast_seq.get()), 3);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastGetSizeWithListReturnsSize) {
+  PyObjectPtr list(PyList_New(0));
+  for (int i = 0; i < 11; i++) {
+    PyList_Append(list, Py_None);
+  }
+  PyObjectPtr fast_seq(PySequence_Fast(list, ""));
+  EXPECT_EQ(PySequence_Fast_GET_SIZE(fast_seq.get()), 11);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastGetItemWithTupleReturnsItem) {
+  PyObjectPtr number(PyLong_FromLong(42));
+  PyObjectPtr tuple(PyTuple_Pack(3, Py_None, Py_None, number.get()));
+  PyObjectPtr fast_seq(PySequence_Fast(tuple, ""));
+  EXPECT_TRUE(
+      isLongEqualsLong(PySequence_Fast_GET_ITEM(fast_seq.get(), 2), 42));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastGetItemWithListReturnsItem) {
+  PyObjectPtr list(PyList_New(0));
+  PyList_Append(list, Py_None);
+  PyObjectPtr number(PyLong_FromLong(42));
+  PyList_Append(list, number);
+  PyList_Append(list, Py_None);
+  PyObjectPtr fast_seq(PySequence_Fast(list, ""));
+  EXPECT_TRUE(
+      isLongEqualsLong(PySequence_Fast_GET_ITEM(fast_seq.get(), 1), 42));
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceFastWithIterableReturnsList) {
   PyRun_SimpleString(R"(
 class C:
