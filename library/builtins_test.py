@@ -5934,6 +5934,90 @@ class ListTests(unittest.TestCase):
         self.assertEqual(a_list.index(n, 1), 1)
         self.assertEqual(n_list.index(n, 2, 3), 2)
 
+    def test_ge_with_elem_ge_and_same_size_returns_true(self):
+        class SubSet(set):
+            def __ge__(self, other):
+                return True
+
+        a = [SubSet([1])]
+        b = [SubSet([1])]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_elem_ge_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __ge__(self, other):
+                return True
+
+        a = [SubSet([1, 2])]
+        b = [SubSet([1])]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_elem_eq_ge_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __eq__(self, other):
+                return True
+
+            def __ge__(self, other):
+                return True
+
+        a = [SubSet([1, 2])]
+        b = [SubSet([1])]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_longer_lhs_with_elem_eq_ge_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __eq__(self, other):
+                return False
+
+            def __ge__(self, other):
+                return True
+
+        a = [SubSet([1, 2]), 2]
+        b = [SubSet([1])]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_bigger_list_returns_true(self):
+        a = [1, 2, 4]
+        b = [1, 2, 3]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_equal_lists_returns_true(self):
+        a = [1, 2, 3]
+        b = [1, 2, 3]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_identity_lists_returns_true(self):
+        a = [1, 2, 3]
+        self.assertTrue(list.__ge__(a, a))
+
+    def test_ge_with_longer_lhs_but_smaller_elem_returns_false(self):
+        a = [1, 1, 1, 1]
+        b = [1, 2, 3]
+        self.assertFalse(list.__ge__(a, b))
+
+    def test_ge_with_longer_lhs_returns_true(self):
+        a = [1, 2, 3, 4]
+        b = [1, 2, 3]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_longer_rhs_but_smaller_elem_returns_true(self):
+        a = [1, 2, 3]
+        b = [1, 1, 1, 1]
+        self.assertTrue(list.__ge__(a, b))
+
+    def test_ge_with_longer_rhs_returns_false(self):
+        a = [1, 2]
+        b = [1, 2, 3]
+        self.assertFalse(list.__ge__(a, b))
+
+    def test_ge_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.__ge__(False, [])
+        self.assertIn(
+            "'__ge__' requires a 'list' object but received a 'bool'",
+            str(context.exception),
+        )
+
     def test_le_with_elem_le_and_same_size_returns_true(self):
         class SubSet(set):
             def __le__(self, other):
