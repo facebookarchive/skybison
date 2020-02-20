@@ -39,8 +39,7 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import abc
-# TODO(T48670024): _ast native module not available yet.
-#import ast
+import ast
 import dis
 import collections.abc
 import enum
@@ -1962,15 +1961,13 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     program = "def foo" + clean_signature + ": pass"
 
-    # TODO(T48670024) Need _ast/ast module.
-    #try:
-    #    module = ast.parse(program)
-    #except SyntaxError:
-    #    module = None
-    #
-    #if not isinstance(module, ast.Module):
-    #    raise ValueError("{!r} builtin has invalid signature".format(obj))
-    _unimplemented()
+    try:
+       module = ast.parse(program)
+    except SyntaxError:
+       module = None
+
+    if not isinstance(module, ast.Module):
+       raise ValueError("{!r} builtin has invalid signature".format(obj))
 
     f = module.body[0]
 
