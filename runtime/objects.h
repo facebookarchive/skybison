@@ -4589,9 +4589,13 @@ inline word RawHeapObject::headerSize(word count) {
 }
 
 inline void RawInstance::initialize(word size, RawObject value) const {
-  for (word offset = RawHeapObject::kSize; offset < size;
-       offset += kPointerSize) {
-    instanceVariableAtPut(offset, value);
+  word start = RawHeapObject::kSize;
+  if (LIKELY(value == RawNoneType::object())) {
+    std::memset(reinterpret_cast<byte*>(address() + start), -1, size - start);
+  } else {
+    for (word offset = start; offset < size; offset += kPointerSize) {
+      instanceVariableAtPut(offset, value);
+    }
   }
 }
 
