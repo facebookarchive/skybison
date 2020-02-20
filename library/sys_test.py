@@ -115,6 +115,21 @@ class SysTests(unittest.TestCase):
         self.assertIs(type(result), int)
         self.assertEqual(result, 42)
 
+    def test_getsetrecursionlimit(self):
+        limit = sys.getrecursionlimit()
+        self.assertGreater(limit, 0)
+        sys.setrecursionlimit(limit + 1)
+        self.assertEqual(sys.getrecursionlimit(), limit + 1)
+        sys.setrecursionlimit(limit)
+        self.assertEqual(sys.getrecursionlimit(), limit)
+
+    def test_setrecursionlimit_with_large_limit_raises_overflowerror(self):
+        with self.assertRaises(OverflowError) as context:
+            sys.setrecursionlimit(230992039023490234904329023904239023)
+        self.assertEqual(
+            str(context.exception), "Python int too large to convert to C long"
+        )
+
     def test_hash_info_is_plausible(self):
         def is_power_of_two(x):
             return x & (x - 1) == 0

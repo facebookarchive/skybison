@@ -267,6 +267,7 @@ class Thread {
     DCHECK(recursion_depth_ > 0, "recursion depth can't be less than 0");
     recursion_depth_--;
   }
+  // TODO(T62600497): Enforce the recursion limit
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
   // Returns thread ID.

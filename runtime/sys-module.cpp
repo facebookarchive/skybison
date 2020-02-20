@@ -249,4 +249,27 @@ RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs) {
   return Runtime::internStr(thread, string);
 }
 
+RawObject FUNC(sys, getrecursionlimit)(Thread* thread, Frame* /* frame */,
+                                       word /* nargs */) {
+  return thread->runtime()->newInt(thread->recursionLimit());
+}
+
+RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Int limit(&scope, args.get(0));
+  OptInt<int> opt_val = limit.asInt<int>();
+  if (opt_val.error != CastError::None) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C long");
+  }
+
+  // TODO(T62600497) Raise RecursionError if new limit is too low at current
+  // recursion depth
+
+  thread->setRecursionLimit(opt_val.value);
+  return NoneType::object();
+}
+
 }  // namespace py

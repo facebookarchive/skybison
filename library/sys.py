@@ -171,6 +171,11 @@ def getfilesystemencoding():
     return "utf-8"
 
 
+# TODO(T62600497): Enforce the recursion limit
+def getrecursionlimit():
+    _builtin()
+
+
 def getsizeof(object, default=_Unbound):
     # It is possible (albeit difficult) to define a class without __sizeof__
     try:
@@ -217,6 +222,11 @@ ps1 = ">>> "
 
 
 ps2 = "... "
+
+
+# TODO(T62600497): Enforce the recursion limit
+def setrecursionlimit(limit):
+    _builtin()
 
 
 stderr = _IOStream(_stderr_fd)
