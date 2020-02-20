@@ -3891,7 +3891,21 @@ class list(bootstrap=True):
         _builtin()
 
     def __le__(self, other):
-        _unimplemented()
+        _list_guard(self)
+        if not _list_check(other):
+            return NotImplemented
+        i = 0
+        len_self = _list_len(self)
+        len_other = _list_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        while i < min_len:
+            self_item = _list_getitem(self, i)
+            other_item = _list_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item <= other_item
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self <= len_other
 
     def __len__(self):
         _builtin()
