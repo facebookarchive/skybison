@@ -9,18 +9,16 @@
 
 namespace py {
 
-/**
- * TryBlock contains the unmarshaled block stack information.
- *
- * Block stack entries are encoded and stored on the stack as a single
- * SmallInt using the following format:
- *
- * Name    Size    Description
- * ----------------------------------------------------
- * Kind    2       The kind of block this entry represents.
- * Handler 30      Where to jump to find the handler
- * Level   25      Value stack level to pop to
- */
+// TryBlock contains the unmarshaled block stack information.
+//
+// Block stack entries are encoded and stored on the stack as a single
+// SmallInt using the following format:
+//
+// Name    Size    Description
+// ----------------------------------------------------
+// Kind    2       The kind of block this entry represents.
+// Handler 30      Where to jump to find the handler
+// Level   25      Value stack level to pop to
 class TryBlock {
  public:
   // cpython stores the opcode that pushed the block as the block kind, but only
@@ -113,73 +111,71 @@ class BlockStack {
   DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
 };
 
-/**
- * A stack frame.
- *
- * Prior to a function call, the stack will look like
- *
- *     Function
- *     Arg 0
- *     ...
- *     Arg N
- *            <- Top of stack / lower memory addresses
- *
- * The function prologue is responsible for reserving space for local variables
- * and pushing other frame metadata needed by the interpreter onto the stack.
- * After the prologue, and immediately before the interpreter is re-invoked,
- * the stack looks like:
- *
- *     Implicit Globals[1]
- *     Function
- *     Arg 0 <------------------------------------------------+
- *     ...                                                    |
- *     Arg N                                                  |
- *     Locals 0                                               |
- *     ...                                                    |
- *     Locals N                                               |
- *     +-------------------------------+ Frame (fixed size)   |
- *     | Locals -----------------------|----------------------+
- *     | Num locals                    |
- *     |+----------------+ BlockStack  |
- *     || Blockstack top |             |
- *     || .              | ^           |
- *     || .              | |           |
- *     || . entries      | | growth    |
- *     |+----------------+             |
- *     | Virtual PC                    |
- *     | Value stack top --------------|--+
- *     | Previous frame ptr            |<-+ <--Frame pointer
- *     +-------------------------------+
- *     .                               .
- *     .                  | growth     .
- *     . Value stack      |            .
- *     .                  v            .
- *     +...............................+
- *
- * [1] Only available for non-optimized functions started via
- * `Thread::runClassFunction()` or `Thread::exec()`. for example,
- * module- and class-body function.
- *
- *
- * Implicit Globals
- * ================
- * Python code started via `Thread::runClassFunction()` or `Thread::exec()`
- * which is used for things like module- and class-bodies or `eval()` may store
- * their local variables in arbitrary mapping objects. In this case the
- * functions will have the OPTIMIZED and NEWLOCALS flags cleared and the
- * bytecode will use STORE_NAME/LOAD_NAME rather than STORE_FAST/LOAD_FAST.
- *
- * We use the term implicit globals in accordance with the Python language
- * reference. Note that CPython code and APIs often use the term "locals"
- * instead. We do not use that term to avoid confusion with fast locals.
- *
- * In our system the implicit globals part of the frame only exists for
- * functions that use them. It may contain an arbitrary mapping or `None`.
- * `None` is a performance optimization in our system. It indicates that
- * we directly write into the globals / `function().moduleObject()` instead of
- * using the `implicitGlobals()` this way we can skip setting up a `ModuleProxy`
- * object for this case and avoid the extra indirection.
- */
+// A stack frame.
+//
+// Prior to a function call, the stack will look like
+//
+//     Function
+//     Arg 0
+//     ...
+//     Arg N
+//            <- Top of stack / lower memory addresses
+//
+// The function prologue is responsible for reserving space for local variables
+// and pushing other frame metadata needed by the interpreter onto the stack.
+// After the prologue, and immediately before the interpreter is re-invoked,
+// the stack looks like:
+//
+//     Implicit Globals[1]
+//     Function
+//     Arg 0 <------------------------------------------------+
+//     ...                                                    |
+//     Arg N                                                  |
+//     Locals 0                                               |
+//     ...                                                    |
+//     Locals N                                               |
+//     +-------------------------------+ Frame (fixed size)   |
+//     | Locals -----------------------|----------------------+
+//     | Num locals                    |
+//     |+----------------+ BlockStack  |
+//     || Blockstack top |             |
+//     || .              | ^           |
+//     || .              | |           |
+//     || . entries      | | growth    |
+//     |+----------------+             |
+//     | Virtual PC                    |
+//     | Value stack top --------------|--+
+//     | Previous frame ptr            |<-+ <--Frame pointer
+//     +-------------------------------+
+//     .                               .
+//     .                  | growth     .
+//     . Value stack      |            .
+//     .                  v            .
+//     +...............................+
+//
+// [1] Only available for non-optimized functions started via
+// `Thread::runClassFunction()` or `Thread::exec()`. for example, module- and
+// class-body function.
+//
+//
+// Implicit Globals
+// ================
+// Python code started via `Thread::runClassFunction()` or `Thread::exec()`
+// which is used for things like module- and class-bodies or `eval()` may store
+// their local variables in arbitrary mapping objects. In this case the
+// functions will have the OPTIMIZED and NEWLOCALS flags cleared and the
+// bytecode will use STORE_NAME/LOAD_NAME rather than STORE_FAST/LOAD_FAST.
+//
+// We use the term implicit globals in accordance with the Python language
+// reference. Note that CPython code and APIs often use the term "locals"
+// instead. We do not use that term to avoid confusion with fast locals.
+//
+// In our system the implicit globals part of the frame only exists for
+// functions that use them. It may contain an arbitrary mapping or `None`.
+// `None` is a performance optimization in our system. It indicates that we
+// directly write into the globals / `function().moduleObject()` instead of
+// using the `implicitGlobals()` this way we can skip setting up a `ModuleProxy`
+// object for this case and avoid the extra indirection.
 class Frame {
  public:
   void init(word total_locals);
