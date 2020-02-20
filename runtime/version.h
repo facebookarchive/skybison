@@ -7,6 +7,7 @@ extern const char* const kVersion;
 extern const int kVersionMajor;
 extern const int kVersionMinor;
 extern const int kVersionMicro;
+extern const int kVersionHex;
 
 extern const char* const kReleaseLevel;
 extern const int kReleaseSerial;

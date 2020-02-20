@@ -2,18 +2,30 @@
 
 #include <cstdio>
 
+#include "cpython-data.h"
+
 namespace py {
 
 static const char* const kCompiler = "\n[GCC " __VERSION__ "]";
 
-const char* const kVersion = "3.6.8+";
+const char* const kVersion = PY_VERSION;
 
-const int kVersionMajor = 3;
-const int kVersionMinor = 6;
-const int kVersionMicro = 8;
+const int kVersionMajor = PY_MAJOR_VERSION;
+const int kVersionMinor = PY_MINOR_VERSION;
+const int kVersionMicro = PY_MICRO_VERSION;
+const int kVersionHex = PY_VERSION_HEX;
 
-const char* const kReleaseLevel = "final";
-const int kReleaseSerial = 0;
+const char* const kReleaseLevel =
+    PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
+        ? "alpha"
+        : (PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
+               ? "beta"
+               : (PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA
+                      ? "candidate"
+                      : (PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
+                             ? "final"
+                             : "<bad>")));
+const int kReleaseSerial = PY_RELEASE_SERIAL;
 
 const char* buildInfo() {
   static char buildinfo[8];

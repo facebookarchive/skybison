@@ -162,7 +162,9 @@ extern "C" {
 #define PY_RELEASE_LEVEL_FINAL 0xF
 #define PY_RELEASE_LEVEL_GAMMA 0xC
 #define PY_RELEASE_SERIAL 0
-#define PY_VERSION "3.6.8+"
+#define PY_VERSION                                                             \
+  Py_STRINGIFY(PY_MAJOR_VERSION) "." Py_STRINGIFY(                             \
+      PY_MINOR_VERSION) "." Py_STRINGIFY(PY_MICRO_VERSION) "+"
 #define PY_VERSION_HEX                                                         \
   ((PY_MAJOR_VERSION << 24) | (PY_MINOR_VERSION << 16) |                       \
    (PY_MICRO_VERSION << 8) | (PY_RELEASE_LEVEL << 4) |                         \

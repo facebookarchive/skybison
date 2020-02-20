@@ -209,6 +209,18 @@ class SysTests(unittest.TestCase):
         self.assertTrue(sys.version)
         self.assertEqual(len(sys.version_info), 5)
 
+    def test_hexversion(self):
+        self.assertIsInstance(sys.hexversion, int)
+        self.assertEqual((sys.hexversion >> 24) & 0xFF, sys.version_info.major)
+        self.assertEqual((sys.hexversion >> 16) & 0xFF, sys.version_info.minor)
+        self.assertEqual((sys.hexversion >> 8) & 0xFF, sys.version_info.micro)
+        release_level = (sys.hexversion >> 4) & 0xF
+        release_level_str = {0xA: "alpha", 0xB: "beta", 0xC: "candidate", 0xF: "final"}
+        self.assertEqual(
+            release_level_str[release_level], sys.version_info.releaselevel
+        )
+        self.assertEqual(sys.hexversion & 0xF, sys.version_info.serial)
+
 
 if __name__ == "__main__":
     unittest.main()

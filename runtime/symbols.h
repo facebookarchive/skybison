@@ -523,6 +523,7 @@ class Runtime;
   V(getsizeof)                                                                 \
   V(gi_running)                                                                \
   V(hash_info)                                                                 \
+  V(hexversion)                                                                \
   V(iadd)                                                                      \
   V(iand)                                                                      \
   V(iconcat)                                                                   \

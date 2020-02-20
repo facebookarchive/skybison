@@ -128,7 +128,9 @@ void SysModule::initialize(Thread* thread, const Module& module) {
       &scope, thread->invokeFunction1(ID(sys), ID(_HashInfo), hash_info_data));
   moduleAtPutById(thread, module, ID(hash_info), hash_info);
 
-  // Fill in version-related fields
+  // Fill in version-related fields.
+  Int hexversion(&scope, SmallInt::fromWord(kVersionHex));
+  moduleAtPutById(thread, module, ID(hexversion), hexversion);
   Str version(&scope, runtime->newStrFromCStr(versionInfo()));
   moduleAtPutById(thread, module, ID(version), version);
 
