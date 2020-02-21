@@ -439,20 +439,20 @@ RawObject METH(str, __bool__)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject METH(str, __contains__)(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, ID(str));
+  bool is_self_invalid = true;
+  if (runtime->isInstanceOfStr(self)) {
+    is_self_invalid = false;
+    if (runtime->isInstanceOfStr(other)) {
+      return Bool::fromBool(strUnderlying(self).includes(strUnderlying(other)));
+    }
   }
-  Object other_obj(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseRequiresType(other_obj, ID(str));
-  }
-  Str self(&scope, strUnderlying(*self_obj));
-  Str other(&scope, strUnderlying(*other_obj));
-  return Bool::fromBool(strFind(self, other) != -1);
+  HandleScope scope(thread);
+  Object invalid(&scope, is_self_invalid ? self : other);
+  return thread->raiseRequiresType(invalid, ID(str));
 }
 
 RawObject METH(str, __eq__)(Thread* thread, Frame* frame, word nargs) {

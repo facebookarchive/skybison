@@ -536,6 +536,8 @@ class RawStr : public RawObject {
   bool equals(RawObject that) const;
   bool equalsCStr(const char* c_str) const;
 
+  bool includes(RawObject that) const;
+
   // Codepoints
   int32_t codePointAt(word char_index, word* char_length) const;
   word codePointLength() const;
@@ -724,6 +726,8 @@ class RawSmallStr : public RawObject {
 
   // Comparison
   word compare(RawObject that) const;
+
+  bool includes(RawObject that) const;
 
   // Codepoints
   word codePointLength() const;
@@ -1467,6 +1471,8 @@ class RawLargeStr : public RawArrayBase {
   word compare(RawObject that) const;
   bool equals(RawObject that) const;
   bool equalsBytes(View<byte> bytes) const;
+
+  bool includes(RawObject that) const;
 
   // Codepoints
   word codePointLength() const;
@@ -6209,6 +6215,14 @@ inline bool RawStr::equals(RawObject that) const {
   if (*this == that) return true;
   if (isImmediateObjectNotSmallInt()) return false;
   return RawLargeStr::cast(*this).equals(that);
+}
+
+inline bool RawStr::includes(RawObject that) const {
+  if (*this == that) return true;
+  if (isSmallStr()) {
+    return RawSmallStr::cast(*this).includes(that);
+  }
+  return RawLargeStr::cast(*this).includes(that);
 }
 
 inline bool RawStr::isASCII() const {

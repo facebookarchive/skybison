@@ -1045,6 +1045,26 @@ TEST_F(SmallStrTest, FromCodePointFourByte) {
   EXPECT_EQ(str.charAt(3), 0x88);
 }
 
+TEST_F(SmallStrTest, IncludesLargeStrReturnsFalse) {
+  HandleScope scope(thread_);
+  SmallStr haystack(&scope, SmallStr::fromCStr("abcd"));
+  LargeStr needle(&scope, runtime_->newStrFromCStr("abcdefgh"));
+  EXPECT_FALSE(haystack.includes(*needle));
+}
+
+TEST_F(SmallStrTest, IncludesSmallStrChecksSubstr) {
+  HandleScope scope(thread_);
+  SmallStr haystack(&scope, SmallStr::fromCStr("abcd"));
+  SmallStr empty(&scope, Str::empty());
+  SmallStr needle(&scope, SmallStr::fromCStr("bc"));
+  SmallStr not_needle(&scope, SmallStr::fromCStr("abcde"));
+
+  EXPECT_TRUE(haystack.includes(*empty));
+  EXPECT_TRUE(haystack.includes(*needle));
+  EXPECT_TRUE(haystack.includes(*haystack));
+  EXPECT_FALSE(haystack.includes(*not_needle));
+}
+
 TEST_F(SmallStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
   HandleScope scope(thread_);
   SmallStr all_ascii(&scope, SmallStr::fromCStr("abc"));
@@ -1145,6 +1165,33 @@ TEST_F(LargeStrTest, CodePointLength) {
   EXPECT_TRUE(str.isLargeStr());
   EXPECT_EQ(str.charLength(), static_cast<word>(std::strlen(code_units)));
   EXPECT_EQ(str.codePointLength(), 23);
+}
+
+TEST_F(LargeStrTest, IncludesLargeStrChecksSubstr) {
+  HandleScope scope(thread_);
+  LargeStr haystack(&scope, runtime_->newStrFromCStr("abcdefghijk"));
+  LargeStr needle(&scope, runtime_->newStrFromCStr("bcdefghi"));
+  LargeStr not_needle(&scope, runtime_->newStrFromCStr("aaaaaaaa"));
+
+  EXPECT_TRUE(haystack.includes(*haystack));
+  EXPECT_TRUE(haystack.includes(*needle));
+  EXPECT_FALSE(haystack.includes(*not_needle));
+}
+
+TEST_F(LargeStrTest, IncludesSmallStrChecksSubstr) {
+  HandleScope scope(thread_);
+  LargeStr haystack(&scope, runtime_->newStrFromCStr("abcdefghijkl"));
+  SmallStr empty(&scope, Str::empty());
+  SmallStr needle(&scope, SmallStr::fromCStr("fgh"));
+  SmallStr not_needle(&scope, SmallStr::fromCStr("bb"));
+
+  EXPECT_TRUE(haystack.includes(*empty));
+  EXPECT_TRUE(haystack.includes(*needle));
+  EXPECT_FALSE(haystack.includes(*not_needle));
+
+  Str chars(&scope, runtime_->newStrFromCStr(".\\[{()*+?^$|"));
+  Str hash(&scope, SmallStr::fromCStr("#"));
+  EXPECT_FALSE(chars.includes(*hash));
 }
 
 TEST_F(LargeStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {

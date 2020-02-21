@@ -120,6 +120,28 @@ RawSmallStr RawSmallStr::fromCStr(const char* value) {
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
+bool RawSmallStr::includes(RawObject that) const {
+  if (!that.isSmallStr()) {
+    return false;
+  }
+  word haystack_len = charLength();
+  word needle_len = SmallStr::cast(that).charLength();
+  word diff = haystack_len - needle_len;
+  if (diff < 0) {
+    return false;
+  }
+  uword haystack = raw() >> kBitsPerByte;
+  uword needle = that.raw() >> kBitsPerByte;
+  uword mask = ~0UL >> ((kWordSize - needle_len) * kBitsPerByte);
+  for (word i = 0; i <= diff; i++) {
+    if ((haystack & mask) == needle) {
+      return true;
+    }
+    haystack >>= kBitsPerByte;
+  }
+  return false;
+}
+
 bool RawSmallStr::isASCII() const {
   uword block = raw() >> kBitsPerByte;
   uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
@@ -324,6 +346,95 @@ bool RawLargeStr::equalsBytes(View<byte> bytes) const {
   }
   const void* chars = reinterpret_cast<const void*>(address());
   return std::memcmp(chars, bytes.data(), length) == 0;
+}
+
+static uword hasZeroByte(uword value) {
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  return (value - mask_0) & ~value & mask_7;
+}
+
+static bool includes1(const byte* haystack, word haystack_len, byte needle) {
+  const uword* p = reinterpret_cast<const uword*>(haystack);
+  uword mask = ((~0UL / 255) * needle);
+  while (haystack_len >= kWordSize) {
+    if (hasZeroByte(*p ^ mask)) {
+      return true;
+    }
+    haystack_len -= kWordSize;
+    p++;
+  }
+  if (haystack_len != 0) {
+    word shift = (kWordSize - haystack_len) * kBitsPerByte;
+    return (hasZeroByte(*p ^ mask) << shift) != 0;
+  }
+  return false;
+}
+
+bool RawLargeStr::includes(RawObject that) const {
+  enum { kMask = kBitsPerWord - 1 };
+
+  if (that == Str::empty()) {
+    return true;
+  }
+
+  word haystack_len = charLength();
+  word needle_len = Str::cast(that).charLength();
+
+  word diff = haystack_len - needle_len;
+  if (diff < 0) {
+    return false;
+  }
+
+  const byte* haystack = reinterpret_cast<const byte*>(address());
+
+  if (needle_len == 1) {
+    byte ch = SmallStr::cast(that).charAt(0);
+    return includes1(haystack, haystack_len, ch);
+  }
+
+  byte buffer[SmallStr::kMaxLength];
+  const byte* needle;
+  if (that.isSmallStr()) {
+    SmallStr::cast(that).copyTo(buffer, needle_len);
+    needle = buffer;
+  } else {
+    needle = reinterpret_cast<const byte*>(LargeStr::cast(that).address());
+  }
+
+  word needle_last = needle_len - 1;
+  word skip = needle_last - 1;
+  uword delta1 = 0;
+  for (word i = 0; i < needle_last; i++) {
+    delta1 |= (1 << (needle[i] & kMask));
+    if (needle[i] == needle[needle_last]) {
+      skip = needle_last - i - 1;
+    }
+  }
+  delta1 |= (1 << (needle[needle_last] & kMask));
+  for (word i = 0; i <= diff; i++) {
+    if (haystack[i + needle_last] == needle[needle_last]) {
+      word j = 0;
+      for (; j < needle_last; j++) {
+        if (haystack[i + j] != needle[j]) {
+          break;
+        }
+      }
+      if (j == needle_last) {
+        return true;
+      }
+      if ((delta1 & (1 << (haystack[i + needle_len] & kMask))) == 0) {
+        i += needle_len;
+      } else {
+        i += skip;
+      }
+    } else {
+      if ((delta1 & (1 << (haystack[i + needle_len] & kMask))) == 0) {
+        i += needle_len;
+      }
+    }
+  }
+  return false;
 }
 
 bool RawLargeStr::isASCII() const {
