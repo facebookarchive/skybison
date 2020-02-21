@@ -1834,16 +1834,23 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(test.replace(b"i", b"a", 2), b"massassippi")
 
     def test_replace_int_error(self):
-        test = b"a b"
-        self.assertRaises(TypeError, test.replace, 32, b"")
+        with self.assertRaises(TypeError) as context:
+            b"a b".replace(b"r", 4)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'int'"
+        )
 
     def test_replace_str_error(self):
-        test = b"a b"
-        self.assertRaises(TypeError, test.replace, "r", b"")
+        with self.assertRaises(TypeError) as context:
+            b"a b".replace(b"r", "s")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
 
     def test_replace_float_count_error(self):
-        test = b"a b"
-        self.assertRaises(TypeError, test.replace, b"r", b"", 4.2)
+        with self.assertRaises(TypeError) as context:
+            b"a b".replace(b"r", b"b", 4.2)
+        self.assertEqual(str(context.exception), "integer argument expected, got float")
 
     def test_replace_str_count_error(self):
         test = b"a b"

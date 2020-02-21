@@ -875,13 +875,13 @@ RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
                                 "a bytes-like object is required, not '%T'",
                                 &new_bytes_obj);
   }
-  if (!runtime->isInstanceOfInt(*count_obj)) {
-    return Unbound::object();
-  }
   if (runtime->isInstanceOfFloat(*count_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "integer argument expected, got float",
                                 &count_obj);
+  }
+  if (!runtime->isInstanceOfInt(*count_obj)) {
+    return Unbound::object();
   }
   if (!count_obj.isSmallInt()) {
     UNIMPLEMENTED("handle if count is a LargeInt");
