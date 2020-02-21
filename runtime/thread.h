@@ -253,22 +253,25 @@ class Thread {
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
 
-  RawObject reprEnter(const Object& obj);
-  void reprLeave(const Object& obj);
-
-  int recursionLimit() { return recursion_limit_; }
   int recursionDepth() { return recursion_depth_; }
-  int increaseRecursionDepth() {
+
+  int recursionEnter() {
     DCHECK(recursion_depth_ <= recursion_limit_,
            "recursion depth can't be more than the recursion limit");
     return recursion_depth_++;
   }
-  void decreaseRecursionDepth() {
+
+  void recursionLeave() {
     DCHECK(recursion_depth_ > 0, "recursion depth can't be less than 0");
     recursion_depth_--;
   }
+
+  int recursionLimit() { return recursion_limit_; }
   // TODO(T62600497): Enforce the recursion limit
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
+
+  RawObject reprEnter(const Object& obj);
+  void reprLeave(const Object& obj);
 
   // Returns thread ID.
   word id() {
