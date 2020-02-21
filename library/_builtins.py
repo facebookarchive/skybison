@@ -136,6 +136,10 @@ def _bytes_repeat(self, count):
     _builtin()
 
 
+def _bytes_replace(self, old, new, count):
+    _builtin()
+
+
 def _bytes_split(self, sep, maxsplit):
     _builtin()
 

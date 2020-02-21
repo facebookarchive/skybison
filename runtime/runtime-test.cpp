@@ -295,6 +295,120 @@ TEST_F(RuntimeByteArrayTest, Extend) {
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "Hello"));
 }
 
+TEST_F(RuntimeBytesTest, BytesReplaceWithSmallBytesAndNegativeReplacesAll) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '2', '2'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'2'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 1,
+                                              new_bytes, 1, -1));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "1**"));
+}
+
+TEST_F(RuntimeBytesTest, BytesReplaceWithLargeBytesAndNegativeReplacesAll) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '1', '1', '1', '1', '1', '1', '2', '1', '1', '1',
+                      '1', '1', '1', '1', '1', '1', '1', '2', '1', '1'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'2'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 1,
+                                              new_bytes, 1, -1));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "1111111*1111111111*11"));
+}
+
+TEST_F(RuntimeBytesTest, BytesReplaceWithLargeBytesAndCountReplacesSome) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '1', '1', '1', '1', '1', '1', '2', '1', '1', '1',
+                      '1', '1', '1', '1', '1', '1', '1', '2', '1', '1'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'2'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 1,
+                                              new_bytes, 1, 1));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "1111111*1111111111211"));
+}
+
+TEST_F(RuntimeBytesTest, BytesReplaceWithLongerNewReturnsLonger) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '2'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'2'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*', '*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 1,
+                                              new_bytes, 2, -1));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "1**"));
+}
+
+TEST_F(RuntimeBytesTest, BytesReplaceWithShorterNewReturnsShorter) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 11,
+                                              new_bytes, 1, -1));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "*"));
+}
+
+TEST_F(RuntimeBytesTest, BytesReplaceWithCountZero) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '2'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'1'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 1,
+                                              new_bytes, 1, 0));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "12"));
+}
+
+TEST_F(RuntimeBytesTest, BytesReplaceWithCountGreaterThanOccurences) {
+  HandleScope scope(thread_);
+  const byte src[] = {'1', '2'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  const byte in[] = {'1'};
+  Bytes old_bytes(&scope, runtime_->newBytesWithAll(in));
+
+  const byte out[] = {'*'};
+  Bytes new_bytes(&scope, runtime_->newBytesWithAll(out));
+
+  Bytes result(&scope, runtime_->bytesReplace(thread_, bytes, old_bytes, 1,
+                                              new_bytes, 1, 9));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "*2"));
+}
+
 TEST_F(RuntimeBytesTest, Concat) {
   HandleScope scope(thread_);
 

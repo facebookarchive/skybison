@@ -1819,6 +1819,36 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(b"1 aaa1".lstrip(bytearray(b" 1")), b"aaa1")
         self.assertEqual(b"hello".lstrip(b"eho"), b"llo")
 
+    def test_replace(self):
+        test = b"mississippi"
+        self.assertEqual(test.replace(b"i", b"a"), b"massassappa")
+        self.assertEqual(test.replace(b"i", b"vv"), b"mvvssvvssvvppvv")
+        self.assertEqual(test.replace(b"ss", b"x"), b"mixixippi")
+        self.assertEqual(test.replace(bytearray(b"ss"), bytearray(b"x")), b"mixixippi")
+        self.assertEqual(test.replace(b"i", bytearray()), b"msssspp")
+        self.assertEqual(test.replace(bytearray(b"i"), b""), b"msssspp")
+
+    def test_replace_with_count(self):
+        test = b"mississippi"
+        self.assertEqual(test.replace(b"i", b"a", 0), b"mississippi")
+        self.assertEqual(test.replace(b"i", b"a", 2), b"massassippi")
+
+    def test_replace_int_error(self):
+        test = b"a b"
+        self.assertRaises(TypeError, test.replace, 32, b"")
+
+    def test_replace_str_error(self):
+        test = b"a b"
+        self.assertRaises(TypeError, test.replace, "r", b"")
+
+    def test_replace_float_count_error(self):
+        test = b"a b"
+        self.assertRaises(TypeError, test.replace, b"r", b"", 4.2)
+
+    def test_replace_str_count_error(self):
+        test = b"a b"
+        self.assertRaises(TypeError, test.replace, "r", b"", "hello")
+
     def test_rfind_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytes.rfind(bytearray(), b"")

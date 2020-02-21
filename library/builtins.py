@@ -44,6 +44,7 @@ from _builtins import (
     _bytes_len,
     _bytes_maketrans,
     _bytes_repeat,
+    _bytes_replace,
     _bytes_split,
     _bytes_split_whitespace,
     _byteslike_check,
@@ -2227,7 +2228,10 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def replace(self, old, new, count=-1):
-        _unimplemented()
+        result = _bytes_replace(self, old, new, count)
+        if result is not _Unbound:
+            return result
+        return _bytes_replace(self, old, new, _index(count))
 
     def rfind(self, sub, start=None, end=None) -> int:
         _bytes_guard(self)

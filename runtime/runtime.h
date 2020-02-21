@@ -443,6 +443,15 @@ class Runtime {
   RawObject bytesRepeat(Thread* thread, const Bytes& source, word length,
                         word count);
 
+  // Replace the occurances of old_bytes with new_bytes in src up to max_count.
+  // If no instances of old_bytes exist, old_bytes == new_bytes, or max_count is
+  // zero, return src unmodified.
+  // NOTE: a negative max_count value is used to signify that all instaces of
+  // old_bytes should be replaced
+  RawObject bytesReplace(Thread* thread, const Bytes& src,
+                         const Bytes& old_bytes, word old_len,
+                         const Bytes& new_bytes, word new_len, word max_count);
+
   // Returns a new Bytes that contains the specified slice of self.
   RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,
                        word step);

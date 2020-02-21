@@ -2650,6 +2650,58 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
   return is_mutable ? *result : result.becomeImmutable();
 }
 
+RawObject Runtime::bytesReplace(Thread* thread, const Bytes& src,
+                                const Bytes& old_bytes, word old_len,
+                                const Bytes& new_bytes, word new_len,
+                                word max_count) {
+  word src_len = src.length();
+  if (max_count == 0 || src_len == 0 || old_bytes.compare(*new_bytes) == 0) {
+    return *src;
+  }
+  // Update the max_count to the number of occurences of old_bytes in src,
+  // capped by the given max_count
+  word count = bytesCount(src, src_len, old_bytes, old_len, 0, src_len);
+  if (max_count < 0 || max_count > count) {
+    max_count = count;
+  }
+  if (max_count == 0) {
+    return *src;
+  }
+
+  HandleScope scope(thread);
+  word result_len = src_len + (new_len - old_len) * max_count;
+  MutableBytes result(&scope, newMutableBytesUninitialized(result_len));
+
+  byte src_buffer[SmallBytes::kMaxLength], old_buffer[SmallBytes::kMaxLength];
+  byte *src_ptr, *old_ptr;
+  if (src.isLargeBytes()) {
+    src_ptr = reinterpret_cast<byte*>(LargeBytes::cast(*src).address());
+  } else {
+    src.copyTo(src_buffer, src_len);
+    src_ptr = src_buffer;
+  }
+  if (old_bytes.isLargeBytes()) {
+    old_ptr = reinterpret_cast<byte*>(LargeBytes::cast(*old_bytes).address());
+  } else {
+    old_bytes.copyTo(old_buffer, old_len);
+    old_ptr = old_buffer;
+  }
+
+  word dst_idx = 0, src_idx = 0;
+  for (; max_count > 0; max_count--) {
+    byte* found_ptr = reinterpret_cast<byte*>(
+        ::memmem(src_ptr + src_idx, src_len - src_idx, old_ptr, old_len));
+    word prefix_len = found_ptr - (src_ptr + src_idx);
+    result.replaceFromWithStartAt(dst_idx, *src, prefix_len, src_idx);
+    dst_idx += prefix_len;
+    result.replaceFromWithStartAt(dst_idx, *new_bytes, new_len, 0);
+    dst_idx += new_len;
+    src_idx += prefix_len + old_len;
+  }
+  result.replaceFromWithStartAt(dst_idx, *src, src_len - src_idx, src_idx);
+  return result.becomeImmutable();
+}
+
 RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
                               word stop, word step) {
   word length = Slice::length(start, stop, step);

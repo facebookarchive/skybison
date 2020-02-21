@@ -851,6 +851,78 @@ RawObject FUNC(_builtins, _bytes_repeat)(Thread* thread, Frame* frame,
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
+RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Object old_bytes_obj(&scope, args.get(1));
+  Object new_bytes_obj(&scope, args.get(2));
+  Object count_obj(&scope, args.get(3));
+
+  // Type Checks
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+  }
+  if (!runtime->isByteslike(*old_bytes_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &old_bytes_obj);
+  }
+  if (!runtime->isByteslike(*new_bytes_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &new_bytes_obj);
+  }
+  if (!runtime->isInstanceOfInt(*count_obj)) {
+    return Unbound::object();
+  }
+  if (runtime->isInstanceOfFloat(*count_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "integer argument expected, got float",
+                                &count_obj);
+  }
+  if (!count_obj.isSmallInt()) {
+    UNIMPLEMENTED("handle if count is a LargeInt");
+  }
+
+  // Byteslike breakdown for oldbytes and newbytes
+  word old_bytes_len;
+  if (runtime->isInstanceOfBytes(*old_bytes_obj)) {
+    Bytes bytes(&scope, bytesUnderlying(*old_bytes_obj));
+    old_bytes_obj = *bytes;
+    old_bytes_len = bytes.length();
+  } else if (runtime->isInstanceOfByteArray(*old_bytes_obj)) {
+    ByteArray bytearray(&scope, *old_bytes_obj);
+    old_bytes_obj = bytearray.bytes();
+    old_bytes_len = bytearray.numItems();
+  } else {
+    // TODO(T38246066): support buffer protocol
+    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
+  }
+  word new_bytes_len;
+  if (runtime->isInstanceOfBytes(*new_bytes_obj)) {
+    Bytes bytes(&scope, bytesUnderlying(*new_bytes_obj));
+    new_bytes_obj = *bytes;
+    new_bytes_len = bytes.length();
+  } else if (runtime->isInstanceOfByteArray(*new_bytes_obj)) {
+    ByteArray bytearray(&scope, *new_bytes_obj);
+    new_bytes_obj = bytearray.bytes();
+    new_bytes_len = bytearray.numItems();
+  } else {
+    // TODO(T38246066): support buffer protocol
+    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
+  }
+
+  Bytes self(&scope, *self_obj);
+  Bytes old_bytes(&scope, *old_bytes_obj);
+  Bytes new_bytes(&scope, *new_bytes_obj);
+  word count = intUnderlying(*count_obj).asWordSaturated();
+  return runtime->bytesReplace(thread, self, old_bytes, old_bytes_len,
+                               new_bytes, new_bytes_len, count);
+}
+
 RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
