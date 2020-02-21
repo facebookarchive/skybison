@@ -535,6 +535,61 @@ TEST_F(RuntimeListTest, AppendToList) {
   }
 }
 
+TEST_F(RuntimeTest, MutableBytesFromBytesWithSmallBytes) {
+  HandleScope scope(thread_);
+
+  const byte data[] = {0x11, 0x22, 0x33};
+  Bytes src(&scope, runtime_->newBytesWithAll(data));
+  ASSERT_TRUE(src.isSmallBytes());
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, src));
+  EXPECT_EQ(dst.length(), 3);
+  EXPECT_EQ(dst.byteAt(0), 0x11);
+  EXPECT_EQ(dst.byteAt(1), 0x22);
+  EXPECT_EQ(dst.byteAt(2), 0x33);
+}
+
+TEST_F(RuntimeTest, MutableBytesFromBytesWithLargeBytes) {
+  HandleScope scope(thread_);
+
+  MutableBytes mutable_bytes(&scope, runtime_->newMutableBytesUninitialized(8));
+  mutable_bytes.byteAtPut(0, 0x11);
+  mutable_bytes.byteAtPut(1, 0x22);
+  mutable_bytes.byteAtPut(2, 0x33);
+  mutable_bytes.byteAtPut(3, 0x44);
+  mutable_bytes.byteAtPut(4, 0x55);
+  mutable_bytes.byteAtPut(5, 0x66);
+  mutable_bytes.byteAtPut(6, 0x77);
+  mutable_bytes.byteAtPut(7, 0x88);
+  Bytes src(&scope, mutable_bytes.becomeImmutable());
+  ASSERT_TRUE(src.isLargeBytes());
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, src));
+  EXPECT_EQ(dst.length(), 8);
+  EXPECT_EQ(dst.byteAt(0), 0x11);
+  EXPECT_EQ(dst.byteAt(1), 0x22);
+  EXPECT_EQ(dst.byteAt(2), 0x33);
+  EXPECT_EQ(dst.byteAt(3), 0x44);
+  EXPECT_EQ(dst.byteAt(4), 0x55);
+  EXPECT_EQ(dst.byteAt(5), 0x66);
+  EXPECT_EQ(dst.byteAt(6), 0x77);
+  EXPECT_EQ(dst.byteAt(7), 0x88);
+}
+
+TEST_F(RuntimeTest, MutableBytesFromBytesWithMutableBytes) {
+  HandleScope scope(thread_);
+
+  MutableBytes mutable_bytes(&scope, runtime_->newMutableBytesUninitialized(3));
+  mutable_bytes.byteAtPut(0, 0x11);
+  mutable_bytes.byteAtPut(1, 0x22);
+  mutable_bytes.byteAtPut(2, 0x33);
+  Bytes src(&scope, *mutable_bytes);
+  ASSERT_TRUE(src.isMutableBytes());
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, src));
+  EXPECT_EQ(dst.length(), 3);
+  EXPECT_EQ(dst.byteAt(0), 0x11);
+  EXPECT_EQ(dst.byteAt(1), 0x22);
+  EXPECT_EQ(dst.byteAt(2), 0x33);
+}
+
 TEST_F(RuntimeTest, NewByteArray) {
   HandleScope scope(thread_);
 
