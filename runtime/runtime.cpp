@@ -2392,23 +2392,6 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
-  Thread* thread = Thread::current();
-  HandleScope scope;
-  Dict module_dict(&scope, module.dict());
-  Tuple buckets(&scope, module_dict.data());
-  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
-    CHECK(Dict::Bucket::key(*buckets, i).isStr(), "Symbol is not a String");
-    Str symbol_name(&scope, Dict::Bucket::key(*buckets, i));
-    // Load all the symbols not starting with '_'
-    if (symbol_name.charAt(0) != '_') {
-      Object value(&scope, moduleAt(thread, module, symbol_name));
-      DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
-      dictAtPutInValueCellByStr(thread, dict, symbol_name, value);
-    }
-  }
-}
-
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {
   word new_capacity = (curr_capacity < kInitialEnsuredCapacity)
                           ? kInitialEnsuredCapacity

@@ -2582,29 +2582,6 @@ class Test(Exception):
   EXPECT_EQ(mro.at(3), runtime_->typeAt(LayoutId::kObject));
 }
 
-TEST_F(RuntimeModuleTest, ModuleImportsAllPublicSymbols) {
-  HandleScope scope(thread_);
-
-  // Create Module
-  Object name(&scope, runtime_->newStrFromCStr("foo"));
-  Module module(&scope, runtime_->newModule(name));
-
-  // Add symbols
-  Dict module_dict(&scope, module.dict());
-  Str symbol_str1(&scope, runtime_->newStrFromCStr("public_symbol"));
-  Str symbol_str2(&scope, runtime_->newStrFromCStr("_private_symbol"));
-  dictAtPutInValueCellByStr(thread_, module_dict, symbol_str1, symbol_str1);
-  dictAtPutInValueCellByStr(thread_, module_dict, symbol_str2, symbol_str2);
-
-  // Import public symbols to dictionary
-  Dict symbols_dict(&scope, runtime_->newDict());
-  runtime_->moduleImportAllFrom(symbols_dict, module);
-  EXPECT_EQ(symbols_dict.numItems(), 1);
-
-  ValueCell result(&scope, dictAtByStr(thread_, symbols_dict, symbol_str1));
-  EXPECT_TRUE(isStrEqualsCStr(result.value(), "public_symbol"));
-}
-
 TEST_F(RuntimeTest, HeapFrameCreate) {
   const char* src = R"(
 def gen():

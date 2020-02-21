@@ -2177,6 +2177,50 @@ HANDLER_INLINE Continue Interpreter::doYieldValue(Thread*, word) {
   return Continue::YIELD;
 }
 
+static Continue implicitGlobalsAtPut(Thread* thread, Frame* frame,
+                                     const Object& implicit_globals_obj,
+                                     const Str& name, const Object& value) {
+  HandleScope scope(thread);
+  if (implicit_globals_obj.isNoneType()) {
+    Module module(&scope, frame->function().moduleObject());
+    moduleAtPut(thread, module, name, value);
+    return Continue::NEXT;
+  }
+  if (implicit_globals_obj.isDict()) {
+    Dict implicit_globals(&scope, *implicit_globals_obj);
+    dictAtPutByStr(thread, implicit_globals, name, value);
+  } else {
+    if (objectSetItem(thread, implicit_globals_obj, name, value)
+            .isErrorException()) {
+      return Continue::UNWIND;
+    }
+  }
+  return Continue::NEXT;
+}
+
+Continue Interpreter::moduleImportAllFrom(Thread* thread, Frame* frame,
+                                          const Module& module,
+                                          const Object& implicit_globals) {
+  HandleScope scope(thread);
+  List module_keys(&scope, moduleKeys(thread, module));
+  Str symbol_name(&scope, Str::empty());
+  Object value(&scope, NoneType::object());
+  for (word i = 0; i < module_keys.numItems(); i++) {
+    CHECK(module_keys.at(i).isStr(), "Symbol is not a String");
+    symbol_name = module_keys.at(i);
+    // Load all the symbols not starting with '_'
+    if (symbol_name.charAt(0) != '_') {
+      value = moduleAt(thread, module, symbol_name);
+      DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
+      if (implicitGlobalsAtPut(thread, frame, implicit_globals, symbol_name,
+                               value) == Continue::UNWIND) {
+        return Continue::UNWIND;
+      }
+    }
+  }
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
@@ -2185,15 +2229,9 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
   // that's not necessary anymore. You can't import * inside a function
   // body anymore.
 
+  Object implicit_globals(&scope, frame->implicitGlobals());
   Module module(&scope, frame->popValue());
-  Object implicit_globals_obj(&scope, frame->implicitGlobals());
-  if (implicit_globals_obj.isNoneType()) {
-    Module function_module(&scope, frame->function().moduleObject());
-    implicit_globals_obj = function_module.dict();
-  }
-  Dict implicit_globals(&scope, *implicit_globals_obj);
-  thread->runtime()->moduleImportAllFrom(implicit_globals, module);
-  return Continue::NEXT;
+  return moduleImportAllFrom(thread, frame, module, implicit_globals);
 }
 
 HANDLER_INLINE Continue Interpreter::doPopBlock(Thread* thread, word) {
@@ -2263,22 +2301,8 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   RawObject names = Code::cast(frame->code()).names();
   Str name(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
-  Object implicit_globals_obj(&scope, frame->implicitGlobals());
-  if (implicit_globals_obj.isNoneType()) {
-    Module module(&scope, frame->function().moduleObject());
-    moduleAtPut(thread, module, name, value);
-    return Continue::NEXT;
-  }
-  if (implicit_globals_obj.isDict()) {
-    Dict implicit_globals(&scope, *implicit_globals_obj);
-    dictAtPutByStr(thread, implicit_globals, name, value);
-  } else {
-    if (objectSetItem(thread, implicit_globals_obj, name, value)
-            .isErrorException()) {
-      return Continue::UNWIND;
-    }
-  }
-  return Continue::NEXT;
+  Object implicit_globals(&scope, frame->implicitGlobals());
+  return implicitGlobalsAtPut(thread, frame, implicit_globals, name, value);
 }
 
 static Continue raiseUndefinedName(Thread* thread, const Object& name) {

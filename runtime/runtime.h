@@ -677,9 +677,6 @@ class Runtime {
   // Return whether object's class provides a __getitem__ method
   bool isMapping(Thread* thread, const Object& obj);
 
-  // Import all the public module's symbols to the given dict
-  void moduleImportAllFrom(const Dict& dict, const Module& module);
-
   // Converts bytes object into an int object. The conversion is performed
   // with the specified endianness. `is_signed` specifies whether the highest
   // bit is considered a sign.

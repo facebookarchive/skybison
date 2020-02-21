@@ -3193,6 +3193,106 @@ b = _private_symbol()
                             "name '_private_symbol' is not defined"));
 }
 
+TEST_F(InterpreterTest, ImportStarWorksWithDictImplicitGlobals) {
+  HandleScope scope(thread_);
+  Object module_src(&scope, runtime_->newStrFromCStr(R"(
+def foo():
+    return "bar"
+def baz():
+    return "quux"
+)"));
+  Object filename(&scope, runtime_->newStrFromCStr("<test string>"));
+
+  // Preload the module
+  Object name(&scope, runtime_->newStrFromCStr("test_module"));
+  Code module_code(&scope,
+                   compile(thread_, module_src, filename, ID(exec), 0, -1));
+  ASSERT_FALSE(executeModuleFromCode(thread_, module_code, name).isError());
+
+  const char* main_src = R"(
+from test_module import *
+a = foo()
+b = baz()
+)";
+
+  Object str(&scope, runtime_->newStrFromCStr(main_src));
+  Code main_code(&scope, compile(thread_, str, filename, ID(exec), 0, -1));
+  Module main_module(&scope, runtime_->findOrCreateMainModule());
+  Dict implicit_globals(&scope, runtime_->newDict());
+  Object result(&scope,
+                thread_->exec(main_code, main_module, implicit_globals));
+  EXPECT_FALSE(result.isError());
+  EXPECT_EQ(implicit_globals.numItems(), 4);
+}
+
+TEST_F(InterpreterTest, ImportStarWorksWithUserDefinedImplicitGlobals) {
+  HandleScope scope(thread_);
+  Object module_src(&scope, runtime_->newStrFromCStr(R"(
+def foo():
+    return "bar"
+def baz():
+    return "quux"
+)"));
+  Object filename(&scope, runtime_->newStrFromCStr("<test string>"));
+
+  // Preload the module
+  Object name(&scope, runtime_->newStrFromCStr("test_module"));
+  Code module_code(&scope,
+                   compile(thread_, module_src, filename, ID(exec), 0, -1));
+  ASSERT_FALSE(executeModuleFromCode(thread_, module_code, name).isError());
+
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+   def __init__(self):
+      self.mydict = {}
+   def __setitem__(self, key, value):
+      self.mydict[key] = value
+   def __getitem__(self, key):
+      return self.mydict[key]
+)")
+                   .isError());
+
+  const char* main_src = R"(
+from test_module import *
+a = foo()
+b = baz()
+)";
+
+  Object str(&scope, runtime_->newStrFromCStr(main_src));
+  Code main_code(&scope, compile(thread_, str, filename, ID(exec), 0, -1));
+  Module main_module(&scope, runtime_->findOrCreateMainModule());
+  Type implicit_globals_type(&scope, mainModuleAt(runtime_, "C"));
+  Object implicit_globals(
+      &scope, thread_->invokeMethod1(implicit_globals_type, ID(__call__)));
+  Object result(&scope,
+                thread_->exec(main_code, main_module, implicit_globals));
+  EXPECT_FALSE(result.isError());
+}
+
+TEST_F(InterpreterTest, ModuleImportAllImportsAllPublicSymbols) {
+  HandleScope scope(thread_);
+
+  // Create Module
+  Object name(&scope, runtime_->newStrFromCStr("foo"));
+  Module module(&scope, runtime_->newModule(name));
+
+  // Add symbols
+  Str symbol_str1(&scope, Runtime::internStrFromCStr(thread_, "public_symbol"));
+  Str symbol_str2(&scope,
+                  Runtime::internStrFromCStr(thread_, "_private_symbol"));
+  moduleAtPut(thread_, module, symbol_str1, symbol_str1);
+  moduleAtPut(thread_, module, symbol_str2, symbol_str2);
+
+  // Import public symbols to dictionary
+  Dict symbols_dict(&scope, runtime_->newDict());
+  Interpreter::moduleImportAllFrom(thread_, thread_->currentFrame(), module,
+                                   symbols_dict);
+  EXPECT_EQ(symbols_dict.numItems(), 1);
+
+  Str result(&scope, dictAtByStr(thread_, symbols_dict, symbol_str1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "public_symbol"));
+}
+
 TEST_F(InterpreterTest, ImportCallsBuiltinsDunderImport) {
   ASSERT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 import builtins
