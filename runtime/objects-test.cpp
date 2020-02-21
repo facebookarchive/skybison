@@ -22,6 +22,7 @@ using ModulesTest = RuntimeFixture;
 using MutableBytesTest = RuntimeFixture;
 using MutableTupleTest = RuntimeFixture;
 using SliceTest = RuntimeFixture;
+using SmallStrTest = RuntimeFixture;
 using StrTest = RuntimeFixture;
 using StringTest = RuntimeFixture;
 using ValueCellTest = RuntimeFixture;
@@ -914,162 +915,143 @@ TEST_F(StringTest, CopyToStartAtWithSmallStrCopiesBytes) {
   str.copyToStartAt(nullptr, 0, 3);
 }
 
-TEST(SmallStrTest, Tests) {
-  RawObject obj0 = SmallStr::fromCStr("AB");
-  ASSERT_TRUE(obj0.isSmallStr());
-  auto str0 = Str::cast(obj0);
-  EXPECT_EQ(str0.charLength(), 2);
-  EXPECT_EQ(str0.charAt(0), 'A');
-  EXPECT_EQ(str0.charAt(1), 'B');
+TEST_F(SmallStrTest, CodePointLengthWithAsciiReturnsLength) {
+  HandleScope scope(thread_);
+  SmallStr len0(&scope, SmallStr::fromCStr(""));
+  EXPECT_EQ(len0.charLength(), 0);
+  EXPECT_EQ(len0.codePointLength(), 0);
+
+  SmallStr len1(&scope, SmallStr::fromCStr("1"));
+  EXPECT_EQ(len1.charLength(), 1);
+  EXPECT_EQ(len1.codePointLength(), 1);
+
+  SmallStr len2(&scope, SmallStr::fromCStr("12"));
+  EXPECT_EQ(len2.charLength(), 2);
+  EXPECT_EQ(len2.codePointLength(), 2);
+
+  SmallStr len3(&scope, SmallStr::fromCStr("123"));
+  EXPECT_EQ(len3.charLength(), 3);
+  EXPECT_EQ(len3.codePointLength(), 3);
+}
+
+TEST_F(SmallStrTest, CodePointLengthWithOneCodePoint) {
+  HandleScope scope(thread_);
+  SmallStr len1(&scope, SmallStr::fromCStr("\x24"));
+  EXPECT_EQ(len1.charLength(), 1);
+  EXPECT_EQ(len1.codePointLength(), 1);
+
+  SmallStr len2(&scope, SmallStr::fromCStr("\xC2\xA2"));
+  EXPECT_EQ(len2.charLength(), 2);
+  EXPECT_EQ(len2.codePointLength(), 1);
+
+  SmallStr len3(&scope, SmallStr::fromCStr("\xE0\xA4\xB9"));
+  EXPECT_EQ(len3.charLength(), 3);
+  EXPECT_EQ(len3.codePointLength(), 1);
+
+  SmallStr len4(&scope, SmallStr::fromCStr("\xF0\x90\x8D\x88"));
+  EXPECT_EQ(len4.charLength(), 4);
+  EXPECT_EQ(len4.codePointLength(), 1);
+}
+
+TEST_F(SmallStrTest, CodePointLengthWithTwoCodePoints) {
+  HandleScope scope(thread_);
+  SmallStr len1(&scope, SmallStr::fromCStr("\x24\x65"));
+  EXPECT_EQ(len1.charLength(), 2);
+  EXPECT_EQ(len1.codePointLength(), 2);
+
+  SmallStr len2(&scope, SmallStr::fromCStr("\xC2\xA2\xC2\xA3"));
+  EXPECT_EQ(len2.charLength(), 4);
+  EXPECT_EQ(len2.codePointLength(), 2);
+
+  SmallStr len3(&scope, SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3"));
+  EXPECT_EQ(len3.charLength(), 5);
+  EXPECT_EQ(len3.codePointLength(), 2);
+
+  SmallStr len4(&scope, SmallStr::fromCStr("\xF0\x90\x8D\x88\xC2\xA3"));
+  EXPECT_EQ(len4.charLength(), 6);
+  EXPECT_EQ(len4.codePointLength(), 2);
+}
+
+TEST_F(SmallStrTest, CodePointLengthWithThreeCodePoints) {
+  HandleScope scope(thread_);
+  SmallStr len1(&scope, SmallStr::fromCStr("\x24\x65\x66"));
+  EXPECT_EQ(len1.charLength(), 3);
+  EXPECT_EQ(len1.codePointLength(), 3);
+
+  SmallStr len2(&scope, SmallStr::fromCStr("\xC2\xA2\xC2\xA3\xC2\xA4"));
+  EXPECT_EQ(len2.charLength(), 6);
+  EXPECT_EQ(len2.codePointLength(), 3);
+
+  SmallStr len3(&scope, SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3\xC2\xA4"));
+  EXPECT_EQ(len3.charLength(), 7);
+  EXPECT_EQ(len3.codePointLength(), 3);
+
+  SmallStr len4(&scope, SmallStr::fromCStr("\xF0\x90\x8D\x88\x65\xC2\xA3"));
+  EXPECT_EQ(len4.charLength(), 7);
+  EXPECT_EQ(len4.codePointLength(), 3);
+}
+
+TEST_F(SmallStrTest, CopyToCopiesBytes) {
+  HandleScope scope(thread_);
+  SmallStr str(&scope, SmallStr::fromCStr("AB"));
+  EXPECT_EQ(str.charLength(), 2);
+  EXPECT_EQ(str.charAt(0), 'A');
+  EXPECT_EQ(str.charAt(1), 'B');
+
   byte array[3]{0, 0, 0};
-  str0.copyTo(array, 2);
+  str.copyTo(array, 2);
   EXPECT_EQ(array[0], 'A');
   EXPECT_EQ(array[1], 'B');
   EXPECT_EQ(array[2], 0);
 }
 
-TEST(SmallStrTest, CodePointLengthWithAsciiReturnsLength) {
-  RawObject len0 = SmallStr::fromCStr("");
-  ASSERT_TRUE(len0.isSmallStr());
-  EXPECT_EQ(Str::cast(len0).charLength(), 0);
-  EXPECT_EQ(Str::cast(len0).codePointLength(), 0);
-
-  RawObject len1 = SmallStr::fromCStr("1");
-  ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).charLength(), 1);
-  EXPECT_EQ(Str::cast(len1).codePointLength(), 1);
-
-  RawObject len2 = SmallStr::fromCStr("12");
-  ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).charLength(), 2);
-  EXPECT_EQ(Str::cast(len2).codePointLength(), 2);
-
-  RawObject len3 = SmallStr::fromCStr("123");
-  ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).charLength(), 3);
-  EXPECT_EQ(Str::cast(len3).codePointLength(), 3);
-}
-
-TEST(SmallStrTest, CodePointLengthWithOneCodePoint) {
-  RawObject len1 = SmallStr::fromCStr("\x24");
-  ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).charLength(), 1);
-  EXPECT_EQ(Str::cast(len1).codePointLength(), 1);
-
-  RawObject len2 = SmallStr::fromCStr("\xC2\xA2");
-  ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).charLength(), 2);
-  EXPECT_EQ(Str::cast(len2).codePointLength(), 1);
-
-  RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9");
-  ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).charLength(), 3);
-  EXPECT_EQ(Str::cast(len3).codePointLength(), 1);
-
-  RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88");
-  ASSERT_TRUE(len4.isSmallStr());
-  EXPECT_EQ(Str::cast(len4).charLength(), 4);
-  EXPECT_EQ(Str::cast(len4).codePointLength(), 1);
-}
-
-TEST(SmallStrTest, CodePointLengthWithTwoCodePoints) {
-  RawObject len1 = SmallStr::fromCStr("\x24\x65");
-  ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).charLength(), 2);
-  EXPECT_EQ(Str::cast(len1).codePointLength(), 2);
-
-  RawObject len2 = SmallStr::fromCStr("\xC2\xA2\xC2\xA3");
-  ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).charLength(), 4);
-  EXPECT_EQ(Str::cast(len2).codePointLength(), 2);
-
-  RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3");
-  ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).charLength(), 5);
-  EXPECT_EQ(Str::cast(len3).codePointLength(), 2);
-
-  RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88\xC2\xA3");
-  ASSERT_TRUE(len4.isSmallStr());
-  EXPECT_EQ(Str::cast(len4).charLength(), 6);
-  EXPECT_EQ(Str::cast(len4).codePointLength(), 2);
-}
-
-TEST(SmallStrTest, CodePointLengthWithThreeCodePoints) {
-  RawObject len1 = SmallStr::fromCStr("\x24\x65\x66");
-  ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).charLength(), 3);
-  EXPECT_EQ(Str::cast(len1).codePointLength(), 3);
-
-  RawObject len2 = SmallStr::fromCStr("\xC2\xA2\xC2\xA3\xC2\xA4");
-  ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).charLength(), 6);
-  EXPECT_EQ(Str::cast(len2).codePointLength(), 3);
-
-  RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3\xC2\xA4");
-  ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).charLength(), 7);
-  EXPECT_EQ(Str::cast(len3).codePointLength(), 3);
-
-  RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88\x65\xC2\xA3");
-  ASSERT_TRUE(len4.isSmallStr());
-  EXPECT_EQ(Str::cast(len4).charLength(), 7);
-  EXPECT_EQ(Str::cast(len4).codePointLength(), 3);
-}
-
-TEST(SmallStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
-  RawObject all_ascii = SmallStr::fromCStr("abc");
-  ASSERT_TRUE(Str::cast(all_ascii).isSmallStr());
-  EXPECT_TRUE(Str::cast(all_ascii).isASCII());
-
-  RawObject some_non_ascii = SmallStr::fromCStr("a\xC2\xA3g");
-  ASSERT_TRUE(Str::cast(some_non_ascii).isSmallStr());
-  EXPECT_FALSE(Str::cast(some_non_ascii).isASCII());
-}
-
-TEST(SmallStrTest, FromCodePointOneByte) {
-  RawObject obj = SmallStr::fromCodePoint(0x24);
-  ASSERT_TRUE(obj.isSmallStr());
-  RawStr str = Str::cast(obj);
+TEST_F(SmallStrTest, FromCodePointOneByte) {
+  HandleScope scope(thread_);
+  SmallStr str(&scope, SmallStr::fromCodePoint(0x24));
   ASSERT_EQ(str.charLength(), 1);
   EXPECT_EQ(str.charAt(0), 0x24);
 }
 
-TEST(SmallStrTest, FromCodePointTwoByte) {
-  RawObject obj = SmallStr::fromCodePoint(0xA2);
-  ASSERT_TRUE(obj.isSmallStr());
-  RawStr str = Str::cast(obj);
+TEST_F(SmallStrTest, FromCodePointTwoByte) {
+  HandleScope scope(thread_);
+  SmallStr str(&scope, SmallStr::fromCodePoint(0xA2));
   ASSERT_EQ(str.charLength(), 2);
   EXPECT_EQ(str.charAt(0), 0xC2);
   EXPECT_EQ(str.charAt(1), 0xA2);
 }
 
-TEST(SmallStrTest, FromCodePointThreeByte) {
-  RawObject obj1 = SmallStr::fromCodePoint(0x0939);
-  ASSERT_TRUE(obj1.isSmallStr());
-  RawStr str1 = Str::cast(obj1);
+TEST_F(SmallStrTest, FromCodePointThreeByte) {
+  HandleScope scope(thread_);
+  SmallStr str1(&scope, SmallStr::fromCodePoint(0x0939));
   ASSERT_EQ(str1.charLength(), 3);
   EXPECT_EQ(str1.charAt(0), 0xE0);
   EXPECT_EQ(str1.charAt(1), 0xA4);
   EXPECT_EQ(str1.charAt(2), 0xB9);
 
-  RawObject obj2 = SmallStr::fromCodePoint(0x20AC);
-  ASSERT_TRUE(obj2.isSmallStr());
-  RawStr str2 = Str::cast(obj2);
+  SmallStr str2(&scope, SmallStr::fromCodePoint(0x20AC));
   ASSERT_EQ(str2.charLength(), 3);
   EXPECT_EQ(str2.charAt(0), 0xE2);
   EXPECT_EQ(str2.charAt(1), 0x82);
   EXPECT_EQ(str2.charAt(2), 0xAC);
 }
 
-TEST(SmallStrTest, FromCodePointFourByte) {
-  RawObject obj = SmallStr::fromCodePoint(0x10348);
-  ASSERT_TRUE(obj.isSmallStr());
-  RawStr str = Str::cast(obj);
+TEST_F(SmallStrTest, FromCodePointFourByte) {
+  HandleScope scope(thread_);
+  SmallStr str(&scope, SmallStr::fromCodePoint(0x10348));
   ASSERT_EQ(str.charLength(), 4);
   EXPECT_EQ(str.charAt(0), 0xF0);
   EXPECT_EQ(str.charAt(1), 0x90);
   EXPECT_EQ(str.charAt(2), 0x8D);
   EXPECT_EQ(str.charAt(3), 0x88);
+}
+
+TEST_F(SmallStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
+  HandleScope scope(thread_);
+  SmallStr all_ascii(&scope, SmallStr::fromCStr("abc"));
+  EXPECT_TRUE(all_ascii.isASCII());
+
+  SmallStr some_non_ascii(&scope, SmallStr::fromCStr("a\xC2\xA3g"));
+  EXPECT_FALSE(some_non_ascii.isASCII());
 }
 
 TEST_F(StrTest, OffsetByCodePoints) {
