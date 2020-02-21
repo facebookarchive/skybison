@@ -243,6 +243,24 @@ RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
   return Bool::fromBool(bytes.findByte(key_opt.value, 0, self.numItems()) >= 0);
 }
 
+RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes src(&scope, self.bytes());
+  MutableBytes dst(&scope, runtime->mutableBytesFromBytes(thread, src));
+  ByteArray result(&scope, runtime->newByteArray());
+  result.setBytes(*dst);
+  result.setNumItems(self.numItems());
+  return *result;
+}
+
 RawObject FUNC(_builtins, _bytearray_check)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);

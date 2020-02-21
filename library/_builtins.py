@@ -44,6 +44,10 @@ def _bytearray_contains(obj, key):
     _builtin()
 
 
+def _bytearray_copy(obj):
+    _builtin()
+
+
 def _bytearray_delitem(self, key):
     _builtin()
 

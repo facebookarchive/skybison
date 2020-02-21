@@ -663,6 +663,21 @@ class ByteArrayTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_copy_with_non_bytearray_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.copy(b"")
+        self.assertIn(
+            "'copy' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
+
+    def test_copy_returns_new_object(self):
+        array = bytearray(b"123")
+        copy = array.copy()
+        self.assertIsInstance(copy, bytearray)
+        self.assertIsNot(copy, array)
+        self.assertEqual(array, copy)
+
     def test_count_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray.count(b"", bytearray())

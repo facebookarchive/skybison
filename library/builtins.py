@@ -22,6 +22,7 @@ from _builtins import (
     _bytearray_check,
     _bytearray_clear,
     _bytearray_contains,
+    _bytearray_copy,
     _bytearray_delitem,
     _bytearray_delslice,
     _bytearray_getitem,
@@ -1697,7 +1698,7 @@ class bytearray(bootstrap=True):
         _bytearray_clear(self)
 
     def copy(self):
-        _unimplemented()
+        return _bytearray_copy(self)
 
     def count(self, sub, start=None, end=None):
         _bytearray_guard(self)
