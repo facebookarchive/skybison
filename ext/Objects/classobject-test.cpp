@@ -9,28 +9,50 @@ namespace testing {
 
 using ClassExtensionApiTest = ExtensionApi;
 
-TEST_F(ClassExtensionApiTest, MethodNewWithNullSelfRaisesRuntimeError) {
+TEST_F(ClassExtensionApiTest, FunctionReturnsFunction) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr bar(PyLong_FromLong(42));
+  PyObjectPtr method(PyMethod_New(foo, bar));
+  EXPECT_EQ(PyMethod_Function(method), foo);
+}
+
+TEST_F(ClassExtensionApiTest, GetFunctionReturnsFunction) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr bar(PyLong_FromLong(42));
+  PyObjectPtr method(PyMethod_New(foo, bar));
+  EXPECT_EQ(PyMethod_GET_FUNCTION(method.get()), foo);
+}
+
+TEST_F(ClassExtensionApiTest, NewWithNullSelfRaisesRuntimeError) {
   PyRun_SimpleString(R"(
 def foo(x):
   return x
 )");
-  PyObjectPtr foo_func(moduleGet("__main__", "foo"));
-  PyObject* func = PyMethod_New(foo_func, nullptr);
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObject* method = PyMethod_New(foo, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(func, nullptr);
+  EXPECT_EQ(method, nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(ClassExtensionApiTest, MethodCallWithNoArgsReturnsBoundObject) {
+TEST_F(ClassExtensionApiTest, NewWithNoArgsReturnsBoundObject) {
   PyRun_SimpleString(R"(
 def foo(x):
   return x
 )");
-  PyObjectPtr foo_func(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
   PyObjectPtr integer(PyLong_FromLong(123));
-  PyObjectPtr func(PyMethod_New(foo_func, integer));
+  PyObjectPtr method(PyMethod_New(foo, integer));
   PyObjectPtr args(PyTuple_New(0));
-  PyObjectPtr result(PyObject_CallObject(func, args));
+  PyObjectPtr result(PyObject_CallObject(method, args));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(result, integer);
 }
@@ -45,10 +67,32 @@ TEST_F(ClassExtensionApiTest, CheckWithMethodReturnsTrue) {
 def foo(x):
   return x
 )");
-  PyObjectPtr foo_func(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
   PyObjectPtr integer(PyLong_FromLong(123));
-  PyObjectPtr func(PyMethod_New(foo_func, integer));
-  EXPECT_EQ(PyMethod_Check(func.get()), 1);
+  PyObjectPtr method(PyMethod_New(foo, integer));
+  EXPECT_EQ(PyMethod_Check(method.get()), 1);
+}
+
+TEST_F(ClassExtensionApiTest, SelfReturnsSelf) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr bar(PyLong_FromLong(42));
+  PyObjectPtr method(PyMethod_New(foo, bar));
+  EXPECT_EQ(PyMethod_Self(method), bar);
+}
+
+TEST_F(ClassExtensionApiTest, GetSelfReturnsSelf) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr bar(PyLong_FromLong(42));
+  PyObjectPtr method(PyMethod_New(foo, bar));
+  EXPECT_EQ(PyMethod_GET_SELF(method.get()), bar);
 }
 
 }  // namespace testing

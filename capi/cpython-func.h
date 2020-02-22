@@ -528,7 +528,11 @@ PyAPI_FUNC(void*) PyMem_Realloc(void*, size_t);
 PyAPI_FUNC(PyObject*) PyMemoryView_FromMemory(char*, Py_ssize_t, int);
 PyAPI_FUNC(PyObject*) PyMemoryView_FromObject(PyObject*);
 PyAPI_FUNC(PyObject*) PyMemoryView_GetContiguous(PyObject*, int, char);
+PyAPI_FUNC(PyObject*) PyMethod_Function(PyObject*);
+PyAPI_FUNC(PyObject*) PyMethod_GET_FUNCTION_Func(PyObject*);
+PyAPI_FUNC(PyObject*) PyMethod_GET_SELF_Func(PyObject*);
 PyAPI_FUNC(PyObject*) PyMethod_New(PyObject*, PyObject*);
+PyAPI_FUNC(PyObject*) PyMethod_Self(PyObject*);
 PyAPI_FUNC(PyObject*) PyModuleDef_Init(struct PyModuleDef*);
 PyAPI_FUNC(int) PyModule_AddFunctions(PyObject*, PyMethodDef*);
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject*, const char*, long);
@@ -1377,6 +1381,9 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t, struct tm*);
 #define PyList_SET_ITEM(op, i, v) PyList_SET_ITEM_Func((PyObject*)op, i, v)
 
 #define PyLong_AS_LONG(op) PyLong_AsLong(op)
+
+#define PyMethod_GET_FUNCTION(op) (PyMethod_GET_FUNCTION_Func((PyObject*)op))
+#define PyMethod_GET_SELF(op) (PyMethod_GET_SELF_Func((PyObject*)op))
 
 #define PySequence_Fast_GET_SIZE(op)                                           \
   PySequence_Fast_GET_SIZE_Func((PyObject*)op)
