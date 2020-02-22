@@ -1047,43 +1047,36 @@ TEST_F(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
       resolveDescriptorGet(thread_, descr, instance, owner).isBoundMethod());
 }
 
-TEST_F(TypeBuiltinsDeathTest,
-       TerminateIfUnimplementedTypeAttrCacheInvalidation) {
-  HandleScope scope(thread_);
-
-  // Not cached dunder function.
-  Object dunder_len(&scope, Runtime::internStrFromCStr(thread_, "__len__"));
-  terminateIfUnimplementedTypeAttrCacheInvalidation(thread_, dunder_len);
-
-  // Cached, and unimplemented cache invalidation for __setattr__ terminates
-  // Pyro.
-  Str dunder_setattr(&scope,
-                     Runtime::internStrFromCStr(thread_, "__setattr__"));
-  ASSERT_DEATH(terminateIfUnimplementedTypeAttrCacheInvalidation(
-                   thread_, dunder_setattr),
-               "unimplemented cache invalidation for type.__setattr__ update");
-}
-
 TEST_F(
-    TypeBuiltinsDeathTest,
-    DunderSetAttrWithUnimplementedCacheInvalidationTerminatesPyroWhenCacheIsEnabled) {
+    TypeBuiltinsTest,
+    TerminateIfUnimplementedTypeAttrCacheInvalidationDoesNotTerminateRuntimeForSupportedCacheInvalidation) {
+  // __len__ supports cache invalidation.
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-class C: pass
+class C:
+  def __len__(self): return 0
 
 C.__len__ = lambda self: 4
 )")
                    .isError());
 
-  ASSERT_DEATH(
-      static_cast<void>(runFromCStr(runtime_, R"(
+  // __setattr__ does not support cache invalidation, but it is not populated in
+  // C so we do not terminate the runtime.
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 
-C.__getattribute__ = lambda self, key: 5
-)")),
-      "unimplemented cache invalidation for type.__getattribute__ update");
+C.__setattr__ = lambda self, key: 5
+)")
+                   .isError());
+}
 
+TEST_F(
+    TypeBuiltinsDeathTest,
+    TerminateIfUnimplementedTypeAttrCacheInvalidationTerminatesRuntimeForUnsupportedCacheInvalidation) {
+  // Redefining the existing __setattr__ terminates the runtime due to the
+  // unsupported cache invalidation for it.
   ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
-class C: pass
+class C:
+  def __setattr__(self, key): pass
 
 C.__setattr__ = lambda self, key: 5
 )")),

@@ -1113,7 +1113,15 @@ static const SymbolId kUnimplementedTypeAttrUpdates[] = {
     ID(__setattr__)};
 
 void terminateIfUnimplementedTypeAttrCacheInvalidation(
-    Thread* thread, const Object& attr_name) {
+    Thread* thread, const Type& type, const Object& attr_name) {
+  word hash = internedStrHash(*attr_name);
+  RawObject existing_attr =
+      lookupCell(MutableTuple::cast(type.attributes()), *attr_name, hash,
+                 /*return_placeholder=*/true);
+  if (!existing_attr.isValueCell()) {
+    // No need for cache invalidation due to the absence of the attribute.
+    return;
+  }
   Runtime* runtime = thread->runtime();
   DCHECK(Runtime::isInternedStr(thread, attr_name), "expected interned str");
   for (uword i = 0; i < ARRAYSIZE(kUnimplementedTypeAttrUpdates); ++i) {
@@ -1130,7 +1138,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
   DCHECK(runtime->isInternedStr(thread, name),
          "name must be an interned string");
   // Make sure cache invalidation is correctly done for this.
-  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name);
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
   HandleScope scope(thread);
   if (type.isBuiltin()) {
     Object type_name(&scope, type.name());

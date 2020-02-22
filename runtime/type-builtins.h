@@ -94,6 +94,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
 // Terminate the process if cache invalidation for updating attr_name in type
 // objects is unimplemented.
 void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
+                                                       const Type& type,
                                                        const Object& attr_name);
 
 // Look-up underlying value-cell to a name.

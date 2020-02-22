@@ -376,9 +376,8 @@ RawObject Runtime::newTypeProxy(const Type& type) {
 RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
                                 const Object& name) {
   HandleScope scope(thread);
-  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name);
-
   Type type(&scope, *receiver);
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
   // TODO(mpage): This needs to handle built-in extension types.
   if (type.isBuiltin()) {
     Str type_name(&scope, type.name());
