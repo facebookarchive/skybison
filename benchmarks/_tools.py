@@ -88,7 +88,7 @@ class TimeTool(SequentialPerformanceTool):
         command = pin_to_cpus()
         command.extend(
             [
-                interpreter.binary_path,
+                *interpreter.interpreter_cmd,
                 f"{os.path.dirname(os.path.abspath(__file__))}/_time_tool.py",
                 benchmark.filepath(),
             ]
@@ -148,7 +148,7 @@ class PerfStat(SequentialPerformanceTool):
             full_command = command + ["--event", events.pop(0)]
             if events:
                 full_command += ["--event", events.pop(0)]
-            full_command += [interpreter.binary_path, benchmark.filepath()]
+            full_command += [*interpreter.interpreter_cmd, benchmark.filepath()]
             completed_process = run(
                 full_command, interpreter=interpreter, stderr=subprocess.PIPE
             )
@@ -201,7 +201,7 @@ class Callgrind(ParallelPerformanceTool):
                 "--tool=callgrind",
                 "--trace-children=yes",
                 f"--callgrind-out-file={temp_file.name}",
-                interpreter.binary_path,
+                *interpreter.interpreter_cmd,
                 benchmark.filepath(),
             ]
             run(command, interpreter=interpreter)
