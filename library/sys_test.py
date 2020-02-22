@@ -165,6 +165,20 @@ class SysTests(unittest.TestCase):
         self.assertEqual(hash_info.hash_bits, 64)
         self.assertEqual(hash_info.seed_bits, 128)
 
+    def test_float_info_matches_cpython(self):
+        float_info = sys.float_info
+        self.assertEqual(float_info.max, 1.7976931348623157e308)
+        self.assertEqual(float_info.max_exp, 1024)
+        self.assertEqual(float_info.max_10_exp, 308)
+        self.assertEqual(float_info.min, 2.2250738585072014e-308)
+        self.assertEqual(float_info.min_exp, -1021)
+        self.assertEqual(float_info.min_10_exp, -307)
+        self.assertEqual(float_info.dig, 15)
+        self.assertEqual(float_info.mant_dig, 53)
+        self.assertEqual(float_info.epsilon, 2.220446049250313e-16)
+        self.assertEqual(float_info.radix, 2)
+        self.assertEqual(float_info.rounds, 1)
+
     def test_intern_returns_str(self):
         self.assertEqual(sys.intern("id"), "id")
         self.assertEqual(sys.intern("long identifier"), "long identifier")

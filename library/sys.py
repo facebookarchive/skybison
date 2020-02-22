@@ -39,6 +39,20 @@ class _Flags(tuple):
     utf8_mode = _structseq_field("utf8_mode", 14)
 
 
+class _FloatInfo(tuple):
+    max = _structseq_field("max", 0)
+    max_exp = _structseq_field("max_exp", 1)
+    max_10_exp = _structseq_field("max_10_exp", 2)
+    min = _structseq_field("min", 3)
+    min_exp = _structseq_field("min_exp", 4)
+    min_10_exp = _structseq_field("min_10_exp", 5)
+    dig = _structseq_field("dig", 6)
+    mant_dig = _structseq_field("mant_dig", 7)
+    epsilon = _structseq_field("epsilon", 8)
+    radix = _structseq_field("radix", 9)
+    rounds = _structseq_field("rounds", 10)
+
+
 class _Frame(tuple):
     f_builtins = _structseq_field("f_builtins", 0)
     f_code = _structseq_field("f_code", 1)
@@ -159,6 +173,23 @@ def exit(code=0):
 
 
 flags = _Flags((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, False, 0))
+
+
+float_info = _FloatInfo(
+    (
+        1.79769313486231570814527423731704357e308,
+        1024,
+        308,
+        2.22507385850720138309023271733240406e-308,
+        -1021,
+        -307,
+        15,
+        53,
+        2.22044604925031308084726333618164062e-16,
+        2,
+        1,
+    )
+)
 
 
 def getfilesystemencodeerrors():
