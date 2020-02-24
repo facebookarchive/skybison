@@ -137,6 +137,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(ZeroDivisionError), LayoutId::kZeroDivisionError},
     {ID(_strarray), LayoutId::kStrArray},
     {ID(_traceback), LayoutId::kTraceback},
+    {ID(async_generator), LayoutId::kAsyncGenerator},
     {ID(bool), LayoutId::kBool},
     {ID(bytearray), LayoutId::kByteArray},
     {ID(bytearray_iterator), LayoutId::kByteArrayIterator},

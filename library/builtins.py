@@ -1490,6 +1490,10 @@ def ascii(obj):
     return _str_escape_non_ascii(repr(obj))
 
 
+class async_generator(bootstrap=True):
+    pass
+
+
 def bin(number) -> str:
     _builtin()
 
