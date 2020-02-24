@@ -10,6 +10,32 @@
 
 namespace py {
 
+static_assert(RawCode::Flags::kOptimized == CO_OPTIMIZED, "");
+static_assert(RawCode::Flags::kNewlocals == CO_NEWLOCALS, "");
+static_assert(RawCode::Flags::kVarargs == CO_VARARGS, "");
+static_assert(RawCode::Flags::kVarkeyargs == CO_VARKEYWORDS, "");
+static_assert(RawCode::Flags::kNested == CO_NESTED, "");
+static_assert(RawCode::Flags::kGenerator == CO_GENERATOR, "");
+static_assert(RawCode::Flags::kNofree == CO_NOFREE, "");
+static_assert(RawCode::Flags::kCoroutine == CO_COROUTINE, "");
+static_assert(RawCode::Flags::kIterableCoroutine == CO_ITERABLE_COROUTINE, "");
+static_assert(RawCode::Flags::kAsyncGenerator == CO_ASYNC_GENERATOR, "");
+static_assert(RawCode::Flags::kFutureDivision == CO_FUTURE_DIVISION, "");
+static_assert(RawCode::Flags::kFutureAbsoluteImport ==
+                  CO_FUTURE_ABSOLUTE_IMPORT,
+              "");
+static_assert(RawCode::Flags::kFutureWithStatement == CO_FUTURE_WITH_STATEMENT,
+              "");
+static_assert(RawCode::Flags::kFuturePrintFunction == CO_FUTURE_PRINT_FUNCTION,
+              "");
+static_assert(RawCode::Flags::kFutureUnicodeLiterals ==
+                  CO_FUTURE_UNICODE_LITERALS,
+              "");
+static_assert(RawCode::Flags::kFutureBarryAsBdfl == CO_FUTURE_BARRY_AS_BDFL,
+              "");
+static_assert(RawCode::Flags::kFutureGeneratorStop == CO_FUTURE_GENERATOR_STOP,
+              "");
+
 PY_EXPORT int PyCode_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isCode();
 }
