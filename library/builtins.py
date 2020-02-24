@@ -2877,10 +2877,6 @@ def exec(source, globals=None, locals=None):
         globals.update(mod.__dict__)
 
 
-def exit():
-    _unimplemented()
-
-
 class filter:
     """filter(function or None, iterable) --> filter object
 

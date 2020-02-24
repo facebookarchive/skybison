@@ -41,6 +41,18 @@ class SysTests(unittest.TestCase):
         def __exit__(self, type, value, tb):
             return True
 
+    def test_exit_raises_system_exit(self):
+        with self.assertRaises(SystemExit) as ctx:
+            sys.exit()
+
+        self.assertEqual(ctx.exception.args, ())
+
+    def test_exit_with_code_raises_system_exit_with_code(self):
+        with self.assertRaises(SystemExit) as ctx:
+            sys.exit("foo")
+
+        self.assertEqual(ctx.exception.args, ("foo",))
+
     def test_exc_info_with_context_manager(self):
         try:
             raise RuntimeError()

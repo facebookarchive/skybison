@@ -168,7 +168,9 @@ def excepthook(exc, value, tb):
 exec_prefix = ""
 
 
-def exit(code=0):
+def exit(code=_Unbound):
+    if code is _Unbound:
+        raise SystemExit()
     raise SystemExit(code)
 
 
