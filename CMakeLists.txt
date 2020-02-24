@@ -93,36 +93,8 @@ set(
   -fno-optimize-sibling-calls
   -fno-rtti)
 
-set(BINARY_DIR_HEADERS "${CMAKE_BINARY_DIR}/Include")
-file(MAKE_DIRECTORY "${BINARY_DIR_HEADERS}")
 set(
-  C_API_HEADERS_INPUT
-  ${CMAKE_SOURCE_DIR}/capi/Python.h
-  ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
-  ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
-  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
-  ${CMAKE_SOURCE_DIR}/capi/pyconfig-linux.h
-  ${CMAKE_SOURCE_DIR}/capi/pyconfig-osx.h
-  ${CMAKE_SOURCE_DIR}/capi/pyconfig.h)
-set(
-  C_API_HEADERS_OUTPUT
-  ${CMAKE_BINARY_DIR}/Include/Python.h
-  ${CMAKE_BINARY_DIR}/Include/pyconfig-linux.h
-  ${CMAKE_BINARY_DIR}/Include/pyconfig-osx.h
-  ${CMAKE_BINARY_DIR}/Include/pyconfig.h)
-add_custom_command(
-  OUTPUT ${C_API_HEADERS_OUTPUT}
-  COMMAND
-  cmake -E copy_if_different ${C_API_HEADERS_INPUT} ${BINARY_DIR_HEADERS}
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  DEPENDS ${C_API_HEADERS_INPUT}
-  COMMENT "Generating Pyro Headers")
-
-add_library(capi-headers INTERFACE)
-target_sources(
-  capi-headers
-  INTERFACE
-  ${C_API_HEADERS_OUTPUT}
+  C_API_HEADERS
   ${CMAKE_SOURCE_DIR}/capi/Python.h
   ${CMAKE_SOURCE_DIR}/capi/abstract.h
   ${CMAKE_SOURCE_DIR}/capi/bltinmodule.h
@@ -200,10 +172,31 @@ target_sources(
   ${CMAKE_SOURCE_DIR}/capi/unicodeobject.h
   ${CMAKE_SOURCE_DIR}/capi/warnings.h
   ${CMAKE_SOURCE_DIR}/capi/weakrefobject.h)
+add_library(capi-headers INTERFACE)
+target_sources(
+  capi-headers
+  INTERFACE
+  ${C_API_HEADERS})
 target_include_directories(
   capi-headers
   INTERFACE
   capi)
+
+set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/Include")
+string(
+  REGEX
+  REPLACE "(${CMAKE_SOURCE_DIR}\/capi\/)" "${BUILD_INCLUDE_DIR}/"
+  C_API_HEADERS_OUTPUT
+  "${C_API_HEADERS}")
+add_custom_command(
+  OUTPUT ${C_API_HEADERS_OUTPUT}
+  COMMAND
+  cmake -E make_directory ${BUILD_INCLUDE_DIR}
+  COMMAND
+  cmake -E copy_if_different ${C_API_HEADERS} ${BUILD_INCLUDE_DIR}
+  DEPENDS ${C_API_HEADERS}
+  COMMENT "Copying C-API headers")
+add_custom_target(copy-capi-headers ALL DEPENDS ${C_API_HEADERS_OUTPUT})
 
 set(
   FROZEN_MODULE_INPUT
@@ -454,127 +447,14 @@ file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Modules")
 file(WRITE "${CMAKE_BINARY_DIR}/Modules/Setup.local" "Pretend Setup exists")
 
 set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
-set(
-  CPYTHON_HEADERS_INPUT
-  ${CPYTHON_DIR}/Include/Python-ast.h
-  ${CPYTHON_DIR}/Include/abstract.h
-  ${CPYTHON_DIR}/Include/accu.h
-  ${CPYTHON_DIR}/Include/asdl.h
-  ${CPYTHON_DIR}/Include/ast.h
-  ${CPYTHON_DIR}/Include/bitset.h
-  ${CPYTHON_DIR}/Include/bltinmodule.h
-  ${CPYTHON_DIR}/Include/boolobject.h
-  ${CPYTHON_DIR}/Include/bytearrayobject.h
-  ${CPYTHON_DIR}/Include/bytes_methods.h
-  ${CPYTHON_DIR}/Include/bytesobject.h
-  ${CPYTHON_DIR}/Include/cellobject.h
-  ${CPYTHON_DIR}/Include/ceval.h
-  ${CPYTHON_DIR}/Include/classobject.h
-  ${CPYTHON_DIR}/Include/code.h
-  ${CPYTHON_DIR}/Include/codecs.h
-  ${CPYTHON_DIR}/Include/compile.h
-  ${CPYTHON_DIR}/Include/complexobject.h
-  ${CPYTHON_DIR}/Include/datetime.h
-  ${CPYTHON_DIR}/Include/descrobject.h
-  ${CPYTHON_DIR}/Include/dictobject.h
-  ${CPYTHON_DIR}/Include/dtoa.h
-  ${CPYTHON_DIR}/Include/dynamic_annotations.h
-  ${CPYTHON_DIR}/Include/enumobject.h
-  ${CPYTHON_DIR}/Include/errcode.h
-  ${CPYTHON_DIR}/Include/eval.h
-  ${CPYTHON_DIR}/Include/fileobject.h
-  ${CPYTHON_DIR}/Include/fileutils.h
-  ${CPYTHON_DIR}/Include/floatobject.h
-  ${CPYTHON_DIR}/Include/frameobject.h
-  ${CPYTHON_DIR}/Include/funcobject.h
-  ${CPYTHON_DIR}/Include/genobject.h
-  ${CPYTHON_DIR}/Include/graminit.h
-  ${CPYTHON_DIR}/Include/grammar.h
-  ${CPYTHON_DIR}/Include/import.h
-  ${CPYTHON_DIR}/Include/intrcheck.h
-  ${CPYTHON_DIR}/Include/iterobject.h
-  ${CPYTHON_DIR}/Include/listobject.h
-  ${CPYTHON_DIR}/Include/longintrepr.h
-  ${CPYTHON_DIR}/Include/longobject.h
-  ${CPYTHON_DIR}/Include/marshal.h
-  ${CPYTHON_DIR}/Include/memoryobject.h
-  ${CPYTHON_DIR}/Include/metagrammar.h
-  ${CPYTHON_DIR}/Include/methodobject.h
-  ${CPYTHON_DIR}/Include/modsupport.h
-  ${CPYTHON_DIR}/Include/moduleobject.h
-  ${CPYTHON_DIR}/Include/namespaceobject.h
-  ${CPYTHON_DIR}/Include/node.h
-  ${CPYTHON_DIR}/Include/object.h
-  ${CPYTHON_DIR}/Include/objimpl.h
-  ${CPYTHON_DIR}/Include/odictobject.h
-  ${CPYTHON_DIR}/Include/opcode.h
-  ${CPYTHON_DIR}/Include/osdefs.h
-  ${CPYTHON_DIR}/Include/osmodule.h
-  ${CPYTHON_DIR}/Include/parsetok.h
-  ${CPYTHON_DIR}/Include/patchlevel.h
-  ${CPYTHON_DIR}/Include/pgen.h
-  ${CPYTHON_DIR}/Include/pgenheaders.h
-  ${CPYTHON_DIR}/Include/py_curses.h
-  ${CPYTHON_DIR}/Include/pyarena.h
-  ${CPYTHON_DIR}/Include/pyatomic.h
-  ${CPYTHON_DIR}/Include/pycapsule.h
-  ${CPYTHON_DIR}/Include/pyctype.h
-  ${CPYTHON_DIR}/Include/pydebug.h
-  ${CPYTHON_DIR}/Include/pydtrace.h
-  ${CPYTHON_DIR}/Include/pyerrors.h
-  ${CPYTHON_DIR}/Include/pyexpat.h
-  ${CPYTHON_DIR}/Include/pyfpe.h
-  ${CPYTHON_DIR}/Include/pygetopt.h
-  ${CPYTHON_DIR}/Include/pyhash.h
-  ${CPYTHON_DIR}/Include/pylifecycle.h
-  ${CPYTHON_DIR}/Include/pymacro.h
-  ${CPYTHON_DIR}/Include/pymath.h
-  ${CPYTHON_DIR}/Include/pymem.h
-  ${CPYTHON_DIR}/Include/pyport.h
-  ${CPYTHON_DIR}/Include/pystate.h
-  ${CPYTHON_DIR}/Include/pystrcmp.h
-  ${CPYTHON_DIR}/Include/pystrhex.h
-  ${CPYTHON_DIR}/Include/pystrtod.h
-  ${CPYTHON_DIR}/Include/pythonrun.h
-  ${CPYTHON_DIR}/Include/pythread.h
-  ${CPYTHON_DIR}/Include/pytime.h
-  ${CPYTHON_DIR}/Include/rangeobject.h
-  ${CPYTHON_DIR}/Include/setobject.h
-  ${CPYTHON_DIR}/Include/sliceobject.h
-  ${CPYTHON_DIR}/Include/structmember.h
-  ${CPYTHON_DIR}/Include/structseq.h
-  ${CPYTHON_DIR}/Include/symtable.h
-  ${CPYTHON_DIR}/Include/sysmodule.h
-  ${CPYTHON_DIR}/Include/token.h
-  ${CPYTHON_DIR}/Include/traceback.h
-  ${CPYTHON_DIR}/Include/tupleobject.h
-  ${CPYTHON_DIR}/Include/typeslots.h
-  ${CPYTHON_DIR}/Include/ucnhash.h
-  ${CPYTHON_DIR}/Include/unicodeobject.h
-  ${CPYTHON_DIR}/Include/warnings.h
-  ${CPYTHON_DIR}/Include/weakrefobject.h)
-string(
-  REGEX
-  REPLACE "(${CPYTHON_DIR}/Include\/)" "${BINARY_DIR_HEADERS}/"
-  CPYTHON_HEADERS_OUTPUT "${CPYTHON_HEADERS_INPUT}")
-add_custom_command(
-  OUTPUT
-    ${CPYTHON_HEADERS_OUTPUT}
-  COMMAND
-    python3 util/generate_cpython_sources.py
-    -sources ${CPYTHON_HEADERS_INPUT}
-    -modified ${C_API_HEADERS_INPUT}
-    -output_dir ${CMAKE_BINARY_DIR}
-  WORKING_DIRECTORY
-    ${CMAKE_SOURCE_DIR}
-  DEPENDS
-    ${CPYTHON_HEADERS_INPUT}
-    ${C_API_HEADERS_INPUT}
-    util/generate_cpython_sources.py
-  COMMENT "Generating CPython Headers")
-
-set(
-  CPYTHON_SOURCES
+add_library(
+  extension-modules
+  STATIC
+  ${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c
+  ${CPYTHON_DIR}/Modules/_blake2/blake2module.c
+  ${CPYTHON_DIR}/Modules/_blake2/blake2s_impl.c
+  ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2b_impl.c.h
+  ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h
   ${CPYTHON_DIR}/Modules/_bz2module.c
   ${CPYTHON_DIR}/Modules/_hashopenssl.c
   ${CPYTHON_DIR}/Modules/_lzmamodule.c
@@ -590,11 +470,6 @@ set(
   ${CPYTHON_DIR}/Modules/addrinfo.h
   ${CPYTHON_DIR}/Modules/atexitmodule.c
   ${CPYTHON_DIR}/Modules/binascii.c
-  ${CPYTHON_DIR}/Modules/_blake2/blake2module.c
-  ${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c
-  ${CPYTHON_DIR}/Modules/_blake2/blake2s_impl.c
-  ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2b_impl.c.h
-  ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_bz2module.c.h
   ${CPYTHON_DIR}/Modules/clinic/_hashopenssl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_lzmamodule.c.h
@@ -676,26 +551,28 @@ set(
   ${CPYTHON_DIR}/Python/pystrtod.c
   ${CPYTHON_DIR}/Python/pytime.c
   ${CPYTHON_DIR}/Python/symtable.c
-  ${CPYTHON_DIR}/Python/wordcode_helpers.h)
-
-# This target is built in util/run_clang_tidy.py:create_compile_commands() to
-# ensure all generated files are present when clang-tidy runs.
-add_custom_target(
-  cpython-sources
-  DEPENDS
-  ${C_API_HEADERS_OUTPUT}
-  ${CPYTHON_HEADERS_OUTPUT}
-  ${CPYTHON_SOURCES})
-
-add_library(
-  extension-modules
-  STATIC
-  ${CPYTHON_SOURCES})
-add_dependencies(extension-modules cpython-sources)
+  ${CPYTHON_DIR}/Python/wordcode_helpers.h
+  capi/cpython-internal/Python-ast.h
+  capi/cpython-internal/accu.h
+  capi/cpython-internal/asdl.h
+  capi/cpython-internal/ast.h
+  capi/cpython-internal/bitset.h
+  capi/cpython-internal/errcode.h
+  capi/cpython-internal/graminit.h
+  capi/cpython-internal/grammar.h
+  capi/cpython-internal/metagrammar.h
+  capi/cpython-internal/node.h
+  capi/cpython-internal/osdefs.h
+  capi/cpython-internal/pgen.h
+  capi/cpython-internal/pgenheaders.h
+  capi/cpython-internal/pystrhex.h
+  capi/cpython-internal/symtable.h
+  capi/cpython-internal/token.h
+  capi/cpython-internal/ucnhash.h)
 target_include_directories(
   extension-modules
   PUBLIC
-  ${BINARY_DIR_HEADERS}
+  capi/cpython-internal
   ${CPYTHON_DIR}/Modules
   ${CPYTHON_DIR}/Modules/_sha3
   ${CPYTHON_DIR}/Modules/zlib
@@ -705,8 +582,6 @@ target_include_directories(
 target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
 target_compile_options(
   extension-modules
-  PUBLIC
-  ${OS_DEFINE}
   PRIVATE
   "-Werror"
   "-DPy_BUILD_CORE"
@@ -801,18 +676,16 @@ add_library(
   ext/Python/traceback.cpp)
 target_compile_options(
   extension
-  PUBLIC
-  ${OS_DEFINE}
   PRIVATE
+  ${OS_DEFINE}
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   extension
   PRIVATE
-  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:capi-headers,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
-  runtime
-  ${BINARY_DIR_HEADERS})
-add_dependencies(extension cpython-sources)
+  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  runtime)
 
 set(BINARY_DIR_LIB "${CMAKE_BINARY_DIR}/Lib")
 set(CPYTHON_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/third-party/cpython/Lib")
@@ -1517,11 +1390,11 @@ target_compile_options(
 target_include_directories(
   python
   PRIVATE
-  capi-headers
   runtime)
 target_link_libraries(
   python
   PRIVATE
+  capi-headers
   runtime
   modules)
 set_target_properties(
@@ -1619,8 +1492,8 @@ target_include_directories(
   runtime-tests
   PRIVATE
   $<TARGET_PROPERTY:benchmark,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:runtime,INTERFACE_INCLUDE_DIRECTORIES>
   ${FROZEN_MODULE_OUTPUT_DIR})
 add_dependencies(
@@ -1699,12 +1572,9 @@ target_include_directories(
   extension-tests
   PRIVATE
   ext/test
-  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:capi-headers,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
-  ${BINARY_DIR_HEADERS})
-add_dependencies(
-  extension-tests
-  frozen-sources)
+  $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>)
 
 add_executable(
   python-tests
