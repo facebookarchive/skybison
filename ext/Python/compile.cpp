@@ -13,8 +13,8 @@
 // Declarations from `Python-ast.h` and `ast.h` which are not part of
 // `Python.h` so we shouldn't add them to `cpython-*.h`.
 extern "C" {
-mod_ty PyAST_FromNode(const _node*, PyCompilerFlags*, const char*, PyArena*);
-PyObject* PyAST_mod2obj(mod_ty t);
+_mod* PyAST_FromNode(const _node*, PyCompilerFlags*, const char*, PyArena*);
+PyObject* PyAST_mod2obj(_mod* t);
 enum _mod_kind {
   Module_kind = 1,
   Interactive_kind = 2,

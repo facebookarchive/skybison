@@ -127,9 +127,6 @@ Runtime::~Runtime() {
     Thread::setCurrentThread(threads_);
   }
   atExit();
-  if (parser_grammar_free_func_ != nullptr) {
-    (*parser_grammar_free_func_)(parserGrammar());
-  }
   clearHandleScopes();
   freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {

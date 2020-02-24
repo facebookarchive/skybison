@@ -668,6 +668,7 @@ set(
   ${CPYTHON_DIR}/Python/future.c
   ${CPYTHON_DIR}/Python/graminit.c
   ${CPYTHON_DIR}/Python/mystrtoul.c
+  ${CPYTHON_DIR}/Python/parser.c
   ${CPYTHON_DIR}/Python/pyarena.c
   ${CPYTHON_DIR}/Python/pyctype.c
   ${CPYTHON_DIR}/Python/pystrcmp.c

@@ -429,6 +429,8 @@ extern const char* Py_hexdigits;
 #define Py_file_input 257
 #define Py_eval_input 258
 
+#define E_EOF 11
+
 #define PyCF_MASK                                                              \
   (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | CO_FUTURE_WITH_STATEMENT | \
    CO_FUTURE_PRINT_FUNCTION | CO_FUTURE_UNICODE_LITERALS |                     \
