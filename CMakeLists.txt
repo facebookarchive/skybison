@@ -191,9 +191,9 @@ string(
 add_custom_command(
   OUTPUT ${C_API_HEADERS_OUTPUT}
   COMMAND
-  cmake -E make_directory ${BUILD_INCLUDE_DIR}
+  ${CMAKE_COMMAND} -E make_directory ${BUILD_INCLUDE_DIR}
   COMMAND
-  cmake -E copy_if_different ${C_API_HEADERS} ${BUILD_INCLUDE_DIR}
+  ${CMAKE_COMMAND} -E copy_if_different ${C_API_HEADERS} ${BUILD_INCLUDE_DIR}
   DEPENDS ${C_API_HEADERS}
   COMMENT "Copying C-API headers")
 add_custom_target(copy-capi-headers ALL DEPENDS ${C_API_HEADERS_OUTPUT})
@@ -1352,13 +1352,13 @@ add_custom_command(
         paste -d' ' \
         <(echo '${CPYTHON_MODULE_INPUT}' | tr ';' ' ' | xargs -n1) \
         <(echo '${CPYTHON_MODULE_OUTPUT}' | tr ';' ' ' | xargs -n1) | \
-        xargs -n2 cmake -E copy_if_different"
+        xargs -n2 ${CMAKE_COMMAND} -E copy_if_different"
   COMMAND
     bash -c "\
         paste -d' ' \
         <(echo '${UNFROZEN_MODULE_INPUT}' | tr ';' ' ' | xargs -n1) \
         <(echo '${UNFROZEN_MODULE_OUTPUT}' | tr ';' ' ' | xargs -n1) | \
-        xargs -n2 cmake -E copy_if_different"
+        xargs -n2 ${CMAKE_COMMAND} -E copy_if_different"
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   DEPENDS
     ${CPYTHON_MODULE_INPUT}
