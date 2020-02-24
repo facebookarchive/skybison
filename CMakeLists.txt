@@ -583,10 +583,11 @@ target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
 target_compile_options(
   extension-modules
   PRIVATE
-  "-Werror"
-  "-DPy_BUILD_CORE"
+  -Werror
+  -Wstrict-prototypes
+  -DPy_BUILD_CORE
   # TODO(T48643833): Remove this define to get _hashlib.scrypt.
-  "-DOPENSSL_NO_SCRYPT")
+  -DOPENSSL_NO_SCRYPT)
 target_link_libraries(
   extension-modules
   PUBLIC
