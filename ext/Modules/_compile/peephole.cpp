@@ -17,6 +17,10 @@ namespace py {
 
 namespace compile {
 
+static_assert(endian::native == endian::little, "expected little endian");
+#define _Py_OPCODE(word) ((word) & 255)
+#define _Py_OPARG(word) ((word) >> 8)
+
 #define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
 #define CONDITIONAL_JUMP(op) (op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)

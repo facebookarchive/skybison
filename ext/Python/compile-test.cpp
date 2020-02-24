@@ -3,7 +3,10 @@
 
 #include "capi-fixture.h"
 #include "capi-testing.h"
-#include "node.h"
+
+// We need to use this functions from the internal `node.h` CPython header
+// in order to avoid a test leaking memory.
+extern "C" void PyNode_Free(_node*);
 
 namespace py {
 namespace testing {
