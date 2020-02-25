@@ -1562,6 +1562,43 @@ def func(*args):
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "(7, 'bb', 14)"));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCallMethodWithEmptyTuplePassesNoArgs) {
+  PyRun_SimpleString(R"(
+class C:
+  def func(self, *arg):
+    return f"{self.__class__.__name__} {arg}"
+instance = C()
+)");
+  PyObjectPtr instance(moduleGet("__main__", "instance"));
+  PyObjectPtr result(PyObject_CallMethod(instance, "func", "()"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "C ()"));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallMethodWithIntTuplePassesTwoInts) {
+  PyRun_SimpleString(R"(
+class C:
+  def func(self, *arg):
+    return f"{self.__class__.__name__} {arg}"
+instance = C()
+)");
+  PyObjectPtr instance(moduleGet("__main__", "instance"));
+  PyObjectPtr result(PyObject_CallMethod(instance, "func", "(ii)", 5, 10));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "C (5, 10)"));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCallMethodWithTupleAndIntPassesTwoArgs) {
+  PyRun_SimpleString(R"(
+class C:
+  def func(self, *arg):
+    return f"{self.__class__.__name__} {arg}"
+instance = C()
+)");
+  PyObjectPtr instance(moduleGet("__main__", "instance"));
+  PyObjectPtr result(PyObject_CallMethod(instance, "func", "()i", 10));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "C ((), 10)"));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCallMethodCalls) {
   PyRun_SimpleString(R"(
 class C:

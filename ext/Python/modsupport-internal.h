@@ -12,5 +12,6 @@ const int kFlagSizeT = 1;
 
 PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
                               int flags);
+Py_ssize_t countFormat(const char* format, char endchar);
 
 }  // namespace py

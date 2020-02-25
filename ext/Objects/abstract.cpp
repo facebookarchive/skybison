@@ -610,18 +610,11 @@ PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
   return ApiHandle::newReference(thread, *result);
 }
 
-static word vaBuildValuePushFrame(Frame* frame, const char* format,
-                                  std::va_list* va, int build_value_flags) {
-  if (format == nullptr) return 0;
-  word num_values = 0;
-  Thread* thread = Thread::current();
-  for (const char* f = format; *f != '\0';) {
-    PyObject* value = makeValueFromFormat(&f, va, build_value_flags);
-    if (value == nullptr) break;
-    frame->pushValue(ApiHandle::stealReference(thread, value));
-    num_values++;
-  }
-  return num_values;
+static PyObject* makeInterpreterCall(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
@@ -629,12 +622,34 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
                                  int build_value_flags) {
   Frame* frame = thread->currentFrame();
   frame->pushValue(*callable);
-  word nargs = vaBuildValuePushFrame(frame, format, va, build_value_flags);
 
-  HandleScope scope(thread);
-  Object result(&scope, Interpreter::call(thread, frame, nargs));
-  if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  if (format == nullptr) {
+    return makeInterpreterCall(thread, frame, /*nargs=*/0);
+  }
+
+  word nargs = countFormat(format, '\0');
+  if (nargs == 1) {
+    PyObject* value = makeValueFromFormat(&format, va, build_value_flags);
+    if (!PyTuple_Check(value)) {
+      frame->pushValue(ApiHandle::stealReference(thread, value));
+      return makeInterpreterCall(thread, frame, nargs);
+    }
+    // If the only argument passed is a tuple, splat the tuple as positional
+    // arguments
+    nargs = PyTuple_Size(value);
+    for (word i = 0; i < nargs; i++) {
+      PyObject* arg = PyTuple_GetItem(value, i);
+      frame->pushValue(ApiHandle::fromPyObject(arg)->asObject());
+    }
+    return makeInterpreterCall(thread, frame, nargs);
+  }
+  for (const char* f = format; *f != '\0';) {
+    PyObject* value = makeValueFromFormat(&f, va, build_value_flags);
+    if (value == nullptr) break;
+    frame->pushValue(ApiHandle::stealReference(thread, value));
+  }
+
+  return makeInterpreterCall(thread, frame, nargs);
 }
 
 PY_EXPORT PyObject* PyObject_CallFunction(PyObject* callable,

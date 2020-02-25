@@ -196,7 +196,7 @@ static PyObject* doMakeTuple(const char** p_format, std::va_list* p_va,
   return v;
 }
 
-static Py_ssize_t countFormat(const char* format, char endchar) {
+Py_ssize_t countFormat(const char* format, char endchar) {
   Py_ssize_t count = 0;
   int level = 0;
   while (level > 0 || *format != endchar) {
