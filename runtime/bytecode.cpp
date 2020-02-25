@@ -213,7 +213,7 @@ void rewriteBytecode(Thread* thread, const Function& function) {
 
   // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
   if (num_caches >= 256) {
-    fprintf(stderr, "cache rewriting limit hit (256 entires)\n");
+    fprintf(stderr, "cache rewriting limit hit (256 entries)\n");
   }
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
