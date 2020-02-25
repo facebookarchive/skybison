@@ -17,6 +17,8 @@ import keyword
 import builtins
 import functools
 import _thread
+# TODO(T44040673): Remove this once `dict` starts keeping insertion order.
+import collections
 
 
 __all__ = ['dataclass',
@@ -807,7 +809,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
     # is defined by the base class, which is found first.
-    fields = {}
+    # TODO(T44040673): Remove this once `dict` starts keeping insertion order.
+    # fields = {}
+    fields = collections.OrderedDict()
 
     if cls.__module__ in sys.modules:
         globals = sys.modules[cls.__module__].__dict__
