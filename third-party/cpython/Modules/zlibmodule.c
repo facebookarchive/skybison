@@ -153,19 +153,22 @@ arrange_input_buffer(z_stream *zst, Py_ssize_t *remains)
 }
 
 static Py_ssize_t
-arrange_output_buffer_with_maximum(z_stream *zst, PyObject **buffer,
+arrange_output_buffer_with_maximum(z_stream *zst,
+                                   _PyBytesWriter *writer,
+                                   char **buffer_start,
                                    Py_ssize_t length,
                                    Py_ssize_t max_length)
 {
     Py_ssize_t occupied;
-
-    if (*buffer == NULL) {
-        if (!(*buffer = PyBytes_FromStringAndSize(NULL, length)))
+    
+    if (*buffer_start == NULL) {
+        *buffer_start = _PyBytesWriter_Alloc(writer, length);
+        if (*buffer_start == NULL)
             return -1;
         occupied = 0;
     }
     else {
-        occupied = zst->next_out - (Byte *)PyBytes_AS_STRING(*buffer);
+        occupied = zst->next_out - (Byte *)(*buffer_start);
 
         if (length == occupied) {
             Py_ssize_t new_length;
@@ -177,24 +180,27 @@ arrange_output_buffer_with_maximum(z_stream *zst, PyObject **buffer,
                 new_length = length << 1;
             else
                 new_length = max_length;
-            if (_PyBytes_Resize(buffer, new_length) < 0)
+            *buffer_start = _PyBytesWriter_Prepare(writer, *buffer_start + length,
+                                                   new_length - length) - length;
+            if (*buffer_start == NULL)
                 return -1;
             length = new_length;
         }
     }
 
     zst->avail_out = Py_MIN((size_t)(length - occupied), UINT_MAX);
-    zst->next_out = (Byte *)PyBytes_AS_STRING(*buffer) + occupied;
+    zst->next_out = (Byte *)(*buffer_start) + occupied;
 
     return length;
 }
 
 static Py_ssize_t
-arrange_output_buffer(z_stream *zst, PyObject **buffer, Py_ssize_t length)
+arrange_output_buffer(z_stream *zst, _PyBytesWriter *writer, char **buffer,
+                      Py_ssize_t length)
 {
     Py_ssize_t ret;
 
-    ret = arrange_output_buffer_with_maximum(zst, buffer, length,
+    ret = arrange_output_buffer_with_maximum(zst, writer, buffer, length,
                                              PY_SSIZE_T_MAX);
     if (ret == -2)
         PyErr_NoMemory();
@@ -218,11 +224,12 @@ static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 /*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
 {
-    PyObject *RetVal = NULL;
     Byte *ibuf;
     Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE;
     int err, flush;
     z_stream zst;
+    char *buffer_start = NULL;
+    _PyBytesWriter writer;
 
     ibuf = data->buf;
     ibuflen = data->len;
@@ -249,15 +256,16 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
         goto error;
     }
 
+    _PyBytesWriter_Init(&writer);
     do {
         arrange_input_buffer(&zst, &ibuflen);
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            obuflen = arrange_output_buffer(&zst, &RetVal, obuflen);
+            obuflen = arrange_output_buffer(&zst, &writer, &buffer_start, obuflen);
             if (obuflen < 0) {
                 deflateEnd(&zst);
-                goto error;
+                goto error_dealloc_writer;
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -267,7 +275,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
             if (err == Z_STREAM_ERROR) {
                 deflateEnd(&zst);
                 zlib_error(zst, err, "while compressing data");
-                goto error;
+                goto error_dealloc_writer;
             }
 
         } while (zst.avail_out == 0);
@@ -278,15 +286,14 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 
     err = deflateEnd(&zst);
     if (err == Z_OK) {
-        if (_PyBytes_Resize(&RetVal, zst.next_out -
-                            (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
-            goto error;
-        return RetVal;
+        return _PyBytesWriter_Finish(&writer, zst.next_out);
     }
     else
         zlib_error(zst, err, "while finishing compression");
+
+ error_dealloc_writer:
+    _PyBytesWriter_Dealloc(&writer);
  error:
-    Py_XDECREF(RetVal);
     return NULL;
 }
 
@@ -332,11 +339,12 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
 /*[clinic end generated code: output=77c7e35111dc8c42 input=21960936208e9a5b]*/
 {
-    PyObject *RetVal = NULL;
     Byte *ibuf;
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
+    char *buffer_start = NULL;
+    _PyBytesWriter writer;
 
     if (bufsize < 0) {
         PyErr_SetString(PyExc_ValueError, "bufsize must be non-negative");
@@ -368,15 +376,16 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
+    _PyBytesWriter_Init(&writer);
     do {
         arrange_input_buffer(&zst, &ibuflen);
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            bufsize = arrange_output_buffer(&zst, &RetVal, bufsize);
+            bufsize = arrange_output_buffer(&zst, &writer, &buffer_start, bufsize);
             if (bufsize < 0) {
                 inflateEnd(&zst);
-                goto error;
+                goto error_dealloc_writer;
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -392,11 +401,11 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                 inflateEnd(&zst);
                 PyErr_SetString(PyExc_MemoryError,
                                 "Out of memory while decompressing data");
-                goto error;
+                goto error_dealloc_writer;
             default:
                 inflateEnd(&zst);
                 zlib_error(zst, err, "while decompressing data");
-                goto error;
+                goto error_dealloc_writer;
             }
 
         } while (zst.avail_out == 0);
@@ -407,23 +416,20 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     if (err != Z_STREAM_END) {
         inflateEnd(&zst);
         zlib_error(zst, err, "while decompressing data");
-        goto error;
+        goto error_dealloc_writer;
     }
 
     err = inflateEnd(&zst);
     if (err != Z_OK) {
         zlib_error(zst, err, "while finishing decompression");
-        goto error;
+        goto error_dealloc_writer;
     }
 
-    if (_PyBytes_Resize(&RetVal, zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
-        goto error;
+    return _PyBytesWriter_Finish(&writer, zst.next_out);
 
-    return RetVal;
-
+ error_dealloc_writer:
+    _PyBytesWriter_Dealloc(&writer);
  error:
-    Py_XDECREF(RetVal);
     return NULL;
 }
 
@@ -660,20 +666,23 @@ static PyObject *
 zlib_Compress_compress_impl(compobject *self, Py_buffer *data)
 /*[clinic end generated code: output=5d5cd791cbc6a7f4 input=0d95908d6e64fab8]*/
 {
-    PyObject *RetVal = NULL;
     Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE;
     int err;
+    char *buffer_start = NULL;
+    _PyBytesWriter writer;
 
     self->zst.next_in = data->buf;
     ibuflen = data->len;
 
     ENTER_ZLIB(self);
 
+    _PyBytesWriter_Init(&writer);
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
 
         do {
-            obuflen = arrange_output_buffer(&self->zst, &RetVal, obuflen);
+            obuflen = arrange_output_buffer(&self->zst, &writer,
+                                            &buffer_start, obuflen);
             if (obuflen < 0)
                 goto error;
 
@@ -691,15 +700,15 @@ zlib_Compress_compress_impl(compobject *self, Py_buffer *data)
 
     } while (ibuflen != 0);
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
-        goto success;
+    goto success;
 
  error:
-    Py_CLEAR(RetVal);
+    _PyBytesWriter_Dealloc(&writer);
+    LEAVE_ZLIB(self);
+    return NULL;
  success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return _PyBytesWriter_Finish(&writer, self->zst.next_out);
 }
 
 /* Helper for objdecompress() and flush(). Saves any unconsumed input data in
@@ -713,21 +722,30 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
         if (self->zst.avail_in > 0) {
             Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
             Py_ssize_t new_size, left_size;
-            PyObject *new_data;
+            PyObject *result;
+            char *new_data;
+            _PyBytesWriter writer;
+
             left_size = (Byte *)data->buf + data->len - self->zst.next_in;
             if (left_size > (PY_SSIZE_T_MAX - old_size)) {
                 PyErr_NoMemory();
                 return -1;
             }
+            _PyBytesWriter_Init(&writer);
             new_size = old_size + left_size;
-            new_data = PyBytes_FromStringAndSize(NULL, new_size);
+            new_data = _PyBytesWriter_Alloc(&writer, new_size);
             if (new_data == NULL)
                 return -1;
-            memcpy(PyBytes_AS_STRING(new_data),
-                      PyBytes_AS_STRING(self->unused_data), old_size);
-            memcpy(PyBytes_AS_STRING(new_data) + old_size,
-                      self->zst.next_in, left_size);
-            Py_SETREF(self->unused_data, new_data);
+            new_data = _PyBytesWriter_WriteBytes(&writer, new_data,
+                            PyBytes_AS_STRING(self->unused_data), old_size);
+            if (new_data == NULL)
+                return -1;
+            new_data = _PyBytesWriter_WriteBytes(&writer, new_data,
+                            self->zst.next_in, left_size);
+            if (new_data == NULL)
+                return -1;
+            result = _PyBytesWriter_Finish(&writer, new_data);
+            Py_SETREF(self->unused_data, result);
             self->zst.avail_in = 0;
         }
     }
@@ -772,7 +790,8 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
 {
     int err = Z_OK;
     Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE, hard_limit;
-    PyObject *RetVal = NULL;
+    char *buffer_start = NULL;
+    _PyBytesWriter writer;
 
     if (max_length < 0) {
         PyErr_SetString(PyExc_ValueError, "max_length must be non-negative");
@@ -791,11 +810,13 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
 
     ENTER_ZLIB(self);
 
+    _PyBytesWriter_Init(&writer);
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
 
         do {
-            obuflen = arrange_output_buffer_with_maximum(&self->zst, &RetVal,
+            obuflen = arrange_output_buffer_with_maximum(&self->zst, &writer,
+                                                         &buffer_start,
                                                          obuflen, hard_limit);
             if (obuflen == -2) {
                 if (max_length > 0) {
@@ -846,16 +867,15 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
         zlib_error(self->zst, err, "while decompressing data");
         goto abort;
     }
-
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
-        goto success;
+    goto success;
 
  abort:
-    Py_CLEAR(RetVal);
+    _PyBytesWriter_Dealloc(&writer);
+    LEAVE_ZLIB(self);
+    return NULL;
  success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return  _PyBytesWriter_Finish(&writer, self->zst.next_out);
 }
 
 /*[clinic input]
@@ -877,7 +897,8 @@ zlib_Compress_flush_impl(compobject *self, int mode)
 {
     int err;
     Py_ssize_t length = DEF_BUF_SIZE;
-    PyObject *RetVal = NULL;
+    char *buffer_start = NULL;
+    _PyBytesWriter writer;
 
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
@@ -889,10 +910,10 @@ zlib_Compress_flush_impl(compobject *self, int mode)
 
     self->zst.avail_in = 0;
 
+    _PyBytesWriter_Init(&writer);
     do {
-        length = arrange_output_buffer(&self->zst, &RetVal, length);
+        length = arrange_output_buffer(&self->zst, &writer, &buffer_start, length);
         if (length < 0) {
-            Py_CLEAR(RetVal);
             goto error;
         }
 
@@ -902,7 +923,6 @@ zlib_Compress_flush_impl(compobject *self, int mode)
 
         if (err == Z_STREAM_ERROR) {
             zlib_error(self->zst, err, "while flushing");
-            Py_CLEAR(RetVal);
             goto error;
         }
     } while (self->zst.avail_out == 0);
@@ -915,7 +935,6 @@ zlib_Compress_flush_impl(compobject *self, int mode)
         err = deflateEnd(&self->zst);
         if (err != Z_OK) {
             zlib_error(self->zst, err, "while finishing compression");
-            Py_CLEAR(RetVal);
             goto error;
         }
         else
@@ -927,17 +946,15 @@ zlib_Compress_flush_impl(compobject *self, int mode)
         */
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(self->zst, err, "while flushing");
-        Py_CLEAR(RetVal);
         goto error;
     }
-
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
-        Py_CLEAR(RetVal);
+    LEAVE_ZLIB(self);
+    return _PyBytesWriter_Finish(&writer, self->zst.next_out);
 
  error:
     LEAVE_ZLIB(self);
-    return RetVal;
+    _PyBytesWriter_Dealloc(&writer);
+    return NULL;
 }
 
 #ifdef HAVE_ZLIB_COPY
@@ -1070,8 +1087,9 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
 {
     int err, flush;
     Py_buffer data;
-    PyObject *RetVal = NULL;
     Py_ssize_t ibuflen;
+    char *buffer_start = NULL;
+    _PyBytesWriter writer;
 
     if (length <= 0) {
         PyErr_SetString(PyExc_ValueError, "length must be greater than zero");
@@ -1086,12 +1104,13 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
     self->zst.next_in = data.buf;
     ibuflen = data.len;
 
+    _PyBytesWriter_Init(&writer);
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            length = arrange_output_buffer(&self->zst, &RetVal, length);
+            length = arrange_output_buffer(&self->zst, &writer, &buffer_start, length);
             if (length < 0)
                 goto abort;
 
@@ -1132,17 +1151,17 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
             goto abort;
         }
     }
-
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
-        goto success;
+    goto success;
 
  abort:
-    Py_CLEAR(RetVal);
+    _PyBytesWriter_Dealloc(&writer);
+    PyBuffer_Release(&data);
+    LEAVE_ZLIB(self);
+    return NULL;
  success:
     PyBuffer_Release(&data);
     LEAVE_ZLIB(self);
-    return RetVal;
+    return _PyBytesWriter_Finish(&writer, self->zst.next_out);
 }
 
 #include "clinic/zlibmodule.c.h"
