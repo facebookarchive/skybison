@@ -2029,6 +2029,35 @@ RawObject FUNC(_builtins, _frozenset_guard)(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(frozenset));
 }
 
+RawObject FUNC(_builtins, _function_annotations)(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  Object annotations(&scope, function.annotations());
+  if (annotations.isNoneType()) {
+    annotations = thread->runtime()->newDict();
+    function.setAnnotations(*annotations);
+  }
+  return *annotations;
+}
+
+RawObject FUNC(_builtins, _function_defaults)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  return function.defaults();
+}
+
 RawObject FUNC(_builtins, _function_globals)(Thread* thread, Frame* frame,
                                              word nargs) {
   HandleScope scope(thread);
@@ -2049,6 +2078,72 @@ RawObject FUNC(_builtins, _function_guard)(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, ID(function));
+}
+
+RawObject FUNC(_builtins, _function_kwdefaults)(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  return function.kwDefaults();
+}
+
+RawObject FUNC(_builtins, _function_set_annotations)(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  Object annotations(&scope, args.get(1));
+  if (thread->runtime()->isInstanceOfDict(*annotations) ||
+      annotations.isNoneType()) {
+    function.setAnnotations(*annotations);
+    return NoneType::object();
+  }
+  return thread->raiseRequiresType(annotations, ID(dict));
+}
+
+RawObject FUNC(_builtins, _function_set_defaults)(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  Object defaults(&scope, args.get(1));
+  if (thread->runtime()->isInstanceOfTuple(*defaults) ||
+      defaults.isNoneType()) {
+    function.setDefaults(tupleUnderlying(*defaults));
+    return NoneType::object();
+  }
+  return thread->raiseRequiresType(defaults, ID(tuple));
+}
+
+RawObject FUNC(_builtins, _function_set_kwdefaults)(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  Object kwdefaults(&scope, args.get(1));
+  if (thread->runtime()->isInstanceOfDict(*kwdefaults) ||
+      kwdefaults.isNoneType()) {
+    function.setKwDefaults(*kwdefaults);
+    return NoneType::object();
+  }
+  return thread->raiseRequiresType(kwdefaults, ID(dict));
 }
 
 RawObject FUNC(_builtins, _gc)(Thread* thread, Frame* /* frame */,

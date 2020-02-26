@@ -4129,6 +4129,102 @@ def foo():
         exec(module_code, module.__dict__)
         self.assertIs(module.__dict__["foo"].__globals__, module.__dict__)
 
+    def test_dunder_defaults_returns_defaults(self):
+        def foo(arg=42):
+            return arg
+
+        self.assertEqual(foo.__defaults__, (42,))
+
+    def test_dunder_set_defaults(self):
+        def foo(arg="bar"):
+            return arg
+
+        self.assertEqual(foo(), "bar")
+        foo.__defaults__ = ("baz",)
+        self.assertEqual(foo(), "baz")
+
+    def test_dunder_set_defaults_with_tuple_subclass(self):
+        class T(tuple):
+            pass
+
+        def whereami(office=770):
+            return office
+
+        self.assertEqual(whereami(), 770)
+        whereami.__defaults__ = T((225,))
+        self.assertEqual(whereami(), 225)
+
+    def test_dunder_set_defaults_with_non_tuple_raises_typeerror(self):
+        def foo():
+            pass
+
+        with self.assertRaises(TypeError):
+            foo.__defaults__ = {}
+
+    def test_dunder_kwdefaults_returns_kwdefaults(self):
+        def foo(*args, kwarg=42):
+            return kwarg
+
+        self.assertEqual(foo.__kwdefaults__, {"kwarg": 42})
+
+    def test_dunder_set_kwdefaults(self):
+        def foo(*args, kwarg="bar"):
+            return kwarg
+
+        self.assertEqual(foo(), "bar")
+        foo.__kwdefaults__ = {"kwarg": "baz"}
+        self.assertEqual(foo(), "baz")
+
+    def test_dunder_set_kwdefaults_with_dict_subclass(self):
+        class D(dict):
+            pass
+
+        def whereami(*args, office=770):
+            return office
+
+        self.assertEqual(whereami(), 770)
+        whereami.__kwdefaults__ = D((("office", 225),))
+        self.assertEqual(whereami(), 225)
+
+    def test_dunder_set_kwdefaults_with_non_dict_raises_typeerror(self):
+        def foo():
+            pass
+
+        with self.assertRaises(TypeError):
+            foo.__kwdefaults__ = "not a dict"
+
+    def test_dunder_annotations_returns_annotations(self):
+        def foo(arg: str):
+            pass
+
+        self.assertEqual(foo.__annotations__, {"arg": str})
+
+    def test_dunder_set_annotations(self):
+        def foo(arg: str):
+            pass
+
+        foo.__annotations__ = {"arg": int}
+        self.assertEqual(foo.__annotations__, {"arg": int})
+        foo.__annotations__ = None
+        self.assertEqual(foo.__annotations__, {})
+
+    def test_dunder_set_annotations_with_dict_subclass(self):
+        class D(dict):
+            pass
+
+        def foo(arg: str):
+            pass
+
+        foo.__annotations__ = D((("arg", int),))
+        self.assertEqual(foo.__annotations__, {"arg": int})
+
+    def test_dunder_set_annotationswith_non_dict_raises_typeerror(self):
+        def foo():
+            pass
+
+        with self.assertRaises(TypeError):
+            foo.__annotations__ = (1, 2, 3)
+
 
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):

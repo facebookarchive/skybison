@@ -349,11 +349,35 @@ def _frozenset_guard(obj):
     _builtin()
 
 
+def _function_annotations(obj):
+    _builtin()
+
+
+def _function_defaults(obj):
+    _builtin()
+
+
 def _function_globals(obj):
     _builtin()
 
 
 def _function_guard(obj):
+    _builtin()
+
+
+def _function_kwdefaults(obj):
+    _builtin()
+
+
+def _function_set_annotations(obj, annotations):
+    _builtin()
+
+
+def _function_set_defaults(obj, defaults):
+    _builtin()
+
+
+def _function_set_kwdefaults(obj, kwdefaults):
     _builtin()
 
 

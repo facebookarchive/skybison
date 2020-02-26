@@ -96,8 +96,14 @@ from _builtins import (
     _float_new_from_str,
     _frozenset_check,
     _frozenset_guard,
+    _function_annotations,
+    _function_defaults,
     _function_globals,
     _function_guard,
+    _function_kwdefaults,
+    _function_set_annotations,
+    _function_set_defaults,
+    _function_set_kwdefaults,
     _get_member_byte,
     _get_member_char,
     _get_member_double,
@@ -283,11 +289,13 @@ def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **k
 
 
 class function(bootstrap=True):
+    __annotations__ = _property(_function_annotations, _function_set_annotations)
+
     def __call__(self, *args, **kwargs):
         _function_guard(self)
         return self(*args, **kwargs)
 
-    __globals__ = _property(_function_globals)
+    __defaults__ = _property(_function_defaults, _function_set_defaults)
 
     @_property
     def __dict__(self):
@@ -297,6 +305,10 @@ class function(bootstrap=True):
 
     def __get__(self, instance, owner):
         _builtin()
+
+    __globals__ = _property(_function_globals)
+
+    __kwdefaults__ = _property(_function_kwdefaults, _function_set_kwdefaults)
 
     def __repr__(self):
         _function_guard(self)
