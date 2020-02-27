@@ -5465,6 +5465,6 @@ handle_return_or_unwind:
 
 }  // namespace
 
-Interpreter* createCppInterpreter() { return new CppInterpreter(); }
+Interpreter* createCppInterpreter() { return new CppInterpreter; }
 
 }  // namespace py

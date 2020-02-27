@@ -539,10 +539,9 @@ TEST_F(FloatBuiltinsTest, DunderEqWithNonFiniteFloatIntReturnsFalse) {
   Object inf(&scope,
              runtime_->newFloat(std::numeric_limits<double>::infinity()));
   Object int0(&scope, runtime_->newInt(7));
-  std::unique_ptr<uword[]> digits(new uword[100]());
+  uword digits[100] = {};
   digits[99] = 1;
-  Object int1(&scope,
-              runtime_->newIntWithDigits(View<uword>(digits.get(), 100)));
+  Object int1(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(METH(float, __eq__), nan, int0), Bool::falseObj());
   EXPECT_EQ(runBuiltin(METH(float, __eq__), inf, int0), Bool::falseObj());
   EXPECT_EQ(runBuiltin(METH(float, __eq__), nan, int1), Bool::falseObj());
@@ -552,10 +551,9 @@ TEST_F(FloatBuiltinsTest, DunderEqWithNonFiniteFloatIntReturnsFalse) {
 TEST_F(FloatBuiltinsTest, DunderEqWithFloatOverflowingIntReturnsFalse) {
   HandleScope scope(thread_);
   Object float0(&scope, runtime_->newFloat(8.25));
-  std::unique_ptr<uword[]> digits(new uword[100]());
+  uword digits[100] = {};
   digits[99] = 1;
-  Object int0(&scope,
-              runtime_->newIntWithDigits(View<uword>(digits.get(), 100)));
+  Object int0(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(METH(float, __eq__), float0, int0), Bool::falseObj());
 }
 

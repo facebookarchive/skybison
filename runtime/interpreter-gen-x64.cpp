@@ -1585,6 +1585,6 @@ void X64Interpreter::setupThread(Thread* thread) {
 
 }  // namespace
 
-Interpreter* createAsmInterpreter() { return new X64Interpreter(); }
+Interpreter* createAsmInterpreter() { return new X64Interpreter; }
 
 }  // namespace py

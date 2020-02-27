@@ -33,7 +33,7 @@ namespace testing {
 class RuntimeFixture : public ::testing::Test {
  protected:
   void SetUp() override {
-    runtime_ = new Runtime();
+    runtime_ = new Runtime;
     thread_ = Thread::current();
   }
 
