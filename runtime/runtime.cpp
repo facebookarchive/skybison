@@ -2025,7 +2025,6 @@ void Runtime::initializePrimitiveInstances() {
   empty_mutable_bytes_ = heap()->createMutableBytes(0);
   empty_slice_ = heap()->create<RawSlice>();
   ellipsis_ = heap()->createEllipsis();
-  callbacks_ = NoneType::object();
 }
 
 void Runtime::initializeImplicitBases() {
