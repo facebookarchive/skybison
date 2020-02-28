@@ -227,8 +227,6 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
-    # TODO(T54070474): Implement dict.fromkeys
-    @unittest.skip("Implement dict.fromkeys")
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
@@ -1168,8 +1166,6 @@ class DictTest(unittest.TestCase):
         dict_b = {X(): X()}
         self.assertTrue(dict_a == dict_b)
 
-    # TODO(T54070474): Implement dict.fromkeys
-    @unittest.skip("Implement dict.fromkeys")
     def test_fromkeys_operator_modifying_dict_operand(self):
         # test fix for seg fault reported in issue 27945 part 4a.
         class X(int):
@@ -1188,8 +1184,6 @@ class DictTest(unittest.TestCase):
         except RuntimeError:  # implementation defined
             pass
 
-    # TODO(T54070474): Implement dict.fromkeys
-    @unittest.skip("Implement dict.fromkeys")
     def test_fromkeys_operator_modifying_set_operand(self):
         # test fix for seg fault reported in issue 27945 part 4b.
         class X(int):

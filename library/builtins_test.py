@@ -2,7 +2,7 @@
 import builtins
 import unittest
 import warnings
-from unittest.mock import Mock
+from unittest.mock import call as mock_call, Mock
 
 from test_support import pyro_only
 
@@ -2731,6 +2731,52 @@ class DictTests(unittest.TestCase):
 
     def test_dunder_hash_is_none(self):
         self.assertIs(dict.__hash__, None)
+
+    def test_fromkeys_with_non_iterable_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, "'int' object is not iterable"):
+            dict.fromkeys(5, ())
+
+    def test_fromkeys_calls_dunder_iter_on_iterable(self):
+        class C:
+            def __iter__(self):
+                return [1, 2, 3].__iter__()
+
+        result = dict.fromkeys(C())
+        self.assertDictEqual(result, {1: None, 2: None, 3: None})
+
+    def test_fromkeys_sets_dict_values_to_given_value(self):
+        class C:
+            def __iter__(self):
+                return [1, 2, 3].__iter__()
+
+        result = dict.fromkeys(C(), "abc")
+        self.assertDictEqual(result, {1: "abc", 2: "abc", 3: "abc"})
+
+    def test_fromkeys_calls_subclass_dunder_init(self):
+        class C(dict):
+            __init__ = Mock(name="__init__", return_value=None)
+
+        result = C.fromkeys(())
+        self.assertDictEqual(result, {})
+        C.__init__.assert_called_once()
+
+    def test_fromkeys_calls_subclass_dunder_new(self):
+        class C(dict):
+            __new__ = Mock(name="__new__", return_value={})
+
+        result = C.fromkeys(())
+        self.assertDictEqual(result, {})
+        C.__new__.assert_called_once()
+
+    def test_fromkeys_calls_subclass_dunder_setitem(self):
+        class C(dict):
+            __setitem__ = Mock(name="__setitem__", return_value={})
+
+        result = C.fromkeys((1, 2, 3))
+        self.assertDictEqual(result, {})
+        C.__setitem__.assert_has_calls(
+            [mock_call(1, None), mock_call(2, None), mock_call(3, None)]
+        )
 
     def test_update_with_malformed_sequence_elt_raises_type_error(self):
         with self.assertRaises(ValueError):

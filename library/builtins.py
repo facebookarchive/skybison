@@ -2640,8 +2640,13 @@ class dict(bootstrap=True):
         result.update(self)
         return result
 
-    def fromkeys(self):
-        _unimplemented()
+    @_classmethod
+    def fromkeys(cls, iterable, value=None):  # noqa: B902
+        _type_subclass_guard(cls, dict)
+        result = cls()
+        for key in iterable:
+            result[key] = value
+        return result
 
     get = _dict_get
 
