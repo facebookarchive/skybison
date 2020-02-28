@@ -1158,6 +1158,17 @@ RawObject METH(str, isalpha)(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
+RawObject METH(str, isascii)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(str));
+  }
+  Str self(&scope, strUnderlying(*self_obj));
+  return Bool::fromBool(self.isASCII());
+}
+
 RawObject METH(str, isdecimal)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

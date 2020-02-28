@@ -2,7 +2,7 @@
 import builtins
 import unittest
 import warnings
-from unittest.mock import call as mock_call, Mock
+from unittest.mock import Mock, call as mock_call
 
 from test_support import pyro_only
 
@@ -9625,6 +9625,22 @@ class StrTests(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             str.isalpha(None)
         self.assertIn("'isalpha' requires a 'str' object", str(context.exception))
+
+    @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
+    def test_isascii_with_empty_string_returns_true(self):
+        self.assertTrue("".isascii())
+
+    @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
+    def test_isascii_with_ascii_values_returns_true(self):
+        self.assertTrue("howdy".isascii())
+        self.assertTrue("\x00".isascii())
+        self.assertTrue("\x7f".isascii())
+        self.assertTrue("\x00\x7f".isascii())
+
+    @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
+    def test_isascii_with_nonascii_values_return_false(self):
+        self.assertFalse("\x80".isascii())
+        self.assertFalse("\xe9".isascii())
 
     def test_isdecimal_with_ascii_char_returns_bool(self):
         self.assertEqual(

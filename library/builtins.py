@@ -5335,6 +5335,9 @@ class str(bootstrap=True):
     def isalpha(self):
         _builtin()
 
+    def isascii(self):
+        _builtin()
+
     def isdecimal(self):
         _builtin()
 
