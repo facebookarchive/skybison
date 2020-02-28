@@ -10327,6 +10327,45 @@ class StrDunderFormatTests(unittest.TestCase):
             str.__format__("", "_")
         self.assertEqual(str(context.exception), "Cannot specify '_' with 's'.")
 
+    def test_zfill_with_empty_string_input_returns_padding_only(self):
+        self.assertEqual("000", "".zfill(3))
+
+    def test_zfill_with_positive_prefix_input_returns_prepended_padding(self):
+        self.assertEqual("+0123", "+123".zfill(5))
+        self.assertEqual("+00", "+".zfill(3))
+
+    def test_zfill_with_negative_prefix_input_returns_prepended_padding(self):
+        self.assertEqual("-0123", "-123".zfill(5))
+        self.assertEqual("-00", "-".zfill(3))
+
+    def test_zfill_without_sign_prefix_input_returns_prepended_padding(self):
+        self.assertEqual("-0123", "-123".zfill(5))
+        self.assertEqual("0123", "123".zfill(4))
+        self.assertEqual("0034", "34".zfill(4))
+
+    def test_zfill_without_sign_prefix_input_returns_self_when_width_lte_len(self):
+        test_str = "123"
+        for width in range(len(test_str) + 1):
+            result = test_str.zfill(width)
+            self.assertIs(test_str, result)
+
+    def test_zfill_with_positive_prefix_input_returns_self_when_width_lte_len(self):
+        test_str = "+123"
+        for width in range(len(test_str) + 1):
+            result = test_str.zfill(width)
+            self.assertIs(test_str, result)
+
+    def test_zfill_with_negative_prefix_input_returns_self_when_width_lte_len(self):
+        test_str = "-123"
+        for width in range(len(test_str) + 1):
+            result = test_str.zfill(width)
+            self.assertIs(test_str, result)
+
+    def test_zfill_with_float_width_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "123".zfill(3.2)
+        self.assertEqual(str(context.exception), "integer argument expected, got float")
+
 
 class StrModTests(unittest.TestCase):
     def test_empty_format_returns_empty_string(self):

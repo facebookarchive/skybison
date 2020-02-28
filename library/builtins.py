@@ -5557,7 +5557,22 @@ class str(bootstrap=True):
         _builtin()
 
     def zfill(self, width):
-        _unimplemented()
+        _str_guard(self)
+        if not _int_check(width):
+            if _float_check(width):
+                raise TypeError("integer argument expected, got float")
+            width = _index(width)
+        str_len = _str_len(self)
+        if width <= str_len:
+            return self
+
+        result = _strarray()
+        has_prefix = str.startswith(self, ("+", "-"))
+        if has_prefix:
+            _strarray_iadd(result, _str_getitem(self, 0))
+        _strarray_iadd(result, "0" * (width - str_len))
+        _strarray_iadd(result, _str_getslice(self, int(has_prefix), str_len, 1))
+        return str(result)
 
 
 class str_iterator(bootstrap=True):
