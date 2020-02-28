@@ -120,7 +120,7 @@ static RawObject fillBuffer(Thread* thread, const Object& raw_file,
     length = bytes.length();
   } else if (runtime->isInstanceOfByteArray(*result_obj)) {
     ByteArray byte_array(&scope, *result_obj);
-    bytes = byte_array.bytes();
+    bytes = byte_array.items();
     length = byte_array.numItems();
   } else if (runtime->isByteslike(*result_obj)) {
     UNIMPLEMENTED("byteslike");
@@ -184,7 +184,7 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
       chunk_length = bytes.length();
     } else if (runtime->isInstanceOfByteArray(*result_obj)) {
       ByteArray byte_array(&scope, *result_obj);
-      bytes = byte_array.bytes();
+      bytes = byte_array.items();
       chunk = *byte_array;
       chunk_length = byte_array.numItems();
     } else if (runtime->isByteslike(*result_obj)) {
@@ -234,7 +234,7 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
         chunk_length = bytes.length();
       } else {
         ByteArray byte_array(&scope, *chunk);
-        bytes = byte_array.bytes();
+        bytes = byte_array.items();
         chunk_length = byte_array.numItems();
       }
       result.replaceFromWith(idx, *bytes, chunk_length);
@@ -412,7 +412,7 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
         bytes_length = bytes.length();
       } else if (runtime->isInstanceOfByteArray(*readall_result)) {
         ByteArray byte_array(&scope, *readall_result);
-        bytes = byte_array.bytes();
+        bytes = byte_array.items();
         bytes_length = byte_array.numItems();
       } else if (runtime->isByteslike(*readall_result)) {
         UNIMPLEMENTED("byteslike");

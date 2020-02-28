@@ -301,7 +301,7 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
 RawObject Runtime::newByteArray() {
   HandleScope scope;
   ByteArray result(&scope, heap()->create<RawByteArray>());
-  result.setBytes(empty_mutable_bytes_);
+  result.setItems(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
 }
@@ -2406,13 +2406,13 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope(thread);
-  MutableBytes old_bytes(&scope, array.bytes());
+  MutableBytes old_bytes(&scope, array.items());
   MutableBytes new_bytes(&scope, newMutableBytesUninitialized(new_capacity));
   byte* dst = reinterpret_cast<byte*>(new_bytes.address());
   word old_length = array.numItems();
   old_bytes.copyTo(dst, old_length);
   std::memset(dst + old_length, 0, new_capacity - old_length);
-  array.setBytes(*new_bytes);
+  array.setItems(*new_bytes);
 }
 
 void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
@@ -2423,7 +2423,7 @@ void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
   word new_length = num_items + length;
   byteArrayEnsureCapacity(thread, array, new_length);
   byte* dst =
-      reinterpret_cast<byte*>(MutableBytes::cast(array.bytes()).address());
+      reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
   std::memcpy(dst + num_items, view.data(), view.length());
   array.setNumItems(new_length);
 }
@@ -2435,7 +2435,7 @@ void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
   word num_items = array.numItems();
   word new_length = num_items + length;
   byteArrayEnsureCapacity(thread, array, new_length);
-  MutableBytes::cast(array.bytes()).replaceFromWith(num_items, *bytes, length);
+  MutableBytes::cast(array.items()).replaceFromWith(num_items, *bytes, length);
   array.setNumItems(new_length);
 }
 
@@ -2588,7 +2588,7 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
     } else {
       DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
       ByteArray array(&scope, *item);
-      bytes = array.bytes();
+      bytes = array.items();
       length = array.numItems();
     }
     bytes.copyTo(dst, length);

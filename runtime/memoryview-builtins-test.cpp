@@ -690,7 +690,7 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
                     runBuiltin(METH(memoryview, __new__), type, bytearray));
   ASSERT_TRUE(result_obj.isMemoryView());
   MemoryView view(&scope, *result_obj);
-  EXPECT_EQ(view.buffer(), bytearray.bytes());
+  EXPECT_EQ(view.buffer(), bytearray.items());
   EXPECT_EQ(view.length(), bytearray.numItems());
   EXPECT_TRUE(isStrEqualsCStr(view.format(), "B"));
   EXPECT_FALSE(view.readOnly());

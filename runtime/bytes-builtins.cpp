@@ -620,7 +620,7 @@ RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
   }
   if (runtime->isInstanceOfByteArray(*chars_obj)) {
     ByteArray chars(&scope, *chars_obj);
-    Bytes chars_bytes(&scope, chars.bytes());
+    Bytes chars_bytes(&scope, chars.items());
     return bytesStripLeft(thread, self, self.length(), chars_bytes,
                           chars.numItems());
   }
@@ -649,7 +649,7 @@ RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs) {
   }
   if (runtime->isInstanceOfByteArray(*chars_obj)) {
     ByteArray chars(&scope, *chars_obj);
-    Bytes chars_bytes(&scope, chars.bytes());
+    Bytes chars_bytes(&scope, chars.items());
     return bytesStripRight(thread, self, self.length(), chars_bytes,
                            chars.numItems());
   }
@@ -678,7 +678,7 @@ RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
   }
   if (runtime->isInstanceOfByteArray(*chars_obj)) {
     ByteArray chars(&scope, *chars_obj);
-    Bytes chars_bytes(&scope, chars.bytes());
+    Bytes chars_bytes(&scope, chars.items());
     return bytesStrip(thread, self, self.length(), chars_bytes,
                       chars.numItems());
   }
@@ -709,7 +709,7 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   } else if (runtime->isInstanceOfByteArray(*table_obj)) {
     ByteArray array(&scope, *table_obj);
     table_length = array.numItems();
-    table_obj = array.bytes();
+    table_obj = array.items();
   } else {
     // TODO(T38246066): allow any bytes-like object
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -730,7 +730,7 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   }
   if (runtime->isInstanceOfByteArray(*del)) {
     ByteArray array(&scope, *del);
-    Bytes bytes(&scope, array.bytes());
+    Bytes bytes(&scope, array.items());
     return runtime->bytesTranslate(thread, self, self.length(), table,
                                    table_length, bytes, array.numItems());
   }

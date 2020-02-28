@@ -360,7 +360,7 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
     if (fmt != 'B' || value_bytearray.numItems() != slice_len) {
       return raiseDifferentStructureError(thread);
     }
-    value_bytes = value_bytearray.bytes();
+    value_bytes = value_bytearray.items();
   }
   if (value_bytes != Bytes::empty()) {
     byte* address = nullptr;
@@ -563,7 +563,7 @@ RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
   }
   if (runtime->isInstanceOfByteArray(*object)) {
     ByteArray bytearray(&scope, *object);
-    Bytes bytes(&scope, bytearray.bytes());
+    Bytes bytes(&scope, bytearray.items());
     return runtime->newMemoryView(thread, bytes, bytearray.numItems(),
                                   ReadOnly::ReadWrite);
   }

@@ -31,7 +31,7 @@ TEST_F(ByteArrayBuiltinsTest, AsBytes) {
   Bytes bytes(&scope, byteArrayAsBytes(thread_, runtime_, array));
   EXPECT_TRUE(isBytesEqualsBytes(bytes, View<byte>(nullptr, 0)));
 
-  array.setBytes(runtime_->mutableBytesWith(10, 0));
+  array.setItems(runtime_->mutableBytesWith(10, 0));
   array.setNumItems(3);
   bytes = byteArrayAsBytes(thread_, runtime_, array);
   const byte expected_bytes[] = {0, 0, 0};
@@ -488,7 +488,7 @@ TEST_F(ByteArrayBuiltinsTest,
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyByteArray) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
-  self.setBytes(runtime_->mutableBytesWith(8, 'a'));
+  self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(-5));
   Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
@@ -498,7 +498,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyByteArray) {
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithZeroReturnsEmptyByteArray) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
-  self.setBytes(runtime_->mutableBytesWith(8, 'a'));
+  self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
@@ -819,7 +819,7 @@ TEST_F(ByteArrayBuiltinsTest,
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyByteArray) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
-  self.setBytes(runtime_->mutableBytesWith(8, 'a'));
+  self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(-5));
   Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
@@ -829,7 +829,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyByteArray) {
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithZeroReturnsEmptyByteArray) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
-  self.setBytes(runtime_->mutableBytesWith(8, 'a'));
+  self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));

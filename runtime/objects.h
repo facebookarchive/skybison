@@ -2370,11 +2370,11 @@ class RawModuleProxy : public RawInstance {
 // A mutable array of bytes.
 //
 // Invariant: All allocated bytes past the end of the array are 0.
-// Invariant: bytes() is a MutableBytes.
+// Invariant: items() is a MutableBytes.
 //
 // RawLayout:
 //   [Header  ]
-//   [Bytes   ] - Pointer to a RawMutableBytes with the underlying data.
+//   [Items   ] - Pointer to a RawMutableBytes with the underlying data.
 //   [NumItems] - Number of bytes currently in the array.
 class RawByteArray : public RawInstance {
  public:
@@ -2382,8 +2382,8 @@ class RawByteArray : public RawInstance {
   byte byteAt(word index) const;
   void byteAtPut(word index, byte value) const;
   void copyTo(byte* dst, word length) const;
-  RawObject bytes() const;
-  void setBytes(RawObject new_bytes) const;
+  RawObject items() const;
+  void setItems(RawObject new_items) const;
   word numItems() const;
   void setNumItems(word num_bytes) const;
   void downsize(word new_length) const;
@@ -2405,8 +2405,8 @@ class RawByteArray : public RawInstance {
                               word src_start) const;
 
   // Layout
-  static const int kBytesOffset = RawHeapObject::kSize;
-  static const int kNumItemsOffset = kBytesOffset + kPointerSize;
+  static const int kItemsOffset = RawHeapObject::kSize;
+  static const int kNumItemsOffset = kItemsOffset + kPointerSize;
   static const int kSize = kNumItemsOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ByteArray);
@@ -5598,17 +5598,17 @@ inline void RawStaticMethod::setFunction(RawObject function) const {
 
 inline byte RawByteArray::byteAt(word index) const {
   DCHECK_INDEX(index, numItems());
-  return RawMutableBytes::cast(bytes()).byteAt(index);
+  return RawMutableBytes::cast(items()).byteAt(index);
 }
 
 inline void RawByteArray::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, numItems());
-  RawMutableBytes::cast(bytes()).byteAtPut(index, value);
+  RawMutableBytes::cast(items()).byteAtPut(index, value);
 }
 
 inline void RawByteArray::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, numItems());
-  RawMutableBytes::cast(bytes()).copyTo(dst, length);
+  RawMutableBytes::cast(items()).copyTo(dst, length);
 }
 
 inline word RawByteArray::numItems() const {
@@ -5620,17 +5620,17 @@ inline void RawByteArray::setNumItems(word num_bytes) const {
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_bytes));
 }
 
-inline RawObject RawByteArray::bytes() const {
-  return instanceVariableAt(kBytesOffset);
+inline RawObject RawByteArray::items() const {
+  return instanceVariableAt(kItemsOffset);
 }
 
-inline void RawByteArray::setBytes(RawObject new_bytes) const {
-  DCHECK(new_bytes.isMutableBytes(), "backed by mutable bytes");
-  instanceVariableAtPut(kBytesOffset, new_bytes);
+inline void RawByteArray::setItems(RawObject new_items) const {
+  DCHECK(new_items.isMutableBytes(), "backed by mutable bytes");
+  instanceVariableAtPut(kItemsOffset, new_items);
 }
 
 inline word RawByteArray::capacity() const {
-  return RawMutableBytes::cast(bytes()).length();
+  return RawMutableBytes::cast(items()).length();
 }
 
 // RawStrArray

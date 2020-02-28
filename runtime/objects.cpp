@@ -179,7 +179,7 @@ void RawByteArray::downsize(word new_length) const {
   word original_length = numItems();
   DCHECK_BOUND(new_length, original_length);
   if (original_length == 0) return;
-  byte* dst = reinterpret_cast<byte*>(RawMutableBytes::cast(bytes()).address());
+  byte* dst = reinterpret_cast<byte*>(RawMutableBytes::cast(items()).address());
   std::memset(dst + new_length, 0, original_length - new_length);
   setNumItems(new_length);
 }
@@ -187,16 +187,16 @@ void RawByteArray::downsize(word new_length) const {
 void RawByteArray::replaceFromWith(word dst_start, RawByteArray src,
                                    word count) const {
   DCHECK_BOUND(dst_start + count, numItems());
-  MutableBytes::cast(bytes()).replaceFromWith(dst_start,
-                                              Bytes::cast(src.bytes()), count);
+  MutableBytes::cast(items()).replaceFromWith(dst_start,
+                                              Bytes::cast(src.items()), count);
 }
 
 void RawByteArray::replaceFromWithStartAt(word dst_start, RawByteArray src,
                                           word count, word src_start) const {
   DCHECK_BOUND(dst_start + count, numItems());
   DCHECK_BOUND(src_start + count, src.numItems());
-  MutableBytes::cast(bytes()).replaceFromWithStartAt(
-      dst_start, Bytes::cast(src.bytes()), count, src_start);
+  MutableBytes::cast(items()).replaceFromWithStartAt(
+      dst_start, Bytes::cast(src.items()), count, src_start);
 }
 
 // RawBytes

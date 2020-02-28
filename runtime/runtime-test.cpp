@@ -290,7 +290,7 @@ TEST_F(RuntimeByteArrayTest, Extend) {
   EXPECT_GE(array.capacity(), 5);
   EXPECT_EQ(array.numItems(), 5);
 
-  Bytes bytes(&scope, array.bytes());
+  Bytes bytes(&scope, array.items());
   bytes = runtime_->bytesSubseq(thread_, bytes, 0, 5);
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "Hello"));
 }
