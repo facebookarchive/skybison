@@ -5766,8 +5766,24 @@ class tuple(bootstrap=True):
     def count(self, other):
         _unimplemented()
 
-    def index(self, other):
-        _unimplemented()
+    def index(self, other, start=_Unbound, stop=_Unbound):
+        _tuple_guard(self)
+        length = _tuple_len(self)
+        if start is _Unbound:
+            start = 0
+        else:
+            start = _slice_start(_slice_index_not_none(start), 1, length)
+        if stop is _Unbound:
+            stop = length
+        else:
+            stop = _slice_stop(_slice_index_not_none(stop), 1, length)
+        i = start
+        while i < stop:
+            item = _tuple_getitem(self, i)
+            if item is other or item == other:
+                return i
+            i += 1
+        raise ValueError("tuple.index(x): x not in tuple")
 
 
 class tuple_iterator(bootstrap=True):

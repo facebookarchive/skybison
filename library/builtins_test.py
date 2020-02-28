@@ -11664,6 +11664,80 @@ class TupleTests(unittest.TestCase):
         self.assertEqual(result.__class__, tuple)
         self.assertTupleEqual(result, (1, 2, 3, 1, 2, 3))
 
+    def test_index_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            tuple.index(object(), object())
+
+    def test_index_with_no_start_starts_at_zero(self):
+        result = (1, 2, 3, 1, 2, 3).index(1)
+        self.assertEqual(result, 0)
+
+    def test_index_with_negative_start_starts_from_end(self):
+        result = (1, 2, 3, 1, 2, 3).index(3, -1)
+        self.assertEqual(result, 5)
+
+    def test_index_with_negative_start_greater_than_length_starts_from_zero(self):
+        result = (1, 2, 3, 1, 2, 3).index(3, -10)
+        self.assertEqual(result, 2)
+
+    def test_index_with_no_stop_ends_at_length(self):
+        result = (1, 2, 3, 4).index(4)
+        self.assertEqual(result, 3)
+
+    def test_index_starts_at_given_start(self):
+        result = (1, 2, 3, 1, 2, 3).index(1, 2)
+        self.assertEqual(result, 3)
+
+    def test_index_with_negative_one_stops_before_end(self):
+        with self.assertRaisesRegex(ValueError, "not in tuple"):
+            (1, 2, 3, 4).index(4, 0, -1)
+
+    def test_index_with_negative_stop_stops_at_end(self):
+        result = (1, 2, 3, 4).index(3, 0, -1)
+        self.assertEqual(result, 2)
+
+    def test_index_with_negative_stop_greater_than_length_stops_at_zero(self):
+        with self.assertRaisesRegex(ValueError, "not in tuple"):
+            (1, 2, 3).index(3, 0, -10)
+
+    def test_index_stops_at_given_stop(self):
+        with self.assertRaisesRegex(ValueError, "not in tuple"):
+            (1, 2, 3, 4).index(4, 0, 3)
+
+    def test_index_compares_identity(self):
+        class C:
+            __eq__ = Mock(name="__eq__", return_value=False)
+
+        instance = C()
+        result = (instance,).index(instance)
+        self.assertEqual(result, 0)
+        instance.__eq__.assert_not_called()
+
+    def test_index_calls_dunder_index_on_start(self):
+        class C:
+            __index__ = Mock(name="__index__", return_value=0)
+
+        result = (1, 2, 3).index(2, C())
+        self.assertEqual(result, 1)
+        C.__index__.assert_called_once()
+
+    def test_index_calls_dunder_index_on_stop(self):
+        class C:
+            __index__ = Mock(name="__index__", return_value=5)
+
+        result = (1, 2, 3).index(2, 0, C())
+        self.assertEqual(result, 1)
+        C.__index__.assert_called_once()
+
+    def test_index_calls_dunder_eq(self):
+        class C:
+            __eq__ = Mock(name="__eq__", return_value=False)
+
+        instance = C()
+        result = (instance, 4).index(4)
+        self.assertEqual(result, 1)
+        instance.__eq__.assert_called_once()
+
 
 class TypeTests(unittest.TestCase):
     def test_abstract_methods_get_with_builtin_type_raises_attribute_error(self):
