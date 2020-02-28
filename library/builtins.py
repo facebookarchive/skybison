@@ -288,6 +288,20 @@ def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **k
     _builtin()
 
 
+def _function_dict(self):
+    # TODO(T56646836) we should not need to define a custom __dict__.
+    _function_guard(self)
+    return _instance_overflow_dict(self)
+
+
+def _function_set_dict(self, rhs):
+    _function_guard(self)
+    _dict_guard(rhs)
+    d = _instance_overflow_dict(self)
+    d.clear()
+    d.update(rhs)
+
+
 class function(bootstrap=True):
     __annotations__ = _property(_function_annotations, _function_set_annotations)
 
@@ -297,11 +311,7 @@ class function(bootstrap=True):
 
     __defaults__ = _property(_function_defaults, _function_set_defaults)
 
-    @_property
-    def __dict__(self):
-        # TODO(T56646836) we should not need to define a custom __dict__.
-        _function_guard(self)
-        return _instance_overflow_dict(self)
+    __dict__ = _property(_function_dict, _function_set_dict)
 
     def __get__(self, instance, owner):
         _builtin()

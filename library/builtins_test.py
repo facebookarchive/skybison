@@ -4158,6 +4158,21 @@ class FunctionTests(unittest.TestCase):
         d["baz"] = -8
         self.assertEqual(foo.baz, -8)
 
+    def test_dunder_dict_setter_update_matches_attributes(self):
+        def foo():
+            pass
+
+        foo.__dict__ = {"baz": 500}
+        self.assertEqual(len(foo.__dict__), 1)
+        self.assertEqual(foo.baz, 500)
+
+    def test_dunder_dict_setters_with_non_dict_raises_type_error(self):
+        def foo():
+            pass
+
+        with self.assertRaises(TypeError):
+            foo.__dict__ = 100
+
     def test_dunder_globals_returns_identical_object(self):
         def foo():
             pass
