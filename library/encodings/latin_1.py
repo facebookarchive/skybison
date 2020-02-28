@@ -20,8 +20,11 @@ class Codec(codecs.Codec):
 
     # Note: Binding these as C functions will result in the class not
     # converting them to methods. This is intended.
-    encode = codecs.latin_1_encode
-    decode = codecs.latin_1_decode
+    # TODO(T54587721): Revert change once we can bind builtins as static methods
+    # encode = codecs.latin_1_encode
+    # decode = codecs.latin_1_decode
+    encode = staticmethod(codecs.latin_1_encode)
+    decode = staticmethod(codecs.latin_1_decode)
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
