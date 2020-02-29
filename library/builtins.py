@@ -4990,7 +4990,14 @@ class set(bootstrap=True):
         _builtin()
 
     def symmetric_difference(self, other):
-        _unimplemented()
+        _set_guard(self)
+        result = set(other)
+        for item in self:
+            if set.__contains__(result, item):
+                set.remove(result, item)
+            else:
+                set.add(result, item)
+        return result
 
     def symmetric_difference_update(self, other):
         _set_guard(self)

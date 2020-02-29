@@ -9042,6 +9042,33 @@ class SetTests(unittest.TestCase):
     def test_isub_with_non_set_other_returns_not_implemented(self):
         self.assertEqual(set.__isub__(set(), "not a set"), NotImplemented)
 
+    def test_symmetric_difference_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            set.symmetric_difference(frozenset(), set())
+        self.assertIn(
+            "'symmetric_difference' requires a 'set' object but received a 'frozenset'",
+            str(context.exception),
+        )
+
+    def test_symmetric_difference_with_non_anyset_other_returns_notimplemented(self):
+        result = set.symmetric_difference(set(), ())
+        self.assertIs(type(result), set)
+        self.assertSetEqual(result, set())
+
+    def test_symmetric_difference_removes_common_elements(self):
+        left = {1, 2, 3}
+        right = {3, 4, 5}
+        result = set.symmetric_difference(left, right)
+        self.assertIs(type(result), set)
+        self.assertSetEqual(result, {1, 2, 4, 5})
+
+    def test_symmetric_difference_with_iterable_removes_common_elements(self):
+        left = {1, 2, 3}
+        right = (3, 4, 5)
+        result = set.symmetric_difference(left, right)
+        self.assertIs(type(result), set)
+        self.assertSetEqual(result, {1, 2, 4, 5})
+
     def test_symmetric_difference_update_with_non_set_self_raises_type_error(self):
         with self.assertRaisesRegex(
             TypeError, "requires a 'set' object but received .+ 'int'"
