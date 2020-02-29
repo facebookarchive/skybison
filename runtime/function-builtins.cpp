@@ -12,65 +12,6 @@
 
 namespace py {
 
-RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
-                                const char* c_doc, ExtensionMethodType type) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function::Entry entry;
-  Function::Entry entry_kw;
-  Function::Entry entry_ex;
-  switch (callType(type)) {
-    case ExtensionMethodType::kMethNoArgs:
-      entry = methodTrampolineNoArgs;
-      entry_kw = methodTrampolineNoArgsKw;
-      entry_ex = methodTrampolineNoArgsEx;
-      break;
-    case ExtensionMethodType::kMethO:
-      entry = methodTrampolineOneArg;
-      entry_kw = methodTrampolineOneArgKw;
-      entry_ex = methodTrampolineOneArgEx;
-      break;
-    case ExtensionMethodType::kMethVarArgs:
-      entry = methodTrampolineVarArgs;
-      entry_kw = methodTrampolineVarArgsKw;
-      entry_ex = methodTrampolineVarArgsEx;
-      break;
-    case ExtensionMethodType::kMethVarArgsAndKeywords:
-      entry = methodTrampolineKeywords;
-      entry_kw = methodTrampolineKeywordsKw;
-      entry_ex = methodTrampolineKeywordsEx;
-      break;
-    case ExtensionMethodType::kMethFastCall:
-      entry = methodTrampolineFastCall;
-      entry_kw = methodTrampolineFastCallKw;
-      entry_ex = methodTrampolineFastCallEx;
-      break;
-    default:
-      UNIMPLEMENTED("Unsupported MethodDef type");
-  }
-  Object name(&scope, runtime->newStrFromCStr(c_name));
-  Object code(&scope, runtime->newIntFromCPtr(meth));
-  Function function(&scope, runtime->newFunctionWithCustomEntry(
-                                thread, name, code, entry, entry_kw, entry_ex));
-  if (c_doc != nullptr) {
-    function.setDoc(runtime->newStrFromCStr(c_doc));
-  }
-  if (isClassmethod(type)) {
-    if (isStaticmethod(type)) {
-      return thread->raiseWithFmt(LayoutId::kValueError,
-                                  "method cannot be both class and static");
-    }
-    ClassMethod result(&scope, runtime->newClassMethod());
-    result.setFunction(*function);
-    return *result;
-  }
-  if (isStaticmethod(type)) {
-    // TODO(T52962591): implement METH_STATIC
-    UNIMPLEMENTED("C extension staticmethods");
-  }
-  return *function;
-}
-
 const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     // TODO(T44845145) Support assignment to __code__.
     {ID(__code__), RawFunction::kCodeOffset, AttributeFlags::kReadOnly},

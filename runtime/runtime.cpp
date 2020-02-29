@@ -730,17 +730,46 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   return *function;
 }
 
-RawObject Runtime::newFunctionWithCustomEntry(
-    Thread* thread, const Object& name, const Object& code,
-    Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex) {
-  DCHECK(!code.isCode(), "Use newFunctionWithCode() for code objects");
-  DCHECK(code.isInt(), "expected int");
+RawObject Runtime::newExtensionFunction(Thread* thread, const Object& name,
+                                        void* function,
+                                        ExtensionMethodType type) {
   HandleScope scope(thread);
-  Function function(&scope, newFunction(thread, name, code, /*flags=*/0,
-                                        /*argcount=*/0, /*total_args=*/0,
-                                        /*total_vars=*/0, /*stacksize=*/0,
-                                        entry, entry_kw, entry_ex));
-  return *function;
+  Function::Entry entry;
+  Function::Entry entry_kw;
+  Function::Entry entry_ex;
+  switch (type) {
+    case ExtensionMethodType::kMethNoArgs:
+      entry = methodTrampolineNoArgs;
+      entry_kw = methodTrampolineNoArgsKw;
+      entry_ex = methodTrampolineNoArgsEx;
+      break;
+    case ExtensionMethodType::kMethO:
+      entry = methodTrampolineOneArg;
+      entry_kw = methodTrampolineOneArgKw;
+      entry_ex = methodTrampolineOneArgEx;
+      break;
+    case ExtensionMethodType::kMethVarArgs:
+      entry = methodTrampolineVarArgs;
+      entry_kw = methodTrampolineVarArgsKw;
+      entry_ex = methodTrampolineVarArgsEx;
+      break;
+    case ExtensionMethodType::kMethVarArgsAndKeywords:
+      entry = methodTrampolineKeywords;
+      entry_kw = methodTrampolineKeywordsKw;
+      entry_ex = methodTrampolineKeywordsEx;
+      break;
+    case ExtensionMethodType::kMethFastCall:
+      entry = methodTrampolineFastCall;
+      entry_kw = methodTrampolineFastCallKw;
+      entry_ex = methodTrampolineFastCallEx;
+      break;
+    default:
+      UNIMPLEMENTED("Unsupported MethodDef type");
+  }
+  Object code(&scope, newIntFromCPtr(function));
+  return newFunction(thread, name, code, /*flags=*/0, /*argcount=*/-1,
+                     /*total_args=*/-1, /*total_vars=*/-1, /*stacksize=*/-1,
+                     entry, entry_kw, entry_ex);
 }
 
 RawObject Runtime::newExceptionState() {

@@ -1238,15 +1238,25 @@ RawObject addMethods(Thread* thread, const Type& type) {
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
-  for (word i = 0; methods[i].ml_name != nullptr; i++) {
-    Object name(&scope, Runtime::internStrFromCStr(thread, methods[i].ml_name));
-    Object function(
-        &scope,
-        functionFromMethodDef(
-            thread, methods[i].ml_name, bit_cast<void*>(methods[i].ml_meth),
-            methods[i].ml_doc, methodTypeFromMethodFlags(methods[i].ml_flags)));
-    if (function.isError()) return *function;
-    typeAtPut(thread, type, name, function);
+  Object none(&scope, NoneType::object());
+  Object unbound(&scope, Unbound::object());
+  Object name(&scope, NoneType::object());
+  Object member(&scope, NoneType::object());
+  for (PyMethodDef* method = methods; method->ml_name != nullptr; method++) {
+    name = Runtime::internStrFromCStr(thread, method->ml_name);
+    int flags = method->ml_flags;
+    if (flags & METH_CLASS) {
+      if (flags & METH_STATIC) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "method cannot be both class and static");
+      }
+      member = newClassMethod(thread, method, name, type);
+    } else if (flags & METH_STATIC) {
+      member = newCFunction(thread, method, name, unbound, none);
+    } else {
+      member = newMethod(thread, method, name, type);
+    }
+    typeAtPut(thread, type, name, member);
   }
   return NoneType::object();
 }

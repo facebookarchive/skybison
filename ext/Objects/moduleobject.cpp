@@ -50,7 +50,8 @@ PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
         return nullptr;
       }
       function_name = Runtime::internStrFromCStr(thread, method->ml_name);
-      function = newCFunction(thread, method, module, module_name);
+      function =
+          newCFunction(thread, method, function_name, module, module_name);
       moduleAtPut(thread, module, function_name, function);
     }
   }

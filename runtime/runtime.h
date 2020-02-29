@@ -29,6 +29,16 @@ struct ListEntry {
   ListEntry* next;
 };
 
+enum class ExtensionMethodType {
+  kMethVarArgs = 1 << 0,
+  kMethKeywords = 1 << 1,  // only used with kMethVarArgs or kMethFastCall
+  kMethVarArgsAndKeywords = kMethVarArgs | kMethKeywords,
+  kMethNoArgs = 1 << 2,
+  kMethO = 1 << 3,
+  kMethFastCall = 1 << 7,
+  kMethFastCallAndKeywords = kMethFastCall | kMethKeywords,
+};
+
 using AtExitFn = void (*)();
 
 using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
@@ -104,11 +114,8 @@ class Runtime {
   RawObject newFunctionWithCode(Thread* thread, const Object& qualname,
                                 const Code& code, const Object& module_obj);
 
-  RawObject newFunctionWithCustomEntry(Thread* thread, const Object& name,
-                                       const Object& code,
-                                       Function::Entry entry,
-                                       Function::Entry entry_kw,
-                                       Function::Entry entry_ex);
+  RawObject newExtensionFunction(Thread* thread, const Object& name,
+                                 void* function, ExtensionMethodType type);
 
   RawObject newExceptionState();
 

@@ -19,10 +19,6 @@ static_assert(static_cast<int>(ExtensionMethodType::kMethNoArgs) == METH_NOARGS,
               "matching flag values");
 static_assert(static_cast<int>(ExtensionMethodType::kMethO) == METH_O,
               "matching flag values");
-static_assert(static_cast<int>(ExtensionMethodType::kMethClass) == METH_CLASS,
-              "matching flag values");
-static_assert(static_cast<int>(ExtensionMethodType::kMethStatic) == METH_STATIC,
-              "matching flag values");
 static_assert(static_cast<int>(ExtensionMethodType::kMethFastCall) ==
                   METH_FASTCALL,
               "matching flag values");
@@ -30,20 +26,24 @@ static_assert(static_cast<int>(ExtensionMethodType::kMethFastCallAndKeywords) ==
                   (METH_FASTCALL | METH_KEYWORDS),
               "matching flag values");
 
-inline ExtensionMethodType methodTypeFromMethodFlags(int flag) {
-  if (DCHECK_IS_ON()) {
-    int call_flag = flag & ~METH_CLASS & ~METH_STATIC;
-    DCHECK(call_flag == METH_NOARGS || call_flag == METH_O ||
-               call_flag == METH_VARARGS ||
-               call_flag == (METH_VARARGS | METH_KEYWORDS) ||
-               call_flag == METH_FASTCALL ||
-               call_flag == (METH_FASTCALL | METH_KEYWORDS),
-           "unexpected flags %d", flag);
-  }
-  return static_cast<ExtensionMethodType>(flag);
+inline ExtensionMethodType methodTypeFromMethodFlags(int flags) {
+  int call_flags = flags & ~METH_CLASS & ~METH_STATIC;
+  DCHECK(call_flags == METH_NOARGS || call_flags == METH_O ||
+             call_flags == METH_VARARGS ||
+             call_flags == (METH_VARARGS | METH_KEYWORDS) ||
+             call_flags == METH_FASTCALL ||
+             call_flags == (METH_FASTCALL | METH_KEYWORDS),
+         "unexpected flags %x", flags);
+  return static_cast<ExtensionMethodType>(call_flags);
 }
 
-RawObject newCFunction(Thread* thread, PyMethodDef* method, const Object& self,
-                       const Object& module_name);
+RawObject newCFunction(Thread* thread, PyMethodDef* method, const Object& name,
+                       const Object& self, const Object& module_name);
+
+RawObject newMethod(Thread* thread, PyMethodDef* method, const Object& name,
+                    const Object& type);
+
+RawObject newClassMethod(Thread* thread, PyMethodDef* method,
+                         const Object& name, const Object& type);
 
 }  // namespace py
