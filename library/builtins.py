@@ -4993,7 +4993,16 @@ class set(bootstrap=True):
         _unimplemented()
 
     def symmetric_difference_update(self, other):
-        _unimplemented()
+        _set_guard(self)
+        if self is other:
+            set.clear(self)
+            return
+        other = set(other)
+        for item in other:
+            if set.__contains__(self, item):
+                set.remove(self, item)
+            else:
+                set.add(self, item)
 
     def union(self, *others):
         if not _set_check(self):

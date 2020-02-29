@@ -9042,6 +9042,58 @@ class SetTests(unittest.TestCase):
     def test_isub_with_non_set_other_returns_not_implemented(self):
         self.assertEqual(set.__isub__(set(), "not a set"), NotImplemented)
 
+    def test_symmetric_difference_update_with_non_set_self_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "requires a 'set' object but received .+ 'int'"
+        ):
+            set.symmetric_difference_update(1, set())
+
+    def test_symmetric_difference_update_with_non_iterable_other_raises_type_error(
+        self
+    ):
+        with self.assertRaisesRegex(TypeError, "object is not iterable"):
+            set.symmetric_difference_update(set(), 1)
+
+    def test_symmetric_difference_update_with_identity_equal_params_clears_self(self):
+        a = {1, 2, 3}
+        self.assertSetEqual(a, {1, 2, 3})
+        set.symmetric_difference_update(a, a)
+        self.assertSetEqual(a, set())
+
+    def test_symmetric_difference_update_removes_self_items_found_in_other(self):
+        left = {1, 2, 3}
+        right = {3}
+        set.symmetric_difference_update(left, right)
+        self.assertSetEqual(left, {1, 2})
+        self.assertSetEqual(right, {3})
+
+    def test_symmetric_difference_update_adds_items_found_in_other(self):
+        left = {1, 2}
+        right = {3, 4, 5}
+        set.symmetric_difference_update(left, right)
+        self.assertSetEqual(left, {1, 2, 3, 4, 5})
+        self.assertSetEqual(right, {3, 4, 5})
+
+    def test_symmetric_difference_update_with_raising_iterable_does_not_remove(self):
+        class C:
+            def __init__(self):
+                self.value = 0
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.value > 3:
+                    raise UserWarning("foo")
+                self.value += 1
+                return self.value
+
+        left = {1, 2, 3}
+        right = C()
+        with self.assertRaisesRegex(UserWarning, "foo"):
+            set.symmetric_difference_update(left, right)
+        self.assertEqual(left, {1, 2, 3})
+
     def test_set_ignores_subclass_isub_update(self):
         class SubSet(set):
             def __isub__(self, other):
