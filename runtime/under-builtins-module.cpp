@@ -164,6 +164,15 @@ RawObject FUNC(_builtins, _address)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(args.get(0).raw());
 }
 
+RawObject FUNC(_builtins, _anyset_check)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  RawObject arg = args.get(0);
+  return Bool::fromBool(runtime->isInstanceOfSet(arg) ||
+                        runtime->isInstanceOfFrozenSet(arg));
+}
+
 RawObject FUNC(_builtins, _bool_check)(Thread* /* t */, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);

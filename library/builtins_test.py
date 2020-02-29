@@ -8979,6 +8979,9 @@ class SetTests(unittest.TestCase):
         self.assertEqual(set.__sub__({1, 2}, {1}), {2})
         self.assertEqual(set.__sub__({1, 2}, {1, 2}), set())
 
+    def test_sub_with_frozenset_returns_difference(self):
+        self.assertEqual(set.__sub__({1, 2}, frozenset({1})), {2})
+
     def test_sub_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):
             set.__sub__("not a set", set())
@@ -9005,6 +9008,12 @@ class SetTests(unittest.TestCase):
         y3 = {1, 2}
         self.assertIs(set.__isub__(x3, y3), x3)
         self.assertEqual(x3, set())
+
+    def test_isub_with_frozenset_returns_difference(self):
+        x2 = {1, 2}
+        y2 = frozenset({1})
+        self.assertIs(set.__isub__(x2, y2), x2)
+        self.assertEqual(x2, {2})
 
     def test_isub_operator_returns_difference(self):
         x1 = {1, 2}

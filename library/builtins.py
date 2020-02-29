@@ -14,6 +14,7 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
 # "the lnotab table is too complex".
 from _builtins import (
     _address,
+    _anyset_check,
     _bool_check,
     _bool_guard,
     _bound_method,
@@ -3261,7 +3262,7 @@ class frozenset(bootstrap=True):
 
     def issuperset(self, other):
         _frozenset_guard(self)
-        if not _set_check(other) or not _frozenset_check(other):
+        if not _anyset_check(other):
             other = set(other)
         return set.__ge__(self, other)
 
@@ -4855,7 +4856,7 @@ class set(bootstrap=True):
 
     def __isub__(self, other):
         _set_guard(self)
-        if not _set_check(other):
+        if not _anyset_check(other):
             return NotImplemented
         set.difference_update(self, other)
         return self
@@ -4883,7 +4884,7 @@ class set(bootstrap=True):
 
     def __ior__(self, other):
         _set_guard(self)
-        if not _set_check(other) and not _frozenset_check(other):
+        if not _anyset_check(other):
             return NotImplemented
         if self is other:
             return self
@@ -4892,7 +4893,7 @@ class set(bootstrap=True):
 
     def __or__(self, other):
         _set_guard(self)
-        if not _set_check(other) and not _frozenset_check(other):
+        if not _anyset_check(other):
             return NotImplemented
         result = set.copy(self)
         if self is other:
@@ -4928,7 +4929,7 @@ class set(bootstrap=True):
 
     def __sub__(self, other):
         _set_guard(self)
-        if not _set_check(other):
+        if not _anyset_check(other):
             return NotImplemented
         return set.difference(self, other)
 
@@ -4978,7 +4979,7 @@ class set(bootstrap=True):
 
     def issuperset(self, other):
         _set_guard(self)
-        if not _set_check(other) or not _frozenset_check(other):
+        if not _anyset_check(other):
             other = set(other)
         return set.__ge__(self, other)
 

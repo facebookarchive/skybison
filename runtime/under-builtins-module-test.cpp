@@ -20,6 +20,54 @@ namespace testing {
 using UnderBuiltinsModuleTest = RuntimeFixture;
 using UnderBuiltinsModuleDeathTest = RuntimeFixture;
 
+TEST_F(UnderBuiltinsModuleTest, UnderAnysetCheckWithNonSetReturnsFalse) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_->newTuple(1));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _anyset_check), obj));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderAnysetCheckWithSetReturnsTrue) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_->newSet());
+  Object result(&scope, runBuiltin(FUNC(_builtins, _anyset_check), obj));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderAnysetCheckWithSetSubclassReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C(set):
+  pass
+obj = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object obj(&scope, mainModuleAt(runtime_, "obj"));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _anyset_check), obj));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderAnysetCheckWithFrozenSetReturnsTrue) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_->newFrozenSet());
+  Object result(&scope, runBuiltin(FUNC(_builtins, _anyset_check), obj));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderAnysetCheckWithFrozenSetSubclassReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C(frozenset):
+  pass
+obj = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object obj(&scope, mainModuleAt(runtime_, "obj"));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _anyset_check), obj));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderBytearrayClearSetsLengthToZero) {
   HandleScope scope(thread_);
   ByteArray array(&scope, runtime_->newByteArray());
