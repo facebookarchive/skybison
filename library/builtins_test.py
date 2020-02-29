@@ -8814,6 +8814,32 @@ class SetTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             set.__and__(frozenset(), set())
 
+    def test_dunder_ixor_with_non_set_self_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "'__ixor__' requires a 'set' object but received a 'frozenset'"
+        ):
+            set.__ixor__(frozenset(), set())
+
+    def test_dunder_ixor_with_non_anyset_other_returns_not_implemented(self):
+        result = set.__ixor__(set(), ())
+        self.assertIs(result, NotImplemented)
+
+    def test_dunder_ixor_does_inplace_symmetric_difference_update(self):
+        left = {1, 2, 3}
+        right = {3, 4, 5}
+        result = set.__ixor__(left, right)
+        self.assertIs(result, left)
+        self.assertSetEqual(left, {1, 2, 4, 5})
+        self.assertSetEqual(right, {3, 4, 5})
+
+    def test_dunder_ixor_with_frozenset_does_inplace_symmetric_difference_update(self):
+        left = {1, 2, 3}
+        right = frozenset({3, 4, 5})
+        result = set.__ixor__(left, right)
+        self.assertIs(result, left)
+        self.assertSetEqual(left, {1, 2, 4, 5})
+        self.assertEqual(right, {3, 4, 5})
+
     def test_set_subclass_difference_removes_elements(self):
         class SubSet(set):
             pass

@@ -4865,7 +4865,11 @@ class set(bootstrap=True):
         _builtin()
 
     def __ixor__(self, other):
-        _unimplemented()
+        _set_guard(self)
+        if not _anyset_check(other):
+            return NotImplemented
+        set.symmetric_difference_update(self, other)
+        return self
 
     def __le__(self, other):
         _builtin()
