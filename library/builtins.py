@@ -4929,7 +4929,10 @@ class set(bootstrap=True):
         _unimplemented()
 
     def __rxor__(self, other):
-        _unimplemented()
+        _set_guard(self)
+        if not _anyset_check(other):
+            return NotImplemented
+        return set.symmetric_difference(self, other)
 
     def __sub__(self, other):
         _set_guard(self)

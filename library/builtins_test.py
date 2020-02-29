@@ -8923,6 +8923,28 @@ class SetTests(unittest.TestCase):
         self.assertIs(type(result), set)
         self.assertSetEqual(result, {1, 2, 4, 5})
 
+    def test_dunder_rxor_with_non_set_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "'__rxor__' requires a 'set' object but received a 'frozenset'"
+        ):
+            set.__rxor__(frozenset(), set())
+
+    def test_dunder_rxor_with_non_anyset_other_returns_notimplemented(self):
+        result = set.__rxor__(set(), ())
+        self.assertIs(result, NotImplemented)
+
+    def test_dunder_rxor_removes_common_elements(self):
+        left = {1, 2, 3}
+        right = {3, 4, 5}
+        result = set.__rxor__(left, right)
+        self.assertSetEqual(result, {1, 2, 4, 5})
+
+    def test_dunder_rxor_with_frozenset_removes_common_elements(self):
+        left = {1, 2, 3}
+        right = frozenset({3, 4, 5})
+        result = set.__rxor__(left, right)
+        self.assertSetEqual(result, {1, 2, 4, 5})
+
     def test_difference_no_others_copies_self(self):
         a_set = {1, 2, 3}
         self.assertIsNot(set.difference(a_set), a_set)
