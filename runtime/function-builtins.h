@@ -42,10 +42,6 @@ inline bool isStaticmethod(ExtensionMethodType type) {
 RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
                                 const char* c_doc, ExtensionMethodType type);
 
-RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
-                                      void* meth, const char* c_doc,
-                                      ExtensionMethodType type);
-
 class FunctionBuiltins
     : public Builtins<FunctionBuiltins, ID(function), LayoutId::kFunction> {
  public:

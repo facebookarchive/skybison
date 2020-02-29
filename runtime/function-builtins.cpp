@@ -71,55 +71,6 @@ RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
   return *function;
 }
 
-RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
-                                      void* meth, const char* c_doc,
-                                      ExtensionMethodType type) {
-  DCHECK(!isClassmethod(type), "module functions cannot set METH_CLASS");
-  DCHECK(!isStaticmethod(type), "module functions cannot set METH_STATIC");
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function::Entry entry;
-  Function::Entry entry_kw;
-  Function::Entry entry_ex;
-  switch (callType(type)) {
-    case ExtensionMethodType::kMethNoArgs:
-      entry = moduleTrampolineNoArgs;
-      entry_kw = moduleTrampolineNoArgsKw;
-      entry_ex = moduleTrampolineNoArgsEx;
-      break;
-    case ExtensionMethodType::kMethO:
-      entry = moduleTrampolineOneArg;
-      entry_kw = moduleTrampolineOneArgKw;
-      entry_ex = moduleTrampolineOneArgEx;
-      break;
-    case ExtensionMethodType::kMethVarArgs:
-      entry = moduleTrampolineVarArgs;
-      entry_kw = moduleTrampolineVarArgsKw;
-      entry_ex = moduleTrampolineVarArgsEx;
-      break;
-    case ExtensionMethodType::kMethVarArgsAndKeywords:
-      entry = moduleTrampolineKeywords;
-      entry_kw = moduleTrampolineKeywordsKw;
-      entry_ex = moduleTrampolineKeywordsEx;
-      break;
-    case ExtensionMethodType::kMethFastCall:
-      entry = moduleTrampolineFastCall;
-      entry_kw = moduleTrampolineFastCallKw;
-      entry_ex = moduleTrampolineFastCallEx;
-      break;
-    default:
-      UNIMPLEMENTED("Unsupported MethodDef type");
-  }
-  Object name(&scope, runtime->newStrFromCStr(c_name));
-  Object code(&scope, runtime->newIntFromCPtr(meth));
-  Function function(&scope, runtime->newFunctionWithCustomEntry(
-                                thread, name, code, entry, entry_kw, entry_ex));
-  if (c_doc != nullptr) {
-    function.setDoc(runtime->newStrFromCStr(c_doc));
-  }
-  return *function;
-}
-
 const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     // TODO(T44845145) Support assignment to __code__.
     {ID(__code__), RawFunction::kCodeOffset, AttributeFlags::kReadOnly},

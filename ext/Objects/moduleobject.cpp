@@ -34,26 +34,23 @@ PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object name(&scope, runtime->newStrFromCStr(def->m_name));
-  Module module(&scope, runtime->newModule(name));
+  Object module_name(&scope, Runtime::internStrFromCStr(thread, def->m_name));
+  Module module(&scope, runtime->newModule(module_name));
   module.setDef(runtime->newIntFromCPtr(def));
 
   if (def->m_methods != nullptr) {
-    for (PyMethodDef* fdef = def->m_methods; fdef->ml_name != nullptr; fdef++) {
-      if (fdef->ml_flags & METH_CLASS || fdef->ml_flags & METH_STATIC) {
+    Object function_name(&scope, NoneType::object());
+    Object function(&scope, NoneType::object());
+    for (PyMethodDef* method = def->m_methods; method->ml_name != nullptr;
+         method++) {
+      if (method->ml_flags & METH_CLASS || method->ml_flags & METH_STATIC) {
         thread->raiseWithFmt(
             LayoutId::kValueError,
             "module functions cannot set METH_CLASS or METH_STATIC");
         return nullptr;
       }
-      Function function(
-          &scope, functionFromModuleMethodDef(
-                      thread, fdef->ml_name, bit_cast<void*>(fdef->ml_meth),
-                      fdef->ml_doc, methodTypeFromMethodFlags(fdef->ml_flags)));
-
-      function.setModuleName(module.name());
-      function.setModuleObject(*module);
-      Str function_name(&scope, function.name());
+      function_name = Runtime::internStrFromCStr(thread, method->ml_name);
+      function = newCFunction(thread, method, module, module_name);
       moduleAtPut(thread, module, function_name, function);
     }
   }

@@ -43,4 +43,7 @@ inline ExtensionMethodType methodTypeFromMethodFlags(int flag) {
   return static_cast<ExtensionMethodType>(flag);
 }
 
+RawObject newCFunction(Thread* thread, PyMethodDef* method, const Object& self,
+                       const Object& module_name);
+
 }  // namespace py

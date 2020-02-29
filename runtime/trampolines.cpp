@@ -738,10 +738,13 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* self_obj =
+      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
   PyObject* pyresult = (*method)(self_obj, nullptr);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
-  ApiHandle::fromPyObject(self_obj)->decref();
+  if (self_obj != nullptr) {
+    ApiHandle::fromPyObject(self_obj)->decref();
+  }
   return *result;
 }
 
@@ -800,11 +803,14 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* self_obj =
+      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
   PyObject* arg_obj = ApiHandle::newReference(thread, *arg);
   PyObject* pyresult = (*method)(self_obj, arg_obj);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
-  ApiHandle::fromPyObject(self_obj)->decref();
+  if (self_obj != nullptr) {
+    ApiHandle::fromPyObject(self_obj)->decref();
+  }
   ApiHandle::fromPyObject(arg_obj)->decref();
   return *result;
 }
@@ -867,11 +873,14 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* self_obj =
+      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
   PyObject* varargs_obj = ApiHandle::newReference(thread, *varargs);
   PyObject* pyresult = (*method)(self_obj, varargs_obj);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
-  ApiHandle::fromPyObject(self_obj)->decref();
+  if (self_obj != nullptr) {
+    ApiHandle::fromPyObject(self_obj)->decref();
+  }
   ApiHandle::fromPyObject(varargs_obj)->decref();
   return *result;
 }
@@ -935,7 +944,8 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   ternaryfunc method = bit_cast<ternaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* self_obj =
+      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
   PyObject* args_obj = ApiHandle::newReference(thread, *args);
   PyObject* kwargs_obj = nullptr;
   if (*kwargs != NoneType::object()) {
@@ -943,7 +953,9 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
   }
   PyObject* pyresult = (*method)(self_obj, args_obj, kwargs_obj);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
-  ApiHandle::fromPyObject(self_obj)->decref();
+  if (self_obj != nullptr) {
+    ApiHandle::fromPyObject(self_obj)->decref();
+  }
   ApiHandle::fromPyObject(args_obj)->decref();
   if (kwargs_obj != nullptr) {
     ApiHandle::fromPyObject(kwargs_obj)->decref();
@@ -1015,12 +1027,15 @@ static RawObject callMethFastCallWithKwargs(Thread* thread,
                                             const Object& kwnames) {
   _PyCFunctionFast method =
       bit_cast<_PyCFunctionFast>(Int::cast(function.code()).asCPtr());
-  ApiHandle* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* self_obj =
+      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
   ApiHandle* kwnames_obj = ApiHandle::newReference(thread, *kwnames);
   PyObject* pyresult = (*method)(self_obj, args, num_args, kwnames_obj);
   RawObject result = ApiHandle::checkFunctionResult(thread, pyresult);
   kwnames_obj->decref();
-  self_obj->decref();
+  if (self_obj != nullptr) {
+    ApiHandle::fromPyObject(self_obj)->decref();
+  }
   return result;
 }
 
@@ -1029,10 +1044,13 @@ static RawObject callMethFastCall(Thread* thread, const Function& function,
                                   const word num_args) {
   _PyCFunctionFast method =
       bit_cast<_PyCFunctionFast>(Int::cast(function.code()).asCPtr());
-  ApiHandle* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* self_obj =
+      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
   PyObject* pyresult = (*method)(self_obj, args, num_args, /*kwnames=*/nullptr);
   RawObject result = ApiHandle::checkFunctionResult(thread, pyresult);
-  self_obj->decref();
+  if (self_obj != nullptr) {
+    ApiHandle::fromPyObject(self_obj)->decref();
+  }
   return result;
 }
 
@@ -1125,296 +1143,6 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
     result =
         callMethFastCallWithKwargs(thread, function, self, fastcall_args.get(),
                                    num_positional, kwnames_tuple);
-  }
-  for (word i = 0; i < num_positional + num_keywords; i++) {
-    ApiHandle::fromPyObject(fastcall_args[i])->decref();
-  }
-  return *result;
-}
-
-RawObject moduleTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
-  }
-  HandleScope scope(thread);
-  Function function(&scope, frame->peek(0));
-  Object module(&scope, function.moduleObject());
-  return callMethNoArgs(thread, function, module);
-}
-
-RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Tuple kwargs(&scope, frame->peek(0));
-  if (kwargs.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no keyword arguments");
-  }
-  if (nargs != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
-  }
-  Function function(&scope, frame->peek(1));
-  Object module(&scope, function.moduleObject());
-  return callMethNoArgs(thread, function, module);
-}
-
-RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
-  HandleScope scope(thread);
-  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  if (has_varkeywords) {
-    Object kw_args(&scope, frame->topValue());
-    if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(*kw_args).numItems() != 0) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "function takes no keyword arguments");
-    }
-  }
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
-  if (varargs.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
-  }
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.moduleObject());
-  return callMethNoArgs(thread, function, module);
-}
-
-RawObject moduleTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one argument");
-  }
-  HandleScope scope(thread);
-  Object arg(&scope, frame->peek(0));
-  Function function(&scope, frame->peek(1));
-  Object module(&scope, function.moduleObject());
-  return callMethOneArg(thread, function, module, arg);
-}
-
-RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Tuple kwargs(&scope, frame->peek(0));
-  if (kwargs.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no keyword arguments");
-  }
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one argument");
-  }
-  Object arg(&scope, frame->peek(1));
-  Function function(&scope, frame->peek(2));
-  Object module(&scope, function.moduleObject());
-  return callMethOneArg(thread, function, module, arg);
-}
-
-RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* frame, word flags) {
-  HandleScope scope(thread);
-  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  if (has_varkeywords) {
-    Object kw_args(&scope, frame->topValue());
-    if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(*kw_args).numItems() != 0) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "function takes no keyword arguments");
-    }
-  }
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
-  if (varargs.length() != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one argument");
-  }
-  Object arg(&scope, varargs.at(0));
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.moduleObject());
-  return callMethOneArg(thread, function, module, arg);
-}
-
-RawObject moduleTrampolineVarArgs(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Function function(&scope, frame->peek(nargs));
-  Object module(&scope, function.moduleObject());
-  Tuple varargs(&scope, thread->runtime()->newTuple(nargs));
-  for (word i = 0; i < nargs; i++) {
-    varargs.atPut(nargs - i - 1, frame->peek(i));
-  }
-  return callMethVarArgs(thread, function, module, varargs);
-}
-
-RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Tuple kwargs(&scope, frame->peek(0));
-  if (kwargs.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no keyword arguments");
-  }
-  Function function(&scope, frame->peek(nargs + 1));
-  Object module(&scope, function.moduleObject());
-  Tuple varargs(&scope, thread->runtime()->newTuple(nargs));
-  for (word i = 0; i < nargs; i++) {
-    varargs.atPut(nargs - i - 1, frame->peek(i + 1));
-  }
-  return callMethVarArgs(thread, function, module, varargs);
-}
-
-RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* frame, word flags) {
-  HandleScope scope(thread);
-  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  if (has_varkeywords) {
-    Object kw_args(&scope, frame->topValue());
-    if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(*kw_args).numItems() != 0) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "function takes no keyword arguments");
-    }
-  }
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.moduleObject());
-  Object args(&scope, frame->peek(has_varkeywords));
-  return callMethVarArgs(thread, function, module, args);
-}
-
-RawObject moduleTrampolineKeywords(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function function(&scope, frame->peek(nargs));
-  Object module(&scope, function.moduleObject());
-  Tuple args(&scope, runtime->newTuple(nargs));
-  for (word i = 0; i < nargs; i++) {
-    args.atPut(nargs - i - 1, frame->peek(i));
-  }
-  Object kwargs(&scope, NoneType::object());
-  return callMethKeywords(thread, function, module, args, kwargs);
-}
-
-RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Tuple kw_names(&scope, frame->peek(0));
-  Object kwargs(&scope, NoneType::object());
-  word num_keywords = kw_names.length();
-  if (num_keywords != 0) {
-    Dict dict(&scope, runtime->newDict());
-    for (word i = 0; i < num_keywords; i++) {
-      Str name(&scope, kw_names.at(i));
-      Object value(&scope, frame->peek(num_keywords - i));
-      dictAtPutByStr(thread, dict, name, value);
-    }
-    kwargs = *dict;
-  }
-  word num_varargs = nargs - num_keywords;
-  Tuple args(&scope, runtime->newTuple(num_varargs));
-  for (word i = 0; i < num_varargs; i++) {
-    args.atPut(i, frame->peek(nargs - i));
-  }
-  Function function(&scope, frame->peek(nargs + 1));
-  Object module(&scope, function.moduleObject());
-  return callMethKeywords(thread, function, module, args, kwargs);
-}
-
-RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* frame, word flags) {
-  HandleScope scope(thread);
-  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  Object varargs(&scope, frame->peek(has_varkeywords));
-  Object kwargs(&scope, NoneType::object());
-  if (has_varkeywords) {
-    kwargs = frame->topValue();
-    if (!kwargs.isDict()) UNIMPLEMENTED("mapping kwargs");
-  }
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.moduleObject());
-  return callMethKeywords(thread, function, module, varargs, kwargs);
-}
-
-RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Function function(&scope, frame->peek(nargs));
-  Object module(&scope, function.moduleObject());
-
-  std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs]);
-  for (word i = 0; i < nargs; i++) {
-    fastcall_args[nargs - i - 1] =
-        ApiHandle::newReference(thread, frame->peek(i));
-  }
-  Object result(&scope, callMethFastCall(thread, function, module,
-                                         fastcall_args.get(), nargs));
-  for (word i = 0; i < nargs; i++) {
-    ApiHandle::fromPyObject(fastcall_args[nargs - i - 1])->decref();
-  }
-  return *result;
-}
-
-RawObject moduleTrampolineFastCallKw(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Function function(&scope, frame->peek(nargs + 1));
-  Object module(&scope, function.moduleObject());
-
-  std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs]);
-  for (word i = 0; i < nargs; i++) {
-    fastcall_args[i] = ApiHandle::newReference(thread, frame->peek(nargs - i));
-  }
-
-  Tuple kwnames(&scope, frame->peek(0));
-  word num_positional = nargs - kwnames.length();
-  Object result(&scope, callMethFastCallWithKwargs(thread, function, module,
-                                                   fastcall_args.get(),
-                                                   num_positional, kwnames));
-  for (word i = 0; i < nargs; i++) {
-    ApiHandle::fromPyObject(fastcall_args[i])->decref();
-  }
-  return *result;
-}
-
-RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  word num_keywords = 0;
-
-  // Get the keyword arguments
-  Tuple kwnames_tuple(&scope, runtime->emptyTuple());
-  if (has_varkeywords) {
-    Dict dict(&scope, frame->topValue());
-    List dict_keys(&scope, dictKeys(thread, dict));
-    kwnames_tuple = runtime->newTuple(dict_keys.numItems());
-    num_keywords = kwnames_tuple.length();
-    for (word j = 0; j < num_keywords; j++) {
-      kwnames_tuple.atPut(j, dict_keys.at(j));
-    }
-  }
-
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
-  word num_positional = varargs.length();
-  std::unique_ptr<PyObject*[]> fastcall_args(
-      new PyObject*[num_positional + num_keywords]);
-
-  // Set the positional arguments
-  for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::newReference(thread, varargs.at(i));
-  }
-
-  // Set the keyword arguments
-  if (has_varkeywords) {
-    Dict dict(&scope, frame->topValue());
-    for (word i = num_positional; i < (num_positional + num_keywords); i++) {
-      Str key(&scope, kwnames_tuple.at(i - num_positional));
-      fastcall_args[i] =
-          ApiHandle::newReference(thread, dictAtByStr(thread, dict, key));
-    }
-  }
-
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.moduleObject());
-
-  Object result(&scope, NoneType::object());
-  if (!has_varkeywords) {
-    result = callMethFastCall(thread, function, module, fastcall_args.get(),
-                              num_positional);
-  } else {
-    result = callMethFastCallWithKwargs(thread, function, module,
-                                        fastcall_args.get(), num_positional,
-                                        kwnames_tuple);
   }
   for (word i = 0; i < num_positional + num_keywords; i++) {
     ApiHandle::fromPyObject(fastcall_args[i])->decref();

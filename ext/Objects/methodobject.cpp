@@ -4,31 +4,35 @@
 
 namespace py {
 
+RawObject newCFunction(Thread* thread, PyMethodDef* method, const Object& self,
+                       const Object& module_name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function function(
+      &scope, functionFromMethodDef(
+                  thread, method->ml_name, bit_cast<void*>(method->ml_meth),
+                  method->ml_doc,
+                  methodTypeFromMethodFlags(method->ml_flags & ~METH_CLASS &
+                                            ~METH_STATIC)));
+  if (runtime->isInstanceOfStr(*module_name)) {
+    function.setModuleName(*module_name);
+  }
+  return runtime->newBoundMethod(function, self);
+}
+
 PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* method, PyObject* self,
-                                      PyObject* module) {
-  DCHECK(self != nullptr || module != nullptr,
-         "PyCFunction_NewEx needs at least a self or module argument");
-  DCHECK(self == nullptr || module == nullptr,
-         "PyCFunction_NewEx can't have both a self and module argument");
+                                      PyObject* module_name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object function(&scope, NoneType::object());
-  if (module != nullptr) {
-    DCHECK(PyModule_Check(module), "module must be a module");
-    function = functionFromModuleMethodDef(
-        thread, method->ml_name, bit_cast<void*>(method->ml_meth),
-        method->ml_doc, methodTypeFromMethodFlags(method->ml_flags));
-  } else {
-    Function self_func(
-        &scope,
-        functionFromMethodDef(thread, method->ml_name,
-                              bit_cast<void*>(method->ml_meth), method->ml_doc,
-                              methodTypeFromMethodFlags(method->ml_flags)));
-    // Pass self as the first argument
-    Object self_obj(&scope, ApiHandle::fromPyObject(self)->asObject());
-    function = thread->runtime()->newBoundMethod(self_func, self_obj);
-  }
-  return ApiHandle::newReference(thread, *function);
+  Object self_obj(&scope, self == nullptr
+                              ? Unbound::object()
+                              : ApiHandle::fromPyObject(self)->asObject());
+  Object module_name_obj(&scope,
+                         module_name != nullptr
+                             ? ApiHandle::fromPyObject(module_name)->asObject()
+                             : NoneType::object());
+  return ApiHandle::newReference(
+      thread, newCFunction(thread, method, self_obj, module_name_obj));
 }
 
 PY_EXPORT int PyCFunction_GetFlags(PyObject* /* p */) {

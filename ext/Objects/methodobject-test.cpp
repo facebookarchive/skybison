@@ -9,60 +9,75 @@ namespace testing {
 
 using MethodExtensionApiTest = ExtensionApi;
 
-TEST_F(MethodExtensionApiTest, NeCFunctionWithModuleReturnsFunction) {
-  PyObjectPtr module(PyModule_New("mod"));
-  ASSERT_NE(module, nullptr);
-  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
-  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
-  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
-  ASSERT_NE(func, nullptr);
-  PyObjectPtr noargs(PyTuple_New(0));
-  PyObjectPtr result(PyObject_Call(func, noargs, nullptr));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isLongEqualsLong(result, 1234));
+PyObject* getPyCFunctionDunderModule(PyObject* function) {
+  PyObject* real_function = function;
+  // Work around PyRo behavior.
+  if (PyMethod_Check(function)) {
+    real_function = PyMethod_Function(function);
+  }
+  return PyObject_GetAttrString(real_function, "__module__");
 }
 
-TEST_F(MethodExtensionApiTest, NewCFunctionWithTypeReturnsFunction) {
-  PyRun_SimpleString(R"(
-class Bar: pass
-)");
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
-  ASSERT_NE(type, nullptr);
-  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
-  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
-  PyObjectPtr func(PyCFunction_NewEx(&foo_func, type, nullptr));
-  ASSERT_NE(func, nullptr);
-  PyObjectPtr noargs(PyTuple_New(0));
-  PyObjectPtr result(PyObject_Call(func, noargs, nullptr));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isLongEqualsLong(result, 1234));
-}
-
-TEST_F(MethodExtensionApiTest, NewCFunctionWithTypeIsFirstArgument) {
-  PyType_Slot slots[] = {
-      {0, nullptr},
-  };
-  static PyType_Spec spec;
-  spec = {
-      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
-  };
-  PyObjectPtr type(PyType_FromSpec(&spec));
-  ASSERT_NE(type, nullptr);
-  testing::moduleSet("__main__", "C", type);
-
+TEST_F(MethodExtensionApiTest, NewCFunctionWithModuleReturnsCallable) {
+  PyObjectPtr self_value(PyUnicode_FromString("foo"));
+  PyObjectPtr module_name(PyUnicode_FromString("bar"));
   binaryfunc meth = [](PyObject* self, PyObject* arg) {
-    EXPECT_EQ(self, arg);
-    return PyLong_FromLong(1234);
+    EXPECT_EQ(arg, nullptr);
+    Py_INCREF(self);
+    return self;
   };
-  static PyMethodDef method = {"testself", meth, METH_O};
-  PyObjectPtr func(PyCFunction_NewEx(&method, type, nullptr));
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, self_value, module_name));
+  ASSERT_NE(func, nullptr);
+  PyObjectPtr noargs(PyTuple_New(0));
+  PyObjectPtr result(PyObject_Call(func, noargs, nullptr));
+  EXPECT_EQ(result, self_value);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr dunder_module(getPyCFunctionDunderModule(func));
+  EXPECT_EQ(dunder_module, module_name);
+}
 
-  testing::moduleSet("__main__", "f", func);
+TEST_F(MethodExtensionApiTest, NewCFunctionWithNullSelfReturnsCallable) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    EXPECT_EQ(self, nullptr);
+    EXPECT_EQ(arg, nullptr);
+    Py_INCREF(Py_None);
+    return Py_None;
+  };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(
+      PyCFunction_NewEx(&foo_func, /*self=*/nullptr, /*module=*/nullptr));
+  ASSERT_NE(func, nullptr);
+  PyObjectPtr noargs(PyTuple_New(0));
+  PyObjectPtr result(PyObject_Call(func, noargs, nullptr));
+  EXPECT_EQ(result, Py_None);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr dunder_module(getPyCFunctionDunderModule(func));
+  EXPECT_EQ(dunder_module, Py_None);
+}
+
+TEST_F(MethodExtensionApiTest, NewCFunctionResultDoesNotBindSelfInClass) {
   PyRun_SimpleString(R"(
-result = f(C)
+class C:
+  pass
+instance = C()
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
-  EXPECT_TRUE(isLongEqualsLong(result, 1234));
+  PyObjectPtr self_value(PyUnicode_FromString("foo"));
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    EXPECT_EQ(arg, nullptr);
+    Py_INCREF(self);
+    return self;
+  };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(
+      PyCFunction_NewEx(&foo_func, self_value, /*module=*/nullptr));
+  ASSERT_NE(func, nullptr);
+  PyObjectPtr c(moduleGet("__main__", "C"));
+  PyObjectPtr instance(moduleGet("__main__", "instance"));
+  PyObject_SetAttrString(c, "foo", func);
+  PyObjectPtr result(PyObject_CallMethod(instance, "foo", ""));
+  EXPECT_NE(result, c);
+  EXPECT_EQ(result, self_value);
 }
 
 }  // namespace testing

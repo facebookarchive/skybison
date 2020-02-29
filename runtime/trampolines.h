@@ -91,43 +91,6 @@ RawObject methodTrampolineFastCallKw(Thread* thread, Frame* frame,
 RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame,
                                      word flags) ALIGN_16;
 
-// module trampolines
-
-RawObject moduleTrampolineNoArgs(Thread* thread, Frame* frame,
-                                 word nargs) ALIGN_16;
-RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* frame,
-                                   word nargs) ALIGN_16;
-RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* frame,
-                                   word flags) ALIGN_16;
-
-RawObject moduleTrampolineOneArg(Thread* thread, Frame* frame,
-                                 word nargs) ALIGN_16;
-RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* frame,
-                                   word nargs) ALIGN_16;
-RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* frame,
-                                   word flags) ALIGN_16;
-
-RawObject moduleTrampolineVarArgs(Thread* thread, Frame* frame,
-                                  word nargs) ALIGN_16;
-RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* frame,
-                                    word nargs) ALIGN_16;
-RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* frame,
-                                    word flags) ALIGN_16;
-
-RawObject moduleTrampolineKeywords(Thread* thread, Frame* frame,
-                                   word nargs) ALIGN_16;
-RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* frame,
-                                     word nargs) ALIGN_16;
-RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* frame,
-                                     word flags) ALIGN_16;
-
-RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame,
-                                   word nargs) ALIGN_16;
-RawObject moduleTrampolineFastCallKw(Thread* thread, Frame* frame,
-                                     word nargs) ALIGN_16;
-RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame,
-                                     word flags) ALIGN_16;
-
 // Aborts immediately when called
 RawObject unimplementedTrampoline(Thread* thread, Frame* frame, word) ALIGN_16;
 
