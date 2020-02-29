@@ -4934,7 +4934,10 @@ class set(bootstrap=True):
         return set.difference(self, other)
 
     def __xor__(self, other):
-        _unimplemented()
+        _set_guard(self)
+        if not _anyset_check(other):
+            return NotImplemented
+        return set.symmetric_difference(self, other)
 
     def add(self, value):
         _builtin()

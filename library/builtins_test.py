@@ -8871,6 +8871,32 @@ class SetTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_dunder_xor_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            set.__xor__(frozenset(), set())
+        self.assertIn(
+            "'__xor__' requires a 'set' object but received a 'frozenset'",
+            str(context.exception),
+        )
+
+    def test_dunder_xor_with_non_anyset_other_returns_notimplemented(self):
+        result = set.__xor__(set(), ())
+        self.assertIs(result, NotImplemented)
+
+    def test_dunder_xor_removes_common_elements(self):
+        left = {1, 2, 3}
+        right = {3, 4, 5}
+        result = set.__xor__(left, right)
+        self.assertIs(type(result), set)
+        self.assertSetEqual(result, {1, 2, 4, 5})
+
+    def test_dunder_xor_with_frozenset_removes_common_elements(self):
+        left = {1, 2, 3}
+        right = frozenset({3, 4, 5})
+        result = set.__xor__(left, right)
+        self.assertIs(type(result), set)
+        self.assertSetEqual(result, {1, 2, 4, 5})
+
     def test_difference_no_others_copies_self(self):
         a_set = {1, 2, 3}
         self.assertIsNot(set.difference(a_set), a_set)
