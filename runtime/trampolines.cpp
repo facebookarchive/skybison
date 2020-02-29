@@ -757,11 +757,16 @@ RawObject methodTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 0) {
+  HandleScope scope(thread);
+  Tuple kwargs(&scope, frame->peek(0));
+  if (kwargs.length() != 0) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "function takes no keyword arguments");
   }
-  HandleScope scope(thread);
+  if (nargs != 0) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "function takes no arguments");
+  }
   Function function(&scope, frame->peek(1));
   Object self(&scope, frame->peek(0));
   return callMethNoArgs(thread, function, self);
@@ -771,10 +776,6 @@ RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   Tuple varargs(&scope, frame->peek(has_varkeywords));
-  if (varargs.length() != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
-  }
   if (has_varkeywords) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -782,6 +783,10 @@ RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "function takes no keyword arguments");
     }
+  }
+  if (varargs.length() != 1) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "function takes no arguments");
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
   Object self(&scope, varargs.at(0));
@@ -817,15 +822,15 @@ RawObject methodTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject methodTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly two arguments");
-  }
   HandleScope scope(thread);
   Tuple kwargs(&scope, frame->peek(0));
   if (kwargs.length() != 0) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "function takes no keyword arguments");
+  }
+  if (nargs != 2) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "function takes exactly one arguments");
   }
   Function function(&scope, frame->peek(3));
   Object self(&scope, frame->peek(1));
@@ -847,7 +852,7 @@ RawObject methodTrampolineOneArgEx(Thread* thread, Frame* frame, word flags) {
   Tuple varargs(&scope, frame->peek(has_varkeywords));
   if (varargs.length() != 2) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly two argument");
+                                "function takes exactly one argument");
   }
   Object self(&scope, varargs.at(0));
   Object arg(&scope, varargs.at(1));
@@ -1139,11 +1144,16 @@ RawObject moduleTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 0) {
+  HandleScope scope(thread);
+  Tuple kwargs(&scope, frame->peek(0));
+  if (kwargs.length() != 0) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "function takes no keyword arguments");
   }
-  HandleScope scope(thread);
+  if (nargs != 0) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "function takes no arguments");
+  }
   Function function(&scope, frame->peek(1));
   Object module(&scope, function.moduleObject());
   return callMethNoArgs(thread, function, module);
@@ -1152,11 +1162,6 @@ RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
 RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
-  if (varargs.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
-  }
   if (has_varkeywords) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -1164,6 +1169,11 @@ RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "function takes no keyword arguments");
     }
+  }
+  Tuple varargs(&scope, frame->peek(has_varkeywords));
+  if (varargs.length() != 0) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "function takes no arguments");
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
   Object module(&scope, function.moduleObject());
@@ -1183,15 +1193,15 @@ RawObject moduleTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one argument");
-  }
   HandleScope scope(thread);
   Tuple kwargs(&scope, frame->peek(0));
   if (kwargs.length() != 0) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "function takes no keyword arguments");
+  }
+  if (nargs != 1) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "function takes exactly one argument");
   }
   Object arg(&scope, frame->peek(1));
   Function function(&scope, frame->peek(2));
