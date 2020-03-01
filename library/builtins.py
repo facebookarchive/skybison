@@ -411,9 +411,9 @@ class type(bootstrap=True):
     def __getattribute__(self, name):
         _builtin()
 
-    def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
-        # Not a patch; just empty
-        pass
+    def __init__(self, *args, **kwargs):
+        if _tuple_len(args) != 1 and _tuple_len(args) != 3:
+            raise TypeError("type.__init__() takes 1 or 3 arguments")
 
     def __instancecheck__(self, obj) -> bool:
         return _isinstance_type(obj, _type(obj), self)

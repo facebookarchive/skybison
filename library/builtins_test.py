@@ -12090,6 +12090,21 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__doc__, "docstring")
         self.assertIsNone(D.__doc__)
 
+    def test_dunder_init_with_no_name_or_object_param_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            type.__init__(type)
+
+        self.assertIn("type.__init__() takes 1 or 3 arguments", str(context.exception))
+
+    def test_dunder_init_with_too_many_args_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            type.__init__(type, "C", (), {}, 1, 2, 3, 4, 5, foobar=42)
+
+        self.assertIn("type.__init__() takes 1 or 3 arguments", str(context.exception))
+
+    def test_dunder_init_with_kwargs_does_not_raise(self):
+        type.__init__(type, "C", (), {}, foobar=42)
+
     def test_dunder_instancecheck_with_instance_returns_true(self):
         self.assertIs(int.__instancecheck__(3), True)
         self.assertIs(int.__instancecheck__(False), True)
