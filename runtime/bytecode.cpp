@@ -214,6 +214,7 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
   if (num_caches >= 256) {
     fprintf(stderr, "cache rewriting limit hit (256 entries)\n");
+    return;
   }
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
@@ -222,8 +223,6 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     RewrittenOp rewritten = rewriteOperation(function, op);
     if (rewritten.bc == UNUSED_BYTECODE_0) continue;
     if (rewritten.needs_inline_cache) {
-      // Cache is full, skip rewriting with inline cache
-      if (cache >= 256) continue;
       for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
         bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         bytecode.byteAtPut(j + 1, 0);
@@ -235,8 +234,6 @@ void rewriteBytecode(Thread* thread, const Function& function) {
       original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
     } else if (rewritten.arg != op.arg || rewritten.bc != op.bc) {
-      CHECK(rewritten.arg < 256,
-            "more than 256 entries may require bytecode resizing");
       for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
         bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         bytecode.byteAtPut(j + 1, 0);

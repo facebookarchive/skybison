@@ -69,20 +69,11 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
+
   // newFunctionWithCode() calls rewriteBytecode().
-
-  byte expected[514];
-  for (int i = 0; i < 257; i++) {
-    expected[i * 2] = LOAD_ATTR_ANAMORPHIC;
-    expected[(i * 2) + 1] = i;
-  }
-
-  // Bytecode inline cache rewritting is capped at 256 entires
-  expected[512] = LOAD_ATTR;
-  expected[513] = static_cast<byte>(256);
-
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+  // The bytecode hasn't changed.
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
