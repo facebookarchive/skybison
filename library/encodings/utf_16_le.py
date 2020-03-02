@@ -26,13 +26,19 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
         return codecs.utf_16_le_encode(input, self.errors)[0]
 
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
-    _buffer_decode = codecs.utf_16_le_decode
+    # TODO(T54587721): Revert change once we can bind builtins as static methods
+    # _buffer_decode = codecs.utf_16_le_decode
+    _buffer_decode = staticmethod(codecs.utf_16_le_decode)
 
 class StreamWriter(codecs.StreamWriter):
-    encode = codecs.utf_16_le_encode
+    # TODO(T54587721): Revert change once we can bind builtins as static methods
+    # encode = codecs.utf_16_le_encode
+    encode = staticmethod(codecs.utf_16_le_encode)
 
 class StreamReader(codecs.StreamReader):
-    decode = codecs.utf_16_le_decode
+    # TODO(T54587721): Revert change once we can bind builtins as static methods
+    # decode = codecs.utf_16_le_decode
+    decode = staticmethod(codecs.utf_16_le_decode)
 
 ### encodings module API
 
