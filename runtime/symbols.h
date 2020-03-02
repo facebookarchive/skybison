@@ -432,7 +432,6 @@ class Runtime;
   V(_type_subclass_guard)                                                      \
   V(_unicode_escape_decode_stateful)                                           \
   V(_valgrind)                                                                 \
-  V(_valuecell__value)                                                         \
   V(_valuecell__dependency_link)                                               \
   V(_warnings)                                                                 \
   V(_weaklink)                                                                 \
@@ -465,6 +464,7 @@ class Runtime;
   V(bytes)                                                                     \
   V(bytes_iterator)                                                            \
   V(callable_iterator)                                                         \
+  V(cell_contents)                                                             \
   V(classmethod)                                                               \
   V(co_argcount)                                                               \
   V(co_cellvars)                                                               \
