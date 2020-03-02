@@ -485,7 +485,10 @@ PY_EXPORT void* _PyBytesWriter_Alloc(_PyBytesWriter* writer, Py_ssize_t size) {
 
 // Frees the writer's heap-allocated buffer.
 PY_EXPORT void _PyBytesWriter_Dealloc(_PyBytesWriter* writer) {
-  if (writer->heap_buffer) std::free(writer->heap_buffer);
+  if (writer->heap_buffer) {
+    std::free(writer->heap_buffer);
+    writer->heap_buffer = nullptr;
+  }
 }
 
 // Converts the memory written to the writer into a Bytes or ByteArray object.
@@ -511,6 +514,7 @@ PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
   }
   PyObject* result = ApiHandle::newReference(
       thread, runtime->newBytesWithAll(View<byte>{start, size}));
+  _PyBytesWriter_Dealloc(writer);
   return result;
 }
 
