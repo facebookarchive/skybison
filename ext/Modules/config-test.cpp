@@ -268,5 +268,19 @@ TEST_F(ConfigExtensionApiTest, ImportZlibReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ZlibModuleMethods) {
+  PyRun_SimpleString(R"(
+import zlib
+input = b'Hello world'
+z = zlib.compress(input)
+result = zlib.decompress(z)
+)");
+  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr input(moduleGet("__main__", "input"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, input);
+  EXPECT_STREQ(PyBytes_AsString(result), PyBytes_AsString(input));
+}
+
 }  // namespace testing
 }  // namespace py
