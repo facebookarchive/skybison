@@ -357,6 +357,10 @@ def _function_annotations(obj):
     _builtin()
 
 
+def _function_closure(obj):
+    _builtin()
+
+
 def _function_defaults(obj):
     _builtin()
 

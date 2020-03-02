@@ -2055,6 +2055,18 @@ RawObject FUNC(_builtins, _function_annotations)(Thread* thread, Frame* frame,
   return *annotations;
 }
 
+RawObject FUNC(_builtins, _function_closure)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, ID(function));
+  }
+  Function function(&scope, *self);
+  return function.closure();
+}
+
 RawObject FUNC(_builtins, _function_defaults)(Thread* thread, Frame* frame,
                                               word nargs) {
   HandleScope scope(thread);

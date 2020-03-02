@@ -98,6 +98,7 @@ from _builtins import (
     _frozenset_check,
     _frozenset_guard,
     _function_annotations,
+    _function_closure,
     _function_defaults,
     _function_globals,
     _function_guard,
@@ -309,6 +310,8 @@ class function(bootstrap=True):
     def __call__(self, *args, **kwargs):
         _function_guard(self)
         return self(*args, **kwargs)
+
+    __closure__ = _property(_function_closure)
 
     __defaults__ = _property(_function_defaults, _function_set_defaults)
 

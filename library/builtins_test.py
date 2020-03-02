@@ -4147,6 +4147,31 @@ class FrozensetTests(unittest.TestCase):
 
 
 class FunctionTests(unittest.TestCase):
+    def test_dunder_closure_returns_none_if_function_is_not_a_closure(self):
+        def foo():
+            pass
+
+        self.assertIsNone(foo.__closure__)
+
+    def test_dunder_closure_returns_tuple_with_valuecell_if_function_is_closure(self):
+        def foo(x):
+            def bar(n):
+                return x + n
+
+            return bar
+
+        add_three = foo(3)
+        self.assertIsInstance(add_three.__closure__, tuple)
+        self.assertEqual(len(add_three.__closure__), 1)
+        self.assertEqual(add_three.__closure__[0].cell_contents, 3)
+
+    def test_dunder_closure_is_read_only_attribute(self):
+        def foo():
+            pass
+
+        with self.assertRaises(AttributeError):
+            foo.__closure__ = 8
+
     def test_dunder_dict_matches_attributes(self):
         def foo():
             pass
