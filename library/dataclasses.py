@@ -596,9 +596,11 @@ def _hash_fn(fields, globals):
 def _is_classvar(a_type, typing):
     # This test uses a typing internal class, but it's the best way to
     # test if this is a ClassVar.
-    return (a_type is typing.ClassVar
-            or (type(a_type) is typing._GenericAlias
-                and a_type.__origin__ is typing.ClassVar))
+    # TODO(T61740328) Uncomment below once we update to Python 3.7
+    # return (a_type is typing.ClassVar
+    #         or (type(a_type) is typing._GenericAlias
+    #         and a_type.__origin__ is typing.ClassVar))
+    return a_type is typing.ClassVar
 
 
 def _is_initvar(a_type, dataclasses):
@@ -677,9 +679,10 @@ def _get_field(cls, a_name, a_type):
     if isinstance(default, Field):
         f = default
     else:
-        if isinstance(default, types.MemberDescriptorType):
-            # This is a field in __slots__, so it has no default value.
-            default = MISSING
+        # TODO(T42989996): Uncomment when member descriptors are implemented
+        # if isinstance(default, types.MemberDescriptorType):
+        #     # This is a field in __slots__, so it has no default value.
+        #     default = MISSING
         f = field(default=default)
 
     # Only at this point do we know the name and the type.  Set them.
@@ -989,8 +992,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
-        cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+        # TODO(T63180083): Uncomment below when inspect.signature is implemented
+        # cls.__doc__ = (cls.__name__ +
+        #                str(inspect.signature(cls)).replace(' -> None', ''))
+        pass
 
     return cls
 

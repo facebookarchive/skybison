@@ -1304,6 +1304,7 @@ set(
   ${UNFROZEN_LIBRARY_DIR}/array.py
   ${UNFROZEN_LIBRARY_DIR}/collections/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/collections/abc.py
+  ${UNFROZEN_LIBRARY_DIR}/dataclasses.py
   ${UNFROZEN_LIBRARY_DIR}/encodings/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/encodings/aliases.py
   ${UNFROZEN_LIBRARY_DIR}/encodings/ascii.py
