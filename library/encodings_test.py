@@ -6,6 +6,10 @@ import unittest
 
 
 class EncodingsModuleTest(unittest.TestCase):
+    def test_utf_16_getencoder_returns_encoder(self):
+        inc = codecs.getencoder("utf-16")
+        self.assertEqual(inc, codecs.utf_16_encode)
+
     def test_utf_8_incremental_decoder_returns_str(self):
         inc = codecs.getincrementaldecoder("utf-8")()
         self.assertEqual(inc.decode(b"test"), "test")
