@@ -60,6 +60,7 @@ CPYTHON_TESTS=(
 PYRO_PATCHED_CPYTHON_TESTS=(
   test_dict.py
   test_hmac.py
+  test_range.py
 )
 
 if [[ -n $1 ]]; then

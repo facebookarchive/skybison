@@ -365,6 +365,8 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
         self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
 
+    # TODO(T38246066): Implement _bytearray_setslice with memoryview
+    @unittest.skip("This tries running _bytearray_setslice with a memoryview")
     def test_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
                      (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
@@ -375,6 +377,8 @@ class RangeTest(unittest.TestCase):
                     self.assertEqual(list(pickle.loads(pickle.dumps(r, proto))),
                                      list(r))
 
+    # TODD(T54077858): Implement range_iterator.__reduce__
+    @unittest.skip("Range iterator pickling needed")
     def test_iterator_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
                      (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
@@ -397,6 +401,8 @@ class RangeTest(unittest.TestCase):
                 it = pickle.loads(d)
                 self.assertEqual(list(it), data[1:])
 
+    # TODD(T54077858): Implement range_iterator.__reduce__
+    @unittest.skip("Range iterator pickling needed")
     def test_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             r = range(2**65, 2**65+2)
@@ -410,6 +416,8 @@ class RangeTest(unittest.TestCase):
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
 
+    # TODD(T54077858): Implement longrange_iterator.__reduce__
+    @unittest.skip("Long range iterator pickling needed")
     def test_large_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             r = range(20)
@@ -510,6 +518,8 @@ class RangeTest(unittest.TestCase):
             test_id = "reversed(range({}, {}, {}))".format(start, end, step)
             self.assert_iterators_equal(iter1, iter2, test_id, limit=100)
 
+    # TODO(T54087819): Import _testcapi
+    @unittest.skip("_testcapi needed")
     @test.support.cpython_only
     def test_range_iterator_invocation(self):
         import _testcapi
