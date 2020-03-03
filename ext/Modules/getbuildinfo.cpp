@@ -5,6 +5,6 @@
 
 namespace py {
 
-PY_EXPORT const char* Py_GetBuildInfo() { return buildInfo(); }
+PY_EXPORT const char* Py_GetBuildInfo() { return kBuildInfo; }
 
 }  // namespace py

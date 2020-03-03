@@ -2,7 +2,10 @@
 
 namespace py {
 
-extern const char* const kVersion;
+extern const char kBuildInfo[];
+extern const char kCompilerVersion[];
+extern const char kVersion[];
+extern const char kVersionInfo[];
 
 extern const int kVersionMajor;
 extern const int kVersionMinor;

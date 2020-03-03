@@ -131,7 +131,7 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   // Fill in version-related fields.
   Int hexversion(&scope, SmallInt::fromWord(kVersionHex));
   moduleAtPutById(thread, module, ID(hexversion), hexversion);
-  Str version(&scope, runtime->newStrFromCStr(versionInfo()));
+  Str version(&scope, runtime->newStrFromCStr(kVersionInfo));
   moduleAtPutById(thread, module, ID(version), version);
 
   MutableTuple version_info_data(&scope, runtime->newMutableTuple(5));

@@ -5,6 +5,6 @@
 
 namespace py {
 
-PY_EXPORT const char* Py_GetCompiler() { return compilerInfo(); }
+PY_EXPORT const char* Py_GetCompiler() { return kCompilerVersion; }
 
 }  // namespace py
