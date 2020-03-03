@@ -57,6 +57,10 @@ CPYTHON_TESTS=(
   test_typechecks.py
   test_webbrowser.py
 )
+PYRO_PATCHED_CPYTHON_TESTS=(
+  test_dict.py
+  test_hmac.py
+)
 
 if [[ -n $1 ]]; then
   if [[ ! -f "$SOURCE_DIR/library/$1" ]]; then
@@ -81,11 +85,16 @@ mkdir tests
 # Add Pyro tests
 find "$SOURCE_DIR/library/" -name "$PYRO_TEST_FILTER" -exec cp {} tests/ \;
 # Add stubbed out CPython tests in Pyro
-find "$SOURCE_DIR/library/test/" -name "test_*.py" -exec cp {} tests/ \;
+for i in "${PYRO_PATCHED_CPYTHON_TESTS[@]}"; do
+    if [[ -d "$SOURCE_DIR/library/test/$i" ]]; then
+        die "We don't support running test directories in CPython yet"
+    fi
+    cp "$SOURCE_DIR/library/test/$i" tests/;
+done
 # Add CPython tests
 for i in "${CPYTHON_TESTS[@]}"; do
     if [[ -d "$SOURCE_DIR/third-party/cpython/Lib/test/$i" ]]; then
-        die "We don't support running test directories in CPython yet"
+        die "We don't support running test directories yet"
     fi
     cp "$SOURCE_DIR/third-party/cpython/Lib/test/$i" tests/;
 done
