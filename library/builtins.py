@@ -4286,6 +4286,13 @@ class method(bootstrap=True):
     def __getattr__(self, name):
         return getattr(self.__func__, name)
 
+    def __new__(cls, func, self):
+        if not callable(func):
+            raise TypeError("first argument must be callable")
+        if self is None:
+            raise TypeError("self must not be None")
+        return _bound_method(func, self)
+
 
 class memoryview(bootstrap=True):
     def __enter__(self):

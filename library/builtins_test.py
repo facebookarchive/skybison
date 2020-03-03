@@ -6895,6 +6895,52 @@ class MemoryviewTests(unittest.TestCase):
 
 
 class MethodTests(unittest.TestCase):
+    def test_dunder_new_with_non_callable_func_raises_type_error(self):
+        class C:
+            def method(self):
+                pass
+
+        instance = C()
+        method_type = type(instance.method)
+        with self.assertRaises(TypeError) as context:
+            method_type.__new__(method_type, 1, "foo")
+
+        self.assertEqual(str(context.exception), "first argument must be callable")
+
+    def test_dunder_new_with_none_self_raises_type_error(self):
+        class C:
+            def method(self):
+                pass
+
+        def non_method_function(self):
+            return self.value
+
+        instance = C()
+        method_type = type(instance.method)
+        with self.assertRaises(TypeError) as context:
+            method_type.__new__(method_type, non_method_function, None)
+
+        self.assertEqual(str(context.exception), "self must not be None")
+
+    def test_dunder_new_returns_bound_method(self):
+        class C:
+            def __init__(self, value):
+                self.value = value
+
+            def method(self):
+                pass
+
+        def non_method_function(self):
+            return self.value
+
+        instance = C(10)
+        method_type = type(instance.method)
+        result = method_type.__new__(method_type, non_method_function, instance)
+        self.assertIsInstance(result, method_type)
+        self.assertEqual(result.__func__, non_method_function)
+        self.assertEqual(result.__self__, instance)
+        self.assertEqual(result(), 10)
+
     def test_has_dunder_call(self):
         class C:
             def bar(self):
