@@ -20,6 +20,10 @@ RawObject newCFunction(Thread* thread, PyMethodDef* method, const Object& name,
   return runtime->newBoundMethod(function, self);
 }
 
+PY_EXPORT PyObject* PyCFunction_New(PyMethodDef* method, PyObject* self) {
+  return PyCFunction_NewEx(method, self, nullptr);
+}
+
 PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* method, PyObject* self,
                                       PyObject* module_name) {
   Thread* thread = Thread::current();

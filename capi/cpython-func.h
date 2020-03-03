@@ -265,6 +265,7 @@ PyAPI_FUNC(PyObject*) PyCFunction_Call(PyObject*, PyObject*, PyObject*);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject*);
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject*);
 PyAPI_FUNC(PyObject*) PyCFunction_GetSelf(PyObject*);
+PyAPI_FUNC(PyObject*) PyCFunction_New(PyMethodDef*, PyObject*);
 PyAPI_FUNC(PyObject*) PyCFunction_NewEx(PyMethodDef*, PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyCallIter_New(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyCallable_Check(PyObject*);

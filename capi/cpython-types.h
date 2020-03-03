@@ -139,8 +139,6 @@ typedef PyObject* (*allocfunc)(struct _typeobject*, Py_ssize_t);
 typedef PyObject* (*unaryfunc)(PyObject*);
 typedef PyObject* (*binaryfunc)(PyObject*, PyObject*);
 typedef PyObject* (*ternaryfunc)(PyObject*, PyObject*, PyObject*);
-typedef PyObject* (*_PyCFunctionFast)(PyObject* self, PyObject** args,
-                                      Py_ssize_t nargs, PyObject* kwnames);
 typedef int (*inquiry)(PyObject*);
 typedef Py_ssize_t (*lenfunc)(PyObject*);
 typedef PyObject* (*ssizeargfunc)(PyObject*, Py_ssize_t);
@@ -159,6 +157,10 @@ typedef PyObject* (*getter)(PyObject*, void*);
 typedef int (*setter)(PyObject*, PyObject*, void*);
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*);
+typedef PyObject* (*_PyCFunctionFast)(PyObject*, PyObject**, Py_ssize_t,
+                                      PyObject*);
+typedef PyObject* (*PyCFunctionWithKeywords)(PyObject*, PyObject*, PyObject*);
+typedef PyObject* (*PyNoArgsFunction)(PyObject*);
 
 typedef struct {
   /* Number implementations must check *both*

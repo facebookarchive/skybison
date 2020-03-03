@@ -7,7 +7,7 @@
 namespace py {
 namespace testing {
 
-using MethodExtensionApiTest = ExtensionApi;
+using PyCFunctionExtensionApiTest = ExtensionApi;
 
 PyObject* getPyCFunctionDunderModule(PyObject* function) {
   PyObject* real_function = function;
@@ -18,7 +18,24 @@ PyObject* getPyCFunctionDunderModule(PyObject* function) {
   return PyObject_GetAttrString(real_function, "__module__");
 }
 
-TEST_F(MethodExtensionApiTest, NewCFunctionWithModuleReturnsCallable) {
+TEST_F(PyCFunctionExtensionApiTest, NewReturnsCallable) {
+  PyObjectPtr self_value(PyUnicode_FromString("baz"));
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    EXPECT_EQ(arg, nullptr);
+    Py_INCREF(self);
+    return self;
+  };
+  static PyMethodDef func_def = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_New(&func_def, self_value));
+  ASSERT_NE(func, nullptr);
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_EQ(result, self_value);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr dunder_module(getPyCFunctionDunderModule(func));
+  EXPECT_EQ(dunder_module, Py_None);
+}
+
+TEST_F(PyCFunctionExtensionApiTest, NewExWithModuleReturnsCallable) {
   PyObjectPtr self_value(PyUnicode_FromString("foo"));
   PyObjectPtr module_name(PyUnicode_FromString("bar"));
   binaryfunc meth = [](PyObject* self, PyObject* arg) {
@@ -37,7 +54,7 @@ TEST_F(MethodExtensionApiTest, NewCFunctionWithModuleReturnsCallable) {
   EXPECT_EQ(dunder_module, module_name);
 }
 
-TEST_F(MethodExtensionApiTest, NewCFunctionWithNullSelfReturnsCallable) {
+TEST_F(PyCFunctionExtensionApiTest, NewExWithNullSelfReturnsCallable) {
   binaryfunc meth = [](PyObject* self, PyObject* arg) {
     EXPECT_EQ(self, nullptr);
     EXPECT_EQ(arg, nullptr);
@@ -56,7 +73,7 @@ TEST_F(MethodExtensionApiTest, NewCFunctionWithNullSelfReturnsCallable) {
   EXPECT_EQ(dunder_module, Py_None);
 }
 
-TEST_F(MethodExtensionApiTest, NewCFunctionResultDoesNotBindSelfInClass) {
+TEST_F(PyCFunctionExtensionApiTest, NewExResultDoesNotBindSelfInClass) {
   PyRun_SimpleString(R"(
 class C:
   pass

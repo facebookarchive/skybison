@@ -36,3 +36,9 @@ Interpreter
   caches the value and only updates the cache when calling across module
   boundaries. We generally do not recommend to reassign `__builtins__` and may
   further limit the ability to do so in the future.
+
+C-API
+-----
+
+- `PyCFunction_Type` and `PyCFunction_Check` are not supported;
+  `PyCFunction_New` works and returns something that behaves similar.
