@@ -386,7 +386,21 @@ extern const char* Py_hexdigits;
 #define Py_TPFLAGS_READY (1UL << 12)
 #define Py_TPFLAGS_READYING (1UL << 13)
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
-#define Py_TPFLAGS_DEFAULT (1UL << 18)
+#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
+#define Py_TPFLAGS_HAVE_VERSION_TAG (1UL << 18)
+#define Py_TPFLAGS_VALID_VERSION_TAG (1UL << 19)
+#define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
+#define Py_TPFLAGS_LONG_SUBCLASS (1UL << 24)
+#define Py_TPFLAGS_LIST_SUBCLASS (1UL << 25)
+#define Py_TPFLAGS_TUPLE_SUBCLASS (1UL << 26)
+#define Py_TPFLAGS_BYTES_SUBCLASS (1UL << 27)
+#define Py_TPFLAGS_UNICODE_SUBCLASS (1UL << 28)
+#define Py_TPFLAGS_DICT_SUBCLASS (1UL << 29)
+#define Py_TPFLAGS_BASE_EXC_SUBCLASS (1UL << 30)
+#define Py_TPFLAGS_TYPE_SUBCLASS (1UL << 31)
+
+#define Py_TPFLAGS_DEFAULT                                                     \
+  (Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | Py_TPFLAGS_HAVE_VERSION_TAG)
 
 /* Masks for PyCodeObject co_flags */
 #define CO_OPTIMIZED 0x0001
