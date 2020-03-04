@@ -73,25 +73,27 @@ multiprocessing_recv(PyObject *self, PyObject *args)
 {
     HANDLE handle;
     int size, nread;
-    PyObject *buf;
+    char *buf;
+    PyObject *result;
 
     if (!PyArg_ParseTuple(args, F_HANDLE "i:recv" , &handle, &size))
         return NULL;
 
-    buf = PyBytes_FromStringAndSize(NULL, size);
+    buf = PyMem_Malloc(size);
     if (!buf)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    nread = recv((SOCKET) handle, PyBytes_AS_STRING(buf), size, 0);
+    nread = recv((SOCKET) handle, buf, size, 0);
     Py_END_ALLOW_THREADS
 
     if (nread < 0) {
-        Py_DECREF(buf);
+        PyMem_Free(buf);
         return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
     }
-    _PyBytes_Resize(&buf, nread);
-    return buf;
+    result = PyBytes_FromStringAndSize(buf, nread);
+    PyMem_Free(buf);
+    return result;
 }
 
 static PyObject *
@@ -158,6 +160,11 @@ PyInit__multiprocessing(void)
     PyObject *module, *temp, *value = NULL;
 
     /* Initialize module */
+    PyObject *m = PyState_FindModule(&multiprocessing_module);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     module = PyModule_Create(&multiprocessing_module);
     if (!module)
         return NULL;
@@ -165,9 +172,7 @@ PyInit__multiprocessing(void)
 #if defined(MS_WINDOWS) ||                                              \
   (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
     /* Add _PyMp_SemLock type to module */
-    if (PyType_Ready(&_PyMp_SemLockType) < 0)
-        return NULL;
-    Py_INCREF(&_PyMp_SemLockType);
+    PyObject *_PyMp_SemLockType = PyType_FromSpec(&_PyMp_SemLockType_spec);
     {
         PyObject *py_sem_value_max;
         /* Some systems define SEM_VALUE_MAX as an unsigned value that
@@ -178,10 +183,11 @@ PyInit__multiprocessing(void)
             py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
         if (py_sem_value_max == NULL)
             return NULL;
-        PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
-                             py_sem_value_max);
+        PyObject_SetAttrString(_PyMp_SemLockType, "SEM_VALUE_MAX",
+                               py_sem_value_max);
     }
-    PyModule_AddObject(module, "SemLock", (PyObject*)&_PyMp_SemLockType);
+    Py_INCREF(_PyMp_SemLockType);
+    PyModule_AddObject(module, "SemLock", _PyMp_SemLockType);
 #endif
 
     /* Add configuration macros */
@@ -212,5 +218,6 @@ PyInit__multiprocessing(void)
     if (PyModule_AddObject(module, "flags", temp) < 0)
         return NULL;
 
+    PyState_AddModule(module, &multiprocessing_module);
     return module;
 }

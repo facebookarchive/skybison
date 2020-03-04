@@ -504,10 +504,12 @@ semlock_rebuild(PyTypeObject *type, PyObject *args)
 static void
 semlock_dealloc(SemLockObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     if (self->handle != SEM_FAILED)
         SEM_CLOSE(self->handle);
     PyMem_Free(self->name);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -617,45 +619,21 @@ static PyMemberDef semlock_members[] = {
  * Semaphore type
  */
 
-PyTypeObject _PyMp_SemLockType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    /* tp_name           */ "_multiprocessing.SemLock",
-    /* tp_basicsize      */ sizeof(SemLockObject),
-    /* tp_itemsize       */ 0,
-    /* tp_dealloc        */ (destructor)semlock_dealloc,
-    /* tp_print          */ 0,
-    /* tp_getattr        */ 0,
-    /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
-    /* tp_repr           */ 0,
-    /* tp_as_number      */ 0,
-    /* tp_as_sequence    */ 0,
-    /* tp_as_mapping     */ 0,
-    /* tp_hash           */ 0,
-    /* tp_call           */ 0,
-    /* tp_str            */ 0,
-    /* tp_getattro       */ 0,
-    /* tp_setattro       */ 0,
-    /* tp_as_buffer      */ 0,
-    /* tp_flags          */ Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    /* tp_doc            */ "Semaphore/Mutex type",
-    /* tp_traverse       */ 0,
-    /* tp_clear          */ 0,
-    /* tp_richcompare    */ 0,
-    /* tp_weaklistoffset */ 0,
-    /* tp_iter           */ 0,
-    /* tp_iternext       */ 0,
-    /* tp_methods        */ semlock_methods,
-    /* tp_members        */ semlock_members,
-    /* tp_getset         */ 0,
-    /* tp_base           */ 0,
-    /* tp_dict           */ 0,
-    /* tp_descr_get      */ 0,
-    /* tp_descr_set      */ 0,
-    /* tp_dictoffset     */ 0,
-    /* tp_init           */ 0,
-    /* tp_alloc          */ 0,
-    /* tp_new            */ semlock_new,
+static PyType_Slot _PyMp_SemLockType_slots[] = {
+    {Py_tp_dealloc, semlock_dealloc},
+    {Py_tp_doc, "Semaphore/Mutex type"},
+    {Py_tp_members, semlock_members},
+    {Py_tp_methods, semlock_methods},
+    {Py_tp_new, semlock_new},
+    {0, 0},
+};
+
+PyType_Spec _PyMp_SemLockType_spec = {
+    "_multiprocessing.SemLock",
+    sizeof(SemLockObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    _PyMp_SemLockType_slots
 };
 
 /*
