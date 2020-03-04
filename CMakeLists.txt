@@ -111,6 +111,7 @@ set(
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${CMAKE_SOURCE_DIR}/capi/datetime.h
   ${CMAKE_SOURCE_DIR}/capi/descrobject.h
   ${CMAKE_SOURCE_DIR}/capi/dictobject.h
   ${CMAKE_SOURCE_DIR}/capi/dtoa.h
@@ -617,6 +618,7 @@ add_library(
   ext/Modules/_compile/peephole.cpp
   ext/Modules/_compile/symtable.h
   ext/Modules/_compile/wordcode_helpers.h
+  ext/Modules/_datetimemodule.cpp
   ext/Modules/_sre/_sre.cpp
   ext/Modules/gcmodule.cpp
   ext/Modules/getbuildinfo.cpp
@@ -1510,6 +1512,7 @@ add_dependencies(
 
 set(
   EXTENSION_TESTS
+  ext/Modules/_datetimemodule-test.cpp
   ext/Modules/config-test.cpp
   ext/Modules/gcmodule-test.cpp
   ext/Modules/getbuildinfo-test.cpp
