@@ -329,6 +329,7 @@ class Runtime;
   V(_module__dict)                                                             \
   V(_module__proxy)                                                            \
   V(_module__name)                                                             \
+  V(_module__state)                                                            \
   V(_mutablebytes)                                                             \
   V(_mutabletuple)                                                             \
   V(_new_member_get_bool)                                                      \

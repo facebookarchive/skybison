@@ -3655,6 +3655,11 @@ static void clearModule(Thread* thread, const Module& module) {
     ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
     if (def->m_free != nullptr) def->m_free(handle);
     module.setDef(thread->runtime()->newIntFromCPtr(nullptr));
+    Object module_state(&scope, module.state());
+    if (module_state.isInt() && Int::cast(*module_state).asCPtr() != nullptr) {
+      std::free(Int::cast(*module_state).asCPtr());
+      module.setState(thread->runtime()->newIntFromCPtr(nullptr));
+    }
     handle->dispose();
   }
 }

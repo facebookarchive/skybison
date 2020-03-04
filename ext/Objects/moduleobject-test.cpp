@@ -146,6 +146,7 @@ TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
 
   testing::PyObjectPtr module(PyModule_Create(&def));
   ASSERT_NE(module, nullptr);
+  ASSERT_EQ(PyState_AddModule(module, &def), 0);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   void* state = PyModule_GetState(module);
@@ -172,6 +173,50 @@ TEST_F(ModuleExtensionApiTest, GetStateFailsOnNonModule) {
   EXPECT_EQ(PyModule_GetState(not_a_module), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ModuleExtensionApiTest, GetStateReturnsValidStateAfterGarbageCollected) {
+  struct MyState {
+    char letter;
+  };
+
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+      "doc",
+      sizeof(MyState),
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  ASSERT_EQ(PyState_AddModule(module, &def), 0);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  void* state = PyModule_GetState(module);
+  ASSERT_NE(state, nullptr);
+  MyState* mod_state = static_cast<MyState*>(state);
+  mod_state->letter = 'a';
+
+  // Decrease the reference count to zero.
+  Py_DECREF(module);
+
+  // Trigger GC to remove the module object from the handle table.
+  PyRun_SimpleString(R"(
+try:
+    from _builtins import _gc
+    _gc()
+except ModuleNotFoundError:
+    pass
+)");
+
+  // Verify that the module still retains the state.
+  module = PyState_FindModule(&def);
+  ASSERT_NE(module, nullptr);
+  ASSERT_EQ(PyModule_GetState(module), state);
+  mod_state = static_cast<MyState*>(state);
+  EXPECT_EQ(mod_state->letter, 'a');
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {

@@ -2332,6 +2332,11 @@ class RawModule : public RawInstance {
   RawObject def() const;
   void setDef(RawObject def) const;
 
+  // Contains the numeric address of module state object for C-API modules or
+  // zero if the module was not defined through the C-API.
+  RawObject state() const;
+  void setState(RawObject state) const;
+
   // Lazily allocated ModuleProxy instance that behaves like dict.
   RawObject moduleProxy() const;
   void setModuleProxy(RawObject module_proxy) const;
@@ -2344,7 +2349,8 @@ class RawModule : public RawInstance {
   static const int kNameOffset = RawHeapObject::kSize;
   static const int kDictOffset = kNameOffset + kPointerSize;
   static const int kDefOffset = kDictOffset + kPointerSize;
-  static const int kModuleProxyOffset = kDefOffset + kPointerSize;
+  static const int kStateOffset = kDefOffset + kPointerSize;
+  static const int kModuleProxyOffset = kStateOffset + kPointerSize;
   static const int kSize = kModuleProxyOffset + kPointerSize;
 
   // Constants.
@@ -6116,6 +6122,14 @@ inline RawObject RawModule::def() const {
 
 inline void RawModule::setDef(RawObject def) const {
   instanceVariableAtPut(kDefOffset, def);
+}
+
+inline RawObject RawModule::state() const {
+  return instanceVariableAt(kStateOffset);
+}
+
+inline void RawModule::setState(RawObject state) const {
+  instanceVariableAtPut(kStateOffset, state);
 }
 
 inline RawObject RawModule::moduleProxy() const {

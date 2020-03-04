@@ -70,14 +70,11 @@ PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
       return nullptr;
     }
   }
-
-  ApiHandle* result = ApiHandle::newReference(thread, *module);
-  result->setCache(state);
+  module.setState(runtime->newIntFromCPtr(state));
 
   // TODO(eelizondo): Check m_slots
   // TODO(eelizondo): Set md_state
-
-  return result;
+  return ApiHandle::newReference(thread, *module);
 }
 
 PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
@@ -137,7 +134,8 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
     thread->raiseBadArgument();
     return nullptr;
   }
-  return handle->cache();
+  Module module(&scope, *module_obj);
+  return Int::cast(module.state()).asCPtr();
 }
 
 PY_EXPORT PyObject* PyModuleDef_Init(PyModuleDef* def) {

@@ -280,6 +280,7 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
     module.setName(*name);
   }
   module.setDef(runtime->newIntFromCPtr(nullptr));
+  module.setState(runtime->newIntFromCPtr(nullptr));
   moduleAtPutById(thread, module, ID(__name__), name);
 
   Object none(&scope, NoneType::object());
@@ -292,6 +293,7 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
 
 const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
     {ID(_module__def), RawModule::kDefOffset, AttributeFlags::kHidden},
+    {ID(_module__state), RawModule::kStateOffset, AttributeFlags::kHidden},
     {ID(_module__dict), RawModule::kDictOffset, AttributeFlags::kHidden},
     {ID(_module__proxy), RawModule::kModuleProxyOffset,
      AttributeFlags::kHidden},
