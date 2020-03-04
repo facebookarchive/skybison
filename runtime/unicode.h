@@ -38,6 +38,8 @@ class Unicode {
   static bool isSpace(int32_t code_point);
   static bool isTitle(int32_t code_point);
   static bool isUpper(int32_t code_point);
+  static bool isXidContinue(int32_t code_point);
+  static bool isXidStart(int32_t code_point);
 
   // Conversion
   static int32_t toLower(int32_t code_point);
@@ -48,6 +50,8 @@ class Unicode {
   static bool isLowerDB(int32_t code_point);
   static bool isTitleDB(int32_t code_point);
   static bool isUpperDB(int32_t code_point);
+  static bool isXidContinueDB(int32_t code_point);
+  static bool isXidStartDB(int32_t code_point);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Unicode);
 };
@@ -165,6 +169,20 @@ inline bool Unicode::isUpper(int32_t code_point) {
     return ASCII::isUpper(code_point);
   }
   return isUpperDB(code_point);
+}
+
+inline bool Unicode::isXidContinue(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isXidContinue(code_point);
+  }
+  return isXidContinueDB(code_point);
+}
+
+inline bool Unicode::isXidStart(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isXidStart(code_point);
+  }
+  return isXidStartDB(code_point);
 }
 
 inline int32_t Unicode::toLower(int32_t code_point) {

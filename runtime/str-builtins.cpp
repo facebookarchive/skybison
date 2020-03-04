@@ -1231,19 +1231,14 @@ RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs) {
   if (char_length == 0) {
     return Bool::falseObj();
   }
-  byte b0 = self.charAt(0);
-  if (b0 > kMaxASCII) {
-    UNIMPLEMENTED("non-ASCII character");
-  }
-  if (!ASCII::isXidStart(b0)) {
+  word len;
+  int32_t first = self.codePointAt(0, &len);
+  if (!Unicode::isXidStart(first) && first != '_') {
     return Bool::falseObj();
   }
-  for (word i = 1; i < char_length; i++) {
-    byte b = self.charAt(i);
-    if (b > kMaxASCII) {
-      UNIMPLEMENTED("non-ASCII character");
-    }
-    if (!ASCII::isXidContinue(b)) {
+  for (word i = len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+    if (!Unicode::isXidContinue(code_point)) {
       return Bool::falseObj();
     }
   }

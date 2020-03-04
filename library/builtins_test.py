@@ -10008,7 +10008,26 @@ class StrTests(unittest.TestCase):
 
     def test_isidentifier_with_multichar_string_returns_bool(self):
         self.assertTrue("foo_8".isidentifier())
+        self.assertTrue("Foo_8".isidentifier())
+        self.assertTrue("_FOO_8".isidentifier())
         self.assertFalse("foo bar".isidentifier())
+
+    def test_isidentifier_with_non_ascii_string_returns_bool(self):
+        self.assertTrue("resum\u00e9".isidentifier())
+        self.assertTrue("\u00e9tude".isidentifier())
+        self.assertFalse("\U0001F643".isidentifier())
+
+    def test_isidentifier_with_invalid_start_returns_false(self):
+        self.assertFalse("8foo".isidentifier())
+        self.assertFalse(".foo".isidentifier())
+
+    def test_isidentifier_with_symbol_returns_false(self):
+        self.assertFalse("foo!".isidentifier())
+        self.assertFalse("foo.bar".isidentifier())
+
+    def test_isidentifier_allows_underscore_start(self):
+        self.assertTrue("_hello".isidentifier())
+        self.assertFalse("_world!".isidentifier())
 
     def test_isidentifier_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:

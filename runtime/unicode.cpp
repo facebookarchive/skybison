@@ -18,4 +18,12 @@ bool Unicode::isUpperDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kUpperMask) != 0;
 }
 
+bool Unicode::isXidContinueDB(int32_t code_point) {
+  return (typeRecord(code_point)->flags & kXidContinueMask) != 0;
+}
+
+bool Unicode::isXidStartDB(int32_t code_point) {
+  return (typeRecord(code_point)->flags & kXidStartMask) != 0;
+}
+
 }  // namespace py
