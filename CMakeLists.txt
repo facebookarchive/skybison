@@ -205,6 +205,7 @@ set(
   library/_imp.py
   library/_io.py
   library/_os.py
+  library/_path.py
   library/_signal.py
   library/_str_mod.py
   library/_thread.py
@@ -400,6 +401,7 @@ add_library(
   runtime/under-io-module.cpp
   runtime/under-io-module.h
   runtime/under-os-module.cpp
+  runtime/under-path-module.cpp
   runtime/under-signal-module.cpp
   runtime/under-signal-module.h
   runtime/under-valgrind-module.cpp
@@ -1484,6 +1486,7 @@ add_library(
   runtime/under-imp-module-test.cpp
   runtime/under-io-module-test.cpp
   runtime/under-os-module-test.cpp
+  runtime/under-path-module-test.cpp
   runtime/under-signal-module-test.cpp
   runtime/under-valgrind-module-test.cpp
   runtime/under-warnings-module-test.cpp

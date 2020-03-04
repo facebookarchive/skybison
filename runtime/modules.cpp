@@ -36,6 +36,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(_imp), &initializeFrozenModule<&kUnderImpModuleData>},
     {ID(_io), &UnderIoModule::initialize},
     {ID(_os), &initializeFrozenModule<&kUnderOsModuleData>},
+    {ID(_path), &initializeFrozenModule<&kUnderPathModuleData>},
     {ID(_signal), &UnderSignalModule::initialize},
     {ID(_str_mod), &initializeFrozenModule<&kUnderStrModModuleData>},
     {ID(_thread), &initializeFrozenModule<&kUnderThreadModuleData>},

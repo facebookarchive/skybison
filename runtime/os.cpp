@@ -149,8 +149,8 @@ bool OS::dirExists(const char* dir) {
   if (err == 0 && (st.st_mode & S_IFDIR)) {
     return true;
   }
-  if (errno != ENOENT) {
-    fprintf(stderr, "stat error: %s %s\n", dir, std::strerror(errno));
+  if (errno != 0 && errno != ENOENT) {
+    std::fprintf(stderr, "stat error: %s %s\n", dir, std::strerror(errno));
   }
   return false;
 }
@@ -158,11 +158,11 @@ bool OS::dirExists(const char* dir) {
 bool OS::fileExists(const char* file) {
   struct stat st;
   int err = ::stat(file, &st);
-  if (err == 0) {
+  if (err == 0 && S_ISREG(st.st_mode)) {
     return true;
   }
-  if (errno != ENOENT) {
-    fprintf(stderr, "stat error: %s %s\n", file, std::strerror(errno));
+  if (errno != 0 && errno != ENOENT) {
+    std::fprintf(stderr, "stat error: %s %s\n", file, std::strerror(errno));
   }
   return false;
 }

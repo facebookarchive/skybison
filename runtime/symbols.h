@@ -356,6 +356,7 @@ class Runtime;
   V(_new_member_set_readonly_strings)                                          \
   V(_number_check)                                                             \
   V(_os)                                                                       \
+  V(_path)                                                                     \
   V(_pendingcr)                                                                \
   V(_pos)                                                                      \
   V(_python_path)                                                              \
