@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "gtest/gtest.h"
@@ -10,6 +11,130 @@
 namespace py {
 namespace testing {
 using UnderOsModuleTest = RuntimeFixture;
+
+TEST_F(UnderOsModuleTest, AccessWithFileAndFokReturnsExpectedValues) {
+  TemporaryDirectory tempdir;
+  std::string valid_file_path = tempdir.path + "foo.py";
+  writeFile(valid_file_path, "");
+  std::string invalid_file_path = tempdir.path + "doesnotexist";
+
+  HandleScope scope(thread_);
+  Object valid_path(&scope, runtime_->newStrFromCStr(valid_file_path.c_str()));
+  Object invalid_path(&scope,
+                      runtime_->newStrFromCStr(invalid_file_path.c_str()));
+  Object f_ok_mode(&scope, SmallInt::fromWord(F_OK));
+
+  Object valid_result(&scope,
+                      runBuiltin(FUNC(_os, access), valid_path, f_ok_mode));
+  ASSERT_TRUE(valid_result.isBool());
+  EXPECT_TRUE(Bool::cast(*valid_result).value());
+
+  Object invalid_result(&scope,
+                        runBuiltin(FUNC(_os, access), invalid_path, f_ok_mode));
+  ASSERT_TRUE(invalid_result.isBool());
+  EXPECT_FALSE(Bool::cast(*invalid_result).value());
+}
+
+TEST_F(UnderOsModuleTest, AccessWithFileAndRokReturnsExpectedValues) {
+  TemporaryDirectory tempdir;
+  std::string readable_path = tempdir.path + "foo.py";
+  writeFile(readable_path, "");
+  ::chmod(readable_path.c_str(), S_IREAD);
+  std::string non_readable_path = tempdir.path + "bar.py";
+  writeFile(non_readable_path, "");
+  ::chmod(non_readable_path.c_str(), ~S_IREAD);
+
+  HandleScope scope(thread_);
+  Object readable(&scope, runtime_->newStrFromCStr(readable_path.c_str()));
+  Object non_readable(&scope,
+                      runtime_->newStrFromCStr(non_readable_path.c_str()));
+  Object r_ok_mode(&scope, SmallInt::fromWord(R_OK));
+
+  Object valid_result(&scope,
+                      runBuiltin(FUNC(_os, access), readable, r_ok_mode));
+  ASSERT_TRUE(valid_result.isBool());
+  EXPECT_TRUE(Bool::cast(*valid_result).value());
+
+  Object invalid_result(&scope,
+                        runBuiltin(FUNC(_os, access), non_readable, r_ok_mode));
+  ASSERT_TRUE(invalid_result.isBool());
+  EXPECT_FALSE(Bool::cast(*invalid_result).value());
+}
+
+TEST_F(UnderOsModuleTest, AccessWithFileAndWokReturnsExpectedValues) {
+  TemporaryDirectory tempdir;
+  std::string writable_path = tempdir.path + "foo.py";
+  writeFile(writable_path, "");
+  ::chmod(writable_path.c_str(), S_IWRITE);
+  std::string non_writable_path = tempdir.path + "bar.py";
+  writeFile(non_writable_path, "");
+  ::chmod(non_writable_path.c_str(), ~S_IWRITE);
+
+  HandleScope scope(thread_);
+  Object writable(&scope, runtime_->newStrFromCStr(writable_path.c_str()));
+  Object non_writable(&scope,
+                      runtime_->newStrFromCStr(non_writable_path.c_str()));
+  Object w_ok_mode(&scope, SmallInt::fromWord(W_OK));
+
+  Object valid_result(&scope,
+                      runBuiltin(FUNC(_os, access), writable, w_ok_mode));
+  ASSERT_TRUE(valid_result.isBool());
+  EXPECT_TRUE(Bool::cast(*valid_result).value());
+
+  Object invalid_result(&scope,
+                        runBuiltin(FUNC(_os, access), non_writable, w_ok_mode));
+  ASSERT_TRUE(invalid_result.isBool());
+  EXPECT_FALSE(Bool::cast(*invalid_result).value());
+}
+
+TEST_F(UnderOsModuleTest, AccessWithFileAndXokReturnsExpectedValues) {
+  TemporaryDirectory tempdir;
+  std::string executable_path = tempdir.path + "foo.py";
+  writeFile(executable_path, "");
+  ::chmod(executable_path.c_str(), S_IEXEC);
+  std::string non_executable_path = tempdir.path + "bar.py";
+  writeFile(non_executable_path, "");
+  ::chmod(non_executable_path.c_str(), ~S_IEXEC);
+
+  HandleScope scope(thread_);
+  Object executable(&scope, runtime_->newStrFromCStr(executable_path.c_str()));
+  Object non_executable(&scope,
+                        runtime_->newStrFromCStr(non_executable_path.c_str()));
+  Object r_ok_mode(&scope, SmallInt::fromWord(X_OK));
+
+  Object valid_result(&scope,
+                      runBuiltin(FUNC(_os, access), executable, r_ok_mode));
+  ASSERT_TRUE(valid_result.isBool());
+  EXPECT_TRUE(Bool::cast(*valid_result).value());
+
+  Object invalid_result(
+      &scope, runBuiltin(FUNC(_os, access), non_executable, r_ok_mode));
+  ASSERT_TRUE(invalid_result.isBool());
+  EXPECT_FALSE(Bool::cast(*invalid_result).value());
+}
+
+TEST_F(UnderOsModuleTest, AccessWithFileAndMultipleFlagsReturnsExpectedValue) {
+  TemporaryDirectory tempdir;
+  std::string readable_executable_path = tempdir.path + "foo.py";
+  writeFile(readable_executable_path, "");
+  ::chmod(readable_executable_path.c_str(), S_IREAD | S_IEXEC);
+
+  HandleScope scope(thread_);
+  Object readable_executable(
+      &scope, runtime_->newStrFromCStr(readable_executable_path.c_str()));
+  Object r_x_ok_mode(&scope, SmallInt::fromWord(R_OK | X_OK));
+  Object r_w_ok_mode(&scope, SmallInt::fromWord(R_OK | W_OK));
+
+  Object valid_result(
+      &scope, runBuiltin(FUNC(_os, access), readable_executable, r_x_ok_mode));
+  ASSERT_TRUE(valid_result.isBool());
+  EXPECT_TRUE(Bool::cast(*valid_result).value());
+
+  Object invalid_result(
+      &scope, runBuiltin(FUNC(_os, access), readable_executable, r_w_ok_mode));
+  ASSERT_TRUE(invalid_result.isBool());
+  EXPECT_FALSE(Bool::cast(*invalid_result).value());
+}
 
 TEST_F(UnderOsModuleTest, CloseWithBadFdRaisesOsError) {
   HandleScope scope(thread_);

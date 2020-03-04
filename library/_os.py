@@ -10,6 +10,14 @@ from _builtins import _builtin
 # linesep accordingly
 name = "posix"
 linesep = "\n"
+F_OK = 0
+X_OK = 1
+W_OK = 2
+R_OK = 4
+
+
+def access(path, mode):
+    _builtin()
 
 
 def close(fd):

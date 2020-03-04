@@ -18,6 +18,11 @@ class OS {
   // the rounded-up size will be written to it.
   static byte* allocateMemory(word size, word* allocated_size = nullptr);
 
+  // Returns whether the user has access to the specified path with the given
+  // mode (which represents a bit mask of flags for the file existing, being
+  // readable, writable, or executable).
+  static bool access(const char* path, int mode);
+
   // Returns an absolute path to the current executable. The path may contain
   // unresolved symlinks.
   static char* executablePath();

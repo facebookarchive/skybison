@@ -9,10 +9,20 @@
 #include "frozen-modules.h"
 #include "module-builtins.h"
 #include "modules.h"
+#include "os.h"
 #include "runtime.h"
 #include "symbols.h"
 
 namespace py {
+
+RawObject FUNC(_os, access)(Thread* /* thread */, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  CHECK(args.get(0).isStr(), "path must be str");
+  unique_c_ptr<char> path(Str::cast(args.get(0)).toCStr());
+  CHECK(args.get(1).isSmallInt(), "mode must be int");
+  int result = OS::access(path.get(), SmallInt::cast(args.get(1)).value());
+  return Bool::fromBool(result);
+}
 
 RawObject FUNC(_os, close)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
