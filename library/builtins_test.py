@@ -10165,6 +10165,14 @@ class StrTests(unittest.TestCase):
         self.assertFalse("HElLLO".isupper())
         self.assertFalse("...a...".isupper())
         self.assertFalse("......".isupper())
+        self.assertFalse("12345".isupper())
+        self.assertTrue("ABC12345".isupper())
+        self.assertFalse("ABC12345abc".isupper())
+
+    def test_isupper_with_nonascii_string_returns_bool(self):
+        self.assertFalse("RESUM\u00e9".isupper())  # lowercase
+        self.assertTrue("\u00c9TUDE".isupper())  # uppercase
+        self.assertFalse("\u01c8UDEVIT".isupper())  # titlecase
 
     def test_isupper_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
