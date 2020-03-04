@@ -275,6 +275,9 @@ def escape(pattern):
                     s.append(c)
         return bytes(s)
 
+Pattern = type(sre_compile.compile('', 0))
+Match = type(sre_compile.compile('', 0).match(''))
+
 # --------------------------------------------------------------------
 # internals
 
