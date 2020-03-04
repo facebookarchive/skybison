@@ -4311,6 +4311,69 @@ def foo():
         with self.assertRaises(TypeError):
             foo.__annotations__ = (1, 2, 3)
 
+    def test_dunder_new_returns_function_object(self):
+        import types
+
+        def _f():
+            pass
+
+        new_func = types.FunctionType(_f.__code__, _f.__globals__)
+        self.assertIsInstance(new_func, types.FunctionType)
+        self.assertEqual(new_func.__name__, "_f")
+
+    def test_dunder_new_with_name_override_returns_function_object(self):
+        import types
+
+        def _f():
+            pass
+
+        new_func = types.FunctionType(_f.__code__, _f.__globals__, name="hi")
+        self.assertIsInstance(new_func, types.FunctionType)
+        self.assertEqual(new_func.__name__, "hi")
+
+    def test_dunder_new_with_name_override_as_subclassed_str_returns_function_object(
+        self
+    ):
+        import types
+
+        def _f():
+            pass
+
+        class _s(str):
+            pass
+
+        str_subclass = _s("reb00t")
+        new_func = types.FunctionType(_f.__code__, _f.__globals__, name=str_subclass)
+        self.assertIsInstance(new_func, types.FunctionType)
+        self.assertEqual(new_func.__name__, "reb00t")
+
+    def test_dunder_new_with_non_code_type_value_raises_type_error(self):
+        import types
+
+        def _f():
+            pass
+
+        with self.assertRaises(TypeError):
+            types.FunctionType("", _f.__globals__, name="hi")
+
+    def test_dunder_new_with_non_dict_globals_value_raises_type_error(self):
+        import types
+
+        def _f():
+            pass
+
+        with self.assertRaises(TypeError):
+            types.FunctionType(_f.__code__, "", name="hi")
+
+    def test_dunder_new_with_non_str_names_value_raises_type_error(self):
+        import types
+
+        def _f():
+            pass
+
+        with self.assertRaises(TypeError):
+            types.FunctionType(_f.__code__, _f.__globals__, name=[])
+
 
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):

@@ -377,6 +377,10 @@ def _function_kwdefaults(obj):
     _builtin()
 
 
+def _function_new(self, code, mod, name):
+    _builtin()
+
+
 def _function_set_annotations(obj, annotations):
     _builtin()
 

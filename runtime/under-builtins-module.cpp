@@ -2113,6 +2113,51 @@ RawObject FUNC(_builtins, _function_kwdefaults)(Thread* thread, Frame* frame,
   return function.kwDefaults();
 }
 
+RawObject FUNC(_builtins, _function_new)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object cls_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*cls_obj)) {
+    return thread->raiseRequiresType(cls_obj, ID(function));
+  }
+  Type cls(&scope, *cls_obj);
+  if (cls.builtinBase() != LayoutId::kFunction) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of function");
+  }
+
+  Object code_obj(&scope, args.get(1));
+  if (!code_obj.isCode()) {
+    return thread->raiseRequiresType(code_obj, ID(code));
+  }
+  Code code(&scope, *code_obj);
+
+  Object module(&scope, args.get(2));
+  if (!runtime->isInstanceOfModule(*module)) {
+    return thread->raiseRequiresType(module, ID(module));
+  }
+
+  Object name(&scope, args.get(3));
+  if (!(name.isNoneType() || runtime->isInstanceOfStr(*name))) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "arg 3 (name) must be None or string", &name);
+  }
+
+  Object empty_qualname(&scope, NoneType::object());
+  Object result(&scope, runtime->newFunctionWithCode(thread, empty_qualname,
+                                                     code, module));
+  if (result.isFunction()) {
+    Function new_function(&scope, *result);
+    if (!name.isNoneType()) {
+      new_function.setName(*name);
+    }
+    return *new_function;
+  }
+  return *result;
+}
+
 RawObject FUNC(_builtins, _function_set_annotations)(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);

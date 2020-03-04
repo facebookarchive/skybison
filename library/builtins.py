@@ -87,6 +87,8 @@ from _builtins import (
     _dict_update,
     _divmod,
     _exec,
+)
+from _builtins import (
     _float_check,
     _float_check_exact,
     _float_divmod,
@@ -103,6 +105,7 @@ from _builtins import (
     _function_globals,
     _function_guard,
     _function_kwdefaults,
+    _function_new,
     _function_set_annotations,
     _function_set_defaults,
     _function_set_kwdefaults,
@@ -323,6 +326,13 @@ class function(bootstrap=True):
     __globals__ = _property(_function_globals)
 
     __kwdefaults__ = _property(_function_kwdefaults, _function_set_kwdefaults)
+
+    def __new__(cls, code, globals_dict, name=None):
+        if _module_proxy_check(globals_dict):
+            mod = globals_dict.__module_object__
+        elif _dict_check(globals_dict):
+            _unimplemented()
+        return _function_new(cls, code, mod, name)
 
     def __repr__(self):
         _function_guard(self)

@@ -696,8 +696,11 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
                                         code.argcount(), total_args, total_vars,
                                         stacksize, entry, entry_kw, entry_ex));
 
-  DCHECK(isInstanceOfStr(*qualname), "expected str");
-  function.setQualname(*qualname);
+  if (isInstanceOfStr(*qualname)) {
+    function.setQualname(*qualname);
+  } else {
+    DCHECK(qualname.isNoneType(), "expected str or none type");
+  }
 
   if (!module_obj.isNoneType()) {
     Module module(&scope, *module_obj);
