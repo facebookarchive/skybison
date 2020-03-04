@@ -279,14 +279,14 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && isSpaceASCII(src.charAt(0))) {
+  if (length == 1 && ASCII::isSpace(src.charAt(0))) {
     return Str::empty();
   }
   word first = 0;
   while (first < length) {
     word num_bytes;
     int32_t ch = src.codePointAt(first, &num_bytes);
-    if (!isSpace(ch)) {
+    if (!Unicode::isSpace(ch)) {
       break;
     }
     first += num_bytes;
@@ -296,7 +296,7 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
     last = src.offsetByCodePoints(last, -1);
     word num_bytes;
     int32_t ch = src.codePointAt(last, &num_bytes);
-    if (!isSpace(ch)) {
+    if (!Unicode::isSpace(ch)) {
       last += num_bytes;
       break;
     }
@@ -309,14 +309,14 @@ RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && isSpaceASCII(src.charAt(0))) {
+  if (length == 1 && ASCII::isSpace(src.charAt(0))) {
     return Str::empty();
   }
   word first = 0;
   while (first < length) {
     word num_bytes;
     int32_t ch = src.codePointAt(first, &num_bytes);
-    if (!isSpace(ch)) {
+    if (!Unicode::isSpace(ch)) {
       break;
     }
     first += num_bytes;
@@ -329,7 +329,7 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && isSpaceASCII(src.charAt(0))) {
+  if (length == 1 && ASCII::isSpace(src.charAt(0))) {
     return Str::empty();
   }
   word last = length;
@@ -337,7 +337,7 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
     last = src.offsetByCodePoints(last, -1);
     word num_bytes;
     int32_t ch = src.codePointAt(last, &num_bytes);
-    if (!isSpace(ch)) {
+    if (!Unicode::isSpace(ch)) {
       last += num_bytes;
       break;
     }
@@ -717,7 +717,7 @@ word strFindFirstNonWhitespace(const Str& str) {
   word i = 0;
   for (word codepoint_len, length = str.charLength(); i < length;
        i += codepoint_len) {
-    if (!isSpace(str.codePointAt(i, &codepoint_len))) return i;
+    if (!Unicode::isSpace(str.codePointAt(i, &codepoint_len))) return i;
   }
   return i;
 }
@@ -854,12 +854,12 @@ RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs) {
     byte ch = self.charAt(i);
     byte mapped;
     if (is_previous_mapped) {
-      mapped = toLowercase(ch);
+      mapped = Unicode::toLower(ch);
     } else {
-      mapped = toTitlecase(ch);
+      mapped = Unicode::toTitle(ch);
     }
     // TODO(...): use the Unicode database case mapping
-    is_previous_mapped = isAlpha(ch);
+    is_previous_mapped = Unicode::isAlpha(ch);
     result.byteAtPut(i, mapped);
   }
   return result.becomeStr();
@@ -1020,7 +1020,7 @@ RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs) {
     } else if (code_point == '\\' || code_point == '\t' || code_point == '\r' ||
                code_point == '\n') {
       result_len += 2;
-    } else if (isPrintableUnicode(code_point)) {
+    } else if (Unicode::isPrintable(code_point)) {
       result_len += char_len;
     } else if (code_point < 0x100) {
       result_len += 4;
@@ -1079,7 +1079,7 @@ RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs) {
       buf.byteAtPut(out++, 'x');
       byteToHex(buf, out, code_point);
       out += 2;
-    } else if (isPrintableUnicode(code_point)) {
+    } else if (Unicode::isPrintable(code_point)) {
       for (word i = 0; i < char_len; i++) {
         buf.byteAtPut(out + i, self.charAt(in + i));
       }
@@ -1126,7 +1126,7 @@ RawObject METH(str, isalnum)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isAlnumASCII(b)) {
+    if (!ASCII::isAlnum(b)) {
       return Bool::falseObj();
     }
   } while (i < char_length);
@@ -1151,7 +1151,7 @@ RawObject METH(str, isalpha)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isAlphaASCII(b)) {
+    if (!ASCII::isAlpha(b)) {
       return Bool::falseObj();
     }
   } while (i < char_length);
@@ -1187,7 +1187,7 @@ RawObject METH(str, isdecimal)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isDecimalASCII(b)) {
+    if (!ASCII::isDecimal(b)) {
       return Bool::falseObj();
     }
   } while (i < char_length);
@@ -1212,7 +1212,7 @@ RawObject METH(str, isdigit)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isDigitASCII(b)) {
+    if (!ASCII::isDigit(b)) {
       return Bool::falseObj();
     }
   } while (i < char_length);
@@ -1235,7 +1235,7 @@ RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs) {
   if (b0 > kMaxASCII) {
     UNIMPLEMENTED("non-ASCII character");
   }
-  if (!isIdStartASCII(b0)) {
+  if (!ASCII::isXidStart(b0)) {
     return Bool::falseObj();
   }
   for (word i = 1; i < char_length; i++) {
@@ -1243,7 +1243,7 @@ RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isIdContinueASCII(b)) {
+    if (!ASCII::isXidContinue(b)) {
       return Bool::falseObj();
     }
   }
@@ -1265,10 +1265,10 @@ RawObject METH(str, islower)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (isUpperASCII(b)) {
+    if (ASCII::isUpper(b)) {
       return Bool::falseObj();
     }
-    if (!cased && isLowerASCII(b)) {
+    if (!cased && ASCII::isLower(b)) {
       cased = true;
     }
   }
@@ -1293,7 +1293,7 @@ RawObject METH(str, isnumeric)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isNumericASCII(b)) {
+    if (!ASCII::isNumeric(b)) {
       return Bool::falseObj();
     }
   } while (i < char_length);
@@ -1313,7 +1313,7 @@ RawObject METH(str, isprintable)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (!isPrintableASCII(b)) {
+    if (!ASCII::isPrintable(b)) {
       return Bool::falseObj();
     }
   }
@@ -1333,13 +1333,13 @@ RawObject METH(str, isspace)(Thread* thread, Frame* frame, word nargs) {
     return Bool::falseObj();
   }
   if (char_length == 1) {
-    return isSpaceASCII(self.charAt(0)) ? Bool::trueObj() : Bool::falseObj();
+    return ASCII::isSpace(self.charAt(0)) ? Bool::trueObj() : Bool::falseObj();
   }
   word byte_index = 0;
   do {
     word num_bytes;
     int32_t codepoint = self.codePointAt(byte_index, &num_bytes);
-    if (!isSpace(codepoint)) {
+    if (!Unicode::isSpace(codepoint)) {
       return Bool::falseObj();
     }
     byte_index += num_bytes;
@@ -1359,11 +1359,11 @@ RawObject METH(str, istitle)(Thread* thread, Frame* frame, word nargs) {
   bool previous_is_cased = false;
   for (word i = 0, char_length = self.charLength(); i < char_length; i++) {
     byte b = self.charAt(i);
-    if (isUpperASCII(b)) {
+    if (ASCII::isUpper(b)) {
       if (previous_is_cased) return Bool::falseObj();
       previous_is_cased = true;
       cased = true;
-    } else if (isLowerASCII(b)) {
+    } else if (ASCII::isLower(b)) {
       if (!previous_is_cased) return Bool::falseObj();
       previous_is_cased = true;
       cased = true;
@@ -1389,10 +1389,10 @@ RawObject METH(str, isupper)(Thread* thread, Frame* frame, word nargs) {
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
-    if (isLowerASCII(b)) {
+    if (ASCII::isLower(b)) {
       return Bool::falseObj();
     }
-    if (!cased && isUpperASCII(b)) {
+    if (!cased && ASCII::isUpper(b)) {
       cased = true;
     }
   }

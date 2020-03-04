@@ -1035,17 +1035,17 @@ RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
   word splits = 0;
   word index = 0;
   while (splits < maxsplit) {
-    while (index < self_len && isSpaceASCII(self.byteAt(index))) {
+    while (index < self_len && ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
     if (index == self_len) break;
     index++;
-    while (index < self_len && !isSpaceASCII(self.byteAt(index))) {
+    while (index < self_len && !ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
     splits++;
   }
-  while (index < self_len && isSpaceASCII(self.byteAt(index))) {
+  while (index < self_len && ASCII::isSpace(self.byteAt(index))) {
     index++;
   }
   bool has_remaining = index < self_len;
@@ -1058,17 +1058,17 @@ RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
   MutableTuple buffer(&scope, runtime->newMutableTuple(result_len));
   index = 0;
   for (word i = 0; i < splits; i++) {
-    while (isSpaceASCII(self.byteAt(index))) {
+    while (ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
     word start = index++;
-    while (!isSpaceASCII(self.byteAt(index))) {
+    while (!ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
     buffer.atPut(i, runtime->bytesSubseq(thread, self, start, index - start));
   }
   if (has_remaining) {
-    while (isSpaceASCII(self.byteAt(index))) {
+    while (ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
     buffer.atPut(splits,
@@ -2526,7 +2526,7 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
   word idx = 0;
   if (idx >= length) return Error::error();
   byte b = bytes.byteAt(idx++);
-  while (isSpaceASCII(b)) {
+  while (ASCII::isSpace(b)) {
     if (idx >= length) return Error::error();
     b = bytes.byteAt(idx++);
   }
@@ -4340,7 +4340,8 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
     // Find beginning of next word
     {
       word num_bytes;
-      while (i < self_length && isSpace(self.codePointAt(i, &num_bytes))) {
+      while (i < self_length &&
+             Unicode::isSpace(self.codePointAt(i, &num_bytes))) {
         i += num_bytes;
       }
     }
@@ -4357,7 +4358,8 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
       j = self.offsetByCodePoints(i, 1);
       {
         word num_bytes;
-        while (j < self_length && !isSpace(self.codePointAt(j, &num_bytes))) {
+        while (j < self_length &&
+               !Unicode::isSpace(self.codePointAt(j, &num_bytes))) {
           j += num_bytes;
         }
       }

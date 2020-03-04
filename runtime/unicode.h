@@ -1,13 +1,67 @@
 #pragma once
 
+#include <cstdint>
+
 #include "globals.h"
 #include "utils.h"
 
 namespace py {
 
-// This should be used only for bytes objects. For strings, use isSpace.
-inline bool isSpaceASCII(int32_t ch) {
-  switch (ch) {
+// Functions for ASCII code points. These should only be used for bytes-like
+// objects or when a code point is guaranteed to be valid ASCII.
+class ASCII {
+ public:
+  static bool isAlnum(byte b);
+  static bool isAlpha(byte b);
+  static bool isDecimal(byte b);
+  static bool isDigit(byte b);
+  static bool isLower(byte b);
+  static bool isNumeric(byte b);
+  static bool isPrintable(byte b);
+  static bool isUpper(byte b);
+  static bool isSpace(byte b);
+  static bool isXidContinue(byte b);
+  static bool isXidStart(byte b);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ASCII);
+};
+
+// Functions for Unicode code points.
+class Unicode {
+ public:
+  // Predicates
+  static bool isASCII(int32_t code_point);
+  static bool isAlpha(int32_t code_point);
+  static bool isPrintable(int32_t code_point);
+  static bool isSpace(int32_t code_point);
+
+  // Conversion
+  static int32_t toLower(int32_t code_point);
+  static int32_t toTitle(int32_t code_point);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Unicode);
+};
+
+// ASCII
+
+inline bool ASCII::isAlnum(byte b) { return isDigit(b) || isAlpha(b); }
+
+inline bool ASCII::isAlpha(byte b) { return isUpper(b) || isLower(b); }
+
+inline bool ASCII::isDecimal(byte b) { return isDigit(b); }
+
+inline bool ASCII::isDigit(byte b) { return '0' <= b && b <= '9'; }
+
+inline bool ASCII::isLower(byte b) { return 'a' <= b && b <= 'z'; }
+
+inline bool ASCII::isNumeric(byte b) { return isDigit(b); }
+
+inline bool ASCII::isPrintable(byte b) { return ' ' <= b && b < kMaxASCII; }
+
+inline bool ASCII::isSpace(byte b) {
+  switch (b) {
     case '\t':
     case '\n':
     case '\x0B':
@@ -24,11 +78,41 @@ inline bool isSpaceASCII(int32_t ch) {
   }
 }
 
+inline bool ASCII::isUpper(byte b) { return 'A' <= b && b <= 'Z'; }
+
+inline bool ASCII::isXidContinue(byte b) { return isXidStart(b) || isDigit(b); }
+
+inline bool ASCII::isXidStart(byte b) { return isAlpha(b) || b == '_'; }
+
+// Unicode
+
+inline bool Unicode::isASCII(int32_t code_point) {
+  return code_point <= kMaxASCII;
+}
+
+inline bool Unicode::isAlpha(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isAlpha(code_point);
+  }
+  // TODO(T57791326) support non-ASCII
+  UNIMPLEMENTED("non-ASCII characters");
+}
+
+inline bool Unicode::isPrintable(int32_t code_point) {
+  // TODO(T55176519): implement using Unicode database
+  if (isASCII(code_point)) {
+    return ASCII::isPrintable(code_point);
+  }
+  return true;
+}
+
 // Returns true for Unicode characters having the bidirectional
 // type 'WS', 'B' or 'S' or the category 'Zs', false otherwise.
-inline bool isSpace(int32_t cp) {
-  if (cp <= kMaxASCII) return isSpaceASCII(cp);
-  switch (cp) {
+inline bool Unicode::isSpace(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isSpace(code_point);
+  }
+  switch (code_point) {
     case 0x0085:
     case 0x00A0:
     case 0x1680:
@@ -54,61 +138,23 @@ inline bool isSpace(int32_t cp) {
   }
 }
 
-inline bool isASCII(byte b) { return b <= kMaxASCII; }
-
-inline bool isDigitASCII(byte b) { return '0' <= b && b <= '9'; }
-
-inline bool isDecimalASCII(byte b) { return isDigitASCII(b); }
-
-inline bool isNumericASCII(byte b) { return isDigitASCII(b); }
-
-inline bool isLowerASCII(byte b) { return 'a' <= b && b <= 'z'; }
-
-inline bool isUpperASCII(byte b) { return 'A' <= b && b <= 'Z'; }
-
-inline bool isAlphaASCII(byte b) { return isUpperASCII(b) || isLowerASCII(b); }
-
-inline bool isAlnumASCII(byte b) { return isDigitASCII(b) || isAlphaASCII(b); }
-
-inline bool isIdStartASCII(byte b) { return isAlphaASCII(b) || b == '_'; }
-
-inline bool isIdContinueASCII(byte b) {
-  return isIdStartASCII(b) || isDigitASCII(b);
-}
-
-inline bool isPrintableASCII(byte b) { return ' ' <= b && b < kMaxASCII; }
-
-inline bool isPrintableUnicode(int32_t cp) {
-  // TODO(T55176519): implement using Unicode database
-  if (cp <= kMaxASCII) {
-    return isPrintableASCII(cp);
-  }
-  return true;
-}
-
-inline bool isUTF8Continuation(byte b) {
-  return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
-}
-
-inline bool isAlpha(byte b) {
-  if (isASCII(b)) return isAlphaASCII(b);
-  // TODO(T57791326) support non-ASCII
-  UNIMPLEMENTED("non-ASCII characters");
-}
-
-inline int32_t toLowercase(int32_t ch) {
-  if (isASCII(ch)) {
-    if (isUpperASCII(ch)) ch -= ('A' - 'a');
-    return ch;
+inline int32_t Unicode::toLower(int32_t code_point) {
+  if (isASCII(code_point)) {
+    if (ASCII::isUpper(code_point)) {
+      code_point -= ('A' - 'a');
+    }
+    return code_point;
   }
   // TODO(T57791326) support non-ASCII
   UNIMPLEMENTED("non-ASCII characters");
 }
 
-inline int32_t toTitlecase(int32_t ch) {
-  if (isASCII(ch)) {
-    if (isLowerASCII(ch)) ch += ('A' - 'a');
-    return ch;
+inline int32_t Unicode::toTitle(int32_t code_point) {
+  if (isASCII(code_point)) {
+    if (ASCII::isLower(code_point)) {
+      code_point += ('A' - 'a');
+    }
+    return code_point;
   }
   // TODO(T57791326) support non-ASCII
   UNIMPLEMENTED("non-ASCII characters");

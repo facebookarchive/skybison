@@ -212,11 +212,11 @@ RawObject bytesStripRight(Thread* thread, const Bytes& bytes, word bytes_len,
 
 RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len) {
   word left = 0;
-  while (left < len && isSpaceASCII(bytes.byteAt(left))) {
+  while (left < len && ASCII::isSpace(bytes.byteAt(left))) {
     left++;
   }
   word right = len;
-  while (right > left && isSpaceASCII(bytes.byteAt(right - 1))) {
+  while (right > left && ASCII::isSpace(bytes.byteAt(right - 1))) {
     right--;
   }
   return thread->runtime()->bytesSubseq(thread, bytes, left, right - left);
@@ -224,7 +224,7 @@ RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len) {
 
 RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len) {
   word left = 0;
-  while (left < len && isSpaceASCII(bytes.byteAt(left))) {
+  while (left < len && ASCII::isSpace(bytes.byteAt(left))) {
     left++;
   }
   return thread->runtime()->bytesSubseq(thread, bytes, left, len - left);
@@ -232,7 +232,7 @@ RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len) {
 
 RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len) {
   word right = len;
-  while (right > 0 && isSpaceASCII(bytes.byteAt(right - 1))) {
+  while (right > 0 && ASCII::isSpace(bytes.byteAt(right - 1))) {
     right--;
   }
   return thread->runtime()->bytesSubseq(thread, bytes, 0, right);
@@ -245,6 +245,10 @@ RawObject bytesUnderlying(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   UserBytesBase user_bytes(&scope, *obj);
   return user_bytes.value();
+}
+
+static bool isUTF8Continuation(byte b) {
+  return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
 }
 
 static bool bytesIsValidUTF8Impl(RawBytes bytes, bool allow_surrogates) {
