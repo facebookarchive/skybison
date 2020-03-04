@@ -3647,30 +3647,35 @@ void Runtime::clearHandleScopes() {
   }
 }
 
+static void clearModule(Thread* thread, const Module& module) {
+  HandleScope scope(thread);
+  Object module_def(&scope, module.def());
+  if (module_def.isInt() && Int::cast(*module_def).asCPtr() != nullptr) {
+    auto def = reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
+    ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
+    if (def->m_free != nullptr) def->m_free(handle);
+    module.setDef(thread->runtime()->newIntFromCPtr(nullptr));
+    handle->dispose();
+  }
+}
+
 void Runtime::freeApiHandles() {
   // Dealloc the Module handles first as they are the handle roots
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict modules(&scope, modules_);
-  Tuple modules_buckets(&scope, modules.data());
-  for (word i = Dict::Bucket::kFirst;
-       Dict::Bucket::nextItem(*modules_buckets, &i);) {
-    Object module_obj(&scope, Dict::Bucket::value(*modules_buckets, i));
-    if (!isInstanceOfModule(*module_obj)) continue;
-    Module module(&scope, *module_obj);
-    Object module_def(&scope, module.def());
-    if (module_def.isInt() && Int::cast(*module_def).asCPtr() != nullptr) {
-      auto def =
-          reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
-      ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
-      if (def->m_free != nullptr) def->m_free(handle);
-      handle->dispose();
-    }
-  }
-
   // Clear the modules dict and run a GC, to run dealloc slots on any now-dead
   // NativeProxy objects.
   dictClear(thread, modules);
+
+  // Dealloc modules referenced by modules_by_index.
+  List modules_list(&scope, modules_by_index_);
+  for (int i = 0; i < modules_list.numItems(); ++i) {
+    Object module_obj(&scope, modules_list.at(i));
+    if (!isInstanceOfModule(*module_obj)) continue;
+    Module module(&scope, *module_obj);
+    clearModule(thread, module);
+  }
 
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {
