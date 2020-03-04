@@ -97,7 +97,6 @@ from _builtins import (
     _float_new_from_byteslike,
     _float_new_from_float,
     _float_new_from_str,
-    _frozenset_check,
     _frozenset_guard,
     _function_annotations,
     _function_closure,
