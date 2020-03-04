@@ -139,19 +139,18 @@ RawObject METH(super, __init__)(Thread* thread, Frame* frame, word nargs) {
         break;
       }
     }
-    if (cell.isErrorNotFound() || !cell.isValueCell()) {
+    if (cell.isErrorNotFound() || !cell.isCell()) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): __class__ cell not found");
     }
-    type_obj = ValueCell::cast(cell).value();
+    type_obj = Cell::cast(cell).value();
     obj = caller_frame->local(0);
     // The parameter value may have been moved into a value cell.
     if (obj.isNoneType() && !code.cell2arg().isNoneType()) {
       Tuple cell2arg(&scope, code.cell2arg());
       for (word i = 0, length = cell2arg.length(); i < length; i++) {
         if (cell2arg.at(i) == SmallInt::fromWord(0)) {
-          obj =
-              ValueCell::cast(caller_frame->local(code.nlocals() + i)).value();
+          obj = Cell::cast(caller_frame->local(code.nlocals() + i)).value();
           break;
         }
       }

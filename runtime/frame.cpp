@@ -59,15 +59,15 @@ RawObject frameLocals(Thread* thread, Frame* frame) {
   }
   for (word i = 0, j = var_names_length; i < freevar_names_length; ++i, ++j) {
     name = freevar_names.at(i);
-    DCHECK(frame->local(j).isValueCell(), "freevar must be ValueCell");
-    value = ValueCell::cast(frame->local(j)).value();
+    DCHECK(frame->local(j).isCell(), "freevar must be Cell");
+    value = Cell::cast(frame->local(j)).value();
     dictAtPutByStr(thread, result, name, value);
   }
   for (word i = 0, j = var_names_length + freevar_names_length;
        i < cellvar_names_length; ++i, ++j) {
     name = cellvar_names.at(i);
-    DCHECK(frame->local(j).isValueCell(), "cellvar must be ValueCell");
-    value = ValueCell::cast(frame->local(j)).value();
+    DCHECK(frame->local(j).isCell(), "cellvar must be Cell");
+    value = Cell::cast(frame->local(j)).value();
     dictAtPutByStr(thread, result, name, value);
   }
   return *result;

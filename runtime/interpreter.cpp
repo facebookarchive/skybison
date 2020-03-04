@@ -4167,8 +4167,8 @@ HANDLER_INLINE Continue Interpreter::doLoadDeref(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Code code(&scope, frame->code());
-  ValueCell value_cell(&scope, frame->local(code.nlocals() + arg));
-  Object value(&scope, value_cell.value());
+  Cell cell(&scope, frame->local(code.nlocals() + arg));
+  Object value(&scope, cell.value());
   if (value.isUnbound()) {
     raiseUnboundCellFreeVar(thread, code, arg);
     return Continue::UNWIND;
@@ -4180,16 +4180,14 @@ HANDLER_INLINE Continue Interpreter::doLoadDeref(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doStoreDeref(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawCode code = Code::cast(frame->code());
-  ValueCell::cast(frame->local(code.nlocals() + arg))
-      .setValue(frame->popValue());
+  Cell::cast(frame->local(code.nlocals() + arg)).setValue(frame->popValue());
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doDeleteDeref(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawCode code = Code::cast(frame->code());
-  ValueCell::cast(frame->local(code.nlocals() + arg))
-      .setValue(Unbound::object());
+  Cell::cast(frame->local(code.nlocals() + arg)).setValue(Unbound::object());
   return Continue::NEXT;
 }
 
@@ -4337,11 +4335,11 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   }
 
   if (result.isErrorNotFound()) {
-    ValueCell value_cell(&scope, frame->local(code.nlocals() + arg));
-    if (value_cell.isUnbound()) {
+    Cell cell(&scope, frame->local(code.nlocals() + arg));
+    if (cell.isUnbound()) {
       UNIMPLEMENTED("unbound free var %s", Str::cast(*name).toCStr());
     }
-    frame->pushValue(value_cell.value());
+    frame->pushValue(cell.value());
   } else {
     frame->pushValue(*result);
   }

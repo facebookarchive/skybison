@@ -26,11 +26,11 @@ void processFreevarsAndCellvars(Thread* thread, Frame* frame) {
   word num_locals = code.nlocals();
   word num_cellvars = code.numCellvars();
   for (word i = 0; i < code.numCellvars(); i++) {
-    ValueCell value_cell(&scope, runtime->newValueCell());
+    Cell cell(&scope, runtime->newCell());
 
     // Allocate a cell for a local variable if cell2arg is not preset
     if (code.cell2arg().isNoneType()) {
-      frame->setLocal(num_locals + i, *value_cell);
+      frame->setLocal(num_locals + i, *cell);
       continue;
     }
 
@@ -38,15 +38,15 @@ void processFreevarsAndCellvars(Thread* thread, Frame* frame) {
     // the cell does not match any argument
     Object arg_index(&scope, Tuple::cast(code.cell2arg()).at(i));
     if (arg_index.isNoneType()) {
-      frame->setLocal(num_locals + i, *value_cell);
+      frame->setLocal(num_locals + i, *cell);
       continue;
     }
 
     // Allocate a cell for an argument
     word local_idx = Int::cast(*arg_index).asWord();
-    value_cell.setValue(frame->local(local_idx));
+    cell.setValue(frame->local(local_idx));
     frame->setLocal(local_idx, NoneType::object());
-    frame->setLocal(num_locals + i, *value_cell);
+    frame->setLocal(num_locals + i, *cell);
   }
 
   // initialize free variables

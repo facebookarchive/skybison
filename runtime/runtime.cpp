@@ -1628,6 +1628,7 @@ void Runtime::initializeHeapTypes() {
   ByteArrayBuiltins::initialize(this);
   ByteArrayIteratorBuiltins::initialize(this);
   BytesIteratorBuiltins::initialize(this);
+  CellBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);
   CodeBuiltins::initialize(this);
   ComplexBuiltins::initialize(this);
@@ -3435,6 +3436,8 @@ void Runtime::setNativeProxyPtr(RawObject object, void* c_ptr) {
   DCHECK(c_ptr != nullptr, "The native instance must have a valid address");
   object.rawCast<RawNativeProxy>().setNative(newIntFromCPtr(c_ptr));
 }
+
+RawObject Runtime::newCell() { return heap()->create<RawCell>(); }
 
 RawObject Runtime::newClassMethod() { return heap()->create<RawClassMethod>(); }
 

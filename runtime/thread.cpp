@@ -179,7 +179,7 @@ Frame* Thread::pushClassFunctionFrame(const Function& function) {
   word num_cellvars = code.numCellvars();
   DCHECK(code.cell2arg().isNoneType(), "class body cannot have cell2arg.");
   for (word i = 0; i < code.numCellvars(); i++) {
-    result->setLocal(num_locals + i, runtime()->newValueCell());
+    result->setLocal(num_locals + i, runtime()->newCell());
   }
 
   // initialize free vars

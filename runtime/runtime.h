@@ -74,6 +74,8 @@ class Runtime {
 
   RawObject newTypeProxy(const Type& type);
 
+  RawObject newCell();
+
   RawObject newClassMethod();
 
   // TODO(T55871582): Remove code paths that can raise from the Runtime

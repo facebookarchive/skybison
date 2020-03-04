@@ -50,6 +50,7 @@ class Handle;
   V(ByteArrayIterator)                                                         \
   V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
+  V(Cell)                                                                      \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Coroutine)                                                                 \
@@ -300,6 +301,7 @@ class RawObject {
   bool isByteArrayIterator() const;
   bool isBytesIO() const;
   bool isBytesIterator() const;
+  bool isCell() const;
   bool isClassMethod() const;
   bool isCode() const;
   bool isComplex() const;
@@ -2923,6 +2925,19 @@ class RawBoundMethod : public RawInstance {
   RAW_OBJECT_COMMON(BoundMethod);
 };
 
+class RawCell : public RawInstance {
+ public:
+  // Getters and setters
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // Layout.
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Cell);
+};
+
 class RawClassMethod : public RawInstance {
  public:
   // Getters and setters
@@ -3725,6 +3740,10 @@ inline bool RawObject::isBytesIO() const {
 
 inline bool RawObject::isBytesIterator() const {
   return isHeapObjectWithLayout(LayoutId::kBytesIterator);
+}
+
+inline bool RawObject::isCell() const {
+  return isHeapObjectWithLayout(LayoutId::kCell);
 }
 
 inline bool RawObject::isClassMethod() const {
@@ -6328,6 +6347,16 @@ inline RawObject RawBoundMethod::self() const {
 
 inline void RawBoundMethod::setSelf(RawObject self) const {
   instanceVariableAtPut(kSelfOffset, self);
+}
+
+// RawCell
+
+inline RawObject RawCell::value() const {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline void RawCell::setValue(RawObject value) const {
+  instanceVariableAtPut(kValueOffset, value);
 }
 
 // RawClassMethod

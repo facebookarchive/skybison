@@ -20,6 +20,7 @@ class Handle;
   V(Bytes)                                                                     \
   V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
+  V(Cell)                                                                      \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \

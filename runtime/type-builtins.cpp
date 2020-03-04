@@ -1018,8 +1018,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 
   Object class_cell(&scope, typeAtById(thread, type, ID(__classcell__)));
   if (!class_cell.isErrorNotFound()) {
-    DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
-    ValueCell::cast(*class_cell).setValue(*type);
+    DCHECK(class_cell.isCell(), "class cell must be a cell");
+    Cell::cast(*class_cell).setValue(*type);
     Object class_cell_name(&scope, runtime->symbols()->at(ID(__classcell__)));
     typeRemove(thread, type, class_cell_name);
   }

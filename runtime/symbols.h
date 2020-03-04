@@ -433,6 +433,7 @@ class Runtime;
   V(_type_subclass_guard)                                                      \
   V(_unicode_escape_decode_stateful)                                           \
   V(_valgrind)                                                                 \
+  V(_valuecell__value)                                                         \
   V(_valuecell__dependency_link)                                               \
   V(_warnings)                                                                 \
   V(_weaklink)                                                                 \
