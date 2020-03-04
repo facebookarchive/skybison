@@ -406,6 +406,9 @@ add_library(
   runtime/under-warnings-module.cpp
   runtime/under-weakref-module.cpp
   runtime/under-weakref-module.h
+  runtime/unicode-db.cpp
+  runtime/unicode-db.h
+  runtime/unicode.cpp
   runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h

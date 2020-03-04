@@ -10032,6 +10032,11 @@ class StrTests(unittest.TestCase):
         self.assertFalse("...A...".islower())
         self.assertFalse("......".islower())
 
+    def test_islower_with_non_ascii_returns_bool(self):
+        self.assertTrue("resum\u00e9".islower())
+        self.assertFalse("\u00c9tude".islower())  # uppercase
+        self.assertFalse("\u01c8udevit".islower())  # titlecase
+
     def test_islower_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.islower(None)

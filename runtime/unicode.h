@@ -33,14 +33,22 @@ class Unicode {
   // Predicates
   static bool isASCII(int32_t code_point);
   static bool isAlpha(int32_t code_point);
+  static bool isLower(int32_t code_point);
   static bool isPrintable(int32_t code_point);
   static bool isSpace(int32_t code_point);
+  static bool isTitle(int32_t code_point);
+  static bool isUpper(int32_t code_point);
 
   // Conversion
   static int32_t toLower(int32_t code_point);
   static int32_t toTitle(int32_t code_point);
 
  private:
+  // Slow paths that use the Unicode database.
+  static bool isLowerDB(int32_t code_point);
+  static bool isTitleDB(int32_t code_point);
+  static bool isUpperDB(int32_t code_point);
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(Unicode);
 };
 
@@ -98,6 +106,13 @@ inline bool Unicode::isAlpha(int32_t code_point) {
   UNIMPLEMENTED("non-ASCII characters");
 }
 
+inline bool Unicode::isLower(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isLower(code_point);
+  }
+  return isLowerDB(code_point);
+}
+
 inline bool Unicode::isPrintable(int32_t code_point) {
   // TODO(T55176519): implement using Unicode database
   if (isASCII(code_point)) {
@@ -136,6 +151,20 @@ inline bool Unicode::isSpace(int32_t code_point) {
     default:
       return false;
   }
+}
+
+inline bool Unicode::isTitle(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return false;
+  }
+  return isTitleDB(code_point);
+}
+
+inline bool Unicode::isUpper(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isUpper(code_point);
+  }
+  return isUpperDB(code_point);
 }
 
 inline int32_t Unicode::toLower(int32_t code_point) {

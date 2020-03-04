@@ -1260,15 +1260,12 @@ RawObject METH(str, islower)(Thread* thread, Frame* frame, word nargs) {
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
   bool cased = false;
-  for (word i = 0; i < char_length; i++) {
-    byte b = self.charAt(i);
-    if (b > kMaxASCII) {
-      UNIMPLEMENTED("non-ASCII character");
-    }
-    if (ASCII::isUpper(b)) {
+  for (word i = 0, len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+    if (Unicode::isUpper(code_point) || Unicode::isTitle(code_point)) {
       return Bool::falseObj();
     }
-    if (!cased && ASCII::isLower(b)) {
+    if (!cased && Unicode::isLower(code_point)) {
       cased = true;
     }
   }
