@@ -1707,7 +1707,8 @@ class RawProperty : public RawInstance {
   static const int kGetterOffset = RawHeapObject::kSize;
   static const int kSetterOffset = kGetterOffset + kPointerSize;
   static const int kDeleterOffset = kSetterOffset + kPointerSize;
-  static const int kSize = kDeleterOffset + kPointerSize;
+  static const int kDocOffset = kDeleterOffset + kPointerSize;
+  static const int kSize = kDocOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Property);
 };

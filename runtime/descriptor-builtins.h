@@ -24,6 +24,9 @@ class StaticMethodBuiltins
 
 class PropertyBuiltins
     : public Builtins<PropertyBuiltins, ID(property), LayoutId::kProperty> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(PropertyBuiltins);
 };

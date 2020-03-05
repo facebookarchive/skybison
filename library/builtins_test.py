@@ -8317,6 +8317,14 @@ class PropertyTests(unittest.TestCase):
         prop = property(fdel=foo)
         self.assertIs(prop.__isabstractmethod__, True)
 
+    def test_dunder_doc_returns_updated_value(self):
+        p = property()
+        self.assertIsNone(p.__doc__)
+
+        document_message = "this is for testing"
+        p.__doc__ = document_message
+        self.assertIs(p.__doc__, document_message)
+
 
 class RangeTests(unittest.TestCase):
     def test_dunder_bool_with_empty_range_returns_true(self):

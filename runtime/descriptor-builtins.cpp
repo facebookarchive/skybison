@@ -62,6 +62,11 @@ RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
 
 // property
 
+const BuiltinAttribute PropertyBuiltins::kAttributes[] = {
+    {ID(__doc__), RawProperty::kDocOffset},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
