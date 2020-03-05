@@ -82,6 +82,18 @@ typedef struct _PyWeakReference PyWeakReference;
 typedef struct _structsequence PyStructSequence;
 typedef struct PyBaseExceptionObject PyBaseExceptionObject;
 
+#if defined(__GNUC__) && __GNUC__ < 10 && !defined(__clang__) &&               \
+    !defined(__cplusplus)
+/* GCC has a bug where applying `&*` to a pointer to an incomplete type is
+ * rejected incorrectly. See also:
+ * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88827 Our PyXXX_Type macros rely
+ * on this working. As a workaround for gcc we add an (incomplete) definition
+ * here so the type is no longer incomplete. */
+struct _typeobject {
+  _PyObject_HEAD_EXTRA
+};
+#endif
+
 typedef struct _object {
   _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
 } PyObject;
