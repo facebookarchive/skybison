@@ -355,6 +355,10 @@ PY_EXPORT PyObject* _PyLong_GCD(PyObject*, PyObject*) {
   UNIMPLEMENTED("_PyLong_GCD");
 }
 
+PY_EXPORT PyLongObject* _PyLong_FromNbInt(PyObject*) {
+  UNIMPLEMENTED("_PyLong_FromNbInt");
+}
+
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

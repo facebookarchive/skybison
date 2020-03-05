@@ -1105,6 +1105,7 @@ PyAPI_FUNC(time_t) _PyLong_AsTime_t(PyObject*);
 PyAPI_FUNC(double) _PyLong_Frexp(PyLongObject*, Py_ssize_t*);
 PyAPI_FUNC(PyObject*)
     _PyLong_FromByteArray(const unsigned char*, size_t, int, int);
+PyAPI_FUNC(PyLongObject*) _PyLong_FromNbInt(PyObject*);
 PyAPI_FUNC(PyObject*) _PyLong_FromTime_t(time_t);
 PyAPI_FUNC(PyObject*) _PyLong_GCD(PyObject*, PyObject*);
 PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject*);

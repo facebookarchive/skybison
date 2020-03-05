@@ -310,9 +310,15 @@ class ssize_t_converter(CConverter):
 static int
 ssize_t_converter(PyObject *obj, void *ptr)
 {
+    PyObject *long_obj;
     Py_ssize_t val;
 
-    val = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
+    long_obj = (PyObject *)_PyLong_FromNbInt(obj);
+    if (long_obj == NULL) {
+        return 0;
+    }
+    val = PyLong_AsSsize_t(long_obj);
+    Py_DECREF(long_obj);
     if (val == -1 && PyErr_Occurred()) {
         return 0;
     }
