@@ -14,6 +14,10 @@ class OS {
 
   static const word kNumSignals;
 
+  static const int kRtldGlobal;
+  static const int kRtldLocal;
+  static const int kRtldNow;
+
   // Allocate a page-sized chunk of memory. If allocated_size is not nullptr,
   // the rounded-up size will be written to it.
   static byte* allocateMemory(word size, word* allocated_size = nullptr);
@@ -52,7 +56,8 @@ class OS {
 
   static double currentTime();
 
-  static void* openSharedObject(const char* filename, const char** error_msg);
+  static void* openSharedObject(const char* filename, int mode,
+                                const char** error_msg);
 
   static void* sharedObjectSymbolAddress(void* handle, const char* symbol);
 

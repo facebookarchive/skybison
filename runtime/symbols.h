@@ -62,6 +62,8 @@ class Runtime;
   V(PendingDeprecationWarning)                                                 \
   V(PermissionError)                                                           \
   V(ProcessLookupError)                                                        \
+  V(RTLD_GLOBAL)                                                               \
+  V(RTLD_LOCAL)                                                                \
   V(RecursionError)                                                            \
   V(ReferenceError)                                                            \
   V(ResourceWarning)                                                           \
@@ -256,12 +258,14 @@ class Runtime;
   V(_byteslike_check)                                                          \
   V(_byteslike_guard)                                                          \
   V(_capi_dict_setitem)                                                        \
+  V(_cast_addr)                                                                \
   V(_closed)                                                                   \
   V(_closefd)                                                                  \
   V(_codecs)                                                                   \
   V(_compile_flags_mask)                                                       \
   V(_complex_check)                                                            \
   V(_created)                                                                  \
+  V(_ctypes)                                                                   \
   V(_decoded_chars)                                                            \
   V(_decoded_chars_used)                                                       \
   V(_decoder)                                                                  \
@@ -324,7 +328,9 @@ class Runtime;
   V(_lookup_text)                                                              \
   V(_lt)                                                                       \
   V(_mappingproxy__mapping)                                                    \
+  V(_memmove_addr)                                                             \
   V(_memoryview_guard)                                                         \
+  V(_memset_addr)                                                              \
   V(_module__def)                                                              \
   V(_module__dict)                                                             \
   V(_module__proxy)                                                            \
@@ -401,6 +407,7 @@ class Runtime;
   V(_str_mod)                                                                  \
   V(_strarray)                                                                 \
   V(_strarray_ctor)                                                            \
+  V(_string_at_addr)                                                           \
   V(_structseq_field)                                                          \
   V(_structseq_field_names)                                                    \
   V(_structseq_new)                                                            \
@@ -446,6 +453,7 @@ class Runtime;
   V(_write_lock)                                                               \
   V(_writenl)                                                                  \
   V(_writetranslate)                                                           \
+  V(_wstring_at_addr)                                                          \
   V(abs)                                                                       \
   V(add)                                                                       \
   V(and_)                                                                      \
@@ -627,6 +635,7 @@ class Runtime;
   V(set_iterator)                                                              \
   V(single)                                                                    \
   V(siphash24)                                                                 \
+  V(sizeof)                                                                    \
   V(slice)                                                                     \
   V(smallbytes)                                                                \
   V(smallint)                                                                  \

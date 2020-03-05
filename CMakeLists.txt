@@ -203,6 +203,7 @@ set(
   FROZEN_MODULE_INPUT
   library/_builtins.py
   library/_codecs.py
+  library/_ctypes.py
   library/_imp.py
   library/_io.py
   library/_os.py
@@ -397,6 +398,8 @@ add_library(
   runtime/under-builtins-module.cpp
   runtime/under-builtins-module.h
   runtime/under-codecs-module.cpp
+  runtime/under-ctypes-module.cpp
+  runtime/under-ctypes-module.h
   runtime/under-imp-module.cpp
   runtime/under-imp-module.h
   runtime/under-io-module.cpp
@@ -433,7 +436,9 @@ target_compile_options(
 target_include_directories(
   runtime
   INTERFACE
-  runtime)
+  runtime
+  PRIVATE
+  ${FFI_INCLUDE_DIRS})
 target_link_libraries(
   runtime
   PUBLIC
@@ -442,7 +447,8 @@ target_link_libraries(
   dl
   modules
   siphash
-  valgrind)
+  valgrind
+  ${FFI_LIBRARIES})
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
 target_compile_definitions(runtime PRIVATE PYRO_BASEDIR="${CMAKE_SOURCE_DIR}")
 target_include_directories(runtime PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}

@@ -62,7 +62,8 @@ RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Frame* frame,
   // Load shared object
   const char* error_msg = nullptr;
   unique_c_ptr<char> path_cstr(path.toCStr());
-  void* handle = OS::openSharedObject(path_cstr.get(), &error_msg);
+  void* handle =
+      OS::openSharedObject(path_cstr.get(), OS::kRtldNow, &error_msg);
   if (handle == nullptr) {
     return thread->raiseWithFmt(
         LayoutId::kImportError, "dlerror: '%s' importing: '%S' from '%S'",
