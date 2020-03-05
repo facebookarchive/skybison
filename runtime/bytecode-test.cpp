@@ -60,12 +60,22 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  byte bytecode[514];
-  for (int i = 0; i < 257; i++) {
+  byte bytecode[256 * 2 + 4];
+  for (int i = 0; i < 256; i++) {
     bytecode[i * 2] = LOAD_ATTR;
     bytecode[(i * 2) + 1] = i * 3;
   }
+  // LOAD_GLOBAL 527 == 4 * 128 + 15.
+  bytecode[256 * 2] = EXTENDED_ARG;
+  bytecode[256 * 2 + 1] = 4;
+  bytecode[256 * 2] = LOAD_GLOBAL;
+  bytecode[256 * 2 + 1] = 15;
+
   code.setCode(runtime_->newBytesWithAll(bytecode));
+  word global_names_length = 600;
+  Tuple names(&scope, runtime_->newTuple(global_names_length));
+  code.setNames(*names);
+
   Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -74,6 +84,8 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   // The bytecode hasn't changed.
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));
+  // The cache for LOAD_GLOBAL was populated.
+  EXPECT_GT(Tuple::cast(function.caches()).length(), 527);
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
