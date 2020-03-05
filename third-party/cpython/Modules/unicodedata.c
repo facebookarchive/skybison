@@ -601,8 +601,6 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     PyObject *result;
     Py_UCS4 *output;
     Py_ssize_t i, o, osize, result_length;
-    int kind;
-    void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
@@ -627,11 +625,9 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         return NULL;
     }
     i = o = 0;
-    kind = PyUnicode_KIND(input);
-    data = PyUnicode_DATA(input);
 
     while (i < isize) {
-        stack[stackptr++] = PyUnicode_READ(kind, data, i++);
+        stack[stackptr++] = PyUnicode_READ_CHAR(input, i++);
         while(stackptr) {
             Py_UCS4 code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
@@ -743,8 +739,6 @@ static PyObject*
 nfc_nfkc(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
-    int kind;
-    void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
     int f,l,index,index1,comb;
@@ -756,8 +750,6 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     if (!result)
         return NULL;
     /* result will be "ready". */
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
     len = PyUnicode_GET_LENGTH(result);
 
     /* We allocate a buffer for the output.
@@ -785,24 +777,24 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       }
       /* Hangul Composition. We don't need to check for <LV,T>
          pairs, since we always have decomposed data. */
-      code = PyUnicode_READ(kind, data, i);
+      code = PyUnicode_READ_CHAR(result, i);
       if (LBase <= code && code < (LBase+LCount) &&
           i + 1 < len &&
-          VBase <= PyUnicode_READ(kind, data, i+1) &&
-          PyUnicode_READ(kind, data, i+1) < (VBase+VCount)) {
+          VBase <= PyUnicode_READ_CHAR(result, i+1) &&
+          PyUnicode_READ_CHAR(result, i+1) < (VBase+VCount)) {
           /* check L character is a modern leading consonant (0x1100 ~ 0x1112)
              and V character is a modern vowel (0x1161 ~ 0x1175). */
           int LIndex, VIndex;
           LIndex = code - LBase;
-          VIndex = PyUnicode_READ(kind, data, i+1) - VBase;
+          VIndex = PyUnicode_READ_CHAR(result, i+1) - VBase;
           code = SBase + (LIndex*VCount+VIndex)*TCount;
           i+=2;
           if (i < len &&
-              TBase < PyUnicode_READ(kind, data, i) &&
-              PyUnicode_READ(kind, data, i) < (TBase+TCount)) {
+              TBase < PyUnicode_READ_CHAR(result, i) &&
+              PyUnicode_READ_CHAR(result, i) < (TBase+TCount)) {
               /* check T character is a modern trailing consonant
                  (0x11A8 ~ 0x11C2). */
-              code += PyUnicode_READ(kind, data, i)-TBase;
+              code += PyUnicode_READ_CHAR(result, i)-TBase;
               i++;
           }
           output[o++] = code;
@@ -820,9 +812,9 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       i1 = i+1;
       comb = 0;
       /* output base character for now; might be updated later. */
-      output[o] = PyUnicode_READ(kind, data, i);
+      output[o] = PyUnicode_READ_CHAR(result, i);
       while (i1 < len) {
-          Py_UCS4 code1 = PyUnicode_READ(kind, data, i1);
+          Py_UCS4 code1 = PyUnicode_READ_CHAR(result, i1);
           int comb1 = _getrecord_ex(code1)->combining;
           if (comb) {
               if (comb1 == 0)
@@ -883,8 +875,6 @@ static int
 is_normalized(PyObject *self, PyObject *input, int nfc, int k)
 {
     Py_ssize_t i, len;
-    int kind;
-    void *data;
     unsigned char prev_combining = 0, quickcheck_mask;
 
     /* An older version of the database is requested, quickchecks must be
@@ -897,11 +887,9 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
 
     i = 0;
-    kind = PyUnicode_KIND(input);
-    data = PyUnicode_DATA(input);
     len = PyUnicode_GET_LENGTH(input);
     while (i < len) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, i++);
+        Py_UCS4 ch = PyUnicode_READ_CHAR(input, i++);
         const _PyUnicode_DatabaseRecord *record = _getrecord_ex(ch);
         unsigned char combining = record->combining;
         unsigned char quickcheck = record->normalization_quick_check;
