@@ -1170,7 +1170,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
   }
   PyObject* result = nullptr;
   // TODO(T42479157): Make more efficient by following CPython's implementation
-  if (std::strcmp(errors, "strict") == 0) {
+  if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
     wchar_t* wstr = PyMem_New(wchar_t, size + 1);
     if (wstr == nullptr) {
       PyErr_NoMemory();

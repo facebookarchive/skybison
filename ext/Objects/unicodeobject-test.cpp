@@ -1994,6 +1994,39 @@ TEST_F(UnicodeExtensionApiTest,
 }
 
 TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithNullErrorValueEmbeddedNulRaisesValueError) {
+  PyObject* self = PyUnicode_DecodeLocaleAndSize("a\0b", 3, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(self, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(
+    UnicodeExtensionApiTest,
+    DecodeLocaleAndSizeWithNullErrorValueNonNulTerminatedStrRaisesValueError) {
+  const char data[] = {'a', 'b'};
+  PyObject* self = PyUnicode_DecodeLocaleAndSize(data, 1, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(self, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithNullErrorValueReturnsStr) {
+  PyObjectPtr str(PyUnicode_DecodeLocaleAndSize("abc", 3, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "abc"));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithNullErrorValueStrictAndSurrogatesRaisesError) {
+  PyObject* str = PyUnicode_DecodeLocaleAndSize("abc\x80", 4, nullptr);
+  ASSERT_EQ(str, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeDecodeError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
        DecodeLocaleAndSizeWithEmbeddedNulRaisesValueError) {
   PyObject* self = PyUnicode_DecodeLocaleAndSize("a\0b", 3, "strict");
   ASSERT_NE(PyErr_Occurred(), nullptr);
