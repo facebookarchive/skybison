@@ -161,6 +161,7 @@ PyAPI_FUNC(int) PyComplex_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyComplex_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyExceptionClass_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyExceptionInstance_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyFloat_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyFloat_Check_Func(PyObject*);
@@ -1483,6 +1484,8 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 #define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
 #define Py_SIZE(obj) Py_SIZE_Func((PyVarObject*)(obj))
 #define Py_TYPE(obj) Py_TYPE_Func((PyObject*)(obj))
+#define PyExceptionClass_Check(obj)                                            \
+  PyExceptionClass_Check_Func((PyObject*)(obj))
 #define PyExceptionInstance_Class(obj)                                         \
   ((PyObject*)Py_TYPE_Func((PyObject*)(obj)))
 #define PyExceptionInstance_Check(x) PyExceptionInstance_Check_Func(x)

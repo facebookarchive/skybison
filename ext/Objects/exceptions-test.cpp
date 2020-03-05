@@ -9,6 +9,37 @@ namespace testing {
 
 using ExceptionsExtensionApiTest = ExtensionApi;
 
+TEST_F(ExceptionsExtensionApiTest, ExceptionClassCheckWithNonTypeReturnsZero) {
+  PyObjectPtr obj(PyLong_FromLong(5));
+  EXPECT_EQ(PyExceptionClass_Check(obj.get()), 0);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       ExceptionClassCheckWithNonExceptionSubclassReturnsZero) {
+  PyRun_SimpleString(R"(
+class C(str):
+  pass
+)");
+  PyObjectPtr c_type(moduleGet("__main__", "C"));
+  EXPECT_EQ(PyExceptionClass_Check(c_type.get()), 0);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       ExceptionClassCheckWithExceptionClassReturnsOne) {
+  EXPECT_EQ(PyExceptionClass_Check(PyExc_BaseException), 1);
+  EXPECT_EQ(PyExceptionClass_Check(PyExc_Exception), 1);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       ExceptionClassCheckWithExceptionSubclassReturnsOne) {
+  PyRun_SimpleString(R"(
+class C(TypeError):
+  pass
+)");
+  PyObjectPtr c_type(moduleGet("__main__", "C"));
+  EXPECT_EQ(PyExceptionClass_Check(c_type.get()), 1);
+}
+
 TEST_F(ExceptionsExtensionApiTest,
        ExceptionInstanceCheckWithNonExceptionReturnsZero) {
   PyObjectPtr obj(PyLong_FromLong(5));

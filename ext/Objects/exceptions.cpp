@@ -268,6 +268,19 @@ PY_EXPORT PyObject* PyExc_ResourceWarning_Ptr() {
   return typeObjectHandle(LayoutId::kResourceWarning);
 }
 
+PY_EXPORT int PyExceptionClass_Check_Func(PyObject* obj) {
+  DCHECK(obj != nullptr, "obj should not be null");
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (!runtime->isInstanceOfType(*object)) {
+    return false;
+  }
+  Type type(&scope, *object);
+  return type.isBaseExceptionSubclass();
+}
+
 PY_EXPORT int PyExceptionInstance_Check_Func(PyObject* obj) {
   DCHECK(obj != nullptr, "obj should not be null");
   Thread* thread = Thread::current();
