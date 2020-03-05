@@ -532,9 +532,9 @@ def getsize(data):
     """Return the smallest possible integer size for the given array.
     """
     maxdata = max(data)
-    if maxdata < (1 << 7):
+    if maxdata < (1 << 8):
         return 1
-    if maxdata < (1 << 15):
+    if maxdata < (1 << 16):
         return 2
     return 4
 
@@ -645,8 +645,8 @@ class Array:
         file.write("};\n")
 
 
-class IntArray:
-    """Integer arrays, printed as hex.
+class UIntArray:
+    """Unsigned integer arrays, printed as hex.
     """
 
     def __init__(self, name, data):
@@ -658,7 +658,7 @@ class IntArray:
         if trace:
             sys.stderr.write(f"{self.name}: {self.size * len(self.data)} bytes\n")
 
-        file.write(f"\nstatic const int{8 * self.size}_t {self.name}[] = {{")
+        file.write(f"\nstatic const uint{8 * self.size}_t {self.name}[] = {{")
         columns = (LINE_WIDTH - 3) // (2 * self.size + 4)
         for i in range(0, len(self.data), columns):
             line = "\n   "
@@ -881,8 +881,8 @@ static const int kTypeIndexShift = {shift};
 static const int32_t kTypeIndexMask = (int32_t{{1}} << kTypeIndexShift) - 1;
 """
     )
-    IntArray("kTypeIndex1", index1).dump(db, trace)
-    IntArray("kTypeIndex2", index2).dump(db, trace)
+    UIntArray("kTypeIndex1", index1).dump(db, trace)
+    UIntArray("kTypeIndex2", index2).dump(db, trace)
 
     db.write(
         """
