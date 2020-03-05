@@ -551,6 +551,10 @@ Py_FinalizeEx(void)
     PyThreadState *tstate;
     int status = 0;
 
+    int should_dump_refs = (int)Py_GETENV("PYTHONDUMPREFS");
+    char* p = Py_GETENV("PYTHONMALLOCSTATS");
+    int debug_malloc_stats = p && *p != '\0';
+
     if (!initialized)
         return status;
 
@@ -659,7 +663,7 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (should_dump_refs)
         _Py_PrintReferences(stderr);
 #endif /* Py_TRACE_REFS */
 
@@ -724,13 +728,12 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (should_dump_refs)
         _Py_PrintReferenceAddresses(stderr);
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
     if (_PyMem_PymallocEnabled()) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
-        if (opt != NULL && *opt != '\0')
+        if (debug_malloc_stats)
             _PyObject_DebugMallocStats(stderr);
     }
 #endif
