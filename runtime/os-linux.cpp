@@ -33,8 +33,13 @@ void* OS::openSharedObject(const char* filename, int mode,
   return result;
 }
 
-void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol) {
-  return ::dlsym(handle, symbol);
+void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol,
+                                    const char** error_msg) {
+  void* result = ::dlsym(handle, symbol);
+  if (result == nullptr && error_msg != nullptr) {
+    *error_msg = ::dlerror();
+  }
+  return result;
 }
 
 }  // namespace py

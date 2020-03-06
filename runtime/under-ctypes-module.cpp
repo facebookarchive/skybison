@@ -114,6 +114,24 @@ void UnderCtypesModule::initialize(Thread* thread, const Module& module) {
   moduleAtPut(thread, module, wstring_at_addr_name, wstring_at_addr);
 }
 
+RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Int handle(&scope, args.get(0));
+  Str name(&scope, args.get(1));
+  unique_c_ptr<char> name_cstr(name.toCStr());
+  const char* error_msg = nullptr;
+  void* address = OS::sharedObjectSymbolAddress(handle.asCPtr(),
+                                                name_cstr.get(), &error_msg);
+  if (address == nullptr) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError, "%s",
+                                error_msg != nullptr ? error_msg : "");
+  }
+  return thread->runtime()->newIntFromCPtr(address);
+}
+
 RawObject FUNC(_ctypes, dlopen)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

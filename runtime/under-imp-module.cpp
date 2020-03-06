@@ -76,7 +76,7 @@ RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Frame* frame,
   unique_c_ptr<char> name_cstr(name.toCStr());
   std::snprintf(buffer, sizeof(buffer), "PyInit_%s", name_cstr.get());
   auto init_func = reinterpret_cast<ApiHandle* (*)()>(
-      OS::sharedObjectSymbolAddress(handle, buffer));
+      OS::sharedObjectSymbolAddress(handle, buffer, /*error_msg=*/nullptr));
   if (init_func == nullptr) {
     return thread->raiseWithFmt(LayoutId::kImportError,
                                 "dlsym error: dynamic module '%S' does not "

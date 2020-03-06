@@ -59,7 +59,8 @@ class OS {
   static void* openSharedObject(const char* filename, int mode,
                                 const char** error_msg);
 
-  static void* sharedObjectSymbolAddress(void* handle, const char* symbol);
+  static void* sharedObjectSymbolAddress(void* handle, const char* symbol,
+                                         const char** error_msg);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);

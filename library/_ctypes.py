@@ -5,9 +5,11 @@ from weakref import ref
 
 from _builtins import (
     _builtin,
+    _bytes_check,
     _int_check,
     _str_check,
     _str_len,
+    _tuple_check,
     _tuple_len,
     _unimplemented,
     _weakref_check,
@@ -171,19 +173,33 @@ class Array(_CData, metaclass=PyCArrayType):
 
 class CFuncPtr(_CData, metaclass=PyCFuncPtrType):
     def __new__(cls, *args, **kwargs):
-        # TODO(T61319024): Flesh this method out more
-        if _tuple_len(args) == 1:
-            arg = args[0]
-            if _int_check(arg):
-                result = super().__new__(cls)
-                result.fn_pointer = arg
-            elif callable(arg):
-                result = super().__new__(cls)
-                result.callable = arg
-            else:
-                _unimplemented()
-        else:
+        if _tuple_len(args) != 1:
             _unimplemented()
+
+        arg = args[0]
+        if _int_check(arg):
+            result = super().__new__(cls)
+            result.fn_pointer = arg
+        elif callable(arg):
+            result = super().__new__(cls)
+            result.callable = arg
+        elif _tuple_check(arg):
+            name = arg[0]
+            if _bytes_check(name):
+                _unimplemented()
+            if not _str_check(name):
+                # Note: integer argument only supported on WIN32
+                raise TypeError("function name must be string, bytes object or integer")
+            dll = arg[1]
+            handle = dll._handle
+            if not _int_check(handle):
+                raise TypeError(
+                    "the _handle attribute of the second argument must be an integer"
+                )
+            result = super().__new__(cls)
+            result.fn_pointer = _shared_object_symbol_address(handle, name)
+        else:
+            raise TypeError("argument must be callable or integer function address")
 
         return result
 
@@ -208,6 +224,10 @@ _array_from_ctype_cache = {}
 
 
 _pointer_type_cache = {}
+
+
+def _shared_object_symbol_address(handle, name):
+    _builtin()
 
 
 def addressof(obj):

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import ctypes
+import ctypes.util
 import unittest
 
 from test_support import pyro_only
@@ -26,6 +27,21 @@ class CtypesTests(unittest.TestCase):
         self.assertGreater(len(_array_from_ctype_cache), 0)
         _gc()
         self.assertEqual(len(_array_from_ctype_cache), 0)
+
+    def test_loaded_library_has_function_attrs(self):
+        libc_name = ctypes.util.find_library("c")
+        libc = ctypes.CDLL(libc_name)
+        self.assertTrue(hasattr(libc, "abort"))
+        self.assertTrue(hasattr(libc, "printf"))
+        self.assertFalse(hasattr(libc, "DoesNotExist"))
+        self.assertIsNotNone(libc.abort)
+        self.assertIsNotNone(libc.printf)
+
+    def test_import_uuid(self):
+        # importing uuid exercises ctypes, make sure it doesn't break
+        import uuid
+
+        self.assertIsNotNone(uuid)
 
 
 if __name__ == "__main__":
