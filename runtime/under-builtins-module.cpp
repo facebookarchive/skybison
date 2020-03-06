@@ -2186,8 +2186,11 @@ RawObject FUNC(_builtins, _function_set_defaults)(Thread* thread, Frame* frame,
   }
   Function function(&scope, *self);
   Object defaults(&scope, args.get(1));
-  if (thread->runtime()->isInstanceOfTuple(*defaults) ||
-      defaults.isNoneType()) {
+  if (defaults.isNoneType()) {
+    function.setDefaults(*defaults);
+    return NoneType::object();
+  }
+  if (thread->runtime()->isInstanceOfTuple(*defaults)) {
     function.setDefaults(tupleUnderlying(*defaults));
     return NoneType::object();
   }

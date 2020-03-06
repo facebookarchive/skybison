@@ -4247,6 +4247,16 @@ def foo():
         with self.assertRaises(TypeError):
             foo.__defaults__ = {}
 
+    def test_dunder_set_defaults_with_none_makes_function_require_arg(self):
+        def foo(arg="bar"):
+            return arg
+
+        foo.__defaults__ = None
+        self.assertEqual(foo.__defaults__, None)
+        self.assertEqual(foo(arg="abc"), "abc")
+        with self.assertRaises(TypeError):
+            foo()
+
     def test_dunder_kwdefaults_returns_kwdefaults(self):
         def foo(*args, kwarg=42):
             return kwarg
@@ -4271,6 +4281,16 @@ def foo():
         self.assertEqual(whereami(), 770)
         whereami.__kwdefaults__ = D((("office", 225),))
         self.assertEqual(whereami(), 225)
+
+    def test_dunder_set_kwdefaults_with_none_makes_function_require_kwarg(self):
+        def foo(*args, kwarg="bar"):
+            return kwarg
+
+        foo.__kwdefaults__ = None
+        self.assertEqual(foo.__kwdefaults__, None)
+        self.assertEqual(foo(kwarg="abc"), "abc")
+        with self.assertRaises(TypeError):
+            foo()
 
     def test_dunder_set_kwdefaults_with_non_dict_raises_typeerror(self):
         def foo():
@@ -4304,7 +4324,7 @@ def foo():
         foo.__annotations__ = D((("arg", int),))
         self.assertEqual(foo.__annotations__, {"arg": int})
 
-    def test_dunder_set_annotationswith_non_dict_raises_typeerror(self):
+    def test_dunder_set_annotations_with_non_dict_raises_typeerror(self):
         def foo():
             pass
 
