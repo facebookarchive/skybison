@@ -66,6 +66,14 @@ TEST_F(ConfigExtensionApiTest, ImportUnderLzmaReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest,
+       ImportUnderMultiprocessingReadlineReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_multiprocessing"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderMyReadlineReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_myreadline"));
   ASSERT_NE(module, nullptr);

@@ -472,6 +472,9 @@ add_library(
   ${CPYTHON_DIR}/Modules/_lzmamodule.c
   ${CPYTHON_DIR}/Modules/_math.c
   ${CPYTHON_DIR}/Modules/_math.h
+  ${CPYTHON_DIR}/Modules/_multiprocessing/multiprocessing.h
+  ${CPYTHON_DIR}/Modules/_multiprocessing/multiprocessing.c
+  ${CPYTHON_DIR}/Modules/_multiprocessing/semaphore.c
   ${CPYTHON_DIR}/Modules/_posixsubprocess.c
   ${CPYTHON_DIR}/Modules/_randommodule.c
   ${CPYTHON_DIR}/Modules/_sha3/sha3module.c
