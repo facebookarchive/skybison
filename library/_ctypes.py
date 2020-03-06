@@ -120,13 +120,11 @@ of length 1"
 
 
 class PyCStructType(_CDataType):
-    def __setattr__(self, name, value):
-        _unimplemented()
+    pass
 
 
 class UnionType(_CDataType):
-    def __setattr__(self, name, value):
-        _unimplemented()
+    pass
 
 
 # End Metaclasses
