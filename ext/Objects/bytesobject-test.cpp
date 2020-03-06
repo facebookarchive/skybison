@@ -726,6 +726,21 @@ TEST_F(BytesWriterExtensionApiTest, AllocSetsUpBuffer) {
   EXPECT_EQ(writer.min_size, size);
 }
 
+TEST_F(BytesWriterExtensionApiTest,
+       FinishWithHeapBufferAndNoSizeDeallocsBuffer) {
+  // at least big enough for heap buffer
+  Py_ssize_t size = 50000;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* buffer = _PyBytesWriter_Alloc(&writer, size);
+  EXPECT_NE(buffer, nullptr);
+  EXPECT_EQ(writer.allocated, size);
+  EXPECT_EQ(writer.min_size, size);
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, buffer));
+  EXPECT_NE(result, nullptr);
+  EXPECT_TRUE(PyBytes_CheckExact(result));
+}
+
 TEST_F(BytesWriterExtensionApiTest, DeallocFreesHeapBuffer) {
   _PyBytesWriter writer;
   _PyBytesWriter_Init(&writer);
