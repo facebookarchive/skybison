@@ -954,14 +954,15 @@ static struct PyModuleDef mathmodule;
 #define mathstate(o) ((mathstate *)PyModule_GetState(o))
 #define mathstate_global ((mathstate *)PyModule_GetState(PyState_FindModule(&mathmodule)))
 
-/* Like _PyObject_LookupSpecial but takes an object for the attribute name
-   instead of a _Py_Identifier */
+// Like _PyObject_LookupSpecial but takes an object for the attribute name
+// instead of a _Py_Identifier
 static PyObject*
 lookup_special(PyObject *self, PyObject *func_name) {
+    PyObject *func, *getter;
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject *func = _PyType_Lookup(tp, func_name);
+    func = _PyType_Lookup(tp, func_name);
     if (func != NULL) {
-        PyObject *getter = _PyType_Lookup(Py_TYPE(func), mathstate_global->dunder_get);
+        getter = _PyType_Lookup(Py_TYPE(func), mathstate_global->dunder_get);
         if (getter == NULL) {
             Py_INCREF(func);
         } else {
@@ -971,6 +972,7 @@ lookup_special(PyObject *self, PyObject *func_name) {
     }
     return func;
 }
+
 
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
     PyObject *method, *result;

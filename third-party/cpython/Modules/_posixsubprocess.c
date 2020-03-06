@@ -585,22 +585,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 #endif
 
     if (!PyArg_ParseTuple(
-            args, "OOpOOOiiiiiiiiiiO:fork_exec",
+            args, "OOpO!OOiiiiiiiiiiO:fork_exec",
             &process_args, &executable_list,
-            &close_fds, &py_fds_to_keep,
+            &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid, &preexec_fn))
         return NULL;
-
-    // TODO(T53172188): investigate whether to implement &PyTuple_Type
-    if (!PyTuple_Check(py_fds_to_keep)) {
-      PyErr_Format(PyExc_TypeError,
-                   "fork_exec() argument 4 must be tuple, not %.50s",
-                   _PyType_Name(Py_TYPE(py_fds_to_keep)));
-      return NULL;
-    }
 
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
@@ -848,15 +840,17 @@ static struct PyModuleDef _posixsubprocessmodule = {
 PyMODINIT_FUNC
 PyInit__posixsubprocess(void)
 {
-    PyObject *m = PyState_FindModule(&_posixsubprocessmodule);
+    PyObject* m;
+
+    m = PyState_FindModule(&_posixsubprocessmodule);
     if (m != NULL) {
-        Py_INCREF(m);
-        return m;
+      Py_INCREF(m);
+      return m;
     }
 
     m = PyModule_Create(&_posixsubprocessmodule);
     if (m == NULL) {
-        return NULL;
+      return NULL;
     }
 
     _posixsubprocessstate(m)->disable = PyUnicode_InternFromString("disable");
