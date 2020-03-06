@@ -132,17 +132,6 @@ CASED_MASK = 0x2000
 EXTENDED_CASE_MASK = 0x4000
 
 
-cjk_ranges = [
-    ("3400", "4DB5"),
-    ("4E00", "9FEF"),
-    ("20000", "2A6D6"),
-    ("2A700", "2B734"),
-    ("2B740", "2B81D"),
-    ("2B820", "2CEA1"),
-    ("2CEB0", "2EBE0"),
-]
-
-
 def open_data(filename, version):
     ucd_dir = os.path.join(PYRO_DIR, "third-party", f"ucd-{version}")
     if not os.path.exists(ucd_dir):
@@ -166,6 +155,27 @@ Find it online at {url}"""
     else:
         # Unihan.zip
         return open(path, "rb")
+
+
+########################################################################################
+# CJK ranges
+
+
+@dataclass(frozen=True)
+class CJKRange:
+    start: int
+    end: int
+
+
+CJK_RANGES = (
+    CJKRange(0x3400, 0x4DB5),
+    CJKRange(0x4E00, 0x9FEF),
+    CJKRange(0x20000, 0x2A6D6),
+    CJKRange(0x2A700, 0x2B734),
+    CJKRange(0x2B740, 0x2B81D),
+    CJKRange(0x2B820, 0x2CEA1),
+    CJKRange(0x2CEB0, 0x2EBE0),
+)
 
 
 ########################################################################################
@@ -194,7 +204,6 @@ class UnicodeData:
         self.aliases = []
         self.case_folding = {}
         self.changed = []
-        self.cjk_ranges = []
         self.exclusions = set()
         self.named_sequences = []
         self.special_casing = {}
@@ -211,6 +220,7 @@ class UnicodeData:
 
         # expand first-last ranges
         field = None
+        cjk_ranges = []
         for char in CODE_POINTS:
             s = self.table[char]
             if s is not None:
@@ -219,13 +229,18 @@ class UnicodeData:
                     field = s
                 elif s[1][-5:] == "Last>":
                     if check_cjk and s[1].startswith("<CJK Ideograph"):
-                        self.cjk_ranges.append((field[0], s[0]))
+                        start = int(field[0], 16)
+                        end = int(s[0], 16)
+                        cjk_ranges.append(CJKRange(start, end))
                     s[1] = ""
                     field = None
             elif field:
                 f2 = field[:]
                 f2[0] = f"{char:X}"
                 self.table[char] = f2
+
+        if check_cjk and set(cjk_ranges) != set(CJK_RANGES):
+            raise ValueError(f"CJK ranges deviate: found {cjk_ranges!r}")
 
         # check for name aliases and named sequences, see #12753
         # aliases and named sequences are not in 3.2.0
