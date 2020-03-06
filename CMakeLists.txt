@@ -469,6 +469,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h
   ${CPYTHON_DIR}/Modules/_bz2module.c
   ${CPYTHON_DIR}/Modules/_hashopenssl.c
+  ${CPYTHON_DIR}/Modules/_localemodule.c
   ${CPYTHON_DIR}/Modules/_lzmamodule.c
   ${CPYTHON_DIR}/Modules/_math.c
   ${CPYTHON_DIR}/Modules/_math.h

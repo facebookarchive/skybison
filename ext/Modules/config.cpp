@@ -8,6 +8,7 @@ extern "C" PyObject* PyInit__bz2();
 extern "C" PyObject* PyInit__capsule();
 extern "C" PyObject* PyInit__compile();
 extern "C" PyObject* PyInit__hashlib();
+extern "C" PyObject* PyInit__locale();
 extern "C" PyObject* PyInit__lzma();
 extern "C" PyObject* PyInit__multiprocessing();
 extern "C" PyObject* PyInit__myreadline();
@@ -52,6 +53,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_compile", PyInit__compile},
     {"_empty", PyInit__empty},
     {"_hashlib", PyInit__hashlib},
+    {"_locale", PyInit__locale},
     {"_lzma", PyInit__lzma},
     {"_multiprocessing", PyInit__multiprocessing},
     {"_myreadline", PyInit__myreadline},
