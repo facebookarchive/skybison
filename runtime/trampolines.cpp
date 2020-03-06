@@ -144,23 +144,6 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   return *function;
 }
 
-static RawObject isParamEqual(Thread* thread, RawObject actual,
-                              RawObject formal) {
-  if (actual == formal) return Bool::trueObj();
-  if (actual.isStr() && formal.isStr()) {
-    return Bool::fromBool(Str::cast(actual).equals(formal));
-  }
-  if (actual.isError()) return Bool::falseObj();
-  HandleScope scope(thread);
-  Object actual_obj(&scope, actual);
-  Object formal_obj(&scope, formal);
-  Object result(
-      &scope, Interpreter::compareOperation(thread, thread->currentFrame(), EQ,
-                                            actual_obj, formal_obj));
-  if (result.isErrorException() || result.isBool()) return *result;
-  return Interpreter::isTrue(thread, *result);
-}
-
 // Verify correct number and order of arguments.  If order is wrong, try to
 // fix it.  If argument is missing (denoted by Error::object()), try to supply
 // it with a default.  This routine expects the number of args on the stack
@@ -192,7 +175,7 @@ static RawObject checkArgs(Thread* thread, const Function& function,
     word formal_pos = arg_pos + start;
     formal_name = formal_names.at(formal_pos);
     RawObject result =
-        isParamEqual(thread, actual_names.at(arg_pos), *formal_name);
+        Runtime::objectEquals(thread, actual_names.at(arg_pos), *formal_name);
     if (result.isErrorException()) return result;
     if (result == Bool::trueObj()) {
       if (formal_pos >= posonlyargcount) {
@@ -210,7 +193,7 @@ static RawObject checkArgs(Thread* thread, const Function& function,
     bool swapped = false;
     // Look for expected Formal name in Actuals tuple.
     for (word i = arg_pos + 1; i < num_actuals; i++) {
-      result = isParamEqual(thread, actual_names.at(i), *formal_name);
+      result = Runtime::objectEquals(thread, actual_names.at(i), *formal_name);
       if (result.isErrorException()) return result;
       if (result == Bool::trueObj()) {
         // Found it.  Swap both the stack and the actual_names tuple.
@@ -277,7 +260,7 @@ static word findName(Thread* thread, word posonlyargcount, const Object& name,
                      const Tuple& names) {
   word len = names.length();
   for (word i = posonlyargcount; i < len; i++) {
-    RawObject result = isParamEqual(thread, *name, names.at(i));
+    RawObject result = Runtime::objectEquals(thread, *name, names.at(i));
     if (result.isErrorException()) return -1;
     if (result == Bool::trueObj()) {
       return i;
