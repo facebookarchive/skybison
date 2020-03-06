@@ -28,6 +28,7 @@ fi
 PYRO_TEST_FILTER="*_test.py"
 TEST_RUNNING_FILTER="*test*.py"
 CPYTHON_TESTS=(
+  test___future__.py
   test_augassign.py
   test_binop.py
   test_colorsys.py
@@ -47,11 +48,13 @@ CPYTHON_TESTS=(
   test_future3.py
   test_future4.py
   test_future5.py
+  test_getpass.py
   test_html.py
   test_int_literal.py
   test_longexp.py
   test_macurl2path.py
   test_netrc.py
+  test_openpty.py
   test_osx_env.py
   test_strftime.py
   test_typechecks.py
