@@ -60,7 +60,7 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  byte bytecode[256 * 2 + 4];
+  byte bytecode[258 * 2];
   for (int i = 0; i < 256; i++) {
     bytecode[i * 2] = LOAD_ATTR;
     bytecode[(i * 2) + 1] = i * 3;
@@ -68,8 +68,8 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   // LOAD_GLOBAL 527 == 4 * 128 + 15.
   bytecode[256 * 2] = EXTENDED_ARG;
   bytecode[256 * 2 + 1] = 4;
-  bytecode[256 * 2] = LOAD_GLOBAL;
-  bytecode[256 * 2 + 1] = 15;
+  bytecode[257 * 2] = LOAD_GLOBAL;
+  bytecode[257 * 2 + 1] = 15;
 
   code.setCode(runtime_->newBytesWithAll(bytecode));
   word global_names_length = 600;
