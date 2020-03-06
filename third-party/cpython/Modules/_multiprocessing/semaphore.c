@@ -183,6 +183,10 @@ semlock_release(SemLockObject *self, PyObject *args)
  * Unix definitions
  */
 
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
 #define SEM_CLEAR_ERROR()
 #define SEM_GET_LAST_ERROR() 0
 #define SEM_CREATE(name, val, max) sem_open(name, O_CREAT | O_EXCL, 0600, val)
