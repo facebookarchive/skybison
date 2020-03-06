@@ -31,9 +31,9 @@ __version__ = "1.1.0"
 
 # Metaclasses
 
-# Note: CPython does not define CDataType as a metaclass, but rather as a
+# Note: CPython does not define _CDataType as a metaclass, but rather as a
 # set of methods which are added to the other metaclasses.
-class CDataType(type):
+class _CDataType(type):
     def from_address(cls, *args, **kwargs):
         _unimplemented()
 
@@ -68,15 +68,15 @@ class CDataType(type):
         return result
 
 
-class PyCArrayType(CDataType):
+class PyCArrayType(_CDataType):
     pass
 
 
-class PyCFuncPtrType(CDataType):
+class PyCFuncPtrType(_CDataType):
     pass
 
 
-class PyCPointerType(CDataType):
+class PyCPointerType(_CDataType):
     def from_param(cls, *args, **kwargs):  # noqa: B902
         _unimplemented()
 
@@ -84,7 +84,7 @@ class PyCPointerType(CDataType):
         _unimplemented()
 
 
-class PyCSimpleType(CDataType):
+class PyCSimpleType(_CDataType):
     def __new__(cls, name, bases, namespace):
         result = super().__new__(cls, name, bases, namespace)
 
@@ -119,12 +119,12 @@ of length 1"
         _unimplemented()
 
 
-class PyCStructType(CDataType):
+class PyCStructType(_CDataType):
     def __setattr__(self, name, value):
         _unimplemented()
 
 
-class UnionType(CDataType):
+class UnionType(_CDataType):
     def __setattr__(self, name, value):
         _unimplemented()
 
