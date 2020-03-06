@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """ctypes support module"""
 
+from weakref import ref
+
 from _builtins import (
     _builtin,
     _int_check,
@@ -8,6 +10,7 @@ from _builtins import (
     _str_len,
     _tuple_len,
     _unimplemented,
+    _weakref_check,
 )
 
 
@@ -43,6 +46,24 @@ class CDataType(type):
 
     def in_dll(cls, *args, **kwargs):
         _unimplemented()
+
+    def __mul__(cls, length):
+        if length < 0:
+            raise ValueError(f"Array length must be >= 0, not {length}")
+        if not isinstance(cls, type):
+            raise TypeError(f"Expected a type object")
+
+        key = (cls, length)
+        result = _array_from_ctype_cache.get(key)
+        if result is not None:
+            return result() if _weakref_check(result) else result
+
+        name = f"{cls.__name__}_Array_{length}"
+        result = PyCArrayType(name, (Array,), {"_length_": length, "_type_": cls})
+        _array_from_ctype_cache[key] = ref(
+            result, lambda _: _array_from_ctype_cache.pop(key)
+        )
+        return result
 
 
 class PyCArrayType(CDataType):
@@ -181,6 +202,9 @@ class Union(_CData, metaclass=UnionType):
 
     def __new__(cls, *args, **kwargs):
         _unimplemented()
+
+
+_array_from_ctype_cache = {}
 
 
 _pointer_type_cache = {}
