@@ -40,7 +40,11 @@ This software comes with no warranty. Use at your own risk.
 
 PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");
 
-static PyObject *Error;
+typedef struct {
+    PyObject *Error;
+} localemodulestate;
+static struct PyModuleDef _localemodule;
+#define localemodulestate(o) ((localemodulestate *)PyModule_GetState(o))
 
 /* support functions for formatting floating point numbers */
 
@@ -93,7 +97,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
 #if defined(MS_WINDOWS)
     if (category < LC_MIN || category > LC_MAX)
     {
-        PyErr_SetString(Error, "invalid locale category");
+        PyErr_SetString(localemodulestate(self)->Error, "invalid locale category");
         return NULL;
     }
 #endif
@@ -103,7 +107,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         result = setlocale(category, locale);
         if (!result) {
             /* operation failed, no setting was changed */
-            PyErr_SetString(Error, "unsupported locale setting");
+            PyErr_SetString(localemodulestate(self)->Error, "unsupported locale setting");
             return NULL;
         }
         result_object = PyUnicode_DecodeLocale(result, NULL);
@@ -113,7 +117,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         /* get locale */
         result = setlocale(category, NULL);
         if (!result) {
-            PyErr_SetString(Error, "locale query failed");
+            PyErr_SetString(localemodulestate(self)->Error, "locale query failed");
             return NULL;
         }
         result_object = PyUnicode_DecodeLocale(result, NULL);
@@ -622,7 +626,7 @@ PyIntl_bindtextdomain(PyObject* self,PyObject*args)
     if (!PyArg_ParseTuple(args, "sO", &domain, &dirname_obj))
         return 0;
     if (!strlen(domain)) {
-        PyErr_SetString(Error, "domain must be a non-empty string");
+        PyErr_SetString(localemodulestate(self)->Error, "domain must be a non-empty string");
         return 0;
     }
     if (dirname_obj != Py_None) {
@@ -703,27 +707,48 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {NULL, NULL}
 };
 
+static int
+localemodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(localemodulestate(m)->Error);
+    return 0;
+}
+
+static int
+localemodule_clear(PyObject *m) {
+    Py_CLEAR(localemodulestate(m)->Error);
+    return 0;
+}
+
+static void
+localemodule_free(void *m) {
+    localemodule_clear((PyObject *)m);
+}
 
 static struct PyModuleDef _localemodule = {
     PyModuleDef_HEAD_INIT,
     "_locale",
     locale__doc__,
-    -1,
+    sizeof(localemodulestate),
     PyLocale_Methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    localemodule_traverse,
+    localemodule_clear,
+    localemodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit__locale(void)
 {
-    PyObject *m;
+    PyObject *m, *Error;
 #ifdef HAVE_LANGINFO_H
     int i;
 #endif
 
+    m = PyState_FindModule(&_localemodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     m = PyModule_Create(&_localemodule);
     if (m == NULL)
         return NULL;
@@ -746,7 +771,9 @@ PyInit__locale(void)
         Py_DECREF(m);
         return NULL;
     }
+    Py_INCREF(Error);
     PyModule_AddObject(m, "Error", Error);
+    localemodulestate(m)->Error = Error;
 
 #ifdef HAVE_LANGINFO_H
     for (i = 0; langinfo_constants[i].name; i++) {
@@ -759,6 +786,7 @@ PyInit__locale(void)
         Py_DECREF(m);
         return NULL;
     }
+    PyState_AddModule(m, &_localemodule);
     return m;
 }
 
