@@ -4650,32 +4650,32 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     if (!isbytes) {
         Py_ssize_t codepointlen = 0;
         charsize = 1;
-        int codeunitsize = 0;
-        for (; codepointlen < length; codepointlen++, codeunitsize++) {
-          unsigned char ch = ((unsigned char*)ptr)[codeunitsize];
-          if (ch <= 0x80) {
+        for (int codeunit_index = 0; codepointlen < length;
+             codepointlen++, codeunit_index++) {
+          unsigned char ch = ((unsigned char*)ptr)[codeunit_index];
+          if (ch < 0x80) {
             continue;
           }
           charsize = 4;
           if ((ch & 0xdf) == ch) {
-            codeunitsize++;
+            codeunit_index++;
             continue;
           }
           if ((ch & 0xef) == ch) {
-            codeunitsize += 2;
+            codeunit_index += 2;
             continue;
           }
-          codeunitsize += 3;
+          codeunit_index += 3;
         }
 
-        void* ucs4buf = PyMem_Malloc(codeunitsize);
+        void* ucs4buf = PyMem_Malloc(codepointlen * charsize);
         if (charsize == 1) {
-          memcpy(ucs4buf, ptr, codeunitsize);
+          memcpy(ucs4buf, ptr, codepointlen);
           ptr = ucs4buf;
         } else {
           for (int i = 0, j = 0; i < codepointlen; i++) {
             unsigned char ch = ((unsigned char*)ptr)[j];
-            if (ch <= 0x80) {
+            if (ch < 0x80) {
               ((Py_UCS4*)ucs4buf)[i] = ch;
               j++;
               continue;
