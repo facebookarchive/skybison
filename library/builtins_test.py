@@ -4341,15 +4341,19 @@ def foo():
         self.assertIsInstance(new_func, types.FunctionType)
         self.assertEqual(new_func.__name__, "_f")
 
-    def test_dunder_new_with_name_override_returns_function_object(self):
+    def test_dunder_new_with_all_args_returns_function_object(self):
         import types
 
         def _f():
             pass
 
-        new_func = types.FunctionType(_f.__code__, _f.__globals__, name="hi")
+        new_func = types.FunctionType(
+            _f.__code__, _f.__globals__, "hi", _f.__defaults__, _f.__closure__
+        )
         self.assertIsInstance(new_func, types.FunctionType)
         self.assertEqual(new_func.__name__, "hi")
+        self.assertEqual(new_func.__defaults__, _f.__defaults__)
+        self.assertEqual(new_func.__closure__, _f.__closure__)
 
     def test_dunder_new_with_name_override_as_subclassed_str_returns_function_object(
         self
@@ -4366,6 +4370,22 @@ def foo():
         new_func = types.FunctionType(_f.__code__, _f.__globals__, name=str_subclass)
         self.assertIsInstance(new_func, types.FunctionType)
         self.assertEqual(new_func.__name__, "reb00t")
+
+    def test_dunder_new_with_closure_as_subclassed_tuple_returns_function_object(self):
+        import types
+
+        def _f():
+            pass
+
+        class _t(tuple):
+            pass
+
+        tuple_subclass = _t()
+        new_func = types.FunctionType(
+            _f.__code__, _f.__globals__, closure=tuple_subclass
+        )
+        self.assertIsInstance(new_func, types.FunctionType)
+        self.assertEqual(new_func.__closure__, ())
 
     def test_dunder_new_with_non_code_type_value_raises_type_error(self):
         import types
@@ -4393,6 +4413,24 @@ def foo():
 
         with self.assertRaises(TypeError):
             types.FunctionType(_f.__code__, _f.__globals__, name=[])
+
+    def test_dunder_new_with_non_tuple_argdefs_value_raises_type_error(self):
+        import types
+
+        def _f():
+            pass
+
+        with self.assertRaises(TypeError):
+            types.FunctionType(_f.__code__, _f.__globals__, argdefs="not a tuple")
+
+    def test_dunder_new_with_non_tuple_closure_value_raises_type_error(self):
+        import types
+
+        def _f():
+            pass
+
+        with self.assertRaises(TypeError):
+            types.FunctionType(_f.__code__, _f.__globals__, closure="not a tuple")
 
 
 class GeneratorTests(unittest.TestCase):

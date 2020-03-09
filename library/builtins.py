@@ -326,12 +326,12 @@ class function(bootstrap=True):
 
     __kwdefaults__ = _property(_function_kwdefaults, _function_set_kwdefaults)
 
-    def __new__(cls, code, globals_dict, name=None):
+    def __new__(cls, code, globals_dict, name=None, argdefs=None, closure=None):
         if _module_proxy_check(globals_dict):
             mod = globals_dict.__module_object__
         elif _dict_check(globals_dict):
             _unimplemented()
-        return _function_new(cls, code, mod, name)
+        return _function_new(cls, code, mod, name, argdefs, closure)
 
     def __repr__(self):
         _function_guard(self)

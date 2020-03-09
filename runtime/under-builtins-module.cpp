@@ -2127,31 +2127,43 @@ RawObject FUNC(_builtins, _function_new)(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "not a subtype of function");
   }
-
   Object code_obj(&scope, args.get(1));
   if (!code_obj.isCode()) {
     return thread->raiseRequiresType(code_obj, ID(code));
   }
-  Code code(&scope, *code_obj);
-
   Object module(&scope, args.get(2));
   if (!runtime->isInstanceOfModule(*module)) {
     return thread->raiseRequiresType(module, ID(module));
   }
-
-  Object name(&scope, args.get(3));
-  if (!(name.isNoneType() || runtime->isInstanceOfStr(*name))) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "arg 3 (name) must be None or string", &name);
-  }
-
+  Code code(&scope, *code_obj);
   Object empty_qualname(&scope, NoneType::object());
   Object result(&scope, runtime->newFunctionWithCode(thread, empty_qualname,
                                                      code, module));
   if (result.isFunction()) {
     Function new_function(&scope, *result);
-    if (!name.isNoneType()) {
+
+    Object name(&scope, args.get(3));
+    if (runtime->isInstanceOfStr(*name)) {
       new_function.setName(*name);
+    } else if (!name.isNoneType()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "arg 3 (name) must be None or string", &name);
+    }
+    Object defaults(&scope, args.get(4));
+    if (runtime->isInstanceOfTuple(*defaults)) {
+      new_function.setDefaults(*defaults);
+    } else if (!defaults.isNoneType()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "arg 4 (defaults) must be None or tuple",
+                                  &defaults);
+    }
+    Object closure(&scope, args.get(5));
+    if (runtime->isInstanceOfTuple(*closure)) {
+      new_function.setClosure(*closure);
+    } else if (!closure.isNoneType()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "arg 5 (closure) must be None or tuple",
+                                  &closure);
     }
     return *new_function;
   }
