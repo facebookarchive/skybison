@@ -42,3 +42,14 @@ C-API
 
 - `PyCFunction_Type` and `PyCFunction_Check` are not supported;
   `PyCFunction_New` works and returns something that behaves similar.
+
+
+Runtime Inspection
+------------------
+
+- `sys._getframe()` always returns a new object whereas CPython returns an
+  identical object for the same frame:
+```python
+>>> sys._getframe(0) is sys._getframe(0)
+False
+```
