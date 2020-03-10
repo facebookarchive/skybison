@@ -223,6 +223,7 @@ set(
   library/operator.py
   library/readline.py
   library/sys.py
+  library/unicodedata.py
   library/warnings.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
@@ -416,6 +417,8 @@ add_library(
   runtime/unicode-db.h
   runtime/unicode.cpp
   runtime/unicode.h
+  runtime/unicodedata-module.cpp
+  runtime/unicodedata-module.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/valuecell-builtins.cpp
@@ -501,7 +504,6 @@ add_library(
   ${CPYTHON_DIR}/Modules/clinic/sha1module.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha256module.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha512module.c.h
-  ${CPYTHON_DIR}/Modules/clinic/unicodedata.c.h
   ${CPYTHON_DIR}/Modules/clinic/zlibmodule.c.h
   ${CPYTHON_DIR}/Modules/errnomodule.c
   ${CPYTHON_DIR}/Modules/fcntlmodule.c
@@ -517,8 +519,6 @@ add_library(
   ${CPYTHON_DIR}/Modules/syslogmodule.c
   ${CPYTHON_DIR}/Modules/termios.c
   ${CPYTHON_DIR}/Modules/timemodule.c
-  ${CPYTHON_DIR}/Modules/unicodedata.c
-  ${CPYTHON_DIR}/Modules/unicodedata_db.h
   ${CPYTHON_DIR}/Modules/unicodename_db.h
   ${CPYTHON_DIR}/Modules/zlib/adler32.c
   ${CPYTHON_DIR}/Modules/zlib/crc32.c

@@ -18,6 +18,7 @@
 #include "under-io-module.h"
 #include "under-signal-module.h"
 #include "under-weakref-module.h"
+#include "unicodedata-module.h"
 
 namespace py {
 
@@ -53,6 +54,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
     {ID(readline), &initializeFrozenModule<&kReadlineModuleData>},
     {ID(sys), &SysModule::initialize},
+    {ID(unicodedata), &UnicodedataModule::initialize},
     {ID(warnings), &initializeFrozenModule<&kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };

@@ -86,6 +86,7 @@ class Runtime;
   V(TimeoutError)                                                              \
   V(True)                                                                      \
   V(TypeError)                                                                 \
+  V(UCD)                                                                       \
   V(UnboundLocalError)                                                         \
   V(UnicodeDecodeError)                                                        \
   V(UnicodeEncodeError)                                                        \
@@ -667,6 +668,9 @@ class Runtime;
   V(type)                                                                      \
   V(type_proxy)                                                                \
   V(typecode)                                                                  \
+  V(ucd_3_2_0)                                                                 \
+  V(unicodedata)                                                               \
+  V(unidata_version)                                                           \
   V(utf_16_encode)                                                             \
   V(utf_32_encode)                                                             \
   V(utf_8_decode)                                                              \
