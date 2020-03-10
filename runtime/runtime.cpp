@@ -3653,20 +3653,17 @@ void Runtime::clearHandleScopes() {
   }
 }
 
-static void clearModule(Thread* thread, const Module& module) {
-  HandleScope scope(thread);
-  Object module_def(&scope, module.def());
-  if (module_def.isInt() && Int::cast(*module_def).asCPtr() != nullptr) {
+static void freeModule(Thread* thread, const Module& module) {
+  if (module.hasDef()) {
     auto def = reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
-    ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
-    if (def->m_free != nullptr) def->m_free(handle);
-    module.setDef(thread->runtime()->newIntFromCPtr(nullptr));
-    Object module_state(&scope, module.state());
-    if (module_state.isInt() && Int::cast(*module_state).asCPtr() != nullptr) {
-      std::free(Int::cast(*module_state).asCPtr());
-      module.setState(thread->runtime()->newIntFromCPtr(nullptr));
+    if (def->m_free != nullptr) {
+      def->m_free(ApiHandle::borrowedReference(thread, *module));
     }
-    handle->dispose();
+    module.setDef(SmallInt::fromWord(0));
+    if (module.hasState()) {
+      std::free(Int::cast(module.state()).asCPtr());
+      module.setState(SmallInt::fromWord(0));
+    }
   }
 }
 
@@ -3685,7 +3682,7 @@ void Runtime::freeApiHandles() {
     Object module_obj(&scope, modules_list.at(i));
     if (!isInstanceOfModule(*module_obj)) continue;
     Module module(&scope, *module_obj);
-    clearModule(thread, module);
+    freeModule(thread, module);
   }
 
   // Process any native instance that is only referenced through the NativeProxy

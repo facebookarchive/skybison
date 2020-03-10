@@ -2333,11 +2333,13 @@ class RawModule : public RawInstance {
   // Contains the numeric address of mode definition object for C-API modules or
   // zero if the module was not defined through the C-API.
   RawObject def() const;
+  bool hasDef() const;
   void setDef(RawObject def) const;
 
   // Contains the numeric address of module state object for C-API modules or
   // zero if the module was not defined through the C-API.
   RawObject state() const;
+  bool hasState() const;
   void setState(RawObject state) const;
 
   // Lazily allocated ModuleProxy instance that behaves like dict.
@@ -6140,12 +6142,22 @@ inline RawObject RawModule::def() const {
   return instanceVariableAt(kDefOffset);
 }
 
+inline bool RawModule::hasDef() const {
+  RawObject def_value = def();
+  return def_value.isInt() && RawInt::cast(def_value).asCPtr() != nullptr;
+}
+
 inline void RawModule::setDef(RawObject def) const {
   instanceVariableAtPut(kDefOffset, def);
 }
 
 inline RawObject RawModule::state() const {
   return instanceVariableAt(kStateOffset);
+}
+
+inline bool RawModule::hasState() const {
+  RawObject state_value = state();
+  return state_value.isInt() && RawInt::cast(state_value).asCPtr() != nullptr;
 }
 
 inline void RawModule::setState(RawObject state) const {
