@@ -906,25 +906,27 @@ RawObject RawNativeProxy::dequeue(RawObject* tail) {
   return dequeueReference(tail, RawNativeProxy::kLinkOffset);
 }
 
-// RawHeapFrame
+// RawGeneratorFrame
 
-word RawHeapFrame::numAttributes(word extra_words) {
+word RawGeneratorFrame::numAttributes(word extra_words) {
   return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
-word RawHeapFrame::virtualPC() const { return frame()->virtualPC(); }
+word RawGeneratorFrame::virtualPC() const { return frame()->virtualPC(); }
 
-void RawHeapFrame::setVirtualPC(word value) const {
+void RawGeneratorFrame::setVirtualPC(word value) const {
   return frame()->setVirtualPC(value);
 }
 
-RawObject* RawHeapFrame::valueStackTop() const {
+RawObject* RawGeneratorFrame::valueStackTop() const {
   return frame()->stashedValueStackTop();
 }
 
-RawObject RawHeapFrame::popValue() const { return frame()->stashedPopValue(); }
+RawObject RawGeneratorFrame::popValue() const {
+  return frame()->stashedPopValue();
+}
 
-void RawHeapFrame::stashInternalPointers(Frame* original_frame) const {
+void RawGeneratorFrame::stashInternalPointers(Frame* original_frame) const {
   frame()->stashInternalPointers(original_frame);
 }
 

@@ -30,13 +30,13 @@ static RawObject sendImpl(Thread* thread, Frame* frame, word nargs) {
 static RawObject findYieldFrom(Thread* thread, const GeneratorBase& gen) {
   HandleScope scope(thread);
   if (gen.running() == Bool::trueObj()) return NoneType::object();
-  HeapFrame hf(&scope, gen.heapFrame());
-  word pc = hf.virtualPC();
+  GeneratorFrame gf(&scope, gen.generatorFrame());
+  word pc = gf.virtualPC();
   if (pc == Frame::kFinishedGeneratorPC) return NoneType::object();
-  Function function(&scope, hf.function());
+  Function function(&scope, gf.function());
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
   if (bytecode.byteAt(pc) != Bytecode::YIELD_FROM) return NoneType::object();
-  return hf.valueStackTop()[0];
+  return gf.valueStackTop()[0];
 }
 
 // Validate the given exception and send it to gen.
@@ -125,13 +125,13 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
     // otherwise, propagate the exception at the YIELD_FROM.
 
     // findYieldFrom() returns None when gen is currently executing, so we
-    // don't have to worry about messing with the HeapFrame of a generator
+    // don't have to worry about messing with the GeneratorFrame of a generator
     // that's running.
     DCHECK(gen.running() == Bool::falseObj(), "Generator shouldn't be running");
-    HeapFrame hf(&scope, gen.heapFrame());
-    Object subiter(&scope, hf.popValue());
+    GeneratorFrame gf(&scope, gen.generatorFrame());
+    Object subiter(&scope, gf.popValue());
     DCHECK(*subiter == *yf, "Unexpected subiter on generator stack");
-    hf.setVirtualPC(hf.virtualPC() + kCodeUnitSize);
+    gf.setVirtualPC(gf.virtualPC() + kCodeUnitSize);
 
     if (thread->hasPendingStopIteration()) {
       Object subiter_value(&scope, thread->pendingStopIterationValue());

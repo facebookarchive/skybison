@@ -52,11 +52,11 @@ class Thread {
   // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
-  Frame* pushHeapFrame(const HeapFrame& heap_frame);
+  Frame* pushGeneratorFrame(const GeneratorFrame& generator_frame);
   Frame* pushClassFunctionFrame(const Function& function);
 
   Frame* popFrame();
-  Frame* popFrameToHeapFrame(const HeapFrame& heap_frame);
+  Frame* popFrameToGeneratorFrame(const GeneratorFrame& generator_frame);
 
   // Runs a code object on the current thread.
   RawObject exec(const Code& code, const Module& module,

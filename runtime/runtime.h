@@ -123,7 +123,7 @@ class Runtime {
 
   RawObject newGenerator();
 
-  RawObject newHeapFrame(const Function& function);
+  RawObject newGeneratorFrame(const Function& function);
 
   RawObject newInstance(const Layout& layout);
 

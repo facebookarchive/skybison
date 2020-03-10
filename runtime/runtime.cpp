@@ -787,7 +787,7 @@ RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 
 RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
 
-RawObject Runtime::newHeapFrame(const Function& function) {
+RawObject Runtime::newGeneratorFrame(const Function& function) {
   DCHECK(function.isGeneratorLike(), "expected a generator-like code object");
 
   HandleScope scope;
@@ -796,9 +796,9 @@ RawObject Runtime::newHeapFrame(const Function& function) {
   word stacksize = function.stacksize();
   // +1 for the function pointer.
   word extra_words = num_args + num_vars + stacksize + 1;
-  HeapFrame frame(
-      &scope, heap()->createInstance(LayoutId::kHeapFrame,
-                                     HeapFrame::numAttributes(extra_words)));
+  GeneratorFrame frame(&scope, heap()->createInstance(
+                                   LayoutId::kGeneratorFrame,
+                                   GeneratorFrame::numAttributes(extra_words)));
   frame.setMaxStackSize(stacksize);
   return *frame;
 }
@@ -1645,7 +1645,7 @@ void Runtime::initializeHeapTypes() {
   DictValueIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject);
   FloatBuiltins::initialize(this);
-  addEmptyBuiltinType(ID(frame), LayoutId::kHeapFrame, LayoutId::kObject);
+  addEmptyBuiltinType(ID(frame), LayoutId::kGeneratorFrame, LayoutId::kObject);
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   GeneratorBuiltins::initialize(this);

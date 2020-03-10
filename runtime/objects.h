@@ -66,7 +66,7 @@ class Handle;
   V(FrozenSet)                                                                 \
   V(Function)                                                                  \
   V(Generator)                                                                 \
-  V(HeapFrame)                                                                 \
+  V(GeneratorFrame)                                                            \
   V(IncrementalNewlineDecoder)                                                 \
   V(Layout)                                                                    \
   V(List)                                                                      \
@@ -321,7 +321,7 @@ class RawObject {
   bool isFrozenSet() const;
   bool isFunction() const;
   bool isGenerator() const;
-  bool isHeapFrame() const;
+  bool isGeneratorFrame() const;
   bool isImportError() const;
   bool isIncrementalNewlineDecoder() const;
   bool isIndexError() const;
@@ -3105,6 +3105,9 @@ class RawSuper : public RawInstance {
   RAW_OBJECT_COMMON(Super);
 };
 
+// TODO(T63568836): Replace GeneratorFrame by moving it variable
+// length data into a MutableTuple and moving any other attributes
+// into Generator.
 // A Frame in a HeapObject, with space allocated before and after for stack and
 // locals, respectively. It looks almost exactly like the ascii art diagram for
 // Frame (from frame.h), except that there is a fixed amount of space allocated
@@ -3129,13 +3132,13 @@ class RawSuper : public RawInstance {
 //   +----------------------+  <--+
 //   | maxStackSize         |
 //   +----------------------+
-class RawHeapFrame : public RawInstance {
+class RawGeneratorFrame : public RawInstance {
  public:
   // The size of the embedded frame + stack and locals, in words.
   word numFrameWords() const;
 
   // Get or set the number of words allocated for the value stack. Used to
-  // derive a pointer to the Frame inside this HeapFrame.
+  // derive a pointer to the Frame inside this GeneratorFrame.
   word maxStackSize() const;
   void setMaxStackSize(word offset) const;
 
@@ -3161,10 +3164,10 @@ class RawHeapFrame : public RawInstance {
   // Number of words that aren't the Frame.
   static const int kNumOverheadWords = kFrameOffset / kPointerSize;
 
-  RAW_OBJECT_COMMON(HeapFrame);
+  RAW_OBJECT_COMMON(GeneratorFrame);
 
  private:
-  // The Frame contained in this HeapFrame.
+  // The Frame contained in this GeneratorFrame.
   Frame* frame() const;
 };
 
@@ -3202,9 +3205,9 @@ class RawExceptionState : public RawInstance {
 // suspended execution frame: RawGenerator, RawCoroutine, and AsyncGenerator.
 class RawGeneratorBase : public RawInstance {
  public:
-  // Get or set the RawHeapFrame embedded in this RawGeneratorBase.
-  RawObject heapFrame() const;
-  void setHeapFrame(RawObject obj) const;
+  // Get or set the RawGeneratorFrame embedded in this RawGeneratorBase.
+  RawObject generatorFrame() const;
+  void setGeneratorFrame(RawObject obj) const;
 
   RawObject exceptionState() const;
   void setExceptionState(RawObject obj) const;
@@ -3825,8 +3828,8 @@ inline bool RawObject::isGenerator() const {
   return isHeapObjectWithLayout(LayoutId::kGenerator);
 }
 
-inline bool RawObject::isHeapFrame() const {
-  return isHeapObjectWithLayout(LayoutId::kHeapFrame);
+inline bool RawObject::isGeneratorFrame() const {
+  return isHeapObjectWithLayout(LayoutId::kGeneratorFrame);
 }
 
 inline bool RawObject::isIncrementalNewlineDecoder() const {
@@ -6702,11 +6705,11 @@ inline void RawExceptionState::setPrevious(RawObject prev) const {
 
 // RawGeneratorBase
 
-inline RawObject RawGeneratorBase::heapFrame() const {
+inline RawObject RawGeneratorBase::generatorFrame() const {
   return instanceVariableAt(kFrameOffset);
 }
 
-inline void RawGeneratorBase::setHeapFrame(RawObject obj) const {
+inline void RawGeneratorBase::setGeneratorFrame(RawObject obj) const {
   instanceVariableAtPut(kFrameOffset, obj);
 }
 
@@ -6734,26 +6737,26 @@ inline void RawGeneratorBase::setQualname(RawObject obj) const {
   instanceVariableAtPut(kQualnameOffset, obj);
 }
 
-// RawHeapFrame
+// RawGeneratorFrame
 
-inline Frame* RawHeapFrame::frame() const {
+inline Frame* RawGeneratorFrame::frame() const {
   return reinterpret_cast<Frame*>(address() + kFrameOffset +
                                   maxStackSize() * kPointerSize);
 }
 
-inline word RawHeapFrame::numFrameWords() const {
+inline word RawGeneratorFrame::numFrameWords() const {
   return header().count() - kNumOverheadWords;
 }
 
-inline word RawHeapFrame::maxStackSize() const {
+inline word RawGeneratorFrame::maxStackSize() const {
   return RawSmallInt::cast(instanceVariableAt(kMaxStackSizeOffset)).value();
 }
 
-inline void RawHeapFrame::setMaxStackSize(word offset) const {
+inline void RawGeneratorFrame::setMaxStackSize(word offset) const {
   instanceVariableAtPut(kMaxStackSizeOffset, RawSmallInt::fromWord(offset));
 }
 
-inline RawObject RawHeapFrame::function() const {
+inline RawObject RawGeneratorFrame::function() const {
   return instanceVariableAt(kFrameOffset +
                             (numFrameWords() - 1) * kPointerSize);
 }

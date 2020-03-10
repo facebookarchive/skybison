@@ -148,20 +148,20 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   return result;
 }
 
-Frame* Thread::pushHeapFrame(const HeapFrame& heap_frame) {
-  word num_frame_words = heap_frame.numFrameWords();
+Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
+  word num_frame_words = generator_frame.numFrameWords();
   word size = num_frame_words * kPointerSize;
   if (UNLIKELY(wouldStackOverflow(size))) {
     return nullptr;
   }
 
-  byte* src =
-      reinterpret_cast<byte*>(heap_frame.address() + HeapFrame::kFrameOffset);
+  byte* src = reinterpret_cast<byte*>(generator_frame.address() +
+                                      GeneratorFrame::kFrameOffset);
   byte* dest = stackPtr() - size;
   std::memcpy(dest, src, num_frame_words * kPointerSize);
-  word value_stack_size = heap_frame.maxStackSize() * kPointerSize;
+  word value_stack_size = generator_frame.maxStackSize() * kPointerSize;
   Frame* result = reinterpret_cast<Frame*>(dest + value_stack_size);
-  result->unstashInternalPointers(Function::cast(heap_frame.function()));
+  result->unstashInternalPointers(Function::cast(generator_frame.function()));
   linkFrame(result);
   DCHECK(result->isInvalid() == nullptr, "invalid frame");
   return result;
@@ -210,16 +210,16 @@ Frame* Thread::popFrame() {
   return current_frame_;
 }
 
-Frame* Thread::popFrameToHeapFrame(const HeapFrame& heap_frame) {
+Frame* Thread::popFrameToGeneratorFrame(const GeneratorFrame& generator_frame) {
   Frame* frame = currentFrame();
-  DCHECK(frame->valueStackSize() <= heap_frame.maxStackSize(),
+  DCHECK(frame->valueStackSize() <= generator_frame.maxStackSize(),
          "not enough space in RawGeneratorBase to save live stack");
-  byte* dest =
-      reinterpret_cast<byte*>(heap_frame.address() + HeapFrame::kFrameOffset);
+  byte* dest = reinterpret_cast<byte*>(generator_frame.address() +
+                                       GeneratorFrame::kFrameOffset);
   byte* src = reinterpret_cast<byte*>(frame->valueStackBase() -
-                                      heap_frame.maxStackSize());
-  std::memcpy(dest, src, heap_frame.numFrameWords() * kPointerSize);
-  heap_frame.stashInternalPointers(frame);
+                                      generator_frame.maxStackSize());
+  std::memcpy(dest, src, generator_frame.numFrameWords() * kPointerSize);
+  generator_frame.stashInternalPointers(frame);
   return popFrame();
 }
 

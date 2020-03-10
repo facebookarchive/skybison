@@ -5282,7 +5282,7 @@ RawObject Interpreter::execute(Thread* thread) {
 
 static RawObject resumeGeneratorImpl(Thread* thread,
                                      const GeneratorBase& generator,
-                                     const HeapFrame& heap_frame,
+                                     const GeneratorFrame& generator_frame,
                                      const ExceptionState& exc_state) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
@@ -5294,11 +5294,11 @@ static RawObject resumeGeneratorImpl(Thread* thread,
 
   // Did generator end with yield?
   if (thread->currentFrame() == frame) {
-    thread->popFrameToHeapFrame(heap_frame);
+    thread->popFrameToGeneratorFrame(generator_frame);
     return *result;
   }
   // Generator ended with return.
-  heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
+  generator_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
   if (result.isErrorException()) return *result;
   return thread->raise(LayoutId::kStopIteration, *result);
 }
@@ -5311,12 +5311,12 @@ RawObject Interpreter::resumeGenerator(Thread* thread,
                                 &generator);
   }
   HandleScope scope(thread);
-  HeapFrame heap_frame(&scope, generator.heapFrame());
-  word pc = heap_frame.virtualPC();
+  GeneratorFrame generator_frame(&scope, generator.generatorFrame());
+  word pc = generator_frame.virtualPC();
   if (pc == Frame::kFinishedGeneratorPC) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
-  Frame* frame = thread->pushHeapFrame(heap_frame);
+  Frame* frame = thread->pushGeneratorFrame(generator_frame);
   if (frame == nullptr) {
     return Error::exception();
   }
@@ -5334,7 +5334,7 @@ RawObject Interpreter::resumeGenerator(Thread* thread,
   ExceptionState exc_state(&scope, generator.exceptionState());
   exc_state.setPrevious(thread->caughtExceptionState());
   thread->setCaughtExceptionState(*exc_state);
-  return resumeGeneratorImpl(thread, generator, heap_frame, exc_state);
+  return resumeGeneratorImpl(thread, generator, generator_frame, exc_state);
 }
 
 RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
@@ -5347,8 +5347,8 @@ RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
                                 &generator);
   }
   HandleScope scope(thread);
-  HeapFrame heap_frame(&scope, generator.heapFrame());
-  Frame* frame = thread->pushHeapFrame(heap_frame);
+  GeneratorFrame generator_frame(&scope, generator.generatorFrame());
+  Frame* frame = thread->pushGeneratorFrame(generator_frame);
   if (frame == nullptr) {
     return Error::exception();
   }
@@ -5365,7 +5365,7 @@ RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
     thread->setCaughtExceptionState(exc_state.previous());
     exc_state.setPrevious(NoneType::object());
     if (thread->currentFrame() != frame) {
-      heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
+      generator_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
     }
     return Error::exception();
   }
@@ -5373,7 +5373,7 @@ RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
     thread->popFrame();
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
-  return resumeGeneratorImpl(thread, generator, heap_frame, exc_state);
+  return resumeGeneratorImpl(thread, generator, generator_frame, exc_state);
 }
 
 namespace {

@@ -2582,7 +2582,7 @@ class Test(Exception):
   EXPECT_EQ(mro.at(3), runtime_->typeAt(LayoutId::kObject));
 }
 
-TEST_F(RuntimeTest, HeapFrameCreate) {
+TEST_F(RuntimeTest, GeneratorFrameCreate) {
   const char* src = R"(
 def gen():
   yield 12
@@ -2593,10 +2593,10 @@ def gen():
   Object gen_obj(&scope, mainModuleAt(runtime_, "gen"));
   ASSERT_TRUE(gen_obj.isFunction());
   Function gen(&scope, *gen_obj);
-  Object frame_obj(&scope, runtime_->newHeapFrame(gen));
-  ASSERT_TRUE(frame_obj.isHeapFrame());
-  HeapFrame heap_frame(&scope, *frame_obj);
-  EXPECT_EQ(heap_frame.maxStackSize(), gen.stacksize());
+  Object frame_obj(&scope, runtime_->newGeneratorFrame(gen));
+  ASSERT_TRUE(frame_obj.isGeneratorFrame());
+  GeneratorFrame generator_frame(&scope, *frame_obj);
+  EXPECT_EQ(generator_frame.maxStackSize(), gen.stacksize());
 }
 
 extern "C" struct _inittab _PyImport_Inittab[];
