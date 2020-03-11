@@ -2392,6 +2392,7 @@ RawObject FUNC(_builtins, _get_member_string)(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
+  if (*reinterpret_cast<char**>(addr) == nullptr) return NoneType::object();
   return thread->runtime()->newStrFromCStr(*reinterpret_cast<char**>(addr));
 }
 

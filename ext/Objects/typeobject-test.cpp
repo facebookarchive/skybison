@@ -2228,6 +2228,38 @@ r1 = b.t_string
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
 }
 
+TEST_F(TypeExtensionApiTest, MemberStringWithNullReturnsNone) {
+  // clang-format off
+  struct BarObject {
+    PyObject_HEAD
+    char* name;
+  };
+  // clang-format on
+  static PyMemberDef members[2];
+  members[0] = {const_cast<char*>("name"), T_STRING, offsetof(BarObject, name),
+                0, nullptr};
+  members[1] = {nullptr};
+  static PyType_Slot slots[2];
+  slots[0] = {Py_tp_members, reinterpret_cast<void*>(members)};
+  slots[1] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_TRUE(PyType_Check(type));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(moduleSet("__main__", "Bar", type), 0);
+
+  ASSERT_EQ(PyRun_SimpleString(R"(
+b = Bar()
+none = b.name
+)"),
+            0);
+  PyObjectPtr none(moduleGet("__main__", "none"));
+  ASSERT_EQ(none, Py_None);
+}
+
 TEST_F(TypeExtensionApiTest, MemberStringRaisesTypeError) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
