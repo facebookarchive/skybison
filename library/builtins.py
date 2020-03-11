@@ -1861,7 +1861,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def lower(self):
-        _unimplemented()
+        _builtin()
 
     def lstrip(self, bytes=None):
         _builtin()
@@ -1956,7 +1956,7 @@ class bytearray(bootstrap=True):
         _builtin()
 
     def upper(self):
-        _unimplemented()
+        _builtin()
 
     def zfill(self):
         _unimplemented()
@@ -2251,7 +2251,7 @@ class bytes(bootstrap=True):
         return self + fillbyte * padding if padding > 0 else self
 
     def lower(self):
-        _unimplemented()
+        _builtin()
 
     def lstrip(self, bytes=None):
         _builtin()
@@ -2364,7 +2364,7 @@ class bytes(bootstrap=True):
         _builtin()
 
     def upper(self):
-        _unimplemented()
+        _builtin()
 
     def zfill(self):
         _unimplemented()

@@ -1032,6 +1032,49 @@ class ByteArrayTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_lower_with_non_bytearray_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.lower("not a bytearray")
+
+    def test_lower_empty_self_returns_new_bytearray(self):
+        src = bytearray(b"")
+        dst = src.lower()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, src)
+
+    def test_lower_all_lower_returns_new_bytearray(self):
+        src = bytearray(b"abcdefghijklmnopqrstuvwxyz1234567890")
+        dst = src.lower()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, src)
+
+    def test_lower_all_lower_and_non_alphanumeric_returns_new_bytearray(self):
+        src = bytearray(b"abcdefghijklmnopqrstuvwxyz1234567890")
+        dst = src.lower()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, src)
+
+    def test_lower_all_uppercase_returns_all_lowercase(self):
+        src = bytearray(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        dst = src.lower()
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, bytearray(b"abcdefghijklmnopqrstuvwxyz"))
+
+    def test_lower_mixed_case_returns_all_lowercase(self):
+        src = bytearray(b"aBcDeFgHiJkLmNoPqRsTuVwXyZ")
+        dst = src.lower()
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, bytearray(b"abcdefghijklmnopqrstuvwxyz"))
+
+    def test_lower_mixed_case_returns_all_lowercase(self):
+        src = bytearray(b"a1!B2@c3#D4$e5%F6^g7&H8*i9(J0)")
+        dst = src.lower()
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, bytearray(b"a1!b2@c3#d4$e5%f6^g7&h8*i9(j0)"))
+
     def test_lstrip_with_non_byteslike_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray().lstrip("")
@@ -1263,6 +1306,49 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsInstance(result, bytearray)
         self.assertEqual(result, arr)
         self.assertIsNot(result, arr)
+
+    def test_upper_with_non_bytearray_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.upper("not a bytearray")
+
+    def test_upper_empty_self_returns_new_bytearray(self):
+        src = bytearray(b"")
+        dst = src.lower()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, src)
+
+    def test_upper_all_upper_returns_new_bytearray(self):
+        src = bytearray(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        dst = src.upper()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(src, dst)
+
+    def test_upper_all_upper_and_non_alphanumeric_returns_new_bytearray(self):
+        src = bytearray(b"ABCDEFGHIJ1234567890!@#$%^&*()")
+        dst = src.upper()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(src, dst)
+
+    def test_upper_all_lower_returns_all_uppercase(self):
+        src = bytearray(b"abcdefghijklmnopqrstuvwxyz")
+        dst = src.upper()
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+    def test_upper_mixed_case_returns_all_uppercase(self):
+        src = bytearray(b"aBcDeFgHiJkLmNoPqRsTuVwXyZ")
+        dst = src.upper()
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+    def test_upper_mixed_case_returns_all_uppercase(self):
+        src = bytearray(b"a1!B2@c3#D4$e5%F6^g7&H8*i9(J0)")
+        dst = src.upper()
+        self.assertIsInstance(dst, bytearray)
+        self.assertEqual(dst, b"A1!B2@C3#D4$E5%F6^G7&H8*I9(J0)")
 
 
 class BytesTests(unittest.TestCase):
@@ -1785,6 +1871,47 @@ class BytesTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_lower_with_non_bytes_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.lower("not a bytes")
+
+    def test_lower_empty_self_returns_self(self):
+        src = b""
+        dst = src.lower()
+        self.assertIs(src, dst)
+
+    def test_lower_all_lower_returns_new_bytes(self):
+        src = b"abcdefghijklmnopqrstuvwxyz"
+        dst = src.lower()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(src, dst)
+
+    def test_lower_all_lower_and_non_alphanumeric_returns_self(self):
+        src = b"abcdefghijklmnopqrstuvwxyz1234567890"
+        dst = src.lower()
+        self.assertIsNot(src, dst)
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(src, dst)
+
+    def test_lower_all_uppercase_returns_all_lowercase(self):
+        src = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        dst = src.lower()
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(dst, b"abcdefghijklmnopqrstuvwxyz")
+
+    def test_lower_mixed_case_returns_all_lowercase(self):
+        src = b"aBcDeFgHiJkLmNoPqRsTuVwXyZ"
+        dst = src.lower()
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(dst, b"abcdefghijklmnopqrstuvwxyz")
+
+    def test_lower_mixed_case_returns_all_lowercase(self):
+        src = b"a1!B2@c3#D4$e5%F6^g7&H8*i9(J0)"
+        dst = src.lower()
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(dst, b"a1!b2@c3#d4$e5%f6^g7&h8*i9(j0)")
+
     def test_ljust_without_growth_returns_original_bytes(self):
         foo = b"foo"
         self.assertIs(foo.ljust(-1), foo)
@@ -2157,6 +2284,47 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(b"1aaa1".strip(bytearray()), b"1aaa1")
         self.assertEqual(b"1 aaa1".strip(bytearray(b" 1")), b"aaa")
         self.assertEqual(b"hello".strip(b"ho"), b"ell")
+
+    def test_upper_with_non_bytes_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.upper("not a bytes")
+
+    def test_upper_empty_self_returns_self(self):
+        src = b""
+        dst = src.upper()
+        self.assertIs(src, dst)
+
+    def test_upper_all_upper_returns_new_bytes(self):
+        src = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        dst = src.upper()
+        self.assertIsInstance(dst, bytes)
+        self.assertIsNot(src, dst)
+        self.assertEqual(src, dst)
+
+    def test_upper_all_upper_and_non_alphanumeric_returns_new_bytes(self):
+        src = b"ABCDEFGHIJ1234567890!@#$%^&*()"
+        dst = src.upper()
+        self.assertIsInstance(dst, bytes)
+        self.assertIsNot(src, dst)
+        self.assertEqual(src, dst)
+
+    def test_upper_all_lower_returns_all_uppercase(self):
+        src = b"abcdefghijklmnopqrstuvwxyz"
+        dst = src.upper()
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(dst, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+    def test_upper_mixed_case_returns_all_uppercase(self):
+        src = b"aBcDeFgHiJkLmNoPqRsTuVwXyZ"
+        dst = src.upper()
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(dst, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+    def test_upper_mixed_case_returns_all_uppercase(self):
+        src = b"a1!B2@c3#D4$e5%F6^g7&H8*i9(J0)"
+        dst = src.upper()
+        self.assertIsInstance(dst, bytes)
+        self.assertEqual(dst, b"A1!B2@C3#D4$E5%F6^G7&H8*I9(J0)")
 
 
 class CallableIteratorTest(unittest.TestCase):

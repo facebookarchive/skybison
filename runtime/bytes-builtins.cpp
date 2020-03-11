@@ -605,6 +605,34 @@ RawObject METH(bytes, hex)(Thread* thread, Frame* frame, word nargs) {
   return bytesHex(thread, self, self.length());
 }
 
+RawObject METH(bytes, lower)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self)) {
+    return thread->raiseRequiresType(self, ID(bytes));
+  }
+  self = bytesUnderlying(thread, self);
+  if (self.isSmallBytes()) {
+    SmallBytes small_bytes(&scope, *self);
+    word length = small_bytes.length();
+    byte buffer[SmallBytes::kMaxLength];
+    small_bytes.copyTo(buffer, length);
+    for (word i = 0; i < length; i++) {
+      buffer[i] = ASCII::toLower(buffer[i]);
+    }
+    return SmallBytes::fromBytes(View<byte>(buffer, length));
+  }
+  LargeBytes large_bytes(&scope, *self);
+  word length = large_bytes.length();
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  for (word i = 0; i < length; i++) {
+    result.byteAtPut(i, ASCII::toLower(large_bytes.byteAt(i)));
+  }
+  return result.becomeImmutable();
+}
+
 RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -741,6 +769,34 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   // TODO(T38246066): allow any bytes-like object
   return thread->raiseWithFmt(
       LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &del);
+}
+
+RawObject METH(bytes, upper)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self)) {
+    return thread->raiseRequiresType(self, ID(bytes));
+  }
+  self = bytesUnderlying(thread, self);
+  if (self.isSmallBytes()) {
+    SmallBytes small_bytes(&scope, *self);
+    word length = small_bytes.length();
+    byte buffer[SmallBytes::kMaxLength];
+    small_bytes.copyTo(buffer, length);
+    for (word i = 0; i < length; i++) {
+      buffer[i] = ASCII::toUpper(buffer[i]);
+    }
+    return SmallBytes::fromBytes(View<byte>(buffer, length));
+  }
+  LargeBytes large_bytes(&scope, *self);
+  word length = large_bytes.length();
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  for (word i = 0; i < length; i++) {
+    result.byteAtPut(i, ASCII::toUpper(large_bytes.byteAt(i)));
+  }
+  return result.becomeImmutable();
 }
 
 RawObject METH(bytes_iterator, __iter__)(Thread* thread, Frame* frame,

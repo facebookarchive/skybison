@@ -11,6 +11,7 @@ namespace py {
 // objects or when a code point is guaranteed to be valid ASCII.
 class ASCII {
  public:
+  // Predicates
   static bool isAlnum(byte b);
   static bool isAlpha(byte b);
   static bool isDecimal(byte b);
@@ -22,6 +23,10 @@ class ASCII {
   static bool isSpace(byte b);
   static bool isXidContinue(byte b);
   static bool isXidStart(byte b);
+
+  // Conversion
+  static byte toLower(byte b);
+  static byte toUpper(byte b);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ASCII);
@@ -95,6 +100,10 @@ inline bool ASCII::isUpper(byte b) { return 'A' <= b && b <= 'Z'; }
 inline bool ASCII::isXidContinue(byte b) { return isXidStart(b) || isDigit(b); }
 
 inline bool ASCII::isXidStart(byte b) { return isAlpha(b) || b == '_'; }
+
+inline byte ASCII::toLower(byte b) { return isUpper(b) ? b + ('a' - 'A') : b; }
+
+inline byte ASCII::toUpper(byte b) { return isLower(b) ? b - ('a' - 'A') : b; }
 
 // Unicode
 

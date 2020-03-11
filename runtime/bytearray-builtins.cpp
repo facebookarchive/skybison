@@ -5,6 +5,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
+#include "unicode.h"
 
 namespace py {
 
@@ -454,6 +455,28 @@ RawObject METH(bytearray, hex)(Thread* thread, Frame* frame, word nargs) {
   return bytesHex(thread, bytes, self.numItems());
 }
 
+RawObject METH(bytearray, lower)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytearray));
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes items(&scope, self.items());
+  word num_items = self.numItems();
+  MutableBytes lowered(&scope,
+                       runtime->newMutableBytesUninitialized(items.length()));
+  for (word i = 0; i < num_items; i++) {
+    lowered.byteAtPut(i, ASCII::toLower(items.byteAt(i)));
+  }
+  ByteArray result(&scope, runtime->newByteArray());
+  result.setItems(*lowered);
+  result.setNumItems(num_items);
+  return *result;
+}
+
 RawObject METH(bytearray, lstrip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -617,6 +640,28 @@ RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
     result.setItems(*translated);
     result.setNumItems(translated.length());
   }
+  return *result;
+}
+
+RawObject METH(bytearray, upper)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytearray));
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes items(&scope, self.items());
+  word num_items = self.numItems();
+  MutableBytes uppered(&scope,
+                       runtime->newMutableBytesUninitialized(items.length()));
+  for (word i = 0; i < num_items; i++) {
+    uppered.byteAtPut(i, ASCII::toUpper(items.byteAt(i)));
+  }
+  ByteArray result(&scope, runtime->newByteArray());
+  result.setItems(*uppered);
+  result.setNumItems(num_items);
   return *result;
 }
 
