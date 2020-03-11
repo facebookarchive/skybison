@@ -188,6 +188,10 @@ RawObject FUNC(_imp, is_frozen)(Thread* thread, Frame* frame, word nargs) {
   return RawBool::falseObj();
 }
 
+RawObject FUNC(_imp, lock_held)(Thread*, Frame*, word) {
+  return Bool::fromBool(import_lock_holder != nullptr);
+}
+
 RawObject FUNC(_imp, release_lock)(Thread* thread, Frame*, word) {
   if (!importReleaseLock(thread)) {
     return thread->raiseWithFmt(LayoutId::kRuntimeError,

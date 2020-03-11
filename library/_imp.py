@@ -59,5 +59,9 @@ def is_frozen_package(name):
     _unimplemented()
 
 
+def lock_held():
+    _builtin()
+
+
 def release_lock():
     _builtin()

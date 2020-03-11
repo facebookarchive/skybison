@@ -199,6 +199,23 @@ TEST_F(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
+TEST_F(ImportBuiltinsTest, LockHeldReturnsFalseInitially) {
+  EXPECT_EQ(runBuiltin(FUNC(_imp, lock_held)), Bool::falseObj());
+}
+
+TEST_F(ImportBuiltinsTest, LockHeldReturnsTrueAfterAcquireLock) {
+  ASSERT_EQ(runBuiltin(FUNC(_imp, acquire_lock)), NoneType::object());
+  EXPECT_EQ(runBuiltin(FUNC(_imp, lock_held)), Bool::trueObj());
+  ASSERT_EQ(runBuiltin(FUNC(_imp, release_lock)), NoneType::object());
+}
+
+TEST_F(ImportBuiltinsTest, LockHeldReturnsFalseAfterReleaseLock) {
+  ASSERT_EQ(runBuiltin(FUNC(_imp, acquire_lock)), NoneType::object());
+  ASSERT_EQ(runBuiltin(FUNC(_imp, lock_held)), Bool::trueObj());
+  ASSERT_EQ(runBuiltin(FUNC(_imp, release_lock)), NoneType::object());
+  EXPECT_EQ(runBuiltin(FUNC(_imp, lock_held)), Bool::falseObj());
+}
+
 TEST_F(ImportBuiltinsTest, ReleaseLockWithoutAcquireRaisesRuntimeError) {
   HandleScope scope(thread_);
   Object result(&scope, runBuiltin(FUNC(_imp, release_lock)));
