@@ -1492,6 +1492,12 @@ class BytesTests(unittest.TestCase):
         self.assertIsInstance(bytes.__new__(B, 2), B)
         self.assertIsInstance(bytes.__new__(A, C()), A)
 
+    def test_dunder_str_returns_same_as_dunder_repr(self):
+        b = b"foobar\x80"
+        b_str = b.__repr__()
+        self.assertEquals(b_str, "b'foobar\\x80'")
+        self.assertEquals(b_str, b.__str__())
+
     def test_count_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytes.count(bytearray(), b"")
@@ -2596,6 +2602,13 @@ class ComplexTests(unittest.TestCase):
 
         self.assertEqual(complex(1.0, 1.0).__add__(A(3)), complex(4, 1))
 
+    def test_dunder_bool_returns_correct_boolean(self):
+        self.assertTrue(complex.__bool__(complex(0.0, 1.0)))
+        self.assertTrue(complex.__bool__(complex(1.0, 0.0)))
+        self.assertTrue(complex.__bool__(complex(-1.0, 1.0)))
+
+        self.assertFalse(complex.__bool__(complex(0.0, 0.0)))
+
     def test_dunder_hash_with_0_image_returns_float_hash(self):
         self.assertEqual(complex.__hash__(complex(0.0)), float.__hash__(0.0))
         self.assertEqual(complex.__hash__(complex(-0.0)), float.__hash__(-0.0))
@@ -3132,6 +3145,18 @@ class DictTests(unittest.TestCase):
         d1 = {0: C()}
         with self.assertRaises(UserWarning):
             dict.__eq__(d0, d1)
+
+    def test_dunder_ne_returns_not_eq(self):
+        nan = float("nan")
+        d0 = {4: "b", "a": 88, 42: nan, None: (42.42, b"x")}
+        d1 = {4: "b", "a": 88, 42: nan, None: (42.42, b"x")}
+        self.assertFalse(d0.__ne__(d1))
+        self.assertTrue(d0.__ne__({}))
+
+    def test_dunder_ne_returns_not_implemented_if_wrong_types(self):
+        orig = {4: "b", "a": 88, None: (42.42, b"x")}
+        self.assertIs(orig.__ne__(1), NotImplemented)
+        self.assertIs(orig.__ne__([]), NotImplemented)
 
     def test_mix_bool_and_int_keys(self):
         d = {}
@@ -5913,6 +5938,25 @@ class ListTests(unittest.TestCase):
         result = orig.__imul__(2)
         self.assertIs(result, orig)
         self.assertEqual(result, [1, 2, 3, 1, 2, 3])
+
+    def test_dunder_ne_returns_not_eq(self):
+        orig = [1, 2, 3]
+        self.assertTrue(orig.__ne__([1, 2]))
+        self.assertFalse(orig.__ne__(orig))
+
+    def test_dunder_ne_returns_not_implemented_if_wrong_types(self):
+        orig = [1, 2, 3]
+        self.assertIs(orig.__ne__(1), NotImplemented)
+        self.assertIs(orig.__ne__({}), NotImplemented)
+
+    def test_dunder_reversed_returns_reversed_iterator(self):
+        orig = [1, 2, 3]
+        rev_iter = orig.__reversed__()
+        self.assertEqual(next(rev_iter), 3)
+        self.assertEqual(next(rev_iter), 2)
+        self.assertEqual(next(rev_iter), 1)
+        with self.assertRaises(StopIteration):
+            next(rev_iter)
 
     def test_dunder_setitem_with_int_sets_value_at_index(self):
         orig = [1, 2, 3]

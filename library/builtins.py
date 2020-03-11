@@ -2082,6 +2082,8 @@ class bytes(bootstrap=True):
         _bytes_guard(self)
         return bytes.__mul__(self, n)
 
+    __str__ = __repr__
+
     def capitalize(self):
         _unimplemented()
 
@@ -2428,8 +2430,22 @@ class complex(bootstrap=True):
     def __add__(self, other):
         _builtin()
 
+    def __bool__(self):
+        return True if (_complex_imag(self) or _complex_real(self)) else False
+
     def __divmod__(self, other):
         _unimplemented()
+
+    def __eq__(self, other) -> bool:
+        imag = _complex_imag(self)
+        real = _complex_real(self)
+        if _float_check(other) or _int_check(other):
+            if imag != 0.0:
+                return False
+            return real == other
+        if _complex_check(other):
+            return imag == _complex_imag(other) and real == _complex_real(other)
+        return NotImplemented
 
     def __float__(self, other):
         _unimplemented()
@@ -2447,17 +2463,6 @@ class complex(bootstrap=True):
 
     def __gt__(self, other):
         _unimplemented()
-
-    def __eq__(self, other) -> bool:
-        imag = _complex_imag(self)
-        real = _complex_real(self)
-        if _float_check(other) or _int_check(other):
-            if imag != 0.0:
-                return False
-            return real == other
-        if _complex_check(other):
-            return imag == _complex_imag(other) and real == _complex_real(other)
-        return NotImplemented
 
     def __hash__(self) -> int:
         _builtin()
@@ -2641,6 +2646,12 @@ class dict(bootstrap=True):
 
     def __lt__(self, other):
         _unimplemented()
+
+    def __ne__(self, other):
+        eq_result = dict.__eq__(self, other)
+        if eq_result is NotImplemented:
+            return NotImplemented
+        return not eq_result
 
     def __new__(cls, *args, **kwargs):
         _builtin()
@@ -3943,6 +3954,9 @@ class list(bootstrap=True):
 
     __hash__ = None
 
+    def __imul__(self, other):
+        _builtin()
+
     def __init__(self, iterable=()):
         self.extend(iterable)
 
@@ -3989,8 +4003,11 @@ class list(bootstrap=True):
     def __mul__(self, other):
         _builtin()
 
-    def __imul__(self, other):
-        _builtin()
+    def __ne__(self, other):
+        eq_result = list.__eq__(self, other)
+        if eq_result is NotImplemented:
+            return NotImplemented
+        return not eq_result
 
     def __new__(cls, iterable=()):
         _builtin()
@@ -4001,6 +4018,9 @@ class list(bootstrap=True):
         result = "[" + ", ".join([repr(i) for i in self]) + "]"
         _repr_leave(self)
         return result
+
+    def __reversed__(self):
+        return iter(self[::-1])
 
     def __rmul__(self, other):
         _unimplemented()
@@ -4873,6 +4893,15 @@ class set(bootstrap=True):
     def __init__(self, iterable=()):
         _builtin()
 
+    def __ior__(self, other):
+        _set_guard(self)
+        if not _anyset_check(other):
+            return NotImplemented
+        if self is other:
+            return self
+        set.update(self, other)
+        return self
+
     def __isub__(self, other):
         _set_guard(self)
         if not _anyset_check(other):
@@ -4904,15 +4933,6 @@ class set(bootstrap=True):
 
     def __new__(cls, iterable=()):
         _builtin()
-
-    def __ior__(self, other):
-        _set_guard(self)
-        if not _anyset_check(other):
-            return NotImplemented
-        if self is other:
-            return self
-        set.update(self, other)
-        return self
 
     def __or__(self, other):
         _set_guard(self)
