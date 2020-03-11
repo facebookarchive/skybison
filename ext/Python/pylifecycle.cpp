@@ -108,8 +108,8 @@ PY_EXPORT void Py_Initialize() { Py_InitializeEx(1); }
 
 PY_EXPORT void Py_InitializeEx(int initsigs) {
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
-  // TODO(T55262429): Reduce the heap size once memory issues are fixed.
-  new Runtime(128 * kMiB);
+  // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
+  new Runtime(1 * kGiB);
 }
 
 PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }
