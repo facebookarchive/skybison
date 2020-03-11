@@ -10,7 +10,7 @@ class TypingTests(unittest.TestCase):
 
         self.assertEqual(fn(None), 5)
 
-    def test_nametuple_keeps_textual_order_of_fields(self):
+    def test_namedtuple_keeps_textual_order_of_fields(self):
         class C(NamedTuple):
             zoozle: int
             aardvark: str = ""
@@ -18,13 +18,27 @@ class TypingTests(unittest.TestCase):
             bar: int = 2
             baz: int = 3
 
-        # TODO(T62273963): Omit fields with default values.
         c = C(999, "abc", -1, -2, -3)
         self.assertIs(c.zoozle, 999)
         self.assertIs(c.aardvark, "abc")
         self.assertIs(c.foo, -1)
         self.assertIs(c.bar, -2)
         self.assertIs(c.baz, -3)
+
+    def test_namedtuple_populates_default_values(self):
+        class C(NamedTuple):
+            zoozle: int
+            aardvark: str = ""
+            foo: int = 1
+            bar: int = 2
+            baz: int = 3
+
+        c = C(999)
+        self.assertIs(c.zoozle, 999)
+        self.assertIs(c.aardvark, "")
+        self.assertIs(c.foo, 1)
+        self.assertIs(c.bar, 2)
+        self.assertIs(c.baz, 3)
 
 
 if __name__ == "__main__":

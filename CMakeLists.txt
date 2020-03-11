@@ -1313,7 +1313,6 @@ set(UNFROZEN_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/library")
 set(
   UNFROZEN_MODULE_INPUT
   ${UNFROZEN_LIBRARY_DIR}/_collections_abc.py
-  ${UNFROZEN_LIBRARY_DIR}/_namedtuple.py
   ${UNFROZEN_LIBRARY_DIR}/_operator.py
   ${UNFROZEN_LIBRARY_DIR}/_string.py
   ${UNFROZEN_LIBRARY_DIR}/_sysconfigdata__darwin_.py
