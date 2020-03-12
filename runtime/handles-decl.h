@@ -42,6 +42,7 @@ class Handle;
   V(GeneratorBase)                                                             \
   V(GeneratorFrame)                                                            \
   V(Header)                                                                    \
+  V(HeapFrame)                                                                 \
   V(HeapObject)                                                                \
   V(IncrementalNewlineDecoder)                                                 \
   V(IndexError)                                                                \

@@ -53,12 +53,6 @@ class _FloatInfo(tuple):
     rounds = _structseq_field("rounds", 10)
 
 
-class _Frame(tuple):
-    f_builtins = _structseq_field("f_builtins", 0)
-    f_code = _structseq_field("f_code", 1)
-    f_globals = _structseq_field("f_globals", 2)
-
-
 class _HashInfo(tuple):
     width = _structseq_field("width", 0)
     modulus = _structseq_field("modulus", 1)
@@ -107,15 +101,7 @@ class _VersionInfo(tuple):
 
 
 def _getframe(depth=0):
-    _int_guard(depth)
-    if depth < 0:
-        depth = 0
-    function = _getframe_function(depth + 1)
-    module = function.__module_object__
-    f_builtins = module.__builtins__.__dict__
-    f_code = function.__code__
-    f_globals = module.__dict__
-    return _Frame((f_builtins, f_code, f_globals))
+    _builtin()
 
 
 abiflags = ""

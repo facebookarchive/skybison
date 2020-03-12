@@ -73,6 +73,7 @@ class Thread {
   Runtime* runtime() { return runtime_; }
 
   Frame* currentFrame() { return current_frame_; }
+  Frame* frameAtDepth(word depth);
 
   using InterpreterFunc = RawObject (*)(Thread*);
 

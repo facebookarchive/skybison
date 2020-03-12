@@ -211,6 +211,39 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
   writeImpl(thread, sys_stderr, stderr, format, va);
 }
 
+RawObject FUNC(sys, _getframe)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object depth_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfInt(*depth_obj)) {
+    return thread->raiseRequiresType(depth_obj, ID(int));
+  }
+  word depth = intUnderlying(*depth_obj).asWordSaturated();
+  if (depth < 0) {
+    depth = 0;
+  }
+
+  frame = thread->frameAtDepth(depth);
+  if (frame == nullptr) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "call stack is not deep enough");
+  }
+
+  Object result(&scope, NoneType::object());
+  Object next_heap_frame(&scope, NoneType::object());
+  for (; !frame->isSentinel(); frame = frame->previousFrame()) {
+    HeapFrame heap_frame(&scope, runtime->newHeapFrame(thread, frame));
+    if (result.isNoneType()) {
+      result = *heap_frame;
+    } else {
+      HeapFrame::cast(*next_heap_frame).setBack(*heap_frame);
+    }
+    next_heap_frame = *heap_frame;
+  }
+  return *result;
+}
+
 RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

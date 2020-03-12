@@ -67,6 +67,7 @@ class Handle;
   V(Function)                                                                  \
   V(Generator)                                                                 \
   V(GeneratorFrame)                                                            \
+  V(HeapFrame)                                                                 \
   V(IncrementalNewlineDecoder)                                                 \
   V(Layout)                                                                    \
   V(List)                                                                      \
@@ -322,6 +323,7 @@ class RawObject {
   bool isFunction() const;
   bool isGenerator() const;
   bool isGeneratorFrame() const;
+  bool isHeapFrame() const;
   bool isImportError() const;
   bool isIncrementalNewlineDecoder() const;
   bool isIndexError() const;
@@ -3171,6 +3173,35 @@ class RawGeneratorFrame : public RawInstance {
   Frame* frame() const;
 };
 
+class RawHeapFrame : public RawInstance {
+ public:
+  // The previous frame on the stack, or None if the current frame object
+  // represents the bottom-most frame.
+  RawObject back() const;
+  void setBack(RawObject back) const;
+
+  // The function executed on the frame.
+  RawObject function() const;
+  void setFunction(RawObject function) const;
+
+  // The last instruction if called.
+  RawObject lasti() const;
+  void setLasti(RawObject lasti) const;
+
+  // The local symbol table, a dictionary.
+  RawObject locals() const;
+  void setLocals(RawObject locals) const;
+
+  // Layout.
+  static const int kBackOffset = RawHeapObject::kSize;
+  static const int kFunctionOffset = kBackOffset + kPointerSize;
+  static const int kLastiOffset = kFunctionOffset + kPointerSize;
+  static const int kLocalsOffset = kLastiOffset + kPointerSize;
+  static const int kSize = kLocalsOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(HeapFrame);
+};
+
 // The exception currently being handled. Every Generator and Coroutine has its
 // own exception state that is installed while it's running, to allow yielding
 // from an except block without losing track of the caught exception.
@@ -3830,6 +3861,10 @@ inline bool RawObject::isGenerator() const {
 
 inline bool RawObject::isGeneratorFrame() const {
   return isHeapObjectWithLayout(LayoutId::kGeneratorFrame);
+}
+
+inline bool RawObject::isHeapFrame() const {
+  return isHeapObjectWithLayout(LayoutId::kHeapFrame);
 }
 
 inline bool RawObject::isIncrementalNewlineDecoder() const {
@@ -6759,6 +6794,40 @@ inline void RawGeneratorFrame::setMaxStackSize(word offset) const {
 inline RawObject RawGeneratorFrame::function() const {
   return instanceVariableAt(kFrameOffset +
                             (numFrameWords() - 1) * kPointerSize);
+}
+
+// RawHeapFrame
+
+inline RawObject RawHeapFrame::back() const {
+  return instanceVariableAt(kBackOffset);
+}
+
+inline void RawHeapFrame::setBack(RawObject back) const {
+  instanceVariableAtPut(kBackOffset, back);
+}
+
+inline RawObject RawHeapFrame::function() const {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+inline void RawHeapFrame::setFunction(RawObject function) const {
+  instanceVariableAtPut(kFunctionOffset, function);
+}
+
+inline RawObject RawHeapFrame::lasti() const {
+  return instanceVariableAt(kLastiOffset);
+}
+
+inline void RawHeapFrame::setLasti(RawObject lasti) const {
+  instanceVariableAtPut(kLastiOffset, lasti);
+}
+
+inline RawObject RawHeapFrame::locals() const {
+  return instanceVariableAt(kLocalsOffset);
+}
+
+inline void RawHeapFrame::setLocals(RawObject locals) const {
+  instanceVariableAtPut(kLocalsOffset, locals);
 }
 
 // RawUnderIOBase

@@ -377,6 +377,10 @@ def _function_kwdefaults(obj):
     _builtin()
 
 
+def _function_lineno(function, pc):
+    _builtin()
+
+
 def _function_new(self, code, mod, name, defaults, closure):
     _builtin()
 

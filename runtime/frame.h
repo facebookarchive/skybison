@@ -180,6 +180,11 @@ class Frame {
  public:
   void init(word total_locals);
 
+  // Returns true if this frame is for a built-in or extension function. This
+  // means no bytecode exists and functions like virtualPC() or caches() must
+  // not be used.
+  bool isNative();
+
   // Function arguments, local variables, cell variables, and free variables
   RawObject local(word idx);
   void setLocal(word idx, RawObject value);
@@ -328,6 +333,10 @@ inline void Frame::init(word total_locals) {
   setValueStackTop(reinterpret_cast<RawObject*>(this));
   resetLocals(total_locals);
   blockStack()->setDepth(0);
+}
+
+inline bool Frame::isNative() {
+  return !code().isCode() || Code::cast(code()).isNative();
 }
 
 inline uword Frame::address() { return reinterpret_cast<uword>(this); }

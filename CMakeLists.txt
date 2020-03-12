@@ -322,6 +322,8 @@ add_library(
   runtime/handles.h
   runtime/heap.cpp
   runtime/heap.h
+  runtime/heap-frame-builtins.cpp
+  runtime/heap-frame-builtins.h
   runtime/heap-profiler.cpp
   runtime/heap-profiler.h
   runtime/ic.cpp

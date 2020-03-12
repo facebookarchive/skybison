@@ -226,10 +226,61 @@ class SysTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "call stack is not deep enough")
 
     def test_under_getframe_with_negative_integer_returns_top_frame(self):
-        self.assertEqual(sys._getframe(-1), sys._getframe(0))
+        self.assertEqual(sys._getframe(-1).f_code, sys._getframe(0).f_code)
 
     def test_under_getframe_with_no_argument_returns_top_frame(self):
-        self.assertEqual(sys._getframe(), sys._getframe(0))
+        self.assertEqual(sys._getframe().f_code, sys._getframe(0).f_code)
+
+    def test_under_getframe_f_back_points_to_previous_frame(self):
+        def baz():
+            return sys._getframe(0)
+
+        def bar():
+            return baz()
+
+        def foo():
+            return bar()
+
+        frame = foo()
+        self.assertIs(frame.f_code, baz.__code__)
+        self.assertIs(frame.f_back.f_code, bar.__code__)
+        self.assertIs(frame.f_back.f_back.f_code, foo.__code__)
+
+    def test_under_getframe_f_back_leads_to_module_frame(self):
+        frame = sys._getframe()
+        while True:
+            if frame.f_back is None:
+                break
+            frame = frame.f_back
+        self.assertIsNone(frame.f_back)
+        self.assertIs(frame.f_globals, sys.modules[self.__module__].__dict__)
+
+    @pyro_only
+    def test_under_getframe_f_back_includes_native_frame(self):
+        recorded_frame = None
+
+        class C:
+            def __hash__(self):
+                nonlocal recorded_frame
+                recorded_frame = sys._getframe()
+                return 1234
+
+        def foo():
+            c = C()
+            d = {}
+            # Calling C.__hash__ via native code, dict.__delitem__.
+            try:
+                del d[c]
+            except KeyError:
+                pass
+
+        foo()
+
+        self.assertIs(recorded_frame.f_code, C.__hash__.__code__)
+        # The native frame for dict.__delitem__ is inserted between foo and
+        # C.__hash__.
+        self.assertIs(recorded_frame.f_back.f_lineno, -1)
+        self.assertIs(recorded_frame.f_back.f_back.f_code, foo.__code__)
 
     def test_version(self):
         self.assertTrue(sys.version)
@@ -246,6 +297,11 @@ class SysTests(unittest.TestCase):
             release_level_str[release_level], sys.version_info.releaselevel
         )
         self.assertEqual(sys.hexversion & 0xF, sys.version_info.serial)
+
+    def test_under_getframe_f_lineno(self):
+        d = {}
+        exec("import sys\n\nresult = sys._getframe().f_lineno", d)
+        self.assertIs(d["result"], 3)
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@
 #include "generator-builtins.h"
 #include "globals.h"
 #include "handles.h"
+#include "heap-frame-builtins.h"
 #include "heap.h"
 #include "int-builtins.h"
 #include "interpreter.h"
@@ -801,6 +802,17 @@ RawObject Runtime::newGeneratorFrame(const Function& function) {
                                    GeneratorFrame::numAttributes(extra_words)));
   frame.setMaxStackSize(stacksize);
   return *frame;
+}
+
+RawObject Runtime::newHeapFrame(Thread* thread, Frame* frame) {
+  HandleScope scope(thread);
+  HeapFrame heap_frame(&scope, heap()->create<RawHeapFrame>());
+  DCHECK(frame->function().isFunction(), "expected to be a function");
+  heap_frame.setFunction(frame->function());
+  if (!frame->isNative()) {
+    heap_frame.setLasti(SmallInt::fromWord(frame->virtualPC()));
+  }
+  return *heap_frame;
 }
 
 RawObject Runtime::newInstance(const Layout& layout) {
@@ -1649,6 +1661,7 @@ void Runtime::initializeHeapTypes() {
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   GeneratorBuiltins::initialize(this);
+  HeapFrameBuiltins::initialize(this);
   LayoutBuiltins::initialize(this);
   LargeBytesBuiltins::initialize(this);
   LargeIntBuiltins::initialize(this);

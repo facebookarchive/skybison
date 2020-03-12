@@ -56,7 +56,7 @@ except TypeError:
     tb = None; del tb
 
 # TODO(T42624200) synchronize with traceback type once we have it.
-FrameType = sys._Frame
+FrameType = frame
 
 # For Jython, the following two types are identical
 # TODO(T42626925)

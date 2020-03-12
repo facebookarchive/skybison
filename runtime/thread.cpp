@@ -84,6 +84,39 @@ void Thread::visitStackRoots(PointerVisitor* visitor) {
 
 Thread* Thread::current() { return Thread::current_thread_; }
 
+namespace {
+
+class UserVisibleFrameVisitor : public FrameVisitor {
+ public:
+  explicit UserVisibleFrameVisitor(word depth) : depth_(depth) {}
+
+  bool visit(Frame* frame) {
+    if (call_ == depth_) {
+      if (!frame->isSentinel()) {
+        target_ = frame;
+      }
+      return false;
+    }
+    call_++;
+    return true;
+  }
+
+  Frame* target() { return target_; }
+
+ private:
+  word call_ = 0;
+  word depth_;
+  Frame* target_ = nullptr;
+};
+
+}  // namespace
+
+Frame* Thread::frameAtDepth(word depth) {
+  UserVisibleFrameVisitor visitor(depth + 1);
+  visitFrames(&visitor);
+  return visitor.target();
+}
+
 void Thread::setCurrentThread(Thread* thread) {
   Thread::current_thread_ = thread;
 }

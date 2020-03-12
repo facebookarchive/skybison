@@ -156,6 +156,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(dict_values), LayoutId::kDictValues},
     {ID(ellipsis), LayoutId::kEllipsis},
     {ID(float), LayoutId::kFloat},
+    {ID(frame), LayoutId::kHeapFrame},
     {ID(frozenset), LayoutId::kFrozenSet},
     {ID(function), LayoutId::kFunction},
     {ID(generator), LayoutId::kGenerator},

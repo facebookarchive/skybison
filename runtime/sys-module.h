@@ -33,6 +33,9 @@ RawObject initialSysPath(Thread* thread);
 class SysModule {
  public:
   static void initialize(Thread* thread, const Module& module);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SysModule);
 };
 
 }  // namespace py

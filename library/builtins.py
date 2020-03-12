@@ -104,6 +104,7 @@ from _builtins import (
     _function_globals,
     _function_guard,
     _function_kwdefaults,
+    _function_lineno,
     _function_new,
     _function_set_annotations,
     _function_set_defaults,
@@ -3327,6 +3328,47 @@ def hasattr(obj, name):
 
 def hash(obj) -> int:
     _builtin()
+
+
+# TODO(T63894279): Hide private names.
+class frame(bootstrap=True):
+    @_property
+    def f_builtins(self):
+        return self._function.__module_object__.__builtins__.__dict__
+
+    # TODO(T63894279): Once self._function.__code__ becomes a mutable attribute,
+    # this should be populated in the native object directly.
+    @_property
+    def f_code(self):
+        return self._function.__code__
+
+    @_property
+    def f_globals(self):
+        return self._function.__globals__
+
+    @_property
+    def f_lineno(self):
+        if self.f_lasti is not None:
+            return _function_lineno(self._function, self.f_lasti)
+        return -1
+
+    # The trace function.
+    @_property
+    def f_trace(self):
+        _unimplemented()
+
+    # The lines of the functions in the trace.
+    @_property
+    def f_trace_lines(self):
+        _unimplemented()
+
+    # The last instructions executed in the trace.
+    @_property
+    def f_trace_opcodes(self):
+        _unimplemented()
+
+    def __eq__(self, other):
+        _unimplemented()
 
 
 def help(obj=_Unbound):

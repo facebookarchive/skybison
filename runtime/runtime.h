@@ -125,6 +125,8 @@ class Runtime {
 
   RawObject newGeneratorFrame(const Function& function);
 
+  RawObject newHeapFrame(Thread* thread, Frame* frame);
+
   RawObject newInstance(const Layout& layout);
 
   // Create a new Int from a signed value.

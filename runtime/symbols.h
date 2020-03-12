@@ -296,6 +296,7 @@ class Runtime;
   V(_frozenset__num_items)                                                     \
   V(_frozenset_check)                                                          \
   V(_frozenset_guard)                                                          \
+  V(_function)                                                                 \
   V(_function__dict)                                                           \
   V(_function_guard)                                                           \
   V(_has_read1)                                                                \
@@ -521,6 +522,9 @@ class Runtime;
   V(exec)                                                                      \
   V(executable)                                                                \
   V(extend)                                                                    \
+  V(f_back)                                                                    \
+  V(f_lasti)                                                                   \
+  V(f_locals)                                                                  \
   V(faulthandler)                                                              \
   V(filename)                                                                  \
   V(fileno)                                                                    \
