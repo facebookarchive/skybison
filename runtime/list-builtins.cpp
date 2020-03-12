@@ -118,8 +118,11 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
 static const int kListInsertionSortSize = 8;
 
 static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
-                                   word start, word end, Object& item_i,
-                                   Object& item_j, Object& compare_result) {
+                                   word start, word end) {
+  HandleScope scope(thread);
+  Object item_i(&scope, NoneType::object());
+  Object item_j(&scope, NoneType::object());
+  Object compare_result(&scope, NoneType::object());
   for (word i = start + 1; i < end; i++) {
     item_i = data.at(i);
     word j = i - 1;
@@ -148,8 +151,11 @@ static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
 // output[left: end].
 static RawObject listMerge(Thread* thread, const MutableTuple& input,
                            const MutableTuple& output, word left, word right,
-                           word end, Object& item_i, Object& item_j,
-                           Object& compare_result) {
+                           word end) {
+  HandleScope scope(thread);
+  Object item_i(&scope, NoneType::object());
+  Object item_j(&scope, NoneType::object());
+  Object compare_result(&scope, NoneType::object());
   word i = left;
   word j = right;
   word k = left;
@@ -184,9 +190,10 @@ static RawObject listMerge(Thread* thread, const MutableTuple& input,
   return NoneType::object();
 }
 
-// This uses an adaptation of merge sort to iteratively merge sublists
-// of size 1 as it increases their size by power of 2. Also, this
-// function allocates a temporary space to ease merging and swaps
+// This uses an adaptation of merge sort. It sorts sublists of size
+// kListInsertionSortSize or less using insertion sort first. Afterwards, it is
+// using a bottom-up merge sort to increase the sublists' size by power of 2.
+// Also, this function allocates a temporary space to ease merging and swaps
 // `input` and `output` to avoid further allocation.
 // TODO(T39107329): Consider using Timsort for further optimization.
 RawObject listSort(Thread* thread, const List& list) {
@@ -196,13 +203,10 @@ RawObject listSort(Thread* thread, const List& list) {
   }
   HandleScope scope(thread);
   MutableTuple input(&scope, list.items());
-  Object item_i(&scope, NoneType::object());
-  Object item_j(&scope, NoneType::object());
   Object compare_result(&scope, NoneType::object());
   for (word left = 0; left < num_items; left += kListInsertionSortSize) {
     word right = Utils::minimum(left + kListInsertionSortSize, num_items);
-    compare_result = listInsertionSort(thread, input, left, right, item_i,
-                                       item_j, compare_result);
+    compare_result = listInsertionSort(thread, input, left, right);
     if (compare_result.isError()) {
       return *compare_result;
     }
@@ -218,8 +222,7 @@ RawObject listSort(Thread* thread, const List& list) {
     for (word left = 0; left < num_items; left += width * 2) {
       word right = Utils::minimum(num_items, left + width);
       word end = Utils::minimum(num_items, left + width * 2);
-      compare_result = listMerge(thread, input, output, left, right, end,
-                                 item_i, item_j, compare_result);
+      compare_result = listMerge(thread, input, output, left, right, end);
       if (compare_result.isError()) {
         return *compare_result;
       }
