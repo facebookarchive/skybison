@@ -6829,6 +6829,12 @@ class ListTests(unittest.TestCase):
         grows[:] = C()
         self.assertEqual(grows, ["a", "b", "c"])
 
+    def test_sort_with_big_list(self):
+        ls = list(range(0, 1000))
+        reversed_ls = list(reversed(ls))
+        reversed_ls.sort()
+        self.assertEqual(ls, reversed_ls)
+
     def test_sort_with_non_list_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             list.sort(None)
