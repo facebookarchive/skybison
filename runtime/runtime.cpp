@@ -3216,22 +3216,16 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
                            word allocated) {
   HandleScope scope(thread);
   word result_len = 0;
-  Object elt(&scope, NoneType::object());
   Str str(&scope, Str::empty());
   for (word i = 0; i < allocated; ++i) {
-    elt = items.at(i);
-    if (!isInstanceOfStr(*elt)) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "sequence item %w: expected str instance, %T found", i, &elt);
-    }
-    str = strUnderlying(*elt);
+    str = strUnderlying(items.at(i));
     result_len += str.charLength();
   }
   if (allocated > 1) {
     result_len += sep.charLength() * (allocated - 1);
   }
   // Small result
+  Object elt(&scope, NoneType::object());
   if (result_len <= RawSmallStr::kMaxLength) {
     byte buffer[RawSmallStr::kMaxLength];
     for (word i = 0, offset = 0; i < allocated; ++i) {

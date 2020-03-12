@@ -5442,9 +5442,9 @@ class str(bootstrap=True):
         _builtin()
 
     def join(self, items) -> str:
-        _str_guard(self)
-        if _tuple_check_exact(tuple) or _list_check_exact(items):
-            return _str_join(self, items)
+        result = _str_join(self, items)
+        if result is not _Unbound:
+            return result
         try:
             it = iter(items)
         except Exception:

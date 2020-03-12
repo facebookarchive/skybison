@@ -4164,16 +4164,34 @@ RawObject FUNC(_builtins, _str_join)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Str sep(&scope, args.get(0));
-  Object iterable(&scope, args.get(1));
-  if (iterable.isTuple()) {
-    Tuple tuple(&scope, *iterable);
-    return runtime->strJoin(thread, sep, tuple, tuple.length());
+  Object sep_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*sep_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
   }
-  DCHECK(iterable.isList(), "iterable must be tuple or list");
-  List list(&scope, *iterable);
-  Tuple tuple(&scope, list.items());
-  return runtime->strJoin(thread, sep, tuple, list.numItems());
+  Str sep(&scope, strUnderlying(*sep_obj));
+  Object iterable(&scope, args.get(1));
+  Tuple tuple(&scope, runtime->emptyTuple());
+  word length = 0;
+  if (iterable.isTuple()) {
+    tuple = *iterable;
+    length = tuple.length();
+  } else if (iterable.isList()) {
+    tuple = List::cast(*iterable).items();
+    length = List::cast(*iterable).numItems();
+  } else {
+    // Slow path: collect items into list in Python and call again
+    return Unbound::object();
+  }
+  Object elt(&scope, NoneType::object());
+  for (word i = 0; i < length; i++) {
+    elt = tuple.at(i);
+    if (!runtime->isInstanceOfStr(*elt)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "sequence item %w: expected str instance, %T found", i, &elt);
+    }
+  }
+  return runtime->strJoin(thread, sep, tuple, length);
 }
 
 RawObject FUNC(_builtins, _str_len)(Thread* thread, Frame* frame, word nargs) {

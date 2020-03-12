@@ -225,8 +225,8 @@ class Runtime {
   void processFinalizers();
 
   RawObject strConcat(Thread* thread, const Str& left, const Str& right);
-  NODISCARD RawObject strJoin(Thread* thread, const Str& sep,
-                              const Tuple& items, word allocated);
+  RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
+                    word allocated);
 
   // Creates a new Str containing `str` repeated `count` times.
   RawObject strRepeat(Thread* thread, const Str& str, word count);

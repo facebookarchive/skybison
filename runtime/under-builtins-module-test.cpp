@@ -2204,6 +2204,18 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrarrayIaddWithStrReturnsStrArray) {
   EXPECT_EQ(self, result);
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderStrJoinWithNonStrRaisesTypeError) {
+  HandleScope scope(thread_);
+  Str sep(&scope, runtime_->newStrFromCStr(","));
+  Tuple elts(&scope, runtime_->newTuple(3));
+  elts.atPut(0, runtime_->newStrFromCStr("foo"));
+  elts.atPut(1, runtime_->newInt(4));
+  elts.atPut(2, runtime_->newStrFromCStr("bar"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FUNC(_builtins, _str_join), sep, elts), LayoutId::kTypeError,
+      "sequence item 1: expected str instance, int found"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, PartitionOnSingleCharStr) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));

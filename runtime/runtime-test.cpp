@@ -3150,19 +3150,6 @@ TEST_F(RuntimeTest, ObjectEqualsWithIntAndBoolReturnsBool) {
       Bool::falseObj());
 }
 
-TEST_F(RuntimeStrTest, StrJoinWithNonStrRaisesTypeError) {
-  HandleScope scope(thread_);
-  Str sep(&scope, runtime_->newStrFromCStr(","));
-  Tuple elts(&scope, runtime_->newTuple(3));
-  elts.atPut(0, runtime_->newStrFromCStr("foo"));
-  elts.atPut(1, runtime_->newInt(4));
-  elts.atPut(2, runtime_->newStrFromCStr("bar"));
-  EXPECT_TRUE(
-      raisedWithStr(runtime_->strJoin(thread_, sep, elts, elts.length()),
-                    LayoutId::kTypeError,
-                    "sequence item 1: expected str instance, int found"));
-}
-
 TEST_F(RuntimeStrTest, StrJoinWithStrSubclassReturnsJoinedString) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C(str):
