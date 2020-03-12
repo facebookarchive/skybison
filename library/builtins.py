@@ -64,6 +64,7 @@ from _builtins import (
     _classmethod_isabstract,
     _code_check,
     _code_guard,
+    _code_new,
     _code_set_posonlyargcount,
     _compile_flags_mask,
     _complex_check,
@@ -2393,6 +2394,60 @@ def chr(c):
 
 
 class code(bootstrap=True):
+    def __new__(
+        cls,
+        argcount,
+        kwonlyargcount,
+        nlocals,
+        stacksize,
+        flags,
+        code,
+        consts,
+        names,
+        varnames,
+        filename,
+        name,
+        firstlineno,
+        lnotab,
+        freevars=(),
+        cellvars=(),
+    ):
+        argcount = _int(argcount)
+        posonlyargcount = 0
+        kwonlyargcount = _int(kwonlyargcount)
+        nlocals = _int(nlocals)
+        stacksize = _int(stacksize)
+        flags = _int(flags)
+        _bytes_guard(code)
+        _tuple_guard(consts)
+        _tuple_guard(names)
+        _tuple_guard(varnames)
+        _str_guard(filename)
+        _str_guard(name)
+        firstlineno = _int(firstlineno)
+        _bytes_guard(lnotab)
+        _tuple_guard(freevars)
+        _tuple_guard(cellvars)
+        return _code_new(
+            cls,
+            argcount,
+            posonlyargcount,
+            kwonlyargcount,
+            nlocals,
+            stacksize,
+            flags,
+            code,
+            consts,
+            names,
+            varnames,
+            filename,
+            name,
+            firstlineno,
+            lnotab,
+            freevars,
+            cellvars,
+        )
+
     def __hash__(self):
         _code_guard(self)
         result = (

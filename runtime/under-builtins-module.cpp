@@ -1469,6 +1469,36 @@ RawObject FUNC(_builtins, _code_guard)(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(code));
 }
 
+RawObject FUNC(_builtins, _code_new)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object cls(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (cls != runtime->typeAt(LayoutId::kCode)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "require code class");
+  }
+  word argcount = intUnderlying(args.get(1)).asWord();
+  word posonlyargcount = intUnderlying(args.get(2)).asWord();
+  word kwonlyargcount = intUnderlying(args.get(3)).asWord();
+  word nlocals = intUnderlying(args.get(4)).asWord();
+  word stacksize = intUnderlying(args.get(5)).asWord();
+  word flags = intUnderlying(args.get(6)).asWord();
+  Object code(&scope, args.get(7));
+  Object consts(&scope, args.get(8));
+  Object names(&scope, args.get(9));
+  Object varnames(&scope, args.get(10));
+  Object filename(&scope, args.get(11));
+  Object name(&scope, args.get(12));
+  word firstlineno = intUnderlying(args.get(13)).asWord();
+  Object lnotab(&scope, args.get(14));
+  Object freevars(&scope, args.get(15));
+  Object cellvars(&scope, args.get(16));
+  return runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
+                          stacksize, flags, code, consts, names, varnames,
+                          freevars, cellvars, filename, name, firstlineno,
+                          lnotab);
+}
+
 RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);

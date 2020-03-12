@@ -212,6 +212,28 @@ def _code_guard(c):
     _builtin()
 
 
+def _code_new(
+    cls,
+    argcount,
+    posonlyargcount,
+    kwonlyargcount,
+    nlocals,
+    stacksize,
+    flags,
+    code,
+    consts,
+    names,
+    varnames,
+    filename,
+    name,
+    firstlineno,
+    lnotab,
+    freevars,
+    cellvars,
+):
+    _builtin()
+
+
 def _code_set_posonlyargcount(code, value):
     _builtin()
 

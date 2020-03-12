@@ -2445,11 +2445,14 @@ class ClassMethodTests(unittest.TestCase):
 
 
 class CodeTests(unittest.TestCase):
-    def test_dunder_hash_with_non_code_object_raises_type_error(self):
-        from types import CodeType
+    def foo(self):
+        pass
 
+    CodeType = type(foo.__code__)
+
+    def test_dunder_hash_with_non_code_object_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            CodeType.__hash__(None)
+            self.CodeType.__hash__(None)
         self.assertIn(
             "'__hash__' requires a 'code' object but received a 'NoneType'",
             str(context.exception),
@@ -2468,6 +2471,118 @@ class CodeTests(unittest.TestCase):
 
         self.assertIsNot(first_foo_code, second_foo_code)
         self.assertEqual(hash(first_foo_code), hash(second_foo_code))
+
+    def test_dunder_new_with_non_int_argcount_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType("not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_non_int_posonlyargcount_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_non_int_kwonlyargcount_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_non_int_nlocals_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_non_int_stacksize_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1)
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_non_bytes_code_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, 1, "not_bytes", 1, 1, 1, 1, 1, 1, 1)
+        self.assertIn("bytes", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_with_non_tuple_consts_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, 1, b"", "not_tuple", 1, 1, 1, 1, 1, 1)
+        self.assertIn("tuple", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_with_non_tuple_names_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, 1, b"", (), "not_tuple", 1, 1, 1, 1, 1)
+        self.assertIn("tuple", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_with_non_tuple_varnames_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, 1, b"", (), (), "not_tuple", 1, 1, 1, 1)
+        self.assertIn("tuple", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_with_non_str_filename_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, 1, b"", (), (), (), b"not_str", 1, 1, 1)
+        self.assertIn("str", str(context.exception))
+        self.assertIn("bytes", str(context.exception))
+
+    def test_dunder_new_with_non_str_name_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(1, 1, 1, 1, 1, b"", (), (), (), "filename", b"not_str", 1, 1)
+        self.assertIn("str", str(context.exception))
+        self.assertIn("bytes", str(context.exception))
+
+    def test_dunder_new_with_non_int_firstlineno_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(
+                1, 1, 1, 1, 1, b"", (), (), (), "filename", "name", "not_int", 1
+            )
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_non_bytes_lnotab_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(
+                1, 1, 1, 1, 1, b"", (), (), (), "filename", "name", 1, "not_bytes"
+            )
+        self.assertIn("bytes", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_with_non_tuple_freevars_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(
+                1, 1, 1, 1, 1, b"", (), (), (), "filename", "name", 1, b"", "not_tuple"
+            )
+        self.assertIn("tuple", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_with_non_tuple_cellvars_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(
+                1,
+                1,
+                1,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                (),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                "not_tuple",
+            )
+        self.assertIn("tuple", str(context.exception))
+        self.assertIn("str", str(context.exception))
+
+    def test_dunder_new_returns_code(self):
+        result = self.CodeType(
+            1, 1, 4, 1, 1, b"", (), (), ("a", "b"), "filename", "name", 1, b"", (), ()
+        )
+        self.assertIsInstance(result, self.CodeType)
 
 
 class ContextManagerTests(unittest.TestCase):
