@@ -26,7 +26,7 @@ Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments."""
 
 import builtins
-from builtins import BlockingIOError, _index, _type_name
+from builtins import BlockingIOError, _index, _int, _type_name
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
 from _builtins import (
@@ -75,6 +75,10 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
 def _StringIO_closed_guard(obj):
+    _builtin()
+
+
+def _StringIO_seek(self, offset, whence):
     _builtin()
 
 
@@ -2127,32 +2131,11 @@ class StringIO(_TextIOBase, bootstrap=True):
     def readline(self, size=None):
         _builtin()
 
-    # TODO(T59698607): implement this in native code.
-    def seek(self, cookie, whence=0):  # noqa: C901
-        _StringIO_closed_guard(self)
-        _int_guard(whence)
-        if not _int_check(cookie):
-            try:
-                cookie = _index(cookie)
-            except AttributeError as err:
-                raise TypeError("an integer is required") from err
-
-        if whence == 0:
-            if cookie < 0:
-                raise ValueError(f"Negative seek position {cookie!r}")
-            self._pos = cookie
-            return cookie
-        elif whence == 1:  # seek relative to current position
-            if cookie != 0:
-                raise OSError("Can't do nonzero cur-relative seeks")
-            return self._pos
-        elif whence == 2:  # seek relative to end of file
-            if cookie != 0:
-                raise OSError("Can't do nonzero end-relative seeks")
-            self._pos = _bytes_len(self._buffer)
-            return self._pos
-        else:
-            raise ValueError(f"Invalid whence ({whence}, should be 0, 1 or 2)")
+    def seek(self, offset, whence=0):
+        result = _StringIO_seek(self, offset, whence)
+        if result is not _Unbound:
+            return result
+        return _StringIO_seek(self, _index(offset), _int(whence))
 
     def tell(self):  # noqa: C901
         _StringIO_closed_guard(self)

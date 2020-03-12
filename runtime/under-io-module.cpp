@@ -55,6 +55,72 @@ RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject FUNC(_io, _StringIO_seek)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object offset_obj(&scope, args.get(1));
+  Object whence_obj(&scope, args.get(2));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*offset_obj) ||
+      !runtime->isInstanceOfInt(*whence_obj)) {
+    return Unbound::object();
+  }
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStringIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(StringIO));
+  }
+  StringIO self(&scope, *self_obj);
+  if (self.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  word offset = intUnderlying(*offset_obj).asWordSaturated();
+  if (!SmallInt::isValid(offset)) {
+    return thread->raiseWithFmt(
+        LayoutId::kOverflowError,
+        "cannot fit offset into an index-sized integer");
+  }
+  if (!runtime->isInstanceOfInt(*whence_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Invalid whence (should be 0, 1 or 2)");
+  }
+  word whence = intUnderlying(*whence_obj).asWordSaturated();
+  switch (whence) {
+    case 0:
+      if (offset < 0) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "Negative seek position %d", offset);
+      }
+      self.setPos(offset);
+      return *offset_obj;
+    case 1:
+      if (offset != 0) {
+        return thread->raiseWithFmt(LayoutId::kOSError,
+                                    "Can't do nonzero cur-relative seeks");
+      }
+      return SmallInt::fromWord(self.pos());
+    case 2: {
+      if (offset != 0) {
+        return thread->raiseWithFmt(LayoutId::kOSError,
+                                    "Can't do nonzero end-relative seeks");
+      }
+      word new_pos = MutableBytes::cast(self.buffer()).length();
+      self.setPos(new_pos);
+      return SmallInt::fromWord(new_pos);
+    }
+    default:
+      if (SmallInt::isValid(whence)) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "Invalid whence (%w, should be 0, 1 or 2)",
+                                    whence);
+      } else {
+        return thread->raiseWithFmt(
+            LayoutId::kOverflowError,
+            "Python int too large to convert to C long");
+      }
+  }
+}
+
 static RawObject initReadBuf(Thread* thread,
                              const BufferedReader& buffered_reader) {
   HandleScope scope(thread);

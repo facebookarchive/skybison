@@ -2744,14 +2744,22 @@ class StringIOTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             string_io.seek(0, "not-int")
 
-    def test_seek_with_intlike_whence_raises_type_error(self):
-        class IntLike:
+    def test_seek_with_index_covertible_whence_raises_type_error(self):
+        class IndexLike:
             def __index__(self):
                 return 5
 
         string_io = _io.StringIO("hello world")
         with self.assertRaises(TypeError):
-            string_io.seek(0, IntLike())
+            string_io.seek(0, IndexLike())
+
+    def test_seek_accepts_int_convertible_whence(self):
+        class IntLike:
+            def __int__(self):
+                return 0
+
+        string_io = _io.StringIO("hello world")
+        self.assertEquals(string_io.seek(1, IntLike()), 1)
 
     def test_seek_can_overseek(self):
         string_io = _io.StringIO("foo\n")
@@ -2794,6 +2802,14 @@ class StringIOTests(unittest.TestCase):
             string_io.seek(1, 3)
         self.assertEqual(
             str(context.exception), "Invalid whence (3, should be 0, 1 or 2)"
+        )
+
+    def test_seek_with_bigint_whence_raises_overflow_error(self):
+        string_io = _io.StringIO("foo\n")
+        with self.assertRaises(OverflowError) as context:
+            string_io.seek(1, 2 ** 65)
+        self.assertEqual(
+            str(context.exception), "Python int too large to convert to C long"
         )
 
     def test_seekable_with_open_StringIO_returns_true(self):
