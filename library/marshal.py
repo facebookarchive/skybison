@@ -150,7 +150,7 @@ class _Marshaller:
         # TODO(T63932056): Check if a string is interned and emit TYPE_INTERNED
         # or TYPE_STRINGREF
         self._write(TYPE_UNICODE)
-        s = x.encode("utf8")
+        s = x.encode("utf8", "surrogatepass")
         self.w_long(len(s))
         self._write(s)
 

@@ -110,6 +110,9 @@ class DumpsTest(unittest.TestCase):
             b"u\t\x00\x00\x00 \t\xe3\x80\x80\n\xe2\x80\xaf",
         )
 
+    def test_dumps_with_str_with_surrogate_pair(self):
+        self.assertEqual(marshal.dumps("\udc80", 2), b"u\x03\x00\x00\x00\xed\xb2\x80")
+
     def test_dumps_with_small_tuple(self):
         self.assertEqual(marshal.dumps((), 2), b"(\x00\x00\x00\x00")
 
