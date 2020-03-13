@@ -661,6 +661,7 @@ class Runtime;
   V(sub)                                                                       \
   V(super)                                                                     \
   V(surrogateescape)                                                           \
+  V(surrogatepass)                                                             \
   V(sys)                                                                       \
   V(text)                                                                      \
   V(throw)                                                                     \

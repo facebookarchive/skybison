@@ -30,6 +30,9 @@ static SymbolId lookupSymbolForErrorHandler(const Str& error) {
   if (error.equalsCStr("surrogateescape")) {
     return ID(surrogateescape);
   }
+  if (error.equalsCStr("surrogatepass")) {
+    return ID(surrogatepass);
+  }
   return SymbolId::kInvalid;
 }
 
@@ -880,6 +883,14 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
           if (isEscapedLatin1Surrogate(codepoint)) {
             byteArrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
+            continue;
+          }
+          break;
+        case ID(surrogatepass):
+          if (isSurrogate(codepoint)) {
+            byteArrayAdd(thread, runtime, output, data.charAt(byte_offset - 3));
+            byteArrayAdd(thread, runtime, output, data.charAt(byte_offset - 2));
+            byteArrayAdd(thread, runtime, output, data.charAt(byte_offset - 1));
             continue;
           }
           break;

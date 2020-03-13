@@ -683,6 +683,21 @@ class EncodeUTF8Tests(unittest.TestCase):
         self.assertEqual(encoded, b"hello")
         self.assertEqual(consumed, 5)
 
+    def test_encode_utf_8_with_surrogatepass_passes_surrogate(self):
+        # high surrogate
+        encoded, consumed = _codecs.utf_8_encode("ab\udc80c", "surrogatepass")
+        self.assertEqual(encoded, b"ab\xed\xb2\x80c")
+        self.assertEqual(consumed, 4)
+
+        # low surrogate
+        encoded, consumed = _codecs.utf_8_encode("ab\ud9a0c", "surrogatepass")
+        self.assertEqual(encoded, b"ab\xed\xa6\xa0c")
+        self.assertEqual(consumed, 4)
+
+    def test_encode_utf_8_without_surrogatepass_raises_on_surrogate(self):
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.utf_8_encode("ab\udc80c")
+
     def test_encode_utf_8_with_custom_error_handler_mid_bytes_error_returns_bytes(self):
         _codecs.register_error("test", lambda x: (b"-testing-", x.end))
         encoded, consumed = _codecs.utf_8_encode("ab\udc80c", "test")
