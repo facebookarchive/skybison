@@ -40,6 +40,9 @@ def extension_suffixes():
 
 
 def _fix_co_filename(code, path):
+    if code.co_filename == path:
+        return
+    # TODO(T63991004): Implement the rest of _fix_co_filename
     _unimplemented()
 
 

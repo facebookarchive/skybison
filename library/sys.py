@@ -86,9 +86,7 @@ class _IOStream:
 class _ImplementationType:
     # TODO(T40871632): Add sys.implementation as a namespace object
     def __init__(self):
-        # TODO(T40871490): Cache compiles *.py files to a __cache__ directory
-        # Setting cache_tag to None avoids caching or searching for cached files
-        self.cache_tag = None
+        self.cache_tag = "pyro-36"
         self.name = "pyro"
 
 

@@ -250,8 +250,7 @@ RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
   // type argument is ignored
   Object value(&scope, args.get(1));
   Object tb(&scope, args.get(2));
-  displayException(thread, value, tb);
-  return NoneType::object();
+  return displayException(thread, value, tb);
 }
 
 RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
