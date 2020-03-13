@@ -33,37 +33,36 @@ from builtins import code as CodeType
 from _builtins import _builtin, _byteslike_check, _type, _unimplemented
 
 
-def loads(bytes):
-    _builtin()
-
-
-TYPE_NULL = b"0"
-TYPE_NONE = b"N"
-TYPE_FALSE = b"F"
-TYPE_TRUE = b"T"
-TYPE_STOPITER = b"S"
-TYPE_ELLIPSIS = b"."
-TYPE_INT = b"i"
-TYPE_FLOAT = b"f"
-TYPE_BINARY_FLOAT = b"g"
-TYPE_COMPLEX = b"x"
 TYPE_BINARY_COMPLEX = b"y"
-TYPE_LONG = b"l"
-TYPE_STRING = b"s"
-TYPE_INTERNED = b"t"
-TYPE_STRINGREF = b"R"
-TYPE_TUPLE = b"("
-TYPE_LIST = b"["
-TYPE_DICT = b"{"
+TYPE_BINARY_FLOAT = b"g"
 TYPE_CODE = b"c"
+TYPE_COMPLEX = b"x"
+TYPE_DICT = b"{"
+TYPE_ELLIPSIS = b"."
+TYPE_FALSE = b"F"
+TYPE_FLOAT = b"f"
+TYPE_FROZENSET = b">"
+TYPE_INT = b"i"
+TYPE_INTERNED = b"t"
+TYPE_LIST = b"["
+TYPE_LONG = b"l"
+TYPE_NONE = b"N"
+TYPE_NULL = b"0"
+TYPE_REF = b"r"
+TYPE_SET = b"<"
+TYPE_STOPITER = b"S"
+TYPE_STRING = b"s"
+TYPE_STRINGREF = b"R"
+TYPE_TRUE = b"T"
+TYPE_TUPLE = b"("
 TYPE_UNICODE = b"u"
 TYPE_UNKNOWN = b"?"
-TYPE_SET = b"<"
-TYPE_FROZENSET = b">"
-TYPE_REF = b"r"
 
-_INT32_MIN = -0x7FFFFFFF - 1
 _INT32_MAX = 0x7FFFFFFF
+_INT32_MIN = -0x7FFFFFFF - 1
+
+
+version = 2
 
 
 class _Marshaller:
@@ -205,9 +204,6 @@ class _Marshaller:
             self.dump(each)
 
 
-version = 2
-
-
 def dumps(x, version=version):
     if version != 2:
         # TODO(T63932405): Support marshal versions other than 2
@@ -216,3 +212,7 @@ def dumps(x, version=version):
     m = _Marshaller(buffer.extend)
     m.dump(x)
     return bytes(buffer)
+
+
+def loads(bytes):
+    _builtin()
