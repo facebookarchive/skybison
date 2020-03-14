@@ -214,6 +214,21 @@ b = math.floor(12.34)
   EXPECT_EQ(PyLong_Check(b), 1);
 }
 
+TEST_F(ConfigExtensionApiTest, ImportMmapReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("mmap"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportMmapModuleMethods) {
+  PyRun_SimpleString(R"(
+import mmap
+mmap.mmap(-1, 13)
+)");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ConfigExtensionApiTest, ImportPosixReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("posix"));
   ASSERT_NE(module, nullptr);
