@@ -83,12 +83,12 @@ class Thread:
         _unimplemented()
 
 
-class Timer:
+class _MainThread(Thread):
     def __init__(self, *args, **kwargs):
+        if args == ("_main_thread_secret",):
+            return
         _unimplemented()
 
-
-class _PseudoThread:
     def getName(self):
         return "MainThread"
 
@@ -99,6 +99,11 @@ class _PseudoThread:
     @property
     def name(self):
         return "MainThread"
+
+
+class Timer:
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
 
 
 class _RLock:
@@ -127,7 +132,7 @@ class _ThreadLocal:
 
 local = _ThreadLocal
 
-_main_thread = _PseudoThread()
+_main_thread = _MainThread("_main_thread_secret")
 
 
 _thread_local = _ThreadLocal()
@@ -146,7 +151,7 @@ def current_thread():
 
 
 def enumerate():
-    _unimplemented()
+    return [_main_thread]
 
 
 def get_ident():
