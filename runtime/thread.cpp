@@ -88,9 +88,17 @@ namespace {
 
 class UserVisibleFrameVisitor : public FrameVisitor {
  public:
-  explicit UserVisibleFrameVisitor(word depth) : depth_(depth) {}
+  UserVisibleFrameVisitor(word depth, word builtins_module_id)
+      : depth_(depth), builtins_module_id_(builtins_module_id) {}
 
   bool visit(Frame* frame) {
+    if (frame != nullptr && !frame->isSentinel()) {
+      RawFunction function = Function::cast(frame->function());
+      if (function.moduleObject().isModule() &&
+          Module::cast(function.moduleObject()).id() == builtins_module_id_) {
+        return true;
+      }
+    }
     if (call_ == depth_) {
       if (!frame->isSentinel()) {
         target_ = frame;
@@ -106,15 +114,34 @@ class UserVisibleFrameVisitor : public FrameVisitor {
  private:
   word call_ = 0;
   word depth_;
+  // TODO(T64005113): Remove this once we mark individual functions.
+  word builtins_module_id_;
   Frame* target_ = nullptr;
 };
 
 }  // namespace
 
 Frame* Thread::frameAtDepth(word depth) {
-  UserVisibleFrameVisitor visitor(depth + 1);
+  UserVisibleFrameVisitor visitor(depth + 1, runtime_->builtinsModuleId());
   visitFrames(&visitor);
   return visitor.target();
+}
+
+bool Thread::isHiddenFrame(Frame* frame) {
+  if (frame == nullptr || frame->isSentinel()) {
+    return true;
+  }
+  RawFunction function = Function::cast(frame->function());
+  word builtins_module_id = runtime_->builtinsModuleId();
+  // PyCFunction do not generate a frame in cpython and therefore do
+  // not show up in sys._getframe(). Our builtin functions do create a
+  // frame so we hide frames of functions in builtins from the user.
+  // TODO(T64005113): This logic should be applied to each function.
+  if (function.moduleObject().isModule() &&
+      Module::cast(function.moduleObject()).id() == builtins_module_id) {
+    return true;
+  }
+  return false;
 }
 
 void Thread::setCurrentThread(Thread* thread) {

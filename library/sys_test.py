@@ -262,7 +262,7 @@ class SysTests(unittest.TestCase):
         self.assertIs(frame.f_globals, sys.modules[self.__module__].__dict__)
 
     @pyro_only
-    def test_under_getframe_f_back_includes_native_frame(self):
+    def test_under_getframe_f_back_excludes_builtins_function(self):
         recorded_frame = None
 
         class C:
@@ -283,10 +283,8 @@ class SysTests(unittest.TestCase):
         foo()
 
         self.assertIs(recorded_frame.f_code, C.__hash__.__code__)
-        # The native frame for dict.__delitem__ is inserted between foo and
-        # C.__hash__.
-        self.assertIs(recorded_frame.f_back.f_lineno, -1)
-        self.assertIs(recorded_frame.f_back.f_back.f_code, foo.__code__)
+        # The result excludes dict.__delitem__.
+        self.assertIs(recorded_frame.f_back.f_code, foo.__code__)
 
     def test_version(self):
         self.assertTrue(sys.version)

@@ -248,6 +248,8 @@ class Runtime {
 
   RawObject ellipsis() { return ellipsis_; }
 
+  word builtinsModuleId() { return builtins_module_id_; }
+
   RawObject moduleDunderGetattribute() { return module_dunder_getattribute_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
   RawObject objectDunderInit() { return object_dunder_init_; }
@@ -893,6 +895,10 @@ class Runtime {
 
   // The last module ID given out.
   word max_module_id_ = 0;
+
+  // The ID of builtins module.
+  // TODO(T64005113): Remove this once we mark individual functions.
+  word builtins_module_id_ = -1;
 
   // Internal-only types, for which the Layout has a different described type
   RawObject large_bytes_ = NoneType::object();

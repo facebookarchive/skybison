@@ -233,6 +233,9 @@ RawObject FUNC(sys, _getframe)(Thread* thread, Frame* frame, word nargs) {
   Object result(&scope, NoneType::object());
   Object next_heap_frame(&scope, NoneType::object());
   for (; !frame->isSentinel(); frame = frame->previousFrame()) {
+    if (thread->isHiddenFrame(frame)) {
+      continue;
+    }
     HeapFrame heap_frame(&scope, runtime->newHeapFrame(thread, frame));
     if (result.isNoneType()) {
       result = *heap_frame;

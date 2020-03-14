@@ -1152,10 +1152,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
 
     def __subclasscheck__(self, cls):
         if self.__origin__ is not None:
-            # TODO(T61710455): This Pyro-specific change to look at frame n-2
-            # instead of n-1 should not be necessary once we upgrade to 3.7,
-            # which doesn't need this workaround
-            if sys._getframe(2).f_globals['__name__'] not in ['abc', 'functools']:
+            if sys._getframe(1).f_globals['__name__'] not in ['abc', 'functools']:
                 raise TypeError("Parameterized generics cannot be used with class "
                                 "or instance checks")
             return False

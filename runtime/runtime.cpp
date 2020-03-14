@@ -2335,6 +2335,11 @@ void Runtime::initializeModules() {
           "failed to initialize built-in module %s",
           Symbols::predefinedSymbolAt(id));
   }
+
+  HandleScope scope(thread);
+  Module builtins_module(&scope, findModuleById(ID(builtins)));
+  builtins_module_id_ = builtins_module.id();
+
   // Run builtins._init to import modules required in builtins.
   CHECK(!thread->invokeFunction0(ID(builtins), ID(_init)).isError(),
         "Failed to run builtins._init");
