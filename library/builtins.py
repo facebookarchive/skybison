@@ -3460,6 +3460,21 @@ class instance_proxy:
         _instance_guard(instance)
         _instance_delattr(instance, key)
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if not _dict_check(other) and _type(other) is not instance_proxy:
+            return NotImplemented
+        if len(self) != len(other):
+            return False
+        for key, value in self.items():
+            other_value = other.get(key, _Unbound)
+            if other_value is _Unbound or (
+                value is not other_value and value != other_value
+            ):
+                return False
+        return True
+
     def __getitem__(self, key):
         instance = self._instance
         _instance_guard(instance)
@@ -3504,6 +3519,14 @@ class instance_proxy:
         _instance_guard(instance)
         for key, value in d.items():
             _instance_setattr(instance, key, value)
+
+    def get(self, key, default=None):
+        instance = self._instance
+        _instance_guard(instance)
+        result = _instance_getattr(instance, key)
+        if result is _Unbound:
+            return default
+        return result
 
     def items(self):
         # TODO(emacs): Return an iterator.

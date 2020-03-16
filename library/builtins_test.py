@@ -8,7 +8,7 @@ from test_support import pyro_only
 
 
 try:
-    from builtins import _number_check
+    from builtins import _number_check, instance_proxy
 except ImportError:
     pass
 
@@ -5155,6 +5155,122 @@ class HexTests(unittest.TestCase):
 
 @pyro_only
 class InstanceProxyTests(unittest.TestCase):
+    def test_dunder_eq_with_id_equal_proxy_returns_true(self):
+        class C:
+            pass
+
+        instance = C()
+        proxy = instance.__dict__
+        self.assertIs(instance_proxy.__eq__(proxy, proxy), True)
+
+    def test_dunder_eq_with_non_dict_other_returns_not_implemented(self):
+        class C:
+            pass
+
+        instance = C()
+        proxy = instance.__dict__
+        self.assertIs(instance_proxy.__eq__(proxy, 5), NotImplemented)
+
+    def test_dunder_eq_with_unequal_length_proxy_returns_false(self):
+        class C:
+            pass
+
+        left = C()
+        right = C()
+        right.a = 1
+        self.assertIs(instance_proxy.__eq__(left.__dict__, right.__dict__), False)
+
+    def test_dunder_eq_with_unequal_length_dict_returns_false(self):
+        class C:
+            pass
+
+        left = C()
+        self.assertIs(instance_proxy.__eq__(left.__dict__, {"a": 1}), False)
+
+    def test_dunder_eq_with_empty_proxies_returns_true(self):
+        class C:
+            pass
+
+        left = C()
+        right = C()
+        self.assertIs(instance_proxy.__eq__(left.__dict__, right.__dict__), True)
+
+    def test_dunder_eq_with_empty_proxy_and_empty_dict_returns_true(self):
+        class C:
+            pass
+
+        left = C()
+        self.assertIs(instance_proxy.__eq__(left.__dict__, {}), True)
+
+    def test_dunder_eq_with_key_not_in_other_returns_false(self):
+        class C:
+            pass
+
+        left = C()
+        left.a = 1
+        right = C()
+        right.b = 2
+        self.assertIs(instance_proxy.__eq__(left.__dict__, right.__dict__), False)
+
+    def test_dunder_eq_with_key_not_in_other_dict_returns_false(self):
+        class C:
+            pass
+
+        left = C()
+        left.a = 1
+        self.assertIs(instance_proxy.__eq__(left.__dict__, {"b": 2}), False)
+
+    def test_dunder_eq_with_value_not_equal_in_other_returns_false(self):
+        class C:
+            pass
+
+        left = C()
+        left.a = 1
+        right = C()
+        right.a = 2
+        self.assertIs(instance_proxy.__eq__(left.__dict__, right.__dict__), False)
+
+    def test_dunder_eq_with_value_not_equal_in_other_dict_returns_false(self):
+        class C:
+            pass
+
+        left = C()
+        left.a = 1
+        self.assertIs(instance_proxy.__eq__(left.__dict__, {"a": 2}), False)
+
+    def test_dunder_eq_with_key_and_value_equal_in_other_returns_true(self):
+        class C:
+            pass
+
+        left = C()
+        left.a = 1
+        right = C()
+        right.a = 1
+        self.assertIs(instance_proxy.__eq__(left.__dict__, right.__dict__), True)
+
+    def test_dunder_eq_with_key_and_value_equal_in_other_dict_returns_true(self):
+        class C:
+            pass
+
+        left = C()
+        left.a = 1
+        self.assertIs(instance_proxy.__eq__(left.__dict__, {"a": 1}), True)
+
+    def test_dunder_eq_with_id_equal_values_returns_true(self):
+        # There's no test for id equal keys but overridden __eq__ because we
+        # don't support str subclasses with overridden __eq__ for attributes
+        class C:
+            pass
+
+        class D:
+            def __eq__(self, other):
+                raise RuntimeError("foo")
+
+        left = C()
+        value = D()
+        left.a = value
+        self.assertIs(instance_proxy.__eq__(left.__dict__, {"a": value}), True)
+
     def test_dunder_init_with_non_instance_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             builtins.instance_proxy(42)
@@ -5162,6 +5278,30 @@ class InstanceProxyTests(unittest.TestCase):
             str(context.exception),
             "'__init__' requires a 'instance' object but received a 'int'",
         )
+
+    def test_get_with_extant_key_returns_value(self):
+        class C:
+            pass
+
+        left = C()
+        value = object()
+        left.a = value
+        self.assertIs(instance_proxy.get(left.__dict__, "a"), value)
+
+    def test_get_with_nonexistent_key_returns_none(self):
+        class C:
+            pass
+
+        left = C()
+        self.assertIs(instance_proxy.get(left.__dict__, "a"), None)
+
+    def test_get_with_nonexistent_key_returns_default(self):
+        class C:
+            pass
+
+        left = C()
+        value = object()
+        self.assertIs(instance_proxy.get(left.__dict__, "a", value), value)
 
 
 class IntTests(unittest.TestCase):
