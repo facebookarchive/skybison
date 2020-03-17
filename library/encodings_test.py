@@ -6,9 +6,25 @@ import unittest
 
 
 class EncodingsModuleTest(unittest.TestCase):
+    def test_raw_unicode_escape_getencoder_returns_encoder(self):
+        inc = codecs.getencoder("raw-unicode-escape")
+        self.assertEqual(inc, codecs.raw_unicode_escape_encode)
+
+    def test_unicode_escape_getencoder_returns_encoder(self):
+        inc = codecs.getencoder("unicode-escape")
+        self.assertEqual(inc, codecs.unicode_escape_encode)
+
+    def test_utf_16_be_getencoder_returns_encoder(self):
+        inc = codecs.getencoder("utf-16-be")
+        self.assertEqual(inc, codecs.utf_16_be_encode)
+
     def test_utf_16_getencoder_returns_encoder(self):
         inc = codecs.getencoder("utf-16")
         self.assertEqual(inc, codecs.utf_16_encode)
+
+    def test_utf_16_le_getencoder_returns_encoder(self):
+        inc = codecs.getencoder("utf-16-le")
+        self.assertEqual(inc, codecs.utf_16_le_encode)
 
     def test_utf_8_incremental_decoder_returns_str(self):
         inc = codecs.getincrementaldecoder("utf-8")()

@@ -313,6 +313,14 @@ def latin_1_encode(data: str, errors: str = "strict"):
     return bytes(result), i
 
 
+def raw_unicode_escape_decode(data, errors: str = "strict"):
+    _unimplemented()
+
+
+def raw_unicode_escape_encode(data, errors: str = "strict"):
+    _unimplemented()
+
+
 def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _strarray):
     """Tries to decode `data`, starting from `index`, into the `out` _strarray.
     If it runs into any errors, it returns a tuple of
@@ -354,6 +362,10 @@ def _unicode_escape_decode_stateful(data: bytes, errors: str = "strict"):
 def unicode_escape_decode(data, errors: str = "strict"):
     escaped, length, _ = _unicode_escape_decode_stateful(data, errors)
     return escaped, length
+
+
+def unicode_escape_encode(data, errors: str = "strict"):
+    _unimplemented()
 
 
 def _utf_8_decode(data: bytes, errors: str, index: int, out: _strarray, is_final: bool):
@@ -505,8 +517,16 @@ def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
     return bytes(result), i
 
 
+def utf_16_le_decode(data: str, errors: str = "strict"):
+    _unimplemented()
+
+
 def utf_16_le_encode(data: str, errors: str = "strict"):
     return utf_16_encode(data, errors, -1)
+
+
+def utf_16_be_decode(data: str, errors: str = "strict"):
+    _unimplemented()
 
 
 def utf_16_be_encode(data: str, errors: str = "strict"):
