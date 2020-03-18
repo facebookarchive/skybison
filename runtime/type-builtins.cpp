@@ -1077,6 +1077,14 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     type.setInstanceLayout(*layout);
   }
 
+  // Special-case __init_subclass__ to be a classmethod
+  Object init_subclass(&scope, typeAtById(thread, type, ID(__init_subclass__)));
+  if (init_subclass.isFunction()) {
+    ClassMethod init_subclass_method(&scope, runtime->newClassMethod());
+    init_subclass_method.setFunction(*init_subclass);
+    typeAtPutById(thread, type, ID(__init_subclass__), init_subclass_method);
+  }
+
   Function type_dunder_call(&scope,
                             runtime->lookupNameInModule(thread, ID(_builtins),
                                                         ID(_type_dunder_call)));

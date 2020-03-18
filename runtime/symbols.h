@@ -170,6 +170,7 @@ class Runtime;
   V(__imul__)                                                                  \
   V(__index__)                                                                 \
   V(__init__)                                                                  \
+  V(__init_subclass__)                                                         \
   V(__int__)                                                                   \
   V(__interactivehook__)                                                       \
   V(__invert__)                                                                \

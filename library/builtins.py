@@ -229,6 +229,7 @@ from _builtins import (
     _str_splitlines,
     _str_startswith,
     _strarray_iadd,
+    _super,
 )
 from _builtins import (
     _tuple_check,
@@ -447,7 +448,7 @@ class type(bootstrap=True):
     def __instancecheck__(self, obj) -> bool:
         return _isinstance_type(obj, _type(obj), self)
 
-    def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound):
+    def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound, **kwargs):
         if cls is type and bases is _Unbound and type_dict is _Unbound:
             # If the first argument is exactly type, and there are no other
             # arguments, then this call returns the type of the argument.
@@ -458,7 +459,9 @@ class type(bootstrap=True):
         _dict_guard(type_dict)
         instance = _type_new(cls, bases)
         mro = _Unbound if cls is type else tuple(cls.mro(instance))
-        return _type_init(instance, name_or_object, type_dict, mro)
+        new_type = _type_init(instance, name_or_object, type_dict, mro)
+        _super(new_type).__init_subclass__(**kwargs)
+        return new_type
 
     @_classmethod
     def __prepare__(self, *args, **kwargs):
@@ -528,6 +531,10 @@ class object(bootstrap=True):  # noqa: E999
 
     def __init__(self, *args, **kwargs):
         _builtin()
+
+    @classmethod
+    def __init_subclass__(cls):
+        pass
 
     def __le__(self, other):
         return NotImplemented

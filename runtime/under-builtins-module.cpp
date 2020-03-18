@@ -4542,6 +4542,17 @@ RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
+RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object cls(&scope, args.get(0));
+  Super result(&scope, thread->runtime()->newSuper());
+  result.setType(*cls);
+  result.setObject(*cls);
+  result.setObjectType(*cls);
+  return *result;
+}
+
 RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);

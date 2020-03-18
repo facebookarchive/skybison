@@ -931,6 +931,10 @@ def _strarray_ctor(cls, source=_Unbound):
     _builtin()
 
 
+def _super(cls):
+    _builtin()
+
+
 def _tuple_check(obj):
     _builtin()
 

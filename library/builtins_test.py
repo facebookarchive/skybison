@@ -8300,6 +8300,17 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(Foo.__class__, type)
         self.assertIs(super(Bar, Bar()).__class__, super)
 
+    def test_dunder_init_subclass_with_args_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            object.__init_subclass__(str)
+
+    def test_dunder_init_subclass_with_kwargs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            object.__init_subclass__(name="foo")
+
+    def test_dunder_init_subclass_returns_none(self):
+        self.assertIs(object.__init_subclass__(), None)
+
     def test_dunder_setattr_raises_attribute_error(self):
         result = object()
         with self.assertRaisesRegex(AttributeError, ".*attribute 'foo'"):
@@ -12923,6 +12934,19 @@ class TypeTests(unittest.TestCase):
 
             class Foo(metaclass=Meta):
                 pass
+
+    def test_new_calls_init_subclass(self):
+        class Foo:
+            def __init_subclass__(cls, *args, **kwargs):
+                cls.called_init = True
+
+                self.assertIsInstance(cls, type)
+                self.assertIn("foo", kwargs)
+
+        class Bar(Foo, foo=True):
+            pass
+
+        self.assertTrue(Bar.called_init)
 
     def test_new_duplicates_dict(self):
         d = {"foo": 42, "bar": 17}
