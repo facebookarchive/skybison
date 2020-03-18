@@ -1499,6 +1499,20 @@ RawObject FUNC(_builtins, _code_new)(Thread* thread, Frame* frame, word nargs) {
                           lnotab);
 }
 
+RawObject FUNC(_builtins, _code_set_filename)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object code_obj(&scope, args.get(0));
+  CHECK(code_obj.isCode(), "Expected code to be a code object");
+  Code code(&scope, *code_obj);
+  Object filename(&scope, args.get(1));
+  CHECK(thread->runtime()->isInstanceOfStr(*filename),
+        "Expected value to be a str");
+  code.setFilename(*filename);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);

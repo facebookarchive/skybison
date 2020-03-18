@@ -433,6 +433,16 @@ dc = Foo(b"DC")
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderCodeSetFilenameSetsFilename) {
+  HandleScope scope(thread_);
+  Code code(&scope, testing::newEmptyCode());
+  Str filename(&scope, runtime_->newStrFromCStr("foobar"));
+  ASSERT_NE(code.filename(), filename);
+  ASSERT_FALSE(runBuiltin(FUNC(_builtins, _code_set_filename), code, filename)
+                   .isError());
+  EXPECT_EQ(code.filename(), filename);
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderDictGetWithNotEnoughArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(

@@ -173,6 +173,34 @@ PyObject* PyInit_foo() {
             self.assertIn("foo", nestedtest.foo.__name__)
             sys.path.pop()
 
+    def test_fix_co_filename_updates_filenames_recursively(self):
+        def foo():
+            def bar():
+                pass
+
+        new_name = "foobar"
+        foo_code = foo.__code__
+        bar_code = foo_code.co_consts[1]
+        self.assertIsInstance(bar_code, type(foo_code))
+        self.assertNotEqual(foo_code.co_filename, new_name)
+        self.assertNotEqual(bar_code.co_filename, new_name)
+        _imp._fix_co_filename(foo_code, new_name)
+        self.assertEqual(foo_code.co_filename, new_name)
+        self.assertEqual(bar_code.co_filename, new_name)
+
+    def test_fix_co_filename_with_str_subclass_returns_subclass(self):
+        def foo():
+            pass
+
+        class C(str):
+            pass
+
+        new_name = C("foobar")
+        foo_code = foo.__code__
+        self.assertNotEqual(foo_code.co_filename, new_name)
+        _imp._fix_co_filename(foo_code, new_name)
+        self.assertIs(foo_code.co_filename, new_name)
+
 
 if __name__ == "__main__":
     unittest.main()

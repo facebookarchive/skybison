@@ -234,6 +234,10 @@ def _code_new(
     _builtin()
 
 
+def _code_set_filename(code, filename):
+    _builtin()
+
+
 def _code_set_posonlyargcount(code, value):
     _builtin()
 

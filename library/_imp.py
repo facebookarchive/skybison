@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """_imp provides basic importlib support."""
 
-from _builtins import _builtin, _str_guard, _str_rpartition, _unimplemented
+from _builtins import (
+    _builtin,
+    _code_check,
+    _code_guard,
+    _code_set_filename,
+    _str_guard,
+    _str_rpartition,
+    _unimplemented,
+)
 
 
 def create_builtin(spec):
@@ -39,11 +47,20 @@ def extension_suffixes():
     _builtin()
 
 
+def _code_update_filenames_recursive(code, old_name, new_name):
+    _code_set_filename(code, new_name)
+    for const in code.co_consts:
+        if _code_check(const):
+            _code_update_filenames_recursive(const, old_name, new_name)
+
+
 def _fix_co_filename(code, path):
-    if code.co_filename == path:
+    _code_guard(code)
+    _str_guard(path)
+    old_name = code.co_filename
+    if old_name == path:
         return
-    # TODO(T63991004): Implement the rest of _fix_co_filename
-    _unimplemented()
+    _code_update_filenames_recursive(code, old_name, path)
 
 
 def get_frozen_object(name):
