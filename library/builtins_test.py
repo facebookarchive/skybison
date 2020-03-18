@@ -10214,6 +10214,54 @@ class StrTests(unittest.TestCase):
         table = {97: "def"}
         self.assertEqual(original.translate(table), expected)
 
+    def test_translate_with_short_str_returns_same_str(self):
+        original = "foobar"
+        expected = "foobar"
+        table = "baz"
+        self.assertEqual(original.translate(table), expected)
+
+    def test_translate_with_lowercase_ascii_can_lowercase(self):
+        table = "".join(
+            [chr(i).lower() if chr(i).isupper() else chr(i) for i in range(128)]
+        )
+        original = "FoOBaR"
+        expected = "foobar"
+        self.assertEqual(original.translate(table), expected)
+
+    def test_translate_with_getitem_calls_it(self):
+        class Sequence:
+            def __getitem__(self, index):
+                if index == ord("a"):
+                    return "z"
+                if index == ord("b"):
+                    return None
+                if index == ord("c"):
+                    return 0xC6
+                raise LookupError
+
+        original = "abcd"
+        expected = "z\u00c6d"
+        self.assertEqual(original.translate(Sequence()), expected)
+
+    def test_translate_with_getitem_calls_type_slot(self):
+        class Sequence:
+            def __getitem__(self, index):
+                if index == ord("a"):
+                    return "z"
+
+        s = Sequence()
+        s.__getitem__ = None
+        self.assertEqual("a".translate(s), "z")
+
+    def test_translate_with_invalid_getitem_raises_type_error(self):
+        class Sequence:
+            def __getitem__(self, index):
+                if index == ord("a"):
+                    return b"a"
+
+        with self.assertRaises(TypeError):
+            "invalid".translate(Sequence())
+
     def test_maketrans_dict_with_non_str_or_int_keys_raises_type_error(self):
         with self.assertRaisesRegex(TypeError, "translate table must be"):
             str.maketrans({123.456: 2})

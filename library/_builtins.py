@@ -919,6 +919,10 @@ def _str_startswith(self, prefix, start, end):
     _builtin()
 
 
+def _str_translate(obj, table):
+    _builtin()
+
+
 def _strarray_clear(self):
     _builtin()
 

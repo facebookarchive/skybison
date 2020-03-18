@@ -375,6 +375,28 @@ RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
   return thread->runtime()->strSubstr(thread, src, 0, length - last);
 }
 
+RawObject strTranslateASCII(Thread* thread, const Str& src, const Str& table) {
+  if (table.charLength() > kMaxASCII || !table.isASCII()) {
+    return Unbound::object();
+  }
+  word src_len = src.charLength();
+  word table_len = table.charLength();
+  HandleScope scope(thread);
+  MutableBytes result(&scope,
+                      thread->runtime()->newMutableBytesUninitialized(src_len));
+  // Since all non-ASCII bytes in UTF-8 have a 1 in front, we can iterate by
+  // bytes instead of codepoints
+  for (word i = 0; i < src.charLength(); i++) {
+    byte to_translate = src.charAt(i);
+    if (to_translate > table_len) {
+      result.byteAtPut(i, to_translate);
+    } else {
+      result.byteAtPut(i, table.charAt(to_translate));
+    }
+  }
+  return result.becomeStr();
+}
+
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   HandleScope scope(thread);
   word byte_offset = iter.index();

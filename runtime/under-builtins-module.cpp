@@ -4542,6 +4542,24 @@ RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
+RawObject FUNC(_builtins, _str_translate)(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, strUnderlying(args.get(0)));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+  }
+  Str self(&scope, *self_obj);
+  Object table_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*table_obj)) {
+    return Unbound::object();
+  }
+  Str table(&scope, strUnderlying(*table_obj));
+  return strTranslateASCII(thread, self, table);
+}
+
 RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

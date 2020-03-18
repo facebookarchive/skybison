@@ -228,10 +228,11 @@ from _builtins import (
     _str_split,
     _str_splitlines,
     _str_startswith,
-    _strarray_iadd,
-    _super,
+    _str_translate,
 )
 from _builtins import (
+    _strarray_iadd,
+    _super,
     _tuple_check,
     _tuple_check_exact,
     _tuple_getitem,
@@ -5777,17 +5778,38 @@ class str(bootstrap=True):
         _builtin()
 
     def translate(self, table):
-        _dict_guard(table)
+        result = _str_translate(self, table)
+        if result is not _Unbound:
+            return result
         result = _strarray()
-        for key in self:
-            value = table.get(ord(key), key)
-            if value is None:
-                continue
-            if _int_check(value):
-                value = chr(value)
-            elif not _str_check(value):
-                raise TypeError("character dict must return int, None or str")
-            _strarray_iadd(result, value)
+        if _dict_check(table):
+            for ch in self:
+                value = _dict_get(table, ord(ch), ch)
+                if value is None:
+                    continue
+                if _int_check(value):
+                    value = chr(value)
+                elif not _str_check(value):
+                    raise TypeError("character mapping must return int, None or str")
+                _strarray_iadd(result, value)
+            return str(result)
+
+        dunder_getitem = _object_type_getattr(table, "__getitem__")
+        if dunder_getitem is _Unbound:
+            raise TypeError(f"'{_type(table).__name__}' object is not subscriptable")
+        for ch in self:
+            try:
+                table_entry = dunder_getitem(ord(ch))
+                if _int_check(table_entry):
+                    _strarray_iadd(result, chr(table_entry))
+                elif _str_check(table_entry):
+                    _strarray_iadd(result, table_entry)
+                elif table_entry is not None:
+                    raise TypeError(
+                        "character mapping must return integer, None, or str"
+                    )
+            except LookupError:
+                _strarray_iadd(result, ch)
         return str(result)
 
     def upper(self):

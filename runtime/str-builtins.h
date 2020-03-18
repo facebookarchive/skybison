@@ -95,6 +95,11 @@ word strSpan(const Str& src, const Str& str);
 // to scan the whole string.
 word strRSpan(const Str& src, const Str& str, word rend);
 
+// Translates src according to table. Returns a new, translated Str if table
+// maps only ASCII code points. Returns Unbound if table maps or contains a
+// non-ASCII code point. The src can contain any Unicode.
+RawObject strTranslateASCII(Thread* thread, const Str& src, const Str& table);
+
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
