@@ -256,3 +256,7 @@ stdout = _IOStream(_stdout_fd)
 
 
 warnoptions = []
+
+
+def _program_name():
+    _builtin()

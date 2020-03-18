@@ -37,5 +37,14 @@ TEST_F(MainExtensionApiTest, RunCommand) {
   EXPECT_EQ(::testing::internal::GetCapturedStdout(), "1600\n");
 }
 
+TEST_F(MainExtensionApiTest, StoresProgramNamePyro) {
+  wchar_t arg0[] = L"not-python";
+  wchar_t arg1[] = L"-c";
+  wchar_t arg2[] = L"None";
+  wchar_t* argv[] = {arg0, arg1, arg2};
+  EXPECT_EQ(Py_Main(/*argc=*/3, argv), 0);
+  EXPECT_STREQ(Py_GetProgramName(), L"not-python");
+}
+
 }  // namespace testing
 }  // namespace py

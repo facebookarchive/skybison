@@ -368,6 +368,7 @@ class Runtime;
   V(_path)                                                                     \
   V(_pendingcr)                                                                \
   V(_pos)                                                                      \
+  V(_program_name)                                                             \
   V(_python_path)                                                              \
   V(_range_check)                                                              \
   V(_range_guard)                                                              \

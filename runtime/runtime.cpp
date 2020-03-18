@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cwchar>
 #include <fstream>
 #include <memory>
 
@@ -97,6 +98,16 @@ static const SymbolId kComparisonSelector[] = {
     ID(__lt__), ID(__le__), ID(__eq__), ID(__ne__), ID(__gt__), ID(__ge__)};
 
 word Runtime::next_module_index_ = 0;
+
+wchar_t Runtime::program_name_[NAME_MAX + 1] = L"python3";
+
+wchar_t* Runtime::programName() { return program_name_; }
+
+void Runtime::setProgramName(const wchar_t* program_name) {
+  CHECK(std::wcslen(program_name) <= NAME_MAX,
+        "program_name length must not exceed NAME_MAX");
+  std::wcscpy(program_name_, program_name);
+}
 
 Runtime::Runtime(word heap_size) : heap_(heap_size) {
   initializeRandom();

@@ -237,6 +237,13 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
 
   bool is_interactive = Py_FdIsInteractive(stdin, nullptr);
 
+  wchar_t* prog_name = Py_DecodeLocale(argv[0], nullptr);
+  if (prog_name == nullptr) {
+    failArgConversion("unable to decode the program name", 0);
+  }
+  Py_SetProgramName(prog_name);
+  PyMem_RawFree(prog_name);
+
   Py_Initialize();
 
   if (!Py_QuietFlag &&

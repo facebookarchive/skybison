@@ -71,5 +71,15 @@ TEST_F(PylifecycleExtensionApiTest, RestoreSignalRestoresToDefault) {
   EXPECT_EQ(PyOS_getsig(SIGXFSZ), SIG_DFL);
 }
 
+TEST_F(PylifecycleExtensionApiTest, GetProgramNameGetsDefaultName) {
+  EXPECT_STREQ(Py_GetProgramName(), L"python3");
+}
+
+TEST_F(PylifecycleExtensionApiTest, SetProgramNameSetsName) {
+  wchar_t name[] = L"new-program-name";
+  Py_SetProgramName(name);
+  EXPECT_STREQ(Py_GetProgramName(), L"new-program-name");
+}
+
 }  // namespace testing
 }  // namespace py

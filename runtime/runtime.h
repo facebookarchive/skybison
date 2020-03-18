@@ -777,6 +777,9 @@ class Runtime {
   // SmallInt objects.
   static RawObject objectEquals(Thread* thread, RawObject o0, RawObject o1);
 
+  static wchar_t* programName();
+  static void setProgramName(const wchar_t* program_name);
+
  private:
   void initializeApiData();
   void initializeExceptionTypes();
@@ -960,6 +963,8 @@ class Runtime {
   AtExitFn at_exit_ = nullptr;
 
   static word next_module_index_;
+
+  static wchar_t program_name_[];
 
   friend class ApiHandle;
 

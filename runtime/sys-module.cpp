@@ -247,6 +247,11 @@ RawObject FUNC(sys, _getframe)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+RawObject FUNC(sys, _program_name)(Thread* thread, Frame* /* frame */,
+                                   word /* nargs */) {
+  return newStrFromWideChar(thread, Runtime::programName());
+}
+
 RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

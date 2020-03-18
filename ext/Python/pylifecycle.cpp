@@ -118,12 +118,14 @@ PY_EXPORT PyThreadState* Py_NewInterpreter() {
   UNIMPLEMENTED("Py_NewInterpreter");
 }
 
-PY_EXPORT wchar_t* Py_GetProgramName() { UNIMPLEMENTED("Py_GetProgramName"); }
+PY_EXPORT wchar_t* Py_GetProgramName() { return Runtime::programName(); }
 
 PY_EXPORT wchar_t* Py_GetPythonHome() { UNIMPLEMENTED("Py_GetPythonHome"); }
 
-PY_EXPORT void Py_SetProgramName(wchar_t* /* name */) {
-  UNIMPLEMENTED("Py_SetProgramName");
+PY_EXPORT void Py_SetProgramName(wchar_t* name) {
+  if (name != nullptr && name[0] != L'\0') {
+    Runtime::setProgramName(name);
+  }
 }
 
 PY_EXPORT void Py_SetPythonHome(wchar_t* /* home */) {
