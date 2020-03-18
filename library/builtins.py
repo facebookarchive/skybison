@@ -280,6 +280,21 @@ def _init():
     global _sys
     import sys as _sys
 
+    import errno
+
+    global _errno_map
+    _errno_map = {
+        errno.EAGAIN: BlockingIOError,
+        errno.EALREADY: BlockingIOError,
+        errno.EPIPE: BrokenPipeError,
+        errno.ECHILD: ChildProcessError,
+        errno.EEXIST: FileExistsError,
+        errno.ENOENT: FileNotFoundError,
+        errno.EINTR: InterruptedError,
+        errno.EACCES: PermissionError,
+        errno.EPERM: PermissionError,
+    }
+
 
 # TODO(T59042197): Remove in favor of Python 3.8 parameter syntax
 def _positional_only(value):
@@ -790,6 +805,17 @@ class NotImplementedError(RuntimeError, bootstrap=True):
 
 
 class OSError(Exception, bootstrap=True):
+    def __new__(cls, *args):
+        _type_subclass_guard(cls, OSError)
+        if cls is OSError and _tuple_len(args) > 1:
+            errno = _tuple_getitem(args, 0)
+            if _int_check(errno):
+                subclass = _errno_map.get(errno)
+                if subclass is not None:
+                    return subclass.__new__(subclass, *args)
+        # TODO(T52743795): Use super().
+        return Exception.__new__(cls, *args)
+
     def __init__(self, *args):
         BaseException.__init__(self, *args)
         self.errno = None

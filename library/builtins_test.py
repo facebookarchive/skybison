@@ -3523,6 +3523,35 @@ class EllipsisTypeTests(unittest.TestCase):
 
 
 class ExceptionTests(unittest.TestCase):
+    def test_oserror_with_errno_enoent_returns_file_not_found_error(self):
+        import errno
+
+        result = OSError(errno.ENOENT, "foo", "bar.py")
+        self.assertIsInstance(result, FileNotFoundError)
+        self.assertEqual(result.errno, errno.ENOENT)
+        self.assertEqual(result.strerror, "foo")
+        self.assertEqual(result.filename, "bar.py")
+
+    def test_oserror_with_not_whitelisted_errno_returns_os_error(self):
+        result = OSError(999, "foo", "bar.py")
+        self.assertIsInstance(result, OSError)
+        self.assertEqual(result.errno, 999)
+        self.assertEqual(result.strerror, "foo")
+        self.assertEqual(result.filename, "bar.py")
+
+    def test_oserror_with_errno_enoent_returns_file_not_found_error(self):
+        import errno
+
+        result = OSError(errno.ENOENT, "foo", "bar.py")
+        self.assertIsInstance(result, FileNotFoundError)
+        self.assertEqual(result.errno, errno.ENOENT)
+        self.assertEqual(result.strerror, "foo")
+        self.assertEqual(result.filename, "bar.py")
+
+    def test_oserror_dunder_new_with_subclass_return_subclass_instance(self):
+        result = OSError.__new__(FileNotFoundError)
+        self.assertIsInstance(result, FileNotFoundError)
+
     def test_oserror_dunder_init_with_no_args_does_not_set_attrs(self):
         exc = OSError()
         self.assertIs(exc.errno, None)
