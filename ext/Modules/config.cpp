@@ -22,6 +22,7 @@ extern "C" PyObject* PyInit__stat();
 extern "C" PyObject* PyInit__stentry();
 extern "C" PyObject* PyInit__struct();
 extern "C" PyObject* PyInit_atexit();
+extern "C" PyObject* PyInit_audioop();
 extern "C" PyObject* PyInit_binascii();
 extern "C" PyObject* PyInit_errno();
 extern "C" PyObject* PyInit_fcntl();
@@ -67,6 +68,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_stentry", PyInit__stentry},
     {"_struct", PyInit__struct},
     {"atexit", PyInit_atexit},
+    {"audioop", PyInit_audioop},
     {"binascii", PyInit_binascii},
     {"errno", PyInit_errno},
     {"fcntl", PyInit_fcntl},
