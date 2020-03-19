@@ -489,9 +489,78 @@ class type(bootstrap=True):
         _builtin()
 
 
+def _object_reduce_getnewargs(self):
+    getnewargs_ex = _object_type_getattr(self, "__getnewargs_ex__")
+    if getnewargs_ex is not _Unbound:
+        newargs = getnewargs_ex()
+        _tuple_guard(newargs)
+        if _tuple_len(newargs) != 2:
+            raise ValueError(
+                "__getnewargs_ex__ should return a tuple of "
+                f"length 2 not {_tuple_len(newargs)}"
+            )
+        _tuple_guard(newargs[0])
+        _dict_guard(newargs[1])
+        return newargs
+
+    getnewargs = _object_type_getattr(self, "__getnewargs__")
+    if getnewargs is not _Unbound:
+        args = getnewargs()
+        _tuple_guard(args)
+        return args, None
+
+    return None, None
+
+
+def _object_reduce_getstate(self, required):
+    getstate = _object_type_getattr(self, "__getstate__")
+    if getstate is not _Unbound:
+        return getstate()
+    state = getattr(self, "__dict__", None)
+    if not state:
+        # None or empty instance_proxy; return None
+        state = None
+    slotnames = _object_type_getattr(self, "__slotnames__")
+    if slotnames is _Unbound:
+        import copyreg
+
+        slotnames = copyreg._slotnames(_type(self))
+    if slotnames is not None and len(slotnames) > 0:
+        # TODO(T64257389): If required, check the size of the object, compare
+        # it to the base object size, and raise TypeError if unpickleable
+        _unimplemented()
+    return state
+
+
+def _object_reduce_newobj(self):
+    args, kwargs = _object_reduce_getnewargs(self)
+    newobj = None
+    newargs = None
+    if not kwargs:
+        import copyreg
+
+        newobj = copyreg.__newobj__
+        newargs = (self.__class__, *args) if args else (self.__class__,)
+    elif args is not None:
+        import copyreg
+
+        newobj = copyreg.__newobj_ex__
+        newargs = (self.__class__, args, kwargs)
+    else:
+        raise ValueError("args is none and kwargs is not")
+
+    required = args is not None and not _list_check(self) and not _dict_check(self)
+    state = _object_reduce_getstate(self, required)
+
+    listitems = iter(self) if _list_check(self) else None
+    dictitems = iter(self.items()) if _dict_check(self) else None
+
+    return newobj, newargs, state, listitems, dictitems
+
+
 def _object_reduce(self, proto):
     if proto >= 2:
-        _unimplemented()
+        return _object_reduce_newobj(self)
     from copyreg import _reduce_ex
 
     return _reduce_ex(self, proto)

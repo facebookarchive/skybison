@@ -8067,8 +8067,7 @@ class NotImplementedTypeTests(unittest.TestCase):
 
 class ObjectTests(unittest.TestCase):
     def test_reduce_with_object(self):
-        o = object()
-        result = o.__reduce__()
+        result = object().__reduce__()
         self.assertEqual(len(result), 2)
         self.assertEqual(result[1], (object, object, None))
 
@@ -8076,8 +8075,7 @@ class ObjectTests(unittest.TestCase):
         class Foo:
             pass
 
-        o = Foo()
-        result = o.__reduce__()
+        result = Foo().__reduce__()
         self.assertEqual(len(result), 2)
         self.assertEqual(result[1], (Foo, object, None))
 
@@ -8086,10 +8084,9 @@ class ObjectTests(unittest.TestCase):
             def __init__(self):
                 self.a = 1
 
-        o = Foo()
-        result = o.__reduce__()
+        result = Foo().__reduce__()
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[1], (Foo, object, None), {"a": 1})
+        self.assertEqual(result[1:], ((Foo, object, None), {"a": 1}))
 
     def test_reduce_with_custom_base(self):
         class Foo:
@@ -8099,12 +8096,11 @@ class ObjectTests(unittest.TestCase):
         class Bar(Foo):
             def __init__(self):
                 Foo.__init__(self)
-                self.b = 1
+                self.b = 2
 
-        o = Bar()
-        result = o.__reduce__()
+        result = Bar().__reduce__()
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[1], (Bar, object, None), {"a": 1, "b": 2})
+        self.assertEqual(result[1:], ((Bar, object, None), {"a": 1, "b": 2}))
 
     def test_reduce_with_getstate(self):
         class Foo:
@@ -8114,35 +8110,53 @@ class ObjectTests(unittest.TestCase):
             def __getstate__(self):
                 return {"b": 2}
 
-        o = Foo()
-        result = o.__reduce__()
+        result = Foo().__reduce__()
         self.assertEqual(len(result), 3)
         self.assertEqual(result[1], (Foo, object, None), {"b": 2})
 
     def test_reduce_ex_with_object(self):
-        o = object()
-        result = o.__reduce_ex__(0)
+        result = object().__reduce_ex__(0)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[1], (object, object, None))
+
+    def test_reduce_ex_with_object_and_proto_three(self):
+        result = object().__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((object,), None, None, None))
 
     def test_reduce_ex_with_custom_type_without_attributes(self):
         class Foo:
             pass
 
-        o = Foo()
-        result = o.__reduce_ex__(0)
+        result = Foo().__reduce_ex__(0)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[1], (Foo, object, None))
+
+    def test_reduce_ex_with_custom_type_without_attributes_and_proto_three(self):
+        class Foo:
+            pass
+
+        result = Foo().__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((Foo,), None, None, None))
 
     def test_reduce_ex_with_custom_type(self):
         class Foo:
             def __init__(self):
                 self.a = 1
 
-        o = Foo()
-        result = o.__reduce_ex__(0)
+        result = Foo().__reduce_ex__(0)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[1], (Foo, object, None), {"a": 1})
+
+    def test_reduce_ex_with_custom_type_and_proto_three(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+        result = Foo().__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((Foo,), {"a": 1}, None, None))
 
     def test_reduce_ex_with_custom_base(self):
         class Foo:
@@ -8152,12 +8166,25 @@ class ObjectTests(unittest.TestCase):
         class Bar(Foo):
             def __init__(self):
                 Foo.__init__(self)
-                self.b = 1
+                self.b = 2
 
-        o = Bar()
-        result = o.__reduce_ex__(0)
+        result = Bar().__reduce_ex__(0)
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[1], (Bar, object, None), {"a": 1, "b": 2})
+        self.assertEqual(result[1:], ((Bar, object, None), {"a": 1, "b": 2}))
+
+    def test_reduce_ex_with_custom_base_and_proto_three(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+        class Bar(Foo):
+            def __init__(self):
+                Foo.__init__(self)
+                self.b = 2
+
+        result = Bar().__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((Bar,), {"a": 1, "b": 2}, None, None))
 
     def test_reduce_ex_with_custom_reduce(self):
         class Foo:
@@ -8167,8 +8194,19 @@ class ObjectTests(unittest.TestCase):
             def __reduce__(self):
                 return (Foo, (self.a))
 
-        o = Foo()
-        result = o.__reduce_ex__(0)
+        result = Foo().__reduce_ex__(0)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result, (Foo, 1))
+
+    def test_reduce_ex_with_custom_reduce_and_proto_three(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+            def __reduce__(self):
+                return (Foo, (self.a))
+
+        result = Foo().__reduce_ex__(3)
         self.assertEqual(len(result), 2)
         self.assertEqual(result, (Foo, 1))
 
@@ -8180,10 +8218,31 @@ class ObjectTests(unittest.TestCase):
             def __getstate__(self):
                 return {"b": 2}
 
-        o = Foo()
-        result = o.__reduce_ex__(1)
+        result = Foo().__reduce_ex__(1)
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[1], (Foo, object, None), {"b": 2})
+        self.assertEqual(result[1:], ((Foo, object, None), {"b": 2}))
+
+    def test_reduce_ex_with_getstate_and_proto_three(self):
+        class Foo:
+            def __init__(self):
+                self.a = 1
+
+            def __getstate__(self):
+                return {"b": 2}
+
+        result = Foo().__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((Foo,), {"b": 2}, None, None))
+
+    def test_reduce_ex_with_dict_and_proto_three(self):
+        d = {"a": 1}
+        result = d.__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:4], ((dict,), None, None))
+        it = result[4]
+        self.assertEqual(it.__next__(), ("a", 1))
+        with self.assertRaises(StopIteration):
+            it.__next__()
 
     def test_reduce_ex_ignores_instance_reduce(self):
         class Foo:
@@ -8204,6 +8263,30 @@ class ObjectTests(unittest.TestCase):
         import copyreg
 
         self.assertEqual(foo.__reduce_ex__(1)[0], copyreg._reconstructor)
+
+    def test_reduce_ex_with_getnewargs_ex_equals_none_raises_type_error(self):
+        class Foo:
+            __getnewargs_ex__ = None
+
+        with self.assertRaises(TypeError) as context:
+            Foo().__reduce_ex__(3)
+        self.assertEqual(str(context.exception), "'NoneType' object is not callable")
+
+    def test_reduce_ex_with_getnewargs_equals_none_raises_type_error(self):
+        class Foo:
+            __getnewargs__ = None
+
+        with self.assertRaises(TypeError) as context:
+            Foo().__reduce_ex__(3)
+        self.assertEqual(str(context.exception), "'NoneType' object is not callable")
+
+    def test_reduce_ex_with_getstate_equals_none_raises_type_error(self):
+        class Foo:
+            __getstate__ = None
+
+        with self.assertRaises(TypeError) as context:
+            Foo().__reduce_ex__(3)
+        self.assertEqual(str(context.exception), "'NoneType' object is not callable")
 
     def test_dir_without_dict_returns_type_attributes(self):
         o = dir(object())
