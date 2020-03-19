@@ -6,10 +6,47 @@ from _builtins import _str_from_str, _str_guard, _str_len, _unimplemented
 _empty_iterator = iter(())
 
 
+class _SubscriptParser:
+    def __init__(self, field_name, idx):
+        self.field_name = field_name
+        self.idx = idx
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        field_name = self.field_name
+        if not field_name:
+            raise StopIteration
+        if field_name[0] != "[":
+            raise ValueError("Only '.' or '[' may follow ']' in format field specifier")
+        right_idx = field_name.find("]")
+        if right_idx == -1:
+            raise ValueError("Missing ']' in format string")
+        subscript = field_name[self.idx + 1 : right_idx]
+        if subscript == "":
+            raise ValueError("Empty attribute in format string")
+        self.field_name = field_name[right_idx + 1 :]
+        self.idx = self.field_name.find("[")
+        return (False, int(subscript) if subscript.isdigit() else subscript)
+
+
 def formatter_field_name_split(field_name):
     _str_guard(field_name)
 
-    if "." in field_name or "[" in field_name:
+    idx = field_name.find("[")
+    if idx != -1:
+        field = field_name[:idx]
+        if field.isdigit():
+            field = int(field)
+        elif not field:
+            # In order to accept "[0]" as an implicit "0[0]", return 0 instead
+            # of the empty string here. See https://bugs.python.org/issue39985
+            # for more detail.
+            field = 0
+        return (field, _SubscriptParser(field_name[idx:], 0))
+
+    if "." in field_name:
         _unimplemented()
 
     if field_name.isdigit():

@@ -5,23 +5,99 @@ from _string import formatter_field_name_split, formatter_parser
 
 
 class FormatterFieldNameSplitTests(unittest.TestCase):
+    def test_multiple_subscripts_returns_multiple_subscripts(self):
+        res, it = formatter_field_name_split("0[2][3]")
+        self.assertEqual(res, 0)
+        self.assertEqual(tuple(it), ((False, 2), (False, 3)))
+
+    def test_non_dot_or_bracket_between_brackets_raises_value_error(self):
+        res, it = formatter_field_name_split("0[4]a[20]")
+        self.assertEqual(res, 0)
+        self.assertEqual(it.__next__(), (False, 4))
+        with self.assertRaises(ValueError) as context:
+            it.__next__()
+        self.assertEqual(
+            str(context.exception),
+            "Only '.' or '[' may follow ']' in format field specifier",
+        )
+
+    def test_string_as_subscript_uses_string_as_subscript(self):
+        res, it = formatter_field_name_split("0[a]")
+        self.assertEqual(res, 0)
+        self.assertEqual(tuple(it), ((False, "a"),))
+
+    def test_left_bracket_as_subscript_uses_bracket_as_subscript(self):
+        res, it = formatter_field_name_split("0[[]")
+        self.assertEqual(res, 0)
+        self.assertEqual(tuple(it), ((False, "["),))
+
+    def test_incomplete_subscript_raises_value_error(self):
+        res, it = formatter_field_name_split("0[2")
+        self.assertEqual(res, 0)
+        with self.assertRaises(ValueError) as context:
+            it.__next__()
+        self.assertEqual(str(context.exception), "Missing ']' in format string")
+
+        res, it = formatter_field_name_split("[2")
+        # TODO(T64268423): Once CPython has a fix, test for 0 instead of "" or
+        # 0.
+        self.assertTrue(res == "" or res == 0)
+        with self.assertRaises(ValueError):
+            it.__next__()
+
+        res, it = formatter_field_name_split("][")
+        self.assertEqual(res, "]")
+        with self.assertRaises(ValueError):
+            it.__next__()
+
+    def test_missing_left_bracket_includes_right_bracket_in_field_name(self):
+        res, it = formatter_field_name_split("2]")
+        self.assertEqual(res, "2]")
+        self.assertEqual(tuple(it), ())
+
+        res, it = formatter_field_name_split("]2")
+        self.assertEqual(res, "]2")
+        self.assertEqual(tuple(it), ())
+
+    def test_missing_subscript_raises_value_error(self):
+        res, it = formatter_field_name_split("[]")
+        # TODO(T64268423): Once CPython has a fix, test for 0 instead of "" or
+        # 0.
+        self.assertTrue(res == "" or res == 0)
+        with self.assertRaises(ValueError):
+            it.__next__()
+
+    def test_number_indexed_with_subscript(self):
+        res, it = formatter_field_name_split("0[2]")
+        self.assertEqual(res, 0)
+        self.assertEqual(tuple(it), ((False, 2),))
+
+    def test_name_indexed_with_subscript(self):
+        res, it = formatter_field_name_split("hello[2]")
+        self.assertEqual(res, "hello")
+        self.assertEqual(tuple(it), ((False, 2),))
+
+    def test_no_name_indexed_with_subscript(self):
+        res, it = formatter_field_name_split("[2]")
+        # TODO(T64268423): Once CPython has a fix, test for 0 instead of "" or
+        # 0.
+        self.assertTrue(res == "" or res == 0)
+        self.assertEqual(tuple(it), ((False, 2),))
+
     def test_simple_string_returns_string_iter_tuple(self):
         res, it = formatter_field_name_split("foo")
         self.assertEqual(res, "foo")
-        with self.assertRaises(StopIteration):
-            it.__next__()
+        self.assertEqual(tuple(it), ())
 
     def test_empty_string_returns_string_iter_tuple(self):
         res, it = formatter_field_name_split("")
         self.assertEqual(res, "")
-        with self.assertRaises(StopIteration):
-            it.__next__()
+        self.assertEqual(tuple(it), ())
 
     def test_simple_string_returns_int_iter_tuple(self):
         res, it = formatter_field_name_split("42")
         self.assertEqual(res, 42)
-        with self.assertRaises(StopIteration):
-            it.__next__()
+        self.assertEqual(tuple(it), ())
 
     def test_non_string_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -112,6 +188,24 @@ class FormatterParserTests(unittest.TestCase):
         )
         self.assertEqual(
             tuple(formatter_parser("{:foo{bar}baz}")), (("", "", "foo{bar}baz", None),)
+        )
+
+    def test_format_with_square_in_spec_returns_tuple(self):
+        self.assertEqual(
+            tuple(formatter_parser("ab{0[0]}cd")),
+            (("ab", "0[0]", "", None), ("cd", None, None, None)),
+        )
+        self.assertEqual(
+            tuple(formatter_parser("ab{hello[0]}cd")),
+            (("ab", "hello[0]", "", None), ("cd", None, None, None)),
+        )
+        self.assertEqual(
+            tuple(formatter_parser("ab{[0]}cd")),
+            (("ab", "[0]", "", None), ("cd", None, None, None)),
+        )
+        self.assertEqual(
+            tuple(formatter_parser("ab{[0][1][2]}cd")),
+            (("ab", "[0][1][2]", "", None), ("cd", None, None, None)),
         )
 
     def test_format_with_all_returns_tuple(self):

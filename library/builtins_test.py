@@ -10609,6 +10609,22 @@ class StrTests(unittest.TestCase):
         result = str.format("1{a}2{b}3{c}4{b}5", a="a", b="b", c="c")
         self.assertEqual(result, "1a2b3c4b5")
 
+    def test_format_with_unnamed_subscript(self):
+        result = str.format("{[1]}", (1, 2, 3))
+        self.assertEqual(result, "2")
+
+    def test_format_with_numbered_subscript(self):
+        result = str.format("{1[1]}", (1, 2, 3), (4, 5, 6))
+        self.assertEqual(result, "5")
+
+    def test_format_with_named_subscript(self):
+        result = str.format("{b[1]}", a=(1, 2, 3), b=(4, 5, 6))
+        self.assertEqual(result, "5")
+
+    def test_format_with_multiple_subscripts(self):
+        result = str.format("{b[1][2]}", a=(1, 2, 3), b=(4, (5, 6, 7), 6))
+        self.assertEqual(result, "7")
+
     def test_isalnum_with_ascii_char_returns_bool(self):
         self.assertEqual(
             "".join(str(int(chr(x).isalnum())) for x in range(128)),
