@@ -7174,7 +7174,7 @@ class LocalsTests(unittest.TestCase):
 
         self.assertIsInstance(result["bar"], FunctionType)
 
-    def test_getframe_locals_in_class_body_returns_dict_with_class_variables(self):
+    def test_caller_locals_in_class_body_returns_dict_with_class_variables(self):
         class C:
             foo = 4
             bar = 5
@@ -7185,7 +7185,7 @@ class LocalsTests(unittest.TestCase):
         self.assertEqual(result["foo"], 4)
         self.assertEqual(result["bar"], 5)
 
-    def test_getframe_locals_in_exec_scope_returns_given_locals_instance(self):
+    def test_caller_locals_in_exec_scope_returns_given_locals_instance(self):
         result_key = None
         result_value = None
 

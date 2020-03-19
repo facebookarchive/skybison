@@ -631,15 +631,6 @@ TEST_F(UnderBuiltinsModuleTest, UnderDivmodReturnsQuotientAndDividend) {
   EXPECT_TRUE(isIntEqualsWord(tuple.at(1), -1));
 }
 
-TEST_F(UnderBuiltinsModuleTest,
-       UnderGetFrameLocalsInModuleScopeReturnsModuleProxy) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(runtime_, "result = _getframe_locals(0)").isError());
-  Object result(&scope, mainModuleAt(runtime_, "result"));
-  ASSERT_TRUE(result.isModuleProxy());
-  EXPECT_EQ(ModuleProxy::cast(*result).module(), findMainModule(runtime_));
-}
-
 TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodReturnsQuotientAndRemainder) {
   HandleScope scope(thread_);
   Float number(&scope, runtime_->newFloat(3.25));

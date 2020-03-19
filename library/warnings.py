@@ -3,8 +3,6 @@
 
 import sys
 
-from _builtins import _getframe_function, _getframe_lineno
-
 
 __all__ = [
     "warn",
@@ -299,20 +297,18 @@ def _getcategory(category):
     return cat
 
 
-def _is_internal_frame(depth):
+def _is_internal_frame(frame):
     """Signal whether the frame is an internal CPython implementation detail."""
-    code = _getframe_function(depth).__code__
-    if isinstance(code, int):
-        return False
-    filename = code.co_filename
+    filename = frame.f_code.co_filename
     return "importlib" in filename and "_bootstrap" in filename
 
 
-def _next_external_frame(depth):
+def _next_external_frame(frame):
     """Find the next frame that doesn't involve CPython internals."""
-    while _is_internal_frame(depth):
-        depth += 1
-    return depth
+    frame = frame.f_back
+    while frame is not None and _is_internal_frame(frame):
+        frame = frame.f_back
+    return frame
 
 
 # Code typically replaced by _warnings
@@ -330,20 +326,32 @@ def warn(message, category=None, stacklevel=1, source=None):
         )
     # Get context information
     try:
-        stacklevel = _next_external_frame(stacklevel)
-        function = _getframe_function(stacklevel)
-        globals = function.__module_object__.__dict__
-        lineno = _getframe_lineno(stacklevel)
-        code = function.__code__
-        filename = code.co_filename
+        if stacklevel <= 1 or _is_internal_frame(sys._getframe(1)):
+            # If frame is too small to care or if the warning originated in
+            # internal code, then do not try to hide any frames.
+            # TODO(T64005113): Remove this once the frame for CPython's native
+            # functions are filtered out from sys._getframe.
+            if stacklevel < 0:
+                stacklevel = 1
+            frame = sys._getframe(stacklevel)
+        else:
+            frame = sys._getframe(1)
+            # Look for one frame less since the above line starts us off.
+            for _ in range(stacklevel - 1):
+                frame = _next_external_frame(frame)
+                if frame is None:
+                    raise ValueError
     except ValueError:
-        globals = {"__name__": "sys"}
+        globals = sys.__dict__
         lineno = 1
-        filename = "sys"
+    else:
+        globals = frame.f_globals
+        lineno = frame.f_lineno
     if "__name__" in globals:
         module = globals["__name__"]
     else:
         module = "<string>"
+    filename = globals.get("__file__")
     if filename:
         fnl = filename.lower()
         if fnl.endswith(".pyc"):

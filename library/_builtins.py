@@ -196,6 +196,14 @@ def _byteslike_startswith(self, prefix, start, end):
     _builtin()
 
 
+def _caller_function():
+    _builtin()
+
+
+def _caller_locals():
+    _builtin()
+
+
 def _classmethod(function):
     _builtin()
 
@@ -476,18 +484,6 @@ def _get_member_ulong(addr):
 
 
 def _get_member_ushort(addr):
-    _builtin()
-
-
-def _getframe_function(depth):
-    _builtin()
-
-
-def _getframe_lineno(depth):
-    _builtin()
-
-
-def _getframe_locals(depth):
     _builtin()
 
 

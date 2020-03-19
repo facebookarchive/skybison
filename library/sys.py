@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 
-from _builtins import (
-    _builtin,
-    _getframe_function,
-    _int_check,
-    _int_guard,
-    _os_write,
-    _Unbound,
-)
+from _builtins import _builtin, _int_check, _os_write, _Unbound
 
 
 # These values are all injected by our boot process. flake8 has no knowledge

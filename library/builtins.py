@@ -60,6 +60,8 @@ from _builtins import (
     _byteslike_startswith,
 )
 from _builtins import (
+    _caller_function,
+    _caller_locals,
     _classmethod,
     _classmethod_isabstract,
     _code_check,
@@ -123,8 +125,6 @@ from _builtins import (
     _get_member_uint,
     _get_member_ulong,
     _get_member_ushort,
-    _getframe_function,
-    _getframe_locals,
 )
 from _builtins import (
     _instance_delattr,
@@ -2505,8 +2505,7 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
 
     if not dont_inherit:
         try:
-            # TODO(T64012837): Use _caller_function.
-            code = _getframe_function(0).__code__
+            code = _caller_function().__code__
             flags |= code.co_flags & _compile_flags_mask
         except ValueError:
             pass  # May have been called on a fresh stackframe.
@@ -2903,8 +2902,7 @@ class dict_values(bootstrap=True):
 
 def dir(obj=_Unbound):
     if obj is _Unbound:
-        # TODO(T64012837): Use _caller_function.
-        names = _getframe_locals(0).keys()
+        names = _caller_locals().keys()
     else:
         names = _type(obj).__dir__(obj)
     return sorted(names)
@@ -2939,11 +2937,10 @@ class enumerate:
 
 def eval(source, globals=None, locals=None):
     if globals is None:
-        # TODO(T64012837): Use _caller_function.
-        caller = _getframe_function(0)
+        caller = _caller_function()
         mod = caller.__module_object__
         if locals is None:
-            locals = _getframe_locals(0)
+            locals = _caller_locals()
     elif _module_proxy_check(globals):
         mod = globals.__module_object__
         globals = None
@@ -2966,8 +2963,7 @@ def eval(source, globals=None, locals=None):
         code = source
     else:
         try:
-            # TODO(T64012837): Use _caller_function.
-            caller = _getframe_function(0)
+            caller = _caller_function()
             flags = caller.__code__.co_flags & _compile_flags_mask
         except ValueError:
             flags = 0  # May have been called on a fresh stackframe.
@@ -2986,11 +2982,10 @@ def eval(source, globals=None, locals=None):
 
 def exec(source, globals=None, locals=None):
     if globals is None:
-        # TODO(T64012837): Use _caller_function.
-        caller = _getframe_function(0)
+        caller = _caller_function()
         mod = caller.__module_object__
         if locals is None:
-            locals = _getframe_locals(0)
+            locals = _caller_locals()
     elif _module_proxy_check(globals):
         mod = globals.__module_object__
         globals = None
@@ -3013,8 +3008,7 @@ def exec(source, globals=None, locals=None):
         code = source
     else:
         try:
-            # TODO(T64012837): Use _caller_function.
-            caller = _getframe_function(0)
+            caller = _caller_function()
             flags = caller.__code__.co_flags & _compile_flags_mask
         except ValueError:
             flags = 0  # May have been called on a fresh stackframe.
@@ -3414,8 +3408,7 @@ def getattr(obj, key, default=_Unbound):
 
 
 def globals():
-    # TODO(T64012837): Use _caller_function.
-    return _getframe_function(0).__module_object__.__dict__
+    return _caller_function().__module_object__.__dict__
 
 
 def hasattr(obj, name):
@@ -4321,8 +4314,7 @@ class list_iterator(bootstrap=True):
 
 
 def locals():
-    # TODO(T64012837): Use _caller_function.
-    return _getframe_locals(0)
+    return _caller_locals()
 
 
 class longrange_iterator(bootstrap=True):
@@ -6147,8 +6139,7 @@ class type_proxy(bootstrap=True):
 
 def vars(obj=_Unbound):
     if obj is _Unbound:
-        # TODO(T64012837): Use _caller_function.
-        return _getframe_locals(0)
+        return _caller_locals()
     try:
         return obj.__dict__
     except Exception:

@@ -1419,6 +1419,15 @@ RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
                                   end);
 }
 
+RawObject FUNC(_builtins, _caller_function)(Thread* thread, Frame*, word) {
+  return thread->currentFrame()->previousFrame()->previousFrame()->function();
+}
+
+RawObject FUNC(_builtins, _caller_locals)(Thread* thread, Frame*, word) {
+  return frameLocals(thread,
+                     thread->currentFrame()->previousFrame()->previousFrame());
+}
+
 RawObject FUNC(_builtins, _classmethod)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -2285,55 +2294,6 @@ RawObject FUNC(_builtins, _gc)(Thread* thread, Frame* /* frame */,
                                word /* nargs */) {
   thread->runtime()->collectGarbage();
   return NoneType::object();
-}
-
-RawObject FUNC(_builtins, _getframe_function)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
-  word depth = intUnderlying(args.get(0)).asWordSaturated();
-  if (depth < 0) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = thread->frameAtDepth(depth);
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  return frame->function();
-}
-
-RawObject FUNC(_builtins, _getframe_lineno)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  word depth = intUnderlying(args.get(0)).asWordSaturated();
-  if (depth < 0) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = thread->frameAtDepth(depth);
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  Code code(&scope, frame->code());
-  word pc = frame->virtualPC();
-  word lineno = code.offsetToLineNum(pc);
-  return SmallInt::fromWord(lineno);
-}
-
-RawObject FUNC(_builtins, _getframe_locals)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
-  word depth = intUnderlying(args.get(0)).asWordSaturated();
-  if (depth < 0) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = thread->frameAtDepth(depth);
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  return frameLocals(thread, frame);
 }
 
 RawObject FUNC(_builtins, _get_member_byte)(Thread* thread, Frame* frame,
