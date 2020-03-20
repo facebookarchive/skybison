@@ -636,7 +636,6 @@ add_library(
   ext/Modules/gcmodule.cpp
   ext/Modules/getbuildinfo.cpp
   ext/Modules/main.cpp
-  ext/Modules/mmap/mmapmodule.cpp
   ext/Modules/signalmodule.cpp
   ext/Objects/abstract.cpp
   ext/Objects/boolobject.cpp

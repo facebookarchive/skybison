@@ -28,7 +28,6 @@ extern "C" PyObject* PyInit_errno();
 extern "C" PyObject* PyInit_fcntl();
 extern "C" PyObject* PyInit_grp();
 extern "C" PyObject* PyInit_math();
-extern "C" PyObject* PyInit_mmap();
 extern "C" PyObject* PyInit_posix();
 extern "C" PyObject* PyInit_pwd();
 extern "C" PyObject* PyInit_select();
@@ -74,7 +73,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"fcntl", PyInit_fcntl},
     {"grp", PyInit_grp},
     {"math", PyInit_math},
-    {"mmap", PyInit_mmap},
     {"posix", PyInit_posix},
     {"pwd", PyInit_pwd},
     {"select", PyInit_select},
