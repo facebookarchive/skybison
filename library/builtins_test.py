@@ -3007,6 +3007,31 @@ class DelattrTests(unittest.TestCase):
 
 
 class DictTests(unittest.TestCase):
+    def test_repr_returns_string(self):
+        self.assertEqual(dict.__repr__({}), "{}")
+        self.assertEqual(dict.__repr__({42: 42}), "{42: 42}")
+        self.assertEqual(
+            dict.__repr__({1: 1, 2: 2, "hello": "hello"}),
+            "{1: 1, 2: 2, 'hello': 'hello'}",
+        )
+
+        class M(type):
+            def __repr__(cls):
+                return "<M instance>"
+
+        class C(metaclass=M):
+            def __repr__(self):
+                return "<C instance>"
+
+        self.assertEqual(
+            dict.__repr__({1: C, 2: C()}), "{1: <M instance>, 2: <C instance>}"
+        )
+
+    def test_repr_with_recursive_dict_prints_ellipsis(self):
+        d = {}
+        d[1] = d
+        self.assertEqual(dict.__repr__(d), "{1: {...}}")
+
     def test_clear_with_non_dict_raises_type_error(self):
         with self.assertRaises(TypeError):
             dict.clear(None)
@@ -5331,6 +5356,18 @@ class InstanceProxyTests(unittest.TestCase):
         left = C()
         value = object()
         self.assertIs(instance_proxy.get(left.__dict__, "a", value), value)
+
+    def test_dunder_repr_with_recursive_instance_prints_ellipsis(self):
+        class C:
+            pass
+
+        instance = C()
+        instance.a = 1
+        instance.b = instance.__dict__
+        self.assertEqual(
+            instance_proxy.__repr__(instance.__dict__),
+            "instance_proxy({'a': 1, 'b': instance_proxy({'a': 1, 'b': instance_proxy({...})})})",  # noqa
+        )
 
 
 class IntTests(unittest.TestCase):
@@ -7722,6 +7759,26 @@ def make_placeholder():
 
     def test_dunder_contains_returns_false_for_placeholder(self):
         self.assertFalse(self.module_proxy.__contains__("placeholder"))
+
+    def test_dunder_repr_returns_string(self):
+        from types import ModuleType
+
+        module_proxy = ModuleType("my_module").__dict__
+        for key in tuple(module_proxy.keys()):
+            if key != "__name__":
+                del module_proxy[key]
+
+        self.assertEqual(module_proxy.__repr__(), "{'__name__': 'my_module'}")
+
+    def test_dunder_repr_with_recursion_returns_string_with_elipsis(self):
+        from types import ModuleType
+
+        module_proxy = ModuleType("my_module").__dict__
+        for key in tuple(module_proxy.keys()):
+            del module_proxy[key]
+        module_proxy["self"] = module_proxy
+
+        self.assertEqual(module_proxy.__repr__(), "{'self': {...}}")
 
     def test_copy_with_non_module_proxy_raises_type_error(self):
         with self.assertRaises(TypeError):

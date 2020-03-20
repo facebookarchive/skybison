@@ -1337,6 +1337,14 @@ def _mapping_check(obj) -> bool:
     return _object_type_hasattr(obj, "__getitem__")
 
 
+def _mapping_repr(left, mapping, right) -> str:
+    if _repr_enter(mapping):
+        return f"{left}...{right}"
+    kwpairs = [f"{key!r}: {value!r}" for key, value in mapping.items()]
+    _repr_leave(mapping)
+    return f"{left}{', '.join(kwpairs)}{right}"
+
+
 def _new_member_get_bool(offset):
     return lambda instance: bool(_get_member_int(_pyobject_offset(instance, offset)))
 
@@ -2816,11 +2824,7 @@ class dict(bootstrap=True):
         _builtin()
 
     def __repr__(self):
-        if _repr_enter(self):
-            return "{...}"
-        kwpairs = [f"{key!r}: {self[key]!r}" for key in self.keys()]
-        _repr_leave(self)
-        return "{" + ", ".join(kwpairs) + "}"
+        return _mapping_repr("{", self, "}")
 
     __setitem__ = _dict_setitem
 
@@ -3592,12 +3596,7 @@ class instance_proxy:
         return len(self.keys())
 
     def __repr__(self):
-        # TODO(T53507197): Use _sequence_repr
-        if _repr_enter(self):
-            return "{...}"
-        kwpairs = [f"{key!r}: {value!r}" for key, value in self.items()]
-        _repr_leave(self)
-        return "instance_proxy({" + ", ".join(kwpairs) + "})"
+        return _mapping_repr("instance_proxy({", self, "})")
 
     def __setitem__(self, key, value):
         instance = self._instance
@@ -4725,11 +4724,7 @@ class module_proxy(bootstrap=True):
 
     def __repr__(self):
         _module_proxy_guard(self)
-        if _repr_enter(self):
-            return "{...}"
-        kwpairs = [f"{key!r}: {self[key]!r}" for key in _module_proxy_keys(self)]
-        _repr_leave(self)
-        return "{" + ", ".join(kwpairs) + "}"
+        return _mapping_repr("{", self, "}")
 
     def __setitem__(self, key, value):
         _module_proxy_guard(self)
