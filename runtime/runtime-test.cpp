@@ -999,22 +999,22 @@ TEST_F(RuntimeTest, Random) {
   EXPECT_NE(r3, r4);
 }
 
-TEST_F(RuntimeTest, TrackNativeGcObjectAndUntrackNativeGcObject) {
+TEST_F(RuntimeTest, TrackNativeObjectAndUntrackNativeObject) {
   ListEntry entry0{nullptr, nullptr};
   ListEntry entry1{nullptr, nullptr};
 
-  EXPECT_TRUE(runtime_->trackNativeGcObject(&entry0));
-  EXPECT_TRUE(runtime_->trackNativeGcObject(&entry1));
+  EXPECT_TRUE(runtime_->trackNativeObject(&entry0));
+  EXPECT_TRUE(runtime_->trackNativeObject(&entry1));
   // Trying to track an already tracked object returns false.
-  EXPECT_FALSE(runtime_->trackNativeGcObject(&entry0));
-  EXPECT_FALSE(runtime_->trackNativeGcObject(&entry1));
+  EXPECT_FALSE(runtime_->trackNativeObject(&entry0));
+  EXPECT_FALSE(runtime_->trackNativeObject(&entry1));
 
-  EXPECT_TRUE(runtime_->untrackNativeGcObject(&entry0));
-  EXPECT_TRUE(runtime_->untrackNativeGcObject(&entry1));
+  EXPECT_TRUE(runtime_->untrackNativeObject(&entry0));
+  EXPECT_TRUE(runtime_->untrackNativeObject(&entry1));
 
   // Trying to untrack an already untracked object returns false.
-  EXPECT_FALSE(runtime_->untrackNativeGcObject(&entry0));
-  EXPECT_FALSE(runtime_->untrackNativeGcObject(&entry1));
+  EXPECT_FALSE(runtime_->untrackNativeObject(&entry0));
+  EXPECT_FALSE(runtime_->untrackNativeObject(&entry1));
 
   // Verify untracked entires are reset to nullptr.
   EXPECT_EQ(entry0.prev, nullptr);

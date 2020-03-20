@@ -178,12 +178,7 @@ void Scavenger::processDelayedReferences() {
 }
 
 void Scavenger::processFinalizableReferences() {
-  processNativeList(runtime_->trackedNativeObjects());
-  // TODO(T55208267): Merge GC extension instances to the native extension list
-  processNativeList(runtime_->trackedNativeGcObjects());
-}
-
-void Scavenger::processNativeList(ListEntry* entry) {
+  ListEntry* entry = runtime_->trackedNativeObjects();
   for (ListEntry* next; entry != nullptr; entry = next) {
     next = entry->next;
     ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);

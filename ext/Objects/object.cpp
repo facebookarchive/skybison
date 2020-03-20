@@ -350,11 +350,7 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   Layout layout(&scope, type_obj.instanceLayout());
   Object native_proxy(&scope, runtime->newInstance(layout));
   runtime->setNativeProxyPtr(*native_proxy, obj);
-
-  // Native GC instace tracking is handled by PyObject_GC_Track
-  if (!type_obj.hasFlag(Type::Flag::kHasCycleGC)) {
-    runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
-  }
+  runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
 
   // Initialize the native object
   obj->reference_ = native_proxy.raw();

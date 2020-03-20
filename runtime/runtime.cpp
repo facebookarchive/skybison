@@ -1528,18 +1528,6 @@ bool Runtime::listEntryRemove(ListEntry* entry, ListEntry** root) {
   return true;
 }
 
-bool Runtime::trackNativeGcObject(ListEntry* entry) {
-  bool did_insert = listEntryInsert(entry, &tracked_native_gc_objects_);
-  if (did_insert) num_tracked_native_gc_objects_++;
-  return did_insert;
-}
-
-bool Runtime::untrackNativeGcObject(ListEntry* entry) {
-  bool did_remove = listEntryRemove(entry, &tracked_native_gc_objects_);
-  if (did_remove) num_tracked_native_gc_objects_--;
-  return did_remove;
-}
-
 bool Runtime::trackNativeObject(ListEntry* entry) {
   bool did_insert = listEntryInsert(entry, &tracked_native_objects_);
   if (did_insert) num_tracked_native_objects_++;
@@ -1553,10 +1541,6 @@ bool Runtime::untrackNativeObject(ListEntry* entry) {
 }
 
 ListEntry* Runtime::trackedNativeObjects() { return tracked_native_objects_; }
-
-ListEntry* Runtime::trackedNativeGcObjects() {
-  return tracked_native_gc_objects_;
-}
 
 RawObject* Runtime::finalizableReferences() { return &finalizable_references_; }
 
@@ -3710,11 +3694,9 @@ void Runtime::freeApiHandles() {
 
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {
-    word before = numTrackedNativeObjects() + numTrackedNativeGcObjects() +
-                  numTrackedApiHandles();
+    word before = numTrackedNativeObjects() + numTrackedApiHandles();
     collectGarbage();
-    word after = numTrackedNativeObjects() + numTrackedNativeGcObjects() +
-                 numTrackedApiHandles();
+    word after = numTrackedNativeObjects() + numTrackedApiHandles();
     word num_handles_collected = before - after;
     if (num_handles_collected == 0) {
       // Fixpoint: no change in tracking
@@ -3735,11 +3717,6 @@ void Runtime::freeApiHandles() {
   while (tracked_native_objects_ != nullptr) {
     auto entry = static_cast<ListEntry*>(tracked_native_objects_);
     untrackNativeObject(entry);
-    std::free(entry);
-  }
-  while (tracked_native_gc_objects_ != nullptr) {
-    auto entry = static_cast<ListEntry*>(tracked_native_gc_objects_);
-    untrackNativeGcObject(entry);
     std::free(entry);
   }
 }

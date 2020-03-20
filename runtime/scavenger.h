@@ -41,8 +41,6 @@ class Scavenger {
 
   void processFinalizableReferences();
 
-  void processNativeList(ListEntry* entry);
-
   void processGrayObjects();
 
   void processApiHandles();

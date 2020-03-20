@@ -293,19 +293,16 @@ class Runtime {
 
   Interpreter* interpreter() { return interpreter_.get(); }
 
-  // Tracks extension native non-GC and GC objects.
+  // Tracks extension native objects.
   // Returns true if an untracked entry becomes tracked, false, otherwise.
   bool trackNativeObject(ListEntry* entry);
-  bool trackNativeGcObject(ListEntry* entry);
 
-  // Untracks extension native non-GC and GC objects.
+  // Untracks extension native objects.
   // Returns true if a tracked entry becomes untracked, false, otherwise.
   bool untrackNativeObject(ListEntry* entry);
-  bool untrackNativeGcObject(ListEntry* entry);
 
   // Return the head of the tracked native objects list.
   ListEntry* trackedNativeObjects();
-  ListEntry* trackedNativeGcObjects();
   RawObject* finalizableReferences();
 
   void visitRoots(PointerVisitor* visitor);
@@ -860,8 +857,6 @@ class Runtime {
 
   word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 
-  word numTrackedNativeGcObjects() { return num_tracked_native_gc_objects_; }
-
   // Clear all active handle scopes
   void clearHandleScopes();
 
@@ -884,9 +879,6 @@ class Runtime {
   // Linked list of tracked extension objects.
   ListEntry* tracked_native_objects_ = nullptr;
   word num_tracked_native_objects_ = 0;
-
-  ListEntry* tracked_native_gc_objects_ = nullptr;
-  word num_tracked_native_gc_objects_ = 0;
 
   // List of native instances which can be finalizable through tp_dealloc
   RawObject finalizable_references_ = NoneType::object();

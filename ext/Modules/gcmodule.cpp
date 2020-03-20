@@ -6,54 +6,22 @@
 
 namespace py {
 
-static ListEntry* fromGCObject(void* gc_obj) {
-  return static_cast<ListEntry*>(gc_obj) - 1;
-}
-
 PY_EXPORT Py_ssize_t PyGC_Collect() { UNIMPLEMENTED("PyGC_Collect"); }
 
 // Releases memory allocated to an object using PyObject_GC_New() or
 // PyObject_GC_NewVar().
-PY_EXPORT void PyObject_GC_Del(void* op) {
-  PyObject_GC_UnTrack(op);
-  ListEntry* entry = fromGCObject(op);
-  PyMem_Free(entry);
-}
+PY_EXPORT void PyObject_GC_Del(void* op) { PyObject_Free(op); }
 
-PY_EXPORT void PyObject_GC_Track(void* op) {
-  ListEntry* entry = fromGCObject(op);
-  if (!Thread::current()->runtime()->trackNativeGcObject(entry)) {
-    Py_FatalError("GC object already tracked");
-  }
-}
+PY_EXPORT void PyObject_GC_Track(void*) {}
 
-PY_EXPORT void PyObject_GC_UnTrack(void* op) {
-  ListEntry* entry = fromGCObject(op);
-  Thread::current()->runtime()->untrackNativeGcObject(entry);
-}
+PY_EXPORT void PyObject_GC_UnTrack(void*) {}
 
 PY_EXPORT PyObject* _PyObject_GC_Malloc(size_t basicsize) {
-  ListEntry* entry =
-      static_cast<ListEntry*>(PyMem_Malloc(sizeof(ListEntry) + basicsize));
-  if (entry == nullptr) {
-    return PyErr_NoMemory();
-  }
-  entry->prev = nullptr;
-  entry->next = nullptr;
-
-  return reinterpret_cast<PyObject*>(entry + 1);
+  return reinterpret_cast<PyObject*>(PyObject_Malloc(basicsize));
 }
 
 PY_EXPORT PyObject* _PyObject_GC_Calloc(size_t basicsize) {
-  ListEntry* entry =
-      static_cast<ListEntry*>(PyMem_Calloc(1, sizeof(ListEntry) + basicsize));
-  if (entry == nullptr) {
-    return PyErr_NoMemory();
-  }
-  entry->prev = nullptr;
-  entry->next = nullptr;
-
-  return reinterpret_cast<PyObject*>(entry + 1);
+  return reinterpret_cast<PyObject*>(PyObject_Calloc(1, basicsize));
 }
 
 PY_EXPORT PyObject* _PyObject_GC_New(PyTypeObject* type) {
