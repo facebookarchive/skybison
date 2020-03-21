@@ -3290,42 +3290,6 @@ RawObject FUNC(_builtins, _module_proxy_check)(Thread*, Frame* frame,
   return Bool::fromBool(args.get(0).isModuleProxy());
 }
 
-RawObject FUNC(_builtins, _module_proxy_delitem)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  ModuleProxy self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
-  Module module(&scope, self.module());
-  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object hash_obj(&scope, Interpreter::hash(thread, key));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, moduleRemove(thread, module, key, hash));
-  if (result.isErrorNotFound()) {
-    return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &key);
-  }
-  return *result;
-}
-
-RawObject FUNC(_builtins, _module_proxy_get)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  ModuleProxy self(&scope, args.get(0));
-  Object name(&scope, args.get(1));
-  name = attributeName(thread, name);
-  if (name.isErrorException()) return *name;
-  Object default_obj(&scope, args.get(2));
-  Module module(&scope, self.module());
-  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object result(&scope, moduleAt(thread, module, name));
-  if (result.isError()) {
-    return *default_obj;
-  }
-  return *result;
-}
-
 RawObject FUNC(_builtins, _module_proxy_guard)(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
@@ -3339,27 +3303,25 @@ RawObject FUNC(_builtins, _module_proxy_keys)(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ModuleProxy self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isModuleProxy()) {
+    return thread->raiseRequiresType(self_obj, ID(module_proxy));
+  }
+  ModuleProxy self(&scope, *self_obj);
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleKeys(thread, module);
-}
-
-RawObject FUNC(_builtins, _module_proxy_len)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  ModuleProxy self(&scope, args.get(0));
-  Module module(&scope, self.module());
-  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  return moduleLen(thread, module);
 }
 
 RawObject FUNC(_builtins, _module_proxy_setitem)(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ModuleProxy self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isModuleProxy()) {
+    return thread->raiseRequiresType(self_obj, ID(module_proxy));
+  }
+  ModuleProxy self(&scope, *self_obj);
   Object name(&scope, args.get(1));
   name = attributeName(thread, name);
   if (name.isErrorException()) return *name;
@@ -3373,7 +3335,11 @@ RawObject FUNC(_builtins, _module_proxy_values)(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ModuleProxy self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isModuleProxy()) {
+    return thread->raiseRequiresType(self_obj, ID(module_proxy));
+  }
+  ModuleProxy self(&scope, *self_obj);
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleValues(thread, module);

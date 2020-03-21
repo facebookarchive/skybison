@@ -166,11 +166,8 @@ from _builtins import (
     _module_dir,
     _module_proxy,
     _module_proxy_check,
-    _module_proxy_delitem,
-    _module_proxy_get,
     _module_proxy_guard,
     _module_proxy_keys,
-    _module_proxy_len,
     _module_proxy_setitem,
     _module_proxy_values,
     _object_keys,
@@ -4687,23 +4684,17 @@ class module(bootstrap=True):
 
 
 class module_proxy(bootstrap=True):
-    def __contains__(self, key) -> bool:
-        _module_proxy_guard(self)
-        return _module_proxy_get(self, key, _Unbound) is not _Unbound  # noqa: T484
+    def __contains__(self, key):
+        _builtin()
 
     def __delitem__(self, key):
-        _module_proxy_guard(self)
-        _module_proxy_delitem(self, key)
+        _builtin()
 
     def __eq__(self, other):
         _unimplemented()
 
     def __getitem__(self, key):
-        _module_proxy_guard(self)
-        result = _module_proxy_get(self, key, _Unbound)
-        if result is _Unbound:
-            raise KeyError(key)
-        return result
+        _builtin()
 
     __hash__ = None
 
@@ -4711,13 +4702,11 @@ class module_proxy(bootstrap=True):
     __init__ = None
 
     def __iter__(self):
-        _module_proxy_guard(self)
         # TODO(T50379702): Return an iterable to avoid materializing a list of keys.
         return iter(_module_proxy_keys(self))
 
     def __len__(self):
-        _module_proxy_guard(self)
-        return _module_proxy_len(self)
+        _builtin()
 
     # module_proxy is not designed to be subclassed.
     __new__ = None
@@ -4727,51 +4716,35 @@ class module_proxy(bootstrap=True):
         return _mapping_repr("{", self, "}")
 
     def __setitem__(self, key, value):
-        _module_proxy_guard(self)
         _module_proxy_setitem(self, key, value)
 
     def clear(self):
         _unimplemented()
 
     def copy(self):
-        _module_proxy_guard(self)
         # TODO(T50379702): Return an iterable to avoid materializing the list of items.
         keys = _module_proxy_keys(self)
         values = _module_proxy_values(self)
         return {keys[i]: values[i] for i in range(len(keys))}
 
     def get(self, key, default=None):
-        _module_proxy_guard(self)
-        return _module_proxy_get(self, key, default)
+        _builtin()
 
     def items(self):
-        _module_proxy_guard(self)
         # TODO(T50379702): Return an iterable to avoid materializing the list of items.
         keys = _module_proxy_keys(self)
         values = _module_proxy_values(self)
         return [(keys[i], values[i]) for i in range(len(keys))]
 
     def keys(self):
-        _module_proxy_guard(self)
         # TODO(T50379702): Return an iterable to avoid materializing the list of keys.
         return _module_proxy_keys(self)
 
     def pop(self, key, default=_Unbound):
-        _module_proxy_guard(self)
-        value = _module_proxy_get(self, key, default)
-        if value is _Unbound:
-            raise KeyError(key)
-        if key in self:
-            _module_proxy_delitem(self, key)
-        return value
+        _builtin()
 
     def setdefault(self, key, default=None):
-        _module_proxy_guard(self)
-        value = _module_proxy_get(self, key, _Unbound)
-        if value is _Unbound:
-            _module_proxy_setitem(self, key, default)
-            return default
-        return value
+        _builtin()
 
     @_positional_only(2)
     def update(self, other=_Unbound, **kwargs):
@@ -4797,7 +4770,6 @@ class module_proxy(bootstrap=True):
             _module_proxy_setitem(self, key, value)
 
     def values(self):
-        _module_proxy_guard(self)
         # TODO(T50379702): Return an iterable to avoid materializing the list of values.
         return _module_proxy_values(self)
 

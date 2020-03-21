@@ -652,23 +652,11 @@ def _module_proxy_check(obj):
     _builtin()
 
 
-def _module_proxy_delitem(self, key):
-    _builtin()
-
-
-def _module_proxy_get(self, key, default):
-    _builtin()
-
-
 def _module_proxy_guard(module):
     _builtin()
 
 
 def _module_proxy_keys(self):
-    _builtin()
-
-
-def _module_proxy_len(self):
     _builtin()
 
 
