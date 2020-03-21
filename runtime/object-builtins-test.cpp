@@ -881,6 +881,20 @@ i = C()
   EXPECT_EQ(kind, LoadAttrKind::kUnknown);
 }
 
+TEST_F(ObjectBuiltinsTest, ObjectGetItemCallsTypeObjectDunderClassItem) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __class_getitem__(cls, item):
+    return f"C:{cls.__name__}[{item.__name__}]"
+)")
+                   .isError());
+  Type type_c(&scope, mainModuleAt(runtime_, "C"));
+  Type key(&scope, runtime_->typeAt(LayoutId::kInt));
+  Object result(&scope, objectGetItem(thread_, type_c, key));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "C:C[int]"));
+}
+
 TEST_F(ObjectBuiltinsTest, ObjectSetAttrSetsInstanceValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

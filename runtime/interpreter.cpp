@@ -1462,12 +1462,22 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object container(&scope, frame->peek(1));
-  Type type(&scope, thread->runtime()->typeOf(*container));
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(*container));
   Object getitem(&scope, typeLookupInMroById(thread, type, ID(__getitem__)));
   if (getitem.isErrorNotFound()) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "object does not support indexing");
-    return Continue::UNWIND;
+    if (runtime->isInstanceOfType(*container)) {
+      Type container_as_type(&scope, *container);
+      Str dunder_class_getitem_name(
+          &scope, runtime->symbols()->at(ID(__class_getitem__)));
+      getitem = typeGetAttribute(thread, container_as_type,
+                                 dunder_class_getitem_name);
+    }
+    if (getitem.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "'%T' object is not subscriptable", &container);
+      return Continue::UNWIND;
+    }
   }
   if (!getitem.isFunction()) {
     getitem = resolveDescriptorGet(thread, getitem, container, type);
@@ -1478,8 +1488,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   if (index >= 0) {
     // TODO(T55274956): Make this into a separate function to be shared.
     Tuple caches(&scope, frame->caches());
-    Str get_item_name(&scope,
-                      thread->runtime()->symbols()->at(ID(__getitem__)));
+    Str get_item_name(&scope, runtime->symbols()->at(ID(__getitem__)));
     Function dependent(&scope, frame->function());
     ICState next_cache_state =
         icUpdateAttr(thread, caches, index, container.layoutId(), getitem,

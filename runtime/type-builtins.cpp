@@ -1085,6 +1085,16 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     typeAtPutById(thread, type, ID(__init_subclass__), init_subclass_method);
   }
 
+  // Ensure that __class_getitem__ is a classmethod.  For convenience, the user
+  // is allowed to define __class_getitem__ as a function.  When that happens,
+  // wrap the function in a classmethod.
+  Object class_getitem(&scope, typeAtById(thread, type, ID(__class_getitem__)));
+  if (class_getitem.isFunction()) {
+    ClassMethod class_getitem_method(&scope, runtime->newClassMethod());
+    class_getitem_method.setFunction(*class_getitem);
+    typeAtPutById(thread, type, ID(__class_getitem__), class_getitem_method);
+  }
+
   Function type_dunder_call(&scope,
                             runtime->lookupNameInModule(thread, ID(_builtins),
                                                         ID(_type_dunder_call)));

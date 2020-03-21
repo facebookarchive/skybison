@@ -347,8 +347,22 @@ RawObject objectDelItem(Thread* thread, const Object& object,
 RawObject objectGetItem(Thread* thread, const Object& object,
                         const Object& key) {
   HandleScope scope(thread);
+  // This logic is replicated in Interpreter::binarySubscrUpdateCache for
+  // optimization.
   Object result(&scope, thread->invokeMethod2(object, ID(__getitem__), key));
   if (result.isErrorNotFound()) {
+    Runtime* runtime = thread->runtime();
+    if (runtime->isInstanceOfType(*object)) {
+      Type object_as_type(&scope, *object);
+      Str dunder_class_getitem_name(
+          &scope, runtime->symbols()->at(ID(__class_getitem__)));
+      Object class_getitem(&scope, typeGetAttribute(thread, object_as_type,
+                                                    dunder_class_getitem_name));
+      if (!class_getitem.isErrorNotFound()) {
+        return Interpreter::callFunction1(thread, thread->currentFrame(),
+                                          class_getitem, key);
+      }
+    }
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object is not subscriptable", &object);
   }

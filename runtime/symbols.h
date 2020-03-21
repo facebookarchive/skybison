@@ -129,6 +129,7 @@ class Runtime;
   V(__call__)                                                                  \
   V(__cause__)                                                                 \
   V(__class__)                                                                 \
+  V(__class_getitem__)                                                         \
   V(__classcell__)                                                             \
   V(__code__)                                                                  \
   V(__complex__)                                                               \

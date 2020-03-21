@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import builtins
+import sys
 import unittest
 import warnings
+from unittest import skipIf
 from unittest.mock import Mock, call as mock_call
 
 from test_support import pyro_only
@@ -8412,6 +8414,21 @@ class ObjectTests(unittest.TestCase):
         self.assertIn("__repr__", f)
         self.assertIn("__doc__", f)
         self.assertIn("foo", f)
+
+    @skipIf(
+        sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
+        "requires at least CPython 3.7",
+    )
+    def test_dunder_class_getitem_becomes_classmethod(self):
+        class C:
+            def __class_getitem__(cls, item):
+                return None
+
+            @classmethod
+            def foo(cls):
+                return cls
+
+        self.assertIs(type(C.__class_getitem__), type(C.foo))
 
     def test_dunder_new_with_builtin_type_raises_type_error(self):
         with self.assertRaisesRegex(

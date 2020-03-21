@@ -1,9 +1,50 @@
 #!/usr/bin/env python3
+import sys
 import unittest
+from unittest import skipIf
 from unittest.mock import Mock
 
 
 class IntepreterTest(unittest.TestCase):
+    @skipIf(
+        sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
+        "requires at least CPython 3.7",
+    )
+    def test_binary_subscr_calls_type_dunder_class_getitem(self):
+        class C:
+            def __class_getitem__(cls, item):
+                return f"C:{cls.__name__}[{item.__name__}]"
+
+        self.assertEqual(C[int], "C:C[int]")
+
+    @skipIf(
+        sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
+        "requires at least CPython 3.7",
+    )
+    def test_binary_subscr_ignores_instance_dunder_class_getitem(self):
+        class C:
+            def __class_getitem__(cls, item):
+                return f"C:{cls.__name__}[{item.__name__}]"
+
+        with self.assertRaises(TypeError) as context:
+            C()[int]
+        self.assertEqual(str(context.exception), "'C' object is not subscriptable")
+
+    @skipIf(
+        sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
+        "requires at least CPython 3.7",
+    )
+    def test_binary_subscr_prioritizes_metaclass_dunder_getitem(self):
+        class M(type):
+            def __getitem__(cls, item):
+                return f"M:{cls.__name__}[{item.__name__}]"
+
+        class C(metaclass=M):
+            def __class_getitem__(cls, item):
+                return f"C:{cls.__name__}[{item.__name__}]"
+
+        self.assertEqual(C[int], "M:C[int]")
+
     def test_compare_op_in_propagetes_exception(self):
         class C:
             def __contains__(self, value):
