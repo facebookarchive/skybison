@@ -3544,6 +3544,70 @@ class DirTests(unittest.TestCase):
         self.assertEqual(dir(c), ["1", "2"])
 
 
+@skipIf(
+    sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
+    "requires at least CPython 3.7",
+)
+class DunderBuildClassTests(unittest.TestCase):
+    def test_bases_updated_with_dunder_mro_entries(self):
+        observed_bases = []
+
+        class GenericAlias:
+            def __init__(self, origin, item):
+                self.origin = origin
+                self.item = item
+
+            def __mro_entries__(self, bases):
+                nonlocal observed_bases
+                observed_bases.append(bases)
+                return (self.origin,)
+
+            def __eq__(self, other):
+                return self.origin == other.origin and self.item == other.item
+
+        class NewList:
+            def __class_getitem__(cls, item):
+                return GenericAlias(cls, item)
+
+        class NewTuple:
+            def __class_getitem__(cls, item):
+                return GenericAlias(cls, item)
+
+        class Tokens(NewList[int], NewTuple[float]):
+            pass
+
+        self.assertIs(type(Tokens.__orig_bases__), tuple)
+        self.assertEqual(Tokens.__orig_bases__, (NewList[int], NewTuple[float]))
+        self.assertIs(type(Tokens.__bases__), tuple)
+        self.assertEqual(Tokens.__bases__, (NewList, NewTuple))
+        self.assertEqual(Tokens.__mro__, (Tokens, NewList, NewTuple, object))
+
+        self.assertEqual(observed_bases, [Tokens.__orig_bases__, Tokens.__orig_bases__])
+
+    def test_exceptions_propagated_from_dunder_mro_entries(self):
+        class GenericAlias:
+            def __init__(self, origin, item):
+                pass
+
+            def __mro_entries__(self, bases):
+                raise UserWarning("GenericAlias.__mro__entries__")
+
+        class NewList:
+            def __class_getitem__(cls, item):
+                return GenericAlias(cls, item)
+
+        class NewTuple:
+            def __class_getitem__(cls, item):
+                return GenericAlias(cls, item)
+
+        with self.assertRaises(UserWarning) as context:
+
+            class Tokens(NewList[int]):
+                pass
+
+        self.assertIn("GenericAlias.__mro__entries__", str(context.exception))
+
+
 class EllipsisTypeTests(unittest.TestCase):
     def test_repr_returns_not_implemented(self):
         self.assertEqual(Ellipsis.__repr__(), "Ellipsis")

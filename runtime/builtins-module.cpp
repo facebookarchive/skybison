@@ -5,10 +5,12 @@
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
+#include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "formatter.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
+#include "list-builtins.h"
 #include "marshal.h"
 #include "module-builtins.h"
 #include "modules.h"
@@ -290,6 +292,43 @@ RawObject FUNC(builtins, delattr)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+static RawObject replaceNonTypeBases(Thread* thread, const Tuple& bases) {
+  Runtime* runtime = thread->runtime();
+  word num_bases = bases.length();
+  bool has_nontype_base = false;
+  for (word i = 0; i < num_bases; i++) {
+    if (!runtime->isInstanceOfType(bases.at(i))) {
+      has_nontype_base = true;
+      break;
+    }
+  }
+  if (!has_nontype_base) {
+    return *bases;
+  }
+  HandleScope scope(thread);
+  List new_bases(&scope, runtime->newList());
+  Object base(&scope, NoneType::object());
+  Object replacements(&scope, NoneType::object());
+  for (word i = 0; i < num_bases; i++) {
+    base = bases.at(i);
+    if (runtime->isInstanceOfType(*base)) {
+      listInsert(thread, new_bases, base, new_bases.numItems());
+      continue;
+    }
+    replacements = thread->invokeMethod2(base, ID(__mro_entries__), bases);
+    if (replacements.isError()) {
+      return *replacements;
+    }
+    if (!replacements.isTuple()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__mro_entries__ must return a tuple");
+    }
+    listExtend(thread, new_bases, replacements);
+  }
+  Tuple new_bases_items(&scope, new_bases.items());
+  return runtime->tupleSubseq(thread, new_bases_items, 0, new_bases.numItems());
+}
+
 RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
                                           word nargs) {
   Runtime* runtime = thread->runtime();
@@ -309,7 +348,8 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
   }
   Object metaclass(&scope, args.get(2));
   Object bootstrap(&scope, args.get(3));
-  Tuple bases(&scope, args.get(4));
+  Tuple orig_bases(&scope, args.get(4));
+  Tuple bases(&scope, *orig_bases);
   Dict kwargs(&scope, args.get(5));
 
   if (bootstrap == Bool::trueObj()) {
@@ -364,6 +404,11 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     return *type;
   }
 
+  Object updated_bases(&scope, replaceNonTypeBases(thread, bases));
+  if (updated_bases.isErrorException()) {
+    return *updated_bases;
+  }
+  bases = *updated_bases;
   bool metaclass_is_class;
   if (metaclass.isUnbound()) {
     metaclass_is_class = true;
@@ -425,6 +470,10 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
   // caller and the on-stack state for the class body function call.
   Object body_result(&scope, thread->runClassFunction(body, type_dict));
   if (body_result.isError()) return *body_result;
+
+  if (bases != orig_bases) {
+    dictAtPutById(thread, type_dict, ID(__orig_bases__), orig_bases);
+  }
 
   frame->pushValue(*metaclass);
   Tuple pargs(&scope, runtime->newTuple(3));

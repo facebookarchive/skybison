@@ -195,6 +195,7 @@ class Runtime;
   V(__module__)                                                                \
   V(__module_object__)                                                         \
   V(__mro__)                                                                   \
+  V(__mro_entries__)                                                           \
   V(__mul__)                                                                   \
   V(__name__)                                                                  \
   V(__ne__)                                                                    \
@@ -202,6 +203,7 @@ class Runtime;
   V(__new__)                                                                   \
   V(__next__)                                                                  \
   V(__or__)                                                                    \
+  V(__orig_bases__)                                                            \
   V(__package__)                                                               \
   V(__pos__)                                                                   \
   V(__pow__)                                                                   \
