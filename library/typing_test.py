@@ -1,15 +1,29 @@
 #!/usr/bin/env python3
-# flake8: noqa
-
+import sys
 import unittest
+from typing import Dict, Generic, List, NamedTuple, Optional, TypeVar, Union
+from unittest import skipIf
 
 
-# Temporarily disabled until next change.
-# from typing import Dict, List, NamedTuple, Optional, Union
-
-
-@unittest.skip("temporarily disabled")
 class TypingTests(unittest.TestCase):
+    @skipIf(
+        sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
+        "requires at least CPython 3.7",
+    )
+    def test_generic_subclass_with_metaclass(self):
+        class M(type):
+            pass
+
+        A = TypeVar("A")
+        B = TypeVar("B")
+
+        class C(Generic[A, B], metaclass=M):
+            pass
+
+        self.assertIs(type(C), M)
+        self.assertTrue(issubclass(C, Generic))
+        self.assertTrue(isinstance(C(), Generic))
+
     def test_typing_parameterized_generics(self):
         def fn(val: Optional[Union[Dict, List]]):
             return 5

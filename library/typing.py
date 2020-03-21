@@ -35,7 +35,6 @@ import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [
@@ -926,8 +925,19 @@ def _get_defaults(func):
 
 
 _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
-                  types.MethodType, types.ModuleType,
-                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
+                  types.MethodType, types.ModuleType)
+# NOTE(T64356933): MethodDescriptorType, MethodWrapperType,
+# WrapperDescriptorType are not supported.
+if (
+    hasattr(types, "MethodDescriptorType")
+    and hasattr(types, "MethodWrapperType")
+    and hasattr(types, "WrapperDescriptorType")
+):
+    _allowed_types += (
+        types.MethodDescriptorType,
+        types.MethodWrapperType,
+        types.WrapperDescriptorType,
+    )
 
 
 def get_type_hints(obj, globalns=None, localns=None):
@@ -1351,6 +1361,11 @@ _special = ('__module__', '__name__', '__qualname__', '__annotations__')
 
 
 class NamedTupleMeta(type):
+
+    # TODO(T44040673): Remove this once `dict` starts keeping insertion order.
+    @_classmethod
+    def __prepare__(cls, typename, bases,  **kwargs):
+        return {"__annotations__" : collections.OrderedDict()}
 
     def __new__(cls, typename, bases, ns):
         if ns.get('_root', False):
