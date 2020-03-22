@@ -390,7 +390,7 @@ class itemgetter:
         return self._call(obj)
 
     def __repr__(self):
-        return _sequence_repr(f"{_type_name(self.__class__)}(", self._attrs, ")")
+        return _sequence_repr(f"{_type_name(self.__class__)}(", self._items, ")")
 
     def __reduce__(self):
         return self.__class__, self._items

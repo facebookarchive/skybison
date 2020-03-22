@@ -1497,6 +1497,8 @@ def _range_getslice(self: range, start: int, stop: int, step: int) -> range:
 
 
 def _sequence_repr(left, seq, right) -> str:
+    if _repr_enter(seq):
+        return f"{left}...{right}"
     result = f"{left}{', '.join(repr(x) for x in seq)}{right}"
     _repr_leave(seq)
     return result
@@ -2913,7 +2915,9 @@ class dict_items(bootstrap=True):
     def __repr__(self):
         if _repr_enter(self):
             return "..."
-        return _sequence_repr("dict_items([", self, "])")
+        result = _sequence_repr("dict_items([", list(self), "])")
+        _repr_leave(self)
+        return result
 
     def __iter__(self):
         _builtin()
@@ -2937,7 +2941,9 @@ class dict_keys(bootstrap=True):
     def __repr__(self):
         if _repr_enter(self):
             return "..."
-        return _sequence_repr("dict_keys([", self, "])")
+        result = _sequence_repr("dict_keys([", list(self), "])")
+        _repr_leave(self)
+        return result
 
     def __iter__(self):
         _builtin()
@@ -2961,7 +2967,9 @@ class dict_values(bootstrap=True):
     def __repr__(self):
         if _repr_enter(self):
             return "..."
-        return _sequence_repr("dict_values([", self, "])")
+        result = _sequence_repr("dict_values([", list(self), "])")
+        _repr_leave(self)
+        return result
 
     def __iter__(self):
         _builtin()
@@ -4232,11 +4240,7 @@ class list(bootstrap=True):
         _builtin()
 
     def __repr__(self):
-        if _repr_enter(self):
-            return "[...]"
-        result = "[" + ", ".join([repr(i) for i in self]) + "]"
-        _repr_leave(self)
-        return result
+        return _sequence_repr("[", self, "]")
 
     def __reversed__(self):
         return iter(self[::-1])
@@ -6064,6 +6068,7 @@ class tuple(bootstrap=True):
             elt = repr(self[0])
             _repr_leave(self)
             return f"({elt},)"
+        _repr_leave(self)
         return _sequence_repr("(", self, ")")
 
     __rmul__ = __mul__

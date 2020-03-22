@@ -3397,6 +3397,11 @@ class DictItemsTests(unittest.TestCase):
             or result == "dict_items([('foo', 'bar'), ('hello', 'world')])"
         )
 
+    def test_dunder_repr_with_recursive_prints_elipsis(self):
+        x = {}
+        x[1] = x.items()
+        self.assertEquals(repr(x.items()), "dict_items([(1, dict_items([(1, ...)]))])")
+
     def test_dunder_repr_calls_key_dunder_repr(self):
         class C:
             def __repr__(self):
@@ -3437,6 +3442,11 @@ class DictKeysTests(unittest.TestCase):
             result == "dict_keys(['hello', 'foo'])"
             or result == "dict_keys(['foo', 'hello'])"
         )
+
+    def test_dunder_repr_with_recursive_prints_elipsis(self):
+        x = {}
+        x[1] = x.values()
+        self.assertEquals(repr(x.values()), "dict_values([dict_values([...])])")
 
     def test_dunder_repr_calls_key_dunder_repr(self):
         class C:
@@ -12490,6 +12500,25 @@ class SyntaxErrorTests(unittest.TestCase):
 
 
 class TupleTests(unittest.TestCase):
+    def test_dunder_repr_with_single_element(self):
+        self.assertEqual(repr((1,)), "(1,)")
+        self.assertEqual(repr(([1],)), "([1],)")
+
+    def test_dunder_repr_with_single_element_recursive(self):
+        x = []
+        y = (x,)
+        x.append(y)
+        self.assertEqual(repr(y), "([(...)],)")
+
+    def test_dunder_repr_with_multi_element(self):
+        self.assertEqual(repr((1, [])), "(1, [])")
+
+    def test_dunder_repr_with_multi_element_recursive(self):
+        x = []
+        y = (x, [], 1)
+        x.append(y)
+        self.assertEqual(repr(y), "([(...)], [], 1)")
+
     def test_dunder_eq_with_non_tuple_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             tuple.__eq__(None, ())
