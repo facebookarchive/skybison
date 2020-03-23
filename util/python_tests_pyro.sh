@@ -22,7 +22,7 @@ PYTHON_BIN="$(realpath "$PYTHON_BIN")"
 if [[ ! -x $PYTHON_BIN ]]; then
     # Assume that this path is impossible if we're being called by
     # python_tests_cpython.sh because it does its own validation.
-    die "$PYTHON_BIN is not executable. Please build using 'make python'"
+    die "$PYTHON_BIN is not executable. Please build using 'cmake --build . --target python'"
 fi
 
 PYRO_TEST_FILTER="*_test.py"
