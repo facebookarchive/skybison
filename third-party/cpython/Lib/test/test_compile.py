@@ -428,6 +428,19 @@ if 1:
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_mangling_prefixed_class(self):
+        class _Foo:
+            __mangled = 1
+        self.assertIn('_Foo__mangled', dir(_Foo))
+
+        class __Foo:
+            __mangled = 1
+        self.assertIn('_Foo__mangled', dir(_Foo))
+
+        class ________________Foo:
+            __mangled = 1
+        self.assertIn('_Foo__mangled', dir(_Foo))
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
