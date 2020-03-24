@@ -305,14 +305,6 @@ compiler_init(struct compiler *c)
     }
 
     {
-        PyObject *mod = PyImport_ImportModule("_myreadline");
-        if (mod == NULL) {
-            return 0;
-        }
-        Py_DECREF(mod);
-    }
-
-    {
         PyObject *mod = PyImport_ImportModule("_capsule");
         if (mod == NULL) {
             return 0;

@@ -81,13 +81,6 @@ TEST_F(ConfigExtensionApiTest,
   EXPECT_TRUE(PyModule_Check(module));
 }
 
-TEST_F(ConfigExtensionApiTest, ImportUnderMyReadlineReturnsModule) {
-  PyObjectPtr module(PyImport_ImportModule("_myreadline"));
-  ASSERT_NE(module, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyModule_Check(module));
-}
-
 TEST_F(ConfigExtensionApiTest, ImportUnderPosixSubprocessReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_posixsubprocess"));
   ASSERT_NE(module, nullptr);

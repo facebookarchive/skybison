@@ -142,7 +142,6 @@ _tracemalloc _tracemalloc.c hashtable.c
 # appropriate lines below.
 
 # ======================================================================
-_myreadline $(srcdir)/Parser/myreadline.c
 
 # The Python symtable module depends on .h files that setup.py doesn't track
 _stentry $(srcdir)/Python/symtable.c
