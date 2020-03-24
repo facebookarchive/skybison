@@ -8,6 +8,7 @@
 #include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 
 namespace py {
 
@@ -79,30 +80,41 @@ PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  if (!thread->runtime()->isInstanceOfDict(*dictobj)) {
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
-  Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope,
-                thread->invokeFunction3(ID(builtins), ID(_capi_dict_setitem),
-                                        dictobj, keyobj, valueobj));
-  return result.isError() ? -1 : 0;
+  Dict dict(&scope, *dict_obj);
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Object hash_obj(&scope, Interpreter::hash(thread, key_obj));
+  if (hash_obj.isError()) return -1;
+  word hash = SmallInt::cast(*hash_obj).value();
+  if (dictAtPut(thread, dict, key_obj, hash, value_obj).isErrorException()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
                                    PyObject* value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  Object keyobj(&scope, thread->runtime()->newStrFromCStr(key));
-  Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope,
-                thread->invokeFunction3(ID(builtins), ID(_capi_dict_setitem),
-                                        dictobj, keyobj, valueobj));
-  return result.isError() ? -1 : 0;
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Dict dict(&scope, *dict_obj);
+  Str key_obj(&scope, runtime->newStrFromCStr(key));
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  word hash = strHash(thread, *key_obj);
+  if (dictAtPut(thread, dict, key_obj, hash, value_obj).isErrorException()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT PyTypeObject* PyDict_Type_Ptr() {
@@ -120,17 +132,26 @@ PY_EXPORT PyObject* PyDict_New() {
   return ApiHandle::newReference(thread, *value);
 }
 
-static PyObject* getItem(Thread* thread, const Object& dict,
+static PyObject* getItem(Thread* thread, const Object& dict_obj,
                          const Object& key) {
   HandleScope scope(thread);
-  Object result(&scope, thread->invokeFunction2(ID(builtins), ID(_dict_getitem),
-                                                dict, key));
-  // For historical reasons, PyDict_GetItem supresses all errors that may occur
-  if (result.isError()) {
+  // For historical reasons, PyDict_GetItem supresses all errors that may occur.
+  if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
+    return nullptr;
+  }
+  Dict dict(&scope, *dict_obj);
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isError()) {
     thread->clearPendingException();
     return nullptr;
   }
-  if (result.isUnbound()) {
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, dictAt(thread, dict, key, hash));
+  if (result.isErrorException()) {
+    thread->clearPendingException();
+    return nullptr;
+  }
+  if (result.isErrorNotFound()) {
     return nullptr;
   }
   return ApiHandle::borrowedReference(thread, *result);

@@ -274,22 +274,6 @@ def _complex_real(c):
     _builtin()
 
 
-def _dict_bucket_insert(self, index, key, key_hash, value):
-    _builtin()
-
-
-def _dict_bucket_key(self, index):
-    _builtin()
-
-
-def _dict_bucket_set_value(self, index, value):
-    _builtin()
-
-
-def _dict_bucket_value(self, index):
-    _builtin()
-
-
 def _dict_check(obj):
     _builtin()
 
@@ -308,14 +292,6 @@ def _dict_guard(obj):
 
 
 def _dict_len(self):
-    _builtin()
-
-
-def _dict_lookup(self, key, key_hash):
-    _builtin()
-
-
-def _dict_lookup_next(self, index, key, key_hash, perturb):
     _builtin()
 
 

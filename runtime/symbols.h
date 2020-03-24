@@ -262,7 +262,6 @@ class Runtime;
   V(_bytes_new)                                                                \
   V(_byteslike_check)                                                          \
   V(_byteslike_guard)                                                          \
-  V(_capi_dict_setitem)                                                        \
   V(_cast_addr)                                                                \
   V(_closed)                                                                   \
   V(_closefd)                                                                  \
@@ -280,7 +279,6 @@ class Runtime;
   V(_dict__num_usable_items)                                                   \
   V(_dict_check)                                                               \
   V(_dict_check_exact)                                                         \
-  V(_dict_getitem)                                                             \
   V(_dict_guard)                                                               \
   V(_dict_len)                                                                 \
   V(_encoder)                                                                  \

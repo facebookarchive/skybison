@@ -75,16 +75,10 @@ from _builtins import (
     _complex_new,
     _complex_new_from_str,
     _complex_real,
-    _dict_bucket_insert,
-    _dict_bucket_key,
-    _dict_bucket_set_value,
-    _dict_bucket_value,
     _dict_check,
     _dict_check_exact,
     _dict_get,
     _dict_guard,
-    _dict_lookup,
-    _dict_lookup_next,
     _dict_popitem,
     _dict_setitem,
     _dict_update,
@@ -1148,58 +1142,6 @@ class _descrclassmethod:
         cls = args[0]
         _type_subclass_guard(cls, self.cls)
         return self.fn(*args, **kwargs)
-
-
-def _dict_getitem(self, key):
-    # Fast path. From the probing strategy, most dictionary lookups will
-    # successfully match the first non-empty bucket it finds or completely
-    # fail to find a single match.
-    key_hash = hash(key)
-    index = _dict_lookup(self, key, key_hash)
-    if index < 0:  # No match in the entire dict
-        return _Unbound
-    other_key = _dict_bucket_key(self, index)
-    if other_key is key or other_key == key:
-        return _dict_bucket_value(self, index)
-
-    # Slow path. The first non-empty bucket did not contain a match. Restart
-    # the probe at the point where it found the last non-empty bucket until
-    # a match is found or all buckets have been probed
-    index, perturb = _dict_lookup_next(self, index, key, key_hash, _Unbound)
-    while index >= 0:
-        other_key = _dict_bucket_key(self, index)
-        if other_key is key or other_key == key:
-            return _dict_bucket_value(self, index)
-        index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
-    return _Unbound
-
-
-# TODO(T56367459): Use _dict_setitem instead.
-def _capi_dict_setitem(self, key, value):
-    # Fast path. From the probing strategy, most dictionary lookups will
-    # successfully match the first non-empty bucket it finds or completely
-    # fail to find a single match.
-    key_hash = hash(key)
-    index = _dict_lookup(self, key, key_hash)
-    if index < 0:  # No match in the entire dict
-        _dict_bucket_insert(self, index, key, key_hash, value)
-        return
-    other_key = _dict_bucket_key(self, index)
-    if other_key is key or other_key == key:
-        _dict_bucket_set_value(self, index, value)
-        return
-
-    # Slow path. The first non-empty bucket did not contain a match. Restart
-    # the probe at the point where it found the last non-empty bucket until
-    # a match is found or all buckets have been probed
-    index, perturb = _dict_lookup_next(self, index, key, key_hash, _Unbound)
-    while index >= 0:
-        other_key = _dict_bucket_key(self, index)
-        if other_key is key or other_key == key:
-            _dict_bucket_set_value(self, index, value)
-            return
-        index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
-    _dict_bucket_insert(self, index, key, key_hash, value)
 
 
 def _dunder_bases_tuple_check(obj, msg) -> None:
