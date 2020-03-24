@@ -70,7 +70,9 @@ PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   word hash = SmallInt::truncate(pyhash);
-  dictAtPut(thread, dict, key_obj, hash, value_obj);
+  if (dictAtPut(thread, dict, key_obj, hash, value_obj).isErrorException()) {
+    return -1;
+  }
   return 0;
 }
 
@@ -189,7 +191,9 @@ PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
   Object hash_obj(&scope, Interpreter::hash(thread, key_obj));
   if (hash_obj.isErrorException()) return -1;
   word hash = SmallInt::cast(*hash_obj).value();
-  return dictIncludes(thread, dict, key_obj, hash);
+  Object result(&scope, dictIncludes(thread, dict, key_obj, hash));
+  if (result.isErrorException()) return -1;
+  return Bool::cast(*result).value();
 }
 
 PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {

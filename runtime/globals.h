@@ -160,6 +160,8 @@ inline D bit_cast(const S& src) {
 
 #define USED __attribute__((used))
 
+#define UNUSED __attribute__((unused))
+
 #define WARN_UNUSED __attribute__((warn_unused))
 
 // Endian enum (as proposed in the C++20 draft).

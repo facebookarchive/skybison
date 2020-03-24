@@ -13,12 +13,14 @@
 
 namespace py {
 
-static bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
-                       word hash, word* index) {
-  if (data.length() == 0) {
-    *index = -1;
-    return false;
-  }
+// Returns one of the three possible values:
+// - `key` was found at a bucket at `index` : SmallInt::fromWord(index)
+// - `key` was not found, but insertion can be done to a bucket at `index` :
+//   SmallInt::fromWord(index - data.length())
+// - Exception that was raised from key comparison __eq__ function.
+static RawObject dictLookup(Thread* thread, const Tuple& data,
+                            const Object& key, word hash) {
+  DCHECK(data.length() > 0, "data shouldn't be empty");
   word next_free_index = -1;
   uword perturb;
   word bucket_mask;
@@ -30,11 +32,10 @@ static bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
       RawObject eq = Runtime::objectEquals(
           thread, Dict::Bucket::key(*data, current_index), *key);
       if (eq == Bool::trueObj()) {
-        *index = current_index;
-        return true;
+        return SmallInt::fromWord(current_index);
       }
-      if (eq.isErrorException()) {
-        UNIMPLEMENTED("exception in key comparison");
+      if (UNLIKELY(eq.isErrorException())) {
+        return eq;
       }
       continue;
     }
@@ -42,8 +43,7 @@ static bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
       if (next_free_index == -1) {
         next_free_index = current_index;
       }
-      *index = next_free_index;
-      return false;
+      return SmallInt::fromWord(next_free_index - data.length());
     }
     if (Dict::Bucket::isTombstone(*data, current_index)) {
       if (next_free_index == -1) {
@@ -51,10 +51,11 @@ static bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
       }
     }
   }
+  UNREACHABLE("Expected to have found a bucket");
 }
 
-void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
-               const Object& value) {
+RawObject dictAtPut(Thread* thread, const Dict& dict, const Object& key,
+                    word hash, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
   if (dict.capacity() == 0) {
@@ -64,13 +65,16 @@ void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
   }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  word index = -1;
-  bool found = dictLookup(thread, data, key, hash, &index);
-  DCHECK(index != -1, "invalid index %ld", index);
-  if (found) {
-    Dict::Bucket::setValue(*data, index, *value);
-    return;
+  RawObject lookup_result = dictLookup(thread, data, key, hash);
+  if (UNLIKELY(lookup_result.isErrorException())) {
+    return lookup_result;
   }
+  word index = SmallInt::cast(lookup_result).value();
+  if (index >= 0) {
+    Dict::Bucket::setValue(*data, index, *value);
+    return NoneType::object();
+  }
+  index += data.length();
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
   Dict::Bucket::set(*data, index, hash, *key, *value);
   dict.setNumItems(dict.numItems() + 1);
@@ -79,12 +83,14 @@ void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
     dictEnsureCapacity(thread, dict);
   }
   DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
+  return NoneType::object();
 }
 
 void dictAtPutByStr(Thread* thread, const Dict& dict, const Object& name,
                     const Object& value) {
   word hash = strHash(thread, *name);
-  dictAtPut(thread, dict, name, hash, value);
+  UNUSED RawObject result = dictAtPut(thread, dict, name, hash, value);
+  DCHECK(!result.isError(), "result must not be an error");
 }
 
 void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
@@ -98,9 +104,15 @@ RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
                  word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  word index = -1;
-  bool found = dictLookup(thread, data, key, hash, &index);
-  if (found) {
+  if (data.length() == 0) {
+    return Error::notFound();
+  }
+  RawObject lookup_result = dictLookup(thread, data, key, hash);
+  if (UNLIKELY(lookup_result.isErrorException())) {
+    return lookup_result;
+  }
+  word index = SmallInt::cast(lookup_result).value();
+  if (index >= 0) {
     return Dict::Bucket::value(*data, index);
   }
   return Error::notFound();
@@ -128,16 +140,19 @@ RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
   }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  word index = -1;
   word hash = strHash(thread, *name);
-  bool found = dictLookup(thread, data, name, hash, &index);
-  DCHECK(index != -1, "invalid index %ld", index);
-  if (found) {
+  RawObject lookup_result = dictLookup(thread, data, name, hash);
+  if (UNLIKELY(lookup_result.isErrorException())) {
+    return lookup_result;
+  }
+  word index = SmallInt::cast(lookup_result).value();
+  if (index >= 0) {
     RawValueCell value_cell =
         ValueCell::cast(Dict::Bucket::value(*data, index));
     value_cell.setValue(*value);
     return value_cell;
   }
+  index += data.length();
   ValueCell value_cell(&scope, thread->runtime()->newValueCell());
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
   Dict::Bucket::set(*data, index, hash, *name, *value_cell);
@@ -162,17 +177,18 @@ void dictClear(Thread* thread, const Dict& dict) {
   dict.resetNumUsableItems();
 }
 
-bool dictIncludesByStr(Thread* thread, const Dict& dict, const Object& name) {
-  word hash = strHash(thread, *name);
-  return dictIncludes(thread, dict, name, hash);
-}
-
-bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
-                  word hash) {
+RawObject dictIncludes(Thread* thread, const Dict& dict, const Object& key,
+                       word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  word ignore;
-  return dictLookup(thread, data, key, hash, &ignore);
+  if (data.length() == 0) {
+    return Bool::falseObj();
+  }
+  RawObject lookup_result = dictLookup(thread, data, key, hash);
+  if (UNLIKELY(lookup_result.isErrorException())) {
+    return lookup_result;
+  }
+  return Bool::fromBool(SmallInt::cast(lookup_result).value() >= 0);
 }
 
 RawObject dictRemoveByStr(Thread* thread, const Dict& dict,
@@ -185,14 +201,20 @@ RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
                      word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  word index = -1;
-  Object result(&scope, Error::notFound());
-  bool found = dictLookup(thread, data, key, hash, &index);
-  if (found) {
-    result = Dict::Bucket::value(*data, index);
-    Dict::Bucket::setTombstone(*data, index);
-    dict.setNumItems(dict.numItems() - 1);
+  if (data.length() == 0) {
+    return Error::notFound();
   }
+  RawObject lookup_result = dictLookup(thread, data, key, hash);
+  if (UNLIKELY(lookup_result.isErrorException())) {
+    return lookup_result;
+  }
+  word index = SmallInt::cast(lookup_result).value();
+  if (index < 0) {
+    return Error::notFound();
+  }
+  Object result(&scope, Dict::Bucket::value(*data, index));
+  Dict::Bucket::setTombstone(*data, index);
+  dict.setNumItems(dict.numItems() - 1);
   return *result;
 }
 
@@ -286,16 +308,25 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
   Object value(&scope, NoneType::object());
   Dict other(&scope, *mapping);
   Tuple other_data(&scope, other.data());
+  Object included(&scope, NoneType::object());
+  Object dict_result(&scope, NoneType::object());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*other_data, &i);) {
     key = Dict::Bucket::key(*other_data, i);
     value = Dict::Bucket::value(*other_data, i);
     word hash = Dict::Bucket::hash(*other_data, i);
-    if (do_override == Override::kOverride ||
-        !dictIncludes(thread, dict, key, hash)) {
-      dictAtPut(thread, dict, key, hash, value);
-    } else if (do_override == Override::kError) {
-      return thread->raise(LayoutId::kKeyError, *key);
+    if (do_override == Override::kOverride) {
+      dict_result = dictAtPut(thread, dict, key, hash, value);
+      if (dict_result.isErrorException()) return *dict_result;
+    } else {
+      included = dictIncludes(thread, dict, key, hash);
+      if (included.isErrorException()) return *included;
+      if (included == Bool::falseObj()) {
+        dict_result = dictAtPut(thread, dict, key, hash, value);
+        if (dict_result.isErrorException()) return *dict_result;
+      } else if (do_override == Override::kError) {
+        return thread->raise(LayoutId::kKeyError, *key);
+      }
     }
   }
   return NoneType::object();
@@ -312,6 +343,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   Object key(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
+  Object included(&scope, NoneType::object());
   Frame* frame = thread->currentFrame();
   Object keys_method(&scope,
                      runtime->attributeAtById(thread, mapping, ID(keys)));
@@ -332,19 +364,30 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
 
   if (keys.isList()) {
     List keys_list(&scope, *keys);
+    Object dict_result(&scope, NoneType::object());
     for (word i = 0; i < keys_list.numItems(); ++i) {
       key = keys_list.at(i);
       hash_obj = Interpreter::hash(thread, key);
       if (hash_obj.isErrorException()) return *hash_obj;
       word hash = SmallInt::cast(*hash_obj).value();
-      if (do_override == Override::kOverride ||
-          !dictIncludes(thread, dict, key, hash)) {
+      if (do_override == Override::kOverride) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        dictAtPut(thread, dict, key, hash, value);
-      } else if (do_override == Override::kError) {
-        return thread->raise(LayoutId::kKeyError, *key);
+        dict_result = dictAtPut(thread, dict, key, hash, value);
+        if (dict_result.isErrorException()) return *dict_result;
+      } else {
+        included = dictIncludes(thread, dict, key, hash);
+        if (included.isErrorException()) return *included;
+        if (included == Bool::falseObj()) {
+          value = Interpreter::callMethod2(thread, frame, subscr_method,
+                                           mapping, key);
+          if (value.isError()) return *value;
+          dict_result = dictAtPut(thread, dict, key, hash, value);
+          if (dict_result.isErrorException()) return *dict_result;
+        } else if (do_override == Override::kError) {
+          return thread->raise(LayoutId::kKeyError, *key);
+        }
       }
     }
     return NoneType::object();
@@ -352,19 +395,30 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
 
   if (keys.isTuple()) {
     Tuple keys_tuple(&scope, *keys);
+    Object dict_result(&scope, NoneType::object());
     for (word i = 0; i < keys_tuple.length(); ++i) {
       key = keys_tuple.at(i);
       hash_obj = Interpreter::hash(thread, key);
       if (hash_obj.isErrorException()) return *hash_obj;
       word hash = SmallInt::cast(*hash_obj).value();
-      if (do_override == Override::kOverride ||
-          !dictIncludes(thread, dict, key, hash)) {
+      if (do_override == Override::kOverride) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        dictAtPut(thread, dict, key, hash, value);
-      } else if (do_override == Override::kError) {
-        return thread->raise(LayoutId::kKeyError, *key);
+        dict_result = dictAtPut(thread, dict, key, hash, value);
+        if (dict_result.isErrorException()) return *dict_result;
+      } else {
+        included = dictIncludes(thread, dict, key, hash);
+        if (included.isErrorException()) return *included;
+        if (included == Bool::falseObj()) {
+          value = Interpreter::callMethod2(thread, frame, subscr_method,
+                                           mapping, key);
+          if (value.isError()) return *value;
+          dict_result = dictAtPut(thread, dict, key, hash, value);
+          if (dict_result.isErrorException()) return *dict_result;
+        } else if (do_override == Override::kError) {
+          return thread->raise(LayoutId::kKeyError, *key);
+        }
       }
     }
     return NoneType::object();
@@ -390,6 +444,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
+  Object dict_result(&scope, NoneType::object());
   for (;;) {
     key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
                                    iterator);
@@ -400,14 +455,24 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     hash_obj = Interpreter::hash(thread, key);
     if (hash_obj.isErrorException()) return *hash_obj;
     word hash = SmallInt::cast(*hash_obj).value();
-    if (do_override == Override::kOverride ||
-        !dictIncludes(thread, dict, key, hash)) {
+    if (do_override == Override::kOverride) {
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value.isError()) return *value;
-      dictAtPut(thread, dict, key, hash, value);
-    } else if (do_override == Override::kError) {
-      return thread->raise(LayoutId::kKeyError, *key);
+      dict_result = dictAtPut(thread, dict, key, hash, value);
+      if (dict_result.isErrorException()) return *dict_result;
+    } else {
+      included = dictIncludes(thread, dict, key, hash);
+      if (included.isErrorException()) return *included;
+      if (included == Bool::falseObj()) {
+        value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
+                                         key);
+        if (value.isError()) return *value;
+        dict_result = dictAtPut(thread, dict, key, hash, value);
+        if (dict_result.isErrorException()) return *dict_result;
+      } else if (do_override == Override::kError) {
+        return thread->raise(LayoutId::kKeyError, *key);
+      }
     }
   }
   return NoneType::object();

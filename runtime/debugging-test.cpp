@@ -413,7 +413,7 @@ TEST_F(DebuggingTests, FormatDict) {
   Object value0(&scope, runtime_->newInt(88));
   Object value1(&scope, runtime_->emptyTuple());
   dictAtPutByStr(thread_, dict, key0, value0);
-  dictAtPut(thread_, dict, key1, hash, value1);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key1, hash, value1).isNoneType());
   std::stringstream ss;
   ss << dict;
   EXPECT_TRUE(ss.str() == R"({"hello": 88, None: ()})" ||

@@ -155,12 +155,12 @@ TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
   Dict dict(&scope, runtime_->apiHandles());
   Object obj(&scope, runtime_->newList());
   word hash = runtime_->hash(*obj);
-  ASSERT_FALSE(dictIncludes(thread_, dict, obj, hash));
+  ASSERT_EQ(dictIncludes(thread_, dict, obj, hash), Bool::falseObj());
 
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(dictIncludes(thread_, dict, obj, hash));
+  EXPECT_EQ(dictIncludes(thread_, dict, obj, hash), Bool::trueObj());
 }
 
 TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {

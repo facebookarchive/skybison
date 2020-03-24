@@ -14,6 +14,25 @@ except ImportError:
 
 @pyro_only
 class UnderBuiltinsTests(unittest.TestCase):
+    def test_dict_get_raises_exception_from_dunder_eq(self):
+        class ExceptionRaiser:
+            def __eq__(self, other):
+                raise UserWarning("ExceptionRaiser.__eq__")
+
+            def __hash__(self):
+                return 400
+
+        class C:
+            def __hash__(self):
+                return 400
+
+        exception_raiser = ExceptionRaiser()
+        c = C()
+        d = {exception_raiser: 500}
+        with self.assertRaises(UserWarning) as context:
+            d[c]
+        self.assertEqual(str(context.exception), "ExceptionRaiser.__eq__")
+
     def test_list_new_default_fill_returns_list(self):
         self.assertListEqual(_builtins._list_new(-1), [])
         self.assertListEqual(_builtins._list_new(0), [])

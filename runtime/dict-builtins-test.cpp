@@ -41,12 +41,12 @@ TEST_F(DictBuiltinsTest, DictAtPutRetainsExistingKeyObject) {
   ASSERT_NE(key0, key1);
   ASSERT_EQ(key0_hash, key1_hash);
 
-  dictAtPut(thread_, dict, key0, key0_hash, value0);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key0, key0_hash, value0).isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dictAt(thread_, dict, key0, key0_hash), *value0);
 
   // Overwrite the stored value
-  dictAtPut(thread_, dict, key1, key1_hash, value1);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key1, key1_hash, value1).isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dictAt(thread_, dict, key1, key1_hash), *value1);
 
@@ -67,7 +67,7 @@ TEST_F(DictBuiltinsTest, GetSet) {
 
   // Store a value
   Object stored(&scope, SmallInt::fromWord(67890));
-  dictAtPut(thread_, dict, key, hash, stored);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, stored).isNoneType());
   EXPECT_EQ(dict.numItems(), 1);
 
   // Retrieve the stored value
@@ -76,7 +76,7 @@ TEST_F(DictBuiltinsTest, GetSet) {
 
   // Overwrite the stored value
   Object new_value(&scope, SmallInt::fromWord(5555));
-  dictAtPut(thread_, dict, key, hash, new_value);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, new_value).isNoneType());
   EXPECT_EQ(dict.numItems(), 1);
 
   // Get the new value
@@ -98,7 +98,7 @@ TEST_F(DictBuiltinsTest, Remove) {
   // stored.
   Object stored(&scope, SmallInt::fromWord(54321));
 
-  dictAtPut(thread_, dict, key, hash, stored);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, stored).isNoneType());
   EXPECT_EQ(dict.numItems(), 1);
 
   RawObject retrieved = dictRemove(thread_, dict, key, hash);
@@ -118,7 +118,7 @@ TEST_F(DictBuiltinsTest, Length) {
   for (int i = 0; i < 10; i++) {
     Object key(&scope, SmallInt::fromWord(i));
     word hash = intHash(*key);
-    dictAtPut(thread_, dict, key, hash, key);
+    ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, key).isNoneType());
   }
   EXPECT_EQ(dict.numItems(), 10);
 
@@ -168,7 +168,8 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   Object first_key(&scope, SmallInt::fromWord(0));
   word hash = intHash(*first_key);
   Object first_value(&scope, SmallInt::fromWord(1));
-  dictAtPut(thread_, dict, first_key, hash, first_value);
+  ASSERT_TRUE(
+      dictAtPut(thread_, dict, first_key, hash, first_value).isNoneType());
 
   word initial_capacity = Runtime::kInitialDictCapacity;
   EXPECT_EQ(dict.numItems(), 1);
@@ -186,7 +187,7 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
     Object key(&scope, SmallInt::fromWord(i));
     word hash = intHash(*key);
     Object value(&scope, SmallInt::fromWord(-i));
-    dictAtPut(thread_, dict, key, hash, value);
+    ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
   }
   EXPECT_EQ(dict.numItems(), threshold);
   EXPECT_EQ(dict.numUsableItems(), 1);
@@ -197,7 +198,8 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   Object last_key(&scope, SmallInt::fromWord(threshold));
   word last_key_hash = intHash(*last_key);
   Object last_value(&scope, SmallInt::fromWord(-threshold));
-  dictAtPut(thread_, dict, last_key, last_key_hash, last_value);
+  ASSERT_TRUE(dictAtPut(thread_, dict, last_key, last_key_hash, last_value)
+                  .isNoneType());
   EXPECT_EQ(dict.numItems(), threshold + 1);
   EXPECT_EQ(dict.capacity(), initial_capacity * Runtime::kDictGrowthFactor);
   EXPECT_EQ(dict.numUsableItems(),
@@ -238,8 +240,8 @@ i1 = C()
   Dict dict(&scope, runtime_->newDict());
 
   // Add two different keys with different values using the same hash
-  dictAtPut(thread_, dict, i0, i0_hash, i0);
-  dictAtPut(thread_, dict, i1, i1_hash, i1);
+  ASSERT_TRUE(dictAtPut(thread_, dict, i0, i0_hash, i0).isNoneType());
+  ASSERT_TRUE(dictAtPut(thread_, dict, i1, i1_hash, i1).isNoneType());
 
   // Make sure we get both back
   Object retrieved(&scope, dictAt(thread_, dict, i0, i0_hash));
@@ -256,11 +258,13 @@ TEST_F(DictBuiltinsTest, MixedKeys) {
   // Add keys of different type
   Object int_key(&scope, SmallInt::fromWord(100));
   word int_key_hash = intHash(*int_key);
-  dictAtPut(thread_, dict, int_key, int_key_hash, int_key);
+  ASSERT_TRUE(
+      dictAtPut(thread_, dict, int_key, int_key_hash, int_key).isNoneType());
 
   Object str_key(&scope, runtime_->newStrFromCStr("testing 123"));
   word str_key_hash = strHash(thread_, *str_key);
-  dictAtPut(thread_, dict, str_key, str_key_hash, str_key);
+  ASSERT_TRUE(
+      dictAtPut(thread_, dict, str_key, str_key_hash, str_key).isNoneType());
 
   // Make sure we get the appropriate values back out
   RawObject retrieved = dictAt(thread_, dict, int_key, int_key_hash);
@@ -288,7 +292,7 @@ TEST_F(DictBuiltinsTest, GetKeys) {
     Object hash_obj(&scope, Interpreter::hash(thread_, key));
     ASSERT_FALSE(hash_obj.isErrorException());
     word hash = SmallInt::cast(*hash_obj).value();
-    dictAtPut(thread_, dict, key, hash, key);
+    ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, key).isNoneType());
   }
 
   // Grab the keys and verify everything is there
@@ -315,7 +319,7 @@ TEST_F(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
   Object key(&scope, runtime_->newInt(123));
   word hash = intHash(*key);
   Object value(&scope, runtime_->newInt(456));
-  dictAtPut(thread_, dict, key, hash, value);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
   int expected = Runtime::kInitialDictCapacity;
   EXPECT_EQ(dict.capacity(), expected);
 }
@@ -489,7 +493,8 @@ del d["foo"]
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   Str foo(&scope, runtime_->newStrFromCStr("foo"));
 
-  EXPECT_FALSE(dictIncludesByStr(thread_, d, foo));
+  EXPECT_EQ(dictIncludes(thread_, d, foo, strHash(thread_, *foo)),
+            Bool::falseObj());
 }
 
 TEST_F(DictBuiltinsTest, DelOnNonexistentKeyRaisesKeyError) {
@@ -1039,7 +1044,7 @@ TEST_F(DictBuiltinsTest, NextBucketProbesAllBuckets) {
   Object key(&scope, runtime_->newInt(123));
   word hash = intHash(*key);
   Object value(&scope, runtime_->newInt(456));
-  dictAtPut(thread_, dict, key, hash, value);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
 
   Tuple data(&scope, dict.data());
   ASSERT_EQ(data.length(),

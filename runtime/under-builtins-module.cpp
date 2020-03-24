@@ -1870,7 +1870,8 @@ RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Frame* frame,
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  dictAtPut(thread, dict, key, hash, value);
+  Object result(&scope, dictAtPut(thread, dict, key, hash, value));
+  if (result.isErrorException()) return *result;
   return NoneType::object();
 }
 

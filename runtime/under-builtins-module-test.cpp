@@ -510,7 +510,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsValue) {
   Object key(&scope, runtime_->newInt(123));
   word hash = intHash(*key);
   Object value(&scope, runtime_->newInt(456));
-  dictAtPut(thread_, dict, key, hash, value);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
   Object dflt(&scope, runtime_->newInt(789));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _dict_get), dict, key, dflt));

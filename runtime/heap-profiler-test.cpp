@@ -781,7 +781,7 @@ TEST_F(HeapProfilerTest, WriteInstanceDumpForDictWritesInstanceDumpRecord) {
   Object key(&scope, SmallStr::fromCStr("foo"));
   Object value(&scope, SmallStr::fromCStr("bar"));
   word hash = Int::cast(Interpreter::hash(thread_, key)).asWord();
-  dictAtPut(thread_, dict, key, hash, value);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
   Layout dict_layout(&scope, runtime_->layoutAt(dict.layoutId()));
 
   Vector<byte> result;

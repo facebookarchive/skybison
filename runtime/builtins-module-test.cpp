@@ -6,6 +6,7 @@
 #include "dict-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "test-utils.h"
 #include "trampolines.h"
 
@@ -416,7 +417,8 @@ class C(int, float, metaclass=Meta, hello="world"):
   ASSERT_TRUE(c.at(3).isDict());
   Dict c_namespace(&scope, c.at(3));
   Str x(&scope, runtime_->newStrFromCStr("x"));
-  EXPECT_TRUE(dictIncludesByStr(thread_, c_namespace, x));
+  EXPECT_EQ(dictIncludes(thread_, c_namespace, x, strHash(thread_, *x)),
+            Bool::trueObj());
   ASSERT_TRUE(c.at(4).isTuple());
   EXPECT_EQ(Tuple::cast(c.at(4)).length(), 0);
   Str hello(&scope, runtime_->newStrFromCStr("hello"));

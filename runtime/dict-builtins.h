@@ -11,16 +11,18 @@ namespace py {
 // Associate a value with the supplied key.
 //
 // This handles growing the backing Tuple if needed.
-void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
-               const Object& value);
+RawObject dictAtPut(Thread* thread, const Dict& dict, const Object& key,
+                    word hash, const Object& value);
 
 // Does the same as `dictAtPut` but only works for `key` being a `str`
 // instance. It must not be used with instances of a `str` subclass.
+// `dict` is supposed to contain only `str` keys.
 void dictAtPutByStr(Thread* thread, const Dict& dict, const Object& name,
                     const Object& value);
 
 // Does the same as `dictAtPut` but uses symbol `id` (converted to a string)
 // as key.
+// `dict` is supposed to contain only `str` keys.
 void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
                    const Object& value);
 
@@ -47,12 +49,8 @@ RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
 void dictClear(Thread* thread, const Dict& dict);
 
 // Returns true if the dict contains the specified key.
-bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
-                  word hash);
-
-// Returns true if the dict contains an entry associated with `name`.
-// `name` must by a `str` instance (but no subclass).
-bool dictIncludesByStr(Thread* thread, const Dict& dict, const Object& name);
+RawObject dictIncludes(Thread* thread, const Dict& dict, const Object& key,
+                       word hash);
 
 // TODO(T46009010): Make this into a private function after making
 // 'builtins._dict_setitem' into a dict builtin function

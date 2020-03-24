@@ -2157,11 +2157,19 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, frame->implicitGlobals());
-      if (!dictIncludesByStr(thread, implicit_globals_dict,
-                             dunder_annotations)) {
+      word hash = strHash(thread, *dunder_annotations);
+      Object include_result(&scope, dictIncludes(thread, implicit_globals_dict,
+                                                 dunder_annotations, hash));
+      if (include_result.isErrorException()) {
+        return Continue::UNWIND;
+      }
+      if (include_result == Bool::falseObj()) {
         Object annotations(&scope, runtime->newDict());
-        dictAtPutByStr(thread, implicit_globals_dict, dunder_annotations,
-                       annotations);
+        if (dictAtPut(thread, implicit_globals_dict, dunder_annotations, hash,
+                      annotations)
+                .isErrorException()) {
+          return Continue::UNWIND;
+        }
       }
     } else {
       if (objectGetItem(thread, implicit_globals, dunder_annotations)
@@ -3226,7 +3234,9 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
     hash_obj = hash(thread, key);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
-    dictAtPut(thread, dict, key, hash, value);
+    if (dictAtPut(thread, dict, key, hash, value).isErrorException()) {
+      return Continue::UNWIND;
+    }
   }
   frame->pushValue(*dict);
   return Continue::NEXT;
@@ -4310,7 +4320,8 @@ HANDLER_INLINE Continue Interpreter::doMapAdd(Thread* thread, word arg) {
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return Continue::UNWIND;
   word hash = SmallInt::cast(*hash_obj).value();
-  dictAtPut(thread, dict, key, hash, value);
+  Object result(&scope, dictAtPut(thread, dict, key, hash, value));
+  if (result.isErrorException()) return Continue::UNWIND;
   return Continue::NEXT;
 }
 
@@ -4560,7 +4571,9 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
     Object value(&scope, frame->popValue());
-    dictAtPut(thread, dict, key, hash, value);
+    if (dictAtPut(thread, dict, key, hash, value).isErrorException()) {
+      return Continue::UNWIND;
+    }
   }
   frame->pushValue(*dict);
   return Continue::NEXT;

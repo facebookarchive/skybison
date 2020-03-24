@@ -347,7 +347,8 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
           Object hash_obj(&scope, Interpreter::hash(thread, key));
           if (hash_obj.isErrorException()) return *hash_obj;
           word hash = SmallInt::cast(*hash_obj).value();
-          dictAtPut(thread, dict, key, hash, value);
+          Object dict_result(&scope, dictAtPut(thread, dict, key, hash, value));
+          if (dict_result.isErrorException()) return *dict_result;
           nargs--;
         }
       }

@@ -960,7 +960,8 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   word hash = SmallInt::cast(*key).hash();
   Object none(&scope, NoneType::object());
   Object value(&scope, runtime->newWeakRef(thread, type, none));
-  dictAtPut(thread, subclasses, key, hash, value);
+  UNUSED Object result(&scope, dictAtPut(thread, subclasses, key, hash, value));
+  DCHECK(!result.isError(), "result must not be an error");
 }
 
 void typeAddDocstring(Thread* thread, const Type& type) {
