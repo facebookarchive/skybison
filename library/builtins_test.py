@@ -8367,6 +8367,25 @@ class ObjectTests(unittest.TestCase):
         self.assertEqual(len(result), 5)
         self.assertEqual(result[1:], ((Foo,), {"b": 2}, None, None))
 
+    def test_reduce_ex_with_empty_slots_and_proto_three(self):
+        class Foo:
+            __slots__ = ()
+
+        result = Foo().__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((Foo,), None, None, None))
+
+    def test_reduce_ex_with_slots_and_proto_three(self):
+        class Foo:
+            __slots__ = "a"
+
+            def __init__(self, value):
+                self.a = value
+
+        result = Foo(1).__reduce_ex__(3)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result[1:], ((Foo,), (None, {"a": 1}), None, None))
+
     def test_reduce_ex_with_dict_and_proto_three(self):
         d = {"a": 1}
         result = d.__reduce_ex__(3)

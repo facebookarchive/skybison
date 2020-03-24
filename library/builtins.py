@@ -513,19 +513,40 @@ def _object_reduce_getstate(self, required):
     getstate = _object_type_getattr(self, "__getstate__")
     if getstate is not _Unbound:
         return getstate()
-    state = getattr(self, "__dict__", None)
-    if not state:
-        # None or empty instance_proxy; return None
+    if _object_type_getattr(self, "__slots__") is not _Unbound:
+        # TODO(T64462298): Remove this check. Instances with __slots__ should
+        # not have a __dict__.
         state = None
+    else:
+        state = getattr(self, "__dict__", None)
+        if not state:
+            # None or empty instance_proxy; return None
+            state = None
     slotnames = _object_type_getattr(self, "__slotnames__")
     if slotnames is _Unbound:
         import copyreg
 
         slotnames = copyreg._slotnames(_type(self))
-    if slotnames is not None and len(slotnames) > 0:
-        # TODO(T64257389): If required, check the size of the object, compare
+    if required:
+        # TODO(T64462484): If required, check the size of the object, compare
         # it to the base object size, and raise TypeError if unpickleable
         _unimplemented()
+    if slotnames is None:
+        return state
+    num_slots = len(slotnames)
+    if num_slots > 0:
+        slots = {}
+        for name in slotnames:
+            try:
+                value = getattr(self, name)
+                slots[name] = value
+            except AttributeError:
+                pass
+            if num_slots != len(slotnames):
+                raise RuntimeError("__slotnames__ changed size during iteration")
+        if slots:
+            state = (state, slots)
+
     return state
 
 
