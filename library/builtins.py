@@ -73,7 +73,6 @@ from _builtins import (
     _complex_checkexact,
     _complex_imag,
     _complex_new,
-    _complex_new_from_str,
     _complex_real,
     _dict_check,
     _dict_check_exact,
@@ -2552,6 +2551,105 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     return compile(source, filename, mode, flags, optimize)
 
 
+def _complex_str_parts(s):  # noqa: C901
+    # Ripped from PyPy
+    slen = len(s)
+    if slen == 0:
+        raise ValueError
+    realstart = 0
+    realstop = 0
+    imagstart = 0
+    imagstop = 0
+    imagsign = " "
+    i = 0
+    # ignore whitespace at beginning and end
+    while i < slen and s[i] == " ":
+        i += 1
+    while slen > 0 and s[slen - 1] == " ":
+        slen -= 1
+
+    # if it's all whitespace, raise
+    if i >= slen:
+        raise ValueError
+
+    if s[i] == "(" and s[slen - 1] == ")":
+        i += 1
+        slen -= 1
+        # ignore whitespace after bracket
+        while i < slen and s[i] == " ":
+            i += 1
+        while slen > 0 and s[slen - 1] == " ":
+            slen -= 1
+
+    # extract first number
+    realstart = i
+    pc = s[i]
+    while i < slen and s[i] != " ":
+        if s[i] in ("+", "-") and pc not in ("e", "E") and i != realstart:
+            break
+        pc = s[i]
+        i += 1
+
+    realstop = i
+
+    # return appropriate strings is only one number is there
+    if i >= slen:
+        newstop = realstop - 1
+        if newstop < 0:
+            raise ValueError
+        if s[newstop] in ("j", "J"):
+            if realstart == newstop:
+                imagpart = "1.0"
+            elif realstart == newstop - 1 and s[realstart] == "+":
+                imagpart = "1.0"
+            elif realstart == newstop - 1 and s[realstart] == "-":
+                imagpart = "-1.0"
+            else:
+                imagpart = s[realstart:newstop]
+            return "0.0", imagpart
+        else:
+            return s[realstart:realstop], "0.0"
+
+    # find sign for imaginary part
+    if s[i] == "-" or s[i] == "+":
+        imagsign = s[i]
+    else:
+        raise ValueError
+
+    i += 1
+    if i >= slen:
+        raise ValueError
+
+    imagstart = i
+    pc = s[i]
+    while i < slen and s[i] != " ":
+        if s[i] in ("+", "-") and pc not in ("e", "E"):
+            break
+        pc = s[i]
+        i += 1
+
+    imagstop = i - 1
+    if imagstop < 0:
+        raise ValueError
+    if s[imagstop] not in ("j", "J"):
+        raise ValueError
+    if imagstop < imagstart:
+        raise ValueError
+
+    if i < slen:
+        raise ValueError
+
+    realpart = s[realstart:realstop]
+    if imagstart == imagstop:
+        imagpart = "1.0"
+    else:
+        imagpart = s[imagstart:imagstop]
+    if imagsign == "-":
+        imagpart = imagsign + imagpart
+
+    return realpart, imagpart
+
+
 class complex(bootstrap=True):
     def __abs__(self):
         _unimplemented()
@@ -2624,7 +2722,8 @@ class complex(bootstrap=True):
             return result
         if _str_check(real):
             if imag is _Unbound:
-                return _complex_new_from_str(cls, real)
+                real_str, imag_str = _complex_str_parts(real)
+                return _complex_new(cls, float(real_str), float(imag_str))
             raise TypeError("complex() can't take second arg if first is a string")
         if _str_check(imag):
             raise TypeError("complex() second arg can't be a string")

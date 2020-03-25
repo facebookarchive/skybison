@@ -2788,6 +2788,156 @@ class ComplexTests(unittest.TestCase):
         c2 = complex(c1)
         self.assertIs(c1, c2)
 
+    def test_dunder_new_with_str_returns_complex(self):
+        c = complex("1")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_subclass_returns_complex(self):
+        class C(str):
+            pass
+
+        c = complex(C("1"))
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_subclass_does_not_call_dunder_float(self):
+        class C(str):
+            def __float__(self):
+                return 2.0
+
+        c = complex(C("1"))
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_empty_str_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            complex("")
+
+    def test_dunder_new_with_str_only_whitespace_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            complex("    ")
+
+    def test_dunder_new_with_str_and_leading_whitespace_returns_complex(self):
+        c = complex("   1")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_and_mismatched_parens_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            complex("(1")
+
+        with self.assertRaises(ValueError):
+            complex(")1")
+
+        with self.assertRaises(ValueError):
+            complex("()1")
+
+        with self.assertRaises(ValueError):
+            complex("1()")
+
+        with self.assertRaises(ValueError):
+            complex("1(")
+
+        with self.assertRaises(ValueError):
+            complex("1)")
+
+    def test_dunder_new_with_str_and_whitespace_inside_parens_returns_complex(self):
+        c = complex("(   1)")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_and_parens_inside_whitespace_returns_complex(self):
+        c = complex("   (1)")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_and_trailing_whitespace_returns_complex(self):
+        c = complex("1   ")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_and_leading_plus_returns_complex(self):
+        c = complex("+1")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_str_and_leading_minus_returns_complex(self):
+        c = complex("-1")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, -1)
+
+    def test_dunder_new_with_str_and_e_returns_complex(self):
+        c = complex("2e3")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 2000)
+        self.assertEqual(c.imag, 0)
+
+        c = complex("2E3")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 2000)
+        self.assertEqual(c.imag, 0)
+
+    def test_dunder_new_with_str_and_only_j_returns_complex(self):
+        c = complex("j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 0)
+        self.assertEqual(c.imag, 1)
+
+        c = complex("J")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 0)
+        self.assertEqual(c.imag, 1)
+
+    def test_dunder_new_with_str_and_only_imag_returns_complex(self):
+        c = complex("2j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 0)
+        self.assertEqual(c.imag, 2)
+
+    def test_dunder_new_with_str_and_real_and_imag_returns_complex(self):
+        c = complex("1+2j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 1)
+        self.assertEqual(c.imag, 2)
+
+        c = complex("1-2j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 1)
+        self.assertEqual(c.imag, -2)
+
+    def test_dunder_new_with_str_and_exponent_imag_returns_complex(self):
+        c = complex("1-2e3j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 1)
+        self.assertEqual(c.imag, -2000)
+
+        c = complex("1-2E3j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 1)
+        self.assertEqual(c.imag, -2000)
+
+    def test_dunder_new_with_str_and_fractional_real_and_imag_returns_complex(self):
+        c = complex("1.234+5.678j")
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c.real, 1.234)
+        self.assertEqual(c.imag, 5.678)
+
+    def test_dunder_new_with_str_and_imag_first_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            complex("j+1")
+
+    def test_dunder_new_with_str_and_imag_no_j_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            complex("1-2")
+
+    def test_dunder_new_with_str_and_sign_but_no_imag_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            complex("1+")
+
+        with self.assertRaises(ValueError):
+            complex("1-")
+
     def test_dunder_new_with_subtype_returns_instance(self):
         class C(complex):
             pass

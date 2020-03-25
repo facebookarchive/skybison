@@ -1621,10 +1621,6 @@ RawObject FUNC(_builtins, _complex_new)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _complex_new_from_str)(Thread*, Frame*, word) {
-  UNIMPLEMENTED("complex(str)");
-}
-
 RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);

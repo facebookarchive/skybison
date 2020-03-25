@@ -266,10 +266,6 @@ def _complex_new(cls, imag, real):
     _builtin()
 
 
-def _complex_new_from_str(cls, str):
-    _builtin()
-
-
 def _complex_real(c):
     _builtin()
 
