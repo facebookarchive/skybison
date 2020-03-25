@@ -2701,7 +2701,7 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
     int res;
     void *buf;
     socklen_t buflen = 0;
-    PyObject *ret;
+    _PyBytesWriter writer;
 
     if (!PyArg_ParseTuple(args, "ii|i:getsockopt",
                           &level, &optname, &buflen))
@@ -2721,17 +2721,17 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
                         "getsockopt buflen out of range");
         return NULL;
     }
-    buf = PyMem_Malloc(buflen);
+
+    _PyBytesWriter_Init(&writer);
+    buf = _PyBytesWriter_Alloc(&writer, buflen);
     if (buf == NULL)
         return NULL;
     res = getsockopt(s->sock_fd, level, optname, buf, &buflen);
     if (res < 0) {
-        PyMem_Free(buf);
+        _PyBytesWriter_Dealloc(&writer);
         return s->errorhandler();
     }
-    ret = PyBytes_FromStringAndSize((char *)buf, buflen);
-    PyMem_Free(buf);
-    return ret;
+    return _PyBytesWriter_Finish(&writer, buf + buflen);
 }
 
 PyDoc_STRVAR(getsockopt_doc,
@@ -3131,7 +3131,7 @@ sock_recv(PySocketSockObject *s, PyObject *args)
     Py_ssize_t recvlen, outlen;
     int flags = 0;
     void *buf;
-    PyObject *ret;
+    _PyBytesWriter writer;
 
     if (!PyArg_ParseTuple(args, "n|i:recv", &recvlen, &flags))
         return NULL;
@@ -3143,7 +3143,8 @@ sock_recv(PySocketSockObject *s, PyObject *args)
     }
 
     /* Allocate a new buffer. */
-    buf = PyMem_Malloc(recvlen);
+    _PyBytesWriter_Init(&writer);
+    buf = _PyBytesWriter_Alloc(&writer, recvlen);
     if (buf == NULL)
         return NULL;
 
@@ -3151,12 +3152,10 @@ sock_recv(PySocketSockObject *s, PyObject *args)
     outlen = sock_recv_guts(s, buf, recvlen, flags);
     if (outlen < 0) {
         /* An error occurred, release the buffer and return an error. */
-        PyMem_Free(buf);
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
-    ret = PyBytes_FromStringAndSize((char *)buf, outlen);
-    PyMem_Free(buf);
-    return ret;
+    return _PyBytesWriter_Finish(&writer, buf + outlen);
 }
 
 PyDoc_STRVAR(recv_doc,
@@ -3308,12 +3307,13 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
 static PyObject *
 sock_recvfrom(PySocketSockObject *s, PyObject *args)
 {
-    void *buf;
-    PyObject *bytes;
+    PyObject *bytes = NULL;
     PyObject *addr = NULL;
     PyObject *ret = NULL;
     int flags = 0;
     Py_ssize_t recvlen, outlen;
+    _PyBytesWriter writer;
+    void* buf;
 
     if (!PyArg_ParseTuple(args, "n|i:recvfrom", &recvlen, &flags))
         return NULL;
@@ -3324,16 +3324,18 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
-    buf = PyMem_Malloc(recvlen);
+    _PyBytesWriter_Init(&writer);
+    buf = _PyBytesWriter_Alloc(&writer, recvlen);
     if (buf == NULL)
         return NULL;
 
     outlen = sock_recvfrom_guts(s, buf, recvlen, flags, &addr);
     if (outlen < 0) {
+        _PyBytesWriter_Dealloc(&writer);
         goto finally;
     }
 
-    bytes = PyBytes_FromStringAndSize(buf, outlen);
+    bytes = _PyBytesWriter_Finish(&writer, buf + outlen);
     if (bytes == NULL) {
         goto finally;
     }
@@ -3341,7 +3343,7 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
     ret = PyTuple_Pack(2, bytes, addr);
 
 finally:
-    PyMem_Free(buf);
+    Py_XDECREF(bytes);
     Py_XDECREF(addr);
     return ret;
 }
