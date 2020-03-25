@@ -7,6 +7,7 @@
 #include "modules.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "unicode-db.h"
 
 extern "C" unsigned char _PyLong_DigitValue[];  // from Include/longobject.h
 extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
@@ -542,10 +543,28 @@ static int32_t decodeUnicodeEscaped(const Bytes& bytes, word* i,
       return escaped;
     }
 
-    case 'N':
-      // TODO(T39917408): Use the PyCapsule API to import UnicodeData
-      UNIMPLEMENTED("Requires PyCapsule_Import");
-      break;
+    // \N{name}
+    case 'N': {
+      *error_message = "malformed \\N character escape";
+      word length = bytes.length();
+      if (*i >= length || bytes.byteAt(*i) != '{') {
+        return -1;
+      }
+      word start = ++(*i);
+      while (*i < length && bytes.byteAt(*i) != '}') {
+        *i += 1;
+      }
+      word size = *i - start;
+      if (size == 0 || *i == length) {
+        return -1;
+      }
+      *i += 1;
+      *error_message = "unknown Unicode character name";
+
+      unique_c_ptr<byte> buffer(reinterpret_cast<byte*>(std::malloc(size)));
+      bytes.copyToStartAt(buffer.get(), size, start);
+      return codePointFromName(buffer.get(), size);
+    }
 
     default: {
       *invalid_escape_index = *i - 1;

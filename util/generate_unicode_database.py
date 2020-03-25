@@ -445,7 +445,7 @@ class UnicodeData:
         numeric_changes = [0] * NUM_CODE_POINTS
         # normalization_changes is a list of key-value pairs
         normalization_changes = []
-        for char in range(NUM_CODE_POINTS):
+        for char in CODE_POINTS:
             if self.table[char] is None:
                 # Characters unassigned in the new version ought to
                 # be unassigned in the old one
@@ -540,7 +540,7 @@ class UnicodeData:
 
 
 ########################################################################################
-# Helper functions
+# Helper functions & classes
 
 
 def getsize(data):
@@ -619,8 +619,50 @@ def splitbins(t, trace=False):  # noqa: C901
     return best
 
 
+@dataclass
+class WordData:
+    word: str
+    index: int
+    frequency: int
+
+
+class Words:
+    def __init__(self, names, trace=False):
+        self.indices = {}
+        self.frequencies = {}
+
+        count = num_chars = num_words = 0
+        for char in CODE_POINTS:
+            name = names[char]
+            if name is None:
+                continue
+
+            words = name.split()
+            num_chars += len(name)
+            num_words += len(words)
+            for word in words:
+                if word in self.indices:
+                    self.frequencies[word] += 1
+                else:
+                    self.frequencies[word] = 1
+                    self.indices[word] = count
+                    count += 1
+
+        if trace:
+            print(f"{num_words} words in text; {num_chars} code points")
+
+    def tolist(self):
+        return sorted(
+            (
+                WordData(word, index, self.frequencies[word])
+                for word, index in self.indices.items()
+            ),
+            key=lambda data: (-data.frequency, data.word),
+        )
+
+
 ########################################################################################
-# Dataclasses for database tables
+# Classes for database tables
 
 
 @dataclass(frozen=True)
@@ -637,7 +679,29 @@ class TypeRecord:
 {self.decimal}, {self.digit}, {self.flags}}}"
 
 
-class Array:
+class CodePointArray:
+    """Arrays of code points, printed as hex.
+    """
+
+    def __init__(self, name, data):
+        self.name = name
+        self.data = data
+
+    def dump(self, file, trace=False):
+        if trace:
+            sys.stderr.write(f"{self.name}: {4 * len(self.data)} bytes\n")
+
+        file.write(f"\nstatic const int32_t {self.name}[] = {{")
+        columns = (LINE_WIDTH - 3) // 12
+        for i in range(0, len(self.data), columns):
+            line = "\n   "
+            for item in self.data[i : i + columns]:
+                line = f"{line} {item:#010x},"
+            file.write(line)
+        file.write("\n};\n")
+
+
+class StructArray:
     """Store an array for writing to a generated C/C++ file.
     """
 
@@ -689,10 +753,111 @@ class UIntArray:
 
 
 ########################################################################################
+# Reimplementation of dictionaries using static structures and a custom string hash
+
+
+# Number chosen to minimize the number of collisions. CPython uses 47.
+MAGIC = 43
+
+
+def myhash(s):
+    h = 0
+    for c in map(ord, s.upper()):
+        h = (h * MAGIC) + c
+        if h > 0x00FFFFFF:
+            h = (h & 0x00FFFFFF) ^ ((h & 0xFF000000) >> 24)
+    return h
+
+
+SIZES = [
+    (4, 3),
+    (8, 3),
+    (16, 3),
+    (32, 5),
+    (64, 3),
+    (128, 3),
+    (256, 29),
+    (512, 17),
+    (1024, 9),
+    (2048, 5),
+    (4096, 83),
+    (8192, 27),
+    (16384, 43),
+    (32768, 3),
+    (65536, 45),
+    (131072, 9),
+    (262144, 39),
+    (524288, 39),
+    (1048576, 9),
+    (2097152, 5),
+    (4194304, 3),
+    (8388608, 33),
+    (16777216, 27),
+]
+
+
+class Hash:
+    def __init__(self, data):
+        """Turn a (key, value) list into a static hash table structure.
+        """
+
+        # determine table size
+        for size, poly in SIZES:
+            if size > len(data):
+                self.poly = poly + size
+                self.size = size
+                break
+        else:
+            raise AssertionError("ran out of polynomials")
+
+        print(self.size, "slots in hash table")
+        table = [None] * self.size
+        mask = self.size - 1
+
+        # initialize hash table
+        collisions = 0
+        for key, value in data:
+            h = myhash(key)
+            i = (~h) & mask
+            if table[i] is None:
+                table[i] = value
+                continue
+            incr = (h ^ (h >> 3)) & mask
+            if not incr:
+                incr = mask
+            while True:
+                collisions += 1
+                i = (i + incr) & mask
+                if table[i] is None:
+                    table[i] = value
+                    break
+                incr = incr << 1
+                if incr > mask:
+                    incr = incr ^ self.poly
+        print(collisions, "collisions")
+
+        for i in range(len(table)):
+            if table[i] is None:
+                table[i] = 0
+
+        self.data = CodePointArray("kCodeHash", table)
+
+    def dump(self, file, trace):
+        self.data.dump(file, trace)
+        file.write(
+            f"""
+static const int32_t kCodeMagic = {MAGIC};
+static const int32_t kCodeMask = {self.size - 1};
+static const int32_t kCodePoly = {self.poly};
+"""
+        )
+
+
+########################################################################################
 # Unicode database writers
 
 
-def write_header(header):
+def write_header(unicode, header):
     """Writes type declarations to the database header file.
     """
 
@@ -704,7 +869,18 @@ generated by {os.path.basename(SCRIPT)}
 
 #include <cstdint>
 
+#include "globals.h"
+
 namespace py {{
+
+static const int kMaxNameLength = 256;
+
+static const int32_t kAliasesStart = {NAME_ALIASES_START:#x};
+static const int32_t kAliasesEnd = {NAME_ALIASES_START + len(unicode.aliases):#x};
+static const int32_t kNamedSequencesStart = {NAMED_SEQUENCES_START:#x};
+static const int32_t kNamedSequencesEnd = {
+    NAMED_SEQUENCES_START + len(unicode.named_sequences)
+:#x};
 
 enum : int32_t {{
   kAlphaMask = {ALPHA_MASK:#x},
@@ -735,6 +911,25 @@ struct UnicodeTypeRecord {{
   const int16_t flags;
 }};
 
+// Get a code point from its Unicode name.
+// Returns the code point if the lookup succeeds, -1 if it fails.
+int32_t codePointFromName(const byte* name, word size);
+int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
+
+inline bool isAlias(int32_t code_point) {{
+  return (kAliasesStart <= code_point) && (code_point < kAliasesEnd);
+}}
+
+// Checks if the code point is in the PUA range used for named sequences.
+inline bool isNamedSequence(int32_t code_point) {{
+  return (kNamedSequencesStart <= code_point) &&
+         (code_point < kNamedSequencesEnd);
+}}
+
+// Write the Unicode name for the given code point into the buffer.
+// Returns true if the name was written successfully, false otherwise.
+bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
+
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
 }}  // namespace py
@@ -752,13 +947,128 @@ def write_db_prelude(db):
 generated by {os.path.basename(SCRIPT)}
 #include "{HEADER}"
 
-#include <cstdint>
+#include <cinttypes>
+#include <cstdio>
+#include <cstring>
 
+#include "asserts.h"
 #include "globals.h"
+#include "unicode.h"
 
 namespace py {{
 """
     )
+
+
+def write_name_data(unicode, db, trace):  # noqa: C901
+    # Collect names
+    names = [None] * NUM_CODE_POINTS
+    for char in CODE_POINTS:
+        record = unicode.table[char]
+        if record:
+            name = record[1].strip()
+            if name and name[0] != "<":
+                names[char] = f"{name}\0"
+
+    if trace:
+        print(len([n for n in names if n is not None]), "distinct names")
+
+    # Collect unique words from names. Note that we differ between
+    # words ending a sentence, which include the trailing null byte,
+    # and words inside a sentence, which do not.
+    words = Words(names, trace)
+    wordlist = words.tolist()
+
+    # Figure out how many phrasebook escapes we need
+    short = (65536 - len(wordlist)) // 256
+    assert short > 0
+
+    if trace:
+        print(short, "short indexes in lexicon")
+        n = sum(wordlist[i].frequency for i in range(short))
+        print(n, "short indexes in phrasebook")
+
+    # Pick the most commonly used words, and sort the rest by falling
+    # length to maximize overlap.
+    tail = wordlist[short:]
+    tail.sort(key=lambda data: len(data.word), reverse=True)
+    wordlist[short:] = tail
+
+    # Build a lexicon string from words
+    current_offset = 0
+    lexicon_offset = [0]
+    lexicon_string = ""
+    word_offsets = {}
+    for data in wordlist:
+        # Encoding: bit 7 indicates last character in word
+        # chr(128) indicates the last character in an entire string)
+        last = ord(data.word[-1])
+        encoded = f"{data.word[:-1]}{chr(last + 128)}"
+
+        # reuse string tails, when possible
+        offset = lexicon_string.find(encoded)
+        if offset < 0:
+            offset = current_offset
+            lexicon_string = lexicon_string + encoded
+            current_offset += len(encoded)
+
+        word_offsets[data.word] = len(lexicon_offset)
+        lexicon_offset.append(offset)
+
+    lexicon = [ord(ch) for ch in lexicon_string]
+
+    # generate phrasebook from names and lexicon
+    phrasebook = [0]
+    phrasebook_offset = [0] * NUM_CODE_POINTS
+    for char in CODE_POINTS:
+        name = names[char]
+        if name is not None:
+            words = name.split()
+            phrasebook_offset[char] = len(phrasebook)
+            for word in words:
+                offset = word_offsets[word]
+                if offset < short:
+                    phrasebook.append(offset)
+                else:
+                    # store as two bytes
+                    phrasebook.append((offset >> 8) + short)
+                    phrasebook.append(offset & 255)
+
+    assert getsize(phrasebook) == 1
+
+    db.write(f"\n// lexicon")
+    UIntArray("kLexicon", lexicon).dump(db, trace)
+    UIntArray("kLexiconOffset", lexicon_offset).dump(db, trace)
+
+    # split decomposition index table
+    offset1, offset2, shift = splitbins(phrasebook_offset, trace)
+
+    db.write(
+        f"""
+// code => name phrasebook
+static const int kPhrasebookShift = {shift};
+static const int kPhrasebookShort = {short};
+static const int kPhrasebookMask = (1 << kPhrasebookShift) - 1;
+"""
+    )
+    UIntArray("kPhrasebook", phrasebook).dump(db, trace)
+    UIntArray("kPhrasebookOffset1", offset1).dump(db, trace)
+    UIntArray("kPhrasebookOffset2", offset2).dump(db, trace)
+
+    # Extract names for name hash table
+    hash_data = []
+    for char in CODE_POINTS:
+        record = unicode.table[char]
+        if record:
+            name = record[1].strip()
+            if name and name[0] != "<":
+                hash_data.append((name, char))
+
+    db.write("\n// name => code dictionary")
+    Hash(hash_data).dump(db, trace)
+
+    aliases = [codepoint for _, codepoint in unicode.aliases]
+    UIntArray("kNameAliases", aliases).dump(db, trace)
 
 
 def write_type_data(unicode, db, trace):  # noqa: C901
@@ -882,7 +1192,7 @@ def write_type_data(unicode, db, trace):  # noqa: C901
     print(len(linebreaks), "linebreak code points")
     print(len(extra_casing), "extended case array")
 
-    Array(
+    StructArray(
         "UnicodeTypeRecord",
         "kTypeRecords",
         table,
@@ -901,8 +1211,307 @@ static const int32_t kTypeIndexMask = (int32_t{{1}} << kTypeIndexShift) - 1;
     UIntArray("kTypeIndex1", index1).dump(db, trace)
     UIntArray("kTypeIndex2", index2).dump(db, trace)
 
+
+def write_db_coda(db):
     db.write(
         """
+struct HangulJamo {
+  const int length;
+  const byte name[3];
+};
+
+static const HangulJamo kHangulLeading[] = {
+    {1, {'G'}},      {2, {'G', 'G'}}, {1, {'N'}},      {1, {'D'}},
+    {2, {'D', 'D'}}, {1, {'R'}},      {1, {'M'}},      {1, {'B'}},
+    {2, {'B', 'B'}}, {1, {'S'}},      {2, {'S', 'S'}}, {0},
+    {1, {'J'}},      {2, {'J', 'J'}}, {1, {'C'}},      {1, {'K'}},
+    {1, {'T'}},      {1, {'P'}},      {1, {'H'}},
+};
+
+static const HangulJamo kHangulVowels[] = {
+    {1, {'A'}},           {2, {'A', 'E'}},      {2, {'Y', 'A'}},
+    {3, {'Y', 'A', 'E'}}, {2, {'E', 'O'}},      {1, {'E'}},
+    {3, {'Y', 'E', 'O'}}, {2, {'Y', 'E'}},      {1, {'O'}},
+    {2, {'W', 'A'}},      {3, {'W', 'A', 'E'}}, {2, {'O', 'E'}},
+    {2, {'Y', 'O'}},      {1, {'U'}},           {3, {'W', 'E', 'O'}},
+    {2, {'W', 'E'}},      {2, {'W', 'I'}},      {2, {'Y', 'U'}},
+    {2, {'E', 'U'}},      {2, {'Y', 'I'}},      {1, {'I'}},
+};
+
+static const HangulJamo kHangulTrailing[] = {
+    {0},
+    {1, {'G'}},
+    {2, {'G', 'G'}},
+    {2, {'G', 'S'}},
+    {1, {'N'}},
+    {2, {'N', 'J'}},
+    {2, {'N', 'H'}},
+    {1, {'D'}},
+    {1, {'L'}},
+    {2, {'L', 'G'}},
+    {2, {'L', 'M'}},
+    {2, {'L', 'B'}},
+    {2, {'L', 'S'}},
+    {2, {'L', 'T'}},
+    {2, {'L', 'P'}},
+    {2, {'L', 'H'}},
+    {1, {'M'}},
+    {1, {'B'}},
+    {2, {'B', 'S'}},
+    {1, {'S'}},
+    {2, {'S', 'S'}},
+    {2, {'N', 'G'}},
+    {1, {'J'}},
+    {1, {'C'}},
+    {1, {'K'}},
+    {1, {'T'}},
+    {1, {'P'}},
+    {1, {'H'}},
+};
+
+static const word kLeadingCount = ARRAYSIZE(kHangulLeading);
+static const word kVowelCount = ARRAYSIZE(kHangulVowels);
+static const word kTrailingCount = ARRAYSIZE(kHangulTrailing);
+static const word kCodaCount = kVowelCount * kTrailingCount;
+static const word kSyllableCount = kLeadingCount * kCodaCount;
+
+static const int32_t kHangulStart = 0xac00;
+
+static int32_t findHangulJamo(const byte* str, word size,
+                              const HangulJamo array[], word count) {
+  word result = -1;
+  int length = -1;
+  for (word i = 0; i < count; i++) {
+    HangulJamo jamo = array[i];
+    if (length < jamo.length && jamo.length <= size &&
+        (std::memcmp(str, jamo.name, jamo.length) == 0)) {
+      length = jamo.length;
+      result = i;
+    }
+  }
+  return result;
+}
+
+static int32_t findHangulSyllable(const byte* name, word size) {
+  word pos = 16;
+  word leading =
+      findHangulJamo(name + pos, size - pos, kHangulLeading, kLeadingCount);
+  if (leading == -1) {
+    return -1;
+  }
+
+  pos += kHangulLeading[leading].length;
+  word vowel =
+      findHangulJamo(name + pos, size - pos, kHangulVowels, kVowelCount);
+  if (vowel == -1) {
+    return -1;
+  }
+
+  pos += kHangulVowels[vowel].length;
+  word trailing =
+      findHangulJamo(name + pos, size - pos, kHangulTrailing, kTrailingCount);
+  if (trailing == -1 || pos + kHangulTrailing[trailing].length != size) {
+    return -1;
+  }
+
+  return kHangulStart + (leading * kVowelCount + vowel) * kTrailingCount +
+         trailing;
+}
+
+static bool isUnifiedIdeograph(int32_t code_point) {
+  return """
+    )
+
+    for i, cjk in enumerate(CJK_RANGES):
+        if i > 0:
+            db.write(" ||\n         ")
+        db.write(f"({cjk.start:#010x} <= code_point && code_point <= {cjk.end:#010x})")
+
+    db.write(
+        """;
+}
+
+static uint32_t myHash(const byte* name, word size) {
+  uint32_t hash = 0;
+  for (word i = 0; i < size; i++) {
+    hash = (hash * kCodeMagic) + ASCII::toUpper(name[i]);
+    if (hash > 0x00ffffff) {
+      hash = (hash & 0x00ffffff) ^ ((hash & 0xff000000) >> 24);
+    }
+  }
+  return hash;
+}
+
+static bool nameMatchesCodePoint(int32_t code_point, const byte* name,
+                                 word size) {
+  byte buffer[kMaxNameLength + 1];
+  if (!nameFromCodePoint(code_point, buffer, kMaxNameLength)) {
+    return false;
+  }
+  for (word i = 0; i < size; i++) {
+    if (ASCII::toUpper(name[i]) != buffer[i]) {
+      return false;
+    }
+  }
+  return buffer[size] == '\\0';
+}
+
+static int32_t getCodePoint(const byte* name, word size,
+                            int32_t (*check)(int32_t)) {
+  if (size >= 16 && std::memcmp(name, "HANGUL SYLLABLE ", 16) == 0) {
+    return findHangulSyllable(name, size);
+  }
+
+  if (size >= 22 && std::memcmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
+    // Four or five uppercase hexdigits must follow
+    name += 22;
+    size -= 22;
+    if (size != 4 && size != 5) {
+      return -1;
+    }
+
+    int32_t result = 0;
+    while (size--) {
+      result *= 16;
+      if ('0' <= *name && *name <= '9') {
+        result += *name - '0';
+      } else if ('A' <= *name && *name <= 'F') {
+        result += *name - 'A' + 10;
+      } else {
+        return -1;
+      }
+      name++;
+    }
+    if (!isUnifiedIdeograph(result)) {
+      return -1;
+    }
+    return result;
+  }
+
+  uint32_t hash = myHash(name, size);
+  uint32_t step = (hash ^ (hash >> 3)) & kCodeMask;
+  if (step == 0) {
+    step = kCodeMask;
+  }
+
+  for (uint32_t idx = (~hash) & kCodeMask;; idx = (idx + step) & kCodeMask) {
+    int32_t result = kCodeHash[idx];
+    if (result == 0) {
+      return -1;
+    }
+    if (nameMatchesCodePoint(result, name, size)) {
+      return check(result);
+    }
+    step = step << 1;
+    if (step > kCodeMask) {
+      step = step ^ kCodePoly;
+    }
+  }
+}
+
+static int32_t checkAliasAndNamedSequence(int32_t code_point) {
+  if (isNamedSequence(code_point)) {
+    return -1;
+  }
+  if (isAlias(code_point)) {
+    return kNameAliases[code_point - kAliasesStart];
+  }
+  return code_point;
+}
+
+int32_t codePointFromName(const byte* name, word size) {
+  return getCodePoint(name, size, checkAliasAndNamedSequence);
+}
+
+static int32_t checkAlias(int32_t code_point) {
+  if (isAlias(code_point)) {
+    return kNameAliases[code_point - kAliasesStart];
+  }
+  return code_point;
+}
+
+int32_t codePointFromNameOrNamedSequence(const byte* name, word size) {
+  return getCodePoint(name, size, checkAlias);
+}
+
+bool nameFromCodePoint(int32_t code_point, byte* buffer, word size) {
+  DCHECK_BOUND(code_point, kMaxUnicode);
+
+  if (kHangulStart <= code_point &&
+      code_point < kHangulStart + kSyllableCount) {
+    if (size < 27) {
+      return false;  // worst case: HANGUL SYLLABLE <10 chars>
+    }
+
+    word offset = code_point - kHangulStart;
+    HangulJamo leading = kHangulLeading[offset / kCodaCount];
+    HangulJamo vowel = kHangulVowels[(offset % kCodaCount) / kTrailingCount];
+    HangulJamo trailing = kHangulTrailing[offset % kTrailingCount];
+
+    std::memcpy(buffer, "HANGUL SYLLABLE ", 16);
+    buffer += 16;
+    std::memcpy(buffer, leading.name, leading.length);
+    buffer += leading.length;
+    std::memcpy(buffer, vowel.name, vowel.length);
+    buffer += vowel.length;
+    std::memcpy(buffer, trailing.name, trailing.length);
+    buffer[trailing.length] = '\\0';
+    return true;
+  }
+
+  if (isUnifiedIdeograph(code_point)) {
+    if (size < 28) {
+      return false;  // worst case: CJK UNIFIED IDEOGRAPH-*****
+    }
+    std::snprintf(reinterpret_cast<char*>(buffer), size,
+                  "CJK UNIFIED IDEOGRAPH-%" PRIX32, code_point);
+    return true;
+  }
+
+  uint32_t offset = kPhrasebookOffset1[code_point >> kPhrasebookShift];
+  offset = kPhrasebookOffset2[(offset << kPhrasebookShift) +
+                              (code_point & kPhrasebookMask)];
+
+  if (offset == 0) {
+    return false;
+  }
+
+  for (word i = 0;;) {
+    if (i > 0) {
+      if (i >= size) {
+        return false;  // buffer overflow
+      }
+      buffer[i++] = ' ';
+    }
+
+    // get word index
+    word word_idx = kPhrasebook[offset] - kPhrasebookShort;
+    if (word_idx >= 0) {
+      word_idx = (word_idx << 8) + kPhrasebook[offset + 1];
+      offset += 2;
+    } else {
+      word_idx = kPhrasebook[offset++];
+    }
+
+    // copy word string from lexicon
+    const byte* word_ptr = kLexicon + kLexiconOffset[word_idx];
+    while (*word_ptr < 128) {
+      if (i >= size) {
+        return false;  // buffer overflow
+      }
+      buffer[i++] = *word_ptr++;
+    }
+
+    if (i >= size) {
+      return false;  // buffer overflow
+    }
+    buffer[i++] = *word_ptr & 0x7f;
+    if (*word_ptr == 0x80) {
+      return true;
+    }
+  }
+}
+
 const UnicodeTypeRecord* typeRecord(int32_t code_point) {
   if (code_point > kMaxUnicode) {
     return kTypeRecords;
@@ -913,13 +1522,7 @@ const UnicodeTypeRecord* typeRecord(int32_t code_point) {
   index = kTypeIndex2[index + (code_point & kTypeIndexMask)];
   return kTypeRecords + index;
 }
-"""
-    )
 
-
-def write_db_coda(db):
-    db.write(
-        """
 }  // namespace py
 """
     )
@@ -938,10 +1541,11 @@ def write_db(trace=False):
         unicode.merge(old_unicode)
 
     with open(HEADER_PATH, "w") as header:
-        write_header(header)
+        write_header(unicode, header)
 
     with open(DB_PATH, "w") as db:
         write_db_prelude(db)
+        write_name_data(unicode, db, trace)
         write_type_data(unicode, db, trace)
         write_db_coda(db)
 

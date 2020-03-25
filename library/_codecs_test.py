@@ -349,6 +349,65 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(decoded, "hello\x95")
         self.assertEqual(consumed, 6)
 
+    def test_decode_unicode_escape_with_valid_hangul_returns_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(
+            b"\\N{HANGUL SYLLABLE BBYAENG}"
+        )
+        self.assertEqual(decoded, "\uBEC9")
+        self.assertEqual(consumed, 27)
+
+    def test_decode_unicode_escape_with_lowercase_hangul_raises_exception(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{HANGUL SYLLABLE ddalg}")
+
+    def test_decode_unicode_escape_with_invalid_leading_raises_exception(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{HANGUL SYLLABLE BLANJ}")
+
+    def test_decode_unicode_escape_with_invalid_vowel_raises_exception(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{HANGUL SYLLABLE CAOGS}")
+
+    def test_decode_unicode_escape_with_invalid_trailing_raises_exception(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{HANGUL SYLLABLE PYOLL}")
+
+    def test_decode_unicode_escape_with_valid_cjk_ideograph_returns_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(
+            b"\\N{CJK UNIFIED IDEOGRAPH-4DB0}"
+        )
+        self.assertEqual(decoded, "\u4DB0")
+        self.assertEqual(consumed, 30)
+
+        decoded, consumed = _codecs.unicode_escape_decode(
+            b"\\N{CJK UNIFIED IDEOGRAPH-2B75A}"
+        )
+        self.assertEqual(decoded, "\U0002B75A")
+        self.assertEqual(consumed, 31)
+
+    def test_decode_unicode_escape_with_lowercase_cjk_ideograph_returns_string(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{CJK UNIFIED IDEOGRAPH-4db0}")
+
+    def test_decode_unicode_escape_with_invalid_cjk_ideograph_returns_string(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{CJK UNIFIED IDEOGRAPH-4DB6}")
+
+    def test_decode_unicode_escape_with_valid_name_escape_returns_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(
+            b"\\N{LATIN SMALL LETTER A WITH MACRON}"
+        )
+        self.assertEqual(decoded, "\u0101")
+        self.assertEqual(consumed, 36)
+
+    def test_decode_unicode_escape_with_invalid_word_raises_unicode_decode_error(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{INVALID}")
+
+    def test_decode_unicode_escape_with_invalid_name_raises_unicode_decode_error(self):
+        with self.assertRaises(UnicodeDecodeError):
+            _codecs.unicode_escape_decode(b"\\N{LATIN S LETTER CAPITAL}")
+
     def test_decode_unicode_escape_with_custom_error_handler_returns_string(self):
         _codecs.register_error("test", lambda x: ("-testing-", x.end))
         decoded, consumed = _codecs.unicode_escape_decode(b"ab\\U90gc", "test")

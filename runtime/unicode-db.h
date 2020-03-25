@@ -3,7 +3,16 @@
 
 #include <cstdint>
 
+#include "globals.h"
+
 namespace py {
+
+static const int kMaxNameLength = 256;
+
+static const int32_t kAliasesStart = 0xf0000;
+static const int32_t kAliasesEnd = 0xf01d4;
+static const int32_t kNamedSequencesStart = 0xf0200;
+static const int32_t kNamedSequencesEnd = 0xf03ba;
 
 enum : int32_t {
   kAlphaMask = 0x1,
@@ -33,6 +42,25 @@ struct UnicodeTypeRecord {
   const int8_t digit;
   const int16_t flags;
 };
+
+// Get a code point from its Unicode name.
+// Returns the code point if the lookup succeeds, -1 if it fails.
+int32_t codePointFromName(const byte* name, word size);
+int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
+
+inline bool isAlias(int32_t code_point) {
+  return (kAliasesStart <= code_point) && (code_point < kAliasesEnd);
+}
+
+// Checks if the code point is in the PUA range used for named sequences.
+inline bool isNamedSequence(int32_t code_point) {
+  return (kNamedSequencesStart <= code_point) &&
+         (code_point < kNamedSequencesEnd);
+}
+
+// Write the Unicode name for the given code point into the buffer.
+// Returns true if the name was written successfully, false otherwise.
+bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
 
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
