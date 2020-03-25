@@ -29,6 +29,11 @@ TypeError: '_type_init' requires a 'str' object but got 'int'
 - Object attributes must only have `str` names that do not override `__eq__` or
   `__hash__`. Identities of attribute names may not preserved.
 
+- `str.__add__` with a non-str other returns `NotImplemented` in PyRo and PyPy,
+  but raises a `TypeError` in CPython. This is because PyRo and PyPy do not
+  share CPython's notions of different types of slots (eg sequence vs number)
+  and that would make it very tricky to support this type of behavior.
+
 Interpreter
 -----------
 

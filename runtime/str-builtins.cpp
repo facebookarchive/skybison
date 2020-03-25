@@ -442,7 +442,7 @@ RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseRequiresType(other_obj, ID(str));
+    return NotImplementedType::object();
   }
   Str self(&scope, strUnderlying(*self_obj));
   Str other(&scope, strUnderlying(*other_obj));

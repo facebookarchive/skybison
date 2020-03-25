@@ -10331,6 +10331,22 @@ class StaticMethodTests(unittest.TestCase):
 
 
 class StrTests(unittest.TestCase):
+    def test_binary_add_with_non_str_other_falls_back_on_other_dunder_radd(self):
+        class C:
+            def __radd__(self, other):
+                return (self, other)
+
+        instance = C()
+        self.assertEqual("a" + instance, (instance, "a"))
+
+    def test_binary_add_with_str_subclass_other_falls_back_on_other_dunder_radd(self):
+        class C(str):
+            def __radd__(self, other):
+                return (self, other)
+
+        instance = C("foo")
+        self.assertEqual("a" + instance, (instance, "a"))
+
     def test_dunder_getitem_with_int_returns_code_point(self):
         s = "a\u05D0b\u05D1c\u05D2"
         self.assertEqual(s[0], "a")
