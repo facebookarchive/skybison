@@ -3547,10 +3547,10 @@ class DictItemsTests(unittest.TestCase):
             or result == "dict_items([('foo', 'bar'), ('hello', 'world')])"
         )
 
-    def test_dunder_repr_with_recursive_prints_elipsis(self):
+    def test_dunder_repr_with_recursive_prints_ellipsis(self):
         x = {}
         x[1] = x.items()
-        self.assertEquals(repr(x.items()), "dict_items([(1, dict_items([(1, ...)]))])")
+        self.assertEqual(repr(x.items()), "dict_items([(1, dict_items([(1, ...)]))])")
 
     def test_dunder_repr_calls_key_dunder_repr(self):
         class C:
@@ -3593,7 +3593,7 @@ class DictKeysTests(unittest.TestCase):
             or result == "dict_keys(['foo', 'hello'])"
         )
 
-    def test_dunder_repr_with_recursive_prints_elipsis(self):
+    def test_dunder_repr_with_recursive_prints_ellipsis(self):
         x = {}
         x[1] = x.values()
         self.assertEquals(repr(x.values()), "dict_values([dict_values([...])])")
@@ -7996,7 +7996,7 @@ def make_placeholder():
 
         self.assertEqual(module_proxy.__repr__(), "{'__name__': 'my_module'}")
 
-    def test_dunder_repr_with_recursion_returns_string_with_elipsis(self):
+    def test_dunder_repr_with_recursion_returns_string_with_ellipsis(self):
         from types import ModuleType
 
         module_proxy = ModuleType("my_module").__dict__
