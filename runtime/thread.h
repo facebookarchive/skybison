@@ -74,9 +74,7 @@ class Thread {
 
   Frame* currentFrame() { return current_frame_; }
 
-  bool isHiddenFrame(Frame* frame);
-
-  Frame* frameAtDepth(word depth);
+  RawObject heapFrameAtDepth(word depth);
 
   using InterpreterFunc = RawObject (*)(Thread*);
 

@@ -88,60 +88,75 @@ namespace {
 
 class UserVisibleFrameVisitor : public FrameVisitor {
  public:
-  UserVisibleFrameVisitor(word depth, word builtins_module_id)
-      : depth_(depth), builtins_module_id_(builtins_module_id) {}
+  UserVisibleFrameVisitor(Thread* thread, word depth)
+      : thread_(thread),
+        scope_(thread),
+        result_(&scope_, NoneType::object()),
+        heap_frame_(&scope_, NoneType::object()),
+        next_heap_frame_(&scope_, NoneType::object()),
+        depth_(depth) {}
 
   bool visit(Frame* frame) {
-    if (frame != nullptr && !frame->isSentinel()) {
-      RawFunction function = Function::cast(frame->function());
-      if (function.moduleObject().isModule() &&
-          Module::cast(function.moduleObject()).id() == builtins_module_id_) {
-        return true;
-      }
+    if (isHiddenFrame(frame)) {
+      return true;
     }
-    if (call_ == depth_) {
-      if (!frame->isSentinel()) {
-        target_ = frame;
-      }
-      return false;
+    if (call_ < depth_) {
+      call_++;
+      return true;
     }
-    call_++;
+    // Once visitor reaches the target depth, start creating a linked list of
+    // HeapFrames objects.
+    // TOOD(T63960421): Cache an already created object in the stack frame.
+    heap_frame_ = thread_->runtime()->newHeapFrame(thread_, frame);
+    if (result_.isNoneType()) {
+      // The head of the linked list is returned as the result.
+      result_ = *heap_frame_;
+    } else {
+      HeapFrame::cast(*next_heap_frame_).setBack(*heap_frame_);
+    }
+    next_heap_frame_ = *heap_frame_;
     return true;
   }
 
-  Frame* target() { return target_; }
+  RawObject result() { return *result_; }
 
  private:
+  bool isHiddenFrame(Frame* frame) {
+    if (frame == nullptr || frame->isSentinel()) {
+      return true;
+    }
+    RawFunction function = Function::cast(frame->function());
+    word builtins_module_id = thread_->runtime()->builtinsModuleId();
+    // PyCFunction do not generate a frame in cpython and therefore do
+    // not show up in sys._getframe(). Our builtin functions do create a
+    // frame so we hide frames of functions in builtins from the user.
+    // TODO(T64005113): This logic should be applied to each function.
+    if (function.moduleObject().isModule() &&
+        Module::cast(function.moduleObject()).id() == builtins_module_id) {
+      return true;
+    }
+    return false;
+  }
+
+  Thread* thread_;
+  HandleScope scope_;
+  Object result_;
+  Object heap_frame_;
+  Object next_heap_frame_;
+
   word call_ = 0;
   word depth_;
-  // TODO(T64005113): Remove this once we mark individual functions.
-  word builtins_module_id_;
-  Frame* target_ = nullptr;
+
+  DISALLOW_HEAP_ALLOCATION();
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UserVisibleFrameVisitor);
 };
 
 }  // namespace
 
-Frame* Thread::frameAtDepth(word depth) {
-  UserVisibleFrameVisitor visitor(depth + 1, runtime_->builtinsModuleId());
+RawObject Thread::heapFrameAtDepth(word depth) {
+  UserVisibleFrameVisitor visitor(this, depth);
   visitFrames(&visitor);
-  return visitor.target();
-}
-
-bool Thread::isHiddenFrame(Frame* frame) {
-  if (frame == nullptr || frame->isSentinel()) {
-    return true;
-  }
-  RawFunction function = Function::cast(frame->function());
-  word builtins_module_id = runtime_->builtinsModuleId();
-  // PyCFunction do not generate a frame in cpython and therefore do
-  // not show up in sys._getframe(). Our builtin functions do create a
-  // frame so we hide frames of functions in builtins from the user.
-  // TODO(T64005113): This logic should be applied to each function.
-  if (function.moduleObject().isModule() &&
-      Module::cast(function.moduleObject()).id() == builtins_module_id) {
-    return true;
-  }
-  return false;
+  return visitor.result();
 }
 
 void Thread::setCurrentThread(Thread* thread) {

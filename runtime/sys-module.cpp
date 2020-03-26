@@ -223,26 +223,13 @@ RawObject FUNC(sys, _getframe)(Thread* thread, Frame* frame, word nargs) {
   if (depth < 0) {
     depth = 0;
   }
-
-  frame = thread->frameAtDepth(depth);
-  if (frame == nullptr) {
+  // Increment the requested depth to skip the frame for sys._getframe itself.
+  // TODO(T64005113): This should be deleted.
+  depth++;
+  Object result(&scope, thread->heapFrameAtDepth(depth));
+  if (result.isNoneType()) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
-  }
-
-  Object result(&scope, NoneType::object());
-  Object next_heap_frame(&scope, NoneType::object());
-  for (; !frame->isSentinel(); frame = frame->previousFrame()) {
-    if (thread->isHiddenFrame(frame)) {
-      continue;
-    }
-    HeapFrame heap_frame(&scope, runtime->newHeapFrame(thread, frame));
-    if (result.isNoneType()) {
-      result = *heap_frame;
-    } else {
-      HeapFrame::cast(*next_heap_frame).setBack(*heap_frame);
-    }
-    next_heap_frame = *heap_frame;
   }
   return *result;
 }
