@@ -2973,6 +2973,12 @@ def _dictview_sub(self, other):
     return result
 
 
+def _dictview_xor(self, other):
+    result = set(self)
+    result.symmetric_difference_update(other)
+    return result
+
+
 class dict_itemiterator(bootstrap=True):
     def __iter__(self):
         _builtin()
@@ -3001,6 +3007,8 @@ class dict_items(bootstrap=True):
     __or__ = _dictview_or
 
     __sub__ = _dictview_sub
+
+    __xor__ = _dictview_xor
 
 
 class dict_keyiterator(bootstrap=True):
@@ -3031,6 +3039,8 @@ class dict_keys(bootstrap=True):
     __or__ = _dictview_or
 
     __sub__ = _dictview_sub
+
+    __xor__ = _dictview_xor
 
 
 class dict_valueiterator(bootstrap=True):
