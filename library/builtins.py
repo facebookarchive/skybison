@@ -2552,7 +2552,8 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
 
 
 def _complex_str_parts(s):  # noqa: C901
-    # Ripped from PyPy
+    # This function is based on PyPy's _split_complex function in
+    # complexobject.py
     slen = len(s)
     if slen == 0:
         raise ValueError
