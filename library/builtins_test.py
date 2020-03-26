@@ -3568,6 +3568,69 @@ class DictItemsTests(unittest.TestCase):
         self.assertIsInstance(result, set)
         self.assertEqual(result, set())
 
+    def test_dunder_eq_with_non_dict_items_lhs_raises_type_error(self):
+        items = {}.keys()
+        items_dunder_eq = {}.items().__class__.__eq__
+        with self.assertRaises(TypeError) as context:
+            items_dunder_eq(items, set())
+        self.assertIn(
+            "'__eq__' requires a 'dict_items' object but received a 'dict_keys'",
+            str(context.exception),
+        )
+
+    def test_dunder_eq_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.items().__eq__()
+
+    def test_dunder_eq_with_empty_lhs_and_empty_rhs_returns_true(self):
+        self.assertIs({}.items().__eq__(set()), True)
+
+    def test_dunder_eq_with_empty_lhs_and_non_empty_rhs_returns_false(self):
+        self.assertIs({}.items().__eq__(set("foo")), False)
+
+    def test_dunder_eq_with_non_empty_lhs_and_empty_rhs_returns_false(self):
+        self.assertIs({"hello": "world"}.items().__eq__(set()), False)
+
+    def test_dunder_eq_with_non_set_or_dictview_rhs_returns_notimplemented(self):
+        self.assertIs({"hello": "world"}.items().__eq__(()), NotImplemented)
+
+    def test_dunder_eq_with_set_rhs(self):
+        self.assertIs({"hello": "world"}.items().__eq__({("hello", "world")}), True)
+
+    def test_dunder_eq_with_frozenset_rhs(self):
+        self.assertIs(
+            {"hello": "world"}.items().__eq__(frozenset({("hello", "world")})), True
+        )
+
+    def test_dunder_eq_with_dict_items_rhs(self):
+        mapping = {"hello": "world"}
+        self.assertIs(mapping.items().__eq__(mapping.items()), True)
+
+    def test_dunder_eq_with_dict_keys_rhs(self):
+        mapping = {"hello": "world"}
+        other_mapping = {("hello", "world"): "baz"}
+        self.assertIs(mapping.items().__eq__(other_mapping.keys()), True)
+
+    def test_dunder_eq_with_dict_values_rhs_returns_notimplemented(self):
+        mapping = {"hello": "world"}
+        self.assertIs(mapping.items().__eq__(mapping.values()), NotImplemented)
+
+    def test_dunder_eq_with_different_lengths_returns_false(self):
+        mapping = {"hello": "world"}
+        other_mapping = {"hello": "world", "foo": "bar"}
+        self.assertIs(mapping.items().__eq__(other_mapping.items()), False)
+
+    def test_dunder_eq_with_id_equal_but_inequal_element_returns_true(self):
+        class C:
+            def __eq__(self, other):
+                return False
+
+            def __hash__(self):
+                return 1
+
+        instance = C()
+        self.assertIs({instance: "world"}.items().__eq__({(instance, "world")}), True)
+
     def test_dunder_repr_prints_items(self):
         result = repr({"hello": "world", "foo": "bar"}.items())
         # TODO(T44040673): Re-write to test against one canonical output when
@@ -3745,6 +3808,66 @@ class DictKeysTests(unittest.TestCase):
         result = {"hello": "world"}.keys().__and__([])
         self.assertIsInstance(result, set)
         self.assertEqual(result, set())
+
+    def test_dunder_eq_with_non_dict_keys_lhs_raises_type_error(self):
+        items = {}.items()
+        keys_dunder_eq = {}.keys().__class__.__eq__
+        with self.assertRaises(TypeError) as context:
+            keys_dunder_eq(items, set())
+        self.assertIn(
+            "'__eq__' requires a 'dict_keys' object but received a 'dict_items'",
+            str(context.exception),
+        )
+
+    def test_dunder_eq_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.keys().__eq__()
+
+    def test_dunder_eq_with_empty_lhs_and_empty_rhs_returns_true(self):
+        self.assertIs({}.keys().__eq__(set()), True)
+
+    def test_dunder_eq_with_empty_lhs_and_non_empty_rhs_returns_false(self):
+        self.assertIs({}.keys().__eq__(set("foo")), False)
+
+    def test_dunder_eq_with_non_empty_lhs_and_empty_rhs_returns_false(self):
+        self.assertIs({"hello": "world"}.keys().__eq__(set()), False)
+
+    def test_dunder_eq_with_non_set_or_dictview_rhs_returns_notimplemented(self):
+        self.assertIs({"hello": "world"}.keys().__eq__(()), NotImplemented)
+
+    def test_dunder_eq_with_set_rhs(self):
+        self.assertIs({"hello": "world"}.keys().__eq__({"hello"}), True)
+
+    def test_dunder_eq_with_frozenset_rhs(self):
+        self.assertIs({"hello": "world"}.keys().__eq__(frozenset({"hello"})), True)
+
+    def test_dunder_eq_with_dict_items_rhs(self):
+        self.assertIs({"hello": "world"}.keys().__eq__({"hello": "world"}.keys()), True)
+
+    def test_dunder_eq_with_dict_keys_rhs(self):
+        mapping = {("hello", "world"): "baz"}
+        other_mapping = {"hello": "world"}
+        self.assertIs(mapping.keys().__eq__(other_mapping.items()), True)
+
+    def test_dunder_eq_with_dict_values_rhs_returns_notimplemented(self):
+        mapping = {"hello": "world"}
+        self.assertIs(mapping.keys().__eq__(mapping.values()), NotImplemented)
+
+    def test_dunder_eq_with_different_lengths_returns_false(self):
+        mapping = {"hello": "world"}
+        other_mapping = {"hello": "world", "foo": "bar"}
+        self.assertIs(mapping.keys().__eq__(other_mapping.keys()), False)
+
+    def test_dunder_eq_with_id_equal_but_inequal_element_returns_true(self):
+        class C:
+            def __eq__(self, other):
+                return False
+
+            def __hash__(self):
+                return 1
+
+        instance = C()
+        self.assertIs({instance: "world"}.keys().__eq__({instance}), True)
 
     def test_dunder_repr_prints_keys(self):
         result = repr({"hello": "world", "foo": "bar"}.keys())

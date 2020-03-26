@@ -2973,6 +2973,22 @@ def _dictview_and(self, other):
     return result
 
 
+def _dictview_eq(self, other):
+    other_type = _type(other)
+    if (
+        (not _anyset_check(other))
+        and other_type is not dict_items
+        and other_type is not dict_keys
+    ):
+        return NotImplemented
+    if len(self) != len(other):
+        return False
+    for item in self:
+        if item not in other:
+            return False
+    return True
+
+
 def _dictview_or(self, other):
     return {*self, *other}
 
@@ -3001,7 +3017,16 @@ class dict_itemiterator(bootstrap=True):
 
 
 class dict_items(bootstrap=True):
-    __and__ = _dictview_and
+    __and__ = _dictview_and  # TODO(T64638542): Add type guards
+
+    def __eq__(self, other):
+        self_type = _type(self)
+        if self_type is not dict_items:
+            raise TypeError(
+                "'__eq__' requires a 'dict_items' object but received a "
+                f"'{self_type.__name__}'"
+            )
+        return _dictview_eq(self, other)
 
     def __repr__(self):
         if _repr_enter(self):
@@ -3016,11 +3041,11 @@ class dict_items(bootstrap=True):
     def __len__(self):
         _builtin()
 
-    __or__ = _dictview_or
+    __or__ = _dictview_or  # TODO(T64638542): Add type guards
 
-    __sub__ = _dictview_sub
+    __sub__ = _dictview_sub  # TODO(T64638542): Add type guards
 
-    __xor__ = _dictview_xor
+    __xor__ = _dictview_xor  # TODO(T64638542): Add type guards
 
 
 class dict_keyiterator(bootstrap=True):
@@ -3035,7 +3060,16 @@ class dict_keyiterator(bootstrap=True):
 
 
 class dict_keys(bootstrap=True):
-    __and__ = _dictview_and
+    __and__ = _dictview_and  # TODO(T64638542): Add type guards
+
+    def __eq__(self, other):
+        self_type = _type(self)
+        if self_type is not dict_keys:
+            raise TypeError(
+                "'__eq__' requires a 'dict_keys' object but received a "
+                f"'{self_type.__name__}'"
+            )
+        return _dictview_eq(self, other)
 
     def __repr__(self):
         if _repr_enter(self):
@@ -3050,11 +3084,11 @@ class dict_keys(bootstrap=True):
     def __len__(self):
         _builtin()
 
-    __or__ = _dictview_or
+    __or__ = _dictview_or  # TODO(T64638542): Add type guards
 
-    __sub__ = _dictview_sub
+    __sub__ = _dictview_sub  # TODO(T64638542): Add type guards
 
-    __xor__ = _dictview_xor
+    __xor__ = _dictview_xor  # TODO(T64638542): Add type guards
 
 
 class dict_valueiterator(bootstrap=True):
