@@ -529,6 +529,8 @@ class Runtime;
   V(f_lasti)                                                                   \
   V(f_locals)                                                                  \
   V(faulthandler)                                                              \
+  V(fdel)                                                                      \
+  V(fget)                                                                      \
   V(filename)                                                                  \
   V(fileno)                                                                    \
   V(float)                                                                     \
@@ -537,6 +539,7 @@ class Runtime;
   V(format)                                                                    \
   V(frame)                                                                     \
   V(frozenset)                                                                 \
+  V(fset)                                                                      \
   V(function)                                                                  \
   V(generator)                                                                 \
   V(getsizeof)                                                                 \

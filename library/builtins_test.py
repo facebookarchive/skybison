@@ -9560,6 +9560,30 @@ class PropertyTests(unittest.TestCase):
         p.__doc__ = document_message
         self.assertIs(p.__doc__, document_message)
 
+    def test_getter_and_setter_and_deleter_default_to_none(self):
+        p = property()
+        self.assertIsNone(p.fget)
+        self.assertIsNone(p.fset)
+        self.assertIsNone(p.fdel)
+
+    def test_fget_returns_getter(self):
+        p = property(fget=len)
+        self.assertIs(p.fget, len)
+        with self.assertRaises(AttributeError):
+            p.fget = len
+
+    def test_fset_returns_setter(self):
+        p = property(fset=len)
+        self.assertIs(p.fset, len)
+        with self.assertRaises(AttributeError):
+            p.fset = len
+
+    def test_fdel_returns_deleter(self):
+        p = property(fdel=len)
+        self.assertIs(p.fdel, len)
+        with self.assertRaises(AttributeError):
+            p.fdel = len
+
 
 class RangeTests(unittest.TestCase):
     def test_dunder_bool_with_empty_range_returns_true(self):

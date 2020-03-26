@@ -64,6 +64,9 @@ RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
 
 const BuiltinAttribute PropertyBuiltins::kAttributes[] = {
     {ID(__doc__), RawProperty::kDocOffset},
+    {ID(fget), RawProperty::kGetterOffset, AttributeFlags::kReadOnly},
+    {ID(fset), RawProperty::kSetterOffset, AttributeFlags::kReadOnly},
+    {ID(fdel), RawProperty::kDeleterOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
