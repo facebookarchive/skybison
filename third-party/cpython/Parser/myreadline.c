@@ -334,7 +334,6 @@ char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
-    PyObject *mod;
     char *rv, *res;
     size_t len;
 
