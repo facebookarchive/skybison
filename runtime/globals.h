@@ -109,7 +109,7 @@ inline D bit_cast(const S& src) {
 
 #define DISALLOW_HEAP_ALLOCATION()                                             \
   void* operator new(size_t size) = delete;                                    \
-  void operator delete(void* p) = delete
+  void* operator new[](size_t size) = delete
 
 #define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName)                               \
   TypeName() = delete;                                                         \
