@@ -33,6 +33,9 @@ import _weakref
 
 _bootstrap_external = None
 
+_ERR_MSG_PREFIX = "No module named "
+_ERR_MSG = _ERR_MSG_PREFIX + "{!r}"
+
 
 def _wrap(new, old):
     """Simple substitute for functools.update_wrapper."""

@@ -67,6 +67,10 @@ def get_frozen_object(name):
     _unimplemented()
 
 
+def init_frozen(name):
+    _unimplemented()
+
+
 def is_builtin(name):
     _builtin()
 
