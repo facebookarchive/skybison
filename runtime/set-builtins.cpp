@@ -271,13 +271,15 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
                      Interpreter::lookupMethod(thread, thread->currentFrame(),
                                                iterable, ID(__iter__)));
   if (iter_method.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object is not iterable", &iterable);
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, iterable));
   if (iterator.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object is not iterable", &iterable);
   }
   Object next_method(&scope,
                      Interpreter::lookupMethod(thread, thread->currentFrame(),

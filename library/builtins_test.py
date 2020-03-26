@@ -3582,6 +3582,48 @@ class DictItemsTests(unittest.TestCase):
         mapping["szechuan"] = "broccoli"
         self.assertEqual(items.__len__(), 3)
 
+    def test_dunder_sub_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.items().__sub__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_sub_with_nonexistent_pair_does_not_remove_pair(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.items().__sub__([("hello", "baz")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("hello", "world"), ("foo", "bar")})
+
+    def test_dunder_sub_with_list_containing_pair_removes_pair(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.items().__sub__([("hello", "world")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("foo", "bar")})
+
+    def test_dunder_sub_with_list_removes_all_pairs_in_list(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.items().__sub__([("hello", "world"), ("foo", "bar")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_sub_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.items().__sub__()
+
+    def test_dunder_sub_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.items().__sub__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_sub_with_empty_lhs_and_non_empty_rhs_returns_empty_set(self):
+        result = {}.items().__sub__([("hello", "world")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_sub_with_non_empty_lhs_and_empty_rhs_removes_none(self):
+        result = {"hello": "world"}.items().__sub__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("hello", "world")})
+
 
 class DictKeysTests(unittest.TestCase):
     def test_dunder_repr_prints_keys(self):
@@ -3637,6 +3679,48 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(keys.__len__(), 2)
         mapping["szechuan"] = "broccoli"
         self.assertEqual(keys.__len__(), 3)
+
+    def test_dunder_sub_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.keys().__sub__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_sub_with_nonexistent_key_does_not_remove_pair(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.keys().__sub__(["baz"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello", "foo"})
+
+    def test_dunder_sub_with_list_containing_key_removes_key(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.keys().__sub__(["hello"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"foo"})
+
+    def test_dunder_sub_with_list_removes_all_keys_in_list(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.keys().__sub__(["hello", "foo"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_sub_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.keys().__sub__()
+
+    def test_dunder_sub_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__sub__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_sub_with_empty_lhs_and_non_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__sub__([("hello", "world")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_sub_with_non_empty_lhs_and_empty_rhs_removes_none(self):
+        result = {"hello": "world"}.keys().__sub__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello"})
 
 
 class DictValuesTests(unittest.TestCase):

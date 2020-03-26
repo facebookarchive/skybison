@@ -888,7 +888,8 @@ TEST_F(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 set.__init__(set(), None)
 )"),
-                            LayoutId::kTypeError, "object is not iterable"));
+                            LayoutId::kTypeError,
+                            "'NoneType' object is not iterable"));
 }
 
 TEST_F(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
@@ -1299,7 +1300,8 @@ TEST_F(SetBuiltinsTest, UpdateWithNonIterableRaisesTypeError) {
 result = set()
 result.update({5}, {6}, None)
 )"),
-                            LayoutId::kTypeError, "object is not iterable"));
+                            LayoutId::kTypeError,
+                            "'NoneType' object is not iterable"));
   HandleScope scope;
   Set result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(result.numItems(), 2);

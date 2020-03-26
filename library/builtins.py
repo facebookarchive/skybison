@@ -2963,6 +2963,12 @@ class dict(bootstrap=True):
         _builtin()
 
 
+def _dictview_sub(self, other):
+    result = set(self)
+    result.difference_update(other)
+    return result
+
+
 class dict_itemiterator(bootstrap=True):
     def __iter__(self):
         _builtin()
@@ -2987,6 +2993,8 @@ class dict_items(bootstrap=True):
 
     def __len__(self):
         _builtin()
+
+    __sub__ = _dictview_sub
 
 
 class dict_keyiterator(bootstrap=True):
@@ -3013,6 +3021,8 @@ class dict_keys(bootstrap=True):
 
     def __len__(self):
         _builtin()
+
+    __sub__ = _dictview_sub
 
 
 class dict_valueiterator(bootstrap=True):
