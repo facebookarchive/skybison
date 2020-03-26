@@ -2963,6 +2963,10 @@ class dict(bootstrap=True):
         _builtin()
 
 
+def _dictview_or(self, other):
+    return {*self, *other}
+
+
 def _dictview_sub(self, other):
     result = set(self)
     result.difference_update(other)
@@ -2994,6 +2998,8 @@ class dict_items(bootstrap=True):
     def __len__(self):
         _builtin()
 
+    __or__ = _dictview_or
+
     __sub__ = _dictview_sub
 
 
@@ -3021,6 +3027,8 @@ class dict_keys(bootstrap=True):
 
     def __len__(self):
         _builtin()
+
+    __or__ = _dictview_or
 
     __sub__ = _dictview_sub
 
