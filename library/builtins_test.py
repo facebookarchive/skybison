@@ -10365,6 +10365,49 @@ class SetTests(unittest.TestCase):
         self.assertEqual(len(a), 1)
         self.assertIn("foo", a)
 
+    def test_intersection_update_with_non_set_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            set.intersection_update(frozenset(), set())
+        self.assertIn(
+            "'intersection_update' requires a 'set' object but received a 'frozenset'",
+            str(context.exception),
+        )
+
+    def test_intersection_update_with_non_iterable_other_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            set.intersection_update(set(), 5)
+        self.assertEqual(str(context.exception), "'int' object is not iterable")
+
+    def test_intersection_update_updates_self_to_be_intersection(self):
+        a = {1, 2, 3}
+        a.intersection_update((2, 3, 4))
+        self.assertEqual(a, {2, 3})
+
+    def test_intersection_update_updates_self_to_be_intersection_with_multiple(self):
+        a = {1, 2, 3}
+        a.intersection_update((2, 3, 4), (3, 4, 5))
+        self.assertEqual(a, {3})
+
+    def test_intersection_update_with_empty_lhs_and_no_rhs_stays_empty(self):
+        a = set()
+        a.intersection_update()
+        self.assertEqual(a, set())
+
+    def test_intersection_update_with_empty_lhs_and_empty_rhs(self):
+        a = set()
+        a.intersection_update(())
+        self.assertEqual(a, set())
+
+    def test_intersection_update_with_non_empty_lhs_and_empty_rhs(self):
+        a = {1, 2, 3}
+        a.intersection_update(())
+        self.assertEqual(a, set())
+
+    def test_intersection_update_with_empty_lhs_and_non_empty_rhs(self):
+        a = set()
+        a.intersection_update({1, 2, 3})
+        self.assertEqual(a, set())
+
     def test_sub_returns_difference(self):
         self.assertEqual(set.__sub__({1, 2}, set()), {1, 2})
         self.assertEqual(set.__sub__({1, 2}, {1}), {2})

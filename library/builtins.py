@@ -5302,8 +5302,10 @@ class set(bootstrap=True):
     def intersection(self, other):
         _builtin()
 
-    def intersection_update(self, other):
-        _unimplemented()
+    def intersection_update(self, *others):
+        _set_guard(self)
+        for other in others:
+            set.__iand__(self, set(other))
 
     def isdisjoint(self, other):
         _builtin()
