@@ -2963,6 +2963,12 @@ class dict(bootstrap=True):
         _builtin()
 
 
+def _dictview_and(self, other):
+    result = set(self)
+    result.intersection_update(other)
+    return result
+
+
 def _dictview_or(self, other):
     return {*self, *other}
 
@@ -2991,6 +2997,8 @@ class dict_itemiterator(bootstrap=True):
 
 
 class dict_items(bootstrap=True):
+    __and__ = _dictview_and
+
     def __repr__(self):
         if _repr_enter(self):
             return "..."
@@ -3023,6 +3031,8 @@ class dict_keyiterator(bootstrap=True):
 
 
 class dict_keys(bootstrap=True):
+    __and__ = _dictview_and
+
     def __repr__(self):
         if _repr_enter(self):
             return "..."

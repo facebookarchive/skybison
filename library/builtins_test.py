@@ -3538,6 +3538,36 @@ class DictTests(unittest.TestCase):
 
 
 class DictItemsTests(unittest.TestCase):
+    def test_dunder_and_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.items().__and__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_and_with_iterable_returns_set_with_intersection(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.items().__and__([("hello", "world"), ("fizz", "buzz")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("hello", "world")})
+
+    def test_dunder_and_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.items().__and__()
+
+    def test_dunder_and_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.items().__and__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_and_with_empty_lhs_and_non_empty_rhs_returns_empty_set(self):
+        result = {}.items().__and__([("hello", "world")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_and_with_non_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {"hello": "world"}.items().__and__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
     def test_dunder_repr_prints_items(self):
         result = repr({"hello": "world", "foo": "bar"}.items())
         # TODO(T44040673): Re-write to test against one canonical output when
@@ -3686,6 +3716,36 @@ class DictItemsTests(unittest.TestCase):
 
 
 class DictKeysTests(unittest.TestCase):
+    def test_dunder_and_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.keys().__and__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_and_with_iterable_returns_set_with_intersection(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.keys().__and__(["hello", "fizz"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello"})
+
+    def test_dunder_and_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.keys().__and__()
+
+    def test_dunder_and_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__and__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_and_with_empty_lhs_and_non_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__and__(["hello"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_and_with_non_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {"hello": "world"}.keys().__and__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
     def test_dunder_repr_prints_keys(self):
         result = repr({"hello": "world", "foo": "bar"}.keys())
         # TODO(T44040673): Re-write to test against one canonical output when
