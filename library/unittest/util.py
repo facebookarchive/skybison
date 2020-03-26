@@ -5,9 +5,7 @@
 # fmt: off
 """Various utility functions."""
 
-# TODO(T42627145): Enable collections.namedtuple
-# from collections import OrderedDict, namedtuple
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 from os.path import commonprefix
 
 
@@ -164,9 +162,7 @@ def _count_diff_all_purpose(actual, expected):
 
 def _ordered_count(iterable):
     'Return dict of element counts, in the order they were first seen'
-    # TODO(T42697938): OrderedDict since weakref.proxy implementation is missing
-    # c = OrderedDict()
-    c = {}
+    c = OrderedDict()
     for elem in iterable:
         c[elem] = c.get(elem, 0) + 1
     return c

@@ -71,11 +71,8 @@ class TestResult(object):
     def _setupStdout(self):
         if self.buffer:
             if self._stderr_buffer is None:
-                # TODO(T41323917): Use io instead of temporary sys._IOStream
-                # self._stderr_buffer = io.StringIO()
-                # self._stdout_buffer = io.StringIO()
-                self._stderr_buffer = sys.stderr
-                self._stdout_buffer = sys.stdout
+                self._stderr_buffer = io.StringIO()
+                self._stdout_buffer = io.StringIO()
                 pass
             sys.stdout = self._stdout_buffer
             sys.stderr = self._stderr_buffer

@@ -21,27 +21,15 @@ class _WritelnDecorator(object):
     def __init__(self,stream):
         self.stream = stream
 
-    # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
     def __getattr__(self, attr):
         if attr in ('stream', '__getstate__'):
             raise AttributeError(attr)
         return getattr(self.stream,attr)
 
-    # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
-    def flush(self):
-        pass
-
-    # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
-    def write(self, *args):
-        self.stream.write(*args)
-
     def writeln(self, arg=None):
         if arg:
-        # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
-        #     self.write(arg)
-        # self.write('\n') # text-mode streams translate to \r\n if needed
-            self.stream.write(arg)
-        self.stream.write('\n') # text-mode streams translate to \r\n if needed
+            self.write(arg)
+        self.write('\n') # text-mode streams translate to \r\n if needed
 
 
 class TextTestResult(result.TestResult):
