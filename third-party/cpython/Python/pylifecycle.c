@@ -69,6 +69,8 @@ extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Init(void);
 extern int _PyTraceMalloc_Fini(void);
+extern int _PyCapsule_Init(void);
+extern int _PySTEntry_Init(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -383,6 +385,12 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_FatalError("Py_Initialize: can't initialize unicode");
     if (_PyStructSequence_Init() < 0)
         Py_FatalError("Py_Initialize: can't initialize structseq");
+
+    if (_PyCapsule_Init() < 0)
+        Py_FatalError("Py_Initialize: can't init PyCapsule");
+
+    if (_PySTEntry_Init() < 0)
+        Py_FatalError("Py_Initialize: can't init PySTEntry");
 
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)
@@ -792,6 +800,12 @@ Py_NewInterpreter(void)
     /* XXX The following is lax in error checking */
 
     interp->modules = PyDict_New();
+
+    if (_PyCapsule_Init() < 0)
+        Py_FatalError("Py_Initialize: can't init PyCapsule");
+
+    if (_PySTEntry_Init() < 0)
+        Py_FatalError("Py_Initialize: can't init PySTEntry");
 
     bimod = _PyImport_FindBuiltin("builtins");
     if (bimod != NULL) {

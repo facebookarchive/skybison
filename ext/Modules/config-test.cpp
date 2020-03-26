@@ -45,13 +45,6 @@ TEST_F(ConfigExtensionApiTest, ImportUnderBz2ReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
-TEST_F(ConfigExtensionApiTest, ImportUnderCapsuleReturnsModule) {
-  PyObjectPtr module(PyImport_ImportModule("_capsule"));
-  ASSERT_NE(module, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyModule_Check(module));
-}
-
 TEST_F(ConfigExtensionApiTest, ImportUnderHashlibReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_hashlib"));
   ASSERT_NE(module, nullptr);
@@ -133,13 +126,6 @@ ssl.create_default_context()
 
 TEST_F(ConfigExtensionApiTest, ImportUnderStatReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_stat"));
-  ASSERT_NE(module, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyModule_Check(module));
-}
-
-TEST_F(ConfigExtensionApiTest, ImportUnderStentryReturnsModule) {
-  PyObjectPtr module(PyImport_ImportModule("_stentry"));
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyModule_Check(module));

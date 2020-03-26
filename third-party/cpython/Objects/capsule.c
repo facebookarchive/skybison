@@ -82,11 +82,6 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
         return NULL;
     }
 
-    if (PyState_FindModule(&capsulemodule) == NULL) {
-        if (PyImport_ImportModule("_capsule") == NULL) {
-            return NULL;
-        }
-    }
     capsule = PyObject_NEW(PyCapsule, (PyTypeObject *)capsulestate_global->PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
@@ -350,32 +345,35 @@ static PyType_Slot PyCapsule_Type_slots[] = {
 };
 
 static PyType_Spec PyCapsule_Type_spec = {
-    "PyCapsule",
+    "_capsule.PyCapsule",
     sizeof(PyCapsule),
     0,
     Py_TPFLAGS_DEFAULT,
     PyCapsule_Type_slots
 };
 
-PyMODINIT_FUNC PyInit__capsule(void) {
+int _PyCapsule_Init(void) {
     PyObject *mod;
     PyTypeObject *PyCapsule_Type;
 
     mod = PyState_FindModule(&capsulemodule);
     if (mod != NULL) {
-        Py_INCREF(mod);
-        return mod;
+        return 0;
     }
     mod = PyModule_Create(&capsulemodule);
     if (mod == NULL) {
-        return NULL;
+        return -1;
+    }
+    if (PyState_AddModule(mod, &capsulemodule) < 0) {
+        Py_DECREF(mod);
+        return -1;
     }
     PyCapsule_Type = (PyTypeObject*)PyType_FromSpec(&PyCapsule_Type_spec);
     if (PyCapsule_Type == NULL) {
-        return NULL;
+        Py_DECREF(mod);
+        return -1;
     }
     capsulestate(mod)->PyCapsule_Type = (PyObject*)PyCapsule_Type;
-
-    PyState_AddModule(mod, &capsulemodule);
-    return mod;
+    Py_DECREF(mod);
+    return 0;
 }

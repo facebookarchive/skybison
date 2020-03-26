@@ -5,7 +5,6 @@
 extern "C" PyObject* PyInit__ast();
 extern "C" PyObject* PyInit__blake2();
 extern "C" PyObject* PyInit__bz2();
-extern "C" PyObject* PyInit__capsule();
 extern "C" PyObject* PyInit__compile();
 extern "C" PyObject* PyInit__hashlib();
 extern "C" PyObject* PyInit__locale();
@@ -18,7 +17,6 @@ extern "C" PyObject* PyInit__sha3();
 extern "C" PyObject* PyInit__sre();
 extern "C" PyObject* PyInit__ssl();
 extern "C" PyObject* PyInit__stat();
-extern "C" PyObject* PyInit__stentry();
 extern "C" PyObject* PyInit__struct();
 extern "C" PyObject* PyInit_atexit();
 extern "C" PyObject* PyInit_audioop();
@@ -48,7 +46,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_ast", PyInit__ast},
     {"_blake2", PyInit__blake2},
     {"_bz2", PyInit__bz2},
-    {"_capsule", PyInit__capsule},
     {"_compile", PyInit__compile},
     {"_empty", PyInit__empty},
     {"_hashlib", PyInit__hashlib},
@@ -62,7 +59,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sre", PyInit__sre},
     {"_ssl", PyInit__ssl},
     {"_stat", PyInit__stat},
-    {"_stentry", PyInit__stentry},
     {"_struct", PyInit__struct},
     {"atexit", PyInit_atexit},
     {"audioop", PyInit_audioop},

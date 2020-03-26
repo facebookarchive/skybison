@@ -10,6 +10,9 @@
 #include "exception-builtins.h"
 #include "runtime.h"
 
+extern "C" int _PyCapsule_Init(void);
+extern "C" int _PySTEntry_Init(void);
+
 // TODO(T57880525): Reconcile these flags with sys.py
 int Py_BytesWarningFlag = 0;
 int Py_DebugFlag = 0;
@@ -110,6 +113,9 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
   new Runtime(1 * kGiB);
+
+  CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
+  CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");
 }
 
 PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }

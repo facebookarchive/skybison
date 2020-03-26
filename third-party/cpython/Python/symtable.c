@@ -205,34 +205,37 @@ static PyType_Slot PySTEntry_Type_slots[] = {
 };
 
 static PyType_Spec PySTEntry_Type_spec = {
-    "symtable entry",
+    "_stentry.symtable entry",
     sizeof(PySTEntryObject),
     0,
     Py_TPFLAGS_DEFAULT,
     PySTEntry_Type_slots,
 };
 
-PyMODINIT_FUNC PyInit__stentry(void) {
+int _PySTEntry_Init(void) {
     PyObject *mod;
     PyTypeObject *PySTEntry_Type;
 
     mod = PyState_FindModule(&stentrymodule);
     if (mod != NULL) {
-        Py_INCREF(mod);
-        return mod;
+        return 0;
     }
     mod = PyModule_Create(&stentrymodule);
     if (mod == NULL) {
-        return NULL;
+        return -1;
+    }
+    if (PyState_AddModule(mod, &stentrymodule) < 0) {
+        Py_DECREF(mod);
+        return -1;
     }
     PySTEntry_Type = (PyTypeObject*)PyType_FromSpec(&PySTEntry_Type_spec);
     if (PySTEntry_Type == NULL) {
-        return NULL;
+        Py_DECREF(mod);
+        return -1;
     }
     stentrystate(mod)->PySTEntry_Type = (PyObject*)PySTEntry_Type;
-
-    PyState_AddModule(mod, &stentrymodule);
-    return mod;
+    Py_DECREF(mod);
+    return 0;
 }
 
 static int symtable_analyze(struct symtable *st);

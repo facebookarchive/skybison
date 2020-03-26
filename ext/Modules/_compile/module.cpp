@@ -4,8 +4,12 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
+#include "asserts.h"
 #include "ast.h"
 #include "compile.h"
+
+extern "C" int _PyCapsule_Init(void);
+extern "C" int _PySTEntry_Init(void);
 
 static PyObject* compile_string_object(const char* str, PyObject* filename,
                                        int start, PyCompilerFlags* flags,
@@ -191,6 +195,11 @@ static struct PyModuleDef _compilemodule = {
 };
 
 PyMODINIT_FUNC PyInit__compile() {
+  // Some unit-tests create a runtime object without using PyInitialize so
+  // we have to manually make sure capsule and stentry are initialized.
+  CHECK(_PyCapsule_Init() >= 0, "Failed to initialize PyCapsule");
+  CHECK(_PySTEntry_Init() >= 0, "Failed to initialize PySTEntry");
+
   PyObject* module = PyState_FindModule(&_compilemodule);
   if (module != nullptr) {
     Py_INCREF(module);

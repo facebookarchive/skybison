@@ -233,22 +233,6 @@ compiler_init(struct compiler *c)
     if (!c->c_stack)
         return 0;
 
-    {
-        PyObject *mod = PyImport_ImportModule("_stentry");
-        if (mod == NULL) {
-            return 0;
-        }
-        Py_DECREF(mod);
-    }
-
-    {
-        PyObject *mod = PyImport_ImportModule("_capsule");
-        if (mod == NULL) {
-            return 0;
-        }
-        Py_DECREF(mod);
-    }
-
     return 1;
 }
 

@@ -144,8 +144,6 @@ _tracemalloc _tracemalloc.c hashtable.c
 # ======================================================================
 
 # The Python symtable module depends on .h files that setup.py doesn't track
-_stentry $(srcdir)/Python/symtable.c
-_capsule $(srcdir)/Objects/capsule.c
 _symtable symtablemodule.c
 
 # Uncommenting the following line tells makesetup that all following
