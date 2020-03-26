@@ -1206,6 +1206,42 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Type self(&scope, args.get(0));
+  if (self == runtime->typeAt(LayoutId::kObject)) {
+    return NoneType::object();
+  }
+  Tuple bases(&scope, self.bases());
+  word num_bases = bases.length();
+  if (num_bases == 0) {
+    // self is the 'object' type
+    return NoneType::object();
+  }
+  Type current_base(&scope, bases.at(0));
+  Type candidate(&scope, runtime->typeAt(current_base.builtinBase()));
+  Type winner(&scope, *candidate);
+  Type best_base(&scope, *current_base);
+  for (word i = 1; i < num_bases; i++) {
+    current_base = bases.at(i);
+    candidate = runtime->typeAt(current_base.builtinBase());
+    if (typeIsSubclass(winner, candidate)) {
+      continue;
+    }
+    if (typeIsSubclass(candidate, winner)) {
+      winner = *candidate;
+      best_base = *current_base;
+    } else {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "multiple bases have instance lay-out conflict");
+    }
+  }
+  return *best_base;
+}
+
 RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);

@@ -412,6 +412,10 @@ class type(bootstrap=True):
         _type_abstractmethods_get, _type_abstractmethods_set, _type_abstractmethods_del
     )
 
+    @_property
+    def __base__(self):
+        _builtin()
+
     __bases__ = _property(_type_bases_get, _type_bases_set, _type_bases_del)
 
     @_property

@@ -13567,6 +13567,29 @@ class TypeTests(unittest.TestCase):
             del Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
 
+    def test_dunder_base_with_object_type_returns_none(self):
+        self.assertIs(object.__base__, None)
+
+    def test_dunder_base_with_builtin_type_returns_supertype(self):
+        self.assertIs(bool.__base__, int)
+        self.assertIs(int.__base__, object)
+        self.assertIs(str.__base__, object)
+        self.assertIs(type.__base__, object)
+
+    def test_dunder_base_with_user_type_returns_best_base(self):
+        class A:
+            pass
+
+        class B(A, str):
+            pass
+
+        class C(B):
+            pass
+
+        self.assertIs(A.__base__, object)
+        self.assertIs(B.__base__, str)
+        self.assertIs(C.__base__, B)
+
     def test_dunder_bases_del_with_builtin_type_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             del object.__bases__
