@@ -5090,6 +5090,36 @@ class FrozensetTests(unittest.TestCase):
         result = frozenset.__new__(C, [1, 2, 3])
         self.assertIsInstance(result, C)
 
+    def test_dunder_repr_with_non_frozenset_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.difference(set())
+
+    def test_dunder_repr_with_empty_frozenset(self):
+        self.assertEqual(frozenset().__repr__(), "frozenset()")
+
+    def test_dunder_repr_with_non_empty_frozenset(self):
+        self.assertEqual(frozenset({1, 2, 3}).__repr__(), "frozenset({1, 2, 3})")
+
+    def test_dunder_repr_with_subclass_prints_subclass_name(self):
+        class C(frozenset):
+            pass
+
+        self.assertEqual(C().__repr__(), "C()")
+        self.assertEqual(C({1, 2, 3}).__repr__(), "C({1, 2, 3})")
+
+    def test_dunder_repr_with_recursive_frozenset_prints_ellipsis(self):
+        class C:
+            def __init__(self):
+                self.value = frozenset((self,))
+
+            def __hash__(self):
+                return 1
+
+            def __repr__(self):
+                return self.value.__repr__()
+
+        self.assertEqual(C().__repr__(), "frozenset({frozenset(...)})")
+
     def test_issuperset_with_non_frozenset_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.issuperset(None, frozenset())

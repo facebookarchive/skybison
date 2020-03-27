@@ -3558,7 +3558,16 @@ class frozenset(bootstrap=True):
         _unimplemented()
 
     def __repr__(self):
-        _unimplemented()
+        _frozenset_guard(self)
+        name = _type(self).__name__
+        if _repr_enter(self):
+            return f"{name}(...)"
+        if len(self) == 0:
+            _repr_leave(self)
+            return f"{name}()"
+        result = f"{name}({{{', '.join(repr(x) for x in self)}}})"
+        _repr_leave(self)
+        return result
 
     def __ror__(self, other):
         _unimplemented()
