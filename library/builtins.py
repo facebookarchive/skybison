@@ -3549,7 +3549,7 @@ class frozenset(bootstrap=True):
         _builtin()
 
     def __or__(self, other):
-        _unimplemented()
+        _builtin()
 
     def __rand__(self, other):
         _unimplemented()

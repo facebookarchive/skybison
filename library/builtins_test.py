@@ -5090,6 +5090,56 @@ class FrozensetTests(unittest.TestCase):
         result = frozenset.__new__(C, [1, 2, 3])
         self.assertIsInstance(result, C)
 
+    def test_dunder_or_with_non_frozenset_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.__or__(set(), frozenset())
+
+    def test_dunder_or_with_missing_other_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.__or__(frozenset())
+
+    def test_dunder_or_with_non_anyset_other_returns_notimplemented(self):
+        self.assertIs(frozenset.__or__(frozenset(), []), NotImplemented)
+
+    def test_dunder_or_with_id_equal_self_and_other_returns_self_copy(self):
+        left = frozenset((1, 2, 3))
+        result = left.__or__(left)
+        self.assertIsInstance(result, frozenset)
+        self.assertIsNot(result, left)
+        self.assertEqual(result, left)
+
+    def test_dunder_or_returns_union(self):
+        left = frozenset((1, 2, 3))
+        result = left.__or__({2, 3, 4})
+        self.assertIsInstance(result, frozenset)
+        self.assertEqual(result, frozenset((1, 2, 3, 4)))
+
+    def test_dunder_or_with_empty_left_returns_elements_from_right(self):
+        result = frozenset().__or__({2, 3, 4})
+        self.assertIsInstance(result, frozenset)
+        self.assertEqual(result, frozenset((2, 3, 4)))
+
+    def test_dunder_or_with_empty_right_returns_elements_from_left(self):
+        result = frozenset((1, 2, 3)).__or__(set())
+        self.assertIsInstance(result, frozenset)
+        self.assertEqual(result, frozenset((1, 2, 3)))
+
+    def test_dunder_or_with_empty_left_and_right_returns_empty_frozenset(self):
+        empty = frozenset()
+        result = empty.__or__(set())
+        self.assertIsInstance(result, frozenset)
+        self.assertIsNot(result, empty)
+        self.assertEqual(result, frozenset())
+
+    def test_dunder_or_with_subclass_returns_exact_frozenset(self):
+        class C(frozenset):
+            pass
+
+        left = C()
+        right = C()
+        self.assertIs(type(left | right), frozenset)
+        self.assertIs(type(left | left), frozenset)
+
     def test_dunder_repr_with_non_frozenset_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.difference(set())

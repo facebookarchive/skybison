@@ -717,6 +717,34 @@ RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
   return setUpdate(thread, result, iterable);
 }
 
+RawObject METH(frozenset, __or__)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFrozenSet(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(frozenset));
+  }
+  if (!runtime->isInstanceOfSetBase(*other)) {
+    return NotImplementedType::object();
+  }
+  FrozenSet self(&scope, *self_obj);
+  if (*self == *other) {
+    // Make a shallow copy; we can alias the underlying immutable data
+    // structure
+    FrozenSet result(&scope, runtime->newFrozenSet());
+    result.setData(self.data());
+    result.setNumItems(self.numItems());
+    return *result;
+  }
+  FrozenSet result(&scope, runtime->newFrozenSet());
+  Object maybe_error(&scope, setUpdate(thread, result, self));
+  if (maybe_error.isError()) return *maybe_error;
+  result = *maybe_error;
+  return setUpdate(thread, result, other);
+}
+
 RawObject METH(frozenset, copy)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
