@@ -3395,6 +3395,20 @@ void Runtime::strArrayAddASCII(Thread* thread, const StrArray& array,
   MutableBytes::cast(array.items()).byteAtPut(num_items, code_point);
 }
 
+void Runtime::strArrayAddCodePoint(Thread* thread, const StrArray& array,
+                                   int32_t code_point) {
+  DCHECK_BOUND(code_point, kMaxUnicode);
+  RawSmallStr str = SmallStr::fromCodePoint(code_point);
+  word num_items = array.numItems();
+  word length = str.charLength();
+  word new_length = num_items + length;
+  strArrayEnsureCapacity(thread, array, new_length);
+  byte* dst =
+      reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
+  str.copyTo(dst + num_items, length);
+  array.setNumItems(new_length);
+}
+
 void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
                              const Str& str) {
   word length = str.charLength();

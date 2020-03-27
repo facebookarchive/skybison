@@ -748,6 +748,8 @@ class Runtime {
                        const Str& newstr, word count);
 
   void strArrayAddASCII(Thread* thread, const StrArray& array, byte code_point);
+  void strArrayAddCodePoint(Thread* thread, const StrArray& array,
+                            int32_t code_point);
   void strArrayAddStr(Thread* thread, const StrArray& array, const Str& str);
   void strArrayAddStrArray(Thread* thread, const StrArray& array,
                            const StrArray& str);

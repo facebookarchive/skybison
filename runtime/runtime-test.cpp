@@ -3315,6 +3315,22 @@ TEST_F(RuntimeTest, NonModuleInModulesDoesNotCrash) {
   EXPECT_EQ(result, not_a_module);
 }
 
+TEST_F(RuntimeStrArrayTest, AddCodePointAppendsValidUTF8) {
+  HandleScope scope(thread_);
+
+  StrArray array(&scope, runtime_->newStrArray());
+  runtime_->strArrayAddCodePoint(thread_, array, 'a');
+  runtime_->strArrayAddCodePoint(thread_, array, ' ');
+  runtime_->strArrayAddCodePoint(thread_, array, 0xe9);
+  runtime_->strArrayAddCodePoint(thread_, array, ' ');
+  runtime_->strArrayAddCodePoint(thread_, array, 0x2cc0);
+  runtime_->strArrayAddCodePoint(thread_, array, ' ');
+  runtime_->strArrayAddCodePoint(thread_, array, 0x1f192);
+
+  EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array),
+                              "a \u00e9 \u2cc0 \U0001f192"));
+}
+
 TEST_F(RuntimeStrArrayTest, NewStrArrayReturnsEmptyStrArray) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newStrArray());
