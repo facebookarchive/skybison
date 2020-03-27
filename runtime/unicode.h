@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "globals.h"
+#include "unicode-db.h"
 #include "utils.h"
 
 namespace py {
@@ -37,8 +38,11 @@ class Unicode {
  public:
   // Predicates
   static bool isASCII(int32_t code_point);
+  static bool isAlias(int32_t code_point);
   static bool isAlpha(int32_t code_point);
+  static bool isHangulSyllable(int32_t code_point);
   static bool isLower(int32_t code_point);
+  static bool isNamedSequence(int32_t code_point);
   static bool isPrintable(int32_t code_point);
   static bool isSpace(int32_t code_point);
   static bool isTitle(int32_t code_point);
@@ -111,6 +115,10 @@ inline bool Unicode::isASCII(int32_t code_point) {
   return code_point <= kMaxASCII;
 }
 
+inline bool Unicode::isAlias(int32_t code_point) {
+  return (kAliasesStart <= code_point) && (code_point < kAliasesEnd);
+}
+
 inline bool Unicode::isAlpha(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isAlpha(code_point);
@@ -119,11 +127,21 @@ inline bool Unicode::isAlpha(int32_t code_point) {
   UNIMPLEMENTED("non-ASCII characters");
 }
 
+inline bool Unicode::isHangulSyllable(int32_t code_point) {
+  return (kHangulSyllableStart <= code_point) &&
+         (code_point < kHangulSyllableStart + kHangulSyllableCount);
+}
+
 inline bool Unicode::isLower(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isLower(code_point);
   }
   return isLowerDB(code_point);
+}
+
+inline bool Unicode::isNamedSequence(int32_t code_point) {
+  return (kNamedSequencesStart <= code_point) &&
+         (code_point < kNamedSequencesEnd);
 }
 
 inline bool Unicode::isPrintable(int32_t code_point) {

@@ -882,6 +882,17 @@ static const int32_t kNamedSequencesEnd = {
     NAMED_SEQUENCES_START + len(unicode.named_sequences)
 :#x};
 
+static const int32_t kHangulSyllableStart = 0xac00;
+static const int32_t kHangulLeadingStart = 0x1100;
+static const int32_t kHangulVowelStart = 0x1161;
+static const int32_t kHangulTrailingStart = 0x11a7;
+
+static const word kHangulLeadingCount = 19;
+static const word kHangulVowelCount = 21;
+static const word kHangulTrailingCount = 28;
+static const word kHangulCodaCount = kHangulVowelCount * kHangulTrailingCount;
+static const word kHangulSyllableCount = kHangulLeadingCount * kHangulCodaCount;
+
 enum : int32_t {{
   kAlphaMask = {ALPHA_MASK:#x},
   kDecimalMask = {DECIMAL_MASK:#x},
@@ -915,16 +926,6 @@ struct UnicodeTypeRecord {{
 // Returns the code point if the lookup succeeds, -1 if it fails.
 int32_t codePointFromName(const byte* name, word size);
 int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
-
-inline bool isAlias(int32_t code_point) {{
-  return (kAliasesStart <= code_point) && (code_point < kAliasesEnd);
-}}
-
-// Checks if the code point is in the PUA range used for named sequences.
-inline bool isNamedSequence(int32_t code_point) {{
-  return (kNamedSequencesStart <= code_point) &&
-         (code_point < kNamedSequencesEnd);
-}}
 
 // Write the Unicode name for the given code point into the buffer.
 // Returns true if the name was written successfully, false otherwise.
@@ -1269,13 +1270,12 @@ static const HangulJamo kHangulTrailing[] = {
     {1, {'H'}},
 };
 
-static const word kLeadingCount = ARRAYSIZE(kHangulLeading);
-static const word kVowelCount = ARRAYSIZE(kHangulVowels);
-static const word kTrailingCount = ARRAYSIZE(kHangulTrailing);
-static const word kCodaCount = kVowelCount * kTrailingCount;
-static const word kSyllableCount = kLeadingCount * kCodaCount;
-
-static const int32_t kHangulStart = 0xac00;
+static_assert(kHangulLeadingCount == ARRAYSIZE(kHangulLeading),
+              "mismatch in number of Hangul syllable onsets");
+static_assert(kHangulVowelCount == ARRAYSIZE(kHangulVowels),
+              "mismatch in number of Hangul vowels");
+static_assert(kHangulTrailingCount == ARRAYSIZE(kHangulTrailing),
+              "mismatch in number of Hangul syllable codas");
 
 static int32_t findHangulJamo(const byte* str, word size,
                               const HangulJamo array[], word count) {
@@ -1294,27 +1294,28 @@ static int32_t findHangulJamo(const byte* str, word size,
 
 static int32_t findHangulSyllable(const byte* name, word size) {
   word pos = 16;
-  word leading =
-      findHangulJamo(name + pos, size - pos, kHangulLeading, kLeadingCount);
+  word leading = findHangulJamo(name + pos, size - pos, kHangulLeading,
+                                kHangulLeadingCount);
   if (leading == -1) {
     return -1;
   }
 
   pos += kHangulLeading[leading].length;
-  word vowel =
-      findHangulJamo(name + pos, size - pos, kHangulVowels, kVowelCount);
+  word vowel = findHangulJamo(name + pos, size - pos, kHangulVowels,
+                              kHangulVowelCount);
   if (vowel == -1) {
     return -1;
   }
 
   pos += kHangulVowels[vowel].length;
-  word trailing =
-      findHangulJamo(name + pos, size - pos, kHangulTrailing, kTrailingCount);
+  word trailing = findHangulJamo(name + pos, size - pos, kHangulTrailing,
+                                 kHangulTrailingCount);
   if (trailing == -1 || pos + kHangulTrailing[trailing].length != size) {
     return -1;
   }
 
-  return kHangulStart + (leading * kVowelCount + vowel) * kTrailingCount +
+  return kHangulSyllableStart +
+         (leading * kHangulVowelCount + vowel) * kHangulTrailingCount +
          trailing;
 }
 
@@ -1410,10 +1411,10 @@ static int32_t getCodePoint(const byte* name, word size,
 }
 
 static int32_t checkAliasAndNamedSequence(int32_t code_point) {
-  if (isNamedSequence(code_point)) {
+  if (Unicode::isNamedSequence(code_point)) {
     return -1;
   }
-  if (isAlias(code_point)) {
+  if (Unicode::isAlias(code_point)) {
     return kNameAliases[code_point - kAliasesStart];
   }
   return code_point;
@@ -1424,7 +1425,7 @@ int32_t codePointFromName(const byte* name, word size) {
 }
 
 static int32_t checkAlias(int32_t code_point) {
-  if (isAlias(code_point)) {
+  if (Unicode::isAlias(code_point)) {
     return kNameAliases[code_point - kAliasesStart];
   }
   return code_point;
@@ -1437,16 +1438,16 @@ int32_t codePointFromNameOrNamedSequence(const byte* name, word size) {
 bool nameFromCodePoint(int32_t code_point, byte* buffer, word size) {
   DCHECK_BOUND(code_point, kMaxUnicode);
 
-  if (kHangulStart <= code_point &&
-      code_point < kHangulStart + kSyllableCount) {
+  if (Unicode::isHangulSyllable(code_point)) {
     if (size < 27) {
       return false;  // worst case: HANGUL SYLLABLE <10 chars>
     }
 
-    word offset = code_point - kHangulStart;
-    HangulJamo leading = kHangulLeading[offset / kCodaCount];
-    HangulJamo vowel = kHangulVowels[(offset % kCodaCount) / kTrailingCount];
-    HangulJamo trailing = kHangulTrailing[offset % kTrailingCount];
+    int32_t offset = code_point - kHangulSyllableStart;
+    HangulJamo leading = kHangulLeading[offset / kHangulCodaCount];
+    HangulJamo vowel =
+        kHangulVowels[(offset % kHangulCodaCount) / kHangulTrailingCount];
+    HangulJamo trailing = kHangulTrailing[offset % kHangulTrailingCount];
 
     std::memcpy(buffer, "HANGUL SYLLABLE ", 16);
     buffer += 16;
