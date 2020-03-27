@@ -5060,6 +5060,36 @@ class FrozensetTests(unittest.TestCase):
         self.assertEqual(frozenset.__hash__(frozenset()), 133146708735736)
         self.assertEqual(frozenset.__hash__(frozenset((1, 2, 3))), -272375401224217160)
 
+    def test_dunder_new_with_failing_iterable_propagates_error(self):
+        class C:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                raise RuntimeError("foo")
+
+        with self.assertRaises(RuntimeError) as context:
+            frozenset(C())
+        self.assertEqual(str(context.exception), "foo")
+
+    def test_dunder_new_with_subclass_and_iterable_creates_instance_of_subclass(self):
+        class Bad:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                raise RuntimeError("foo")
+
+        class C(frozenset):
+            pass
+
+        with self.assertRaises(RuntimeError) as context:
+            frozenset.__new__(frozenset, Bad())
+        self.assertEqual(str(context.exception), "foo")
+
+        result = frozenset.__new__(C, [1, 2, 3])
+        self.assertIsInstance(result, C)
+
     def test_issuperset_with_non_frozenset_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.issuperset(None, frozenset())

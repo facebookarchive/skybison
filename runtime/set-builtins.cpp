@@ -698,12 +698,23 @@ RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
         LayoutId::kTypeError,
         "frozenset.__new__ must be called with an iterable");
   }
-  FrozenSet result(&scope, runtime->newFrozenSet());
-  result = setUpdate(thread, result, iterable);
-  if (result.numItems() == 0) {
-    return runtime->emptyFrozenSet();
+  if (type.isBuiltin() && type.builtinBase() == LayoutId::kFrozenSet) {
+    // Called with exact frozenset type
+    FrozenSet result(&scope, runtime->newFrozenSet());
+    RawObject maybe_error = setUpdate(thread, result, iterable);
+    if (maybe_error.isError()) return maybe_error;
+    result = maybe_error;
+    if (result.numItems() == 0) {
+      return runtime->emptyFrozenSet();
+    }
+    return *result;
   }
-  return *result;
+  // Not called with exact frozenset type, should return new frozenset subclass
+  Layout layout(&scope, type.instanceLayout());
+  FrozenSet result(&scope, runtime->newInstance(layout));
+  result.setNumItems(0);
+  result.setData(runtime->emptyTuple());
+  return setUpdate(thread, result, iterable);
 }
 
 RawObject METH(frozenset, copy)(Thread* thread, Frame* frame, word nargs) {
