@@ -3587,8 +3587,16 @@ class frozenset(bootstrap=True):
     def copy(self):
         _builtin()
 
-    def difference(self, other):
-        _unimplemented()
+    def difference(self, *others):
+        _frozenset_guard(self)
+        result = list(self)
+        for other in others:
+            diff = []
+            for item in result:
+                if item not in other:
+                    diff.append(item)
+            result = diff
+        return frozenset(result)
 
     def intersection(self, other):
         _builtin()

@@ -5120,6 +5120,27 @@ class FrozensetTests(unittest.TestCase):
 
         self.assertEqual(C().__repr__(), "frozenset({frozenset(...)})")
 
+    def test_difference_with_non_frozenset_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.difference(set(), frozenset())
+
+    def test_difference_no_others_copies_self(self):
+        a_frozenset = frozenset({1, 2, 3})
+        self.assertIsNot(frozenset.difference(a_frozenset), a_frozenset)
+
+    def test_difference_same_frozensets_returns_empty_frozenset(self):
+        a_frozenset = frozenset({1, 2, 3})
+        self.assertFalse(frozenset.difference(a_frozenset, a_frozenset))
+
+    def test_difference_two_frozensets_returns_difference(self):
+        frozenset1 = frozenset({1, 2, 3, 4, 5, 6, 7})
+        frozenset2 = frozenset({1, 3, 5, 7})
+        self.assertEqual(frozenset.difference(frozenset1, frozenset2), {2, 4, 6})
+
+    def test_difference_many_frozensets_returns_difference(self):
+        a_frozenset = frozenset({1, 10, 100, 1000})
+        self.assertEqual(frozenset.difference(a_frozenset, {10}, {100}, {1000}), {1})
+
     def test_issuperset_with_non_frozenset_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.issuperset(None, frozenset())
