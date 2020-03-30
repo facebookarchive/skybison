@@ -4,6 +4,7 @@
 #include "bytes-builtins.h"
 #include "float-builtins.h"
 #include "int-builtins.h"
+#include "mmap-module.h"
 
 namespace py {
 
@@ -575,6 +576,17 @@ RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
                                        view.readOnly() ? ReadOnly::ReadOnly
                                                        : ReadOnly::ReadWrite));
     result.setFormat(view.format());
+    return *result;
+  }
+  if (object.isMmap()) {
+    Mmap mmap_obj(&scope, *object);
+    Pointer pointer(&scope, mmap_obj.data());
+    // TODO(T64584485): Store the Pointer itself inside the memoryview
+    MemoryView result(&scope, runtime->newMemoryViewFromCPtr(
+                                  thread, pointer.cptr(), pointer.length(),
+                                  mmap_obj.isWritable() ? ReadOnly::ReadWrite
+                                                        : ReadOnly::ReadOnly));
+    result.setFormat(SmallStr::fromCodePoint('B'));
     return *result;
   }
   return thread->raiseWithFmt(LayoutId::kTypeError,

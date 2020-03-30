@@ -8147,6 +8147,25 @@ class MemoryviewTests(unittest.TestCase):
         view = memoryview(src).cast("i")
         self.assertEqual(view.itemsize, 4)
 
+    def test_mmap_creates_memoryview_with_correct_permissions(self):
+        import mmap
+
+        writable = mmap.mmap(-1, 6)
+        writable_view = memoryview(writable)
+        self.assertEqual(writable_view.readonly, False)
+        self.assertEqual(writable_view.format, "B")
+        self.assertEqual(writable_view.nbytes, 6)
+        del writable_view
+        writable.close()
+
+        readable = mmap.mmap(-1, 6, access=mmap.ACCESS_READ)
+        readable_view = memoryview(readable)
+        self.assertEqual(readable_view.readonly, True)
+        self.assertEqual(readable_view.format, "B")
+        self.assertEqual(readable_view.nbytes, 6)
+        del readable_view
+        readable.close()
+
     def test_nbytes_returns_size_of_memoryview(self):
         view = memoryview(b"foobar")
         self.assertEqual(view.nbytes, 6)
