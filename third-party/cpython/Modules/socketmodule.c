@@ -4262,23 +4262,11 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O$O!y*O!i:sendmsg_afalg",
-                                     keywords, &data_arg, &opobj, &iv,
-                                     &assoclenobj, &flags)) {
-        return NULL;
-    }
-
-    // TODO(T53172188): investigate whether to implement &PyLong_Type
-    if (!PyLong_Check(opobj)) {
-      PyErr_Format(PyExc_TypeError,
-                   "sendmsg_afalg() argument 2 must be int, not %.50s",
-                   _PyType_Name(Py_TYPE(opobj)));
-      return NULL;
-    }
-    if (!PyLong_Check(assoclenobj)) {
-      PyErr_Format(PyExc_TypeError,
-                   "sendmsg_afalg() argument 4 must be int, not %.50s",
-                   _PyType_Name(Py_TYPE(assoclenobj)));
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "|O$O!y*O!i:sendmsg_afalg", keywords,
+                                     &data_arg,
+                                     &PyLong_Type, &opobj, &iv,
+                                     &PyLong_Type, &assoclenobj, &flags)) {
         return NULL;
     }
 
