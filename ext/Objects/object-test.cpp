@@ -162,6 +162,7 @@ obj.b = 13
 }
 
 TEST_F(ObjectExtensionApiTest, DelAttrRaisesAttributeError) {
+  Py_INCREF(Py_None);
   PyObjectPtr obj(Py_None);
   EXPECT_EQ(PyObject_DelAttrString(obj, "does_not_exist"), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
