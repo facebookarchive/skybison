@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bytecode.h"
+#include "capi-handles.h"
 #include "handles.h"
 #include "heap.h"
 #include "interpreter-gen.h"
@@ -400,9 +401,9 @@ class Runtime {
 
   RawObject modules() { return modules_; }
 
-  RawObject apiHandles() { return api_handles_; }
+  IdentityDict* apiHandles() { return &api_handles_; }
 
-  RawObject apiCaches() { return api_caches_; }
+  IdentityDict* apiCaches() { return &api_caches_; }
 
   void setAtExit(AtExitFn at_exit) { at_exit_ = at_exit; }
   void atExit() {
@@ -861,7 +862,7 @@ class Runtime {
   // Removes an entry from the linked list
   static bool listEntryRemove(ListEntry* entry, ListEntry** root);
 
-  word numTrackedApiHandles() { return Dict::cast(api_handles_).numItems(); }
+  word numTrackedApiHandles() { return api_handles_.numItems(); }
 
   word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 
@@ -942,12 +943,12 @@ class Runtime {
   RawObject modules_by_index_ = NoneType::object();
 
   // ApiHandles
-  RawObject api_handles_ = NoneType::object();
+  IdentityDict api_handles_;
 
   // Some API functions promise to cache their return value and return the same
   // value for repeated invocations on a specific PyObject. Those value are
   // cached here.
-  RawObject api_caches_ = NoneType::object();
+  IdentityDict api_caches_;
 
   // Weak reference callback list
   RawObject callbacks_ = NoneType::object();

@@ -43,8 +43,6 @@ class Scavenger {
 
   void processGrayObjects();
 
-  void processApiHandles();
-
   void processRoots();
 
   void processLayouts();

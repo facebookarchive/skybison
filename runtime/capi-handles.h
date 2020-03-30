@@ -9,6 +9,54 @@ namespace py {
 
 class PointerVisitor;
 
+class IdentityDict {
+ public:
+  IdentityDict()
+      : capacity_(0),
+        num_items_(0),
+        num_usable_items_(0),
+        data_(NoneType::object()) {}
+
+  word capacity() { return capacity_; }
+  void setCapacity(word capacity) { capacity_ = capacity; }
+
+  word numItems() { return num_items_; }
+  void setNumItems(word num_items) { num_items_ = num_items; }
+
+  word numUsableItems() { return num_usable_items_; }
+  void setNumUsableItems(word num_usable_items) {
+    num_usable_items_ = num_usable_items;
+  }
+  void decrementNumUsableItems() {
+    DCHECK(num_usable_items_ > 0, "num_usable_items must be > 0");
+    num_usable_items_--;
+  }
+
+  RawObject data() { return data_; }
+  void setData(RawObject data) { data_ = data; }
+
+  void visit(PointerVisitor* visitor) {
+    visitor->visitPointer(&data_, PointerKind::kRuntime);
+  }
+
+  RawObject at(Thread* thread, const Object& key, word hash);
+
+  bool includes(Thread* thread, const Object& key, word hash);
+
+  void atPut(Thread* thread, const Object& key, word hash, const Object& value);
+
+  RawObject remove(Thread* thread, const Object& key, word hash);
+
+ private:
+  word capacity_;
+  word num_items_;
+  word num_usable_items_;
+  RawObject data_;
+
+  DISALLOW_HEAP_ALLOCATION();
+  DISALLOW_COPY_AND_ASSIGN(IdentityDict);
+};
+
 class ApiHandle : public PyObject {
  public:
   // Returns a handle for a managed object.  Increments the reference count of
@@ -38,8 +86,19 @@ class ApiHandle : public PyObject {
     return fromPyObject(reinterpret_cast<PyObject*>(type));
   }
 
+  // WARNING: This function should be called by the garbage collector.
+  // Clear out handles which are not referenced by managed objects or by an
+  // extension object.
+  static void clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
+                                        IdentityDict* cache);
+
+  // WARNING: This function should be called for shutdown.
+  // Dispose all handles, without trying to cleanly deallocate the object for
+  // runtime shutdown.
+  static void disposeHandles(Thread* thread, IdentityDict* api_handles);
+
   // Visit all reference_ members of live ApiHandles.
-  static void visitReferences(RawObject handles, PointerVisitor* visitor);
+  static void visitReferences(IdentityDict* handles, PointerVisitor* visitor);
 
   // Get the object from the handle's reference pointer. If non-existent
   // Either search the object in the runtime's extension types dictionary
@@ -95,16 +154,6 @@ class ApiHandle : public PyObject {
     return (reinterpret_cast<uword>(obj) & kImmediateMask) != 0;
   }
 
-  // TODO(T44244793): Remove these functions when handles have their own
-  // specialized hash table.
-  static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
-                                            const Object& key, word hash);
-
-  // TODO(T44244793): Remove these functions when handles have their own
-  // specialized hash table.
-  static RawObject dictAtIdentityEquals(Thread* thread, const Dict& dict,
-                                        const Object& key, word hash);
-
  private:
   // Returns an owned handle for a managed object. If a handle does not already
   // exist, a new handle is created.
@@ -115,12 +164,6 @@ class ApiHandle : public PyObject {
 
   // Create a new runtime instance based on this ApiHandle
   RawObject asInstance(RawObject type);
-
-  // TODO(T44244793): Remove these functions when handles have their own
-  // specialized hash table.
-  static void dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
-                                      const Object& key, word hash,
-                                      const Object& value);
 
   static const long kManagedBit = 1L << 31;
   static const long kBorrowedBit = 1L << 30;

@@ -2248,9 +2248,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&modules_by_index_, PointerKind::kRuntime);
 
   // Visit C-API data.
-  visitor->visitPointer(&api_handles_, PointerKind::kRuntime);
+  api_handles_.visit(visitor);
   ApiHandle::visitReferences(apiHandles(), visitor);
-  visitor->visitPointer(&api_caches_, PointerKind::kRuntime);
+  api_caches_.visit(visitor);
 
   // Visit symbols
   symbols_->visit(visitor);
@@ -2356,8 +2356,8 @@ void Runtime::initializeModules() {
 }
 
 void Runtime::initializeApiData() {
-  api_handles_ = newDict();
-  api_caches_ = newDict();
+  api_handles_.setData(empty_tuple_);
+  api_caches_.setData(empty_tuple_);
 }
 
 RawObject Runtime::concreteTypeAt(LayoutId layout_id) {
@@ -3736,13 +3736,7 @@ void Runtime::freeApiHandles() {
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
-  Dict handles(&scope, apiHandles());
-  Tuple handles_buckets(&scope, handles.data());
-  for (word i = Dict::Bucket::kFirst;
-       Dict::Bucket::nextItem(*handles_buckets, &i);) {
-    ApiHandle* handle = ApiHandle::atIndex(this, i);
-    handle->dispose();
-  }
+  ApiHandle::disposeHandles(thread, apiHandles());
   while (tracked_native_objects_ != nullptr) {
     auto entry = static_cast<ListEntry*>(tracked_native_objects_);
     untrackNativeObject(entry);
