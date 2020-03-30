@@ -8,6 +8,7 @@
 
 #include "builtins-module.h"
 #include "capi-handles.h"
+#include "dict-builtins.h"
 #include "function-builtins.h"
 #include "function-utils.h"
 #include "handles.h"
@@ -1415,10 +1416,14 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   HandleScope scope(thread);
 
   // Define the type name
+  Object module_name(&scope, NoneType::object());
   const char* class_name = strrchr(spec->name, '.');
   if (class_name == nullptr) {
     class_name = spec->name;
   } else {
+    module_name = Runtime::internStrFromAll(
+        thread, View<byte>(reinterpret_cast<const byte*>(spec->name),
+                           class_name - spec->name));
     class_name++;
   }
   Str type_name(&scope, Runtime::internStrFromCStr(thread, class_name));
@@ -1430,6 +1435,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Tuple bases_obj(&scope, runtime->implicitBases());
   if (bases != nullptr) bases_obj = ApiHandle::fromPyObject(bases)->asObject();
   Dict dict(&scope, runtime->newDict());
+  if (!module_name.isNoneType()) {
+    dictAtPutById(thread, dict, ID(__module__), module_name);
+  }
+  dictAtPutById(thread, dict, ID(__qualname__), type_name);
   word flags = Type::Flag::kIsNativeProxy;
   if (spec->flags & Py_TPFLAGS_HAVE_GC) {
     flags |= Type::Flag::kHasCycleGC;

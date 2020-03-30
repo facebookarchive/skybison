@@ -76,6 +76,12 @@ TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
   PyRun_SimpleString("x = Empty");
   PyObjectPtr result(testing::moduleGet("__main__", "x"));
   EXPECT_TRUE(PyType_CheckExact(result));
+  PyObjectPtr module(PyObject_GetAttrString(result, "__module__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(module, "foo"));
+  PyObjectPtr name(PyObject_GetAttrString(result, "__name__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, "Bar"));
+  PyObjectPtr qualname(PyObject_GetAttrString(result, "__qualname__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(qualname, "Bar"));
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotRaisesError) {
