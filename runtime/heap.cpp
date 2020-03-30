@@ -203,6 +203,16 @@ RawObject Heap::createMutableTuple(word length) {
   return MutableTuple::cast(result);
 }
 
+RawObject Heap::createPointer(void* c_ptr, word length) {
+  RawObject raw = allocate(allocationSize<RawPointer>(), RawHeader::kSize);
+  CHECK(!raw.isError(), "out of memory");
+  auto result = raw.rawCast<RawPointer>();
+  result.setHeader(Header::from(RawPointer::kSize, 0, LayoutId::kPointer,
+                                ObjectFormat::kData));
+  result.initialize(c_ptr, length);
+  return Pointer::cast(result);
+}
+
 RawObject Heap::createTuple(word length) {
   word size = Tuple::allocationSize(length);
   RawObject raw = allocate(size, HeapObject::headerSize(length));

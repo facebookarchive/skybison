@@ -47,6 +47,7 @@ class Runtime;
   V(KeyError)                                                                  \
   V(KeyboardInterrupt)                                                         \
   V(LookupError)                                                               \
+  V(MAP_SHARED)                                                                \
   V(MemoryError)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(NSIG)                                                                      \
@@ -62,6 +63,9 @@ class Runtime;
   V(PendingDeprecationWarning)                                                 \
   V(PermissionError)                                                           \
   V(ProcessLookupError)                                                        \
+  V(PROT_EXEC)                                                                 \
+  V(PROT_READ)                                                                 \
+  V(PROT_WRITE)                                                                \
   V(RTLD_GLOBAL)                                                               \
   V(RTLD_LOCAL)                                                                \
   V(RecursionError)                                                            \
@@ -335,6 +339,9 @@ class Runtime;
   V(_memmove_addr)                                                             \
   V(_memoryview_guard)                                                         \
   V(_memset_addr)                                                              \
+  V(_mmap__access)                                                             \
+  V(_mmap__data)                                                               \
+  V(_mmap__fd)                                                                 \
   V(_module__def)                                                              \
   V(_module__dict)                                                             \
   V(_module__proxy)                                                            \
@@ -600,6 +607,7 @@ class Runtime;
   V(maxunicode)                                                                \
   V(memoryview)                                                                \
   V(method)                                                                    \
+  V(mmap)                                                                      \
   V(mod)                                                                       \
   V(mode)                                                                      \
   V(module)                                                                    \

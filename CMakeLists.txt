@@ -220,6 +220,7 @@ set(
   library/importlib/_bootstrap.py
   library/importlib/_bootstrap_external.py
   library/marshal.py
+  library/mmap.py
   library/operator.py
   library/readline.py
   library/sys.py
@@ -351,6 +352,8 @@ add_library(
   runtime/memory-region.h
   runtime/memoryview-builtins.cpp
   runtime/memoryview-builtins.h
+  runtime/mmap-module.cpp
+  runtime/mmap-module.h
   runtime/modules.cpp
   runtime/modules.h
   runtime/module-builtins.cpp

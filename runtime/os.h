@@ -33,6 +33,9 @@ class OS {
 
   static bool freeMemory(byte* ptr, word size);
 
+  static void* mmap(void* addr, word size, int prot, int flags, int fd,
+                    off_t offset);
+
   static bool protectMemory(byte* address, word size, Protection);
 
   static bool secureRandom(byte* ptr, word size);

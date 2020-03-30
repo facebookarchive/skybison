@@ -156,6 +156,9 @@ class Runtime {
   RawObject newMemoryViewFromCPtr(Thread* thread, void* ptr, word length,
                                   ReadOnly read_only);
 
+  // Create a new Mmap object.
+  RawObject newMmap();
+
   RawObject newModule(const Object& name);
 
   RawObject newModuleProxy(const Module& module);
@@ -179,6 +182,8 @@ class Runtime {
 
   // Return a new, None-initialized tuple of the given length.
   RawObject newTuple(word length);
+
+  RawObject newPointer(void* cptr, word length);
 
   RawObject newProperty(const Object& getter, const Object& setter,
                         const Object& deleter);
@@ -580,6 +585,7 @@ class Runtime {
   DEFINE_IS_INSTANCE(ImportError)
   DEFINE_IS_INSTANCE(Int)
   DEFINE_IS_INSTANCE(List)
+  DEFINE_IS_INSTANCE(Mmap)
   DEFINE_IS_INSTANCE(Module)
   DEFINE_IS_INSTANCE(Set)
   DEFINE_IS_INSTANCE(StopIteration)

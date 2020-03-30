@@ -41,6 +41,7 @@
 #include "list-builtins.h"
 #include "mappingproxy-builtins.h"
 #include "memoryview-builtins.h"
+#include "mmap-module.h"
 #include "module-builtins.h"
 #include "module-proxy-builtins.h"
 #include "modules.h"
@@ -907,6 +908,15 @@ RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, void* ptr, word length,
   return newMemoryView(thread, buffer, length, read_only);
 }
 
+RawObject Runtime::newMmap() {
+  HandleScope scope;
+  Mmap result(&scope, heap()->create<RawMmap>());
+  result.setAccess(0);
+  result.setData(NoneType::object());
+  result.setFd(NoneType::object());
+  return *result;
+}
+
 RawObject Runtime::newMutableBytesUninitialized(word size) {
   if (size == 0) {
     return empty_mutable_bytes_;
@@ -995,6 +1005,10 @@ RawObject Runtime::newIntWithDigits(View<uword> digits) {
   }
   DCHECK(result.isValid(), "Invalid digits");
   return *result;
+}
+
+RawObject Runtime::newPointer(void* cptr, word length) {
+  return heap()->createPointer(cptr, length);
 }
 
 RawObject Runtime::newProperty(const Object& getter, const Object& setter,
@@ -1667,6 +1681,7 @@ void Runtime::initializeHeapTypes() {
   BoundMethodBuiltins::initialize(this);
   MappingProxyBuiltins::initialize(this);
   MemoryViewBuiltins::initialize(this);
+  MmapBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
   ModuleProxyBuiltins::initialize(this);
   NotImplementedBuiltins::initialize(this);

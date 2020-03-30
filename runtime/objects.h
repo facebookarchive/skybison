@@ -75,9 +75,11 @@ class Handle;
   V(LongRangeIterator)                                                         \
   V(MappingProxy)                                                              \
   V(MemoryView)                                                                \
+  V(Mmap)                                                                      \
   V(Module)                                                                    \
   V(ModuleProxy)                                                               \
   V(Object)                                                                    \
+  V(Pointer)                                                                   \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -338,12 +340,14 @@ class RawObject {
   bool isLookupError() const;
   bool isMappingProxy() const;
   bool isMemoryView() const;
+  bool isMmap() const;
   bool isModule() const;
   bool isModuleNotFoundError() const;
   bool isModuleProxy() const;
   bool isMutableBytes() const;
   bool isMutableTuple() const;
   bool isNotImplementedError() const;
+  bool isPointer() const;
   bool isProperty() const;
   bool isRange() const;
   bool isRangeIterator() const;
@@ -1409,6 +1413,49 @@ class RawArray : public RawInstance {
   RAW_OBJECT_COMMON(Array);
 };
 
+// A container for an mmap'd pointer
+//
+// RawLayout:
+//   [Header  ]
+//   [Access  ] - A bitmask word storing the access permissions for the file
+//   [Data    ] - A RawPointer holding the address + length of the memory
+//   [Fd      ] - The file descriptor opened
+class RawMmap : public RawInstance {
+ public:
+  enum Property {
+    kReadable = 0x01,
+    kWritable = 0x02,
+    kCopyOnWrite = 0x04,
+  };
+  // Getters and setters
+  word access() const;
+  void setAccess(word new_access) const;
+
+  RawObject data() const;
+  void setData(RawObject new_data) const;
+
+  RawObject fd() const;
+  void setFd(RawObject new_fd) const;
+
+  // Getters and setters for the kAccessOffset bitmask word
+  bool isReadable() const;
+  void setReadable() const;
+
+  bool isWritable() const;
+  void setWritable() const;
+
+  bool isCopyOnWrite() const;
+  void setCopyOnWrite() const;
+
+  // Layout
+  static const int kAccessOffset = RawHeapObject::kSize;
+  static const int kDataOffset = kAccessOffset + kPointerSize;
+  static const int kFdOffset = kDataOffset + kPointerSize;
+  static const int kSize = kFdOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Mmap);
+};
+
 class RawTuple : public RawArrayBase {
  public:
   // Getters and setters.
@@ -1691,6 +1738,29 @@ class RawNativeProxy : public RawInstance {
   static const int kSize = kLinkOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(NativeProxy);
+};
+
+class RawPointer : public RawHeapObject {
+ public:
+  // Getters and setters
+  void* cptr() const;
+  void setCPtr(void* new_cptr) const;
+
+  word length() const;
+  void setLength(word new_length) const;
+
+  // Layout.
+  static const int kCPtrOffset = RawHeapObject::kSize;
+  static const int kLengthOffset = kCPtrOffset + kPointerSize;
+  static const int kSize = kLengthOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Pointer);
+
+ private:
+  // Instance initialization should only done by the Heap.
+  void initialize(void* cptr, word length) const;
+
+  friend class Heap;
 };
 
 class RawProperty : public RawInstance {
@@ -3927,6 +3997,10 @@ inline bool RawObject::isMemoryView() const {
   return isHeapObjectWithLayout(LayoutId::kMemoryView);
 }
 
+inline bool RawObject::isMmap() const {
+  return isHeapObjectWithLayout(LayoutId::kMmap);
+}
+
 inline bool RawObject::isModule() const {
   return isHeapObjectWithLayout(LayoutId::kModule);
 }
@@ -3949,6 +4023,10 @@ inline bool RawObject::isMutableTuple() const {
 
 inline bool RawObject::isNotImplementedError() const {
   return isHeapObjectWithLayout(LayoutId::kNotImplementedError);
+}
+
+inline bool RawObject::isPointer() const {
+  return isHeapObjectWithLayout(LayoutId::kPointer);
 }
 
 inline bool RawObject::isProperty() const {
@@ -5598,6 +5676,29 @@ inline void RawNativeProxy::setLink(RawObject reference) const {
   instanceVariableAtPut(kLinkOffset, reference);
 }
 
+// RawPointer
+
+inline void* RawPointer::cptr() const {
+  return *reinterpret_cast<void**>(address() + kCPtrOffset);
+}
+
+inline void RawPointer::setCPtr(void* new_cptr) const {
+  *reinterpret_cast<void**>(address() + kCPtrOffset) = new_cptr;
+}
+
+inline word RawPointer::length() const {
+  return *reinterpret_cast<word*>(address() + kLengthOffset);
+}
+
+inline void RawPointer::setLength(word new_length) const {
+  *reinterpret_cast<word*>(address() + kLengthOffset) = new_length;
+}
+
+inline void RawPointer::initialize(void* cptr, word length) const {
+  *reinterpret_cast<void**>(address() + kCPtrOffset) = cptr;
+  *reinterpret_cast<word*>(address() + kLengthOffset) = length;
+}
+
 // RawProperty
 
 inline RawObject RawProperty::getter() const {
@@ -6156,6 +6257,63 @@ inline word RawMemoryView::length() const {
 
 inline void RawMemoryView::setLength(word length) const {
   instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(length));
+}
+
+// RawMmap
+
+inline word RawMmap::access() const {
+  return RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value();
+}
+
+inline void RawMmap::setAccess(word new_access) const {
+  instanceVariableAtPut(kAccessOffset, RawSmallInt::fromWord(new_access));
+}
+
+inline RawObject RawMmap::data() const {
+  return instanceVariableAt(kDataOffset);
+}
+
+inline void RawMmap::setData(RawObject new_data) const {
+  instanceVariableAtPut(kDataOffset, new_data);
+}
+
+inline RawObject RawMmap::fd() const { return instanceVariableAt(kFdOffset); }
+
+inline void RawMmap::setFd(RawObject new_fd) const {
+  instanceVariableAtPut(kFdOffset, new_fd);
+}
+
+inline bool RawMmap::isReadable() const {
+  return RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value() &
+         Property::kReadable;
+}
+
+inline void RawMmap::setReadable() const {
+  word mask = RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value();
+  instanceVariableAtPut(kAccessOffset,
+                        RawSmallInt::fromWord(mask | Property::kReadable));
+}
+
+inline bool RawMmap::isWritable() const {
+  return RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value() &
+         Property::kWritable;
+}
+
+inline void RawMmap::setWritable() const {
+  word mask = RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value();
+  instanceVariableAtPut(kAccessOffset,
+                        RawSmallInt::fromWord(mask | Property::kWritable));
+}
+
+inline bool RawMmap::isCopyOnWrite() const {
+  return RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value() &
+         Property::kCopyOnWrite;
+}
+
+inline void RawMmap::setCopyOnWrite() const {
+  word mask = RawSmallInt::cast(instanceVariableAt(kAccessOffset)).value();
+  instanceVariableAtPut(kAccessOffset,
+                        RawSmallInt::fromWord(mask | Property::kCopyOnWrite));
 }
 
 // RawModule

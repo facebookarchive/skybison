@@ -46,9 +46,11 @@ class Heap {
 
   RawObject createMutableTuple(word length);
 
-  RawObject createTuple(word length);
+  RawObject createPointer(void* c_ptr, word length);
 
   RawObject createRange();
+
+  RawObject createTuple(word length);
 
   static int spaceOffset() { return offsetof(Heap, space_); };
 

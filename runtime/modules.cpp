@@ -7,6 +7,7 @@
 #include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"
+#include "mmap-module.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
@@ -51,6 +52,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(builtins), &BuiltinsModule::initialize},
     {ID(faulthandler), &initializeFrozenModule<&kFaulthandlerModuleData>},
     {ID(marshal), &initializeFrozenModule<&kMarshalModuleData>},
+    {ID(mmap), &MmapModule::initialize},
     {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
     {ID(readline), &initializeFrozenModule<&kReadlineModuleData>},
     {ID(sys), &SysModule::initialize},

@@ -656,6 +656,18 @@ TEST_F(RuntimeTest, NewMemoryViewFromCPtrCreatesMemoryView) {
   EXPECT_EQ(ptr[4], 4);
 }
 
+TEST_F(RuntimeTest, NewMmapReturnsEmptyMmap) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_->newMmap());
+  ASSERT_TRUE(obj.isMmap());
+  Mmap mmap_obj(&scope, *obj);
+  EXPECT_EQ(mmap_obj.isReadable(), false);
+  EXPECT_EQ(mmap_obj.isWritable(), false);
+  EXPECT_EQ(mmap_obj.isCopyOnWrite(), false);
+  EXPECT_EQ(mmap_obj.data(), NoneType::object());
+  EXPECT_EQ(mmap_obj.fd(), NoneType::object());
+}
+
 TEST_F(RuntimeTest, LargeBytesSizeRoundedUpToPointerSizeMultiple) {
   HandleScope scope(thread_);
 
@@ -668,6 +680,15 @@ TEST_F(RuntimeTest, LargeBytesSizeRoundedUpToPointerSizeMultiple) {
   LargeBytes len255(&scope, runtime_->newBytes(255, 0));
   EXPECT_EQ(len255.size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+}
+
+TEST_F(RuntimeTest, NewPointerReturnsEmptyPointer) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_->newPointer(nullptr, -1));
+  ASSERT_TRUE(obj.isPointer());
+  Pointer pointer(&scope, *obj);
+  EXPECT_EQ(pointer.cptr(), nullptr);
+  EXPECT_EQ(pointer.length(), -1);
 }
 
 TEST_F(RuntimeTest, NewTuple) {

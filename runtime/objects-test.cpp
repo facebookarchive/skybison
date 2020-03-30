@@ -18,6 +18,7 @@ using DoubleTest = RuntimeFixture;
 using IntTest = RuntimeFixture;
 using LargeStrTest = RuntimeFixture;
 using ListTest = RuntimeFixture;
+using MmapTest = RuntimeFixture;
 using ModulesTest = RuntimeFixture;
 using MutableBytesTest = RuntimeFixture;
 using MutableTupleTest = RuntimeFixture;
@@ -520,6 +521,19 @@ TEST_F(IntTest, AsIntWithFalseReturnsZero) {
 
 TEST_F(IntTest, SmallIntFromWordTruncatedWithSmallNegativeNumberReturnsSelf) {
   EXPECT_EQ(SmallInt::fromWord(-1), SmallInt::fromWordTruncated(-1));
+}
+
+TEST_F(MmapTest, AccessSettersSetValues) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_->newMmap());
+  ASSERT_TRUE(obj.isMmap());
+  Mmap mmap_obj(&scope, *obj);
+  mmap_obj.setReadable();
+  mmap_obj.setWritable();
+  mmap_obj.setCopyOnWrite();
+  EXPECT_EQ(mmap_obj.isReadable(), true);
+  EXPECT_EQ(mmap_obj.isWritable(), true);
+  EXPECT_EQ(mmap_obj.isCopyOnWrite(), true);
 }
 
 TEST_F(ModulesTest, TestCreate) {

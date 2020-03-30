@@ -65,6 +65,7 @@ class Handle;
   V(NoneType)                                                                  \
   V(NotImplementedError)                                                       \
   V(NotImplementedType)                                                        \
+  V(Pointer)                                                                   \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -102,6 +103,7 @@ class Handle;
   V(FrozenSet)                                                                 \
   V(ImportError)                                                               \
   V(List)                                                                      \
+  V(Mmap)                                                                      \
   V(Module)                                                                    \
   V(Set)                                                                       \
   V(SetBase)                                                                   \
