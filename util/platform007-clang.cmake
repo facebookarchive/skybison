@@ -1,6 +1,4 @@
 # Toolchain settings for facebook platform007
-# This should be used with the `-C` option. Example:
-#     $ cmake -C util/platform007-clang.cmake ..
 #
 # See also:
 #   fbsource/tools/buckconfigs/fbcode/platforms/*/cxx.bcfg
@@ -16,14 +14,14 @@ endif()
 set(FBCODE_DIR "${FBSOURCE_DIR}/fbcode")
 set(LLVM_BIN "${FBCODE_DIR}/third-party-buck/platform007/build/llvm-fb/bin")
 
-set(CMAKE_C_COMPILER "/usr/local/fbcode/platform007/bin/clang.par" CACHE STRING "")
-set(CMAKE_CXX_COMPILER "/usr/local/fbcode/platform007/bin/clang++.par" CACHE STRING "")
-set(CMAKE_LINKER "${LLVM_BIN}/lld" CACHE STRING "")
-set(CMAKE_AR "${LLVM_BIN}/llvm-ar" CACHE STRING "")
-set(CMAKE_NM "${LLVM_BIN}/llvm-nm" CACHE STRING "")
-set(CMAKE_RANLIB "/bin/true" CACHE STRING "")
-set(CMAKE_OBJCOPY "${LLVM_BIN}/llvm-objcopy" CACHE STRING "")
-set(CMAKE_OBJDUMP "${LLVM_BIN}/llvm-objdump" CACHE STRING "")
+set(CMAKE_C_COMPILER "/usr/local/fbcode/platform007/bin/clang.par")
+set(CMAKE_CXX_COMPILER "/usr/local/fbcode/platform007/bin/clang++.par")
+set(CMAKE_LINKER "${LLVM_BIN}/lld")
+set(CMAKE_AR "${LLVM_BIN}/llvm-ar")
+set(CMAKE_NM "${LLVM_BIN}/llvm-nm")
+set(CMAKE_RANLIB "/bin/true")
+set(CMAKE_OBJCOPY "${LLVM_BIN}/llvm-objcopy")
+set(CMAKE_OBJDUMP "${LLVM_BIN}/llvm-objdump")
 
 include(${CMAKE_CURRENT_LIST_DIR}/platform007-common.cmake)
 

@@ -1,6 +1,4 @@
 # Toolchain settings for facebook platform007
-# This should be used with the `-C` option. Example:
-#     $ cmake -C util/platform007-gcc.cmake ..
 #
 # See also:
 #   fbsource/tools/buckconfigs/fbcode/platforms/*/cxx.bcfg

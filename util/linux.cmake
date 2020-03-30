@@ -1,9 +1,13 @@
 # Toolchain settings for a regular (non-Sandcastle) Linux build
-# This should be used with the `-C` option. Example:
-#     $ cmake -C util/linux.cmake ..
+if(NOT CMAKE_C_COMPILER)
+  set(CMAKE_C_COMPILER /usr/bin/cc)
+endif()
+if(NOT CMAKE_CXX_COMPILER)
+  set(CMAKE_CXX_COMPILER /usr/bin/c++)
+endif()
 
-set(BZIP2_LIBRARIES bz2 CACHE STRING "")
-set(FFI_LIBRARIES ffi CACHE STRING "")
-set(XZ_LIBRARIES lzma CACHE STRING "")
-set(OPENSSL_PREFIX /usr CACHE STRING "")
-set(OPENSSL_LIBRARIES crypto ssl CACHE STRING "")
+set(BZIP2_LIBRARIES bz2)
+set(FFI_LIBRARIES ffi)
+set(XZ_LIBRARIES lzma)
+set(OPENSSL_PREFIX /usr)
+set(OPENSSL_LIBRARIES crypto ssl)

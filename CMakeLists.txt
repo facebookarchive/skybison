@@ -1,5 +1,26 @@
 cmake_minimum_required(VERSION 3.5)
-project(python)
+project(python LANGUAGES C CXX)
+
+if(NOT CMAKE_TOOLCHAIN_FILE)
+  message(SEND_ERROR "
+")
+  file(GLOB TOOLCHAIN_FILES RELATIVE ${CMAKE_SOURCE_DIR} util/*.cmake)
+  list(FILTER TOOLCHAIN_FILES EXCLUDE REGEX util/.*-common\.cmake)
+  string(REPLACE ";" "\n    " TOOLCHAIN_FILES "${TOOLCHAIN_FILES}")
+  message(FATAL_ERROR "
+
+Error: This project requires a toolchain file.
+Please specify CMAKE_TOOLCHAIN_FILE. Example:
+
+  $ mkdir build
+  $ cd build
+  $ cmake -GNinja -D CMAKE_TOOLCHAIN_FILE=../util/platform007-clang.cmake ..
+
+Available toolchain files:
+
+    ${TOOLCHAIN_FILES}
+")
+endif()
 
 # Append flags set by util/*.cmake files
 # Note that setting CMAKE_C_FLAGS directly in util/*.cmake is problematic
