@@ -289,18 +289,18 @@ typedef struct PyModuleDef {
 } PyModuleDef;
 
 typedef struct PyMemberDef {
-  char* name;
+  const char* name;
   int type;
   Py_ssize_t offset;
   int flags;
-  char* doc;
+  const char* doc;
 } PyMemberDef;
 
 typedef struct PyGetSetDef {
-  char* name;
+  const char* name;
   getter get;
   setter set;
-  char* doc;
+  const char* doc;
   void* closure;
 } PyGetSetDef;
 
@@ -346,13 +346,13 @@ typedef struct {
 } PyType_Spec;
 
 typedef struct PyStructSequence_Field {
-  char* name;
-  char* doc;
+  const char* name;
+  const char* doc;
 } PyStructSequence_Field;
 
 typedef struct PyStructSequence_Desc {
-  char* name;
-  char* doc;
+  const char* name;
+  const char* doc;
   struct PyStructSequence_Field* fields;
   int n_in_sequence;
 } PyStructSequence_Desc;

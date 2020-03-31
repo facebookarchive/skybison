@@ -1875,47 +1875,28 @@ static void createBarTypeWithMembers() {
   };
 
   static PyMemberDef members[22];
-  members[0] = {const_cast<char*>("t_bool"), T_BOOL,
-                offsetof(BarObject, t_bool)};
-  members[1] = {const_cast<char*>("t_byte"), T_BYTE,
-                offsetof(BarObject, t_byte)};
-  members[2] = {const_cast<char*>("t_ubyte"), T_UBYTE,
-                offsetof(BarObject, t_ubyte)};
-  members[3] = {const_cast<char*>("t_short"), T_SHORT,
-                offsetof(BarObject, t_short)};
-  members[4] = {const_cast<char*>("t_ushort"), T_USHORT,
-                offsetof(BarObject, t_ushort)};
-  members[5] = {const_cast<char*>("t_int"), T_INT, offsetof(BarObject, t_int)};
-  members[6] = {const_cast<char*>("t_uint"), T_UINT,
-                offsetof(BarObject, t_uint)};
-  members[7] = {const_cast<char*>("t_long"), T_LONG,
-                offsetof(BarObject, t_long)};
-  members[8] = {const_cast<char*>("t_ulong"), T_ULONG,
-                offsetof(BarObject, t_ulong)};
-  members[9] = {const_cast<char*>("t_pyssize"), T_PYSSIZET,
-                offsetof(BarObject, t_pyssizet)};
-  members[10] = {const_cast<char*>("t_float"), T_FLOAT,
-                 offsetof(BarObject, t_float)};
-  members[11] = {const_cast<char*>("t_double"), T_DOUBLE,
-                 offsetof(BarObject, t_double)};
-  members[12] = {const_cast<char*>("t_string"), T_STRING,
-                 offsetof(BarObject, t_string)};
-  members[13] = {const_cast<char*>("t_char"), T_CHAR,
-                 offsetof(BarObject, t_char)};
-  members[14] = {const_cast<char*>("t_object"), T_OBJECT,
-                 offsetof(BarObject, t_object)};
-  members[15] = {const_cast<char*>("t_object_null"), T_OBJECT,
+  members[0] = {"t_bool", T_BOOL, offsetof(BarObject, t_bool)};
+  members[1] = {"t_byte", T_BYTE, offsetof(BarObject, t_byte)};
+  members[2] = {"t_ubyte", T_UBYTE, offsetof(BarObject, t_ubyte)};
+  members[3] = {"t_short", T_SHORT, offsetof(BarObject, t_short)};
+  members[4] = {"t_ushort", T_USHORT, offsetof(BarObject, t_ushort)};
+  members[5] = {"t_int", T_INT, offsetof(BarObject, t_int)};
+  members[6] = {"t_uint", T_UINT, offsetof(BarObject, t_uint)};
+  members[7] = {"t_long", T_LONG, offsetof(BarObject, t_long)};
+  members[8] = {"t_ulong", T_ULONG, offsetof(BarObject, t_ulong)};
+  members[9] = {"t_pyssize", T_PYSSIZET, offsetof(BarObject, t_pyssizet)};
+  members[10] = {"t_float", T_FLOAT, offsetof(BarObject, t_float)};
+  members[11] = {"t_double", T_DOUBLE, offsetof(BarObject, t_double)};
+  members[12] = {"t_string", T_STRING, offsetof(BarObject, t_string)};
+  members[13] = {"t_char", T_CHAR, offsetof(BarObject, t_char)};
+  members[14] = {"t_object", T_OBJECT, offsetof(BarObject, t_object)};
+  members[15] = {"t_object_null", T_OBJECT, offsetof(BarObject, t_object_null)};
+  members[16] = {"t_objectex", T_OBJECT_EX, offsetof(BarObject, t_object)};
+  members[17] = {"t_objectex_null", T_OBJECT_EX,
                  offsetof(BarObject, t_object_null)};
-  members[16] = {const_cast<char*>("t_objectex"), T_OBJECT_EX,
-                 offsetof(BarObject, t_object)};
-  members[17] = {const_cast<char*>("t_objectex_null"), T_OBJECT_EX,
-                 offsetof(BarObject, t_object_null)};
-  members[18] = {const_cast<char*>("t_longlong"), T_LONGLONG,
-                 offsetof(BarObject, t_longlong)};
-  members[19] = {const_cast<char*>("t_ulonglong"), T_ULONGLONG,
-                 offsetof(BarObject, t_ulonglong)};
-  members[20] = {const_cast<char*>("t_int_readonly"), T_INT,
-                 offsetof(BarObject, t_int), READONLY};
+  members[18] = {"t_longlong", T_LONGLONG, offsetof(BarObject, t_longlong)};
+  members[19] = {"t_ulonglong", T_ULONGLONG, offsetof(BarObject, t_ulonglong)};
+  members[20] = {"t_int_readonly", T_INT, offsetof(BarObject, t_int), READONLY};
   members[21] = {nullptr};
 
   newfunc new_func = [](PyTypeObject* type, PyObject*, PyObject*) {
@@ -2242,8 +2223,7 @@ TEST_F(TypeExtensionApiTest, MemberStringWithNullReturnsNone) {
   };
   // clang-format on
   static PyMemberDef members[2];
-  members[0] = {const_cast<char*>("name"), T_STRING, offsetof(BarObject, name),
-                0, nullptr};
+  members[0] = {"name", T_STRING, offsetof(BarObject, name), 0, nullptr};
   members[1] = {nullptr};
   static PyType_Slot slots[2];
   slots[0] = {Py_tp_members, reinterpret_cast<void*>(members)};
@@ -2443,8 +2423,7 @@ TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
   };
   // clang-format on
   static PyMemberDef members[2];
-  members[0] = {const_cast<char*>("value"), unknown_type,
-                offsetof(BarObject, value), 0, nullptr};
+  members[0] = {"value", unknown_type, offsetof(BarObject, value), 0, nullptr};
   members[1] = {nullptr};
   static PyType_Slot slots[2];
   slots[0] = {Py_tp_members, reinterpret_cast<void*>(members)};
@@ -2485,12 +2464,9 @@ static void createBarTypeWithGetSetObject() {
   };
 
   static PyGetSetDef getsets[4];
-  getsets[0] = {const_cast<char*>("attribute"), attribute_getter,
-                attribute_setter};
-  getsets[1] = {const_cast<char*>("readonly_attribute"),
-                readonly_attribute_getter, nullptr};
-  getsets[2] = {const_cast<char*>("raise_attribute"), attribute_getter,
-                raise_attribute_setter};
+  getsets[0] = {"attribute", attribute_getter, attribute_setter};
+  getsets[1] = {"readonly_attribute", readonly_attribute_getter, nullptr};
+  getsets[2] = {"raise_attribute", attribute_getter, raise_attribute_setter};
   getsets[3] = {nullptr};
 
   newfunc new_func = [](PyTypeObject* type, PyObject*, PyObject*) {
@@ -3563,7 +3539,7 @@ class Foo:
     int t_int;
   };
   static PyMemberDef members[2];
-  members[0] = {const_cast<char*>("t_int"), T_INT, offsetof(FooObject, t_int)};
+  members[0] = {"t_int", T_INT, offsetof(FooObject, t_int)};
   members[1] = {nullptr};
   initproc init_func = [](PyObject* self, PyObject*, PyObject*) {
     reinterpret_cast<FooObject*>(self)->t_int = 321;

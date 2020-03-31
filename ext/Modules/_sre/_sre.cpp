@@ -7713,18 +7713,18 @@ static PyMethodDef pattern_methods[] = {
 };
 
 static PyGetSetDef pattern_getset[] = {
-    {const_cast<char*>("groupindex"), (getter)pattern_groupindex, (setter)NULL,
-      const_cast<char*>("A dictionary mapping group names to group numbers.")},
+    {"groupindex", (getter)pattern_groupindex, (setter)NULL,
+      "A dictionary mapping group names to group numbers."},
     {NULL}  /* Sentinel */
 
 };
 
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
-    {const_cast<char*>("pattern"),    T_OBJECT,    PAT_OFF(pattern),       READONLY},
-    {const_cast<char*>("flags"),      T_INT,       PAT_OFF(flags),         READONLY},
-    {const_cast<char*>("groups"),     T_PYSSIZET,  PAT_OFF(groups),        READONLY},
-    {const_cast<char*>("__weaklistoffset__"), T_NONE, PAT_OFF(weakreflist), READONLY},
+    {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY},
+    {"flags",      T_INT,       PAT_OFF(flags),         READONLY},
+    {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY},
+    {"__weaklistoffset__", T_NONE, PAT_OFF(weakreflist), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -7765,18 +7765,18 @@ static PyMethodDef match_methods[] = {
 };
 
 static PyGetSetDef match_getset[] = {
-    {const_cast<char*>("lastindex"), (getter)match_lastindex_get, (setter)NULL},
-    {const_cast<char*>("lastgroup"), (getter)match_lastgroup_get, (setter)NULL},
-    {const_cast<char*>("regs"),      (getter)match_regs_get,      (setter)NULL},
+    {"lastindex", (getter)match_lastindex_get, (setter)NULL},
+    {"lastgroup", (getter)match_lastgroup_get, (setter)NULL},
+    {"regs",      (getter)match_regs_get,      (setter)NULL},
     {NULL}
 };
 
 #define MATCH_OFF(x) offsetof(MatchObject, x)
 static PyMemberDef match_members[] = {
-    {const_cast<char*>("string"),  T_OBJECT,   MATCH_OFF(string),  READONLY},
-    {const_cast<char*>("re"),      T_OBJECT,   MATCH_OFF(pattern), READONLY},
-    {const_cast<char*>("pos"),     T_PYSSIZET, MATCH_OFF(pos),     READONLY},
-    {const_cast<char*>("endpos"),  T_PYSSIZET, MATCH_OFF(endpos),  READONLY},
+    {"string",  T_OBJECT,   MATCH_OFF(string),  READONLY},
+    {"re",      T_OBJECT,   MATCH_OFF(pattern), READONLY},
+    {"pos",     T_PYSSIZET, MATCH_OFF(pos),     READONLY},
+    {"endpos",  T_PYSSIZET, MATCH_OFF(endpos),  READONLY},
     {NULL}
 };
 
@@ -7810,7 +7810,7 @@ static PyMethodDef scanner_methods[] = {
 
 #define SCAN_OFF(x) offsetof(ScannerObject, x)
 static PyMemberDef scanner_members[] = {
-    {const_cast<char*>("pattern"), T_OBJECT, SCAN_OFF(pattern), READONLY},
+    {"pattern", T_OBJECT, SCAN_OFF(pattern), READONLY},
     {NULL}  /* Sentinel */
 };
 

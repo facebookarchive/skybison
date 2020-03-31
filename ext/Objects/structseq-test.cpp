@@ -10,15 +10,11 @@ namespace testing {
 using StructSeqExtensionApiTest = ExtensionApi;
 
 PyStructSequence_Field desc_fields[] = {
-    {const_cast<char*>("first"), const_cast<char*>("first field")},
-    {const_cast<char*>("second"), const_cast<char*>("second field")},
-    {const_cast<char*>("third"), const_cast<char*>("third field")},
-    {const_cast<char*>("fourth"), const_cast<char*>("fourth field")},
-    {const_cast<char*>("fifth"), const_cast<char*>("fifth field")},
-    {nullptr}};
+    {"first", "first field"}, {"second", "second field"},
+    {"third", "third field"}, {"fourth", "fourth field"},
+    {"fifth", "fifth field"}, {nullptr}};
 
-PyStructSequence_Desc desc = {const_cast<char*>("Structseq"),
-                              const_cast<char*>("docs"), desc_fields, 2};
+PyStructSequence_Desc desc = {"Structseq", "docs", desc_fields, 2};
 
 TEST_F(StructSeqExtensionApiTest, NewTypeCreatesRuntimeType) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
