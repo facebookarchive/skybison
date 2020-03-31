@@ -2404,6 +2404,74 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
     return 1;
 }
 
+static int
+unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
+             Py_ssize_t min, Py_ssize_t max, va_list vargs)
+{
+    Py_ssize_t i;
+    PyObject **o;
+
+    assert(min >= 0);
+    assert(min <= max);
+
+    if (nargs < min) {
+        if (name != NULL)
+            PyErr_Format(
+                PyExc_TypeError,
+                "%.200s expected %s%zd arguments, got %zd",
+                name, (min == max ? "" : "at least "), min, nargs);
+        else
+            PyErr_Format(
+                PyExc_TypeError,
+                "unpacked tuple should have %s%zd elements,"
+                " but has %zd",
+                (min == max ? "" : "at least "), min, nargs);
+        return 0;
+    }
+
+    if (nargs == 0) {
+        return 1;
+    }
+
+    if (nargs > max) {
+        if (name != NULL)
+            PyErr_Format(
+                PyExc_TypeError,
+                "%.200s expected %s%zd arguments, got %zd",
+                name, (min == max ? "" : "at most "), max, nargs);
+        else
+            PyErr_Format(
+                PyExc_TypeError,
+                "unpacked tuple should have %s%zd elements,"
+                " but has %zd",
+                (min == max ? "" : "at most "), max, nargs);
+        return 0;
+    }
+
+    for (i = 0; i < nargs; i++) {
+        o = va_arg(vargs, PyObject **);
+        *o = args[i];
+    }
+    return 1;
+}
+
+int
+_PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
+                   Py_ssize_t min, Py_ssize_t max, ...)
+{
+    int retval;
+    va_list vargs;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, max);
+#else
+    va_start(vargs);
+#endif
+    retval = unpack_stack(args, nargs, name, min, max, vargs);
+    va_end(vargs);
+    return retval;
+}
+
 
 /* For type constructors that don't take keyword args
  *

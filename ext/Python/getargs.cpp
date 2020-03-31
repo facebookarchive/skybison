@@ -2050,6 +2050,59 @@ PY_EXPORT int PyArg_UnpackTuple(PyObject* args, const char* name,
   return 1;
 }
 
+static int unpackStack(PyObject* const* args, Py_ssize_t nargs,
+                       const char* name, Py_ssize_t min, Py_ssize_t max,
+                       va_list vargs) {
+  DCHECK(min >= 0, "min must be positive");
+  DCHECK(min <= max, "min must be <= max");
+
+  if (nargs < min) {
+    if (name != nullptr) {
+      PyErr_Format(PyExc_TypeError, "%.200s expected %s%zd arguments, got %zd",
+                   name, (min == max ? "" : "at least "), min, nargs);
+    } else {
+      PyErr_Format(PyExc_TypeError,
+                   "unpacked tuple should have %s%zd elements,"
+                   " but has %zd",
+                   (min == max ? "" : "at least "), min, nargs);
+    }
+    return 0;
+  }
+
+  if (nargs == 0) {
+    return 1;
+  }
+
+  if (nargs > max) {
+    if (name != nullptr) {
+      PyErr_Format(PyExc_TypeError, "%.200s expected %s%zd arguments, got %zd",
+                   name, (min == max ? "" : "at most "), max, nargs);
+    } else {
+      PyErr_Format(PyExc_TypeError,
+                   "unpacked tuple should have %s%zd elements,"
+                   " but has %zd",
+                   (min == max ? "" : "at most "), max, nargs);
+    }
+    return 0;
+  }
+
+  for (Py_ssize_t i = 0; i < nargs; i++) {
+    PyObject** o = va_arg(vargs, PyObject**);
+    *o = args[i];
+  }
+  return 1;
+}
+
+PY_EXPORT int _PyArg_UnpackStack(PyObject* const* args, Py_ssize_t nargs,
+                                 const char* name, Py_ssize_t min,
+                                 Py_ssize_t max, ...) {
+  va_list vargs;
+  va_start(vargs, max);
+  int retval = unpackStack(args, nargs, name, min, max, vargs);
+  va_end(vargs);
+  return retval;
+}
+
 PY_EXPORT int _PyArg_NoKeywords(const char* funcname, PyObject* kwargs) {
   if (kwargs == nullptr) {
     return 1;

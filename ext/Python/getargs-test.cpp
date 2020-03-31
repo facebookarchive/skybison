@@ -510,5 +510,63 @@ TEST_F(GetArgsExtensionApiTest, NoPositionalWithNonEmptyTupleRaisesTypeError) {
 }
 #pragma pop_macro("_PyArg_NoPositional")
 
+TEST_F(GetArgsExtensionApiTest,
+       UnpackStackWithNullNameAndNargsLessThanMinRaisesTypeError) {
+  EXPECT_EQ(_PyArg_UnpackStack(/*args=*/nullptr, /*nargs=*/1, /*name=*/nullptr,
+                               /*min=*/2, /*max=*/3),
+            0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(GetArgsExtensionApiTest,
+       UnpackStackWithNonNullNameAndNargsLessThanMinRaisesTypeError) {
+  EXPECT_EQ(_PyArg_UnpackStack(/*args=*/nullptr, /*nargs=*/1, /*name=*/"foo",
+                               /*min=*/2, /*max=*/3),
+            0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(GetArgsExtensionApiTest, UnpackStackWithNargsEqualsZeroReturnsOne) {
+  EXPECT_EQ(_PyArg_UnpackStack(/*args=*/nullptr, /*nargs=*/0, /*name=*/"foo",
+                               /*min=*/0, /*max=*/3),
+            1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(GetArgsExtensionApiTest,
+       UnpackStackWithNullNameAndNargsGreaterThanMaxRaisesTypeError) {
+  EXPECT_EQ(_PyArg_UnpackStack(/*args=*/nullptr, /*nargs=*/2, /*name=*/nullptr,
+                               /*min=*/0, /*max=*/1),
+            0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(GetArgsExtensionApiTest,
+       UnpackStackWithNonNullNameAndNargsGreaterThanMaxRaisesTypeError) {
+  EXPECT_EQ(_PyArg_UnpackStack(/*args=*/nullptr, /*nargs=*/2, /*name=*/"foo",
+                               /*min=*/0, /*max=*/1),
+            0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(GetArgsExtensionApiTest, UnpackStackUnpacksArrayIntoVarargs) {
+  PyObjectPtr long10(PyLong_FromLong(10));
+  PyObjectPtr long33(PyLong_FromLong(33));
+  PyObjectPtr test_str(PyUnicode_FromString("test_str"));
+  PyObject* args[] = {long10, long33, test_str};
+  PyObject *arg0 = nullptr, *arg1 = nullptr, *arg2 = nullptr;
+  EXPECT_EQ(_PyArg_UnpackStack(/*args=*/args, /*nargs=*/3, /*name=*/nullptr,
+                               /*min=*/0, /*max=*/3, &arg0, &arg1, &arg2),
+            1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(arg0, long10.get());
+  EXPECT_EQ(arg1, long33.get());
+  EXPECT_EQ(arg2, test_str.get());
+}
+
 }  // namespace testing
 }  // namespace py

@@ -41,6 +41,9 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyArg_UnpackStack(PyObject* const*, Py_ssize_t, const char*,
+                                   Py_ssize_t, Py_ssize_t, ...);
+
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kw);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #endif

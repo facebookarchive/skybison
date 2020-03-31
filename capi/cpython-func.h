@@ -1052,6 +1052,8 @@ PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject*, PyObject*,
 PyAPI_FUNC(int)
     _PyArg_ParseTuple_SizeT(PyObject* args, const char* format, ...);
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject*, const char*, ...);
+PyAPI_FUNC(int) _PyArg_UnpackStack(PyObject* const*, Py_ssize_t, const char*,
+                                   Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(int)
     _PyArg_VaParseTupleAndKeywordsFast(PyObject*, PyObject*,
                                        struct _PyArg_Parser*, va_list);
