@@ -131,6 +131,23 @@ c = C()
       raised(runtime_->attributeAt(thread_, c, name), LayoutId::kUserWarning));
 }
 
+TEST_F(RuntimeTest, AttributeAtPropagatesExceptionFromDunderGetAttributeDescr) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class Descr:
+  def __get__(self, instance, owner):
+    raise UserWarning("foo")
+class C:
+  __getattribute__ = Descr()
+c = C()
+)")
+                   .isError());
+  Object c(&scope, mainModuleAt(runtime_, "c"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  EXPECT_TRUE(
+      raised(runtime_->attributeAt(thread_, c, name), LayoutId::kUserWarning));
+}
+
 TEST_F(RuntimeTest, AttributeAtCallsDunderGetattr) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

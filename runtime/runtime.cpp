@@ -3150,6 +3150,7 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
       Interpreter::lookupMethod(thread, frame, object, ID(__getattribute__)));
   DCHECK(!dunder_getattribute.isErrorNotFound(),
          "__getattribute__ is expected to be found");
+  if (UNLIKELY(dunder_getattribute.isError())) return *dunder_getattribute;
   Runtime* runtime = thread->runtime();
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     Object result(&scope, objectGetAttribute(thread, object, name));

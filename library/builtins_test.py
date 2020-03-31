@@ -9210,6 +9210,18 @@ class ObjectTests(unittest.TestCase):
 
         self.assertIs(type(C.__class_getitem__), type(C.foo))
 
+    def test_dunder_getattribute_with_raising_descr_propagates_exception(self):
+        class D:
+            def __get__(self, x, y):
+                raise UserWarning("foo")
+
+        class C:
+            __getattribute__ = D()
+
+        instance = C()
+        with self.assertRaises(UserWarning):
+            instance.foo
+
     def test_dunder_new_with_builtin_type_raises_type_error(self):
         with self.assertRaisesRegex(
             TypeError, r"object\.__new__\(int\) is not safe.*int\.__new__\(\)"
