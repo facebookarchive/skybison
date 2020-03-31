@@ -1142,6 +1142,14 @@ class TestUnicode(unittest.TestCase):
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
 
+    def test_unicode_write_with_unicode_lineterminator(self):
+        with TemporaryFile("w+", newline='', encoding="utf-8") as fileobj:
+            writer = csv.writer(fileobj, lineterminator="\u2714")
+            writer.writerow(self.names)
+            expected = ",".join(self.names)+"\u2714"
+            fileobj.seek(0)
+            self.assertEqual(fileobj.read(), expected)
+
 class KeyOrderingTest(unittest.TestCase):
 
     def test_ordering_for_the_dict_reader_and_writer(self):
