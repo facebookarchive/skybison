@@ -33,6 +33,13 @@ class ASCII {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ASCII);
 };
 
+// Represents the possible result of casing a codepoint. Since lower-, upper-,
+// and title-casing a codepoint can be a one-to-many mapping, this cannot be
+// represented as a single value.
+struct FullCasing {
+  int32_t code_points[3];
+};
+
 // Functions for Unicode code points.
 class Unicode {
  public:
@@ -51,7 +58,7 @@ class Unicode {
   static bool isXidStart(int32_t code_point);
 
   // Conversion
-  static int32_t toLower(int32_t code_point);
+  static FullCasing toLower(int32_t code_point);
   static int32_t toTitle(int32_t code_point);
 
  private:
@@ -61,6 +68,7 @@ class Unicode {
   static bool isUpperDB(int32_t code_point);
   static bool isXidContinueDB(int32_t code_point);
   static bool isXidStartDB(int32_t code_point);
+  static FullCasing toLowerDB(int32_t code_point);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Unicode);
 };
@@ -212,15 +220,11 @@ inline bool Unicode::isXidStart(int32_t code_point) {
   return isXidStartDB(code_point);
 }
 
-inline int32_t Unicode::toLower(int32_t code_point) {
+inline FullCasing Unicode::toLower(int32_t code_point) {
   if (isASCII(code_point)) {
-    if (ASCII::isUpper(code_point)) {
-      code_point -= ('A' - 'a');
-    }
-    return code_point;
+    return {ASCII::toLower(code_point), -1};
   }
-  // TODO(T57791326) support non-ASCII
-  UNIMPLEMENTED("non-ASCII characters");
+  return toLowerDB(code_point);
 }
 
 inline int32_t Unicode::toTitle(int32_t code_point) {

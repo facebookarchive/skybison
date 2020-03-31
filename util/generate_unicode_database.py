@@ -927,6 +927,9 @@ struct UnicodeTypeRecord {{
 int32_t codePointFromName(const byte* name, word size);
 int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
 
+// Returns the case mapping for code points where offset is insufficient
+int32_t extendedCaseMapping(int32_t index);
+
 // Write the Unicode name for the given code point into the buffer.
 // Returns true if the name was written successfully, false otherwise.
 bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
@@ -1084,7 +1087,7 @@ def write_type_data(unicode, db, trace):  # noqa: C901
     numeric = {}
     spaces = []
     linebreaks = []
-    extra_casing = []
+    extended_cases = []
 
     for char in CODE_POINTS:
         record = unicode.table[char]
@@ -1154,19 +1157,19 @@ def write_type_data(unicode, db, trace):  # noqa: C901
                 # lowercase. The extra characters are stored in a different
                 # array.
                 flags |= EXTENDED_CASE_MASK
-                lower = len(extra_casing) | (len(sc[0]) << 24)
-                extra_casing.extend(sc[0])
+                lower = len(extended_cases) | (len(sc[0]) << 24)
+                extended_cases.extend(sc[0])
                 if cf != sc[0]:
                     lower |= len(cf) << 20
-                    extra_casing.extend(cf)
-                upper = len(extra_casing) | (len(sc[2]) << 24)
-                extra_casing.extend(sc[2])
+                    extended_cases.extend(cf)
+                upper = len(extended_cases) | (len(sc[2]) << 24)
+                extended_cases.extend(sc[2])
                 # Title is probably equal to upper.
                 if sc[1] == sc[2]:
                     title = upper
                 else:
-                    title = len(extra_casing) | (len(sc[1]) << 24)
-                    extra_casing.extend(sc[1])
+                    title = len(extended_cases) | (len(sc[1]) << 24)
+                    extended_cases.extend(sc[1])
             # decimal digit, integer digit
             decimal = 0
             if record[6]:
@@ -1191,7 +1194,7 @@ def write_type_data(unicode, db, trace):  # noqa: C901
     print(sum(map(len, numeric.values())), "numeric code points")
     print(len(spaces), "whitespace code points")
     print(len(linebreaks), "linebreak code points")
-    print(len(extra_casing), "extended case array")
+    print(len(extended_cases), "extended case array")
 
     StructArray(
         "UnicodeTypeRecord",
@@ -1211,6 +1214,9 @@ static const int32_t kTypeIndexMask = (int32_t{{1}} << kTypeIndexShift) - 1;
     )
     UIntArray("kTypeIndex1", index1).dump(db, trace)
     UIntArray("kTypeIndex2", index2).dump(db, trace)
+
+    # extended case mappings
+    CodePointArray("kExtendedCase", extended_cases).dump(db, trace)
 
 
 def write_db_coda(db):
@@ -1433,6 +1439,10 @@ static int32_t checkAlias(int32_t code_point) {
 
 int32_t codePointFromNameOrNamedSequence(const byte* name, word size) {
   return getCodePoint(name, size, checkAlias);
+}
+
+int32_t extendedCaseMapping(int32_t index) {
+  return kExtendedCase[index];
 }
 
 bool nameFromCodePoint(int32_t code_point, byte* buffer, word size) {

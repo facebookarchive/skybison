@@ -826,38 +826,64 @@ RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs) {
   }
   Str self(&scope, strUnderlying(*self_obj));
   word length = self.charLength();
+  if (self.isASCII()) {
+    if (self.isSmallStr()) {
+      byte buf[SmallStr::kMaxLength] = {};
+      for (word i = 0; i < length; i++) {
+        buf[i] = ASCII::toLower(self.charAt(i));
+      }
+      return SmallStr::fromBytes({buf, length});
+    }
+    // Search for the first uppercase character.
+    word first_uppercase = 0;
+    for (; first_uppercase < length; first_uppercase++) {
+      if (ASCII::isUpper(self.charAt(first_uppercase))) {
+        break;
+      }
+    }
+    if (first_uppercase >= length && self_obj.isStr()) {
+      return *self_obj;
+    }
+
+    MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+    result.replaceFromWithStr(0, *self, first_uppercase);
+    for (word i = first_uppercase; i < length; i++) {
+      byte lower = ASCII::toLower(self.charAt(i));
+      result.byteAtPut(i, lower);
+    }
+    return result.becomeStr();
+  }
 
   // Search for the first uppercase character.
-  word i = 0;
-  for (; i < length; i++) {
-    byte c = self.charAt(i);
-    if (c > kMaxASCII) {
-      // TODO(T57791326) support non-ASCII
-      UNIMPLEMENTED("non-ASCII characters");
-    }
-    if (c >= 'A' && c <= 'Z') {
+  word first_uppercase = 0;
+  for (word char_length; first_uppercase < length;
+       first_uppercase += char_length) {
+    int32_t code_point = self.codePointAt(first_uppercase, &char_length);
+    if (Unicode::isUpper(code_point) || Unicode::isTitle(code_point)) {
       break;
     }
   }
-  if (i >= length && self_obj.isStr()) {
+  if (first_uppercase >= length && self_obj.isStr()) {
     return *self_obj;
   }
 
-  // Create new string object and translate remaining characters.
-  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
-  result.replaceFromWithStr(0, *self, i);
-  for (; i < length; i++) {
-    byte c = self.charAt(i);
-    if (c > kMaxASCII) {
-      // TODO(T57791326) support non-ASCII
-      UNIMPLEMENTED("non-ASCII characters");
+  StrArray result(&scope, runtime->newStrArray());
+  runtime->strArrayEnsureCapacity(thread, result, length);
+  // Since the prefix is valid UTF-8 and guaranteed to fit, it's safe to write
+  // directly to the underlying MutableBytes.
+  MutableBytes result_bytes(&scope, result.items());
+  result_bytes.replaceFromWithStr(0, *self, first_uppercase);
+  result.setNumItems(first_uppercase);
+  for (word char_length, i = first_uppercase; i < length; i += char_length) {
+    struct FullCasing lower =
+        Unicode::toLower(self.codePointAt(i, &char_length));
+    for (word j = 0; j < 3; j++) {
+      int32_t decoded = lower.code_points[j];
+      if (decoded == -1) break;
+      runtime->strArrayAddCodePoint(thread, result, decoded);
     }
-    if (c >= 'A' && c <= 'Z') {
-      c -= 'A' - 'a';
-    }
-    result.byteAtPut(i, c);
   }
-  return result.becomeStr();
+  return runtime->strFromStrArray(result);
 }
 
 RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs) {
@@ -876,7 +902,8 @@ RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs) {
     byte ch = self.charAt(i);
     byte mapped;
     if (is_previous_mapped) {
-      mapped = Unicode::toLower(ch);
+      FullCasing lower = Unicode::toLower(ch);
+      mapped = lower.code_points[0];
     } else {
       mapped = Unicode::toTitle(ch);
     }

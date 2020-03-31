@@ -11949,6 +11949,13 @@ class StrTests(unittest.TestCase):
         self.assertEqual(str.lower("1234"), "1234")
         self.assertEqual(str.lower("$%^*("), "$%^*(")
 
+    def test_lower_with_non_ascii_returns_lowercased_string(self):
+        self.assertEqual(str.lower("foo\u01BCBAR"), "foo\u01BDbar")
+        # uppercase without lowercase
+        self.assertEqual(str.lower("FOO\U0001D581bar"), "foo\U0001D581bar")
+        # one to many lowercasing
+        self.assertEqual(str.lower("foo\u0130bar"), "foo\x69\u0307bar")
+
     def test_lower_with_str_subclass_returns_str(self):
         class C(str):
             pass
