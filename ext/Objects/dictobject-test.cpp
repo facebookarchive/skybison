@@ -811,18 +811,17 @@ TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {
 }
 
 TEST_F(DictExtensionApiTest, SizeWithEmptyDictReturnsZero) {
-  PyObject* dict = PyDict_New();
+  PyObjectPtr dict(PyDict_New());
   EXPECT_EQ(PyDict_Size(dict), 0);
-  Py_DECREF(dict);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
-  PyObject* dict = PyDict_New();
-  PyObject* key1 = PyLong_FromLong(1);
-  PyObject* key2 = PyLong_FromLong(2);
-  PyObject* value1 = PyLong_FromLong(0);
-  PyObject* value2 = PyLong_FromLong(0);
-  PyObject* value3 = PyLong_FromLong(0);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key1(PyLong_FromLong(1));
+  PyObjectPtr key2(PyLong_FromLong(2));
+  PyObjectPtr value1(PyLong_FromLong(0));
+  PyObjectPtr value2(PyLong_FromLong(0));
+  PyObjectPtr value3(PyLong_FromLong(0));
 
   // Dict starts out empty
   EXPECT_EQ(PyDict_Size(dict), 0);
@@ -835,13 +834,6 @@ TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
   // Replace value for existing key
   ASSERT_EQ(PyDict_SetItem(dict, key1, value3), 0);
   EXPECT_EQ(PyDict_Size(dict), 2);
-
-  Py_DECREF(dict);
-  Py_DECREF(key1);
-  Py_DECREF(key2);
-  Py_DECREF(value1);
-  Py_DECREF(value2);
-  Py_DECREF(value3);
 }
 
 TEST_F(DictExtensionApiTest, ContainsWithKeyInDictReturnsOne) {
@@ -959,6 +951,32 @@ TEST_F(DictExtensionApiTest, ClearRemovesAllItems) {
   PyDict_Clear(dict);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyDict_Size(dict), 0);
+}
+
+TEST_F(DictExtensionApiTest, GETSIZEWithEmptyDictReturnsZero) {
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(PyDict_GET_SIZE(dict.get()), 0);
+}
+
+TEST_F(DictExtensionApiTest, GETSIZEWithNonEmptyDict) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key1(PyLong_FromLong(1));
+  PyObjectPtr key2(PyLong_FromLong(2));
+  PyObjectPtr value1(PyLong_FromLong(0));
+  PyObjectPtr value2(PyLong_FromLong(0));
+  PyObjectPtr value3(PyLong_FromLong(0));
+
+  // Dict starts out empty
+  EXPECT_EQ(PyDict_GET_SIZE(dict.get()), 0);
+
+  // Inserting items for two different keys
+  ASSERT_EQ(PyDict_SetItem(dict, key1, value1), 0);
+  ASSERT_EQ(PyDict_SetItem(dict, key2, value2), 0);
+  EXPECT_EQ(PyDict_GET_SIZE(dict.get()), 2);
+
+  // Replace value for existing key
+  ASSERT_EQ(PyDict_SetItem(dict, key1, value3), 0);
+  EXPECT_EQ(PyDict_GET_SIZE(dict.get()), 2);
 }
 
 TEST_F(DictExtensionApiTest, GetItemWithErrorNonExistingKeyReturnsNull) {

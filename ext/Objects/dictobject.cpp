@@ -57,6 +57,12 @@ PY_EXPORT int PyDict_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
+PY_EXPORT Py_ssize_t PyDict_GET_SIZE_Func(PyObject* dict) {
+  HandleScope scope;
+  Dict dict_obj(&scope, ApiHandle::fromPyObject(dict)->asObject());
+  return dict_obj.numItems();
+}
+
 PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
                                         PyObject* value, Py_hash_t pyhash) {
   Thread* thread = Thread::current();

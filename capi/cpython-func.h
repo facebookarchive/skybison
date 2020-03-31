@@ -163,6 +163,7 @@ PyAPI_FUNC(int) PyComplex_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyComplex_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_Check_Func(PyObject*);
+PyAPI_FUNC(Py_ssize_t) PyDict_GET_SIZE_Func(PyObject*);
 PyAPI_FUNC(int) PyExceptionClass_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyExceptionInstance_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyFloat_CheckExact_Func(PyObject*);
@@ -1375,6 +1376,8 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 #define PyByteArray_GET_SIZE(op) PyByteArray_Size((PyObject*)op)
 #define PyBytes_AS_STRING(op) PyBytes_AsString((PyObject*)op)
 #define PyBytes_GET_SIZE(op) PyBytes_Size((PyObject*)op)
+
+#define PyDict_GET_SIZE(op) PyDict_GET_SIZE_Func((PyObject*)op)
 
 #define PyFloat_AS_DOUBLE(op) PyFloat_AsDouble((PyObject*)op)
 
