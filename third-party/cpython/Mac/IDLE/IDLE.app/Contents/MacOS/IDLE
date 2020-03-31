@@ -1,4 +1,4 @@
-#!%prefix%/Resources/Python.app/Contents/MacOS/%exe%
+#!/opt/yum/Cellar/python@2/2.7.17_1/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python
 
 import sys, os
 execdir = os.path.dirname(sys.argv[0])
@@ -6,6 +6,9 @@ executable = os.path.join(execdir, "Python")
 resdir = os.path.join(os.path.dirname(execdir), "Resources")
 libdir = os.path.join(os.path.dirname(execdir), "Frameworks")
 mainprogram = os.path.join(resdir, "idlemain.py")
+
+if 0:
+    sys.argv.insert(1, '-O')
 
 sys.argv.insert(1, mainprogram)
 if 0 or 0:
@@ -17,6 +20,7 @@ else:
     if pypath:
         pypath = ":" + pypath
     os.environ["PYTHONPATH"] = resdir + pypath
+
 os.environ["PYTHONEXECUTABLE"] = executable
 os.environ["DYLD_LIBRARY_PATH"] = libdir
 os.environ["DYLD_FRAMEWORK_PATH"] = libdir
