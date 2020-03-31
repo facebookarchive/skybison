@@ -540,6 +540,7 @@ PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
 PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
+PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);

@@ -169,6 +169,212 @@ TEST_F(ObjectExtensionApiTest, DelAttrRaisesAttributeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
 }
 
+TEST_F(ObjectExtensionApiTest, LookupAttrWithNonStrNameRaisesTypeError) {
+  Py_INCREF(Py_None);
+  PyObjectPtr obj(Py_None);
+  Py_INCREF(Py_None);
+  PyObjectPtr name(Py_None);
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, LookupAttrWithExtantAttrReturnsOne) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+obj = C()
+obj.a = 42
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  ASSERT_TRUE(PyObject_HasAttr(obj, name));
+  PyObject* result = nullptr;
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 42);
+  Py_DECREF(result);
+}
+
+TEST_F(ObjectExtensionApiTest, LookupAttrWithNonexistentAttrReturnsZero) {
+  Py_INCREF(Py_None);
+  PyObjectPtr obj(Py_None);
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  ASSERT_FALSE(PyObject_HasAttr(obj, name));
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithSuccessfulDunderGetAttributeReturnsOne) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattribute__(self, key):
+    return 42
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = nullptr;
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 42);
+  Py_DECREF(result);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithRaisingDunderGetAttributeReturnsNegativeOne) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattribute__(self, key):
+    raise TypeError("foo")
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithAttributeErrorRaisingDunderGetAttributeReturnsZero) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattribute__(self, key):
+    raise AttributeError("foo")
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithSuccessfulDunderGetAttrReturnsOne) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattr__(self, key):
+    return 42
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = nullptr;
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 42);
+  Py_DECREF(result);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithRaisingDunderGetAttrReturnsNegativeOne) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattr__(self, key):
+    raise TypeError("foo")
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithAttributeErrorRaisingDunderGetAttrReturnsZero) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattr__(self, key):
+    raise AttributeError("foo")
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(
+    ObjectExtensionApiTest,
+    LookupAttrWithDunderGetAttributeAndDunderGetAttrCallsDunderGetAttribute) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattr__(self, key):
+    return 5
+  def __getattribute__(self, key):
+    return 10
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = nullptr;
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 10);
+  Py_DECREF(result);
+}
+
+TEST_F(
+    ObjectExtensionApiTest,
+    LookupAttrWithRaisingDunderGetAttributeAndDunderGetAttrCallsDunderGetAttr) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getattr__(self, key):
+    return 5
+  def __getattribute__(self, key):
+    raise AttributeError("foo")
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = nullptr;
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 5);
+  Py_DECREF(result);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       LookupAttrWithRaisingDescrAttrReturnsNegativeOne) {
+  PyRun_SimpleString(R"(
+class Desc:
+  def __get__(self, instance, owner):
+    raise TypeError("foo")
+
+class C:
+  a = Desc()
+
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr name(PyUnicode_FromString("a"));
+  PyObject* result = name.get();  // some non-NULL value
+  EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
   PyObjectPtr key(PyUnicode_FromString("a_key"));
   PyObjectPtr value(PyLong_FromLong(5));

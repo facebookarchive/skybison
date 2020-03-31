@@ -1135,6 +1135,7 @@ PyAPI_FUNC(PyVarObject*) _PyObject_GC_NewVar(PyTypeObject*, Py_ssize_t);
 PyAPI_FUNC(PyVarObject*) _PyObject_GC_Resize(PyVarObject*, Py_ssize_t);
 PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject*, struct _Py_Identifier*);
 PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject*, struct _Py_Identifier*);
+PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject*, PyObject*, PyObject**);
 PyAPI_FUNC(PyObject*)
     _PyObject_LookupSpecial(PyObject*, struct _Py_Identifier*);
 PyAPI_FUNC(PyObject*) _PyObject_New(PyTypeObject*);

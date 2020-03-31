@@ -259,6 +259,41 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   return ApiHandle::newReference(thread, *result);
 }
 
+PY_EXPORT int _PyObject_LookupAttr(PyObject* obj, PyObject* name,
+                                   PyObject** result) {
+  // Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which don't
+  // raise AttributeError.
+  // Return 1 and set *result != NULL if an attribute is found.
+  // Return 0 and set *result == NULL if an attribute is not found; an
+  // AttributeError is silenced.
+  // Return -1 and set *result == NULL if an error other than AttributeError is
+  // raised.
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object name_str(&scope, attributeName(thread, name_obj));
+  if (name_str.isErrorException()) {
+    // name was not a str instance
+    *result = nullptr;
+    return -1;
+  }
+  Object result_obj(&scope,
+                    thread->runtime()->attributeAt(thread, object, name_obj));
+  if (!result_obj.isError()) {
+    *result = ApiHandle::newReference(thread, *result_obj);
+    return 1;
+  }
+  DCHECK(result_obj.isErrorException(), "result should only be an exception");
+  if (thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
+    *result = nullptr;
+    thread->clearPendingException();
+    return 0;
+  }
+  *result = nullptr;
+  return -1;
+}
+
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                                       PyObject* value) {
   Thread* thread = Thread::current();
