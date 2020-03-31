@@ -1118,7 +1118,7 @@ TEST_F(DictExtensionApiTest, NextWithNonEmptyDictReturnsKeysAndValues) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(DictExtensionApiTest, NextWithNullKeyPtrDoesNotDie) {
+TEST_F(DictExtensionApiTest, NextAcceptsNullKeyPointer) {
   PyObjectPtr dict(PyDict_New());
   PyObjectPtr one(PyLong_FromLong(1));
   PyObjectPtr two(PyLong_FromLong(2));
@@ -1133,7 +1133,7 @@ TEST_F(DictExtensionApiTest, NextWithNullKeyPtrDoesNotDie) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(DictExtensionApiTest, NextWithNullValuePtrDoesNotDie) {
+TEST_F(DictExtensionApiTest, NextAcceptsNullValuePointer) {
   PyObjectPtr dict(PyDict_New());
   PyObjectPtr one(PyLong_FromLong(1));
   PyObjectPtr two(PyLong_FromLong(2));
@@ -1145,6 +1145,93 @@ TEST_F(DictExtensionApiTest, NextWithNullValuePtrDoesNotDie) {
   Py_ssize_t pos = 0;
   PyObject* key = nullptr;
   ASSERT_EQ(PyDict_Next(dict, &pos, &key, nullptr), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, UnderNextWithEmptyDictReturnsFalse) {
+  PyObject* key = nullptr;
+  PyObject* value = nullptr;
+  Py_hash_t hash = 0;
+  Py_ssize_t pos = 0;
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(_PyDict_Next(dict, &pos, &key, &value, &hash), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, UnderNextWithNonEmptyDictReturnsKeysAndValues) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* key = nullptr;
+  PyObject* value = nullptr;
+  Py_hash_t hash = 0;
+  ASSERT_EQ(_PyDict_Next(dict, &pos, &key, &value, &hash), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(key, one);
+  EXPECT_EQ(value, two);
+  EXPECT_EQ(hash, 1);
+
+  ASSERT_EQ(_PyDict_Next(dict, &pos, &key, &value, &hash), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(key, three);
+  EXPECT_EQ(value, four);
+  EXPECT_EQ(hash, 3);
+
+  ASSERT_EQ(_PyDict_Next(dict, &pos, &key, &value, &hash), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, UnderNextAcceptsNullKeyPointer) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* value = nullptr;
+  Py_hash_t hash = 0;
+  ASSERT_EQ(_PyDict_Next(dict, &pos, nullptr, &value, &hash), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, UnderNextAcceptsNullValuePointer) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* key = nullptr;
+  Py_hash_t hash = 0;
+  ASSERT_EQ(_PyDict_Next(dict, &pos, &key, nullptr, &hash), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, UnderNextAcceptsNullHashPointer) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* key = nullptr;
+  PyObject* value = nullptr;
+  ASSERT_EQ(_PyDict_Next(dict, &pos, &key, &value, nullptr), 1);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 

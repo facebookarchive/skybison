@@ -353,16 +353,16 @@ PY_EXPORT int PyDict_MergeFromSeq2(PyObject* /* d */, PyObject* /* 2 */,
   UNIMPLEMENTED("PyDict_MergeFromSeq2");
 }
 
-PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
-                          PyObject** pvalue) {
+PY_EXPORT int _PyDict_Next(PyObject* dict, Py_ssize_t* ppos, PyObject** pkey,
+                           PyObject** pvalue, Py_hash_t* phash) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object dict_obj(&scope, ApiHandle::fromPyObject(dict)->asObject());
   if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
     return 0;
   }
-  Dict dict(&scope, *dict_obj);
-  Tuple dict_data(&scope, dict.data());
+  Dict dict_dict(&scope, *dict_obj);
+  Tuple dict_data(&scope, dict_dict.data());
   // Below are all the possible statuses of ppos and what to do in each case.
   // * If an index is out of bounds, we should not advance.
   // * If an index does not point to a valid bucket, we should try and find the
@@ -381,8 +381,16 @@ PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
     *pvalue = ApiHandle::borrowedReference(
         thread, Dict::Bucket::value(*dict_data, *ppos));
   }
+  if (phash != nullptr) {
+    *phash = Dict::Bucket::hash(*dict_data, *ppos);
+  }
   *ppos += Dict::Bucket::kNumPointers;
   return true;
+}
+
+PY_EXPORT int PyDict_Next(PyObject* dict, Py_ssize_t* ppos, PyObject** pkey,
+                          PyObject** pvalue) {
+  return _PyDict_Next(dict, ppos, pkey, pvalue, nullptr);
 }
 
 PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {

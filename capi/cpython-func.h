@@ -1086,6 +1086,8 @@ PyAPI_FUNC(PyObject*)
 PyAPI_FUNC(PyObject*) _PyCodec_LookupTextEncoding(const char*, const char*);
 PyAPI_FUNC(PyObject*)
     _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key, Py_hash_t hash);
+PyAPI_FUNC(int)
+    _PyDict_Next(PyObject*, Py_ssize_t*, PyObject**, PyObject**, Py_hash_t*);
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
                                           PyObject* value, Py_hash_t hash);
 PyAPI_FUNC(void) _PyErr_BadInternalCall(const char*, int);
