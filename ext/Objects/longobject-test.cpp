@@ -728,5 +728,13 @@ TEST_F(LongExtensionApiTest, FromDoubleRaisesAndReturnsNull) {
   EXPECT_EQ(pylong, nullptr);
 }
 
+TEST_F(LongExtensionApiTest, OneIsOne) {
+  EXPECT_TRUE(isLongEqualsLong(_PyLong_One, 1));
+}
+
+TEST_F(LongExtensionApiTest, ZeroIsZero) {
+  EXPECT_TRUE(isLongEqualsLong(_PyLong_Zero, 0));
+}
+
 }  // namespace testing
 }  // namespace py

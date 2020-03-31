@@ -16,6 +16,9 @@
 #define NSMALLNEGINTS           5
 #endif
 
+PyObject *_PyLong_Zero = NULL;
+PyObject *_PyLong_One = NULL;
+
 /* convert a PyLong of size 1, 0 or -1 to an sdigit */
 #define MEDIUM_VALUE(x) (assert(-1 <= Py_SIZE(x) && Py_SIZE(x) <= 1),   \
          Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :   \
@@ -5543,6 +5546,13 @@ _PyLong_Init(void)
         v->ob_digit[0] = (digit)abs(ival);
     }
 #endif
+    _PyLong_Zero = PyLong_FromLong(0);
+    if (_PyLong_Zero == NULL)
+        return 0;
+    _PyLong_One = PyLong_FromLong(1);
+    if (_PyLong_One == NULL)
+        return 0;
+
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0)
@@ -5555,6 +5565,8 @@ _PyLong_Init(void)
 void
 PyLong_Fini(void)
 {
+    Py_CLEAR(_PyLong_One);
+    Py_CLEAR(_PyLong_Zero);
     /* Integers are currently statically allocated. Py_DECREF is not
        needed, but Python must forget about the reference or multiple
        reinitializations will fail. */

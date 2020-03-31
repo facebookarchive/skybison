@@ -359,6 +359,10 @@ PY_EXPORT PyLongObject* _PyLong_FromNbInt(PyObject*) {
   UNIMPLEMENTED("_PyLong_FromNbInt");
 }
 
+PY_EXPORT PyObject* _PyLong_One_Ptr() {
+  return ApiHandle::borrowedReference(Thread::current(), SmallInt::fromWord(1));
+}
+
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -366,6 +370,10 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   DCHECK(thread->runtime()->isInstanceOfInt(*obj), "requires an integer");
   Int value(&scope, intUnderlying(*obj));
   return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
+}
+
+PY_EXPORT PyObject* _PyLong_Zero_Ptr() {
+  return ApiHandle::borrowedReference(Thread::current(), SmallInt::fromWord(0));
 }
 
 }  // namespace py
