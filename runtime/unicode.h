@@ -42,6 +42,8 @@ struct FullCasing {
 
 class UTF8 {
  public:
+  static const word kMaxLength = 4;
+
   // Given the lead byte of a UTF-8 code point, return its length.
   static word numChars(byte lead_byte);
 

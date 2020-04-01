@@ -6,6 +6,7 @@
 #include "frame.h"
 #include "runtime.h"
 #include "thread.h"
+#include "unicode.h"
 
 namespace py {
 
@@ -831,6 +832,22 @@ int32_t RawStrArray::codePointAt(word index, word* char_length) const {
   RawMutableBytes buffer = RawMutableBytes::cast(items());
   return decodeCodePoint(&buffer, &RawMutableBytes::byteAt, numItems(), index,
                          char_length);
+}
+
+void RawStrArray::rotateCodePoint(word first, word last) const {
+  DCHECK_BOUND(first, last);
+  DCHECK_INDEX(last, numItems());
+  if (first == last) {
+    return;
+  }
+
+  byte code_point[UTF8::kMaxLength];
+  byte* buffer =
+      reinterpret_cast<byte*>(RawMutableBytes::cast(items()).address());
+  word char_length = UTF8::numChars(buffer[last]);
+  std::memcpy(code_point, &buffer[last], char_length);
+  std::memmove(&buffer[first + char_length], &buffer[first], last - first);
+  std::memcpy(&buffer[first], code_point, char_length);
 }
 
 // Linked list helpers

@@ -24,6 +24,7 @@ using MutableBytesTest = RuntimeFixture;
 using MutableTupleTest = RuntimeFixture;
 using SliceTest = RuntimeFixture;
 using SmallStrTest = RuntimeFixture;
+using StrArrayTest = RuntimeFixture;
 using StrTest = RuntimeFixture;
 using StringTest = RuntimeFixture;
 using ValueCellTest = RuntimeFixture;
@@ -716,6 +717,52 @@ TEST_F(SliceTest, LengthWithPositiveStepAndStopLessThanStartReturnsZero) {
 
 TEST_F(SliceTest, LengthWithPositiveStepAndStartEqualsStopReturnsZero) {
   EXPECT_EQ(Slice::length(2, 2, 1), 0);
+}
+
+TEST_F(StrArrayTest, RotateCodePointWithSameFirstAndLastIsNoop) {
+  HandleScope scope(thread_);
+  StrArray array(&scope, runtime_->newStrArray());
+  runtime_->strArrayAddASCII(thread_, array, 'H');
+  runtime_->strArrayAddASCII(thread_, array, 'i');
+  runtime_->strArrayAddASCII(thread_, array, '!');
+  EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array), "Hi!"));
+
+  array.rotateCodePoint(1, 1);
+  EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array), "Hi!"));
+}
+
+TEST_F(StrArrayTest, RotateCodePointWithFirstBeforeLastRotatesCodePoint) {
+  HandleScope scope(thread_);
+  StrArray array(&scope, runtime_->newStrArray());
+  runtime_->strArrayAddASCII(thread_, array, 'a');
+  runtime_->strArrayAddASCII(thread_, array, 'b');
+  runtime_->strArrayAddASCII(thread_, array, 'c');
+  EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array), "abc"));
+
+  array.rotateCodePoint(0, 2);
+  EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array), "cab"));
+}
+
+TEST_F(StrArrayTest, RotateCodePointWithNonASCIIRotatesEntireCodePoint) {
+  HandleScope scope(thread_);
+  StrArray array(&scope, runtime_->newStrArray());
+  Str str(&scope, runtime_->newStrFromCStr("Chopin \u00e9tude"));
+  runtime_->strArrayAddStr(thread_, array, str);
+
+  array.rotateCodePoint(1, 7);
+  EXPECT_TRUE(
+      isStrEqualsCStr(runtime_->strFromStrArray(array), "C\u00e9hopin tude"));
+}
+
+TEST_F(StrArrayTest, RotateCodePointWithNonASCIIUsesCharIndex) {
+  HandleScope scope(thread_);
+  StrArray array(&scope, runtime_->newStrArray());
+  Str str(&scope, runtime_->newStrFromCStr("Chopin \u00e9tude"));
+  runtime_->strArrayAddStr(thread_, array, str);
+
+  array.rotateCodePoint(1, 10);
+  EXPECT_TRUE(
+      isStrEqualsCStr(runtime_->strFromStrArray(array), "Cuhopin \u00e9tde"));
 }
 
 TEST_F(LargeStrTest, CopyTo) {

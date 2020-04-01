@@ -2514,6 +2514,9 @@ class RawStrArray : public RawInstance {
   void copyTo(byte* dst, word length) const;
   int32_t codePointAt(word index, word* length) const;
 
+  // Rotate the code point from `last` to `first`.
+  void rotateCodePoint(word first, word last) const;
+
   // The size of the underlying string in bytes.
   word capacity() const;
 
