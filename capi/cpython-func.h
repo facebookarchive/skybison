@@ -27,6 +27,8 @@ extern "C" {
 #define Py_UNUSED(name) _unused_##name __attribute__((unused))
 #define _Py_NO_RETURN __attribute__((__noreturn__))
 
+#define Py_UNREACHABLE() abort()
+
 /* Singletons */
 PyAPI_FUNC(PyTypeObject*) PyAsyncGen_Type_Ptr(void);
 PyAPI_FUNC(PyTypeObject*) PyBaseObject_Type_Ptr(void);
@@ -1652,6 +1654,31 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
     PyObject* return_value_ = Py_NotImplemented;                               \
     Py_INCREF(return_value_);                                                  \
     return return_value_;                                                      \
+  } while (0)
+#define Py_RETURN_RICHCOMPARE(val1, val2, op)                                  \
+  do {                                                                         \
+    switch (op) {                                                              \
+      case Py_EQ:                                                              \
+        if ((val1) == (val2)) Py_RETURN_TRUE;                                  \
+        Py_RETURN_FALSE;                                                       \
+      case Py_NE:                                                              \
+        if ((val1) != (val2)) Py_RETURN_TRUE;                                  \
+        Py_RETURN_FALSE;                                                       \
+      case Py_LT:                                                              \
+        if ((val1) < (val2)) Py_RETURN_TRUE;                                   \
+        Py_RETURN_FALSE;                                                       \
+      case Py_GT:                                                              \
+        if ((val1) > (val2)) Py_RETURN_TRUE;                                   \
+        Py_RETURN_FALSE;                                                       \
+      case Py_LE:                                                              \
+        if ((val1) <= (val2)) Py_RETURN_TRUE;                                  \
+        Py_RETURN_FALSE;                                                       \
+      case Py_GE:                                                              \
+        if ((val1) >= (val2)) Py_RETURN_TRUE;                                  \
+        Py_RETURN_FALSE;                                                       \
+      default:                                                                 \
+        Py_UNREACHABLE();                                                      \
+    }                                                                          \
   } while (0)
 #define Py_RETURN_TRUE                                                         \
   do {                                                                         \

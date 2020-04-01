@@ -2029,7 +2029,8 @@ class RawCode : public RawInstance {
     kFutureUnicodeLiterals = 0x20000,
     kFutureBarryAsBdfl = 0x40000,
     kFutureGeneratorStop = 0x80000,
-    kBuiltin = 0x100000,
+    kFutureAnnotations = 0x100000,
+    kBuiltin = 0x200000,
     kLast = kBuiltin,
   };
 
@@ -2125,7 +2126,7 @@ class RawCode : public RawInstance {
       Flags::kFutureDivision | Flags::kFutureAbsoluteImport |
       Flags::kFutureWithStatement | Flags::kFuturePrintFunction |
       Flags::kFutureUnicodeLiterals | Flags::kFutureBarryAsBdfl |
-      Flags::kFutureGeneratorStop;
+      Flags::kFutureGeneratorStop | Flags::kFutureAnnotations;
 
   RAW_OBJECT_COMMON(Code);
 };

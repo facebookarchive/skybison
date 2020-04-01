@@ -423,6 +423,7 @@ extern const char* Py_hexdigits;
 #define CO_FUTURE_UNICODE_LITERALS 0x20000
 #define CO_FUTURE_BARRY_AS_BDFL 0x40000
 #define CO_FUTURE_GENERATOR_STOP 0x80000
+#define CO_FUTURE_ANNOTATIONS 0x100000
 
 #define CO_CELL_NOT_AN_ARG 255
 
@@ -437,6 +438,7 @@ extern const char* Py_hexdigits;
 #define FUTURE_UNICODE_LITERALS "unicode_literals"
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
 #define FUTURE_GENERATOR_STOP "generator_stop"
+#define FUTURE_ANNOTATIONS "annotations"
 
 #define PY_INVALID_STACK_EFFECT INT_MAX
 
@@ -450,7 +452,7 @@ extern const char* Py_hexdigits;
 #define PyCF_MASK                                                              \
   (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | CO_FUTURE_WITH_STATEMENT | \
    CO_FUTURE_PRINT_FUNCTION | CO_FUTURE_UNICODE_LITERALS |                     \
-   CO_FUTURE_BARRY_AS_BDFL | CO_FUTURE_GENERATOR_STOP)
+   CO_FUTURE_BARRY_AS_BDFL | CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
 #define PyCF_SOURCE_IS_UTF8 0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200

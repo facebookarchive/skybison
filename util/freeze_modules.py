@@ -18,7 +18,7 @@ UPPERCASE_RE = re.compile("_([a-zA-Z])")
 
 # Pyro specific flag to mark code objects for builtin functions.
 # (see also `runtime/objects.h`)
-CO_BUILTIN = 0x100000
+CO_BUILTIN = 0x200000
 
 
 def builtin_function_template():
