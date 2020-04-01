@@ -3309,6 +3309,16 @@ TEST_F(RuntimeStrTest, StrSliceUnicode) {
   EXPECT_TRUE(isStrEqualsCStr(*slice, u8"\u05d9\u05dc \u05d5"));
 }
 
+TEST_F(RuntimeStrTest, StrSliceUnicodeWithLargeResult) {
+  HandleScope scope(thread_);
+  Str str(&scope,
+          runtime_->newStrFromCStr(
+              u8"\u05d0\u05e0\u05d9 \u05dc\u05d0 \u05d0\u05d5\u05d4\u05d1 "
+              u8"\u05e0\u05d7\u05e9\u05d9\u05dd"));
+  Str slice(&scope, runtime_->strSlice(thread_, str, 2, 13, 2));
+  EXPECT_TRUE(isStrEqualsCStr(*slice, u8"\u05d9\u05dc \u05d5\u05d1\u05e0"));
+}
+
 TEST_F(RuntimeStrTest, StrSliceUnicodeWithStepOne) {
   HandleScope scope(thread_);
   Str str(&scope,

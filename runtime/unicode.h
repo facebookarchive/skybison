@@ -40,6 +40,15 @@ struct FullCasing {
   int32_t code_points[3];
 };
 
+class UTF8 {
+ public:
+  // Given the lead byte of a UTF-8 code point, return its length.
+  static word numChars(byte lead_byte);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UTF8);
+};
+
 // Functions for Unicode code points.
 class Unicode {
  public:
@@ -116,6 +125,23 @@ inline bool ASCII::isXidStart(byte b) { return isAlpha(b) || b == '_'; }
 inline byte ASCII::toLower(byte b) { return isUpper(b) ? b + ('a' - 'A') : b; }
 
 inline byte ASCII::toUpper(byte b) { return isLower(b) ? b - ('a' - 'A') : b; }
+
+// UTF-8
+
+inline word UTF8::numChars(byte lead_byte) {
+  if (lead_byte <= kMaxASCII) {
+    return 1;
+  }
+  if (lead_byte < 0xE0) {
+    DCHECK(lead_byte >= 0xC0, "invalid lead byte");
+    return 2;
+  }
+  if (lead_byte < 0xF0) {
+    return 3;
+  }
+  DCHECK(lead_byte < 0xF8, "invalid lead byte");
+  return 4;
+}
 
 // Unicode
 

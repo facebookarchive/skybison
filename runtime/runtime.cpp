@@ -63,6 +63,7 @@
 #include "type-builtins.h"
 #include "under-builtins-module.h"
 #include "under-io-module.h"
+#include "unicode.h"
 #include "utils.h"
 #include "valuecell-builtins.h"
 #include "visitor.h"
@@ -3322,51 +3323,42 @@ RawObject Runtime::strRepeat(Thread* thread, const Str& str, word count) {
   return *result;
 }
 
-static int numTrailBytes(byte ch) {
-  DCHECK(ch > kMaxASCII, "invalid lead byte");
-  if ((ch & 0xE0) == 0xC0) return 1;
-  if ((ch & 0xF0) == 0xE0) return 2;
-  DCHECK((ch & 0xF8) == 0xF0, "invalid lead byte");
-  return 3;
-}
-
 RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
                             word stop, word step) {
   word length = Slice::length(start, stop, step);
-  word num_bytes = 0;
+  word start_index = str.offsetByCodePoints(0, start);
+
   if (step == 1) {
-    word start_index = str.offsetByCodePoints(0, start);
     word end_index = str.offsetByCodePoints(start_index, length);
-    num_bytes = end_index - start_index;
-    return strSubstr(thread, str, start_index, num_bytes);
+    word num_chars = end_index - start_index;
+    return strSubstr(thread, str, start_index, num_chars);
   }
-  for (word i = 0, str_index = start; i < length; i++, str_index += step) {
-    // TODO(T54139192): adjust the char index incrementally instead of
-    // recomputing it on each iteration.
-    word char_index = str.offsetByCodePoints(0, str_index);
-    byte ch = str.charAt(char_index);
-    num_bytes++;
-    if (ch > kMaxASCII) {
-      num_bytes += numTrailBytes(ch);
+
+  word result_length = 0;
+  for (word i = 0, char_index = start_index; i < length;
+       i++, char_index = str.offsetByCodePoints(char_index, step)) {
+    result_length += UTF8::numChars(str.charAt(char_index));
+  }
+
+  if (result_length <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    for (word i = 0, char_index = start_index; i < result_length;
+         char_index = str.offsetByCodePoints(char_index, step)) {
+      word num_chars = UTF8::numChars(str.charAt(char_index));
+      str.copyToStartAt(&buffer[i], num_chars, char_index);
+      i += num_chars;
     }
+    return SmallStr::fromBytes({buffer, result_length});
   }
+
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(num_bytes));
-  for (word result_index = 0, str_index = start; result_index < num_bytes;
-       str_index += step) {
-    // TODO(T54139192): adjust the char index incrementally instead of
-    // recomputing it on each iteration.
-    word char_index = str.offsetByCodePoints(0, str_index);
-    byte ch = str.charAt(char_index++);
-    result.byteAtPut(result_index++, ch);
-    if (ch > kMaxASCII) {
-      word num_trail_bytes = numTrailBytes(ch);
-      for (word j = 0; j < num_trail_bytes; j++) {
-        ch = str.charAt(char_index++);
-        result.byteAtPut(result_index++, ch);
-      }
-    }
+  MutableBytes result(
+      &scope, thread->runtime()->newMutableBytesUninitialized(result_length));
+  for (word i = 0, char_index = start_index; i < result_length;
+       char_index = str.offsetByCodePoints(char_index, step)) {
+    word num_chars = UTF8::numChars(str.charAt(char_index));
+    result.replaceFromWithStrStartAt(i, *str, num_chars, char_index);
+    i += num_chars;
   }
   return result.becomeStr();
 }
