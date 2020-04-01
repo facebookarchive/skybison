@@ -24,6 +24,9 @@ const BuiltinType MmapModule::kBuiltinTypes[] = {
 
 void MmapModule::initialize(Thread* thread, const Module& module) {
   HandleScope scope(thread);
+  Object page_size(&scope, SmallInt::fromWord(OS::pageSize()));
+  moduleAtPutById(thread, module, ID(PAGESIZE), page_size);
+
   Object prot_exec(&scope, SmallInt::fromWord(static_cast<word>(PROT_EXEC)));
   moduleAtPutById(thread, module, ID(PROT_EXEC), prot_exec);
 

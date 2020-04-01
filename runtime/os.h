@@ -36,6 +36,9 @@ class OS {
   static void* mmap(void* addr, word size, int prot, int flags, int fd,
                     off_t offset);
 
+  // Returns the system page size
+  static int pageSize();
+
   static bool protectMemory(byte* address, word size, Protection);
 
   static bool secureRandom(byte* ptr, word size);

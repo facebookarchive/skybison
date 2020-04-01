@@ -60,6 +60,7 @@ class Runtime;
   V(NotImplementedType)                                                        \
   V(OSError)                                                                   \
   V(OverflowError)                                                             \
+  V(PAGESIZE)                                                                  \
   V(PendingDeprecationWarning)                                                 \
   V(PermissionError)                                                           \
   V(ProcessLookupError)                                                        \

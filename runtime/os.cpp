@@ -30,6 +30,8 @@ bool OS::access(const char* path, int mode) {
   return ::access(path, mode) == 0;
 }
 
+int OS::pageSize() { return ::sysconf(_SC_PAGESIZE); }
+
 bool OS::protectMemory(byte* address, word size, Protection mode) {
   DCHECK(size >= 0, "invalid size %ld", size);
   int prot;
