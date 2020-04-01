@@ -25,6 +25,7 @@
 #include "range-builtins.h"
 #include "str-builtins.h"
 #include "strarray-builtins.h"
+#include "structseq-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "unicode.h"
@@ -3744,6 +3745,28 @@ RawObject FUNC(_builtins, _strarray_ctor)(Thread* thread, Frame* frame,
   Str source(&scope, strUnderlying(*source_obj));
   runtime->strArrayAddStr(thread, self, source);
   return *self;
+}
+
+RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Str name(&scope, strUnderlying(args.get(0)));
+  name = Runtime::internStr(thread, name);
+  Tuple field_names(&scope, args.get(1));
+  word num_fields = field_names.length();
+  Tuple field_names_interned(&scope, runtime->newTuple(num_fields));
+  Object field_name(&scope, NoneType::object());
+  for (word i = 0; i < num_fields; i++) {
+    field_name = field_names.at(i);
+    if (field_name.isNoneType()) continue;
+    field_names_interned.atPut(i, Runtime::internStr(thread, field_name));
+  }
+  word num_in_sequence = args.get(2).isUnbound()
+                             ? num_fields
+                             : SmallInt::cast(args.get(2)).value();
+  return structseqNewType(thread, name, field_names_interned, num_in_sequence);
 }
 
 RawObject FUNC(_builtins, _str_check)(Thread* thread, Frame* frame,

@@ -407,6 +407,8 @@ add_library(
   runtime/str-builtins.h
   runtime/strarray-builtins.cpp
   runtime/strarray-builtins.h
+  runtime/structseq-builtins.cpp
+  runtime/structseq-builtins.h
   runtime/super-builtins.cpp
   runtime/super-builtins.h
   runtime/symbols.cpp

@@ -63,6 +63,8 @@ bool strInternConstants(Thread* thread, const Object& items);
 // and end are code point offsets, not byte offsets.
 word strRFind(const Str& haystack, const Str& needle, word start, word end);
 
+word strRFindAsciiChar(const Str& haystack, byte needle);
+
 RawObject strStrip(Thread* thread, const Str& src, const Str& str);
 RawObject strStripLeft(Thread* thread, const Str& src, const Str& str);
 RawObject strStripRight(Thread* thread, const Str& src, const Str& str);

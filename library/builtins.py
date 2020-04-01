@@ -223,6 +223,7 @@ from _builtins import (
 )
 from _builtins import (
     _strarray_iadd,
+    _structseq_new_type,
     _super,
     _tuple_check,
     _tuple_check_exact,
@@ -1523,18 +1524,8 @@ class _structseq_field:
         raise TypeError("readonly attribute")
 
 
-def _structseq_getitem(self, pos):
-    if pos < 0 or pos >= _type(self).n_fields:
-        raise IndexError("index out of bounds")
-    if pos < len(self):
-        return self[pos]
-    else:
-        name = self._structseq_field_names[pos]
-        return _instance_getattr(self, name)
-
-
 def _structseq_new(cls, sequence, dict={}):  # noqa B006
-    seq_tuple = tuple(sequence)
+    seq_tuple = (*sequence,)
     seq_len = _tuple_len(seq_tuple)
     max_len = cls.n_fields
     min_len = cls.n_sequence_fields
@@ -1549,13 +1540,13 @@ def _structseq_new(cls, sequence, dict={}):  # noqa B006
             f"({seq_len}-sequence given)"
         )
 
-    # Create the tuple of size min_len
-    structseq = tuple.__new__(cls, seq_tuple[:min_len])
+    # `cls` is known to be a subclass of tuple; use tuple constructor.
+    structseq = _tuple_new(cls, seq_tuple[:min_len])
 
     # Fill the rest of the hidden fields
     for i in range(min_len, seq_len):
         key = cls._structseq_field_names[i]
-        _instance_setattr(structseq, key, seq_tuple[min_len])
+        _instance_setattr(structseq, key, _tuple_getitem(seq_tuple, i))
 
     # Fill the remaining from the dict or set to None
     for i in range(seq_len, max_len):

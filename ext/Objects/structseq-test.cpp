@@ -14,13 +14,20 @@ PyStructSequence_Field desc_fields[] = {
     {"third", "third field"}, {"fourth", "fourth field"},
     {"fifth", "fifth field"}, {nullptr}};
 
-PyStructSequence_Desc desc = {"Structseq", "docs", desc_fields, 2};
+PyStructSequence_Desc desc = {"foo.bar", "docs", desc_fields, 2};
 
 TEST_F(StructSeqExtensionApiTest, NewTypeCreatesRuntimeType) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
   ASSERT_NE(type, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyType_CheckExact(type));
+
+  PyObjectPtr module(PyObject_GetAttrString(type, "__module__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(module, "foo"));
+  PyObjectPtr name(PyObject_GetAttrString(type, "__name__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, "bar"));
+  PyObjectPtr qualname(PyObject_GetAttrString(type, "__qualname__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(qualname, "bar"));
 
   PyObjectPtr seq_attr1(PyObject_GetAttrString(type, "n_sequence_fields"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -36,75 +43,6 @@ TEST_F(StructSeqExtensionApiTest, NewTypeCreatesRuntimeType) {
   EXPECT_EQ(PyLong_AsLong(seq_attr3), 5);
 }
 
-TEST_F(StructSeqExtensionApiTest,
-       NewInstanceWithLessThanMinSizeRaisesException) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  // TODO(T40700664): Use PyRun_String and test for raised exception
-  EXPECT_EQ(PyRun_SimpleString(R"(
-import sys
-sys.excepthook = lambda *args: None
-Structseq()
-)"),
-            -1);
-}
-
-TEST_F(StructSeqExtensionApiTest, NewInstanceWithNonSequenceRaisesException) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  // TODO(T40700664): Use PyRun_String and test for raised exception
-  EXPECT_EQ(PyRun_SimpleString(R"(
-import sys
-sys.excepthook = lambda *args: None
-Structseq(1)
-)"),
-            -1);
-}
-
-TEST_F(StructSeqExtensionApiTest,
-       NewInstanceWithMoreThanMaxSizeRaisesException) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  // TODO(T40700664): Use PyRun_String and test for raised exception
-  EXPECT_EQ(PyRun_SimpleString(R"(
-import sys
-sys.excepthook = lambda *args: None
-Structseq((1,2,3,4,5,6))
-)"),
-            -1);
-}
-
-TEST_F(StructSeqExtensionApiTest, NewInstanceWithMinLenReturnsValue) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  PyRun_SimpleString(R"(
-result = Structseq((1,2))
-)");
-  PyObjectPtr result(moduleGet("__main__", "result"));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyTuple_Check(result));
-
-  PyObject* value = PyStructSequence_GetItem(result, 1);
-  ASSERT_TRUE(PyLong_Check(value));
-  EXPECT_EQ(PyLong_AsLong(value), 2);
-}
-
 TEST_F(StructSeqExtensionApiTest, SETITEMOnlyDecrefsOnce) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
   PyObjectPtr seq(PyStructSequence_New(type.asTypeObject()));
@@ -113,63 +51,6 @@ TEST_F(StructSeqExtensionApiTest, SETITEMOnlyDecrefsOnce) {
   PyStructSequence_SET_ITEM(seq.get(), 0, value);
   // Pyro will have refcount of 1 less than CPython
   EXPECT_LE(Py_REFCNT(value), refcnt);
-}
-
-TEST_F(StructSeqExtensionApiTest, NewInstanceWithLargerThanMinLenReturnsValue) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  PyRun_SimpleString(R"(
-result = Structseq((1,2,3))
-)");
-  PyObjectPtr result(moduleGet("__main__", "result"));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyTuple_Check(result));
-
-  PyObject* value = PyStructSequence_GetItem(result, 2);
-  ASSERT_TRUE(PyLong_Check(value));
-  EXPECT_EQ(PyLong_AsLong(value), 3);
-}
-
-TEST_F(StructSeqExtensionApiTest, NewInstanceWithDictReturnsValue) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  PyRun_SimpleString(R"(
-result = Structseq((1,2), {"third": 3})
-)");
-  PyObjectPtr result(moduleGet("__main__", "result"));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyTuple_Check(result));
-
-  PyObject* value = PyStructSequence_GetItem(result, 2);
-  ASSERT_TRUE(PyLong_Check(value));
-  EXPECT_EQ(PyLong_AsLong(value), 3);
-}
-
-TEST_F(StructSeqExtensionApiTest, NewInstanceWithOverrideIgnoresValue) {
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  PyRun_SimpleString(R"(
-result = Structseq((1,2), {"first": 5})
-)");
-  PyObjectPtr result(moduleGet("__main__", "result"));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyTuple_Check(result));
-
-  PyObject* value = PyStructSequence_GetItem(result, 0);
-  ASSERT_TRUE(PyLong_Check(value));
-  EXPECT_EQ(PyLong_AsLong(value), 1);
 }
 
 TEST_F(StructSeqExtensionApiTest, GetItem) {
@@ -359,7 +240,7 @@ result = Structseq((1,2,3)).__repr__()
 
   PyObjectPtr result(moduleGet("__main__", "result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isUnicodeEqualsCStr(result, "Structseq(1, 2)"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "bar(1, 2)"));
 }
 
 TEST_F(StructSeqExtensionApiTest, SetItemRaisesException) {

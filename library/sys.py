@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from builtins import _structseq_new_type
+
 from _builtins import _builtin, _int_check, _os_write, _Unbound
 
 
@@ -10,52 +12,63 @@ _python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdin_fd = _stdin_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
-_structseq_field = _structseq_field  # noqa: F821
 executable = executable  # noqa: F821
 
 
-class _Flags(tuple):
-    debug = _structseq_field("debug", 0)
-    inspect = _structseq_field("inspect", 1)
-    interactive = _structseq_field("interactive", 2)
-    optimize = _structseq_field("optimize", 3)
-    dont_write_bytecode = _structseq_field("dont_write_bytecode", 4)
-    no_user_site = _structseq_field("no_user_site", 5)
-    no_site = _structseq_field("no_site", 6)
-    ignore_environment = _structseq_field("ignore_environment", 7)
-    verbose = _structseq_field("verbose", 8)
-    bytes_warning = _structseq_field("bytes_warning", 9)
-    quiet = _structseq_field("quiet", 10)
-    hash_randomization = _structseq_field("hash_randomization", 11)
-    isolated = _structseq_field("isolated", 12)
-    dev_mode = _structseq_field("dev_mode", 13)
-    utf8_mode = _structseq_field("utf8_mode", 14)
+_Flags = _structseq_new_type(
+    "sys.flags",
+    (
+        "debug",
+        "inspect",
+        "interactive",
+        "optimize",
+        "dont_write_bytecode",
+        "no_user_site",
+        "no_site",
+        "ignore_environment",
+        "verbose",
+        "bytes_warning",
+        "quiet",
+        "hash_randomization",
+        "isolated",
+        "dev_mode",
+        "utf8_mode",
+    ),
+)
 
 
-class _FloatInfo(tuple):
-    max = _structseq_field("max", 0)
-    max_exp = _structseq_field("max_exp", 1)
-    max_10_exp = _structseq_field("max_10_exp", 2)
-    min = _structseq_field("min", 3)
-    min_exp = _structseq_field("min_exp", 4)
-    min_10_exp = _structseq_field("min_10_exp", 5)
-    dig = _structseq_field("dig", 6)
-    mant_dig = _structseq_field("mant_dig", 7)
-    epsilon = _structseq_field("epsilon", 8)
-    radix = _structseq_field("radix", 9)
-    rounds = _structseq_field("rounds", 10)
+_FloatInfo = _structseq_new_type(
+    "sys.float_info",
+    (
+        "max",
+        "max_exp",
+        "max_10_exp",
+        "min",
+        "min_exp",
+        "min_10_exp",
+        "dig",
+        "mant_dig",
+        "epsilon",
+        "radix",
+        "rounds",
+    ),
+)
 
 
-class _HashInfo(tuple):
-    width = _structseq_field("width", 0)
-    modulus = _structseq_field("modulus", 1)
-    inf = _structseq_field("inf", 2)
-    nan = _structseq_field("nan", 3)
-    imag = _structseq_field("imag", 4)
-    algorithm = _structseq_field("algorithm", 5)
-    hash_bits = _structseq_field("hash_bits", 6)
-    seed_bits = _structseq_field("seed_bits", 7)
-    cutoff = _structseq_field("cutoff", 8)
+_HashInfo = _structseq_new_type(
+    "sys.hash_info",
+    (
+        "width",
+        "modulus",
+        "inf",
+        "nan",
+        "imag",
+        "algorithm",
+        "hash_bits",
+        "seed_bits",
+        "cutoff",
+    ),
+)
 
 
 class _IOStream:
@@ -83,12 +96,9 @@ class _ImplementationType:
         self.name = "pyro"
 
 
-class _VersionInfo(tuple):
-    major = _structseq_field("major", 0)
-    minor = _structseq_field("minor", 1)
-    micro = _structseq_field("micro", 2)
-    releaselevel = _structseq_field("releaselevel", 3)
-    serial = _structseq_field("serial", 4)
+_VersionInfo = _structseq_new_type(
+    "sys.version_info", ("major", "minor", "micro", "releaselevel", "serial")
+)
 
 
 def _getframe(depth=0):

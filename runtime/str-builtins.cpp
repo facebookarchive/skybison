@@ -789,6 +789,16 @@ word strRFind(const Str& haystack, const Str& needle, word start, word end) {
   return -1;
 }
 
+word strRFindAsciiChar(const Str& haystack, byte needle) {
+  DCHECK(needle <= kMaxASCII, "must only be called for ASCII `needle`");
+  for (word i = haystack.charLength() - 1; i >= 0; i--) {
+    if (haystack.charAt(i) == needle) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 RawObject METH(str, __le__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
