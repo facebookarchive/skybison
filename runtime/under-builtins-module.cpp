@@ -3747,6 +3747,15 @@ RawObject FUNC(_builtins, _strarray_ctor)(Thread* thread, Frame* frame,
   return *self;
 }
 
+RawObject FUNC(_builtins, _structseq_getitem)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  word index = SmallInt::cast(args.get(1)).value();
+  return structseqGetItem(thread, self, index);
+}
+
 RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
                                                word nargs) {
   HandleScope scope(thread);
@@ -3767,6 +3776,16 @@ RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
                              ? num_fields
                              : SmallInt::cast(args.get(2)).value();
   return structseqNewType(thread, name, field_names_interned, num_in_sequence);
+}
+
+RawObject FUNC(_builtins, _structseq_setitem)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  word index = SmallInt::cast(args.get(1)).value();
+  Object value(&scope, args.get(2));
+  return structseqSetItem(thread, self, index, value);
 }
 
 RawObject FUNC(_builtins, _str_check)(Thread* thread, Frame* frame,

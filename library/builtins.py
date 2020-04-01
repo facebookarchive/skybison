@@ -223,7 +223,9 @@ from _builtins import (
 )
 from _builtins import (
     _strarray_iadd,
+    _structseq_getitem,
     _structseq_new_type,
+    _structseq_setitem,
     _super,
     _tuple_check,
     _tuple_check_exact,
@@ -1510,14 +1512,17 @@ class _strarray(bootstrap=True):  # noqa: F821
 
 class _structseq_field:
     def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        if self.index is not None:
-            return instance[self.index]
-        return _instance_getattr(instance, self.name)
+        if _type(instance) is not self.type:
+            if instance is None:
+                return self
+            raise TypeError(
+                f"descriptor for '{self.type.__name__}' doesn't apply to "
+                f"'{_type(instance).__name__}' object"
+            )
+        return _structseq_getitem(instance, self.index)
 
-    def __init__(self, name, index):
-        self.name = name
+    def __init__(self, type, index):
+        self.type = type
         self.index = index
 
     def __set__(self, instance, value):
@@ -1545,13 +1550,12 @@ def _structseq_new(cls, sequence, dict={}):  # noqa B006
 
     # Fill the rest of the hidden fields
     for i in range(min_len, seq_len):
-        key = cls._structseq_field_names[i]
-        _instance_setattr(structseq, key, _tuple_getitem(seq_tuple, i))
+        _structseq_setitem(structseq, i, _tuple_getitem(seq_tuple, i))
 
     # Fill the remaining from the dict or set to None
     for i in range(seq_len, max_len):
         key = cls._structseq_field_names[i]
-        _instance_setattr(structseq, key, dict.get(key))
+        _structseq_setitem(structseq, i, dict.get(key))
 
     return structseq
 

@@ -895,7 +895,15 @@ def _strarray_ctor(cls, source=_Unbound):
     _builtin()
 
 
+def _structseq_getitem(structseq, index):
+    _builtin()
+
+
 def _structseq_new_type(name, field_names, num_in_sequence=_Unbound):
+    _builtin()
+
+
+def _structseq_setitem(structseq, index, value):
     _builtin()
 
 

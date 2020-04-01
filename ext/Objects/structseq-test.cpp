@@ -43,6 +43,31 @@ TEST_F(StructSeqExtensionApiTest, NewTypeCreatesRuntimeType) {
   EXPECT_EQ(PyLong_AsLong(seq_attr3), 5);
 }
 
+TEST_F(StructSeqExtensionApiTest, NewTypeWithUnnamedFieldsReturnsType) {
+  PyStructSequence_Field fields[] = {
+      {const_cast<char*>("foo"), const_cast<char*>("foo docu")},
+      {PyStructSequence_UnnamedField, const_cast<char*>("unnamed docu")},
+      {const_cast<char*>("bar"), const_cast<char*>("bar docu")},
+      {PyStructSequence_UnnamedField, const_cast<char*>("unnamed docu")},
+      {const_cast<char*>("baz"), const_cast<char*>("baz docu")},
+      {nullptr}};
+  PyStructSequence_Desc s_desc = {const_cast<char*>("S"),
+                                  const_cast<char*>("S docu"), fields, 4};
+  PyObjectPtr type(PyStructSequence_NewType(&s_desc));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+
+  PyObjectPtr n_unnamed_fields(
+      PyObject_GetAttrString(type, "n_unnamed_fields"));
+  EXPECT_TRUE(isLongEqualsLong(n_unnamed_fields, 2));
+  PyObjectPtr n_fields(PyObject_GetAttrString(type, "n_fields"));
+  EXPECT_TRUE(isLongEqualsLong(n_fields, 5));
+  PyObjectPtr n_sequence_fields(
+      PyObject_GetAttrString(type, "n_sequence_fields"));
+  EXPECT_TRUE(isLongEqualsLong(n_sequence_fields, 4));
+}
+
 TEST_F(StructSeqExtensionApiTest, SETITEMOnlyDecrefsOnce) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
   PyObjectPtr seq(PyStructSequence_New(type.asTypeObject()));

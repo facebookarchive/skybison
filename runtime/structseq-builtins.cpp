@@ -9,6 +9,36 @@ namespace py {
 
 static const word kUserTupleFields = UserTupleBase::kSize / kPointerSize;
 
+RawObject structseqGetItem(Thread* thread, const Object& structseq,
+                           word index) {
+  HandleScope scope(thread);
+  UserTupleBase user_tuple(&scope, *structseq);
+  Tuple tuple(&scope, user_tuple.value());
+  word num_in_sequence = tuple.length();
+  if (index < num_in_sequence) {
+    return tuple.at(index);
+  }
+  word attribute_index = index - num_in_sequence + kUserTupleFields;
+  CHECK_INDEX(attribute_index, user_tuple.headerCountOrOverflow());
+  return user_tuple.instanceVariableAt(attribute_index * kPointerSize);
+}
+
+RawObject structseqSetItem(Thread* thread, const Object& structseq, word index,
+                           const Object& value) {
+  HandleScope scope(thread);
+  UserTupleBase user_tuple(&scope, *structseq);
+  Tuple tuple(&scope, user_tuple.value());
+  word num_in_sequence = tuple.length();
+  if (index < num_in_sequence) {
+    tuple.atPut(index, *value);
+    return NoneType::object();
+  }
+  word attribute_index = index - num_in_sequence + kUserTupleFields;
+  CHECK_INDEX(attribute_index, user_tuple.headerCountOrOverflow());
+  user_tuple.instanceVariableAtPut(attribute_index * kPointerSize, *value);
+  return NoneType::object();
+}
+
 RawObject structseqNew(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -64,7 +94,7 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   word num_unnamed_fields = 0;
   Object field_name(&scope, Str::empty());
   Object descriptor(&scope, NoneType::object());
-  Object index(&scope, NoneType::object());
+  SmallInt index(&scope, SmallInt::fromWord(0));
   for (word i = 0; i < num_fields; i++) {
     field_name = field_names.at(i);
     if (field_name.isNoneType()) {
@@ -74,10 +104,9 @@ RawObject structseqNewType(Thread* thread, const Str& name,
     }
     DCHECK(Runtime::isInternedStr(thread, field_name),
            "field_names must contain interned strings or None");
-    index = i < num_in_sequence ? static_cast<RawObject>(SmallInt::fromWord(i))
-                                : NoneType::object();
+    index = SmallInt::fromWord(i);
     descriptor = thread->invokeFunction2(ID(builtins), ID(_structseq_field),
-                                         field_name, index);
+                                         type, index);
     if (descriptor.isErrorException()) return *descriptor;
     typeAtPut(thread, type, field_name, descriptor);
   }

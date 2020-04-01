@@ -87,9 +87,19 @@ class StructSequenceTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, ".*4-sequence.*(5-sequence given)"):
             sseq_type((1, 2, 3, 4, 5))
 
+    def test_descriptor_on_other_instance_raises_type_error(self):
+        sseq_type = grp.struct_group
+        descriptor = sseq_type.gr_name
+        with self.assertRaisesRegex(
+            TypeError, "descriptor.*doesn't apply to 'tuple' object"
+        ):
+            descriptor.__get__((1, 2, 3, 4), tuple)
+
     @pyro_only
-    def test_structseq_new_type_returns_structseq_type(self):
+    def test_structseq_new_type_returns_type(self):
         tp = _structseq_new_type("foo.bar", ("f0", "f1", "f2"), 2)
+        self.assertIsInstance(tp, type)
+        self.assertTrue(issubclass(tp, tuple))
         self.assertEqual(tp.__module__, "foo")
         self.assertEqual(tp.__name__, "bar")
         self.assertEqual(tp.__qualname__, "bar")
@@ -102,6 +112,21 @@ class StructSequenceTests(unittest.TestCase):
     def test_structseq_new_type_without_dot_in_name_does_not_set_module(self):
         tp = _structseq_new_type("foo", (), 0)
         self.assertNotIn("__module__", tp.__dict__)
+
+    @pyro_only
+    def test_structseq_new_type_with_unnamed_fields_returns_structseq_type(self):
+        tp = _structseq_new_type("quux", ("foo", None, "bar", None, "baz"), 4)
+        self.assertIsInstance(tp, type)
+        self.assertTrue(issubclass(tp, tuple))
+        self.assertEqual(tp.__name__, "quux")
+        self.assertEqual(tp.n_sequence_fields, 4)
+        self.assertEqual(tp.n_unnamed_fields, 2)
+        self.assertEqual(tp.n_fields, 5)
+        self.assertEqual(tp._structseq_field_names, ("foo", None, "bar", None, "baz"))
+        instance = tp((1, 2, 3, 4, 5))
+        self.assertEqual(instance, (1, 2, 3, 4))
+        self.assertEqual(instance.bar, 3)
+        self.assertEqual(instance.baz, 5)
 
 
 if __name__ == "__main__":

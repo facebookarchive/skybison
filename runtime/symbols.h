@@ -672,6 +672,7 @@ class Runtime;
   V(str_iterator)                                                              \
   V(strict)                                                                    \
   V(strict_errors)                                                             \
+  V(structseq)                                                                 \
   V(sub)                                                                       \
   V(super)                                                                     \
   V(surrogateescape)                                                           \

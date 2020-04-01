@@ -14,54 +14,37 @@ char* PyStructSequence_UnnamedField = const_cast<char*>("unnamed field");
 
 namespace py {
 
-PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
-                                             Py_ssize_t pos) {
+PY_EXPORT PyObject* PyStructSequence_GET_ITEM_Func(PyObject* structseq,
+                                                   Py_ssize_t pos) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  UserTupleBase user_tuple(&scope,
-                           ApiHandle::fromPyObject(structseq)->asObject());
-  Tuple tuple(&scope, user_tuple.value());
-  word num_in_sequence = tuple.length();
-  word user_tuple_fields = (UserTupleBase::kSize / kPointerSize);
-  word num_fields =
-      num_in_sequence + user_tuple.headerCountOrOverflow() - user_tuple_fields;
-  CHECK_INDEX(pos, num_fields);
-  if (pos < num_in_sequence) {
-    return ApiHandle::borrowedReference(thread, tuple.at(pos));
-  }
-  word offset = (pos - num_in_sequence + user_tuple_fields) * kPointerSize;
-  return ApiHandle::borrowedReference(thread,
-                                      user_tuple.instanceVariableAt(offset));
+  Object structseq_obj(&scope, ApiHandle::fromPyObject(structseq)->asObject());
+  Object result(&scope, structseqGetItem(thread, structseq_obj, pos));
+  return result.isUnbound() ? nullptr
+                            : ApiHandle::newReference(thread, *result);
+}
+
+PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
+                                             Py_ssize_t pos) {
+  return PyStructSequence_GET_ITEM_Func(structseq, pos);
 }
 
 PY_EXPORT PyObject* PyStructSequence_SET_ITEM_Func(PyObject* structseq,
                                                    Py_ssize_t pos,
                                                    PyObject* value) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  UserTupleBase user_tuple(&scope,
-                           ApiHandle::fromPyObject(structseq)->asObject());
-  Tuple tuple(&scope, user_tuple.value());
-  Object value_obj(&scope, value == nullptr
-                               ? NoneType::object()
-                               : ApiHandle::stealReference(thread, value));
-  word num_in_sequence = tuple.length();
-  word user_tuple_fields = (RawUserTupleBase::kSize / kPointerSize);
-  word num_fields =
-      num_in_sequence + user_tuple.headerCountOrOverflow() - user_tuple_fields;
-  CHECK_INDEX(pos, num_fields);
-  if (pos < num_in_sequence) {
-    tuple.atPut(pos, *value_obj);
-  } else {
-    word offset = (pos - num_in_sequence + user_tuple_fields) * kPointerSize;
-    user_tuple.instanceVariableAtPut(offset, *value_obj);
-  }
+  PyStructSequence_SetItem(structseq, pos, value);
   return value;
 }
 
 PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
                                         PyObject* value) {
-  PyStructSequence_SET_ITEM_Func(structseq, pos, value);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object structseq_obj(&scope, ApiHandle::fromPyObject(structseq)->asObject());
+  Object value_obj(&scope, value == nullptr
+                               ? Unbound::object()
+                               : ApiHandle::fromPyObject(value)->asObject());
+  structseqSetItem(thread, structseq_obj, pos, value_obj);
 }
 
 PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
