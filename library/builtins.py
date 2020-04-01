@@ -1562,11 +1562,25 @@ def _structseq_new(cls, sequence, dict={}):  # noqa B006
 
 def _structseq_repr(self):
     _tuple_guard(self)
-    if not hasattr(self, "n_sequence_fields"):
-        raise TypeError("__repr__(): self is not a self")
-    # TODO(T40273054): Iterate attributes and return field names
-    tuple_values = ", ".join([repr(i) for i in self])
-    return f"{_type(self).__name__}({tuple_values})"
+    tp = _type(self)
+    fullname = f"{tp.__module__}.{tp.__name__}"
+    if _repr_enter(self):
+        return f"{fullname}(...)"
+    field_names = tp._structseq_field_names
+    name_index = 0
+    value_strings = []
+    for i in range(tp.n_sequence_fields):
+        # Replicate cpython bug and simply take the next name in case of an
+        # unnamed field...
+        while True:
+            name = field_names[name_index]
+            name_index += 1
+            if name is not None:
+                break
+        value = _tuple_getitem(self, i)
+        value_strings.append(f"{name}={value!r}")
+    _repr_leave(self)
+    return f"{fullname}({', '.join(value_strings)})"
 
 
 def _type_name(cls):

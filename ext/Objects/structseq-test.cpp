@@ -251,23 +251,6 @@ result = [x for x in structseq]
   EXPECT_EQ(PyLong_AsLong(PyList_GetItem(result, 1)), 2);
 }
 
-TEST_F(StructSeqExtensionApiTest, ReprPyro) {
-  // TODO(T40273054): Pyro only test, test the field names as well
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
-  PyRun_SimpleString(R"(
-result = Structseq((1,2,3)).__repr__()
-)");
-
-  PyObjectPtr result(moduleGet("__main__", "result"));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isUnicodeEqualsCStr(result, "bar(1, 2)"));
-}
-
 TEST_F(StructSeqExtensionApiTest, SetItemRaisesException) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
   ASSERT_NE(type, nullptr);

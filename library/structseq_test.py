@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import grp
+import posix
+import sys
 import time
 import unittest
 
@@ -94,6 +96,54 @@ class StructSequenceTests(unittest.TestCase):
             TypeError, "descriptor.*doesn't apply to 'tuple' object"
         ):
             descriptor.__get__((1, 2, 3, 4), tuple)
+
+    def test_repr_returns_string(self):
+        sseq_type = grp.struct_group
+        instance = sseq_type(("foo", 42, "bar", (1, 2, 3)))
+        self.assertEqual(
+            sseq_type.__repr__(instance),
+            "grp.struct_group(gr_name='foo', gr_passwd=42, gr_gid='bar', "
+            "gr_mem=(1, 2, 3))",
+        )
+
+    def test_repr_unnamed_field_bug_matches_cptyhon(self):
+        if sys.implementation.name == "pyro":
+            # TODO(T64685580) This should use posix.stat_result, but the way
+            # posixmodule replaces new does not work yet.
+            stat_result = _structseq_new_type(
+                "os.stat_result",
+                (
+                    "st_mode",
+                    "st_ino",
+                    "st_dev",
+                    "st_nlink",
+                    "st_uid",
+                    "st_gid",
+                    "st_size",
+                    None,
+                    None,
+                    None,
+                    "st_atime",
+                    "st_mtime",
+                    "st_ctime",
+                    "st_atime_ns",
+                    "st_mtime_ns",
+                    "st_ctime_ns",
+                ),
+                10,
+            )
+        else:
+            stat_result = posix.stat_result
+        self.assertEqual(stat_result.n_sequence_fields, 10)
+        self.assertEqual(stat_result.n_unnamed_fields, 3)
+        self.assertTrue(stat_result.n_fields > 13)
+        instance = stat_result((1, 2, 3, 4, 5, 6, 7, 8, "nine", 10, 11))
+        self.assertEqual(
+            repr(instance),
+            "os.stat_result(st_mode=1, st_ino=2, st_dev=3, st_nlink=4, "
+            "st_uid=5, st_gid=6, st_size=7, st_atime=8, st_mtime='nine', "
+            "st_ctime=10)",
+        )
 
     @pyro_only
     def test_structseq_new_type_returns_type(self):
