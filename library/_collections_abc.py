@@ -3,13 +3,13 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 # Copyright 2007 Google, Inc. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 
 """Abstract Base Classes (ABCs) for collections, according to PEP 3119.
 
 Unit tests are in test_collections.
-isort:skip_file
 """
 
 from abc import ABCMeta, abstractmethod

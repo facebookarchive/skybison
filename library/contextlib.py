@@ -3,9 +3,8 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
-"""Utilities for with-statement contexts.  See PEP 343.
-
-isort:skip_file"""
+# isort:skip_file
+"""Utilities for with-statement contexts.  See PEP 343."""
 import abc
 import sys
 import _collections_abc

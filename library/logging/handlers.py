@@ -3,6 +3,7 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 # Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -20,7 +21,6 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """
-isort:skip_file
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 

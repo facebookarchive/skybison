@@ -3,6 +3,7 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 # TODO(T42597307): signal module
 # import signal
 import weakref

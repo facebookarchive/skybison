@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Built-in classes, functions, and constants.
-isort:skip_file"""
+# isort:skip_file
+"""Built-in classes, functions, and constants."""
 
 
 def __import__(name, globals=None, locals=None, fromlist=(), level=0):

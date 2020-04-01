@@ -3,6 +3,7 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 
 #.  Copyright (C) 2005-2010   Gregory P. Smith (greg@krypto.org)
 #  Licensed to PSF under a Contributor Agreement.

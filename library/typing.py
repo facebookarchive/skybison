@@ -3,6 +3,7 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 """
 The typing module: Support for gradual typing as defined by PEP 484.
 
@@ -21,8 +22,6 @@ At large scale, the structure of the module is following:
 * Generic aliases for collections.abc ABCs and few additional protocols.
 * Special types: NewType, NamedTuple, TypedDict (may be added soon).
 * Wrapper submodules for re and io related types.
-
-isort:skip_file
 """
 
 import abc

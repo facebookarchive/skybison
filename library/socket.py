@@ -3,6 +3,7 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 
 # Wrapper module for _socket, providing some additional facilities
 # implemented in Python.
@@ -50,7 +51,6 @@ Integer constants:
 
 Many other constants may be defined; these may be used in calls to
 the setsockopt() and getsockopt() methods.
-isort:skip_file
 """
 
 import _socket

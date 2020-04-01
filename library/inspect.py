@@ -3,8 +3,8 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 """
-isort:skip_file
 Get useful information from live Python objects.
 
 This module encapsulates the interface provided by the internal special

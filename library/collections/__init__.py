@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # flake8: noqa
 # fmt: off
+# isort:skip_file
 '''This module implements specialized container datatypes providing
 alternatives to Python's general purpose built-in containers, dict,
 list, set, and tuple.
@@ -14,8 +15,6 @@ list, set, and tuple.
 * UserDict     wrapper around dictionary objects for easier dict subclassing
 * UserList     wrapper around list objects for easier list subclassing
 * UserString   wrapper around string objects for easier string subclassing
-
-isort:skip_file
 '''
 
 __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
