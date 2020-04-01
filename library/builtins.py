@@ -151,6 +151,7 @@ from _builtins import (
     _mappingproxy_guard,
     _mappingproxy_mapping,
     _mappingproxy_set_mapping,
+    _memoryview_getitem,
     _memoryview_guard,
     _memoryview_itemsize,
     _memoryview_nbytes,
@@ -4709,8 +4710,18 @@ class memoryview(bootstrap=True):
     def __exit__(self, exc_type, exc_value, exc_tb):
         memoryview.release(self)
 
-    def __getitem__(self, index):
-        _builtin()
+    def __getitem__(self, key):
+        result = _memoryview_getitem(self, key)
+        if result is not _Unbound:
+            return result
+        if _slice_check(key):
+            _unimplemented()
+        if _object_type_hasattr(key, "__index__"):
+            return _memoryview_getitem(self, _index(key))
+        raise TypeError(
+            f"memoryview indices must be integers or slices, "
+            f"not {_type(key).__name__}"
+        )
 
     def __len__(self) -> int:
         _builtin()

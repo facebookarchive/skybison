@@ -267,26 +267,6 @@ static RawObject packObject(Thread* thread, uword address, char format,
   return NoneType::object();
 }
 
-RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
-                            const Int& index, const Object& value) {
-  HandleScope scope(thread);
-  Object buffer(&scope, view.buffer());
-  Str format(&scope, view.format());
-  char fmt = formatChar(format);
-  // TODO(T58046846): Replace DCHECK(char > 0) checks
-  DCHECK(fmt > 0, "invalid memoryview");
-  word byte_index = index.asWord();
-  DCHECK_INDEX(byte_index,
-               view.length() - static_cast<word>(itemSize(fmt) - 1));
-  if (buffer.isMutableBytes()) {
-    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt,
-                      byte_index, *value);
-  }
-  DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
-  return packObject(thread, Int::cast(*buffer).asInt<uword>().value, fmt,
-                    byte_index, *value);
-}
-
 static RawObject unpackObject(Thread* thread, uword address, word length,
                               char format, word index) {
   Runtime* runtime = thread->runtime();
@@ -332,6 +312,60 @@ static RawObject unpackObject(Thread* thread, uword address, word length,
     default:
       UNREACHABLE("invalid format");
   }
+}
+
+RawObject memoryviewGetitem(Thread* thread, const MemoryView& view,
+                            word index) {
+  HandleScope scope(thread);
+  Object buffer(&scope, view.buffer());
+  Runtime* runtime = thread->runtime();
+
+  // TODO(T36619828) support str subclasses
+  Str format(&scope, view.format());
+  char format_c = formatChar(format);
+  // TODO(T58046846): Replace DCHECK(char > 0) checks
+  DCHECK(format_c > 0, "invalid memoryview");
+
+  word length = view.length();
+  DCHECK_INDEX(index, length - static_cast<word>(itemSize(format_c) - 1));
+
+  if (runtime->isInstanceOfBytes(*buffer)) {
+    // TODO(T38246066) support bytes subclasses
+    if (buffer.isLargeBytes()) {
+      LargeBytes bytes(&scope, *buffer);
+      return unpackObject(thread, bytes.address(), length, format_c, index);
+    }
+    CHECK(buffer.isSmallBytes(),
+          "memoryview.__getitem__ with non bytes/memory");
+    Bytes bytes(&scope, *buffer);
+    byte bytes_buffer[SmallBytes::kMaxLength];
+    bytes.copyTo(bytes_buffer, length);
+    return unpackObject(thread, reinterpret_cast<uword>(bytes_buffer), length,
+                        format_c, index);
+  }
+  CHECK(buffer.isInt(), "memoryview.__getitem__ with non bytes/memory");
+  return unpackObject(thread, Int::cast(*buffer).asInt<uword>().value, length,
+                      format_c, index);
+}
+
+RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
+                            const Int& index, const Object& value) {
+  HandleScope scope(thread);
+  Object buffer(&scope, view.buffer());
+  Str format(&scope, view.format());
+  char fmt = formatChar(format);
+  // TODO(T58046846): Replace DCHECK(char > 0) checks
+  DCHECK(fmt > 0, "invalid memoryview");
+  word byte_index = index.asWord();
+  DCHECK_INDEX(byte_index,
+               view.length() - static_cast<word>(itemSize(fmt) - 1));
+  if (buffer.isMutableBytes()) {
+    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt,
+                      byte_index, *value);
+  }
+  DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
+  return packObject(thread, Int::cast(*buffer).asInt<uword>().value, fmt,
+                    byte_index, *value);
 }
 
 static RawObject raiseDifferentStructureError(Thread* thread) {
@@ -470,64 +504,6 @@ RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs) {
                   self.readOnly() ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
   result.setFormat(*format);
   return *result;
-}
-
-RawObject METH(memoryview, __getitem__)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, ID(memoryview));
-  }
-  MemoryView self(&scope, *self_obj);
-
-  Object index_obj(&scope, args.get(1));
-  Object index_int_obj(&scope, intFromIndex(thread, index_obj));
-  if (index_int_obj.isError()) return *index_int_obj;
-  Int index_int(&scope, intUnderlying(*index_int_obj));
-  if (index_int.isLargeInt()) {
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "cannot fit '%T' into an index-sized integer",
-                                &index_obj);
-  }
-  word index = index_int.asWord();
-  // TODO(T36619828) support str subclasses
-  Str format(&scope, self.format());
-  char format_c = formatChar(format);
-  DCHECK(format_c > 0, "invalid memoryview");
-  word item_size = itemSize(format_c);
-  DCHECK(item_size > 0, "invalid memoryview");
-  word index_abs = std::abs(index);
-  word length = self.length();
-  word byte_index;
-  if (__builtin_mul_overflow(index_abs, item_size, &byte_index) ||
-      byte_index + (item_size - 1) >= length) {
-    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of bounds");
-  }
-  if (index < 0) {
-    byte_index = length - byte_index;
-  }
-  Object buffer(&scope, self.buffer());
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfBytes(*buffer)) {
-    // TODO(T38246066) support bytes subclasses
-    if (buffer.isLargeBytes()) {
-      LargeBytes bytes(&scope, *buffer);
-      return unpackObject(thread, bytes.address(), length, format_c,
-                          byte_index);
-    }
-    CHECK(buffer.isSmallBytes(),
-          "memoryview.__getitem__ with non bytes/memory");
-    Bytes bytes(&scope, *buffer);
-    byte bytes_buffer[SmallBytes::kMaxLength];
-    bytes.copyTo(bytes_buffer, length);
-    return unpackObject(thread, reinterpret_cast<uword>(bytes_buffer), length,
-                        format_c, byte_index);
-  }
-  CHECK(buffer.isInt(), "memoryview.__getitem__ with non bytes/memory");
-  return unpackObject(thread, Int::cast(*buffer).asInt<uword>().value, length,
-                      format_c, byte_index);
 }
 
 RawObject METH(memoryview, __len__)(Thread* thread, Frame* frame, word nargs) {

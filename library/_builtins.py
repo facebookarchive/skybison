@@ -592,6 +592,10 @@ def _memoryview_check(obj):
     _builtin()
 
 
+def _memoryview_getitem(obj, key):
+    _builtin()
+
+
 def _memoryview_guard(obj):
     _builtin()
 

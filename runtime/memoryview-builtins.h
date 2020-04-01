@@ -5,6 +5,7 @@
 
 namespace py {
 
+RawObject memoryviewGetitem(Thread* thread, const MemoryView& view, word index);
 RawObject memoryviewItemsize(Thread* thread, const MemoryView& view);
 RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
                             const Int& index, const Object& value);

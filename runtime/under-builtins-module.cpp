@@ -2999,6 +2999,43 @@ RawObject FUNC(_builtins, _list_swap)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
+  }
+  MemoryView self(&scope, *self_obj);
+
+  Object key_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfInt(*key_obj)) {
+    return Unbound::object();
+  }
+  word index = intUnderlying(*key_obj).asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key_obj);
+  }
+  word index_abs = std::abs(index);
+  word length = self.length();
+  word item_size = SmallInt::cast(memoryviewItemsize(thread, self)).value();
+  word byte_index;
+  if (__builtin_mul_overflow(index_abs, item_size, &byte_index) ||
+      length == 0) {
+    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of bounds");
+  }
+  if (index < 0) {
+    byte_index = length - byte_index;
+  }
+  if (byte_index + (item_size - 1) >= length) {
+    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of bounds");
+  }
+  return memoryviewGetitem(thread, self, byte_index);
+}
+
 RawObject FUNC(_builtins, _mappingproxy_guard)(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
