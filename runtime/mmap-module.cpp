@@ -1,7 +1,10 @@
 #include "mmap-module.h"
 
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
+#include <cerrno>
 
 #include "builtins.h"
 #include "file.h"
@@ -39,6 +42,10 @@ void MmapModule::initialize(Thread* thread, const Module& module) {
   Object map_shared(&scope, SmallInt::fromWord(static_cast<word>(MAP_SHARED)));
   moduleAtPutById(thread, module, ID(MAP_SHARED), map_shared);
 
+  Object map_private(&scope,
+                     SmallInt::fromWord(static_cast<word>(MAP_PRIVATE)));
+  moduleAtPutById(thread, module, ID(MAP_PRIVATE), map_private);
+
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
   executeFrozenModule(thread, &kMmapModuleData, module);
 }
@@ -47,19 +54,44 @@ RawObject FUNC(mmap, _mmap_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
-
   word fd = intUnderlying(args.get(1)).asWord();
   word length = intUnderlying(args.get(2)).asWord();
   word flags = intUnderlying(args.get(3)).asWord();
   word prot = intUnderlying(args.get(4)).asWord();
   word offset = intUnderlying(args.get(5)).asWord();
 
-  Type type(&scope, args.get(0));
-  void* address = OS::mmap(nullptr, length, prot, flags, fd, offset);
-  if (address == MAP_FAILED) {
-    return thread->raiseWithFmt(LayoutId::kOSError, "Call to mmap failed");
+  if (fd != -1) {
+    struct stat sbuf;
+    if (::fstat(fd, &sbuf) == 0 && S_ISREG(sbuf.st_mode)) {
+      if (length == 0) {
+        if (sbuf.st_size == 0) {
+          return thread->raiseWithFmt(LayoutId::kValueError,
+                                      "cannot mmap an empty file");
+        }
+        if (offset >= sbuf.st_size) {
+          return thread->raiseWithFmt(LayoutId::kValueError,
+                                      "mmap offset is greater than file size");
+        }
+        length = sbuf.st_size - offset;
+      } else if (offset > sbuf.st_size || sbuf.st_size - offset < length) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "mmap length is greater than file size");
+      }
+    }
+    fd = ::fcntl(fd, F_DUPFD_CLOEXEC, 0);
+    if (fd < 0) {
+      return thread->raiseOSErrorFromErrno(errno);
+    }
+  } else {
+    flags |= MAP_ANONYMOUS;
   }
 
+  void* address = ::mmap(nullptr, length, prot, flags, fd, offset);
+  if (address == MAP_FAILED) {
+    return thread->raiseOSErrorFromErrno(errno);
+  }
+
+  Type type(&scope, args.get(0));
   Layout layout(&scope, type.instanceLayout());
   Mmap result(&scope, runtime->newInstance(layout));
   result.setAccess(0);

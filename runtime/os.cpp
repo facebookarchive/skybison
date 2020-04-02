@@ -60,20 +60,6 @@ bool OS::freeMemory(byte* ptr, word size) {
   return result == 0;
 }
 
-void* OS::mmap(void* addr, word size, int prot, int flags, int fd,
-               off_t offset) {
-  if (fd == -1) {
-    flags |= MAP_ANONYMOUS;
-  } else {
-    UNIMPLEMENTED("Should reach the _unimplemented in managed code");
-  }
-  size = Utils::roundUp(size, kPageSize);
-  DCHECK(size >= 0, "invalid size %ld", size);
-  void* result = ::mmap(addr, size, prot, flags, fd, offset);
-  CHECK(result != MAP_FAILED, "mmap failure");
-  return static_cast<byte*>(result);
-}
-
 class ScopedFd {
  public:
   explicit ScopedFd(int fd) : fd_(fd) {}

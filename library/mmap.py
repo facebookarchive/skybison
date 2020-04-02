@@ -52,8 +52,6 @@ class mmap(bootstrap=True):
             prot = 3
         elif access != 0:
             raise ValueError("mmap invalid access parameter.")
-        if fileno != -1:
-            _unimplemented()
         return _mmap_new(cls, fileno, length, flags, prot, offset)
 
     def close(self):

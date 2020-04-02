@@ -48,6 +48,7 @@ class Runtime;
   V(KeyboardInterrupt)                                                         \
   V(LookupError)                                                               \
   V(MAP_SHARED)                                                                \
+  V(MAP_PRIVATE)                                                               \
   V(MemoryError)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(NSIG)                                                                      \
