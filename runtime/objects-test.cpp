@@ -719,6 +719,75 @@ TEST_F(SliceTest, LengthWithPositiveStepAndStartEqualsStopReturnsZero) {
   EXPECT_EQ(Slice::length(2, 2, 1), 0);
 }
 
+TEST_F(StrArrayTest, OffsetByCodePoints) {
+  HandleScope scope(thread_);
+
+  StrArray empty(&scope, runtime_->newStrArray());
+  EXPECT_EQ(empty.numItems(), 0);
+  EXPECT_EQ(empty.offsetByCodePoints(0, 1), 0);
+  EXPECT_EQ(empty.offsetByCodePoints(2, 0), 0);
+  EXPECT_EQ(empty.offsetByCodePoints(2, 1), 0);
+
+  StrArray ascii(&scope, runtime_->newStrArray());
+  Str ascii_str(&scope, runtime_->newStrFromCStr("abcd"));
+  runtime_->strArrayAddStr(thread_, ascii, ascii_str);
+  EXPECT_EQ(ascii.numItems(), 4);
+
+  // for ASCII, each code point is one byte wide
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 0), 0);
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 3), 3);
+  EXPECT_EQ(ascii.offsetByCodePoints(1, 0), 1);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 0), 2);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 1), 3);
+  EXPECT_EQ(ascii.offsetByCodePoints(3, 0), 3);
+
+  // return the length once we reach the end of the string
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 4), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 5), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(1, 3), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(1, 4), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 2), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 3), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(3, 1), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(3, 2), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(4, 0), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(6, 0), 4);
+
+  StrArray unicode(&scope, runtime_->newStrArray());
+  Str unicode_str(
+      &scope, runtime_->newStrFromCStr("\xd7\x90pq\xd7\x91\xd7\x92-\xd7\x93"));
+  runtime_->strArrayAddStr(thread_, unicode, unicode_str);
+  EXPECT_EQ(unicode.numItems(), 11);
+
+  // for Unicode, code points may be more than one byte wide
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 0), 0);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 1), 2);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 2), 3);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 3), 4);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 4), 6);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 5), 8);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 6), 9);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 0), 2);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 1), 3);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 2), 4);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 3), 6);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 4), 8);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 5), 9);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 6), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(4, 0), 4);
+  EXPECT_EQ(unicode.offsetByCodePoints(4, 1), 6);
+  EXPECT_EQ(unicode.offsetByCodePoints(6, 0), 6);
+
+  // return the length once we reach the end of the string
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 7), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 9), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 7), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(3, 6), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(4, 5), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(8, 3), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(12, 0), 11);
+}
+
 TEST_F(StrArrayTest, RotateCodePointWithSameFirstAndLastIsNoop) {
   HandleScope scope(thread_);
   StrArray array(&scope, runtime_->newStrArray());

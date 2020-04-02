@@ -149,6 +149,27 @@ bool RawSmallStr::isASCII() const {
   return (block & non_ascii_mask) == 0;
 }
 
+template <typename T, typename F>
+static inline word offset(T src, F at, word len, word index, word count) {
+  if (count >= 0) {
+    while (count-- && index < len) {
+      index += UTF8::numChars((src->*at)(index));
+    }
+    return Utils::minimum(index, len);
+  }
+  while (count < 0) {
+    index--;
+    if (index < 0) return -1;
+    if (UTF8::isLeadByte((src->*at)(index))) count++;
+  }
+  return index;
+}
+
+word RawSmallStr::offsetByCodePoints(word index, word count) const {
+  // TODO(T64961042): operate directly on the word
+  return offset(this, &RawSmallStr::charAt, charLength(), index, count);
+}
+
 char* RawSmallStr::toCStr() const {
   word length = charLength();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
@@ -450,6 +471,10 @@ bool RawLargeStr::isASCII() const {
     if ((block & non_ascii_mask) != 0) return false;
   }
   return true;
+}
+
+word RawLargeStr::offsetByCodePoints(word index, word count) const {
+  return offset(this, &RawLargeStr::charAt, charLength(), index, count);
 }
 
 char* RawLargeStr::toCStr() const {
@@ -800,38 +825,17 @@ bool RawStr::equalsCStr(const char* c_str) const {
   return *cp == '\0';
 }
 
-word RawStr::offsetByCodePoints(word index, word count) const {
-  if (count >= 0) {
-    word len = charLength();
-    while (count-- && index < len) {
-      byte ch = charAt(index);
-      if (ch <= kMaxASCII) {
-        index++;
-      } else if ((ch & 0xE0) == 0xC0) {
-        index += 2;
-      } else if ((ch & 0xF0) == 0xE0) {
-        index += 3;
-      } else {
-        DCHECK((ch & 0xF8) == 0xF0, "invalid code unit");
-        index += 4;
-      }
-    }
-    return Utils::minimum(index, len);
-  }
-  while (count < 0) {
-    index--;
-    if (index < 0) return -1;
-    if ((charAt(index) & 0xC0) != 0x80) count++;
-  }
-  return index;
-}
-
 // RawStrArray
 
 int32_t RawStrArray::codePointAt(word index, word* char_length) const {
   RawMutableBytes buffer = RawMutableBytes::cast(items());
   return decodeCodePoint(&buffer, &RawMutableBytes::byteAt, numItems(), index,
                          char_length);
+}
+
+word RawStrArray::offsetByCodePoints(word index, word count) const {
+  RawMutableBytes buffer = RawMutableBytes::cast(items());
+  return offset(&buffer, &RawMutableBytes::byteAt, numItems(), index, count);
 }
 
 void RawStrArray::rotateCodePoint(word first, word last) const {

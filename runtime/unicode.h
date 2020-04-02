@@ -44,6 +44,10 @@ class UTF8 {
  public:
   static const word kMaxLength = 4;
 
+  // Predicates
+  static bool isLeadByte(byte b);
+  static bool isTrailByte(byte b);
+
   // Given the lead byte of a UTF-8 code point, return its length.
   static word numChars(byte lead_byte);
 
@@ -129,6 +133,13 @@ inline byte ASCII::toLower(byte b) { return isUpper(b) ? b + ('a' - 'A') : b; }
 inline byte ASCII::toUpper(byte b) { return isLower(b) ? b - ('a' - 'A') : b; }
 
 // UTF-8
+
+inline bool UTF8::isLeadByte(byte b) {
+  DCHECK(b < 0xF8, "invalid UTF-8 byte");
+  return (b & 0xC0) != 0x80;
+}
+
+inline bool UTF8::isTrailByte(byte b) { return (b & 0xC0) == 0x80; }
 
 inline word UTF8::numChars(byte lead_byte) {
   if (lead_byte <= kMaxASCII) {

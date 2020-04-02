@@ -740,6 +740,7 @@ class RawSmallStr : public RawObject {
   // Codepoints
   word codePointLength() const;
   bool isASCII() const;
+  word offsetByCodePoints(word index, word count) const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -1528,6 +1529,7 @@ class RawLargeStr : public RawArrayBase {
   // Codepoints
   word codePointLength() const;
   bool isASCII() const;
+  word offsetByCodePoints(word index, word count) const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -2514,6 +2516,12 @@ class RawStrArray : public RawInstance {
 
   void copyTo(byte* dst, word length) const;
   int32_t codePointAt(word index, word* length) const;
+
+  // Returns an index into a string offset by either a positive or negative
+  // number of code points.  Otherwise, if the new index would be negative, -1
+  // is returned or if the new index would be greater than the length of the
+  // string, the length is returned.
+  word offsetByCodePoints(word char_index, word count) const;
 
   // Rotate the code point from `last` to `first`.
   void rotateCodePoint(word first, word last) const;
@@ -6476,6 +6484,13 @@ inline bool RawStr::isASCII() const {
     return RawSmallStr::cast(*this).isASCII();
   }
   return RawLargeStr::cast(*this).isASCII();
+}
+
+inline word RawStr::offsetByCodePoints(word index, word count) const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallStr::cast(*this).offsetByCodePoints(index, count);
+  }
+  return RawLargeStr::cast(*this).offsetByCodePoints(index, count);
 }
 
 inline char* RawStr::toCStr() const {
