@@ -2759,7 +2759,7 @@ class StringIOTests(unittest.TestCase):
                 return 0
 
         string_io = _io.StringIO("hello world")
-        self.assertEquals(string_io.seek(1, IntLike()), 1)
+        self.assertEqual(string_io.seek(1, IntLike()), 1)
 
     def test_seek_can_overseek(self):
         string_io = _io.StringIO("foo\n")

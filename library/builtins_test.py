@@ -1497,8 +1497,8 @@ class BytesTests(unittest.TestCase):
     def test_dunder_str_returns_same_as_dunder_repr(self):
         b = b"foobar\x80"
         b_str = b.__repr__()
-        self.assertEquals(b_str, "b'foobar\\x80'")
-        self.assertEquals(b_str, b.__str__())
+        self.assertEqual(b_str, "b'foobar\\x80'")
+        self.assertEqual(b_str, b.__str__())
 
     def test_count_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
@@ -3881,7 +3881,7 @@ class DictKeysTests(unittest.TestCase):
     def test_dunder_repr_with_recursive_prints_ellipsis(self):
         x = {}
         x[1] = x.values()
-        self.assertEquals(repr(x.values()), "dict_values([dict_values([...])])")
+        self.assertEqual(repr(x.values()), "dict_values([dict_values([...])])")
 
     def test_dunder_repr_calls_key_dunder_repr(self):
         class C:
