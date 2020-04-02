@@ -584,6 +584,8 @@ add_library(
   ${CPYTHON_DIR}/Python/Python-ast.c
   ${CPYTHON_DIR}/Python/asdl.c
   ${CPYTHON_DIR}/Python/ast.c
+  ${CPYTHON_DIR}/Python/ast_opt.c
+  ${CPYTHON_DIR}/Python/ast_unparse.c
   ${CPYTHON_DIR}/Python/dtoa.c
   ${CPYTHON_DIR}/Python/fileutils.c
   ${CPYTHON_DIR}/Python/future.c

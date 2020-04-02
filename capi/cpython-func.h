@@ -223,6 +223,7 @@ PyAPI_FUNC(Py_ssize_t) _PyObject_SIZE_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) _PyObject_VAR_SIZE_Func(PyObject*, Py_ssize_t);
 
 /* C-API functions */
+PyAPI_FUNC(int) _PyAST_Optimize(struct _mod*, PyArena* arena, int optimize);
 PyAPI_FUNC(PyCodeObject*)
     PyAST_Compile(struct _mod*, const char*, PyCompilerFlags*, PyArena*);
 PyAPI_FUNC(PyCodeObject*)

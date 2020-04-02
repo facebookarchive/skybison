@@ -31,17 +31,30 @@ class PrintfTransformTests(unittest.TestCase):
         )
         self.assertEqual(eval(code), str.__mod__("foo", ()))  # noqa: P204
 
-    def test_percent_a(self):
+    def test_percent_a_constant_folded(self):
         code = _compile.compile("'%a' % (42,)", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
-  1           0 LOAD_CONST               0 (42)
+  1           0 LOAD_CONST               0 ('42')
+              2 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%a", (42,)))  # noqa: P204
+
+    def test_percent_a(self):
+        code = _compile.compile("'%a' % (x,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_NAME                0 (x)
               2 FORMAT_VALUE             3 (ascii)
               4 RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%a", (42,)))  # noqa: P204
+        self.assertEqual(
+            eval(code, locals={"x": 42}), str.__mod__("%a", (42,))  # noqa: P204
+        )
 
     def test_percent_percent(self):
         code = _compile.compile("'%%' % ()", "", "eval")
@@ -54,38 +67,60 @@ class PrintfTransformTests(unittest.TestCase):
         )
         self.assertEqual(eval(code), str.__mod__("%%", ()))  # noqa: P204
 
-    def test_percent_r(self):
+    def test_percent_r_constant_folded(self):
         code = _compile.compile("'%r' % ('bar',)", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
-  1           0 LOAD_CONST               0 ('bar')
-              2 FORMAT_VALUE             2 (repr)
-              4 RETURN_VALUE
+  1           0 LOAD_CONST               0 ("'bar'")
+              2 RETURN_VALUE
 """,
         )
         self.assertEqual(eval(code), str.__mod__("%r", ("bar",)))  # noqa: P204
 
-    def test_percent_s(self):
+    def test_percent_r(self):
+        code = _compile.compile("'%r' % (x,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_NAME                0 (x)
+              2 FORMAT_VALUE             2 (repr)
+              4 RETURN_VALUE
+""",
+        )
+        self.assertEqual(
+            eval(code, locals={"x": "bar"}), str.__mod__("%r", ("bar",))  # noqa: P204
+        )
+
+    def test_percent_s_constant_folded(self):
         code = _compile.compile("'%s' % (42,)", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
-  1           0 LOAD_CONST               0 (42)
-              2 FORMAT_VALUE             1 (str)
-              4 RETURN_VALUE
+  1           0 LOAD_CONST               0 ('42')
+              2 RETURN_VALUE
 """,
         )
         self.assertEqual(eval(code), str.__mod__("%s", (42,)))  # noqa: P204
 
-    def test_percent_d_i_u(self):
+    def test_percent_s(self):
+        code = _compile.compile("'%s' % (x,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_NAME                0 (x)
+              2 FORMAT_VALUE             1 (str)
+              4 RETURN_VALUE
+""",
+        )
+        self.assertEqual(
+            eval(code, locals={"x": 42}), str.__mod__("%s", (42,))  # noqa: P204
+        )
+
+    def test_percent_d_i_u_constant_folded(self):
         expected = """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_ATTR                0 (_mod_convert_number)
-              4 LOAD_CONST               2 (-13)
-              6 CALL_FUNCTION            1
-              8 FORMAT_VALUE             0
-             10 RETURN_VALUE
+  1           0 LOAD_CONST               0 ('-13')
+              2 RETURN_VALUE
 """
         code0 = _compile.compile("'%d' % (-13,)", "", "eval")
         code1 = _compile.compile("'%i' % (-13,)", "", "eval")
@@ -96,6 +131,31 @@ class PrintfTransformTests(unittest.TestCase):
         self.assertEqual(eval(code0), str.__mod__("%d", (-13,)))  # noqa: P204
         self.assertEqual(eval(code1), str.__mod__("%i", (-13,)))  # noqa: P204
         self.assertEqual(eval(code2), str.__mod__("%u", (-13,)))  # noqa: P204
+
+    def test_percent_d_i_u(self):
+        expected = """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_METHOD              0 (_mod_convert_number)
+              4 LOAD_NAME                1 (x)
+              6 CALL_METHOD              1
+              8 FORMAT_VALUE             0
+             10 RETURN_VALUE
+"""
+        code0 = _compile.compile("'%d' % (x,)", "", "eval")
+        code1 = _compile.compile("'%i' % (x,)", "", "eval")
+        code2 = _compile.compile("'%u' % (x,)", "", "eval")
+        self.assertEqual(dis_str(code0), expected)
+        self.assertEqual(dis_str(code1), expected)
+        self.assertEqual(dis_str(code2), expected)
+        self.assertEqual(
+            eval(code0, locals={"x": -13}), str.__mod__("%d", (-13,))  # noqa: P204
+        )
+        self.assertEqual(
+            eval(code1, locals={"x": -13}), str.__mod__("%i", (-13,))  # noqa: P204
+        )
+        self.assertEqual(
+            eval(code2, locals={"x": -13}), str.__mod__("%u", (-13,))  # noqa: P204
+        )
 
     def test_percent_d_calls_dunder_int(self):
         class C:
@@ -115,58 +175,98 @@ class PrintfTransformTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "format requires a number, not C"):
             eval(code, None, {"x": C()})  # noqa: P204
 
-    def test_percent_s_with_width(self):
+    def test_percent_s_with_width_constant_folded(self):
         code = _compile.compile("'%13s' % (42,)", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
-  1           0 LOAD_CONST               0 (42)
-              2 LOAD_CONST               1 ('>13')
-              4 FORMAT_VALUE             5 (str, with format)
-              6 RETURN_VALUE
+  1           0 LOAD_CONST               0 ('           42')
+              2 RETURN_VALUE
 """,
         )
         self.assertEqual(eval(code), str.__mod__("%13s", (42,)))  # noqa: P204
 
-    def test_percent_d_with_width_and_flags(self):
+    def test_percent_s_with_width(self):
+        code = _compile.compile("'%13s' % (x,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_NAME                0 (x)
+              2 LOAD_CONST               0 ('>13')
+              4 FORMAT_VALUE             5 (str, with format)
+              6 RETURN_VALUE
+""",
+        )
+        self.assertEqual(
+            eval(code, locals={"x": 42}), str.__mod__("%13s", (42,))  # noqa: P204
+        )
+
+    def test_percent_d_with_width_and_flags_constant_folded(self):
         code = _compile.compile("'%05d' % (-5,)", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_ATTR                0 (_mod_convert_number)
-              4 LOAD_CONST               3 (-5)
-              6 CALL_FUNCTION            1
-              8 LOAD_CONST               2 ('05')
-             10 FORMAT_VALUE             4 (with format)
-             12 RETURN_VALUE
+  1           0 LOAD_CONST               0 ('-0005')
+              2 RETURN_VALUE
 """,
         )
         self.assertEqual(eval(code), str.__mod__("%05d", (-5,)))  # noqa: P204
 
-    def test_mixed(self):
+    def test_percent_d_with_width_and_flags(self):
+        code = _compile.compile("'%05d' % (x,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_METHOD              0 (_mod_convert_number)
+              4 LOAD_NAME                1 (x)
+              6 CALL_METHOD              1
+              8 LOAD_CONST               1 ('05')
+             10 FORMAT_VALUE             4 (with format)
+             12 RETURN_VALUE
+""",
+        )
+        self.assertEqual(
+            eval(code, locals={"x": -5}), str.__mod__("%05d", (-5,))  # noqa: P204
+        )
+
+    def test_mixed_constant_folded(self):
         code = _compile.compile("'%s %% foo %r bar %a %s' % (1,2,3,4)", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
-  1           0 LOAD_CONST               0 (1)
+  1           0 LOAD_CONST               0 ('1 % foo 2 bar 3 4')
+              2 RETURN_VALUE
+""",
+        )
+        self.assertEqual(
+            eval(code),  # noqa: P204
+            str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
+        )
+
+    def test_mixed(self):
+        code = _compile.compile("'%s %% foo %r bar %a %s' % (a, b, c, d)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_NAME                0 (a)
               2 FORMAT_VALUE             1 (str)
-              4 LOAD_CONST               1 (' ')
-              6 LOAD_CONST               2 ('% foo ')
-              8 LOAD_CONST               3 (2)
+              4 LOAD_CONST               0 (' ')
+              6 LOAD_CONST               1 ('% foo ')
+              8 LOAD_NAME                1 (b)
              10 FORMAT_VALUE             2 (repr)
-             12 LOAD_CONST               4 (' bar ')
-             14 LOAD_CONST               5 (3)
+             12 LOAD_CONST               2 (' bar ')
+             14 LOAD_NAME                2 (c)
              16 FORMAT_VALUE             3 (ascii)
-             18 LOAD_CONST               1 (' ')
-             20 LOAD_CONST               6 (4)
+             18 LOAD_CONST               0 (' ')
+             20 LOAD_NAME                3 (d)
              22 FORMAT_VALUE             1 (str)
              24 BUILD_STRING             8
              26 RETURN_VALUE
 """,
         )
         self.assertEqual(
-            eval(code),  # noqa: P204
+            eval(code, locals={"a": 1, "b": 2, "c": 3, "d": 4}),  # noqa: P204
             str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
         )
 
@@ -176,22 +276,35 @@ class PrintfTransformTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             _compile.compile(ast.Module(), "test", "exec")
 
-    def test_without_tuple(self):
+    def test_without_tuple_constant_folded(self):
         code = _compile.compile("'%s' % 5.5", "", "eval")
         self.assertEqual(
             dis_str(code),
             """\
+  1           0 LOAD_CONST               0 ('5.5')
+              2 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%s", 5.5))  # noqa: P204
+
+    def test_without_tuple(self):
+        code = _compile.compile("'%s' % x", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
   1           0 LOAD_CONST               0 ('')
-              2 LOAD_ATTR                0 (_mod_check_single_arg)
-              4 LOAD_CONST               1 (5.5)
-              6 CALL_FUNCTION            1
-              8 LOAD_CONST               2 (0)
+              2 LOAD_METHOD              0 (_mod_check_single_arg)
+              4 LOAD_NAME                1 (x)
+              6 CALL_METHOD              1
+              8 LOAD_CONST               1 (0)
              10 BINARY_SUBSCR
              12 FORMAT_VALUE             1 (str)
              14 RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%s", 5.5))  # noqa: P204
+        self.assertEqual(
+            eval(code, locals={"x": 5.5}), str.__mod__("%s", 5.5)  # noqa: P204
+        )
 
     def test_without_tuple_formats_value(self):
         code = _compile.compile("'%s' % x", "", "eval")

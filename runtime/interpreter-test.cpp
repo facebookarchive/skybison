@@ -5386,10 +5386,8 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD);
-  bytecode.byteAtPut(8, CALL_METHOD);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
 
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::callFunction0(
@@ -5413,10 +5411,8 @@ def test():
                    .isError());
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD_ANAMORPHIC);
-  bytecode.byteAtPut(8, CALL_METHOD);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
 
   Object c(&scope, mainModuleAt(runtime_, "c"));
   LayoutId layout_id = c.layoutId();
@@ -5452,10 +5448,8 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD_ANAMORPHIC);
-  bytecode.byteAtPut(8, CALL_METHOD);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
 
   // Cache miss.
   Object c(&scope, mainModuleAt(runtime_, "c"));

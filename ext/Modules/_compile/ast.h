@@ -7,6 +7,7 @@
 
 extern "C" {
 
+PyAPI_FUNC(PyObject*) _PyAST_ExprAsUnicode(expr_ty);
 PyAPI_FUNC(int) PyAST_Validate(mod_ty);
 PyAPI_FUNC(mod_ty) PyAST_FromNode(
     const node *n,
