@@ -27,6 +27,7 @@ import os
 import platform
 import re
 import shutil
+import socket
 import stat
 import struct
 import subprocess
@@ -40,15 +41,6 @@ import urllib.error
 import warnings
 
 from .testresult import get_test_runner
-
-
-# TODO(T47796072): Import socket
-#import socket
-class socket:
-   AF_INET = 2
-   SOCK_STREAM = 1
-   has_ipv6 = False
-
 
 
 try:
@@ -1206,10 +1198,8 @@ def _filterwarnings(filters, quiet=False):
     """
     # Clear the warning registry of the calling module
     # in order to re-raise the warnings.
-    # TODO(T43303879): Implement sys._getframe
-    # frame = sys._getframe(2)
-    # registry = frame.f_globals.get('__warningregistry__')
-    registry = sys._getframe_globals(2).get('__warningregistry__')
+    frame = sys._getframe(2)
+    registry = frame.f_globals.get('__warningregistry__')
     if registry:
        registry.clear()
     with warnings.catch_warnings(record=True) as w:
