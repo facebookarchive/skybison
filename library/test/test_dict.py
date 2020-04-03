@@ -32,8 +32,6 @@ class DictTest(unittest.TestCase):
         self.assertEqual(dict(), {})
         self.assertIsNot(dict(), {})
 
-    # TODO(T54193215): Implement eval
-    @unittest.skip("Implement eval")
     def test_literal_constructor(self):
         # check literal constructor for different sized dicts
         # (to exercise the BUILD_MAP oparg).
@@ -51,8 +49,6 @@ class DictTest(unittest.TestCase):
         self.assertIs(bool({}), False)
         self.assertIs(bool({1: 2}), True)
 
-    # TODO(T54219523): Implement __repr__ for dict_* types
-    @unittest.skip("Implement __repr__ for dict_* types")
     def test_keys(self):
         d = {}
         self.assertEqual(set(d.keys()), set())
@@ -66,8 +62,6 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.keys, None)
         self.assertEqual(repr(dict(a=1).keys()), "dict_keys(['a'])")
 
-    # TODO(T54219523): Implement __repr__ for dict_* types
-    @unittest.skip("Implement __repr__ for dict_* types")
     def test_values(self):
         d = {}
         self.assertEqual(set(d.values()), set())
@@ -76,8 +70,6 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.values, None)
         self.assertEqual(repr(dict(a=1).values()), "dict_values([1])")
 
-    # TODO(T54219523): Implement __repr__ for dict_* types
-    @unittest.skip("Implement __repr__ for dict_* types")
     def test_items(self):
         d = {}
         self.assertEqual(set(d.items()), set())
@@ -589,8 +581,6 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             d3.items() > d2.items()
 
-    # TODO(T54219523): Implement builtin methods for dict_* types
-    @unittest.skip("Implement builtin methods for dict_* types")
     def test_dictview_set_operations_on_keys(self):
         k1 = {1:1, 2:2}.keys()
         k2 = {1:1, 2:2, 3:3}.keys()
@@ -606,8 +596,6 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 ^ k2, {3})
         self.assertEqual(k1 ^ k3, {1,2,4})
 
-    # TODO(T54219523): Implement builtin methods for dict_* types
-    @unittest.skip("Implement builtin methods for dict_* types")
     def test_dictview_set_operations_on_items(self):
         k1 = {1:1, 2:2}.items()
         k2 = {1:1, 2:2, 3:3}.items()
@@ -623,8 +611,6 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 ^ k2, {(3,3)})
         self.assertEqual(k1 ^ k3, {(1,1), (2,2), (4,4)})
 
-    # TODO(T54219523): Implement builtin methods for dict_* types
-    @unittest.skip("Implement builtin methods for dict_* types")
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()
         self.assertTrue({1:1}.keys() == {1})
