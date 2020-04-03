@@ -11160,6 +11160,14 @@ class StrTests(unittest.TestCase):
         self.assertEqual(s[1:8:2], "el o")
         self.assertEqual(s[-1:3:-3], "doo")
 
+    def test_dunder_getitem_with_slice_indexes_by_code_point(self):
+        s = "# \xc2\xa9 2018 Unicode\xc2\xae, Inc.\n"
+        self.assertEqual(s[10:], "Unicode\xc2\xae, Inc.\n")
+        self.assertEqual(s[:9], "# \xc2\xa9 2018")
+        self.assertEqual(s[::2], "#\xc2 08Uioe\xae n.")
+        self.assertEqual(s[1:8:2], " \xa921")
+        self.assertEqual(s[-1:3:-3], "\nn,ecU1 ")
+
     def test_dunder_getitem_with_slice_uses_adjusted_bounds(self):
         s = "hello world"
         self.assertEqual(s[-20:5], "hello")

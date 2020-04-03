@@ -3967,6 +3967,17 @@ RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Frame* frame,
   return *instance;
 }
 
+static word adjustedStrIndex(const Str& str, word index) {
+  word len = str.charLength();
+  if (index >= 0) {
+    return str.offsetByCodePoints(0, index);
+  }
+  if (-len < index) {
+    return Utils::maximum(0l, str.offsetByCodePoints(str.charLength(), index));
+  }
+  return 0;
+}
+
 RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -4004,13 +4015,12 @@ RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
     return Unbound::object();
   }
 
+  // Manually adjust slice bounds to avoid an extra call to codePointLength
   Str self(&scope, strUnderlying(*self_obj));
-  word length = self.codePointLength();
-  word result_len = Slice::adjustIndices(length, &start, &stop, 1);
-  if (result_len == length) {
-    return *self;
-  }
-  return runtime->strSubstr(thread, self, start, result_len);
+  word start_index = adjustedStrIndex(self, start);
+  word stop_index = adjustedStrIndex(self, stop);
+  return runtime->strSubstr(thread, self, start_index,
+                            stop_index - start_index);
 }
 
 RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Frame* frame,
