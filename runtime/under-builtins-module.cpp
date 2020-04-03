@@ -3022,7 +3022,7 @@ RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Frame* frame,
   }
   word index_abs = std::abs(index);
   word length = self.length();
-  word item_size = SmallInt::cast(memoryviewItemsize(thread, self)).value();
+  word item_size = memoryviewItemsize(thread, self);
   word byte_index;
   if (__builtin_mul_overflow(index_abs, item_size, &byte_index) ||
       length == 0) {
@@ -3087,7 +3087,7 @@ RawObject FUNC(_builtins, _memoryview_itemsize)(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
-  return memoryviewItemsize(thread, self);
+  return SmallInt::fromWord(memoryviewItemsize(thread, self));
 }
 
 RawObject FUNC(_builtins, _memoryview_nbytes)(Thread* thread, Frame* frame,
@@ -3119,7 +3119,7 @@ RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Frame* frame,
   if (!index_obj.isInt()) return Unbound::object();
   Int index_int(&scope, *index_obj);
   word index = index_int.asWord();
-  word item_size = SmallInt::cast(memoryviewItemsize(thread, self)).value();
+  word item_size = memoryviewItemsize(thread, self);
   word byte_index = (index < 0 ? -index : index) * item_size;
   if (byte_index + item_size > self.length()) {
     return thread->raiseWithFmt(LayoutId::kIndexError, "index out of bounds");
@@ -3129,8 +3129,7 @@ RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Frame* frame,
   }
 
   Object value(&scope, args.get(2));
-  Int bytes(&scope, SmallInt::fromWord(byte_index));
-  return memoryviewSetitem(thread, self, bytes, value);
+  return memoryviewSetitem(thread, self, byte_index, value);
 }
 
 RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread, Frame* frame,

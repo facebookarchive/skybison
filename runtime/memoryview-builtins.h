@@ -6,9 +6,9 @@
 namespace py {
 
 RawObject memoryviewGetitem(Thread* thread, const MemoryView& view, word index);
-RawObject memoryviewItemsize(Thread* thread, const MemoryView& view);
-RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
-                            const Int& index, const Object& value);
+word memoryviewItemsize(Thread* thread, const MemoryView& view);
+RawObject memoryviewSetitem(Thread* thread, const MemoryView& view, word index,
+                            const Object& value);
 RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                              word stop, word step, word slice_len,
                              const Object& value);

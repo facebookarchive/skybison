@@ -89,11 +89,12 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatbSetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0xab};
   MemoryView view(&scope, newMemoryView(bytes, "b", ReadOnly::ReadWrite));
-  Int index(&scope, runtime_->newInt(0));
-  Int value(&scope, runtime_->newInt(-59));
+  word index = 0;
+  Object value(&scope, runtime_->newInt(-59));
   EXPECT_EQ(memoryviewSetitem(thread_, view, index, value), NoneType::object());
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
+  Object index_obj(&scope, runtime_->newInt(index));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
+                                   index_obj));
   EXPECT_TRUE(isIntEqualsWord(*result, -59));
 }
 
@@ -102,9 +103,8 @@ TEST_F(MemoryViewBuiltinsTest,
   HandleScope scope(thread_);
   const byte bytes[] = {0xab};
   MemoryView view(&scope, newMemoryView(bytes, "b", ReadOnly::ReadWrite));
-  Int index(&scope, runtime_->newInt(0));
-  Int value(&scope, runtime_->newInt(0x101));
-  Object result(&scope, memoryviewSetitem(thread_, view, index, value));
+  Object value(&scope, runtime_->newInt(0x101));
+  Object result(&scope, memoryviewSetitem(thread_, view, 0, value));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
                             "memoryview: invalid value for format 'b'"));
 }
@@ -113,11 +113,12 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatBSetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0xee};
   MemoryView view(&scope, newMemoryView(bytes, "B", ReadOnly::ReadWrite));
-  Int index(&scope, runtime_->newInt(0));
-  Int value(&scope, runtime_->newInt(0xd8));
+  word index = 0;
+  Object value(&scope, runtime_->newInt(0xd8));
   EXPECT_EQ(memoryviewSetitem(thread_, view, index, value), NoneType::object());
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
+  Object index_obj(&scope, runtime_->newInt(index));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
+                                   index_obj));
   EXPECT_TRUE(isIntEqualsWord(*result, 216));
 }
 
@@ -125,11 +126,12 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatcSetsBytes) {
   HandleScope scope(thread_);
   const byte bytes[] = {97, 98};
   MemoryView view(&scope, newMemoryView(bytes, "c", ReadOnly::ReadWrite));
-  Int index(&scope, runtime_->newInt(0));
+  word index = 0;
   Bytes value(&scope, runtime_->newBytes(1, 100));
   EXPECT_EQ(memoryviewSetitem(thread_, view, index, value), NoneType::object());
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
+  Object index_obj(&scope, runtime_->newInt(index));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
+                                   index_obj));
   const byte expected_bytes[] = {100};
   EXPECT_TRUE(isBytesEqualsBytes(result, expected_bytes));
 }
@@ -138,11 +140,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormathSetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0xcd, 0x2c, 0xBE, 0xEF};
   MemoryView view(&scope, newMemoryView(bytes, "h", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(2));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newInt(-932));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newInt(-932));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 2, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   EXPECT_TRUE(isIntEqualsWord(*result, -932));
@@ -152,11 +152,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatHSetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0xb2, 0x11, 0xBE, 0xEF};
   MemoryView view(&scope, newMemoryView(bytes, "H", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(2));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newInt(49300));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newInt(49300));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 2, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 49300));
@@ -166,11 +164,12 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatiSetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0x30, 0x8A, 0x43, 0xF2, 0xDE, 0xAD, 0xBE, 0xEF};
   MemoryView view(&scope, newMemoryView(bytes, "i", ReadOnly::ReadWrite));
-  Int index(&scope, runtime_->newInt(0));
-  Int value(&scope, runtime_->newInt(-464070943));
+  word index = 0;
+  Object value(&scope, runtime_->newInt(-464070943));
   EXPECT_EQ(memoryviewSetitem(thread_, view, index, value), NoneType::object());
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
+  Object index_obj(&scope, runtime_->newInt(index));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
+                                   index_obj));
   EXPECT_TRUE(isIntEqualsWord(*result, -464070943));
 }
 
@@ -178,11 +177,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatISetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0x30, 0x8A, 0x43, 0xF2, 0xDE, 0xAD, 0xBE, 0xEF};
   MemoryView view(&scope, newMemoryView(bytes, "I", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(4));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newInt(149624948));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newInt(149624948));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 4, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 149624948));
@@ -193,11 +190,12 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatlSetsInt) {
   const byte bytes[] = {0xD8, 0x76, 0x97, 0xD1, 0x8B, 0xA1, 0xD2, 0x62,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "l", ReadOnly::ReadWrite));
-  Int index(&scope, runtime_->newInt(0));
-  Int value(&scope, runtime_->newInt(-9099618978295131431));
+  word index = 0;
+  Object value(&scope, runtime_->newInt(-9099618978295131431));
   EXPECT_EQ(memoryviewSetitem(thread_, view, index, value), NoneType::object());
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
+  Object index_obj(&scope, runtime_->newInt(index));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
+                                   index_obj));
   EXPECT_TRUE(isIntEqualsWord(*result, -9099618978295131431));
 }
 
@@ -206,11 +204,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatLSetsInt) {
   const byte bytes[] = {0xD8, 0x76, 0x97, 0xD1, 0x8B, 0xA1, 0xD2, 0x62,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "L", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(8));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newIntFromUnsigned(7082027347532687782));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newIntFromUnsigned(7082027347532687782));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 8, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 7082027347532687782));
@@ -221,11 +217,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatqSetsInt) {
   const byte bytes[] = {0x7,  0xE2, 0x42, 0x9E, 0x8F, 0xBF, 0xDB, 0x1B,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "q", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(8));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newInt(2534191260184616076));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newInt(2534191260184616076));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 8, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 2534191260184616076));
@@ -236,11 +230,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatQSetsInt) {
   const byte bytes[] = {0xD9, 0xC6, 0xD2, 0x40, 0xBD, 0x19, 0xA9, 0xC8,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "Q", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(8));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newIntFromUnsigned(0xbdc73615af8b018aul));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newIntFromUnsigned(0xbdc73615af8b018aul));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 8, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   const uword expected_digits[] = {0xbdc73615af8b018aul, 0};
@@ -252,11 +244,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatnSetsInt) {
   const byte bytes[] = {0xF2, 0x6F, 0xFA, 0x8B, 0x93, 0xC0, 0xED, 0x9D,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "n", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(8));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newInt(-1461155128888034195l));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newInt(-1461155128888034195l));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 8, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   EXPECT_TRUE(isIntEqualsWord(*result, -1461155128888034195l));
@@ -267,11 +257,9 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatNSetsInt) {
   const byte bytes[] = {0x6B, 0x8F, 0x6,  0xA2, 0xE0, 0x13, 0x88, 0x47,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "N", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(8));
-  Int key(&scope, runtime_->newInt(1));
-  Int value(&scope, runtime_->newIntFromUnsigned(0xc009026b7e40b67eul));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  Object value(&scope, runtime_->newIntFromUnsigned(0xc009026b7e40b67eul));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 8, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   const uword expected_digits[] = {0xc009026b7e40b67eul, 0};
@@ -282,12 +270,10 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatfSetsFloat) {
   HandleScope scope(thread_);
   const byte bytes[] = {0x67, 0x32, 0x23, 0x31, 0xDE, 0xAD, 0xBE, 0xEF};
   MemoryView view(&scope, newMemoryView(bytes, "f", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(4));
-  Int key(&scope, runtime_->newInt(1));
   Float value(&scope, runtime_->newFloat(
                           std::strtof("-0x1.78e1720000000p-120", nullptr)));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 4, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   ASSERT_TRUE(result.isFloat());
@@ -300,12 +286,10 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatdSetsFloat) {
   const byte bytes[] = {0xEA, 0x43, 0xAD, 0x6F, 0x9D, 0x31, 0xE,  0x96,
                         0xBA, 0xDC, 0x0F, 0xFE, 0xE0, 0xDD, 0xF0, 0x0D};
   MemoryView view(&scope, newMemoryView(bytes, "d", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(8));
-  Int key(&scope, runtime_->newInt(1));
   Float value(&scope, runtime_->newFloat(
                           std::strtod("0x1.c0c870d1a8028p+187", nullptr)));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
-            NoneType::object());
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 8, value), NoneType::object());
+  Object key(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, key));
   ASSERT_TRUE(result.isFloat());
@@ -317,12 +301,13 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatQuestionmarkSetsTrue) {
   HandleScope scope(thread_);
   const byte bytes[] = {0x92, 0xE1, 0x57, 0, 0x81, 0xA8};
   MemoryView view(&scope, newMemoryView(bytes, "?", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(3));
+  word byte_index = 3;
   Bool value(&scope, Bool::trueObj());
   EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
             NoneType::object());
+  Object byte_index_obj(&scope, runtime_->newInt(byte_index));
   Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
-                                   byte_index));
+                                   byte_index_obj));
   EXPECT_EQ(result, Bool::trueObj());
 }
 
@@ -330,12 +315,13 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatQuestionmarkSetsFalse) {
   HandleScope scope(thread_);
   const byte bytes[] = {0x92, 0xE1, 0xAB, 0xEA, 0x81, 0xA8};
   MemoryView view(&scope, newMemoryView(bytes, "?", ReadOnly::ReadWrite));
-  Int byte_index(&scope, runtime_->newInt(2));
+  word byte_index = 2;
   Bool value(&scope, Bool::falseObj());
   EXPECT_EQ(memoryviewSetitem(thread_, view, byte_index, value),
             NoneType::object());
+  Object byte_index_obj(&scope, runtime_->newInt(byte_index));
   Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
-                                   byte_index));
+                                   byte_index_obj));
   EXPECT_EQ(result, Bool::falseObj());
 }
 
@@ -345,36 +331,32 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithMemoryBufferWritesMemory) {
   byte memory[length];
   MemoryView view(&scope, runtime_->newMemoryViewFromCPtr(
                               thread_, memory, length, ReadOnly::ReadWrite));
-  Int idx(&scope, SmallInt::fromWord(0));
-  Int value(&scope, SmallInt::fromWord(0));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, idx, value), NoneType::object());
-  idx = Int::cast(SmallInt::fromWord(1));
-  value = Int::cast(SmallInt::fromWord(1));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, idx, value), NoneType::object());
-  idx = Int::cast(SmallInt::fromWord(2));
-  value = Int::cast(SmallInt::fromWord(2));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, idx, value), NoneType::object());
-  idx = Int::cast(SmallInt::fromWord(3));
-  value = Int::cast(SmallInt::fromWord(3));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, idx, value), NoneType::object());
-  idx = Int::cast(SmallInt::fromWord(4));
-  value = Int::cast(SmallInt::fromWord(4));
-  EXPECT_EQ(memoryviewSetitem(thread_, view, idx, value), NoneType::object());
-  idx = Int::cast(SmallInt::fromWord(0));
+  Object value(&scope, SmallInt::fromWord(0));
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 0, value), NoneType::object());
+  value = SmallInt::fromWord(1);
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 1, value), NoneType::object());
+  value = SmallInt::fromWord(2);
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 2, value), NoneType::object());
+  value = SmallInt::fromWord(3);
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 3, value), NoneType::object());
+  value = SmallInt::fromWord(4);
+  EXPECT_EQ(memoryviewSetitem(thread_, view, 4, value), NoneType::object());
+
+  Object idx_obj(&scope, runtime_->newInt(0));
   EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx), 0));
-  idx = Int::cast(SmallInt::fromWord(1));
+      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx_obj), 0));
+  idx_obj = runtime_->newInt(1);
   EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx), 1));
-  idx = Int::cast(SmallInt::fromWord(2));
+      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx_obj), 1));
+  idx_obj = runtime_->newInt(2);
   EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx), 2));
-  idx = Int::cast(SmallInt::fromWord(3));
+      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx_obj), 2));
+  idx_obj = runtime_->newInt(3);
   EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx), 3));
-  idx = Int::cast(SmallInt::fromWord(4));
+      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx_obj), 3));
+  idx_obj = runtime_->newInt(4);
   EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx), 4));
+      runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx_obj), 4));
   EXPECT_EQ(memory[0], 0);
   EXPECT_EQ(memory[1], 1);
   EXPECT_EQ(memory[2], 2);
@@ -395,11 +377,12 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithByteArraySetsMutableBytes) {
                     runBuiltin(METH(memoryview, __new__), type, bytearray));
   ASSERT_TRUE(result_obj.isMemoryView());
   MemoryView view(&scope, *result_obj);
-  Int index(&scope, runtime_->newInt(0));
-  Int value(&scope, runtime_->newInt(0xA5));
+  word index = 0;
+  Object value(&scope, runtime_->newInt(0xA5));
   EXPECT_EQ(memoryviewSetitem(thread_, view, index, value), NoneType::object());
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
+  Object index_object(&scope, runtime_->newInt(index));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_getitem), view,
+                                   index_object));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xA5));
   EXPECT_EQ(bytearray.byteAt(0), 0xA5);
 }

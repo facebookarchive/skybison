@@ -57,14 +57,14 @@ static word itemSize(char format) {
   }
 }
 
-RawObject memoryviewItemsize(Thread* thread, const MemoryView& view) {
+word memoryviewItemsize(Thread* thread, const MemoryView& view) {
   HandleScope scope(thread);
   Str format(&scope, view.format());
   char format_c = formatChar(format);
   DCHECK(format_c > 0, "invalid memoryview");
   word item_size = itemSize(format_c);
   DCHECK(item_size > 0, "invalid memoryview");
-  return SmallInt::fromWord(item_size);
+  return item_size;
 }
 
 static RawObject raiseInvalidValueError(Thread* thread, char format) {
@@ -348,24 +348,22 @@ RawObject memoryviewGetitem(Thread* thread, const MemoryView& view,
                       format_c, index);
 }
 
-RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
-                            const Int& index, const Object& value) {
+RawObject memoryviewSetitem(Thread* thread, const MemoryView& view, word index,
+                            const Object& value) {
   HandleScope scope(thread);
   Object buffer(&scope, view.buffer());
   Str format(&scope, view.format());
   char fmt = formatChar(format);
   // TODO(T58046846): Replace DCHECK(char > 0) checks
   DCHECK(fmt > 0, "invalid memoryview");
-  word byte_index = index.asWord();
-  DCHECK_INDEX(byte_index,
-               view.length() - static_cast<word>(itemSize(fmt) - 1));
+  DCHECK_INDEX(index, view.length() - static_cast<word>(itemSize(fmt) - 1));
   if (buffer.isMutableBytes()) {
-    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt,
-                      byte_index, *value);
+    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt, index,
+                      *value);
   }
   DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
-  return packObject(thread, Int::cast(*buffer).asInt<uword>().value, fmt,
-                    byte_index, *value);
+  return packObject(thread, Int::cast(*buffer).asInt<uword>().value, fmt, index,
+                    *value);
 }
 
 static RawObject raiseDifferentStructureError(Thread* thread) {
