@@ -29,30 +29,121 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_sre_getlower__doc__,
-"getlower($module, character, flags, /)\n"
+PyDoc_STRVAR(_sre_ascii_iscased__doc__,
+"ascii_iscased($module, character, /)\n"
 "--\n"
 "\n");
 
-#define _SRE_GETLOWER_METHODDEF    \
-    {"getlower", (PyCFunction)_sre_getlower, METH_VARARGS, _sre_getlower__doc__},
+#define _SRE_ASCII_ISCASED_METHODDEF    \
+    {"ascii_iscased", (PyCFunction)_sre_ascii_iscased, METH_O, _sre_ascii_iscased__doc__},
 
 static int
-_sre_getlower_impl(PyObject *module, int character, int flags);
+_sre_ascii_iscased_impl(PyObject *module, int character);
 
 static PyObject *
-_sre_getlower(PyObject *module, PyObject *args)
+_sre_ascii_iscased(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int character;
-    int flags;
     int _return_value;
 
-    if (!PyArg_ParseTuple(args, "ii:getlower",
-        &character, &flags)) {
+    if (!PyArg_Parse(arg, "i:ascii_iscased", &character)) {
         goto exit;
     }
-    _return_value = _sre_getlower_impl(module, character, flags);
+    _return_value = _sre_ascii_iscased_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_unicode_iscased__doc__,
+"unicode_iscased($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_UNICODE_ISCASED_METHODDEF    \
+    {"unicode_iscased", (PyCFunction)_sre_unicode_iscased, METH_O, _sre_unicode_iscased__doc__},
+
+static int
+_sre_unicode_iscased_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_unicode_iscased(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:unicode_iscased", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_unicode_iscased_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_ascii_tolower__doc__,
+"ascii_tolower($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_ASCII_TOLOWER_METHODDEF    \
+    {"ascii_tolower", (PyCFunction)_sre_ascii_tolower, METH_O, _sre_ascii_tolower__doc__},
+
+static int
+_sre_ascii_tolower_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_ascii_tolower(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:ascii_tolower", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_ascii_tolower_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_unicode_tolower__doc__,
+"unicode_tolower($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_UNICODE_TOLOWER_METHODDEF    \
+    {"unicode_tolower", (PyCFunction)_sre_unicode_tolower, METH_O, _sre_unicode_tolower__doc__},
+
+static int
+_sre_unicode_tolower_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_unicode_tolower(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:unicode_tolower", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_unicode_tolower_impl(module, character);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -63,7 +154,7 @@ exit:
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
-"match($self, /, string=None, pos=0, endpos=sys.maxsize, *, pattern=None)\n"
+"match($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Matches zero or more characters at the beginning of the string.");
@@ -73,69 +164,63 @@ PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t pos, Py_ssize_t endpos,
-                            PyObject *pattern);
+                            Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_match(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:match", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:match", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *pattern = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &pattern)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_match_impl(self, string, pos, endpos, pattern);
+    return_value = _sre_SRE_Pattern_match_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
-"fullmatch($self, /, string=None, pos=0, endpos=sys.maxsize, *,\n"
-"          pattern=None)\n"
+"fullmatch($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
-"Matches against all of the string");
+"Matches against all of the string.");
 
 #define _SRE_SRE_PATTERN_FULLMATCH_METHODDEF    \
     {"fullmatch", (PyCFunction)_sre_SRE_Pattern_fullmatch, METH_FASTCALL, _sre_SRE_Pattern_fullmatch__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
-                                Py_ssize_t pos, Py_ssize_t endpos,
-                                PyObject *pattern);
+                                Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:fullmatch", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:fullmatch", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *pattern = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &pattern)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_fullmatch_impl(self, string, pos, endpos, pattern);
+    return_value = _sre_SRE_Pattern_fullmatch_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_search__doc__,
-"search($self, /, string=None, pos=0, endpos=sys.maxsize, *,\n"
-"       pattern=None)\n"
+"search($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Scan through string looking for a match, and return a corresponding match object instance.\n"
@@ -147,33 +232,30 @@ PyDoc_STRVAR(_sre_SRE_Pattern_search__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyObject *string,
-                             Py_ssize_t pos, Py_ssize_t endpos,
-                             PyObject *pattern);
+                             Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_search(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:search", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:search", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *pattern = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &pattern)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_search_impl(self, string, pos, endpos, pattern);
+    return_value = _sre_SRE_Pattern_search_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_findall__doc__,
-"findall($self, /, string=None, pos=0, endpos=sys.maxsize, *,\n"
-"        source=None)\n"
+"findall($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Return a list of all non-overlapping matches of pattern in string.");
@@ -183,25 +265,23 @@ PyDoc_STRVAR(_sre_SRE_Pattern_findall__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
-                              Py_ssize_t pos, Py_ssize_t endpos,
-                              PyObject *source);
+                              Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_findall(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "source", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:findall", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:findall", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *source = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &source)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_findall_impl(self, string, pos, endpos, source);
+    return_value = _sre_SRE_Pattern_findall_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
@@ -275,7 +355,7 @@ exit:
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_split__doc__,
-"split($self, /, string=None, maxsplit=0, *, source=None)\n"
+"split($self, /, string, maxsplit=0)\n"
 "--\n"
 "\n"
 "Split string by the occurrences of pattern.");
@@ -285,23 +365,22 @@ PyDoc_STRVAR(_sre_SRE_Pattern_split__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t maxsplit, PyObject *source);
+                            Py_ssize_t maxsplit);
 
 static PyObject *
 _sre_SRE_Pattern_split(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "maxsplit", "source", NULL};
-    static _PyArg_Parser _parser = {"|On$O:split", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "maxsplit", NULL};
+    static _PyArg_Parser _parser = {"O|n:split", _keywords, 0};
+    PyObject *string;
     Py_ssize_t maxsplit = 0;
-    PyObject *source = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &maxsplit, &source)) {
+        &string, &maxsplit)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_split_impl(self, string, maxsplit, source);
+    return_value = _sre_SRE_Pattern_split_impl(self, string, maxsplit);
 
 exit:
     return return_value;
@@ -391,33 +470,12 @@ _sre_SRE_Pattern___copy__(PatternObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
-"__deepcopy__($self, /, memo)\n"
+"__deepcopy__($self, memo, /)\n"
 "--\n"
 "\n");
 
 #define _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_FASTCALL, _sre_SRE_Pattern___deepcopy____doc__},
-
-static PyObject *
-_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo);
-
-static PyObject *
-_sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"memo", NULL};
-    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
-    PyObject *memo;
-
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &memo)) {
-        goto exit;
-    }
-    return_value = _sre_SRE_Pattern___deepcopy___impl(self, memo);
-
-exit:
-    return return_value;
-}
+    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
 
 PyDoc_STRVAR(_sre_compile__doc__,
 "compile($module, /, pattern, flags, code, groups, groupindex,\n"
@@ -438,7 +496,7 @@ _sre_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
-    static _PyArg_Parser _parser = {"OiOnOO:compile", _keywords, 0};
+    static _PyArg_Parser _parser = {"OiO!nO!O!:compile", _keywords, 0};
     PyObject *pattern;
     int flags;
     PyObject *code;
@@ -447,7 +505,7 @@ _sre_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *indexgroup;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &pattern, &flags, &code, &groups, &groupindex, &indexgroup)) {
+        &pattern, &flags, &PyList_Type, &code, &groups, &PyDict_Type, &groupindex, &PyTuple_Type, &indexgroup)) {
         goto exit;
     }
     return_value = _sre_compile_impl(module, pattern, flags, code, groups, groupindex, indexgroup);
@@ -624,7 +682,7 @@ PyDoc_STRVAR(_sre_SRE_Match_span__doc__,
 "span($self, group=0, /)\n"
 "--\n"
 "\n"
-"For MatchObject m, return the 2-tuple (m.start(group), m.end(group)).");
+"For match object m, return the 2-tuple (m.start(group), m.end(group)).");
 
 #define _SRE_SRE_MATCH_SPAN_METHODDEF    \
     {"span", (PyCFunction)_sre_SRE_Match_span, METH_VARARGS, _sre_SRE_Match_span__doc__},
@@ -667,33 +725,12 @@ _sre_SRE_Match___copy__(MatchObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
-"__deepcopy__($self, /, memo)\n"
+"__deepcopy__($self, memo, /)\n"
 "--\n"
 "\n");
 
 #define _SRE_SRE_MATCH___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_FASTCALL, _sre_SRE_Match___deepcopy____doc__},
-
-static PyObject *
-_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo);
-
-static PyObject *
-_sre_SRE_Match___deepcopy__(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"memo", NULL};
-    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
-    PyObject *memo;
-
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &memo)) {
-        goto exit;
-    }
-    return_value = _sre_SRE_Match___deepcopy___impl(self, memo);
-
-exit:
-    return return_value;
-}
+    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
 
 PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "match($self, /)\n"
@@ -728,4 +765,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=0ee6de5171e41ad2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cbafe6a83364b0b0 input=a9049054013a1b77]*/

@@ -43,7 +43,8 @@ TEST_F(UnderWarningsExtensionApiTest,
   CaptureStdStreams streams;
   EXPECT_EQ(PyErr_WarnEx(PyExc_RuntimeWarning, "bar", -10), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(streams.err(), "sys:1: RuntimeWarning: bar\n");
+  EXPECT_THAT(streams.err(),
+              ::testing::EndsWith("sys:1: RuntimeWarning: bar\n"));
 }
 
 TEST_F(UnderWarningsExtensionApiTest,
@@ -53,7 +54,8 @@ TEST_F(UnderWarningsExtensionApiTest,
   // that this is a bigger number.
   EXPECT_EQ(PyErr_WarnEx(PyExc_RuntimeWarning, "bar", PY_SSIZE_T_MAX), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(streams.err(), "sys:1: RuntimeWarning: bar\n");
+  EXPECT_THAT(streams.err(),
+              ::testing::EndsWith("sys:1: RuntimeWarning: bar\n"));
 }
 
 TEST_F(UnderWarningsExtensionApiTest,
@@ -87,7 +89,8 @@ TEST_F(UnderWarningsExtensionApiTest,
                                      /*registry=*/Py_None),
             0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(streams.err(), "bar:1: RuntimeWarning: foo\n");
+  EXPECT_THAT(streams.err(),
+              ::testing::EndsWith("bar:1: RuntimeWarning: foo\n"));
 }
 
 TEST_F(UnderWarningsExtensionApiTest,
@@ -108,8 +111,9 @@ TEST_F(UnderWarningsExtensionApiTest,
                                      /*registry=*/nullptr),
             0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(streams.err(),
-            "bar:1: FutureWarning: foo\nbar:1: FutureWarning: foo\n");
+  EXPECT_THAT(streams.err(),
+              ::testing::EndsWith(
+                  "bar:1: FutureWarning: foo\nbar:1: FutureWarning: foo\n"));
 }
 
 }  // namespace testing
