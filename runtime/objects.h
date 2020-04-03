@@ -1493,6 +1493,9 @@ class RawMutableTuple : public RawTuple {
   void replaceFromWithStartAt(word dst_start, RawTuple src, word count,
                               word src_start) const;
 
+  // Swap elements at indices i, j
+  void swap(word i, word j) const;
+
   RAW_OBJECT_COMMON(MutableTuple);
 };
 
@@ -2859,6 +2862,9 @@ class RawList : public RawInstance {
   // destination and index src_start in the source
   void replaceFromWithStartAt(word start, RawList src, word count,
                               word src_start) const;
+
+  // Swap elements at indices i, j
+  void swap(word i, word j) const;
 
   // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;
@@ -5173,6 +5179,12 @@ inline RawObject RawMutableTuple::becomeImmutable() const {
   return *this;
 }
 
+inline void RawMutableTuple::swap(word i, word j) const {
+  RawObject tmp = at(i);
+  atPut(i, at(j));
+  atPut(j, tmp);
+}
+
 // RawTuple
 
 inline word RawTuple::allocationSize(word length) {
@@ -6225,6 +6237,12 @@ inline void RawList::atPut(word index, RawObject value) const {
 inline RawObject RawList::at(word index) const {
   DCHECK_INDEX(index, numItems());
   return RawTuple::cast(items()).at(index);
+}
+
+inline void RawList::swap(word i, word j) const {
+  DCHECK_INDEX(i, numItems());
+  DCHECK_INDEX(j, numItems());
+  RawMutableTuple::cast(items()).swap(i, j);
 }
 
 // RawMappingProxy

@@ -2994,9 +2994,7 @@ RawObject FUNC(_builtins, _list_swap)(Thread* thread, Frame* frame,
   List list(&scope, args.get(0));
   word i = SmallInt::cast(args.get(1)).value();
   word j = SmallInt::cast(args.get(2)).value();
-  RawObject tmp = list.at(i);
-  list.atPut(i, list.at(j));
-  list.atPut(j, tmp);
+  list.swap(i, j);
   return NoneType::object();
 }
 

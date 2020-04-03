@@ -1601,6 +1601,14 @@ TEST_F(ListTest, ReplaceFromWithStartAtWithSelfForward) {
   EXPECT_PYLIST_EQ(dst, {0, 1, 0, 1, 4});
 }
 
+TEST_F(ListTest, SwapSwapsElementsAtIndices) {
+  HandleScope scope(thread_);
+  List src(&scope, listFromRange(0, 5));
+  EXPECT_PYLIST_EQ(src, {0, 1, 2, 3, 4});
+  src.swap(1, 3);
+  EXPECT_PYLIST_EQ(src, {0, 3, 2, 1, 4});
+}
+
 TEST_F(MutableTupleTest, NoneFillTupleFillsTupleWithNone) {
   HandleScope scope(thread_);
   MutableTuple tuple(&scope, runtime_->newMutableTuple(3));
@@ -1701,6 +1709,15 @@ TEST_F(MutableTupleTest,
   EXPECT_TRUE(dst.at(2).isNoneType());
   EXPECT_TRUE(dst.at(3).isNoneType());
   EXPECT_TRUE(dst.at(4).isNoneType());
+}
+
+TEST_F(MutableTupleTest, SwapSwapsElementsAtIndices) {
+  HandleScope scope(thread_);
+  List src_list(&scope, listFromRange(0, 5));
+  MutableTuple src(&scope, src_list.items());
+  EXPECT_PYLIST_EQ(src_list, {0, 1, 2, 3, 4});
+  src.swap(1, 3);
+  EXPECT_PYLIST_EQ(src_list, {0, 3, 2, 1, 4});
 }
 
 TEST(ErrorTest, ErrorIsError) {
