@@ -899,6 +899,13 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
   result.setLength(length);
   result.setFormat(RawSmallStr::fromCodePoint('B'));
   result.setReadOnly(read_only == ReadOnly::ReadOnly);
+  result.setStart(0);
+  Tuple shape(&scope, newTuple(1));
+  shape.atPut(0, SmallInt::fromWord(length));
+  result.setShape(*shape);
+  Tuple strides(&scope, newTuple(1));
+  strides.atPut(0, SmallInt::fromWord(1));
+  result.setStrides(*strides);
   return *result;
 }
 

@@ -340,6 +340,7 @@ class Runtime;
   V(_mappingproxy__mapping)                                                    \
   V(_memmove_addr)                                                             \
   V(_memoryview_guard)                                                         \
+  V(_memoryview__start)                                                        \
   V(_memset_addr)                                                              \
   V(_mmap__access)                                                             \
   V(_mmap__data)                                                               \
@@ -654,6 +655,7 @@ class Runtime;
   V(send)                                                                      \
   V(set)                                                                       \
   V(set_iterator)                                                              \
+  V(shape)                                                                     \
   V(single)                                                                    \
   V(siphash24)                                                                 \
   V(sizeof)                                                                    \
@@ -674,6 +676,7 @@ class Runtime;
   V(str_iterator)                                                              \
   V(strict)                                                                    \
   V(strict_errors)                                                             \
+  V(strides)                                                                   \
   V(structseq)                                                                 \
   V(sub)                                                                       \
   V(super)                                                                     \

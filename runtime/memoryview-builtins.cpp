@@ -11,6 +11,10 @@ namespace py {
 const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
     {ID(format), RawMemoryView::kFormatOffset, AttributeFlags::kReadOnly},
     {ID(readonly), RawMemoryView::kReadOnlyOffset, AttributeFlags::kReadOnly},
+    {ID(shape), RawMemoryView::kShapeOffset, AttributeFlags::kReadOnly},
+    {ID(strides), RawMemoryView::kStridesOffset, AttributeFlags::kReadOnly},
+    {ID(_memoryview__start), RawMemoryView::kStartOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

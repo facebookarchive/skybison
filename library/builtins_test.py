@@ -8182,6 +8182,14 @@ class MappingProxyTests(unittest.TestCase):
 
 
 class MemoryviewTests(unittest.TestCase):
+    def test_strides_returns_default_value(self):
+        view = memoryview(b"foobar")
+        self.assertEqual(view.strides, (1,))
+
+    def test_shape_returns_default_value(self):
+        view = memoryview(b"foobar")
+        self.assertEqual(view.shape, (6,))
+
     def test_dunder_enter_and_dunder_exit(self):
         view = memoryview(b"foobar")
         with view as ctx:

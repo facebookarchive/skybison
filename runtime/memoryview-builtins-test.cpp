@@ -421,6 +421,13 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
   EXPECT_EQ(view.buffer(), bytes);
   EXPECT_TRUE(isStrEqualsCStr(view.format(), "B"));
   EXPECT_TRUE(view.readOnly());
+  EXPECT_EQ(view.start(), 0);
+  Tuple shape(&scope, view.shape());
+  ASSERT_EQ(shape.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(shape.at(0), view.length()));
+  Tuple strides(&scope, view.strides());
+  ASSERT_EQ(strides.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(strides.at(0), 1));
 }
 
 TEST_F(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
@@ -438,6 +445,13 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
   EXPECT_EQ(view.length(), bytearray.numItems());
   EXPECT_TRUE(isStrEqualsCStr(view.format(), "B"));
   EXPECT_FALSE(view.readOnly());
+  EXPECT_EQ(view.start(), 0);
+  Tuple shape(&scope, view.shape());
+  ASSERT_EQ(shape.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(shape.at(0), view.length()));
+  Tuple strides(&scope, view.strides());
+  ASSERT_EQ(strides.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(strides.at(0), 1));
 }
 
 TEST_F(MemoryViewBuiltinsTest, DunderNewWithMemoryViewReturnsMemoryView) {
@@ -452,6 +466,14 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithMemoryViewReturnsMemoryView) {
   EXPECT_EQ(view.buffer(), result.buffer());
   EXPECT_TRUE(Str::cast(view.format()).equals(result.format()));
   EXPECT_EQ(view.readOnly(), result.readOnly());
+  EXPECT_EQ(result.start(), 0);
+  Tuple shape(&scope, result.shape());
+  ASSERT_EQ(shape.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(shape.at(0), view.length()));
+  Tuple strides(&scope, result.strides());
+  ASSERT_EQ(strides.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(strides.at(0), 1));
+  EXPECT_EQ(strides.length(), 1);
 }
 
 TEST_F(MemoryViewBuiltinsTest, DunderNewWithUnsupportedObjectRaisesTypeError) {

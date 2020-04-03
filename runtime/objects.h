@@ -2415,6 +2415,23 @@ class RawMemoryView : public RawInstance {
   word length() const;
   void setLength(word length) const;
 
+  // Tuple of integers giving the shape of the memory as an N-dimensional array
+  // In the 1-D case, shape will have one value which is equal to the length
+  RawObject shape() const;
+  void setShape(RawObject shape) const;
+
+  // Private variable used to store the starting index of a memoryview.
+  // Default value is 0
+  word start() const;
+  void setStart(word start) const;
+
+  // Tuple of integers used to keep track of the number of bytes to step in each
+  // dimension when traversing a memoryview buffer. In the 1-D case, strides
+  // will will have one value which is equal to the step
+  // Default value is (1,)
+  RawObject strides() const;
+  void setStrides(RawObject strides) const;
+
   bool readOnly() const;
   void setReadOnly(bool read_only) const;
 
@@ -2423,7 +2440,10 @@ class RawMemoryView : public RawInstance {
   static const int kFormatOffset = kBufferOffset + kPointerSize;
   static const int kLengthOffset = kFormatOffset + kPointerSize;
   static const int kReadOnlyOffset = kLengthOffset + kPointerSize;
-  static const int kSize = kReadOnlyOffset + kPointerSize;
+  static const int kShapeOffset = kReadOnlyOffset + kPointerSize;
+  static const int kStartOffset = kShapeOffset + kPointerSize;
+  static const int kStridesOffset = kStartOffset + kPointerSize;
+  static const int kSize = kStridesOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(MemoryView);
 };
@@ -6321,6 +6341,30 @@ inline word RawMemoryView::length() const {
 
 inline void RawMemoryView::setLength(word length) const {
   instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(length));
+}
+
+inline RawObject RawMemoryView::shape() const {
+  return RawMemoryView::instanceVariableAt(kShapeOffset);
+}
+
+inline void RawMemoryView::setShape(RawObject shape) const {
+  instanceVariableAtPut(kShapeOffset, shape);
+}
+
+inline word RawMemoryView::start() const {
+  return RawSmallInt::cast(instanceVariableAt(kStartOffset)).value();
+}
+
+inline void RawMemoryView::setStart(word start) const {
+  instanceVariableAtPut(kStartOffset, RawSmallInt::fromWord(start));
+}
+
+inline RawObject RawMemoryView::strides() const {
+  return RawMemoryView::instanceVariableAt(kStridesOffset);
+}
+
+inline void RawMemoryView::setStrides(RawObject strides) const {
+  instanceVariableAtPut(kStridesOffset, strides);
 }
 
 // RawMmap
