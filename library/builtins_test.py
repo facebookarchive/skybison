@@ -3705,6 +3705,36 @@ class DictItemsTests(unittest.TestCase):
         self.assertIsInstance(result, set)
         self.assertEqual(result, {("hello", "world")})
 
+    def test_dunder_ror_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.items().__ror__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_ror_with_iterable_returns_set_with_union(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.items().__ror__([("hello", "baz")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("hello", "world"), ("foo", "bar"), ("hello", "baz")})
+
+    def test_dunder_ror_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.items().__ror__()
+
+    def test_dunder_ror_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.items().__ror__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_ror_with_empty_lhs_and_non_empty_rhs_returns_rhs(self):
+        result = {}.items().__ror__([("hello", "world")])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("hello", "world")})
+
+    def test_dunder_ror_with_non_empty_lhs_and_empty_rhs_adds_none(self):
+        result = {"hello": "world"}.items().__ror__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {("hello", "world")})
+
     def test_dunder_sub_with_non_iterable_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             {"hello": "world", "foo": "bar"}.items().__sub__(5)
@@ -3950,6 +3980,36 @@ class DictKeysTests(unittest.TestCase):
 
     def test_dunder_or_with_non_empty_lhs_and_empty_rhs_adds_none(self):
         result = {"hello": "world"}.keys().__or__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello"})
+
+    def test_dunder_ror_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.keys().__ror__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_ror_with_iterable_returns_set_with_union(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.keys().__ror__(["baz"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello", "foo", "baz"})
+
+    def test_dunder_ror_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.keys().__ror__()
+
+    def test_dunder_ror_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__ror__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_ror_with_empty_lhs_and_non_empty_rhs_returns_rhs(self):
+        result = {}.keys().__ror__(["hello"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello"})
+
+    def test_dunder_ror_with_non_empty_lhs_and_empty_rhs_adds_none(self):
+        result = {"hello": "world"}.keys().__ror__([])
         self.assertIsInstance(result, set)
         self.assertEqual(result, {"hello"})
 

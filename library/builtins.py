@@ -3053,6 +3053,8 @@ class dict_items(bootstrap=True):
 
     __or__ = _dictview_or  # TODO(T64638542): Add type guards
 
+    __ror__ = _dictview_or  # TODO(T64638542): Add type guards
+
     __sub__ = _dictview_sub  # TODO(T64638542): Add type guards
 
     __xor__ = _dictview_xor  # TODO(T64638542): Add type guards
@@ -3095,6 +3097,8 @@ class dict_keys(bootstrap=True):
         _builtin()
 
     __or__ = _dictview_or  # TODO(T64638542): Add type guards
+
+    __ror__ = _dictview_or  # TODO(T64638542): Add type guards
 
     __sub__ = _dictview_sub  # TODO(T64638542): Add type guards
 
