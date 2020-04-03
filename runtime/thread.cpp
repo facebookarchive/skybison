@@ -105,14 +105,14 @@ class UserVisibleFrameVisitor : public FrameVisitor {
       return true;
     }
     // Once visitor reaches the target depth, start creating a linked list of
-    // HeapFrames objects.
+    // FrameProxys objects.
     // TOOD(T63960421): Cache an already created object in the stack frame.
-    heap_frame_ = thread_->runtime()->newHeapFrame(thread_, frame);
+    heap_frame_ = thread_->runtime()->newFrameProxy(thread_, frame);
     if (result_.isNoneType()) {
       // The head of the linked list is returned as the result.
       result_ = *heap_frame_;
     } else {
-      HeapFrame::cast(*next_heap_frame_).setBack(*heap_frame_);
+      FrameProxy::cast(*next_heap_frame_).setBack(*heap_frame_);
     }
     next_heap_frame_ = *heap_frame_;
     return true;

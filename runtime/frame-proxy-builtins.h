@@ -5,13 +5,13 @@
 
 namespace py {
 
-class HeapFrameBuiltins
-    : public Builtins<HeapFrameBuiltins, ID(frame), LayoutId::kHeapFrame> {
+class FrameProxyBuiltins
+    : public Builtins<FrameProxyBuiltins, ID(frame), LayoutId::kFrameProxy> {
  public:
   static const BuiltinAttribute kAttributes[];
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(HeapFrameBuiltins);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(FrameProxyBuiltins);
 };
 
 }  // namespace py

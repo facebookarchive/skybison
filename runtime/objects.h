@@ -63,11 +63,11 @@ class Handle;
   V(DictValues)                                                                \
   V(ExceptionState)                                                            \
   V(FileIO)                                                                    \
+  V(FrameProxy)                                                                \
   V(FrozenSet)                                                                 \
   V(Function)                                                                  \
   V(Generator)                                                                 \
   V(GeneratorFrame)                                                            \
-  V(HeapFrame)                                                                 \
   V(IncrementalNewlineDecoder)                                                 \
   V(Layout)                                                                    \
   V(List)                                                                      \
@@ -89,8 +89,8 @@ class Handle;
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
   V(StrArray)                                                                  \
-  V(StringIO)                                                                  \
   V(StrIterator)                                                               \
+  V(StringIO)                                                                  \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \
   V(Traceback)                                                                 \
@@ -290,9 +290,6 @@ class RawObject {
   bool isImmediateObjectNotSmallInt() const;
 
   // Heap objects
-  bool isHeapObject() const;
-  bool isHeapObjectWithLayout(LayoutId layout_id) const;
-  bool isInstance() const;
   bool isArray() const;
   bool isAsyncGenerator() const;
   bool isBaseException() const;
@@ -321,14 +318,17 @@ class RawObject {
   bool isExceptionState() const;
   bool isFileIO() const;
   bool isFloat() const;
+  bool isFrameProxy() const;
   bool isFrozenSet() const;
   bool isFunction() const;
   bool isGenerator() const;
   bool isGeneratorFrame() const;
-  bool isHeapFrame() const;
+  bool isHeapObject() const;
+  bool isHeapObjectWithLayout(LayoutId layout_id) const;
   bool isImportError() const;
   bool isIncrementalNewlineDecoder() const;
   bool isIndexError() const;
+  bool isInstance() const;
   bool isKeyError() const;
   bool isLargeBytes() const;
   bool isLargeInt() const;
@@ -359,8 +359,8 @@ class RawObject {
   bool isStaticMethod() const;
   bool isStopIteration() const;
   bool isStrArray() const;
-  bool isStringIO() const;
   bool isStrIterator() const;
+  bool isStringIO() const;
   bool isSuper() const;
   bool isSyntaxError() const;
   bool isSystemExit() const;
@@ -1621,6 +1621,35 @@ class RawFloat : public RawHeapObject {
   void initialize(double value) const;
 
   friend class Heap;
+};
+
+class RawFrameProxy : public RawInstance {
+ public:
+  // The previous frame on the stack, or None if the current frame object
+  // represents the bottom-most frame.
+  RawObject back() const;
+  void setBack(RawObject back) const;
+
+  // The function executed on the frame.
+  RawObject function() const;
+  void setFunction(RawObject function) const;
+
+  // The last instruction if called.
+  RawObject lasti() const;
+  void setLasti(RawObject lasti) const;
+
+  // The local symbol table, a dictionary.
+  RawObject locals() const;
+  void setLocals(RawObject locals) const;
+
+  // Layout.
+  static const int kBackOffset = RawHeapObject::kSize;
+  static const int kFunctionOffset = kBackOffset + kPointerSize;
+  static const int kLastiOffset = kFunctionOffset + kPointerSize;
+  static const int kLocalsOffset = kLastiOffset + kPointerSize;
+  static const int kSize = kLocalsOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(FrameProxy);
 };
 
 class RawUserBytesBase : public RawInstance {
@@ -3261,35 +3290,6 @@ class RawGeneratorFrame : public RawInstance {
   Frame* frame() const;
 };
 
-class RawHeapFrame : public RawInstance {
- public:
-  // The previous frame on the stack, or None if the current frame object
-  // represents the bottom-most frame.
-  RawObject back() const;
-  void setBack(RawObject back) const;
-
-  // The function executed on the frame.
-  RawObject function() const;
-  void setFunction(RawObject function) const;
-
-  // The last instruction if called.
-  RawObject lasti() const;
-  void setLasti(RawObject lasti) const;
-
-  // The local symbol table, a dictionary.
-  RawObject locals() const;
-  void setLocals(RawObject locals) const;
-
-  // Layout.
-  static const int kBackOffset = RawHeapObject::kSize;
-  static const int kFunctionOffset = kBackOffset + kPointerSize;
-  static const int kLastiOffset = kFunctionOffset + kPointerSize;
-  static const int kLocalsOffset = kLastiOffset + kPointerSize;
-  static const int kSize = kLocalsOffset + kPointerSize;
-
-  RAW_OBJECT_COMMON(HeapFrame);
-};
-
 // The exception currently being handled. Every Generator and Coroutine has its
 // own exception state that is installed while it's running, to allow yielding
 // from an except block without losing track of the caught exception.
@@ -3935,6 +3935,10 @@ inline bool RawObject::isFloat() const {
   return isHeapObjectWithLayout(LayoutId::kFloat);
 }
 
+inline bool RawObject::isFrameProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kFrameProxy);
+}
+
 inline bool RawObject::isFrozenSet() const {
   return isHeapObjectWithLayout(LayoutId::kFrozenSet);
 }
@@ -3949,10 +3953,6 @@ inline bool RawObject::isGenerator() const {
 
 inline bool RawObject::isGeneratorFrame() const {
   return isHeapObjectWithLayout(LayoutId::kGeneratorFrame);
-}
-
-inline bool RawObject::isHeapFrame() const {
-  return isHeapObjectWithLayout(LayoutId::kHeapFrame);
 }
 
 inline bool RawObject::isIncrementalNewlineDecoder() const {
@@ -5557,6 +5557,40 @@ inline void RawComplex::initialize(double real, double imag) const {
   *reinterpret_cast<double*>(address() + kImagOffset) = imag;
 }
 
+// RawFrameProxy
+
+inline RawObject RawFrameProxy::back() const {
+  return instanceVariableAt(kBackOffset);
+}
+
+inline void RawFrameProxy::setBack(RawObject back) const {
+  instanceVariableAtPut(kBackOffset, back);
+}
+
+inline RawObject RawFrameProxy::function() const {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+inline void RawFrameProxy::setFunction(RawObject function) const {
+  instanceVariableAtPut(kFunctionOffset, function);
+}
+
+inline RawObject RawFrameProxy::lasti() const {
+  return instanceVariableAt(kLastiOffset);
+}
+
+inline void RawFrameProxy::setLasti(RawObject lasti) const {
+  instanceVariableAtPut(kLastiOffset, lasti);
+}
+
+inline RawObject RawFrameProxy::locals() const {
+  return instanceVariableAt(kLocalsOffset);
+}
+
+inline void RawFrameProxy::setLocals(RawObject locals) const {
+  instanceVariableAtPut(kLocalsOffset, locals);
+}
+
 // RawUserBytesBase
 
 inline RawObject RawUserBytesBase::value() const {
@@ -6989,40 +7023,6 @@ inline void RawGeneratorFrame::setMaxStackSize(word offset) const {
 inline RawObject RawGeneratorFrame::function() const {
   return instanceVariableAt(kFrameOffset +
                             (numFrameWords() - 1) * kPointerSize);
-}
-
-// RawHeapFrame
-
-inline RawObject RawHeapFrame::back() const {
-  return instanceVariableAt(kBackOffset);
-}
-
-inline void RawHeapFrame::setBack(RawObject back) const {
-  instanceVariableAtPut(kBackOffset, back);
-}
-
-inline RawObject RawHeapFrame::function() const {
-  return instanceVariableAt(kFunctionOffset);
-}
-
-inline void RawHeapFrame::setFunction(RawObject function) const {
-  instanceVariableAtPut(kFunctionOffset, function);
-}
-
-inline RawObject RawHeapFrame::lasti() const {
-  return instanceVariableAt(kLastiOffset);
-}
-
-inline void RawHeapFrame::setLasti(RawObject lasti) const {
-  instanceVariableAtPut(kLastiOffset, lasti);
-}
-
-inline RawObject RawHeapFrame::locals() const {
-  return instanceVariableAt(kLocalsOffset);
-}
-
-inline void RawHeapFrame::setLocals(RawObject locals) const {
-  instanceVariableAtPut(kLocalsOffset, locals);
 }
 
 // RawUnderIOBase

@@ -25,13 +25,13 @@
 #include "exception-builtins.h"
 #include "file.h"
 #include "float-builtins.h"
+#include "frame-proxy-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "function-builtins.h"
 #include "generator-builtins.h"
 #include "globals.h"
 #include "handles.h"
-#include "heap-frame-builtins.h"
 #include "heap.h"
 #include "int-builtins.h"
 #include "interpreter.h"
@@ -799,6 +799,17 @@ RawObject Runtime::newAsyncGenerator() {
 
 RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 
+RawObject Runtime::newFrameProxy(Thread* thread, Frame* frame) {
+  HandleScope scope(thread);
+  FrameProxy heap_frame(&scope, heap()->create<RawFrameProxy>());
+  DCHECK(frame->function().isFunction(), "expected to be a function");
+  heap_frame.setFunction(frame->function());
+  if (!frame->isNative()) {
+    heap_frame.setLasti(SmallInt::fromWord(frame->virtualPC()));
+  }
+  return *heap_frame;
+}
+
 RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
 
 RawObject Runtime::newGeneratorFrame(const Function& function) {
@@ -815,17 +826,6 @@ RawObject Runtime::newGeneratorFrame(const Function& function) {
                                    GeneratorFrame::numAttributes(extra_words)));
   frame.setMaxStackSize(stacksize);
   return *frame;
-}
-
-RawObject Runtime::newHeapFrame(Thread* thread, Frame* frame) {
-  HandleScope scope(thread);
-  HeapFrame heap_frame(&scope, heap()->create<RawHeapFrame>());
-  DCHECK(frame->function().isFunction(), "expected to be a function");
-  heap_frame.setFunction(frame->function());
-  if (!frame->isNative()) {
-    heap_frame.setLasti(SmallInt::fromWord(frame->virtualPC()));
-  }
-  return *heap_frame;
 }
 
 RawObject Runtime::newInstance(const Layout& layout) {
@@ -1668,10 +1668,10 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject);
   FloatBuiltins::initialize(this);
   addEmptyBuiltinType(ID(frame), LayoutId::kGeneratorFrame, LayoutId::kObject);
+  FrameProxyBuiltins::initialize(this);
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   GeneratorBuiltins::initialize(this);
-  HeapFrameBuiltins::initialize(this);
   LayoutBuiltins::initialize(this);
   LargeBytesBuiltins::initialize(this);
   LargeIntBuiltins::initialize(this);

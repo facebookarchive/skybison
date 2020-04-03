@@ -10,7 +10,6 @@ class Handle;
 // TODO(T34683229): This macro and its uses are temporary as part of an
 // in-progress migration.
 #define HANDLE_TYPES(V)                                                        \
-  V(Object)                                                                    \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \
@@ -37,12 +36,12 @@ class Handle;
   V(ExceptionState)                                                            \
   V(FileIO)                                                                    \
   V(Float)                                                                     \
+  V(FrameProxy)                                                                \
   V(Function)                                                                  \
   V(Generator)                                                                 \
   V(GeneratorBase)                                                             \
   V(GeneratorFrame)                                                            \
   V(Header)                                                                    \
-  V(HeapFrame)                                                                 \
   V(HeapObject)                                                                \
   V(IncrementalNewlineDecoder)                                                 \
   V(IndexError)                                                                \
@@ -58,13 +57,14 @@ class Handle;
   V(LookupError)                                                               \
   V(MappingProxy)                                                              \
   V(MemoryView)                                                                \
-  V(ModuleProxy)                                                               \
   V(ModuleNotFoundError)                                                       \
+  V(ModuleProxy)                                                               \
   V(MutableBytes)                                                              \
   V(MutableTuple)                                                              \
   V(NoneType)                                                                  \
   V(NotImplementedError)                                                       \
   V(NotImplementedType)                                                        \
+  V(Object)                                                                    \
   V(Pointer)                                                                   \
   V(Property)                                                                  \
   V(Range)                                                                     \

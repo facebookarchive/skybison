@@ -122,11 +122,11 @@ class Runtime {
 
   RawObject newExceptionState();
 
+  RawObject newFrameProxy(Thread* thread, Frame* frame);
+
   RawObject newGenerator();
 
   RawObject newGeneratorFrame(const Function& function);
-
-  RawObject newHeapFrame(Thread* thread, Frame* frame);
 
   RawObject newInstance(const Layout& layout);
 

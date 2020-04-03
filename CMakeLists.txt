@@ -303,8 +303,8 @@ add_library(
   runtime/assembler-utils.h
   runtime/assembler-x64.cpp
   runtime/assembler-x64.h
-  runtime/asserts.h
   runtime/asserts.cpp
+  runtime/asserts.h
   runtime/builtins-module.cpp
   runtime/builtins-module.h
   runtime/bytearray-builtins.cpp
@@ -335,6 +335,8 @@ add_library(
   runtime/float-conversion.h
   runtime/formatter.cpp
   runtime/formatter.h
+  runtime/frame-proxy-builtins.cpp
+  runtime/frame-proxy-builtins.h
   runtime/frame.cpp
   runtime/frame.h
   runtime/function-builtins.cpp
@@ -342,12 +344,10 @@ add_library(
   runtime/globals.h
   runtime/handles.cpp
   runtime/handles.h
-  runtime/heap.cpp
-  runtime/heap.h
-  runtime/heap-frame-builtins.cpp
-  runtime/heap-frame-builtins.h
   runtime/heap-profiler.cpp
   runtime/heap-profiler.h
+  runtime/heap.cpp
+  runtime/heap.h
   runtime/ic.cpp
   runtime/ic.h
   runtime/int-builtins.cpp
@@ -359,9 +359,9 @@ add_library(
   runtime/intrinsic.h
   runtime/iterator-builtins.cpp
   runtime/iterator-builtins.h
-  runtime/layout.h
   runtime/layout-builtins.cpp
   runtime/layout-builtins.h
+  runtime/layout.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h
   runtime/mappingproxy-builtins.cpp
@@ -375,15 +375,15 @@ add_library(
   runtime/memoryview-builtins.h
   runtime/mmap-module.cpp
   runtime/mmap-module.h
-  runtime/modules.cpp
-  runtime/modules.h
   runtime/module-builtins.cpp
   runtime/module-builtins.h
   runtime/module-proxy-builtins.cpp
   runtime/module-proxy-builtins.h
-  runtime/mutex.h
+  runtime/modules.cpp
+  runtime/modules.h
   runtime/mro.cpp
   runtime/mro.h
+  runtime/mutex.h
   runtime/object-builtins.cpp
   runtime/objects.cpp
   runtime/objects.h
