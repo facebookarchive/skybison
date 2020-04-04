@@ -34,7 +34,7 @@ TEST_F(FaulthandlerModuleTest,
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FUNC(faulthandler, dump_traceback), fd, all_threads),
       LayoutId::kTypeError,
-      "'<anonymous>' requires a 'int' object but got 'NoneType'"));
+      "'<anonymous>' requires a 'int' object but received a 'NoneType'"));
 }
 
 TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {

@@ -40,7 +40,7 @@ TEST_F(StrArrayBuiltinsTest, DunderReprWithSimpleStrArrayReturnsStr) {
 TEST_F(StrArrayBuiltinsTest, DunderStrWithNonStrArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "_strarray.__str__(b'')"), LayoutId::kTypeError,
-      "'__str__' requires a '_strarray' object but got 'bytes'"));
+      "'__str__' requires a '_strarray' object but received a 'bytes'"));
 }
 
 TEST_F(StrArrayBuiltinsTest, DunderStrWithEmptyStrArrayReturnsEmptyStr) {

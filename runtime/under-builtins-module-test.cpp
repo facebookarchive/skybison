@@ -2214,7 +2214,7 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FUNC(_builtins, _memoryview_itemsize), not_memoryview),
       LayoutId::kTypeError,
-      "'<anonymous>' requires a 'memoryview' object but got 'int'"));
+      "'<anonymous>' requires a 'memoryview' object but received a 'int'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -2235,7 +2235,7 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FUNC(_builtins, _memoryview_nbytes), not_memoryview),
       LayoutId::kTypeError,
-      "'<anonymous>' requires a 'memoryview' object but got 'int'"));
+      "'<anonymous>' requires a 'memoryview' object but received a 'int'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewNbytesReturnsSizeOfMemoryView) {

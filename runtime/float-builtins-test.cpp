@@ -175,9 +175,9 @@ TEST_F(FloatBuiltinsTest, AddWithNonFloatSelfRaisesTypeError) {
   const char* src = R"(
 float.__add__(None, 1.0)
 )";
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, src), LayoutId::kTypeError,
-                    "'__add__' requires a 'float' object but got 'NoneType'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, src), LayoutId::kTypeError,
+      "'__add__' requires a 'float' object but received a 'NoneType'"));
 }
 
 TEST_F(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
@@ -375,9 +375,9 @@ TEST_F(FloatBuiltinsTest, SubWithNonFloatSelfRaisesTypeError) {
   const char* src = R"(
 float.__sub__(None, 1.0)
 )";
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, src), LayoutId::kTypeError,
-                    "'__sub__' requires a 'float' object but got 'NoneType'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, src), LayoutId::kTypeError,
+      "'__sub__' requires a 'float' object but received a 'NoneType'"));
 }
 
 TEST_F(FloatBuiltinsTest, PowFloatAndFloat) {

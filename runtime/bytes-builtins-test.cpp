@@ -952,7 +952,7 @@ TEST_F(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
 TEST_F(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytes.__mul__(0, 1)"), LayoutId::kTypeError,
-      "'__mul__' requires a 'bytes' object but got 'int'"));
+      "'__mul__' requires a 'bytes' object but received a 'int'"));
 }
 
 TEST_F(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -1321,7 +1321,7 @@ TEST_F(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytes.__repr__(bytearray())"),
       LayoutId::kTypeError,
-      "'__repr__' requires a 'bytes' object but got 'bytearray'"));
+      "'__repr__' requires a 'bytes' object but received a 'bytearray'"));
 }
 
 TEST_F(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
@@ -1406,9 +1406,9 @@ TEST_F(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
 }
 
 TEST_F(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "bytes.hex(1)"),
-                            LayoutId::kTypeError,
-                            "'hex' requires a 'bytes' object but got 'int'"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, "bytes.hex(1)"), LayoutId::kTypeError,
+                    "'hex' requires a 'bytes' object but received a 'int'"));
 }
 
 TEST_F(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
@@ -1513,7 +1513,7 @@ TEST_F(BytesBuiltinsTest, TranslateWithNonBytesSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytes.translate(bytearray(), None)"),
       LayoutId::kTypeError,
-      "'translate' requires a 'bytes' object but got 'bytearray'"));
+      "'translate' requires a 'bytes' object but received a 'bytearray'"));
 }
 
 TEST_F(BytesBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {

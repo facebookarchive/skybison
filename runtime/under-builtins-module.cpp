@@ -4694,8 +4694,9 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
 
   if (!runtime->isInstanceOfType(*self_obj)) {
     return thread->raiseWithFmt(
-        LayoutId::kTypeError, "'__call__' requires a '%Y' object but got '%T'",
-        ID(type), &self_obj);
+        LayoutId::kTypeError,
+        "'__call__' requires a '%Y' object but received a '%T'", ID(type),
+        &self_obj);
   }
   Type self(&scope, *self_obj);
 

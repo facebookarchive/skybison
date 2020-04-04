@@ -80,9 +80,9 @@ TEST_F(MemoryViewBuiltinsTest, CastWithNonMemoryViewRaisesTypeError) {
   Object none(&scope, NoneType::object());
   Str new_format(&scope, runtime_->newStrFromCStr("I"));
   Object result(&scope, runBuiltin(METH(memoryview, cast), none, new_format));
-  EXPECT_TRUE(raisedWithStr(
-      *result, LayoutId::kTypeError,
-      "'<anonymous>' requires a 'memoryview' object but got 'NoneType'"));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "'<anonymous>' requires a 'memoryview' object but "
+                            "received a 'NoneType'"));
 }
 
 TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatbSetsInt) {

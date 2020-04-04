@@ -155,8 +155,8 @@ class Thread {
   RawObject raiseOSErrorFromErrno(int errno_value);
 
   // Raises a TypeError exception of the form '<method> requires a <type(obj)>
-  // object but got <expected_type>' and returns an Error object that must be
-  // returned up the stack by the caller.
+  // object but received a <expected_type>' and returns an Error object that
+  // must be returned up the stack by the caller.
   RawObject raiseRequiresType(const Object& obj, SymbolId expected_type);
 
   // Raises a TypeError exception and returns an Error object that must be

@@ -176,7 +176,7 @@ c = a + b
 TEST_F(ListBuiltinsTest, AddWithNonListSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "list.__add__(None, [])"), LayoutId::kTypeError,
-      "'__add__' requires a 'list' object but got 'NoneType'"));
+      "'__add__' requires a 'list' object but received a 'NoneType'"));
 }
 
 TEST_F(ListBuiltinsTest, AddListToTupleRaisesTypeError) {
@@ -345,7 +345,7 @@ TEST_F(ListBuiltinsTest, ListInsertWithMissingArgumentsRaisesTypeError) {
 TEST_F(ListBuiltinsTest, ListInsertWithNonListRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "list.insert(None, 1, None)"), LayoutId::kTypeError,
-      "'insert' requires a 'list' object but got 'NoneType'"));
+      "'insert' requires a 'list' object but received a 'NoneType'"));
 }
 
 TEST_F(ListBuiltinsTest, ListInsertWithNonIntIndexRaisesTypeError) {
@@ -1070,7 +1070,7 @@ ls.sort(reverse=True)
 TEST_F(ListBuiltinsTest, ClearWithNonListRaisesTypeError) {
   ASSERT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "list.clear(None)"), LayoutId::kTypeError,
-      "'clear' requires a 'list' object but got 'NoneType'"));
+      "'clear' requires a 'list' object but received a 'NoneType'"));
 }
 
 TEST_F(ListBuiltinsTest, ClearRemovesElements) {

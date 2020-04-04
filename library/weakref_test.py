@@ -37,13 +37,10 @@ class WeakRefTests(unittest.TestCase):
         self.assertIsNone(ref.__callback__)
 
     def test_ref_dunder_call_with_non_ref_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, "'__call__' requires a '(weak)?ref' object but received a 'str'"
+        ):
             weakref.ref.__call__("not a weakref")
-        self.assertTrue(
-            str(context.exception) == "'__call__' requires a 'ref' object but got 'str'"
-            or str(context.exception)
-            == "descriptor '__call__' requires a 'weakref' object but received a 'str'"
-        )
 
     def test_dunder_eq_proxies_dunder_eq(self):
         class C:

@@ -50,10 +50,10 @@ array.clear()
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderAddWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__add__(b'', b'')"),
-                    LayoutId::kTypeError,
-                    "'__add__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__add__(b'', b'')"),
+      LayoutId::kTypeError,
+      "'__add__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderAddWithNonBytesLikeRaisesTypeError) {
@@ -109,10 +109,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderEqWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__eq__(b'', bytearray())"),
-                    LayoutId::kTypeError,
-                    "'__eq__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__eq__(b'', bytearray())"),
+      LayoutId::kTypeError,
+      "'__eq__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
@@ -169,10 +169,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__ge__(b'', bytearray())"),
-                    LayoutId::kTypeError,
-                    "'__ge__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__ge__(b'', bytearray())"),
+      LayoutId::kTypeError,
+      "'__ge__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
@@ -248,10 +248,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithLaterOtherReturnsFalse) {
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__gt__(b'', bytearray())"),
-                    LayoutId::kTypeError,
-                    "'__gt__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__gt__(b'', bytearray())"),
+      LayoutId::kTypeError,
+      "'__gt__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
@@ -330,7 +330,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.__iadd__(b'', b'')"),
       LayoutId::kTypeError,
-      "'__iadd__' requires a 'bytearray' object but got 'bytes'"));
+      "'__iadd__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderIaddWithNonBytesLikeRaisesTypeError) {
@@ -383,7 +383,7 @@ other = Foo(b"1234")
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithNonByteArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.__imul__(b'', 1)"), LayoutId::kTypeError,
-      "'__imul__' requires a 'bytearray' object but got 'bytes'"));
+      "'__imul__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
@@ -526,10 +526,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulReturnsRepeatedByteArray) {
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__le__(b'', bytearray())"),
-                    LayoutId::kTypeError,
-                    "'__le__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__le__(b'', bytearray())"),
+      LayoutId::kTypeError,
+      "'__le__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
@@ -607,7 +607,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithLaterOtherReturnsTrue) {
 TEST_F(ByteArrayBuiltinsTest, DunderLenWithNonByteArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.__len__(b'')"), LayoutId::kTypeError,
-      "'__len__' requires a 'bytearray' object but got 'bytes'"));
+      "'__len__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLenWithEmptyByteArrayReturnsZero) {
@@ -632,10 +632,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__lt__(b'', bytearray())"),
-                    LayoutId::kTypeError,
-                    "'__lt__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__lt__(b'', bytearray())"),
+      LayoutId::kTypeError,
+      "'__lt__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
@@ -713,7 +713,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithLaterOtherReturnsTrue) {
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithNonByteArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.__mul__(b'', 1)"), LayoutId::kTypeError,
-      "'__mul__' requires a 'bytearray' object but got 'bytes'"));
+      "'__mul__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -857,10 +857,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulReturnsRepeatedByteArray) {
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNeWithNonByteArraySelfRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytearray.__ne__(b'', bytearray())"),
-                    LayoutId::kTypeError,
-                    "'__ne__' requires a 'bytearray' object but got 'bytes'"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "bytearray.__ne__(b'', bytearray())"),
+      LayoutId::kTypeError,
+      "'__ne__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
@@ -945,7 +945,7 @@ TEST_F(ByteArrayBuiltinsTest, NewByteArray) {
 TEST_F(ByteArrayBuiltinsTest, DunderReprWithNonByteArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.__repr__(b'')"), LayoutId::kTypeError,
-      "'__repr__' requires a 'bytearray' object but got 'bytes'"));
+      "'__repr__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderReprWithEmptyByteArrayReturnsEmptyRepr) {
@@ -1023,7 +1023,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderRmulCallsDunderMul) {
 TEST_F(ByteArrayBuiltinsTest, HexWithNonByteArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.hex(b'')"), LayoutId::kTypeError,
-      "'hex' requires a 'bytearray' object but got 'bytes'"));
+      "'hex' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, HexWithEmptyByteArrayReturnsEmptyString) {
@@ -1116,7 +1116,7 @@ TEST_F(ByteArrayBuiltinsTest, TranslateWithNonByteArraySelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray.translate(b'', None)"),
       LayoutId::kTypeError,
-      "'translate' requires a 'bytearray' object but got 'bytes'"));
+      "'translate' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {

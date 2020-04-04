@@ -3130,7 +3130,7 @@ TEST_F(IntBuiltinsTest, DunderTrueDivWithIntZeroRaisesZeroDivisionError) {
 TEST_F(IntBuiltinsTest, DunderTrueDivWithNonIntLeftRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "int.__truediv__(1.0, 2)"), LayoutId::kTypeError,
-      "'__truediv__' requires a 'int' object but got 'float'"));
+      "'__truediv__' requires a 'int' object but received a 'float'"));
 }
 
 TEST_F(IntBuiltinsTest, DunderTrueDivWithFloatRightReturnsNotImplemented) {
