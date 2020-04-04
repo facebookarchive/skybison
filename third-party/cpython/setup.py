@@ -523,7 +523,6 @@ class PyBuildExt(build_ext):
         if not cross_compiling:
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
-            add_dir_to_list(self.compiler.include_dirs, '/opt/chef/embedded/include') # added for zlib.h
         # only change this for cross builds for 3.3, issues on Mageia
         if cross_compiling:
             self.add_gcc_paths()

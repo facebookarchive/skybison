@@ -550,16 +550,6 @@ add_library(
   ${CPYTHON_DIR}/Modules/termios.c
   ${CPYTHON_DIR}/Modules/timemodule.c
   ${CPYTHON_DIR}/Modules/unicodename_db.h
-  ${CPYTHON_DIR}/Modules/zlib/adler32.c
-  ${CPYTHON_DIR}/Modules/zlib/crc32.c
-  ${CPYTHON_DIR}/Modules/zlib/deflate.c
-  ${CPYTHON_DIR}/Modules/zlib/inffast.c
-  ${CPYTHON_DIR}/Modules/zlib/inflate.c
-  ${CPYTHON_DIR}/Modules/zlib/inftrees.c
-  ${CPYTHON_DIR}/Modules/zlib/trees.c
-  ${CPYTHON_DIR}/Modules/zlib/zconf.h
-  ${CPYTHON_DIR}/Modules/zlib/zlib.h
-  ${CPYTHON_DIR}/Modules/zlib/zutil.c
   ${CPYTHON_DIR}/Modules/zlibmodule.c
   ${CPYTHON_DIR}/Objects/accu.c
   ${CPYTHON_DIR}/Objects/capsule.c
@@ -623,10 +613,10 @@ target_include_directories(
   capi/cpython-internal
   ${CPYTHON_DIR}/Modules
   ${CPYTHON_DIR}/Modules/_sha3
-  ${CPYTHON_DIR}/Modules/zlib
   ${BZIP2_INCLUDE_DIRS}
+  ${OPENSSL_INCLUDE_DIRS}
   ${XZ_INCLUDE_DIRS}
-  ${OPENSSL_INCLUDE_DIRS})
+  ${ZLIB_INCLUDE_DIRS})
 target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
 target_compile_options(
   extension-modules
@@ -643,8 +633,9 @@ target_link_libraries(
   PRIVATE
   util
   ${BZIP2_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
   ${XZ_LIBRARIES}
-  ${OPENSSL_LIBRARIES})
+  ${ZLIB_LIBRARIES})
 
 add_library(
   extension
@@ -1646,24 +1637,51 @@ target_link_libraries(
   runtime)
 
 # Extension tests with CPython
+set(CPYTHON_CONFIGURE_FLAGS)
+set(CPYTHON_CFLAGS_NODIST)
+set(CPYTHON_CPPFLAGS)
+set(CPYTHON_LDFLAGS)
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
-  set(CPYTHON_ASSERTIONS_FLAG "--with-assertions")
-  set(CPYTHON_CFLAGS "CFLAGS=-O0")
+  set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-assertions")
+  set(CPYTHON_CFLAGS_NODIST "${CPYTHON_CFLAGS_NODIST} -O0")
 endif()
 set(LIBPYTHON_BIN "libpython3.6m.a")
 set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
 file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
 file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)
+foreach(dir
+    ${BZIP2_INCLUDE_DIRS}
+    ${FFI_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIRS}
+    ${XZ_INCLUDE_DIRS}
+    ${ZLIB_INCLUDE_DIRS})
+  set(CPYTHON_CPPFLAGS "${CPYTHON_CPPFLAGS} -I${dir}")
+endforeach()
+foreach(dir
+    ${BZIP2_LIBRARY_DIRS}
+    ${FFI_LIBRARY_DIRS}
+    ${OPENSSL_LIBRARY_DIRS}
+    ${XZ_LIBRARY_DIRS}
+    ${ZLIB_LIBRARY_DIRS})
+  set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")
+endforeach()
+# Write commands into a script to avoid quoting problems.
+file(GENERATE OUTPUT ${CPYTHON_BUILD_DIR}/build.sh CONTENT "
+export CC=\"${CMAKE_C_COMPILER}\"
+export CXX=\"${CMAKE_CXX_COMPILER}\"
+export CFLAGS_NODIST=\"${CPYTHON_CFLAGS_NODIST}\"
+export CPPFLAGS=\"${CPYTHON_CPPFLAGS}\"
+export LDFLAGS=\"${CPYTHON_LDFLAGS}\"
+${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
+make -j
+")
 add_custom_command(
   OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
-  COMMAND ${CPYTHON_CFLAGS}
-    ${CPYTHON_DIR}/configure
-    "LDFLAGS=-Wl,-rpath,${OPENSSL_PREFIX}/lib"
-    "--with-openssl=${OPENSSL_PREFIX}"
-    ${CPYTHON_ASSERTIONS_FLAG}
-  COMMAND make -j
-  DEPENDS ${CPYTHON_FILES}
-  WORKING_DIRECTORY ${CPYTHON_BUILD_DIR})
+  COMMAND cat ${CPYTHON_BUILD_DIR}/build.sh
+  COMMAND /bin/sh ${CPYTHON_BUILD_DIR}/build.sh
+  DEPENDS ${CPYTHON_FILES} ${CPYTHON_BUILD_DIR}/build.sh
+  WORKING_DIRECTORY ${CPYTHON_BUILD_DIR}
+  USES_TERMINAL)
 add_custom_target(
   compile-cpython
   DEPENDS ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
