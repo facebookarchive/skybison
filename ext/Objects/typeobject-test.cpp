@@ -3991,5 +3991,25 @@ TEST_F(TypeExtensionApiTest, TypeCheckWithDifferentTypesReturnsFalse) {
             0);
 }
 
+TEST_F(TypeExtensionApiTest, SetDunderClassWithExtensionTypeRaisesTypeError) {
+  destructor dealloc = [](PyObject* self) {
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(type);
+  };
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_dealloc, dealloc));
+
+  CaptureStdStreams streams;
+  PyRun_SimpleString(R"(
+bar = Bar()
+class C: pass
+bar.__class__ = C
+)");
+  std::string err = streams.err();
+  EXPECT_NE(err.find("TypeError:"), std::string::npos);
+  EXPECT_NE(err.find("__class__"), std::string::npos);
+  EXPECT_NE(err.find("differs"), std::string::npos);
+}
+
 }  // namespace testing
 }  // namespace py

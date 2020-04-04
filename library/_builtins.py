@@ -648,6 +648,10 @@ def _iter(self):
     _builtin()
 
 
+def _object_class_set(obj, name):
+    _builtin()
+
+
 def _object_keys(self):
     _builtin()
 

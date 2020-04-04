@@ -40,6 +40,13 @@ enum class ExtensionMethodType {
   kMethFastCallAndKeywords = kMethFastCall | kMethKeywords,
 };
 
+enum LayoutTypeTransition {
+  kFrom = 0,
+  kTo = 1,
+  kResult = 2,
+  kTransitionSize,
+};
+
 using AtExitFn = void (*)();
 
 using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
@@ -369,6 +376,13 @@ class Runtime {
   RawObject layouts() { return layouts_; }
   void setLayouts(RawObject layouts) { layouts_ = layouts; }
 
+  // Raw access to the Tuple of layout transitions while setting __class__.
+  // Intended only for use by the GC.
+  RawObject layoutTypeTransitions() { return layout_type_transitions_; }
+  void setLayoutTypeTransitions(RawObject value) {
+    layout_type_transitions_ = value;
+  }
+
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes and/or methods.
   RawObject addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
@@ -553,6 +567,12 @@ class Runtime {
   // containing entries + entry.
   RawObject layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
                                     const Object& name, AttributeInfo info);
+
+  // Change the described type of a layout. Follow an edge if it exists, or
+  // create a new layout otherwise.
+  // This is used when assigning to __class__ on an instance.
+  RawObject layoutSetDescribedType(Thread* thread, const Layout& from,
+                                   const Type& to);
 
   // Delete the named attribute from the layout.
   //
@@ -896,6 +916,10 @@ class Runtime {
   RawObject layouts_ = NoneType::object();
   // The number of layout objects in layouts_.
   word num_layouts_ = 0;
+
+  // A Tuple of (A, B, C) triples representing transitions from a layout A to a
+  // class B, resulting in final cached layout C.
+  RawObject layout_type_transitions_ = NoneType::object();
 
   // The last module ID given out.
   word max_module_id_ = 0;

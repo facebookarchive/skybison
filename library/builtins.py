@@ -164,6 +164,7 @@ from _builtins import (
     _module_proxy_keys,
     _module_proxy_setitem,
     _module_proxy_values,
+    _object_class_set,
     _object_keys,
     _object_type_getattr,
     _object_type_hasattr,
@@ -590,7 +591,7 @@ class object(bootstrap=True):  # noqa: E999
 
     @__class__.setter  # noqa: F811
     def __class__(self, value):
-        _unimplemented()
+        _object_class_set(self, value)
 
     def __dir__(self):
         attrs = _object_keys(self)

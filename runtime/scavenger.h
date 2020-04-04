@@ -53,6 +53,7 @@ class Scavenger {
   Space* to_;
   uword scan_;
   RawMutableTuple layouts_;
+  RawMutableTuple layout_type_transitions_;
   RawObject delayed_references_;
   RawObject delayed_callbacks_;
 

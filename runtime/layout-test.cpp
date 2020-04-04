@@ -232,6 +232,125 @@ TEST_F(LayoutTest, AddDuplicateAttributes) {
   EXPECT_TRUE(info.isOverflow());
 }
 
+TEST_F(LayoutTest, TransitionTypeReturnsNewLayout) {
+  HandleScope scope(thread_);
+  Layout from_layout(&scope, testing::layoutCreateEmpty(thread_));
+
+  Object attr(&scope, Runtime::internStrFromCStr(thread_, "__class__"));
+  AttributeInfo info;
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*from_layout, attr, &info));
+
+  // Transitioning the type will result in a new layout
+  ASSERT_FALSE(testing::runFromCStr(runtime_, R"(
+class A:
+    pass
+)")
+                   .isError());
+  Type to_type(&scope, testing::mainModuleAt(runtime_, "A"));
+  Layout target_layout(
+      &scope, runtime_->layoutSetDescribedType(thread_, from_layout, to_type));
+  EXPECT_NE(*from_layout, *target_layout);
+
+  // Transitioning more than once will result in the same layout
+  Layout target_layout2(
+      &scope, runtime_->layoutSetDescribedType(thread_, from_layout, to_type));
+  EXPECT_EQ(*target_layout2, *target_layout);
+}
+
+TEST_F(LayoutTest, TransitionTableHoldsWeakRefToLayouts) {
+  HandleScope scope(thread_);
+  Layout from_layout(&scope, testing::layoutCreateEmpty(thread_));
+
+  Object attr(&scope, Runtime::internStrFromCStr(thread_, "__class__"));
+  AttributeInfo info;
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*from_layout, attr, &info));
+
+  // Transitioning the type will result in a new layout
+  Object to_ref(&scope, NoneType::object());
+  Object target_ref(&scope, NoneType::object());
+  Object none(&scope, NoneType::object());
+  {
+    ASSERT_FALSE(testing::runFromCStr(runtime_, R"(
+class A:
+    pass
+)")
+                     .isError());
+    Type to_type(&scope, testing::mainModuleAt(runtime_, "A"));
+    ASSERT_FALSE(testing::runFromCStr(runtime_, R"(
+del A
+)")
+                     .isError());
+    WeakRef to_ref_inner(&scope, runtime_->newWeakRef(thread_, to_type, none));
+    to_ref = *to_ref_inner;
+
+    Layout target_layout(&scope, runtime_->layoutSetDescribedType(
+                                     thread_, from_layout, to_type));
+    WeakRef target_ref_inner(
+        &scope, runtime_->newWeakRef(thread_, target_layout, none));
+    EXPECT_NE(*from_layout, *target_layout);
+    target_ref = *target_ref_inner;
+
+    runtime_->collectGarbage();
+    EXPECT_EQ(to_ref_inner.referent(), *to_type);
+    EXPECT_EQ(target_ref_inner.referent(), *target_layout);
+  }
+
+  // Layouts are collected
+  runtime_->collectGarbage();
+  EXPECT_EQ(WeakRef::cast(*to_ref).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*target_ref).referent(), NoneType::object());
+}
+
+TEST_F(LayoutTest, InstanceTransitionTypeReturnsInstanceWithNewLayout) {
+  ASSERT_FALSE(testing::runFromCStr(runtime_, R"(
+class A:
+  def __init__(self):
+    self.a = "a"
+    self.b = "b"
+
+class B:
+  def __init__(self):
+    self.b = "b"
+    self.c = "c"
+
+a_instance = A()
+b_instance = B()
+  )")
+                   .isError());
+  HandleScope scope(thread_);
+  Instance a_instance(&scope, testing::mainModuleAt(runtime_, "a_instance"));
+  Instance b_instance(&scope, testing::mainModuleAt(runtime_, "b_instance"));
+  Layout from_layout(&scope, runtime_->layoutOf(*a_instance));
+  Layout to_layout(&scope, runtime_->layoutOf(*b_instance));
+  EXPECT_NE(*from_layout, *to_layout);
+
+  Object a_attr(&scope, Runtime::internStrFromCStr(thread_, "a"));
+  Object b_attr(&scope, Runtime::internStrFromCStr(thread_, "b"));
+  Object c_attr(&scope, Runtime::internStrFromCStr(thread_, "c"));
+  AttributeInfo info;
+  // a_instance has a, b; does not have c
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*from_layout, a_attr, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*from_layout, b_attr, &info));
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*from_layout, c_attr, &info));
+
+  // b_instance has b, c; does not have a
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*to_layout, a_attr, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*to_layout, b_attr, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*to_layout, c_attr, &info));
+
+  ASSERT_FALSE(testing::runFromCStr(runtime_, R"(
+a_instance.__class__ = B
+  )")
+                   .isError());
+
+  // a_instance still has a, b, but does not magically gain c
+  Layout target_layout(&scope, runtime_->layoutOf(*a_instance));
+  EXPECT_NE(*to_layout, *target_layout);
+  EXPECT_TRUE(Runtime::layoutFindAttribute(*target_layout, a_attr, &info));
+  EXPECT_TRUE(Runtime::layoutFindAttribute(*target_layout, b_attr, &info));
+  EXPECT_FALSE(Runtime::layoutFindAttribute(*target_layout, c_attr, &info));
+}
+
 TEST_F(LayoutTest, DeleteInObjectAttribute) {
   HandleScope scope(thread_);
 

@@ -20,6 +20,8 @@ Scavenger::Scavenger(Runtime* runtime)
       from_(runtime->heap()->space()),
       to_(nullptr),
       layouts_(MutableTuple::cast(runtime->layouts())),
+      layout_type_transitions_(
+          MutableTuple::cast(runtime->layoutTypeTransitions())),
       delayed_references_(NoneType::object()),
       delayed_callbacks_(NoneType::object()) {}
 
@@ -119,6 +121,50 @@ void Scavenger::processLayouts() {
   // TODO(T59281894): We can skip this step if the Layouts table doesn't live
   // in the managed heap.
   runtime_->setLayouts(transport(layouts_));
+
+  // Remove dead empty entries (triples (A, B, C) where either A or C is dead).
+  // Post-condition: all entries in the tuple will either be references to
+  // to-space or None.
+  word length = layout_type_transitions_.length();
+  DCHECK(!to_->contains(layout_type_transitions_.address()),
+         "object should not have been moved");
+  for (word i = 0; i < length; i += LayoutTypeTransition::kTransitionSize) {
+    RawObject from_obj =
+        layout_type_transitions_.at(i + LayoutTypeTransition::kFrom);
+    if (from_obj.isNoneType()) continue;
+
+    RawHeapObject from = HeapObject::cast(from_obj);
+    RawHeapObject to = HeapObject::cast(
+        layout_type_transitions_.at(i + LayoutTypeTransition::kTo));
+    RawHeapObject result = HeapObject::cast(
+        layout_type_transitions_.at(i + LayoutTypeTransition::kResult));
+    DCHECK(!to_->contains(to.address()),
+           "reference should not have been moved");
+    DCHECK(!to_->contains(from.address()),
+           "reference should not have been moved");
+    DCHECK(!to_->contains(result.address()),
+           "reference should not have been moved");
+    if (from.isForwarding() && result.isForwarding()) {
+      layout_type_transitions_.atPut(i + LayoutTypeTransition::kFrom,
+                                     from.forward());
+      layout_type_transitions_.atPut(i + LayoutTypeTransition::kTo,
+                                     to.forward());
+      layout_type_transitions_.atPut(i + LayoutTypeTransition::kResult,
+                                     result.forward());
+    } else {
+      // Remove the transition edge of the from or result layouts have been
+      // collected.
+      layout_type_transitions_.atPut(i + LayoutTypeTransition::kFrom,
+                                     NoneType::object());
+      layout_type_transitions_.atPut(i + LayoutTypeTransition::kTo,
+                                     NoneType::object());
+      layout_type_transitions_.atPut(i + LayoutTypeTransition::kResult,
+                                     NoneType::object());
+    }
+  }
+
+  // TODO(T65021438): Implement None-compaction to avoid having a sparse table
+  runtime_->setLayoutTypeTransitions(transport(layout_type_transitions_));
 }
 
 // Process the list of weakrefs that had otherwise-unreachable referents during
@@ -171,6 +217,7 @@ void Scavenger::processFinalizableReferences() {
 
 RawObject Scavenger::transport(RawObject old_object) {
   RawHeapObject from_object = HeapObject::cast(old_object);
+  DCHECK(!from_object.isForwarding(), "old_object should not be forwarding");
   word size = from_object.size();
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);

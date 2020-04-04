@@ -321,6 +321,28 @@ class IntepreterTest(unittest.TestCase):
         C.keys.assert_called_once()
         self.assertEqual(C.__getitem__.call_count, 2)
 
+    def test_cache_misses_after_dunder_class_update(self):
+        class C:
+            def foo(self):
+                return 100
+
+        class D:
+            def foo(self):
+                return 200
+
+        def cache_attribute(c):
+            return c.foo()
+
+        c = C()
+        # Load the cache
+        result = cache_attribute(c)
+        self.assertIs(result, 100)
+
+        c.__class__ = D
+        # The loaded cache doesn't match `c` since its layout id has changed.
+        result = cache_attribute(c)
+        self.assertIs(result, 200)
+
 
 if __name__ == "__main__":
     unittest.main()

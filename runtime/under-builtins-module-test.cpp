@@ -670,6 +670,21 @@ TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectDunderClassSetterWithTypeSelfDeathTest) {
+  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
+class M(type):
+  pass
+class C(metaclass=M):
+  pass
+C.__class__ = type
+)")),
+               "Cannot change type of types and modules");
+}
+
+// TODO(T64924852): Once module.__setattr__ is fixed, write death test for
+// setting __class__ of module.
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderObjectKeysWithUnassignedNumInObjectAttributes) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

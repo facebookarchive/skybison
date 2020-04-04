@@ -2437,6 +2437,74 @@ class ClassMethodTests(unittest.TestCase):
         method = classmethod(foo)
         self.assertIs(method.__isabstractmethod__, True)
 
+    def test_dunder_class_setter_with_non_type_raises_type_error(self):
+        class C:
+            pass
+
+        class D:
+            pass
+
+        obj = C()
+        with self.assertRaisesRegex(TypeError, "__class__ must be"):
+            obj.__class__ = 123
+
+    def test_dunder_class_setter_on_builtin_types_raises_type_error(self):
+        class C:
+            pass
+
+        class D:
+            pass
+
+        obj = "foo"
+        with self.assertRaisesRegex(TypeError, "only supported for"):
+            obj.__class__ = C
+        with self.assertRaisesRegex(TypeError, "only supported for"):
+            C.__class__ = D
+
+    def test_dunder_class_setter_on_different_layout_raises_type_error(self):
+        class C(float):
+            pass
+
+        class D(list):
+            pass
+
+        obj = C(12.3)
+        with self.assertRaisesRegex(TypeError, "layout differs"):
+            obj.__class__ = D
+
+    def test_dunder_class_setter_changes_instance_type(self):
+        class C:
+            def foo(self):
+                return 123
+
+        class D:
+            def foo(self):
+                return 321
+
+        obj = C()
+        obj.__class__ = D
+        self.assertIsInstance(obj, D)
+        self.assertEqual(obj.foo(), 321)
+
+    def test_dunder_class_setter_retains_original_attributes(self):
+        class C:
+            def __init__(self):
+                self.a = 123
+                self.b = 321
+
+            pass
+
+        class D:
+            def __init__(self):
+                self.a = 789
+                self.b = 987
+
+        obj = C()
+        obj.__class__ = D
+        self.assertIsInstance(obj, D)
+        self.assertEqual(obj.a, 123)
+        self.assertEqual(obj.b, 321)
+
     def test_has_dunder_call(self):
         class C:
             @classmethod

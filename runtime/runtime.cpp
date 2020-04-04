@@ -1616,6 +1616,8 @@ void Runtime::initializeLayouts() {
       static_cast<word>(LayoutId::kLastBuiltinId) < kInitialLayoutTupleCapacity,
       "initial layout tuple size too small");
   num_layouts_ = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
+  layout_type_transitions_ =
+      newMutableTuple(LayoutTypeTransition::kTransitionSize);
 }
 
 RawObject Runtime::createMro(const Layout& subclass_layout,
@@ -3627,6 +3629,48 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
   layoutAddEdge(thread, this, edges, name, new_layout);
 
   return *new_layout;
+}
+
+RawObject Runtime::layoutSetDescribedType(Thread* thread, const Layout& from,
+                                          const Type& to) {
+  // Check if a edge for the attribute addition already exists
+  HandleScope scope(thread);
+  MutableTuple transitions(&scope, layout_type_transitions_);
+  word length = transitions.length();
+  word first_none = length;
+  for (word i = 0; i < length; i += LayoutTypeTransition::kTransitionSize) {
+    RawObject found_from = transitions.at(i + LayoutTypeTransition::kFrom);
+    if (found_from == from &&
+        transitions.at(i + LayoutTypeTransition::kTo) == to) {
+      // The transition exists; return the result layout
+      return transitions.at(i + LayoutTypeTransition::kResult);
+    }
+    if (first_none == length && found_from.isNoneType()) {
+      // There's an empty slot we can use to store the transition
+      first_none = i;
+    }
+  }
+
+  // Make a new layout and transition the type
+  Layout result(&scope, layoutCreateChild(thread, from));
+  result.setDescribedType(*to);
+
+  // If needed, grow the table
+  word index = first_none;
+  if (index >= length) {
+    word new_length = newCapacity(length, /*min_capacity=*/index);
+    MutableTuple new_tuple(&scope, newMutableTuple(new_length));
+    new_tuple.replaceFromWith(0, *transitions, length);
+    layout_type_transitions_ = *new_tuple;
+    transitions = *new_tuple;
+  }
+
+  // Add the edge to the layout
+  transitions.atPut(index + LayoutTypeTransition::kFrom, *from);
+  transitions.atPut(index + LayoutTypeTransition::kTo, *to);
+  transitions.atPut(index + LayoutTypeTransition::kResult, *result);
+
+  return *result;
 }
 
 static RawObject markEntryDeleted(Thread* thread, RawObject entries,
