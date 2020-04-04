@@ -583,6 +583,9 @@ class Runtime {
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                   const Object& name, AttributeInfo info);
 
+  // Return the dict overflow-only layout from `type's layout.
+  RawObject typeDictOnlyLayout(Thread* thread, const Type& type);
+
   void* nativeProxyPtr(RawObject object);
 
   void setNativeProxyPtr(RawObject object, void* c_ptr);

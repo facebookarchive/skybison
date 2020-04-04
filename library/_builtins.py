@@ -463,6 +463,10 @@ def _heap_dump(filename):
     _builtin()
 
 
+def _instance_dunder_dict_set(obj, dict):
+    _builtin()
+
+
 def _instance_delattr(obj, name):
     _builtin()
 

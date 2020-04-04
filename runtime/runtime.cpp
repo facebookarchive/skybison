@@ -3503,12 +3503,12 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
 
 RawObject Runtime::emptyFrozenSet() { return empty_frozen_set_; }
 
-static RawObject layoutFollowEdge(RawObject edges, RawObject name) {
+static RawObject layoutFollowEdge(RawObject edges, RawObject key) {
   RawList list = List::cast(edges);
   DCHECK(list.numItems() % 2 == 0,
          "edges must contain an even number of elements");
   for (word i = 0, num_items = list.numItems(); i < num_items; i++) {
-    if (list.at(i) == name) {
+    if (list.at(i) == key) {
       return list.at(i + 1);
     }
   }
@@ -3516,10 +3516,10 @@ static RawObject layoutFollowEdge(RawObject edges, RawObject name) {
 }
 
 static void layoutAddEdge(Thread* thread, Runtime* runtime, const List& edges,
-                          const Object& name, const Object& layout) {
+                          const Object& key, const Object& layout) {
   DCHECK(edges.numItems() % 2 == 0,
          "edges must contain an even number of elements");
-  runtime->listAdd(thread, edges, name);
+  runtime->listAdd(thread, edges, key);
   runtime->listAdd(thread, edges, layout);
 }
 
@@ -3595,6 +3595,33 @@ RawObject Runtime::createNativeProxyLayout(Thread* thread,
         layoutAddAttributeEntry(thread, entries, none, info));
   }
   return *layout;
+}
+
+static RawUnbound kDictOverflowLayoutTransitionEdgeName = Unbound::object();
+
+RawObject Runtime::typeDictOnlyLayout(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Layout layout(&scope, type.instanceLayout());
+  DCHECK(!layout.hasDictOverflow(),
+         "instance layout should not have dict overflow");
+  // This name is used only for the internal layout transition edge from
+  // a layout to a new one with dict overflow.
+  Object key(&scope, kDictOverflowLayoutTransitionEdgeName);
+  // Check if a edge for the attribute addition already exists
+  Object result(&scope, layoutFollowEdge(layout.deletions(), *key));
+  if (!result.isErrorNotFound()) {
+    AttributeInfo ignored;
+    DCHECK(!layoutFindAttribute(Layout::cast(*result), key, &ignored),
+           "unexpected attribute is found");
+    return *result;
+  }
+  Layout new_layout(&scope, layoutCreateChild(thread, layout));
+  new_layout.setInObjectAttributes(emptyTuple());
+  new_layout.setDictOverflowOffset(new_layout.overflowOffset());
+  // Add the edge to the existing layout.
+  List edges(&scope, layout.deletions());
+  layoutAddEdge(thread, this, edges, key, new_layout);
+  return *new_layout;
 }
 
 RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,

@@ -2276,6 +2276,43 @@ RawObject FUNC(_builtins, _heap_dump)(Thread* thread, Frame* frame,
   return heapDump(thread, filename_str.get());
 }
 
+RawObject FUNC(_builtins, _instance_dunder_dict_set)(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Instance instance(&scope, args.get(0));
+  Object dict_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!dict_obj.isDict()) {
+    if (runtime->isInstanceOfDict(*dict_obj)) {
+      // TODO(T64971317): Support dict subclass.
+      UNIMPLEMENTED("dict subclass is not supported yet.");
+    }
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__dict__ must be set to a dictionary, "
+                                "not a '%T'",
+                                &dict_obj);
+  }
+  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
+  Type type(&scope, runtime->typeAt(layout.id()));
+  if (type.isBuiltin()) {
+    // TODO(T65043421): Support builtin type.
+    UNIMPLEMENTED("_instance_dunder_dict_set(builtin_type_object)");
+  }
+  // Set in-object attribute values to None.
+  Tuple in_object(&scope, layout.inObjectAttributes());
+  for (word i = 0; i < in_object.length(); i++) {
+    Tuple entry(&scope, in_object.at(i));
+    AttributeInfo info(entry.at(1));
+    instance.instanceVariableAtPut(info.offset(), NoneType::object());
+  }
+  Layout new_layout(&scope, runtime->typeDictOnlyLayout(thread, type));
+  DCHECK(new_layout.hasDictOverflow(), "dict overflow is expected");
+  instance.setLayoutId(new_layout.id());
+  instance.instanceVariableAtPut(new_layout.dictOverflowOffset(), *dict_obj);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Frame* frame,
                                              word nargs) {
   HandleScope scope(thread);

@@ -1061,6 +1061,25 @@ TEST_F(RuntimeTest, TrackNativeObjectAndUntrackNativeObject) {
   EXPECT_EQ(entry1.next, nullptr);
 }
 
+TEST_F(RuntimeTest, TypeDictOnlyLayoutReturnsLayoutWithDictOverflow) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
+  Type type(&scope, mainModuleAt(runtime_, "C"));
+  Layout layout(&scope, type.instanceLayout());
+  ASSERT_TRUE(!layout.hasDictOverflow());
+  Layout new_layout(&scope, runtime_->typeDictOnlyLayout(thread_, type));
+  EXPECT_NE(layout, new_layout);
+  EXPECT_TRUE(new_layout.hasDictOverflow());
+  EXPECT_EQ(layout.describedType(), new_layout.describedType());
+
+  Layout new_layout2(&scope, runtime_->typeDictOnlyLayout(thread_, type));
+  EXPECT_NE(layout, new_layout2);
+  EXPECT_TRUE(new_layout2.hasDictOverflow());
+  EXPECT_EQ(layout.describedType(), new_layout2.describedType());
+
+  EXPECT_EQ(*new_layout, *new_layout2);
+}
+
 TEST_F(RuntimeTest, HashCodeSizeCheck) {
   RawObject code = newEmptyCode();
   ASSERT_TRUE(code.isHeapObject());

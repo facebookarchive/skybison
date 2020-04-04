@@ -701,6 +701,27 @@ i = C(False)
   EXPECT_EQ(List::cast(*result).numItems(), 0);
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderInstanceDunderDictSetterCoalescesAffectedLayoutsIntoSingleOne) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C: pass
+
+c0 = C()
+c0.foo = 4
+
+c1 = C()
+c1.bar = 5
+
+c0.__dict__ = {"a": 4}
+c1.__dict__ = {"b": 4}
+)")
+                   .isError());
+  Object c0(&scope, mainModuleAt(runtime_, "c0"));
+  Object c1(&scope, mainModuleAt(runtime_, "c1"));
+  EXPECT_EQ(c0.layoutId(), c1.layoutId());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderInstanceOverflowDictAllocatesDictionary) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

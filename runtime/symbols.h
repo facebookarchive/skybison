@@ -312,6 +312,7 @@ class Runtime;
   V(_imp)                                                                      \
   V(_index)                                                                    \
   V(_init)                                                                     \
+  V(_instance_dunder_dict_set)                                                 \
   V(_int)                                                                      \
   V(_int_check)                                                                \
   V(_int_check_exact)                                                          \

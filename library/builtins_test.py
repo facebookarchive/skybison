@@ -6242,6 +6242,62 @@ class InstanceProxyTests(unittest.TestCase):
         )
 
 
+class InstanceTests(unittest.TestCase):
+    def test__dict__updates_instance_attributes(self):
+        class C:
+            def __init__(self):
+                self.foo = 10
+                self.bar = 20
+
+        c = C()
+        d = {"bar": -10, "baz": -20}
+        c.__dict__ = d
+
+        self.assertFalse(hasattr(c, "foo"))
+        # Existing "bar" was overwritten.
+        self.assertTrue(hasattr(c, "bar"))
+        self.assertTrue(hasattr(c, "baz"))
+
+        self.assertEqual(c.bar, -10)
+        self.assertEqual(c.baz, -20)
+
+        d["foo"] = "1"
+        d["bar"] = "2"
+        d["baz"] = "3"
+
+        self.assertEqual(c.foo, "1")
+        self.assertEqual(c.bar, "2")
+        self.assertEqual(c.baz, "3")
+
+    def test__dict__updates_instances_during_init(self):
+        class C:
+            shared_defaults = {"a": 42, "b": 13}
+
+            def __init__(self):
+                self.__dict__ = C.shared_defaults
+
+        c0 = C()
+        self.assertEqual(c0.a, 42)
+        self.assertEqual(c0.b, 13)
+
+        c1 = C()
+        c0.new_attribute = 99
+
+        self.assertEqual(c1.new_attribute, 99)
+
+    def test__dict__updates_with_non_dict_raises_type_error(self):
+        class C:
+            pass
+
+        c = C()
+        with self.assertRaises(TypeError) as context:
+            c.__dict__ = None
+        self.assertEqual(
+            str(context.exception),
+            "__dict__ must be set to a dictionary, not a 'NoneType'",
+        )
+
+
 class IntTests(unittest.TestCase):
     def test_dunder_hash_with_small_number_returns_self(self):
         self.assertEqual(int.__hash__(0), 0)

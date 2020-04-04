@@ -1061,8 +1061,14 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     Module builtins(&scope, runtime->findModuleById(ID(builtins)));
     Object instance_proxy(&scope,
                           moduleAtById(thread, builtins, ID(instance_proxy)));
+    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+    Function under_instance_dunder_dict_set(
+        &scope,
+        moduleAtById(thread, under_builtins, ID(_instance_dunder_dict_set)));
     Object none(&scope, NoneType::object());
-    Object property(&scope, runtime->newProperty(instance_proxy, none, none));
+    Object property(&scope,
+                    runtime->newProperty(instance_proxy,
+                                         under_instance_dunder_dict_set, none));
     typeAtPutById(thread, type, ID(__dict__), property);
   }
 
