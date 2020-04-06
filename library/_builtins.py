@@ -287,6 +287,14 @@ def _dict_guard(obj):
     _builtin()
 
 
+def _dict_items_guard(self):
+    _builtin()
+
+
+def _dict_keys_guard(self):
+    _builtin()
+
+
 def _dict_len(self):
     _builtin()
 

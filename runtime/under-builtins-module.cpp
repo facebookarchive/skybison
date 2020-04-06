@@ -1677,6 +1677,20 @@ RawObject FUNC(_builtins, _dict_guard)(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(dict));
 }
 
+RawObject FUNC(_builtins, _dict_items_guard)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isDictItems()) return NoneType::object();
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(dict_items));
+}
+
+RawObject FUNC(_builtins, _dict_keys_guard)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isDictKeys()) return NoneType::object();
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(dict_keys));
+}
+
 RawObject FUNC(_builtins, _dict_len)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

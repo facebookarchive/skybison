@@ -78,6 +78,8 @@ from _builtins import (
     _dict_check_exact,
     _dict_get,
     _dict_guard,
+    _dict_items_guard,
+    _dict_keys_guard,
     _dict_popitem,
     _dict_setitem,
     _dict_update,
@@ -3028,23 +3030,13 @@ class dict_itemiterator(bootstrap=True):
 
 
 class dict_items(bootstrap=True):
-    __and__ = _dictview_and  # TODO(T64638542): Add type guards
+    def __and__(self, other):
+        _dict_items_guard(self)
+        return _dictview_and(self, other)
 
     def __eq__(self, other):
-        self_type = _type(self)
-        if self_type is not dict_items:
-            raise TypeError(
-                "'__eq__' requires a 'dict_items' object but received a "
-                f"'{self_type.__name__}'"
-            )
+        _dict_items_guard(self)
         return _dictview_eq(self, other)
-
-    def __repr__(self):
-        if _repr_enter(self):
-            return "..."
-        result = _sequence_repr("dict_items([", list(self), "])")
-        _repr_leave(self)
-        return result
 
     def __iter__(self):
         _builtin()
@@ -3052,13 +3044,29 @@ class dict_items(bootstrap=True):
     def __len__(self):
         _builtin()
 
-    __or__ = _dictview_or  # TODO(T64638542): Add type guards
+    def __or__(self, other):
+        _dict_items_guard(self)
+        return _dictview_or(self, other)
 
-    __ror__ = _dictview_or  # TODO(T64638542): Add type guards
+    def __repr__(self):
+        _dict_items_guard(self)
+        if _repr_enter(self):
+            return "..."
+        result = _sequence_repr("dict_items([", list(self), "])")
+        _repr_leave(self)
+        return result
 
-    __sub__ = _dictview_sub  # TODO(T64638542): Add type guards
+    def __ror__(self, other):
+        _dict_items_guard(self)
+        return _dictview_or(self, other)
 
-    __xor__ = _dictview_xor  # TODO(T64638542): Add type guards
+    def __sub__(self, other):
+        _dict_items_guard(self)
+        return _dictview_sub(self, other)
+
+    def __xor__(self, other):
+        _dict_items_guard(self)
+        return _dictview_xor(self, other)
 
 
 class dict_keyiterator(bootstrap=True):
@@ -3073,23 +3081,13 @@ class dict_keyiterator(bootstrap=True):
 
 
 class dict_keys(bootstrap=True):
-    __and__ = _dictview_and  # TODO(T64638542): Add type guards
+    def __and__(self, other):
+        _dict_keys_guard(self)
+        return _dictview_and(self, other)
 
     def __eq__(self, other):
-        self_type = _type(self)
-        if self_type is not dict_keys:
-            raise TypeError(
-                "'__eq__' requires a 'dict_keys' object but received a "
-                f"'{self_type.__name__}'"
-            )
+        _dict_keys_guard(self)
         return _dictview_eq(self, other)
-
-    def __repr__(self):
-        if _repr_enter(self):
-            return "..."
-        result = _sequence_repr("dict_keys([", list(self), "])")
-        _repr_leave(self)
-        return result
 
     def __iter__(self):
         _builtin()
@@ -3097,13 +3095,29 @@ class dict_keys(bootstrap=True):
     def __len__(self):
         _builtin()
 
-    __or__ = _dictview_or  # TODO(T64638542): Add type guards
+    def __or__(self, other):
+        _dict_keys_guard(self)
+        return _dictview_or(self, other)
 
-    __ror__ = _dictview_or  # TODO(T64638542): Add type guards
+    def __repr__(self):
+        _dict_keys_guard(self)
+        if _repr_enter(self):
+            return "..."
+        result = _sequence_repr("dict_keys([", list(self), "])")
+        _repr_leave(self)
+        return result
 
-    __sub__ = _dictview_sub  # TODO(T64638542): Add type guards
+    def __ror__(self, other):
+        _dict_keys_guard(self)
+        return _dictview_or(self, other)
 
-    __xor__ = _dictview_xor  # TODO(T64638542): Add type guards
+    def __sub__(self, other):
+        _dict_keys_guard(self)
+        return _dictview_sub(self, other)
+
+    def __xor__(self, other):
+        _dict_keys_guard(self)
+        return _dictview_xor(self, other)
 
 
 class dict_valueiterator(bootstrap=True):
