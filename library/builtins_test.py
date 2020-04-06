@@ -12419,6 +12419,13 @@ class StrTests(unittest.TestCase):
         self.assertIs(type(str.upper(C(""))), str)
         self.assertIs(type(str.upper(C("upper"))), str)
 
+    def test_upper_with_non_ascii_returns_uppercased_string(self):
+        self.assertEqual(str.upper("foo\u01BDBAR"), "FOO\u01BCBAR")
+        # lowercase without uppercase
+        self.assertEqual(str.upper("FOO\u0237bar"), "FOO\u0237BAR")
+        # one to many uppercasing
+        self.assertEqual(str.upper("foo\xDFbar"), "FOO\x53\x53BAR")
+
 
 class StrDunderFormatTests(unittest.TestCase):
     def test_empty_format_returns_string(self):

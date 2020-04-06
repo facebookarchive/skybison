@@ -75,6 +75,7 @@ class Unicode {
   // Conversion
   static FullCasing toLower(int32_t code_point);
   static int32_t toTitle(int32_t code_point);
+  static FullCasing toUpper(int32_t code_point);
 
  private:
   // Slow paths that use the Unicode database.
@@ -84,6 +85,7 @@ class Unicode {
   static bool isXidContinueDB(int32_t code_point);
   static bool isXidStartDB(int32_t code_point);
   static FullCasing toLowerDB(int32_t code_point);
+  static FullCasing toUpperDB(int32_t code_point);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Unicode);
 };
@@ -275,6 +277,13 @@ inline int32_t Unicode::toTitle(int32_t code_point) {
   }
   // TODO(T57791326) support non-ASCII
   UNIMPLEMENTED("non-ASCII characters");
+}
+
+inline FullCasing Unicode::toUpper(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return {ASCII::toUpper(code_point), -1};
+  }
+  return toUpperDB(code_point);
 }
 
 }  // namespace py
