@@ -5010,7 +5010,7 @@ RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, ID(ref));
+    return thread->raiseRequiresType(self_obj, ID(weakref));
   }
   WeakRef self(&scope, *self_obj);
   return self.callback();
@@ -5028,7 +5028,7 @@ RawObject FUNC(_builtins, _weakref_guard)(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfWeakRef(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(ref));
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(weakref));
 }
 
 RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Frame* frame,
@@ -5038,7 +5038,7 @@ RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, ID(ref));
+    return thread->raiseRequiresType(self_obj, ID(weakref));
   }
   WeakRef self(&scope, weakRefUnderlying(*self_obj));
   return self.referent();

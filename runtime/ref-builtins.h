@@ -8,7 +8,8 @@
 
 namespace py {
 
-class RefBuiltins : public Builtins<RefBuiltins, ID(ref), LayoutId::kWeakRef> {
+class RefBuiltins
+    : public Builtins<RefBuiltins, ID(weakref), LayoutId::kWeakRef> {
  public:
   static const BuiltinAttribute kAttributes[];
 

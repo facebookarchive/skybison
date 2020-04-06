@@ -646,7 +646,6 @@ class Runtime;
   V(readonly)                                                                  \
   V(real)                                                                      \
   V(reason)                                                                    \
-  V(ref)                                                                       \
   V(replace)                                                                   \
   V(repr)                                                                      \
   V(rpartition)                                                                \
@@ -709,6 +708,7 @@ class Runtime;
   V(warn)                                                                      \
   V(warn_explicit)                                                             \
   V(warnings)                                                                  \
+  V(weakref)                                                                   \
   V(write)                                                                     \
   V(xor)
 

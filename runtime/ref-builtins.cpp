@@ -16,18 +16,18 @@ const BuiltinAttribute RefBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-RawObject METH(ref, __call__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(weakref, __call__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfWeakRef(*self)) {
-    return thread->raiseRequiresType(self, ID(ref));
+    return thread->raiseRequiresType(self, ID(weakref));
   }
   WeakRef ref(&scope, weakRefUnderlying(*self));
   return ref.referent();
 }
 
-RawObject METH(ref, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(weakref, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));

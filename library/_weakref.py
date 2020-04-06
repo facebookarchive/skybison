@@ -64,7 +64,7 @@ def proxy(object, callback=None):
     return weakproxy(reference)
 
 
-class ref(bootstrap=True):
+class weakref(bootstrap=True):
     def __call__(self):
         _builtin()
 
@@ -402,4 +402,5 @@ class weakproxy:
 
 CallableProxyType = weakcallableproxy
 ProxyType = weakproxy
-ReferenceType = ref
+ReferenceType = weakref
+ref = weakref
