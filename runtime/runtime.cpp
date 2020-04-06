@@ -912,8 +912,8 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
 RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, void* ptr, word length,
                                          ReadOnly read_only) {
   HandleScope scope(thread);
-  Object buffer(&scope, newIntFromCPtr(ptr));
-  return newMemoryView(thread, buffer, length, read_only);
+  Object pointer(&scope, newPointer(ptr, length));
+  return newMemoryView(thread, pointer, length, read_only);
 }
 
 RawObject Runtime::newMmap() {
@@ -1645,6 +1645,7 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   addEmptyBuiltinType(ID(_mutabletuple), LayoutId::kMutableTuple,
                       LayoutId::kObject);
+  addEmptyBuiltinType(ID(_pointer), LayoutId::kPointer, LayoutId::kObject);
   WeakLinkBuiltins::initialize(this);
   StrArrayBuiltins::initialize(this);
 

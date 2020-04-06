@@ -347,9 +347,10 @@ RawObject memoryviewGetitem(Thread* thread, const MemoryView& view,
     return unpackObject(thread, reinterpret_cast<uword>(bytes_buffer), length,
                         format_c, index);
   }
-  CHECK(buffer.isInt(), "memoryview.__getitem__ with non bytes/memory");
-  return unpackObject(thread, Int::cast(*buffer).asInt<uword>().value, length,
-                      format_c, index);
+  CHECK(buffer.isPointer(), "memoryview.__getitem__ with non bytes/memory");
+  void* cptr = Pointer::cast(*buffer).cptr();
+  return unpackObject(thread, reinterpret_cast<uword>(cptr), length, format_c,
+                      index);
 }
 
 RawObject memoryviewSetitem(Thread* thread, const MemoryView& view, word index,
@@ -365,9 +366,9 @@ RawObject memoryviewSetitem(Thread* thread, const MemoryView& view, word index,
     return packObject(thread, LargeBytes::cast(*buffer).address(), fmt, index,
                       *value);
   }
-  DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
-  return packObject(thread, Int::cast(*buffer).asInt<uword>().value, fmt, index,
-                    *value);
+  DCHECK(buffer.isPointer(), "memoryview.__setitem__ with non bytes/memory");
+  void* cptr = Pointer::cast(*buffer).cptr();
+  return packObject(thread, reinterpret_cast<uword>(cptr), fmt, index, *value);
 }
 
 static RawObject raiseDifferentStructureError(Thread* thread) {
@@ -404,8 +405,9 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
     if (buffer.isMutableBytes()) {
       address = reinterpret_cast<byte*>(LargeBytes::cast(*buffer).address());
     } else {
-      DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
-      address = reinterpret_cast<byte*>(Int::cast(*buffer).asCPtr());
+      DCHECK(buffer.isPointer(),
+             "memoryview.__setitem__ with non bytes/memory");
+      address = static_cast<byte*>(Pointer::cast(*buffer).cptr());
     }
     if (step == 1) {
       value_bytes.copyTo(address + start, slice_len);
@@ -444,8 +446,9 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
     if (buffer.isMutableBytes()) {
       address = LargeBytes::cast(*buffer).address();
     } else {
-      DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
-      address = Int::cast(*buffer).asInt<uword>().value;
+      DCHECK(buffer.isPointer(),
+             "memoryview.__setitem__ with non bytes/memory");
+      address = reinterpret_cast<uword>(Pointer::cast(*buffer).cptr());
     }
     if (step == 1 && item_size == 1) {
       std::memcpy(reinterpret_cast<void*>(address + start),

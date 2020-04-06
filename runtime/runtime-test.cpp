@@ -663,9 +663,9 @@ TEST_F(RuntimeTest, NewMemoryViewFromCPtrCreatesMemoryView) {
   MemoryView view(&scope,
                   runtime_->newMemoryViewFromCPtr(thread_, memory.get(), length,
                                                   ReadOnly::ReadOnly));
-  Int buffer(&scope, view.buffer());
+  Pointer pointer(&scope, view.buffer());
   EXPECT_EQ(view.length(), length);
-  byte* ptr = reinterpret_cast<byte*>(buffer.asCPtr());
+  byte* ptr = reinterpret_cast<byte*>(pointer.cptr());
   EXPECT_EQ(ptr[0], 0);
   EXPECT_EQ(ptr[1], 1);
   EXPECT_EQ(ptr[2], 2);

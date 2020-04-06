@@ -379,6 +379,7 @@ class Runtime;
   V(_os)                                                                       \
   V(_path)                                                                     \
   V(_pendingcr)                                                                \
+  V(_pointer)                                                                  \
   V(_pos)                                                                      \
   V(_program_name)                                                             \
   V(_python_path)                                                              \
