@@ -21,7 +21,7 @@ void checkFailed(const char* file, int line, const char* func, const char* expr,
 void checkIndexFailed(const char* file, int line, const char* func, word index,
                       word high) {
   std::fprintf(stderr, "%s:%d %s: index out of range, %ld not in [0..%ld) : \n",
-               file, line, func, index, high - 1);
+               file, line, func, index, high);
   py::Utils::printDebugInfoAndAbort();
 }
 
