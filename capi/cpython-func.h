@@ -1044,10 +1044,15 @@ PyAPI_FUNC(PyObject*) Py_VaBuildValue(const char*, va_list);
 PyAPI_FUNC(void) _PyArg_Fini(void);
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char* funcname, PyObject* kw);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char* funcname, PyObject* args);
-PyAPI_FUNC(int) _PyArg_ParseStack(PyObject**, Py_ssize_t, PyObject*,
-                                  struct _PyArg_Parser*, ...);
-PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject**, Py_ssize_t, PyObject*,
-                                        struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int) _PyArg_ParseStack(PyObject* const* args, Py_ssize_t nargs,
+                                  const char* format, ...);
+PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject* const* args, Py_ssize_t nargs,
+                                        const char* format, ...);
+PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(PyObject**, Py_ssize_t, PyObject*,
+                                             struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int)
+    _PyArg_ParseStackAndKeywords_SizeT(PyObject**, Py_ssize_t, PyObject*,
+                                       struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject*, PyObject*,
                                                  struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int)
@@ -1311,6 +1316,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 #define Py_BuildValue _Py_BuildValue_SizeT
 #define Py_VaBuildValue _Py_VaBuildValue_SizeT
 #define _PyArg_ParseStack _PyArg_ParseStack_SizeT
+#define _PyArg_ParseStackAndKeywords _PyArg_ParseStackAndKeywords_SizeT
 #define _PyArg_ParseTupleAndKeywordsFast _PyArg_ParseTupleAndKeywordsFast_SizeT
 #define _PyArg_VaParseTupleAndKeywordsFast                                     \
   _PyArg_VaParseTupleAndKeywordsFast_SizeT

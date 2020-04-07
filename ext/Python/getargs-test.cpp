@@ -73,7 +73,199 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsFastWithOptionals) {
   EXPECT_EQ(out2, 42);
 }
 
+TEST_F(GetArgsExtensionApiTest, ParseStackMaintainsRefcount) {
+  PyObjectPtr str(PyUnicode_FromString("hello world"));
+  Py_ssize_t old_refcnt = Py_REFCNT(str);
+  PyObject* args[] = {str};
+  PyObject* out = nullptr;
+  EXPECT_EQ(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "O", &out), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out, str.get());
+  EXPECT_EQ(Py_REFCNT(out), old_refcnt);
+  _PyArg_Fini();
+}
+
 TEST_F(GetArgsExtensionApiTest, ParseStackOneObject) {
+  PyObjectPtr str(PyUnicode_FromString("hello world"));
+  PyObject* args[] = {str};
+  PyObject* out = nullptr;
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "O:xyz", &out));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out, str.get());
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackMultipleObjects) {
+  PyObjectPtr long111(PyLong_FromLong(111));
+  PyObjectPtr long333(PyLong_FromLong(333));
+  PyObject* args[] = {long111, Py_None, long333};
+  PyObject* out1 = nullptr;
+  PyObject* out2 = nullptr;
+  PyObject* out3 = nullptr;
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "OOO:xyz", &out1,
+                                &out2, &out3));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out1, long111.get());
+  EXPECT_EQ(out2, Py_None);
+  EXPECT_EQ(out3, long333.get());
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackUnicodeObject) {
+  PyObjectPtr str(PyUnicode_FromString("hello world"));
+  PyObject* args[] = {str};
+  PyObject* out = nullptr;
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "U:xyz", &out));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out, str);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackWithWrongTypeRaisesTypeError) {
+  PyObjectPtr non_str(PyLong_FromLong(10));
+  PyObject* args[] = {non_str};
+  PyObject* out = nullptr;
+  EXPECT_FALSE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "U:xyz", &out));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+  EXPECT_EQ(out, nullptr);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackWithFormatsSAndZ) {
+  PyObjectPtr str1(PyUnicode_FromString("hello"));
+  PyObjectPtr str2(PyUnicode_FromString("world"));
+  PyObject* args[] = {str1, str2};
+  char* out1 = nullptr;
+  char* out2 = nullptr;
+  EXPECT_TRUE(
+      _PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "sz", &out1, &out2));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ("hello", out1);
+  EXPECT_STREQ("world", out2);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackWithStringAndNone) {
+  PyObject* args[] = {Py_None, Py_None};
+  char* out1 = nullptr;
+  char* out2 = nullptr;
+  int size = 123;
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "zz#", &out1,
+                                &out2, &size));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(nullptr, out1);
+  EXPECT_EQ(nullptr, out2);
+  EXPECT_EQ(0, size);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackWithStringAndSize) {
+  PyObjectPtr str1(PyUnicode_FromString("hello"));
+  PyObjectPtr str2(PyUnicode_FromString("cpython"));
+  PyObject* args[] = {str1, str2};
+  char* out1 = nullptr;
+  char* out2 = nullptr;
+  int size1 = 123;
+  int size2 = 456;
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "s#z#", &out1,
+                                &size1, &out2, &size2));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ("hello", out1);
+  EXPECT_EQ(5, size1);
+  EXPECT_STREQ("cpython", out2);
+  EXPECT_EQ(7, size2);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackNumbers) {
+  const int k_ints = 11;
+  PyObject* args[k_ints];
+  for (int i = 0; i < k_ints; i++) {
+    args[i] = PyLong_FromLong(123 + i);
+  }
+
+  unsigned char nb;
+  unsigned char n_b;
+  short int nh;
+  unsigned short int n_h;
+  int ni;
+  unsigned int n_i;
+  long int nl;
+  unsigned long nk;
+  long long n_l;
+  unsigned long long n_k;
+  Py_ssize_t nn;
+
+  EXPECT_TRUE(_PyArg_ParseStack(args, k_ints, "bBhHiIlkLKn", &nb, &n_b, &nh,
+                                &n_h, &ni, &n_i, &nl, &nk, &n_l, &n_k, &nn));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(123, nb);
+  EXPECT_EQ(124, n_b);
+  EXPECT_EQ(125, nh);
+  EXPECT_EQ(126, n_h);
+  EXPECT_EQ(127, ni);
+  EXPECT_EQ(128U, n_i);
+  EXPECT_EQ(129, nl);
+  EXPECT_EQ(130UL, nk);
+  EXPECT_EQ(131, n_l);
+  EXPECT_EQ(132ULL, n_k);
+  EXPECT_EQ(133, nn);
+
+  for (int i = 0; i < k_ints; i++) {
+    Py_DECREF(args[i]);
+  }
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackOptionalPresent) {
+  PyObjectPtr obj(PyLong_FromLong(111));
+  PyObject* args[] = {obj};
+
+  PyObject* out = reinterpret_cast<PyObject*>(0xdeadbeef);
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "|O", &out));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out, obj.get());
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackOptionalNotPresent) {
+  PyObject* out = reinterpret_cast<PyObject*>(0xdeadbeef);
+  EXPECT_TRUE(_PyArg_ParseStack(nullptr, 0, "|O", &out));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(out, reinterpret_cast<PyObject*>(0xdeadbeef));
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackObjectWithCorrectType) {
+  PyObjectPtr obj(PyLong_FromLong(111));
+  PyObject* args[] = {obj};
+
+  PyObject* out = reinterpret_cast<PyObject*>(0xdeadbeef);
+  EXPECT_TRUE(
+      _PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "O!", &PyLong_Type, &out));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out, obj.get());
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackObjectWithIncorrectType) {
+  PyObjectPtr obj(PyLong_FromLong(111));
+  PyObject* args[] = {obj};
+
+  PyObject* out = reinterpret_cast<PyObject*>(0xdeadbeef);
+  EXPECT_FALSE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "O!",
+                                 &PyTuple_Type, &out));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+  EXPECT_EQ(out, reinterpret_cast<PyObject*>(0xdeadbeef));
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackObjectWithConverter) {
+  using converter_func = void (*)(PyObject*, void*);
+  converter_func converter = [](PyObject* ptr, void* out) {
+    *static_cast<int*>(out) = 1 + PyLong_AsLong(ptr);
+  };
+
+  PyObjectPtr obj(PyLong_FromLong(111));
+  PyObject* args[] = {obj};
+
+  int out = 0;
+  EXPECT_TRUE(_PyArg_ParseStack(args, Py_ARRAY_LENGTH(args), "O&", converter,
+                                static_cast<void*>(&out)));
+  EXPECT_EQ(out, 112);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackAndKeywordsOneObject) {
   PyObjectPtr long10(PyLong_FromLong(10));
   PyObject* args[] = {long10};
   int nargs = Py_ARRAY_LENGTH(args);
@@ -84,12 +276,14 @@ TEST_F(GetArgsExtensionApiTest, ParseStackOneObject) {
   PyObject* kwnames = nullptr;
   PyObject* out = nullptr;
 
-  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, &parser, &out), 1);
+  EXPECT_EQ(_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser, &out),
+            1);
   EXPECT_EQ(PyLong_AsLong(out), 10);
   _PyArg_Fini();
 }
 
-TEST_F(GetArgsExtensionApiTest, ParseStackWithLongKWNamesRaisesTypeError) {
+TEST_F(GetArgsExtensionApiTest,
+       ParseStackAndKeywordsWithLongKWNamesRaisesTypeError) {
   PyObjectPtr long10(PyLong_FromLong(10));
   PyObject* args[] = {long10};
   int nargs = Py_ARRAY_LENGTH(args);
@@ -103,14 +297,15 @@ TEST_F(GetArgsExtensionApiTest, ParseStackWithLongKWNamesRaisesTypeError) {
                                  keywords};
   PyObject* out1 = nullptr;
 
-  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, &parser, &out1), 0);
+  EXPECT_EQ(_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser, &out1),
+            0);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   EXPECT_EQ(PyLong_AsLong(out1), 10);
   _PyArg_Fini();
 }
 
-TEST_F(GetArgsExtensionApiTest, ParseStackMultipleObjects) {
+TEST_F(GetArgsExtensionApiTest, ParseStackAndKeywordsMultipleObjects) {
   PyObjectPtr long10(PyLong_FromLong(10));
   PyObjectPtr long33(PyLong_FromLong(33));
   PyObjectPtr test_str(PyUnicode_FromString("test_str"));
@@ -125,15 +320,16 @@ TEST_F(GetArgsExtensionApiTest, ParseStackMultipleObjects) {
   PyObject* out2 = nullptr;
   PyObject* out3 = nullptr;
 
-  EXPECT_EQ(
-      _PyArg_ParseStack(args, nargs, kwnames, &parser, &out1, &out2, &out3), 1);
+  EXPECT_EQ(_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser, &out1,
+                                         &out2, &out3),
+            1);
   EXPECT_EQ(PyLong_AsLong(out1), 10);
   EXPECT_EQ(PyLong_AsLong(out2), 33);
   EXPECT_EQ(out3, test_str);
   _PyArg_Fini();
 }
 
-TEST_F(GetArgsExtensionApiTest, ParseStackUnicode) {
+TEST_F(GetArgsExtensionApiTest, ParseStackAndKeywordsUnicode) {
   PyObjectPtr hello(PyUnicode_FromString("hello"));
   PyObjectPtr world(PyUnicode_FromString("world"));
   PyObject* args[] = {hello, world};
@@ -145,13 +341,16 @@ TEST_F(GetArgsExtensionApiTest, ParseStackUnicode) {
   PyObject* kwnames = nullptr;
   PyObject* out1 = nullptr;
   PyObject* out2 = nullptr;
-  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, &parser, &out1, &out2), 1);
+  EXPECT_EQ(
+      _PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser, &out1, &out2),
+      1);
   EXPECT_EQ(hello, out1);
   EXPECT_EQ(world, out2);
   _PyArg_Fini();
 }
 
-TEST_F(GetArgsExtensionApiTest, ParseStackWithWrongTypeRaisesTypeError) {
+TEST_F(GetArgsExtensionApiTest,
+       ParseStackAndKeywordsWithWrongTypeRaisesTypeError) {
   PyObjectPtr long100(PyLong_FromLong(100));
   PyObject* args[] = {long100};
   int nargs = Py_ARRAY_LENGTH(args);
@@ -161,14 +360,15 @@ TEST_F(GetArgsExtensionApiTest, ParseStackWithWrongTypeRaisesTypeError) {
 
   PyObject* kwnames = nullptr;
   PyObject* out1 = nullptr;
-  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, &parser, &out1), 0);
+  EXPECT_EQ(_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser, &out1),
+            0);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   EXPECT_EQ(out1, nullptr);
   _PyArg_Fini();
 }
 
-TEST_F(GetArgsExtensionApiTest, ParseStackString) {
+TEST_F(GetArgsExtensionApiTest, ParseStackAndKeywordsString) {
   PyObjectPtr hello(PyUnicode_FromString("hello"));
   PyObjectPtr world(PyUnicode_FromString("world"));
   PyObject* args[] = {hello, world};
@@ -180,7 +380,9 @@ TEST_F(GetArgsExtensionApiTest, ParseStackString) {
   PyObject* kwnames = nullptr;
   char* out1 = nullptr;
   char* out2 = nullptr;
-  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, &parser, &out1, &out2), 1);
+  EXPECT_EQ(
+      _PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser, &out1, &out2),
+      1);
   EXPECT_STREQ("hello", out1);
   EXPECT_STREQ("world", out2);
   _PyArg_Fini();

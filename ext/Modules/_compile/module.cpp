@@ -167,9 +167,9 @@ static PyObject* _compile_compile(PyObject* module, PyObject** args,
   const char* mode;
   int flags = 0;
   int optimize = -1;
-  if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser, &source,
-                         PyUnicode_FSDecoder, &filename, &mode, &flags,
-                         &optimize)) {
+  if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &source,
+                                    PyUnicode_FSDecoder, &filename, &mode,
+                                    &flags, &optimize)) {
     return nullptr;
   }
   return _compile_compile_impl(module, source, filename, mode, flags, optimize);

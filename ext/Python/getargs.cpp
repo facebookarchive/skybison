@@ -32,6 +32,9 @@ typedef struct {
 #define STATIC_FREELIST_ENTRIES 8
 
 // Forward
+static int vGetArgs1Impl(PyObject* args, PyObject* const* stack,
+                         Py_ssize_t nargs, const char* format, va_list* p_va,
+                         int flags);
 static int vgetargs1(PyObject*, const char*, va_list*, int);
 static void seterror(Py_ssize_t, const char*, int*, const char*, const char*);
 static const char* convertitem(PyObject*, const char**, va_list*, int, int*,
@@ -93,6 +96,24 @@ PY_EXPORT int _PyArg_ParseTuple_SizeT(PyObject* args, const char* format, ...) {
 
   va_start(va, format);
   retval = vgetargs1(args, format, &va, FLAG_SIZE_T);
+  va_end(va);
+  return retval;
+}
+
+PY_EXPORT int _PyArg_ParseStack(PyObject* const* args, Py_ssize_t nargs,
+                                const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  int retval = vGetArgs1Impl(nullptr, args, nargs, format, &va, 0);
+  va_end(va);
+  return retval;
+}
+
+PY_EXPORT int _PyArg_ParseStack_SizeT(PyObject* const* args, Py_ssize_t nargs,
+                                      const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  int retval = vGetArgs1Impl(nullptr, args, nargs, format, &va, FLAG_SIZE_T);
   va_end(va);
   return retval;
 }
@@ -165,30 +186,22 @@ static int cleanreturn(int retval, freelist_t* freelist) {
   return retval;
 }
 
-static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
-                     int flags) {
-  char msgbuf[256];
-  int levels[32];
-  const char* fname = nullptr;
-  const char* message = nullptr;
-  int min = -1;
-  int max = 0;
-  int level = 0;
-  int endfmt = 0;
-  const char* formatsave = format;
-  Py_ssize_t i, len;
-  const char* msg;
+static int vGetArgs1Impl(PyObject* compat_args, PyObject* const* stack,
+                         Py_ssize_t nargs, const char* format, va_list* p_va,
+                         int flags) {
+  DCHECK(nargs == 0 || stack != nullptr,
+         "if nargs == 0, stack must be nullptr");
+
   int compat = flags & FLAG_COMPAT;
-  freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
-  freelist_t freelist;
-
-  freelist.entries = static_entries;
-  freelist.first_available = 0;
-  freelist.entries_malloced = 0;
-
-  assert(compat || (args != (PyObject*)nullptr));
   flags = flags & ~FLAG_COMPAT;
 
+  int endfmt = 0;
+  const char* formatsave = format;
+  const char* fname = nullptr;
+  int level = 0;
+  int max = 0;
+  const char* message = nullptr;
+  int min = -1;
   while (endfmt == 0) {
     int c = *format++;
     switch (c) {
@@ -223,23 +236,23 @@ static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
         if (level == 0) min = max;
         break;
       default:
-        if (level == 0) {
-          if (Py_ISALPHA(Py_CHARMASK(c))) {
-            if (c != 'e') {  // skip encoded
-              max++;
-            }
-          }
+        if (level == 0 && Py_ISALPHA(Py_CHARMASK(c)) && c != 'e') {
+          /* skip encoded */
+          max++;
         }
         break;
     }
   }
 
-  if (level != 0) Py_FatalError("missing ')' in getargs format");
+  if (level != 0) Py_FatalError(/* '(' */ "missing ')' in getargs format");
 
   if (min < 0) min = max;
 
-  format = formatsave;
-
+  freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
+  freelist_t freelist;
+  freelist.entries = static_entries;
+  freelist.first_available = 0;
+  freelist.entries_malloced = 0;
   if (max > STATIC_FREELIST_ENTRIES) {
     freelist.entries = PyMem_NEW(freelistentry_t, max);
     if (freelist.entries == nullptr) {
@@ -249,22 +262,26 @@ static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
     freelist.entries_malloced = 1;
   }
 
+  format = formatsave;
+  int levels[32];
+  const char* msg;
+  char msgbuf[256];
   if (compat) {
     if (max == 0) {
-      if (args == nullptr) return 1;
+      if (compat_args == nullptr) return 1;
       PyErr_Format(PyExc_TypeError, "%.200s%s takes no arguments",
                    fname == nullptr ? "function" : fname,
                    fname == nullptr ? "" : "()");
       return cleanreturn(0, &freelist);
     }
     if (min == 1 && max == 1) {
-      if (args == nullptr) {
+      if (compat_args == nullptr) {
         PyErr_Format(PyExc_TypeError, "%.200s%s takes at least one argument",
                      fname == nullptr ? "function" : fname,
                      fname == nullptr ? "" : "()");
         return cleanreturn(0, &freelist);
       }
-      msg = convertitem(args, &format, p_va, flags, levels, msgbuf,
+      msg = convertitem(compat_args, &format, p_va, flags, levels, msgbuf,
                         sizeof(msgbuf), &freelist);
       if (msg == nullptr) return cleanreturn(1, &freelist);
       seterror(levels[0], msg, levels + 1, fname, message);
@@ -275,33 +292,24 @@ static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
     return cleanreturn(0, &freelist);
   }
 
-  if (!PyTuple_Check(args)) {
-    PyErr_SetString(PyExc_SystemError,
-                    "new style getargs format but argument is not a tuple");
-    return cleanreturn(0, &freelist);
-  }
-
-  len = PyTuple_GET_SIZE(args);
-
-  if (len < min || max < len) {
+  if (nargs < min || max < nargs) {
     if (message == nullptr) {
       PyErr_Format(
-          PyExc_TypeError, "%.150s%s takes %s %d argument%s (%ld given)",
+          PyExc_TypeError, "%.150s%s takes %s %d argument%s (%zd given)",
           fname == nullptr ? "function" : fname, fname == nullptr ? "" : "()",
-          min == max ? "exactly" : len < min ? "at least" : "at most",
-          len < min ? min : max, (len < min ? min : max) == 1 ? "" : "s",
-          Py_SAFE_DOWNCAST(len, Py_ssize_t, long));
+          min == max ? "exactly" : nargs < min ? "at least" : "at most",
+          nargs < min ? min : max, (nargs < min ? min : max) == 1 ? "" : "s",
+          nargs);
     } else {
       PyErr_SetString(PyExc_TypeError, message);
     }
     return cleanreturn(0, &freelist);
   }
 
-  for (i = 0; i < len; i++) {
+  for (Py_ssize_t i = 0; i < nargs; i++) {
     if (*format == '|') format++;
-    // Facebook: Use PyTuple_GetItem instead of &PyTuple_GET_ITEM (D12953145)
-    msg = convertitem(PyTuple_GetItem(args, i), &format, p_va, flags, levels,
-                      msgbuf, sizeof(msgbuf), &freelist);
+    msg = convertitem(stack[i], &format, p_va, flags, levels, msgbuf,
+                      sizeof(msgbuf), &freelist);
     if (msg) {
       seterror(i + 1, msg, levels, fname, message);
       return cleanreturn(0, &freelist);
@@ -315,6 +323,33 @@ static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
   }
 
   return cleanreturn(1, &freelist);
+}
+
+static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
+                     int flags) {
+  if (flags & FLAG_COMPAT) {
+    return vGetArgs1Impl(args, nullptr, 0, format, p_va, flags);
+  }
+  DCHECK(args != nullptr, "args must be non-NULL");
+
+  if (!PyTuple_Check(args)) {
+    PyErr_SetString(PyExc_SystemError,
+                    "new style getargs format but argument is not a tuple");
+    return 0;
+  }
+
+  static const int max_small_array_size = 16;
+  PyObject* small_array[max_small_array_size];
+  Py_ssize_t nargs = PyTuple_Size(args);
+  PyObject** array = nargs <= 16 ? small_array : new PyObject*[nargs];
+  for (Py_ssize_t i = 0; i < nargs; i++) {
+    array[i] = PyTuple_GET_ITEM(args, i);
+  }
+  int retval = vGetArgs1Impl(args, array, nargs, format, p_va, flags);
+  if (array != small_array) {
+    delete[] array;
+  }
+  return retval;
 }
 
 static void seterror(Py_ssize_t iarg, const char* msg, int* levels,
@@ -1298,9 +1333,9 @@ PY_EXPORT int _PyArg_ParseTupleAndKeywordsFast_SizeT(
   return retval;
 }
 
-PY_EXPORT int _PyArg_ParseStack(PyObject** args, Py_ssize_t nargs,
-                                PyObject* kwnames, struct _PyArg_Parser* parser,
-                                ...) {
+PY_EXPORT int _PyArg_ParseStackAndKeywords(PyObject** args, Py_ssize_t nargs,
+                                           PyObject* kwnames,
+                                           struct _PyArg_Parser* parser, ...) {
   if ((kwnames != nullptr && !PyTuple_Check(kwnames)) || parser == nullptr) {
     PyErr_BadInternalCall();
     return 0;
@@ -1314,9 +1349,11 @@ PY_EXPORT int _PyArg_ParseStack(PyObject** args, Py_ssize_t nargs,
   return retval;
 }
 
-PY_EXPORT int _PyArg_ParseStack_SizeT(PyObject** args, Py_ssize_t nargs,
-                                      PyObject* kwnames,
-                                      struct _PyArg_Parser* parser, ...) {
+PY_EXPORT int _PyArg_ParseStackAndKeywords_SizeT(PyObject** args,
+                                                 Py_ssize_t nargs,
+                                                 PyObject* kwnames,
+                                                 struct _PyArg_Parser* parser,
+                                                 ...) {
   if ((kwnames != nullptr && !PyTuple_Check(kwnames)) || parser == nullptr) {
     PyErr_BadInternalCall();
     return 0;

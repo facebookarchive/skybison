@@ -766,7 +766,9 @@ TEST_F(ModuleExtensionApiTest, MethodWithFastCallReturnsArg) {
     int value;
     static const char* const keywords[] = {"input", nullptr};
     static _PyArg_Parser parser = {"i:fastcall", keywords};
-    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    EXPECT_EQ(
+        _PyArg_ParseStackAndKeywords(args, num_args, kwnames, &parser, &value),
+        1);
     return PyLong_FromLong(value);
   };
   PyMethodDef foo_methods[] = {
@@ -799,7 +801,9 @@ TEST_F(ModuleExtensionApiTest, MethodWithFastCallKwReturnsArg) {
     int value;
     static const char* const keywords[] = {"input", nullptr};
     static _PyArg_Parser parser = {"i:fastcall", keywords};
-    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    EXPECT_EQ(
+        _PyArg_ParseStackAndKeywords(args, num_args, kwnames, &parser, &value),
+        1);
     return PyLong_FromLong(value);
   };
   PyMethodDef foo_methods[] = {
@@ -832,7 +836,9 @@ TEST_F(ModuleExtensionApiTest, MethodWithFastCallExTupleReturnsArg) {
     int value;
     static const char* const keywords[] = {"input", nullptr};
     static _PyArg_Parser parser = {"i:fastcall", keywords};
-    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    EXPECT_EQ(
+        _PyArg_ParseStackAndKeywords(args, num_args, kwnames, &parser, &value),
+        1);
     return PyLong_FromLong(value);
   };
   PyMethodDef foo_methods[] = {
@@ -866,7 +872,9 @@ TEST_F(ModuleExtensionApiTest, MethodWithFastCallExDictReturnsArg) {
     int value;
     static const char* const keywords[] = {"input", nullptr};
     static _PyArg_Parser parser = {"i:fastcall", keywords};
-    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    EXPECT_EQ(
+        _PyArg_ParseStackAndKeywords(args, num_args, kwnames, &parser, &value),
+        1);
     return PyLong_FromLong(value);
   };
   PyMethodDef foo_methods[] = {

@@ -176,7 +176,7 @@ _sre_SRE_Pattern_match(PatternObject *self, PyObject **args, Py_ssize_t nargs, P
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -209,7 +209,7 @@ _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject **args, Py_ssize_t narg
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -244,7 +244,7 @@ _sre_SRE_Pattern_search(PatternObject *self, PyObject **args, Py_ssize_t nargs, 
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -277,7 +277,7 @@ _sre_SRE_Pattern_findall(PatternObject *self, PyObject **args, Py_ssize_t nargs,
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -312,7 +312,7 @@ _sre_SRE_Pattern_finditer(PatternObject *self, PyObject **args, Py_ssize_t nargs
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -344,7 +344,7 @@ _sre_SRE_Pattern_scanner(PatternObject *self, PyObject **args, Py_ssize_t nargs,
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -376,7 +376,7 @@ _sre_SRE_Pattern_split(PatternObject *self, PyObject **args, Py_ssize_t nargs, P
     PyObject *string;
     Py_ssize_t maxsplit = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string, &maxsplit)) {
         goto exit;
     }
@@ -409,7 +409,7 @@ _sre_SRE_Pattern_sub(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyO
     PyObject *string;
     Py_ssize_t count = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &repl, &string, &count)) {
         goto exit;
     }
@@ -442,7 +442,7 @@ _sre_SRE_Pattern_subn(PatternObject *self, PyObject **args, Py_ssize_t nargs, Py
     PyObject *string;
     Py_ssize_t count = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &repl, &string, &count)) {
         goto exit;
     }
@@ -475,7 +475,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
 "\n");
 
 #define _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
+    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_FASTCALL, _sre_SRE_Pattern___deepcopy____doc__},
 
 PyDoc_STRVAR(_sre_compile__doc__,
 "compile($module, /, pattern, flags, code, groups, groupindex,\n"
@@ -504,7 +504,7 @@ _sre_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *groupindex;
     PyObject *indexgroup;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &pattern, &flags, &PyList_Type, &code, &groups, &PyDict_Type, &groupindex, &PyTuple_Type, &indexgroup)) {
         goto exit;
     }
@@ -534,7 +534,7 @@ _sre_SRE_Match_expand(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyOb
     static _PyArg_Parser _parser = {"O:expand", _keywords, 0};
     PyObject *template;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &template)) {
         goto exit;
     }
@@ -567,7 +567,7 @@ _sre_SRE_Match_groups(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyOb
     static _PyArg_Parser _parser = {"|O:groups", _keywords, 0};
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &default_value)) {
         goto exit;
     }
@@ -600,7 +600,7 @@ _sre_SRE_Match_groupdict(MatchObject *self, PyObject **args, Py_ssize_t nargs, P
     static _PyArg_Parser _parser = {"|O:groupdict", _keywords, 0};
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &default_value)) {
         goto exit;
     }
@@ -730,7 +730,7 @@ PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
 "\n");
 
 #define _SRE_SRE_MATCH___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
+    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_FASTCALL, _sre_SRE_Match___deepcopy____doc__},
 
 PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "match($self, /)\n"
