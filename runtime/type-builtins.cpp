@@ -551,17 +551,14 @@ static inline RawObject lookupCell(RawMutableTuple data, RawObject name,
 RawObject typeAssignFromDict(Thread* thread, const Type& type,
                              const Dict& dict) {
   HandleScope scope(thread);
-  Tuple data(&scope, dict.data());
+  Object key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
-  Object item_name(&scope, NoneType::object());
-  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-    value = Dict::Bucket::value(*data, i);
+  for (word i = 0; dictNextItem(dict, &i, &key, &value);) {
     DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
            "value should not be a placeholder value cell");
-    item_name = Dict::Bucket::key(*data, i);
-    item_name = attributeName(thread, item_name);
-    if (item_name.isErrorException()) return *item_name;
-    typeAtPut(thread, type, item_name, value);
+    key = attributeName(thread, key);
+    if (key.isErrorException()) return *key;
+    typeAtPut(thread, type, key, value);
   }
   return NoneType::object();
 }

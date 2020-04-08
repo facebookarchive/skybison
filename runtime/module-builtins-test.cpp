@@ -221,6 +221,33 @@ foo()
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
+TEST_F(ModuleBuiltinsTest, ModuleDictNextItemReturnsNextNonPlaceholder) {
+  HandleScope scope(thread_);
+  Str name(&scope, Str::empty());
+  Module module(&scope, runtime_->newModule(name));
+  Dict module_dict(&scope, runtime_->newDict());
+  module.setDict(*module_dict);
+
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Object qux(&scope, Runtime::internStrFromCStr(thread_, "qux"));
+  Str value(&scope, runtime_->newStrFromCStr("value"));
+
+  // Only baz is not Placeholder.
+  ValueCell::cast(moduleAtPut(thread_, module, foo, value)).makePlaceholder();
+  ValueCell::cast(moduleAtPut(thread_, module, bar, value)).makePlaceholder();
+  moduleAtPut(thread_, module, baz, value);
+  ValueCell::cast(moduleAtPut(thread_, module, qux, value)).makePlaceholder();
+
+  word i = 0;
+  Object dict_key(&scope, NoneType::object());
+  Object dict_value(&scope, NoneType::object());
+  ASSERT_TRUE(moduleDictNextItem(module_dict, &i, &dict_key, &dict_value));
+  EXPECT_TRUE(isStrEqualsCStr(*dict_key, "baz"));
+  EXPECT_FALSE(moduleDictNextItem(module_dict, &i, &dict_key, &dict_value));
+}
+
 TEST_F(ModuleBuiltinsTest, ModuleKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Str name(&scope, Str::empty());
@@ -353,32 +380,6 @@ TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   Object module(&scope, runtime_->newModule(name));
   Object result(&scope, Thread::current()->invokeMethod1(module, ID(__repr__)));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'hello'>"));
-}
-
-TEST_F(ModuleBuiltinsTest, NextModuleDictItemReturnsNextNonPlaceholder) {
-  HandleScope scope(thread_);
-  Str name(&scope, Str::empty());
-  Module module(&scope, runtime_->newModule(name));
-  Dict module_dict(&scope, runtime_->newDict());
-  module.setDict(*module_dict);
-
-  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Object qux(&scope, Runtime::internStrFromCStr(thread_, "qux"));
-  Str value(&scope, runtime_->newStrFromCStr("value"));
-
-  // Only baz is not Placeholder.
-  ValueCell::cast(moduleAtPut(thread_, module, foo, value)).makePlaceholder();
-  ValueCell::cast(moduleAtPut(thread_, module, bar, value)).makePlaceholder();
-  moduleAtPut(thread_, module, baz, value);
-  ValueCell::cast(moduleAtPut(thread_, module, qux, value)).makePlaceholder();
-
-  Tuple buckets(&scope, module_dict.data());
-  word i = Dict::Bucket::kFirst;
-  EXPECT_TRUE(nextModuleDictItem(*buckets, &i));
-  EXPECT_TRUE(isStrEqualsCStr(Dict::Bucket::key(*buckets, i), "baz"));
-  EXPECT_FALSE(nextModuleDictItem(*buckets, &i));
 }
 
 TEST_F(ModuleBuiltinsTest, BuiltinModuleDunderReprReturnsString) {

@@ -1,6 +1,7 @@
 #include "set-builtins.h"
 
 #include "builtins.h"
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -258,10 +259,8 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
   // Special case for dicts
   if (iterable.isDict()) {
     Dict dict(&scope, *iterable);
-    Tuple data(&scope, dict.data());
-    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-      elt = Dict::Bucket::key(*data, i);
-      word hash = Dict::Bucket::hash(*data, i);
+    word hash;
+    for (word i = 0; dictNextKeyHash(dict, &i, &elt, &hash);) {
       setAdd(thread, dst, elt, hash);
     }
     return *dst;

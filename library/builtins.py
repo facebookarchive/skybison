@@ -80,7 +80,6 @@ from _builtins import (
     _dict_guard,
     _dict_items_guard,
     _dict_keys_guard,
-    _dict_popitem,
     _dict_setitem,
     _dict_update,
     _divmod,
@@ -2942,11 +2941,7 @@ class dict(bootstrap=True):
         return value
 
     def popitem(self):
-        _dict_guard(self)
-        result = _dict_popitem(self)
-        if result is None:
-            raise KeyError("popitem(): dictionary is empty")
-        return result
+        _builtin()
 
     def setdefault(self, key, default=None):
         _dict_guard(self)

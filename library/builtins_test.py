@@ -3252,6 +3252,32 @@ class DictTests(unittest.TestCase):
         d[1] = d
         self.assertEqual(dict.__repr__(d), "{1: {...}}")
 
+    def test_setitem_for_new_keys_keeps_insertion_order(self):
+        d = {}
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        self.assertEqual(list(d.keys()), ["a", "b", "c"])
+
+    def test_setitem_for_existing_key_preserves_order(self):
+        d = {}
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["a"] = 100
+        self.assertEqual(list(d.keys()), ["a", "b", "c"])
+        self.assertIs(d["a"], 100)
+
+    def test_setitem_for_deleted_key_inserted_last(self):
+        d = {}
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        del d["a"]
+        d["a"] = 100
+        self.assertEqual(list(d.keys()), ["b", "c", "a"])
+        self.assertIs(d["a"], 100)
+
     def test_clear_with_non_dict_raises_type_error(self):
         with self.assertRaises(TypeError):
             dict.clear(None)
@@ -3540,10 +3566,7 @@ class DictTests(unittest.TestCase):
     def test_popitem_with_non_dict_raise_type_error(self):
         with self.assertRaises(TypeError) as context:
             dict.popitem(None)
-        self.assertIn(
-            "'popitem' requires a 'dict' object but received a 'NoneType'",
-            str(context.exception),
-        )
+        self.assertIn("'popitem' requires a 'dict' object", str(context.exception))
 
     def test_popitem_with_empty_dict_raises_key_error(self):
         d = {}
@@ -3551,12 +3574,15 @@ class DictTests(unittest.TestCase):
             dict.popitem(d)
         self.assertIn("popitem(): dictionary is empty", str(context.exception))
 
-    def test_popitem_deletes_random_item_and_returns_it(self):
-        d = {"a": 1, "b": 2}
-        self.assertEqual(len(d), 2)
+    def test_popitem_deletes_last_inserted_item_and_returns_it(self):
+        d = {"a": 1, "b": 2, "c": 3}
+        self.assertEqual(len(d), 3)
         key0, value0 = dict.popitem(d)
         key1, value1 = dict.popitem(d)
-        self.assertEqual({key0: value0, key1: value1}, {"a": 1, "b": 2})
+        key2, value2 = dict.popitem(d)
+        self.assertEqual((key0, value0), ("c", 3))
+        self.assertEqual((key1, value1), ("b", 2))
+        self.assertEqual((key2, value2), ("a", 1))
         self.assertEqual(len(d), 0)
 
     def test_update_with_tuple_keys_propagates_exceptions_from_dunder_hash(self):
@@ -3717,12 +3743,7 @@ class DictItemsTests(unittest.TestCase):
 
     def test_dunder_repr_prints_items(self):
         result = repr({"hello": "world", "foo": "bar"}.items())
-        # TODO(T44040673): Re-write to test against one canonical output when
-        # dicts are ordered
-        self.assertTrue(
-            result == "dict_items([('hello', 'world'), ('foo', 'bar')])"
-            or result == "dict_items([('foo', 'bar'), ('hello', 'world')])"
-        )
+        self.assertEqual(result, "dict_items([('hello', 'world'), ('foo', 'bar')])")
 
     def test_dunder_repr_with_recursive_prints_ellipsis(self):
         x = {}
@@ -4041,12 +4062,7 @@ class DictKeysTests(unittest.TestCase):
 
     def test_dunder_repr_prints_keys(self):
         result = repr({"hello": "world", "foo": "bar"}.keys())
-        # TODO(T44040673): Re-write to test against one canonical output when
-        # dicts are ordered
-        self.assertTrue(
-            result == "dict_keys(['hello', 'foo'])"
-            or result == "dict_keys(['foo', 'hello'])"
-        )
+        self.assertEqual(result, "dict_keys(['hello', 'foo'])")
 
     def test_dunder_repr_with_recursive_prints_ellipsis(self):
         x = {}
@@ -4260,13 +4276,7 @@ class DictKeysTests(unittest.TestCase):
 class DictValuesTests(unittest.TestCase):
     def test_dunder_repr_prints_values(self):
         result = repr({"hello": "world", "foo": "bar"}.values())
-        # TODO(T44040673): Re-write to test against one canonical output when
-
-        # dicts are ordered
-        self.assertTrue(
-            result == "dict_values(['world', 'bar'])"
-            or result == "dict_values(['bar', 'world'])"
-        )
+        self.assertEqual(result, "dict_values(['world', 'bar'])")
 
     def test_dunder_repr_calls_key_dunder_repr(self):
         class C:

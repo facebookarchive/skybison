@@ -303,13 +303,14 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   word len = dict.numItems();
   List result(&scope, runtime->newList());
   if (len > 0) {
-    Tuple data(&scope, dict.data());
     MutableTuple items(&scope, runtime->newMutableTuple(len));
     word num_items = 0;
-    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    Object key(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    for (word i = 0; dictNextItem(dict, &i, &key, &value);) {
       Tuple kvpair(&scope, runtime->newTuple(2));
-      kvpair.atPut(0, Dict::Bucket::key(*data, i));
-      kvpair.atPut(1, Dict::Bucket::value(*data, i));
+      kvpair.atPut(0, *key);
+      kvpair.atPut(1, *value);
       items.atPut(num_items++, *kvpair);
     }
     result.setItems(*items);
@@ -368,29 +369,22 @@ PY_EXPORT int _PyDict_Next(PyObject* dict, Py_ssize_t* ppos, PyObject** pkey,
     return 0;
   }
   Dict dict_dict(&scope, *dict_obj);
-  Tuple dict_data(&scope, dict_dict.data());
   // Below are all the possible statuses of ppos and what to do in each case.
   // * If an index is out of bounds, we should not advance.
   // * If an index does not point to a valid bucket, we should try and find the
   //   next bucket, or fail.
   // * Read the contents of that bucket.
   // * Advance the index.
-  if (!Dict::Bucket::currentOrNextItem(*dict_data, ppos)) {
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  word hash;
+  if (!dictNextItemHash(dict_dict, ppos, &key, &value, &hash)) {
     return 0;
   }
   // At this point, we will always have a valid bucket index.
-  if (pkey != nullptr) {
-    *pkey = ApiHandle::borrowedReference(thread,
-                                         Dict::Bucket::key(*dict_data, *ppos));
-  }
-  if (pvalue != nullptr) {
-    *pvalue = ApiHandle::borrowedReference(
-        thread, Dict::Bucket::value(*dict_data, *ppos));
-  }
-  if (phash != nullptr) {
-    *phash = Dict::Bucket::hash(*dict_data, *ppos);
-  }
-  *ppos += Dict::Bucket::kNumPointers;
+  if (pkey != nullptr) *pkey = ApiHandle::borrowedReference(thread, *key);
+  if (pvalue != nullptr) *pvalue = ApiHandle::borrowedReference(thread, *value);
+  if (phash != nullptr) *phash = hash;
   return true;
 }
 
@@ -431,11 +425,11 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   word len = dict.numItems();
   List result(&scope, runtime->newList());
   if (len > 0) {
-    Tuple data(&scope, dict.data());
     MutableTuple values(&scope, runtime->newMutableTuple(len));
     word num_values = 0;
-    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-      values.atPut(num_values++, Dict::Bucket::value(*data, i));
+    Object value(&scope, NoneType::object());
+    for (word i = 0; dictNextValue(dict, &i, &value);) {
+      values.atPut(num_values++, *value);
     }
     result.setItems(*values);
     result.setNumItems(len);

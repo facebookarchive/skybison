@@ -802,7 +802,7 @@ TEST_F(HeapProfilerTest, WriteInstanceDumpForDictWritesInstanceDumpRecord) {
   // Heap dump segment
   EXPECT_TRUE(readTag(result, &pos, HeapProfiler::Tag::kHeapDumpSegment));
   EXPECT_EQ(read32(result, &pos), 0);   // time
-  EXPECT_EQ(read32(result, &pos), 49);  // length
+  EXPECT_EQ(read32(result, &pos), 57);  // length
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
@@ -810,13 +810,13 @@ TEST_F(HeapProfilerTest, WriteInstanceDumpForDictWritesInstanceDumpRecord) {
   EXPECT_EQ(read32(result, &pos), 0);            // stack trace serial number
   EXPECT_EQ(readu64(result, &pos), dict_layout.raw());  // class object ID
   EXPECT_EQ(read32(result, &pos),
-            3 * kPointerSize);  // number of bytes that follow
+            4 * kPointerSize);  // number of bytes that follow
   EXPECT_EQ(readu64(result, &pos), SmallInt::fromWord(1).raw());  // num items
   EXPECT_EQ(readu64(result, &pos), dict.data().raw());            // data
-  EXPECT_EQ(
-      readu64(result, &pos),
-      SmallInt::fromWord(dict.numUsableItems()).raw());  // num usable items
-
+  EXPECT_EQ(readu64(result, &pos), dict.indices().raw());         // sparse
+  // first empty item index
+  EXPECT_EQ(readu64(result, &pos),
+            SmallInt::fromWord(dict.firstEmptyItemIndex()).raw());
   EXPECT_EQ(pos, result.size());
 }
 

@@ -50,10 +50,10 @@ TEST_F(DictBuiltinsTest, DictAtPutRetainsExistingKeyObject) {
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dictAt(thread_, dict, key1, key1_hash), *value1);
 
-  Tuple data(&scope, dict.data());
-  word i = Dict::Bucket::kFirst;
-  Dict::Bucket::nextItem(*data, &i);
-  EXPECT_EQ(Dict::Bucket::key(*data, i), key0);
+  word i = 0;
+  Object key(&scope, NoneType::object());
+  ASSERT_TRUE(dictNextKey(dict, &i, &key));
+  EXPECT_EQ(key, key0);
 }
 
 TEST_F(DictBuiltinsTest, GetSet) {
@@ -160,10 +160,14 @@ TEST_F(DictBuiltinsTest, DictAtPutInValueCellByStrReusesExistingValueCell) {
   EXPECT_EQ(ValueCell::cast(*result1).value(), value1);
 }
 
+// Should be synced with dict-builtins.cpp.
+static const word kInitialDictIndicesLength = 8;
+static const word kItemNumPointers = 3;
+
 TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_->newDict());
-  EXPECT_EQ(dict.capacity(), 0);
+  EXPECT_EQ(dict.indicesLength(), 0);
 
   Object first_key(&scope, SmallInt::fromWord(0));
   word hash = intHash(*first_key);
@@ -171,9 +175,9 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   ASSERT_TRUE(
       dictAtPut(thread_, dict, first_key, hash, first_value).isNoneType());
 
-  word initial_capacity = Runtime::kInitialDictCapacity;
+  word initial_capacity = kInitialDictIndicesLength;
   EXPECT_EQ(dict.numItems(), 1);
-  EXPECT_EQ(dict.capacity(), initial_capacity);
+  EXPECT_EQ(dict.indicesLength(), initial_capacity);
 }
 
 TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
@@ -182,7 +186,7 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
 
   // Fill in one fewer keys than would require growing the underlying object
   // array again.
-  word threshold = ((Runtime::kInitialDictCapacity * 2) / 3) - 1;
+  word threshold = ((kInitialDictIndicesLength * 2) / 3) - 1;
   for (word i = 0; i < threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
     word hash = intHash(*key);
@@ -190,9 +194,9 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
     ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
   }
   EXPECT_EQ(dict.numItems(), threshold);
-  EXPECT_EQ(dict.numUsableItems(), 1);
-  word initial_capacity = Runtime::kInitialDictCapacity;
-  EXPECT_EQ(dict.capacity(), initial_capacity);
+  EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, threshold);
+  word initial_capacity = kInitialDictIndicesLength;
+  EXPECT_EQ(dict.indicesLength(), initial_capacity);
 
   // Add another key which should force us to double the capacity
   Object last_key(&scope, SmallInt::fromWord(threshold));
@@ -201,9 +205,9 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   ASSERT_TRUE(dictAtPut(thread_, dict, last_key, last_key_hash, last_value)
                   .isNoneType());
   EXPECT_EQ(dict.numItems(), threshold + 1);
-  EXPECT_EQ(dict.capacity(), initial_capacity * Runtime::kDictGrowthFactor);
-  EXPECT_EQ(dict.numUsableItems(),
-            ((dict.capacity() * 2) / 3) - dict.numItems());
+  // 2 == kDictGrowthFactor.
+  EXPECT_EQ(dict.indicesLength(), initial_capacity * 2);
+  EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, threshold + 1);
 
   // Make sure we can still read all the stored keys/values.
   for (word i = 0; i <= threshold; i++) {
@@ -314,14 +318,14 @@ TEST_F(DictBuiltinsTest, CanCreateDictItems) {
 TEST_F(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_->newDict());
-  EXPECT_EQ(dict.capacity(), 0);
+  EXPECT_EQ(dict.indicesLength(), 0);
 
   Object key(&scope, runtime_->newInt(123));
   word hash = intHash(*key);
   Object value(&scope, runtime_->newInt(456));
   ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
-  int expected = Runtime::kInitialDictCapacity;
-  EXPECT_EQ(dict.capacity(), expected);
+  int expected = kInitialDictIndicesLength;
+  EXPECT_EQ(dict.indicesLength(), expected);
 }
 
 TEST_F(DictBuiltinsTest, ClearWithEmptyDictIsNoop) {
@@ -368,7 +372,7 @@ result = dict.copy(d)
   Dict result(&scope, *result_obj);
   EXPECT_NE(*dict, *result);
   EXPECT_EQ(result.numItems(), 1);
-  EXPECT_EQ(result.numUsableItems(), 5 - 1);
+  EXPECT_EQ(result.firstEmptyItemIndex() / kItemNumPointers, 1);
 }
 
 TEST_F(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
@@ -649,18 +653,18 @@ d3 = {"a": 123}
   Dict d1(&scope, mainModuleAt(runtime_, "d1"));
   Dict d2(&scope, mainModuleAt(runtime_, "d2"));
   ASSERT_EQ(d1.numItems(), 2);
-  ASSERT_EQ(d1.numUsableItems(), 5 - 2);
+  EXPECT_EQ(d1.firstEmptyItemIndex() / kItemNumPointers, 2);
   ASSERT_EQ(d2.numItems(), 2);
-  ASSERT_EQ(d2.numUsableItems(), 5 - 2);
+  EXPECT_EQ(d2.firstEmptyItemIndex() / kItemNumPointers, 2);
   ASSERT_TRUE(runFromCStr(runtime_, "d1.update(d2)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
-  ASSERT_EQ(d1.numUsableItems(), 5 - 4);
+  EXPECT_EQ(d1.firstEmptyItemIndex() / kItemNumPointers, 4);
   EXPECT_EQ(d2.numItems(), 2);
-  ASSERT_EQ(d2.numUsableItems(), 5 - 2);
+  EXPECT_EQ(d2.firstEmptyItemIndex() / kItemNumPointers, 2);
 
   ASSERT_TRUE(runFromCStr(runtime_, "d1.update(d3)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
-  ASSERT_EQ(d1.numUsableItems(), 5 - 4);
+  EXPECT_EQ(d1.firstEmptyItemIndex() / kItemNumPointers, 4);
   Str a(&scope, runtime_->newStrFromCStr("a"));
   Object a_val(&scope, dictAtByStr(thread_, d1, a));
   EXPECT_TRUE(isIntEqualsWord(*a_val, 123));
@@ -923,9 +927,11 @@ TEST_F(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
   Object value(&scope, runtime_->newStrFromCStr("world"));
   dictAtPutByStr(thread_, dict, key, value);
   ASSERT_FALSE(dictRemoveByStr(thread_, dict, key).isError());
-  Tuple data(&scope, dict.data());
-  word i = Dict::Bucket::kFirst;
-  ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));
+
+  word i = 0;
+  Object dict_key(&scope, NoneType::object());
+  Object dict_value(&scope, NoneType::object());
+  EXPECT_FALSE(dictNextItem(dict, &i, &dict_key, &dict_value));
 }
 
 TEST_F(DictBuiltinsTest, RecursiveDictPrintsEllipsis) {
@@ -958,7 +964,7 @@ result = d.pop("hello")
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "world"));
   Dict dict(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_EQ(dict.numItems(), 0);
-  EXPECT_EQ(dict.numUsableItems(), 5 - 1);
+  EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, 1);
 }
 
 TEST_F(DictBuiltinsTest, PopWithMissingKeyAndDefaultReturnsDefault) {
@@ -970,7 +976,7 @@ result = d.pop("hello", "world")
   HandleScope scope(thread_);
   Dict dict(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_EQ(dict.numItems(), 0);
-  EXPECT_EQ(dict.numUsableItems(), 5);
+  EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, 0);
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "world"));
 }
 
@@ -992,7 +998,7 @@ result = c.pop('hello')
   HandleScope scope(thread_);
   Dict dict(&scope, mainModuleAt(runtime_, "c"));
   EXPECT_EQ(dict.numItems(), 0);
-  EXPECT_EQ(dict.numUsableItems(), 5 - 1);
+  EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, 1);
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "world"));
 }
 
@@ -1036,41 +1042,6 @@ result = d["hello"]
 )")
                    .isError());
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 5));
-}
-
-TEST_F(DictBuiltinsTest, NextBucketProbesAllBuckets) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_->newDict());
-  Object key(&scope, runtime_->newInt(123));
-  word hash = intHash(*key);
-  Object value(&scope, runtime_->newInt(456));
-  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
-
-  Tuple data(&scope, dict.data());
-  ASSERT_EQ(data.length(),
-            Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers);
-
-  bool probed[Runtime::kInitialDictCapacity] = {false};
-
-  uword perturb;
-  word bucket_mask;
-  word current = Dict::Bucket::bucket(*data, hash, &bucket_mask, &perturb);
-  probed[current] = true;
-  // Probe until perturb becomes zero.
-  while (perturb > 0) {
-    current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
-    probed[current] = true;
-  }
-  // Probe as many times as the capacity.
-  for (word i = 1; i < Runtime::kInitialDictCapacity; ++i) {
-    current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
-    probed[current] = true;
-  }
-  bool all_probed = true;
-  for (word i = 0; i < Runtime::kInitialDictCapacity; ++i) {
-    all_probed &= probed[i];
-  }
-  EXPECT_TRUE(all_probed);
 }
 
 TEST_F(DictBuiltinsTest, NumAttributesMatchesObjectSize) {

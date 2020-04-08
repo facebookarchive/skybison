@@ -2587,15 +2587,16 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
     return retryForIterAnamorphic(thread, arg);
   }
   // NOTE: This should be synced with dictKeyIteratorNext in dict-builtins.cpp.
-  RawDictKeyIterator iter = DictKeyIterator::cast(iter_obj);
-  RawDict dict = iter.iterable().rawCast<RawDict>();
-  RawTuple buckets = Tuple::cast(dict.data());
+  HandleScope scope(thread);
+  DictKeyIterator iter(&scope, DictKeyIterator::cast(iter_obj));
+  Dict dict(&scope, iter.iterable());
   word i = iter.index();
-  if (Dict::Bucket::nextItem(buckets, &i)) {
+  Object key(&scope, NoneType::object());
+  if (dictNextKey(dict, &i, &key)) {
     // At this point, we have found a valid index in the buckets.
     iter.setIndex(i);
     iter.setNumFound(iter.numFound() + 1);
-    frame->pushValue(Dict::Bucket::key(buckets, i));
+    frame->pushValue(*key);
   } else {
     // We hit the end.
     iter.setIndex(i);
@@ -4561,20 +4562,21 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
                                                         word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Tuple keys(&scope, frame->popValue());
+  Tuple keys(&scope, frame->topValue());
   Dict dict(&scope, thread->runtime()->newDictWithSize(keys.length()));
   Object key(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
-  for (word i = arg - 1; i >= 0; i--) {
+  for (word i = 0; i < arg; i++) {
     key = keys.at(i);
     hash_obj = Interpreter::hash(thread, key);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
-    Object value(&scope, frame->popValue());
+    Object value(&scope, frame->peek(arg - i));
     if (dictAtPut(thread, dict, key, hash, value).isErrorException()) {
       return Continue::UNWIND;
     }
   }
+  frame->dropValues(arg + 1);
   frame->pushValue(*dict);
   return Continue::NEXT;
 }

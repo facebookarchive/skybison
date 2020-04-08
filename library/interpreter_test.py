@@ -65,6 +65,16 @@ class IntepreterTest(unittest.TestCase):
             1 not in c
         self.assertEqual(str(context.exception), "C.__contains__")
 
+    def test_for_iter_iterates_dict_by_insertion_order(self):
+        d = {}
+        d["a"] = 1
+        d["c"] = 3
+        d["b"] = 2
+        result = []
+        for key in d:
+            result.append(key)
+        self.assertEqual(result, ["a", "c", "b"])
+
     def test_store_name_calls_dunder_setitem(self):
         class C(dict):
             def __setitem__(self, key, value):

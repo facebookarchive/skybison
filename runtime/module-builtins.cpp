@@ -96,16 +96,27 @@ RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
   return moduleValueCellAtPut(thread, module, name, value);
 }
 
+bool moduleDictNextItem(const Dict& dict, word* index, Object* key_out,
+                        Object* value_out) {
+  // Iterate through until we find a non-placeholder item.
+  while (dictNextItem(dict, index, key_out, value_out)) {
+    if (!ValueCell::cast(**value_out).isPlaceholder()) {
+      // At this point, we have found a valid index in the buckets.
+      return true;
+    }
+  }
+  return false;
+}
+
 RawObject moduleKeys(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict module_dict(&scope, module.dict());
-  Tuple buckets(&scope, module_dict.data());
   List result(&scope, runtime->newList());
+  Object key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
-  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
-    value = Dict::Bucket::key(*buckets, i);
-    runtime->listAdd(thread, result, value);
+  for (word i = 0; moduleDictNextItem(module_dict, &i, &key, &value);) {
+    runtime->listAdd(thread, result, key);
   }
   return *result;
 }
@@ -113,9 +124,10 @@ RawObject moduleKeys(Thread* thread, const Module& module) {
 RawObject moduleLen(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Dict module_dict(&scope, module.dict());
-  Tuple buckets(&scope, module_dict.data());
   word count = 0;
-  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  for (word i = 0; moduleDictNextItem(module_dict, &i, &key, &value);) {
     ++count;
   }
   return SmallInt::fromWord(count);
@@ -152,11 +164,12 @@ RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
 RawObject moduleValues(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Tuple buckets(&scope, Dict::cast(module.dict()).data());
+  Dict module_dict(&scope, module.dict());
   List result(&scope, runtime->newList());
+  Object key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
-  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
-    value = ValueCell::cast(Dict::Bucket::value(*buckets, i)).value();
+  for (word i = 0; moduleDictNextItem(module_dict, &i, &key, &value);) {
+    value = ValueCell::cast(*value).value();
     runtime->listAdd(thread, result, value);
   }
   return *result;
@@ -196,17 +209,6 @@ RawObject moduleSetAttr(Thread* thread, const Module& module,
                         const Object& name, const Object& value) {
   moduleAtPut(thread, module, name, value);
   return NoneType::object();
-}
-
-bool nextModuleDictItem(RawTuple data, word* idx) {
-  // Iterate through until we find a non-placeholder item.
-  while (Dict::Bucket::nextItem(data, idx)) {
-    if (!ValueCell::cast(Dict::Bucket::value(data, *idx)).isPlaceholder()) {
-      // At this point, we have found a valid index in the buckets.
-      return true;
-    }
-  }
-  return false;
 }
 
 int execDef(Thread* thread, const Module& module, PyModuleDef* def) {

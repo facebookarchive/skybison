@@ -527,35 +527,6 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictGetWithNonDictRaisesTypeError) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderDictPopitemRemovesAvailableItemAndReturnsTupleOfKeyAndValue) {
-  HandleScope scope(thread_);
-  // Create {"a": 1, "b": 2}.
-  Dict dict(&scope, runtime_->newDict());
-  Str a(&scope, runtime_->newStrFromCStr("a"));
-  Object a_value(&scope, SmallInt::fromWord(1));
-  Str b(&scope, runtime_->newStrFromCStr("b"));
-  Object b_value(&scope, SmallInt::fromWord(2));
-  dictAtPutByStr(thread_, dict, a, a_value);
-  dictAtPutByStr(thread_, dict, b, b_value);
-
-  Tuple result(&scope, runBuiltin(FUNC(_builtins, _dict_popitem), dict));
-  ASSERT_EQ(result.length(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "a"));
-  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
-  EXPECT_TRUE(dictAtByStr(thread_, dict, a).isErrorNotFound());
-  EXPECT_EQ(dict.numItems(), 1);
-}
-
-TEST_F(UnderBuiltinsModuleTest,
-       UnderDictPopitemReturnsNoneTypeWhenNoItemIsAvailable) {
-  HandleScope scope(thread_);
-  // Create {}.
-  Dict dict(&scope, runtime_->newDict());
-  ASSERT_EQ(dict.numItems(), 0);
-  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _dict_popitem), dict).isNoneType());
-}
-
-TEST_F(UnderBuiltinsModuleTest,
        UnderDictSetitemWithKeyHashReturningNonIntRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class E:
@@ -580,7 +551,6 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithExistingKey) {
                 runBuiltin(FUNC(_builtins, _dict_setitem), dict, key, val2));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(dict.numUsableItems(), 5 - 1);
   ASSERT_EQ(dictAtByStr(thread_, dict, key), *val2);
 }
 
@@ -588,14 +558,12 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithNonExistentKey) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_->newDictWithSize(1));
   ASSERT_EQ(dict.numItems(), 0);
-  ASSERT_EQ(dict.numUsableItems(), 5);
   Str key(&scope, runtime_->newStrFromCStr("foo"));
   Object val(&scope, runtime_->newInt(0));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _dict_setitem), dict, key, val));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(dict.numUsableItems(), 5 - 1);
   ASSERT_EQ(dictAtByStr(thread_, dict, key), *val);
 }
 

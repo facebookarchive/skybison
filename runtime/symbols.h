@@ -281,8 +281,10 @@ class Runtime;
   V(_decoder)                                                                  \
   V(_descrclassmethod)                                                         \
   V(_dict__data)                                                               \
+  V(_dict__first_empty_item_index)                                             \
   V(_dict__num_items)                                                          \
   V(_dict__num_usable_items)                                                   \
+  V(_dict__sparse)                                                             \
   V(_dict_check)                                                               \
   V(_dict_check_exact)                                                         \
   V(_dict_guard)                                                               \

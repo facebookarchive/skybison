@@ -2593,166 +2593,42 @@ class RawStrArray : public RawInstance {
 //
 // RawLayout:
 //
-//   [Header        ]
-//   [NumItems      ] - Number of items currently in the dict
-//   [Items         ] - Pointer to an RawTuple that stores the underlying
-// data.
-//   [NumUsableItems] - Usable items for insertion.
+//   [Header  ]
+//   [NumItems] - Number of items currently in the dict
+//   [Data    ] - RawTuple that stores the underlying data.
+//   [Indices ] - RawTuple storing indices into the data tuple.
+//   [FirstEmptyItemIndex] - Index pointing to the first empty item in data.
 //
-// RawDict entries are stored in buckets as a triple of (hash, key, value).
-// Empty buckets are stored as (RawNoneType, RawNoneType, RawNoneType).
-// Tombstone buckets are stored as (RawNoneType, <not RawNoneType>, <Any>).
 class RawDict : public RawInstance {
  public:
-  class Bucket;
-
   // Number of items currently in the dict
   word numItems() const;
   void setNumItems(word num_items) const;
 
   // Getters and setters.
-  // The RawTuple backing the dict
+  // RawTuple that stores the underlying data.
   RawObject data() const;
   void setData(RawObject data) const;
 
-  // Number of usable items for insertion.
-  word numUsableItems() const;
-  void setNumUsableItems(word num_usable_items) const;
+  // RawTuple storing indices into the data tuple.
+  RawObject indices() const;
+  void setIndices(RawObject index_data) const;
 
-  // Returns true if numUsableItems is positive.
-  // See Runtime::dictEnsureCapacity() for how it's used.
-  bool hasUsableItems() const;
+  // Index pointing to the first empty item in data.
+  word firstEmptyItemIndex() const;
+  void setFirstEmptyItemIndex(word first_empty_item_index) const;
 
-  // Reset the number of usable items according to the capacity and number of
-  // items in the dict.
-  void resetNumUsableItems() const;
-  void decrementNumUsableItems() const;
-
-  // Number of hash buckets.
-  word capacity() const;
+  // Length of indicies tuple.
+  word indicesLength() const;
 
   // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
-  static const int kNumUsableItemsOffset = kDataOffset + kPointerSize;
-  static const int kSize = kNumUsableItemsOffset + kPointerSize;
+  static const int kIndicesOffset = kDataOffset + kPointerSize;
+  static const int kFirstEmptyItemIndexOffset = kIndicesOffset + kPointerSize;
+  static const int kSize = kFirstEmptyItemIndexOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Dict);
-};
-
-// Helper class for manipulating buckets in the RawTuple that backs the
-// dict. None of operations here do bounds checking on the backing array.
-class RawDict::Bucket {
- public:
-  static word bucket(RawTuple data, word hash, word* bucket_mask,
-                     uword* perturb) {
-    const word nbuckets = data.length() / kNumPointers;
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    DCHECK(nbuckets > 0, "bucket size <= 0");
-    DCHECK(RawSmallInt::isValid(hash), "hash out of range");
-    *perturb = static_cast<uword>(hash);
-    *bucket_mask = nbuckets - 1;
-    return *bucket_mask & hash;
-  }
-
-  static word bucketMask(word data_length) {
-    word nbuckets = data_length / kNumPointers;
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    DCHECK(nbuckets > 0, "bucket size <= 0");
-    return nbuckets - 1;
-  }
-
-  static word reduceIndex(word data_length, uword perturb) {
-    return (bucketMask(data_length) & perturb) * kNumPointers;
-  }
-
-  static word nextBucket(word current, word bucket_mask, uword* perturb) {
-    // Given that current stands for the index of a bucket, this advances
-    // current to (5 * bucket + 1 + perturb). Note that it's guaranteed that
-    // keeping calling this function returns a permutation of all indices when
-    // the number of the buckets is power of two. See
-    // https://en.wikipedia.org/wiki/Linear_congruential_generator#c_%E2%89%A0_0.
-    *perturb >>= 5;
-    return (current * 5 + 1 + *perturb) & bucket_mask;
-  }
-
-  static word hash(RawTuple data, word index) {
-    return RawSmallInt::cast(data.at(index + kHashOffset)).value();
-  }
-
-  static RawObject hashRaw(RawTuple data, word index) {
-    return data.at(index + kHashOffset);
-  }
-
-  static bool isEmpty(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType() &&
-           key(data, index).isNoneType();
-  }
-
-  static bool isTombstone(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType() &&
-           !key(data, index).isNoneType();
-  }
-
-  static RawObject key(RawTuple data, word index) {
-    return data.at(index + kKeyOffset);
-  }
-
-  static void set(RawTuple data, word index, word hash, RawObject key,
-                  RawObject value) {
-    data.atPut(index + kHashOffset, RawSmallInt::fromWordTruncated(hash));
-    data.atPut(index + kKeyOffset, key);
-    data.atPut(index + kValueOffset, value);
-  }
-
-  static void setTombstone(RawTuple data, word index) {
-    data.atPut(index + kHashOffset, RawNoneType::object());
-    data.atPut(index + kKeyOffset, RawError::notFound());
-    data.atPut(index + kValueOffset, RawNoneType::object());
-  }
-
-  static void setValue(RawTuple data, word index, RawObject value) {
-    data.atPut(index + kValueOffset, value);
-  }
-
-  static RawObject value(RawTuple data, word index) {
-    return data.at(index + kValueOffset);
-  }
-
-  static bool currentOrNextItem(RawTuple data, word* idx) {
-    if (*idx >= data.length()) {
-      return false;
-    }
-    if (!isEmptyOrTombstone(data, *idx)) {
-      return true;
-    }
-    return nextItem(data, idx);
-  }
-
-  static bool nextItem(RawTuple data, word* idx) {
-    // Calling next on an invalid index should not advance that index.
-    if (*idx >= data.length()) {
-      return false;
-    }
-    do {
-      *idx += kNumPointers;
-    } while (*idx < data.length() && isEmptyOrTombstone(data, *idx));
-    return *idx < data.length();
-  }
-
-  // Layout.
-  static const word kHashOffset = 0;
-  static const word kKeyOffset = kHashOffset + 1;
-  static const word kValueOffset = kKeyOffset + 1;
-  static const word kNumPointers = kValueOffset + 1;
-  static const word kFirst = -kNumPointers;
-
- private:
-  static bool isEmptyOrTombstone(RawTuple data, word index) {
-    return isEmpty(data, index) || isTombstone(data, index);
-  }
-
-  DISALLOW_HEAP_ALLOCATION();
 };
 
 class RawDictViewBase : public RawInstance {
@@ -5925,29 +5801,26 @@ inline void RawDict::setData(RawObject data) const {
   instanceVariableAtPut(kDataOffset, data);
 }
 
-inline bool RawDict::hasUsableItems() const { return numUsableItems() > 0; }
-
-inline word RawDict::numUsableItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumUsableItemsOffset)).value();
+inline RawObject RawDict::indices() const {
+  return instanceVariableAt(kIndicesOffset);
 }
 
-inline void RawDict::setNumUsableItems(word num_usable_items) const {
-  DCHECK(num_usable_items >= 0, "numUsableItems must be >= 0");
-  instanceVariableAtPut(kNumUsableItemsOffset,
-                        RawSmallInt::fromWord(num_usable_items));
+inline void RawDict::setIndices(RawObject index_data) const {
+  instanceVariableAtPut(kIndicesOffset, index_data);
 }
 
-inline void RawDict::resetNumUsableItems() const {
-  setNumUsableItems((capacity() * 2) / 3 - numItems());
+inline word RawDict::firstEmptyItemIndex() const {
+  return RawSmallInt::cast(instanceVariableAt(kFirstEmptyItemIndexOffset))
+      .value();
 }
 
-inline void RawDict::decrementNumUsableItems() const {
-  setNumUsableItems(numUsableItems() - 1);
+inline void RawDict::setFirstEmptyItemIndex(word first_empty_item_index) const {
+  instanceVariableAtPut(kFirstEmptyItemIndexOffset,
+                        RawSmallInt::fromWord(first_empty_item_index));
 }
 
-inline word RawDict::capacity() const {
-  return RawTuple::cast(instanceVariableAt(kDataOffset)).length() /
-         Bucket::kNumPointers;
+inline word RawDict::indicesLength() const {
+  return RawTuple::cast(instanceVariableAt(kIndicesOffset)).length();
 }
 
 // RawDictIteratorBase

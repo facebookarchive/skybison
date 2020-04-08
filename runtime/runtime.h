@@ -679,13 +679,6 @@ class Runtime {
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
 
-  static const int kDictGrowthFactor = 2;
-  // Initial size of the dict. According to comments in CPython's
-  // dictobject.c this accommodates the majority of dictionaries without needing
-  // a resize (obviously this depends on the load factor used to resize the
-  // dict).
-  static const int kInitialDictCapacity = 8;
-
   // Initial data of the set.
   static const int kSetGrowthFactor = 2;
   static const int kInitialSetCapacity = 8;

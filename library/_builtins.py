@@ -299,10 +299,6 @@ def _dict_len(self):
     _builtin()
 
 
-def _dict_popitem(self):
-    _builtin()
-
-
 # TODO(T56301601): Move this into a type-specific file.
 def _dict_setitem(self, key, value):
     _builtin()

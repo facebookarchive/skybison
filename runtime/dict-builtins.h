@@ -8,6 +8,25 @@
 
 namespace py {
 
+// Allocate dict.indices() of size `num_indices` and dict.data() accordingly.
+void dictAllocateArrays(Thread* thread, const Dict& dict, word indices_len);
+
+// Return true if an item is found at `*index` or after and sets index to the
+// next index to probe, key_out to the found key and value_out to the found
+// value. Returns false otherwise.
+bool dictNextItem(const Dict& dict, word* index, Object* key_out,
+                  Object* value_out);
+
+bool dictNextItemHash(const Dict& dict, word* index, Object* key_out,
+                      Object* value_out, word* hash_out);
+
+bool dictNextKey(const Dict& dict, word* index, Object* key_out);
+
+bool dictNextValue(const Dict& dict, word* index, Object* value_out);
+
+bool dictNextKeyHash(const Dict& dict, word* index, Object* key_out,
+                     word* hash_out);
+
 // Associate a value with the supplied key.
 //
 // This handles growing the backing Tuple if needed.

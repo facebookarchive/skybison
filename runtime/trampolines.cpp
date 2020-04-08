@@ -445,19 +445,15 @@ static RawObject processExplodeArguments(Thread* thread, Frame* frame,
       frame->pushValue(runtime->emptyTuple());
       return SmallInt::fromWord(nargs);
     }
-    Tuple data(&scope, dict.data());
     MutableTuple keys(&scope, runtime->newMutableTuple(len));
     Object key(&scope, NoneType::object());
     Object value(&scope, NoneType::object());
-    for (word i = Dict::Bucket::kFirst, j = 0;
-         Dict::Bucket::nextItem(*data, &i); j++) {
-      key = Dict::Bucket::key(*data, i);
+    for (word i = 0, j = 0; dictNextItem(dict, &i, &key, &value); j++) {
       if (!runtime->isInstanceOfStr(*key)) {
         return thread->raiseWithFmt(LayoutId::kTypeError,
                                     "keywords must be strings");
       }
       keys.atPut(j, *key);
-      value = Dict::Bucket::value(*data, i);
       frame->pushValue(*value);
     }
     nargs += len;

@@ -1698,28 +1698,6 @@ RawObject FUNC(_builtins, _dict_len)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject FUNC(_builtins, _dict_popitem)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Dict dict(&scope, args.get(0));
-  if (dict.numItems() == 0) {
-    return NoneType::object();
-  }
-  // TODO(T44040673): Return the last item.
-  Tuple data(&scope, dict.data());
-  word index = Dict::Bucket::kFirst;
-  bool has_item = Dict::Bucket::nextItem(*data, &index);
-  DCHECK(has_item,
-         "dict.numItems() > 0, but Dict::Bucket::nextItem() returned false");
-  Tuple result(&scope, thread->runtime()->newTuple(2));
-  result.atPut(0, Dict::Bucket::key(*data, index));
-  result.atPut(1, Dict::Bucket::value(*data, index));
-  Dict::Bucket::setTombstone(*data, index);
-  dict.setNumItems(dict.numItems() - 1);
-  return *result;
-}
-
 RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);

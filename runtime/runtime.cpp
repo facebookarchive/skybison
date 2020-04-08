@@ -2897,23 +2897,21 @@ RawObject Runtime::newDict() {
   Dict result(&scope, heap()->create<RawDict>());
   result.setNumItems(0);
   result.setData(empty_tuple_);
-  result.setNumUsableItems(0);
+  result.setIndices(empty_tuple_);
+  result.setFirstEmptyItemIndex(0);
   return *result;
 }
 
 RawObject Runtime::newDictWithSize(word initial_size) {
-  HandleScope scope;
-  // TODO(jeethu): initialSize should be scaled up by a load factor.
-  word initial_capacity = Utils::maximum(
-      static_cast<word>(kInitialDictCapacity),
-      Utils::nextPowerOfTwo(initial_size) * Runtime::kDictGrowthFactor);
-  Tuple array(&scope,
-              newMutableTuple(initial_capacity * Dict::Bucket::kNumPointers));
-  Dict result(&scope, newDict());
-  result.setNumItems(0);
-  result.setData(*array);
-  result.resetNumUsableItems();
-  return *result;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  // NOTE: Multiplying 2 will leave (initial_size * 2 * 2/3) - initial_size
+  // items available after initial_size items are inserted before dict is
+  // expanded.
+  word indices_len = Utils::nextPowerOfTwo(initial_size) * 2;
+  Dict dict(&scope, newDict());
+  dictAllocateArrays(thread, dict, indices_len);
+  return *dict;
 }
 
 static RawObject NEVER_INLINE callDunderEq(Thread* thread, RawObject o0_raw,
@@ -2971,7 +2969,7 @@ RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
 RawObject Runtime::newDictItemIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
-  result.setIndex(Dict::Bucket::kFirst);
+  result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
   return *result;
@@ -2991,7 +2989,7 @@ RawObject Runtime::newDictItems(Thread* thread, const Dict& dict) {
 RawObject Runtime::newDictKeyIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
-  result.setIndex(Dict::Bucket::kFirst);
+  result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
   return *result;
@@ -3011,7 +3009,7 @@ RawObject Runtime::newDictKeys(Thread* thread, const Dict& dict) {
 RawObject Runtime::newDictValueIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
-  result.setIndex(Dict::Bucket::kFirst);
+  result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
   return *result;
