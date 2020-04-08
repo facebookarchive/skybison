@@ -10,6 +10,9 @@ namespace py {
 
 static const int kMaxNameLength = 256;
 
+// Longest decomposition in Unicode 11.0.0: U+FDFA
+static const int kMaxDecomposition = 18;
+
 static_assert(Unicode::kAliasStart == 0xf0000,
               "Unicode aliases start at unexpected code point");
 static_assert(Unicode::kAliasCount == 468,
@@ -18,6 +21,14 @@ static_assert(Unicode::kNamedSequenceStart == 0xf0200,
               "Unicode named sequences start at unexpected code point");
 static_assert(Unicode::kNamedSequenceCount == 442,
               "Unexpected number of Unicode named sequences");
+
+enum NormalizationForm : byte {
+  kInvalid = 0,
+  kNFD = 0x3,
+  kNFKD = 0xc,
+  kNFC = 0x30,
+  kNFKC = 0xc0,
+};
 
 enum : int32_t {
   kAlphaMask = 0x1,
@@ -37,6 +48,15 @@ enum : int32_t {
   kExtendedCaseMask = 0x4000,
 };
 
+struct UnicodeDatabaseRecord {
+  const byte bidirectional;
+  const byte category;
+  const byte combining;  // canonical combining class
+  const byte east_asian_width;
+  const bool mirrored;
+  const byte quick_check;
+};
+
 struct UnicodeTypeRecord {
   // Deltas to the character or offsets in kExtendedCase
   const int32_t upper;
@@ -53,13 +73,28 @@ struct UnicodeTypeRecord {
 int32_t codePointFromName(const byte* name, word size);
 int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
 
+// Returns the NFC composition given the NFC first and last indices.
+int32_t composeCodePoint(int32_t first, int32_t last);
+
+// Copies the decomposition of the code point onto the stack, starting at index,
+// in reverse order. Returns true if the decomposition was copied.
+// Returns false if the code point is not decomposable,
+// or if it has a compatibility decomposition, but we do NFC/NFD.
+bool decomposeCodePoint(int32_t code_point, NormalizationForm form,
+                        int32_t* stack, word* depth);
+
 // Returns the case mapping for code points where offset is insufficient
 int32_t extendedCaseMapping(int32_t index);
+
+// Finds the first/last character of an NFC sequence containing the code point.
+int32_t findNFCFirst(int32_t code_point);
+int32_t findNFCLast(int32_t code_point);
 
 // Write the Unicode name for the given code point into the buffer.
 // Returns true if the name was written successfully, false otherwise.
 bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
 
+const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
 }  // namespace py

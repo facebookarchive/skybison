@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from _builtins import _Unbound, _unimplemented
+from _builtins import _builtin, _Unbound, _unimplemented
 
 
 # TODO(T36511309): make UCD non-extensible
@@ -98,7 +98,7 @@ def name(chr, default=_Unbound):
 
 
 def normalize(form, unistr):
-    _unimplemented()
+    _builtin()
 
 
 def numeric(chr, default=_Unbound):
