@@ -191,6 +191,7 @@ extern int Py_NoSiteFlag;
 extern int Py_NoUserSiteDirectory;
 extern int Py_OptimizeFlag;
 extern int Py_QuietFlag;
+extern int Py_UTF8Mode;
 extern int Py_UnbufferedStdioFlag;
 extern int Py_UseClassExceptionsFlag;
 extern int Py_VerboseFlag;

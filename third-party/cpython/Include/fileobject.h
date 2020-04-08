@@ -27,6 +27,8 @@ PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncodeErrors;
 #endif
 PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
+// This normally has guards around it for 3.7, but we are backporting to 3.6.
+PyAPI_DATA(int) Py_UTF8Mode;
 
 /* Internal API
 
