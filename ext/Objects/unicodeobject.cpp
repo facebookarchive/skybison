@@ -2004,16 +2004,13 @@ static PyObject* decodeUnicodeToString(Thread* thread, const void* src,
   }
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  // TODO(T41785453): Remove the ByteArray intermediary
-  ByteArray dst(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, dst, size);
+  // TODO(T41785453): Remove the StrArray intermediary
+  StrArray array(&scope, runtime->newStrArray());
+  runtime->strArrayEnsureCapacity(thread, array, size);
   for (word i = 0; i < size; ++i) {
-    RawStr str = Str::cast(SmallStr::fromCodePoint(cp[i]));
-    for (word j = 0; j < str.charLength(); ++j) {
-      byteArrayAdd(thread, runtime, dst, str.charAt(j));
-    }
+    runtime->strArrayAddCodePoint(thread, array, cp[i]);
   }
-  return ApiHandle::newReference(thread, runtime->newStrFromByteArray(dst));
+  return ApiHandle::newReference(thread, runtime->strFromStrArray(array));
 }
 
 PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,

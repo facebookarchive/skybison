@@ -345,14 +345,12 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
   if (num_bytes != length) {
     // A non-ASCII character was found; switch to a Latin-1 decoding for the
     // remainder of the input sequence
-    Str str(&scope, Str::empty());
     for (word i = num_bytes; i < length; ++i) {
       byte code_point = bytes.byteAt(i);
       if (code_point <= kMaxASCII) {
         runtime->strArrayAddASCII(thread, array, code_point);
       } else {
-        str = Str::cast(SmallStr::fromCodePoint(code_point));
-        runtime->strArrayAddStr(thread, array, str);
+        runtime->strArrayAddCodePoint(thread, array, code_point);
       }
     }
   }

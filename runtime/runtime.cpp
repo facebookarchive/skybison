@@ -1316,7 +1316,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
   if (size <= RawSmallStr::kMaxLength) {
     byte dst[SmallStr::kMaxLength];
     for (word i = 0, j = 0; i < code_units.length(); ++i) {
-      RawStr src = Str::cast(SmallStr::fromCodePoint(code_units.get(i)));
+      RawSmallStr src = SmallStr::fromCodePoint(code_units.get(i));
       word num_bytes = src.charLength();
       src.copyTo(&dst[j], num_bytes);
       j += num_bytes;
@@ -1334,7 +1334,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
     return result;
   }
   for (word i = 0, j = 0; i < code_units.length(); ++i) {
-    RawStr src = Str::cast(SmallStr::fromCodePoint(code_units.get(i)));
+    RawSmallStr src = SmallStr::fromCodePoint(code_units.get(i));
     word num_bytes = src.charLength();
     src.copyTo(&dst[j], num_bytes);
     j += num_bytes;

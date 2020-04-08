@@ -536,8 +536,7 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = str.__class__.__name__").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
-  ASSERT_TRUE(result.isStr());
-  EXPECT_TRUE(isStrEqualsCStr(Str::cast(*result), "type"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "type"));
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
