@@ -156,6 +156,51 @@ handled by the symbol analysis pass.
 
 */
 
+enum CompilerIds {
+    id_AssertionError,
+    id_StopAsyncIteration,
+    id___annotations__,
+    id___class__,
+    id___classcell__,
+    id___doc__,
+    id___module__,
+    id___name__,
+    id___qualname__,
+    id_dictcomp,
+    id_dot,
+    id_dot_locals,
+    id_empty,
+    id_genexpr,
+    id_lambda,
+    id_listcomp,
+    id_module,
+    id_return,
+    id_setcomp,
+
+    num_ids = id_setcomp + 1,
+};
+static const char* const id_strings[num_ids] = {
+    "AssertionError",
+    "StopAsyncIteration",
+    "__annotations__",
+    "__class__",
+    "__classcell__",
+    "__doc__",
+    "__module__",
+    "__name__",
+    "__qualname__",
+    "<dictcomp>",
+    ".",
+    ".<locals>",
+    "",
+    "<genexpr>",
+    "<lambda>",
+    "<listcomp>",
+    "<module>",
+    "return",
+    "<setcomp>",
+};
+
 struct compiler {
     PyObject *c_filename;
     struct symtable *c_st;
@@ -170,8 +215,7 @@ struct compiler {
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
 
-    PyObject* __doc__;  /* __doc__ string */
-    PyObject* __annotations__;  /* __annotations__ string */
+    PyObject *id_objs[num_ids];
 };
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -236,12 +280,14 @@ compiler_init(struct compiler *c)
     if (!c->c_stack)
         return 0;
 
-    c->__doc__ = PyUnicode_InternFromString("__doc__");
-    if (!c->__doc__)
-        return 0;
-    c->__annotations__ = PyUnicode_InternFromString("__annotations__");
-    if (!c->__annotations__)
-        return 0;
+    {
+        int i;
+        for (i = 0; i < num_ids; i++) {
+            c->id_objs[i] = PyUnicode_InternFromString(id_strings[i]);
+            if (c->id_objs[i] == NULL)
+                return 0;
+        }
+    }
 
     return 1;
 }
@@ -332,8 +378,13 @@ compiler_free(struct compiler *c)
         PyObject_Free(c->c_future);
     Py_XDECREF(c->c_filename);
     Py_DECREF(c->c_stack);
-    Py_DECREF(c->__doc__);
-    Py_DECREF(c->__annotations__);
+
+    {
+        int i;
+        for (i = 0; i < num_ids; i++) {
+            Py_DECREF(c->id_objs[i]);
+        }
+    }
 }
 
 static PyObject *
@@ -509,17 +560,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        PyObject *tuple, *dunder_class;
+        PyObject *tuple;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_Size(u->u_cellvars) == 0);
-        dunder_class = PyUnicode_InternFromString("__class__");
-        if (!dunder_class) {
-            compiler_unit_free(u);
-            return 0;
-        }
-        tuple = _PyCode_ConstantKey(dunder_class);
-        Py_DECREF(dunder_class);
+        tuple = _PyCode_ConstantKey(c->id_objs[id___class__]);
         if (!tuple) {
             compiler_unit_free(u);
             return 0;
@@ -616,7 +661,7 @@ compiler_set_qualname(struct compiler *c)
 {
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
-    PyObject *name, *base, *dot_str, *dot_locals_str;
+    PyObject *name, *base;
 
     base = NULL;
     stack_size = PyList_GET_SIZE(c->c_stack);
@@ -648,11 +693,7 @@ compiler_set_qualname(struct compiler *c)
             if (parent->u_scope_type == COMPILER_SCOPE_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA) {
-                dot_locals_str = PyUnicode_InternFromString(".<locals>");
-                if (dot_locals_str == NULL)
-                    return 0;
-                base = PyUnicode_Concat(parent->u_qualname, dot_locals_str);
-                Py_DECREF(dot_locals_str);
+                base = PyUnicode_Concat(parent->u_qualname, c->id_objs[id_dot_locals]);
                 if (base == NULL)
                     return 0;
             }
@@ -664,13 +705,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        dot_str = PyUnicode_InternFromString(".");
-        if (dot_str == NULL) {
-            Py_DECREF(base);
-            return 0;
-        }
-        name = PyUnicode_Concat(base, dot_str);
-        Py_DECREF(dot_str);
+        name = PyUnicode_Concat(base, c->id_objs[id_dot]);
         Py_DECREF(base);
         if (name == NULL)
             return 0;
@@ -1441,7 +1476,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
         /* don't generate docstrings if -OO */
         i = 1;
         VISIT(c, expr, st->v.Expr.value);
-        if (!compiler_nameop(c, c->__doc__, Store))
+        if (!compiler_nameop(c, c->id_objs[id___doc__], Store))
             return 0;
     }
     for (; i < asdl_seq_LEN(stmts); i++)
@@ -1454,16 +1489,9 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    PyObject *module;
-    module = PyUnicode_InternFromString("<module>");
-    if (!module)
-        return NULL;
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0)) {
-        Py_XDECREF(module);
+    if (!compiler_enter_scope(c, c->id_objs[id_module], COMPILER_SCOPE_MODULE, mod, 0))
         return NULL;
-    }
-   Py_DECREF(module);
     switch (mod->kind) {
     case Module_kind:
         if (!compiler_body(c, mod->v.Module.body)) {
@@ -1731,7 +1759,6 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
        Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
-    identifier return_str;
     PyObject *names;
     Py_ssize_t len;
     names = PyList_New(0);
@@ -1751,14 +1778,9 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, names))
         goto error;
 
-    return_str = PyUnicode_InternFromString("return");
-    if (!return_str)
-        goto error;
-    if (!compiler_visit_argannotation(c, return_str, returns, names)) {
-        Py_DECREF(return_str);
+    if (!compiler_visit_argannotation(c, c->id_objs[id_return], returns, names)) {
         goto error;
     }
-    Py_DECREF(return_str);
 
     len = PyList_GET_SIZE(names);
     if (len) {
@@ -1911,7 +1933,6 @@ static int
 compiler_class(struct compiler *c, stmt_ty s)
 {
     PyCodeObject *co;
-    PyObject *str;
     int i;
     asdl_seq* decos = s->v.ClassDef.decorator_list;
 
@@ -1940,30 +1961,21 @@ compiler_class(struct compiler *c, stmt_ty s)
         Py_INCREF(s->v.ClassDef.name);
         Py_XSETREF(c->u->u_private, s->v.ClassDef.name);
         /* load (global) __name__ ... */
-        str = PyUnicode_InternFromString("__name__");
-        if (!str || !compiler_nameop(c, str, Load)) {
-            Py_XDECREF(str);
+        if (!compiler_nameop(c, c->id_objs[id___name__], Load)) {
             compiler_exit_scope(c);
             return 0;
         }
-        Py_DECREF(str);
         /* ... and store it as __module__ */
-        str = PyUnicode_InternFromString("__module__");
-        if (!str || !compiler_nameop(c, str, Store)) {
-            Py_XDECREF(str);
+        if (!compiler_nameop(c, c->id_objs[id___module__], Store)) {
             compiler_exit_scope(c);
             return 0;
         }
-        Py_DECREF(str);
         assert(c->u->u_qualname);
         ADDOP_O(c, LOAD_CONST, c->u->u_qualname, consts);
-        str = PyUnicode_InternFromString("__qualname__");
-        if (!str || !compiler_nameop(c, str, Store)) {
-            Py_XDECREF(str);
+        if (!compiler_nameop(c, c->id_objs[id___qualname__], Store)) {
             compiler_exit_scope(c);
             return 0;
         }
-        Py_DECREF(str);
         /* compile the body proper */
         if (!compiler_body(c, s->v.ClassDef.body)) {
             compiler_exit_scope(c);
@@ -1972,13 +1984,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
-            str = PyUnicode_InternFromString("__class__");
-            if (str == NULL) {
-                compiler_exit_scope(c);
-                return 0;
-            }
-            i = compiler_lookup_arg(c->u->u_cellvars, str);
-            Py_DECREF(str);
+            i = compiler_lookup_arg(c->u->u_cellvars, c->id_objs[id___class__]);
             if (i < 0) {
                 compiler_exit_scope(c);
                 return 0;
@@ -1987,13 +1993,10 @@ compiler_class(struct compiler *c, stmt_ty s)
 
             ADDOP_I(c, LOAD_CLOSURE, i);
             ADDOP(c, DUP_TOP);
-            str = PyUnicode_InternFromString("__classcell__");
-            if (!str || !compiler_nameop(c, str, Store)) {
-                Py_XDECREF(str);
+            if (!compiler_nameop(c, c->id_objs[id___classcell__], Store)) {
                 compiler_exit_scope(c);
                 return 0;
             }
-            Py_DECREF(str);
         }
         else {
             /* No methods referenced __class__, so just return None */
@@ -2188,7 +2191,6 @@ compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
     PyObject *qualname;
-    identifier name;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
@@ -2198,15 +2200,10 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    name = PyUnicode_InternFromString("<lambda>");
-    if (!name)
-        return 0;
-    if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
+    if (!compiler_enter_scope(c, c->id_objs[id_lambda], COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
-        Py_DECREF(name);
         return 0;
     }
-    Py_DECREF(name);
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
@@ -2352,12 +2349,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     compiler_use_next_block(c, except);
     ADDOP(c, DUP_TOP);
-    PyObject *stop_aiter_error = PyUnicode_InternFromString("StopAsyncIteration");
-    if (stop_aiter_error == NULL) {
-        return 0;
-    }
-    ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
-    Py_DECREF(stop_aiter_error);
+    ADDOP_O(c, LOAD_GLOBAL, c->id_objs[id_StopAsyncIteration], names);
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
     ADDOP_JABS(c, POP_JUMP_IF_TRUE, try_cleanup);
     ADDOP(c, END_FINALLY);
@@ -2815,11 +2807,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
-        PyObject* empty_string = PyUnicode_InternFromString("");
-        if (!empty_string)
-            return 0;
-        ADDOP_NAME(c, IMPORT_NAME, empty_string, names);
-        Py_DECREF(empty_string);
+        ADDOP_NAME(c, IMPORT_NAME, c->id_objs[id_empty], names);
     }
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
@@ -2872,11 +2860,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return 0;
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
-    PyObject* assertion_error = PyUnicode_InternFromString("AssertionError");
-    if (assertion_error == NULL)
-        return 0;
-    ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
-    Py_DECREF(assertion_error);
+    ADDOP_O(c, LOAD_GLOBAL, c->id_objs[id_AssertionError], names);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, CALL_FUNCTION, 1);
@@ -3897,12 +3881,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     compiler_use_next_block(c, except);
     ADDOP(c, DUP_TOP);
     {
-        PyObject *stop_aiter_error = PyUnicode_InternFromString("StopAsyncIteration");
-        if (stop_aiter_error == NULL) {
-            return 0;
-        }
-        ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
-        Py_DECREF(stop_aiter_error);
+        ADDOP_O(c, LOAD_GLOBAL, c->id_objs[id_StopAsyncIteration], names);
     }
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
     ADDOP_JABS(c, POP_JUMP_IF_TRUE, try_cleanup);
@@ -4065,66 +4044,38 @@ error:
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    int res;
-    identifier name;
-    name = PyUnicode_InternFromString("<genexpr>");
-    if (!name)
-        return 0;
     assert(e->kind == GeneratorExp_kind);
-    res = compiler_comprehension(c, e, COMP_GENEXP, name,
+    return compiler_comprehension(c, e, COMP_GENEXP, c->id_objs[id_genexpr],
                                   e->v.GeneratorExp.generators,
                                   e->v.GeneratorExp.elt, NULL);
-    Py_DECREF(name);
-    return res;
 }
 
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    int res;
-    identifier name;
-    name = PyUnicode_InternFromString("<listcomp>");
-    if (!name)
-        return 0;
     assert(e->kind == ListComp_kind);
-    res = compiler_comprehension(c, e, COMP_LISTCOMP, name,
+    return compiler_comprehension(c, e, COMP_LISTCOMP, c->id_objs[id_listcomp],
                                   e->v.ListComp.generators,
                                   e->v.ListComp.elt, NULL);
-    Py_DECREF(name);
-    return res;
 }
 
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    int res;
-    identifier name;
-    name = PyUnicode_InternFromString("<setcomp>");
-    if (!name)
-        return 0;
     assert(e->kind == SetComp_kind);
-    res = compiler_comprehension(c, e, COMP_SETCOMP, name,
+    return compiler_comprehension(c, e, COMP_SETCOMP, c->id_objs[id_setcomp],
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
-    Py_DECREF(name);
-    return res;
 }
 
 
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    int res;
-    identifier name;
-    name = PyUnicode_InternFromString("<dictcomp>");
-    if (!name)
-        return 0;
     assert(e->kind == DictComp_kind);
-    res = compiler_comprehension(c, e, COMP_DICTCOMP, name,
+    return compiler_comprehension(c, e, COMP_DICTCOMP, c->id_objs[id_dictcomp],
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
-    Py_DECREF(name);
-    return res;
 }
 
 
@@ -4953,7 +4904,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             else {
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
-            ADDOP_NAME(c, LOAD_NAME, c->__annotations__, names);
+            ADDOP_NAME(c, LOAD_NAME, c->id_objs[id___annotations__], names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             if (!mangled) {
                 return 0;
