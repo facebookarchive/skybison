@@ -6308,6 +6308,26 @@ class InstanceProxyTests(unittest.TestCase):
             "'__init__' requires a 'instance' object but received a 'int'",
         )
 
+    def test_copy_with_empty_instance_returns_empty_dict(self):
+        class C:
+            pass
+
+        result = C().__dict__.copy()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, {})
+
+    def test_copy_returns_dict_with_attributes(self):
+        class C:
+            pass
+
+        instance = C()
+        instance.a = 1
+        instance.b = 2
+        result = instance.__dict__.copy()
+        self.assertIsInstance(result, dict)
+        self.assertIsNot(result, instance.__dict__)
+        self.assertEqual(result, {"a": 1, "b": 2})
+
     def test_get_with_extant_key_returns_value(self):
         class C:
             pass
@@ -7036,6 +7056,25 @@ class IsInstanceTests(unittest.TestCase):
         with self.assertRaises(AttributeError) as context:
             isinstance(2, A)
         self.assertEqual(str(context.exception), "failed")
+
+    def test_dunder_dict_copy_with_empty_instance_returns_empty_dict(self):
+        class C:
+            pass
+
+        result = C().__dict__.copy()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, {})
+
+    def test_dunder_dict_copy_returns_dict_with_attributes(self):
+        class C:
+            pass
+
+        instance = C()
+        instance.a = 1
+        instance.b = 2
+        result = instance.__dict__.copy()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, {"a": 1, "b": 2})
 
 
 class IsSubclassTests(unittest.TestCase):

@@ -3799,6 +3799,11 @@ class instance_proxy:
         for key in _object_keys(instance):
             _instance_delattr(instance, key)
 
+    def copy(self):
+        instance = self._instance
+        _instance_guard(instance)
+        return {key: _instance_getattr(instance, key) for key in _object_keys(instance)}
+
     def update(self, d):
         instance = self._instance
         _instance_guard(instance)
