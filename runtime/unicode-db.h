@@ -4,26 +4,20 @@
 #include <cstdint>
 
 #include "globals.h"
+#include "unicode.h"
 
 namespace py {
 
 static const int kMaxNameLength = 256;
 
-static const int32_t kAliasesStart = 0xf0000;
-static const int32_t kAliasesEnd = 0xf01d4;
-static const int32_t kNamedSequencesStart = 0xf0200;
-static const int32_t kNamedSequencesEnd = 0xf03ba;
-
-static const int32_t kHangulSyllableStart = 0xac00;
-static const int32_t kHangulLeadingStart = 0x1100;
-static const int32_t kHangulVowelStart = 0x1161;
-static const int32_t kHangulTrailingStart = 0x11a7;
-
-static const word kHangulLeadingCount = 19;
-static const word kHangulVowelCount = 21;
-static const word kHangulTrailingCount = 28;
-static const word kHangulCodaCount = kHangulVowelCount * kHangulTrailingCount;
-static const word kHangulSyllableCount = kHangulLeadingCount * kHangulCodaCount;
+static_assert(Unicode::kAliasStart == 0xf0000,
+              "Unicode aliases start at unexpected code point");
+static_assert(Unicode::kAliasCount == 468,
+              "Unexpected number of Unicode aliases");
+static_assert(Unicode::kNamedSequenceStart == 0xf0200,
+              "Unicode named sequences start at unexpected code point");
+static_assert(Unicode::kNamedSequenceCount == 442,
+              "Unexpected number of Unicode named sequences");
 
 enum : int32_t {
   kAlphaMask = 0x1,

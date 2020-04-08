@@ -50541,7 +50541,7 @@ struct HangulJamo {
   const byte name[3];
 };
 
-static const HangulJamo kHangulLeading[] = {
+static const HangulJamo kHangulLeads[] = {
     {1, {'G'}},      {2, {'G', 'G'}}, {1, {'N'}},      {1, {'D'}},
     {2, {'D', 'D'}}, {1, {'R'}},      {1, {'M'}},      {1, {'B'}},
     {2, {'B', 'B'}}, {1, {'S'}},      {2, {'S', 'S'}}, {0},
@@ -50559,7 +50559,7 @@ static const HangulJamo kHangulVowels[] = {
     {2, {'E', 'U'}},      {2, {'Y', 'I'}},      {1, {'I'}},
 };
 
-static const HangulJamo kHangulTrailing[] = {
+static const HangulJamo kHangulTrails[] = {
     {0},
     {1, {'G'}},
     {2, {'G', 'G'}},
@@ -50590,12 +50590,12 @@ static const HangulJamo kHangulTrailing[] = {
     {1, {'H'}},
 };
 
-static_assert(kHangulLeadingCount == ARRAYSIZE(kHangulLeading),
-              "mismatch in number of Hangul syllable onsets");
-static_assert(kHangulVowelCount == ARRAYSIZE(kHangulVowels),
-              "mismatch in number of Hangul vowels");
-static_assert(kHangulTrailingCount == ARRAYSIZE(kHangulTrailing),
-              "mismatch in number of Hangul syllable codas");
+static_assert(ARRAYSIZE(kHangulLeads) == Unicode::kHangulLeadCount,
+              "mismatch in number of Hangul lead jamo");
+static_assert(ARRAYSIZE(kHangulVowels) == Unicode::kHangulVowelCount,
+              "mismatch in number of Hangul vowel jamo");
+static_assert(ARRAYSIZE(kHangulTrails) == Unicode::kHangulTrailCount,
+              "mismatch in number of Hangul trail jamo");
 
 static int32_t findHangulJamo(const byte* str, word size,
                               const HangulJamo array[], word count) {
@@ -50614,29 +50614,30 @@ static int32_t findHangulJamo(const byte* str, word size,
 
 static int32_t findHangulSyllable(const byte* name, word size) {
   word pos = 16;
-  word leading = findHangulJamo(name + pos, size - pos, kHangulLeading,
-                                kHangulLeadingCount);
-  if (leading == -1) {
+  word lead = findHangulJamo(name + pos, size - pos, kHangulLeads,
+                             Unicode::kHangulLeadCount);
+  if (lead == -1) {
     return -1;
   }
 
-  pos += kHangulLeading[leading].length;
+  pos += kHangulLeads[lead].length;
   word vowel = findHangulJamo(name + pos, size - pos, kHangulVowels,
-                              kHangulVowelCount);
+                              Unicode::kHangulVowelCount);
   if (vowel == -1) {
     return -1;
   }
 
   pos += kHangulVowels[vowel].length;
-  word trailing = findHangulJamo(name + pos, size - pos, kHangulTrailing,
-                                 kHangulTrailingCount);
-  if (trailing == -1 || pos + kHangulTrailing[trailing].length != size) {
+  word trail = findHangulJamo(name + pos, size - pos, kHangulTrails,
+                              Unicode::kHangulTrailCount);
+  if (trail == -1 || pos + kHangulTrails[trail].length != size) {
     return -1;
   }
 
-  return kHangulSyllableStart +
-         (leading * kHangulVowelCount + vowel) * kHangulTrailingCount +
-         trailing;
+  return Unicode::kHangulSyllableStart +
+         (lead * Unicode::kHangulVowelCount + vowel) *
+             Unicode::kHangulTrailCount +
+         trail;
 }
 
 static bool isUnifiedIdeograph(int32_t code_point) {
@@ -50732,7 +50733,7 @@ static int32_t checkAliasAndNamedSequence(int32_t code_point) {
     return -1;
   }
   if (Unicode::isAlias(code_point)) {
-    return kNameAliases[code_point - kAliasesStart];
+    return kNameAliases[code_point - Unicode::kAliasStart];
   }
   return code_point;
 }
@@ -50743,7 +50744,7 @@ int32_t codePointFromName(const byte* name, word size) {
 
 static int32_t checkAlias(int32_t code_point) {
   if (Unicode::isAlias(code_point)) {
-    return kNameAliases[code_point - kAliasesStart];
+    return kNameAliases[code_point - Unicode::kAliasStart];
   }
   return code_point;
 }
@@ -50764,20 +50765,20 @@ bool nameFromCodePoint(int32_t code_point, byte* buffer, word size) {
       return false;  // worst case: HANGUL SYLLABLE <10 chars>
     }
 
-    int32_t offset = code_point - kHangulSyllableStart;
-    HangulJamo leading = kHangulLeading[offset / kHangulCodaCount];
-    HangulJamo vowel =
-        kHangulVowels[(offset % kHangulCodaCount) / kHangulTrailingCount];
-    HangulJamo trailing = kHangulTrailing[offset % kHangulTrailingCount];
+    int32_t offset = code_point - Unicode::kHangulSyllableStart;
+    HangulJamo lead = kHangulLeads[offset / Unicode::kHangulCodaCount];
+    HangulJamo vowel = kHangulVowels[(offset % Unicode::kHangulCodaCount) /
+                                     Unicode::kHangulTrailCount];
+    HangulJamo trail = kHangulTrails[offset % Unicode::kHangulTrailCount];
 
     std::memcpy(buffer, "HANGUL SYLLABLE ", 16);
     buffer += 16;
-    std::memcpy(buffer, leading.name, leading.length);
-    buffer += leading.length;
+    std::memcpy(buffer, lead.name, lead.length);
+    buffer += lead.length;
     std::memcpy(buffer, vowel.name, vowel.length);
     buffer += vowel.length;
-    std::memcpy(buffer, trailing.name, trailing.length);
-    buffer[trailing.length] = '\0';
+    std::memcpy(buffer, trail.name, trail.length);
+    buffer[trail.length] = '\0';
     return true;
   }
 

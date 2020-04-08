@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "globals.h"
-#include "unicode-db.h"
 #include "utils.h"
 
 namespace py {
@@ -58,11 +57,30 @@ class UTF8 {
 // Functions for Unicode code points.
 class Unicode {
  public:
+  // Constants
+  static const int32_t kAliasStart = 0xf0000;
+  static const int32_t kHangulSyllableStart = 0xac00;
+  static const int32_t kHangulLeadStart = 0x1100;
+  static const int32_t kHangulVowelStart = 0x1161;
+  static const int32_t kHangulTrailStart = 0x11a7;
+  static const int32_t kNamedSequenceStart = 0xf0200;
+
+  static const int kAliasCount = 468;
+  static const int kHangulLeadCount = 19;
+  static const int kHangulVowelCount = 21;
+  static const int kHangulTrailCount = 28;
+  static const int kHangulCodaCount = kHangulVowelCount * kHangulTrailCount;
+  static const int kHangulSyllableCount = kHangulLeadCount * kHangulCodaCount;
+  static const int kNamedSequenceCount = 442;
+
   // Predicates
   static bool isASCII(int32_t code_point);
   static bool isAlias(int32_t code_point);
   static bool isAlpha(int32_t code_point);
+  static bool isHangulLead(int32_t code_point);
   static bool isHangulSyllable(int32_t code_point);
+  static bool isHangulTrail(int32_t code_point);
+  static bool isHangulVowel(int32_t code_point);
   static bool isLower(int32_t code_point);
   static bool isNamedSequence(int32_t code_point);
   static bool isPrintable(int32_t code_point);
@@ -165,7 +183,8 @@ inline bool Unicode::isASCII(int32_t code_point) {
 }
 
 inline bool Unicode::isAlias(int32_t code_point) {
-  return (kAliasesStart <= code_point) && (code_point < kAliasesEnd);
+  return (kAliasStart <= code_point) &&
+         (code_point < kAliasStart + kAliasCount);
 }
 
 inline bool Unicode::isAlpha(int32_t code_point) {
@@ -176,9 +195,24 @@ inline bool Unicode::isAlpha(int32_t code_point) {
   UNIMPLEMENTED("non-ASCII characters");
 }
 
+inline bool Unicode::isHangulLead(int32_t code_point) {
+  return (kHangulLeadStart <= code_point) &&
+         (code_point < kHangulLeadStart + kHangulLeadCount);
+}
+
 inline bool Unicode::isHangulSyllable(int32_t code_point) {
   return (kHangulSyllableStart <= code_point) &&
          (code_point < kHangulSyllableStart + kHangulSyllableCount);
+}
+
+inline bool Unicode::isHangulTrail(int32_t code_point) {
+  return (kHangulTrailStart <= code_point) &&
+         (code_point < kHangulTrailStart + kHangulTrailCount);
+}
+
+inline bool Unicode::isHangulVowel(int32_t code_point) {
+  return (kHangulVowelStart <= code_point) &&
+         (code_point < kHangulVowelStart + kHangulVowelCount);
 }
 
 inline bool Unicode::isLower(int32_t code_point) {
@@ -189,8 +223,8 @@ inline bool Unicode::isLower(int32_t code_point) {
 }
 
 inline bool Unicode::isNamedSequence(int32_t code_point) {
-  return (kNamedSequencesStart <= code_point) &&
-         (code_point < kNamedSequencesEnd);
+  return (kNamedSequenceStart <= code_point) &&
+         (code_point < kNamedSequenceStart + kNamedSequenceCount);
 }
 
 inline bool Unicode::isPrintable(int32_t code_point) {
