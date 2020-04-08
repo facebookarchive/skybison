@@ -1865,11 +1865,51 @@ static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
   return *instance;
 }
 
-RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* /* thread */,
-                                                     Frame* /* frame */,
-                                                     word /* nargs */) {
-  // TODO(T57022841): follow full CPython conversion for bytes-like objects
-  UNIMPLEMENTED("float.__new__ from byteslike");
+static RawObject floatNewFromBuffer(Thread* thread, const Type& type,
+                                    const char* str, word length) {
+  // TODO(T57022841): follow full CPython conversion for strings
+  char* str_end = nullptr;
+  double result = std::strtod(str, &str_end);
+  // Overflow, return infinity or negative infinity.
+  Runtime* runtime = thread->runtime();
+  if (result == HUGE_VAL) {
+    return floatNew(thread, type,
+                    runtime->newFloat(std::numeric_limits<double>::infinity()));
+  }
+  if (result == -HUGE_VAL) {
+    return floatNew(
+        thread, type,
+        runtime->newFloat(-std::numeric_limits<double>::infinity()));
+  }
+  // Conversion was incomplete; the string was not a valid float.
+  if (length == 0 || str_end - str != length) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "could not convert string to float");
+  }
+  return floatNew(thread, type, runtime->newFloat(result));
+}
+
+RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Object arg(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  Bytes underlying(&scope, Bytes::empty());
+  word length;
+  if (runtime->isInstanceOfBytes(*arg)) {
+    underlying = bytesUnderlying(*arg);
+    length = underlying.length();
+  } else {
+    // TODO(T57022841): follow full CPython conversion for bytes-like objects
+    UNIMPLEMENTED("float.__new__ from byteslike");
+  }
+  unique_c_ptr<byte> c_str(reinterpret_cast<byte*>(std::malloc(length + 1)));
+  c_str.get()[length] = '\0';
+  underlying.copyTo(c_str.get(), length);
+  return floatNewFromBuffer(thread, type, reinterpret_cast<char*>(c_str.get()),
+                            length);
 }
 
 RawObject FUNC(_builtins, _float_new_from_float)(Thread* thread, Frame* frame,
@@ -1887,31 +1927,9 @@ RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
   Type type(&scope, args.get(0));
   Object arg(&scope, args.get(1));
   Str str(&scope, strUnderlying(*arg));
-
-  // TODO(T57022841): follow full CPython conversion for strings
-  char* str_end = nullptr;
   unique_c_ptr<char> c_str(str.toCStr());
-  double result = std::strtod(c_str.get(), &str_end);
-
-  // Overflow, return infinity or negative infinity.
-  if (result == HUGE_VAL) {
-    return floatNew(
-        thread, type,
-        thread->runtime()->newFloat(std::numeric_limits<double>::infinity()));
-  }
-  if (result == -HUGE_VAL) {
-    return floatNew(
-        thread, type,
-        thread->runtime()->newFloat(-std::numeric_limits<double>::infinity()));
-  }
-
-  // Conversion was incomplete; the string was not a valid float.
-  word expected_length = str.charLength();
-  if (expected_length == 0 || str_end - c_str.get() != expected_length) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "could not convert string to float");
-  }
-  return floatNew(thread, type, thread->runtime()->newFloat(result));
+  word length = str.charLength();
+  return floatNewFromBuffer(thread, type, c_str.get(), length);
 }
 
 RawObject FUNC(_builtins, _float_signbit)(Thread*, Frame* frame, word nargs) {

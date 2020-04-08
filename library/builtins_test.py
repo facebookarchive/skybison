@@ -5030,6 +5030,19 @@ class FloatTests(unittest.TestCase):
     def test_dunder_new_with_huge_negative_str_returns_negative_inf(self):
         self.assertEqual(float("-1.18973e+4932"), float("-inf"))
 
+    def test_dunder_new_with_invalid_bytes_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            float(b"1880.3a01")
+
+    def test_dunder_new_with_bytes_returns_float(self):
+        self.assertEqual(float(b"1.0"), 1.0)
+
+    def test_dunder_new_with_huge_positive_bytes_returns_inf(self):
+        self.assertEqual(float(b"1.18973e+4932"), float("inf"))
+
+    def test_dunder_new_with_huge_negative_bytes_returns_negative_inf(self):
+        self.assertEqual(float(b"-1.18973e+4932"), float("-inf"))
+
     def test_dunder_new_with_float_subclass_calls_dunder_float(self):
         class C(float):
             def __float__(self):
