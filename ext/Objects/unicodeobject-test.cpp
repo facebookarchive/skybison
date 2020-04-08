@@ -2404,6 +2404,133 @@ TEST_F(UnicodeExtensionApiTest, IsIdentifierWithInvalidIdentifierReturnsFalse) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithEmptyStrReturnsZero) {
+  const wchar_t* str = L"";
+  char* result = nullptr;
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
+                                /*reason=*/nullptr, /*raw_malloc=*/0,
+                                /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, "");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithASCIIStrReturnsZero) {
+  const wchar_t* str = L"hello";
+  char* result = nullptr;
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
+                                /*reason=*/nullptr, /*raw_malloc=*/0,
+                                /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, "hello");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithRawMallocReturnsZero) {
+  const wchar_t* str = L"hello";
+  char* result = nullptr;
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
+                                /*reason=*/nullptr, /*raw_malloc=*/1,
+                                /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, "hello");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithLatin1ReturnsZero) {
+  const wchar_t* str = L"cr\xe8me br\xfbl\xe9e";
+  char* result = nullptr;
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
+                                /*reason=*/nullptr, /*raw_malloc=*/0,
+                                /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, u8"cr\xC3\xA8me br\xC3\xBBl\xE0\xBA\x9E");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeUTF8ExWithoutSurrogateEscapeReturnsNegativeTwo) {
+  const wchar_t* str = L"\x0000dc80";
+  char* result = reinterpret_cast<char*>(0xdeadbeef);
+  EXPECT_EQ(-2, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
+                                 /*reason=*/nullptr, /*raw_malloc=*/0,
+                                 /*surrogateescape=*/0));
+  EXPECT_EQ(result, reinterpret_cast<char*>(0xdeadbeef));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeUTF8ExWithoutSurrogateEscapeAndErrorPosSetsErrorPos) {
+  const wchar_t* str = L"foo\x0000dc80zip";
+  char* result = reinterpret_cast<char*>(0xdeadbeef);
+  size_t error_pos = 1337;
+  EXPECT_EQ(-2, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
+                                 /*reason=*/nullptr, /*raw_malloc=*/0,
+                                 /*surrogateescape=*/0));
+  EXPECT_EQ(result, reinterpret_cast<char*>(0xdeadbeef));
+  EXPECT_EQ(error_pos, size_t{3});
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeUTF8ExWithoutSurrogateEscapeAndReasonSetsReason) {
+  const wchar_t* str = L"\x0000dc80";
+  char* result = reinterpret_cast<char*>(0xdeadbeef);
+  const char* reason = nullptr;
+  EXPECT_EQ(-2, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
+                                 /*reason=*/&reason, /*raw_malloc=*/0,
+                                 /*surrogateescape=*/0));
+  EXPECT_EQ(result, reinterpret_cast<char*>(0xdeadbeef));
+  ASSERT_NE(reason, nullptr);
+  EXPECT_STREQ(reason, "encoding error");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeUTF8ExWithSurrogateEscapeEscapesSurrogate) {
+  const wchar_t* str = L"\x0000dc80";
+  char* result = nullptr;
+  size_t error_pos = 1337;
+  const char* reason = const_cast<const char*>(reinterpret_cast<char*>(0x1337));
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
+                                /*reason=*/&reason, /*raw_malloc=*/0,
+                                /*surrogateescape=*/1));
+  EXPECT_EQ(error_pos, size_t{1337});
+  EXPECT_EQ(reason, reinterpret_cast<char*>(0x1337));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, u8"\x80");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeUTF8ExWithThreeByteCodePointEncodesCodePoint) {
+  const wchar_t* str = L"\x0000efff";
+  char* result = nullptr;
+  size_t error_pos = 1337;
+  const char* reason = const_cast<const char*>(reinterpret_cast<char*>(0x1337));
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
+                                /*reason=*/nullptr, /*raw_malloc=*/0,
+                                /*surrogateescape=*/1));
+  EXPECT_EQ(error_pos, size_t{1337});
+  EXPECT_EQ(reason, reinterpret_cast<char*>(0x1337));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, u8"\xee\xbf\xbf");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeUTF8ExWithFourByteCodePointEncodesCodePoint) {
+  const wchar_t* str = L"\x10000";
+  char* result = nullptr;
+  size_t error_pos = 1337;
+  const char* reason = const_cast<const char*>(reinterpret_cast<char*>(0x1337));
+  EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
+                                /*reason=*/nullptr, /*raw_malloc=*/0,
+                                /*surrogateescape=*/1));
+  EXPECT_EQ(error_pos, size_t{1337});
+  EXPECT_EQ(reason, reinterpret_cast<char*>(0x1337));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, u8"\xf0\x90\x80\x80");
+  PyMem_Free(result);
+}
+
 // TODO(T57404483): Remove this ifdef after targeting CPython 3.7
 #if defined(__APPLE__) || defined(__ANDROID__)
 

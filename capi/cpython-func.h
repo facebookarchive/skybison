@@ -1255,6 +1255,9 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject*);
 PyAPI_FUNC(wchar_t*) _Py_DecodeLocaleEx(const char*, size_t*, int);
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 PyAPI_FUNC(char*) _Py_EncodeLocaleEx(const wchar_t*, size_t*, int);
+PyAPI_FUNC(int)
+    _Py_EncodeUTF8Ex(const wchar_t* text, char** str, size_t* error_pos,
+                     const char** reason, int raw_malloc, int surrogateescape);
 PyAPI_FUNC(void) _Py_FreeCharPArray(char* const array[]);
 PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(PyObject**, PyObject**, const char**);
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);

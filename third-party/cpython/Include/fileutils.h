@@ -15,6 +15,14 @@ PyAPI_FUNC(char*) Py_EncodeLocale(
     size_t *error_pos);
 #endif
 
+PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
+    const wchar_t *text,
+    char **str,
+    size_t *error_pos,
+    const char **reason,
+    int raw_malloc,
+    int surrogateescape);
+
 #ifndef Py_LIMITED_API
 
 PyAPI_FUNC(wchar_t *) _Py_DecodeLocaleEx(
