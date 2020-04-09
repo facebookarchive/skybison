@@ -43,7 +43,7 @@ class UCD:
         _unimplemented()
 
     def normalize(self, form, unistr):
-        _unimplemented()
+        _builtin()
 
     def numeric(self, chr, default=_Unbound):
         _unimplemented()

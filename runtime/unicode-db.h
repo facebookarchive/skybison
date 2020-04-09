@@ -48,6 +48,15 @@ enum : int32_t {
   kExtendedCaseMask = 0x4000,
 };
 
+struct UnicodeChangeRecord {
+  const byte bidirectional;
+  const byte category;
+  const byte decimal;
+  const byte east_asian_width;
+  const byte mirrored;
+  const double numeric;
+};
+
 struct UnicodeDatabaseRecord {
   const byte bidirectional;
   const byte category;
@@ -94,6 +103,11 @@ int32_t findNFCLast(int32_t code_point);
 // Returns true if the name was written successfully, false otherwise.
 bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
 
+// Returns the normalization of the code point in Unicode 3.2.0, if it differs
+// from the current version. If the normalization is unchanged, returns -1.
+int32_t normalizeOld(int32_t code_point);
+
+const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 

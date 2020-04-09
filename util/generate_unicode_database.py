@@ -25,6 +25,7 @@ NUM_CODE_POINTS = sys.maxunicode + 1
 CODE_POINTS = range(NUM_CODE_POINTS)
 
 UNIDATA_VERSION = "11.0.0"
+OLD_VERSION = "3.2.0"
 
 # UCD files
 CASE_FOLDING = "CaseFolding.txt"
@@ -50,8 +51,6 @@ NAMED_SEQUENCES_START = 0xF0200
 
 # Longest decomposition in Unicode {UNIDATA_VERSION}: U+FDFA
 MAX_DECOMPOSITION = 18
-
-old_versions = ["3.2.0"]
 
 CATEGORY_NAMES = [
     "Cn",
@@ -142,7 +141,7 @@ def open_data(filename, version):
 
     path = os.path.join(ucd_dir, filename)
     if not os.path.exists(path):
-        if version == "3.2.0":
+        if version == OLD_VERSION:
             # irregular url structure
             root, path = os.path.splitext(filename)
             url = f"http://www.unicode.org/Public/3.2-Update/{root}-{version}{path}"
@@ -206,9 +205,10 @@ class UnicodeData:
 
         self.aliases = []
         self.case_folding = {}
-        self.changed = []
+        self.change_records = []
         self.exclusions = set()
         self.named_sequences = []
+        self.normalization_changes = []
         self.special_casing = {}
         self.table = [None] * NUM_CODE_POINTS
 
@@ -247,7 +247,7 @@ class UnicodeData:
 
         # check for name aliases and named sequences, see #12753
         # aliases and named sequences are not in 3.2.0
-        if version != "3.2.0":
+        if version != OLD_VERSION:
             self.aliases = []
             # store aliases in the Private Use Area 15, in range U+F0000..U+F00FF,
             # in order to take advantage of the compression and lookup
@@ -384,8 +384,8 @@ class UnicodeData:
 
         with open_data(UNIHAN, version) as file:
             zip = zipfile.ZipFile(file)
-            if version == "3.2.0":
-                data = zip.open("Unihan-3.2.0.txt").read()
+            if version == OLD_VERSION:
+                data = zip.open(f"Unihan-{OLD_VERSION}.txt").read()
             else:
                 data = zip.open("Unihan_NumericValues.txt").read()
         for line in data.decode("utf-8").splitlines():
@@ -417,7 +417,7 @@ class UnicodeData:
                 upper = [int(char, 16) for char in data[3].split()]
                 sc[c] = (lower, title, upper)
         cf = self.case_folding = {}
-        if version != "3.2.0":
+        if version != OLD_VERSION:
             with open_data(CASE_FOLDING, version) as file:
                 for s in file:
                     s = s[:-1].split("#", 1)[0]
@@ -441,11 +441,11 @@ class UnicodeData:
         bidir_changes = [0xFF] * NUM_CODE_POINTS
         category_changes = [0xFF] * NUM_CODE_POINTS
         decimal_changes = [0xFF] * NUM_CODE_POINTS
-        mirrored_changes = [0xFF] * NUM_CODE_POINTS
         east_asian_width_changes = [0xFF] * NUM_CODE_POINTS
+        mirrored_changes = [0xFF] * NUM_CODE_POINTS
         # In numeric data, 0 means "no change",
         # -1 means "did not have a numeric value
-        numeric_changes = [0] * NUM_CODE_POINTS
+        numeric_changes = [0.0] * NUM_CODE_POINTS
         # normalization_changes is a list of key-value pairs
         normalization_changes = []
         for char in CODE_POINTS:
@@ -483,15 +483,15 @@ class UnicodeData:
                         elif k == 8:
                             # Since 0 encodes "no change", the old value is better not 0
                             if not value:
-                                numeric_changes[char] = -1
+                                numeric_changes[char] = -1.0
                             else:
                                 numeric_changes[char] = float(value)
                                 assert numeric_changes[char] not in (0, -1)
                         elif k == 9:
                             if value == "Y":
-                                mirrored_changes[char] = "1"
+                                mirrored_changes[char] = 1
                             else:
-                                mirrored_changes[char] = "0"
+                                mirrored_changes[char] = 0
                         elif k == 11:
                             # change to ISO comment, ignore
                             pass
@@ -524,22 +524,16 @@ class UnicodeData:
                             raise Difference(
                                 hex(char), k, old.table[char], self.table[char]
                             )
-        self.changed.append(
-            (
-                old.version,
-                list(
-                    zip(
-                        bidir_changes,
-                        category_changes,
-                        decimal_changes,
-                        mirrored_changes,
-                        east_asian_width_changes,
-                        numeric_changes,
-                    )
-                ),
-                normalization_changes,
-            )
+
+        self.change_records = zip(
+            bidir_changes,
+            category_changes,
+            decimal_changes,
+            east_asian_width_changes,
+            mirrored_changes,
+            numeric_changes,
         )
+        self.normalization_changes = normalization_changes
 
 
 ########################################################################################
@@ -666,6 +660,21 @@ class Words:
 
 ########################################################################################
 # Classes for database tables
+
+
+@dataclass(frozen=True)
+class ChangeRecord:
+    bidirectional: int
+    category: int
+    decimal: int
+    east_asian_width: int
+    mirrored: int
+    numeric: float
+
+    def __str__(self):
+        return f"\
+{{{self.bidirectional:#04x}, {self.category:#04x}, {self.decimal:#04x}, \
+{self.east_asian_width:#04x}, {self.mirrored:#04x}, {self.numeric}}}"
 
 
 @dataclass(frozen=True)
@@ -962,6 +971,15 @@ enum : int32_t {{
   kExtendedCaseMask = {EXTENDED_CASE_MASK:#x},
 }};
 
+struct UnicodeChangeRecord {{
+  const byte bidirectional;
+  const byte category;
+  const byte decimal;
+  const byte east_asian_width;
+  const byte mirrored;
+  const double numeric;
+}};
+
 struct UnicodeDatabaseRecord {{
   const byte bidirectional;
   const byte category;
@@ -1008,6 +1026,11 @@ int32_t findNFCLast(int32_t code_point);
 // Returns true if the name was written successfully, false otherwise.
 bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
 
+// Returns the normalization of the code point in Unicode {OLD_VERSION}, if it differs
+// from the current version. If the normalization is unchanged, returns -1.
+int32_t normalizeOld(int32_t code_point);
+
+const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
@@ -1479,6 +1502,59 @@ static const int32_t kTypeIndexMask = (int32_t{{1}} << kTypeIndexShift) - 1;
     CodePointArray("kExtendedCase", extended_cases).dump(db, trace)
 
 
+def write_change_data(unicode, db, trace):
+    dummy = ChangeRecord(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0.0)
+    records = [dummy]
+    cache = {dummy: 0}
+    index = [0] * NUM_CODE_POINTS
+
+    # Generate delta tables for 3.2
+    for char, record in enumerate(unicode.change_records):
+        record = ChangeRecord(*record)
+        if record in cache:
+            index[char] = cache[record]
+        else:
+            index[char] = cache[record] = len(records)
+            records.append(record)
+
+    StructArray(
+        "UnicodeChangeRecord",
+        "kChangeRecords",
+        records,
+        f"deltas from Unicode {OLD_VERSION} to the current version",
+    ).dump(db, trace)
+
+    index1, index2, shift = splitbins(index, trace)
+    db.write(
+        f"""
+static const int kChangeIndexShift = {shift};
+static const int kChangeIndexMask = (1 << kChangeIndexShift) - 1;
+"""
+    )
+    UIntArray("kChangeIndex1", index1).dump(db, trace)
+    UIntArray("kChangeIndex2", index2).dump(db, trace)
+
+    db.write(
+        """
+int32_t normalizeOld(int32_t code_point) {
+  switch (code_point) {"""
+    )
+    for k, v in unicode.normalization_changes:
+        db.write(
+            f"""
+    case {k:#x}:
+      return 0x{v.lower()};"""
+        )
+    db.write(
+        """
+    default:
+      return -1;
+  }
+}
+"""
+    )
+
+
 def write_db_coda(db):
     db.write(
         """
@@ -1835,6 +1911,17 @@ bool nameFromCodePoint(int32_t code_point, byte* buffer, word size) {
   }
 }
 
+const UnicodeChangeRecord* changeRecord(int32_t code_point) {
+  if (code_point > kMaxUnicode) {
+    return &kChangeRecords[0];
+  }
+
+  int index = kChangeIndex1[code_point >> kChangeIndexShift];
+  index <<= kChangeIndexShift;
+  index = kChangeIndex2[index + (code_point & kChangeIndexMask)];
+  return &kChangeRecords[index];
+}
+
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point) {
   if (code_point > kMaxUnicode) {
     return &kDatabaseRecords[0];
@@ -1868,11 +1955,10 @@ def write_db(trace=False):
 
     print(len(list(filter(None, unicode.table))), "characters")
 
-    for version in old_versions:
-        print(f"--- Reading {UNICODE_DATA} v{version} ...")
-        old_unicode = UnicodeData(version, check_cjk=False)
-        print(len(list(filter(None, old_unicode.table))), "characters")
-        unicode.merge(old_unicode)
+    print(f"--- Reading {UNICODE_DATA} v{OLD_VERSION} ...")
+    old_unicode = UnicodeData(OLD_VERSION, check_cjk=False)
+    print(len(list(filter(None, old_unicode.table))), "characters")
+    unicode.merge(old_unicode)
 
     with open(HEADER_PATH, "w") as header:
         write_header(unicode, header)
@@ -1882,6 +1968,7 @@ def write_db(trace=False):
         write_database_records(unicode, db, trace)
         write_name_data(unicode, db, trace)
         write_type_data(unicode, db, trace)
+        write_change_data(unicode, db, trace)
         write_db_coda(db)
 
 

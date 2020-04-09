@@ -10,6 +10,7 @@
 #include "runtime.h"
 #include "symbols.h"
 #include "thread.h"
+#include "type-builtins.h"
 #include "unicode-db.h"
 #include "unicode.h"
 
@@ -240,7 +241,8 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   word src_length = src.charLength();
   runtime->strArrayEnsureCapacity(thread, buffer, src_length);
   for (word i = 0, char_length; i < src_length; i += char_length) {
-    int32_t stack[kMaxDecomposition] = {src.codePointAt(i, &char_length)};
+    int32_t stack[kMaxDecomposition];
+    stack[0] = src.codePointAt(i, &char_length);
     for (word depth = 1; depth > 0;) {
       int32_t code_point = stack[--depth];
       if (Unicode::isHangulSyllable(code_point)) {
@@ -249,6 +251,75 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
       }
 
       if (!decomposeCodePoint(code_point, form, stack, &depth)) {
+        runtime->strArrayAddCodePoint(thread, buffer, code_point);
+      }
+    }
+  }
+
+  sortCanonical(buffer);
+  if (form == NormalizationForm::kNFD || form == NormalizationForm::kNFKD) {
+    return runtime->strFromStrArray(buffer);
+  }
+
+  return compose(thread, buffer);
+}
+
+RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+
+  Object self(&scope, args.get(0));
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type ucd_type(&scope,
+                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
+  if (!typeIsSubclass(self_type, ucd_type)) {
+    return thread->raiseRequiresType(self, ID(UCD));
+  }
+  Object form_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*form_obj)) {
+    return thread->raiseRequiresType(form_obj, ID(str));
+  }
+  Object src_obj(&scope, args.get(2));
+  if (!runtime->isInstanceOfStr(*src_obj)) {
+    return thread->raiseRequiresType(src_obj, ID(str));
+  }
+
+  Str src(&scope, strUnderlying(*src_obj));
+  if (src.charLength() == 0) {
+    return *src_obj;
+  }
+
+  Str form_str(&scope, strUnderlying(*form_obj));
+  NormalizationForm form = getForm(form_str);
+  if (form == NormalizationForm::kInvalid) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "invalid normalization form");
+  }
+
+  // Decomposition
+  StrArray buffer(&scope, runtime->newStrArray());
+  word src_length = src.charLength();
+  runtime->strArrayEnsureCapacity(thread, buffer, src_length);
+  for (word i = 0, char_length; i < src_length; i += char_length) {
+    // longest decomposition in Unicode 3.2: U+FDFA
+    int32_t stack[kMaxDecomposition];
+    stack[0] = src.codePointAt(i, &char_length);
+    for (word depth = 1; depth > 0;) {
+      int32_t code_point = stack[--depth];
+      if (Unicode::isHangulSyllable(code_point)) {
+        decomposeHangul(thread, buffer, code_point);
+        continue;
+      }
+
+      int32_t normalization = normalizeOld(code_point);
+      if (normalization >= 0) {
+        stack[depth++] = normalization;
+        continue;
+      }
+
+      if (changeRecord(code_point)->category == 0 ||
+          !decomposeCodePoint(code_point, form, stack, &depth)) {
         runtime->strArrayAddCodePoint(thread, buffer, code_point);
       }
     }
