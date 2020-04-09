@@ -1351,7 +1351,6 @@ set(
   ${UNFROZEN_LIBRARY_DIR}/encodings/utf_8.py
   ${UNFROZEN_LIBRARY_DIR}/gc.py
   ${UNFROZEN_LIBRARY_DIR}/hashlib.py
-  ${UNFROZEN_LIBRARY_DIR}/inspect.py
   ${UNFROZEN_LIBRARY_DIR}/itertools.py
   ${UNFROZEN_LIBRARY_DIR}/logging/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/logging/config.py
