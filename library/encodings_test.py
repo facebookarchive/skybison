@@ -60,6 +60,14 @@ class EncodingsModuleTest(unittest.TestCase):
         string = reader.readline()
         self.assertEqual(string, "foo")
 
+    def test_idna_to_ascii_and_back_returns_correct_values(self):
+        import encodings.idna
+
+        uni_str = "b\u00fccher"
+        to_ascii = encodings.idna.ToASCII(uni_str)
+        self.assertEqual(to_ascii, b"xn--bcher-kva")
+        self.assertEqual(encodings.idna.ToUnicode(to_ascii), uni_str)
+
 
 if __name__ == "__main__":
     unittest.main()
