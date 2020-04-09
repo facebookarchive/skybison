@@ -8611,6 +8611,14 @@ class MemoryviewTests(unittest.TestCase):
         view = memoryview(b"hello")
         self.assertEqual(view[IndSet()], ord("h"))
 
+    def test_dunder_new_with_bytes_subclass_returns_memoryview(self):
+        class C(bytes):
+            pass
+
+        view = memoryview(C(b"hello"))
+        self.assertIsInstance(view, memoryview)
+        self.assertEqual(view.tolist(), list(b"hello"))
+
     def test_itemsize_returns_size_of_item_chars(self):
         src = b"abcd"
         view = memoryview(src)

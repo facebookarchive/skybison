@@ -589,7 +589,7 @@ RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
 
   Object object(&scope, args.get(1));
   if (runtime->isInstanceOfBytes(*object)) {
-    Bytes bytes(&scope, *object);
+    Bytes bytes(&scope, bytesUnderlying(*object));
     return runtime->newMemoryView(thread, bytes, bytes.length(),
                                   ReadOnly::ReadOnly);
   }
