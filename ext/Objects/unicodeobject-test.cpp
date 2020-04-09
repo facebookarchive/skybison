@@ -2404,6 +2404,71 @@ TEST_F(UnicodeExtensionApiTest, IsIdentifierWithInvalidIdentifierReturnsFalse) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithEmptyStrReturnsZero) {
+  const char* str = "";
+  wchar_t* result = nullptr;
+  EXPECT_EQ(0, _Py_DecodeUTF8Ex(str, /*size=*/0, /*result=*/&result,
+                                /*wlen=*/nullptr,
+                                /*reason=*/nullptr,
+                                /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_STREQ(result, L"");
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrReturnsZero) {
+  const char* str = "hello";
+  wchar_t* result = nullptr;
+  EXPECT_EQ(0,
+            _Py_DecodeUTF8Ex(str, /*size=*/std::strlen(str), /*result=*/&result,
+                             /*wlen=*/nullptr,
+                             /*reason=*/nullptr,
+                             /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(std::wcslen(result), size_t{5});
+  EXPECT_EQ('h', result[0]);
+  EXPECT_EQ('e', result[1]);
+  EXPECT_EQ('l', result[2]);
+  EXPECT_EQ('l', result[3]);
+  EXPECT_EQ('o', result[4]);
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExDecodesUpToSizeBytes) {
+  const char* str = "hello";
+  wchar_t* result = nullptr;
+  EXPECT_EQ(0, _Py_DecodeUTF8Ex(str, /*size=*/3, /*result=*/&result,
+                                /*wlen=*/nullptr,
+                                /*reason=*/nullptr,
+                                /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(std::wcslen(result), size_t{3});
+  EXPECT_EQ('h', result[0]);
+  EXPECT_EQ('e', result[1]);
+  EXPECT_EQ('l', result[2]);
+  PyMem_Free(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrSetsWlen) {
+  const char* str = "hello";
+  wchar_t* result = nullptr;
+  size_t wlen = 0;
+  EXPECT_EQ(0,
+            _Py_DecodeUTF8Ex(str, /*size=*/std::strlen(str), /*result=*/&result,
+                             /*wlen=*/&wlen,
+                             /*reason=*/nullptr,
+                             /*surrogateescape=*/0));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(std::wcslen(result), size_t{5});
+  EXPECT_EQ('h', result[0]);
+  EXPECT_EQ('e', result[1]);
+  EXPECT_EQ('l', result[2]);
+  EXPECT_EQ('l', result[3]);
+  EXPECT_EQ('o', result[4]);
+  EXPECT_EQ(wlen, size_t{5});
+  PyMem_Free(result);
+}
+
 TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithEmptyStrReturnsZero) {
   const wchar_t* str = L"";
   char* result = nullptr;

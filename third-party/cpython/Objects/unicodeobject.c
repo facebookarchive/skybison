@@ -5195,6 +5195,82 @@ onError:
     return NULL;
 }
 
+int
+_Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
+                 const char **reason, int surrogateescape)
+{
+    const char *orig_s = s;
+    const char *e;
+    wchar_t *unicode;
+    Py_ssize_t outpos;
+
+    /* Note: size will always be longer than the resulting Unicode
+       character count */
+    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < (size + 1)) {
+        return -1;
+    }
+
+    unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
+    if (!unicode) {
+        return -1;
+    }
+
+    /* Unpack UTF-8 encoded data */
+    e = s + size;
+    outpos = 0;
+    while (s < e) {
+        Py_UCS4 ch;
+#if SIZEOF_WCHAR_T == 4
+        ch = ucs4lib_utf8_decode(&s, e, (Py_UCS4 *)unicode, &outpos);
+#else
+        ch = ucs2lib_utf8_decode(&s, e, (Py_UCS2 *)unicode, &outpos);
+#endif
+        if (ch > 0xFF) {
+#if SIZEOF_WCHAR_T == 4
+            Py_UNREACHABLE();
+#else
+            assert(ch > 0xFFFF && ch <= MAX_UNICODE);
+            /* write a surrogate pair */
+            unicode[outpos++] = (wchar_t)Py_UNICODE_HIGH_SURROGATE(ch);
+            unicode[outpos++] = (wchar_t)Py_UNICODE_LOW_SURROGATE(ch);
+#endif
+        }
+        else {
+            if (!ch && s == e)
+                break;
+            if (!surrogateescape) {
+                PyMem_RawFree(unicode );
+                if (reason != NULL) {
+                    switch (ch) {
+                    case 0:
+                        *reason = "unexpected end of data";
+                        break;
+                    case 1:
+                        *reason = "invalid start byte";
+                        break;
+                    /* 2, 3, 4 */
+                    default:
+                        *reason = "invalid continuation byte";
+                        break;
+                    }
+                }
+                if (wlen != NULL) {
+                    *wlen = s - orig_s;
+                }
+                return -2;
+            }
+            /* surrogateescape */
+            unicode[outpos++] = 0xDC00 + (unsigned char)*s++;
+        }
+    }
+    unicode[outpos] = L'\0';
+    if (wlen) {
+        *wlen = outpos;
+    }
+    *wstr = unicode;
+    return 0;
+}
+
 #if defined(__APPLE__) || defined(__ANDROID__)
 
 /* Simplified UTF-8 decoder using surrogateescape error handler,

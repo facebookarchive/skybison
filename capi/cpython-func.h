@@ -1254,6 +1254,9 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char*);
 PyAPI_FUNC(void) _Py_Dealloc(PyObject*);
 PyAPI_FUNC(wchar_t*) _Py_DecodeLocaleEx(const char*, size_t*, int);
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
+PyAPI_FUNC(int)
+    _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size, wchar_t** result,
+                     size_t* wlen, const char** reason, int surrogateescape);
 PyAPI_FUNC(char*) _Py_EncodeLocaleEx(const wchar_t*, size_t*, int);
 PyAPI_FUNC(int)
     _Py_EncodeUTF8Ex(const wchar_t* text, char** str, size_t* error_pos,

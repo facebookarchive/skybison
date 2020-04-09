@@ -2159,6 +2159,33 @@ PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
   return wc_str;
 }
 
+PY_EXPORT int _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size,
+                               wchar_t** result, size_t* wlen,
+                               const char** /* reason */,
+                               int /* surrogateescape */) {
+  wchar_t* wc_str =
+      static_cast<wchar_t*>(PyMem_RawMalloc((size + 1) * sizeof(*wc_str)));
+  if (wc_str == nullptr) {
+    return -1;
+  }
+  for (Py_ssize_t i = 0; i < size; i++) {
+    byte ch = c_str[i];
+    // TODO(T57811636): Support UTF-8 decoding decoupled from the runtime.
+    // We don't have UTF-8 decoding machinery that is decoupled from the
+    // runtime
+    if (ch > kMaxASCII) {
+      UNIMPLEMENTED("UTF-8 argument support unimplemented");
+    }
+    wc_str[i] = ch;
+  }
+  wc_str[size] = '\0';
+  *result = wc_str;
+  if (wlen) {
+    *wlen = size;
+  }
+  return 0;
+}
+
 // UTF-8 encoder using the surrogateescape error handler .
 //
 // On success, return 0 and write the newly allocated character string (use
