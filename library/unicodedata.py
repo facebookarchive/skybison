@@ -13,7 +13,7 @@ class UCD:
         _unimplemented()
 
     def category(self, chr):
-        _unimplemented()
+        _builtin()
 
     def combining(self, chr):
         _unimplemented()
@@ -58,7 +58,7 @@ def bidirectional(chr):
 
 
 def category(chr):
-    _unimplemented()
+    _builtin()
 
 
 def combining(chr):

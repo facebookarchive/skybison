@@ -27,6 +27,35 @@ void UnicodedataModule::initialize(Thread* thread, const Module& module) {
   moduleAtPutById(thread, module, ID(ucd_3_2_0), old_ucd);
 }
 
+static int32_t getCodePoint(const Str& src) {
+  word length = src.charLength();
+  if (length == 0) {
+    return -1;
+  }
+  word char_length;
+  int32_t result = src.codePointAt(0, &char_length);
+  return (length == char_length) ? result : -1;
+}
+
+RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
+                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "category() argument must be a unicode character");
+  }
+  return kCategoryNames[databaseRecord(code_point)->category];
+}
+
 static NormalizationForm getForm(const Str& str) {
   if (str.equalsCStr("NFC")) {
     return NormalizationForm::kNFC;
@@ -262,6 +291,35 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   }
 
   return compose(thread, buffer);
+}
+
+RawObject METH(UCD, category)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type ucd_type(&scope,
+                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
+  if (!typeIsSubclass(self_type, ucd_type)) {
+    return thread->raiseRequiresType(self, ID(UCD));
+  }
+  Object obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "category() argument must be a unicode character");
+  }
+  byte category = changeRecord(code_point)->category;
+  if (category != 0xff) {
+    return kCategoryNames[category];
+  }
+  return kCategoryNames[databaseRecord(code_point)->category];
 }
 
 RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {

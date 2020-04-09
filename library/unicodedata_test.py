@@ -8,6 +8,14 @@ class UnicodedataTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             unicodedata.UCD()
 
+    def test_UCD_category_uses_old_version(self):
+        self.assertEqual(unicodedata.ucd_3_2_0.category("A"), "Lu")
+        self.assertEqual(unicodedata.ucd_3_2_0.category("a"), "Ll")
+        self.assertEqual(unicodedata.ucd_3_2_0.category("\u00A7"), "So")
+        self.assertEqual(unicodedata.ucd_3_2_0.category("\uFFFE"), "Cn")
+        self.assertEqual(unicodedata.ucd_3_2_0.category("\U0001012A"), "Cn")
+        self.assertEqual(unicodedata.ucd_3_2_0.category("\U00020000"), "Lo")
+
     def test_UCD_normalize_with_non_UCD_raises_type_error(self):
         with self.assertRaises(TypeError):
             unicodedata.UCD.normalize(1, "NFC", "foo")
@@ -34,6 +42,14 @@ class UnicodedataTests(unittest.TestCase):
             ),
             u"\U0002136A \u5F33 \u43AB \u7AAE \u4D57",
         )
+
+    def test_category_uses_current_version(self):
+        self.assertEqual(unicodedata.category("A"), "Lu")
+        self.assertEqual(unicodedata.category("a"), "Ll")
+        self.assertEqual(unicodedata.category("\u00A7"), "Po")
+        self.assertEqual(unicodedata.category("\uFFFE"), "Cn")
+        self.assertEqual(unicodedata.category("\U0001012A"), "No")
+        self.assertEqual(unicodedata.category("\U00020000"), "Lo")
 
     def test_old_unidata_version(self):
         self.assertEqual(unicodedata.ucd_3_2_0.unidata_version, "3.2.0")

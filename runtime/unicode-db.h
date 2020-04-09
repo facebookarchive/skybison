@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "globals.h"
+#include "objects.h"
 #include "unicode.h"
 
 namespace py {
@@ -76,6 +77,10 @@ struct UnicodeTypeRecord {
   const int8_t digit;
   const int16_t flags;
 };
+
+extern const RawSmallStr kBidirectionalNames[];
+extern const RawSmallStr kCategoryNames[];
+extern const RawSmallStr kEastAsianWidthNames[];
 
 // Get a code point from its Unicode name.
 // Returns the code point if the lookup succeeds, -1 if it fails.
