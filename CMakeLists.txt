@@ -534,6 +534,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/clinic/sha1module.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha256module.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha512module.c.h
+  ${CPYTHON_DIR}/Modules/clinic/symtablemodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/zlibmodule.c.h
   ${CPYTHON_DIR}/Modules/errnomodule.c
   ${CPYTHON_DIR}/Modules/fcntlmodule.c
@@ -546,6 +547,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/selectmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.h
+  ${CPYTHON_DIR}/Modules/symtablemodule.c
   ${CPYTHON_DIR}/Modules/syslogmodule.c
   ${CPYTHON_DIR}/Modules/termios.c
   ${CPYTHON_DIR}/Modules/timemodule.c

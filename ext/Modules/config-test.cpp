@@ -145,6 +145,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderStructReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderSymtableReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_symtable"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportAtexitReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("atexit"));
   ASSERT_NE(module, nullptr);

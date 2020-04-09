@@ -1038,6 +1038,8 @@ PyAPI_FUNC(void) Py_SetProgramName(wchar_t*);
 PyAPI_FUNC(void) Py_SetPythonHome(wchar_t*);
 PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(struct symtable*) Py_SymtableString(const char*, const char*, int);
+PyAPI_FUNC(struct symtable*)
+    Py_SymtableStringObject(const char* str, PyObject* filename, int start);
 PyAPI_FUNC(size_t) Py_UNICODE_strlen(const Py_UNICODE*);
 PyAPI_FUNC(char*) Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*);
 PyAPI_FUNC(PyObject*) Py_VaBuildValue(const char*, va_list);

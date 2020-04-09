@@ -19,6 +19,7 @@ extern "C" PyObject* PyInit__sre();
 extern "C" PyObject* PyInit__ssl();
 extern "C" PyObject* PyInit__stat();
 extern "C" PyObject* PyInit__struct();
+extern "C" PyObject* PyInit__symtable();
 extern "C" PyObject* PyInit_atexit();
 extern "C" PyObject* PyInit_audioop();
 extern "C" PyObject* PyInit_binascii();
@@ -62,6 +63,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_ssl", PyInit__ssl},
     {"_stat", PyInit__stat},
     {"_struct", PyInit__struct},
+    {"_symtable", PyInit__symtable},
     {"atexit", PyInit_atexit},
     {"audioop", PyInit_audioop},
     {"binascii", PyInit_binascii},
