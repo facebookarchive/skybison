@@ -318,6 +318,17 @@ static RawObject unpackObject(Thread* thread, uword address, word length,
   }
 }
 
+// Helper function that returns the location within the memoryview buffer to
+// find requested index
+static word bufferIndex(const MemoryView& view, word index) {
+  word step = intUnderlying(Tuple::cast(view.strides()).at(0)).asWord();
+  if (step != 1) {
+    UNIMPLEMENTED("Stride != 1 is not yet supported");
+  }
+  DCHECK_INDEX(index, view.length());
+  return view.start() + index;
+}
+
 RawObject memoryviewGetitem(Thread* thread, const MemoryView& view,
                             word index) {
   HandleScope scope(thread);
@@ -329,28 +340,58 @@ RawObject memoryviewGetitem(Thread* thread, const MemoryView& view,
   char format_c = formatChar(format);
   // TODO(T58046846): Replace DCHECK(char > 0) checks
   DCHECK(format_c > 0, "invalid memoryview");
-
-  word length = view.length();
-  DCHECK_INDEX(index, length - static_cast<word>(itemSize(format_c) - 1));
+  word item_size = itemSize(format_c);
+  DCHECK(item_size > 0, "invalid memoryview");
+  word buffer_index = bufferIndex(view, index);
 
   if (runtime->isInstanceOfBytes(*buffer)) {
     // TODO(T38246066) support bytes subclasses
     if (buffer.isLargeBytes()) {
       LargeBytes bytes(&scope, *buffer);
-      return unpackObject(thread, bytes.address(), length, format_c, index);
+      return unpackObject(thread, bytes.address(), bytes.length(), format_c,
+                          buffer_index);
     }
     CHECK(buffer.isSmallBytes(),
           "memoryview.__getitem__ with non bytes/memory");
     Bytes bytes(&scope, *buffer);
     byte bytes_buffer[SmallBytes::kMaxLength];
-    bytes.copyTo(bytes_buffer, length);
-    return unpackObject(thread, reinterpret_cast<uword>(bytes_buffer), length,
-                        format_c, index);
+    bytes.copyTo(bytes_buffer, bytes.length());
+    return unpackObject(thread, reinterpret_cast<uword>(bytes_buffer),
+                        bytes.length(), format_c, buffer_index);
   }
   CHECK(buffer.isPointer(), "memoryview.__getitem__ with non bytes/memory");
   void* cptr = Pointer::cast(*buffer).cptr();
-  return unpackObject(thread, reinterpret_cast<uword>(cptr), length, format_c,
-                      index);
+  word ptr_length = Pointer::cast(*buffer).length();
+  return unpackObject(thread, reinterpret_cast<uword>(cptr), ptr_length,
+                      format_c, buffer_index);
+}
+
+RawObject memoryviewGetslice(Thread* thread, const MemoryView& view, word start,
+                             word stop, word step) {
+  if (step != 1) {
+    UNIMPLEMENTED("Stride != 1 is not yet supported");
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Str format(&scope, view.format());
+  char format_c = formatChar(format);
+  // TODO(T58046846): Replace DCHECK(char > 0) checks
+  DCHECK(format_c > 0, "invalid memoryview");
+  word item_size = itemSize(format_c);
+  DCHECK(item_size > 0, "invalid memoryview");
+  word slice_len = Slice::length(start, stop, step);
+  word slice_byte_size = slice_len * item_size;
+
+  Object buffer(&scope, view.buffer());
+  MemoryView result(
+      &scope, runtime->newMemoryView(
+                  thread, buffer, slice_byte_size,
+                  view.readOnly() ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
+  result.setFormat(view.format());
+  result.setStart(view.start() + start * item_size);
+  return *result;
 }
 
 RawObject memoryviewSetitem(Thread* thread, const MemoryView& view, word index,
@@ -361,14 +402,18 @@ RawObject memoryviewSetitem(Thread* thread, const MemoryView& view, word index,
   char fmt = formatChar(format);
   // TODO(T58046846): Replace DCHECK(char > 0) checks
   DCHECK(fmt > 0, "invalid memoryview");
-  DCHECK_INDEX(index, view.length() - static_cast<word>(itemSize(fmt) - 1));
+  word item_size = itemSize(fmt);
+  DCHECK(item_size > 0, "invalid memoryview");
+
+  word buffer_index = bufferIndex(view, index);
   if (buffer.isMutableBytes()) {
-    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt, index,
-                      *value);
+    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt,
+                      buffer_index, *value);
   }
   DCHECK(buffer.isPointer(), "memoryview.__setitem__ with non bytes/memory");
   void* cptr = Pointer::cast(*buffer).cptr();
-  return packObject(thread, reinterpret_cast<uword>(cptr), fmt, index, *value);
+  return packObject(thread, reinterpret_cast<uword>(cptr), fmt, buffer_index,
+                    *value);
 }
 
 static RawObject raiseDifferentStructureError(Thread* thread) {
@@ -382,6 +427,11 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                              const Object& value_obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
+  word stride = intUnderlying(Tuple::cast(view.strides()).at(0)).asWord();
+  if (view.start() != 0 || stride != 1) {
+    UNIMPLEMENTED("Set item with slicing called on a sliced memoryview");
+  }
+
   Str format(&scope, view.format());
   char fmt = formatChar(format);
   // TODO(T58046846): Replace DCHECK(char > 0) checks

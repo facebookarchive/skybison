@@ -153,6 +153,7 @@ from _builtins import (
     _mappingproxy_mapping,
     _mappingproxy_set_mapping,
     _memoryview_getitem,
+    _memoryview_getslice,
     _memoryview_guard,
     _memoryview_itemsize,
     _memoryview_nbytes,
@@ -4743,7 +4744,11 @@ class memoryview(bootstrap=True):
         if result is not _Unbound:
             return result
         if _slice_check(key):
-            _unimplemented()
+            step = _slice_step(_slice_index(key.step))
+            length = memoryview.__len__(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            return _memoryview_getslice(self, start, stop, step)
         if _object_type_hasattr(key, "__index__"):
             return _memoryview_getitem(self, _index(key))
         raise TypeError(

@@ -8494,6 +8494,123 @@ class MemoryviewTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             view.format = "h"
 
+    def test_dunder_getitem_with_non_memoryview_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            memoryview.__getitem__(None, 1)
+        self.assertIn("requires a 'memoryview' object", str(context.exception))
+
+    def test_dunder_getitem_index_too_large_raises_index_error(self):
+        view = memoryview(b"12345678").cast("I")
+        with self.assertRaises(IndexError) as context:
+            memoryview.__getitem__(view, 2)
+        self.assertIn("index out of bounds", str(context.exception))
+
+    def test_dunder_getitem_index_too_small_raises_index_error(self):
+        view = memoryview(bytes())
+        with self.assertRaises(IndexError) as context:
+            memoryview.__getitem__(view, -1)
+        self.assertIn("index out of bounds", str(context.exception))
+
+    def test_dunder_getitem_with_positive_index_returns_value(self):
+        view = memoryview(b"hello")
+        self.assertEqual(view[1], ord("e"))
+
+    def test_dunder_getitem_with_positive_index_returns_value_on_sliced_mv(self):
+        view = memoryview(b"drive")
+        sliced = view[2:]
+        self.assertEqual(sliced[1], ord("v"))
+
+    def test_dunder_getitem_with_negative_index_returns_value(self):
+        view = memoryview(b"negative")
+        self.assertEqual(view[-2], ord("v"))
+
+    def test_dunder_getitem_with_negative_index_returns_value_on_sliced_mv(self):
+        view = memoryview(b"negativo")
+        sliced = view[:3]
+        self.assertEqual(sliced[-2], ord("e"))
+
+    def test_dunder_getitem_with_negative_index_relative_to_end_value(self):
+        view = memoryview(b"bam")
+        self.assertEqual(memoryview.__getitem__(view, -3), ord("b"))
+
+    def test_dunder_getitem_with_valid_indices_returns_submemoryview(self):
+        view = memoryview(b"movie")
+        self.assertEqual(
+            memoryview.__getitem__(view, slice(2, -1)).tolist(), [ord("v"), ord("i")]
+        )
+
+    def test_dunder_getitem_with_negative_start_returns_trailing(self):
+        view = memoryview(b"bam")
+        self.assertEqual(
+            memoryview.__getitem__(view, slice(-2, 5)).tolist(), [ord("a"), ord("m")]
+        )
+
+    def test_dunder_getitem_with_positive_stop_returns_leading(self):
+        view = memoryview(b"bam")
+        self.assertEqual(
+            memoryview.__getitem__(view, slice(2)).tolist(), [ord("b"), ord("a")]
+        )
+
+    def test_dunder_getitem_with_negative_stop_returns_all_but_trailing(self):
+        view = memoryview(b"bam")
+        self.assertEqual(memoryview.__getitem__(view, slice(-2)).tolist(), [ord("b")])
+
+    def test_dunder_getitem_with_large_negative_start_returns_copy(self):
+        view = memoryview(b"bam")
+        self.assertEqual(
+            memoryview.__getitem__(view, slice(-10, 10)).tolist(), view.tolist()
+        )
+
+    def test_dunder_getitem_with_large_positive_start_returns_empty(self):
+        view = memoryview(b"bam")
+        self.assertEqual(memoryview.__getitem__(view, slice(10, 10)).tolist(), [])
+
+    def test_dunder_getitem_with_large_negative_stop_returns_empty(self):
+        view = memoryview(b"bam")
+        self.assertEqual(memoryview.__getitem__(view, slice(-10)).tolist(), [])
+
+    def test_dunder_getitem_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise ValueError("foo")
+
+        view = memoryview(b"asde")
+        self.assertEqual(memoryview.__getitem__(view, C(0)), ord("a"))
+
+    def test_dunder_getitem_with_raising_descriptor_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("foo")
+
+        class C:
+            __index__ = Desc()
+
+        view = memoryview(b"asde")
+        with self.assertRaises(AttributeError) as context:
+            memoryview.__getitem__(view, C())
+        self.assertEqual(str(context.exception), "foo")
+
+    def test_dunder_getitem_with_non_int_raises_type_error(self):
+        view = memoryview(b"asde")
+        with self.assertRaises(TypeError):
+            memoryview.__getitem__(view, "3")
+
+    def test_dunder_getitem_with_dunder_index_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 2
+
+        view = memoryview(b"asde")
+        self.assertEqual(memoryview.__getitem__(view, C()), ord("d"))
+
+    def test_dunder_getitem_with_class_with_index(self):
+        class IndSet:
+            def __index__(self):
+                return 0
+
+        view = memoryview(b"hello")
+        self.assertEqual(view[IndSet()], ord("h"))
+
     def test_itemsize_returns_size_of_item_chars(self):
         src = b"abcd"
         view = memoryview(src)

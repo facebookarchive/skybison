@@ -3082,6 +3082,24 @@ RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Frame* frame,
   return memoryviewGetitem(thread, self, byte_index);
 }
 
+RawObject FUNC(_builtins, _memoryview_getslice)(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
+  }
+  MemoryView self(&scope, *self_obj);
+  Int start_int(&scope, intUnderlying(args.get(1)));
+  word start = start_int.asWord();
+  Int stop_int(&scope, intUnderlying(args.get(2)));
+  word stop = stop_int.asWord();
+  Int step_int(&scope, intUnderlying(args.get(3)));
+  word step = step_int.asWord();
+  return memoryviewGetslice(thread, self, start, stop, step);
+}
+
 RawObject FUNC(_builtins, _mappingproxy_guard)(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
