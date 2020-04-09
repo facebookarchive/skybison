@@ -6443,6 +6443,16 @@ class InstanceTests(unittest.TestCase):
             "__dict__ must be set to a dictionary, not a 'NoneType'",
         )
 
+    def test___dict___keys_with_instance_with_dict_overflow_returns_keys(self):
+        class C:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+
+        instance = C()
+        instance.__dict__ = {"hello": "world"}
+        self.assertEqual(list(instance.__dict__.keys()), ["hello"])
+
 
 class IntTests(unittest.TestCase):
     def test_dunder_hash_with_small_number_returns_self(self):

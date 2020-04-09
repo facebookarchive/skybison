@@ -670,6 +670,68 @@ i = C(False)
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectKeysWithEmptyDictOverflowReturnsKeys) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+instance = C()
+instance.__dict__ = {}
+)")
+                   .isError());
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Layout layout(&scope, runtime_->layoutOf(*instance));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Object result(&scope, runBuiltin(FUNC(_builtins, _object_keys), instance));
+  ASSERT_TRUE(result.isList());
+  EXPECT_PYLIST_EQ(result, {});
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectKeysWithNonEmptyDictOverflowReturnsKeys) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+instance = C()
+instance.__dict__ = {"hello": "world", "foo": "bar"}
+)")
+                   .isError());
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Layout layout(&scope, runtime_->layoutOf(*instance));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Object result(&scope, runBuiltin(FUNC(_builtins, _object_keys), instance));
+  ASSERT_TRUE(result.isList());
+  EXPECT_PYLIST_EQ(result, {"hello", "foo"});
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectKeysWithInObjectAndDictOverflowReturnsKeys) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def instance():
+  pass
+instance.hello = "world"
+instance.foo = "bar"
+)")
+                   .isError());
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Layout layout(&scope, runtime_->layoutOf(*instance));
+  Tuple in_object(&scope, layout.inObjectAttributes());
+  ASSERT_GT(in_object.length(), 0);
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Object result_obj(&scope,
+                    runBuiltin(FUNC(_builtins, _object_keys), instance));
+  ASSERT_TRUE(result_obj.isList());
+  List result(&scope, *result_obj);
+  EXPECT_GT(result.numItems(), 2);
+  Str hello(&scope, runtime_->newStrFromCStr("hello"));
+  Str foo(&scope, runtime_->newStrFromCStr("foo"));
+  EXPECT_TRUE(listContains(result, hello));
+  EXPECT_TRUE(listContains(result, foo));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderInstanceDunderDictSetterCoalescesAffectedLayoutsIntoSingleOne) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

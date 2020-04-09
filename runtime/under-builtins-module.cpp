@@ -3389,10 +3389,16 @@ RawObject FUNC(_builtins, _object_keys)(Thread* thread, Frame* frame,
       if (name.isNoneType()) continue;
       runtime->listAdd(thread, result, name);
     }
-  } else {
+  } else if (layout.hasDictOverflow()) {
     // TODO(T57446141): Dict overflow should be handled by a __dict__ descriptor
     // on the type, like `type` or `function`
-    CHECK(layout.overflowAttributes().isNoneType(), "no overflow");
+    Instance instance(&scope, *object);
+    Dict dict(&scope, instance.instanceVariableAt(layout.dictOverflowOffset()));
+    Object key(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    for (word i = 0; dictNextItem(dict, &i, &key, &value);) {
+      runtime->listAdd(thread, result, key);
+    }
   }
   return *result;
 }
