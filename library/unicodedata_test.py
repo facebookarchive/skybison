@@ -8,6 +8,13 @@ class UnicodedataTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             unicodedata.UCD()
 
+    def test_UCD_bidirectional_uses_old_version(self):
+        self.assertEqual(unicodedata.ucd_3_2_0.bidirectional(" "), "WS")
+        self.assertEqual(unicodedata.ucd_3_2_0.bidirectional("+"), "ET")
+        self.assertEqual(unicodedata.ucd_3_2_0.bidirectional("A"), "L")
+        self.assertEqual(unicodedata.ucd_3_2_0.bidirectional("\uFFFE"), "")
+        self.assertEqual(unicodedata.ucd_3_2_0.bidirectional("\U00020000"), "L")
+
     def test_UCD_category_uses_old_version(self):
         self.assertEqual(unicodedata.ucd_3_2_0.category("A"), "Lu")
         self.assertEqual(unicodedata.ucd_3_2_0.category("a"), "Ll")
@@ -42,6 +49,13 @@ class UnicodedataTests(unittest.TestCase):
             ),
             u"\U0002136A \u5F33 \u43AB \u7AAE \u4D57",
         )
+
+    def test_bidirectional_uses_current_version(self):
+        self.assertEqual(unicodedata.bidirectional(" "), "WS")
+        self.assertEqual(unicodedata.bidirectional("+"), "ES")
+        self.assertEqual(unicodedata.bidirectional("A"), "L")
+        self.assertEqual(unicodedata.bidirectional("\uFFFE"), "")
+        self.assertEqual(unicodedata.bidirectional("\U00020000"), "L")
 
     def test_category_uses_current_version(self):
         self.assertEqual(unicodedata.category("A"), "Lu")

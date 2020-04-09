@@ -10,7 +10,7 @@ class UCD:
         raise TypeError(f"cannot create 'unicodedata.UCD' instances")
 
     def bidirectional(self, chr):
-        _unimplemented()
+        _builtin()
 
     def category(self, chr):
         _builtin()
@@ -54,7 +54,7 @@ class UCD:
 
 
 def bidirectional(chr):
-    _unimplemented()
+    _builtin()
 
 
 def category(chr):

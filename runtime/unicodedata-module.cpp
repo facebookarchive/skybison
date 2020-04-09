@@ -37,6 +37,25 @@ static int32_t getCodePoint(const Str& src) {
   return (length == char_length) ? result : -1;
 }
 
+RawObject FUNC(unicodedata, bidirectional)(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "bidirectional() argument must be a unicode character");
+  }
+  return kBidirectionalNames[databaseRecord(code_point)->bidirectional];
+}
+
 RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
                                       word nargs) {
   HandleScope scope(thread);
@@ -291,6 +310,38 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   }
 
   return compose(thread, buffer);
+}
+
+RawObject METH(UCD, bidirectional)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type ucd_type(&scope,
+                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
+  if (!typeIsSubclass(self_type, ucd_type)) {
+    return thread->raiseRequiresType(self, ID(UCD));
+  }
+  Object obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "bidirectional() argument must be a unicode character");
+  }
+  const UnicodeChangeRecord* record = changeRecord(code_point);
+  if (record->category == 0) {
+    return kBidirectionalNames[0];
+  }
+  if (record->bidirectional != 0xff) {
+    return kBidirectionalNames[record->bidirectional];
+  }
+  return kBidirectionalNames[databaseRecord(code_point)->bidirectional];
 }
 
 RawObject METH(UCD, category)(Thread* thread, Frame* frame, word nargs) {
