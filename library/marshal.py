@@ -67,49 +67,49 @@ version = 2
 
 
 def _dump(obj, f):  # noqa: C901
-    ty = _type(obj)
     if obj is None:
-        f.write(TYPE_NONE)
-    elif obj is StopIteration:
-        f.write(TYPE_STOPITER)
-    elif obj is ...:
-        f.write(TYPE_ELLIPSIS)
-    elif obj is False:
-        f.write(TYPE_FALSE)
-    elif obj is True:
-        f.write(TYPE_TRUE)
-    elif ty is int:
-        _dump_int(obj, f)
-    elif ty is float:
-        _dump_float(obj, f)
-    elif ty is complex:
-        _dump_complex(obj, f)
-    elif ty is str:
-        _dump_str(obj, f)
-    elif _byteslike_check(obj):
-        _dump_bytes(obj, f)
-    elif ty is tuple:
-        _dump_tuple(obj, f)
-    elif ty is list:
-        _dump_list(obj, f)
-    elif ty is dict:
-        _dump_dict(obj, f)
-    elif ty is set:
-        _dump_set(obj, f)
-    elif ty is frozenset:
-        _dump_frozenset(obj, f)
-    elif ty is CodeType:
-        _dump_code(obj, f)
-    else:
-        raise ValueError("unmarshallable object")
+        return f.write(TYPE_NONE)
+    if obj is StopIteration:
+        return f.write(TYPE_STOPITER)
+    if obj is ...:
+        return f.write(TYPE_ELLIPSIS)
+    if obj is False:
+        return f.write(TYPE_FALSE)
+    if obj is True:
+        return f.write(TYPE_TRUE)
+    ty = _type(obj)
+    if ty is int:
+        return _dump_int(obj, f)
+    if ty is float:
+        return _dump_float(obj, f)
+    if ty is complex:
+        return _dump_complex(obj, f)
+    if ty is str:
+        return _dump_str(obj, f)
+    if _byteslike_check(obj):
+        return _dump_bytes(obj, f)
+    if ty is tuple:
+        return _dump_tuple(obj, f)
+    if ty is list:
+        return _dump_list(obj, f)
+    if ty is dict:
+        return _dump_dict(obj, f)
+    if ty is set:
+        return _dump_set(obj, f)
+    if ty is frozenset:
+        return _dump_frozenset(obj, f)
+    if ty is CodeType:
+        return _dump_code(obj, f)
+    raise ValueError("unmarshallable object")
 
 
 def _dump_int(obj, f):
+    result = 0
     if _INT32_MIN <= obj <= _INT32_MAX:
-        f.write(TYPE_INT)
-        _w_long(obj, f)
-        return
-    f.write(TYPE_LONG)
+        result += f.write(TYPE_INT)
+        result += _w_long(obj, f)
+        return result
+    result += f.write(TYPE_LONG)
     sign = 1
     if obj < 0:
         sign = -1
@@ -118,98 +118,116 @@ def _dump_int(obj, f):
     while obj:
         digits.append(obj & 0x7FFF)
         obj >>= 15
-    _w_long(len(digits) * sign, f)
+    result += _w_long(len(digits) * sign, f)
     for d in digits:
-        _w_short(d, f)
+        result += _w_short(d, f)
+    return result
 
 
 def _dump_float(obj, f):
-    f.write(TYPE_BINARY_FLOAT)
-    f.write(_struct.pack("d", obj))
+    result = f.write(TYPE_BINARY_FLOAT)
+    result += f.write(_struct.pack("d", obj))
+    return result
 
 
 def _dump_complex(obj, f):
-    f.write(TYPE_BINARY_COMPLEX)
-    f.write(_struct.pack("d", obj.real))
-    f.write(_struct.pack("d", obj.imag))
+    result = f.write(TYPE_BINARY_COMPLEX)
+    result += f.write(_struct.pack("d", obj.real))
+    result += f.write(_struct.pack("d", obj.imag))
+    return result
 
 
 def _dump_bytes(obj, f):
-    f.write(TYPE_STRING)
-    _w_long(len(obj), f)
-    f.write(obj)
+    result = f.write(TYPE_STRING)
+    result += _w_long(len(obj), f)
+    result += f.write(obj)
+    return result
 
 
 def _dump_str(obj, f):
     # TODO(T63932056): Check if a string is interned and emit TYPE_INTERNED
     # or TYPE_STRINGREF
-    f.write(TYPE_UNICODE)
+    result = f.write(TYPE_UNICODE)
     s = obj.encode("utf8", "surrogatepass")
-    _w_long(len(s), f)
-    f.write(s)
+    result += _w_long(len(s), f)
+    result += f.write(s)
+    return result
 
 
 def _dump_tuple(obj, f):
-    f.write(TYPE_TUPLE)
-    _w_long(len(obj), f)
+    result = f.write(TYPE_TUPLE)
+    result += _w_long(len(obj), f)
     for item in obj:
-        _dump(item, f)
+        result += _dump(item, f)
+    return result
 
 
 def _dump_list(obj, f):
-    f.write(TYPE_LIST)
-    _w_long(len(obj), f)
+    result = f.write(TYPE_LIST)
+    result += _w_long(len(obj), f)
     for item in obj:
-        _dump(item, f)
+        result += _dump(item, f)
+    return result
 
 
 def _dump_dict(obj, f):
-    f.write(TYPE_DICT)
+    result = f.write(TYPE_DICT)
     for key, value in obj.items():
-        _dump(key, f)
-        _dump(value, f)
-    f.write(TYPE_NULL)
+        result += _dump(key, f)
+        result += _dump(value, f)
+    result += f.write(TYPE_NULL)
+    return result
 
 
 def _dump_code(obj, f):
-    f.write(TYPE_CODE)
-    _w_long(obj.co_argcount, f)
-    _w_long(obj.co_kwonlyargcount, f)
-    _w_long(obj.co_nlocals, f)
-    _w_long(obj.co_stacksize, f)
-    _w_long(obj.co_flags, f)
-    _dump(obj.co_code, f)
-    _dump(obj.co_consts, f)
-    _dump(obj.co_names, f)
-    _dump(obj.co_varnames, f)
-    _dump(obj.co_freevars, f)
-    _dump(obj.co_cellvars, f)
-    _dump(obj.co_filename, f)
-    _dump(obj.co_name, f)
-    _w_long(obj.co_firstlineno, f)
-    _dump(obj.co_lnotab, f)
+    result = f.write(TYPE_CODE)
+    result += _w_long(obj.co_argcount, f)
+    result += _w_long(obj.co_kwonlyargcount, f)
+    result += _w_long(obj.co_nlocals, f)
+    result += _w_long(obj.co_stacksize, f)
+    result += _w_long(obj.co_flags, f)
+    result += _dump(obj.co_code, f)
+    result += _dump(obj.co_consts, f)
+    result += _dump(obj.co_names, f)
+    result += _dump(obj.co_varnames, f)
+    result += _dump(obj.co_freevars, f)
+    result += _dump(obj.co_cellvars, f)
+    result += _dump(obj.co_filename, f)
+    result += _dump(obj.co_name, f)
+    result += _w_long(obj.co_firstlineno, f)
+    result += _dump(obj.co_lnotab, f)
+    return result
 
 
 def _dump_set(obj, f):
-    f.write(TYPE_SET)
-    _w_long(len(obj), f)
+    result = f.write(TYPE_SET)
+    result += _w_long(len(obj), f)
     for item in obj:
-        _dump(item, f)
+        result += _dump(item, f)
+    return result
 
 
 def _dump_frozenset(obj, f):
-    f.write(TYPE_FROZENSET)
-    _w_long(len(obj), f)
+    result = f.write(TYPE_FROZENSET)
+    result += _w_long(len(obj), f)
     for item in obj:
-        _dump(item, f)
+        result += _dump(item, f)
+    return result
 
 
 def _w_long(obj, f):
-    f.write(obj.to_bytes(4, "little", signed=True))
+    return f.write(obj.to_bytes(4, "little", signed=True))
 
 
 def _w_short(obj, f):
-    f.write(obj.to_bytes(2, "little", signed=True))
+    return f.write(obj.to_bytes(2, "little", signed=True))
+
+
+def dump(obj, f, version=version):
+    if version != 2:
+        # TODO(T63932405): Support marshal versions other than 2
+        _unimplemented()
+    return _dump(obj, f)
 
 
 def dumps(obj, version=version):
