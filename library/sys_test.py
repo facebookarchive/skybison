@@ -16,7 +16,7 @@ class DisplayhookTest(unittest.TestCase):
         orig_out = sys.stdout
         out = StringIO()
         sys.stdout = out
-        sys.displayhook(None)
+        sys.__displayhook__(None)
         self.assertEqual(out.getvalue(), "")
         self.assertTrue(not hasattr(builtins, "_"))
         sys.stdout = orig_out
@@ -27,10 +27,13 @@ class DisplayhookTest(unittest.TestCase):
         orig_out = sys.stdout
         out = StringIO()
         sys.stdout = out
-        sys.displayhook(42)
+        sys.__displayhook__(42)
         self.assertEqual(out.getvalue(), "42\n")
         self.assertEqual(builtins._, 42)
         sys.stdout = orig_out
+
+    def test_has_displayhook(self):
+        self.assertTrue(hasattr(sys, "displayhook"))
 
 
 class SysTests(unittest.TestCase):

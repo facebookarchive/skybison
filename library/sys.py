@@ -101,25 +101,7 @@ _VersionInfo = _structseq_new_type(
 )
 
 
-def _getframe(depth=0):
-    _builtin()
-
-
-abiflags = ""
-
-
-# TODO(cshapiro): assign a meaningful value in the runtime
-base_exec_prefix = ""
-
-
-# TODO(cshapiro): assign a meaningful value in the runtime
-base_prefix = ""
-
-
-copyright = ""
-
-
-def displayhook(value):
+def __displayhook__(value):
     if value is None:
         return
     # Set '_' to None to avoid recursion
@@ -138,6 +120,27 @@ def displayhook(value):
             stdout.write(text)
     stdout.write("\n")
     builtins._ = value
+
+
+def _getframe(depth=0):
+    _builtin()
+
+
+abiflags = ""
+
+
+# TODO(cshapiro): assign a meaningful value in the runtime
+base_exec_prefix = ""
+
+
+# TODO(cshapiro): assign a meaningful value in the runtime
+base_prefix = ""
+
+
+copyright = ""
+
+
+displayhook = __displayhook__
 
 
 dont_write_bytecode = False
