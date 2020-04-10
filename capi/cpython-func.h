@@ -1050,10 +1050,11 @@ PyAPI_FUNC(int) _PyArg_ParseStack(PyObject* const* args, Py_ssize_t nargs,
                                   const char* format, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject* const* args, Py_ssize_t nargs,
                                         const char* format, ...);
-PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(PyObject**, Py_ssize_t, PyObject*,
-                                             struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int)
-    _PyArg_ParseStackAndKeywords_SizeT(PyObject**, Py_ssize_t, PyObject*,
+    _PyArg_ParseStackAndKeywords(PyObject* const*, Py_ssize_t, PyObject*,
+                                 struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int)
+    _PyArg_ParseStackAndKeywords_SizeT(PyObject* const*, Py_ssize_t, PyObject*,
                                        struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject*, PyObject*,
                                                  struct _PyArg_Parser*, ...);

@@ -51,12 +51,12 @@ static int vgetargskeywords(PyObject*, PyObject*, const char*, char**, va_list*,
 
 static bool vGetArgsKeywordsFast(PyObject*, PyObject*, struct _PyArg_Parser*,
                                  va_list*, int);
-static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
+static bool vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
                                      PyObject* keywords, PyObject* kwnames,
                                      struct _PyArg_Parser* parser,
                                      va_list* p_va, int flags);
 static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count);
-static PyObject* findKeyword(PyObject* kwnames, PyObject** kwstack,
+static PyObject* findKeyword(PyObject* kwnames, PyObject* const* kwstack,
                              const char* key);
 static const char* skipitem(const char**, va_list*, int);
 
@@ -1333,8 +1333,8 @@ PY_EXPORT int _PyArg_ParseTupleAndKeywordsFast_SizeT(
   return retval;
 }
 
-PY_EXPORT int _PyArg_ParseStackAndKeywords(PyObject** args, Py_ssize_t nargs,
-                                           PyObject* kwnames,
+PY_EXPORT int _PyArg_ParseStackAndKeywords(PyObject* const* args,
+                                           Py_ssize_t nargs, PyObject* kwnames,
                                            struct _PyArg_Parser* parser, ...) {
   if ((kwnames != nullptr && !PyTuple_Check(kwnames)) || parser == nullptr) {
     PyErr_BadInternalCall();
@@ -1349,7 +1349,7 @@ PY_EXPORT int _PyArg_ParseStackAndKeywords(PyObject** args, Py_ssize_t nargs,
   return retval;
 }
 
-PY_EXPORT int _PyArg_ParseStackAndKeywords_SizeT(PyObject** args,
+PY_EXPORT int _PyArg_ParseStackAndKeywords_SizeT(PyObject* const* args,
                                                  Py_ssize_t nargs,
                                                  PyObject* kwnames,
                                                  struct _PyArg_Parser* parser,
@@ -1391,7 +1391,7 @@ static bool vGetArgsKeywordsFast(PyObject* args, PyObject* keywords,
                                   p_va, flags);
 }
 
-static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
+static bool vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
                                      PyObject* keywords, PyObject* kwnames,
                                      struct _PyArg_Parser* parser,
                                      va_list* p_va, int flags) {
@@ -1428,7 +1428,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
   }
 
   Py_ssize_t num_keywords = 0;
-  PyObject** kwstack = nullptr;
+  PyObject* const* kwstack = nullptr;
   if (keywords != nullptr) {
     num_keywords = PyDict_Size(keywords);
   } else if (kwnames != nullptr) {
@@ -1896,7 +1896,7 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
   return true;
 }
 
-static PyObject* findKeyword(PyObject* kwnames, PyObject** kwstack,
+static PyObject* findKeyword(PyObject* kwnames, PyObject* const* kwstack,
                              const char* key) {
   Py_ssize_t num_kwargs = PyTuple_GET_SIZE(kwnames);
   for (Py_ssize_t i = 0; i < num_kwargs; i++) {
