@@ -239,5 +239,9 @@ def dumps(obj, version=version):
         return f.getvalue()
 
 
+def load(f):
+    _unimplemented()
+
+
 def loads(bytes):
     _builtin()
