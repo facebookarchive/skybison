@@ -54,7 +54,6 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(marshal), &initializeFrozenModule<&kMarshalModuleData>},
     {ID(mmap), &MmapModule::initialize},
     {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
-    {ID(readline), &initializeFrozenModule<&kReadlineModuleData>},
     {ID(sys), &SysModule::initialize},
     {ID(unicodedata), &UnicodedataModule::initialize},
     {ID(warnings), &initializeFrozenModule<&kWarningsModuleData>},

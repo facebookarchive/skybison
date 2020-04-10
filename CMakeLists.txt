@@ -243,7 +243,6 @@ set(
   library/marshal.py
   library/mmap.py
   library/operator.py
-  library/readline.py
   library/sys.py
   library/unicodedata.py
   library/warnings.py)

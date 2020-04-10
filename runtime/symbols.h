@@ -644,7 +644,6 @@ class Runtime;
   V(range_iterator)                                                            \
   V(read)                                                                      \
   V(readall)                                                                   \
-  V(readline)                                                                  \
   V(readonly)                                                                  \
   V(real)                                                                      \
   V(reason)                                                                    \
