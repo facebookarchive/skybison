@@ -30,6 +30,7 @@ loads() -- read value from a bytes-like object"""
 import _struct
 from builtins import code as CodeType
 
+import _io
 from _builtins import _builtin, _byteslike_check, _type, _unimplemented
 
 
@@ -65,153 +66,159 @@ _INT32_MIN = -0x7FFFFFFF - 1
 version = 2
 
 
-class _Marshaller:
-    def __init__(self, writefunc):
-        self._write = writefunc
-
-    def dump(self, x):  # noqa: C901
-        ty = _type(x)
-        if x is None:
-            self._write(TYPE_NONE)
-        elif x is StopIteration:
-            self._write(TYPE_STOPITER)
-        elif x is ...:
-            self._write(TYPE_ELLIPSIS)
-        elif x is False:
-            self._write(TYPE_FALSE)
-        elif x is True:
-            self._write(TYPE_TRUE)
-        elif ty is int:
-            self.dump_int(x)
-        elif ty is float:
-            self.dump_float(x)
-        elif ty is complex:
-            self.dump_complex(x)
-        elif ty is str:
-            self.dump_str(x)
-        elif _byteslike_check(x):
-            self.dump_bytes(x)
-        elif ty is tuple:
-            self.dump_tuple(x)
-        elif ty is list:
-            self.dump_list(x)
-        elif ty is dict:
-            self.dump_dict(x)
-        elif ty is set:
-            self.dump_set(x)
-        elif ty is frozenset:
-            self.dump_frozenset(x)
-        elif ty is CodeType:
-            self.dump_code(x)
-        else:
-            raise ValueError("unmarshallable object")
-
-    def w_long(self, x):
-        self._write(x.to_bytes(4, "little", signed=True))
-
-    def w_short(self, x):
-        self._write(x.to_bytes(2, "little", signed=True))
-
-    def dump_int(self, x):
-        if _INT32_MIN <= x <= _INT32_MAX:
-            self._write(TYPE_INT)
-            self.w_long(x)
-            return
-        self._write(TYPE_LONG)
-        sign = 1
-        if x < 0:
-            sign = -1
-            x = -x
-        digits = []
-        while x:
-            digits.append(x & 0x7FFF)
-            x >>= 15
-        self.w_long(len(digits) * sign)
-        for d in digits:
-            self.w_short(d)
-
-    def dump_float(self, x):
-        write = self._write
-        write(TYPE_BINARY_FLOAT)
-        write(_struct.pack("d", x))
-
-    def dump_complex(self, x):
-        write = self._write
-        write(TYPE_BINARY_COMPLEX)
-        write(_struct.pack("d", x.real))
-        write(_struct.pack("d", x.imag))
-
-    def dump_bytes(self, x):
-        self._write(TYPE_STRING)
-        self.w_long(len(x))
-        self._write(x)
-
-    def dump_str(self, x):
-        # TODO(T63932056): Check if a string is interned and emit TYPE_INTERNED
-        # or TYPE_STRINGREF
-        self._write(TYPE_UNICODE)
-        s = x.encode("utf8", "surrogatepass")
-        self.w_long(len(s))
-        self._write(s)
-
-    def dump_tuple(self, x):
-        self._write(TYPE_TUPLE)
-        self.w_long(len(x))
-        for item in x:
-            self.dump(item)
-
-    def dump_list(self, x):
-        self._write(TYPE_LIST)
-        self.w_long(len(x))
-        for item in x:
-            self.dump(item)
-
-    def dump_dict(self, x):
-        self._write(TYPE_DICT)
-        for key, value in x.items():
-            self.dump(key)
-            self.dump(value)
-        self._write(TYPE_NULL)
-
-    def dump_code(self, x):
-        self._write(TYPE_CODE)
-        self.w_long(x.co_argcount)
-        self.w_long(x.co_kwonlyargcount)
-        self.w_long(x.co_nlocals)
-        self.w_long(x.co_stacksize)
-        self.w_long(x.co_flags)
-        self.dump(x.co_code)
-        self.dump(x.co_consts)
-        self.dump(x.co_names)
-        self.dump(x.co_varnames)
-        self.dump(x.co_freevars)
-        self.dump(x.co_cellvars)
-        self.dump(x.co_filename)
-        self.dump(x.co_name)
-        self.w_long(x.co_firstlineno)
-        self.dump(x.co_lnotab)
-
-    def dump_set(self, x):
-        self._write(TYPE_SET)
-        self.w_long(len(x))
-        for each in x:
-            self.dump(each)
-
-    def dump_frozenset(self, x):
-        self._write(TYPE_FROZENSET)
-        self.w_long(len(x))
-        for each in x:
-            self.dump(each)
+def _dump(obj, f):  # noqa: C901
+    ty = _type(obj)
+    if obj is None:
+        f.write(TYPE_NONE)
+    elif obj is StopIteration:
+        f.write(TYPE_STOPITER)
+    elif obj is ...:
+        f.write(TYPE_ELLIPSIS)
+    elif obj is False:
+        f.write(TYPE_FALSE)
+    elif obj is True:
+        f.write(TYPE_TRUE)
+    elif ty is int:
+        _dump_int(obj, f)
+    elif ty is float:
+        _dump_float(obj, f)
+    elif ty is complex:
+        _dump_complex(obj, f)
+    elif ty is str:
+        _dump_str(obj, f)
+    elif _byteslike_check(obj):
+        _dump_bytes(obj, f)
+    elif ty is tuple:
+        _dump_tuple(obj, f)
+    elif ty is list:
+        _dump_list(obj, f)
+    elif ty is dict:
+        _dump_dict(obj, f)
+    elif ty is set:
+        _dump_set(obj, f)
+    elif ty is frozenset:
+        _dump_frozenset(obj, f)
+    elif ty is CodeType:
+        _dump_code(obj, f)
+    else:
+        raise ValueError("unmarshallable object")
 
 
-def dumps(x, version=version):
+def _dump_int(obj, f):
+    if _INT32_MIN <= obj <= _INT32_MAX:
+        f.write(TYPE_INT)
+        _w_long(obj, f)
+        return
+    f.write(TYPE_LONG)
+    sign = 1
+    if obj < 0:
+        sign = -1
+        obj = -obj
+    digits = []
+    while obj:
+        digits.append(obj & 0x7FFF)
+        obj >>= 15
+    _w_long(len(digits) * sign, f)
+    for d in digits:
+        _w_short(d, f)
+
+
+def _dump_float(obj, f):
+    f.write(TYPE_BINARY_FLOAT)
+    f.write(_struct.pack("d", obj))
+
+
+def _dump_complex(obj, f):
+    f.write(TYPE_BINARY_COMPLEX)
+    f.write(_struct.pack("d", obj.real))
+    f.write(_struct.pack("d", obj.imag))
+
+
+def _dump_bytes(obj, f):
+    f.write(TYPE_STRING)
+    _w_long(len(obj), f)
+    f.write(obj)
+
+
+def _dump_str(obj, f):
+    # TODO(T63932056): Check if a string is interned and emit TYPE_INTERNED
+    # or TYPE_STRINGREF
+    f.write(TYPE_UNICODE)
+    s = obj.encode("utf8", "surrogatepass")
+    _w_long(len(s), f)
+    f.write(s)
+
+
+def _dump_tuple(obj, f):
+    f.write(TYPE_TUPLE)
+    _w_long(len(obj), f)
+    for item in obj:
+        _dump(item, f)
+
+
+def _dump_list(obj, f):
+    f.write(TYPE_LIST)
+    _w_long(len(obj), f)
+    for item in obj:
+        _dump(item, f)
+
+
+def _dump_dict(obj, f):
+    f.write(TYPE_DICT)
+    for key, value in obj.items():
+        _dump(key, f)
+        _dump(value, f)
+    f.write(TYPE_NULL)
+
+
+def _dump_code(obj, f):
+    f.write(TYPE_CODE)
+    _w_long(obj.co_argcount, f)
+    _w_long(obj.co_kwonlyargcount, f)
+    _w_long(obj.co_nlocals, f)
+    _w_long(obj.co_stacksize, f)
+    _w_long(obj.co_flags, f)
+    _dump(obj.co_code, f)
+    _dump(obj.co_consts, f)
+    _dump(obj.co_names, f)
+    _dump(obj.co_varnames, f)
+    _dump(obj.co_freevars, f)
+    _dump(obj.co_cellvars, f)
+    _dump(obj.co_filename, f)
+    _dump(obj.co_name, f)
+    _w_long(obj.co_firstlineno, f)
+    _dump(obj.co_lnotab, f)
+
+
+def _dump_set(obj, f):
+    f.write(TYPE_SET)
+    _w_long(len(obj), f)
+    for item in obj:
+        _dump(item, f)
+
+
+def _dump_frozenset(obj, f):
+    f.write(TYPE_FROZENSET)
+    _w_long(len(obj), f)
+    for item in obj:
+        _dump(item, f)
+
+
+def _w_long(obj, f):
+    f.write(obj.to_bytes(4, "little", signed=True))
+
+
+def _w_short(obj, f):
+    f.write(obj.to_bytes(2, "little", signed=True))
+
+
+def dumps(obj, version=version):
     if version != 2:
         # TODO(T63932405): Support marshal versions other than 2
         _unimplemented()
-    buffer = bytearray()
-    m = _Marshaller(buffer.extend)
-    m.dump(x)
-    return bytes(buffer)
+    with _io.BytesIO() as f:
+        _dump(obj, f)
+        return f.getvalue()
 
 
 def loads(bytes):
