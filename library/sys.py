@@ -77,6 +77,7 @@ class _IOStream:
 
     def __init__(self, fd):
         self._fd = fd
+        self.encoding = "utf-8"
 
     def fileno(self):
         return self._fd

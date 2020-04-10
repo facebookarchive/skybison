@@ -112,6 +112,15 @@ import unittest
 from io import StringIO
 from collections import namedtuple
 
+# TODO(T65304353) Remove this
+try:
+    from sys import gettrace, settrace
+except ImportError:
+    def gettrace():
+        return None
+    def settrace(function):
+        pass
+
 TestResults = namedtuple('TestResults', 'failed attempted')
 
 # There are 4 basic classes:
@@ -1463,7 +1472,9 @@ class DocTestRunner:
         # Note that the interactive output will go to *our*
         # save_stdout, even if that's not the real sys.stdout; this
         # allows us to write test cases for the set_trace behavior.
-        save_trace = sys.gettrace()
+        # TODO(T65304353) Revert this change
+        #save_trace = sys.gettrace()
+        save_trace = gettrace()
         save_set_trace = pdb.set_trace
         self.debugger = _OutputRedirectingPdb(save_stdout)
         self.debugger.reset()
@@ -1483,7 +1494,9 @@ class DocTestRunner:
         finally:
             sys.stdout = save_stdout
             pdb.set_trace = save_set_trace
-            sys.settrace(save_trace)
+            # TODO(T65304353) Revert this change
+            #sys.settrace(save_trace)
+            settrace(save_trace)
             linecache.getlines = self.save_linecache_getlines
             sys.displayhook = save_displayhook
             if clear_globs:
