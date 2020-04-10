@@ -280,13 +280,10 @@ class UnicodeData:
                         continue
                     name, chars = s.split(";")
                     chars = tuple(int(char, 16) for char in chars.split())
-                    # check that the structure defined in makeunicodename is OK
-                    assert 2 <= len(chars) <= 4, "change the Py_UCS2 array size"
-                    assert all(c <= 0xFFFF for c in chars), (
-                        "use Py_UCS4 in "
-                        "the NamedSequence struct and in unicodedata_lookup"
-                    )
-                    self.named_sequences.append((name, chars))
+                    # check that the structure defined in write_header is OK
+                    assert len(chars) <= 4, "change the NamedSequence array size"
+                    assert all(c < NUM_CODE_POINTS for c in chars)
+                    self.named_sequences.append(NamedSequence(name, chars))
                     # also store these in the PUA 1
                     self.table[pua_index][1] = name
                     pua_index += 1
@@ -694,6 +691,16 @@ class DatabaseRecord:
 
 
 @dataclass(frozen=True)
+class NamedSequence:
+    name: int
+    seq: int
+
+    def __str__(self):
+        seq_str = ", ".join(f"{elt:#04x}" for elt in self.seq)
+        return f"{{{len(self.seq)}, {{{seq_str}}}}}"
+
+
+@dataclass(frozen=True)
 class Reindex:
     start: int
     count: int
@@ -990,6 +997,11 @@ struct UnicodeDatabaseRecord {{
   const byte quick_check;
 }};
 
+struct UnicodeNamedSequence {{
+  const byte length;
+  const int32_t code_points[4];
+}};
+
 struct UnicodeTypeRecord {{
   // Deltas to the character or offsets in kExtendedCase
   const int32_t upper;
@@ -1048,6 +1060,7 @@ bool unicodeIsWhitespace(int32_t code_point);
 
 const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
+const UnicodeNamedSequence* namedSequence(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
 }}  // namespace py
@@ -1373,6 +1386,10 @@ static const int kPhrasebookMask = (1 << kPhrasebookShift) - 1;
 
     aliases = [codepoint for _, codepoint in unicode.aliases]
     UIntArray("kNameAliases", aliases).dump(db, trace)
+
+    StructArray(
+        "UnicodeNamedSequence", "kNamedSequences", unicode.named_sequences
+    ).dump(db, trace)
 
 
 def write_type_data(unicode, db, trace):  # noqa: C901
@@ -2002,6 +2019,11 @@ const UnicodeDatabaseRecord* databaseRecord(int32_t code_point) {
   index <<= kDatabaseIndexShift;
   index = kDatabaseIndex2[index + (code_point & kDatabaseIndexMask)];
   return &kDatabaseRecords[index];
+}
+
+const UnicodeNamedSequence* namedSequence(int32_t code_point) {
+  DCHECK(Unicode::isNamedSequence(code_point), "not a named sequence");
+  return &kNamedSequences[code_point - Unicode::kNamedSequenceStart];
 }
 
 const UnicodeTypeRecord* typeRecord(int32_t code_point) {

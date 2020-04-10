@@ -75,6 +75,63 @@ RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
   return kCategoryNames[databaseRecord(code_point)->category];
 }
 
+static RawObject copyName(Thread* thread, const Object& name_obj, byte* buffer,
+                          word size) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfStr(*name_obj)) {
+    Str name(&scope, strUnderlying(*name_obj));
+    word length = name.charLength();
+    if (length > size) {
+      return thread->raiseWithFmt(LayoutId::kKeyError, "name too long");
+    }
+    name.copyTo(buffer, length);
+    return SmallInt::fromWord(length);
+  }
+  if (runtime->isInstanceOfBytes(*name_obj)) {
+    Bytes name(&scope, bytesUnderlying(*name_obj));
+    word length = name.length();
+    if (length > size) {
+      return thread->raiseWithFmt(LayoutId::kKeyError, "name too long");
+    }
+    name.copyTo(buffer, length);
+    return SmallInt::fromWord(length);
+  }
+  if (runtime->isByteslike(*name_obj)) {
+    UNIMPLEMENTED("bytes-like other than bytes");
+  }
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "a bytes-like object is required, not '%T'",
+                              &name_obj);
+}
+
+RawObject FUNC(unicodedata, lookup)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object name(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+
+  byte buffer[kMaxNameLength + 1];
+  Object copy_result(&scope, copyName(thread, name, buffer, kMaxNameLength));
+  if (copy_result.isErrorException()) {
+    return *copy_result;
+  }
+  word length = SmallInt::cast(*copy_result).value();
+
+  int32_t code_point = codePointFromNameOrNamedSequence(buffer, length);
+  if (code_point < 0) {
+    buffer[length] = '\0';
+    return thread->raiseWithFmt(LayoutId::kKeyError,
+                                "undefined character name '%s'", buffer);
+  }
+  if (Unicode::isNamedSequence(code_point)) {
+    const UnicodeNamedSequence* seq = namedSequence(code_point);
+    return runtime->newStrFromUTF32({seq->code_points, seq->length});
+  }
+  DCHECK_BOUND(code_point, kMaxUnicode);
+  return SmallStr::fromCodePoint(code_point);
+}
+
 static NormalizationForm getForm(const Str& str) {
   if (str.equalsCStr("NFC")) {
     return NormalizationForm::kNFC;

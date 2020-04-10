@@ -67,6 +67,11 @@ struct UnicodeDatabaseRecord {
   const byte quick_check;
 };
 
+struct UnicodeNamedSequence {
+  const byte length;
+  const int32_t code_points[4];
+};
+
 struct UnicodeTypeRecord {
   // Deltas to the character or offsets in kExtendedCase
   const int32_t upper;
@@ -125,6 +130,7 @@ bool unicodeIsWhitespace(int32_t code_point);
 
 const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
+const UnicodeNamedSequence* namedSequence(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
 }  // namespace py

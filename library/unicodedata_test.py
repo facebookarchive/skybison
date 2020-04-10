@@ -65,6 +65,28 @@ class UnicodedataTests(unittest.TestCase):
         self.assertEqual(unicodedata.category("\U0001012A"), "No")
         self.assertEqual(unicodedata.category("\U00020000"), "Lo")
 
+    def test_lookup_uses_current_version(self):
+        self.assertEqual(unicodedata.lookup("latin CAPITAL Letter a"), "A")
+        self.assertEqual(unicodedata.lookup("digit zero"), "0")
+        self.assertEqual(unicodedata.lookup("TAI VIET LETTER LOW VO"), "\uAAAA")
+
+        # Hangul
+        self.assertEqual(unicodedata.lookup("Hangul jongseong RIEUL-PIEUP"), "\u11B2")
+        self.assertEqual(unicodedata.lookup("HANGUL SYLLABLE JJWAENH"), "\uCAFA")
+
+        # CJK
+        self.assertEqual(unicodedata.lookup("CJK UNIFIED IDEOGRAPH-35AB"), "\u35AB")
+        self.assertEqual(
+            unicodedata.lookup("CJK UNIFIED IDEOGRAPH-20000"), "\U00020000"
+        )
+
+        # Named Sequences
+        self.assertEqual(unicodedata.lookup("TAI VIET LETTER LOW VO"), "\uAAAA")
+
+        self.assertRaises(KeyError, unicodedata.lookup, "letter b")
+        self.assertRaises(KeyError, unicodedata.lookup, "hangul syllable son")
+        self.assertRaises(KeyError, unicodedata.lookup, "cjk unified ideograph-20000")
+
     def test_numeric_uses_current_version(self):
         self.assertEqual(unicodedata.numeric("7"), 7.0)
         self.assertEqual(unicodedata.numeric("\u00BE"), 0.75)

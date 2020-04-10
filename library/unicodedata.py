@@ -86,7 +86,7 @@ def is_normalized(form, unistr):
 
 
 def lookup(name):
-    _unimplemented()
+    _builtin()
 
 
 def mirrored(chr):
