@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import sys
+import tempfile
 import unittest
 import unittest.mock
 from unittest.mock import Mock
@@ -1466,6 +1468,25 @@ class OpenTests(unittest.TestCase):
         fd = _getfd()
         with _io.open(fd, buffering=False, mode="rb") as result:
             self.assertIsInstance(result, _io.FileIO)
+
+    @unittest.skipIf(sys.platform == "darwin", "Darwin rejects non-utf8 filenames")
+    def test_open_non_utf8_filename(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            filename = "bad_surrogate\udc80.txt"
+            full_path = os.path.join(tempdir, filename)
+            with open(full_path, "w") as fp:
+                fp.write("foobar")
+            filename_encoded = filename.encode(
+                sys.getfilesystemencoding(), sys.getfilesystemencodeerrors()
+            )
+            tempdir_bytes = tempdir.encode(
+                sys.getfilesystemencoding(), sys.getfilesystemencodeerrors()
+            )
+            files = os.listdir(tempdir_bytes)
+            self.assertIn(filename_encoded, files)
+
+            with open(full_path, "r") as fp:
+                self.assertEqual(fp.read(), "foobar")
 
 
 @pyro_only

@@ -187,7 +187,7 @@ float_info = _FloatInfo(
 
 def getfilesystemencodeerrors():
     # TODO(T40363016): Allow arbitrary encodings and error handlings.
-    return "surrogateescape"
+    return "surrogatepass"
 
 
 def getfilesystemencoding():
