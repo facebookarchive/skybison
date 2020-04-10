@@ -99,6 +99,7 @@ PyInterpreterState_New(void)
         interp->importlib = NULL;
         interp->import_func = NULL;
         interp->eval_frame = _PyEval_EvalFrameDefault;
+        interp->pyexitfunc = NULL;
         coextra->co_extra_user_count = 0;
         coextra->interp = interp;
 #ifdef HAVE_DLOPEN

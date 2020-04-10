@@ -56,7 +56,7 @@ static int initfsencoding(PyInterpreterState *interp);
 static void initsite(void);
 static int initstdio(void);
 static void initsigs(void);
-static void call_py_exitfuncs(void);
+static void call_py_exitfuncs(PyInterpreterState *interp);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 extern int _PyUnicode_Init(void);
@@ -577,11 +577,11 @@ Py_FinalizeEx(void)
      * threads created thru it, so this also protects pending imports in
      * the threads created via Threading.
      */
-    call_py_exitfuncs();
-
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
     interp = tstate->interp;
+
+    call_py_exitfuncs(interp);
 
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
@@ -1504,20 +1504,29 @@ exit:
 #  include "pythread.h"
 #endif
 
-static void (*pyexitfunc)(void) = NULL;
 /* For the atexit module. */
-void _Py_PyAtExit(void (*func)(void))
+void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
-    pyexitfunc = func;
+    PyThreadState *ts;
+    PyInterpreterState *is;
+
+    ts = PyThreadState_GET();
+    is = ts->interp;
+
+    /* Guard against API misuse (see bpo-17852) */
+    assert(is->pyexitfunc == NULL || is->pyexitfunc == func);
+
+    is->pyexitfunc = func;
+    is->pyexitmodule = module;
 }
 
 static void
-call_py_exitfuncs(void)
+call_py_exitfuncs(PyInterpreterState *istate)
 {
-    if (pyexitfunc == NULL)
+    if (istate->pyexitfunc == NULL)
         return;
 
-    (*pyexitfunc)();
+    (*istate->pyexitfunc)(istate->pyexitmodule);
     PyErr_Clear();
 }
 

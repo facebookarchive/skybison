@@ -47,7 +47,7 @@ enum LayoutTypeTransition {
   kTransitionSize,
 };
 
-using AtExitFn = void (*)();
+using AtExitFn = void (*)(PyObject*);
 
 using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
 
@@ -419,9 +419,18 @@ class Runtime {
 
   IdentityDict* apiCaches() { return &api_caches_; }
 
-  void setAtExit(AtExitFn at_exit) { at_exit_ = at_exit; }
+  void setAtExit(AtExitFn at_exit, PyObject* module) {
+    if (at_exit_ != nullptr) {
+      DCHECK(at_exit_ == at_exit,
+             "setAtExit should not override existing at_exit function");
+    }
+    at_exit_ = at_exit;
+    at_exit_module_ = module;
+  }
   void atExit() {
-    if (at_exit_ != nullptr) at_exit_();
+    if (at_exit_ == nullptr) return;
+    at_exit_(at_exit_module_);
+    Thread::current()->clearPendingException();
   }
 
   Symbols* symbols() { return symbols_; }
@@ -980,8 +989,9 @@ class Runtime {
 
   Symbols* symbols_;
 
-  // atexit C Function
+  // atexit C Function (to be called with atexit module)
   AtExitFn at_exit_ = nullptr;
+  PyObject* at_exit_module_ = nullptr;
 
   static word next_module_index_;
 

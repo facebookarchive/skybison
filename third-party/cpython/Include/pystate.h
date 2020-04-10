@@ -44,6 +44,9 @@ typedef struct _is {
     int dlopenflags;
 #endif
 
+    void (*pyexitfunc)(PyObject *);
+    PyObject *pyexitmodule;
+
     PyObject *builtins_copy;
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */

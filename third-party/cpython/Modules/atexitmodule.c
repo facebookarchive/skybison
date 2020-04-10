@@ -63,17 +63,13 @@ atexit_cleanup(atexitmodule_state *modstate)
 /* Installed into pylifecycle.c's atexit mechanism */
 
 static void
-atexit_callfuncs(void)
+atexit_callfuncs(PyObject* module)
 {
     PyObject *exc_type = NULL, *exc_value, *exc_tb, *r;
     atexit_callback *cb;
-    PyObject *module;
     atexitmodule_state *modstate;
     int i;
 
-    module = PyState_FindModule(&atexitmodule);
-    if (module == NULL)
-        return;
     modstate = GET_ATEXIT_STATE(module);
 
     if (modstate->ncallbacks == 0)
@@ -185,7 +181,7 @@ Run all registered exit functions.");
 static PyObject *
 atexit_run_exitfuncs(PyObject *self, PyObject *unused)
 {
-    atexit_callfuncs();
+    atexit_callfuncs(self);
     if (PyErr_Occurred())
         return NULL;
     Py_RETURN_NONE;
@@ -347,7 +343,7 @@ PyInit_atexit(void)
     if (modstate->atexit_callbacks == NULL)
         return NULL;
 
-    _Py_PyAtExit(atexit_callfuncs);
+    _Py_PyAtExit(atexit_callfuncs, m);
     PyState_AddModule(m, &atexitmodule);
     return m;
 }

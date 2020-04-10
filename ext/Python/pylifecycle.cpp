@@ -139,8 +139,8 @@ PY_EXPORT void Py_SetPythonHome(wchar_t* /* home */) {
   UNIMPLEMENTED("Py_SetPythonHome");
 }
 
-PY_EXPORT void _Py_PyAtExit(void (*func)(void)) {
-  Thread::current()->runtime()->setAtExit(func);
+PY_EXPORT void _Py_PyAtExit(void (*func)(PyObject*), PyObject* module) {
+  Thread::current()->runtime()->setAtExit(func, module);
 }
 
 PY_EXPORT void _Py_RestoreSignals() {
