@@ -6,8 +6,16 @@
 
 namespace py {
 
+bool Unicode::isLinebreakDB(int32_t code_point) {
+  return unicodeIsLinebreak(code_point);
+}
+
 bool Unicode::isLowerDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kLowerMask) != 0;
+}
+
+bool Unicode::isSpaceDB(int32_t code_point) {
+  return unicodeIsWhitespace(code_point);
 }
 
 bool Unicode::isTitleDB(int32_t code_point) {

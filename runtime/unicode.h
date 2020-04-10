@@ -16,6 +16,7 @@ class ASCII {
   static bool isAlpha(byte b);
   static bool isDecimal(byte b);
   static bool isDigit(byte b);
+  static bool isLinebreak(byte b);
   static bool isLower(byte b);
   static bool isNumeric(byte b);
   static bool isPrintable(byte b);
@@ -81,6 +82,7 @@ class Unicode {
   static bool isHangulSyllable(int32_t code_point);
   static bool isHangulTrail(int32_t code_point);
   static bool isHangulVowel(int32_t code_point);
+  static bool isLinebreak(int32_t code_point);
   static bool isLower(int32_t code_point);
   static bool isNamedSequence(int32_t code_point);
   static bool isPrintable(int32_t code_point);
@@ -97,7 +99,9 @@ class Unicode {
 
  private:
   // Slow paths that use the Unicode database.
+  static bool isLinebreakDB(int32_t code_point);
   static bool isLowerDB(int32_t code_point);
+  static bool isSpaceDB(int32_t code_point);
   static bool isTitleDB(int32_t code_point);
   static bool isUpperDB(int32_t code_point);
   static bool isXidContinueDB(int32_t code_point);
@@ -117,6 +121,21 @@ inline bool ASCII::isAlpha(byte b) { return isUpper(b) || isLower(b); }
 inline bool ASCII::isDecimal(byte b) { return isDigit(b); }
 
 inline bool ASCII::isDigit(byte b) { return '0' <= b && b <= '9'; }
+
+inline bool ASCII::isLinebreak(byte b) {
+  switch (b) {
+    case '\n':
+    case '\x0B':
+    case '\x0C':
+    case '\r':
+    case '\x1C':
+    case '\x1D':
+    case '\x1E':
+      return true;
+    default:
+      return false;
+  }
+}
 
 inline bool ASCII::isLower(byte b) { return 'a' <= b && b <= 'z'; }
 
@@ -215,6 +234,13 @@ inline bool Unicode::isHangulVowel(int32_t code_point) {
          (code_point < kHangulVowelStart + kHangulVowelCount);
 }
 
+inline bool Unicode::isLinebreak(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isLinebreak(code_point);
+  }
+  return isLinebreakDB(code_point);
+}
+
 inline bool Unicode::isLower(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isLower(code_point);
@@ -235,36 +261,11 @@ inline bool Unicode::isPrintable(int32_t code_point) {
   return true;
 }
 
-// Returns true for Unicode characters having the bidirectional
-// type 'WS', 'B' or 'S' or the category 'Zs', false otherwise.
 inline bool Unicode::isSpace(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isSpace(code_point);
   }
-  switch (code_point) {
-    case 0x0085:
-    case 0x00A0:
-    case 0x1680:
-    case 0x2000:
-    case 0x2001:
-    case 0x2002:
-    case 0x2003:
-    case 0x2004:
-    case 0x2005:
-    case 0x2006:
-    case 0x2007:
-    case 0x2008:
-    case 0x2009:
-    case 0x200A:
-    case 0x2028:
-    case 0x2029:
-    case 0x202F:
-    case 0x205F:
-    case 0x3000:
-      return true;
-    default:
-      return false;
-  }
+  return isSpaceDB(code_point);
 }
 
 inline bool Unicode::isTitle(int32_t code_point) {

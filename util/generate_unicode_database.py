@@ -1038,6 +1038,14 @@ int32_t normalizeOld(int32_t code_point);
 // Returns the numeric value of the code point, or -1.0 if not numeric.
 double numericValue(int32_t code_point);
 
+// Returns true if the code point has one of the line break properties "BK",
+// "CR", "LR", or "NL" or the bidirectional type "B". Returns false otherwise.
+bool unicodeIsLinebreak(int32_t code_point);
+
+// Returns true if the code point has the bidirectional type "WS", "B", or "S"
+// or the category "Zs". Returns false otherwise.
+bool unicodeIsWhitespace(int32_t code_point);
+
 const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
@@ -1527,6 +1535,32 @@ double numericValue(int32_t code_point) {
         """
     default:
       return -1.0;
+  }
+}
+
+bool unicodeIsLinebreak(int32_t code_point) {
+  switch (code_point) {"""
+    )
+    for codepoint in sorted(linebreaks):
+        db.write(f"\n    case {codepoint:#08x}:")
+    db.write(
+        """
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool unicodeIsWhitespace(int32_t code_point) {
+  switch (code_point) {"""
+    )
+    for codepoint in sorted(spaces):
+        db.write(f"\n    case {codepoint:#08x}:")
+    db.write(
+        """
+      return true;
+    default:
+      return false;
   }
 }
 """
