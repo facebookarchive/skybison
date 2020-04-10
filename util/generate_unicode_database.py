@@ -1035,6 +1035,9 @@ bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
 // from the current version. If the normalization is unchanged, returns -1.
 int32_t normalizeOld(int32_t code_point);
 
+// Returns the numeric value of the code point, or -1.0 if not numeric.
+double numericValue(int32_t code_point);
+
 const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
@@ -1506,6 +1509,28 @@ static const int32_t kTypeIndexMask = (int32_t{{1}} << kTypeIndexShift) - 1;
 
     # extended case mappings
     CodePointArray("kExtendedCase", extended_cases).dump(db, trace)
+
+    db.write(
+        """
+double numericValue(int32_t code_point) {
+  switch (code_point) {"""
+    )
+    for value, codepoints in sorted(numeric.items()):
+        parts = value.split("/")
+        value = " / ".join(repr(float(part)) for part in parts)
+
+        codepoints.sort()
+        for codepoint in codepoints:
+            db.write(f"\n    case {codepoint:#08x}:")
+        db.write(f"\n      return {value};")
+    db.write(
+        """
+    default:
+      return -1.0;
+  }
+}
+"""
+    )
 
 
 def write_change_data(unicode, db, trace):

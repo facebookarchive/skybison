@@ -312,6 +312,34 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   return compose(thread, buffer);
 }
 
+RawObject FUNC(unicodedata, numeric)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "numeric() argument must be a unicode character");
+  }
+
+  double value = numericValue(code_point);
+  if (value != -1.0) {
+    return runtime->newFloat(value);
+  }
+
+  Object default_value(&scope, args.get(1));
+  if (default_value.isUnbound()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "not a numeric character");
+  }
+  return *default_value;
+}
+
 RawObject METH(UCD, bidirectional)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

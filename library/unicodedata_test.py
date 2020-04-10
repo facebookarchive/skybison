@@ -65,6 +65,21 @@ class UnicodedataTests(unittest.TestCase):
         self.assertEqual(unicodedata.category("\U0001012A"), "No")
         self.assertEqual(unicodedata.category("\U00020000"), "Lo")
 
+    def test_numeric_uses_current_version(self):
+        self.assertEqual(unicodedata.numeric("7"), 7.0)
+        self.assertEqual(unicodedata.numeric("\u00BE"), 0.75)
+        self.assertEqual(unicodedata.numeric("\u09F7"), 0.25)
+        self.assertEqual(unicodedata.numeric("\U000109D3"), 200.0)
+        self.assertEqual(unicodedata.numeric("\U00020AFD"), 3.0)
+
+        self.assertEqual(unicodedata.numeric("A", "default"), "default")
+
+        self.assertRaises(TypeError, unicodedata.numeric, 2)
+        self.assertRaises(TypeError, unicodedata.numeric, "")
+        self.assertRaises(TypeError, unicodedata.numeric, "foo")
+        self.assertRaises(ValueError, unicodedata.numeric, "A")
+        self.assertRaises(ValueError, unicodedata.numeric, "\u4EAC")
+
     def test_old_unidata_version(self):
         self.assertEqual(unicodedata.ucd_3_2_0.unidata_version, "3.2.0")
 

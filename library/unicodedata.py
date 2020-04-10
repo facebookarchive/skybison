@@ -102,7 +102,7 @@ def normalize(form, unistr):
 
 
 def numeric(chr, default=_Unbound):
-    _unimplemented()
+    _builtin()
 
 
 unidata_version = "11.0.0"

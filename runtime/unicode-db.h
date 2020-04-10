@@ -112,6 +112,9 @@ bool nameFromCodePoint(int32_t code_point, byte* buffer, word size);
 // from the current version. If the normalization is unchanged, returns -1.
 int32_t normalizeOld(int32_t code_point);
 
+// Returns the numeric value of the code point, or -1.0 if not numeric.
+double numericValue(int32_t code_point);
+
 const UnicodeChangeRecord* changeRecord(int32_t code_point);
 const UnicodeDatabaseRecord* databaseRecord(int32_t code_point);
 const UnicodeTypeRecord* typeRecord(int32_t code_point);
