@@ -41,10 +41,13 @@ PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     int current_locale,
     int surrogateescape);
 
-PyAPI_FUNC(char*) _Py_EncodeLocaleEx(
+PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     const wchar_t *text,
+    char **str,
     size_t *error_pos,
-    int current_locale);
+    const char **reason,
+    int current_locale,
+    int surrogateescape);
 
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 

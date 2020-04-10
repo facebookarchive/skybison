@@ -509,8 +509,10 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 }
 
 
-static char*
-encode_current_locale(const wchar_t *text, size_t *error_pos)
+static int
+encode_current_locale(const wchar_t *text, char **str,
+                      size_t *error_pos, const char **reason,
+                      int raw_malloc, int surrogateescape)
 {
     const size_t len = wcslen(text);
     char *result = NULL, *bytes = NULL;
@@ -526,34 +528,37 @@ encode_current_locale(const wchar_t *text, size_t *error_pos)
         for (i=0; i < len; i++) {
             c = text[i];
             if (c >= 0xdc80 && c <= 0xdcff) {
+                if (!surrogateescape) {
+                    goto encode_error;
+                }
                 /* UTF-8b surrogate */
                 if (bytes != NULL) {
                     *bytes++ = c - 0xdc00;
                     size--;
                 }
-                else
+                else {
                     size++;
+                }
                 continue;
             }
             else {
                 buf[0] = c;
-                if (bytes != NULL)
+                if (bytes != NULL) {
                     converted = wcstombs(bytes, buf, size);
-                else
+                }
+                else {
                     converted = wcstombs(NULL, buf, 0);
+                }
                 if (converted == (size_t)-1) {
-                    if (result != NULL)
-                        PyMem_Free(result);
-                    if (error_pos != NULL)
-                        *error_pos = i;
-                    return NULL;
+                    goto encode_error;
                 }
                 if (bytes != NULL) {
                     bytes += converted;
                     size -= converted;
                 }
-                else
+                else {
                     size += converted;
+                }
             }
         }
         if (result != NULL) {
@@ -562,56 +567,116 @@ encode_current_locale(const wchar_t *text, size_t *error_pos)
         }
 
         size += 1; /* nul byte at the end */
-        result = PyMem_Malloc(size);
+        if (raw_malloc) {
+            result = PyMem_RawMalloc(size);
+        }
+        else {
+            result = PyMem_Malloc(size);
+        }
         if (result == NULL) {
-            if (error_pos != NULL)
-                *error_pos = (size_t)-1;
-            return NULL;
+            return -1;
         }
         bytes = result;
     }
-    return result;
+    *str = result;
+    return 0;
+
+encode_error:
+    if (raw_malloc) {
+        PyMem_RawFree(result);
+    }
+    else {
+        PyMem_Free(result);
+    }
+    if (error_pos != NULL) {
+        *error_pos = i;
+    }
+    if (reason) {
+        *reason = "encoding error";
+    }
+    return -2;
 }
 
 
-static char*
-encode_locale(const wchar_t *text, size_t *error_pos, int current_locale)
+static int
+encode_ascii(const wchar_t *text, char **str,
+             size_t *error_pos, const char **reason,
+             int raw_malloc, int surrogateescape)
+{
+    char *result = NULL, *out;
+    size_t len, i;
+    wchar_t ch;
+
+    len = wcslen(text);
+
+    /* +1 for NULL byte */
+    if (raw_malloc) {
+        result = PyMem_RawMalloc(len + 1);
+    }
+    else {
+        result = PyMem_Malloc(len + 1);
+    }
+    if (result == NULL) {
+        return -1;
+    }
+
+    out = result;
+    for (i=0; i<len; i++) {
+        ch = text[i];
+
+        if (ch <= 0x7f) {
+            /* ASCII character */
+            *out++ = (char)ch;
+        }
+        else if (surrogateescape && 0xdc80 <= ch && ch <= 0xdcff) {
+            /* UTF-8b surrogate */
+            *out++ = (char)(ch - 0xdc00);
+        }
+        else {
+            if (raw_malloc) {
+                PyMem_RawFree(result);
+            }
+            else {
+                PyMem_Free(result);
+            }
+            if (error_pos != NULL) {
+                *error_pos = i;
+            }
+            if (reason) {
+                *reason = "encoding error";
+            }
+            return -2;
+        }
+    }
+    *out = '\0';
+    *str = result;
+    return 0;
+}
+
+
+static int
+encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
+                 const char **reason,
+                 int raw_malloc, int current_locale, int surrogateescape)
 {
     if (current_locale) {
-        return encode_current_locale(text, error_pos);
+#ifdef __ANDROID__
+        return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
+                                raw_malloc, surrogateescape);
+#else
+        return encode_current_locale(text, str, error_pos, reason,
+                                     raw_malloc, surrogateescape);
+#endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)
-    Py_ssize_t len;
-    PyObject *unicode, *bytes = NULL;
-    char *cpath;
-
-    unicode = PyUnicode_FromWideChar(text, wcslen(text));
-    if (unicode == NULL)
-        return NULL;
-
-    bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
-    Py_DECREF(unicode);
-    if (bytes == NULL) {
-        PyErr_Clear();
-        if (error_pos != NULL)
-            *error_pos = (size_t)-1;
-        return NULL;
-    }
-
-    len = PyBytes_GET_SIZE(bytes);
-    cpath = PyMem_Malloc(len+1);
-    if (cpath == NULL) {
-        PyErr_Clear();
-        Py_DECREF(bytes);
-        if (error_pos != NULL)
-            *error_pos = (size_t)-1;
-        return NULL;
-    }
-    memcpy(cpath, PyBytes_AsString(bytes), len + 1);
-    Py_DECREF(bytes);
-    return cpath;
+    return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
+                            raw_malloc, surrogateescape);
 #else   /* __APPLE__ */
+    if (Py_UTF8Mode == 1) {
+        return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
+                                raw_malloc, surrogateescape);
+    }
 
 #ifdef USE_FORCE_ASCII
     if (force_ascii == -1) {
@@ -619,12 +684,31 @@ encode_locale(const wchar_t *text, size_t *error_pos, int current_locale)
     }
 
     if (force_ascii) {
-        return encode_ascii_surrogateescape(text, error_pos);
+        return encode_ascii(text, str, error_pos, reason,
+                            raw_malloc, surrogateescape);
     }
 #endif
 
-    return encode_current_locale(text, error_pos);
+    return encode_current_locale(text, str, error_pos, reason,
+                                 raw_malloc, surrogateescape);
 #endif   /* __APPLE__ or __ANDROID__ */
+}
+
+
+static char*
+encode_locale(const wchar_t *text, size_t *error_pos,
+              int raw_malloc, int current_locale)
+{
+    char *str;
+    int res = encode_locale_ex(text, &str, error_pos, NULL,
+                               raw_malloc, current_locale, 1);
+    if (res != -2 && error_pos) {
+        *error_pos = (size_t)-1;
+    }
+    if (res != 0) {
+        return NULL;
+    }
+    return str;
 }
 
 
@@ -643,14 +727,17 @@ encode_locale(const wchar_t *text, size_t *error_pos, int current_locale)
 char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
-    return encode_locale(text, error_pos, 0);
+    return encode_locale(text, error_pos, 0, 0);
 }
 
 
-char*
-_Py_EncodeLocaleEx(const wchar_t *text, size_t *error_pos, int current_locale)
+int
+_Py_EncodeLocaleEx(const wchar_t *text, char **str,
+                   size_t *error_pos, const char **reason,
+                   int current_locale, int surrogateescape)
 {
-    return encode_locale(text, error_pos, current_locale);
+    return encode_locale_ex(text, str, error_pos, reason, 1,
+                            current_locale, surrogateescape);
 }
 
 

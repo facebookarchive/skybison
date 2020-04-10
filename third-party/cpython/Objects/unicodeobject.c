@@ -3400,52 +3400,6 @@ PyUnicode_AsEncodedObject(PyObject *unicode,
     return NULL;
 }
 
-static size_t
-wcstombs_errorpos(const wchar_t *wstr)
-{
-    size_t len;
-#if SIZEOF_WCHAR_T == 2
-    wchar_t buf[3];
-#else
-    wchar_t buf[2];
-#endif
-    char outbuf[MB_LEN_MAX];
-    const wchar_t *start, *previous;
-
-#if SIZEOF_WCHAR_T == 2
-    buf[2] = 0;
-#else
-    buf[1] = 0;
-#endif
-    start = wstr;
-    while (*wstr != L'\0')
-    {
-        previous = wstr;
-#if SIZEOF_WCHAR_T == 2
-        if (Py_UNICODE_IS_HIGH_SURROGATE(wstr[0])
-            && Py_UNICODE_IS_LOW_SURROGATE(wstr[1]))
-        {
-            buf[0] = wstr[0];
-            buf[1] = wstr[1];
-            wstr += 2;
-        }
-        else {
-            buf[0] = *wstr;
-            buf[1] = 0;
-            wstr++;
-        }
-#else
-        buf[0] = *wstr;
-        wstr++;
-#endif
-        len = wcstombs(outbuf, buf, sizeof(outbuf));
-        if (len == (size_t)-1)
-            return previous - start;
-    }
-
-    /* failed to find the unencodable character */
-    return 0;
-}
 
 static int
 locale_error_handler(const char *errors, int *surrogateescape)
@@ -3472,111 +3426,51 @@ static PyObject *
 unicode_encode_locale(PyObject *unicode, const char *errors,
                       int current_locale)
 {
-    Py_ssize_t wlen, wlen2;
-    wchar_t *wstr;
-    PyObject *bytes = NULL;
-    char *errmsg;
-    PyObject *reason = NULL;
-    PyObject *exc;
-    size_t error_pos;
     int surrogateescape;
-
     if (locale_error_handler(errors, &surrogateescape) < 0)
         return NULL;
 
-    wstr = PyUnicode_AsWideCharString(unicode, &wlen);
-    if (wstr == NULL)
+    Py_ssize_t wlen;
+    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, &wlen);
+    if (wstr == NULL) {
         return NULL;
+    }
 
-    wlen2 = wcslen(wstr);
-    if (wlen2 != wlen) {
-        PyMem_Free(wstr);
+    if ((size_t)wlen != wcslen(wstr)) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
+        PyMem_Free(wstr);
         return NULL;
     }
 
-    if (surrogateescape) {
-        /* "surrogateescape" error handler */
-        char *str;
-
-        str = _Py_EncodeLocaleEx(wstr, &error_pos, current_locale);
-        if (str == NULL) {
-            if (error_pos == (size_t)-1) {
-                PyErr_NoMemory();
-                PyMem_Free(wstr);
-                return NULL;
-            }
-            else {
-                goto encode_error;
-            }
-        }
-        PyMem_Free(wstr);
-
-        bytes = PyBytes_FromString(str);
-        PyMem_Free(str);
-    }
-    else {
-        /* strict mode */
-        size_t len, len2;
-
-        len = wcstombs(NULL, wstr, 0);
-        if (len == (size_t)-1) {
-            error_pos = (size_t)-1;
-            goto encode_error;
-        }
-
-        bytes = PyBytes_FromStringAndSize(NULL, len);
-        if (bytes == NULL) {
-            PyMem_Free(wstr);
-            return NULL;
-        }
-
-        len2 = wcstombs(PyBytes_AS_STRING(bytes), wstr, len+1);
-        if (len2 == (size_t)-1 || len2 > len) {
-            error_pos = (size_t)-1;
-            goto encode_error;
-        }
-        PyMem_Free(wstr);
-    }
-    return bytes;
-
-encode_error:
-    errmsg = strerror(errno);
-    assert(errmsg != NULL);
-
-    if (error_pos == (size_t)-1)
-        error_pos = wcstombs_errorpos(wstr);
-
+    char *str;
+    size_t error_pos;
+    const char *reason;
+    int res = _Py_EncodeLocaleEx(wstr, &str, &error_pos, &reason,
+                                 current_locale, surrogateescape);
     PyMem_Free(wstr);
-    Py_XDECREF(bytes);
 
-    if (errmsg != NULL) {
-        size_t errlen;
-        wstr = Py_DecodeLocale(errmsg, &errlen);
-        if (wstr != NULL) {
-            reason = PyUnicode_FromWideChar(wstr, errlen);
-            PyMem_RawFree(wstr);
-        } else
-            errmsg = NULL;
-    }
-    if (errmsg == NULL)
-        reason = PyUnicode_FromString(
-            "wcstombs() encountered an unencodable "
-            "wide character");
-    if (reason == NULL)
+    if (res != 0) {
+        if (res == -2) {
+            PyObject *exc;
+            exc = PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns",
+                    "locale", unicode,
+                    (Py_ssize_t)error_pos,
+                    (Py_ssize_t)(error_pos+1),
+                    reason);
+            if (exc != NULL) {
+                PyCodec_StrictErrors(exc);
+                Py_DECREF(exc);
+            }
+        }
+        else {
+            PyErr_NoMemory();
+        }
         return NULL;
-
-    exc = PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnnO",
-                                "locale", unicode,
-                                (Py_ssize_t)error_pos,
-                                (Py_ssize_t)(error_pos+1),
-                                reason);
-    Py_DECREF(reason);
-    if (exc != NULL) {
-        PyCodec_StrictErrors(exc);
-        Py_XDECREF(exc);
     }
-    return NULL;
+
+    PyObject *bytes = PyBytes_FromString(str);
+    PyMem_RawFree(str);
+    return bytes;
 }
 
 PyObject *
@@ -3747,36 +3641,6 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
     return NULL;
 }
 
-static size_t
-mbstowcs_errorpos(const char *str, size_t len)
-{
-#ifdef HAVE_MBRTOWC
-    const char *start = str;
-    mbstate_t mbs;
-    size_t converted;
-    wchar_t ch;
-
-    memset(&mbs, 0, sizeof mbs);
-    while (len)
-    {
-        converted = mbrtowc(&ch, str, len, &mbs);
-        if (converted == 0)
-            /* Reached end of string */
-            break;
-        if (converted == (size_t)-1 || converted == (size_t)-2) {
-            /* Conversion error or incomplete character */
-            return str - start;
-        }
-        else {
-            str += converted;
-            len -= converted;
-        }
-    }
-    /* failed to find the undecodable byte sequence */
-    return 0;
-#endif
-    return 0;
-}
 
 static PyObject*
 unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
