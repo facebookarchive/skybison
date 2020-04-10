@@ -33,10 +33,13 @@ PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
 
 #ifndef Py_LIMITED_API
 
-PyAPI_FUNC(wchar_t *) _Py_DecodeLocaleEx(
+PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     const char *arg,
-    size_t *size,
-    int current_locale);
+    wchar_t **wstr,
+    size_t *wlen,
+    const char **reason,
+    int current_locale,
+    int surrogateescape);
 
 PyAPI_FUNC(char*) _Py_EncodeLocaleEx(
     const wchar_t *text,

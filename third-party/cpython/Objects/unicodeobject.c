@@ -3779,20 +3779,10 @@ mbstowcs_errorpos(const char *str, size_t len)
 }
 
 static PyObject*
-unicode_decode_locale(const char *str, Py_ssize_t len,
-                      const char *errors, int current_locale)
+unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
+                      int current_locale)
 {
-    wchar_t smallbuf[256];
-    size_t smallbuf_len = Py_ARRAY_LENGTH(smallbuf);
-    wchar_t *wstr;
-    size_t wlen, wlen2;
-    PyObject *unicode;
     int surrogateescape;
-    size_t error_pos;
-    char *errmsg;
-    PyObject *reason = NULL;   /* initialize to prevent gcc warning */
-    PyObject *exc;
-
     if (locale_error_handler(errors, &surrogateescape) < 0)
         return NULL;
 
@@ -3801,84 +3791,33 @@ unicode_decode_locale(const char *str, Py_ssize_t len,
         return NULL;
     }
 
-    if (surrogateescape) {
-        /* "surrogateescape" error handler */
-        wstr = _Py_DecodeLocaleEx(str, &wlen, current_locale);
-        if (wstr == NULL) {
-            if (wlen == (size_t)-1)
-                PyErr_NoMemory();
-            else
-                PyErr_SetFromErrno(PyExc_OSError);
-            return NULL;
-        }
-
-        unicode = PyUnicode_FromWideChar(wstr, wlen);
-        PyMem_RawFree(wstr);
-    }
-    else {
-        /* strict mode */
-#ifndef HAVE_BROKEN_MBSTOWCS
-        wlen = mbstowcs(NULL, str, 0);
-#else
-        wlen = len;
-#endif
-        if (wlen == (size_t)-1)
-            goto decode_error;
-        if (wlen+1 <= smallbuf_len) {
-            wstr = smallbuf;
+    wchar_t *wstr;
+    size_t wlen;
+    const char *reason;
+    int res = _Py_DecodeLocaleEx(str, &wstr, &wlen, &reason,
+                                 current_locale, surrogateescape);
+    if (res != 0) {
+        if (res == -2) {
+            PyObject *exc;
+            exc = PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nns",
+                                        "locale", str, len,
+                                        (Py_ssize_t)wlen,
+                                        (Py_ssize_t)(wlen + 1),
+                                        reason);
+            if (exc != NULL) {
+                PyCodec_StrictErrors(exc);
+                Py_DECREF(exc);
+            }
         }
         else {
-            wstr = PyMem_New(wchar_t, wlen+1);
-            if (!wstr)
-                return PyErr_NoMemory();
+            PyErr_NoMemory();
         }
-
-        wlen2 = mbstowcs(wstr, str, wlen+1);
-        if (wlen2 == (size_t)-1) {
-            if (wstr != smallbuf)
-                PyMem_Free(wstr);
-            goto decode_error;
-        }
-#ifdef HAVE_BROKEN_MBSTOWCS
-        assert(wlen2 == wlen);
-#endif
-        unicode = PyUnicode_FromWideChar(wstr, wlen2);
-        if (wstr != smallbuf)
-            PyMem_Free(wstr);
-    }
-    return unicode;
-
-decode_error:
-    reason = NULL;
-    errmsg = strerror(errno);
-    assert(errmsg != NULL);
-
-    error_pos = mbstowcs_errorpos(str, len);
-    if (errmsg != NULL) {
-        size_t errlen;
-        wstr = Py_DecodeLocale(errmsg, &errlen);
-        if (wstr != NULL) {
-            reason = PyUnicode_FromWideChar(wstr, errlen);
-            PyMem_RawFree(wstr);
-        }
-    }
-    if (reason == NULL)
-        reason = PyUnicode_FromString(
-            "mbstowcs() encountered an invalid multibyte sequence");
-    if (reason == NULL)
         return NULL;
-
-    exc = PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nnO",
-                                "locale", str, len,
-                                (Py_ssize_t)error_pos,
-                                (Py_ssize_t)(error_pos+1),
-                                reason);
-    Py_DECREF(reason);
-    if (exc != NULL) {
-        PyCodec_StrictErrors(exc);
-        Py_XDECREF(exc);
     }
-    return NULL;
+
+    PyObject *unicode = PyUnicode_FromWideChar(wstr, wlen);
+    PyMem_RawFree(wstr);
+    return unicode;
 }
 
 PyObject*

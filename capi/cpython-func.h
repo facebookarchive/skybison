@@ -1254,7 +1254,9 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(Py_UCS4);
 PyAPI_FUNC(PyObject*) _Py_BuildValue_SizeT(const char*, ...);
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char*);
 PyAPI_FUNC(void) _Py_Dealloc(PyObject*);
-PyAPI_FUNC(wchar_t*) _Py_DecodeLocaleEx(const char*, size_t*, int);
+PyAPI_FUNC(int) _Py_DecodeLocaleEx(const char* arg, wchar_t** wstr,
+                                   size_t* wlen, const char** reason,
+                                   int current_locale, int surrogateescape);
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 PyAPI_FUNC(int)
     _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size, wchar_t** result,

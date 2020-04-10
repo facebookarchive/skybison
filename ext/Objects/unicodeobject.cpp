@@ -18,8 +18,6 @@
 #include "utils.h"
 
 const char* Py_FileSystemDefaultEncodeErrors = "surrogateescape";
-// _Py_DecodeLocaleEx is defined in fileutils.c
-extern "C" wchar_t* _Py_DecodeLocaleEx(const char*, size_t*, int);
 // clang-format off
 extern "C" const unsigned char _Py_ascii_whitespace[] = {  // NOLINT
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -1184,9 +1182,12 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
     PyMem_Free(wstr);
   } else if (std::strcmp(errors, "surrogateescape") == 0) {
     size_t wlen;
-    wchar_t* wstr = _Py_DecodeLocaleEx(str, &wlen, 1);
-    if (wstr == nullptr) {
-      if (wlen == static_cast<size_t>(-1)) {
+    const char* reason;
+    wchar_t* wstr;
+    int res = _Py_DecodeLocaleEx(str, &wstr, &wlen, &reason,
+                                 /*current_locale=*/1, /*surrogateescape=*/1);
+    if (res != 0) {
+      if (res == -1) {
         PyErr_NoMemory();
       } else {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1194,7 +1195,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
       return nullptr;
     }
     result = PyUnicode_FromWideChar(wstr, wlen);
-    PyMem_Free(wstr);
+    PyMem_RawFree(wstr);
   } else {
     PyErr_Format(PyExc_ValueError,
                  "only 'strict' and 'surrogateescape' error handlers "
