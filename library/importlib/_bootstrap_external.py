@@ -1440,8 +1440,12 @@ def _setup():
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)
 
+    _bootstrap._verbose_message("installing zipimport hook")
+    import zipimport
 
-_relax_case = _make_relax_case()
-_setup()
+    sys.path_hooks.insert(0, zipimport.zipimporter)
+
 
 _bootstrap._bootstrap_external = sys.modules[__name__]
+_relax_case = _make_relax_case()
+_setup()

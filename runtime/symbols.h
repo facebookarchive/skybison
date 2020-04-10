@@ -711,7 +711,8 @@ class Runtime;
   V(warnings)                                                                  \
   V(weakref)                                                                   \
   V(write)                                                                     \
-  V(xor)
+  V(xor)                                                                       \
+  V(zipimport)
 
 // clang-format off
 enum class SymbolId {

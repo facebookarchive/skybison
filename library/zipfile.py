@@ -172,9 +172,12 @@ _CD64_OFFSET_START_CENTDIR = 9
 
 _DD_SIGNATURE = 0x08074b50
 
-_EXTRA_FIELD_STRUCT = struct.Struct('<HH')
+# TODO(T65337126): Uncomment next line
+#_EXTRA_FIELD_STRUCT = struct.Struct('<HH')
 
 def _strip_extra(extra, xids):
+    # TODO(T65337126) Remove next line
+    _EXTRA_FIELD_STRUCT = struct.Struct('<HH')
     # Remove Extra Fields with specified IDs.
     unpack = _EXTRA_FIELD_STRUCT.unpack
     modified = False

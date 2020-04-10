@@ -64,6 +64,7 @@ PYRO_PATCHED_CPYTHON_TESTS=(
   test_dict.py
   test_hmac.py
   test_range.py
+  test_zipimport.py
 )
 
 if [[ -n $1 ]]; then

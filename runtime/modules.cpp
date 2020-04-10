@@ -57,6 +57,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(sys), &SysModule::initialize},
     {ID(unicodedata), &UnicodedataModule::initialize},
     {ID(warnings), &initializeFrozenModule<&kWarningsModuleData>},
+    {ID(zipimport), &initializeFrozenModule<&kZipimportModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
 
