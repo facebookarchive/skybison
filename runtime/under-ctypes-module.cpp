@@ -132,6 +132,24 @@ RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
   return thread->runtime()->newIntFromCPtr(address);
 }
 
+RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object value(&scope, args.get(0));
+  Str type(&scope, args.get(1));
+  switch (type.charAt(0)) {
+    case 'H':
+      if (value.isUnbound()) {
+        return runtime->newInt(0);
+      }
+      return *value;
+    default:
+      UNIMPLEMENTED("Cannot get values of non-uint16 objects yet");
+  }
+}
+
 RawObject FUNC(_ctypes, dlopen)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

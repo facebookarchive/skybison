@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """ctypes support module"""
 
+from builtins import _int
 from weakref import ref
 
 from _builtins import (
     _builtin,
     _bytes_check,
+    _float_check,
     _int_check,
+    _property,
     _str_check,
     _str_len,
     _tuple_check,
     _tuple_len,
+    _Unbound,
     _unimplemented,
     _weakref_check,
 )
@@ -27,6 +31,10 @@ FUNCFLAG_USE_LASTERROR = 0x10
 
 
 __version__ = "1.1.0"
+
+
+def _SimpleCData_value_to_type(value, typ):
+    _builtin()
 
 
 # Metaclasses
@@ -147,8 +155,29 @@ class _Pointer(_CData, metaclass=PyCPointerType):
 
 
 class _SimpleCData(_CData, metaclass=PyCSimpleType):
-    def __new__(cls, name, bases, namespace):
-        _unimplemented()
+    def __init__(self, value=_Unbound):
+        self._value_setter(value)
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "_type_"):
+            raise TypeError("abstract class")
+        return super().__new__(cls, args, kwargs)
+
+    def _value_getter(self):
+        return _SimpleCData_value_to_type(self._value, self._type_)
+
+    def _value_setter(self, value):
+        if self._type_ == "H":
+            if _float_check(value):
+                raise TypeError("int expected instead of float")
+            if value is _Unbound:
+                self._value = 0
+            else:
+                self._value = _int(value)
+        else:
+            _unimplemented()
+
+    value = _property(_value_getter, _value_setter)
 
 
 class ArgumentError(Exception):

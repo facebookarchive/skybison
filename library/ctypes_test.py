@@ -28,6 +28,30 @@ class CtypesTests(unittest.TestCase):
         _gc()
         self.assertEqual(len(_array_from_ctype_cache), 0)
 
+    def test_ctypes_uint16_creation_stores_uint16(self):
+        self.assertEqual(ctypes.c_uint16().value, 0)
+        self.assertEqual(ctypes.c_uint16(10).value, 10)
+        self.assertEqual(ctypes.c_uint16(True).value, 1)
+
+    def test_ctypes_uint16_value_is_modifiable(self):
+        uint = ctypes.c_uint16()
+        self.assertEqual(uint.value, 0)
+        uint.value = 12345
+        self.assertEqual(uint.value, 12345)
+        with self.assertRaises(TypeError) as ctx:
+            uint.value = 1.0
+        self.assertEqual(str(ctx.exception), "int expected instead of float")
+
+    def test_ctypes_uint16_with_wrong_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            ctypes.c_uint16("1")
+        self.assertEqual(str(ctx.exception), "an integer is required (got type str)")
+
+    def test_ctypes_uint16_with_float_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            ctypes.c_uint16(1.0)
+        self.assertEqual(str(ctx.exception), "int expected instead of float")
+
     def test_loaded_library_has_function_attrs(self):
         libc_name = ctypes.util.find_library("c")
         libc = ctypes.CDLL(libc_name)
