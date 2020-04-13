@@ -1865,11 +1865,12 @@ static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
   return *instance;
 }
 
-static RawObject floatNewFromBuffer(Thread* thread, const Type& type,
+// Read ASCII digits from str and make a float from those digits.
+static RawObject floatNewFromDigits(Thread* thread, const Type& type,
                                     const char* str, word length) {
   // TODO(T57022841): follow full CPython conversion for strings
-  char* str_end = nullptr;
-  double result = std::strtod(str, &str_end);
+  char* end = nullptr;
+  double result = std::strtod(str, &end);
   // Overflow, return infinity or negative infinity.
   Runtime* runtime = thread->runtime();
   if (result == HUGE_VAL) {
@@ -1882,7 +1883,7 @@ static RawObject floatNewFromBuffer(Thread* thread, const Type& type,
         runtime->newFloat(-std::numeric_limits<double>::infinity()));
   }
   // Conversion was incomplete; the string was not a valid float.
-  if (length == 0 || str_end - str != length) {
+  if (length == 0 || end - str != length) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "could not convert string to float");
   }
@@ -1908,7 +1909,7 @@ RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* thread,
   unique_c_ptr<byte> c_str(reinterpret_cast<byte*>(std::malloc(length + 1)));
   c_str.get()[length] = '\0';
   underlying.copyTo(c_str.get(), length);
-  return floatNewFromBuffer(thread, type, reinterpret_cast<char*>(c_str.get()),
+  return floatNewFromDigits(thread, type, reinterpret_cast<char*>(c_str.get()),
                             length);
 }
 
@@ -1929,7 +1930,7 @@ RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
   Str str(&scope, strUnderlying(*arg));
   unique_c_ptr<char> c_str(str.toCStr());
   word length = str.charLength();
-  return floatNewFromBuffer(thread, type, c_str.get(), length);
+  return floatNewFromDigits(thread, type, c_str.get(), length);
 }
 
 RawObject FUNC(_builtins, _float_signbit)(Thread*, Frame* frame, word nargs) {
