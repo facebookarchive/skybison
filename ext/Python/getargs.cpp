@@ -31,6 +31,8 @@ typedef struct {
 
 #define STATIC_FREELIST_ENTRIES 8
 
+static const int kMaxSmallArraySize = 16;
+
 // Forward
 static int vGetArgs1Impl(PyObject* args, PyObject* const* stack,
                          Py_ssize_t nargs, const char* format, va_list* p_va,
@@ -49,12 +51,12 @@ static int getbuffer(PyObject*, Py_buffer*, const char**);
 static int vgetargskeywords(PyObject*, PyObject*, const char*, char**, va_list*,
                             int);
 
-static bool vGetArgsKeywordsFast(PyObject*, PyObject*, struct _PyArg_Parser*,
-                                 va_list*, int);
-static bool vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
-                                     PyObject* keywords, PyObject* kwnames,
-                                     struct _PyArg_Parser* parser,
-                                     va_list* p_va, int flags);
+static int vGetArgsKeywordsFast(PyObject*, PyObject*, struct _PyArg_Parser*,
+                                va_list*, int);
+static int vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
+                                    PyObject* keywords, PyObject* kwnames,
+                                    struct _PyArg_Parser* parser, va_list* p_va,
+                                    int flags);
 static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count);
 static PyObject* findKeyword(PyObject* kwnames, PyObject* const* kwstack,
                              const char* key);
@@ -338,10 +340,10 @@ static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
     return 0;
   }
 
-  static const int max_small_array_size = 16;
-  PyObject* small_array[max_small_array_size];
+  PyObject* small_array[kMaxSmallArraySize];
   Py_ssize_t nargs = PyTuple_Size(args);
-  PyObject** array = nargs <= 16 ? small_array : new PyObject*[nargs];
+  PyObject** array =
+      nargs <= kMaxSmallArraySize ? small_array : new PyObject*[nargs];
   for (Py_ssize_t i = 0; i < nargs; i++) {
     array[i] = PyTuple_GET_ITEM(args, i);
   }
@@ -1380,21 +1382,30 @@ static bool isValidKeyword(struct _PyArg_Parser* parser,
   return false;
 }
 
-static bool vGetArgsKeywordsFast(PyObject* args, PyObject* keywords,
-                                 struct _PyArg_Parser* parser, va_list* p_va,
-                                 int flags) {
+static int vGetArgsKeywordsFast(PyObject* args, PyObject* keywords,
+                                struct _PyArg_Parser* parser, va_list* p_va,
+                                int flags) {
   DCHECK(args != nullptr && PyTuple_Check(args),
          "args must be a non-null tuple");
-  PyObject* stack = PyTuple_GET_ITEM(args, 0);
+  PyObject* small_array[kMaxSmallArraySize];
   Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-  return vGetArgsKeywordsFastImpl(&stack, nargs, keywords, nullptr, parser,
-                                  p_va, flags);
+  PyObject** stack =
+      nargs <= kMaxSmallArraySize ? small_array : new PyObject*[nargs];
+  for (Py_ssize_t i = 0; i < nargs; i++) {
+    stack[i] = PyTuple_GET_ITEM(args, i);
+  }
+  int result = vGetArgsKeywordsFastImpl(stack, nargs, keywords, nullptr, parser,
+                                        p_va, flags);
+  if (stack != small_array) {
+    delete[] stack;
+  }
+  return result;
 }
 
-static bool vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
-                                     PyObject* keywords, PyObject* kwnames,
-                                     struct _PyArg_Parser* parser,
-                                     va_list* p_va, int flags) {
+static int vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
+                                    PyObject* keywords, PyObject* kwnames,
+                                    struct _PyArg_Parser* parser, va_list* p_va,
+                                    int flags) {
   freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
   freelist_t freelist;
   freelist.entries = static_entries;
