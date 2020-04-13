@@ -140,7 +140,7 @@ Runtime::~Runtime() {
     CHECK(threads_ != nullptr, "the runtime does not have any threads");
     Thread::setCurrentThread(threads_);
   }
-  atExit();
+  callAtExit();
   clearHandleScopes();
   freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {

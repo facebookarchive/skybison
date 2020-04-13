@@ -150,8 +150,29 @@ PY_EXPORT void Py_SetPythonHome(wchar_t* /* home */) {
   UNIMPLEMENTED("Py_SetPythonHome");
 }
 
+struct AtExitContext {
+  void (*func)(PyObject*);
+  PyObject* module;
+};
+
+static void callAtExitFunction(void* context) {
+  DCHECK(context != nullptr, "context must not be null");
+  AtExitContext* thunk = reinterpret_cast<AtExitContext*>(context);
+  DCHECK(thunk->func != nullptr, "function must not be null");
+  thunk->func(thunk->module);
+  // CPython does not own the reference, but that's dangerous.
+  Py_DECREF(thunk->module);
+  PyErr_Clear();
+  delete thunk;
+}
+
 PY_EXPORT void _Py_PyAtExit(void (*func)(PyObject*), PyObject* module) {
-  Thread::current()->runtime()->setAtExit(func, module);
+  AtExitContext* thunk = new AtExitContext;
+  thunk->func = func;
+  // CPython does not own the reference, but that's dangerous.
+  Py_INCREF(module);
+  thunk->module = module;
+  Thread::current()->runtime()->setAtExit(callAtExitFunction, thunk);
 }
 
 PY_EXPORT void _Py_RestoreSignals() {

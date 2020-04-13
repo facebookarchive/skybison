@@ -47,7 +47,7 @@ enum LayoutTypeTransition {
   kTransitionSize,
 };
 
-using AtExitFn = void (*)(PyObject*);
+using AtExitFn = void (*)(void*);
 
 using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
 
@@ -419,18 +419,18 @@ class Runtime {
 
   IdentityDict* apiCaches() { return &api_caches_; }
 
-  void setAtExit(AtExitFn at_exit, PyObject* module) {
-    if (at_exit_ != nullptr) {
-      DCHECK(at_exit_ == at_exit,
-             "setAtExit should not override existing at_exit function");
-    }
-    at_exit_ = at_exit;
-    at_exit_module_ = module;
+  void setAtExit(AtExitFn func, void* ctx) {
+    DCHECK(at_exit_ == nullptr,
+           "setAtExit should not override existing at_exit function");
+    at_exit_ = func;
+    at_exit_context_ = ctx;
   }
-  void atExit() {
+
+  void callAtExit() {
     if (at_exit_ == nullptr) return;
-    at_exit_(at_exit_module_);
-    Thread::current()->clearPendingException();
+    at_exit_(at_exit_context_);
+    at_exit_ = nullptr;
+    at_exit_context_ = nullptr;
   }
 
   Symbols* symbols() { return symbols_; }
@@ -989,9 +989,9 @@ class Runtime {
 
   Symbols* symbols_;
 
-  // atexit C Function (to be called with atexit module)
+  // atexit thunk (to be passed into pylifecycle and called with atexit module)
   AtExitFn at_exit_ = nullptr;
-  PyObject* at_exit_module_ = nullptr;
+  void* at_exit_context_ = nullptr;
 
   static word next_module_index_;
 
