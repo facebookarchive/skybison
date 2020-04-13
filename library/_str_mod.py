@@ -119,6 +119,7 @@ def format(string: str, args) -> str:  # noqa: C901
 
             # Parse named reference.
             if c is "(":  # noqa: F632
+                # Lazily initialize args_dict.
                 if args_dict is None:
                     if (
                         _tuple_check(args)
@@ -348,6 +349,9 @@ def format(string: str, args) -> str:  # noqa: C901
         raise ValueError("incomplete format")
     _strarray_iadd(result, string[begin:])
 
-    if arg_idx < args_len:
-        raise TypeError("not all arguments converted during string formatting")
+    if arg_idx < args_len and args_dict is None:
+        # Lazily check that the user did not specify an args dictionary and if
+        # not raise an error:
+        if _tuple_check(args) or _str_check(args) or not _mapping_check(args):
+            raise TypeError("not all arguments converted during string formatting")
     return result.__str__()

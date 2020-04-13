@@ -12951,6 +12951,11 @@ class StrModTests(unittest.TestCase):
             str.__mod__("%(foo)s", ("foobar",))
         self.assertEqual(str(context.exception), "format requires a mapping")
 
+    def test_with_mapping_does_not_raise_type_error(self):
+        # The following must not raise
+        # "not all arguments converted during string formatting".
+        self.assertEqual(str.__mod__("foo", {"bar": 42}), "foo")
+
     def test_positional_after_named_arg_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.__mod__("%(foo)s %s", {"foo": "bar"})
