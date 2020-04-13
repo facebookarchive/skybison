@@ -6389,7 +6389,7 @@ class InstanceProxyTests(unittest.TestCase):
 
 
 class InstanceTests(unittest.TestCase):
-    def test__dict__updates_instance_attributes(self):
+    def test_dunder_dict_updates_instance_attributes(self):
         class C:
             def __init__(self):
                 self.foo = 10
@@ -6415,7 +6415,7 @@ class InstanceTests(unittest.TestCase):
         self.assertEqual(c.bar, "2")
         self.assertEqual(c.baz, "3")
 
-    def test__dict__updates_instances_during_init(self):
+    def test_dunder_dict_updates_instances_during_init(self):
         class C:
             shared_defaults = {"a": 42, "b": 13}
 
@@ -6431,7 +6431,7 @@ class InstanceTests(unittest.TestCase):
 
         self.assertEqual(c1.new_attribute, 99)
 
-    def test__dict__updates_with_non_dict_raises_type_error(self):
+    def test_dunder_dict_updates_with_non_dict_raises_type_error(self):
         class C:
             pass
 
@@ -6443,13 +6443,15 @@ class InstanceTests(unittest.TestCase):
             "__dict__ must be set to a dictionary, not a 'NoneType'",
         )
 
-    def test___dict___keys_with_instance_with_dict_overflow_returns_keys(self):
+    def test_dunder_dict_keys_with_instance_with_dict_overflow_returns_keys(self):
         class C:
             def __init__(self):
                 self.a = 1
                 self.b = 2
 
         instance = C()
+        # This is the current idiomatic way to force an instance's layout into
+        # the dict overflow state.
         instance.__dict__ = {"hello": "world"}
         self.assertEqual(list(instance.__dict__.keys()), ["hello"])
 
