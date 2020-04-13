@@ -22,7 +22,7 @@ Available toolchain files:
 ")
 endif()
 
-# Append flags set by util/*.cmake files
+# Append flags set by util/*.cmake files.
 # Note that setting CMAKE_C_FLAGS directly in util/*.cmake is problematic
 # because using `-DCMAKE_C_FLAGS=` would unintentionally override the platform
 # flags.
