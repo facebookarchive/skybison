@@ -16,6 +16,30 @@ class MainExtensionApiTest : public ::testing::Test {
   }
 };
 
+TEST_F(MainExtensionApiTest, NoSiteZeroLoadsSite) {
+  ASSERT_EQ(Py_NoSiteFlag, 0);
+  ::testing::internal::CaptureStdout();
+  wchar_t arg0[] = L"python";
+  wchar_t arg1[] = L"-c";
+  wchar_t arg2[] = L"import sys; print('site' in sys.modules)";
+  wchar_t* argv[] = {arg0, arg1, arg2};
+  EXPECT_EQ(Py_Main(/*argc=*/3, argv), 0);
+  EXPECT_EQ(::testing::internal::GetCapturedStdout(), "True\n");
+}
+
+TEST_F(MainExtensionApiTest, NoSiteOneDoesNotLoadSite) {
+  ASSERT_EQ(Py_NoSiteFlag, 0);
+  ::testing::internal::CaptureStdout();
+  wchar_t arg0[] = L"python";
+  wchar_t arg1[] = L"-S";
+  wchar_t arg2[] = L"-c";
+  wchar_t arg3[] = L"import sys; print('site' in sys.modules)";
+  wchar_t* argv[] = {arg0, arg1, arg2, arg3};
+  EXPECT_EQ(Py_Main(/*argc=*/4, argv), 0);
+  EXPECT_EQ(::testing::internal::GetCapturedStdout(), "False\n");
+  Py_NoSiteFlag = 0;
+}
+
 TEST_F(MainExtensionApiTest, RunModule) {
   ::testing::internal::CaptureStdout();
   wchar_t arg0[] = L"python";

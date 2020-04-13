@@ -12,6 +12,7 @@ class ExtensionApi : public ::testing::Test {
   void SetUp() override {
     saved_locale_ = ::strdup(std::setlocale(LC_CTYPE, nullptr));
     std::setlocale(LC_CTYPE, "en_US.UTF-8");
+    Py_NoSiteFlag = 1;
     Py_Initialize();
   }
 

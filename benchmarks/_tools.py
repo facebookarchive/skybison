@@ -15,13 +15,17 @@ from multiprocessing.pool import ThreadPool
 log = logging.getLogger(__name__)
 
 
-def run(cmd, interpreter=None, **kwargs):
+def run(cmd, extra_env=None, **kwargs):
     env = dict(os.environ)
     env["PYTHONHASHSEED"] = "0"
-    if interpreter is not None:
-        env["PYTHONPATH"] = interpreter.library_path
+    if extra_env is not None:
+        env.update(extra_env)
     log.info(f">>> {' '.join(cmd)}")
     return subprocess.run(cmd, encoding="UTF-8", env=env, check=True, **kwargs)
+
+
+def run_interpreter(interpreter, cmd, **kwargs):
+    run(cmd, extra_env={"PYTHONPATH": interpreter.library_path}, **kwargs)
 
 
 def create_taskset_command(isolated_cpus):
@@ -93,8 +97,8 @@ class TimeTool(SequentialPerformanceTool):
                 benchmark.filepath(),
             ]
         )
-        completed_process = run(
-            command, interpreter=interpreter, stdout=subprocess.PIPE
+        completed_process = run_interpreter(
+            interpreter, command, stdout=subprocess.PIPE
         )
         time_output = completed_process.stdout.strip()
         events = [event.split(" , ") for event in time_output.split("\n")]
@@ -149,8 +153,8 @@ class PerfStat(SequentialPerformanceTool):
             if events:
                 full_command += ["--event", events.pop(0)]
             full_command += [*interpreter.interpreter_cmd, benchmark.filepath()]
-            completed_process = run(
-                full_command, interpreter=interpreter, stderr=subprocess.PIPE
+            completed_process = run_interpreter(
+                interpreter, full_command, stderr=subprocess.PIPE
             )
             perfstat_output = completed_process.stderr.strip()
             results.update(self.parse_perfstat(perfstat_output))
@@ -204,7 +208,7 @@ class Callgrind(ParallelPerformanceTool):
                 *interpreter.interpreter_cmd,
                 benchmark.filepath(),
             ]
-            run(command, interpreter=interpreter)
+            run_interpreter(interpreter, command)
 
             instructions = 1
             with open(temp_file.name) as fd:

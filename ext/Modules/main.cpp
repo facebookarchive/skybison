@@ -176,7 +176,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'S':
         Py_NoSiteFlag++;
-        UNIMPLEMENTED("No site flag");
         break;
       case 'E':
         Py_IgnoreEnvironmentFlag++;

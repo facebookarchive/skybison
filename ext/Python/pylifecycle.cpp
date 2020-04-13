@@ -8,6 +8,7 @@
 
 #include "capi-handles.h"
 #include "exception-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 
 extern "C" int _PyCapsule_Init(void);
@@ -117,6 +118,16 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
 
   CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
   CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");
+  // TODO(T43142858) We should rather have the site importing in the runtime
+  // constructor. Though for that we need a way to communicate the value of
+  // Py_NoSiteFlag.
+  if (!Py_NoSiteFlag) {
+    PyObject* module = PyImport_ImportModule("site");
+    if (module == nullptr) {
+      py::Utils::printDebugInfoAndAbort();
+    }
+    Py_DECREF(module);
+  }
 }
 
 PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }
