@@ -195,7 +195,7 @@ class _SimpleCData(_CData, metaclass=PyCSimpleType):
         return _SimpleCData_value_to_type(self._value, self._type_, self._offset)
 
     def _value_setter(self, value):
-        if self._type_ == "H":
+        if self._type_ == "H" or self._type_ == "L":
             if _float_check(value):
                 raise TypeError("int expected instead of float")
             if value is _Unbound:

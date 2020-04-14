@@ -164,6 +164,18 @@ RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
         return runtime->newInt(0);
       }
       return *value;
+    case 'L':
+      if (value.isMmap()) {
+        Pointer value_ptr(&scope, Mmap::cast(*value).data());
+        CHECK(static_cast<uword>(value_ptr.length()) >= sizeof(unsigned long),
+              "Not enough memory");
+        long* cptr = reinterpret_cast<long*>(value_ptr.cptr());
+        return runtime->newInt(cptr[offset.asWord()]);
+      }
+      if (value.isUnbound()) {
+        return runtime->newInt(0);
+      }
+      return *value;
     default:
       UNIMPLEMENTED("Cannot get values of non-uint16 objects yet");
   }

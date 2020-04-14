@@ -66,6 +66,10 @@ class CtypesTests(unittest.TestCase):
             ctypes.c_uint16(1.0)
         self.assertEqual(str(ctx.exception), "int expected instead of float")
 
+    def test_ctypes_ulonglong_creation_stores_long(self):
+        self.assertEqual(ctypes.c_ulonglong().value, 0)
+        self.assertEqual(ctypes.c_ulonglong(0xFF << 32).value, 0xFF << 32)
+
     def test_from_buffer_with_memory_reflects_memory(self):
         import mmap
 
@@ -109,6 +113,18 @@ class CtypesTests(unittest.TestCase):
             str(context.exception),
             "Buffer size too small (1 instead of at least 2 bytes)",
         )
+
+    def test_from_buffer_with_different_sizes_read_correct_number_of_bytes(self):
+        import mmap
+
+        m = mmap.mmap(-1, 8)
+        view = memoryview(m)
+        view[0] = 0xFF
+        view[3] = 0xFF
+        short = ctypes.c_uint16.from_buffer(view)
+        longlong = ctypes.c_ulonglong.from_buffer(view)
+        self.assertEqual(short.value, 0xFF)
+        self.assertEqual(longlong.value, (0xFF << 24) + 0xFF)
 
     def test_loaded_library_has_function_attrs(self):
         libc_name = ctypes.util.find_library("c")
