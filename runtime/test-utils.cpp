@@ -296,9 +296,9 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
   if (read_only == ReadOnly::ReadWrite) {
     bytes_obj = runtime->mutableBytesFromBytes(thread, bytes_obj);
   }
-  MemoryView result(
-      &scope,
-      runtime->newMemoryView(thread, bytes_obj, bytes_obj.length(), read_only));
+  MemoryView result(&scope,
+                    runtime->newMemoryView(thread, bytes_obj, bytes_obj,
+                                           bytes_obj.length(), read_only));
   result.setFormat(Str::cast(runtime->newStrFromCStr(format)));
   return *result;
 }

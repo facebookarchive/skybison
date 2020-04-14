@@ -8506,6 +8506,32 @@ class MemoryviewTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             view.format = "h"
 
+    def test_object_with_bytes_returns_original_object(self):
+        b = b"foo"
+        bytes_mem = memoryview(b)
+        self.assertIs(bytes_mem.obj, b)
+
+        ba = bytearray(b"foo")
+        bytearray_mem = memoryview(ba)
+        self.assertIs(bytearray_mem.obj, ba)
+
+    def test_object_with_bytes_subclass_returns_original_object(self):
+        class BytesSub(bytes):
+            pass
+
+        bytes_sub = BytesSub(b"foo")
+        bytes_sub_mem = memoryview(bytes_sub)
+        self.assertIs(bytes_sub_mem.obj, bytes_sub)
+
+    def test_object_with_mmap_returns_original_object(self):
+        from mmap import mmap
+
+        memory = mmap(-1, 4)
+        memory_mem = memoryview(memory)
+        self.assertIs(memory_mem.obj, memory)
+        memory_mem_mem = memoryview(memory_mem)[1:]
+        self.assertIs(memory_mem_mem.obj, memory)
+
     def test_dunder_getitem_with_non_memoryview_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             memoryview.__getitem__(None, 1)

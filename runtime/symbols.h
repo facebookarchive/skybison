@@ -628,6 +628,7 @@ class Runtime;
   V(n_unnamed_fields)                                                          \
   V(name)                                                                      \
   V(neg)                                                                       \
+  V(obj)                                                                       \
   V(object)                                                                    \
   V(offset)                                                                    \
   V(operator)                                                                  \

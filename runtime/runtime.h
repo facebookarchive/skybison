@@ -157,12 +157,13 @@ class Runtime {
   RawObject newSeqIterator(const Object& sequence);
 
   // Create a new MemoryView object. Initializes the view format to "B".
-  RawObject newMemoryView(Thread* thread, const Object& buffer, word length,
+  RawObject newMemoryView(Thread* thread, const Object& obj,
+                          const Object& buffer, word length,
                           ReadOnly read_only);
   // Create a new MemoryView object from a C pointer. Initializes the view
   // format to "B".
-  RawObject newMemoryViewFromCPtr(Thread* thread, void* ptr, word length,
-                                  ReadOnly read_only);
+  RawObject newMemoryViewFromCPtr(Thread* thread, const Object& obj, void* ptr,
+                                  word length, ReadOnly read_only);
 
   // Create a new Mmap object.
   RawObject newMmap();

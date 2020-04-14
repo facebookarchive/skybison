@@ -10,6 +10,7 @@ namespace py {
 
 const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
     {ID(format), RawMemoryView::kFormatOffset, AttributeFlags::kReadOnly},
+    {ID(obj), RawMemoryView::kObjectOffset, AttributeFlags::kReadOnly},
     {ID(readonly), RawMemoryView::kReadOnlyOffset, AttributeFlags::kReadOnly},
     {ID(shape), RawMemoryView::kShapeOffset, AttributeFlags::kReadOnly},
     {ID(strides), RawMemoryView::kStridesOffset, AttributeFlags::kReadOnly},
@@ -385,9 +386,10 @@ RawObject memoryviewGetslice(Thread* thread, const MemoryView& view, word start,
   word slice_byte_size = slice_len * item_size;
 
   Object buffer(&scope, view.buffer());
+  Object obj(&scope, view.object());
   MemoryView result(
       &scope, runtime->newMemoryView(
-                  thread, buffer, slice_byte_size,
+                  thread, obj, buffer, slice_byte_size,
                   view.readOnly() ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
   result.setFormat(view.format());
   result.setStart(view.start() + start * item_size);
@@ -553,9 +555,10 @@ RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs) {
         "memoryview: length is not a multiple of itemsize");
   }
   Object buffer(&scope, self.buffer());
+  Object obj(&scope, self.object());
   MemoryView result(
       &scope, runtime->newMemoryView(
-                  thread, buffer, length,
+                  thread, obj, buffer, length,
                   self.readOnly() ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
   result.setFormat(*format);
   return *result;
@@ -590,20 +593,25 @@ RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
   Object object(&scope, args.get(1));
   if (runtime->isInstanceOfBytes(*object)) {
     Bytes bytes(&scope, bytesUnderlying(*object));
-    return runtime->newMemoryView(thread, bytes, bytes.length(),
-                                  ReadOnly::ReadOnly);
+    MemoryView result(
+        &scope, runtime->newMemoryView(thread, object, bytes, bytes.length(),
+                                       ReadOnly::ReadOnly));
+    return *result;
   }
   if (runtime->isInstanceOfByteArray(*object)) {
     ByteArray bytearray(&scope, *object);
     Bytes bytes(&scope, bytearray.items());
-    return runtime->newMemoryView(thread, bytes, bytearray.numItems(),
-                                  ReadOnly::ReadWrite);
+    MemoryView result(&scope, runtime->newMemoryView(thread, object, bytes,
+                                                     bytearray.numItems(),
+                                                     ReadOnly::ReadWrite));
+    return *result;
   }
   if (object.isMemoryView()) {
     MemoryView view(&scope, *object);
     Object buffer(&scope, view.buffer());
+    Object view_obj(&scope, view.object());
     MemoryView result(
-        &scope, runtime->newMemoryView(thread, buffer, view.length(),
+        &scope, runtime->newMemoryView(thread, view_obj, buffer, view.length(),
                                        view.readOnly() ? ReadOnly::ReadOnly
                                                        : ReadOnly::ReadWrite));
     result.setFormat(view.format());
@@ -613,10 +621,11 @@ RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
     Mmap mmap_obj(&scope, *object);
     Pointer pointer(&scope, mmap_obj.data());
     // TODO(T64584485): Store the Pointer itself inside the memoryview
-    MemoryView result(&scope, runtime->newMemoryViewFromCPtr(
-                                  thread, pointer.cptr(), pointer.length(),
-                                  mmap_obj.isWritable() ? ReadOnly::ReadWrite
-                                                        : ReadOnly::ReadOnly));
+    MemoryView result(
+        &scope,
+        runtime->newMemoryViewFromCPtr(
+            thread, object, pointer.cptr(), pointer.length(),
+            mmap_obj.isWritable() ? ReadOnly::ReadWrite : ReadOnly::ReadOnly));
     result.setFormat(SmallStr::fromCodePoint('B'));
     return *result;
   }

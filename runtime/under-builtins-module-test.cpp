@@ -2221,8 +2221,9 @@ TEST_F(UnderBuiltinsModuleTest,
   for (word i = 0; i < length; i++) {
     memory[i] = i;
   }
-  Object view(&scope, runtime_->newMemoryViewFromCPtr(thread_, memory, length,
-                                                      ReadOnly::ReadOnly));
+  Object none(&scope, NoneType::object());
+  Object view(&scope, runtime_->newMemoryViewFromCPtr(
+                          thread_, none, memory, length, ReadOnly::ReadOnly));
   Int idx(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(FUNC(_builtins, _memoryview_getitem), view, idx), 0));
@@ -2272,8 +2273,8 @@ TEST_F(UnderBuiltinsModuleTest,
        UnderMemoryViewItemsizeReturnsSizeOfMemoryItems) {
   HandleScope scope(thread_);
   Bytes bytes(&scope, runtime_->newBytes(5, 'x'));
-  MemoryView view(
-      &scope, runtime_->newMemoryView(thread_, bytes, 5, ReadOnly::ReadOnly));
+  MemoryView view(&scope, runtime_->newMemoryView(thread_, bytes, bytes, 5,
+                                                  ReadOnly::ReadOnly));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_itemsize), view));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
@@ -2292,8 +2293,8 @@ TEST_F(UnderBuiltinsModuleTest,
 TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewNbytesReturnsSizeOfMemoryView) {
   HandleScope scope(thread_);
   Bytes bytes(&scope, runtime_->newBytes(5, 'x'));
-  MemoryView view(
-      &scope, runtime_->newMemoryView(thread_, bytes, 5, ReadOnly::ReadOnly));
+  MemoryView view(&scope, runtime_->newMemoryView(thread_, bytes, bytes, 5,
+                                                  ReadOnly::ReadOnly));
   Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_nbytes), view));
   EXPECT_TRUE(isIntEqualsWord(*result, 5));
 }

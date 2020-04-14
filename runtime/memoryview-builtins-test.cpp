@@ -329,8 +329,10 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithMemoryBufferWritesMemory) {
   HandleScope scope(thread_);
   const word length = 5;
   byte memory[length];
-  MemoryView view(&scope, runtime_->newMemoryViewFromCPtr(
-                              thread_, memory, length, ReadOnly::ReadWrite));
+  Object none(&scope, NoneType::object());
+  MemoryView view(&scope,
+                  runtime_->newMemoryViewFromCPtr(thread_, none, memory, length,
+                                                  ReadOnly::ReadWrite));
   Object value(&scope, SmallInt::fromWord(0));
   EXPECT_EQ(memoryviewSetitem(thread_, view, 0, value), NoneType::object());
   value = SmallInt::fromWord(1);

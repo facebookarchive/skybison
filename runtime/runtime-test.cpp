@@ -660,9 +660,10 @@ TEST_F(RuntimeTest, NewMemoryViewFromCPtrCreatesMemoryView) {
   for (word i = 0; i < length; i++) {
     memory[i] = i;
   }
+  Object none(&scope, NoneType::object());
   MemoryView view(&scope,
-                  runtime_->newMemoryViewFromCPtr(thread_, memory.get(), length,
-                                                  ReadOnly::ReadOnly));
+                  runtime_->newMemoryViewFromCPtr(thread_, none, memory.get(),
+                                                  length, ReadOnly::ReadOnly));
   Pointer pointer(&scope, view.buffer());
   EXPECT_EQ(view.length(), length);
   byte* ptr = reinterpret_cast<byte*>(pointer.cptr());

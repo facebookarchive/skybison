@@ -2415,6 +2415,10 @@ class RawMemoryView : public RawInstance {
   word length() const;
   void setLength(word length) const;
 
+  // Original object that memoryview was created with
+  RawObject object() const;
+  void setObject(RawObject object) const;
+
   // Tuple of integers giving the shape of the memory as an N-dimensional array
   // In the 1-D case, shape will have one value which is equal to the length
   RawObject shape() const;
@@ -2440,7 +2444,8 @@ class RawMemoryView : public RawInstance {
   static const int kFormatOffset = kBufferOffset + kPointerSize;
   static const int kLengthOffset = kFormatOffset + kPointerSize;
   static const int kReadOnlyOffset = kLengthOffset + kPointerSize;
-  static const int kShapeOffset = kReadOnlyOffset + kPointerSize;
+  static const int kObjectOffset = kReadOnlyOffset + kPointerSize;
+  static const int kShapeOffset = kObjectOffset + kPointerSize;
   static const int kStartOffset = kShapeOffset + kPointerSize;
   static const int kStridesOffset = kStartOffset + kPointerSize;
   static const int kSize = kStridesOffset + kPointerSize;
@@ -6214,6 +6219,14 @@ inline word RawMemoryView::length() const {
 
 inline void RawMemoryView::setLength(word length) const {
   instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(length));
+}
+
+inline RawObject RawMemoryView::object() const {
+  return RawMemoryView::instanceVariableAt(kObjectOffset);
+}
+
+inline void RawMemoryView::setObject(RawObject object) const {
+  instanceVariableAtPut(kObjectOffset, object);
 }
 
 inline RawObject RawMemoryView::shape() const {

@@ -891,11 +891,13 @@ RawObject Runtime::newModuleProxy(const Module& module) {
   return *result;
 }
 
-RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
-                                 word length, ReadOnly read_only) {
+RawObject Runtime::newMemoryView(Thread* thread, const Object& obj,
+                                 const Object& buffer, word length,
+                                 ReadOnly read_only) {
   HandleScope scope(thread);
   MemoryView result(&scope, heap()->create<RawMemoryView>());
   result.setBuffer(*buffer);
+  result.setObject(*obj);
   result.setLength(length);
   result.setFormat(RawSmallStr::fromCodePoint('B'));
   result.setReadOnly(read_only == ReadOnly::ReadOnly);
@@ -909,11 +911,12 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
   return *result;
 }
 
-RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, void* ptr, word length,
+RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, const Object& obj,
+                                         void* ptr, word length,
                                          ReadOnly read_only) {
   HandleScope scope(thread);
   Object pointer(&scope, newPointer(ptr, length));
-  return newMemoryView(thread, pointer, length, read_only);
+  return newMemoryView(thread, obj, pointer, length, read_only);
 }
 
 RawObject Runtime::newMmap() {
