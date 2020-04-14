@@ -209,9 +209,14 @@ RawObject FUNC(_ctypes, sizeof)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object obj_or_type(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*obj_or_type)) {
-    UNIMPLEMENTED("sizeof ctypes instance");
+    obj_or_type = runtime->typeOf(*obj_or_type);
   }
   Type type(&scope, *obj_or_type);
+  Type cdata_type(&scope,
+                  runtime->lookupNameInModule(thread, ID(_ctypes), ID(_CData)));
+  if (!typeIsSubclass(type, cdata_type)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "this type has no size");
+  }
   Object type_attr(&scope, runtime->newStrFromCStr("_type_"));
   Str proto(&scope, typeGetAttribute(thread, type, type_attr));
   FieldDesc* field_desc = fieldDesc(proto.charAt(0));

@@ -106,6 +106,7 @@ class Runtime;
   V(ZeroDivisionError)                                                         \
   V(_BufferedIOBase)                                                           \
   V(_BufferedIOMixin)                                                          \
+  V(_CData)                                                                    \
   V(_HashInfo)                                                                 \
   V(_IOBase)                                                                   \
   V(_RawIOBase)                                                                \

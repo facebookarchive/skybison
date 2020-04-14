@@ -125,6 +125,22 @@ class CtypesTests(unittest.TestCase):
 
         self.assertIsNotNone(uuid)
 
+    def test_sizeof_non_cdata_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            ctypes.sizeof(TypeError)
+        self.assertEqual(str(ctx.exception), "this type has no size")
+
+    def test_sizeof_type_returns_size(self):
+        self.assertEqual(ctypes.sizeof(ctypes.c_bool), 1)
+        self.assertEqual(ctypes.sizeof(ctypes.c_uint16), 2)
+
+    def test_sizeof_object_with_memory_returns_size_of_type(self):
+        import mmap
+
+        view = memoryview(mmap.mmap(-1, 6))
+        uint = ctypes.c_uint16.from_buffer(view)
+        self.assertEqual(ctypes.sizeof(uint), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
