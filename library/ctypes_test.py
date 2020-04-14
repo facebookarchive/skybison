@@ -7,6 +7,20 @@ from test_support import pyro_only
 
 
 class CtypesTests(unittest.TestCase):
+    def test_addressof_non_cdata_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            ctypes.addressof("not-CData")
+        self.assertEqual(str(ctx.exception), "invalid type")
+
+    def test_addressof_mmap_returns_int_greater_than_zero(self):
+        import mmap
+
+        view = memoryview(mmap.mmap(-1, 2))
+        uint = ctypes.c_uint16.from_buffer(view)
+        addr = ctypes.addressof(uint)
+        self.assertIsInstance(addr, int)
+        self.assertGreater(addr, 0)
+
     def test_ctypes_array_creation_with_type_returns_array_type(self):
         arr = ctypes.c_ubyte * 14
         self.assertEqual(arr._type_, ctypes.c_ubyte)

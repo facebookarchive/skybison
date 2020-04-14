@@ -17,6 +17,7 @@ from _builtins import (
     _str_len,
     _tuple_check,
     _tuple_len,
+    _type,
     _type_issubclass,
     _Unbound,
     _unimplemented,
@@ -274,6 +275,10 @@ class Union(_CData, metaclass=UnionType):
         _unimplemented()
 
 
+def _addressof(obj):
+    _builtin()
+
+
 _array_from_ctype_cache = {}
 
 
@@ -285,7 +290,11 @@ def _shared_object_symbol_address(handle, name):
 
 
 def addressof(obj):
-    _unimplemented()
+    if not issubclass(type(obj), _CData):
+        raise TypeError("invalid type")
+    if not _type_issubclass(_type(obj), _SimpleCData) or not _mmap_check(obj._value):
+        _unimplemented()
+    return _addressof(obj._value)
 
 
 def alignment(obj_or_type):

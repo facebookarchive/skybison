@@ -132,6 +132,18 @@ RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
   return thread->runtime()->newIntFromCPtr(address);
 }
 
+RawObject FUNC(_ctypes, _addressof)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object value(&scope, args.get(0));
+  if (value.isMmap()) {
+    Object buf(&scope, Mmap::cast(*value).data());
+    Pointer pointer(&scope, *buf);
+    return thread->runtime()->newIntFromCPtr(pointer.cptr());
+  }
+  UNIMPLEMENTED("Cannot construct pointer from non-mmap yet");
+}
+
 RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
