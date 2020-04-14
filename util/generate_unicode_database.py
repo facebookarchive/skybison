@@ -712,16 +712,16 @@ class Reindex:
 
 @dataclass(frozen=True)
 class TypeRecord:
-    upper: int
-    lower: int
-    title: int
     decimal: int
     digit: int
     flags: int
+    lower: int
+    title: int
+    upper: int
 
     def __str__(self):
-        return f"{{{self.upper}, {self.lower}, {self.title}, \
-{self.decimal}, {self.digit}, {self.flags}}}"
+        return f"{{{self.decimal}, {self.digit}, {self.flags:#06x}, \
+{self.lower:#x}, {self.title:#x}, {self.upper:#x}}}"
 
 
 class CodePointArray:
@@ -1003,14 +1003,14 @@ struct UnicodeNamedSequence {{
 }};
 
 struct UnicodeTypeRecord {{
-  // Deltas to the character or offsets in kExtendedCase
-  const int32_t upper;
-  const int32_t lower;
-  const int32_t title;
   // Note: if more flag space is needed, decimal and digit could be unified
   const int8_t decimal;
   const int8_t digit;
   const int16_t flags;
+  // Deltas to the character or offsets in kExtendedCase
+  const int32_t lower;
+  const int32_t title;
+  const int32_t upper;
 }};
 
 extern const RawSmallStr kBidirectionalNames[];
@@ -1499,7 +1499,7 @@ def write_type_data(unicode, db, trace):  # noqa: C901
             if record[8]:
                 flags |= NUMERIC_MASK
                 numeric.setdefault(record[8], []).append(char)
-            item = TypeRecord(upper, lower, title, decimal, digit, flags)
+            item = TypeRecord(decimal, digit, flags, lower, title, upper)
             # add entry to index and item tables
             i = cache.get(item)
             if i is None:

@@ -73,14 +73,14 @@ struct UnicodeNamedSequence {
 };
 
 struct UnicodeTypeRecord {
-  // Deltas to the character or offsets in kExtendedCase
-  const int32_t upper;
-  const int32_t lower;
-  const int32_t title;
   // Note: if more flag space is needed, decimal and digit could be unified
   const int8_t decimal;
   const int8_t digit;
   const int16_t flags;
+  // Deltas to the character or offsets in kExtendedCase
+  const int32_t lower;
+  const int32_t title;
+  const int32_t upper;
 };
 
 extern const RawSmallStr kBidirectionalNames[];
