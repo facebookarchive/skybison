@@ -2061,7 +2061,22 @@ PY_EXPORT int PyUnicode_KIND_Func(PyObject* obj) {
 // behavior from CPython, where changing the data in the buffer changes the
 // string object.
 PY_EXPORT void* PyUnicode_DATA_Func(PyObject* str) {
-  return PyUnicode_AsUTF8(str);
+  ApiHandle* handle = ApiHandle::fromPyObject(str);
+  if (void* cache = handle->cache()) {
+    return static_cast<char*>(cache);
+  }
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, handle->asObject());
+  DCHECK(thread->runtime()->isInstanceOfStr(*obj),
+         "str should be a str instance");
+  Str str_obj(&scope, strUnderlying(*obj));
+  word length = str_obj.charLength();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  str_obj.copyTo(result, length);
+  result[length] = '\0';
+  handle->setCache(result);
+  return reinterpret_cast<char*>(result);
 }
 
 PY_EXPORT Py_UCS4 PyUnicode_READ_Func(int kind, void* data, Py_ssize_t index) {
