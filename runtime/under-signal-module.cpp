@@ -23,6 +23,9 @@ void UnderSignalModule::initialize(Thread* thread, const Module& module) {
   Object sig_ign(&scope, SmallInt::fromWord(reinterpret_cast<word>(SIG_IGN)));
   moduleAtPutById(thread, module, ID(SIG_IGN), sig_ign);
 
+  Object sigint(&scope, SmallInt::fromWord(SIGINT));
+  moduleAtPutById(thread, module, ID(SIGINT), sigint);
+
   executeFrozenModule(thread, &kUnderSignalModuleData, module);
 }
 

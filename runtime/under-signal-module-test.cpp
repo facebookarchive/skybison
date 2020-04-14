@@ -38,5 +38,13 @@ TEST_F(UnderSignalModuleTest, TestSigIgnExists) {
   ASSERT_EQ(SmallInt::cast(*sig_dfl).value(), reinterpret_cast<word>(SIG_IGN));
 }
 
+TEST_F(UnderSignalModuleTest, TestSigintExists) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, "import _signal").isError());
+  Object sigint(&scope, moduleAtByCStr(runtime_, "_signal", "SIGINT"));
+  ASSERT_TRUE(sigint.isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(*sigint, SIGINT));
+}
+
 }  // namespace testing
 }  // namespace py
