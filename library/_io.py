@@ -418,9 +418,7 @@ class _IOBase(bootstrap=True):
             if not b:
                 break
             res += b
-            # TODO(T47144276): Implement bytearray.endswith so we can do
-            # res.endswith(b"\n"):
-            if res[-1] == ord("\n"):
+            if res.endswith(b"\n"):
                 break
         return bytes(res)
 
@@ -512,9 +510,7 @@ class _RawIOBase(_IOBase, bootstrap=True):
         n = self.readinto(b)
         if n is None:
             return None
-        # TODO(T47144276): Implement bytearray.__delitem__ so we can use
-        # del b[n:]
-        b = b[:n]
+        del b[n:]
         return bytes(b)
 
     def readall(self):
@@ -1162,9 +1158,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
             raise TypeError(f"integer argument expected, got '{_type(pos).__name__}'")
         if pos < 0:
             raise ValueError(f"negative truncate position {pos!r}")
-        # TODO(T47144276): Implement bytearray.__delitem__ so we can use
-        # del self._buffer[pos:]
-        self._buffer = self._buffer[:pos]
+        del self._buffer[pos:]
         return pos
 
     def readable(self):
