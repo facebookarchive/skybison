@@ -81,11 +81,6 @@ class Semaphore:
 
 class Thread:
     def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-
-class _MainThread(Thread):
-    def __init__(self, *args, **kwargs):
         if args == ("_main_thread_secret",):
             return
         _unimplemented()
@@ -100,6 +95,10 @@ class _MainThread(Thread):
     @property
     def name(self):
         return "MainThread"
+
+
+class _MainThread(Thread):
+    pass
 
 
 class Timer:
