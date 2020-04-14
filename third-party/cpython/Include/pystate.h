@@ -217,7 +217,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
-PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
+PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 
 /* Variable and macro for in-line access to current thread state */

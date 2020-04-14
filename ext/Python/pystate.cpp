@@ -110,7 +110,8 @@ PY_EXPORT PyThreadState* PyThreadState_Next(PyThreadState* /* p */) {
   UNIMPLEMENTED("PyThreadState_Next");
 }
 
-PY_EXPORT int PyThreadState_SetAsyncExc(long /* d */, PyObject* /* c */) {
+PY_EXPORT int PyThreadState_SetAsyncExc(unsigned long /* d */,
+                                        PyObject* /* c */) {
   UNIMPLEMENTED("PyThreadState_SetAsyncExc");
 }
 

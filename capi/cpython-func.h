@@ -806,7 +806,7 @@ PyAPI_FUNC(PyThreadState*) PyThreadState_Get(void);
 PyAPI_FUNC(PyObject*) PyThreadState_GetDict(void);
 PyAPI_FUNC(PyThreadState*) PyThreadState_New(PyInterpreterState*);
 PyAPI_FUNC(PyThreadState*) PyThreadState_Next(PyThreadState*);
-PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject*);
+PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject*);
 PyAPI_FUNC(PyThreadState*) PyThreadState_Swap(PyThreadState*);
 PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 PyAPI_FUNC(void) PyThread_ReInitTLS(void);
