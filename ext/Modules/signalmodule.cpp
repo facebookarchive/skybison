@@ -19,4 +19,16 @@ PY_EXPORT void PyOS_AfterFork() {
   // TODO(T39596544): do nothing until we have a GIL.
 }
 
+PY_EXPORT void PyOS_AfterFork_Child() {
+  // TODO(T39596544): do nothing until we have a GIL.
+}
+
+PY_EXPORT void PyOS_AfterFork_Parent() {
+  // TODO(T39596544): do nothing until we have a GIL.
+}
+
+PY_EXPORT void PyOS_BeforeFork() {
+  // TODO(T39596544): do nothing until we have a GIL.
+}
+
 }  // namespace py

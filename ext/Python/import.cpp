@@ -203,6 +203,8 @@ PY_EXPORT PyObject* PyImport_ReloadModule(PyObject* /* m */) {
 
 PY_EXPORT void _PyImport_AcquireLock() { importAcquireLock(Thread::current()); }
 
+PY_EXPORT void _PyImport_ReInitLock() { UNIMPLEMENTED("_PyImport_ReInitLock"); }
+
 PY_EXPORT int _PyImport_ReleaseLock() {
   return importReleaseLock(Thread::current()) ? 1 : -1;
 }

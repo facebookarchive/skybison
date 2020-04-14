@@ -616,6 +616,9 @@ PyAPI_FUNC(int) PyODict_DelItem(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyODict_New(void);
 PyAPI_FUNC(int) PyODict_SetItem(PyObject*, PyObject*, PyObject*);
 PyAPI_FUNC(void) PyOS_AfterFork(void);
+PyAPI_FUNC(void) PyOS_AfterFork_Child(void);
+PyAPI_FUNC(void) PyOS_AfterFork_Parent(void);
+PyAPI_FUNC(void) PyOS_BeforeFork(void);
 PyAPI_FUNC(int) PyOS_CheckStack(void);
 PyAPI_FUNC(PyObject*) PyOS_FSPath(PyObject*);
 PyAPI_FUNC(void) PyOS_InitInterrupts(void);
@@ -1114,7 +1117,9 @@ PyAPI_FUNC(int) _PyFloat_Pack8(double x, unsigned char* p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack2(const unsigned char* p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack4(const unsigned char* p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char* p, int le);
+PyAPI_FUNC(void) _PyGILState_Reinit(void);
 PyAPI_FUNC(void) _PyImport_AcquireLock(void);
+PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
 PyAPI_FUNC(int)
     _PyLong_AsByteArray(PyLongObject*, unsigned char*, size_t, int, int);
@@ -1159,6 +1164,7 @@ PyAPI_FUNC(int)
 PyAPI_FUNC(char* const*) _PySequence_BytesToCharpArray(PyObject*);
 PyAPI_FUNC(int) _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
                                  PyObject** pkey, Py_hash_t* phash);
+PyAPI_FUNC(void) _PySignal_AfterFork(void);
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject*);
@@ -1177,16 +1183,24 @@ PyAPI_FUNC(int)
     _PyTime_AsTimeval_noraise(_PyTime_t, struct timeval*, _PyTime_round_t);
 PyAPI_FUNC(int)
     _PyTime_FromMillisecondsObject(_PyTime_t*, PyObject*, _PyTime_round_t);
-PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(long long ns);
+PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(_PyTime_t ns);
+PyAPI_FUNC(int) _PyTime_FromNanosecondsObject(_PyTime_t* t, PyObject* obj);
 PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
 PyAPI_FUNC(int)
     _PyTime_FromSecondsObject(_PyTime_t*, PyObject*, _PyTime_round_t);
+PyAPI_FUNC(int) _PyTime_FromTimespec(_PyTime_t* tp, struct timespec* ts);
+PyAPI_FUNC(int) _PyTime_FromTimeval(_PyTime_t* tp, struct timeval* tv);
 PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
 PyAPI_FUNC(int)
     _PyTime_GetMonotonicClockWithInfo(_PyTime_t*, _Py_clock_info_t*);
+PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
+PyAPI_FUNC(int)
+    _PyTime_GetPerfCounterWithInfo(_PyTime_t* t, _Py_clock_info_t* info);
 PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock(void);
 PyAPI_FUNC(int) _PyTime_GetSystemClockWithInfo(_PyTime_t*, _Py_clock_info_t*);
 PyAPI_FUNC(int) _PyTime_Init(void);
+PyAPI_FUNC(_PyTime_t)
+    _PyTime_MulDiv(_PyTime_t ticks, _PyTime_t mul, _PyTime_t div);
 PyAPI_FUNC(int) _PyTime_ObjectToTime_t(PyObject*, time_t*, _PyTime_round_t);
 PyAPI_FUNC(int)
     _PyTime_ObjectToTimespec(PyObject*, time_t*, long*, _PyTime_round_t);

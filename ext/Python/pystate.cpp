@@ -118,6 +118,8 @@ PY_EXPORT PyThreadState* PyThreadState_Swap(PyThreadState* /* s */) {
   UNIMPLEMENTED("PyThreadState_Swap");
 }
 
+PY_EXPORT void _PyGILState_Reinit() { UNIMPLEMENTED("_PyGILState_Reinit"); }
+
 PY_EXPORT int _PyState_AddModule(PyObject* /* e */, PyModuleDef* /* f */) {
   UNIMPLEMENTED("_PyState_AddModule");
 }
