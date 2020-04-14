@@ -11,6 +11,10 @@
 #include "symtable.h"
 #include "ast.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
 static void err_input(perrdetail *);
@@ -39,6 +43,43 @@ static int PARSER_FLAGS(PyCompilerFlags *flags)
                 | ((flags)->cf_flags & CO_FUTURE_WITH_STATEMENT ? \
                    PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
 #endif
+
+struct symtable *
+Py_SymtableStringObject(const char *str, PyObject *filename, int start)
+{
+    struct symtable *st;
+    mod_ty mod;
+    PyCompilerFlags flags;
+    PyArena *arena;
+
+    arena = PyArena_New();
+    if (arena == NULL)
+        return NULL;
+
+    flags.cf_flags = 0;
+    mod = PyParser_ASTFromStringObject(str, filename, start, &flags, arena);
+    if (mod == NULL) {
+        PyArena_Free(arena);
+        return NULL;
+    }
+    st = PySymtable_BuildObject(mod, filename, 0);
+    PyArena_Free(arena);
+    return st;
+}
+
+struct symtable *
+Py_SymtableString(const char *str, const char *filename_str, int start)
+{
+    PyObject *filename;
+    struct symtable *st;
+
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    st = Py_SymtableStringObject(str, filename, start);
+    Py_DECREF(filename);
+    return st;
+}
 
 /* Preferred access to parser is through AST. */
 mod_ty
@@ -211,7 +252,7 @@ err_input(perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
-    char *msg = NULL;
+    const char *msg = NULL;
     int offset = err->offset;
 
     errtype = PyExc_SyntaxError;
@@ -333,43 +374,6 @@ cleanup:
     }
 }
 
-struct symtable *
-Py_SymtableStringObject(const char *str, PyObject *filename, int start)
-{
-    struct symtable *st;
-    mod_ty mod;
-    PyCompilerFlags flags;
-    PyArena *arena;
-
-    arena = PyArena_New();
-    if (arena == NULL)
-        return NULL;
-
-    flags.cf_flags = 0;
-    mod = PyParser_ASTFromStringObject(str, filename, start, &flags, arena);
-    if (mod == NULL) {
-        PyArena_Free(arena);
-        return NULL;
-    }
-    st = PySymtable_BuildObject(mod, filename, 0);
-    PyArena_Free(arena);
-    return st;
-}
-
-struct symtable *
-Py_SymtableString(const char *str, const char *filename_str, int start)
-{
-    PyObject *filename;
-    struct symtable *st;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    st = Py_SymtableStringObject(str, filename, start);
-    Py_DECREF(filename);
-    return st;
-}
-
 /* Deprecated C API functions still provided for binary compatibility */
 
 #undef PyParser_SimpleParseFile
@@ -385,3 +389,7 @@ PyParser_SimpleParseString(const char *str, int start)
 {
     return PyParser_SimpleParseStringFlags(str, start, 0);
 }
+
+#ifdef __cplusplus
+}
+#endif
