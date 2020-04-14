@@ -9,11 +9,15 @@ from _builtins import (
     _bytes_check,
     _float_check,
     _int_check,
+    _memoryview_check,
+    _memoryview_start,
+    _mmap_check,
     _property,
     _str_check,
     _str_len,
     _tuple_check,
     _tuple_len,
+    _type_issubclass,
     _Unbound,
     _unimplemented,
     _weakref_check,
@@ -33,7 +37,7 @@ FUNCFLAG_USE_LASTERROR = 0x10
 __version__ = "1.1.0"
 
 
-def _SimpleCData_value_to_type(value, typ):
+def _SimpleCData_value_to_type(value, typ, offset):
     _builtin()
 
 
@@ -45,8 +49,30 @@ class _CDataType(type):
     def from_address(cls, *args, **kwargs):
         _unimplemented()
 
-    def from_buffer(cls, *args, **kwargs):
-        _unimplemented()
+    def from_buffer(cls, obj, offset=0):
+        if not hasattr(cls, "_type_"):
+            raise TypeError("abstract class")
+        if not _type_issubclass(cls, _SimpleCData):
+            _unimplemented()
+        if not _memoryview_check(obj) or not _mmap_check(obj.obj):
+            _unimplemented()
+        if offset < 0:
+            raise ValueError("offset cannot be negative")
+        if obj.readonly:
+            raise TypeError("underlying buffer is not writable")
+        if obj.strides != (1,):
+            raise TypeError("underlying buffer is not C contiguous")
+        obj_len = obj.shape[0]
+        type_size = sizeof(cls)
+        if type_size > obj_len - offset:
+            raise ValueError(
+                "Buffer size too small "
+                f"({obj_len} instead of at least {type_size + offset} bytes)"
+            )
+        result = cls.__new__(cls)
+        result._value = obj.obj
+        result._offset = offset + _memoryview_start(obj)
+        return result
 
     def from_buffer_copy(cls, *args, **kwargs):
         _unimplemented()
@@ -157,6 +183,7 @@ class _Pointer(_CData, metaclass=PyCPointerType):
 class _SimpleCData(_CData, metaclass=PyCSimpleType):
     def __init__(self, value=_Unbound):
         self._value_setter(value)
+        self._offset = 0
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "_type_"):
@@ -164,7 +191,7 @@ class _SimpleCData(_CData, metaclass=PyCSimpleType):
         return super().__new__(cls, args, kwargs)
 
     def _value_getter(self):
-        return _SimpleCData_value_to_type(self._value, self._type_)
+        return _SimpleCData_value_to_type(self._value, self._type_, self._offset)
 
     def _value_setter(self, value):
         if self._type_ == "H":

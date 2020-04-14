@@ -139,8 +139,15 @@ RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
   Runtime* runtime = thread->runtime();
   Object value(&scope, args.get(0));
   Str type(&scope, args.get(1));
+  Int offset(&scope, args.get(2));
   switch (type.charAt(0)) {
     case 'H':
+      if (value.isMmap()) {
+        Pointer value_ptr(&scope, Mmap::cast(*value).data());
+        CHECK(value_ptr.length() >= 2, "Not enough memory");
+        uint16_t* cptr = reinterpret_cast<uint16_t*>(value_ptr.cptr());
+        return runtime->newInt(cptr[offset.asWord()]);
+      }
       if (value.isUnbound()) {
         return runtime->newInt(0);
       }

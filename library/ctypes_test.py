@@ -52,6 +52,50 @@ class CtypesTests(unittest.TestCase):
             ctypes.c_uint16(1.0)
         self.assertEqual(str(ctx.exception), "int expected instead of float")
 
+    def test_from_buffer_with_memory_reflects_memory(self):
+        import mmap
+
+        m = mmap.mmap(-1, 2)
+        c = ctypes.c_uint16.from_buffer(memoryview(m))
+        view = memoryview(m)
+        view[0] = ord("f")
+        view[1] = ord("b")
+        self.assertEqual(c.value, (view[1] << 8) + view[0])
+
+    def test_from_buffer_with_abstract_class_raises_type_error(self):
+        import _ctypes
+
+        with self.assertRaises(TypeError) as context:
+            _ctypes._SimpleCData.from_buffer(b"as")
+        self.assertEqual(str(context.exception), "abstract class")
+
+    def test_from_buffer_with_readonly_buffer_raises_type_error(self):
+        import mmap
+
+        m = mmap.mmap(-1, 2, prot=mmap.PROT_READ)
+        with self.assertRaises(TypeError) as context:
+            ctypes.c_uint16.from_buffer(memoryview(m))
+        self.assertEqual(str(context.exception), "underlying buffer is not writable")
+
+    def test_from_buffer_with_negative_offset_raises_value_error(self):
+        import mmap
+
+        m = mmap.mmap(-1, 2)
+        with self.assertRaises(ValueError) as context:
+            ctypes.c_uint16.from_buffer(memoryview(m), -1)
+        self.assertEqual(str(context.exception), "offset cannot be negative")
+
+    def test_from_buffer_with_too_small_buffer_raises_value_error(self):
+        import mmap
+
+        m = mmap.mmap(-1, 1)
+        with self.assertRaises(ValueError) as context:
+            ctypes.c_uint16.from_buffer(memoryview(m))
+        self.assertEqual(
+            str(context.exception),
+            "Buffer size too small (1 instead of at least 2 bytes)",
+        )
+
     def test_loaded_library_has_function_attrs(self):
         libc_name = ctypes.util.find_library("c")
         libc = ctypes.CDLL(libc_name)

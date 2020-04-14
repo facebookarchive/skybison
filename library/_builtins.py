@@ -628,6 +628,14 @@ def _memoryview_setslice(self, start, stop, step, value):
     _builtin()
 
 
+def _memoryview_start(self):
+    _builtin()
+
+
+def _mmap_check(obj):
+    _builtin()
+
+
 def _module_dir(module):
     _builtin()
 

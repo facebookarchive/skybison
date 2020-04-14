@@ -3220,6 +3220,18 @@ RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread, Frame* frame,
   return memoryviewSetslice(thread, self, start, stop, step, slice_len, value);
 }
 
+RawObject FUNC(_builtins, _memoryview_start)(Thread*, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  return SmallInt::fromWord(MemoryView::cast(args.get(0)).start());
+}
+
+RawObject FUNC(_builtins, _mmap_check)(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfMmap(args.get(0)));
+}
+
 RawObject FUNC(_builtins, _module_dir)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
