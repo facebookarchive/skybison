@@ -123,12 +123,14 @@ def active_count():
     return 1
 
 
-def activeCount():
-    return 1
+activeCount = active_count
 
 
 def current_thread():
     return _main_thread
+
+
+currentThread = current_thread
 
 
 def enumerate():
