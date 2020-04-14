@@ -29,6 +29,26 @@ class Lock:
     release_lock = release
 
 
+class RLock:
+    """Recursive (pseudo) Lock assuming single-threaded execution."""
+
+    def __init__(self):
+        self._count = 0
+
+    def acquire(self, blocking=True, timeout=-1):
+        self._count += 1
+
+    __enter__ = acquire
+
+    def release(self):
+        if self._count == 0:
+            raise RuntimeError("cannot release un-acquired lock")
+        self._count -= 1
+
+    def __exit__(self, t, v, tb):
+        self.release()
+
+
 allocate_lock = Lock
 
 

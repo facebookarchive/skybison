@@ -2,6 +2,7 @@
 
 from _builtins import _Unbound, _unimplemented
 from _thread import Lock  # noqa: F401
+from _thread import RLock as _RLock
 
 
 class Barrier:
@@ -104,26 +105,6 @@ class _MainThread(Thread):
 class Timer:
     def __init__(self, *args, **kwargs):
         _unimplemented()
-
-
-class _RLock:
-    """Recursive (pseudo) Lock assuming single-threaded execution."""
-
-    def __init__(self):
-        self._count = 0
-
-    def acquire(self, blocking=True, timeout=-1):
-        self._count += 1
-
-    __enter__ = acquire
-
-    def release(self):
-        if self._count == 0:
-            raise RuntimeError("cannot release un-acquired lock")
-        self._count -= 1
-
-    def __exit__(self, t, v, tb):
-        self.release()
 
 
 class _ThreadLocal:
