@@ -6,7 +6,13 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
+extern "C" int _Py_EncodeUTF8Ex(const wchar_t* text, char** str,
+                                size_t* error_pos, const char** reason,
+                                int raw_malloc, int surrogateescape);
 extern "C" wchar_t* _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
+extern "C" int _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size,
+                                wchar_t** result, size_t* wlen,
+                                const char** reason, int surrogateescape);
 extern "C" int _Py_normalize_encoding(const char*, char*, size_t);
 
 namespace py {
