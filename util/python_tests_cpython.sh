@@ -11,7 +11,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
 fi
 
 if [[ ! -x "$CPYTHON_BIN" ]]; then
-  echo "$CPYTHON_BIN is not executable. Please build using 'cmake --build . --target compile-cpython'" 1>&2
+  echo "$CPYTHON_BIN is not executable. Please build using 'cmake --build . --target cpython'" 1>&2
   exit 1
 fi
 

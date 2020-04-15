@@ -1685,10 +1685,10 @@ add_custom_command(
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR}
   USES_TERMINAL)
 add_custom_target(
-  compile-cpython
+  cpython
   DEPENDS ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
 add_library(libpython STATIC IMPORTED)
-add_dependencies(libpython compile-cpython)
+add_dependencies(libpython cpython)
 set_target_properties(
   libpython
   PROPERTIES IMPORTED_LOCATION ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
