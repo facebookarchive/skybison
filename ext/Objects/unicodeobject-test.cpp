@@ -937,7 +937,6 @@ TEST_F(UnicodeExtensionApiTest, GetLengthWithEmptyStrReturnsZero) {
   PyObjectPtr str(PyUnicode_FromString(""));
   Py_ssize_t expected = 0;
   EXPECT_EQ(PyUnicode_GetLength(str), expected);
-  EXPECT_EQ(PyUnicode_GetSize(str), expected);
   EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
   EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
 }
@@ -946,7 +945,6 @@ TEST_F(UnicodeExtensionApiTest, GetLengthWithNonEmptyString) {
   PyObjectPtr str(PyUnicode_FromString("foo"));
   Py_ssize_t expected = 3;
   EXPECT_EQ(PyUnicode_GetLength(str), expected);
-  EXPECT_EQ(PyUnicode_GetSize(str), expected);
   EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
   EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
 }
@@ -960,7 +958,6 @@ substr = SubStr('foo')
   PyObjectPtr str(moduleGet("__main__", "substr"));
   Py_ssize_t expected = 3;
   EXPECT_EQ(PyUnicode_GetLength(str), expected);
-  EXPECT_EQ(PyUnicode_GetSize(str), expected);
   EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
   EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
 }
@@ -969,7 +966,6 @@ TEST_F(UnicodeExtensionApiTest, GetLengthWithUTF8ReturnsCodePointLength) {
   PyObjectPtr str(PyUnicode_FromString("\xc3\xa9"));
   Py_ssize_t expected = 1;
   EXPECT_EQ(PyUnicode_GetLength(str), expected);
-  EXPECT_EQ(PyUnicode_GetSize(str), expected);
   EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
   EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
 }
@@ -983,9 +979,21 @@ TEST_F(UnicodeExtensionApiTest, GetLengthWithNonStrRaisesTypeError) {
 
 TEST_F(UnicodeExtensionApiTest, GetSizeWithNonStrRaisesTypeError) {
   PyObjectPtr list(PyList_New(3));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   EXPECT_EQ(PyUnicode_GetSize(list), -1);
+#pragma GCC diagnostic pop
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, GetSizeWithStrReturnsLength) {
+  PyObjectPtr unicode(PyUnicode_FromString("abc"));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 3);
+#pragma GCC diagnostic pop
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(UnicodeExtensionApiTest, FromUnicodeWithASCIIReturnsString) {
@@ -1024,7 +1032,7 @@ TEST_F(UnicodeExtensionApiTest,
   PyObjectPtr empty(PyUnicode_FromWideChar(nullptr, 0));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_Check(empty));
-  EXPECT_EQ(PyUnicode_GetSize(empty), 0);
+  EXPECT_EQ(PyUnicode_GetLength(empty), 0);
 }
 
 TEST_F(UnicodeExtensionApiTest, FromWideCharWithNullBufferReturnsError) {
@@ -1050,7 +1058,7 @@ TEST_F(UnicodeExtensionApiTest, FromWideCharWithBufferAndZeroSizeReturnsEmpty) {
   PyObjectPtr empty(PyUnicode_FromWideChar(L"abc", 0));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_Check(empty));
-  EXPECT_EQ(PyUnicode_GetSize(empty), 0);
+  EXPECT_EQ(PyUnicode_GetLength(empty), 0);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeWithNullEncodingReturnsUTF8) {
@@ -1140,7 +1148,7 @@ TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterCreatesEmptyString) {
   PyObjectPtr empty(_PyUnicodeWriter_Finish(&writer));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_Check(empty));
-  EXPECT_EQ(PyUnicode_GetSize(empty), 0);
+  EXPECT_EQ(PyUnicode_GetLength(empty), 0);
 }
 
 TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesASCIIStrings) {
@@ -1792,12 +1800,18 @@ TEST_F(UnicodeExtensionApiTest, RSplitReturnsList) {
 
 TEST_F(UnicodeExtensionApiTest, StrlenWithEmptyStrReturnsZero) {
   const wchar_t* str = L"";
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   ASSERT_EQ(Py_UNICODE_strlen(str), 0U);
+#pragma GCC diagnostic pop
 }
 
 TEST_F(UnicodeExtensionApiTest, StrlenWithStrReturnsNumberOfChars) {
   const wchar_t* str = L"hello";
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   ASSERT_EQ(Py_UNICODE_strlen(str), 5U);
+#pragma GCC diagnostic pop
 }
 
 TEST_F(UnicodeExtensionApiTest, SubstringWithNegativeStartRaisesIndexError) {
