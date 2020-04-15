@@ -597,6 +597,32 @@ RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
          << "', but got '" << result_name << "'";
 }
 
+::testing::AssertionResult isFloatEqualsDouble(RawObject obj, double expected) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (obj.isError()) {
+    if (obj.isErrorException()) {
+      Type type(&scope, thread->pendingExceptionType());
+      Str type_name(&scope, type.name());
+      return ::testing::AssertionFailure()
+             << "pending " << type_name << " exception";
+    }
+    return ::testing::AssertionFailure() << "is an " << obj;
+  }
+  if (!runtime->isInstanceOfFloat(obj)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, obj) << "'";
+  }
+  double value = floatUnderlying(obj).value();
+  // Test with memcmp instead of ==, so we can differentiate -0, and 0 or test
+  // for NaNs.
+  if (value != expected) {
+    return ::testing::AssertionFailure() << value << " is not " << expected;
+  }
+  return ::testing::AssertionSuccess();
+}
+
 ::testing::AssertionResult isIntEqualsWord(RawObject obj, word value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

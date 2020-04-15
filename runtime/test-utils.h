@@ -211,6 +211,8 @@ RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
 ::testing::AssertionResult isBytesEqualsBytes(const Object& result,
                                               View<byte> expected);
 
+::testing::AssertionResult isFloatEqualsDouble(RawObject obj, double expected);
+
 ::testing::AssertionResult isMutableBytesEqualsBytes(const Object& result,
                                                      View<byte> expected);
 

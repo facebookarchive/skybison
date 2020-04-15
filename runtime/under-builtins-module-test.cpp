@@ -2128,9 +2128,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewGetitemWithFormatfReturnsFloat) {
   Int index(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
-  ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(Float::cast(*result).value(),
-            std::strtod("-0x1.78e1720000000p-120", nullptr));
+  EXPECT_TRUE(isFloatEqualsDouble(
+      *result, std::strtod("-0x1.78e1720000000p-120", nullptr)));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewGetitemWithFormatdReturnsFloat) {
@@ -2141,9 +2140,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewGetitemWithFormatdReturnsFloat) {
   Int index(&scope, runtime_->newInt(1));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_getitem), view, index));
-  ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(Float::cast(*result).value(),
-            std::strtod("0x1.c0c870d1a8028p+187", nullptr));
+  EXPECT_TRUE(isFloatEqualsDouble(
+      *result, std::strtod("0x1.c0c870d1a8028p+187", nullptr)));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
