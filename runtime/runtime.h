@@ -669,7 +669,7 @@ class Runtime {
     if (instance.isSetBase()) {
       return true;
     }
-    LayoutId builtin_base = Type::cast(typeOf(instance)).builtinBase();
+    LayoutId builtin_base = typeOf(instance).rawCast<RawType>().builtinBase();
     return builtin_base == LayoutId::kSet ||
            builtin_base == LayoutId::kFrozenSet;
   }

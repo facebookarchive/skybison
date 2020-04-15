@@ -1531,6 +1531,35 @@ stop_iteration = StopIterationSub()
   EXPECT_FALSE(runtime_->isInstanceOfSystemExit(*stop_iteration));
 }
 
+TEST_F(RuntimeTest, IsInstanceOfSetBase) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class M(type):
+  pass
+
+class C(metaclass=M):
+  pass
+
+class D(set, metaclass=M):
+  pass
+
+class E(set):
+  pass
+
+class F(frozenset):
+  pass
+
+c = C()
+d = D()
+e = E()
+f = F()
+)")
+                   .isError());
+  EXPECT_FALSE(runtime_->isInstanceOfSetBase(mainModuleAt(runtime_, "c")));
+  EXPECT_TRUE(runtime_->isInstanceOfSetBase(mainModuleAt(runtime_, "d")));
+  EXPECT_TRUE(runtime_->isInstanceOfSetBase(mainModuleAt(runtime_, "e")));
+  EXPECT_TRUE(runtime_->isInstanceOfSetBase(mainModuleAt(runtime_, "f")));
+}
+
 TEST_F(RuntimeTest, IsInstanceOfUserBaseAcceptsMetaclassInstances) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
