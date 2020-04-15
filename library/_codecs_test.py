@@ -251,6 +251,21 @@ class DecodeASCIITests(unittest.TestCase):
         self.assertEqual(decoded, "hello")
         self.assertEqual(consumed, 5)
 
+    def test_decode_ascii_with_well_formed_ascii_bytearray_returns_string(self):
+        decoded, consumed = _codecs.ascii_decode(bytearray(b"hello"))
+        self.assertEqual(decoded, "hello")
+        self.assertEqual(consumed, 5)
+
+    def test_decode_ascii_with_well_formed_ascii_bytearray_subclass_returns_string(
+        self
+    ):
+        class B(bytearray):
+            pass
+
+        decoded, consumed = _codecs.ascii_decode(B(b"hello"))
+        self.assertEqual(decoded, "hello")
+        self.assertEqual(consumed, 5)
+
     def test_decode_ascii_with_custom_error_handler_returns_string(self):
         _codecs.register_error("test", lambda x: ("-testing-", x.end))
         decoded, consumed = _codecs.ascii_decode(b"ab\x90c", "test")
@@ -324,6 +339,19 @@ class DecodeLatin1Tests(unittest.TestCase):
         self.assertEqual(decoded, "hello")
         self.assertEqual(consumed, 5)
 
+    def test_decode_latin_1_with_ascii_bytearray_returns_string(self):
+        decoded, consumed = _codecs.latin_1_decode(bytearray(b"hello"))
+        self.assertEqual(decoded, "hello")
+        self.assertEqual(consumed, 5)
+
+    def test_decode_latin_1_with_ascii_bytearray_subclass_returns_string(self):
+        class B(bytearray):
+            pass
+
+        decoded, consumed = _codecs.latin_1_decode(B(b"hello"))
+        self.assertEqual(decoded, "hello")
+        self.assertEqual(consumed, 5)
+
     def test_decode_latin_1_with_latin_1_returns_string(self):
         decoded, consumed = _codecs.latin_1_decode(b"\x7D\x7E\x7F\x80\x81\x82")
         self.assertEqual(decoded, "\x7D\x7E\x7F\x80\x81\x82")
@@ -346,6 +374,21 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
 
     def test_decode_unicode_escape_with_well_formed_latin_1_returns_string(self):
         decoded, consumed = _codecs.unicode_escape_decode(b"hello\x95")
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_unicode_escape_with_well_formed_latin_1_bytearray_returns_string(
+        self
+    ):
+        decoded, consumed = _codecs.unicode_escape_decode(bytearray(b"hello\x95"))
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_unicode_escape_with_latin_1_bytearray_subclass_returns_string(self):
+        class B(bytearray):
+            pass
+
+        decoded, consumed = _codecs.unicode_escape_decode(B(b"hello\x95"))
         self.assertEqual(decoded, "hello\x95")
         self.assertEqual(consumed, 6)
 
@@ -441,6 +484,23 @@ class DecodeUTF8Tests(unittest.TestCase):
     def test_decode_utf_8_with_well_formed_utf_8_returns_string(self):
         decoded, consumed = _codecs.utf_8_decode(
             b"\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80"
+        )
+        self.assertEqual(decoded, "\U0001f192h\xe4l\u2cc0")
+        self.assertEqual(consumed, 11)
+
+    def test_decode_utf_8_with_well_formed_utf8_bytearray_returns_string(self):
+        decoded, consumed = _codecs.utf_8_decode(
+            bytearray(b"\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80")
+        )
+        self.assertEqual(decoded, "\U0001f192h\xe4l\u2cc0")
+        self.assertEqual(consumed, 11)
+
+    def test_decode_utf_8_with_well_formed_utf8_bytearray_subclass_returns_string(self):
+        class B(bytearray):
+            pass
+
+        decoded, consumed = _codecs.utf_8_decode(
+            B(b"\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80")
         )
         self.assertEqual(decoded, "\U0001f192h\xe4l\u2cc0")
         self.assertEqual(consumed, 11)

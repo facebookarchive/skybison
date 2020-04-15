@@ -38,10 +38,10 @@ static SymbolId lookupSymbolForErrorHandler(const Str& error) {
 }
 
 static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
-                       int index) {
+                       word src_length, word index) {
   // TODO(T41032331): Implement a fastpass to read longs instead of chars
   Runtime* runtime = thread->runtime();
-  for (; index < src.length(); index++) {
+  for (; index < src_length; index++) {
     byte byte = src.byteAt(index);
     if (byte & 0x80) {
       break;
@@ -56,15 +56,24 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Object data(&scope, args.get(0));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
   Tuple result(&scope, runtime->newTuple(2));
-  word length = bytes.length();
+  word length;
+  Bytes bytes(&scope, Bytes::empty());
+  if (runtime->isInstanceOfByteArray(*data)) {
+    ByteArray array(&scope, *data);
+    bytes = array.items();
+    length = array.numItems();
+  } else {
+    bytes = bytesUnderlying(*data);
+    length = bytes.length();
+  }
   runtime->strArrayEnsureCapacity(thread, dst, length);
-  word outpos = asciiDecode(thread, dst, bytes, index);
+  word outpos = asciiDecode(thread, dst, bytes, length, index);
   if (outpos == length) {
     result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
@@ -336,12 +345,21 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Object data(&scope, args.get(0));
   StrArray array(&scope, runtime->newStrArray());
-  word length = bytes.length();
+  word length;
+  Bytes bytes(&scope, Bytes::empty());
+  if (runtime->isInstanceOfByteArray(*data)) {
+    ByteArray byte_array(&scope, *data);
+    bytes = byte_array.items();
+    length = byte_array.numItems();
+  } else {
+    bytes = bytesUnderlying(*data);
+    length = bytes.length();
+  }
   runtime->strArrayEnsureCapacity(thread, array, length);
   // First, try a quick ASCII decoding
-  word num_bytes = asciiDecode(thread, array, bytes, 0);
+  word num_bytes = asciiDecode(thread, array, bytes, length, 0);
   if (num_bytes != length) {
     // A non-ASCII character was found; switch to a Latin-1 decoding for the
     // remainder of the input sequence
@@ -576,13 +594,22 @@ RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
-  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Object data(&scope, args.get(0));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
   Tuple result(&scope, runtime->newTuple(4));
-  word length = bytes.length();
+  word length;
+  Bytes bytes(&scope, Bytes::empty());
+  if (runtime->isInstanceOfByteArray(*data)) {
+    ByteArray array(&scope, *data);
+    bytes = array.items();
+    length = array.numItems();
+  } else {
+    bytes = bytesUnderlying(*data);
+    length = bytes.length();
+  }
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word first_invalid_escape_index = -1;
   for (word i = index; i < length;) {
@@ -777,16 +804,25 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object final_obj(&scope, args.get(4));
   DCHECK(final_obj.isBool(), "Fifth arg to _utf_8_decode must be bool");
-  // TODO(T45849551): Handle any bytes-like object
-  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Object data(&scope, args.get(0));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
   Tuple result(&scope, runtime->newTuple(3));
-  word length = bytes.length();
+  word length;
+  Bytes bytes(&scope, Bytes::empty());
+  // TODO(T45849551): Handle any bytes-like object
+  if (runtime->isInstanceOfByteArray(*data)) {
+    ByteArray array(&scope, *data);
+    bytes = array.items();
+    length = array.numItems();
+  } else {
+    bytes = bytesUnderlying(*data);
+    length = bytes.length();
+  }
   runtime->strArrayEnsureCapacity(thread, dst, length);
-  word i = asciiDecode(thread, dst, bytes, index);
+  word i = asciiDecode(thread, dst, bytes, length, index);
   if (i == length) {
     result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
