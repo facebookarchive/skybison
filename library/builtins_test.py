@@ -10902,6 +10902,14 @@ class RangeIteratorTests(unittest.TestCase):
 
 
 class ReversedTests(unittest.TestCase):
+    def test_dunder_new_with_no_dunder_getitem_raises_type_error(self):
+        class C:
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            reversed(C())
+        self.assertEqual(str(context.exception), "'C' object is not reversible")
+
     def test_reversed_iterates_backwards_over_iterable(self):
         it = reversed([1, 2, 3])
         self.assertEqual(it.__next__(), 3)

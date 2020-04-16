@@ -5230,6 +5230,8 @@ class reversed:
             raise TypeError(f"'{_type(seq).__name__}' object is not reversible")
         if dunder_reversed is not _Unbound:
             return dunder_reversed()
+        if _object_type_getattr(seq, "__getitem__") is _Unbound:
+            raise TypeError(f"'{_type(seq).__name__}' object is not reversible")
         return object.__new__(cls)
 
     def __init__(self, seq):
