@@ -728,55 +728,93 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function,
   return *result;
 }
 
-RawObject methodTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
-  }
+static RawObject raiseTypeErrorMustBeBound(Thread* thread,
+                                           const Function& function) {
   HandleScope scope(thread);
-  Function function(&scope, frame->peek(1));
+  Str function_name(&scope, function.name());
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError, "'%S' must be bound to an object", &function_name);
+}
+
+static RawObject raiseTypeErrorNoArguments(Thread* thread,
+                                           const Function& function,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Str function_name(&scope, function.name());
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "'%S' takes no arguments (%w given)",
+                              &function_name, nargs - 1);
+}
+
+static RawObject raiseTypeErrorNoKeywordArguments(Thread* thread,
+                                                  const Function& function) {
+  HandleScope scope(thread);
+  Str function_name(&scope, function.name());
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError, "'%S' takes no keyword arguments", &function_name);
+}
+
+RawObject methodTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Function function(&scope, frame->peek(nargs));
+  if (nargs != 1) {
+    return raiseTypeErrorNoArguments(thread, function, nargs);
+  }
   Object self(&scope, frame->peek(0));
   return callMethNoArgs(thread, function, self);
 }
 
 RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
+  Function function(&scope, frame->peek(nargs + 1));
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no keyword arguments");
+    return raiseTypeErrorNoKeywordArguments(thread, function);
   }
-  if (nargs != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
+  if (nargs != 1) {
+    return raiseTypeErrorNoArguments(thread, function, nargs);
   }
-  Function function(&scope, frame->peek(1));
-  Object self(&scope, frame->peek(0));
+  Object self(&scope, frame->peek(1));
   return callMethNoArgs(thread, function, self);
 }
 
 RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
+  Function function(&scope, frame->peek(has_varkeywords + 1));
+  Tuple args(&scope, frame->peek(has_varkeywords));
   if (has_varkeywords) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
     if (Dict::cast(*kw_args).numItems() != 0) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "function takes no keyword arguments");
+      return raiseTypeErrorNoKeywordArguments(thread, function);
     }
   }
-  if (varargs.length() != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no arguments");
+  word args_length = args.length();
+  if (args_length != 1) {
+    return raiseTypeErrorNoArguments(thread, function, args_length);
   }
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object self(&scope, varargs.at(0));
+  Object self(&scope, args.at(0));
   return callMethNoArgs(thread, function, self);
 }
 
 // method one arg
+
+static RawObject raiseTypeErrorOneArgument(Thread* thread,
+                                           const Function& function,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Str function_name(&scope, function.name());
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "'%S' takes exactly one argument (%w given)",
+                              &function_name, nargs - 1);
+}
 
 static RawObject callMethOneArg(Thread* thread, const Function& function,
                                 const Object& self, const Object& arg) {
@@ -796,12 +834,11 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
 }
 
 RawObject methodTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one argument");
-  }
   HandleScope scope(thread);
-  Function function(&scope, frame->peek(2));
+  Function function(&scope, frame->peek(nargs));
+  if (nargs != 2) {
+    return raiseTypeErrorOneArgument(thread, function, nargs);
+  }
   Object self(&scope, frame->peek(1));
   Object arg(&scope, frame->peek(0));
   return callMethOneArg(thread, function, self, arg);
@@ -809,40 +846,36 @@ RawObject methodTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
 
 RawObject methodTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
+  Function function(&scope, frame->peek(nargs + 1));
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no keyword arguments");
+    return raiseTypeErrorNoKeywordArguments(thread, function);
   }
   if (nargs != 2) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one arguments");
+    return raiseTypeErrorOneArgument(thread, function, nargs);
   }
-  Function function(&scope, frame->peek(3));
-  Object self(&scope, frame->peek(1));
-  Object arg(&scope, frame->peek(2));
+  Object self(&scope, frame->peek(2));
+  Object arg(&scope, frame->peek(1));
   return callMethOneArg(thread, function, self, arg);
 }
 
 RawObject methodTrampolineOneArgEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
+  Function function(&scope, frame->peek(has_varkeywords + 1));
   if (has_varkeywords) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
     if (Dict::cast(*kw_args).numItems() != 0) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "function takes no keyword arguments");
+      return raiseTypeErrorNoKeywordArguments(thread, function);
     }
   }
   Tuple varargs(&scope, frame->peek(has_varkeywords));
   if (varargs.length() != 2) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes exactly one argument");
+    return raiseTypeErrorOneArgument(thread, function, varargs.length());
   }
   Object self(&scope, varargs.at(0));
   Object arg(&scope, varargs.at(1));
-  Function function(&scope, frame->peek(has_varkeywords + 1));
   return callMethOneArg(thread, function, self, arg);
 }
 
@@ -866,12 +899,11 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
 }
 
 RawObject methodTrampolineVarArgs(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes at least one arguments");
-  }
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
   Object self(&scope, frame->peek(nargs - 1));
   Tuple varargs(&scope, thread->runtime()->newTuple(nargs - 1));
   for (word i = 0; i < nargs - 1; i++) {
@@ -881,18 +913,19 @@ RawObject methodTrampolineVarArgs(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* frame, word nargs) {
-  DCHECK(nargs > 1, "nargs must be greater than 1");
   HandleScope scope(thread);
+  Function function(&scope, frame->peek(nargs + 1));
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "function takes no keyword arguments");
+    return raiseTypeErrorNoKeywordArguments(thread, function);
   }
-  Function function(&scope, frame->peek(nargs + 1));
-  Object self(&scope, frame->peek(nargs - 1));
-  Tuple varargs(&scope, thread->runtime()->newTuple(nargs));
-  for (word i = 1; i < nargs; i++) {
-    varargs.atPut(nargs - i - 1, frame->peek(i + 1));
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
+  Object self(&scope, frame->peek(nargs));
+  Tuple varargs(&scope, thread->runtime()->newTuple(nargs - 1));
+  for (word i = 0; i < nargs - 1; i++) {
+    varargs.atPut(i, frame->peek(nargs - i - 1));
   }
   return callMethVarArgs(thread, function, self, varargs);
 }
@@ -900,20 +933,22 @@ RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* frame, word nargs) {
 RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
+  Function function(&scope, frame->peek(has_varkeywords + 1));
   if (has_varkeywords) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
     if (Dict::cast(*kw_args).numItems() != 0) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "function takes no keyword arguments");
+      return raiseTypeErrorNoKeywordArguments(thread, function);
     }
   }
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
-  Object self(&scope, varargs.at(0));
-  Object args(&scope, thread->runtime()->tupleSubseq(thread, varargs, 1,
-                                                     varargs.length() - 1));
-  return callMethVarArgs(thread, function, self, args);
+  Tuple args(&scope, frame->peek(has_varkeywords));
+  if (args.length() == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
+  Object self(&scope, args.at(0));
+  Object varargs(&scope, thread->runtime()->tupleSubseq(thread, args, 1,
+                                                        args.length() - 1));
+  return callMethVarArgs(thread, function, self, varargs);
 }
 
 // callMethKeywordArgs
@@ -944,10 +979,12 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
 }
 
 RawObject methodTrampolineKeywords(Thread* thread, Frame* frame, word nargs) {
-  DCHECK(nargs > 0, "nargs must be greater than 0");
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function function(&scope, frame->peek(nargs));
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
   Object self(&scope, frame->peek(nargs - 1));
   Tuple varargs(&scope, runtime->newTuple(nargs - 1));
   for (word i = 0; i < nargs - 1; i++) {
@@ -972,12 +1009,15 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame, word nargs) {
     }
     kwargs = *dict;
   }
+  Function function(&scope, frame->peek(nargs + 1));
+  if (nargs - num_keywords == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
   word num_positional = nargs - num_keywords - 1;
   Tuple args(&scope, runtime->newTuple(num_positional));
   for (word i = 0; i < num_positional; i++) {
     args.atPut(i, frame->peek(nargs - i - 1));
   }
-  Function function(&scope, frame->peek(nargs + 1));
   Object self(&scope, frame->peek(nargs));
   return callMethKeywords(thread, function, self, args, kwargs);
 }
@@ -992,6 +1032,9 @@ RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* frame, word flags) {
     if (!kwargs.isDict()) UNIMPLEMENTED("mapping kwargs");
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
+  if (varargs.length() == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
   Object self(&scope, varargs.at(0));
   Object args(&scope, thread->runtime()->tupleSubseq(thread, varargs, 1,
                                                      varargs.length() - 1));
@@ -1037,6 +1080,9 @@ static RawObject callMethFastCall(Thread* thread, const Function& function,
 RawObject methodTrampolineFastCall(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
   Object self(&scope, frame->peek(nargs - 1));
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs - 1]);
@@ -1056,6 +1102,9 @@ RawObject methodTrampolineFastCall(Thread* thread, Frame* frame, word nargs) {
 RawObject methodTrampolineFastCallKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs + 1));
+  if (nargs == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
   Object self(&scope, frame->peek(nargs));
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs - 1]);
@@ -1083,37 +1132,42 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
   // Get the keyword arguments
   Tuple kw_names(&scope, runtime->emptyTuple());
   if (has_varkeywords) {
-    Dict dict(&scope, frame->topValue());
-    List dict_keys(&scope, dictKeys(thread, dict));
-    kw_names = runtime->newTuple(dict_keys.numItems());
-    num_keywords = kw_names.length();
-    for (word j = 0; j < num_keywords; j++) {
-      kw_names.atPut(j, dict_keys.at(j));
-    }
+    Object kw_args_obj(&scope, frame->topValue());
+    if (!kw_args_obj.isDict()) UNIMPLEMENTED("mapping kwargs");
+    Dict kw_args(&scope, *kw_args_obj);
+    num_keywords = kw_args.numItems();
   }
 
-  Tuple varargs(&scope, frame->peek(has_varkeywords));
-  word num_positional = varargs.length() - 1;
+  Function function(&scope, frame->peek(has_varkeywords + 1));
+  Tuple args(&scope, frame->peek(has_varkeywords));
+  word args_length = args.length();
+  if (args_length == 0) {
+    return raiseTypeErrorMustBeBound(thread, function);
+  }
+  Object self(&scope, args.at(0));
+  word num_positional = args_length - 1;
   std::unique_ptr<PyObject*[]> fastcall_args(
       new PyObject*[num_positional + num_keywords]);
 
   // Set the positional arguments
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::newReference(thread, varargs.at(i + 1));
+    fastcall_args[i] = ApiHandle::newReference(thread, args.at(i + 1));
   }
 
   // Set the keyword arguments
   if (has_varkeywords) {
-    Dict dict(&scope, frame->topValue());
-    for (word i = num_positional; i < (num_positional + num_keywords); i++) {
-      Str key(&scope, kw_names.at(i - num_positional));
-      fastcall_args[i] =
-          ApiHandle::newReference(thread, dictAtByStr(thread, dict, key));
+    Dict kw_args(&scope, frame->topValue());
+
+    Object key(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    kw_names = runtime->newTuple(num_keywords);
+    for (word dict_i = 0, arg_i = 0;
+         dictNextItem(kw_args, &dict_i, &key, &value); arg_i++) {
+      kw_names.atPut(arg_i, *key);
+      fastcall_args[num_positional + arg_i] =
+          ApiHandle::newReference(thread, *value);
     }
   }
-
-  Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object self(&scope, varargs.at(0));
 
   Object result(&scope, NoneType::object());
   if (!has_varkeywords) {
