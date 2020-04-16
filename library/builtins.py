@@ -3967,11 +3967,11 @@ class int(bootstrap=True):
                     f"__trunc__ returned non-Integral (type {_type(result).__name__})"
                 )
             if _str_check(x):
-                return _int_new_from_str(cls, x, 10)
+                return _int_new_from_str(cls, x.strip(), 10)
             if _bytes_check(x):
-                return _int_new_from_bytes(cls, x, 10)
+                return _int_new_from_bytes(cls, x.strip(), 10)
             if _bytearray_check(x):
-                return _int_new_from_bytearray(cls, x, 10)
+                return _int_new_from_bytearray(cls, x.strip(), 10)
             raise TypeError(
                 f"int() argument must be a string, a bytes-like object "
                 f"or a number, not {_type(x).__name__}"
@@ -3980,11 +3980,11 @@ class int(bootstrap=True):
         if base > 36 or (base < 2 and base != 0):
             raise ValueError("int() base must be >= 2 and <= 36")
         if _str_check(x):
-            return _int_new_from_str(cls, x, base)
+            return _int_new_from_str(cls, x.strip(), base)
         if _bytes_check(x):
-            return _int_new_from_bytes(cls, x, base)
+            return _int_new_from_bytes(cls, x.strip(), base)
         if _bytearray_check(x):
-            return _int_new_from_bytearray(cls, x, base)
+            return _int_new_from_bytearray(cls, x.strip(), base)
         raise TypeError("int() can't convert non-string with explicit base")
 
     def __or__(self, n: int) -> int:

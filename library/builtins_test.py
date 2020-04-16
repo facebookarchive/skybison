@@ -6564,6 +6564,21 @@ class IntTests(unittest.TestCase):
         self.assertEqual(int(b"abc", 16), 0xABC)
         self.assertEqual(int(b"0xabc", 0), 0xABC)
 
+    def test_dunder_new_strips_whitespace(self):
+        self.assertEqual(int(" \t\n123\n\t "), 123)
+        self.assertEqual(int(" \t\n123\n\t ", 10), 123)
+        self.assertEqual(int(b" \t\n123\n\t "), 123)
+        self.assertEqual(int(b" \t\n123\n\t ", 10), 123)
+        self.assertEqual(int(bytearray(b" \t\n123\n\t "), 10), 123)
+
+    def test_dunder_new_with_non_space_after_whitespace_raises_value_error(self):
+        self.assertRaises(ValueError, int, " \t\n123\n\t 1")
+        self.assertRaises(ValueError, int, " \t\n123\n\t 1", 10)
+        self.assertRaises(ValueError, int, b" \t\n123\n\t 1")
+        self.assertRaises(ValueError, int, b" \t\n123\n\t 1", 10)
+        self.assertRaises(ValueError, int, bytearray(b" \t\n123\n\t 1"))
+        self.assertRaises(ValueError, int, bytearray(b" \t\n123\n\t 1"), 10)
+
     def test_dunder_new_with_empty_bytearray_raises_value_error(self):
         with self.assertRaises(ValueError):
             int(bytearray())
