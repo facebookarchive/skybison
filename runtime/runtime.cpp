@@ -3686,8 +3686,9 @@ RawObject Runtime::layoutSetDescribedType(Thread* thread, const Layout& from,
 
   // If needed, grow the table
   word index = first_none;
-  if (index >= length) {
-    word new_length = newCapacity(length, /*min_capacity=*/index);
+  word needed_length = index + LayoutTypeTransition::kTransitionSize;
+  if (needed_length > length) {
+    word new_length = newCapacity(length, /*min_capacity=*/needed_length);
     MutableTuple new_tuple(&scope, newMutableTuple(new_length));
     new_tuple.replaceFromWith(0, *transitions, length);
     layout_type_transitions_ = *new_tuple;

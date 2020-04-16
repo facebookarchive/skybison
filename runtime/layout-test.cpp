@@ -257,6 +257,27 @@ class A:
   EXPECT_EQ(*target_layout2, *target_layout);
 }
 
+TEST_F(LayoutTest, TransitionTableResizesWhenNecessary) {
+  HandleScope scope(thread_);
+  Layout from_layout(&scope, testing::layoutCreateEmpty(thread_));
+
+  Object attr(&scope, Runtime::internStrFromCStr(thread_, "__class__"));
+  AttributeInfo info;
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*from_layout, attr, &info));
+
+  Tuple transitions(&scope, runtime_->newMutableTuple(1));
+  runtime_->setLayoutTypeTransitions(*transitions);
+
+  Type type(&scope, runtime_->newType());
+  Layout to_layout(
+      &scope, runtime_->layoutSetDescribedType(thread_, from_layout, type));
+
+  EXPECT_NE(*to_layout, *from_layout);
+
+  transitions = runtime_->layoutTypeTransitions();
+  EXPECT_GT(transitions.length(), 1);
+}
+
 TEST_F(LayoutTest, TransitionTableHoldsWeakRefToLayouts) {
   HandleScope scope(thread_);
   Layout from_layout(&scope, testing::layoutCreateEmpty(thread_));
