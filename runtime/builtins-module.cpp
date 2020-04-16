@@ -309,6 +309,7 @@ static RawObject replaceNonTypeBases(Thread* thread, const Tuple& bases) {
   List new_bases(&scope, runtime->newList());
   Object base(&scope, NoneType::object());
   Object replacements(&scope, NoneType::object());
+  Tuple entries(&scope, runtime->emptyTuple());
   for (word i = 0; i < num_bases; i++) {
     base = bases.at(i);
     if (runtime->isInstanceOfType(*base)) {
@@ -323,7 +324,8 @@ static RawObject replaceNonTypeBases(Thread* thread, const Tuple& bases) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "__mro_entries__ must return a tuple");
     }
-    listExtend(thread, new_bases, replacements);
+    entries = *replacements;
+    listExtend(thread, new_bases, entries, entries.length());
   }
   Tuple new_bases_items(&scope, new_bases.items());
   return runtime->tupleSubseq(thread, new_bases_items, 0, new_bases.numItems());

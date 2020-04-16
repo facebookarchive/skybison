@@ -825,26 +825,10 @@ TEST_F(ListBuiltinsTest, PopList) {
   EXPECT_TRUE(isIntEqualsWord(res0, 0));
 }
 
-TEST_F(ListBuiltinsTest, ExtendList) {
-  HandleScope scope(thread_);
-  List list(&scope, runtime_->newList());
-  List list1(&scope, runtime_->newList());
-  for (int i = 0; i < 4; i++) {
-    Object value(&scope, SmallInt::fromWord(i));
-    Object value1(&scope, SmallInt::fromWord(i + 4));
-    runtime_->listAdd(thread_, list, value);
-    runtime_->listAdd(thread_, list1, value1);
-  }
-  EXPECT_EQ(list.numItems(), 4);
-  Object list1_handle(&scope, *list1);
-  listExtend(Thread::current(), list, list1_handle);
-  EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
-}
-
 TEST_F(ListBuiltinsTest, ExtendTuple) {
   HandleScope scope(thread_);
   List list(&scope, runtime_->newList());
-  Object object_array0(&scope, runtime_->emptyTuple());
+  Tuple object_array0(&scope, runtime_->emptyTuple());
   Tuple object_array1(&scope, runtime_->newTuple(1));
   Tuple object_array16(&scope, runtime_->newTuple(16));
 
@@ -852,12 +836,11 @@ TEST_F(ListBuiltinsTest, ExtendTuple) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime_->listAdd(thread_, list, value);
   }
-  listExtend(Thread::current(), list, object_array0);
+  listExtend(Thread::current(), list, object_array0, 0);
   EXPECT_EQ(list.numItems(), 4);
 
-  Object object_array1_handle(&scope, *object_array1);
   object_array1.atPut(0, NoneType::object());
-  listExtend(Thread::current(), list, object_array1_handle);
+  listExtend(Thread::current(), list, object_array1, 1);
   ASSERT_GE(list.numItems(), 5);
   ASSERT_TRUE(list.at(4).isNoneType());
 
@@ -865,9 +848,8 @@ TEST_F(ListBuiltinsTest, ExtendTuple) {
     object_array16.atPut(i, SmallInt::fromWord(i));
   }
 
-  Object object_array2_handle(&scope, *object_array16);
-  listExtend(Thread::current(), list, object_array2_handle);
-  ASSERT_GE(list.numItems(), 4 + 1 + 4);
+  listExtend(Thread::current(), list, object_array16, 4);
+  ASSERT_GE(list.numItems(), 9);
   EXPECT_EQ(list.at(5), SmallInt::fromWord(0));
   EXPECT_EQ(list.at(6), SmallInt::fromWord(1));
   EXPECT_EQ(list.at(7), SmallInt::fromWord(2));

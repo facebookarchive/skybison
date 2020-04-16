@@ -2773,9 +2773,28 @@ RawObject FUNC(_builtins, _list_extend)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  List list(&scope, args.get(0));
-  Object value(&scope, args.get(1));
-  return listExtend(thread, list, value);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfList(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(list));
+  }
+  List self(&scope, *self_obj);
+  Object other(&scope, args.get(1));
+
+  word src_length;
+  Tuple src(&scope, runtime->emptyTuple());
+  if (other.isList()) {
+    src = List::cast(*other).items();
+    src_length = List::cast(*other).numItems();
+  } else if (other.isTuple()) {
+    src = *other;
+    src_length = src.length();
+  } else {
+    return Unbound::object();
+  }
+
+  listExtend(thread, self, src, src_length);
+  return NoneType::object();
 }
 
 RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Frame* frame,

@@ -7316,6 +7316,24 @@ class LenTests(unittest.TestCase):
 
 
 class ListTests(unittest.TestCase):
+    def test_dunder_add_with_non_list_raises_type_error(self):
+        self.assertRaises(TypeError, list.__add__, (), [])
+        self.assertRaises(TypeError, list.__add__, [], ())
+
+    def test_dunder_add_with_empty_lists_returns_new_empty_list(self):
+        orig = []
+        result = list.__add__(orig, orig)
+        self.assertEqual(result, [])
+        self.assertIsNot(result, orig)
+
+    def test_dunder_add_with_list_returns_new_list(self):
+        orig = [1, 2, 3]
+        self.assertEqual(list.__add__(orig, []), [1, 2, 3])
+        self.assertEqual(list.__add__(orig, [4, 5]), [1, 2, 3, 4, 5])
+
+        # orig is unchanged
+        self.assertEqual(orig, [1, 2, 3])
+
     def test_dunder_eq_with_non_list_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             list.__eq__(False, [])
@@ -7323,6 +7341,27 @@ class ListTests(unittest.TestCase):
             "'__eq__' requires a 'list' object but received a 'bool'",
             str(context.exception),
         )
+
+    def test_dunder_iadd_with_list_subclass_uses_iter(self):
+        class C(list):
+            def __iter__(self):
+                return iter([1, 2, 3])
+
+        orig = [1, 2, 3]
+        other = C([4, 5])
+        self.assertIs(list.__iadd__(orig, other), orig)
+        self.assertEqual(orig, [1, 2, 3, 1, 2, 3])
+
+    def test_dunder_iadd_with_iterable_appends_to_list(self):
+        orig = []
+
+        self.assertIs(list.__iadd__(orig, [1, 2, 3]), orig)
+        self.assertIs(list.__iadd__(orig, set()), orig)
+        self.assertIs(list.__iadd__(orig, "abc"), orig)
+        self.assertIs(list.__iadd__(orig, (4, 5)), orig)
+
+        # orig now contains all other elements
+        self.assertEqual(orig, [1, 2, 3, "a", "b", "c", 4, 5])
 
     def test_dunder_imul_with_non_list_raises_type_error(self):
         with self.assertRaisesRegex(TypeError, "'__imul__' requires a 'list' object"):

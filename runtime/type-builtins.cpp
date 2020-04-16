@@ -1328,12 +1328,13 @@ RawObject METH(type, mro)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, ID(type));
   }
   Type type(&scope, *self);
-  Object mro(&scope, computeMro(thread, type));
-  if (mro.isError()) {
-    return *mro;
+  Object maybe_mro(&scope, computeMro(thread, type));
+  if (maybe_mro.isError()) {
+    return *maybe_mro;
   }
   List result(&scope, runtime->newList());
-  listExtend(thread, result, mro);
+  Tuple mro(&scope, *maybe_mro);
+  listExtend(thread, result, mro, mro.length());
   return *result;
 }
 

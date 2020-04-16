@@ -8,9 +8,9 @@
 
 namespace py {
 
-// Extends a list from an exact tuple or exact list. Modifies dst in-place.
-// Returns either the None or an Error object if allocation failed.
-RawObject listExtend(Thread* thread, const List& dst, const Object& iterable);
+// Extends dst in-place with the first src_length elements from src.
+void listExtend(Thread* thread, const List& dst, const Tuple& src,
+                word src_length);
 
 // Inserts an element to the specified index of the list.
 // When index >= len(list) it is equivalent to appending to the list.

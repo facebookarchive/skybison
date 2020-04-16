@@ -4367,6 +4367,13 @@ class list(bootstrap=True):
 
     __hash__ = None
 
+    def __iadd__(self, other):
+        result = _list_extend(self, other)
+        if result is not _Unbound:
+            return self
+        _list_extend(self, (*other,))
+        return self
+
     def __imul__(self, other):
         _builtin()
 
@@ -4480,9 +4487,10 @@ class list(bootstrap=True):
         return result
 
     def extend(self, other):
-        _list_guard(self)
-        if _tuple_check_exact(other) or _list_check_exact(other):
-            return _list_extend(self, other)
+        result = _list_extend(self, other)
+        if result is not _Unbound:
+            return
+        # NOTE: this loop prevents recursion in (*other,)
         for item in other:
             list.append(self, item)
 

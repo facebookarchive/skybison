@@ -539,7 +539,7 @@ def _list_delslice(self, start, stop, step):
     _builtin()
 
 
-def _list_extend(obj, other):
+def _list_extend(self, other):
     _builtin()
 
 

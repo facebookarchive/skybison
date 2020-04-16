@@ -12,31 +12,17 @@
 
 namespace py {
 
-RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Tuple src_tuple(&scope, runtime->emptyTuple());
-  word src_length = 0;
-  DCHECK(runtime->isInstanceOfList(*iterable) ||
-             runtime->isInstanceOfTuple(*iterable),
-         "iterable must be list or tuple instance");
-  if (runtime->isInstanceOfList(*iterable)) {
-    List src(&scope, *iterable);
-    src_tuple = src.items();
-    src_length = src.numItems();
-  } else {
-    src_tuple = tupleUnderlying(*iterable);
-    src_length = src_tuple.length();
+void listExtend(Thread* thread, const List& dst, const Tuple& src,
+                word src_length) {
+  if (src_length == 0) {
+    return;
   }
+
   word old_length = dst.numItems();
   word new_length = old_length + src_length;
-  if (new_length != old_length) {
-    runtime->listEnsureCapacity(thread, dst, new_length);
-    dst.setNumItems(new_length);
-    MutableTuple dst_items(&scope, dst.items());
-    dst_items.replaceFromWith(old_length, *src_tuple, src_length);
-  }
-  return NoneType::object();
+  thread->runtime()->listEnsureCapacity(thread, dst, new_length);
+  dst.setNumItems(new_length);
+  MutableTuple::cast(dst.items()).replaceFromWith(old_length, *src, src_length);
 }
 
 void listInsert(Thread* thread, const List& list, const Object& value,
@@ -288,12 +274,13 @@ RawObject METH(list, __add__)(Thread* thread, Frame* frame, word nargs) {
   List self(&scope, *self_obj);
   List other(&scope, *other_obj);
   List new_list(&scope, runtime->newList());
-  runtime->listEnsureCapacity(thread, new_list,
-                              self.numItems() + other.numItems());
-  Object result(&scope, listExtend(thread, new_list, self));
-  if (result.isError()) return *result;
-  result = listExtend(thread, new_list, other);
-  if (result.isError()) return *result;
+  word self_len = self.numItems();
+  word other_len = other.numItems();
+  runtime->listEnsureCapacity(thread, new_list, self_len + other_len);
+  Tuple self_items(&scope, self.items());
+  Tuple other_items(&scope, other.items());
+  listExtend(thread, new_list, self_items, self_len);
+  listExtend(thread, new_list, other_items, other_len);
   return *new_list;
 }
 
