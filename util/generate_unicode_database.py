@@ -997,6 +997,12 @@ struct UnicodeDatabaseRecord {{
   const byte quick_check;
 }};
 
+struct UnicodeDecomposition {{
+  const char* prefix;
+  const int count;
+  const int32_t* code_points;
+}};
+
 struct UnicodeNamedSequence {{
   const byte length;
   const int32_t code_points[4];
@@ -1025,12 +1031,8 @@ int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
 // Returns the NFC composition given the NFC first and last indices.
 int32_t composeCodePoint(int32_t first, int32_t last);
 
-// Copies the decomposition of the code point onto the stack, starting at index,
-// in reverse order. Returns true if the decomposition was copied.
-// Returns false if the code point is not decomposable,
-// or if it has a compatibility decomposition, but we do NFC/NFD.
-bool decomposeCodePoint(int32_t code_point, NormalizationForm form,
-                        int32_t* stack, word* depth);
+// Returns the decomposition mapping of the code point.
+UnicodeDecomposition decomposeCodePoint(int32_t code_point);
 
 // Returns the case mapping for code points where offset is insufficient
 int32_t extendedCaseMapping(int32_t index);
@@ -1255,11 +1257,16 @@ static const int kTotalLast = {total_last};
 
     db.write(
         f"""
-// decomposition data
+// decomposition mappings
 static const int kDecompShift = {shift};
 static const int32_t kDecompMask = (int32_t{{1}} << kDecompShift) - 1;
+
+const char* kDecompPrefix[] = {{
 """
     )
+    for name in decomp_prefix:
+        db.write(f'    "{name}",\n')
+    db.write("};\n")
 
     CodePointArray("kDecompData", decomp_data).dump(db, trace)
     UIntArray("kDecompIndex1", index1).dump(db, trace)
@@ -1652,28 +1659,15 @@ int32_t composeCodePoint(int32_t first, int32_t last) {
   return kCompData[(j << kCompShift) + (i & kCompMask)];
 }
 
-bool decomposeCodePoint(int32_t code_point, NormalizationForm form,
-                        int32_t* stack, word* depth) {
+UnicodeDecomposition decomposeCodePoint(int32_t code_point) {
   DCHECK_BOUND(code_point, kMaxUnicode);
   uint16_t offset = kDecompIndex1[code_point >> kDecompShift];
   offset = kDecompIndex2[(offset << kDecompShift) + (code_point & kDecompMask)];
+
   int32_t decomp = kDecompData[offset];
-
   int32_t count = decomp >> kBitsPerByte;
-  if (count == 0) {
-    return false;
-  }
-
   int8_t prefix = decomp & kMaxByte;
-  if (prefix != 0 &&
-      (form == NormalizationForm::kNFC || form == NormalizationForm::kNFD)) {
-    return false;
-  }
-
-  for (; count > 0; count--) {
-    stack[(*depth)++] = kDecompData[offset + count];
-  }
-  return true;
+  return {kDecompPrefix[prefix], count, &kDecompData[offset + 1]};
 }
 
 static int32_t findNFC(const Reindex* nfc, int32_t code_point) {

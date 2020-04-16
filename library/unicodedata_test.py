@@ -23,6 +23,18 @@ class UnicodedataTests(unittest.TestCase):
         self.assertEqual(unicodedata.ucd_3_2_0.category("\U0001012A"), "Cn")
         self.assertEqual(unicodedata.ucd_3_2_0.category("\U00020000"), "Lo")
 
+    def test_UCD_decomposition_uses_old_version(self):
+        self.assertEqual(unicodedata.ucd_3_2_0.decomposition("\uFFFE"), "")
+        self.assertEqual(
+            unicodedata.ucd_3_2_0.decomposition("\u00BC"), "<fraction> 0031 2044 0034"
+        )
+
+        # unassigned in 3.2.0
+        self.assertEqual(unicodedata.ucd_3_2_0.decomposition("\u0221"), "")
+
+        self.assertRaises(TypeError, unicodedata.ucd_3_2_0.decomposition)
+        self.assertRaises(TypeError, unicodedata.ucd_3_2_0.decomposition, "xx")
+
     def test_UCD_normalize_with_non_UCD_raises_type_error(self):
         with self.assertRaises(TypeError):
             unicodedata.UCD.normalize(1, "NFC", "foo")
@@ -64,6 +76,18 @@ class UnicodedataTests(unittest.TestCase):
         self.assertEqual(unicodedata.category("\uFFFE"), "Cn")
         self.assertEqual(unicodedata.category("\U0001012A"), "No")
         self.assertEqual(unicodedata.category("\U00020000"), "Lo")
+
+    def test_decomposition_uses_current_version(self):
+        self.assertEqual(unicodedata.decomposition("\u0221"), "")
+        self.assertEqual(unicodedata.decomposition("\uFFFE"), "")
+        self.assertEqual(
+            unicodedata.decomposition("\u00BC"), "<fraction> 0031 2044 0034"
+        )
+
+        self.assertRaises(TypeError, unicodedata.decomposition)
+        self.assertRaises(TypeError, unicodedata.decomposition, "xx")
+
+        # unassigned in 3.2.0
 
     def test_lookup_uses_current_version(self):
         self.assertEqual(unicodedata.lookup("latin CAPITAL Letter a"), "A")

@@ -75,6 +75,53 @@ RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
   return kCategoryNames[databaseRecord(code_point)->category];
 }
 
+static void writeDecomposition(UnicodeDecomposition decomp,
+                               const MutableBytes& out) {
+  word prefix_length = std::strlen(decomp.prefix);
+  char* dst = reinterpret_cast<char*>(out.address());
+  std::memcpy(dst, decomp.prefix, prefix_length);
+
+  word i = prefix_length;
+  for (word j = 0; j < decomp.count; j++) {
+    if (i > 0) {
+      dst[i++] = ' ';
+    }
+    std::sprintf(&dst[i], "%04X", decomp.code_points[j]);
+    i += 4;
+  }
+  DCHECK(i == out.length(), "expected %d bytes, wrote %d", out.length(), i);
+}
+
+RawObject FUNC(unicodedata, decomposition)(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "decomposition() argument must be a unicode character");
+  }
+
+  UnicodeDecomposition decomp = decomposeCodePoint(code_point);
+  if (decomp.count == 0) {
+    return Str::empty();
+  }
+
+  word prefix_length = std::strlen(decomp.prefix);
+  word result_length = prefix_length + 5 * decomp.count;
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  writeDecomposition(decomp, result);
+  return result.becomeStr();
+}
+
 static RawObject copyName(Thread* thread, const Object& name_obj, byte* buffer,
                           word size) {
   HandleScope scope(thread);
@@ -345,6 +392,8 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   StrArray buffer(&scope, runtime->newStrArray());
   word src_length = src.charLength();
   runtime->strArrayEnsureCapacity(thread, buffer, src_length);
+  bool canonical =
+      form == NormalizationForm::kNFC || form == NormalizationForm::kNFD;
   for (word i = 0, char_length; i < src_length; i += char_length) {
     int32_t stack[kMaxDecomposition];
     stack[0] = src.codePointAt(i, &char_length);
@@ -355,8 +404,14 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
         continue;
       }
 
-      if (!decomposeCodePoint(code_point, form, stack, &depth)) {
+      UnicodeDecomposition decomp = decomposeCodePoint(code_point);
+      if (decomp.count == 0 || (std::strlen(decomp.prefix) > 0 && canonical)) {
         runtime->strArrayAddCodePoint(thread, buffer, code_point);
+        continue;
+      }
+
+      for (word j = decomp.count - 1; j >= 0; j--) {
+        stack[depth++] = decomp.code_points[j];
       }
     }
   }
@@ -458,6 +513,46 @@ RawObject METH(UCD, category)(Thread* thread, Frame* frame, word nargs) {
   return kCategoryNames[databaseRecord(code_point)->category];
 }
 
+RawObject METH(UCD, decomposition)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type ucd_type(&scope,
+                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
+  if (!typeIsSubclass(self_type, ucd_type)) {
+    return thread->raiseRequiresType(self, ID(UCD));
+  }
+  Object obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "decomposition() argument must be a unicode character");
+  }
+
+  if (changeRecord(code_point)->category == 0) {
+    return Str::empty();
+  }
+
+  UnicodeDecomposition decomp = decomposeCodePoint(code_point);
+  if (decomp.count == 0) {
+    return Str::empty();
+  }
+
+  word prefix_length = std::strlen(decomp.prefix);
+  word result_length = prefix_length + 5 * decomp.count;
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  writeDecomposition(decomp, result);
+  return result.becomeStr();
+}
+
 RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -495,6 +590,8 @@ RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
   StrArray buffer(&scope, runtime->newStrArray());
   word src_length = src.charLength();
   runtime->strArrayEnsureCapacity(thread, buffer, src_length);
+  bool canonical =
+      form == NormalizationForm::kNFC || form == NormalizationForm::kNFD;
   for (word i = 0, char_length; i < src_length; i += char_length) {
     // longest decomposition in Unicode 3.2: U+FDFA
     int32_t stack[kMaxDecomposition];
@@ -512,9 +609,19 @@ RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
         continue;
       }
 
-      if (changeRecord(code_point)->category == 0 ||
-          !decomposeCodePoint(code_point, form, stack, &depth)) {
+      if (changeRecord(code_point)->category == 0) {
         runtime->strArrayAddCodePoint(thread, buffer, code_point);
+        continue;
+      }
+
+      UnicodeDecomposition decomp = decomposeCodePoint(code_point);
+      if (decomp.count == 0 || (std::strlen(decomp.prefix) > 0 && canonical)) {
+        runtime->strArrayAddCodePoint(thread, buffer, code_point);
+        continue;
+      }
+
+      for (word j = decomp.count - 1; j >= 0; j--) {
+        stack[depth++] = decomp.code_points[j];
       }
     }
   }

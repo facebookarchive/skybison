@@ -67,6 +67,12 @@ struct UnicodeDatabaseRecord {
   const byte quick_check;
 };
 
+struct UnicodeDecomposition {
+  const char* prefix;
+  const int count;
+  const int32_t* code_points;
+};
+
 struct UnicodeNamedSequence {
   const byte length;
   const int32_t code_points[4];
@@ -95,12 +101,8 @@ int32_t codePointFromNameOrNamedSequence(const byte* name, word size);
 // Returns the NFC composition given the NFC first and last indices.
 int32_t composeCodePoint(int32_t first, int32_t last);
 
-// Copies the decomposition of the code point onto the stack, starting at index,
-// in reverse order. Returns true if the decomposition was copied.
-// Returns false if the code point is not decomposable,
-// or if it has a compatibility decomposition, but we do NFC/NFD.
-bool decomposeCodePoint(int32_t code_point, NormalizationForm form,
-                        int32_t* stack, word* depth);
+// Returns the decomposition mapping of the code point.
+UnicodeDecomposition decomposeCodePoint(int32_t code_point);
 
 // Returns the case mapping for code points where offset is insufficient
 int32_t extendedCaseMapping(int32_t index);
