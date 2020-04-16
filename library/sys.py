@@ -123,6 +123,9 @@ def __displayhook__(value):
     builtins._ = value
 
 
+_framework = ""
+
+
 def _getframe(depth=0):
     _builtin()
 
