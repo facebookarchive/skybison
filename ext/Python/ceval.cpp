@@ -164,10 +164,28 @@ PY_EXPORT void PyEval_SetTrace(Py_tracefunc /* c */, PyObject* /* g */) {
   UNIMPLEMENTED("PyEval_SetTrace");
 }
 
-PY_EXPORT PyObject* PyEval_CallObjectWithKeywords(PyObject* /* e */,
-                                                  PyObject* /* s */,
-                                                  PyObject* /* s */) {
-  UNIMPLEMENTED("PyEval_CallObjectWithKeywords");
+PY_EXPORT PyObject* PyEval_CallObjectWithKeywords(PyObject* callable,
+                                                  PyObject* args,
+                                                  PyObject* kwargs) {
+  // PyEval_CallObjectWithKeywords() must not be called with an exception
+  // set. It raises a new exception if parameters are invalid or if
+  // PyTuple_New() fails, and so the original exception is lost.
+  DCHECK(!PyErr_Occurred(), "must not be called with an exception set");
+
+  if (args != nullptr && !PyTuple_Check(args)) {
+    PyErr_SetString(PyExc_TypeError, "argument list must be a tuple");
+    return nullptr;
+  }
+
+  if (kwargs != nullptr && !PyDict_Check(kwargs)) {
+    PyErr_SetString(PyExc_TypeError, "keyword list must be a dictionary");
+    return nullptr;
+  }
+
+  if (args == nullptr) {
+    return _PyObject_FastCallDict(callable, nullptr, 0, kwargs);
+  }
+  return PyObject_Call(callable, args, kwargs);
 }
 
 PY_EXPORT PyObject* _PyEval_EvalFrameDefault(PyFrameObject* /* f */,

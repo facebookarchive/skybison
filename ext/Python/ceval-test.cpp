@@ -146,5 +146,100 @@ TEST_F(CevalExtensionApiTest, MergeCompilerFlagsMergesCodeFlags) {
   EXPECT_TRUE(isLongEqualsLong(result, 0xfba0000 | CO_FUTURE_BARRY_AS_BDFL));
 }
 
+TEST_F(CevalExtensionApiTest, CallObjectWithNonTupleArgsRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def fn():
+  pass
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr args(PyList_New(0));
+  PyEval_CallObject(fn, args);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(CevalExtensionApiTest, CallObjectWithNullArgsReturnsResult) {
+  PyRun_SimpleString(R"(
+def fn():
+  return 19
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr result(PyEval_CallObject(fn, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isLongEqualsLong(result, 19));
+}
+
+TEST_F(CevalExtensionApiTest, CallObjectWithTupleArgsReturnsResult) {
+  PyRun_SimpleString(R"(
+def fn(*args):
+  return args[0]
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr args(PyTuple_New(1));
+  PyTuple_SetItem(args, 0, PyLong_FromLong(3));
+  PyObjectPtr result(PyEval_CallObject(fn, args));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isLongEqualsLong(result, 3));
+}
+
+TEST_F(CevalExtensionApiTest,
+       CallObjectWithKeywordsWithNonTupleArgsRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def fn():
+  pass
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr args(PyList_New(0));
+  PyEval_CallObjectWithKeywords(fn, args, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(CevalExtensionApiTest,
+       CallObjectWithKeywordsWithNonDictKwargsRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def fn():
+  pass
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr kwargs(PyList_New(0));
+  PyEval_CallObjectWithKeywords(fn, nullptr, kwargs);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(CevalExtensionApiTest, CallObjectWithKeywordsWithNullArgsReturnsResult) {
+  PyRun_SimpleString(R"(
+def fn(*args, **kwargs):
+  return kwargs["kwarg"]
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
+  PyObjectPtr kwarg_value(PyLong_FromLong(2));
+  PyDict_SetItem(kwargs, kwarg_name, kwarg_value);
+  PyObjectPtr result(PyEval_CallObjectWithKeywords(fn, nullptr, kwargs));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isLongEqualsLong(result, 2));
+}
+
+TEST_F(CevalExtensionApiTest,
+       CallObjectWithKeywordsWithArgsAndKeywordsReturnsResult) {
+  PyRun_SimpleString(R"(
+def fn(*args, **kwargs):
+  return kwargs["kwarg"] + args[0]
+)");
+  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr args(PyTuple_New(1));
+  PyTuple_SetItem(args, 0, PyLong_FromLong(2));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
+  PyObjectPtr kwarg_value(PyLong_FromLong(2));
+  PyDict_SetItem(kwargs, kwarg_name, kwarg_value);
+  PyObjectPtr result(PyEval_CallObjectWithKeywords(fn, args, kwargs));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isLongEqualsLong(result, 4));
+}
+
 }  // namespace testing
 }  // namespace py

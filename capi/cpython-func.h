@@ -1415,6 +1415,9 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE_Func((PyObject*)op)
 
+#define PyEval_CallObject(func, arg)                                           \
+  PyEval_CallObjectWithKeywords(func, arg, (PyObject*)NULL)
+
 #define PyFloat_AS_DOUBLE(op) PyFloat_AsDouble((PyObject*)op)
 
 #define PyList_GET_ITEM(op, i) PyList_GetItem((PyObject*)op, i)
