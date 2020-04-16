@@ -45,7 +45,7 @@ static const char* converttuple(PyObject*, const char**, va_list*, int, int*,
                                 char*, size_t, int, freelist_t*);
 static const char* convertsimple(PyObject*, const char**, va_list*, int, char*,
                                  size_t, freelist_t*);
-static Py_ssize_t convertbuffer(PyObject*, void** p, const char**);
+static Py_ssize_t convertbuffer(PyObject*, void const** p, const char**);
 static int getbuffer(PyObject*, Py_buffer*, const char**);
 
 static int vgetargskeywords(PyObject*, PyObject*, const char*, char**, va_list*,
@@ -562,7 +562,6 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
 
   const char* format = *p_format;
   char c = *format++;
-  char* sarg;
 
   switch (c) {
     case 'b': {  // unsigned byte -- very short int
@@ -808,7 +807,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
       //   need to be cleaned up!
 
     case 'y': {  // any bytes-like object
-      void** p = reinterpret_cast<void**>(va_arg(*p_va, char**));
+      void const** p =
+          reinterpret_cast<void const**>(va_arg(*p_va, char const**));
       const char* buf;
       Py_ssize_t count;
       if (*format == '*') {
@@ -830,7 +830,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         STORE_SIZE(count);
         format++;
       } else {
-        if (std::strlen(static_cast<char*>(*p)) != static_cast<size_t>(count)) {
+        if (std::strlen(static_cast<const char*>(*p)) !=
+            static_cast<size_t>(count)) {
           PyErr_SetString(PyExc_ValueError, "embedded null byte");
           RETURN_ERR_OCCURRED;
         }
@@ -849,11 +850,13 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
           PyBuffer_FillInfo(p, nullptr, nullptr, 0, 1, 0);
         } else if (PyUnicode_Check(arg)) {
           Py_ssize_t len;
-          sarg = PyUnicode_AsUTF8AndSize(arg, &len);
+          const char* sarg = PyUnicode_AsUTF8AndSize(arg, &len);
           if (sarg == nullptr) {
             return converterr(CONV_UNICODE, arg, msgbuf, bufsize);
           }
-          PyBuffer_FillInfo(p, arg, sarg, len, 1, 0);
+          // This const_cast is gross, but FillInfo should only ever read from
+          // this arg.
+          PyBuffer_FillInfo(p, arg, const_cast<char*>(sarg), len, 1, 0);
         } else {  // any bytes-like object
           const char* buf;
           if (getbuffer(arg, p, &buf) < 0) {
@@ -866,7 +869,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         format++;
       } else if (*format == '#') {  // a string or read-only bytes-like object
         // "s#" or "z#"
-        void** p = reinterpret_cast<void**>(va_arg(*p_va, char**));
+        void const** p =
+            reinterpret_cast<void const**>(va_arg(*p_va, char const**));
         FETCH_SIZE;
 
         if (c == 'z' && arg == Py_None) {
@@ -874,7 +878,7 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
           STORE_SIZE(0);
         } else if (PyUnicode_Check(arg)) {
           Py_ssize_t len;
-          sarg = PyUnicode_AsUTF8AndSize(arg, &len);
+          const char* sarg = PyUnicode_AsUTF8AndSize(arg, &len);
           if (sarg == nullptr) {
             return converterr(CONV_UNICODE, arg, msgbuf, bufsize);
           }
@@ -890,14 +894,13 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         format++;
       } else {
         // "s" or "z"
-        char** p = va_arg(*p_va, char**);
+        char const** p = va_arg(*p_va, char const**);
         Py_ssize_t len;
-        sarg = nullptr;
 
         if (c == 'z' && arg == Py_None) {
           *p = nullptr;
         } else if (PyUnicode_Check(arg)) {
-          sarg = PyUnicode_AsUTF8AndSize(arg, &len);
+          const char* sarg = PyUnicode_AsUTF8AndSize(arg, &len);
           if (sarg == nullptr) {
             return converterr(CONV_UNICODE, arg, msgbuf, bufsize);
           }
@@ -1193,7 +1196,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
 #undef RETURN_ERR_OCCURRED
 }
 
-static Py_ssize_t convertbuffer(PyObject* arg, void** p, const char** errmsg) {
+static Py_ssize_t convertbuffer(PyObject* arg, void const** p,
+                                const char** errmsg) {
   Py_ssize_t count;
   Py_buffer view;
 

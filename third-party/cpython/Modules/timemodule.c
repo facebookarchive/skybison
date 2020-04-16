@@ -474,7 +474,7 @@ gettmarg(PyObject *args, struct tm *p)
     if (Py_TYPE(args) == (PyTypeObject *)timestate_global->StructTimeType) {
         PyObject *item;
         item = PyStructSequence_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : PyUnicode_AsUTF8(item);
+        p->tm_zone = item == Py_None ? NULL : (char*)PyUnicode_AsUTF8(item);
         item = PyStructSequence_GET_ITEM(args, 10);
         p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
         if (PyErr_Occurred())

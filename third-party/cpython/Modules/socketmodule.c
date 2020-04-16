@@ -5984,7 +5984,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
     char pbuf[30];
-    char *hptr, *pptr;
+    char *hptr;
+    const char* pptr;
     int family, socktype, protocol, flags;
     int error;
     PyObject *all = (PyObject *)NULL;

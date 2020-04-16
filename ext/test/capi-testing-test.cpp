@@ -27,7 +27,7 @@ TEST_F(ExtensionApiTestingUtilsTest, ImportExistingModuleReturnsModule) {
   Py_DECREF(pyname);
 
   PyObject* sysmodule_name = PyModule_GetNameObject(sysmodule);
-  char* c_sysmodule_name = PyUnicode_AsUTF8(sysmodule_name);
+  const char* c_sysmodule_name = PyUnicode_AsUTF8(sysmodule_name);
   EXPECT_STREQ(c_sysmodule_name, c_name);
   Py_DECREF(sysmodule_name);
   Py_DECREF(sysmodule);

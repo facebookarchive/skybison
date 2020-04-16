@@ -593,7 +593,8 @@ PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
   return ApiHandle::newReference(thread, *value);
 }
 
-PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
+PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
+                                              Py_ssize_t* size) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
@@ -620,7 +621,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
   return reinterpret_cast<char*>(result);
 }
 
-PY_EXPORT char* PyUnicode_AsUTF8(PyObject* unicode) {
+PY_EXPORT const char* PyUnicode_AsUTF8(PyObject* unicode) {
   return PyUnicode_AsUTF8AndSize(unicode, nullptr);
 }
 
