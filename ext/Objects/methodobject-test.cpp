@@ -97,5 +97,119 @@ instance = C()
   EXPECT_EQ(result, self_value);
 }
 
+TEST_F(PyCFunctionExtensionApiTest, NewExWithMethNoArgsCallsFunction) {
+  PyCFunction foo_func = [](PyObject* self, PyObject* args) {
+    EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
+    EXPECT_EQ(args, nullptr);
+    return PyLong_FromLong(-7);
+  };
+  PyMethodDef def = {
+      "foo", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(foo_func)),
+      METH_NOARGS};
+  PyObjectPtr self(PyUnicode_FromString("self"));
+  PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
+
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  ASSERT_TRUE(isLongEqualsLong(result, -7));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PyCFunctionExtensionApiTest, NewExWithMethOCallsFunction) {
+  PyCFunction foo_func = [](PyObject* self, PyObject* arg) {
+    EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
+    EXPECT_TRUE(isLongEqualsLong(arg, 42));
+    return PyLong_FromLong(1);
+  };
+  PyMethodDef def = {"foo", foo_func, METH_O};
+  PyObjectPtr self(PyUnicode_FromString("self"));
+  PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
+  PyObjectPtr arg(PyLong_FromLong(42));
+
+  PyObject* argo = arg.get();
+  PyObjectPtr result(_PyObject_CallArg1(func, argo));
+  ASSERT_TRUE(isLongEqualsLong(result, 1));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PyCFunctionExtensionApiTest, NewExWithMethVarArgsCallsFunction) {
+  PyCFunction foo_func = [](PyObject* self, PyObject* args) {
+    EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
+    EXPECT_TRUE(PyTuple_Check(args));
+    EXPECT_EQ(PyTuple_Size(args), 2);
+    EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(args, 0), -14));
+    EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(args, 1), 15));
+    return PyLong_FromLong(22);
+  };
+  PyMethodDef def = {"foo", foo_func, METH_VARARGS};
+  PyObjectPtr self(PyUnicode_FromString("self"));
+  PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
+  PyObjectPtr arg0(PyLong_FromLong(-14));
+  PyObjectPtr arg1(PyLong_FromLong(15));
+  PyObjectPtr args(PyTuple_Pack(2, arg0.get(), arg1.get()));
+
+  PyObjectPtr result(PyObject_Call(func, args, nullptr));
+  ASSERT_TRUE(isLongEqualsLong(result, 22));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PyCFunctionExtensionApiTest, NewExWithVarArgsAndKeywordsCallsFunction) {
+  PyCFunctionWithKeywords foo_func = [](PyObject* self, PyObject* args,
+                                        PyObject* kwargs) -> PyObject* {
+    EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
+    EXPECT_TRUE(PyTuple_Check(args));
+    EXPECT_EQ(PyTuple_Size(args), 2);
+    EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(args, 0), -111));
+    EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(args, 1), 222));
+    EXPECT_TRUE(PyDict_Check(kwargs));
+    EXPECT_EQ(PyDict_Size(kwargs), 1);
+    EXPECT_TRUE(isLongEqualsLong(PyDict_GetItemString(kwargs, "keyword"), 333));
+    return PyLong_FromLong(876);
+  };
+  PyMethodDef def = {
+      "foo", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(foo_func)),
+      METH_VARARGS | METH_KEYWORDS};
+  PyObjectPtr self(PyUnicode_FromString("self"));
+  PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
+
+  PyObjectPtr arg0(PyLong_FromLong(-111));
+  PyObjectPtr arg1(PyLong_FromLong(222));
+  PyObjectPtr args(PyTuple_Pack(2, arg0.get(), arg1.get()));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr value(PyLong_FromLong(333));
+  PyDict_SetItemString(kwargs, "keyword", value);
+  PyObjectPtr result(PyObject_Call(func, args, kwargs));
+  ASSERT_TRUE(isLongEqualsLong(result, 876));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PyCFunctionExtensionApiTest, NewExWithMethFastCallCallsFunction) {
+  _PyCFunctionFast foo_func = [](PyObject* self, PyObject** args,
+                                 Py_ssize_t num_args,
+                                 PyObject* kwnames) -> PyObject* {
+    EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
+    EXPECT_EQ(num_args, 1);
+    EXPECT_TRUE(isLongEqualsLong(args[0], 42));
+    EXPECT_TRUE(isLongEqualsLong(args[1], 30));
+    EXPECT_TRUE(PyTuple_Check(kwnames));
+    EXPECT_EQ(PyTuple_Size(kwnames), 1);
+    EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 0), "keyword"));
+    return PyLong_FromLong(333);
+  };
+  PyMethodDef def = {
+      "foo", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(foo_func)),
+      METH_FASTCALL};
+  PyObjectPtr self(PyUnicode_FromString("self"));
+  PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
+
+  PyObjectPtr arg(PyLong_FromLong(42));
+  PyObjectPtr args(PyTuple_Pack(1, arg.get()));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr value(PyLong_FromLong(30));
+  PyDict_SetItemString(kwargs, "keyword", value);
+  PyObjectPtr result(PyObject_Call(func, args, kwargs));
+  ASSERT_TRUE(isLongEqualsLong(result, 333));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace testing
 }  // namespace py
