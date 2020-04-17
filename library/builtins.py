@@ -170,6 +170,7 @@ from _builtins import (
     _object_keys,
     _object_type_getattr,
     _object_type_hasattr,
+    _os_error_subclass_from_errno,
     _property,
     _property_isabstract,
     _pyobject_offset,
@@ -278,21 +279,6 @@ def _init():
 
     global _sys
     import sys as _sys
-
-    import errno
-
-    global _errno_map
-    _errno_map = {
-        errno.EAGAIN: BlockingIOError,
-        errno.EALREADY: BlockingIOError,
-        errno.EPIPE: BrokenPipeError,
-        errno.ECHILD: ChildProcessError,
-        errno.EEXIST: FileExistsError,
-        errno.ENOENT: FileNotFoundError,
-        errno.EINTR: InterruptedError,
-        errno.EACCES: PermissionError,
-        errno.EPERM: PermissionError,
-    }
 
 
 # TODO(T59042197): Remove in favor of Python 3.8 parameter syntax
@@ -909,8 +895,8 @@ class OSError(Exception, bootstrap=True):
         if cls is OSError and _tuple_len(args) > 1:
             errno = _tuple_getitem(args, 0)
             if _int_check(errno):
-                subclass = _errno_map.get(errno)
-                if subclass is not None:
+                subclass = _os_error_subclass_from_errno(errno)
+                if subclass is not OSError:
                     return subclass.__new__(subclass, *args)
         # TODO(T52743795): Use super().
         return Exception.__new__(cls, *args)

@@ -2207,5 +2207,14 @@ TEST_F(ThreadTest, RaiseWithFmtFormatsString) {
       LayoutId::kTypeError, "hello dict"));
 }
 
+TEST_F(ThreadTest, RaiseOSErrorFromErrnoWithInvalidErrnoReturnsOSError) {
+  EXPECT_TRUE(raised(thread_->raiseOSErrorFromErrno(-5), LayoutId::kOSError));
+}
+
+TEST_F(ThreadTest, RaiseOSErrorFromErrnoPicksOSErrorSubclass) {
+  EXPECT_TRUE(raised(thread_->raiseOSErrorFromErrno(EACCES),
+                     LayoutId::kPermissionError));
+}
+
 }  // namespace testing
 }  // namespace py

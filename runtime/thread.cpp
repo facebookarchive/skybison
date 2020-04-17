@@ -575,9 +575,8 @@ RawObject Thread::raiseMemoryError() {
 }
 
 RawObject Thread::raiseOSErrorFromErrno(int errno_value) {
-  // TODO(matthiasb): Pick apropriate OSError subclass.
-  return raiseWithFmt(LayoutId::kOSError, "[Errno %d] %s", errno_value,
-                      std::strerror(errno_value));
+  return raiseWithFmt(layoutFromErrno(errno_value), "[Errno %d] %s",
+                      errno_value, std::strerror(errno_value));
 }
 
 RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {

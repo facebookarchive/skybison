@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <cerrno>
 #include <cinttypes>
 
 #include "builtins-module.h"
@@ -17,6 +18,31 @@
 #include "type-builtins.h"
 
 namespace py {
+
+LayoutId layoutFromErrno(int errno_value) {
+  switch (errno_value) {
+    case EAGAIN:
+      return LayoutId::kBlockingIOError;
+    case EALREADY:
+      return LayoutId::kBlockingIOError;
+    case EPIPE:
+      return LayoutId::kBrokenPipeError;
+    case ECHILD:
+      return LayoutId::kChildProcessError;
+    case EEXIST:
+      return LayoutId::kFileExistsError;
+    case ENOENT:
+      return LayoutId::kFileNotFoundError;
+    case EINTR:
+      return LayoutId::kInterruptedError;
+    case EACCES:
+      return LayoutId::kPermissionError;
+    case EPERM:
+      return LayoutId::kPermissionError;
+    default:
+      return LayoutId::kOSError;
+  }
+}
 
 bool givenExceptionMatches(Thread* thread, const Object& given,
                            const Object& exc) {

@@ -3499,6 +3499,16 @@ RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(result);
 }
 
+RawObject FUNC(_builtins, _os_error_subclass_from_errno)(Thread* thread,
+                                                         Frame* frame,
+                                                         word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Int errno_value(&scope, intUnderlying(args.get(0)));
+  LayoutId subclass = layoutFromErrno(errno_value.asWord());
+  return thread->runtime()->typeAt(subclass);
+}
+
 RawObject FUNC(_builtins, _property)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

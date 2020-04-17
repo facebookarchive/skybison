@@ -690,6 +690,10 @@ def _os_write(fd, buf):
     _builtin()
 
 
+def _os_error_subclass_from_errno(errno):
+    _builtin()
+
+
 def _property(fget=None, fset=None, fdel=None, doc=None):
     """Has the same effect as property(), but can be used for bootstrapping."""
     _builtin()
