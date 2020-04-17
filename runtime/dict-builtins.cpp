@@ -99,7 +99,7 @@ static void itemSet(RawTuple data, word index, word hash, RawObject key,
 
 static void itemSetTombstone(RawTuple data, word index) {
   data.atPut(index + kItemHashOffset, Unbound::object());
-  data.atPut(index + kItemKeyOffset, Error::notFound());
+  data.atPut(index + kItemKeyOffset, NoneType::object());
   data.atPut(index + kItemValueOffset, NoneType::object());
 }
 
