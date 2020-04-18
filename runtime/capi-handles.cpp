@@ -60,13 +60,11 @@ class Bucket {
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType() &&
-           key(data, index).isNoneType();
+    return data.at(index + kHashOffset).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType() &&
-           !key(data, index).isNoneType();
+    return data.at(index + kHashOffset).isUnbound();
   }
 
   static RawObject key(RawTuple data, word index) {
@@ -81,8 +79,8 @@ class Bucket {
   }
 
   static void setTombstone(RawTuple data, word index) {
-    data.atPut(index + kHashOffset, RawNoneType::object());
-    data.atPut(index + kKeyOffset, RawError::notFound());
+    data.atPut(index + kHashOffset, Unbound::object());
+    data.atPut(index + kKeyOffset, RawNoneType::object());
     data.atPut(index + kValueOffset, RawNoneType::object());
   }
 

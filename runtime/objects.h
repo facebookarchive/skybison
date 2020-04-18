@@ -2715,13 +2715,11 @@ class RawSetBase::Bucket {
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType() &&
-           value(data, index).isNoneType();
+    return data.at(index + kHashOffset).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType() &&
-           !value(data, index).isNoneType();
+    return data.at(index + kHashOffset).isUnbound();
   }
 
   static RawObject value(RawTuple data, word index) {
@@ -2734,8 +2732,8 @@ class RawSetBase::Bucket {
   }
 
   static void setTombstone(RawTuple data, word index) {
-    data.atPut(index + kHashOffset, RawNoneType::object());
-    data.atPut(index + kKeyOffset, RawError::notFound());
+    data.atPut(index + kHashOffset, RawUnbound::object());
+    data.atPut(index + kKeyOffset, RawNoneType::object());
   }
 
   static bool nextItem(RawTuple data, word* idx) {
