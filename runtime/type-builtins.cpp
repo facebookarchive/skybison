@@ -1055,9 +1055,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 
   if (type.hasFlag(Type::Flag::kHasDunderDict) &&
       typeLookupInMroById(thread, type, ID(__dict__)).isErrorNotFound()) {
-    Module builtins(&scope, runtime->findModuleById(ID(builtins)));
-    Object instance_proxy(&scope,
-                          moduleAtById(thread, builtins, ID(instance_proxy)));
+    Object instance_proxy(&scope, runtime->typeAt(LayoutId::kInstanceProxy));
+    CHECK(instance_proxy.isType(), "instance_proxy not found");
     Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
     Function under_instance_dunder_dict_set(
         &scope,

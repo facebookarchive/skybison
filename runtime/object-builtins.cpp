@@ -524,4 +524,9 @@ RawObject METH(NoneType, __repr__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->symbols()->at(ID(None));
 }
 
+const BuiltinAttribute InstanceProxyBuiltins::kAttributes[] = {
+    {ID(_instance), RawInstanceProxy::kInstanceOffset},
+    {SymbolId::kSentinelId, -1},
+};
+
 }  // namespace py

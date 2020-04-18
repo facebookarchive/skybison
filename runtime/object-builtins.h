@@ -68,6 +68,16 @@ class ObjectBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
 };
 
+class InstanceProxyBuiltins
+    : public Builtins<InstanceProxyBuiltins, ID(instance_proxy),
+                      LayoutId::kInstanceProxy, LayoutId::kObject> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(InstanceProxyBuiltins);
+};
+
 class NoneBuiltins
     : public ImmediateBuiltins<NoneBuiltins, ID(NoneType), LayoutId::kNoneType,
                                LayoutId::kObject> {

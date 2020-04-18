@@ -69,6 +69,7 @@ class Handle;
   V(Generator)                                                                 \
   V(GeneratorFrame)                                                            \
   V(IncrementalNewlineDecoder)                                                 \
+  V(InstanceProxy)                                                             \
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
@@ -329,6 +330,7 @@ class RawObject {
   bool isIncrementalNewlineDecoder() const;
   bool isIndexError() const;
   bool isInstance() const;
+  bool isInstanceProxy() const;
   bool isKeyError() const;
   bool isLargeBytes() const;
   bool isLargeInt() const;
@@ -3454,6 +3456,19 @@ class RawFileIO : public RawUnderRawIOBase {
   RAW_OBJECT_COMMON_NO_CAST(FileIO);
 };
 
+class RawInstanceProxy : public RawInstance {
+ public:
+  // Getters and setters
+  RawObject instance() const;
+  void setInstance(RawObject instance) const;
+
+  // Layout
+  static const int kInstanceOffset = RawHeapObject::kSize;
+  static const int kSize = kInstanceOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(InstanceProxy);
+};
+
 class RawIncrementalNewlineDecoder : public RawInstance {
  public:
   // Getters and setters
@@ -3856,6 +3871,10 @@ inline bool RawObject::isGeneratorFrame() const {
 
 inline bool RawObject::isIncrementalNewlineDecoder() const {
   return isHeapObjectWithLayout(LayoutId::kIncrementalNewlineDecoder);
+}
+
+inline bool RawObject::isInstanceProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kInstanceProxy);
 }
 
 inline bool RawObject::isImportError() const {

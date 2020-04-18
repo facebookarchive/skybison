@@ -162,6 +162,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(frozenset), LayoutId::kFrozenSet},
     {ID(function), LayoutId::kFunction},
     {ID(generator), LayoutId::kGenerator},
+    {ID(instance_proxy), LayoutId::kInstanceProxy},
     {ID(int), LayoutId::kInt},
     {ID(iterator), LayoutId::kSeqIterator},
     {ID(list), LayoutId::kList},

@@ -1685,6 +1685,7 @@ void Runtime::initializeHeapTypes() {
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   GeneratorBuiltins::initialize(this);
+  InstanceProxyBuiltins::initialize(this);
   LayoutBuiltins::initialize(this);
   LargeBytesBuiltins::initialize(this);
   LargeIntBuiltins::initialize(this);

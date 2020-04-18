@@ -3721,7 +3721,7 @@ def input(prompt=None):
     _unimplemented()
 
 
-class instance_proxy:
+class instance_proxy(bootstrap=True):
     def __contains__(self, key):
         instance = self._instance
         _instance_guard(instance)
