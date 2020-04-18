@@ -55,6 +55,9 @@ static RawObject makeTestFunction(Thread* thread) {
   Module module(&scope, runtime->findOrCreateMainModule());
   Function func(&scope,
                 runtime->newFunctionWithCode(thread, qualname, code, module));
+  func.setEntry(reinterpret_cast<Function::Entry>(100));
+  func.setEntryEx(reinterpret_cast<Function::Entry>(200));
+  func.setEntryKw(reinterpret_cast<Function::Entry>(300));
   Dict annotations(&scope, runtime->newDict());
   Str return_name(&scope, runtime->newStrFromCStr("return"));
   Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
@@ -184,7 +187,22 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "__module_object__" = <module "__main__">
   (in-object) "__name__" = "baz"
   (in-object) "__qualname__" = "footype.baz"
+  (in-object) "_function__annotations" = {"return": <type "int">}
+  (in-object) "_function__argcount" = 1
+  (in-object) "_function__caches" = (None, None, None, None)
+  (in-object) "_function__closure" = ()
+  (in-object) "_function__defaults" = (-9,)
   (in-object) "_function__dict" = {"funcattr0": 4}
+  (in-object) "_function__entry" = 50
+  (in-object) "_function__entry_ex" = 100
+  (in-object) "_function__entry_kw" = 150
+  (in-object) "_function__flags" = 1309973413919
+  (in-object) "_function__kw_defaults" = {"name0": None}
+  (in-object) "_function__original_arguments" = (None, 0)
+  (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
+  (in-object) "_function__stack_size" = 2
+  (in-object) "_function__total_args" = 3
+  (in-object) "_function__total_vars" = 3
   overflow dict: {"funcattr0": 4}
 )";
   EXPECT_EQ(ss.str(), expected.str());

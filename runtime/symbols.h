@@ -309,7 +309,22 @@ class Runtime;
   V(_frozenset_check)                                                          \
   V(_frozenset_guard)                                                          \
   V(_function)                                                                 \
+  V(_function__annotations)                                                    \
+  V(_function__argcount)                                                       \
+  V(_function__caches)                                                         \
+  V(_function__closure)                                                        \
+  V(_function__defaults)                                                       \
   V(_function__dict)                                                           \
+  V(_function__entry)                                                          \
+  V(_function__entry_ex)                                                       \
+  V(_function__entry_kw)                                                       \
+  V(_function__flags)                                                          \
+  V(_function__kw_defaults)                                                    \
+  V(_function__original_arguments)                                             \
+  V(_function__rewritten_bytecode)                                             \
+  V(_function__stack_size)                                                     \
+  V(_function__total_args)                                                     \
+  V(_function__total_vars)                                                     \
   V(_function_guard)                                                           \
   V(_has_read1)                                                                \
   V(_heap_dump)                                                                \
