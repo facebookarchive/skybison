@@ -529,7 +529,7 @@ TEST_F(HeapProfilerTest, WriteClassDumpWithOverflowAttributes) {
   EXPECT_EQ(pos, result.size());
 }
 
-TEST_F(HeapProfilerDeathTest, WriteClassDumpWithDictOverflow) {
+TEST_F(HeapProfilerTest, WriteClassDumpWithDictOverflow) {
   HandleScope scope(thread_);
   // Make a new type, C
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
@@ -560,11 +560,14 @@ TEST_F(HeapProfilerDeathTest, WriteClassDumpWithDictOverflow) {
   RawLayout object_layout = Layout::cast(runtime_->layoutAt(LayoutId::kObject));
   EXPECT_TRUE(readStringInUtf8(result, &pos, object_address, "object"));
   EXPECT_TRUE(readLoadClass(result, &pos, object_layout.raw(), object_address));
+  EXPECT_TRUE(readStringInUtf8(result, &pos,
+                               reinterpret_cast<uword>(HeapProfiler::kOverflow),
+                               HeapProfiler::kOverflow));
 
   // Heap dump segment
   EXPECT_TRUE(readTag(result, &pos, HeapProfiler::kHeapDumpSegment));
   EXPECT_EQ(read32(result, &pos), 0);   // time
-  EXPECT_EQ(read32(result, &pos), 71);  // length
+  EXPECT_EQ(read32(result, &pos), 80);  // length
 
   // Class dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::kClassDump));
@@ -575,12 +578,16 @@ TEST_F(HeapProfilerDeathTest, WriteClassDumpWithDictOverflow) {
   EXPECT_EQ(read16(result, &pos),
             0);  // size of constant pool and number of records that follow
   EXPECT_EQ(read16(result, &pos), 0);  // number of static fields
-  EXPECT_EQ(read16(result, &pos), 0);  // number of instance fields
+  EXPECT_EQ(read16(result, &pos), 1);  // number of instance fields
+
+  EXPECT_EQ(readu64(result, &pos),
+            reinterpret_cast<uword>(HeapProfiler::kOverflow));
+  EXPECT_EQ(read8(result, &pos), HeapProfiler::BasicType::kObject);
 
   EXPECT_EQ(pos, result.size());
 }
 
-TEST_F(HeapProfilerDeathTest, WriteInstanceWithDictOverflow) {
+TEST_F(HeapProfilerTest, WriteInstanceWithDictOverflow) {
   HandleScope scope(thread_);
   // Make a new type, C
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
