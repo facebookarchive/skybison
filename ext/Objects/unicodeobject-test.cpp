@@ -678,6 +678,49 @@ TEST_F(UnicodeExtensionApiTest, READReadsCharsFromDATA) {
   EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 2), Py_UCS4{'o'});
 }
 
+TEST_F(UnicodeExtensionApiTest, ReadCharReturnsCharAtIndex) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_ReadChar(str.get(), 0), Py_UCS4{'f'});
+  EXPECT_EQ(PyUnicode_ReadChar(str.get(), 1), Py_UCS4{'o'});
+  EXPECT_EQ(PyUnicode_ReadChar(str.get(), 2), Py_UCS4{'o'});
+}
+
+TEST_F(UnicodeExtensionApiTest, ReadCharReturnsUnicodeCodePointAtIndex) {
+  PyObjectPtr str(PyUnicode_FromString("\xF0\x90\x8D\x88"));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), 1);
+  EXPECT_EQ(PyUnicode_ReadChar(str.get(), 0), Py_UCS4{0x10348});
+  EXPECT_EQ(PyUnicode_ReadChar(str.get(), 1), Py_UCS4{0xFFFFFFFF});
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+  PyErr_Clear();
+
+  PyObjectPtr dessert(PyUnicode_FromString("cr\xc3\xa9me"));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(dessert.get()), 5);
+  EXPECT_EQ(PyUnicode_ReadChar(dessert.get(), 0), Py_UCS4{'c'});
+  EXPECT_EQ(PyUnicode_ReadChar(dessert.get(), 1), Py_UCS4{'r'});
+  EXPECT_EQ(PyUnicode_ReadChar(dessert.get(), 2), Py_UCS4{0xE9});
+  EXPECT_EQ(PyUnicode_ReadChar(dessert.get(), 3), Py_UCS4{'m'});
+  EXPECT_EQ(PyUnicode_ReadChar(dessert.get(), 4), Py_UCS4{'e'});
+  EXPECT_EQ(PyUnicode_ReadChar(dessert.get(), 5), Py_UCS4{0xFFFFFFFF});
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+  PyErr_Clear();
+}
+
+TEST_F(UnicodeExtensionApiTest, ReadCharWithNonStrRaisesTypeError) {
+  PyObjectPtr list(PyList_New(3));
+  EXPECT_EQ(PyUnicode_ReadChar(list.get(), 0), Py_UCS4{0xFFFFFFFF});
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, ReadCharWithOutOfBoundIndexRaisesIndexError) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_ReadChar(str.get(), 3), Py_UCS4{0xFFFFFFFF});
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
   PyObject* pyunicode = PyUnicode_FromString("some string");
   int is_ready = PyUnicode_READY(pyunicode);

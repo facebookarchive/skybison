@@ -1851,8 +1851,25 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* /* e */, Py_ssize_t /* x */) {
-  UNIMPLEMENTED("PyUnicode_ReadChar");
+PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* obj, Py_ssize_t index) {
+  DCHECK(obj != nullptr, "obj must not be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (!runtime->isInstanceOfStr(*str_obj)) {
+    thread->raiseBadArgument();
+    return -1;
+  }
+  Str str(&scope, strUnderlying(*str_obj));
+  word byte_offset;
+  if (index < 0 ||
+      (byte_offset = str.offsetByCodePoints(0, index)) >= str.charLength()) {
+    thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
+    return -1;
+  }
+  word num_bytes;
+  return str.codePointAt(byte_offset, &num_bytes);
 }
 
 PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
