@@ -7,6 +7,25 @@ import importlib._bootstrap
 import importlib.util
 import sysconfig
 
+
+try:
+    import subprocess
+    del subprocess
+    SUBPROCESS_BOOTSTRAP = False
+except ImportError:
+    # Bootstrap Python: distutils.spawn uses subprocess to build C extensions,
+    # subprocess requires C extensions built by setup.py like _posixsubprocess.
+    #
+    # Use _bootsubprocess which only uses the os module.
+    #
+    # It is dropped from sys.modules as soon as all C extension modules
+    # are built.
+    import _bootsubprocess
+    sys.modules['subprocess'] = _bootsubprocess
+    del _bootsubprocess
+    SUBPROCESS_BOOTSTRAP = True
+
+
 from distutils import log
 from distutils.errors import *
 from distutils.core import Extension, setup
@@ -15,6 +34,7 @@ from distutils.command.install import install
 from distutils.command.install_lib import install_lib
 from distutils.command.build_scripts import build_scripts
 from distutils.spawn import find_executable
+
 
 cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
 
@@ -297,6 +317,11 @@ class PyBuildExt(build_ext):
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
+
+        if SUBPROCESS_BOOTSTRAP:
+            # Drop our custom subprocess module:
+            # use the newly built subprocess module
+            del sys.modules['subprocess']
 
         for ext in self.extensions:
             self.check_extension_import(ext)

@@ -242,6 +242,9 @@ path_hooks = []
 path_importer_cache = {}
 
 
+platlibdir = "lib"
+
+
 prefix = ""
 
 

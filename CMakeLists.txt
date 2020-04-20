@@ -737,6 +737,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/__future__.py
   ${CPYTHON_LIBRARY_DIR}/__phello__.foo.py
   ${CPYTHON_LIBRARY_DIR}/_bootlocale.py
+  ${CPYTHON_LIBRARY_DIR}/_bootsubprocess.py
   ${CPYTHON_LIBRARY_DIR}/_compat_pickle.py
   ${CPYTHON_LIBRARY_DIR}/_compression.py
   ${CPYTHON_LIBRARY_DIR}/_dummy_thread.py
