@@ -215,23 +215,10 @@ RawObject FUNC(_ctypes, dlopen)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newIntFromCPtr(handle);
 }
 
-RawObject FUNC(_ctypes, sizeof)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_ctypes, _sizeof_typeclass)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object obj_or_type(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*obj_or_type)) {
-    obj_or_type = runtime->typeOf(*obj_or_type);
-  }
-  Type type(&scope, *obj_or_type);
-  Type cdata_type(&scope,
-                  runtime->lookupNameInModule(thread, ID(_ctypes), ID(_CData)));
-  if (!typeIsSubclass(type, cdata_type)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "this type has no size");
-  }
-  Object type_attr(&scope, runtime->newStrFromCStr("_type_"));
-  Str proto(&scope, typeGetAttribute(thread, type, type_attr));
-  FieldDesc* field_desc = fieldDesc(proto.charAt(0));
+  DCHECK(args.get(0).isStr(), "bad internal call");
+  FieldDesc* field_desc = fieldDesc(Str::cast(args.get(0)).charAt(0));
   size_t size = field_desc->pffi_type->size;
   return SmallInt::fromWord(size);
 }

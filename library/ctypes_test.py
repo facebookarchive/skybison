@@ -157,6 +157,11 @@ class CtypesTests(unittest.TestCase):
         uint = ctypes.c_uint16.from_buffer(view)
         self.assertEqual(ctypes.sizeof(uint), 2)
 
+    def test_sizeof_array_returns_length(self):
+        self.assertEqual(ctypes.sizeof(ctypes.c_char * 5), 5)
+        self.assertEqual(ctypes.sizeof(ctypes.c_uint16 * 20), 40)
+        self.assertEqual(ctypes.sizeof(ctypes.c_uint16 * 5 * 5), 50)
+
 
 if __name__ == "__main__":
     unittest.main()

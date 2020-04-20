@@ -18,6 +18,7 @@ from _builtins import (
     _tuple_check,
     _tuple_len,
     _type,
+    _type_check,
     _type_issubclass,
     _Unbound,
     _unimplemented,
@@ -285,6 +286,10 @@ _array_from_ctype_cache = {}
 _pointer_type_cache = {}
 
 
+def _sizeof_typeclass(cdata_type):
+    _builtin()
+
+
 def _shared_object_symbol_address(handle, name):
     _builtin()
 
@@ -344,4 +349,14 @@ def set_errno(value):
 
 
 def sizeof(obj_or_type):
-    _builtin()
+    if not _type_check(obj_or_type):
+        ty = _type(obj_or_type)
+    else:
+        ty = obj_or_type
+    if not _type_issubclass(ty, _CData):
+        raise TypeError("this type has no size")
+    if _type_issubclass(ty, Array):
+        return ty._length_ * sizeof(ty._type_)
+    if _type_issubclass(ty, _SimpleCData):
+        return _sizeof_typeclass(ty._type_)
+    _unimplemented()
