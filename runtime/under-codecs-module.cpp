@@ -38,17 +38,17 @@ static SymbolId lookupSymbolForErrorHandler(const Str& error) {
 }
 
 static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
-                       word src_length, word index) {
+                       word start, word end) {
   // TODO(T41032331): Implement a fastpass to read longs instead of chars
   Runtime* runtime = thread->runtime();
-  for (; index < src_length; index++) {
-    byte byte = src.byteAt(index);
-    if (byte & 0x80) {
-      break;
+  for (word i = start; i < end; i++) {
+    byte ch = src.byteAt(i);
+    if (ch > kMaxASCII) {
+      return i;
     }
-    runtime->strArrayAddASCII(thread, dst, byte);
+    runtime->strArrayAddASCII(thread, dst, ch);
   }
-  return index;
+  return end;
 }
 
 RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
@@ -73,7 +73,7 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
     length = bytes.length();
   }
   runtime->strArrayEnsureCapacity(thread, dst, length);
-  word outpos = asciiDecode(thread, dst, bytes, length, index);
+  word outpos = asciiDecode(thread, dst, bytes, index, length);
   if (outpos == length) {
     result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
@@ -359,7 +359,7 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
   }
   runtime->strArrayEnsureCapacity(thread, array, length);
   // First, try a quick ASCII decoding
-  word num_bytes = asciiDecode(thread, array, bytes, length, 0);
+  word num_bytes = asciiDecode(thread, array, bytes, 0, length);
   if (num_bytes != length) {
     // A non-ASCII character was found; switch to a Latin-1 decoding for the
     // remainder of the input sequence
@@ -822,7 +822,7 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
     length = bytes.length();
   }
   runtime->strArrayEnsureCapacity(thread, dst, length);
-  word i = asciiDecode(thread, dst, bytes, length, index);
+  word i = asciiDecode(thread, dst, bytes, index, length);
   if (i == length) {
     result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
