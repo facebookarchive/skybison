@@ -25,7 +25,7 @@ def run(cmd, extra_env=None, **kwargs):
 
 
 def run_interpreter(interpreter, cmd, **kwargs):
-    run(cmd, extra_env={"PYTHONPATH": interpreter.library_path}, **kwargs)
+    return run(cmd, extra_env={"PYTHONPATH": interpreter.library_path}, **kwargs)
 
 
 def create_taskset_command(isolated_cpus):
