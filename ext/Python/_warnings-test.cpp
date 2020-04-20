@@ -52,7 +52,7 @@ TEST_F(UnderWarningsExtensionApiTest,
   CaptureStdStreams streams;
   // TODO(T43609717): Determine the current stack depth with C-API and ensure
   // that this is a bigger number.
-  EXPECT_EQ(PyErr_WarnEx(PyExc_RuntimeWarning, "bar", PY_SSIZE_T_MAX), 0);
+  EXPECT_EQ(PyErr_WarnEx(PyExc_RuntimeWarning, "bar", PY_SSIZE_T_MAX - 1), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_THAT(streams.err(),
               ::testing::EndsWith("sys:1: RuntimeWarning: bar\n"));

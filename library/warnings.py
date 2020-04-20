@@ -329,10 +329,6 @@ def warn(message, category=None, stacklevel=1, source=None):
         if stacklevel <= 1 or _is_internal_frame(sys._getframe(1)):
             # If frame is too small to care or if the warning originated in
             # internal code, then do not try to hide any frames.
-            # TODO(T64005113): Remove this once the frame for CPython's native
-            # functions are filtered out from sys._getframe.
-            if stacklevel < 0:
-                stacklevel = 1
             frame = sys._getframe(stacklevel)
         else:
             frame = sys._getframe(1)

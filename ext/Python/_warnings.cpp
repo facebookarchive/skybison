@@ -20,6 +20,11 @@ static int callWarn(PyObject* category, PyObject* message,
   if (source == nullptr) {
     source = Py_None;
   }
+  // Pop the extra frame pushed for calling managed code below. We need to do
+  // that since we're calling warnings.warn that pushes an extra frame whereas
+  // CPython performs the same task natively.
+  if (stack_level < 0) stack_level = 0;
+  stack_level++;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object category_obj(&scope, ApiHandle::fromPyObject(category)->asObject());
