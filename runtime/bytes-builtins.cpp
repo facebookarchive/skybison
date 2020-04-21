@@ -238,15 +238,6 @@ RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len) {
   return thread->runtime()->bytesSubseq(thread, bytes, 0, right);
 }
 
-RawObject bytesUnderlying(Thread* thread, const Object& obj) {
-  if (obj.isBytes()) return *obj;
-  DCHECK(thread->runtime()->isInstanceOfBytes(*obj),
-         "cannot get a base bytes value from a non-bytes");
-  HandleScope scope(thread);
-  UserBytesBase user_bytes(&scope, *obj);
-  return user_bytes.value();
-}
-
 static bool isUTF8Continuation(byte b) {
   return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
 }
@@ -394,10 +385,10 @@ RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   Object other_obj(&scope, args.get(1));
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     return runtime->bytesConcat(thread, self, other);
   }
   if (runtime->isInstanceOfByteArray(*other_obj)) {
@@ -422,8 +413,8 @@ RawObject METH(bytes, __eq__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*other_obj)) {
     return NotImplementedType::object();
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Bytes other(&scope, bytesUnderlying(thread, other_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  Bytes other(&scope, bytesUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) == 0);
 }
 
@@ -439,8 +430,8 @@ RawObject METH(bytes, __ge__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*other_obj)) {
     return NotImplementedType::object();
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Bytes other(&scope, bytesUnderlying(thread, other_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  Bytes other(&scope, bytesUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) >= 0);
 }
 
@@ -456,8 +447,8 @@ RawObject METH(bytes, __gt__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*other_obj)) {
     return NotImplementedType::object();
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Bytes other(&scope, bytesUnderlying(thread, other_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  Bytes other(&scope, bytesUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) > 0);
 }
 
@@ -468,7 +459,7 @@ RawObject METH(bytes, __hash__)(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   return SmallInt::fromWord(bytesHash(thread, *self));
 }
 
@@ -480,7 +471,7 @@ RawObject METH(bytes, __iter__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   return runtime->newBytesIterator(thread, self);
 }
 
@@ -496,8 +487,8 @@ RawObject METH(bytes, __le__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*other_obj)) {
     return NotImplementedType::object();
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Bytes other(&scope, bytesUnderlying(thread, other_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  Bytes other(&scope, bytesUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) <= 0);
 }
 
@@ -510,7 +501,7 @@ RawObject METH(bytes, __len__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
 
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   return SmallInt::fromWord(self.length());
 }
 
@@ -526,8 +517,8 @@ RawObject METH(bytes, __lt__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*other_obj)) {
     return NotImplementedType::object();
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Bytes other(&scope, bytesUnderlying(thread, other_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  Bytes other(&scope, bytesUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) < 0);
 }
 
@@ -542,7 +533,7 @@ RawObject METH(bytes, __mul__)(Thread* thread, Frame* frame, word nargs) {
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   word count = intUnderlying(*count_obj).asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -577,8 +568,8 @@ RawObject METH(bytes, __ne__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*other_obj)) {
     return NotImplementedType::object();
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Bytes other(&scope, bytesUnderlying(thread, other_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  Bytes other(&scope, bytesUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) != 0);
 }
 
@@ -590,7 +581,7 @@ RawObject METH(bytes, __repr__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   return bytesReprSmartQuotes(thread, self);
 }
 
@@ -601,7 +592,7 @@ RawObject METH(bytes, hex)(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfBytes(*obj)) {
     return thread->raiseRequiresType(obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, obj));
+  Bytes self(&scope, bytesUnderlying(*obj));
   return bytesHex(thread, self, self.length());
 }
 
@@ -613,7 +604,7 @@ RawObject METH(bytes, lower)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self)) {
     return thread->raiseRequiresType(self, ID(bytes));
   }
-  self = bytesUnderlying(thread, self);
+  self = bytesUnderlying(*self);
   if (self.isSmallBytes()) {
     SmallBytes small_bytes(&scope, *self);
     word length = small_bytes.length();
@@ -641,13 +632,13 @@ RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   Object chars_obj(&scope, args.get(1));
   if (chars_obj.isNoneType()) {
     return bytesStripSpaceLeft(thread, self, self.length());
   }
   if (runtime->isInstanceOfBytes(*chars_obj)) {
-    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    Bytes chars(&scope, bytesUnderlying(*chars_obj));
     return bytesStripLeft(thread, self, self.length(), chars, chars.length());
   }
   if (runtime->isInstanceOfByteArray(*chars_obj)) {
@@ -670,13 +661,13 @@ RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   Object chars_obj(&scope, args.get(1));
   if (chars_obj.isNoneType()) {
     return bytesStripSpaceRight(thread, self, self.length());
   }
   if (runtime->isInstanceOfBytes(*chars_obj)) {
-    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    Bytes chars(&scope, bytesUnderlying(*chars_obj));
     return bytesStripRight(thread, self, self.length(), chars, chars.length());
   }
   if (runtime->isInstanceOfByteArray(*chars_obj)) {
@@ -699,13 +690,13 @@ RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   Object chars_obj(&scope, args.get(1));
   if (chars_obj.isNoneType()) {
     return bytesStripSpace(thread, self, self.length());
   }
   if (runtime->isInstanceOfBytes(*chars_obj)) {
-    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    Bytes chars(&scope, bytesUnderlying(*chars_obj));
     return bytesStrip(thread, self, self.length(), chars, chars.length());
   }
   if (runtime->isInstanceOfByteArray(*chars_obj)) {
@@ -728,14 +719,14 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   Object table_obj(&scope, args.get(1));
   word table_length;
   if (table_obj.isNoneType()) {
     table_length = BytesBuiltins::kTranslationTableLength;
     table_obj = Bytes::empty();
   } else if (runtime->isInstanceOfBytes(*table_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, table_obj));
+    Bytes bytes(&scope, bytesUnderlying(*table_obj));
     table_length = bytes.length();
     table_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*table_obj)) {
@@ -756,7 +747,7 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   Bytes table(&scope, *table_obj);
   Object del(&scope, args.get(2));
   if (runtime->isInstanceOfBytes(*del)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, del));
+    Bytes bytes(&scope, bytesUnderlying(*del));
     return runtime->bytesTranslate(thread, self, self.length(), table,
                                    table_length, bytes, bytes.length());
   }
@@ -779,7 +770,7 @@ RawObject METH(bytes, upper)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self)) {
     return thread->raiseRequiresType(self, ID(bytes));
   }
-  self = bytesUnderlying(thread, self);
+  self = bytesUnderlying(*self);
   if (self.isSmallBytes()) {
     SmallBytes small_bytes(&scope, *self);
     word length = small_bytes.length();
