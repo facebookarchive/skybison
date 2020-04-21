@@ -373,8 +373,8 @@ RawObject METH(bytearray, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject byteArrayRepr(Thread* thread, const ByteArray& self) {
-  word length = self.numItems();
+RawObject byteArrayRepr(Thread* thread, const ByteArray& array) {
+  word length = array.numItems();
   word affix_length = 14;  // strlen("bytearray(b'')") == 14
   if (length > (kMaxWord - affix_length) / 4) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -385,7 +385,7 @@ RawObject byteArrayRepr(Thread* thread, const ByteArray& self) {
   bool has_single_quote = false;
   bool has_double_quote = false;
   for (word i = 0; i < length; i++) {
-    byte current = self.byteAt(i);
+    byte current = array.byteAt(i);
     if (current == '\'') {
       has_single_quote = true;
     } else if (current == '"') {
@@ -404,7 +404,7 @@ RawObject byteArrayRepr(Thread* thread, const ByteArray& self) {
                                 'r', 'a', 'y', '(', 'b', quote};
   runtime->byteArrayExtend(thread, buffer, bytearray_str);
   for (word i = 0; i < length; i++) {
-    byte current = self.byteAt(i);
+    byte current = array.byteAt(i);
     if (current == '\'' || current == '\\') {
       const byte bytes[] = {'\\', current};
       runtime->byteArrayExtend(thread, buffer, bytes);

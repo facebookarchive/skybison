@@ -26,12 +26,12 @@ RawObject bytesHex(Thread* thread, const Bytes& bytes, word length);
 word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end);
 
-// Converts self into a string representation with single quote delimiters.
-RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
+// Converts bytes into a string representation with single quote delimiters.
+RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes);
 
-// Converts self into a string representation.
-// Scans self to select an appropriate delimiter (single or double quotes).
-RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
+// Converts bytes into a string representation.
+// Scans bytes to select an appropriate delimiter (single or double quotes).
+RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& bytes);
 
 // Strips the given characters from the end(s) of the given bytes. For left and
 // right variants, strips only the specified side. For space variants, strips

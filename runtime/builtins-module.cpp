@@ -23,31 +23,33 @@
 
 namespace py {
 
-RawObject delAttribute(Thread* thread, const Object& self,
-                       const Object& name_obj) {
+RawObject delAttribute(Thread* thread, const Object& object,
+                       const Object& name) {
   HandleScope scope(thread);
-  Object name(&scope, attributeName(thread, name_obj));
-  if (name.isErrorException()) return *name;
-  Object result(&scope, thread->runtime()->attributeDel(thread, self, name));
+  Object interned(&scope, attributeName(thread, name));
+  if (interned.isErrorException()) return *interned;
+  Object result(&scope,
+                thread->runtime()->attributeDel(thread, object, interned));
   if (result.isErrorException()) return *result;
   return NoneType::object();
 }
 
-RawObject getAttribute(Thread* thread, const Object& self,
-                       const Object& name_obj) {
+RawObject getAttribute(Thread* thread, const Object& object,
+                       const Object& name) {
   HandleScope scope(thread);
-  Object name(&scope, attributeName(thread, name_obj));
-  if (name.isErrorException()) return *name;
-  return thread->runtime()->attributeAt(thread, self, name);
+  Object interned(&scope, attributeName(thread, name));
+  if (interned.isErrorException()) return *interned;
+  return thread->runtime()->attributeAt(thread, object, interned);
 }
 
-RawObject hasAttribute(Thread* thread, const Object& self,
-                       const Object& name_obj) {
+RawObject hasAttribute(Thread* thread, const Object& object,
+                       const Object& name) {
   HandleScope scope(thread);
-  Object name(&scope, attributeName(thread, name_obj));
-  if (name.isErrorException()) return *name;
+  Object interned(&scope, attributeName(thread, name));
+  if (interned.isErrorException()) return *interned;
 
-  Object result(&scope, thread->runtime()->attributeAt(thread, self, name));
+  Object result(&scope,
+                thread->runtime()->attributeAt(thread, object, interned));
   if (!result.isErrorException()) {
     return Bool::trueObj();
   }
@@ -58,14 +60,14 @@ RawObject hasAttribute(Thread* thread, const Object& self,
   return Bool::falseObj();
 }
 
-RawObject setAttribute(Thread* thread, const Object& self,
-                       const Object& name_obj, const Object& value) {
+RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
+                       const Object& value) {
   HandleScope scope(thread);
-  Object name(&scope, attributeName(thread, name_obj));
-  if (name.isErrorException()) return *name;
+  Object interned(&scope, attributeName(thread, name));
+  if (interned.isErrorException()) return *interned;
 
-  Object result(&scope,
-                thread->invokeMethod3(self, ID(__setattr__), name, value));
+  Object result(
+      &scope, thread->invokeMethod3(object, ID(__setattr__), interned, value));
   if (result.isErrorException()) return *result;
   return NoneType::object();
 }

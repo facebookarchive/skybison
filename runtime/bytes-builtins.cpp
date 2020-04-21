@@ -93,12 +93,12 @@ word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
   return -1;
 }
 
-static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
+static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& bytes,
                                         byte delimiter) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   ByteArray buffer(&scope, runtime->newByteArray());
-  word len = self.length();
+  word len = bytes.length();
   // Each byte will be mapped to one or more ASCII characters. Add 3 to the
   // length for the 2-character prefix (b') and the 1-character suffix (').
   // We expect mostly ASCII bytes, so we usually will not have to resize again.
@@ -106,22 +106,22 @@ static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
   const byte bytes_delim[] = {'b', delimiter};
   runtime->byteArrayExtend(thread, buffer, bytes_delim);
   for (word i = 0; i < len; i++) {
-    byte current = self.byteAt(i);
+    byte current = bytes.byteAt(i);
     if (current == delimiter || current == '\\') {
-      const byte bytes[] = {'\\', current};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      const byte escaped[] = {'\\', current};
+      runtime->byteArrayExtend(thread, buffer, escaped);
     } else if (current == '\t') {
-      const byte bytes[] = {'\\', 't'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      const byte escaped[] = {'\\', 't'};
+      runtime->byteArrayExtend(thread, buffer, escaped);
     } else if (current == '\n') {
-      const byte bytes[] = {'\\', 'n'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      const byte escaped[] = {'\\', 'n'};
+      runtime->byteArrayExtend(thread, buffer, escaped);
     } else if (current == '\r') {
-      const byte bytes[] = {'\\', 'r'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      const byte escaped[] = {'\\', 'r'};
+      runtime->byteArrayExtend(thread, buffer, escaped);
     } else if (current < ' ' || current >= 0x7f) {
-      const byte bytes[] = {'\\', 'x'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      const byte escaped[] = {'\\', 'x'};
+      runtime->byteArrayExtend(thread, buffer, escaped);
       writeByteAsHexDigits(thread, buffer, current);
     } else {
       byteArrayAdd(thread, runtime, buffer, current);
@@ -131,25 +131,25 @@ static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
   return runtime->newStrFromByteArray(buffer);
 }
 
-RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self) {
-  return bytesReprWithDelimiter(thread, self, '\'');
+RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes) {
+  return bytesReprWithDelimiter(thread, bytes, '\'');
 }
 
-RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self) {
-  word len = self.length();
+RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& bytes) {
+  word len = bytes.length();
   bool has_single_quote = false;
   for (word i = 0; i < len; i++) {
-    switch (self.byteAt(i)) {
+    switch (bytes.byteAt(i)) {
       case '\'':
         has_single_quote = true;
         break;
       case '"':
-        return bytesReprWithDelimiter(thread, self, '\'');
+        return bytesReprWithDelimiter(thread, bytes, '\'');
       default:
         break;
     }
   }
-  return bytesReprWithDelimiter(thread, self, has_single_quote ? '"' : '\'');
+  return bytesReprWithDelimiter(thread, bytes, has_single_quote ? '"' : '\'');
 }
 
 // Returns the index of the first byte in bytes that is not in chars.

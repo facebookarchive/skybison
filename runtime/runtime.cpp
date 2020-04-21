@@ -2522,21 +2522,21 @@ void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
 
 // Bytes
 
-RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
-                               const Bytes& other) {
-  word self_len = self.length();
-  word other_len = other.length();
-  word len = self_len + other_len;
+RawObject Runtime::bytesConcat(Thread* thread, const Bytes& left,
+                               const Bytes& right) {
+  word left_len = left.length();
+  word right_len = right.length();
+  word len = left_len + right_len;
   if (len <= SmallBytes::kMaxLength) {
     byte buffer[SmallBytes::kMaxLength];
-    self.copyTo(buffer, self_len);
-    other.copyTo(buffer + self_len, other_len);
+    left.copyTo(buffer, left_len);
+    right.copyTo(buffer + left_len, right_len);
     return SmallBytes::fromBytes({buffer, len});
   }
   HandleScope scope(thread);
   MutableBytes result(&scope, newMutableBytesUninitialized(len));
-  result.replaceFromWith(0, *self, self_len);
-  result.replaceFromWith(self_len, *other, other_len);
+  result.replaceFromWith(0, *left, left_len);
+  result.replaceFromWith(left_len, *right, right_len);
   return result.becomeImmutable();
 }
 
@@ -2566,17 +2566,17 @@ RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
   return copy.becomeImmutable();
 }
 
-RawObject Runtime::bytesEndsWith(const Bytes& self, word self_len,
+RawObject Runtime::bytesEndsWith(const Bytes& bytes, word bytes_len,
                                  const Bytes& suffix, word suffix_len,
                                  word start, word end) {
-  DCHECK_BOUND(self_len, self.length());
+  DCHECK_BOUND(bytes_len, bytes.length());
   DCHECK_BOUND(suffix_len, suffix.length());
-  Slice::adjustSearchIndices(&start, &end, self_len);
-  if (end - start < suffix_len || start > self_len) {
+  Slice::adjustSearchIndices(&start, &end, bytes_len);
+  if (end - start < suffix_len || start > bytes_len) {
     return Bool::falseObj();
   }
   for (word i = end - suffix_len, j = 0; i < end; i++, j++) {
-    if (self.byteAt(i) != suffix.byteAt(j)) {
+    if (bytes.byteAt(i) != suffix.byteAt(j)) {
       return Bool::falseObj();
     }
   }
@@ -2761,13 +2761,13 @@ RawObject Runtime::bytesReplace(Thread* thread, const Bytes& src,
   return result.becomeImmutable();
 }
 
-RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
+RawObject Runtime::bytesSlice(Thread* thread, const Bytes& bytes, word start,
                               word stop, word step) {
   word length = Slice::length(start, stop, step);
   if (length <= SmallBytes::kMaxLength) {
     byte buffer[SmallBytes::kMaxLength];
     for (word i = 0, j = start; i < length; i++, j += step) {
-      buffer[i] = self.byteAt(j);
+      buffer[i] = bytes.byteAt(j);
     }
     return SmallBytes::fromBytes({buffer, length});
   }
@@ -2776,37 +2776,37 @@ RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
   {
     byte* dst = reinterpret_cast<byte*>(result.address());
     for (word i = 0, j = start; i < length; i++, j += step) {
-      dst[i] = self.byteAt(j);
+      dst[i] = bytes.byteAt(j);
     }
   }
   return result.becomeImmutable();
 }
 
-RawObject Runtime::bytesStartsWith(const Bytes& self, word self_len,
+RawObject Runtime::bytesStartsWith(const Bytes& bytes, word bytes_len,
                                    const Bytes& prefix, word prefix_len,
                                    word start, word end) {
-  DCHECK_BOUND(self_len, self.length());
+  DCHECK_BOUND(bytes_len, bytes.length());
   DCHECK_BOUND(prefix_len, prefix.length());
-  Slice::adjustSearchIndices(&start, &end, self_len);
+  Slice::adjustSearchIndices(&start, &end, bytes_len);
   if (start + prefix_len > end) {
     return Bool::falseObj();
   }
   for (word i = start, j = 0; j < prefix_len; i++, j++) {
-    if (self.byteAt(i) != prefix.byteAt(j)) {
+    if (bytes.byteAt(i) != prefix.byteAt(j)) {
       return Bool::falseObj();
     }
   }
   return Bool::trueObj();
 }
 
-RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
+RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& bytes, word start,
                                word length) {
-  DCHECK_BOUND(start, self.length());
-  DCHECK_BOUND(length, self.length() - start);
+  DCHECK_BOUND(start, bytes.length());
+  DCHECK_BOUND(length, bytes.length() - start);
   if (length <= SmallBytes::kMaxLength) {
     byte buffer[SmallBytes::kMaxLength];
     for (word i = length - 1; i >= 0; i--) {
-      buffer[i] = self.byteAt(start + i);
+      buffer[i] = bytes.byteAt(start + i);
     }
     return SmallBytes::fromBytes({buffer, length});
   }
@@ -2815,17 +2815,17 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
   {
     byte* dst = reinterpret_cast<byte*>(copy.address());
     const byte* src =
-        reinterpret_cast<byte*>(HeapObject::cast(*self).address());
+        reinterpret_cast<byte*>(HeapObject::cast(*bytes).address());
     std::memcpy(dst, src + start, length);
   }
   return copy.becomeImmutable();
 }
 
-RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
+RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& bytes,
                                   word length, const Bytes& table,
                                   word table_len, const Bytes& del,
                                   word del_len) {
-  DCHECK_BOUND(length, self.length());
+  DCHECK_BOUND(length, bytes.length());
   DCHECK_BOUND(del_len, del.length());
   // calculate mapping table
   byte new_byte[BytesBuiltins::kTranslationTableLength];
@@ -2848,17 +2848,17 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
   }
   word new_length = length;
   for (word i = 0; i < length; i++) {
-    if (delete_byte[self.byteAt(i)]) {
+    if (delete_byte[bytes.byteAt(i)]) {
       new_length--;
     }
   }
   // replace or delete each byte
-  bool is_mutable = self.isMutableBytes();
+  bool is_mutable = bytes.isMutableBytes();
   if (new_length <= SmallBytes::kMaxLength && !is_mutable) {
     byte buffer[SmallBytes::kMaxLength];
     for (word i = 0, j = 0; j < new_length; i++) {
-      DCHECK(i < length, "reached end of self before finishing translation");
-      byte current = self.byteAt(i);
+      DCHECK(i < length, "reached end of bytes before finishing translation");
+      byte current = bytes.byteAt(i);
       if (!delete_byte[current]) {
         buffer[j++] = new_byte[current];
       }
@@ -2868,8 +2868,8 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
   HandleScope scope(thread);
   MutableBytes result(&scope, newMutableBytesUninitialized(new_length));
   for (word i = 0, j = 0; j < new_length; i++) {
-    DCHECK(i < length, "reached end of self before finishing translation");
-    byte current = self.byteAt(i);
+    DCHECK(i < length, "reached end of bytes before finishing translation");
+    byte current = bytes.byteAt(i);
     if (!delete_byte[current]) {
       result.byteAtPut(j++, new_byte[current]);
     }
@@ -3051,15 +3051,15 @@ RawObject Runtime::newFrozenSet() {
   return *result;
 }
 
-RawObject Runtime::tupleSubseq(Thread* thread, const Tuple& self, word start,
+RawObject Runtime::tupleSubseq(Thread* thread, const Tuple& tuple, word start,
                                word length) {
-  DCHECK_BOUND(start, self.length());
-  DCHECK_BOUND(length, self.length() - start);
+  DCHECK_BOUND(start, tuple.length());
+  DCHECK_BOUND(length, tuple.length() - start);
   if (length == 0) return empty_tuple_;
   HandleScope scope(thread);
   Tuple result(&scope, newTuple(length));
   for (word i = 0; i < length; i++) {
-    result.atPut(i, self.at(i + start));
+    result.atPut(i, tuple.at(i + start));
   }
   return *result;
 }

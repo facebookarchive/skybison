@@ -451,8 +451,8 @@ class Runtime {
   void byteArrayIadd(Thread* thread, const ByteArray& array, const Bytes& bytes,
                      word length);
 
-  // Returns a new Bytes containing the elements of self and then other.
-  RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
+  // Returns a new Bytes containing the elements of `left` and `right`.
+  RawObject bytesConcat(Thread* thread, const Bytes& left, const Bytes& right);
 
   // Returns a copy of a bytes object
   RawObject bytesCopy(Thread* thread, const Bytes& src);
@@ -463,10 +463,11 @@ class Runtime {
   RawObject bytesCopyWithSize(Thread* thread, const Bytes& original,
                               word new_length);
 
-  // Checks whether the specified range of `self` ends with the given `suffix`.
+  // Checks whether the specified range of `bytes` ends with the given `suffix`.
   // Returns `Bool::trueObj()` if the suffix matches, else `Bool::falseObj()`.
-  RawObject bytesEndsWith(const Bytes& self, word self_len, const Bytes& suffix,
-                          word suffix_len, word start, word end);
+  RawObject bytesEndsWith(const Bytes& bytes, word bytes_len,
+                          const Bytes& suffix, word suffix_len, word start,
+                          word end);
 
   // Returns a new Bytes from the first `length` int-like elements in the tuple.
   RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
@@ -492,25 +493,25 @@ class Runtime {
                          const Bytes& old_bytes, word old_len,
                          const Bytes& new_bytes, word new_len, word max_count);
 
-  // Returns a new Bytes that contains the specified slice of self.
-  RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,
-                       word step);
+  // Returns a new Bytes that contains the specified slice of bytes.
+  RawObject bytesSlice(Thread* thread, const Bytes& bytes, word start,
+                       word stop, word step);
 
-  // Checks whether the specified range of self starts with the given prefix.
+  // Checks whether the specified range of bytes starts with the given prefix.
   // Returns Bool::trueObj() if the suffix matches, else Bool::falseObj().
-  RawObject bytesStartsWith(const Bytes& self, word self_len,
+  RawObject bytesStartsWith(const Bytes& bytes, word bytes_len,
                             const Bytes& prefix, word prefix_len, word start,
                             word end);
 
   // Returns a new Bytes containing the Bytes or MutableBytes subsequence of
-  // self with the given start index and length.
-  RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,
+  // bytes with the given start index and length.
+  RawObject bytesSubseq(Thread* thread, const Bytes& bytes, word start,
                         word length);
 
-  // Returns a new Bytes or MutableBytes copy of `self` with all of
+  // Returns a new Bytes or MutableBytes copy of `bytes` with all of
   // the bytes in `del` removed, where the remaining bytes are mapped using
   // `table`.
-  RawObject bytesTranslate(Thread* thread, const Bytes& self, word length,
+  RawObject bytesTranslate(Thread* thread, const Bytes& bytes, word length,
                            const Bytes& table, word table_len, const Bytes& del,
                            word del_len);
 
@@ -525,7 +526,7 @@ class Runtime {
   RawObject mutableBytesFromBytes(Thread* thread, const Bytes& bytes);
   RawObject mutableBytesWith(word length, byte value);
 
-  RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
+  RawObject tupleSubseq(Thread* thread, const Tuple& tuple, word start,
                         word length);
 
   // Performs a simple scan of the bytecode and collects all attributes that
