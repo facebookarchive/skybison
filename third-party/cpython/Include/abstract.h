@@ -276,8 +276,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 #ifndef Py_LIMITED_API
     PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
-        PyObject **stack,
+        PyObject *const *stack,
         Py_ssize_t nargs);
+
+    PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
+        PyObject *const *stack,
+        Py_ssize_t nargs,
+        Py_ssize_t start,
+        Py_ssize_t end);
 
     /* Convert keyword arguments from the (stack, kwnames) format to a Python
        dictionary.
@@ -287,7 +293,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        calling _PyStack_AsDict(). For example, _PyArg_ParseStack() raises an
        error if a key is not a string. */
     PyAPI_FUNC(PyObject *) _PyStack_AsDict(
-        PyObject **values,
+        PyObject *const *values,
         PyObject *kwnames);
 
     /* Convert (args, nargs, kwargs: dict) into (stack, nargs, kwnames: tuple).
@@ -302,11 +308,27 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        The type of keyword keys is not checked, these checks should be done
        later (ex: _PyArg_ParseStackAndKeywords). */
     PyAPI_FUNC(int) _PyStack_UnpackDict(
-        PyObject **args,
+        PyObject *const *args,
         Py_ssize_t nargs,
         PyObject *kwargs,
-        PyObject ***p_stack,
+        PyObject *const **p_stack,
         PyObject **p_kwnames);
+
+    /* Suggested size (number of positional arguments) for arrays of PyObject*
+       allocated on a C stack to avoid allocating memory on the heap memory.
+       Such array is used to pass positional arguments to call functions of the
+       _PyObject_FastCall() family.
+
+       The size is chosen to not abuse the C stack and so limit the risk of
+       stack overflow. The size is also chosen to allow using the small stack
+       for most function calls of the Python standard library. On 64-bit CPU,
+       it allocates 40 bytes on the stack. */
+#define _PY_FASTCALL_SMALL_STACK 5
+
+    /* Return 1 if callable supports FASTCALL calling convention for positional
+       arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords()
+       */
+    PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
 
     /* Call the callable object func with the "fast call" calling convention:
        args is a C array for positional arguments (nargs is the number of
@@ -318,7 +340,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        Return the result on success. Raise an exception on return NULL on
        error. */
     PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(PyObject *func,
-                                                  PyObject **args, Py_ssize_t nargs,
+                                                  PyObject *const *args,
+                                                  Py_ssize_t nargs,
                                                   PyObject *kwargs);
 
     /* Call the callable object func with the "fast call" calling convention:
@@ -338,7 +361,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        error. */
     PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords
        (PyObject *func,
-        PyObject **args,
+        PyObject *const *args,
         Py_ssize_t nargs,
         PyObject *kwnames);
 
@@ -346,14 +369,19 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
     _PyObject_FastCallDict((func), (args), (nargs), NULL)
 
 #define _PyObject_CallNoArg(func) \
-    _PyObject_FastCall((func), NULL, 0)
+    _PyObject_FastCallDict((func), NULL, 0, NULL)
 
-#define _PyObject_CallArg1(func, arg) \
-    _PyObject_FastCall((func), &(arg), 1)
+    PyAPI_FUNC(PyObject *) _PyObject_CallArg1(PyObject *func, PyObject *arg);
 
     PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(PyObject *func,
                                                   PyObject *obj, PyObject *args,
                                                   PyObject *kwargs);
+
+    PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
+        PyObject *callable,
+        PyObject *obj,
+        PyObject *const *args,
+        Py_ssize_t nargs);
 
      PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
                                                     PyObject *result,

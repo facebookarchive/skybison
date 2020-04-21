@@ -267,13 +267,13 @@ PyDoc_STRVAR(_asyncio_Task_current_task__doc__,
 "None is returned when called not in the context of a Task.");
 
 #define _ASYNCIO_TASK_CURRENT_TASK_METHODDEF    \
-    {"current_task", (PyCFunction)_asyncio_Task_current_task, METH_FASTCALL|METH_CLASS, _asyncio_Task_current_task__doc__},
+    {"current_task", (PyCFunction)_asyncio_Task_current_task, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, _asyncio_Task_current_task__doc__},
 
 static PyObject *
 _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_current_task(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_current_task(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -299,13 +299,13 @@ PyDoc_STRVAR(_asyncio_Task_all_tasks__doc__,
 "By default all tasks for the current event loop are returned.");
 
 #define _ASYNCIO_TASK_ALL_TASKS_METHODDEF    \
-    {"all_tasks", (PyCFunction)_asyncio_Task_all_tasks, METH_FASTCALL|METH_CLASS, _asyncio_Task_all_tasks__doc__},
+    {"all_tasks", (PyCFunction)_asyncio_Task_all_tasks, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, _asyncio_Task_all_tasks__doc__},
 
 static PyObject *
 _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_all_tasks(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_all_tasks(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -399,13 +399,13 @@ PyDoc_STRVAR(_asyncio_Task_get_stack__doc__,
 "returned for a suspended coroutine.");
 
 #define _ASYNCIO_TASK_GET_STACK_METHODDEF    \
-    {"get_stack", (PyCFunction)_asyncio_Task_get_stack, METH_FASTCALL, _asyncio_Task_get_stack__doc__},
+    {"get_stack", (PyCFunction)_asyncio_Task_get_stack, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task_get_stack__doc__},
 
 static PyObject *
 _asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit);
 
 static PyObject *
-_asyncio_Task_get_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", NULL};
@@ -435,14 +435,14 @@ PyDoc_STRVAR(_asyncio_Task_print_stack__doc__,
 "to sys.stderr.");
 
 #define _ASYNCIO_TASK_PRINT_STACK_METHODDEF    \
-    {"print_stack", (PyCFunction)_asyncio_Task_print_stack, METH_FASTCALL, _asyncio_Task_print_stack__doc__},
+    {"print_stack", (PyCFunction)_asyncio_Task_print_stack, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task_print_stack__doc__},
 
 static PyObject *
 _asyncio_Task_print_stack_impl(TaskObj *self, PyObject *limit,
                                PyObject *file);
 
 static PyObject *
-_asyncio_Task_print_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", "file", NULL};
@@ -466,13 +466,13 @@ PyDoc_STRVAR(_asyncio_Task__step__doc__,
 "\n");
 
 #define _ASYNCIO_TASK__STEP_METHODDEF    \
-    {"_step", (PyCFunction)_asyncio_Task__step, METH_FASTCALL, _asyncio_Task__step__doc__},
+    {"_step", (PyCFunction)_asyncio_Task__step, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__step__doc__},
 
 static PyObject *
 _asyncio_Task__step_impl(TaskObj *self, PyObject *exc);
 
 static PyObject *
-_asyncio_Task__step(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__step(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc", NULL};
@@ -495,13 +495,13 @@ PyDoc_STRVAR(_asyncio_Task__wakeup__doc__,
 "\n");
 
 #define _ASYNCIO_TASK__WAKEUP_METHODDEF    \
-    {"_wakeup", (PyCFunction)_asyncio_Task__wakeup, METH_FASTCALL, _asyncio_Task__wakeup__doc__},
+    {"_wakeup", (PyCFunction)_asyncio_Task__wakeup, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__wakeup__doc__},
 
 static PyObject *
 _asyncio_Task__wakeup_impl(TaskObj *self, PyObject *fut);
 
 static PyObject *
-_asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__wakeup(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fut", NULL};
@@ -517,4 +517,4 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7441872b13652085 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2af1231fd8e3c369 input=a9049054013a1b77]*/

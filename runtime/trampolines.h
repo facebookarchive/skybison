@@ -84,12 +84,19 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame,
 RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* frame,
                                      word flags) ALIGN_16;
 
-RawObject methodTrampolineFastCall(Thread* thread, Frame* frame,
-                                   word nargs) ALIGN_16;
-RawObject methodTrampolineFastCallKw(Thread* thread, Frame* frame,
-                                     word nargs) ALIGN_16;
-RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame,
-                                     word flags) ALIGN_16;
+RawObject methodTrampolineFast(Thread* thread, Frame* frame,
+                               word nargs) ALIGN_16;
+RawObject methodTrampolineFastKw(Thread* thread, Frame* frame,
+                                 word nargs) ALIGN_16;
+RawObject methodTrampolineFastEx(Thread* thread, Frame* frame,
+                                 word flags) ALIGN_16;
+
+RawObject methodTrampolineFastWithKeywords(Thread* thread, Frame* frame,
+                                           word nargs) ALIGN_16;
+RawObject methodTrampolineFastWithKeywordsKw(Thread* thread, Frame* frame,
+                                             word nargs) ALIGN_16;
+RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, Frame* frame,
+                                             word flags) ALIGN_16;
 
 // Aborts immediately when called
 RawObject unimplementedTrampoline(Thread* thread, Frame* frame, word) ALIGN_16;

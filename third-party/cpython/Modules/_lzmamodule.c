@@ -465,7 +465,7 @@ module _lzma
 class _lzma.LZMACompressor "Compressor *" "(PyTypeObject *)lzmamodulestate_global->Compressor_type"
 class _lzma.LZMADecompressor "Decompressor *" "(PyTypeObject *)lzmamodulestate_global->Decompressor_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=37d9abd0fa2a2bb9]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b53574e30d8ebade]*/
 
 #include "clinic/_lzmamodule.c.h"
 

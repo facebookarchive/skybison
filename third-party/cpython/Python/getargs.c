@@ -84,7 +84,7 @@ static int vgetargskeywords(PyObject *, PyObject *,
                             const char *, char **, va_list *, int);
 static int vgetargskeywordsfast(PyObject *, PyObject *,
                             struct _PyArg_Parser *, va_list *, int);
-static int vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
+static int vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                           PyObject *keywords, PyObject *kwnames,
                           struct _PyArg_Parser *parser,
                           va_list *p_va, int flags);
@@ -2002,7 +2002,7 @@ parser_clear(struct _PyArg_Parser *parser)
 }
 
 static PyObject*
-find_keyword(PyObject *kwnames, PyObject **kwstack, PyObject *key)
+find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
 {
     Py_ssize_t i, nkwargs;
 
@@ -2028,7 +2028,7 @@ find_keyword(PyObject *kwnames, PyObject **kwstack, PyObject *key)
 }
 
 static int
-vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
+vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                           PyObject *keywords, PyObject *kwnames,
                           struct _PyArg_Parser *parser,
                           va_list *p_va, int flags)
@@ -2044,7 +2044,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
-    PyObject **kwstack = NULL;
+    PyObject *const *kwstack = NULL;
 
     freelist.entries = static_entries;
     freelist.first_available = 0;

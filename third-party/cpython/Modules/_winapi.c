@@ -836,13 +836,15 @@ process ID, and thread ID.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
-                           Py_UNICODE *command_line, PyObject *proc_attrs,
-                           PyObject *thread_attrs, BOOL inherit_handles,
-                           DWORD creation_flags, PyObject *env_mapping,
-                           Py_UNICODE *current_directory,
+_winapi_CreateProcess_impl(PyObject *module,
+                           const Py_UNICODE *application_name,
+                           const Py_UNICODE *command_line,
+                           PyObject *proc_attrs, PyObject *thread_attrs,
+                           BOOL inherit_handles, DWORD creation_flags,
+                           PyObject *env_mapping,
+                           const Py_UNICODE *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=4652a33aff4b0ae1 input=4a43b05038d639bb]*/
+/*[clinic end generated code: output=eb1e8730213e6e90 input=4a43b05038d639bb]*/
 {
     BOOL result;
     PROCESS_INFORMATION pi;

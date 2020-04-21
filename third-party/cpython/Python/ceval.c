@@ -3898,12 +3898,12 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
    PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
-static PyObject *
+PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
-           PyObject **args, Py_ssize_t argcount,
-           PyObject **kwnames, PyObject **kwargs,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep,
-           PyObject **defs, Py_ssize_t defcount,
+           PyObject *const *defs, Py_ssize_t defcount,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
 {
@@ -4739,39 +4739,6 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 }
 
 
-/* External interface to call any callable object.
-   The arg must be a tuple or NULL.  The kw must be a dict or NULL. */
-
-PyObject *
-PyEval_CallObjectWithKeywords(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-#ifdef Py_DEBUG
-    /* PyEval_CallObjectWithKeywords() must not be called with an exception
-       set. It raises a new exception if parameters are invalid or if
-       PyTuple_New() fails, and so the original exception is lost. */
-    assert(!PyErr_Occurred());
-#endif
-
-    if (args != NULL && !PyTuple_Check(args)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "argument list must be a tuple");
-        return NULL;
-    }
-
-    if (kwargs != NULL && !PyDict_Check(kwargs)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "keyword list must be a dictionary");
-        return NULL;
-    }
-
-    if (args == NULL) {
-        return _PyObject_FastCallDict(func, NULL, 0, kwargs);
-    }
-    else {
-        return PyObject_Call(func, args, kwargs);
-    }
-}
-
 const char *
 PyEval_GetFuncName(PyObject *func)
 {
@@ -4996,98 +4963,6 @@ fast_function(PyObject *func, PyObject **stack,
                                     nkwargs, 1,
                                     d, (int)nd, kwdefs,
                                     closure, name, qualname);
-}
-
-PyObject *
-_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
-                             Py_ssize_t nargs, PyObject *kwnames)
-{
-    return fast_function(func, stack, nargs, kwnames);
-}
-
-PyObject *
-_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
-                         PyObject *kwargs)
-{
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject *kwtuple, **k;
-    PyObject **d;
-    Py_ssize_t nd, nk;
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(nargs >= 0);
-    assert(nargs == 0 || args != NULL);
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    PCALL(PCALL_FUNCTION);
-    PCALL(PCALL_FAST_FUNCTION);
-
-    if (co->co_kwonlyargcount == 0 &&
-        (kwargs == NULL || PyDict_Size(kwargs) == 0) &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
-    {
-        /* Fast paths */
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            return _PyFunction_FastCall(co, args, nargs, globals);
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            args = &PyTuple_GET_ITEM(argdefs, 0);
-            return _PyFunction_FastCall(co, args, Py_SIZE(argdefs), globals);
-        }
-    }
-
-    if (kwargs != NULL) {
-        Py_ssize_t pos, i;
-        nk = PyDict_Size(kwargs);
-
-        kwtuple = PyTuple_New(2 * nk);
-        if (kwtuple == NULL) {
-            return NULL;
-        }
-
-        k = &PyTuple_GET_ITEM(kwtuple, 0);
-        pos = i = 0;
-        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
-            Py_INCREF(k[i]);
-            Py_INCREF(k[i+1]);
-            i += 2;
-        }
-        nk = i / 2;
-    }
-    else {
-        kwtuple = NULL;
-        k = NULL;
-        nk = 0;
-    }
-
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    closure = PyFunction_GET_CLOSURE(func);
-    name = ((PyFunctionObject *)func) -> func_name;
-    qualname = ((PyFunctionObject *)func) -> func_qualname;
-
-    if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
-
-    result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
-                                      args, nargs,
-                                      k, k != NULL ? k + 1 : NULL, nk, 2,
-                                      d, nd, kwdefs,
-                                      closure, name, qualname);
-    Py_XDECREF(kwtuple);
-    return result;
 }
 
 static PyObject *

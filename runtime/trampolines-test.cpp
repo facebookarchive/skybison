@@ -1751,10 +1751,146 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithoutSelfRaisesTypeError) {
                             "'foo' must be bound to an object"));
 }
 
-static PyObject* capiFunctionFastCallNullKwnames(PyObject* self,
-                                                 PyObject** args,
-                                                 Py_ssize_t nargs,
-                                                 PyObject* kwnames) {
+static PyObject* capiFunctionFast(PyObject* self, PyObject* const* args,
+                                  Py_ssize_t nargs) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
+  EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
+                              "the self argument"));
+  EXPECT_EQ(nargs, 2);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(args[0]));
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(args[1]));
+  EXPECT_TRUE(
+      isFloatEqualsDouble(ApiHandle::fromPyObject(args[0])->asObject(), -13.));
+  EXPECT_TRUE(
+      isFloatEqualsDouble(ApiHandle::fromPyObject(args[1])->asObject(), 0.125));
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1236));
+}
+
+static RawObject newExtensionFunctionFast(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name(&scope, runtime->newStrFromCStr("foo"));
+  _PyCFunctionFast function_ptr = capiFunctionFast;
+  return runtime->newExtensionFunction(thread, name,
+                                       reinterpret_cast<void*>(function_ptr),
+                                       ExtensionMethodType::kMethFastCall);
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFast) {
+  HandleScope scope(thread_);
+  Object function(&scope, newExtensionFunctionFast(thread_));
+  Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object arg1(&scope, runtime_->newFloat(-13.));
+  Object arg2(&scope, runtime_->newFloat(0.125));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction3(thread_, thread_->currentFrame(), function,
+                                 arg0, arg1, arg2),
+      1236));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastWithoutSelfRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object function(&scope, newExtensionFunctionFast(thread_));
+  EXPECT_TRUE(raisedWithStr(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      LayoutId::kTypeError, "'foo' must be bound to an object"));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastKw) {
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(runtime_->newStrFromCStr("the self argument"));
+  frame->pushValue(runtime_->newFloat(-13.));
+  frame->pushValue(runtime_->newFloat(0.125));
+  frame->pushValue(runtime_->emptyTuple());
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 3), 1236));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastKwWithoutSelfRaisesTypeError) {
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(runtime_->emptyTuple());
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastKwWithKeywordRaisesTypeError) {
+  HandleScope scope(thread_);
+  Tuple kw_names(&scope, runtime_->newTuple(1));
+  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(runtime_->newStrFromCStr("the self argument"));
+  frame->pushValue(runtime_->newFloat(-13.));
+  frame->pushValue(runtime_->newFloat(0.125));
+  frame->pushValue(runtime_->newStrFromCStr("value"));
+  frame->pushValue(*kw_names);
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 4),
+                            LayoutId::kTypeError,
+                            "'foo' takes no keyword arguments"));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutKwargs) {
+  HandleScope scope(thread_);
+  Tuple args(&scope, runtime_->newTuple(3));
+  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  args.atPut(1, runtime_->newFloat(-13.));
+  args.atPut(2, runtime_->newFloat(0.125));
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(*args);
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1236));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastExWithKwargs) {
+  HandleScope scope(thread_);
+  Tuple args(&scope, runtime_->newTuple(3));
+  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  args.atPut(1, runtime_->newFloat(-13.));
+  args.atPut(2, runtime_->newFloat(0.125));
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(*args);
+  frame->pushValue(runtime_->newDict());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      1236));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutSelfRaisesTypeError) {
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(runtime_->emptyTuple());
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastExWithKeywordArgRaisesTypeError) {
+  HandleScope scope(thread_);
+  Tuple args(&scope, runtime_->newTuple(3));
+  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  args.atPut(1, runtime_->newFloat(-13.));
+  args.atPut(2, runtime_->newFloat(0.125));
+  Dict kwargs(&scope, runtime_->newDict());
+  Object value(&scope, runtime_->newStrFromCStr("value"));
+  dictAtPutById(thread_, kwargs, ID(key), value);
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(newExtensionFunctionFast(thread_));
+  frame->pushValue(*args);
+  frame->pushValue(*kwargs);
+  EXPECT_TRUE(raisedWithStr(
+      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      LayoutId::kTypeError, "'foo' takes no keyword arguments"));
+}
+
+static PyObject* capiFunctionFastWithKeywordsNullKwnames(PyObject* self,
+                                                         PyObject* const* args,
+                                                         Py_ssize_t nargs,
+                                                         PyObject* kwnames) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
@@ -1771,19 +1907,22 @@ static PyObject* capiFunctionFastCallNullKwnames(PyObject* self,
   return ApiHandle::newReference(thread, SmallInt::fromWord(1238));
 }
 
-static RawObject newFunctionFastCallNullKwnames(Thread* thread) {
+static RawObject newExtensionFunctionFastWithKeywordsNullKwnames(
+    Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
-  _PyCFunctionFast function_ptr = capiFunctionFastCallNullKwnames;
-  return runtime->newExtensionFunction(thread, name,
-                                       reinterpret_cast<void*>(function_ptr),
-                                       ExtensionMethodType::kMethFastCall);
+  _PyCFunctionFastWithKeywords function_ptr =
+      capiFunctionFastWithKeywordsNullKwnames;
+  return runtime->newExtensionFunction(
+      thread, name, reinterpret_cast<void*>(function_ptr),
+      ExtensionMethodType::kMethFastCallAndKeywords);
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCall) {
+TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywords) {
   HandleScope scope(thread_);
-  Object function(&scope, newFunctionFastCallNullKwnames(thread_));
+  Object function(&scope,
+                  newExtensionFunctionFastWithKeywordsNullKwnames(thread_));
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newFloat(42.5));
   Object arg2(&scope, runtime_->newFloat(-8.8));
@@ -1793,16 +1932,20 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCall) {
       1238));
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCallWithoutSelfRaisesTypeError) {
+TEST_F(TrampolinesTest,
+       MethodTrampolineFastWithKeywordsWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
-  Object function(&scope, newFunctionFastCallNullKwnames(thread_));
+  Object function(&scope,
+                  newExtensionFunctionFastWithKeywordsNullKwnames(thread_));
   EXPECT_TRUE(raisedWithStr(
       Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
       LayoutId::kTypeError, "'foo' must be bound to an object"));
 }
 
-static PyObject* capiFunctionFastCall(PyObject* self, PyObject** args,
-                                      word nargs, PyObject* kwnames) {
+static PyObject* capiFunctionFastWithKeywords(PyObject* self,
+                                              PyObject* const* args,
+                                              Py_ssize_t nargs,
+                                              PyObject* kwnames) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   thread->runtime()->collectGarbage();
@@ -1831,23 +1974,23 @@ static PyObject* capiFunctionFastCall(PyObject* self, PyObject** args,
   return ApiHandle::newReference(thread, SmallInt::fromWord(1238));
 }
 
-static RawObject newFunctionFastCall(Thread* thread) {
+static RawObject newExtensionFunctionFastWithKeywords(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
-  _PyCFunctionFast function_ptr = capiFunctionFastCall;
-  return runtime->newExtensionFunction(thread, name,
-                                       reinterpret_cast<void*>(function_ptr),
-                                       ExtensionMethodType::kMethFastCall);
+  _PyCFunctionFastWithKeywords function_ptr = capiFunctionFastWithKeywords;
+  return runtime->newExtensionFunction(
+      thread, name, reinterpret_cast<void*>(function_ptr),
+      ExtensionMethodType::kMethFastCallAndKeywords);
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCallKw) {
+TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsKw) {
   HandleScope scope(thread_);
   Tuple kw_names(&scope, runtime_->newTuple(2));
   kw_names.atPut(0, runtime_->newStrFromCStr("foo"));
   kw_names.atPut(1, runtime_->newStrFromCStr("bar"));
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(newFunctionFastCall(thread_));
+  frame->pushValue(newExtensionFunctionFastWithKeywords(thread_));
   frame->pushValue(runtime_->newStrFromCStr("the self argument"));
   frame->pushValue(runtime_->newFloat(42.5));
   frame->pushValue(runtime_->newFloat(-8.8));
@@ -1857,28 +2000,29 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCallKw) {
   EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 5), 1238));
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCallKwWihoutSelfRaisesTypeError) {
+TEST_F(TrampolinesTest,
+       MethodTrampolineFastWithKeywordsKwWihoutSelfRaisesTypeError) {
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(newFunctionFastCall(thread_));
+  frame->pushValue(newExtensionFunctionFastWithKeywords(thread_));
   frame->pushValue(runtime_->emptyTuple());
   EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCallExWithoutKwargs) {
+TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithoutKwargs) {
   HandleScope scope(thread_);
   Tuple args(&scope, runtime_->newTuple(3));
   args.atPut(0, runtime_->newStrFromCStr("the self argument"));
   args.atPut(1, runtime_->newFloat(42.5));
   args.atPut(2, runtime_->newFloat(-8.8));
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(newFunctionFastCallNullKwnames(thread_));
+  frame->pushValue(newExtensionFunctionFastWithKeywordsNullKwnames(thread_));
   frame->pushValue(*args);
   EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1238));
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCallExWithKwargs) {
+TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithKwargs) {
   HandleScope scope(thread_);
   Tuple args(&scope, runtime_->newTuple(3));
   args.atPut(0, runtime_->newStrFromCStr("the self argument"));
@@ -1892,7 +2036,7 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCallExWithKwargs) {
   Object bar_value(&scope, runtime_->newStrFromCStr("bar_value"));
   dictAtPutByStr(thread_, kwargs, bar, bar_value);
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(newFunctionFastCall(thread_));
+  frame->pushValue(newExtensionFunctionFastWithKeywords(thread_));
   frame->pushValue(*args);
   frame->pushValue(*kwargs);
   EXPECT_TRUE(isIntEqualsWord(
@@ -1900,9 +2044,10 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCallExWithKwargs) {
       1238));
 }
 
-TEST_F(TrampolinesTest, MethodTrampolineFastCallExWithoutSelfRaisesTypeError) {
+TEST_F(TrampolinesTest,
+       MethodTrampolineFastWithKeywordsExWithoutSelfRaisesTypeError) {
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(newFunctionFastCall(thread_));
+  frame->pushValue(newExtensionFunctionFastWithKeywords(thread_));
   frame->pushValue(runtime_->emptyTuple());
   EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
                             LayoutId::kTypeError,

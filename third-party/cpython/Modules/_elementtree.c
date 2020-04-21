@@ -2778,7 +2778,7 @@ typedef struct {
 } XMLParserObject;
 
 static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject* self, PyObject* args);
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *const *args, Py_ssize_t nargs);
 static PyObject *
 _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
                                     PyObject *pubid, PyObject *system);
@@ -3781,7 +3781,7 @@ static PyMethodDef element_methods[] = {
     _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF
 
-    {"getiterator", (PyCFunction)_elementtree_Element_iter, METH_FASTCALL, _elementtree_Element_iter__doc__},
+    {"getiterator", (PyCFunction)_elementtree_Element_iter, METH_FASTCALL | METH_KEYWORDS, _elementtree_Element_iter__doc__},
     _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF
 
     _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF

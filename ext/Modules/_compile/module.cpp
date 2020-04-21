@@ -179,7 +179,7 @@ static PyMethodDef _compile_methods[] = {
     {"compile",
      reinterpret_cast<PyCFunction>(
          reinterpret_cast<void (*)()>(_compile_compile)),
-     METH_FASTCALL, ""},
+     METH_FASTCALL | METH_KEYWORDS, ""},
     {nullptr, nullptr}};
 
 static struct PyModuleDef _compilemodule = {

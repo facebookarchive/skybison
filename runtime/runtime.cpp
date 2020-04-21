@@ -776,9 +776,14 @@ RawObject Runtime::newExtensionFunction(Thread* thread, const Object& name,
       entry_ex = methodTrampolineKeywordsEx;
       break;
     case ExtensionMethodType::kMethFastCall:
-      entry = methodTrampolineFastCall;
-      entry_kw = methodTrampolineFastCallKw;
-      entry_ex = methodTrampolineFastCallEx;
+      entry = methodTrampolineFast;
+      entry_kw = methodTrampolineFastKw;
+      entry_ex = methodTrampolineFastEx;
+      break;
+    case ExtensionMethodType::kMethFastCallAndKeywords:
+      entry = methodTrampolineFastWithKeywords;
+      entry_kw = methodTrampolineFastWithKeywordsKw;
+      entry_ex = methodTrampolineFastWithKeywordsEx;
       break;
     default:
       UNIMPLEMENTED("Unsupported MethodDef type");

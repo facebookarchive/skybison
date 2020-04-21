@@ -4231,8 +4231,8 @@ Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
-os_system_impl(PyObject *module, Py_UNICODE *command)
-/*[clinic end generated code: output=96c4dffee36dfb48 input=303f5ce97df606b0]*/
+os_system_impl(PyObject *module, const Py_UNICODE *command)
+/*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
 {
     long result;
     Py_BEGIN_ALLOW_THREADS
@@ -9455,8 +9455,8 @@ Return disk usage statistics about the given path as a (total, free) tuple.
 [clinic start generated code]*/
 
 static PyObject *
-os__getdiskusage_impl(PyObject *module, Py_UNICODE *path)
-/*[clinic end generated code: output=76d6adcd86b1db0b input=6458133aed893c78]*/
+os__getdiskusage_impl(PyObject *module, const Py_UNICODE *path)
+/*[clinic end generated code: output=2d8753136e242d16 input=6458133aed893c78]*/
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
@@ -10580,8 +10580,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 [clinic start generated code]*/
 
 static PyObject *
-os_startfile_impl(PyObject *module, path_t *filepath, Py_UNICODE *operation)
-/*[clinic end generated code: output=912ceba79acfa1c9 input=63950bf2986380d0]*/
+os_startfile_impl(PyObject *module, path_t *filepath,
+                  const Py_UNICODE *operation)
+/*[clinic end generated code: output=66dc311c94d50797 input=63950bf2986380d0]*/
 {
     HINSTANCE rc;
 

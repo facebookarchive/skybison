@@ -183,9 +183,35 @@ TEST_F(PyCFunctionExtensionApiTest, NewExWithVarArgsAndKeywordsCallsFunction) {
 }
 
 TEST_F(PyCFunctionExtensionApiTest, NewExWithMethFastCallCallsFunction) {
-  _PyCFunctionFast foo_func = [](PyObject* self, PyObject** args,
-                                 Py_ssize_t num_args,
-                                 PyObject* kwnames) -> PyObject* {
+  _PyCFunctionFast foo_func = [](PyObject* self, PyObject* const* args,
+                                 Py_ssize_t num_args) -> PyObject* {
+    EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
+    EXPECT_EQ(num_args, 3);
+    EXPECT_TRUE(isLongEqualsLong(args[0], 17));
+    EXPECT_TRUE(isLongEqualsLong(args[1], -8));
+    EXPECT_TRUE(isLongEqualsLong(args[2], 99));
+    return PyLong_FromLong(4444);
+  };
+  PyMethodDef def = {
+      "foo", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(foo_func)),
+      METH_FASTCALL};
+  PyObjectPtr self(PyUnicode_FromString("self"));
+  PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
+
+  PyObjectPtr arg0(PyLong_FromLong(17));
+  PyObjectPtr arg1(PyLong_FromLong(-8));
+  PyObjectPtr arg2(PyLong_FromLong(99));
+  PyObjectPtr args(PyTuple_Pack(3, arg0.get(), arg1.get(), arg2.get()));
+  PyObjectPtr result(PyObject_Call(func, args, nullptr));
+  ASSERT_TRUE(isLongEqualsLong(result, 4444));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PyCFunctionExtensionApiTest,
+       NewExWithMethFastCallAndKeywordsCallsFunction) {
+  _PyCFunctionFastWithKeywords foo_func =
+      [](PyObject* self, PyObject* const* args, Py_ssize_t num_args,
+         PyObject* kwnames) -> PyObject* {
     EXPECT_TRUE(isUnicodeEqualsCStr(self, "self"));
     EXPECT_EQ(num_args, 1);
     EXPECT_TRUE(isLongEqualsLong(args[0], 42));
@@ -197,7 +223,7 @@ TEST_F(PyCFunctionExtensionApiTest, NewExWithMethFastCallCallsFunction) {
   };
   PyMethodDef def = {
       "foo", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(foo_func)),
-      METH_FASTCALL};
+      METH_FASTCALL | METH_KEYWORDS};
   PyObjectPtr self(PyUnicode_FromString("self"));
   PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
 

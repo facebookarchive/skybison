@@ -169,8 +169,9 @@ typedef PyObject* (*getter)(PyObject*, void*);
 typedef int (*setter)(PyObject*, PyObject*, void*);
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*);
-typedef PyObject* (*_PyCFunctionFast)(PyObject*, PyObject**, Py_ssize_t,
-                                      PyObject*);
+typedef PyObject* (*_PyCFunctionFast)(PyObject*, PyObject* const*, Py_ssize_t);
+typedef PyObject* (*_PyCFunctionFastWithKeywords)(PyObject*, PyObject* const*,
+                                                  Py_ssize_t, PyObject*);
 typedef PyObject* (*PyCFunctionWithKeywords)(PyObject*, PyObject*, PyObject*);
 typedef PyObject* (*PyNoArgsFunction)(PyObject*);
 
