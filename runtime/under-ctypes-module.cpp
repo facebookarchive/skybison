@@ -114,6 +114,29 @@ void UnderCtypesModule::initialize(Thread* thread, const Module& module) {
   moduleAtPut(thread, module, wstring_at_addr_name, wstring_at_addr);
 }
 
+RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+
+  void* addr = Int::cast(args.get(0)).asCPtr();
+  Str type(&scope, args.get(1));
+  switch (type.charAt(0)) {
+    case 'i': {
+      int int_result = reinterpret_cast<int (*)()>(addr)();
+      return thread->runtime()->newInt(int_result);
+    }
+    case 'z': {
+      char* bytes_result = reinterpret_cast<char* (*)()>(addr)();
+      return thread->runtime()->newBytesWithAll(View<byte>(
+          reinterpret_cast<byte*>(bytes_result), std::strlen(bytes_result)));
+    }
+    default: {
+      UNIMPLEMENTED("Not yet supported return value type");
+    }
+  }
+}
+
 RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
                                                        Frame* frame,
                                                        word nargs) {

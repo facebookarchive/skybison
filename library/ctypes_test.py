@@ -21,6 +21,25 @@ class CtypesTests(unittest.TestCase):
         self.assertIsInstance(addr, int)
         self.assertGreater(addr, 0)
 
+    def test_cfuncptr_dunder_call_no_args_c_int_restype_returns_int(self):
+        lib_name = ctypes.util.find_library("python")
+        lib = ctypes.CDLL(lib_name)
+        recursion_limit = lib.Py_GetRecursionLimit
+        self.assertIs(recursion_limit.restype, ctypes.c_int)
+        result = recursion_limit()
+        self.assertIs(type(result), int)
+        self.assertEqual(result, 1000)
+
+    def test_cfuncptr_dunder_call_no_args_c_char_p_restype_returns_bytes(self):
+        lib_name = ctypes.util.find_library("python")
+        lib = ctypes.CDLL(lib_name)
+        get_platform = lib.Py_GetPlatform
+        self.assertIs(get_platform.restype, ctypes.c_int)
+        get_platform.restype = ctypes.c_char_p
+        result = get_platform()
+        self.assertIs(type(result), bytes)
+        self.assertTrue(result in [b"linux", b"darwin"])
+
     def test_ctypes_array_creation_with_type_returns_array_type(self):
         arr = ctypes.c_ubyte * 14
         self.assertEqual(arr._type_, ctypes.c_ubyte)

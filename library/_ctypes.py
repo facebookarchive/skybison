@@ -228,6 +228,13 @@ class Array(_CData, metaclass=PyCArrayType):
 
 
 class CFuncPtr(_CData, metaclass=PyCFuncPtrType):
+    def __call__(self, *args, **kwargs):
+        if _tuple_len(args) != 0:
+            _unimplemented()
+        if hasattr(self, "callable") and self.callable is not None:
+            _unimplemented()
+        return _call_cfuncptr(self.fn_pointer, self.restype._type_)
+
     def __new__(cls, *args, **kwargs):
         if _tuple_len(args) != 1:
             _unimplemented()
@@ -257,6 +264,7 @@ class CFuncPtr(_CData, metaclass=PyCFuncPtrType):
         else:
             raise TypeError("argument must be callable or integer function address")
 
+        result.restype = cls._restype_
         return result
 
 
@@ -284,6 +292,10 @@ _array_from_ctype_cache = {}
 
 
 _pointer_type_cache = {}
+
+
+def _call_cfuncptr(function_ptr, result_type):
+    _builtin()
 
 
 def _sizeof_typeclass(cdata_type):
