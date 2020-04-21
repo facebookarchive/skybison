@@ -2218,6 +2218,8 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(b.split(b"a"), [b""])
 
     def test_split_without_sep_splits_whitespace(self):
+        b = b"foo bar"
+        self.assertEqual(b.split(), [b"foo", b"bar"])
         b = b" foo bar  \t \nbaz\r\n   "
         self.assertEqual(b.split(), [b"foo", b"bar", b"baz"])
 

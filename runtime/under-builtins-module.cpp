@@ -1063,7 +1063,7 @@ RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
       index++;
     }
     word start = index++;
-    while (!ASCII::isSpace(self.byteAt(index))) {
+    while (index < self_len && !ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
     buffer.atPut(i, runtime->bytesSubseq(thread, self, start, index - start));
