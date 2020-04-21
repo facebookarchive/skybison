@@ -35,7 +35,7 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
 
   PyRun_SimpleString("x = spam.CONST");
 
-  PyObjectPtr x(testing::moduleGet("__main__", "x"));
+  PyObjectPtr x(testing::mainModuleGet("x"));
   long result = PyLong_AsLong(x);
   ASSERT_EQ(result, val);
 }
@@ -317,7 +317,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringSetsObjectAttribute) {
 class C: pass
 not_a_module = C()
 )");
-  PyObjectPtr not_a_module(moduleGet("__main__", "not_a_module"));
+  PyObjectPtr not_a_module(mainModuleGet("not_a_module"));
   EXPECT_EQ(PyModule_SetDocString(not_a_module, "baz"), 0);
   PyObjectPtr value(PyObject_GetAttrString(not_a_module, "__doc__"));
   EXPECT_TRUE(isUnicodeEqualsCStr(value, "baz"));
@@ -399,7 +399,7 @@ class C(ModuleType):
   pass
 module = C("foo")
 )");
-  PyObjectPtr module(moduleGet("__main__", "module"));
+  PyObjectPtr module(mainModuleGet("module"));
   PyObjectPtr result(PyModule_GetNameObject(module));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "foo"));
 }
@@ -431,7 +431,7 @@ class C(ModuleType):
 module = C("foo")
 module.__file__ = "baz"
 )");
-  PyObjectPtr module(moduleGet("__main__", "module"));
+  PyObjectPtr module(mainModuleGet("module"));
   PyObjectPtr result(PyModule_GetFilenameObject(module));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "baz"));
 }

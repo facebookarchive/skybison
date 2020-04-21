@@ -174,7 +174,7 @@ class Foo:
     return self.bar
 foo = Foo()
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr slice(PySlice_New(foo, foo, foo));
   Py_ssize_t start, stop, step;
   ASSERT_EQ(PySlice_Unpack(slice, &start, &stop, &step), 0);

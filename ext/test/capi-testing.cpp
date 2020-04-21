@@ -9,6 +9,10 @@
 namespace py {
 namespace testing {
 
+PyObject* mainModuleGet(const char* name) {
+  return moduleGet("__main__", name);
+}
+
 PyObject* moduleGet(const char* module, const char* name) {
   PyObject* mods = PyImport_GetModuleDict();
   PyObject* module_name = PyUnicode_FromString(module);

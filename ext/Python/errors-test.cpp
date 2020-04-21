@@ -522,7 +522,7 @@ class BadException(Exception):
     raise RuntimeError(arg)
 )"),
             0);
-  PyObject* exc = moduleGet("__main__", "BadException");
+  PyObject* exc = mainModuleGet("BadException");
   ASSERT_TRUE(PyType_Check(exc));
 
   const char* msg = "couldn't construct BadException";
@@ -697,7 +697,7 @@ class C:
     return "foo"
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyErr_SetString(PyExc_MemoryError, "original cause");
   CaptureStdStreams streams;
   PyErr_WriteUnraisable(c);
@@ -714,7 +714,7 @@ class C:
   __repr__ = 5
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyErr_SetString(PyExc_MemoryError, "original cause");
   CaptureStdStreams streams;
   PyErr_WriteUnraisable(c);
@@ -733,8 +733,8 @@ class C(BaseException):
 C.__module__ = 5
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr ctype(moduleGet("__main__", "C"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr ctype(mainModuleGet("C"));
   PyErr_SetString(ctype, "original cause");
   CaptureStdStreams streams;
   PyErr_WriteUnraisable(c);
@@ -751,8 +751,8 @@ class C(BaseException):
 C.__module__ = "foo"
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr ctype(moduleGet("__main__", "C"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr ctype(mainModuleGet("C"));
   PyErr_SetString(ctype, "original cause");
   CaptureStdStreams streams;
   PyErr_WriteUnraisable(c);
@@ -769,7 +769,7 @@ class C:
 C.__module__ = "foo"
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyErr_SetObject(PyExc_MemoryError, c);
   CaptureStdStreams streams;
   PyErr_WriteUnraisable(Py_None);
@@ -786,7 +786,7 @@ class C:
 C.__module__ = "foo"
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyErr_SetObject(PyExc_MemoryError, c);
   CaptureStdStreams streams;
   PyErr_WriteUnraisable(Py_None);
@@ -837,9 +837,9 @@ except ValueError as exc:
 )"),
             0);
 
-  PyObjectPtr inner_exc(moduleGet("__main__", "inner_exc"));
+  PyObjectPtr inner_exc(mainModuleGet("inner_exc"));
   ASSERT_NE(inner_exc, nullptr);
-  PyObjectPtr outer_exc(moduleGet("__main__", "outer_exc"));
+  PyObjectPtr outer_exc(mainModuleGet("outer_exc"));
   ASSERT_NE(outer_exc, nullptr);
   PyObjectPtr outer_ctx(PyException_GetContext(outer_exc));
   EXPECT_EQ(outer_ctx, inner_exc);

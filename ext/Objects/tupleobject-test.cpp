@@ -14,7 +14,7 @@ TEST_F(TupleExtensionApiTest, CheckWithTupleSubclassReturnsTrue) {
 class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   EXPECT_TRUE(PyTuple_Check(obj));
 }
 
@@ -23,7 +23,7 @@ TEST_F(TupleExtensionApiTest, CheckExactWithTupleSubclassReturnsFalse) {
 class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   EXPECT_FALSE(PyTuple_CheckExact(obj));
 }
 
@@ -65,7 +65,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithTupleSubclassReturnsZero) {
 class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
-  PyObjectPtr pytuple(moduleGet("__main__", "obj"));
+  PyObjectPtr pytuple(mainModuleGet("obj"));
   // PyTuple_SetItem() wants the tuple's reference count to be 1, so remove the
   // reference from __main__.
   moduleSet("__main__", "obj", Py_None);
@@ -127,7 +127,7 @@ TEST_F(TupleExtensionApiTest, GetItemWithTupleSubclassReturnsValue) {
 class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObject* first = PyTuple_GetItem(obj, 0);
   PyObject* second = PyTuple_GetItem(obj, 1);
   EXPECT_EQ(PyLong_AsLong(first), 1);

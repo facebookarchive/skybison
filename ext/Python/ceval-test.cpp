@@ -43,7 +43,7 @@ TEST_F(CevalExtensionApiTest, EvalCodeReturnsNonNull) {
   PyRun_SimpleString(R"(
 module_dict = locals()
 )");
-  PyObjectPtr module_dict(moduleGet("__main__", "module_dict"));
+  PyObjectPtr module_dict(mainModuleGet("module_dict"));
   PyObjectPtr locals(PyDict_New());
   EXPECT_NE(PyEval_EvalCode(code, /*globals=*/module_dict, locals), nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -69,12 +69,12 @@ a = 1 + 2
   PyRun_SimpleString(R"(
 module_dict = locals()
 )");
-  PyObjectPtr module_dict(moduleGet("__main__", "module_dict"));
+  PyObjectPtr module_dict(mainModuleGet("module_dict"));
   PyObjectPtr locals(PyDict_New());
   EXPECT_NE(PyEval_EvalCode(code, /*globals=*/module_dict, locals), nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(moduleGet("__main__", "a"));
+  PyObjectPtr result(mainModuleGet("a"));
   EXPECT_TRUE(PyLong_CheckExact(result));
   EXPECT_EQ(PyLong_AsDouble(result), 3.0);
 }
@@ -96,13 +96,13 @@ TEST_F(CevalExtensionApiTest,
   PyRun_SimpleString(R"(
 module_dict = locals()
 )");
-  PyObjectPtr module_dict(moduleGet("__main__", "module_dict"));
+  PyObjectPtr module_dict(mainModuleGet("module_dict"));
   EXPECT_NE(
       PyEval_EvalCode(code, /*globals=*/module_dict, /*locals=*/module_dict),
       nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(moduleGet("__main__", "a"));
+  PyObjectPtr result(mainModuleGet("a"));
   EXPECT_TRUE(PyLong_CheckExact(result));
   EXPECT_EQ(PyLong_AsDouble(result), 3.0);
 }
@@ -141,7 +141,7 @@ TEST_F(CevalExtensionApiTest, MergeCompilerFlagsMergesCodeFlags) {
   ASSERT_EQ(PyRun_SimpleStringFlags(
                 "result = test_module.test_merge_compiler_flags()", &flags),
             0);
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_FALSE(0xfba0000 & CO_FUTURE_BARRY_AS_BDFL);
   EXPECT_TRUE(isLongEqualsLong(result, 0xfba0000 | CO_FUTURE_BARRY_AS_BDFL));
 }
@@ -151,7 +151,7 @@ TEST_F(CevalExtensionApiTest, CallObjectWithNonTupleArgsRaisesTypeError) {
 def fn():
   pass
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr args(PyList_New(0));
   PyEval_CallObject(fn, args);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -163,7 +163,7 @@ TEST_F(CevalExtensionApiTest, CallObjectWithNullArgsReturnsResult) {
 def fn():
   return 19
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr result(PyEval_CallObject(fn, nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(isLongEqualsLong(result, 19));
@@ -174,7 +174,7 @@ TEST_F(CevalExtensionApiTest, CallObjectWithTupleArgsReturnsResult) {
 def fn(*args):
   return args[0]
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr args(PyTuple_New(1));
   PyTuple_SetItem(args, 0, PyLong_FromLong(3));
   PyObjectPtr result(PyEval_CallObject(fn, args));
@@ -188,7 +188,7 @@ TEST_F(CevalExtensionApiTest,
 def fn():
   pass
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr args(PyList_New(0));
   PyEval_CallObjectWithKeywords(fn, args, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -201,7 +201,7 @@ TEST_F(CevalExtensionApiTest,
 def fn():
   pass
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr kwargs(PyList_New(0));
   PyEval_CallObjectWithKeywords(fn, nullptr, kwargs);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -213,7 +213,7 @@ TEST_F(CevalExtensionApiTest, CallObjectWithKeywordsWithNullArgsReturnsResult) {
 def fn(*args, **kwargs):
   return kwargs["kwarg"]
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr kwargs(PyDict_New());
   PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
   PyObjectPtr kwarg_value(PyLong_FromLong(2));
@@ -229,7 +229,7 @@ TEST_F(CevalExtensionApiTest,
 def fn(*args, **kwargs):
   return kwargs["kwarg"] + args[0]
 )");
-  PyObjectPtr fn(moduleGet("__main__", "fn"));
+  PyObjectPtr fn(mainModuleGet("fn"));
   PyObjectPtr args(PyTuple_New(1));
   PyTuple_SetItem(args, 0, PyLong_FromLong(2));
   PyObjectPtr kwargs(PyDict_New());

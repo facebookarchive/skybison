@@ -19,7 +19,7 @@ class C:
     return self.x
 i = C()
 )");
-  PyObjectPtr i(moduleGet("__main__", "i"));
+  PyObjectPtr i(mainModuleGet("i"));
   PyObjectPtr sentinel(PyLong_FromLong(5));
   PyObjectPtr iterator(PyCallIter_New(i, sentinel));
   PyObjectPtr type(PyObject_Type(iterator));

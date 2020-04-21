@@ -53,7 +53,7 @@ class SubStr(str): pass
 
 substr = SubStr("some string")
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
   const char* expected = "some string";
 
   PyObjectPtr bytes(PyUnicode_AsEncodedString(substr, "ascii", nullptr));
@@ -76,7 +76,7 @@ def lookup_function(encoding):
 _codecs.register(lookup_function)
 substr = "some test"
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
   PyObjectPtr bytes(PyUnicode_AsEncodedString(
       substr, "encode-with-bytearray-return", nullptr));
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "expected"));
@@ -103,7 +103,7 @@ def lookup_function(encoding):
 _codecs.register(lookup_function)
 substr = "some test"
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
   EXPECT_EQ(PyUnicode_AsEncodedString(substr, "encode-with-non-bytelike-return",
                                       nullptr),
             nullptr);
@@ -132,7 +132,7 @@ class SubStr(str): pass
 
 substr = SubStr("some string")
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
   Py_ssize_t size = 0;
   const char* expected = "some string";
 
@@ -223,7 +223,7 @@ class SubStr(str): pass
 
 substr = SubStr("foo")
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
   PyObjectPtr bytes(_PyUnicode_AsUTF8String(substr, nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyBytes_Check(bytes));
@@ -300,7 +300,7 @@ class SubStr(str): pass
 
 substr = SubStr("foo")
 )");
-  PyObjectPtr unicode(moduleGet("__main__", "substr"));
+  PyObjectPtr unicode(mainModuleGet("substr"));
   Py_UCS4 target[4];
   Py_UCS4* ucs4_string =
       PyUnicode_AsUCS4(unicode, target, 4, 1 /* copy_null */);
@@ -370,7 +370,7 @@ class SubStr(str): pass
 
 substr = SubStr('ok')
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyUnicode_Check(substr));
   EXPECT_FALSE(PyUnicode_CheckExact(substr));
@@ -466,7 +466,7 @@ class SubStr(str): pass
 
 substr = SubStr('hello')
 )");
-  PyObjectPtr self(moduleGet("__main__", "substr"));
+  PyObjectPtr self(mainModuleGet("substr"));
   PyObjectPtr sub(PyUnicode_FromString("ll"));
   EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), 2);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -539,7 +539,7 @@ class SubStr(str): pass
 
 substr = SubStr('hello')
 )");
-  PyObjectPtr self(moduleGet("__main__", "substr"));
+  PyObjectPtr self(mainModuleGet("substr"));
   Py_UCS4 ch = 'h';
   EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 5, 1), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -759,7 +759,7 @@ class SubStr(str): pass
 
 subclass_instance = SubStr("hello world!")
 )");
-  PyObjectPtr subclass_instance(moduleGet("__main__", "subclass_instance"));
+  PyObjectPtr subclass_instance(mainModuleGet("subclass_instance"));
   PyObjectPtr substr(PyUnicode_FromString("some string"));
   PyObjectPtr replstr(PyUnicode_FromString("some string"));
   PyObjectPtr result(PyUnicode_Replace(subclass_instance, substr, replstr, -1));
@@ -788,9 +788,9 @@ str_val = SubStr("22122122122122122")
 substr = SubStr("22")
 replstr = SubStr("*")
 )");
-  PyObjectPtr str(moduleGet("__main__", "str_val"));
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
-  PyObjectPtr replstr(moduleGet("__main__", "replstr"));
+  PyObjectPtr str(mainModuleGet("str_val"));
+  PyObjectPtr substr(mainModuleGet("substr"));
+  PyObjectPtr replstr(mainModuleGet("replstr"));
   PyObjectPtr expected(PyUnicode_FromString("*1*1*1*1*1*"));
   PyObjectPtr actual(PyUnicode_Replace(str, substr, replstr, -1));
   EXPECT_EQ(_PyUnicode_EQ(actual, expected), 1);
@@ -836,7 +836,7 @@ class SubStr(str): pass
 
 substr = SubStr("some string")
 )");
-  PyObjectPtr s1(moduleGet("__main__", "substr"));
+  PyObjectPtr s1(mainModuleGet("substr"));
   PyObjectPtr s2(PyUnicode_FromString("some longer string"));
   PyObjectPtr s22(PyUnicode_FromString("some longer string"));
 
@@ -898,7 +898,7 @@ class SubStr(str): pass
 
 substr = SubStr("some string")
 )");
-  PyObjectPtr str(moduleGet("__main__", "substr"));
+  PyObjectPtr str(mainModuleGet("substr"));
   PyObjectPtr str1(PyUnicode_FromString("some string"));
   EXPECT_EQ(_PyUnicode_EQ(str1.get(), str.get()), 1);
 
@@ -931,7 +931,7 @@ class SubStr(str): pass
 
 substr = SubStr("here's another string")
 )");
-  PyObjectPtr unicode(moduleGet("__main__", "substr"));
+  PyObjectPtr unicode(mainModuleGet("substr"));
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "here's another string"));
   EXPECT_FALSE(
       _PyUnicode_EqualToASCIIString(unicode, "here is another string"));
@@ -968,7 +968,7 @@ class SubStr(str): pass
 
 substr = SubStr("large string")
 )");
-  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObjectPtr substr(mainModuleGet("substr"));
 
   // Equal
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(substr, "large string"), 0);
@@ -1004,7 +1004,7 @@ class SubStr(str): pass
 
 substr = SubStr('foo')
 )");
-  PyObjectPtr str(moduleGet("__main__", "substr"));
+  PyObjectPtr str(mainModuleGet("substr"));
   Py_ssize_t expected = 3;
   EXPECT_EQ(PyUnicode_GetLength(str), expected);
   EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
@@ -1278,8 +1278,8 @@ world_str = SubStr(" world")
 )");
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);
-  PyObjectPtr hello_str(moduleGet("__main__", "hello_str"));
-  PyObjectPtr world_str(moduleGet("__main__", "world_str"));
+  PyObjectPtr hello_str(mainModuleGet("hello_str"));
+  PyObjectPtr world_str(mainModuleGet("world_str"));
   ASSERT_EQ(_PyUnicodeWriter_WriteStr(&writer, hello_str), 0);
   ASSERT_EQ(_PyUnicodeWriter_WriteStr(&writer, world_str), 0);
   PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
@@ -1310,7 +1310,7 @@ str_value = SubStr("hello world")
 )");
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);
-  PyObjectPtr str(moduleGet("__main__", "str_value"));
+  PyObjectPtr str(mainModuleGet("str_value"));
   ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 0, 5), 0);
   ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 5, 11), 0);
   PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
@@ -1777,7 +1777,7 @@ class SubStr(str): pass
 
 str_val = SubStr('hello\nworld')
 )");
-  PyObjectPtr str(moduleGet("__main__", "str_val"));
+  PyObjectPtr str(mainModuleGet("str_val"));
   PyObjectPtr result(PyUnicode_Splitlines(str, 1));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_NE(result, nullptr);
@@ -1906,7 +1906,7 @@ class SubStr(str): pass
 
 str_val = SubStr('Hello world!')
 )");
-  PyObjectPtr str(moduleGet("__main__", "str_val"));
+  PyObjectPtr str(mainModuleGet("str_val"));
   PyObjectPtr result(PyUnicode_Substring(str, 3, 8));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_CheckExact(result));
@@ -2665,7 +2665,7 @@ TEST_F(UnicodeExtensionApiTest,
 import sys
 errors = sys.getfilesystemencodeerrors()
 )");
-  PyObjectPtr errors(moduleGet("__main__", "errors"));
+  PyObjectPtr errors(mainModuleGet("errors"));
   EXPECT_TRUE(isUnicodeEqualsCStr(errors, Py_FileSystemDefaultEncodeErrors));
 }
 

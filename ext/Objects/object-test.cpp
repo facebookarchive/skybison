@@ -43,7 +43,7 @@ class Foo:
     return 1
 obj = Foo()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyObject_Bytes(obj), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -56,7 +56,7 @@ class Foo:
     return b'123'
 obj = Foo()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr result(PyObject_Bytes(obj));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_STREQ(PyBytes_AsString(result), "123");
@@ -69,7 +69,7 @@ class Foo:
     raise ValueError
 obj = Foo()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyObject_Bytes(obj), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
@@ -111,7 +111,7 @@ class C:
   __call__ = None
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyCallable_Check(c), 1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -123,7 +123,7 @@ class C:
   __call__ = 5
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyCallable_Check(c), 1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -136,7 +136,7 @@ obj = C()
 obj.a = 42
 obj.b = 13
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
   EXPECT_EQ(PyObject_DelAttrString(obj, "a"), 0);
@@ -152,7 +152,7 @@ obj = C()
 obj.a = 42
 obj.b = 13
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
   PyObjectPtr name(PyUnicode_FromString("a"));
@@ -188,7 +188,7 @@ class C:
 obj = C()
 obj.a = 42
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   ASSERT_TRUE(PyObject_HasAttr(obj, name));
   PyObject* result = nullptr;
@@ -218,7 +218,7 @@ class C:
     return 42
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = nullptr;
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
@@ -236,7 +236,7 @@ class C:
     raise TypeError("foo")
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = name.get();  // some non-NULL value
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
@@ -253,7 +253,7 @@ class C:
     raise AttributeError("foo")
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = name.get();  // some non-NULL value
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 0);
@@ -269,7 +269,7 @@ class C:
     return 42
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = nullptr;
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
@@ -287,7 +287,7 @@ class C:
     raise TypeError("foo")
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = name.get();  // some non-NULL value
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
@@ -304,7 +304,7 @@ class C:
     raise AttributeError("foo")
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = name.get();  // some non-NULL value
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 0);
@@ -323,7 +323,7 @@ class C:
     return 10
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = nullptr;
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
@@ -344,7 +344,7 @@ class C:
     raise AttributeError("foo")
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = nullptr;
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), 1);
@@ -366,7 +366,7 @@ class C:
 
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr name(PyUnicode_FromString("a"));
   PyObject* result = name.get();  // some non-NULL value
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
@@ -412,7 +412,7 @@ obj = C()
 obj.a = 42
 obj.b = 13
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
   EXPECT_EQ(PyObject_SetAttrString(obj, "a", nullptr), 0);
@@ -428,7 +428,7 @@ obj = C()
 obj.a = 42
 obj.b = 13
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "a"));
   ASSERT_TRUE(PyObject_HasAttrString(obj, "b"));
   PyObjectPtr name(PyUnicode_FromString("a"));
@@ -597,7 +597,7 @@ obj = C()
   )"),
             0);
   CaptureStdStreams streams;
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   int result = PyObject_Print(obj, stdout, 0);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(streams.out(), "foo");
@@ -614,7 +614,7 @@ obj = C()
   )"),
             0);
   CaptureStdStreams streams;
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   int result = PyObject_Print(obj, stdout, Py_PRINT_RAW);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(streams.out(), "bar");
@@ -629,7 +629,7 @@ obj = C()
   )"),
             0);
   CaptureStdStreams streams;
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   int result = PyObject_Print(obj, stdout, 0);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(streams.out(), "foo\\bar");
@@ -827,7 +827,7 @@ i = C()
 )"),
             0);
 
-  PyObjectPtr i(moduleGet("__main__", "i"));
+  PyObjectPtr i(mainModuleGet("i"));
   ASSERT_NE(i, nullptr);
   PyObjectPtr key(PyUnicode_FromString("key"));
   PyObjectPtr value(PyUnicode_FromString("value"));
@@ -842,7 +842,7 @@ i = 3
 )"),
             0);
 
-  PyObjectPtr i(moduleGet("__main__", "i"));
+  PyObjectPtr i(mainModuleGet("i"));
   ASSERT_NE(i, nullptr);
   PyObjectPtr key(PyUnicode_FromString("key"));
   PyObjectPtr value(PyUnicode_FromString("value"));
@@ -1176,10 +1176,10 @@ class C:
     return False
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_Not(c), 1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  PyObjectPtr sideeffect(mainModuleGet("sideeffect"));
   EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
 }
 
@@ -1191,7 +1191,7 @@ class C:
     return -10
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_Not(c), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -1203,7 +1203,7 @@ class C:
   __hash__ = None
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_Hash(c), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -1216,7 +1216,7 @@ class C:
     return 7
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_Hash(c), 7);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -1228,7 +1228,7 @@ class C:
     raise IndexError
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_Hash(c), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
@@ -1370,7 +1370,7 @@ TEST_F(ObjectExtensionApiTest, DirReturnsLocals) {
   PyRun_SimpleString(R"(
 class C: pass
 )");
-  PyObjectPtr c_type(moduleGet("__main__", "C"));
+  PyObjectPtr c_type(mainModuleGet("C"));
   binaryfunc meth = [](PyObject*, PyObject*) { return PyObject_Dir(nullptr); };
   static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
   PyObjectPtr func(PyCFunction_NewEx(&foo_func, c_type, nullptr));
@@ -1382,7 +1382,7 @@ foo = 123
 c = C()
 obj = c.foo()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyList_Check(obj), 1);
   PyObjectPtr foo(PyUnicode_FromString("foo"));
   EXPECT_EQ(PySequence_Contains(obj, foo), 1);
@@ -1395,7 +1395,7 @@ class C:
     self.foo = 123
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr result(PyObject_Dir(obj));
   ASSERT_EQ(PyList_Check(result), 1);
@@ -1412,7 +1412,7 @@ class C:
       raise TypeError("no dir on this type")
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr result(PyObject_Dir(obj));
   ASSERT_EQ(result, nullptr);
@@ -1430,7 +1430,7 @@ class C:
       return 123
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr result(PyObject_Dir(obj));
   ASSERT_EQ(result, nullptr);
@@ -1450,7 +1450,7 @@ def new_dir(self):
 obj = C()
 obj.__dir__ = new_dir.__get__(obj, C)
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr result(PyObject_Dir(obj));
   ASSERT_EQ(PyList_Check(result), 1);

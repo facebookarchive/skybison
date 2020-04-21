@@ -35,7 +35,7 @@ class C:
   def __sizeof__(self): raise Exception()
 o = C()
 )");
-  PyObjectPtr object(moduleGet("__main__", "o"));
+  PyObjectPtr object(mainModuleGet("o"));
   EXPECT_EQ(_PySys_GetSizeOf(object), static_cast<size_t>(-1));
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_Exception));
@@ -47,7 +47,7 @@ class C:
   def __sizeof__(self): return 10
 o = C()
 )");
-  PyObjectPtr object(moduleGet("__main__", "o"));
+  PyObjectPtr object(mainModuleGet("o"));
   EXPECT_EQ(_PySys_GetSizeOf(object), size_t{10});
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -59,7 +59,7 @@ class C:
   def __sizeof__(self): return N(10)
 o = C()
 )");
-  PyObjectPtr object(moduleGet("__main__", "o"));
+  PyObjectPtr object(mainModuleGet("o"));
   EXPECT_EQ(_PySys_GetSizeOf(object), size_t{10});
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -90,7 +90,7 @@ sys.stdout = C()
   EXPECT_EQ(streams.out(), "a");
   EXPECT_EQ(streams.err(), "");
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   EXPECT_EQ(PyLong_AsLong(x), 42);
 }
 

@@ -15,7 +15,7 @@ TEST_F(FuncExtensionApiTest,
 def foo(x):
   return x
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr static_foo(PyStaticMethod_New(foo));
   ASSERT_EQ(moduleSet("__main__", "static_foo", static_foo), 0);
   PyRun_SimpleString(R"(
@@ -25,7 +25,7 @@ setattr(Bar, "foo", static_foo)
 bar = Bar()
 result = bar.foo(123)
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyLong_Check(result), 1);
   EXPECT_EQ(PyLong_AsLong(result), 123);
@@ -36,7 +36,7 @@ TEST_F(FuncExtensionApiTest, StaticMethodCallOnTypeReturnsPassedAsFirstArg) {
 def foo(x):
   return x
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr static_foo(PyStaticMethod_New(foo));
   ASSERT_EQ(moduleSet("__main__", "static_foo", static_foo), 0);
   PyRun_SimpleString(R"(
@@ -45,7 +45,7 @@ class Bar:
 setattr(Bar, "foo", static_foo)
 result = Bar.foo(123)
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyLong_Check(result), 1);
   EXPECT_EQ(PyLong_AsLong(result), 123);
@@ -56,7 +56,7 @@ TEST_F(FuncExtensionApiTest, StaticMethodCallOnFreeFunctionRaisesTypeError) {
 def foo(x):
   return x
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr function(PyStaticMethod_New(foo));
   PyObjectPtr args(PyTuple_New(1));
   PyTuple_SetItem(args, 0, PyLong_FromLong(123));
@@ -70,7 +70,7 @@ TEST_F(FuncExtensionApiTest, ClassMethodCallOnInstanceReturnsTypeAsFirstArg) {
 def foo(cls):
   return cls
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr class_foo(PyClassMethod_New(foo));
   ASSERT_EQ(moduleSet("__main__", "class_foo", class_foo), 0);
   PyRun_SimpleString(R"(
@@ -79,8 +79,8 @@ class Bar:
 setattr(Bar, "foo", class_foo)
 result = Bar().foo()
 )");
-  PyObjectPtr bar_type(moduleGet("__main__", "Bar"));
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr bar_type(mainModuleGet("Bar"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyType_Check(result), 1);
   EXPECT_EQ(result, bar_type);
@@ -91,7 +91,7 @@ TEST_F(FuncExtensionApiTest, ClassMethodCallOnTypeReturnsTypeAsFirstArg) {
 def foo(cls):
   return cls
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr class_foo(PyClassMethod_New(foo));
   ASSERT_EQ(moduleSet("__main__", "class_foo", class_foo), 0);
   PyRun_SimpleString(R"(
@@ -100,8 +100,8 @@ class Bar:
 setattr(Bar, "foo", class_foo)
 result = Bar.foo()
 )");
-  PyObjectPtr bar_type(moduleGet("__main__", "Bar"));
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr bar_type(mainModuleGet("Bar"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyType_Check(result), 1);
   EXPECT_EQ(result, bar_type);
@@ -112,7 +112,7 @@ TEST_F(FuncExtensionApiTest, ClassMethodCallOnFreeFunctionCallRaisesTypeError) {
 def foo(cls):
   return cls
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr function(PyClassMethod_New(foo));
   PyObjectPtr args(PyTuple_New(1));
   PyTuple_SetItem(args, 0, PyLong_FromLong(123));

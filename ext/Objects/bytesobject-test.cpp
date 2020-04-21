@@ -48,7 +48,7 @@ TEST_F(BytesExtensionApiTest, AsStringWithBytesSubclassReturnsString) {
 class Foo(bytes): pass
 foo = Foo(b"foo")
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   EXPECT_STREQ(PyBytes_AsString(foo), "foo");
 }
 
@@ -86,7 +86,7 @@ TEST_F(BytesExtensionApiTest,
 class Foo(bytes): pass
 foo = Foo(b"foo")
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   char* buffer;
   Py_ssize_t length;
   ASSERT_EQ(PyBytes_AsStringAndSize(foo, &buffer, &length), 0);
@@ -183,8 +183,8 @@ class Foo(bytes): pass
 foo = Foo(b"foo")
 bar = Foo(b"bar")
 )");
-  PyObject* foo = moduleGet("__main__", "foo");
-  PyObjectPtr bar(moduleGet("__main__", "bar"));
+  PyObject* foo = mainModuleGet("foo");
+  PyObjectPtr bar(mainModuleGet("bar"));
   PyBytes_Concat(&foo, bar);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_STREQ(PyBytes_AsString(foo), "foobar");
@@ -392,7 +392,7 @@ class Foo:
   def __index__(self): return ''
 obj = (Foo(),)
 )");
-  PyObjectPtr tuple(moduleGet("__main__", "obj"));
+  PyObjectPtr tuple(mainModuleGet("obj"));
   ASSERT_EQ(PyBytes_FromObject(tuple), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -435,7 +435,7 @@ class HasIter:
   def __iter__(self): return NotIterator()
 obj = HasIter()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyBytes_FromObject(obj), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -564,11 +564,11 @@ first = Foo(b"ab")
 second = Foo(b"")
 third = Foo(b"123456789")
   )");
-  PyObjectPtr sep(moduleGet("__main__", "sep"));
+  PyObjectPtr sep(mainModuleGet("sep"));
   PyObjectPtr iter(PyList_New(3));
-  ASSERT_EQ(PyList_SetItem(iter, 0, moduleGet("__main__", "first")), 0);
-  ASSERT_EQ(PyList_SetItem(iter, 1, moduleGet("__main__", "second")), 0);
-  ASSERT_EQ(PyList_SetItem(iter, 2, moduleGet("__main__", "third")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 0, mainModuleGet("first")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 1, mainModuleGet("second")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 2, mainModuleGet("third")), 0);
   PyObjectPtr join(_PyBytes_Join(sep, iter));
   EXPECT_TRUE(PyBytes_CheckExact(join));
   EXPECT_STREQ(PyBytes_AsString(join), "ab--123456789");
@@ -608,7 +608,7 @@ TEST_F(BytesExtensionApiTest, ReprWithBytesSubclassReturnsString) {
 class Foo(bytes): pass
 self = Foo(b"Hello world!")
 )");
-  PyObjectPtr self(moduleGet("__main__", "self"));
+  PyObjectPtr self(mainModuleGet("self"));
   PyObjectPtr repr(PyBytes_Repr(self, true));
   EXPECT_TRUE(isUnicodeEqualsCStr(repr, "b'Hello world!'"));
 }
@@ -709,8 +709,8 @@ class Foo(bytes): pass
 empty = Foo()
 foo = Foo(b"foo")
 )");
-  PyObjectPtr empty(moduleGet("__main__", "empty"));
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr empty(mainModuleGet("empty"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   EXPECT_EQ(PyBytes_Size(empty), 0);
   EXPECT_EQ(PyBytes_Size(foo), 3);
 }

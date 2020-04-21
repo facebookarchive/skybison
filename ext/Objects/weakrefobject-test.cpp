@@ -20,8 +20,8 @@ def foo():
 
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr obj(mainModuleGet("obj"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr proxy(PyWeakref_NewProxy(obj, foo));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
@@ -37,7 +37,7 @@ class C:
 
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr proxy(PyWeakref_NewProxy(obj, nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
@@ -53,8 +53,8 @@ obj = C()
 def foo():
   pass
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr obj(mainModuleGet("obj"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr ref(PyWeakref_NewRef(obj, foo));
   EXPECT_TRUE(PyWeakref_Check(ref));
 }
@@ -67,7 +67,7 @@ obj = C()
 def foo():
   pass
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr ref(PyWeakref_NewRef(obj, nullptr));
   EXPECT_TRUE(PyWeakref_Check(ref));
 }
@@ -86,7 +86,7 @@ obj = C()
 def foo():
   pass
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   EXPECT_EQ(PyWeakref_GetObject(obj), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -98,7 +98,7 @@ class C:
   pass
 obj = C()
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr ref(PyWeakref_NewRef(obj, nullptr));
   PyObject* referent = PyWeakref_GetObject(ref);
   EXPECT_EQ(referent, obj);

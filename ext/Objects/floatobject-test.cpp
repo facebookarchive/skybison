@@ -51,7 +51,7 @@ class FloatLikeClass:
 
 f = FloatLikeClass();
   )");
-  PyObjectPtr f(testing::moduleGet("__main__", "f"));
+  PyObjectPtr f(testing::mainModuleGet("f"));
   double res = PyFloat_AsDouble(f);
   EXPECT_EQ(res, 1.5);
 }
@@ -65,7 +65,7 @@ class FloatLikeClass:
 
 f = FloatLikeClass();
   )");
-  PyObjectPtr f(moduleGet("__main__", "f"));
+  PyObjectPtr f(mainModuleGet("f"));
   EXPECT_EQ(PyFloat_AsDouble(f), -1.0);
 
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -81,12 +81,12 @@ class SubFloat(float):
 subfloat = SubFloat(1.5)
 subfloat_foo = subfloat.foo
   )");
-  PyObjectPtr subfloat(testing::moduleGet("__main__", "subfloat"));
+  PyObjectPtr subfloat(testing::mainModuleGet("subfloat"));
   ASSERT_FALSE(PyLong_CheckExact(subfloat));
   ASSERT_TRUE(PyFloat_Check(subfloat));
   EXPECT_EQ(1.5, PyFloat_AsDouble(subfloat));
 
-  PyObjectPtr subfloat_foo(testing::moduleGet("__main__", "subfloat_foo"));
+  PyObjectPtr subfloat_foo(testing::mainModuleGet("subfloat_foo"));
   ASSERT_TRUE(PyLong_Check(subfloat_foo));
   EXPECT_EQ(3, PyLong_AsLong(subfloat_foo));
 }

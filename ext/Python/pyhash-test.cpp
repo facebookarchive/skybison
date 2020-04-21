@@ -22,7 +22,7 @@ TEST_F(PyhashExtensionApiTest, _Py_HashDoubleReturnsHash) {
   PyRun_SimpleString(R"(
 hash_value = hash(-42.42)
 )");
-  PyObjectPtr hash_value(moduleGet("__main__", "hash_value"));
+  PyObjectPtr hash_value(mainModuleGet("hash_value"));
   Py_hash_t result = _Py_HashDouble(-42.42);
   EXPECT_TRUE(isLongEqualsLong(hash_value, result));
 }
@@ -31,7 +31,7 @@ TEST_F(PyhashExtensionApiTest, _Py_HashBytesWithSmallBytesReturnsHash) {
   PyRun_SimpleString(R"(
 hash_value = hash(b"jo")
 )");
-  PyObjectPtr hash_value(moduleGet("__main__", "hash_value"));
+  PyObjectPtr hash_value(mainModuleGet("hash_value"));
   Py_hash_t result = _Py_HashBytes("jo", 2);
   EXPECT_TRUE(isLongEqualsLong(hash_value, result));
 }
@@ -40,7 +40,7 @@ TEST_F(PyhashExtensionApiTest, _Py_HashBytesWithLargeBytesReturnsHash) {
   PyRun_SimpleString(R"(
 hash_value = hash(b"Monty Python")
 )");
-  PyObjectPtr hash_value(moduleGet("__main__", "hash_value"));
+  PyObjectPtr hash_value(mainModuleGet("hash_value"));
   Py_hash_t result = _Py_HashBytes("Monty Python", 12);
   EXPECT_TRUE(isLongEqualsLong(hash_value, result));
 }

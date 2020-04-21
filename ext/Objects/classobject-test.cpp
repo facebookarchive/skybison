@@ -14,7 +14,7 @@ TEST_F(ClassExtensionApiTest, FunctionReturnsFunction) {
 def foo():
   pass
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr bar(PyLong_FromLong(42));
   PyObjectPtr method(PyMethod_New(foo, bar));
   EXPECT_EQ(PyMethod_Function(method), foo);
@@ -25,7 +25,7 @@ TEST_F(ClassExtensionApiTest, GetFunctionReturnsFunction) {
 def foo():
   pass
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr bar(PyLong_FromLong(42));
   PyObjectPtr method(PyMethod_New(foo, bar));
   EXPECT_EQ(PyMethod_GET_FUNCTION(method.get()), foo);
@@ -36,7 +36,7 @@ TEST_F(ClassExtensionApiTest, NewWithNullSelfRaisesRuntimeError) {
 def foo(x):
   return x
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObject* method = PyMethod_New(foo, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_EQ(method, nullptr);
@@ -48,7 +48,7 @@ TEST_F(ClassExtensionApiTest, NewWithNoArgsReturnsBoundObject) {
 def foo(x):
   return x
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr integer(PyLong_FromLong(123));
   PyObjectPtr method(PyMethod_New(foo, integer));
   PyObjectPtr args(PyTuple_New(0));
@@ -67,7 +67,7 @@ TEST_F(ClassExtensionApiTest, CheckWithMethodReturnsTrue) {
 def foo(x):
   return x
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr integer(PyLong_FromLong(123));
   PyObjectPtr method(PyMethod_New(foo, integer));
   EXPECT_EQ(PyMethod_Check(method.get()), 1);
@@ -78,7 +78,7 @@ TEST_F(ClassExtensionApiTest, SelfReturnsSelf) {
 def foo():
   pass
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr bar(PyLong_FromLong(42));
   PyObjectPtr method(PyMethod_New(foo, bar));
   EXPECT_EQ(PyMethod_Self(method), bar);
@@ -89,7 +89,7 @@ TEST_F(ClassExtensionApiTest, GetSelfReturnsSelf) {
 def foo():
   pass
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr bar(PyLong_FromLong(42));
   PyObjectPtr method(PyMethod_New(foo, bar));
   EXPECT_EQ(PyMethod_GET_SELF(method.get()), bar);

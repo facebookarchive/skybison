@@ -29,7 +29,7 @@ class C(frozenset):
   pass
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_TRUE(PyFrozenSet_Check(c));
 }
 
@@ -50,7 +50,7 @@ class C(frozenset):
   pass
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_FALSE(PyFrozenSet_CheckExact(c));
 }
 

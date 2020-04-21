@@ -20,7 +20,7 @@ TEST_F(FileObjectExtensionApiTest, AsFileDescriptorWithIntSubclassReturnsInt) {
 class Subclass(int): pass
 obj = Subclass(5)
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   EXPECT_EQ(PyObject_AsFileDescriptor(obj), 5);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -30,7 +30,7 @@ TEST_F(FileObjectExtensionApiTest,
   PyRun_SimpleString(R"(
 big = 1 << 70
 )");
-  PyObjectPtr big(moduleGet("__main__", "big"));
+  PyObjectPtr big(mainModuleGet("big"));
   EXPECT_EQ(PyObject_AsFileDescriptor(big), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
@@ -43,7 +43,7 @@ class C:
     return 7
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_AsFileDescriptor(c), 7);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -64,7 +64,7 @@ class C:
     return -7
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_AsFileDescriptor(c), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
@@ -77,7 +77,7 @@ class C:
     return "foobar"
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_AsFileDescriptor(c), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -92,7 +92,7 @@ class C:
     return Subclass(5)
 c = C()
 )");
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(PyObject_AsFileDescriptor(c), 5);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }

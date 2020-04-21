@@ -89,8 +89,8 @@ instance = C()
   PyObjectPtr func(
       PyCFunction_NewEx(&foo_func, self_value, /*module=*/nullptr));
   ASSERT_NE(func, nullptr);
-  PyObjectPtr c(moduleGet("__main__", "C"));
-  PyObjectPtr instance(moduleGet("__main__", "instance"));
+  PyObjectPtr c(mainModuleGet("C"));
+  PyObjectPtr instance(mainModuleGet("instance"));
   PyObject_SetAttrString(c, "foo", func);
   PyObjectPtr result(PyObject_CallMethod(instance, "foo", ""));
   EXPECT_NE(result, c);

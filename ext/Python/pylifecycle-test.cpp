@@ -46,7 +46,7 @@ TEST_F(PylifecycleExtensionApiTest, SetsigSetsSignalHandler) {
   EXPECT_EQ(PyOS_getsig(SIGUSR1), handler);
 
   ::raise(SIGUSR1);
-  PyObjectPtr handled(moduleGet("__main__", "handled"));
+  PyObjectPtr handled(mainModuleGet("handled"));
   EXPECT_EQ(handled, Py_True);
 
   PyOS_setsig(SIGUSR1, saved);

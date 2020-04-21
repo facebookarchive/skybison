@@ -135,7 +135,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunFileFlagsReturnsFalse) {
 TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringReturnsInt) {
   EXPECT_EQ(PyRun_SimpleString("a = 42"), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr value(moduleGet("__main__", "a"));
+  PyObjectPtr value(mainModuleGet("a"));
   EXPECT_TRUE(isLongEqualsLong(value, 42));
 }
 
@@ -160,7 +160,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringFlagsReturnsTrue) {
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   EXPECT_EQ(PyRun_SimpleStringFlags("foo = 13 <> 42", &flags), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr value(moduleGet("__main__", "foo"));
+  PyObjectPtr value(mainModuleGet("foo"));
   EXPECT_EQ(value, Py_True);
 }
 
@@ -217,7 +217,7 @@ except Exception as e:
   exc = e
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, exc, nullptr);
@@ -236,7 +236,7 @@ exc.__cause__ = RuntimeError("inner")
 exc.__cause__.__cause__ = exc
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, exc, nullptr);
@@ -253,7 +253,7 @@ exc.__context__ = RuntimeError("inner")
 exc.__context__.__context__ = exc
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, exc, nullptr);
@@ -271,7 +271,7 @@ exc.__context__ = RuntimeError("inner error")
 exc.__suppress_context__ = True
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, exc, nullptr);
@@ -287,7 +287,7 @@ class MyExc(Exception):
 exc = MyExc()
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, exc, nullptr);
@@ -302,7 +302,7 @@ class MyExc(Exception):
 exc = MyExc("hi")
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, exc, nullptr);
@@ -332,7 +332,7 @@ se.offset = 31
 se.text = "this is fake source code\nthat is multiple lines long"
 )"),
             0);
-  PyObjectPtr se(moduleGet("__main__", "se"));
+  PyObjectPtr se(mainModuleGet("se"));
 
   CaptureStdStreams streams;
   PyErr_Display(nullptr, se, nullptr);

@@ -33,7 +33,7 @@ TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
 
 TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedTypePyro) {
   PyRun_SimpleString(R"(class Foo: pass)");
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(testing::mainModuleGet("Foo"));
   ASSERT_TRUE(PyType_CheckExact(foo_type));
   EXPECT_DEATH(
       PyType_GetFlags(reinterpret_cast<PyTypeObject*>(foo_type.get())),
@@ -74,7 +74,7 @@ TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
 
   testing::moduleSet("__main__", "Empty", type);
   PyRun_SimpleString("x = Empty");
-  PyObjectPtr result(testing::moduleGet("__main__", "x"));
+  PyObjectPtr result(testing::mainModuleGet("x"));
   EXPECT_TRUE(PyType_CheckExact(result));
   PyObjectPtr module(PyObject_GetAttrString(result, "__module__"));
   EXPECT_TRUE(isUnicodeEqualsCStr(module, "foo"));
@@ -134,7 +134,7 @@ TEST_F(TypeExtensionApiTest, CallExtensionTypeReturnsExtensionInstancePyro) {
 bar = Bar()
 )");
 
-  PyObjectPtr bar(testing::moduleGet("__main__", "bar"));
+  PyObjectPtr bar(testing::mainModuleGet("bar"));
   ASSERT_NE(bar, nullptr);
   BarObject* barobj = reinterpret_cast<BarObject*>(bar.get());
   EXPECT_EQ(barobj->value, 30);
@@ -175,7 +175,7 @@ class Foo:
 )"),
             0);
 
-  PyObjectPtr foo(moduleGet("__main__", "Foo"));
+  PyObjectPtr foo(mainModuleGet("Foo"));
   auto new_slot =
       reinterpret_cast<newfunc>(PyType_GetSlot(foo.asTypeObject(), Py_tp_new));
   ASSERT_NE(new_slot, nullptr);
@@ -213,7 +213,7 @@ TEST_F(TypeExtensionApiTest, IsSubtypeWithSubtypeReturnsTrue) {
   EXPECT_EQ(PyRun_SimpleString("class MyFloat(float): pass"), 0);
   PyObjectPtr pyfloat(PyFloat_FromDouble(1.23));
   PyObjectPtr pyfloat_type(PyObject_Type(pyfloat));
-  PyObjectPtr myfloat_type(moduleGet("__main__", "MyFloat"));
+  PyObjectPtr myfloat_type(mainModuleGet("MyFloat"));
   EXPECT_TRUE(
       PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(myfloat_type.get()),
                        reinterpret_cast<PyTypeObject*>(pyfloat_type.get())));
@@ -250,7 +250,7 @@ class Foo:
         pass
   )");
 
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(testing::mainModuleGet("Foo"));
   ASSERT_TRUE(PyType_CheckExact(foo_type));
   EXPECT_DEATH(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()),
                               Py_tp_init),
@@ -262,7 +262,7 @@ TEST_F(TypeExtensionApiTest, GetUnsupportedSlotFromManagedTypeAbortsPyro) {
 class Foo: pass
   )");
 
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(testing::mainModuleGet("Foo"));
   ASSERT_TRUE(PyType_CheckExact(foo_type));
   EXPECT_DEATH(
       PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()), Py_nb_or),
@@ -274,7 +274,7 @@ TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotRaisesSystemError) {
 class Foo: pass
   )");
 
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(testing::mainModuleGet("Foo"));
   ASSERT_TRUE(PyType_CheckExact(foo_type));
 
   EXPECT_EQ(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()), -1),
@@ -289,7 +289,7 @@ TEST_F(TypeExtensionApiTest, GetSlotFromLargerThanMaxSlotReturnsNull) {
 class Foo: pass
   )");
 
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(testing::mainModuleGet("Foo"));
   ASSERT_TRUE(PyType_CheckExact(foo_type));
 
   EXPECT_EQ(
@@ -351,7 +351,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethNoargsPosCall) {
   PyRun_SimpleString(R"(
 result = C().noargs()
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(PyLong_AsLong(result), 1234);
 }
@@ -394,7 +394,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethNoargsExCall) {
   PyRun_SimpleString(R"(
 result = C().noargs(*[])
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(PyLong_AsLong(result), 1234);
 }
@@ -418,7 +418,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethNoargsExNoKwargsCall) {
   PyRun_SimpleString(R"(
 result = C().noargs(*[],**{})
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(PyLong_AsLong(result), 1234);
 }
@@ -445,7 +445,7 @@ try:
 except:
   result = True
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_EQ(result, Py_True);
 }
 
@@ -471,8 +471,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethOneArgPosCall) {
 self = C()
 result = self.onearg(1234)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -505,7 +505,7 @@ try:
 except TypeError:
   result = True
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(result, Py_True);
 }
@@ -529,7 +529,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethOneArgClassPosCallOnClass) {
   ASSERT_NE(type, nullptr);
   testing::moduleSet("__main__", "C", type);
   PyRun_SimpleString("result = C.onearg(1234)");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -554,7 +554,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethOneArgClassPosCallOnInstance) {
   ASSERT_NE(type, nullptr);
   testing::moduleSet("__main__", "C", type);
   PyRun_SimpleString("result = C().onearg(1234)");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -584,14 +584,14 @@ class D(C):
 result0 = D.onearg(1234)
 result1 = D().onearg(5678)
 )");
-  PyObjectPtr d(testing::moduleGet("__main__", "D"));
-  PyObjectPtr result0(testing::moduleGet("__main__", "result0"));
+  PyObjectPtr d(testing::mainModuleGet("D"));
+  PyObjectPtr result0(testing::mainModuleGet("result0"));
   ASSERT_NE(result0, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result0), 1);
   ASSERT_EQ(PyTuple_Size(result0), 2);
   EXPECT_EQ(PyTuple_GetItem(result0, 0), d);
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result0, 1), 1234));
-  PyObjectPtr result1(testing::moduleGet("__main__", "result1"));
+  PyObjectPtr result1(testing::mainModuleGet("result1"));
   ASSERT_NE(result1, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result1), 1);
   ASSERT_EQ(PyTuple_Size(result1), 2);
@@ -620,7 +620,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethOneArgStaticCalledOnClass) {
   ASSERT_NE(type, nullptr);
   testing::moduleSet("__main__", "C", type);
   PyRun_SimpleString("result = C.onearg(1234)");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   EXPECT_TRUE(isLongEqualsLong(result, 1234));
 }
 
@@ -643,7 +643,7 @@ TEST_F(TypeExtensionApiTest, MethodsMethOneArgStaticCalledOnInstance) {
   ASSERT_NE(type, nullptr);
   testing::moduleSet("__main__", "C", type);
   PyRun_SimpleString("result = C().onearg(1234)");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   EXPECT_TRUE(isLongEqualsLong(result, 1234));
 }
 
@@ -671,9 +671,9 @@ class D(C):
 result0 = D.onearg(1234)
 result1 = D().onearg(5678)
 )");
-  PyObjectPtr result0(testing::moduleGet("__main__", "result0"));
+  PyObjectPtr result0(testing::mainModuleGet("result0"));
   EXPECT_TRUE(isLongEqualsLong(result0, 1234));
-  PyObjectPtr result1(testing::moduleGet("__main__", "result1"));
+  PyObjectPtr result1(testing::mainModuleGet("result1"));
   EXPECT_TRUE(isLongEqualsLong(result1, 5678));
 }
 
@@ -703,7 +703,7 @@ try:
 except TypeError:
   result = True
 )"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   EXPECT_EQ(result, Py_True);
 }
 
@@ -729,8 +729,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethOneArgExCall) {
 obj = C()
 result = obj.onearg(*[1234])
 )");
-  PyObjectPtr obj(testing::moduleGet("__main__", "obj"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr obj(testing::mainModuleGet("obj"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -760,8 +760,8 @@ TEST_F(TypeExtensionApiTest, MethodsVarargsArgPosCall) {
 self = C()
 result = self.varargs(1234)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -791,8 +791,8 @@ TEST_F(TypeExtensionApiTest, MethodsVarargsArgPosNoArgsCall) {
 self = C()
 result = self.varargs()
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -827,7 +827,7 @@ try:
 except TypeError:
   result = True
 )");
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   EXPECT_EQ(result, Py_True);
 }
 
@@ -853,8 +853,8 @@ TEST_F(TypeExtensionApiTest, MethodsVarargsArgExCall) {
 self = C()
 result = self.varargs(*[1234])
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -884,8 +884,8 @@ TEST_F(TypeExtensionApiTest, MethodsVarargsArgExHasEmptyKwargsCall) {
 self = C()
 result = self.varargs(*[1234], **{})
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -924,8 +924,8 @@ self = C()
 result = self.keywords(1234)
 )");
 
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -966,8 +966,8 @@ self = C()
 result = self.keywords(1234, kwarg=5678)
 )");
 
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 3);
@@ -1013,8 +1013,8 @@ self = C()
 result = self.keywords(*[1234], kwarg=5678)
 )");
 
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 3);
@@ -1059,8 +1059,8 @@ self = C()
 result = self.keywords(*[1234], *{})
 )");
 
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -1089,7 +1089,7 @@ TEST_F(TypeExtensionApiTest, GetObjectCreatedInManagedCode) {
   // managed heap and had no corresponding PyObject* before the call to
   // moduleGet().
   ASSERT_EQ(PyRun_SimpleString("f = Foo()"), 0);
-  PyObjectPtr foo(moduleGet("__main__", "f"));
+  PyObjectPtr foo(mainModuleGet("f"));
   EXPECT_NE(foo, nullptr);
 }
 
@@ -1173,22 +1173,22 @@ b += -12
 )"),
             0);
 
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   EXPECT_TRUE(isLongEqualsLong(r1, 36));
 
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   EXPECT_TRUE(isLongEqualsLong(r2, 48));
 
-  PyObjectPtr r3(moduleGet("__main__", "r3"));
+  PyObjectPtr r3(mainModuleGet("r3"));
   EXPECT_TRUE(isLongEqualsLong(r3, 1024));
 
-  PyObjectPtr r4(moduleGet("__main__", "r4"));
+  PyObjectPtr r4(mainModuleGet("r4"));
   EXPECT_TRUE(isLongEqualsLong(r4, 66));
 
-  PyObjectPtr r5(moduleGet("__main__", "r5"));
+  PyObjectPtr r5(mainModuleGet("r5"));
   EXPECT_TRUE(isLongEqualsLong(r5, 124));
 
-  PyObjectPtr b(moduleGet("__main__", "b"));
+  PyObjectPtr b(mainModuleGet("b"));
   EXPECT_TRUE(isLongEqualsLong(b, 12));
 }
 
@@ -1230,10 +1230,10 @@ h2 = Bar.__hash__(b)
 )"),
             0);
 
-  PyObjectPtr h1(moduleGet("__main__", "h1"));
+  PyObjectPtr h1(mainModuleGet("h1"));
   EXPECT_TRUE(isLongEqualsLong(h1, 0xba5eba11));
 
-  PyObjectPtr h2(moduleGet("__main__", "h2"));
+  PyObjectPtr h2(mainModuleGet("h2"));
   EXPECT_TRUE(isLongEqualsLong(h2, 0xba5eba11));
 }
 
@@ -1253,8 +1253,8 @@ r4 = Bar.__call__(*args)
 )"),
             0);
 
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyTuple_Check(r1), 1);
   ASSERT_EQ(PyTuple_Size(r1), 3);
   EXPECT_EQ(PyTuple_GetItem(r1, 0), b);
@@ -1263,7 +1263,7 @@ r4 = Bar.__call__(*args)
   EXPECT_EQ(PyTuple_Size(tmp), 0);
   EXPECT_EQ(PyTuple_GetItem(r1, 2), Py_None);
 
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   ASSERT_EQ(PyTuple_Size(r2), 3);
   EXPECT_EQ(PyTuple_GetItem(r2, 0), b);
@@ -1277,7 +1277,7 @@ r4 = Bar.__call__(*args)
   PyObjectPtr key(PyUnicode_FromString("c"));
   EXPECT_TRUE(isUnicodeEqualsCStr(PyDict_GetItem(tmp, key), "see"));
 
-  PyObjectPtr r3(moduleGet("__main__", "r3"));
+  PyObjectPtr r3(mainModuleGet("r3"));
   ASSERT_EQ(PyTuple_Check(r3), 1);
   ASSERT_EQ(PyTuple_Size(r3), 3);
   EXPECT_EQ(PyTuple_GetItem(r3, 0), b);
@@ -1287,7 +1287,7 @@ r4 = Bar.__call__(*args)
   EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(tmp, 0), "hello!"));
   EXPECT_EQ(PyTuple_GetItem(r3, 2), Py_None);
 
-  PyObjectPtr r4(moduleGet("__main__", "r4"));
+  PyObjectPtr r4(mainModuleGet("r4"));
   ASSERT_EQ(PyTuple_Check(r4), 1);
   ASSERT_EQ(PyTuple_Size(r4), 3);
   EXPECT_EQ(PyTuple_GetItem(r4, 0), b);
@@ -1311,9 +1311,9 @@ r = b.foo_bar
 )"),
             0);
 
-  PyObjectPtr b(moduleGet("__main__", "b"));
+  PyObjectPtr b(mainModuleGet("b"));
   ASSERT_NE(b, nullptr);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   ASSERT_NE(r, nullptr);
   ASSERT_EQ(PyTuple_Check(r), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(r, 0), "foo_bar"));
@@ -1340,10 +1340,10 @@ r1 = b.__setattr__("attr", 1234)
 )"),
             0);
 
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   EXPECT_EQ(r1, Py_None);
-  PyObjectPtr set_attr(moduleGet("__main__", "set_attr"));
+  PyObjectPtr set_attr(mainModuleGet("set_attr"));
   ASSERT_EQ(PyTuple_Check(set_attr), 1);
   ASSERT_EQ(PyTuple_Size(set_attr), 3);
   EXPECT_EQ(PyTuple_GetItem(set_attr, 0), b);
@@ -1351,9 +1351,9 @@ r1 = b.__setattr__("attr", 1234)
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(set_attr, 2), 1234));
 
   ASSERT_EQ(PyRun_SimpleString(R"(r2 = b.__delattr__("other attr"))"), 0);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   EXPECT_EQ(r2, Py_None);
-  PyObjectPtr del_attr(moduleGet("__main__", "del_attr"));
+  PyObjectPtr del_attr(mainModuleGet("del_attr"));
   ASSERT_EQ(PyTuple_Check(del_attr), 1);
   ASSERT_EQ(PyTuple_Size(del_attr), 2);
   EXPECT_EQ(PyTuple_GetItem(del_attr, 0), b);
@@ -1375,15 +1375,15 @@ r2 = b.__gt__(0xcafe)
 )"),
             0);
 
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyTuple_Check(r1), 1);
   ASSERT_EQ(PyTuple_Size(r1), 3);
   EXPECT_EQ(PyTuple_GetItem(r1, 0), b);
   EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(r1, 1), "equal"));
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r1, 2), Py_EQ));
 
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   ASSERT_EQ(PyTuple_Size(r2), 3);
   EXPECT_EQ(PyTuple_GetItem(r2, 0), b);
@@ -1404,8 +1404,8 @@ r = b.__next__()
 )"),
             0);
 
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, b);
 }
 
@@ -1422,7 +1422,7 @@ except StopIteration:
 )"),
             0);
 
-  PyObjectPtr caught(moduleGet("__main__", "caught"));
+  PyObjectPtr caught(mainModuleGet("caught"));
   EXPECT_EQ(caught, Py_True);
 }
 
@@ -1440,10 +1440,10 @@ r = b.__get__(b2, Bar)
 )"),
             0);
 
-  PyObjectPtr bar(moduleGet("__main__", "Bar"));
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr b2(moduleGet("__main__", "b2"));
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr bar(mainModuleGet("Bar"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr b2(mainModuleGet("b2"));
+  PyObjectPtr r(mainModuleGet("r"));
   ASSERT_EQ(PyTuple_Check(r), 1);
   ASSERT_EQ(PyTuple_Size(r), 3);
   EXPECT_EQ(PyTuple_GetItem(r, 0), b);
@@ -1469,7 +1469,7 @@ except TypeError as e:
   exc = e
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
   EXPECT_EQ(PyErr_GivenExceptionMatches(exc, PyExc_TypeError), 1);
 }
 
@@ -1520,13 +1520,13 @@ b.__init__(123, four=4)
 )"),
             0);
 
-  PyObjectPtr args(moduleGet("__main__", "args"));
+  PyObjectPtr args(mainModuleGet("args"));
   ASSERT_NE(args, nullptr);
   ASSERT_EQ(PyTuple_Check(args), 1);
   ASSERT_EQ(PyTuple_Size(args), 1);
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(args, 0), 123));
 
-  PyObjectPtr kwargs(moduleGet("__main__", "kwargs"));
+  PyObjectPtr kwargs(mainModuleGet("kwargs"));
   ASSERT_NE(kwargs, nullptr);
   ASSERT_EQ(PyDict_Check(kwargs), 1);
   ASSERT_EQ(PyDict_Size(kwargs), 1);
@@ -1543,12 +1543,12 @@ TEST_F(TypeExtensionApiTest, CallDelSlotFromManagedCode) {
 bar = Bar()
 )"),
             0);
-  PyObjectPtr bar_type(moduleGet("__main__", "Bar"));
-  PyObject* bar = moduleGet("__main__", "bar");
+  PyObjectPtr bar_type(mainModuleGet("Bar"));
+  PyObject* bar = mainModuleGet("bar");
   auto func = reinterpret_cast<destructor>(PyType_GetSlot(
       reinterpret_cast<PyTypeObject*>(bar_type.get()), Py_tp_dealloc));
   (*func)(bar);
-  PyObjectPtr called(moduleGet("__main__", "called"));
+  PyObjectPtr called(mainModuleGet("called"));
   EXPECT_EQ(called, Py_True);
 }
 
@@ -1564,15 +1564,15 @@ r1 = b.__pow__(123, 456)
 r2 = b.__pow__(789)
 )"),
             0);
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyTuple_Check(r1), 1);
   ASSERT_EQ(PyTuple_Size(r1), 3);
   EXPECT_EQ(PyTuple_GetItem(r1, 0), b);
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r1, 1), 123));
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r1, 2), 456));
 
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   ASSERT_EQ(PyTuple_Size(r1), 3);
   EXPECT_EQ(PyTuple_GetItem(r2, 0), b);
@@ -1582,7 +1582,7 @@ r2 = b.__pow__(789)
 
 TEST_F(TypeExtensionApiTest, CallInquirySlotFromManagedCode) {
   inquiry bool_func = [](PyObject* self) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     return 1;
   };
@@ -1593,13 +1593,13 @@ b = Bar()
 r = b.__bool__()
   )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, Py_True);
 }
 
 TEST_F(TypeExtensionApiTest, CallObjobjargSlotFromManagedCode) {
   objobjargproc set_func = [](PyObject* self, PyObject* key, PyObject* value) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     moduleSet("__main__", "key", key);
     moduleSet("__main__", "value", value);
@@ -1613,19 +1613,19 @@ b = Bar()
 r = b.__setitem__("some key", "a value")
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, Py_None);
 
-  PyObjectPtr key(moduleGet("__main__", "key"));
+  PyObjectPtr key(mainModuleGet("key"));
   EXPECT_TRUE(isUnicodeEqualsCStr(key, "some key"));
 
-  PyObjectPtr value(moduleGet("__main__", "value"));
+  PyObjectPtr value(mainModuleGet("value"));
   EXPECT_TRUE(isUnicodeEqualsCStr(value, "a value"));
 }
 
 TEST_F(TypeExtensionApiTest, CallObjobjSlotFromManagedCode) {
   objobjproc contains_func = [](PyObject* self, PyObject* value) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     moduleSet("__main__", "value", value);
     return 123456;
@@ -1638,16 +1638,16 @@ b = Bar()
 r = b.__contains__("a key")
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, Py_True);
 
-  PyObjectPtr value(moduleGet("__main__", "value"));
+  PyObjectPtr value(mainModuleGet("value"));
   EXPECT_TRUE(isUnicodeEqualsCStr(value, "a key"));
 }
 
 TEST_F(TypeExtensionApiTest, CallDelitemSlotFromManagedCode) {
   objobjargproc del_func = [](PyObject* self, PyObject* key, PyObject* value) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     EXPECT_EQ(value, nullptr);
     moduleSet("__main__", "key", key);
@@ -1661,16 +1661,16 @@ b = Bar()
 r = b.__delitem__("another key")
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, Py_None);
 
-  PyObjectPtr key(moduleGet("__main__", "key"));
+  PyObjectPtr key(mainModuleGet("key"));
   EXPECT_TRUE(isUnicodeEqualsCStr(key, "another key"));
 }
 
 TEST_F(TypeExtensionApiTest, CallLenSlotFromManagedCode) {
   lenfunc len_func = [](PyObject* self) -> Py_ssize_t {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     return 0xdeadbeef;
   };
@@ -1681,13 +1681,13 @@ b = Bar()
 r = b.__len__()
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_TRUE(isLongEqualsLong(r, 0xdeadbeef));
 }
 
 TEST_F(TypeExtensionApiTest, CallIndexargSlotFromManagedCode) {
   ssizeargfunc mul_func = [](PyObject* self, Py_ssize_t i) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     return PyLong_FromLong(i * 456);
   };
@@ -1698,13 +1698,13 @@ b = Bar()
 r = b.__mul__(123)
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_TRUE(isLongEqualsLong(r, 123 * 456));
 }
 
 TEST_F(TypeExtensionApiTest, CallSqItemSlotFromManagedCode) {
   ssizeargfunc item_func = [](PyObject* self, Py_ssize_t i) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     return PyLong_FromLong(i + 100);
   };
@@ -1715,13 +1715,13 @@ b = Bar()
 r = b.__getitem__(1337)
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_TRUE(isLongEqualsLong(r, 1337 + 100));
 }
 
 TEST_F(TypeExtensionApiTest, CallSqSetitemSlotFromManagedCode) {
   ssizeobjargproc set_func = [](PyObject* self, Py_ssize_t i, PyObject* value) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     PyObjectPtr key(PyLong_FromLong(i));
     moduleSet("__main__", "key", key);
@@ -1735,19 +1735,19 @@ b = Bar()
 r = b.__setitem__(123, 456)
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, Py_None);
 
-  PyObjectPtr key(moduleGet("__main__", "key"));
+  PyObjectPtr key(mainModuleGet("key"));
   EXPECT_TRUE(isLongEqualsLong(key, 123));
 
-  PyObjectPtr value(moduleGet("__main__", "value"));
+  PyObjectPtr value(mainModuleGet("value"));
   EXPECT_TRUE(isLongEqualsLong(value, 456));
 }
 
 TEST_F(TypeExtensionApiTest, CallSqDelitemSlotFromManagedCode) {
   ssizeobjargproc del_func = [](PyObject* self, Py_ssize_t i, PyObject* value) {
-    PyObjectPtr b(moduleGet("__main__", "b"));
+    PyObjectPtr b(mainModuleGet("b"));
     EXPECT_EQ(self, b);
     PyObjectPtr key(PyLong_FromLong(i));
     moduleSet("__main__", "key", key);
@@ -1761,17 +1761,17 @@ b = Bar()
 r = b.__delitem__(7890)
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_EQ(r, Py_None);
 
-  PyObjectPtr key(moduleGet("__main__", "key"));
+  PyObjectPtr key(mainModuleGet("key"));
   EXPECT_TRUE(isLongEqualsLong(key, 7890));
 }
 
 TEST_F(TypeExtensionApiTest, HashNotImplementedSlotSetsNoneDunderHash) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("Bar", Py_tp_hash, PyObject_HashNotImplemented));
-  PyObjectPtr bar(moduleGet("__main__", "Bar"));
+  PyObjectPtr bar(mainModuleGet("Bar"));
   PyObjectPtr hash(PyObject_GetAttrString(bar, "__hash__"));
   EXPECT_EQ(hash, Py_None);
 }
@@ -1791,7 +1791,7 @@ TEST_F(TypeExtensionApiTest, CallNewSlotFromManagedCode) {
 r = Bar.__new__(Bar, 1, 2, 3)
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   ASSERT_EQ(PyTuple_Check(r), 1);
   ASSERT_EQ(PyTuple_Size(r), 3);
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r, 0), 1));
@@ -1827,7 +1827,7 @@ b = Bar()
 r = b.__add__("foo")
 )"),
             0);
-  PyObjectPtr r(moduleGet("__main__", "r"));
+  PyObjectPtr r(mainModuleGet("r"));
   EXPECT_TRUE(isLongEqualsLong(r, 0xf00));
 }
 
@@ -1848,7 +1848,7 @@ except RuntimeError as e:
   exc = e
 )"),
             0);
-  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyObjectPtr exc(mainModuleGet("exc"));
   EXPECT_EQ(PyErr_GivenExceptionMatches(exc, PyExc_RuntimeError), 1);
 }
 
@@ -1971,10 +1971,10 @@ b.t_bool = False
 r2 = b.t_bool
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyBool_Check(r1), 1);
   EXPECT_EQ(r1, Py_True);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyBool_Check(r2), 1);
   EXPECT_EQ(r2, Py_False);
 }
@@ -1988,10 +1988,10 @@ b.t_byte = 21
 r2 = b.t_byte
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -12));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
@@ -2005,10 +2005,10 @@ b.t_ubyte = 21
 r2 = b.t_ubyte
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, std::numeric_limits<unsigned char>::max()));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
@@ -2022,10 +2022,10 @@ b.t_short = 21
 r2 = b.t_short
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -12));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
@@ -2039,10 +2039,10 @@ b.t_ushort = 21
 r2 = b.t_ushort
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, std::numeric_limits<unsigned short>::max()));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
@@ -2056,10 +2056,10 @@ b.t_int = 4321
 r2 = b.t_int
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
 }
@@ -2073,11 +2073,11 @@ b.t_uint = 4321
 r2 = b.t_uint
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r1),
             std::numeric_limits<unsigned int>::max());
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321UL);
 }
@@ -2091,10 +2091,10 @@ b.t_long = 4321
 r2 = b.t_long
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
 }
@@ -2108,11 +2108,11 @@ b.t_ulong = 4321
 r2 = b.t_ulong
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r1),
             std::numeric_limits<unsigned long>::max());
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321UL);
 }
@@ -2126,10 +2126,10 @@ b.t_longlong = -4321
 r2 = b.t_longlong
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsLongLong(r1), std::numeric_limits<long long>::max());
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, -4321));
 }
@@ -2143,11 +2143,11 @@ b.t_ulonglong = 4321
 r2 = b.t_ulonglong
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(r1),
             std::numeric_limits<unsigned long long>::max());
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(r2), 4321UL);
 }
@@ -2161,10 +2161,10 @@ b.t_float = 1.5
 r2 = b.t_float
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyFloat_Check(r1), 1);
   EXPECT_EQ(PyFloat_AsDouble(r1), 1.0);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyFloat_Check(r2), 1);
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
 }
@@ -2178,10 +2178,10 @@ b.t_double = 1.5
 r2 = b.t_double
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyFloat_Check(r1), 1);
   EXPECT_EQ(PyFloat_AsDouble(r1), 1.0);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyFloat_Check(r2), 1);
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
 }
@@ -2195,10 +2195,10 @@ b.t_char = 'b'
 r2 = b.t_char
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyUnicode_Check(r2), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r2, "b"));
 }
@@ -2210,7 +2210,7 @@ b = Bar()
 r1 = b.t_string
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
 }
@@ -2242,7 +2242,7 @@ b = Bar()
 none = b.name
 )"),
             0);
-  PyObjectPtr none(moduleGet("__main__", "none"));
+  PyObjectPtr none(mainModuleGet("none"));
   ASSERT_EQ(none, Py_None);
 }
 
@@ -2259,8 +2259,8 @@ except TypeError:
 r1 = b.t_string
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr r1(mainModuleGet("r1"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
@@ -2276,13 +2276,13 @@ b.t_object = (1, "a", 2, "b", 3, "c")
 r2 = b.t_object
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyList_Check(r1), 1);
   EXPECT_EQ(PyList_Size(r1), 1);
   PyObject* item = PyList_GetItem(r1, 0);
   ASSERT_EQ(PyLong_Check(item), 1);
   EXPECT_TRUE(isLongEqualsLong(item, 9));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   EXPECT_EQ(PyTuple_Size(r2), 6);
 }
@@ -2294,7 +2294,7 @@ b = Bar()
 r1 = b.t_object_null
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   EXPECT_EQ(r1, Py_None);
 }
 
@@ -2308,13 +2308,13 @@ b.t_objectex = tuple()
 r2 = b.t_objectex
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyList_Check(r1), 1);
   EXPECT_EQ(PyList_Size(r1), 1);
   PyObject* item = PyList_GetItem(r1, 0);
   ASSERT_EQ(PyLong_Check(item), 1);
   EXPECT_TRUE(isLongEqualsLong(item, 9));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   EXPECT_EQ(PyTuple_Size(r2), 0);
 }
@@ -2331,7 +2331,7 @@ except AttributeError:
   raised = True
 )"),
             0);
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
 }
 
@@ -2344,10 +2344,10 @@ b.t_pyssize = 4321
 r2 = b.t_pyssize
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsSsize_t(r1), 1234);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsSsize_t(r2), 4321);
 }
@@ -2365,10 +2365,10 @@ except AttributeError:
   raised = True
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
 }
 
@@ -2385,8 +2385,8 @@ except TypeError:
 r1 = b.t_int
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr r1(mainModuleGet("r1"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
@@ -2405,8 +2405,8 @@ except TypeError:
 r1 = b.t_char
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr r1(mainModuleGet("r1"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
@@ -2506,10 +2506,10 @@ b.attribute = 321
 r2 = b.attribute
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsLong(r1), 123);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsLong(r2), 321);
 }
@@ -2527,8 +2527,8 @@ except AttributeError:
 r1 = b.readonly_attribute
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr r1(mainModuleGet("r1"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsLong(r1), 456);
@@ -2547,8 +2547,8 @@ except TypeError:
 r1 = b.raise_attribute
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
-  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  PyObjectPtr r1(mainModuleGet("r1"));
+  PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsLong(r1), 123);
@@ -2587,7 +2587,7 @@ TEST_F(TypeExtensionApiTest, PyTypeNameWithUserDefinedTypeReturnsName) {
 class FooBarTheBaz:
   pass
 )");
-  PyObjectPtr c(moduleGet("__main__", "FooBarTheBaz"));
+  PyObjectPtr c(mainModuleGet("FooBarTheBaz"));
   const char* name = _PyType_Name(reinterpret_cast<PyTypeObject*>(c.get()));
   EXPECT_STREQ(name, "FooBarTheBaz");
 }
@@ -2611,10 +2611,10 @@ static PyObject* emptyUnaryFunc(PyObject*) { return Py_None; }
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesSetsBaseSlots) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   PyObject* bases = static_cast<PyObject*>(PyType_GetSlot(tp, Py_tp_bases));
@@ -2653,10 +2653,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNumberSlots) {
   binaryfunc empty_binary_func2 = [](PyObject*, PyObject*) { return Py_None; };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_subtract, empty_binary_func2, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_nb_add)),
@@ -2669,10 +2669,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsAsyncSlots) {
   unaryfunc empty_unary_func2 = [](PyObject*) { return Py_None; };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_am_await, &emptyUnaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_am_aiter, empty_unary_func2, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<unaryfunc>(PyType_GetSlot(tp, Py_am_await)),
@@ -2687,10 +2687,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSequenceSlots) {
   };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_sq_concat, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_sq_repeat, empty_sizearg_func, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_sq_concat)),
@@ -2702,10 +2702,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSequenceSlots) {
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMappingSlots) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_mp_subscript, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_mp_length, &emptyLenFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_mp_subscript)),
@@ -2717,10 +2717,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMappingSlots) {
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsTypeSlots) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_call, &emptyTernaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<ternaryfunc>(PyType_GetSlot(tp, Py_tp_call)),
@@ -2730,10 +2730,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsTypeSlots) {
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMixedSlots) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_mp_length, &emptyLenFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<binaryfunc>(PyType_GetSlot(tp, Py_nb_add)),
@@ -2746,10 +2746,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritGetAttrIfDefined) {
   getattrfunc empty_getattr_func = [](PyObject*, char*) { return Py_None; };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_getattro, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_tp_getattr, empty_getattr_func, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattro), nullptr);
@@ -2760,10 +2760,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritGetAttrIfDefined) {
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsGetAttrIfNotDefined) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_getattro, &emptyBinaryFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<getattrofunc>(PyType_GetSlot(tp, Py_tp_getattro)),
@@ -2777,10 +2777,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritSetAttrIfDefined) {
   };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_setattr, empty_setattr_func));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_tp_setattro, &emptySetattroFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<setattrofunc>(PyType_GetSlot(tp, Py_tp_setattro)),
@@ -2791,10 +2791,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritSetAttrIfDefined) {
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSetAttrIfNotDefined) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_setattro, &emptySetattroFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<setattrofunc>(PyType_GetSlot(tp, Py_tp_setattro)),
@@ -2807,10 +2807,10 @@ TEST_F(TypeExtensionApiTest,
   hashfunc empty_hash_func = [](PyObject*) { return Py_hash_t{0}; };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_richcompare, &emptyCompareFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_tp_hash, empty_hash_func, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_richcompare), nullptr);
@@ -2822,10 +2822,10 @@ TEST_F(TypeExtensionApiTest,
        FromSpecWithBasesInheritsCompareAndHashIfNotDefined) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_richcompare, &emptyCompareFunc));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(
@@ -2853,7 +2853,7 @@ TEST_F(TypeExtensionApiTest,
 
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_finalize), nullptr);
@@ -2902,7 +2902,7 @@ TEST_F(TypeExtensionApiTest,
   freefunc empty_free_func = [](void*) { return; };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_free, empty_free_func));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
 
   static PyType_Slot slots[1];
   slots[0] = {0, nullptr};
@@ -2928,7 +2928,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsFreeIfBothHaveGCFlagSet) {
   freefunc empty_free_func = PyObject_Free;
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_free, empty_free_func));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
 
   static PyType_Slot slots[1];
   slots[0] = {0, nullptr};
@@ -3048,7 +3048,7 @@ TEST_F(TypeExtensionApiTest, MethodIsInheirtedFromClassFromWinningParent) {
   PyRun_SimpleString(R"(
 a_mro = A.__mro__
 )");
-  PyObjectPtr a_mro(moduleGet("__main__", "a_mro"));
+  PyObjectPtr a_mro(mainModuleGet("a_mro"));
   ASSERT_EQ(PyTuple_Check(a_mro), 1);
   ASSERT_EQ(PyTuple_GetItem(a_mro, 0), a_type);
   ASSERT_EQ(PyTuple_GetItem(a_mro, 1), b_type);
@@ -3112,10 +3112,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
   };
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_new, empty_new_func));
-  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  PyObjectPtr base_type(mainModuleGet("BaseType"));
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
       "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
-  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(reinterpret_cast<newfunc>(PyType_GetSlot(tp, Py_tp_new)),
@@ -3250,7 +3250,7 @@ except:
   pass
 )");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
-  PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
+  PyObjectPtr called_del(testing::mainModuleGet("called_del"));
   EXPECT_EQ(called_del, Py_True);
 }
 
@@ -3390,7 +3390,7 @@ class Foo:
 foo = Foo()
 foo.bar = 1
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr foo_type(PyObject_Type(foo));
   PyObjectPtr bar_str(PyUnicode_FromString("bar"));
   PyObject* res =
@@ -3404,7 +3404,7 @@ TEST_F(TypeExtensionApiTest, TypeLookupWithoutMatchDoesNotRaise) {
   PyRun_SimpleString(R"(
 class Foo: pass
 )");
-  PyObjectPtr foo_type(moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(mainModuleGet("Foo"));
   PyObjectPtr bar_str(PyUnicode_FromString("bar"));
   PyObjectPtr res(
       _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), bar_str));
@@ -3416,7 +3416,7 @@ TEST_F(TypeExtensionApiTest, TypeLookupWithNonStrDoesNotRaise) {
   PyRun_SimpleString(R"(
 class Foo: pass
 )");
-  PyObjectPtr foo_type(moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(mainModuleGet("Foo"));
   PyObjectPtr res(
       _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), Py_None));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -3467,7 +3467,7 @@ except:
   pass
 )");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
-  PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
+  PyObjectPtr called_del(testing::mainModuleGet("called_del"));
   EXPECT_EQ(called_del, Py_True);
 }
 
@@ -3477,7 +3477,7 @@ TEST_F(TypeExtensionApiTest, ManagedTypeInheritsTpFlagsFromCType) {
 class Baz(Bar): pass
 )"),
             0);
-  PyObjectPtr baz_type(moduleGet("__main__", "Baz"));
+  PyObjectPtr baz_type(mainModuleGet("Baz"));
   EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(baz_type.get())) &
               Py_TPFLAGS_HEAPTYPE);
 }
@@ -3491,13 +3491,13 @@ r2 = Baz().t_bool
 r3 = Baz().t_object
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyBool_Check(r1), 1);
   EXPECT_EQ(r1, Py_True);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyBool_Check(r2), 1);
   EXPECT_EQ(r2, Py_True);
-  PyObjectPtr r3(moduleGet("__main__", "r3"));
+  PyObjectPtr r3(mainModuleGet("r3"));
   ASSERT_EQ(PyList_Check(r3), 1);
   EXPECT_EQ(PyList_Size(r3), 0);
 }
@@ -3514,14 +3514,14 @@ r2 = baz.value
 r3 = baz.t_object
 )"),
             0);
-  PyObjectPtr baz(moduleGet("__main__", "baz"));
+  PyObjectPtr baz(mainModuleGet("baz"));
   ASSERT_NE(baz, nullptr);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyBool_Check(r1), 1);
   EXPECT_EQ(r1, Py_False);
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   EXPECT_TRUE(isLongEqualsLong(r2, 123));
-  PyObjectPtr r3(moduleGet("__main__", "r3"));
+  PyObjectPtr r3(mainModuleGet("r3"));
   EXPECT_FALSE(PyList_Check(r3));
 }
 
@@ -3532,7 +3532,7 @@ class Foo:
         return 123
 )"),
             0);
-  PyObjectPtr foo_type(moduleGet("__main__", "Foo"));
+  PyObjectPtr foo_type(mainModuleGet("Foo"));
 
   struct FooObject {
     PyObject_HEAD PyObject* dict;
@@ -3576,9 +3576,9 @@ r1 = FooSubclass().foo()
 r2 = FooSubclass().t_int
 )"),
             0);
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   EXPECT_TRUE(isLongEqualsLong(r1, 123));
-  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  PyObjectPtr r2(mainModuleGet("r2"));
   EXPECT_TRUE(isLongEqualsLong(r2, 321));
 }
 
@@ -3612,8 +3612,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallNoArg) {
 self = C()
 result = self.fastcall()
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 2);
@@ -3649,8 +3649,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallPosCall) {
 self = C()
 result = self.fastcall(1234)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 3);
@@ -3687,8 +3687,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallPosCallMultiArgs) {
 self = C()
 result = self.fastcall(1234, 5678)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 4);
@@ -3725,8 +3725,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallKwCall) {
 self = C()
 result = self.fastcall(1234, kwarg=5678)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 5);
@@ -3769,8 +3769,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallKwCallMultiArg) {
 self = C()
 result = self.fastcall(1234, 99, kwarg=5678, kwdos=22)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 7);
@@ -3815,8 +3815,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallExCall) {
 self = C()
 result = self.fastcall(*[1234], kwarg=5678)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 5);
@@ -3859,8 +3859,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallExCallMultiArg) {
 self = C()
 result = self.fastcall(*[1234, 99], kwarg=5678, kwdos=22)
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 7);
@@ -3907,8 +3907,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallExEmptyKwargsCall) {
 self = C()
 result = self.fastcall(*[1234], *{})
 )");
-  PyObjectPtr self(testing::moduleGet("__main__", "self"));
-  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  PyObjectPtr self(testing::mainModuleGet("self"));
+  PyObjectPtr result(testing::mainModuleGet("result"));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyTuple_CheckExact(result), 1);
   ASSERT_EQ(PyTuple_Size(result), 3);
@@ -3930,8 +3930,7 @@ TEST(TypeExtensionApiTestNoFixture, DeallocSlotCalledDuringFinalize) {
   };
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_dealloc, dealloc));
 
-  PyTypeObject* type =
-      reinterpret_cast<PyTypeObject*>(moduleGet("__main__", "Bar"));
+  PyTypeObject* type = reinterpret_cast<PyTypeObject*>(mainModuleGet("Bar"));
   PyObject* obj = PyObject_New(PyObject, type);
   Py_DECREF(type);
   ASSERT_EQ(moduleSet("__main__", "bar_obj", obj), 0);
@@ -3955,8 +3954,8 @@ itr = f.__iter__()
 )"),
             0);
 
-  PyObjectPtr f(moduleGet("__main__", "f"));
-  PyObjectPtr itr(moduleGet("__main__", "itr"));
+  PyObjectPtr f(mainModuleGet("f"));
+  PyObjectPtr itr(mainModuleGet("itr"));
   EXPECT_EQ(f, itr);
 }
 
@@ -3974,7 +3973,7 @@ class MyFloat(float): pass
 myflt = MyFloat(1.23)
 )"),
             0);
-  PyObjectPtr myfloat(moduleGet("__main__", "myflt"));
+  PyObjectPtr myfloat(mainModuleGet("myflt"));
   PyObjectPtr pyfloat(PyFloat_FromDouble(3.21));
   PyObjectPtr pyfloat_type(PyObject_Type(pyfloat));
   EXPECT_EQ(PyObject_TypeCheck(

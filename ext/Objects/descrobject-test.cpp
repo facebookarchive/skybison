@@ -30,7 +30,7 @@ TEST_F(DescrExtensionApiTest, ClassMethodAsDescriptorReturnsFunction) {
   };
   static PyMethodDef method_def;
   method_def = {"foo", meth, METH_VARARGS};
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  PyObjectPtr type(mainModuleGet("Bar"));
   PyObjectPtr descriptor(PyDescr_NewClassMethod(
       reinterpret_cast<PyTypeObject*>(type.get()), &method_def));
   ASSERT_NE(descriptor, nullptr);
@@ -63,7 +63,7 @@ TEST_F(DescrExtensionApiTest, ClassMethodAsCallableReturnsTypeAsFirstArg) {
   };
   static PyMethodDef method_def;
   method_def = {"foo", meth, METH_VARARGS};
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  PyObjectPtr type(mainModuleGet("Bar"));
   PyObjectPtr callable(PyDescr_NewClassMethod(
       reinterpret_cast<PyTypeObject*>(type.get()), &method_def));
   ASSERT_NE(callable, nullptr);
@@ -96,7 +96,7 @@ TEST_F(DescrExtensionApiTest, ClassMethodCallWithNoArgsRaisesTypeError) {
   };
   static PyMethodDef method_def;
   method_def = {"foo", meth, METH_VARARGS};
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  PyObjectPtr type(mainModuleGet("Bar"));
   PyObjectPtr callable(PyDescr_NewClassMethod(
       reinterpret_cast<PyTypeObject*>(type.get()), &method_def));
   ASSERT_NE(callable, nullptr);
@@ -116,7 +116,7 @@ TEST_F(DescrExtensionApiTest, ClassMethodCallWithNonBoundClassRaisesTypeError) {
   };
   static PyMethodDef method_def;
   method_def = {"foo", meth, METH_VARARGS};
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  PyObjectPtr type(mainModuleGet("Bar"));
   PyObjectPtr callable(PyDescr_NewClassMethod(
       reinterpret_cast<PyTypeObject*>(type.get()), &method_def));
   ASSERT_NE(callable, nullptr);
@@ -143,7 +143,7 @@ TEST_F(DescrExtensionApiTest, DictProxyNewWithMappingReturnsMappingProxy) {
   moduleSet("__main__", "foo", result);
   PyRun_SimpleString("value_from_proxy = foo[10]");
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr value_from_proxy(moduleGet("__main__", "value_from_proxy"));
+  PyObjectPtr value_from_proxy(mainModuleGet("value_from_proxy"));
   EXPECT_TRUE(PyLong_CheckExact(value_from_proxy));
   EXPECT_EQ(PyLong_AsDouble(value_from_proxy), 54321.0);
 
@@ -157,7 +157,7 @@ except TypeError:
 )");
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr type_error_caught(moduleGet("__main__", "type_error_caught"));
+  PyObjectPtr type_error_caught(mainModuleGet("type_error_caught"));
   EXPECT_EQ(type_error_caught, Py_True);
 }
 
@@ -174,7 +174,7 @@ TEST_F(DescrExtensionApiTest, MethodAsDescriptorReturnsFunction) {
   };
   static PyMethodDef method_def;
   method_def = {"foo", meth, METH_VARARGS};
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  PyObjectPtr type(mainModuleGet("Bar"));
   PyObjectPtr descriptor(PyDescr_NewMethod(
       reinterpret_cast<PyTypeObject*>(type.get()), &method_def));
   ASSERT_NE(descriptor, nullptr);
@@ -184,8 +184,8 @@ TEST_F(DescrExtensionApiTest, MethodAsDescriptorReturnsFunction) {
 bar = Bar()
 r1 = bar.foo()
 )");
-  PyObjectPtr bar(moduleGet("__main__", "bar"));
-  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr bar(mainModuleGet("bar"));
+  PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyTuple_Check(r1), 1);
   ASSERT_EQ(PyTuple_Size(r1), 2);
 

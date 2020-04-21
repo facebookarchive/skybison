@@ -23,7 +23,7 @@ c = "print('hello') "
 b = ast.parse(c)
 a = ast.dump(b)
 )");
-  PyObjectPtr a(moduleGet("__main__", "a"));
+  PyObjectPtr a(mainModuleGet("a"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(
       a,
@@ -207,8 +207,8 @@ import math
 a = math.sin(1)
 b = math.floor(12.34)
 )");
-  PyObjectPtr a(moduleGet("__main__", "a"));
-  PyObjectPtr b(moduleGet("__main__", "b"));
+  PyObjectPtr a(mainModuleGet("a"));
+  PyObjectPtr b(mainModuleGet("b"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyFloat_Check(a), 1);
   EXPECT_EQ(PyLong_Check(b), 1);
@@ -262,8 +262,8 @@ import time
 a = time.time()
 b = time.perf_counter()
 )");
-  PyObjectPtr a(moduleGet("__main__", "a"));
-  PyObjectPtr b(moduleGet("__main__", "b"));
+  PyObjectPtr a(mainModuleGet("a"));
+  PyObjectPtr b(mainModuleGet("b"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyFloat_Check(a), 1);
   EXPECT_EQ(PyFloat_Check(b), 1);
@@ -283,8 +283,8 @@ input = b'Hello world'
 z = zlib.compress(input)
 result = zlib.decompress(z)
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
-  PyObjectPtr input(moduleGet("__main__", "input"));
+  PyObjectPtr result(mainModuleGet("result"));
+  PyObjectPtr input(mainModuleGet("input"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_NE(result, input);
   EXPECT_STREQ(PyBytes_AsString(result), PyBytes_AsString(input));

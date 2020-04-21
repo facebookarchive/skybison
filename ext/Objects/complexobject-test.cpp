@@ -97,7 +97,7 @@ class Foo:
   __complex__ = Desc()
 foo = Foo()
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   Py_complex result = PyComplex_AsCComplex(foo);
   EXPECT_EQ(result.real, -1.0);
   EXPECT_EQ(result.imag, 0.0);
@@ -113,7 +113,7 @@ class Foo:
     return 1
 foo = Foo()
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   Py_complex result = PyComplex_AsCComplex(foo);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   ASSERT_EQ(result.real, -1.0);
@@ -128,7 +128,7 @@ class Foo:
     return 1+0j
 foo = Foo()
 )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   Py_complex result = PyComplex_AsCComplex(foo);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result.real, 1.0);

@@ -57,7 +57,7 @@ class Foo(dict): pass
 obj = Foo()
   )");
 
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr key(PyLong_FromLong(1));
   PyObjectPtr val(PyLong_FromLong(2));
   ASSERT_EQ(PyDict_SetItem(obj, key, val), 0);
@@ -81,8 +81,8 @@ c1 = C(4)
 c2 = C(5)
   )");
 
-  PyObjectPtr c1(moduleGet("__main__", "c1"));
-  PyObjectPtr c2(moduleGet("__main__", "c2"));
+  PyObjectPtr c1(mainModuleGet("c1"));
+  PyObjectPtr c2(mainModuleGet("c2"));
   PyObjectPtr v1(PyLong_FromLong(1));
   PyObjectPtr v2(PyLong_FromLong(2));
   PyObjectPtr dict(PyDict_New());
@@ -111,7 +111,7 @@ class C:
 c = C(4)
 )");
 
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyObjectPtr v(PyLong_FromLong(1));
   PyObjectPtr dict(PyDict_New());
   ASSERT_EQ(PyDict_SetItem(dict, c, v), 0);
@@ -136,11 +136,11 @@ d = {}
 d[c] = 4
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_False);
   EXPECT_EQ(PyLong_AsLong(result), 4);
 }
@@ -163,11 +163,11 @@ d = {}
 d[C(2)] = 2
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_False);
   EXPECT_EQ(result, nullptr);
 }
@@ -188,11 +188,11 @@ c = C()
 d[C()] = 4
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(PyLong_AsLong(result), 4);
 }
@@ -213,11 +213,11 @@ d = {}
 d[C()] = 4
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(result, nullptr);
 }
@@ -239,11 +239,11 @@ d = {}
 d[C()] = 4
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(result, nullptr);
 }
@@ -264,11 +264,11 @@ d = {}
 d[C()] = 4
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(result, nullptr);
 }
@@ -317,28 +317,28 @@ d = D()
 )"),
             0);
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyObjectPtr value(PyLong_FromLong(500));
 
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
-  PyObjectPtr c_eq(moduleGet("__main__", "c_eq"));
+  PyObjectPtr c_eq(mainModuleGet("c_eq"));
   ASSERT_EQ(PyLong_AsLong(c_eq), 0);
-  PyObjectPtr c_hash(moduleGet("__main__", "c_hash"));
+  PyObjectPtr c_hash(mainModuleGet("c_hash"));
   ASSERT_EQ(PyLong_AsLong(c_hash), 1);
 
-  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObjectPtr d(mainModuleGet("d"));
   PyObject* result = PyDict_GetItem(dict, d);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyLong_AsLong(result), 500);
-  c_hash = moduleGet("__main__", "c_hash");
+  c_hash = mainModuleGet("c_hash");
   EXPECT_EQ(PyLong_AsLong(c_hash), 1);
-  PyObjectPtr d_hash(moduleGet("__main__", "d_hash"));
+  PyObjectPtr d_hash(mainModuleGet("d_hash"));
   EXPECT_EQ(PyLong_AsLong(d_hash), 2);
-  c_eq = moduleGet("__main__", "c_eq");
+  c_eq = mainModuleGet("c_eq");
   EXPECT_EQ(PyLong_AsLong(c_eq), 3);
-  PyObjectPtr d_eq(moduleGet("__main__", "d_eq"));
+  PyObjectPtr d_eq(mainModuleGet("d_eq"));
   EXPECT_EQ(PyLong_AsLong(d_eq), 4);
 }
 
@@ -359,14 +359,14 @@ d = C(5)
 )"),
             0);
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyObjectPtr value(PyLong_FromLong(500));
 
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
 
-  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObjectPtr d(mainModuleGet("d"));
   ASSERT_EQ(PyDict_GetItem(dict, d), nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -451,7 +451,7 @@ class Foo(dict): pass
 obj = Foo()
   )");
 
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr key(PyLong_FromLong(0));
   PyObjectPtr val(PyLong_FromLong(0));
 
@@ -470,7 +470,7 @@ class C:
 c = C()
 )");
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr key(moduleGet("__main__", "c"));
+  PyObjectPtr key(mainModuleGet("c"));
   PyObjectPtr val(PyLong_FromLong(0));
 
   ASSERT_EQ(PyDict_SetItem(dict, key, val), -1);
@@ -492,7 +492,7 @@ class C:
 c = C(4)
 )");
 
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyObjectPtr v(PyLong_FromLong(1));
   PyObjectPtr dict(PyDict_New());
   EXPECT_EQ(PyDict_SetItem(dict, c, v), 0);
@@ -514,14 +514,14 @@ d = {}
 d[c] = 0
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObjectPtr value(PyLong_FromLong(1));
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyDict_Size(dict), 1);
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_False);
   EXPECT_EQ(value, result);
 }
@@ -544,12 +544,12 @@ d = {}
 d[C(2)] = 2
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObjectPtr value(PyLong_FromLong(1));
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_False);
   EXPECT_EQ(PyDict_Size(dict), 2);
 }
@@ -570,14 +570,14 @@ d = {}
 d[C()] = 0
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObjectPtr value(PyLong_FromLong(1));
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyDict_Size(dict), 1);
   PyObject* result = PyDict_GetItem(dict, c);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(value, result);
 }
@@ -598,12 +598,12 @@ d = {}
 d[C()] = 0
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObjectPtr value(PyLong_FromLong(1));
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(PyDict_Size(dict), 2);
 }
@@ -624,14 +624,14 @@ d = {}
 d[C()] = 0
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObjectPtr value(PyLong_FromLong(1));
   EXPECT_EQ(PyDict_SetItem(dict, c, value), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
   PyErr_Clear();
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(PyDict_Size(dict), 1);
 }
@@ -652,12 +652,12 @@ d = {}
 d[C()] = 0
 )"),
             0);
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr dict(mainModuleGet("d"));
   PyObjectPtr value(PyLong_FromLong(1));
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  PyObjectPtr called_dunder_eq(mainModuleGet("called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(PyDict_Size(dict), 2);
 }
@@ -706,28 +706,28 @@ d = D()
 )"),
             0);
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyObjectPtr value(PyLong_FromLong(1));
 
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
-  PyObjectPtr c_eq(moduleGet("__main__", "c_eq"));
+  PyObjectPtr c_eq(mainModuleGet("c_eq"));
   ASSERT_EQ(PyLong_AsLong(c_eq), 0);
-  PyObjectPtr c_hash(moduleGet("__main__", "c_hash"));
+  PyObjectPtr c_hash(mainModuleGet("c_hash"));
   ASSERT_EQ(PyLong_AsLong(c_hash), 1);
 
-  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObjectPtr d(mainModuleGet("d"));
   ASSERT_EQ(PyDict_SetItem(dict, d, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
-  c_hash = moduleGet("__main__", "c_hash");
+  c_hash = mainModuleGet("c_hash");
   EXPECT_EQ(PyLong_AsLong(c_hash), 1);
-  PyObjectPtr d_hash(moduleGet("__main__", "d_hash"));
+  PyObjectPtr d_hash(mainModuleGet("d_hash"));
   EXPECT_EQ(PyLong_AsLong(d_hash), 2);
-  c_eq = moduleGet("__main__", "c_eq");
+  c_eq = mainModuleGet("c_eq");
   EXPECT_EQ(PyLong_AsLong(c_eq), 3);
-  PyObjectPtr d_eq(moduleGet("__main__", "d_eq"));
+  PyObjectPtr d_eq(mainModuleGet("d_eq"));
   EXPECT_EQ(PyLong_AsLong(d_eq), 4);
 }
 
@@ -745,8 +745,8 @@ d = C()
 )"),
             0);
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr d(mainModuleGet("d"));
   PyObjectPtr c_value(PyLong_FromLong(1));
   PyObjectPtr d_value(PyLong_FromLong(2));
 
@@ -788,14 +788,14 @@ d = C(5)
 )"),
             0);
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr c(mainModuleGet("c"));
   PyObjectPtr value(PyLong_FromLong(500));
 
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
 
-  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObjectPtr d(mainModuleGet("d"));
   ASSERT_EQ(PyDict_SetItem(dict, d, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 2);
@@ -1015,7 +1015,7 @@ class Foo(dict): pass
 obj = Foo()
   )");
 
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr obj(mainModuleGet("obj"));
   PyObjectPtr key(PyLong_FromLong(1));
   PyObjectPtr val(PyLong_FromLong(2));
   ASSERT_EQ(PyDict_SetItem(obj, key, val), 0);
@@ -1035,7 +1035,7 @@ class C:
 obj = C()
 )");
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr key(moduleGet("__main__", "obj"));
+  PyObjectPtr key(mainModuleGet("obj"));
   EXPECT_EQ(PyDict_GetItemWithError(dict, key), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -1375,7 +1375,7 @@ class Mapping:
   pass
 m = Mapping()
 )");
-  PyObjectPtr rhs(moduleGet("__main__", "m"));
+  PyObjectPtr rhs(mainModuleGet("m"));
   PyObjectPtr lhs(PyDict_New());
   ASSERT_EQ(PyDict_Merge(lhs, rhs, 0), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -1393,7 +1393,7 @@ class Mapping:
         return self.d[i]
 m = Mapping()
 )");
-  PyObjectPtr rhs(moduleGet("__main__", "m"));
+  PyObjectPtr rhs(mainModuleGet("m"));
   PyObjectPtr lhs(PyDict_New());
   ASSERT_EQ(PyDict_Merge(lhs, rhs, 0), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);

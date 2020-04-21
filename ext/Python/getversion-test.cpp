@@ -16,7 +16,7 @@ TEST_F(GetVersionExtensionApiTest, GetVersionReturnsCString) {
 import sys
 v = sys.version
 )");
-  PyObjectPtr v(testing::moduleGet("__main__", "v"));
+  PyObjectPtr v(testing::mainModuleGet("v"));
   ASSERT_NE(v, nullptr);
   const char* sys_version = PyUnicode_AsUTF8(v);
   EXPECT_STREQ(version, sys_version);

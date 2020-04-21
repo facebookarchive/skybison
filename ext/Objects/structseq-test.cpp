@@ -88,7 +88,7 @@ TEST_F(StructSeqExtensionApiTest, GetItem) {
   PyRun_SimpleString(R"(
 result = Structseq((1,2))
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyTuple_Check(result));
 
@@ -113,7 +113,7 @@ TEST_F(StructSeqExtensionApiTest, GetItemWithIndexReturnsValue) {
   PyRun_SimpleString(R"(
 result = Structseq((1,2))[0]
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyLong_Check(result));
   EXPECT_EQ(PyLong_AsLong(result), 1);
@@ -146,7 +146,7 @@ TEST_F(StructSeqExtensionApiTest, GetItemWithNameReturnsValue) {
   PyRun_SimpleString(R"(
 result = Structseq((1,2)).first
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyLong_Check(result));
   EXPECT_EQ(PyLong_AsLong(result), 1);
@@ -162,7 +162,7 @@ TEST_F(StructSeqExtensionApiTest, GetItemWithNameToHiddenValueReturnsValue) {
   PyRun_SimpleString(R"(
 result = Structseq((1,2,3)).third
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyLong_Check(result));
   EXPECT_EQ(PyLong_AsLong(result), 3);
@@ -179,7 +179,7 @@ TEST_F(StructSeqExtensionApiTest,
   PyRun_SimpleString(R"(
 result = Structseq((1,2,3)).fifth
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result, Py_None);
 }
@@ -194,7 +194,7 @@ TEST_F(StructSeqExtensionApiTest, GetItemWithDictAndInvalidFieldReturnsValue) {
   PyRun_SimpleString(R"(
 result = Structseq((1,2), {"badattr": 3}).first
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_TRUE(PyLong_Check(result));
   EXPECT_EQ(PyLong_AsLong(result), 1);
 }
@@ -226,7 +226,7 @@ TEST_F(StructSeqExtensionApiTest, LenReturnsVisibleSize) {
   PyRun_SimpleString(R"(
 result = len(Structseq((1,2,3)))
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyLong_Check(result));
   EXPECT_EQ(PyLong_AsLong(result), 2);
@@ -243,7 +243,7 @@ TEST_F(StructSeqExtensionApiTest, IterReturnsVisibleItems) {
 structseq = Structseq((1,2,3,4,5))
 result = [x for x in structseq]
 )");
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyList_Check(result));
   EXPECT_EQ(PyList_Size(result), 2);

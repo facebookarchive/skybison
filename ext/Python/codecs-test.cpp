@@ -19,7 +19,7 @@ class Inc(codecs.IncrementalDecoder):
 test = codecs.CodecInfo('test', None, None, incrementaldecoder=Inc)
   )");
 
-  PyObjectPtr test(moduleGet("__main__", "test"));
+  PyObjectPtr test(mainModuleGet("test"));
   PyObjectPtr inc_dec(_PyCodecInfo_GetIncrementalDecoder(test, "ignore"));
   ASSERT_EQ(moduleSet("__main__", "inc_dec", inc_dec), 0);
 
@@ -27,7 +27,7 @@ test = codecs.CodecInfo('test', None, None, incrementaldecoder=Inc)
 result = inc_dec.decode(b'hel\x80lo')
   )");
 
-  PyObjectPtr result(moduleGet("__main__", "result"));
+  PyObjectPtr result(mainModuleGet("result"));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "hello"));
 }
 

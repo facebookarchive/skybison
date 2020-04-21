@@ -36,7 +36,7 @@ class Foo():
   __fspath__ = None
 foo = Foo()
   )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr result(PyOS_FSPath(foo));
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -50,7 +50,7 @@ class Foo():
     return 1
 foo = Foo()
   )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr result(PyOS_FSPath(foo));
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -64,7 +64,7 @@ class Foo():
     return "/some/path"
 foo = Foo()
   )");
-  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo(mainModuleGet("foo"));
   PyObjectPtr result(PyOS_FSPath(foo));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "/some/path"));

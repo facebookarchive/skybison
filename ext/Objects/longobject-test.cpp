@@ -38,7 +38,7 @@ TEST_F(LongExtensionApiTest, CheckWithIntSubclass) {
 class X(int): pass
 x = X()
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   EXPECT_TRUE(PyLong_Check(x));
   EXPECT_FALSE(PyLong_CheckExact(x));
 }
@@ -95,7 +95,7 @@ TEST_F(LongExtensionApiTest, AsDoubleWithIntSubclassReturnsDouble) {
 class X(int): pass
 x = X(42)
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyLong_AsDouble(x), 42.0);
 }
@@ -132,7 +132,7 @@ TEST_F(LongExtensionApiTest, AsIntWithIntSubclassReturnsInt) {
 class X(int): pass
 x = X(42)
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(_PyLong_AsInt(x), 42);
 }
@@ -143,7 +143,7 @@ class X:
   def __int__(self): return ""
 x = X()
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   ASSERT_EQ(_PyLong_AsInt(x), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -155,7 +155,7 @@ class X:
     def __int__(self): return 42
 x = X()
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(_PyLong_AsInt(x), 42);
 }
@@ -180,7 +180,7 @@ TEST_F(LongExtensionApiTest, AsLongWithIntSubclassReturnsLong) {
 class X(int): pass
 x = X(42)
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyLong_AsLong(x), 42);
 }
@@ -192,7 +192,7 @@ class X:
         return "not an int"
 x = X()
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   EXPECT_EQ(PyLong_AsLong(x), -1l);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -205,7 +205,7 @@ class X:
         return -7
 x = X()
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   EXPECT_EQ(PyLong_AsLong(x), -7);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -602,7 +602,7 @@ TEST_F(LongExtensionApiTest, AsByteArrayWithIntSubclassWritesBytes) {
 class X(int): pass
 x = X(0xface)
 )");
-  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr x(mainModuleGet("x"));
   PyLongObject* obj = x.asLongObject();
   unsigned char dst[3];
   ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), 0);
@@ -685,9 +685,9 @@ a = X(-42)
 b = X(0)
 c = X(42)
 )");
-  PyObjectPtr a(moduleGet("__main__", "a"));
-  PyObjectPtr b(moduleGet("__main__", "b"));
-  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr a(mainModuleGet("a"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr c(mainModuleGet("c"));
   EXPECT_EQ(_PyLong_Sign(a), -1);
   EXPECT_EQ(_PyLong_Sign(b), 0);
   EXPECT_EQ(_PyLong_Sign(c), 1);
