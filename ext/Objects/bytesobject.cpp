@@ -318,8 +318,7 @@ PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
       format = next;
     }
   }
-  return ApiHandle::newReference(thread,
-                                 byteArrayAsBytes(thread, runtime, writer));
+  return ApiHandle::newReference(thread, byteArrayAsBytes(thread, writer));
 }
 
 PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {

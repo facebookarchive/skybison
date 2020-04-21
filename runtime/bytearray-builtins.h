@@ -11,8 +11,7 @@ inline void byteArrayAdd(Thread* thread, Runtime* runtime,
 }
 
 // Returns a new RawBytes containing the bytes in the array.
-RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
-                           const ByteArray& array);
+RawObject byteArrayAsBytes(Thread* thread, const ByteArray& array);
 
 // Returns a new Str containing the repr of `array`. On error, raise & return
 // OverflowError.

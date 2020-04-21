@@ -177,7 +177,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
       return *result;
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(0, byteArrayAsBytes(thread, output));
   result.atPut(1, runtime->newInt(i));
   return *result;
 }
@@ -334,7 +334,7 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
     }
   }
   Tuple result(&scope, runtime->newTuple(3));
-  result.atPut(0, byteArrayAsBytes(thread, runtime, dst));
+  result.atPut(0, byteArrayAsBytes(thread, dst));
   result.atPut(1, runtime->newInt(length));
   result.atPut(2, runtime->newInt(first_invalid_escape_index));
   return *result;
@@ -427,7 +427,7 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
       return *result;
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(0, byteArrayAsBytes(thread, output));
   result.atPut(1, runtime->newInt(i));
   return *result;
 }
@@ -960,7 +960,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
       return *result;
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(0, byteArrayAsBytes(thread, output));
   result.atPut(1, runtime->newInt(index));
   return *result;
 }
@@ -1048,7 +1048,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
       return *result;
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(0, byteArrayAsBytes(thread, output));
   result.atPut(1, runtime->newInt(index));
   return *result;
 }
@@ -1125,7 +1125,7 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
       return *result;
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(0, byteArrayAsBytes(thread, output));
   result.atPut(1, runtime->newInt(index));
   return *result;
 }

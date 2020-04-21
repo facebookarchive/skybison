@@ -46,6 +46,11 @@ RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len);
 RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len);
 RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len);
 
+// Returns a new Bytes containing the Bytes or MutableBytes subsequence of
+// bytes with the given start index and length.
+RawObject bytesSubseq(Thread* thread, const Bytes& bytes, word start,
+                      word length);
+
 bool bytesIsValidUTF8(RawBytes bytes);
 
 // Test whether bytes are valid UTF-8 except that it also allows codepoints

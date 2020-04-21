@@ -195,19 +195,19 @@ RawObject bytesStrip(Thread* thread, const Bytes& bytes, word bytes_len,
                      const Bytes& chars, word chars_len) {
   word left = bytesSpanLeft(bytes, bytes_len, chars, chars_len);
   word right = bytesSpanRight(bytes, bytes_len, chars, chars_len, left);
-  return thread->runtime()->bytesSubseq(thread, bytes, left, right - left);
+  return bytesSubseq(thread, bytes, left, right - left);
 }
 
 RawObject bytesStripLeft(Thread* thread, const Bytes& bytes, word bytes_len,
                          const Bytes& chars, word chars_len) {
   word left = bytesSpanLeft(bytes, bytes_len, chars, chars_len);
-  return thread->runtime()->bytesSubseq(thread, bytes, left, bytes_len - left);
+  return bytesSubseq(thread, bytes, left, bytes_len - left);
 }
 
 RawObject bytesStripRight(Thread* thread, const Bytes& bytes, word bytes_len,
                           const Bytes& chars, word chars_len) {
   word right = bytesSpanRight(bytes, bytes_len, chars, chars_len, 0);
-  return thread->runtime()->bytesSubseq(thread, bytes, 0, right);
+  return bytesSubseq(thread, bytes, 0, right);
 }
 
 RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len) {
@@ -219,7 +219,7 @@ RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len) {
   while (right > left && ASCII::isSpace(bytes.byteAt(right - 1))) {
     right--;
   }
-  return thread->runtime()->bytesSubseq(thread, bytes, left, right - left);
+  return bytesSubseq(thread, bytes, left, right - left);
 }
 
 RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len) {
@@ -227,7 +227,7 @@ RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len) {
   while (left < len && ASCII::isSpace(bytes.byteAt(left))) {
     left++;
   }
-  return thread->runtime()->bytesSubseq(thread, bytes, left, len - left);
+  return bytesSubseq(thread, bytes, left, len - left);
 }
 
 RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len) {
@@ -235,7 +235,25 @@ RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len) {
   while (right > 0 && ASCII::isSpace(bytes.byteAt(right - 1))) {
     right--;
   }
-  return thread->runtime()->bytesSubseq(thread, bytes, 0, right);
+  return bytesSubseq(thread, bytes, 0, right);
+}
+
+RawObject bytesSubseq(Thread* thread, const Bytes& bytes, word start,
+                      word length) {
+  DCHECK_BOUND(start, bytes.length());
+  DCHECK_BOUND(length, bytes.length() - start);
+  if (length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    for (word i = length - 1; i >= 0; i--) {
+      buffer[i] = bytes.byteAt(start + i);
+    }
+    return SmallBytes::fromBytes({buffer, length});
+  }
+  HandleScope scope(thread);
+  MutableBytes result(&scope,
+                      thread->runtime()->newMutableBytesUninitialized(length));
+  result.replaceFromWithStartAt(/*dst_start=*/0, *bytes, length, start);
+  return result.becomeImmutable();
 }
 
 static bool isUTF8Continuation(byte b) {
@@ -393,7 +411,7 @@ RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
   }
   if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
-    Bytes other_bytes(&scope, byteArrayAsBytes(thread, runtime, other));
+    Bytes other_bytes(&scope, byteArrayAsBytes(thread, other));
     return runtime->bytesConcat(thread, self, other_bytes);
   }
   // TODO(T38246066): buffers besides bytes/bytearray

@@ -500,8 +500,7 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
       // This copy avoids complicated indexing logic in a rare case of
       // replacing lhs with elements of rhs when lhs == rhs. It can likely be
       // re-written to avoid allocation if necessary.
-      src_bytes =
-          thread->runtime()->bytesSubseq(thread, src_bytes, 0, src_length);
+      src_bytes = bytesSubseq(thread, src_bytes, 0, src_length);
     }
     word growth = src_length - (stop - start);
     word new_length = self.numItems() + growth;
@@ -707,7 +706,7 @@ RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Frame* frame,
   }
   if (runtime->isInstanceOfByteArray(*src)) {
     ByteArray source(&scope, *src);
-    return byteArrayAsBytes(thread, runtime, source);
+    return byteArrayAsBytes(thread, source);
   }
   if (src.isList()) {
     List source(&scope, *src);
@@ -762,7 +761,7 @@ RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Frame* frame,
 
   Bytes self(&scope, bytesUnderlying(*self_obj));
   word result_len = Slice::adjustIndices(self.length(), &start, &stop, 1);
-  return runtime->bytesSubseq(thread, self, start, result_len);
+  return bytesSubseq(thread, self, start, result_len);
 }
 
 RawObject FUNC(_builtins, _bytes_getslice)(Thread* thread, Frame* frame,
@@ -1006,11 +1005,10 @@ RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
   for (word i = 0; i < splits; i++) {
     word end = bytesFind(self, self_len, sep, sep_len, start, self_len);
     DCHECK(end != -1, "already found in first pass");
-    buffer.atPut(i, runtime->bytesSubseq(thread, self, start, end - start));
+    buffer.atPut(i, bytesSubseq(thread, self, start, end - start));
     start = end + sep_len;
   }
-  buffer.atPut(splits,
-               runtime->bytesSubseq(thread, self, start, self_len - start));
+  buffer.atPut(splits, bytesSubseq(thread, self, start, self_len - start));
   result.setItems(*buffer);
   result.setNumItems(result_len);
   return *result;
@@ -1066,14 +1064,13 @@ RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
     while (index < self_len && !ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
-    buffer.atPut(i, runtime->bytesSubseq(thread, self, start, index - start));
+    buffer.atPut(i, bytesSubseq(thread, self, start, index - start));
   }
   if (has_remaining) {
     while (ASCII::isSpace(self.byteAt(index))) {
       index++;
     }
-    buffer.atPut(splits,
-                 runtime->bytesSubseq(thread, self, index, self_len - index));
+    buffer.atPut(splits, bytesSubseq(thread, self, index, self_len - index));
   }
   result.setItems(*buffer);
   result.setNumItems(result_len);
@@ -2536,8 +2533,7 @@ RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread, Frame* frame,
   word base = intUnderlying(args.get(2)).asWord();
   Object result(&scope, intFromBytes(thread, bytes, array.numItems(), base));
   if (result.isError()) {
-    Runtime* runtime = thread->runtime();
-    Bytes truncated(&scope, byteArrayAsBytes(thread, runtime, array));
+    Bytes truncated(&scope, byteArrayAsBytes(thread, array));
     Str repr(&scope, bytesReprSmartQuotes(thread, truncated));
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "invalid literal for int() with base %w: %S",

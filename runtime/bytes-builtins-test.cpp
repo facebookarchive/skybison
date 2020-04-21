@@ -141,6 +141,17 @@ TEST_F(BytesBuiltinsTest, BytesIsValidStrWithSurrogateReturnsTrue) {
       bytesIsValidStr(Bytes::cast(runtime_->newBytesWithAll(max_surrogate))));
 }
 
+TEST_F(BytesBuiltinsTest, BytesSubseqReturnsBytes) {
+  HandleScope scope(thread_);
+
+  View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 12);
+  Bytes bytes(&scope, runtime_->newBytesWithAll(hello));
+  ASSERT_EQ(bytes.length(), 12);
+
+  Bytes copy(&scope, bytesSubseq(thread_, bytes, 6, 5));
+  EXPECT_TRUE(isBytesEqualsCStr(copy, "world"));
+}
+
 TEST_F(BytesBuiltinsTest, FindWithSameBytesReturnsZero) {
   HandleScope scope(thread_);
   const byte haystack_bytes[] = {102, 55, 100, 74, 91, 118};

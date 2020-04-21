@@ -6,6 +6,7 @@
 #include "gtest/gtest.h"
 
 #include "bytecode.h"
+#include "bytes-builtins.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
@@ -308,7 +309,7 @@ TEST_F(RuntimeByteArrayTest, Extend) {
   EXPECT_EQ(array.numItems(), 5);
 
   Bytes bytes(&scope, array.items());
-  bytes = runtime_->bytesSubseq(thread_, bytes, 0, 5);
+  bytes = bytesSubseq(thread_, bytes, 0, 5);
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "Hello"));
 }
 
@@ -487,17 +488,6 @@ c = C(99)
   tuple.atPut(2, mainModuleAt(runtime_, "c"));
   Object result(&scope, runtime_->bytesFromTuple(thread_, tuple, 3));
   EXPECT_TRUE(isBytesEqualsCStr(result, "abc"));
-}
-
-TEST_F(RuntimeBytesTest, Subseq) {
-  HandleScope scope(thread_);
-
-  View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 12);
-  Bytes bytes(&scope, runtime_->newBytesWithAll(hello));
-  ASSERT_EQ(bytes.length(), 12);
-
-  Bytes copy(&scope, runtime_->bytesSubseq(thread_, bytes, 6, 5));
-  EXPECT_TRUE(isBytesEqualsCStr(copy, "world"));
 }
 
 TEST_F(RuntimeListTest, ListGrowth) {

@@ -28,12 +28,12 @@ TEST_F(ByteArrayBuiltinsTest, AsBytes) {
   HandleScope scope(thread_);
 
   ByteArray array(&scope, runtime_->newByteArray());
-  Bytes bytes(&scope, byteArrayAsBytes(thread_, runtime_, array));
+  Bytes bytes(&scope, byteArrayAsBytes(thread_, array));
   EXPECT_TRUE(isBytesEqualsBytes(bytes, View<byte>(nullptr, 0)));
 
   array.setItems(runtime_->mutableBytesWith(10, 0));
   array.setNumItems(3);
-  bytes = byteArrayAsBytes(thread_, runtime_, array);
+  bytes = byteArrayAsBytes(thread_, array);
   const byte expected_bytes[] = {0, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected_bytes));
 }

@@ -2799,28 +2799,6 @@ RawObject Runtime::bytesStartsWith(const Bytes& bytes, word bytes_len,
   return Bool::trueObj();
 }
 
-RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& bytes, word start,
-                               word length) {
-  DCHECK_BOUND(start, bytes.length());
-  DCHECK_BOUND(length, bytes.length() - start);
-  if (length <= SmallBytes::kMaxLength) {
-    byte buffer[SmallBytes::kMaxLength];
-    for (word i = length - 1; i >= 0; i--) {
-      buffer[i] = bytes.byteAt(start + i);
-    }
-    return SmallBytes::fromBytes({buffer, length});
-  }
-  HandleScope scope(thread);
-  MutableBytes copy(&scope, newMutableBytesUninitialized(length));
-  {
-    byte* dst = reinterpret_cast<byte*>(copy.address());
-    const byte* src =
-        reinterpret_cast<byte*>(HeapObject::cast(*bytes).address());
-    std::memcpy(dst, src + start, length);
-  }
-  return copy.becomeImmutable();
-}
-
 RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& bytes,
                                   word length, const Bytes& table,
                                   word table_len, const Bytes& del,

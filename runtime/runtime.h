@@ -503,11 +503,6 @@ class Runtime {
                             const Bytes& prefix, word prefix_len, word start,
                             word end);
 
-  // Returns a new Bytes containing the Bytes or MutableBytes subsequence of
-  // bytes with the given start index and length.
-  RawObject bytesSubseq(Thread* thread, const Bytes& bytes, word start,
-                        word length);
-
   // Returns a new Bytes or MutableBytes copy of `bytes` with all of
   // the bytes in `del` removed, where the remaining bytes are mapped using
   // `table`.

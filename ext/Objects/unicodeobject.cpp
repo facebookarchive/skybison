@@ -788,8 +788,8 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
       thread->clearPendingException();
     }
     ByteArray result_bytearray(&scope, *result);
-    return ApiHandle::newReference(
-        thread, byteArrayAsBytes(thread, runtime, result_bytearray));
+    return ApiHandle::newReference(thread,
+                                   byteArrayAsBytes(thread, result_bytearray));
   }
   thread->raiseWithFmt(LayoutId::kTypeError,
                        "'%s' encoder returned '%T' instead of 'bytes'; "

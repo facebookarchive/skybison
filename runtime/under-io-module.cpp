@@ -411,7 +411,7 @@ RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Frame* frame,
   }
 
   Bytes read_buf(&scope, *read_buf_obj);
-  return runtime->bytesSubseq(thread, read_buf, read_pos, available);
+  return bytesSubseq(thread, read_buf, read_pos, available);
 }
 
 RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
@@ -460,7 +460,7 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
     word new_read_pos = read_pos + num_bytes;
     self.setReadPos(new_read_pos);
     Bytes read_buf(&scope, self.readBuf());
-    return runtime->bytesSubseq(thread, read_buf, read_pos, num_bytes);
+    return bytesSubseq(thread, read_buf, read_pos, num_bytes);
   }
 
   Object raw_file(&scope, self.underlying());
@@ -532,7 +532,7 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
   self.setBufferNumBytes(buffer_num_bytes);
   self.setReadPos(length);
   Bytes read_buf_bytes(&scope, *read_buf);
-  return runtime->bytesSubseq(thread, read_buf_bytes, 0, length);
+  return bytesSubseq(thread, read_buf_bytes, 0, length);
 }
 
 RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
@@ -593,8 +593,7 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
     if (line_end >= 0) {
       self.setReadPos(line_end);
       Bytes read_buf_bytes(&scope, *read_buf);
-      return runtime->bytesSubseq(thread, read_buf_bytes, read_pos,
-                                  line_end - read_pos);
+      return bytesSubseq(thread, read_buf_bytes, read_pos, line_end - read_pos);
     }
   }
 
@@ -1016,7 +1015,7 @@ RawObject METH(StringIO, __next__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   Bytes result(&scope, string_io.buffer());
-  result = thread->runtime()->bytesSubseq(thread, result, start, end - start);
+  result = bytesSubseq(thread, result, start, end - start);
   return result.becomeStr();
 }
 
@@ -1051,7 +1050,6 @@ RawObject METH(StringIO, read)(Thread* thread, Frame* frame, word nargs) {
                                 "I/O operation on closed file.");
   }
   Object size_obj(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
   word size;
   if (size_obj.isNoneType()) {
     size = -1;
@@ -1074,12 +1072,12 @@ RawObject METH(StringIO, read)(Thread* thread, Frame* frame, word nargs) {
   }
   if (size < 0) {
     string_io.setPos(end);
-    result = runtime->bytesSubseq(thread, result, start, end - start);
+    result = bytesSubseq(thread, result, start, end - start);
     return result.becomeStr();
   }
   word new_pos = Utils::minimum(end, start + size);
   string_io.setPos(new_pos);
-  result = runtime->bytesSubseq(thread, result, start, new_pos - start);
+  result = bytesSubseq(thread, result, start, new_pos - start);
   return result.becomeStr();
 }
 
@@ -1096,7 +1094,6 @@ RawObject METH(StringIO, readline)(Thread* thread, Frame* frame, word nargs) {
                                 "I/O operation on closed file.");
   }
   Object size_obj(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
   word size;
   if (size_obj.isNoneType()) {
     size = -1;
@@ -1117,7 +1114,7 @@ RawObject METH(StringIO, readline)(Thread* thread, Frame* frame, word nargs) {
     return Str::empty();
   }
   Bytes result(&scope, string_io.buffer());
-  result = runtime->bytesSubseq(thread, result, start, end - start);
+  result = bytesSubseq(thread, result, start, end - start);
   return result.becomeStr();
 }
 

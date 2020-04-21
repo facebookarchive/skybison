@@ -485,7 +485,7 @@ RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
            << "is a '" << typeName(runtime, *result) << "'";
   }
   ByteArray result_array(&scope, *result);
-  Bytes result_bytes(&scope, byteArrayAsBytes(thread, runtime, result_array));
+  Bytes result_bytes(&scope, byteArrayAsBytes(thread, result_array));
   Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
   if (result_bytes.compare(*expected_bytes) != 0) {
     return ::testing::AssertionFailure()

@@ -9,11 +9,10 @@
 
 namespace py {
 
-RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
-                           const ByteArray& array) {
+RawObject byteArrayAsBytes(Thread* thread, const ByteArray& array) {
   HandleScope scope(thread);
   Bytes bytes(&scope, array.items());
-  return runtime->bytesSubseq(thread, bytes, 0, array.numItems());
+  return bytesSubseq(thread, bytes, 0, array.numItems());
 }
 
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value) {
