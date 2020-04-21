@@ -124,12 +124,7 @@ class IntepreterTest(unittest.TestCase):
             def __getitem__(self, key):
                 return (key, 17)
 
-        # TODO(T54956257): Use regular dict for globals.
-        from types import ModuleType
-
-        module = ModuleType("test_module")
-        globals = module.__dict__
-        globals["foo"] = None
+        globals = {"foo": None}
         locals = C()
         exec('assert(foo == ("foo", 17))', globals, locals)
 
@@ -139,11 +134,7 @@ class IntepreterTest(unittest.TestCase):
                 self.result = key
                 raise KeyError()
 
-        # TODO(T54956257): Use regular dict for globals.
-        from types import ModuleType
-
-        module = ModuleType("test_module")
-        globals = module.__dict__
+        globals = {}
         exec("foo = 99", globals)
         self.assertIn("foo", globals)
 
@@ -197,11 +188,7 @@ class IntepreterTest(unittest.TestCase):
                 self.result = key
                 raise UserWarning("bar")
 
-        # TODO(T54956257): Use regular dict for globals.
-        from types import ModuleType
-
-        module = ModuleType("test_module")
-        globals = module.__dict__
+        globals = {}
         locals = C()
         with self.assertRaises(NameError) as context:
             exec("del foo", globals, locals)
@@ -219,12 +206,7 @@ class IntepreterTest(unittest.TestCase):
         class C(dict):
             __delitem__ = d
 
-        # TODO(T54956257): Use regular dict for globals.
-        from types import ModuleType
-
-        module = ModuleType("test_module")
-
-        globals = module.__dict__
+        globals = {}
         locals = C()
         with self.assertRaises(NameError) as context:
             exec("del foo", globals, locals)

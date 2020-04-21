@@ -8399,12 +8399,7 @@ class LocalsTests(unittest.TestCase):
 
         c = C()
 
-        # TODO(T54956257): Use regular dict for globals.
-        from types import ModuleType
-
-        module = ModuleType("test_module")
-
-        exec("result = locals()", module.__dict__, c)
+        exec("result = locals()", {}, c)
         self.assertEqual(result_key, "result")
         self.assertIs(result_value, c)
 
