@@ -62,7 +62,8 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
         return PyObject_Call(exception, value, NULL);
     }
     else {
-        return _PyObject_CallArg1(exception, value);
+        PyObject *args[1] = {value};
+        return _PyObject_FastCallDict(exception, args, 1, NULL);
     }
 }
 

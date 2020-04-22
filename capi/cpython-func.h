@@ -1138,7 +1138,6 @@ PyAPI_FUNC(char*) _PyMem_Strdup(const char*);
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
 PyAPI_FUNC(int) _PyOS_URandom(void*, Py_ssize_t);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void*, Py_ssize_t);
-PyAPI_FUNC(PyObject*) _PyObject_CallArg1(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*)
     _PyObject_CallMethod_SizeT(PyObject*, const char*, const char*, ...);
 PyAPI_FUNC(PyObject*) _PyObject_CallNoArg(PyObject*);

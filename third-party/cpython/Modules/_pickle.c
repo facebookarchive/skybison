@@ -342,7 +342,8 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
 
-    result = _PyObject_CallArg1(func, obj);
+    PyObject *args[1] = {obj};
+    result = _PyObject_FastCallDict(func, args, 1, NULL);
     Py_DECREF(obj);
     return result;
 }

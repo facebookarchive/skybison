@@ -125,8 +125,8 @@ TEST_F(PyCFunctionExtensionApiTest, NewExWithMethOCallsFunction) {
   PyObjectPtr func(PyCFunction_NewEx(&def, self, nullptr));
   PyObjectPtr arg(PyLong_FromLong(42));
 
-  PyObject* argo = arg.get();
-  PyObjectPtr result(_PyObject_CallArg1(func, argo));
+  PyObject* args[1] = {arg.get()};
+  PyObjectPtr result(_PyObject_FastCallDict(func, args, 1, nullptr));
   ASSERT_TRUE(isLongEqualsLong(result, 1));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }

@@ -826,10 +826,6 @@ PY_EXPORT int PyObject_DelItemString(PyObject* /* o */, const char* /* y */) {
   UNIMPLEMENTED("PyObject_DelItemString");
 }
 
-PY_EXPORT PyObject* _PyObject_CallArg1(PyObject* callable, PyObject* arg) {
-  return _PyObject_FastCall(callable, &arg, 1);
-}
-
 PY_EXPORT PyObject* _PyObject_CallNoArg(PyObject* callable) {
   return _PyObject_FastCall(callable, nullptr, 0);
 }

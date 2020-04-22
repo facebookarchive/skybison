@@ -854,7 +854,8 @@ FutureObj_finalize(FutureObj *fut)
 
     func = _PyObject_GetAttrId(fut->fut_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        PyObject *res = _PyObject_CallArg1(func, context);
+        PyObject *args[1] = {context};
+        PyObject *res = _PyObject_FastCallDict(func, args, 1, NULL);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }
@@ -1765,7 +1766,8 @@ TaskObj_finalize(TaskObj *task)
 
     func = _PyObject_GetAttrId(task->task_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        PyObject *res = _PyObject_CallArg1(func, context);
+      PyObject *args[1] = {context};
+        PyObject *res = _PyObject_FastCallDict(func, args, 1, NULL);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }

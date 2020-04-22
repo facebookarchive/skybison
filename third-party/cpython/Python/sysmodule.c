@@ -2300,7 +2300,8 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (writer == NULL)
         goto error;
 
-    result = _PyObject_CallArg1(writer, unicode);
+    PyObject *args[1] = {unicode};
+    result = _PyObject_FastCallDict(writer, args, 1, NULL);
     if (result == NULL) {
         goto error;
     } else {

@@ -147,7 +147,8 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = _PyObject_CallArg1(writer, value);
+    PyObject *args[1] = {value};
+    result = _PyObject_FastCallDict(writer, args, 1, NULL);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)

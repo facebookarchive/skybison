@@ -133,14 +133,6 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
 }
 
 PyObject *
-_PyObject_CallArg1(PyObject *func, PyObject *arg)
-{
-  PyObject *args[1] = {arg};
-  return _PyObject_FastCallDict(func, args, 1, NULL);
-}
-
-
-PyObject *
 _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_t nargs,
                            PyObject *kwnames)
 {
