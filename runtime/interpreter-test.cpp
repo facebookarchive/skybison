@@ -3377,6 +3377,19 @@ a = AsyncIterator()
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
+static RawObject runCodeCallingGetAwaitableOnObject(Thread* thread,
+                                                    const Object& obj) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, *obj);
+  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
+  code.setCode(runtime->newBytesWithAll(bytecode));
+  return runCode(code);
+}
+
 TEST_F(InterpreterTest, GetAwaitableCallsAwait) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
@@ -3389,28 +3402,74 @@ a = Awaitable()
                    .isError());
 
   Object a(&scope, mainModuleAt(runtime_, "a"));
-
-  Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, *a);
-  code.setConsts(*consts);
-  const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-
-  Object result(&scope, runCode(code));
+  Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, a));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
+}
+
+TEST_F(InterpreterTest, GetAwaitableIsNoOpOnCoroutine) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+async def f(): pass
+
+coro = f()
+)")
+                   .isError());
+
+  Object coro(&scope, mainModuleAt(runtime_, "coro"));
+  Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, coro));
+  EXPECT_TRUE(*result == *coro);
+}
+
+TEST_F(InterpreterTest, GetAwaitableIsNoOpOnAsyncGenerator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+async def f(): yield
+
+async_gen = f()
+)")
+                   .isError());
+
+  Object async_gen(&scope, mainModuleAt(runtime_, "async_gen"));
+  Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, async_gen));
+  EXPECT_TRUE(*result == *async_gen);
+}
+
+TEST_F(InterpreterTest, GetAwaitableRaisesOnUnflaggedGenerator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def f(): yield
+
+generator = f()
+)")
+                   .isError());
+
+  Object generator(&scope, mainModuleAt(runtime_, "generator"));
+  Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, generator));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST_F(InterpreterTest, GetAwaitableIsNoOpOnFlaggedGenerator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def f(): yield
+)")
+                   .isError());
+  Function generator_function(&scope, mainModuleAt(runtime_, "f"));
+  generator_function.setFlags(generator_function.flags() |
+                              RawFunction::Flags::kIterableCoroutine);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+generator = f()
+)")
+                   .isError());
+  Object generator(&scope, mainModuleAt(runtime_, "generator"));
+  Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, generator));
+  EXPECT_TRUE(*result == *generator);
 }
 
 TEST_F(InterpreterTest, GetAwaitableOnNonAwaitable) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, Runtime::internStrFromCStr(thread_, "foo"));
-  code.setConsts(*consts);
-  const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-
-  Object result(&scope, runCode(code));
+  Object str(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, str));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 

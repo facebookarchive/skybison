@@ -2013,10 +2013,23 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object obj(&scope, frame->popValue());
-
-  // TODO(T33628943): Check if `obj` is a native or generator-based
-  // coroutine and if it is, no need to call __await__
+  Object obj(&scope, frame->topValue());
+  if (obj.isCoroutine() || obj.isAsyncGenerator()) {
+    return Continue::NEXT;
+  }
+  if (obj.isGenerator()) {
+    Generator generator(&scope, *obj);
+    GeneratorFrame generator_frame(&scope, generator.generatorFrame());
+    Function func(&scope, generator_frame.function());
+    if (func.isIterableCoroutine()) {
+      return Continue::NEXT;
+    }
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "generator object not flagged as iterable coroutine "
+                         "can't be used in 'await' expression");
+    return Continue::UNWIND;
+  }
+  frame->popValue();
   Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
   if (await.isError()) {
     if (await.isErrorException()) {
