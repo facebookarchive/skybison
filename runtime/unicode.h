@@ -78,6 +78,7 @@ class Unicode {
   static bool isASCII(int32_t code_point);
   static bool isAlias(int32_t code_point);
   static bool isAlpha(int32_t code_point);
+  static bool isCased(int32_t code_point);
   static bool isHangulLead(int32_t code_point);
   static bool isHangulSyllable(int32_t code_point);
   static bool isHangulTrail(int32_t code_point);
@@ -94,11 +95,12 @@ class Unicode {
 
   // Conversion
   static FullCasing toLower(int32_t code_point);
-  static int32_t toTitle(int32_t code_point);
+  static FullCasing toTitle(int32_t code_point);
   static FullCasing toUpper(int32_t code_point);
 
  private:
   // Slow paths that use the Unicode database.
+  static bool isCasedDB(int32_t code_point);
   static bool isLinebreakDB(int32_t code_point);
   static bool isLowerDB(int32_t code_point);
   static bool isSpaceDB(int32_t code_point);
@@ -107,6 +109,7 @@ class Unicode {
   static bool isXidContinueDB(int32_t code_point);
   static bool isXidStartDB(int32_t code_point);
   static FullCasing toLowerDB(int32_t code_point);
+  static FullCasing toTitleDB(int32_t code_point);
   static FullCasing toUpperDB(int32_t code_point);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Unicode);
@@ -214,6 +217,13 @@ inline bool Unicode::isAlpha(int32_t code_point) {
   UNIMPLEMENTED("non-ASCII characters");
 }
 
+inline bool Unicode::isCased(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isAlpha(code_point);
+  }
+  return isCasedDB(code_point);
+}
+
 inline bool Unicode::isHangulLead(int32_t code_point) {
   return (kHangulLeadStart <= code_point) &&
          (code_point < kHangulLeadStart + kHangulLeadCount);
@@ -303,15 +313,11 @@ inline FullCasing Unicode::toLower(int32_t code_point) {
   return toLowerDB(code_point);
 }
 
-inline int32_t Unicode::toTitle(int32_t code_point) {
+inline FullCasing Unicode::toTitle(int32_t code_point) {
   if (isASCII(code_point)) {
-    if (ASCII::isLower(code_point)) {
-      code_point += ('A' - 'a');
-    }
-    return code_point;
+    return {ASCII::toUpper(code_point), -1};
   }
-  // TODO(T57791326) support non-ASCII
-  UNIMPLEMENTED("non-ASCII characters");
+  return toTitleDB(code_point);
 }
 
 inline FullCasing Unicode::toUpper(int32_t code_point) {

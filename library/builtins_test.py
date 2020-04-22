@@ -12411,6 +12411,15 @@ class StrTests(unittest.TestCase):
             str.istitle(None)
         self.assertIn("'istitle' requires a 'str' object", str(context.exception))
 
+    def test_istitle_with_non_ascii_returns_bool(self):
+        self.assertTrue("Resum\u00e9".istitle())
+        self.assertTrue("\u00c9tude".istitle())
+        self.assertTrue("\u01c8udevit".istitle())
+
+        self.assertFalse("resum\u00e9".istitle())
+        self.assertFalse("\u00c9tudE".istitle())
+        self.assertFalse("L\u01c8udevit".istitle())
+
     def test_isupper_with_ascii_char_returns_bool(self):
         self.assertEqual(
             "".join(str(int(chr(x).isupper())) for x in range(128)),
@@ -12788,6 +12797,16 @@ class StrTests(unittest.TestCase):
                 return "test"
 
         self.assertEqual(str(A()), "test")
+
+    def test_title_with_returns_titlecased_string(self):
+        self.assertEqual("".title(), "")
+        self.assertEqual("1234!@#$".title(), "1234!@#$")
+        self.assertEqual("hello world".title(), "Hello World")
+        self.assertEqual("HELLO_WORLD".title(), "Hello_World")
+
+        self.assertEqual("resum\u00e9".title(), "Resum\u00e9")
+        self.assertEqual("\u00e9TuDe".title(), "\u00c9tude")
+        self.assertEqual("\u01c7uDeViT".title(), "\u01c8udevit")
 
     def test_upper_returns_uppercased_string(self):
         self.assertEqual(str.upper("hello"), "HELLO")

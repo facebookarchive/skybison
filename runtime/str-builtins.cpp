@@ -904,24 +904,25 @@ RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
+
   Str self(&scope, strUnderlying(*self_obj));
-  word length = self.charLength();
-  bool is_previous_mapped = false;
-  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
-  for (word i = 0; i < length; i++) {
-    byte ch = self.charAt(i);
-    byte mapped;
-    if (is_previous_mapped) {
-      FullCasing lower = Unicode::toLower(ch);
-      mapped = lower.code_points[0];
-    } else {
-      mapped = Unicode::toTitle(ch);
+  word char_length = self.charLength();
+
+  bool previous_is_cased = false;
+  StrArray result(&scope, runtime->newStrArray());
+  for (word i = 0, len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+
+    FullCasing mapped = previous_is_cased ? Unicode::toLower(code_point)
+                                          : Unicode::toTitle(code_point);
+    for (word j = 0; mapped.code_points[j] != -1; j++) {
+      runtime->strArrayAddCodePoint(thread, result, mapped.code_points[j]);
     }
-    // TODO(...): use the Unicode database case mapping
-    is_previous_mapped = Unicode::isAlpha(ch);
-    result.byteAtPut(i, mapped);
+
+    previous_is_cased = Unicode::isCased(code_point);
   }
-  return result.becomeStr();
+
+  return runtime->strFromStrArray(result);
 }
 
 RawObject METH(str, upper)(Thread* thread, Frame* frame, word nargs) {
@@ -1434,13 +1435,14 @@ RawObject METH(str, istitle)(Thread* thread, Frame* frame, word nargs) {
   Str self(&scope, strUnderlying(*self_obj));
   bool cased = false;
   bool previous_is_cased = false;
-  for (word i = 0, char_length = self.charLength(); i < char_length; i++) {
-    byte b = self.charAt(i);
-    if (ASCII::isUpper(b)) {
+  word char_length = self.charLength();
+  for (word i = 0, len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+    if (Unicode::isUpper(code_point) || Unicode::isTitle(code_point)) {
       if (previous_is_cased) return Bool::falseObj();
-      previous_is_cased = true;
       cased = true;
-    } else if (ASCII::isLower(b)) {
+      previous_is_cased = true;
+    } else if (Unicode::isLower(code_point)) {
       if (!previous_is_cased) return Bool::falseObj();
       previous_is_cased = true;
       cased = true;
