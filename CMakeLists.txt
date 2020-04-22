@@ -1378,35 +1378,42 @@ string(
   REGEX
   REPLACE "(${UNFROZEN_LIBRARY_DIR}\/)" "${BINARY_DIR_LIB}/"
   UNFROZEN_MODULE_OUTPUT "${UNFROZEN_MODULE_INPUT}")
-add_custom_command(
-  OUTPUT
-    ${CPYTHON_MODULE_OUTPUT}
-    ${UNFROZEN_MODULE_OUTPUT}
-  VERBATIM
-  # Create the directory structure
-  COMMAND
-    find "third-party/cpython/Lib" -type d |
-    grep -v "Lib/test" |
-    cut -d/ -f3- |
-    xargs -n1 -I {} mkdir -p "${CMAKE_BINARY_DIR}/{}"
-  # Copy from the source files into its destination location
-  COMMAND
-    bash -c "\
-        paste -d' ' \
-        <(echo '${CPYTHON_MODULE_INPUT}' | tr ';' ' ' | xargs -n1) \
-        <(echo '${CPYTHON_MODULE_OUTPUT}' | tr ';' ' ' | xargs -n1) | \
-        xargs -n2 ${CMAKE_COMMAND} -E copy_if_different"
-  COMMAND
-    bash -c "\
-        paste -d' ' \
-        <(echo '${UNFROZEN_MODULE_INPUT}' | tr ';' ' ' | xargs -n1) \
-        <(echo '${UNFROZEN_MODULE_OUTPUT}' | tr ';' ' ' | xargs -n1) | \
-        xargs -n2 ${CMAKE_COMMAND} -E copy_if_different"
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  DEPENDS
-    ${CPYTHON_MODULE_INPUT}
-    ${UNFROZEN_MODULE_INPUT}
-  COMMENT "Generating Lib Directory")
+
+foreach(src_file ${CPYTHON_MODULE_INPUT})
+  string(
+    REGEX
+    REPLACE "(${CPYTHON_LIBRARY_DIR}\/)" "${BINARY_DIR_LIB}/"
+    dst_file "${src_file}")
+  get_filename_component(dst_dir ${dst_file} DIRECTORY)
+  add_custom_command(
+    OUTPUT ${dst_file}
+    VERBATIM
+    # Create the directory structure
+    COMMAND mkdir -p "${dst_dir}"
+    # Copy from the source files into its destination location
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src_file}" "${dst_file}"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS ${src_file}
+    COMMENT "Copying to ${dst_file}")
+endforeach()
+
+foreach(src_file ${UNFROZEN_MODULE_INPUT})
+  string(
+    REGEX
+    REPLACE "(${UNFROZEN_LIBRARY_DIR}\/)" "${BINARY_DIR_LIB}/"
+    dst_file "${src_file}")
+  get_filename_component(dst_dir ${dst_file} DIRECTORY)
+  add_custom_command(
+    OUTPUT ${dst_file}
+    VERBATIM
+    # Create the directory structure
+    COMMAND mkdir -p "${dst_dir}"
+    # Copy from the source files into its destination location
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src_file}" "${dst_file}"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS ${src_file}
+    COMMENT "Copying to ${dst_file}")
+endforeach()
 
 add_library(
   modules
