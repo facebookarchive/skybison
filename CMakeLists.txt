@@ -245,8 +245,8 @@ set(
   library/operator.py
   library/sys.py
   library/unicodedata.py
-  library/warnings.py
-  library/zipimport.py)
+  library/zipimport.py
+  third-party/cpython/Lib/warnings.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
   ${CMAKE_BINARY_DIR}/bootstrap)
@@ -1293,6 +1293,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/venv/scripts/nt/deactivate.bat
   ${CPYTHON_LIBRARY_DIR}/venv/scripts/posix/activate.csh
   ${CPYTHON_LIBRARY_DIR}/venv/scripts/posix/activate.fish
+  ${CPYTHON_LIBRARY_DIR}/warnings.py
   ${CPYTHON_LIBRARY_DIR}/wave.py
   ${CPYTHON_LIBRARY_DIR}/weakref.py
   ${CPYTHON_LIBRARY_DIR}/webbrowser.py
