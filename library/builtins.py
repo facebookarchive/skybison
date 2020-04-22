@@ -2813,6 +2813,10 @@ copyright = ""
 
 
 class coroutine(bootstrap=True):
+    def close(self):
+        # TODO(T42623564): implement this.
+        pass
+
     def send(self, value):
         _builtin()
 

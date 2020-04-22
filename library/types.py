@@ -25,11 +25,10 @@ def _g():
     yield 1
 GeneratorType = type(_g())
 
-# TODO(T42623564)
-#async def _c(): pass
-#_c = _c()
-#CoroutineType = type(_c)
-#_c.close()  # Prevent ResourceWarning
+async def _c(): pass
+_c = _c()
+CoroutineType = type(_c)
+_c.close()  # Prevent ResourceWarning
 _c = None
 
 async def _ag():
