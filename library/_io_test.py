@@ -498,6 +498,11 @@ class BufferedRandomTests(unittest.TestCase):
             result = buffered.read(3)
             self.assertEqual(result, b"hel")
 
+    # TODO(T65863013): Make read1 behavior match CPython and remove this skipIf
+    @unittest.skipIf(
+        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
+        "behavior changes in CPython 3.7",
+    )
     def test_read1_with_negative_raises_value_error(self):
         with _io.BytesIO(b"hello") as bytes_io:
             buffered = _io.BufferedRandom(bytes_io, buffer_size=10)
@@ -2013,6 +2018,11 @@ class BufferedReaderTests(unittest.TestCase):
             buffered.read()
         self.assertIn("closed file", str(context.exception))
 
+    # TODO(T65863013): Make read behavior match CPython and remove this skipIf
+    @unittest.skipIf(
+        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
+        "behavior changes in CPython 3.7",
+    )
     def test_read_with_negative_size_raises_value_error(self):
         with _io.FileIO(_getfd(), mode="r") as file_reader:
             buffered = _io.BufferedReader(file_reader)
@@ -2113,6 +2123,11 @@ class TextIOWrapperTests(unittest.TestCase):
             "TextIOWrapper() argument 2 must be str or None, not int",
         )
 
+    # TODO(T65863013): Make read behavior match CPython and remove this skipIf
+    @unittest.skipIf(
+        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
+        "behavior changes in CPython 3.7",
+    )
     def test_dunder_init_with_non_str_errors_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             _io.TextIOWrapper("hello", errors=5)
