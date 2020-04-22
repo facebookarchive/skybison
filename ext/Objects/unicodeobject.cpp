@@ -899,50 +899,92 @@ PY_EXPORT PyObject* PyUnicode_AsUnicodeEscapeString(PyObject* /* e */) {
   UNIMPLEMENTED("PyUnicode_AsUnicodeEscapeString");
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_AsWideChar(PyObject* /* e */, wchar_t* /* w */,
-                                          Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsWideChar");
-}
-
-static wchar_t* unicodeAsWideChar(Thread* thread, const Str& str) {
-  word len = str.codePointLength();
-  wchar_t* buf =
-      static_cast<wchar_t*>(PyMem_Malloc((len + 1) * sizeof(wchar_t)));
-  word byte_count = str.charLength();
-  for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
-       byte_index < byte_count; byte_index += num_bytes, wchar_index += 1) {
-    int32_t cp = str.codePointAt(byte_index, &num_bytes);
-    if (cp == '\0') {
-      PyMem_Free(buf);
-      thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
-      return nullptr;
-    }
-    static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
-    buf[wchar_index] = static_cast<wchar_t>(cp);
-  }
-  buf[len] = '\0';
-  return buf;
-}
-
-PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* unicode) {
+PY_EXPORT Py_ssize_t PyUnicode_AsWideChar(PyObject* str, wchar_t* result,
+                                          Py_ssize_t size) {
   Thread* thread = Thread::current();
-  if (unicode == nullptr) {
+  if (str == nullptr) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*str_obj)) {
+    thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "PyUnicode_AsWideChar requires 'str' object but received a '%T'",
+        &str_obj);
+    return -1;
+  }
+  Str str_str(&scope, strUnderlying(*str_obj));
+  Py_ssize_t num_code_points = str_str.codePointLength();
+  if (size > num_code_points) {
+    size = num_code_points + 1;
+  } else {
+    num_code_points = size;
+  }
+
+  {
+    word byte_count = str_str.charLength();
+    for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
+         byte_index < byte_count && wchar_index < size;
+         byte_index += num_bytes, wchar_index += 1) {
+      int32_t cp = str_str.codePointAt(byte_index, &num_bytes);
+      static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
+      if (result != nullptr) {
+        result[wchar_index] = static_cast<wchar_t>(cp);
+      }
+    }
+    if (num_code_points < size) {
+      result[num_code_points] = '\0';
+    }
+  }
+
+  return num_code_points;
+}
+
+PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* str,
+                                              Py_ssize_t* result_len) {
+  Thread* thread = Thread::current();
+  if (str == nullptr) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
   HandleScope scope(thread);
-  Object unicode_obj(&scope, ApiHandle::fromPyObject(unicode)->asObject());
-  if (!thread->runtime()->isInstanceOfStr(*unicode_obj)) {
-    thread->raiseBadArgument();
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*str_obj)) {
+    thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "PyUnicode_AsWideChar requires 'str' object but received a '%T'",
+        &str_obj);
     return nullptr;
   }
-  Str unicode_str(&scope, strUnderlying(*unicode_obj));
-  return unicodeAsWideChar(thread, unicode_str);
-}
+  Str str_str(&scope, strUnderlying(*str_obj));
+  word length = str_str.codePointLength();
+  wchar_t* result =
+      static_cast<wchar_t*>(PyMem_Malloc((length + 1) * sizeof(wchar_t)));
+  if (result == nullptr) {
+    thread->raiseMemoryError();
+    return nullptr;
+  }
 
-PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* /* e */,
-                                              Py_ssize_t* /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsWideCharString");
+  {
+    word byte_count = str_str.charLength();
+    for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
+         byte_index < byte_count && wchar_index < length + 1;
+         byte_index += num_bytes, wchar_index += 1) {
+      int32_t cp = str_str.codePointAt(byte_index, &num_bytes);
+      static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
+      result[wchar_index] = static_cast<wchar_t>(cp);
+    }
+    result[length] = '\0';
+  }
+
+  if (result_len != nullptr) {
+    *result_len = length;
+  }
+  return result;
 }
 
 PY_EXPORT PyObject* PyUnicode_BuildEncodingMap(PyObject* /* g */) {

@@ -323,16 +323,83 @@ TEST_F(UnicodeExtensionApiTest,
   PyMem_Free(ucs4_string);
 }
 
-TEST_F(UnicodeExtensionApiTest, AsWideCharStringWithNullptrRaisesInternalCall) {
-  EXPECT_EQ(_PyUnicode_AsWideCharString(nullptr), nullptr);
+TEST_F(UnicodeExtensionApiTest, AsWideCharWithNullptrRaisesSystemError) {
+  wchar_t wide_string[1];
+  EXPECT_EQ(
+      PyUnicode_AsWideChar(nullptr, wide_string, Py_ARRAY_LENGTH(wide_string)),
+      -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(UnicodeExtensionApiTest,
-       AsWideCharStringWithNonStringRaisesBadArgument) {
+TEST_F(UnicodeExtensionApiTest, AsWideCharWithNonStringRaisesTypeError) {
   PyObjectPtr not_string(PyTuple_New(0));
-  EXPECT_EQ(_PyUnicode_AsWideCharString(not_string), nullptr);
+  wchar_t wide_string[1];
+  EXPECT_EQ(PyUnicode_AsWideChar(not_string, wide_string,
+                                 Py_ARRAY_LENGTH(wide_string)),
+            -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsWideCharWithNonASCIICodePointReturnsNullTerminatedWideCharString) {
+  PyObjectPtr unicode(PyUnicode_FromString("a\xc3\xa5z"));
+  wchar_t wide_string[4];
+  EXPECT_EQ(Py_ssize_t{3}, PyUnicode_AsWideChar(unicode, wide_string,
+                                                Py_ARRAY_LENGTH(wide_string)));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ(0xe5, wide_string[1]);
+  EXPECT_EQ('z', wide_string[2]);
+  EXPECT_EQ(0, wide_string[3]);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsWideCharWithEmbeddedNullWritesNullChar) {
+  PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
+  wchar_t wide_string[5];
+  EXPECT_EQ(4, PyUnicode_AsWideChar(unicode, wide_string,
+                                    Py_ARRAY_LENGTH(wide_string)));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ('b', wide_string[1]);
+  EXPECT_EQ('\0', wide_string[2]);
+  EXPECT_EQ('c', wide_string[3]);
+  EXPECT_EQ('\0', wide_string[4]);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsWideCharWithSizeEqualsBufferSizeDoesNotWriteNul) {
+  PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
+  wchar_t wide_string[4];
+  EXPECT_EQ(4, PyUnicode_AsWideChar(unicode, wide_string, 4));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ('b', wide_string[1]);
+  EXPECT_EQ('\0', wide_string[2]);
+  EXPECT_EQ('c', wide_string[3]);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsWideCharWithBufferSizeLessThanStringSizeWritesUpToBufferSize) {
+  PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
+  wchar_t wide_string[2];
+  EXPECT_EQ(2, PyUnicode_AsWideChar(unicode, wide_string,
+                                    Py_ARRAY_LENGTH(wide_string)));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ('b', wide_string[1]);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsWideCharStringWithNullptrRaisesSystemError) {
+  EXPECT_EQ(PyUnicode_AsWideCharString(nullptr, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsWideCharStringWithNonStringRaisesTypeError) {
+  PyObjectPtr not_string(PyTuple_New(0));
+  EXPECT_EQ(PyUnicode_AsWideCharString(not_string, nullptr), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
@@ -341,7 +408,7 @@ TEST_F(
     UnicodeExtensionApiTest,
     AsWideCharStringWithNonASCIICodePointReturnsNullTerminatedWideCharString) {
   PyObjectPtr unicode(PyUnicode_FromString("a\xc3\xa5z"));
-  wchar_t* wide_string = _PyUnicode_AsWideCharString(unicode);
+  wchar_t* wide_string = PyUnicode_AsWideCharString(unicode, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ('a', wide_string[0]);
   EXPECT_EQ(0xe5, wide_string[1]);
@@ -350,12 +417,30 @@ TEST_F(
   PyMem_Free(wide_string);
 }
 
+TEST_F(UnicodeExtensionApiTest, AsWideCharStringWithNonNullSizeSetsSize) {
+  PyObjectPtr unicode(PyUnicode_FromString("a\xc3\xa5z"));
+  Py_ssize_t size = 0xdeadbeef;
+  wchar_t* wide_string = PyUnicode_AsWideCharString(unicode, &size);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(size, 3);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ(0xe5, wide_string[1]);
+  EXPECT_EQ('z', wide_string[2]);
+  EXPECT_EQ(0, wide_string[3]);
+  PyMem_Free(wide_string);
+}
+
 TEST_F(UnicodeExtensionApiTest,
-       AsWideCharStringWithEmbeddedNullRaisesValueError) {
+       AsWideCharStringWithEmbeddedNullReturnsWideStringWithNull) {
   PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
-  EXPECT_EQ(nullptr, _PyUnicode_AsWideCharString(unicode));
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+  wchar_t* wide_string = PyUnicode_AsWideCharString(unicode, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ('b', wide_string[1]);
+  EXPECT_EQ('\0', wide_string[2]);
+  EXPECT_EQ('c', wide_string[3]);
+  EXPECT_EQ('\0', wide_string[4]);
+  PyMem_Free(wide_string);
 }
 
 TEST_F(UnicodeExtensionApiTest, CheckWithStrReturnsTrue) {

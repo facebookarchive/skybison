@@ -1231,7 +1231,6 @@ PyAPI_FUNC(int) _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter*, PyObject*,
 PyAPI_FUNC(PyObject*) _PyUnicode_AsASCIIString(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) _PyUnicode_AsLatin1String(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(PyObject*, const char*);
-PyAPI_FUNC(wchar_t*) _PyUnicode_AsWideCharString(PyObject*);
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t,
                                                      const char*, const char**);
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t,
