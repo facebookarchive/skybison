@@ -156,6 +156,8 @@ typedef Py_ssize_t (*lenfunc)(PyObject*);
 typedef PyObject* (*ssizeargfunc)(PyObject*, Py_ssize_t);
 typedef PyObject* (*ssizessizeargfunc)(PyObject*, Py_ssize_t, Py_ssize_t);
 typedef int (*ssizeobjargproc)(PyObject*, Py_ssize_t, PyObject*);
+typedef int (*ssizessizeobjargproc)(PyObject*, Py_ssize_t, Py_ssize_t,
+                                    PyObject*);
 typedef int (*objobjargproc)(PyObject*, PyObject*, PyObject*);
 
 typedef int (*objobjproc)(PyObject*, PyObject*);
