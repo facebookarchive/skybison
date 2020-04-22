@@ -375,6 +375,67 @@ TEST_F(TypeExtensionApiTest, MethodsClassAndStaticRaisesValueError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+TEST_F(TypeExtensionApiTest,
+       MethodsWithTypeSlotNameCoExistGetsResolvedForFunctionCall) {
+  newfunc new_func = [](PyTypeObject*, PyObject*, PyObject*) {
+    return PyLong_FromLong(100);
+  };
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(200); };
+  static PyMethodDef methods[] = {
+      {"__new__", meth, METH_NOARGS | METH_STATIC | METH_COEXIST}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_new, reinterpret_cast<void*>(new_func)},
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(
+      reinterpret_cast<newfunc>(PyType_GetSlot(type.asTypeObject(), Py_tp_new)),
+      new_func);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+result = C.__new__()
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 200);
+}
+
+TEST_F(TypeExtensionApiTest, MethodsWithTypeSlotNameClassAndStaticGetsIgnored) {
+  newfunc new_func = [](PyTypeObject*, PyObject*, PyObject*) {
+    return PyLong_FromLong(100);
+  };
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(200); };
+  static PyMethodDef methods[] = {{"__new__", meth, METH_NOARGS | METH_STATIC},
+                                  {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_new, reinterpret_cast<void*>(new_func)},
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(
+      reinterpret_cast<newfunc>(PyType_GetSlot(type.asTypeObject(), Py_tp_new)),
+      new_func);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+result = C.__new__(C)
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 100);
+}
+
 // METH_NOARGS and CALL_FUNCTION_EX
 
 TEST_F(TypeExtensionApiTest, MethodsMethNoargsExCall) {

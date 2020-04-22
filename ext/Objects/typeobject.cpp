@@ -1246,6 +1246,9 @@ RawObject addMethods(Thread* thread, const Type& type) {
   for (PyMethodDef* method = methods; method->ml_name != nullptr; method++) {
     name = Runtime::internStrFromCStr(thread, method->ml_name);
     int flags = method->ml_flags;
+    if (!(flags & METH_COEXIST) && !typeAt(type, name).isErrorNotFound()) {
+      continue;
+    }
     if (flags & METH_CLASS) {
       if (flags & METH_STATIC) {
         return thread->raiseWithFmt(LayoutId::kValueError,

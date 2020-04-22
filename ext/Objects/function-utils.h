@@ -27,7 +27,7 @@ static_assert(static_cast<int>(ExtensionMethodType::kMethFastCallAndKeywords) ==
               "matching flag values");
 
 inline ExtensionMethodType methodTypeFromMethodFlags(int flags) {
-  int call_flags = flags & ~METH_CLASS & ~METH_STATIC;
+  int call_flags = flags & ~METH_CLASS & ~METH_STATIC & ~METH_COEXIST;
   DCHECK(call_flags == METH_NOARGS || call_flags == METH_O ||
              call_flags == METH_VARARGS ||
              call_flags == (METH_VARARGS | METH_KEYWORDS) ||
