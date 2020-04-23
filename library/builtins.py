@@ -2004,7 +2004,10 @@ class bytearray(bootstrap=True):
         _builtin()
 
     def split(self, sep=None, maxsplit=-1):
-        _unimplemented()
+        _bytearray_guard(self)
+        self_bytes = bytes(self)
+        result = self_bytes.split(sep, maxsplit)
+        return [bytearray(x) for x in result]
 
     def splitlines(self, keepends=False):
         _unimplemented()
