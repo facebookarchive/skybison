@@ -28,6 +28,7 @@ Scavenger::Scavenger(Runtime* runtime)
 Scavenger::~Scavenger() {}
 
 RawObject Scavenger::scavenge() {
+  DCHECK(runtime_->heap()->verify(), "Heap failed to verify before GC");
   to_ = new Space(from_->size());
   scan_ = to_->start();
   // Nothing should be allocating during a GC.
