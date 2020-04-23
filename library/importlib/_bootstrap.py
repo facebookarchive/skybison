@@ -29,12 +29,10 @@ import _imp
 import _thread
 import _warnings
 import _weakref
+from _builtins import _address
 
 
 _bootstrap_external = None
-
-_ERR_MSG_PREFIX = "No module named "
-_ERR_MSG = _ERR_MSG_PREFIX + "{!r}"
 
 
 def _wrap(new, old):
@@ -127,7 +125,7 @@ class _ModuleLock:
                     self.wakeup.release()
 
     def __repr__(self):
-        return f"_ModuleLock({repr(self.name)}) at {id(self)}"  # noqa: E999
+        return f"_ModuleLock({self.name!r}) at {_address(self):#x}"
 
 
 class _DummyModuleLock:
@@ -148,7 +146,7 @@ class _DummyModuleLock:
         self.count -= 1
 
     def __repr__(self):
-        return f"_DummyModuleLock({repr(self.name)}) at {id(self)}"
+        return f"_DummyModuleLock({self.name!r}) at {_address(self):#x}"
 
 
 class _ModuleLockManager:
@@ -246,9 +244,7 @@ def _requires_builtin(fxn):
 
     def _requires_builtin_wrapper(self, fullname):
         if fullname not in sys.builtin_module_names:
-            raise ImportError(
-                f"{repr(fullname)} is not a built-in module", name=fullname
-            )
+            raise ImportError(f"{fullname!r} is not a built-in module", name=fullname)
         return fxn(self, fullname)
 
     _wrap(_requires_builtin_wrapper, fxn)
@@ -260,7 +256,7 @@ def _requires_frozen(fxn):
 
     def _requires_frozen_wrapper(self, fullname):
         if not _imp.is_frozen(fullname):
-            raise ImportError(f"{repr(fullname)} is not a frozen module", name=fullname)
+            raise ImportError(f"{fullname!r} is not a frozen module", name=fullname)
         return fxn(self, fullname)
 
     _wrap(_requires_frozen_wrapper, fxn)
@@ -315,14 +311,11 @@ def _module_repr(module):
         filename = module.__file__
     except AttributeError:
         if loader is None:
-            return f"<module {repr(name)}>"
+            return f"<module {name!r}>"
         else:
-            return f"<module {repr(name)} ({repr(loader)})>"
+            return f"<module {name!r} ({loader!r})>"
     else:
-        return f"<module {repr(name)} from {repr(filename)}>"
-
-
-__builtins__._module_repr = _module_repr
+        return f"<module {name!r} from {filename!r}>"
 
 
 class _installed_safely:
@@ -346,7 +339,7 @@ class _installed_safely:
                 except KeyError:
                     pass
             else:
-                _verbose_message(f"import {repr(spec.name)} # {repr(spec.loader)}")
+                _verbose_message(f"import {spec.name!r} # {spec.loader!r}")
         finally:
             self._spec._initializing = False
 
@@ -402,13 +395,12 @@ class ModuleSpec:
         self._cached = None
 
     def __repr__(self):
-        args = [f"name={repr(self.name)}", f"loader={repr(self.loader)}"]
+        args = [f"name={self.name!r}", f"loader={self.loader!r}"]
         if self.origin is not None:
-            args.append(f"origin={repr(self.origin)}")
+            args.append(f"origin={self.origin!r}")
         if self.submodule_search_locations is not None:
             args.append(f"submodule_search_locations={self.submodule_search_locations}")
-        joined_args = ", ".join(args)
-        return f"{self.__class__.__name__}({joined_args})"
+        return f"{self.__class__.__name__}({', '.join(args)})"
 
     def __eq__(self, other):
         smsl = self.submodule_search_locations
@@ -547,6 +539,18 @@ def _init_module_attrs(spec, module, *, override=False):
 
                 loader = _NamespaceLoader.__new__(_NamespaceLoader)
                 loader._path = spec.submodule_search_locations
+                spec.loader = loader
+                # While the docs say that module.__file__ is not set for
+                # built-in modules, and the code below will avoid setting it if
+                # spec.has_location is false, this is incorrect for namespace
+                # packages.  Namespace packages have no location, but their
+                # __spec__.origin is None, and thus their module.__file__
+                # should also be None for consistency.  While a bit of a hack,
+                # this is the best place to ensure this consistency.
+                #
+                # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module  # noqa:B950
+                # and bpo-32305
+                module.__file__ = None
         try:
             module.__loader__ = loader
         except AttributeError:
@@ -610,14 +614,14 @@ def _module_repr_from_spec(spec):
     name = "?" if spec.name is None else spec.name
     if spec.origin is None:
         if spec.loader is None:
-            return f"<module {repr(name)}>"
+            return f"<module {name!r}>"
         else:
-            return f"<module {repr(name)} ({repr(spec.loader)})>"
+            return f"<module {name!r} ({spec.loader!r})>"
     else:
         if spec.has_location:
-            return f"<module {repr(name)} from {repr(spec.origin)}>"
+            return f"<module {name!r} from {spec.origin!r}>"
         else:
-            return f"<module {repr(spec.name)} ({spec.origin})>"
+            return f"<module {spec.name!r} ({spec.origin})>"
 
 
 # Used by importlib.reload() and _load_module_shim().
@@ -626,7 +630,7 @@ def _exec(spec, module):
     name = spec.name
     with _ModuleLockManager(name):
         if sys.modules.get(name) is not module:
-            msg = f"module {repr(name)} not in sys.modules"
+            msg = f"module {name!r} not in sys.modules"
             raise ImportError(msg, name=name)
         if spec.loader is None:
             if spec.submodule_search_locations is None:
@@ -731,7 +735,7 @@ class BuiltinImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        return f"<module {repr(module.__name__)} (built-in)>"
+        return f"<module {module.__name__!r} (built-in)>"
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
@@ -758,9 +762,7 @@ class BuiltinImporter:
     def create_module(self, spec):
         """Create a built-in module"""
         if spec.name not in sys.builtin_module_names:
-            raise ImportError(
-                f"{repr(spec.name)} is not a built-in module", name=spec.name
-            )
+            raise ImportError(f"{spec.name!r} is not a built-in module", name=spec.name)
         return _call_with_frames_removed(_imp.create_builtin, spec)
 
     @classmethod
@@ -805,7 +807,7 @@ class FrozenImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        return f"<module {repr(m.__name__)} (frozen)>"
+        return f"<module {m.__name__!r} (frozen)>"
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
@@ -831,7 +833,7 @@ class FrozenImporter:
     def exec_module(module):
         name = module.__spec__.name
         if not _imp.is_frozen(name):
-            raise ImportError(f"{repr(name)} is not a frozen module", name=name)
+            raise ImportError(f"{name!r} is not a frozen module", name=name)
         code = _call_with_frames_removed(_imp.get_frozen_object, name)
         exec(code, module.__dict__)
 
@@ -960,10 +962,12 @@ def _sanity_check(name, package, level):
         raise ValueError("Empty module name")
 
 
+_ERR_MSG_PREFIX = "No module named "
+_ERR_MSG = _ERR_MSG_PREFIX + "{!r}"
+
+
 def _find_and_load_unlocked(name, import_):
     path = None
-    _ERR_MSG = f"No module named {repr(name)}"
-
     parent = name.rpartition(".")[0]
     if parent:
         if parent not in sys.modules:
@@ -975,11 +979,11 @@ def _find_and_load_unlocked(name, import_):
         try:
             path = parent_module.__path__
         except AttributeError:
-            msg = _ERR_MSG + f"; {repr(parent)} is not a package"
+            msg = _ERR_MSG_PREFIX + f"{name!r}; {parent!r} is not a package"
             raise ModuleNotFoundError(msg, name=name) from None
     spec = _find_spec(name, path)
     if spec is None:
-        raise ModuleNotFoundError(_ERR_MSG, name=name)
+        raise ModuleNotFoundError(_ERR_MSG_PREFIX + f"{name!r}", name=name)
     else:
         module = _load_unlocked(spec)
     if parent:
@@ -1156,3 +1160,4 @@ sys.meta_path.append(BuiltinImporter)
 sys.meta_path.append(FrozenImporter)
 
 __builtins__.__import__ = __import__
+__builtins__._module_repr = _module_repr

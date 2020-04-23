@@ -299,6 +299,14 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
     Py_DECREF(value);
     Py_DECREF(impmod);
 
+    value = PyObject_CallMethod(interp->importlib,
+                                "_install_external_importers", "");
+    if (value == NULL) {
+        PyErr_Print();
+        Py_FatalError("external importer setup failed");
+    }
+    Py_DECREF(value);
+
     _PyImportZip_Init();
 }
 

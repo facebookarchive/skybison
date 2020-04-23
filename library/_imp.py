@@ -12,6 +12,9 @@ from _builtins import (
 )
 
 
+check_hash_based_pycs = "default"
+
+
 def create_builtin(spec):
     _builtin()
 

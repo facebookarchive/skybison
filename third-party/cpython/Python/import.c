@@ -2096,6 +2096,8 @@ static struct PyModuleDef impmodule = {
     NULL
 };
 
+const char *_Py_CheckHashBasedPycsMode = "default";
+
 PyMODINIT_FUNC
 PyInit_imp(void)
 {
@@ -2107,6 +2109,16 @@ PyInit_imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
+
+    PyObject *pyc_mode = PyUnicode_FromString(_Py_CheckHashBasedPycsMode);
+    if (pyc_mode == NULL) {
+        goto failure;
+    }
+    if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
+        Py_DECREF(pyc_mode);
+        goto failure;
+    }
+    Py_DECREF(pyc_mode);
 
     return m;
   failure:

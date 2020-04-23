@@ -17,6 +17,7 @@ to Zip archives.
 import _frozen_importlib_external as _bootstrap_external
 from _frozen_importlib_external import _unpack_uint16, _unpack_uint32
 import _frozen_importlib as _bootstrap  # for _verbose_message
+import _imp  # for check_hash_based_pycs
 import _io  # for open
 import marshal  # for loads
 import sys  # for modules
@@ -548,27 +549,29 @@ def _eq_mtime(t1, t2):
 # match (we do this instead of raising an exception as we fall back
 # to .py if available and we don't want to mask other errors).
 def _unmarshal_code(pathname, data, mtime):
-    # Facebook: In Python 3.7, PEP 552 was introduced which added an extra
-    # 4 bits at the beginning of the marshaled code. Since, 3.6 does not support
-    # that PEP, the hard coded numeric values here had to be shifted by 4.
-    # Without this change, the whole test suite explodes. That being said,
-    # test_importlib and test_zipimport don't rely on import working. Therefore,
-    # they were good indicators of the correctness of this change.
-    if len(data) < 12:
+    if len(data) < 16:
         raise ZipImportError('bad pyc data')
 
     if data[:4] != _bootstrap_external.MAGIC_NUMBER:
         _bootstrap._verbose_message('{!r} has bad magic', pathname)
         return None  # signal caller to try alternative
 
-
-    if mtime != 0 and not _eq_mtime(_unpack_uint32(data[4:8]), mtime):
+    flags = _unpack_uint32(data[4:8])
+    if flags != 0:
+        # Hash-based pyc. We currently refuse to handle checked hash-based
+        # pycs. We could validate hash-based pycs against the source, but it
+        # seems likely that most people putting hash-based pycs in a zipfile
+        # will use unchecked ones.
+        if (_imp.check_hash_based_pycs != 'never' and
+            (flags != 0x1 or _imp.check_hash_based_pycs == 'always')):
+            return None
+    elif mtime != 0 and not _eq_mtime(_unpack_uint32(data[8:12]), mtime):
         _bootstrap._verbose_message('{!r} has bad mtime', pathname)
         return None  # signal caller to try alternative
 
     # XXX the pyc's size field is ignored; timestamp collisions are probably
     # unimportant with zip files.
-    code = marshal.loads(data[12:])
+    code = marshal.loads(data[16:])
     if not isinstance(code, _code_type):
         raise TypeError(f'compiled module {pathname!r} is not a code object')
     return code

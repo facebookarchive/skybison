@@ -13,7 +13,11 @@
 
 namespace py {
 
-const int32_t kPycMagic = 3379 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
+// Magic numbers from `importlib/_bootstrap_external.py`.
+const int32_t kPycMagic36rc1 =
+    3379 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
+const int32_t kPycMagic37b5 =
+    3394 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
 
 enum {
   FLAG_REF = '\x80',  // with a type, add obj to index
@@ -59,20 +63,35 @@ Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer)
 
 RawObject Marshal::Reader::readPycHeader(const Str& filename) {
   Thread* thread = Thread::current();
-  const word header_length = 12;
-  if (length_ - pos_ < header_length) {
+  if (length_ - pos_ < 4) {
     return thread->raiseWithFmt(
         LayoutId::kEOFError, "reached end of file while reading header of '%S'",
         &filename);
   }
   int32_t magic = readLong();
-  if (magic != kPycMagic) {
+  if (magic == kPycMagic37b5) {
+    if (length_ - pos_ < 12) {
+      return thread->raiseWithFmt(
+          LayoutId::kEOFError,
+          "reached end of file while reading header of '%S'", &filename);
+    }
+    readLong();  // read flags.
+    readLong();  // read source timestamp.
+    readLong();  // read source length.
+    DCHECK(pos_ == 16, "size mismatch");
+  } else if (magic == kPycMagic36rc1) {
+    if (length_ - pos_ < 8) {
+      return thread->raiseWithFmt(
+          LayoutId::kEOFError,
+          "reached end of file while reading header of '%S'", &filename);
+    }
+    readLong();  // read source timestamp.
+    readLong();  // read source length.
+    DCHECK(pos_ == 12, "size mismatch");
+  } else {
     return thread->raiseWithFmt(LayoutId::kImportError,
                                 "unsupported magic number in '%S'", &filename);
   }
-  readLong();  // read source timestamp.
-  readLong();  // read source length.
-  DCHECK(pos_ == header_length, "size mismatch");
   return NoneType::object();
 }
 

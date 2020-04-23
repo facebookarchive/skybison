@@ -245,8 +245,8 @@ set(
   library/operator.py
   library/sys.py
   library/unicodedata.py
-  library/zipimport.py
-  third-party/cpython/Lib/warnings.py)
+  third-party/cpython/Lib/warnings.py
+  third-party/cpython/Lib/zipimport.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
   ${CMAKE_BINARY_DIR}/bootstrap)
