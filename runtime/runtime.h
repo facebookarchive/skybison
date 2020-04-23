@@ -693,8 +693,11 @@ class Runtime {
 
   static const word kInitialLayoutTupleCapacity = 1024;
 
+  static const int kHashSecretSize = 3;
+
   // Explicitly seed the random number generator
-  void seedRandom(const uword random_state[2], const uword hash_secret[2]);
+  void seedRandom(const uword random_state[2],
+                  const uword hash_secret[kHashSecretSize]);
 
   // Returns whether object's class provides a __call__ method
   //
@@ -807,6 +810,8 @@ class Runtime {
 
   static wchar_t* programName();
   static void setProgramName(const wchar_t* program_name);
+
+  const uword* hashSecret();
 
  private:
   void initializeApiData();
@@ -982,7 +987,7 @@ class Runtime {
   Thread* threads_;
 
   uword random_state_[2];
-  uword hash_secret_[2];
+  uword hash_secret_[kHashSecretSize];
 
   Symbols* symbols_;
 

@@ -45,5 +45,13 @@ hash_value = hash(b"Monty Python")
   EXPECT_TRUE(isLongEqualsLong(hash_value, result));
 }
 
+TEST_F(PyhashExtensionApiTest, _Py_HashSecretReturnsHashSecret) {
+  EXPECT_EQ(_Py_HashSecret.fnv.prefix,
+            static_cast<Py_hash_t>(_Py_HashSecret.siphash.k0));
+  EXPECT_EQ(_Py_HashSecret.fnv.suffix,
+            static_cast<Py_hash_t>(_Py_HashSecret.siphash.k1));
+  EXPECT_EQ(_Py_HashSecret.djbx33a.suffix, _Py_HashSecret.expat.hashsalt);
+}
+
 }  // namespace testing
 }  // namespace py

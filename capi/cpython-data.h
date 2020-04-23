@@ -145,6 +145,7 @@ extern "C" {
 #define Py_None PyNone_Ptr()
 #define Py_NotImplemented PyNotImplemented_Ptr()
 #define Py_True PyTrue_Ptr()
+#define _Py_HashSecret (*_Py_HashSecret_Ptr())
 #define _PyLong_One _PyLong_One_Ptr()
 #define _PyLong_Zero _PyLong_Zero_Ptr()
 #define _PyNone_Type (*_PyNone_Type_Ptr())

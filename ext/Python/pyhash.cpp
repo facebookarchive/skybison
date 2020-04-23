@@ -43,4 +43,12 @@ PY_EXPORT Py_hash_t _Py_HashBytes(const void* src, Py_ssize_t len) {
 
 PY_EXPORT void _PyHash_Fini(void) {}
 
+PY_EXPORT const _Py_HashSecret_t* _Py_HashSecret_Ptr() {
+  static_assert(
+      kWordSize * Runtime::kHashSecretSize >= sizeof(_Py_HashSecret_t),
+      "hash secret too small");
+  return reinterpret_cast<const _Py_HashSecret_t*>(
+      Thread::current()->runtime()->hashSecret());
+}
+
 }  // namespace py

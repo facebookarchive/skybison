@@ -471,11 +471,12 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
 }
 
 void Runtime::seedRandom(const uword random_state[2],
-                         const uword hash_secret[2]) {
+                         const uword hash_secret[kHashSecretSize]) {
   random_state_[0] = random_state[0];
   random_state_[1] = random_state[1];
-  hash_secret_[0] = hash_secret[0];
-  hash_secret_[1] = hash_secret[1];
+  for (int i = 0; i < kHashSecretSize; i++) {
+    hash_secret_[i] = hash_secret[i];
+  }
 }
 
 bool Runtime::isCallable(Thread* thread, const Object& obj) {
@@ -1612,6 +1613,8 @@ word Runtime::valueHash(RawObject object) {
   return code;
 }
 
+const uword* Runtime::hashSecret() { return hash_secret_; }
+
 void Runtime::initializeTypes() {
   initializeLayouts();
   initializeHeapTypes();
@@ -2117,7 +2120,7 @@ void Runtime::initializeInterned() {
 
 void Runtime::initializeRandom() {
   uword random_state[2];
-  uword hash_secret[2];
+  uword hash_secret[kHashSecretSize];
   // TODO(T43142858) Replace getenv with a configuration system.
   const char* hashseed = std::getenv("PYTHONHASHSEED");
   if (hashseed == nullptr || std::strcmp(hashseed, "random") == 0) {
@@ -2145,8 +2148,9 @@ void Runtime::initializeRandom() {
     };
     random_state[0] = next();
     random_state[1] = next();
-    hash_secret[0] = next();
-    hash_secret[1] = next();
+    for (int i = 0; i < kHashSecretSize; i++) {
+      hash_secret[i] = next();
+    }
   }
   seedRandom(random_state, hash_secret);
 }

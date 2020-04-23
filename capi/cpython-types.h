@@ -447,6 +447,30 @@ typedef enum PyLockStatus {
 #define PY_TIMEOUT_T long long
 #define PY_TIMEOUT_MAX LLONG_MAX
 
+typedef union {
+  /* ensure 24 bytes */
+  unsigned char uc[24];
+  /* two Py_hash_t for FNV */
+  struct {
+    Py_hash_t prefix;
+    Py_hash_t suffix;
+  } fnv;
+  /* two uint64 for SipHash24 */
+  struct {
+    uint64_t k0;
+    uint64_t k1;
+  } siphash;
+  /* a different (!) Py_hash_t for small string optimization */
+  struct {
+    unsigned char padding[16];
+    Py_hash_t suffix;
+  } djbx33a;
+  struct {
+    unsigned char padding[16];
+    Py_hash_t hashsalt;
+  } expat;
+} _Py_HashSecret_t;
+
 #ifdef __cplusplus
 }
 #endif

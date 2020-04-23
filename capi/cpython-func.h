@@ -145,6 +145,7 @@ PyAPI_FUNC(PyTypeObject*) PyTuple_Type_Ptr(void);
 PyAPI_FUNC(PyTypeObject*) PyType_Type_Ptr(void);
 PyAPI_FUNC(PyTypeObject*) PyUnicodeIter_Type_Ptr(void);
 PyAPI_FUNC(PyTypeObject*) PyUnicode_Type_Ptr(void);
+PyAPI_FUNC(const _Py_HashSecret_t*) _Py_HashSecret_Ptr(void);
 PyAPI_FUNC(PyObject*) _PyLong_One_Ptr(void);
 PyAPI_FUNC(PyObject*) _PyLong_Zero_Ptr(void);
 PyAPI_FUNC(PyTypeObject*) _PyNone_Type_Ptr(void);

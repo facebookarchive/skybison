@@ -1078,13 +1078,13 @@ TEST_F(RuntimeTest, HashCodeSizeCheck) {
   // Verify that large-magnitude random numbers are properly
   // truncated to somethat which fits in a SmallInt
 
-  // Conspire based on knoledge of the random number genrated to
+  // Conspire based on knowledge of the random number generated to
   // create a high-magnitude result from Runtime::random
   // which is truncated to 0 for storage in the header and
   // replaced with "1" so no hash code has value 0.
   uword high = uword{1} << (8 * sizeof(uword) - 1);
   uword state[2] = {0, high};
-  uword secret[2] = {0, 0};
+  uword secret[Runtime::kHashSecretSize] = {0, 0, 0};
   runtime_->seedRandom(state, secret);
   uword first = runtime_->random();
   EXPECT_EQ(first, high);
