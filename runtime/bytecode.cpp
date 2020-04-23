@@ -218,7 +218,6 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     function.setCaches(
         runtime->newTuple(num_global_caches * kIcPointersPerEntry));
     function.setOriginalArguments(runtime->emptyTuple());
-    fprintf(stderr, "cache rewriting limit hit (256 entries)\n");
     return;
   }
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
