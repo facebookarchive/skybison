@@ -1594,6 +1594,22 @@ word Runtime::siphash24(View<byte> array) {
   return result;
 }
 
+uint64_t Runtime::hashWithKey(const Bytes& bytes, uint64_t key) {
+  uint64_t result = 0;
+  word length = bytes.length();
+  byte small_buffer[SmallBytes::kMaxLength];
+  byte* data;
+  if (bytes.isSmallBytes()) {
+    bytes.copyTo(small_buffer, length);
+    data = small_buffer;
+  } else {
+    data = reinterpret_cast<byte*>(LargeBytes::cast(*bytes).address());
+  }
+  ::halfsiphash(data, length, reinterpret_cast<const uint8_t*>(&key),
+                reinterpret_cast<uint8_t*>(&result), sizeof(result));
+  return result;
+}
+
 word Runtime::bytesHash(View<byte> array) {
   word result = siphash24(array);
   result &= RawHeader::kHashCodeMask;

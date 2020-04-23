@@ -89,3 +89,7 @@ def lock_held():
 
 def release_lock():
     _builtin()
+
+
+def source_hash(key, source):
+    _builtin()

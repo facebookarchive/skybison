@@ -8,6 +8,7 @@ from distutils.dist import Distribution
 from distutils.extension import Extension
 
 import _imp
+from test_support import pyro_only
 
 
 class MockSpec:  # noqa: B903
@@ -200,6 +201,39 @@ PyObject* PyInit_foo() {
         self.assertNotEqual(foo_code.co_filename, new_name)
         _imp._fix_co_filename(foo_code, new_name)
         self.assertIs(foo_code.co_filename, new_name)
+
+    def test_source_hash_returns_bytes(self):
+        result = _imp.source_hash(1234, b"foo")
+        self.assertIs(type(result), bytes)
+        self.assertEqual(len(result), 8)
+
+    def test_source_hash_returns_same_value(self):
+        result0 = _imp.source_hash(12345, b"foo bar")
+        result1 = _imp.source_hash(12345, b"foo bar")
+        self.assertEqual(result0, result1)
+
+    def test_source_hash_with_long_input_returns_bytes(self):
+        result = _imp.source_hash(1234, b"hello world foo bar baz bam long bytes!")
+        self.assertIs(type(result), bytes)
+        self.assertEqual(len(result), 8)
+
+    def test_source_hash_with_different_key_returns_different_bytes(self):
+        result0 = _imp.source_hash(1234, b"hello")
+        result1 = _imp.source_hash(4321, b"hello")
+        self.assertNotEqual(result0, result1)
+
+    def test_source_hash_with_different_bytes_returns_different_bytes(self):
+        result0 = _imp.source_hash(42, b"foo")
+        result1 = _imp.source_hash(42, b"bar")
+        self.assertNotEqual(result0, result1)
+
+    @pyro_only
+    def test_source_hash_returns_known_values(self):
+        self.assertEqual(_imp.source_hash(123, b"foo"), b"\x8e\x13\x1cq\x0bZ\x1f;")
+        self.assertEqual(
+            _imp.source_hash(123, b"hello world foo bar baz bam long bytes!"),
+            b"\x136g\xb0\xcf\xa9\x12R",
+        )
 
 
 if __name__ == "__main__":

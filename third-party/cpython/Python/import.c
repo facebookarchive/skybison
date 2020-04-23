@@ -2034,10 +2034,32 @@ _imp_exec_builtin_impl(PyObject *module, PyObject *mod)
 }
 
 /*[clinic input]
-dump buffer
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
+_imp.source_hash
 
+    key: long
+    source: Py_buffer
+[clinic start generated code]*/
+
+static PyObject *
+_imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
+/*[clinic end generated code: output=edb292448cf399ea input=9aaad1e590089789]*/
+{
+    union {
+        uint64_t x;
+        char data[sizeof(uint64_t)];
+    } hash;
+    hash.x = _Py_KeyedHash((uint64_t)key, source->buf, source->len);
+#if !PY_LITTLE_ENDIAN
+    // Force to little-endian. There really ought to be a succinct standard way
+    // to do this.
+    for (size_t i = 0; i < sizeof(hash.data)/2; i++) {
+        char tmp = hash.data[i];
+        hash.data[i] = hash.data[sizeof(hash.data) - i - 1];
+        hash.data[sizeof(hash.data) - i - 1] = tmp;
+    }
+#endif
+    return PyBytes_FromStringAndSize(hash.data, sizeof(hash.data));
+}
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib and imp.");
@@ -2057,6 +2079,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
+    _IMP_SOURCE_HASH_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 

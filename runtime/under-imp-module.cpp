@@ -200,4 +200,37 @@ RawObject FUNC(_imp, release_lock)(Thread* thread, Frame*, word) {
   return RawNoneType::object();
 }
 
+RawObject FUNC(_imp, source_hash)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object key_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfInt(*key_obj)) {
+    return thread->raiseRequiresType(key_obj, ID(int));
+  }
+  Int key_int(&scope, intUnderlying(*key_obj));
+  if (key_int.numDigits() > 1) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C long");
+  }
+  word key = key_int.asWord();
+  Object source_obj(&scope, args.get(1));
+  if (!runtime->isByteslike(*source_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &source_obj);
+  }
+  if (!runtime->isInstanceOfBytes(*source_obj)) {
+    // TODO(T38246066): support bytes-like objects other than bytes
+    UNIMPLEMENTED("bytes-like other than bytes");
+  }
+  Bytes source(&scope, bytesUnderlying(*source_obj));
+  uint64_t hash = Runtime::hashWithKey(source, key);
+  if (endian::native == endian::big) {
+    hash = __builtin_bswap64(hash);
+  }
+  return runtime->newBytesWithAll(
+      View<byte>(reinterpret_cast<byte*>(&hash), sizeof(hash)));
+}
+
 }  // namespace py

@@ -725,6 +725,8 @@ class Runtime {
   RawObject bytesToInt(Thread* thread, const Bytes& bytes, endian endianness,
                        bool is_signed);
 
+  static uint64_t hashWithKey(const Bytes& bytes, uint64_t key);
+
   // Returns the sum of `left` and `right`.
   RawObject intAdd(Thread* thread, const Int& left, const Int& right);
 
