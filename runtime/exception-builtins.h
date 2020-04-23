@@ -20,7 +20,7 @@ RawObject createException(Thread* thread, const Type& type,
 
 // Return the appropriate OSError subclass from the given errno_value. If a
 // corresponding subclass is not found in the mapping, return OSError.
-LayoutId layoutFromErrno(int errno_value);
+LayoutId errorLayoutFromErrno(int errno_value);
 
 // Internal equivalent to PyErr_NormalizeException(): If exc is a Type subtype,
 // ensure that value is an instance of it (or a subtype). If a new exception

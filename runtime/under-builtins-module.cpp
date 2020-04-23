@@ -3501,7 +3501,7 @@ RawObject FUNC(_builtins, _os_error_subclass_from_errno)(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Int errno_value(&scope, intUnderlying(args.get(0)));
-  LayoutId subclass = layoutFromErrno(errno_value.asWord());
+  LayoutId subclass = errorLayoutFromErrno(errno_value.asWord());
   return thread->runtime()->typeAt(subclass);
 }
 

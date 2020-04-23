@@ -19,7 +19,7 @@
 
 namespace py {
 
-LayoutId layoutFromErrno(int errno_value) {
+LayoutId errorLayoutFromErrno(int errno_value) {
   switch (errno_value) {
     case EAGAIN:
       return LayoutId::kBlockingIOError;

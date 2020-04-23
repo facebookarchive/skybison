@@ -575,7 +575,7 @@ RawObject Thread::raiseMemoryError() {
 }
 
 RawObject Thread::raiseOSErrorFromErrno(int errno_value) {
-  return raiseWithFmt(layoutFromErrno(errno_value), "[Errno %d] %s",
+  return raiseWithFmt(errorLayoutFromErrno(errno_value), "[Errno %d] %s",
                       errno_value, std::strerror(errno_value));
 }
 
