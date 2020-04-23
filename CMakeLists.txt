@@ -738,6 +738,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/__phello__.foo.py
   ${CPYTHON_LIBRARY_DIR}/_bootlocale.py
   ${CPYTHON_LIBRARY_DIR}/_bootsubprocess.py
+  ${CPYTHON_LIBRARY_DIR}/_collections_abc.py
   ${CPYTHON_LIBRARY_DIR}/_compat_pickle.py
   ${CPYTHON_LIBRARY_DIR}/_compression.py
   ${CPYTHON_LIBRARY_DIR}/_dummy_thread.py
@@ -1339,7 +1340,6 @@ string(
 set(UNFROZEN_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/library")
 set(
   UNFROZEN_MODULE_INPUT
-  ${UNFROZEN_LIBRARY_DIR}/_collections_abc.py
   ${UNFROZEN_LIBRARY_DIR}/_operator.py
   ${UNFROZEN_LIBRARY_DIR}/_string.py
   ${UNFROZEN_LIBRARY_DIR}/_sysconfigdata__darwin_.py
