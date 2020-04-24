@@ -93,7 +93,7 @@ class _IOStream:
 class _ImplementationType:
     # TODO(T40871632): Add sys.implementation as a namespace object
     def __init__(self):
-        self.cache_tag = "pyro-36"
+        self.cache_tag = "pyro-37"
         self.name = "pyro"
 
 
