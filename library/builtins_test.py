@@ -8726,6 +8726,45 @@ class MemoryviewTests(unittest.TestCase):
         view = memoryview(b"foobar")
         self.assertEqual(view.shape, (6,))
 
+    def test_dunder_eq_with_non_memoryview_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            memoryview.__eq__(1, 2)
+
+    def test_dunder_eq_with_non_memoryview_other_returns_not_implemented(self):
+        view = memoryview(b"foobar")
+        self.assertIs(view.__eq__(1), NotImplemented)
+
+    def test_dunder_eq_with_same_object_returns_true(self):
+        view = memoryview(b"foobar")
+        self.assertIs(True, view.__eq__(view))
+
+    def test_dunder_eq_with_same_bytes_object_returns_true(self):
+        content = b"foobar"
+        view = memoryview(content)
+        comp = memoryview(content)
+        self.assertIs(True, view.__eq__(comp))
+
+    def test_dunder_eq_with_matching_bytes_returns_true(self):
+        content = b"foobar"
+        view = memoryview(content)
+        self.assertIs(True, view.__eq__(content))
+
+    def test_dunder_eq_with_matching_bytearray_returns_true(self):
+        content = bytearray(b"foobar")
+        view = memoryview(content)
+        self.assertIs(True, view.__eq__(content))
+
+    def test_dunder_eq_with_sliced_memoryview_returns_false(self):
+        view = memoryview(b"123456")
+        sliced = view[:2]
+        result = memoryview(b"12")
+        self.assertIs(True, sliced.__eq__(result))
+
+    def test_dunder_eq_different_memoryview_values_returns_false(self):
+        view = memoryview(b"123456")
+        comp = memoryview(b"135")
+        self.assertIs(False, view.__eq__(comp))
+
     def test_dunder_enter_and_dunder_exit(self):
         view = memoryview(b"foobar")
         with view as ctx:

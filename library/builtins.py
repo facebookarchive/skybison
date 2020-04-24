@@ -152,6 +152,7 @@ from _builtins import (
     _mappingproxy_guard,
     _mappingproxy_mapping,
     _mappingproxy_set_mapping,
+    _memoryview_check,
     _memoryview_getitem,
     _memoryview_getslice,
     _memoryview_guard,
@@ -4736,6 +4737,32 @@ class method(bootstrap=True):
 class memoryview(bootstrap=True):
     def __enter__(self):
         return self
+
+    def __eq__(self, other):
+        _memoryview_guard(self)
+        if self is other:
+            return True
+        if _memoryview_check(other):
+            self_length = memoryview.__len__(self)
+            other_length = memoryview.__len__(other)
+            if self_length == other_length:
+                for index in range(self_length):
+                    if _memoryview_getitem(self, index) != _memoryview_getitem(
+                        other, index
+                    ):
+                        return False
+                return True
+            return False
+        if _byteslike_check(other):
+            self_length = memoryview.__len__(self)
+            other_length = len(other)
+            if self_length == other_length:
+                for index in range(self_length):
+                    if _memoryview_getitem(self, index) != other[index]:
+                        return False
+                return True
+            return False
+        return NotImplemented
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         memoryview.release(self)
