@@ -8314,31 +8314,31 @@ os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
 {
     Py_ssize_t n;
     int async_err = 0;
-    PyObject *buffer;
+    char *buffer = NULL;
+    _PyBytesWriter writer;
 
     if (length < 0) {
         errno = EINVAL;
         return posix_error();
     }
-    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
+    _PyBytesWriter_Init(&writer);
+    buffer = _PyBytesWriter_Alloc(&writer, length);
     if (buffer == NULL)
         return NULL;
 
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
-        n = pread(fd, PyBytes_AS_STRING(buffer), length, offset);
+        n = pread(fd, buffer, length, offset);
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (n < 0) {
-        Py_DECREF(buffer);
+        _PyBytesWriter_Dealloc(&writer);
         return (!async_err) ? posix_error() : NULL;
     }
-    if (n != length)
-        _PyBytes_Resize(&buffer, n);
-    return buffer;
+    return _PyBytesWriter_Finish(&writer, buffer + n);
 }
 #endif /* HAVE_PREAD */
 
@@ -11118,50 +11118,45 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
 /*[clinic end generated code: output=5f2f44200a43cff2 input=025789491708f7eb]*/
 {
     Py_ssize_t i;
-    PyObject *buffer = NULL;
+    char *buffer = NULL;
+    _PyBytesWriter writer;
 
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
 
+    _PyBytesWriter_Init(&writer);
     for (i = 0; ; i++) {
-        void *ptr;
         ssize_t result;
         static const Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
+            _PyBytesWriter_Dealloc(&writer);
             path_error(path);
             return NULL;
         }
-        buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
-        if (!buffer)
+        buffer = _PyBytesWriter_Alloc(&writer, buffer_size);
+        if (buffer == NULL)
             return NULL;
-        ptr = PyBytes_AS_STRING(buffer);
 
         Py_BEGIN_ALLOW_THREADS;
         if (path->fd >= 0)
-            result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
+            result = fgetxattr(path->fd, attribute->narrow, buffer, buffer_size);
         else if (follow_symlinks)
-            result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+            result = getxattr(path->narrow, attribute->narrow, buffer, buffer_size);
         else
-            result = lgetxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+            result = lgetxattr(path->narrow, attribute->narrow, buffer, buffer_size);
         Py_END_ALLOW_THREADS;
 
         if (result < 0) {
-            Py_DECREF(buffer);
+            _PyBytesWriter_Dealloc(&writer);
             if (errno == ERANGE)
                 continue;
             path_error(path);
             return NULL;
         }
-
-        if (result != buffer_size) {
-            /* Can only shrink. */
-            _PyBytes_Resize(&buffer, result);
-        }
         break;
     }
-
-    return buffer;
+    return _PyBytesWriter_Finish(&writer, buffer);
 }
 
 
@@ -12657,15 +12652,17 @@ static PyObject *
 os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 /*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
 {
-    PyObject *bytes;
+    char *bytes = NULL;
     Py_ssize_t n;
+    _PyBytesWriter writer;
 
     if (size < 0) {
         errno = EINVAL;
         return posix_error();
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
+    _PyBytesWriter_Init(&writer);
+    bytes = _PyBytesWriter_Alloc(&writer, size);
     if (bytes == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -12673,8 +12670,8 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 
     while (1) {
         n = syscall(SYS_getrandom,
-                    PyBytes_AS_STRING(bytes),
-                    PyBytes_GET_SIZE(bytes),
+                    bytes,
+                    size,
                     flags);
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
@@ -12693,13 +12690,12 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
     }
 
     if (n != size) {
-        _PyBytes_Resize(&bytes, n);
+        return _PyBytesWriter_Finish(&writer, bytes + n);
     }
-
-    return bytes;
+    return _PyBytesWriter_Finish(&writer, bytes + size);
 
 error:
-    Py_DECREF(bytes);
+    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
