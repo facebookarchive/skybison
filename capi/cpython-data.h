@@ -355,6 +355,8 @@ extern const unsigned char _PyLong_DigitValue[256];
 
 extern char* PyStructSequence_UnnamedField;
 
+extern const char* Py_FileSystemDefaultEncoding;
+extern int Py_HasFileSystemDefaultEncoding;
 extern const char* Py_FileSystemDefaultEncodeErrors;
 extern const char* Py_hexdigits;
 

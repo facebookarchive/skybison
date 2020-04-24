@@ -17,7 +17,10 @@
 #include "str-builtins.h"
 #include "utils.h"
 
+const char* Py_FileSystemDefaultEncoding = "utf-8";
+int Py_HasFileSystemDefaultEncoding = 1;
 const char* Py_FileSystemDefaultEncodeErrors = "surrogatepass";
+
 // clang-format off
 extern "C" const unsigned char _Py_ascii_whitespace[] = {  // NOLINT
     0, 0, 0, 0, 0, 0, 0, 0,

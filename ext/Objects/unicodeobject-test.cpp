@@ -2754,6 +2754,16 @@ errors = sys.getfilesystemencodeerrors()
   EXPECT_TRUE(isUnicodeEqualsCStr(errors, Py_FileSystemDefaultEncodeErrors));
 }
 
+TEST_F(UnicodeExtensionApiTest,
+       FileSystemDefaultEncodingMatchesSysGetfilesystemencoding) {
+  PyRun_SimpleString(R"(
+import sys
+encoding = sys.getfilesystemencoding()
+)");
+  PyObjectPtr errors(mainModuleGet("encoding"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(errors, Py_FileSystemDefaultEncoding));
+}
+
 // TODO(T57404483): Remove this ifdef after targeting CPython 3.7
 #if defined(__APPLE__) || defined(__ANDROID__)
 
