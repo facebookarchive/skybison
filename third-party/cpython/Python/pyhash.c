@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-_Py_HashSecret_t _Py_HashSecret;
+_Py_HashSecret_t _Py_HashSecret = {{0}};
 
 #if Py_HASH_ALGORITHM == Py_HASH_EXTERNAL
 extern PyHash_FuncDef PyHash_Func;
@@ -175,7 +175,7 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
             case 2: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
             case 1: hash = ((hash << 5) + hash) + *p++; break;
             default:
-                assert(0);
+                Py_UNREACHABLE();
         }
         hash ^= len;
         hash ^= (Py_uhash_t) _Py_HashSecret.djbx33a.suffix;
@@ -196,7 +196,7 @@ _PyHash_Fini(void)
 #ifdef Py_HASH_STATS
     int i;
     Py_ssize_t total = 0;
-    char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
+    const char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
 
     fprintf(stderr, "len   calls    total\n");
     for (i = 1; i <= Py_HASH_STATS_MAX; i++) {
@@ -284,7 +284,6 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
 #endif /* Py_HASH_ALGORITHM == Py_HASH_FNV */
 
 
-#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH24
 /* **************************************************************************
  <MIT License>
  Copyright (c) 2013  Marek Majkowski <marek@popcount.org>
@@ -420,15 +419,16 @@ pysiphash(const void *src, Py_ssize_t src_sz) {
         src, src_sz);
 }
 
-static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash24", 64, 128};
-
 uint64_t
 _Py_KeyedHash(uint64_t key, const void *src, Py_ssize_t src_sz)
 {
     return siphash24(key, 0, src, src_sz);
 }
 
-#endif /* Py_HASH_ALGORITHM == Py_HASH_SIPHASH24 */
+
+#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH24
+static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash24", 64, 128};
+#endif
 
 #ifdef __cplusplus
 }

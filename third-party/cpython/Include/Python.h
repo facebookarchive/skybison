@@ -18,7 +18,7 @@
 #error "Python's source code assumes C's unsigned char is an 8-bit type."
 #endif
 
-#if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
 
@@ -36,7 +36,17 @@
 #include <unistd.h>
 #endif
 #ifdef HAVE_CRYPT_H
+#if defined(HAVE_CRYPT_R) && !defined(_GNU_SOURCE)
+/* Required for glibc to expose the crypt_r() function prototype. */
+#  define _GNU_SOURCE
+#  define _Py_GNU_SOURCE_FOR_CRYPT
+#endif
 #include <crypt.h>
+#ifdef _Py_GNU_SOURCE_FOR_CRYPT
+/* Don't leak the _GNU_SOURCE define to other headers. */
+#  undef _GNU_SOURCE
+#  undef _Py_GNU_SOURCE_FOR_CRYPT
+#endif
 #endif
 
 /* For size_t? */
@@ -121,9 +131,11 @@
 #include "pyerrors.h"
 
 #include "pystate.h"
+#include "context.h"
 
 #include "pyarena.h"
 #include "modsupport.h"
+#include "compile.h"
 #include "pythonrun.h"
 #include "pylifecycle.h"
 #include "ceval.h"
@@ -135,7 +147,6 @@
 #include "abstract.h"
 #include "bltinmodule.h"
 
-#include "compile.h"
 #include "eval.h"
 
 #include "pyctype.h"

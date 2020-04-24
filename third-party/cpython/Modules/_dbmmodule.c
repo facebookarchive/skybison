@@ -187,8 +187,7 @@ _dbm_dbm_close_impl(dbmobject *self)
     if (self->di_dbm)
         dbm_close(self->di_dbm);
     self->di_dbm = NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -239,7 +238,7 @@ dbm_contains(PyObject *self, PyObject *arg)
          return -1;
     }
     if (PyUnicode_Check(arg)) {
-        key.dptr = PyUnicode_AsUTF8AndSize(arg, &size);
+        key.dptr = (char *)PyUnicode_AsUTF8AndSize(arg, &size);
         key.dsize = size;
         if (key.dptr == NULL)
             return -1;
@@ -497,7 +496,7 @@ PyInit__dbm(void) {
     d = PyModule_GetDict(m);
     if (DbmError == NULL)
         DbmError = PyErr_NewException("_dbm.error",
-                                      PyExc_IOError, NULL);
+                                      PyExc_OSError, NULL);
     s = PyUnicode_FromString(which_dbm);
     if (s != NULL) {
         PyDict_SetItemString(d, "library", s);

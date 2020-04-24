@@ -74,19 +74,27 @@ structseq_dealloc(PyStructSequence *obj)
     }
 }
 
+/*[clinic input]
+class structseq "PyStructSequence *" "NULL"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d781c6922c77752]*/
+
+#include "clinic/structseq.c.h"
+
+/*[clinic input]
+@classmethod
+structseq.__new__ as structseq_new
+    sequence as arg: object
+    dict: object = NULL
+[clinic start generated code]*/
+
 static PyObject *
-structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
+/*[clinic end generated code: output=baa082e788b171da input=9b44810243907377]*/
 {
-    PyObject *arg = NULL;
-    PyObject *dict = NULL;
     PyObject *ob;
     PyStructSequence *res = NULL;
     Py_ssize_t len, min_len, max_len, i, n_unnamed_fields;
-    static char *kwlist[] = {"sequence", "dict", 0};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:structseq",
-                                     kwlist, &arg, &dict))
-        return NULL;
 
     arg = PySequence_Fast(arg, "constructor requires a sequence");
 
@@ -178,10 +186,16 @@ structseq_repr(PyStructSequence *obj)
     endofbuf= &buf[REPR_BUFFER_SIZE-5];
 
     /* "typename(", limited to  TYPE_MAXSIZE */
-    len = strlen(typ->tp_name) > TYPE_MAXSIZE ? TYPE_MAXSIZE :
-                            strlen(typ->tp_name);
-    strncpy(pbuf, typ->tp_name, len);
-    pbuf += len;
+    assert(TYPE_MAXSIZE < sizeof(buf));
+    len = strlen(typ->tp_name);
+    if (len <= TYPE_MAXSIZE) {
+        strcpy(pbuf, typ->tp_name);
+        pbuf += len;
+    }
+    else {
+        strncpy(pbuf, typ->tp_name, TYPE_MAXSIZE);
+        pbuf += TYPE_MAXSIZE;
+    }
     *pbuf++ = '(';
 
     for (i=0; i < VISIBLE_SIZE(obj); i++) {
@@ -190,7 +204,7 @@ structseq_repr(PyStructSequence *obj)
 
         cname = typ->tp_members[i].name;
         if (cname == NULL) {
-            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %d name is NULL"
+            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %zd name is NULL"
                          " for type %.500s", i, typ->tp_name);
             return NULL;
         }

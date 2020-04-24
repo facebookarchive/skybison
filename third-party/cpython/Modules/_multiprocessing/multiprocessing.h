@@ -37,6 +37,9 @@
 #  define INVALID_HANDLE_VALUE (-1)
 #endif
 
+#include <sys/time.h>
+
+
 /*
  * Issue 3110 - Solaris does not define SEM_VALUE_MAX
  */

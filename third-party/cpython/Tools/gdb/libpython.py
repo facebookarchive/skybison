@@ -1122,8 +1122,8 @@ class PyTupleObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('(...)')
         visited.add(self.as_address())
 
-        result = tuple([PyObjectPtr.from_pyobject_ptr(self[i]).proxyval(visited)
-                        for i in safe_range(int_from_int(self.field('ob_size')))])
+        result = tuple(PyObjectPtr.from_pyobject_ptr(self[i]).proxyval(visited)
+                       for i in safe_range(int_from_int(self.field('ob_size'))))
         return result
 
     def write_repr(self, out, visited):
@@ -1178,7 +1178,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         global _is_pep393
         if _is_pep393 is None:
-            fields = gdb.lookup_type('PyUnicodeObject').target().fields()
+            fields = gdb.lookup_type('PyUnicodeObject').fields()
             _is_pep393 = 'data' in [f.name for f in fields]
         if _is_pep393:
             # Python 3.3 and newer
@@ -1563,7 +1563,8 @@ class Frame(object):
         if not caller:
             return False
 
-        if caller == 'PyCFunction_Call':
+        if caller in ('_PyCFunction_FastCallDict',
+                      '_PyCFunction_FastCallKeywords'):
             arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
@@ -1572,17 +1573,6 @@ class Frame(object):
             #   "self" is the (PyObject*) of the 'self'
             try:
                 # Use the prettyprinter for the func:
-                func = frame.read_var(arg_name)
-                return str(func)
-            except ValueError:
-                return ('PyCFunction invocation (unable to read %s: '
-                        'missing debuginfos?)' % arg_name)
-            except RuntimeError:
-                return 'PyCFunction invocation (unable to read %s)' % arg_name
-
-        elif caller == '_PyCFunction_FastCallDict':
-            arg_name = 'func_obj'
-            try:
                 func = frame.read_var(arg_name)
                 return str(func)
             except ValueError:

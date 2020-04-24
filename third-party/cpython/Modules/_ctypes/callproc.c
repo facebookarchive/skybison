@@ -136,7 +136,7 @@ _ctypes_get_errobj(int **pspace)
     PyObject *dict = PyThreadState_GetDict();
     PyObject *errobj;
     static PyObject *error_object_name;
-    if (dict == 0) {
+    if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot get thread state");
         return NULL;
@@ -690,7 +690,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #ifdef CTYPES_UNICODE
     if (PyUnicode_Check(obj)) {
         pa->ffi_type = &ffi_type_pointer;
-        pa->value.p = _PyUnicode_AsWideCharString(obj);
+        pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
         if (pa->value.p == NULL)
             return -1;
         pa->keep = PyCapsule_New(pa->value.p, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
@@ -767,9 +767,7 @@ static int _call_function_pointer(int flags,
                                   void *resmem,
                                   int argcount)
 {
-#ifdef WITH_THREAD
     PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
-#endif
     PyObject *error_object = NULL;
     int *space;
     ffi_cif cif;
@@ -808,10 +806,8 @@ static int _call_function_pointer(int flags,
         if (error_object == NULL)
             return -1;
     }
-#ifdef WITH_THREAD
     if ((flags & FUNCFLAG_PYTHONAPI) == 0)
         Py_UNBLOCK_THREADS
-#endif
     if (flags & FUNCFLAG_USE_ERRNO) {
         int temp = space[0];
         space[0] = errno;
@@ -848,10 +844,8 @@ static int _call_function_pointer(int flags,
         space[0] = errno;
         errno = temp;
     }
-#ifdef WITH_THREAD
     if ((flags & FUNCFLAG_PYTHONAPI) == 0)
         Py_BLOCK_THREADS
-#endif
     Py_XDECREF(error_object);
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
@@ -914,8 +908,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
         return PyLong_FromLong(*(int *)result);
 
     if (restype == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     dict = PyType_stgdict(restype);
@@ -1005,9 +998,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
     /* We absolutely have to release the GIL during COM method calls,
        otherwise we may get a deadlock!
     */
-#ifdef WITH_THREAD
     Py_BEGIN_ALLOW_THREADS
-#endif
 
     hr = pIunk->lpVtbl->QueryInterface(pIunk, &IID_ISupportErrorInfo, (void **)&psei);
     if (FAILED(hr))
@@ -1031,9 +1022,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
     pei->lpVtbl->Release(pei);
 
   failed:
-#ifdef WITH_THREAD
     Py_END_ALLOW_THREADS
-#endif
 
     progid = NULL;
     ProgIDFromCLSID(&guid, &progid);
@@ -1063,7 +1052,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 #if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
-    defined(__aarch64__)
+    defined(__aarch64__) || defined(__riscv)
 #define CTYPES_PASS_BY_REF_HACK
 #define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
 #define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
@@ -1136,20 +1125,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
             converter = PyTuple_GET_ITEM(argtypes, i);
             v = PyObject_CallFunctionObjArgs(converter, arg, NULL);
             if (v == NULL) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
 
             err = ConvParam(v, i+1, pa);
             Py_DECREF(v);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
         } else {
             err = ConvParam(arg, i+1, pa);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup; /* leaking ? */
             }
         }
@@ -1312,8 +1301,7 @@ static PyObject *free_library(PyObject *self, PyObject *args)
         return NULL;
     if (!FreeLibrary((HMODULE)hMod))
         return PyErr_SetFromWindowsErr(GetLastError());
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static const char copy_com_pointer_doc[] =
@@ -1377,7 +1365,7 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     handle = ctypes_dlopen(name_str, mode);
     Py_XDECREF(name2);
     if (!handle) {
-        char *errmsg = ctypes_dlerror();
+        const char *errmsg = ctypes_dlerror();
         if (!errmsg)
             errmsg = "dlopen() error";
         PyErr_SetString(PyExc_OSError,
@@ -1398,8 +1386,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
                                ctypes_dlerror());
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *py_dl_sym(PyObject *self, PyObject *args)
@@ -1673,32 +1660,39 @@ resize(PyObject *self, PyObject *args)
         obj->b_size = size;
     }
   done:
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
 unpickle(PyObject *self, PyObject *args)
 {
-    PyObject *typ;
-    PyObject *state;
-    PyObject *result;
-    PyObject *tmp;
+    PyObject *typ, *state, *meth, *obj, *result;
     _Py_IDENTIFIER(__new__);
     _Py_IDENTIFIER(__setstate__);
 
-    if (!PyArg_ParseTuple(args, "OO", &typ, &state))
+    if (!PyArg_ParseTuple(args, "OO!", &typ, &PyTuple_Type, &state))
         return NULL;
-    result = _PyObject_CallMethodId(typ, &PyId___new__, "O", typ);
-    if (result == NULL)
+    obj = _PyObject_CallMethodIdObjArgs(typ, &PyId___new__, typ, NULL);
+    if (obj == NULL)
         return NULL;
-    tmp = _PyObject_CallMethodId(result, &PyId___setstate__, "O", state);
-    if (tmp == NULL) {
-        Py_DECREF(result);
-        return NULL;
+
+    meth = _PyObject_GetAttrId(obj, &PyId___setstate__);
+    if (meth == NULL) {
+        goto error;
     }
-    Py_DECREF(tmp);
-    return result;
+
+    result = PyObject_Call(meth, state, NULL);
+    Py_DECREF(meth);
+    if (result == NULL) {
+        goto error;
+    }
+    Py_DECREF(result);
+
+    return obj;
+
+error:
+    Py_DECREF(obj);
+    return NULL;
 }
 
 static PyObject *

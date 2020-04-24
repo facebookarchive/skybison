@@ -53,7 +53,7 @@
 
    Requires at GCC 3.1+ */
 #if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && \
-    (((__GNUC__ == 3) && (__GNU_MINOR__ >= 1)) || (__GNUC__ >= 4)))
+    (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)) || (__GNUC__ >= 4)))
 /* Two gcc extensions.
    &a[0] degrades to a pointer: a different type from an array */
 #define Py_ARRAY_LENGTH(array) \
@@ -89,12 +89,12 @@
 /* Check if pointer "p" is aligned to "a"-bytes boundary. */
 #define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a) - 1)))
 
-#define Py_UNREACHABLE() abort()
-
 #ifdef __GNUC__
 #define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
 #else
 #define Py_UNUSED(name) _unused_ ## name
 #endif
+
+#define Py_UNREACHABLE() abort()
 
 #endif /* Py_PYMACRO_H */

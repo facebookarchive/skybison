@@ -623,6 +623,22 @@ type objects) *must* have the :attr:`ob_size` field.
    | :const:`Py_GE` | ``>=``     |
    +----------------+------------+
 
+   The following macro is defined to ease writing rich comparison functions:
+
+   .. c:function:: PyObject *Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
+
+      Return ``Py_True`` or ``Py_False`` from the function, depending on the
+      result of a comparison.
+      VAL_A and VAL_B must be orderable by C comparison operators (for example,
+      they may be C ints or floats). The third argument specifies the requested
+      operation, as for :c:func:`PyObject_RichCompare`.
+
+      The return value's reference count is properly incremented.
+
+      On error, sets an exception and returns NULL from the function.
+
+      .. versionadded:: 3.7
+
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_weaklistoffset
 
@@ -1240,7 +1256,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceConcat`
    will fall back to :c:func:`PySequence_Concat`.  It is also used by the
-   augmented assignment ``+=``, after trying numeric inplace addition
+   augmented assignment ``+=``, after trying numeric in-place addition
    via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
@@ -1249,7 +1265,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceRepeat`
    will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
-   augmented assignment ``*=``, after trying numeric inplace multiplication
+   augmented assignment ``*=``, after trying numeric in-place multiplication
    via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
 
 

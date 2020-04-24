@@ -63,13 +63,15 @@ atexit_cleanup(atexitmodule_state *modstate)
 /* Installed into pylifecycle.c's atexit mechanism */
 
 static void
-atexit_callfuncs(PyObject* module)
+atexit_callfuncs(PyObject *module)
 {
     PyObject *exc_type = NULL, *exc_value, *exc_tb, *r;
     atexit_callback *cb;
     atexitmodule_state *modstate;
     int i;
 
+    if (module == NULL)
+        return;
     modstate = GET_ATEXIT_STATE(module);
 
     if (modstate->ncallbacks == 0)
@@ -221,13 +223,15 @@ atexit_m_traverse(PyObject *self, visitproc visit, void *arg)
     atexitmodule_state *modstate;
 
     modstate = GET_ATEXIT_STATE(self);
-    for (i = 0; i < modstate->ncallbacks; i++) {
-        atexit_callback *cb = modstate->atexit_callbacks[i];
-        if (cb == NULL)
-            continue;
-        Py_VISIT(cb->func);
-        Py_VISIT(cb->args);
-        Py_VISIT(cb->kwargs);
+    if (modstate != NULL) {
+        for (i = 0; i < modstate->ncallbacks; i++) {
+            atexit_callback *cb = modstate->atexit_callbacks[i];
+            if (cb == NULL)
+                continue;
+            Py_VISIT(cb->func);
+            Py_VISIT(cb->args);
+            Py_VISIT(cb->kwargs);
+        }
     }
     return 0;
 }
@@ -237,7 +241,9 @@ atexit_m_clear(PyObject *self)
 {
     atexitmodule_state *modstate;
     modstate = GET_ATEXIT_STATE(self);
-    atexit_cleanup(modstate);
+    if (modstate != NULL) {
+        atexit_cleanup(modstate);
+    }
     return 0;
 }
 
@@ -246,8 +252,10 @@ atexit_free(PyObject *m)
 {
     atexitmodule_state *modstate;
     modstate = GET_ATEXIT_STATE(m);
-    atexit_cleanup(modstate);
-    PyMem_Free(modstate->atexit_callbacks);
+    if (modstate != NULL) {
+        atexit_cleanup(modstate);
+        PyMem_Free(modstate->atexit_callbacks);
+    }
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
@@ -305,7 +313,6 @@ upon normal program termination.\n\
 \n\
 Two public functions, register and unregister, are defined.\n\
 ");
-
 
 static struct PyModuleDef atexitmodule = {
     PyModuleDef_HEAD_INIT,

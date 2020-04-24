@@ -263,11 +263,11 @@ in the instance.  A variety of primitive C types are supported, and access may
 be read-only or read-write.  The structures in the table are defined as::
 
    typedef struct PyMemberDef {
-       char *name;
-       int   type;
-       int   offset;
-       int   flags;
-       char *doc;
+       const char *name;
+       int         type;
+       int         offset;
+       int         flags;
+       const char *doc;
    } PyMemberDef;
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
@@ -487,9 +487,9 @@ Here is a toy ``tp_call`` implementation::
    newdatatype_call(newdatatypeobject *self, PyObject *args, PyObject *kwds)
    {
        PyObject *result;
-       char *arg1;
-       char *arg2;
-       char *arg3;
+       const char *arg1;
+       const char *arg2;
+       const char *arg3;
 
        if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
            return NULL;

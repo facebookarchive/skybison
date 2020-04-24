@@ -186,7 +186,7 @@ previous simple module-based configuration example::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
@@ -295,7 +295,7 @@ Here is an example of a module using the logging configuration server::
         while True:
             logger.debug('debug message')
             logger.info('info message')
-            logger.warn('warn message')
+            logger.warning('warn message')
             logger.error('error message')
             logger.critical('critical message')
             time.sleep(5)
@@ -1069,7 +1069,7 @@ to indicate additional contextual information to be added to the log). So
 you cannot directly make logging calls using :meth:`str.format` or
 :class:`string.Template` syntax, because internally the logging package
 uses %-formatting to merge the format string and the variable arguments.
-There would no changing this while preserving backward compatibility, since
+There would be no changing this while preserving backward compatibility, since
 all logging calls which are out there in existing code will be using %-format
 strings.
 

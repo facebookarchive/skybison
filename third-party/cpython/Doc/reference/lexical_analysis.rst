@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/9.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/11.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -343,13 +343,13 @@ exactly as written here:
 
 .. sourcecode:: text
 
-   False      class      finally    is         return
-   None       continue   for        lambda     try
-   True       def        from       nonlocal   while
-   and        del        global     not        with
-   as         elif       if         or         yield
-   assert     else       import     pass
-   break      except     in         raise
+   False      await      else       import     pass
+   None       break      except     in         raise
+   True       class      finally    is         return
+   and        continue   for        lambda     try
+   as         def        from       nonlocal   while
+   assert     del        global     not        with
+   async      elif       if         or         yield
 
 .. index::
    single: _, identifiers
@@ -927,4 +927,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/9.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

@@ -42,7 +42,7 @@
 
 
 #if defined(HAVE_EXPAT_CONFIG_H)  /* e.g. MinGW */
-# include <expat_config.h>
+# include "expat_config.h"
 #else  /* !defined(HAVE_EXPAT_CONFIG_H) */
 
 

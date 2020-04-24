@@ -70,6 +70,24 @@ PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
 #define _ELEMENTTREE_ELEMENT___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)_elementtree_Element___deepcopy__, METH_O, _elementtree_Element___deepcopy____doc__},
 
+static PyObject *
+_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo);
+
+static PyObject *
+_elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *memo;
+
+    if (!PyArg_Parse(arg, "O!:__deepcopy__", &PyDict_Type, &memo)) {
+        goto exit;
+    }
+    return_value = _elementtree_Element___deepcopy___impl(self, memo);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree_Element___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
@@ -328,6 +346,35 @@ _elementtree_Element_iter(ElementObject *self, PyObject *const *args, Py_ssize_t
         goto exit;
     }
     return_value = _elementtree_Element_iter_impl(self, tag);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_elementtree_Element_getiterator__doc__,
+"getiterator($self, /, tag=None)\n"
+"--\n"
+"\n");
+
+#define _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF    \
+    {"getiterator", (PyCFunction)_elementtree_Element_getiterator, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_getiterator__doc__},
+
+static PyObject *
+_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag);
+
+static PyObject *
+_elementtree_Element_getiterator(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"tag", NULL};
+    static _PyArg_Parser _parser = {"|O:getiterator", _keywords, 0};
+    PyObject *tag = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &tag)) {
+        goto exit;
+    }
+    return_value = _elementtree_Element_getiterator_impl(self, tag);
 
 exit:
     return return_value;
@@ -702,4 +749,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1b4b41d6209861f7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5a85a88bbb5cc06 input=a9049054013a1b77]*/

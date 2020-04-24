@@ -92,8 +92,6 @@ typedef struct {
 } PyHash_FuncDef;
 
 PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
-
-uint64_t _Py_KeyedHash(uint64_t, const void *, Py_ssize_t);
 #endif
 
 

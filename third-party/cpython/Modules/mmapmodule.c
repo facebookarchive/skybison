@@ -181,8 +181,7 @@ mmap_close_method(mmap_object *self, PyObject *unused)
     }
 #endif
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 #ifdef MS_WINDOWS
@@ -241,28 +240,6 @@ mmap_read_line_method(mmap_object *self,
     return result;
 }
 
-/* Basically the "n" format code with the ability to turn None into -1. */
-static int
-mmap_convert_ssize_t(PyObject *obj, void *result) {
-    Py_ssize_t limit;
-    if (obj == Py_None) {
-        limit = -1;
-    }
-    else if (PyNumber_Check(obj)) {
-        limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
-            return 0;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "integer argument expected, got '%.200s'",
-                     Py_TYPE(obj)->tp_name);
-        return 0;
-    }
-    *((Py_ssize_t *)result) = limit;
-    return 1;
-}
-
 static PyObject *
 mmap_read_method(mmap_object *self,
                  PyObject *args)
@@ -271,7 +248,7 @@ mmap_read_method(mmap_object *self,
     PyObject *result;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|O&:read", mmap_convert_ssize_t, &num_bytes))
+    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
         return(NULL);
 
     /* silently 'adjust' out-of-range requests */
@@ -415,8 +392,7 @@ mmap_write_byte_method(mmap_object *self,
 
     if (self->pos < self->size) {
         self->data[self->pos++] = value;
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "write byte out of range");
@@ -524,8 +500,7 @@ mmap_resize_method(mmap_object *self,
                                                 new_size);
             if (self->data != NULL) {
                 self->size = new_size;
-                Py_INCREF(Py_None);
-                return Py_None;
+                Py_RETURN_NONE;
             } else {
                 dwErrCode = GetLastError();
                 CloseHandle(self->map_handle);
@@ -567,8 +542,7 @@ mmap_resize_method(mmap_object *self,
         }
         self->data = newmap;
         self->size = new_size;
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
 #endif /* HAVE_MREMAP */
 #endif /* UNIX */
     }
@@ -644,8 +618,7 @@ mmap_seek_method(mmap_object *self, PyObject *args)
         if (where > self->size || where < 0)
             goto onoutofrange;
         self->pos = where;
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
   onoutofrange:
@@ -670,8 +643,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 
         memmove(&self->data[dest], &self->data[src], cnt);
 
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
 
       bounds:
         PyErr_SetString(PyExc_ValueError,
@@ -1227,7 +1199,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    char *tagname = "";
+    const char *tagname = "";
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1483,6 +1455,7 @@ PyInit_mmap(void)
 
     setint(dict, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity());
 
+    setint(dict, "ACCESS_DEFAULT", ACCESS_DEFAULT);
     setint(dict, "ACCESS_READ", ACCESS_READ);
     setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
     setint(dict, "ACCESS_COPY", ACCESS_COPY);

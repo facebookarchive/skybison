@@ -10,14 +10,39 @@ static PyObject *va_build_value(const char *, va_list, int);
 static PyObject **va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len, const char *, va_list, int, Py_ssize_t*);
 
 /* Package context -- the full module name for package imports */
-char *_Py_PackageContext = NULL;
+const char *_Py_PackageContext = NULL;
+
+
+int
+_Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
+{
+    Py_ssize_t limit;
+    if (obj == Py_None) {
+        return 1;
+    }
+    else if (PyIndex_Check(obj)) {
+        limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
+        if (limit == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not '%.200s'",
+                     Py_TYPE(obj)->tp_name);
+        return 0;
+    }
+    *((Py_ssize_t *)result) = limit;
+    return 1;
+}
+
 
 /* Helper for mkvalue() to scan the length of a format */
 
-static int
-countformat(const char *format, int endchar)
+static Py_ssize_t
+countformat(const char *format, char endchar)
 {
-    int count = 0;
+    Py_ssize_t count = 0;
     int level = 0;
     while (level > 0 || *format != endchar) {
         switch (*format) {
@@ -29,8 +54,9 @@ countformat(const char *format, int endchar)
         case '(':
         case '[':
         case '{':
-            if (level == 0)
+            if (level == 0) {
                 count++;
+            }
             level++;
             break;
         case ')':
@@ -46,8 +72,9 @@ countformat(const char *format, int endchar)
         case '\t':
             break;
         default:
-            if (level == 0)
+            if (level == 0) {
                 count++;
+            }
         }
         format++;
     }
@@ -58,18 +85,18 @@ countformat(const char *format, int endchar)
 /* Generic function to create a value -- the inverse of getargs() */
 /* After an original idea and first implementation by Steven Miale */
 
-static PyObject *do_mktuple(const char**, va_list *, int, int, int);
+static PyObject *do_mktuple(const char**, va_list *, char, Py_ssize_t, int);
 static int do_mkstack(PyObject **, const char**, va_list *, char, Py_ssize_t, int);
-static PyObject *do_mklist(const char**, va_list *, int, int, int);
-static PyObject *do_mkdict(const char**, va_list *, int, int, int);
+static PyObject *do_mklist(const char**, va_list *, char, Py_ssize_t, int);
+static PyObject *do_mkdict(const char**, va_list *, char, Py_ssize_t, int);
 static PyObject *do_mkvalue(const char**, va_list *, int);
 
 
 static void
-do_ignore(const char **p_format, va_list *p_va, int endchar, int n, int flags)
+do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *v;
-    int i;
+    Py_ssize_t i;
     assert(PyErr_Occurred());
     v = PyTuple_New(n);
     for (i = 0; i < n; i++) {
@@ -93,15 +120,16 @@ do_ignore(const char **p_format, va_list *p_va, int endchar, int n, int flags)
                         "Unmatched paren in format");
         return;
     }
-    if (endchar)
+    if (endchar) {
         ++*p_format;
+    }
 }
 
 static PyObject *
-do_mkdict(const char **p_format, va_list *p_va, int endchar, int n, int flags)
+do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *d;
-    int i;
+    Py_ssize_t i;
     if (n < 0)
         return NULL;
     if (n % 2) {
@@ -148,10 +176,10 @@ do_mkdict(const char **p_format, va_list *p_va, int endchar, int n, int flags)
 }
 
 static PyObject *
-do_mklist(const char **p_format, va_list *p_va, int endchar, int n, int flags)
+do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *v;
-    int i;
+    Py_ssize_t i;
     if (n < 0)
         return NULL;
     /* Note that we can't bail immediately on error as this will leak
@@ -219,10 +247,10 @@ error:
 }
 
 static PyObject *
-do_mktuple(const char **p_format, va_list *p_va, int endchar, int n, int flags)
+do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *v;
-    int i;
+    Py_ssize_t i;
     if (n < 0)
         return NULL;
     /* Note that we can't bail immediately on error as this will leak
@@ -325,8 +353,8 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             }
             else {
                 if (n < 0)
-                    n = Py_UNICODE_strlen(u);
-                v = PyUnicode_FromUnicode(u, n);
+                    n = wcslen(u);
+                v = PyUnicode_FromWideChar(u, n);
             }
             return v;
         }
@@ -504,15 +532,14 @@ static PyObject *
 va_build_value(const char *format, va_list va, int flags)
 {
     const char *f = format;
-    int n = countformat(f, '\0');
+    Py_ssize_t n = countformat(f, '\0');
     va_list lva;
     PyObject *retval;
 
     if (n < 0)
         return NULL;
     if (n == 0) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     va_copy(lva, va);
     if (n == 1) {

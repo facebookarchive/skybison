@@ -141,7 +141,7 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <https://www.python.org/~guido/>`_, Python's creator.
+      <https://gvanrossum.github.io/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
@@ -200,7 +200,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
@@ -332,7 +332,7 @@ Glossary
       names, attribute access, operators or function calls which all return a
       value.  In contrast to many other languages, not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
-      as expressions, such as :keyword:`if`.  Assignments are also statements,
+      as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
 
    extension module
@@ -444,8 +444,8 @@ Glossary
 
    generator expression
       An expression that returns an iterator.  It looks like a normal expression
-      followed by a :keyword:`for` expression defining a loop variable, range,
-      and an optional :keyword:`if` expression.  The combined expression
+      followed by a :keyword:`!for` clause defining a loop variable, range,
+      and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
 
          >>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
@@ -483,6 +483,12 @@ Glossary
       because performance suffered in the common single-processor case. It
       is believed that overcoming this performance issue would make the
       implementation much more complicated and therefore costlier to maintain.
+
+
+   hash-based pyc
+      A bytecode cache file that uses the hash rather than the last-modified
+      time of the corresponding source file to determine its validity. See
+      :ref:`pyc-invalidation`.
 
    hashable
       An object is *hashable* if it has a hash value which never changes during
@@ -652,6 +658,11 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
 
    mapping
       A container object that supports arbitrary key lookups and implements the
@@ -994,6 +1005,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in

@@ -42,6 +42,11 @@ can be customized by end users easily.
       be used for this purpose.
 
 
+.. testsetup::
+
+   import configparser
+
+
 Quick Start
 -----------
 
@@ -95,7 +100,6 @@ back and explore the data it holds.
 
 .. doctest::
 
-   >>> import configparser
    >>> config = configparser.ConfigParser()
    >>> config.sections()
    []
@@ -116,8 +120,8 @@ back and explore the data it holds.
    'no'
    >>> topsecret['Port']
    '50022'
-   >>> for key in config['bitbucket.org']: print(key)
-   ...
+   >>> for key in config['bitbucket.org']:  # doctest: +SKIP
+   ...     print(key)
    user
    compressionlevel
    serveraliveinterval
@@ -397,11 +401,11 @@ However, there are a few differences that should be taken into account:
   because default values cannot be deleted from the section (because technically
   they are not there).  If they are overridden in the section, deleting causes
   the default value to be visible again.  Trying to delete a default value
-  causes a ``KeyError``.
+  causes a :exc:`KeyError`.
 
 * ``DEFAULTSECT`` cannot be removed from the parser:
 
-  * trying to delete it raises ``ValueError``,
+  * trying to delete it raises :exc:`ValueError`,
 
   * ``parser.clear()`` leaves it intact,
 
@@ -458,7 +462,8 @@ the :meth:`__init__` options:
 
   Please note: there are ways to add a set of key-value pairs in a single
   operation.  When you use a regular dictionary in those operations, the order
-  of the keys may be random.  For example:
+  of the keys will be ordered because dict preserves order from Python 3.7.
+  For example:
 
   .. doctest::
 
@@ -474,40 +479,9 @@ the :meth:`__init__` options:
      ...                                'baz': 'z'}
      ... })
      >>> parser.sections()
-     ['section3', 'section2', 'section1']
+     ['section1', 'section2', 'section3']
      >>> [option for option in parser['section3']]
-     ['baz', 'foo', 'bar']
-
-  In these operations you need to use an ordered dictionary as well:
-
-  .. doctest::
-
-     >>> from collections import OrderedDict
-     >>> parser = configparser.ConfigParser()
-     >>> parser.read_dict(
-     ...   OrderedDict((
-     ...     ('s1',
-     ...      OrderedDict((
-     ...        ('1', '2'),
-     ...        ('3', '4'),
-     ...        ('5', '6'),
-     ...      ))
-     ...     ),
-     ...     ('s2',
-     ...      OrderedDict((
-     ...        ('a', 'b'),
-     ...        ('c', 'd'),
-     ...        ('e', 'f'),
-     ...      ))
-     ...     ),
-     ...   ))
-     ... )
-     >>> parser.sections()
-     ['s1', 's2']
-     >>> [option for option in parser['s1']]
-     ['1', '3', '5']
-     >>> [option for option in parser['s2'].values()]
-     ['b', 'd', 'f']
+     ['foo', 'bar', 'baz']
 
 * *allow_no_value*, default value: ``False``
 
@@ -601,11 +575,11 @@ the :meth:`__init__` options:
     ...   line #3
     ... """)
     >>> print(parser['hashes']['shebang'])
-
+    <BLANKLINE>
     #!/usr/bin/env python
     # -*- coding: utf-8 -*-
     >>> print(parser['hashes']['extensions'])
-
+    <BLANKLINE>
     enabled_extension
     another_extension
     yet_another_extension
@@ -749,6 +723,12 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
+  .. note::
+     The optionxform function transforms option names to a canonical form.
+     This should be an idempotent function: if the name is already in
+     canonical form, it should be returned unchanged.
+
+
 .. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default
@@ -759,6 +739,7 @@ be overridden by subclasses or by attribute assignment.
 
   .. doctest::
 
+     >>> import re
      >>> config = """
      ... [Section 1]
      ... option = value
@@ -766,11 +747,11 @@ be overridden by subclasses or by attribute assignment.
      ... [  Section 2  ]
      ... another = val
      ... """
-     >>> typical = ConfigParser()
+     >>> typical = configparser.ConfigParser()
      >>> typical.read_string(config)
      >>> typical.sections()
      ['Section 1', '  Section 2  ']
-     >>> custom = ConfigParser()
+     >>> custom = configparser.ConfigParser()
      >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
      >>> custom.read_string(config)
      >>> custom.sections()
@@ -943,6 +924,10 @@ ConfigParser Objects
    .. versionchanged:: 3.5
       The *converters* argument was added.
 
+   .. versionchanged:: 3.7
+      The *defaults* argument is read with :meth:`read_dict()`,
+      providing consistent behavior across the parser: non-string
+      keys and values are implicitly converted to strings.
 
    .. method:: defaults()
 
@@ -989,7 +974,8 @@ ConfigParser Objects
       Attempt to read and parse an iterable of filenames, returning a list of
       filenames which were successfully parsed.
 
-      If *filenames* is a string or :term:`path-like object`, it is treated as
+      If *filenames* is a string, a :class:`bytes` object or a
+      :term:`path-like object`, it is treated as
       a single filename.  If a file named in *filenames* cannot be opened, that
       file will be ignored.  This is designed so that you can specify an
       iterable of potential configuration file locations (for example, the
@@ -1016,6 +1002,9 @@ ConfigParser Objects
 
       .. versionadded:: 3.6.1
          The *filenames* parameter accepts a :term:`path-like object`.
+
+      .. versionadded:: 3.7
+         The *filenames* parameter accepts a :class:`bytes` object.
 
 
    .. method:: read_file(f, source=None)
@@ -1204,8 +1193,10 @@ RawConfigParser Objects
                            default_section=configparser.DEFAULTSECT[, \
                            interpolation])
 
-   Legacy variant of the :class:`ConfigParser` with interpolation disabled
-   by default and unsafe ``add_section`` and ``set`` methods.
+   Legacy variant of the :class:`ConfigParser`.  It has interpolation
+   disabled by default and allows for non-string section names, option
+   names, and values via its unsafe ``add_section`` and ``set`` methods,
+   as well as the legacy ``defaults=`` keyword argument handling.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
@@ -1321,4 +1312,3 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
-

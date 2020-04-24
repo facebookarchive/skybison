@@ -1370,7 +1370,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
             goto exit;
         }
         if (!PyArg_ParseTuple(state,
-                        "iO!;audioop.ratecv: illegal state argument",
+                        "iO!;ratecv(): illegal state argument",
                         &d, &PyTuple_Type, &samps))
             goto exit;
         if (PyTuple_Size(samps) != nchannels) {
@@ -1386,9 +1386,11 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
                 goto exit;
             }
             if (!PyArg_ParseTuple(channel,
-                                  "ii:ratecv", &prev_i[chan],
-                                               &cur_i[chan]))
+                                  "ii;ratecv(): illegal state argument",
+                                  &prev_i[chan], &cur_i[chan]))
+            {
                 goto exit;
+            }
         }
     }
 
@@ -1659,7 +1661,9 @@ audioop_lin2adpcm_impl(PyObject *module, Py_buffer *fragment, int width,
         PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
         return NULL;
     }
-    else if (!PyArg_ParseTuple(state, "ii", &valpred, &index)) {
+    else if (!PyArg_ParseTuple(state, "ii;lin2adpcm(): illegal state argument",
+                               &valpred, &index))
+    {
         return NULL;
     }
     else if (valpred >= 0x8000 || valpred < -0x8000 ||
@@ -1787,7 +1791,9 @@ audioop_adpcm2lin_impl(PyObject *module, Py_buffer *fragment, int width,
         PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
         return NULL;
     }
-    else if (!PyArg_ParseTuple(state, "ii", &valpred, &index)) {
+    else if (!PyArg_ParseTuple(state, "ii;adpcm2lin(): illegal state argument",
+                               &valpred, &index))
+    {
         return NULL;
     }
     else if (valpred >= 0x8000 || valpred < -0x8000 ||

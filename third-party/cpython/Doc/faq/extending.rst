@@ -63,7 +63,7 @@ How can I execute arbitrary Python statements from C?
 The highest-level function to do this is :c:func:`PyRun_SimpleString` which takes
 a single string argument to be executed in the context of the module
 ``__main__`` and returns ``0`` for success and ``-1`` when an exception occurred
-(including ``SyntaxError``).  If you want more control, use
+(including :exc:`SyntaxError`).  If you want more control, use
 :c:func:`PyRun_String`; see the source for :c:func:`PyRun_SimpleString` in
 ``Python/pythonrun.c``.
 
@@ -280,6 +280,7 @@ solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
 equal to ``E_EOF``, which means the input is incomplete.  Here's a sample code
 fragment, untested, inspired by code from Alex Farber::
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
    #include <node.h>
    #include <errcode.h>
@@ -318,6 +319,7 @@ complete example using the GNU readline library (you may want to ignore
    #include <stdio.h>
    #include <readline.h>
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
    #include <object.h>
    #include <compile.h>

@@ -7,24 +7,24 @@ Built-in Functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-===================  =================  ==================  ================  ====================
-..                   ..                 Built-in Functions  ..                ..
-===================  =================  ==================  ================  ====================
-:func:`abs`          |func-dict|_       :func:`help`        :func:`min`       :func:`setattr`
-:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
-:func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
-:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
-:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
-:func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
+===================  =================  ==================  ==================  ====================
+..                   ..                 Built-in Functions  ..                  ..
+===================  =================  ==================  ==================  ====================
+:func:`abs`          :func:`delattr`    :func:`hash`        |func-memoryview|_  |func-set|_
+:func:`all`          |func-dict|_       :func:`help`        :func:`min`         :func:`setattr`
+:func:`any`          :func:`dir`        :func:`hex`         :func:`next`        :func:`slice`
+:func:`ascii`        :func:`divmod`     :func:`id`          :func:`object`      :func:`sorted`
+:func:`bin`          :func:`enumerate`  :func:`input`       :func:`oct`         :func:`staticmethod`
+:func:`bool`         :func:`eval`       :func:`int`         :func:`open`        |func-str|_
+:func:`breakpoint`   :func:`exec`       :func:`isinstance`  :func:`ord`         :func:`sum`
+|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`         :func:`super`
+|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`       |func-tuple|_
+:func:`callable`     :func:`format`     :func:`len`         :func:`property`    :func:`type`
+:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_       :func:`vars`
+:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`        :func:`zip`
+:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`    :func:`__import__`
 :func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
-:func:`delattr`      :func:`hash`       |func-memoryview|_  |func-set|_
-===================  =================  ==================  ================  ====================
+===================  =================  ==================  ==================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
@@ -112,6 +112,22 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
+
+.. function:: breakpoint(*args, **kws)
+
+   This function drops you into the debugger at the call site.  Specifically,
+   it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
+   through.  By default, ``sys.breakpointhook()`` calls
+   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   purely a convenience function so you don't have to explicitly import
+   :mod:`pdb` or type as much code to enter the debugger.  However,
+   :func:`sys.breakpointhook` can be set to some other function and
+   :func:`breakpoint` will automatically call that, allowing you to drop into
+   the debugger of choice.
+
+   .. versionadded:: 3.7
 
 .. _func-bytearray:
 .. class:: bytearray([source[, encoding[, errors]]])
@@ -194,19 +210,18 @@ are always available.  They are listed here in alphabetical order.
           @classmethod
           def f(cls, arg1, arg2, ...): ...
 
-   The ``@classmethod`` form is a function :term:`decorator` -- see the description
-   of function definitions in :ref:`function` for details.
+   The ``@classmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
+   A class method can be called either on the class (such as ``C.f()``) or on an instance (such
    as ``C().f()``).  The instance is ignored except for its class. If a class
    method is called for a derived class, the derived class object is passed as the
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod` in this section.
+   see :func:`staticmethod`.
 
-   For more information on class methods, consult the documentation on the standard
-   type hierarchy in :ref:`types`.
+   For more information on class methods, see :ref:`types`.
 
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
@@ -352,7 +367,7 @@ are always available.  They are listed here in alphabetical order.
    The resulting list is sorted alphabetically.  For example:
 
       >>> import struct
-      >>> dir()   # show the names in the module namespace
+      >>> dir()   # show the names in the module namespace  # doctest: +SKIP
       ['__builtins__', '__name__', 'struct']
       >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
       ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
@@ -563,6 +578,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
+
 
 .. index::
    single: __format__
@@ -649,6 +667,11 @@ are always available.  They are listed here in alphabetical order.
    topic, and a help page is printed on the console.  If the argument is any other
    kind of object, a help page on the object is generated.
 
+   Note that if a slash(/) appears in the parameter list of a function, when
+   invoking :func:`help`, it means that the parameters prior to the slash are
+   positional-only. For more info, see
+   :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
+
    This function is added to the built-in namespace by the :mod:`site` module.
 
    .. versionchanged:: 3.4
@@ -714,7 +737,7 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. class:: int(x=0)
+.. class:: int([x])
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
@@ -747,6 +770,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. function:: isinstance(object, classinfo)
@@ -787,13 +813,14 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`typeiter`.
 
-   One useful application of the second form of :func:`iter` is to read lines of
-   a file until a certain line is reached.  The following example reads a file
-   until the :meth:`~io.TextIOBase.readline` method returns an empty string::
+   One useful application of the second form of :func:`iter` is to build a
+   block-reader. For example, reading fixed-width blocks from a binary
+   database file until the end of file is reached::
 
-      with open('mydata.txt') as fp:
-          for line in iter(fp.readline, ''):
-              process_line(line)
+      from functools import partial
+      with open('mydata.db', 'rb') as f:
+          for block in iter(partial(f.read, 64), b''):
+              process_block(block)
 
 
 .. function:: len(s)
@@ -815,7 +842,8 @@ are always available.  They are listed here in alphabetical order.
 
    Update and return a dictionary representing the current local symbol table.
    Free variables are returned by :func:`locals` when it is called in function
-   blocks, but not in class blocks.
+   blocks, but not in class blocks. Note that at the module level, :func:`locals`
+   and :func:`globals` are the same dictionary.
 
    .. note::
       The contents of this dictionary should not be modified; changes may not
@@ -974,7 +1002,6 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   :term:`universal newlines` mode (deprecated)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
@@ -988,6 +1015,12 @@ are always available.  They are listed here in alphabetical order.
    the contents of the file are returned as :class:`str`, the bytes having been
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
+
+   There is an additional mode character permitted, ``'U'``, which no longer
+   has any effect, and is considered deprecated. It previously enabled
+   :term:`universal newlines` in text mode, which became the default behaviour
+   in Python 3.0. Refer to the documentation of the
+   :ref:`newline <open-newline-parameter>` parameter for further details.
 
    .. note::
 
@@ -1054,6 +1087,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       single: universal newlines; open() built-in function
+
+   .. _open-newline-parameter:
 
    *newline* controls how :term:`universal newlines` mode works (it only
    applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
@@ -1410,11 +1445,11 @@ are always available.  They are listed here in alphabetical order.
           @staticmethod
           def f(arg1, arg2, ...): ...
 
-   The ``@staticmethod`` form is a function :term:`decorator` -- see the
-   description of function definitions in :ref:`function` for details.
+   The ``@staticmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).  The instance is ignored except for its class.
+   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
+   as ``C().f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1429,8 +1464,7 @@ are always available.  They are listed here in alphabetical order.
       class C:
           builtin_open = staticmethod(open)
 
-   For more information on static methods, consult the documentation on the
-   standard type hierarchy in :ref:`types`.
+   For more information on static methods, see :ref:`types`.
 
 
 .. index::
@@ -1633,7 +1667,7 @@ are always available.  They are listed here in alphabetical order.
    This function is invoked by the :keyword:`import` statement.  It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
-   :keyword:`import` statement, but doing so is **strongly** discouraged as it
+   :keyword:`!import` statement, but doing so is **strongly** discouraged as it
    is usually simpler to use import hooks (see :pep:`302`) to attain the same
    goals and does not cause issues with code which assumes the default import
    implementation is in use.  Direct use of :func:`__import__` is also

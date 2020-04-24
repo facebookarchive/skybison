@@ -31,7 +31,7 @@
 */
 
 #if !defined(_WIN32) && defined(HAVE_EXPAT_CONFIG_H)
-#  include <pyconfig.h>
+#  include "pyconfig.h"
 #endif
 #include <stddef.h>
 #include <string.h>  /* memcpy */
@@ -50,7 +50,7 @@
 #include "winconfig.h"
 #else
 #ifdef HAVE_EXPAT_CONFIG_H
-#include <expat_config.h>
+#include "expat_config.h"
 #endif
 #endif /* ndef _WIN32 */
 

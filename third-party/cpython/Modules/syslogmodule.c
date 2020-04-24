@@ -150,8 +150,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
     openlog(ident, logopt, facility);
     state->S_log_open = 1;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -204,8 +203,7 @@ syslog_closelog(PyObject *self, PyObject *unused)
         Py_CLEAR(state->S_ident_o);
         state->S_log_open = 0;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

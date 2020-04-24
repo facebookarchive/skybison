@@ -560,12 +560,14 @@ pattern_error(Py_ssize_t status)
 static void
 pattern_dealloc(PatternObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
     Py_XDECREF(self->indexgroup);
     PyObject_DEL(self);
+    Py_DECREF(tp);
 }
 
 LOCAL(Py_ssize_t)
@@ -1898,10 +1900,12 @@ _validate(PatternObject *self)
 static void
 match_dealloc(MatchObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     Py_XDECREF(self->regs);
     Py_XDECREF(self->string);
     Py_DECREF(self->pattern);
     PyObject_DEL(self);
+    Py_DECREF(tp);
 }
 
 static PyObject*
@@ -2328,7 +2332,7 @@ match_repr(MatchObject *self)
         return NULL;
     result = PyUnicode_FromFormat(
             "<%s object; span=(%zd, %zd), match=%.50R>",
-            Py_TYPE(self)->tp_name,
+            _PyType_Name(Py_TYPE(self)),
             self->mark[0], self->mark[1], group0);
     Py_DECREF(group0);
     return result;
@@ -2404,9 +2408,11 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 static void
 scanner_dealloc(ScannerObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     state_fini(&self->state);
     Py_XDECREF(self->pattern);
     PyObject_DEL(self);
+    Py_DECREF(tp);
 }
 
 /*[clinic input]
@@ -2608,6 +2614,7 @@ static PyMemberDef pattern_members[] = {
      "The regex matching flags."},
     {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY,
      "The number of capturing groups in the pattern."},
+    {"__weaklistoffset__", T_NONE, PAT_OFF(weakreflist), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -2769,31 +2776,32 @@ PyMODINIT_FUNC PyInit__sre(void)
     PyObject* m;
     PyObject* x;
 
-    /* Patch object types */
-    PyTypeObject *Pattern_Type = (PyTypeObject *)PyType_FromSpec(&Pattern_Type_spec);
-    if (Pattern_Type == NULL) {
-        return NULL;
-    }
-    Pattern_Type->tp_weaklistoffset = offsetof(PatternObject, weakreflist);
-    PyTypeObject *Match_Type = (PyTypeObject *)PyType_FromSpec(&Match_Type_spec);
-    if (Match_Type == NULL) {
-        return NULL;
-    }
-    PyTypeObject *Scanner_Type = (PyTypeObject *)PyType_FromSpec(&Scanner_Type_spec);
-    if (Scanner_Type == NULL) {
-        return NULL;
+    m = PyState_FindModule(&sremodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
     }
 
     m = PyModule_Create(&sremodule);
     if (m == NULL)
         return NULL;
 
+    /* Patch object types */
+    PyTypeObject *Pattern_Type = (PyTypeObject *)PyType_FromSpec(&Pattern_Type_spec);
+    if (Pattern_Type == NULL) {
+        return NULL;
+    }
     _srestate(m)->Pattern_Type = (PyObject *)Pattern_Type;
-    Py_INCREF(_srestate(m)->Pattern_Type);
+    PyTypeObject *Match_Type = (PyTypeObject *)PyType_FromSpec(&Match_Type_spec);
+    if (Match_Type == NULL) {
+        return NULL;
+    }
     _srestate(m)->Match_Type = (PyObject *)Match_Type;
-    Py_INCREF(_srestate(m)->Match_Type);
+    PyTypeObject *Scanner_Type = (PyTypeObject *)PyType_FromSpec(&Scanner_Type_spec);
+    if (Scanner_Type == NULL) {
+        return NULL;
+    }
     _srestate(m)->Scanner_Type = (PyObject *)Scanner_Type;
-    Py_INCREF(_srestate(m)->Scanner_Type);
 
     x = PyLong_FromLong(SRE_MAGIC);
     if (x) {
@@ -2819,6 +2827,8 @@ PyMODINIT_FUNC PyInit__sre(void)
     if (x) {
         PyModule_AddObject(m, "copyright", x);
     }
+
+    PyState_AddModule(m, &sremodule);
     return m;
 }
 

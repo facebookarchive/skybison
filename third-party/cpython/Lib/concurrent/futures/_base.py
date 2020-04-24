@@ -536,7 +536,7 @@ class Future(object):
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
         """Submits a callable to be executed with the given arguments.
 
         Schedules the callable to be executed as fn(*args, **kwargs) and returns
@@ -545,6 +545,15 @@ class Executor(object):
         Returns:
             A Future representing the given call.
         """
+        if len(args) >= 2:
+            pass
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'Executor' object "
+                            "needs an argument")
+        elif 'fn' not in kwargs:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         raise NotImplementedError()
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
@@ -610,3 +619,9 @@ class Executor(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown(wait=True)
         return False
+
+
+class BrokenExecutor(RuntimeError):
+    """
+    Raised when a executor has become non-functional after a severe failure.
+    """

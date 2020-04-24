@@ -1,5 +1,6 @@
 #include <unistd.h>
 
+#include <climits>
 #include <cstdlib>
 #include <string>
 
@@ -166,14 +167,17 @@ TEST_F(SysModuleExtensionApiTest,
 }
 
 TEST_F(SysModuleExtensionApiTest,
-       SetArgvWithModuleArgInsertsEmptyStringIntoSysPath) {
+       SetArgvWithModuleArgInsertsWorkingDirectoryIntoSysPath) {
   wchar_t arg0[] = L"-m";
   wchar_t* wargv[] = {arg0};
   PySys_SetArgv(1, wargv);
 
+  char cwd[PATH_MAX] = {0};
+  ASSERT_NE(::getcwd(cwd, PATH_MAX), nullptr);
+
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
-  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, ""));
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, cwd));
 }
 
 TEST_F(SysModuleExtensionApiTest,

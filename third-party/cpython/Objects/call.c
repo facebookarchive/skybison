@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pystate.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 
@@ -132,6 +132,7 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
     }
 }
 
+
 PyObject *
 _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_t nargs,
                            PyObject *kwnames)
@@ -252,7 +253,7 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
 /* --- PyFunction call functions ---------------------------------- */
 
-static PyObject* 
+static PyObject* _Py_HOT_FUNCTION
 function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs,
                        PyObject *globals)
 {
@@ -1270,7 +1271,7 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
    stack consumption, Disable inlining to optimize the stack consumption. */
-PyObject*
+PyObject* _Py_NO_INLINE
 _PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
 {
     PyObject *args;

@@ -7,7 +7,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "     errors=None, newline=None, closefd=True, opener=None)\n"
 "--\n"
 "\n"
-"Open file and return a stream.  Raise IOError upon failure.\n"
+"Open file and return a stream.  Raise OSError upon failure.\n"
 "\n"
 "file is either a text or byte string giving the name (and the path\n"
 "if the file isn\'t in the current working directory) of the file to\n"
@@ -158,4 +158,4 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2a22530a2c488a1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9de1ae79c960e81 input=a9049054013a1b77]*/

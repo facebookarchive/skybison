@@ -50,6 +50,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
+    _Py_IDENTIFIER(readline);
     PyObject *result;
 
     if (f == NULL) {
@@ -57,32 +58,18 @@ PyFile_GetLine(PyObject *f, int n)
         return NULL;
     }
 
-    {
-        PyObject *reader;
-        PyObject *args;
-        _Py_IDENTIFIER(readline);
-
-        reader = _PyObject_GetAttrId(f, &PyId_readline);
-        if (reader == NULL)
-            return NULL;
-        if (n <= 0)
-            args = PyTuple_New(0);
-        else
-            args = Py_BuildValue("(i)", n);
-        if (args == NULL) {
-            Py_DECREF(reader);
-            return NULL;
-        }
-        result = PyEval_CallObject(reader, args);
-        Py_DECREF(reader);
-        Py_DECREF(args);
-        if (result != NULL && !PyBytes_Check(result) &&
-            !PyUnicode_Check(result)) {
-            Py_DECREF(result);
-            result = NULL;
-            PyErr_SetString(PyExc_TypeError,
-                       "object.readline() returned non-string");
-        }
+    if (n <= 0) {
+        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+    }
+    else {
+        result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
+    }
+    if (result != NULL && !PyBytes_Check(result) &&
+        !PyUnicode_Check(result)) {
+        Py_DECREF(result);
+        result = NULL;
+        PyErr_SetString(PyExc_TypeError,
+                   "object.readline() returned non-string");
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
@@ -147,8 +134,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    PyObject *args[1] = {value};
-    result = _PyObject_FastCallDict(writer, args, 1, NULL);
+    result = PyObject_CallFunctionObjArgs(writer, value, NULL);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -199,7 +185,7 @@ PyObject_AsFileDescriptor(PyObject *o)
     }
     else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
     {
-        PyObject *fno = PyEval_CallObject(meth, NULL);
+        PyObject *fno = _PyObject_CallNoArg(meth);
         Py_DECREF(meth);
         if (fno == NULL)
             return -1;
@@ -369,7 +355,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 {
     PyObject *unicode;
     PyObject *bytes = NULL;
-    char *str;
+    const char *str;
     Py_ssize_t n;
     int err;
 
@@ -391,10 +377,8 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         bytes = _PyUnicode_AsUTF8String(unicode, "backslashreplace");
         if (bytes == NULL)
             return NULL;
-        if (PyBytes_AsStringAndSize(bytes, &str, &n) < 0) {
-            Py_DECREF(bytes);
-            return NULL;
-        }
+        str = PyBytes_AS_STRING(bytes);
+        n = PyBytes_GET_SIZE(bytes);
     }
 
     n = _Py_write(self->fd, str, n);
@@ -423,7 +407,7 @@ stdprinter_fileno(PyStdPrinter_Object *self)
 static PyObject *
 stdprinter_repr(PyStdPrinter_Object *self)
 {
-    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at 0x%x>",
+    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at %p>",
                                 self->fd, self);
 }
 
@@ -460,8 +444,7 @@ static PyMethodDef stdprinter_methods[] = {
 static PyObject *
 get_closed(PyStdPrinter_Object *self, void *closure)
 {
-    Py_INCREF(Py_False);
-    return Py_False;
+    Py_RETURN_FALSE;
 }
 
 static PyObject *

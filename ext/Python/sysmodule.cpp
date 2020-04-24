@@ -1,3 +1,6 @@
+#include <unistd.h>
+
+#include <climits>
 #include <cstdarg>
 
 #include "cpython-data.h"
@@ -76,10 +79,20 @@ static void sysUpdatePath(Thread* thread, const Str& arg0) {
   char* arg0_cstr = arg0.toCStr();
   char* script_path = arg0_cstr;
 
-  if (std::strcmp(script_path, "-c") == 0 ||
-      std::strcmp(script_path, "-m") == 0) {
+  if (std::strcmp(script_path, "-c") == 0) {
     Str empty(&scope, Str::empty());
     listInsert(thread, path, empty, 0);
+    std::free(arg0_cstr);
+    return;
+  }
+
+  if (std::strcmp(script_path, "-m") == 0) {
+    char buf[PATH_MAX];
+    if (::getcwd(buf, PATH_MAX) == nullptr) {
+      return;
+    }
+    Str cwd(&scope, runtime->newStrFromCStr(buf));
+    listInsert(thread, path, cwd, 0);
     std::free(arg0_cstr);
     return;
   }

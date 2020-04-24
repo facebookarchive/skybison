@@ -137,9 +137,7 @@ static void _CallPythonObject(void *mem,
     Py_ssize_t nArgs;
     PyObject *error_object = NULL;
     int *space;
-#ifdef WITH_THREAD
     PyGILState_STATE state = PyGILState_Ensure();
-#endif
 
     nArgs = PySequence_Length(converters);
     /* Hm. What to return in case of error?
@@ -162,14 +160,14 @@ static void _CallPythonObject(void *mem,
         if (cnv)
             dict = PyType_stgdict(cnv);
         else {
-            PrintError("Getting argument converter %d\n", i);
+            PrintError("Getting argument converter %zd\n", i);
             goto Done;
         }
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
             if (!v) {
-                PrintError("create argument %d:\n", i);
+                PrintError("create argument %zd:\n", i);
                 Py_DECREF(cnv);
                 goto Done;
             }
@@ -181,16 +179,16 @@ static void _CallPythonObject(void *mem,
             */
         } else if (dict) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
-            CDataObject *obj = (CDataObject *)PyObject_CallFunctionObjArgs(cnv, NULL);
+            CDataObject *obj = (CDataObject *)_PyObject_CallNoArg(cnv);
             if (!obj) {
-                PrintError("create argument %d:\n", i);
+                PrintError("create argument %zd:\n", i);
                 Py_DECREF(cnv);
                 goto Done;
             }
             if (!CDataObject_Check(obj)) {
                 Py_DECREF(obj);
                 Py_DECREF(cnv);
-                PrintError("unexpected result of create argument %d:\n", i);
+                PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
@@ -201,7 +199,7 @@ static void _CallPythonObject(void *mem,
         } else {
             PyErr_SetString(PyExc_TypeError,
                             "cannot build parameter");
-            PrintError("Parsing argument %d\n", i);
+            PrintError("Parsing argument %zd\n", i);
             Py_DECREF(cnv);
             goto Done;
         }
@@ -281,9 +279,7 @@ if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyEr
     Py_XDECREF(result);
   Done:
     Py_XDECREF(arglist);
-#ifdef WITH_THREAD
     PyGILState_Release(state);
-#endif
 }
 
 static void closure_fcn(ffi_cif *cif,
@@ -421,9 +417,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 static void LoadPython(void)
 {
     if (!Py_IsInitialized()) {
-#ifdef WITH_THREAD
         PyEval_InitThreads();
-#endif
         Py_Initialize();
     }
 }
@@ -494,18 +488,12 @@ STDAPI DllGetClassObject(REFCLSID rclsid,
                          LPVOID *ppv)
 {
     long result;
-#ifdef WITH_THREAD
     PyGILState_STATE state;
-#endif
 
     LoadPython();
-#ifdef WITH_THREAD
     state = PyGILState_Ensure();
-#endif
     result = Call_GetClassObject(rclsid, riid, ppv);
-#ifdef WITH_THREAD
     PyGILState_Release(state);
-#endif
     return result;
 }
 
@@ -534,7 +522,7 @@ long Call_CanUnloadNow(void)
         return E_FAIL;
     }
 
-    result = PyObject_CallFunction(func, NULL);
+    result = _PyObject_CallNoArg(func);
     Py_DECREF(func);
     if (!result) {
         PyErr_WriteUnraisable(context ? context : Py_None);
@@ -557,13 +545,9 @@ long Call_CanUnloadNow(void)
 STDAPI DllCanUnloadNow(void)
 {
     long result;
-#ifdef WITH_THREAD
     PyGILState_STATE state = PyGILState_Ensure();
-#endif
     result = Call_CanUnloadNow();
-#ifdef WITH_THREAD
     PyGILState_Release(state);
-#endif
     return result;
 }
 

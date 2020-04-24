@@ -1,0 +1,1654 @@
+commit 78dddea29e2533951f29d2172c0a676b2298a0db
+Author: Maxwell Bernstein <emacs@fb.com>
+Date:   Tue Apr 14 14:48:20 2020 -0700
+
+    Backport 3.8 distutils
+    
+    Summary: 3.7 distutils uses os.fork(), which is not recommended API.
+    
+    Test Plan: CPython test suite.
+    
+    Reviewers: #pyro
+    
+    Subscribers:
+    
+    Tasks:
+    
+    Tags: pyro, skybison
+    
+    Blame Revision:
+    
+    Differential Revision: https://phabricator.intern.facebook.com/D21027930
+
+diff --git a/Lib/_bootsubprocess.py b/Lib/_bootsubprocess.py
+new file mode 100644
+index 0000000000..9c1912f315
+--- /dev/null
++++ b/Lib/_bootsubprocess.py
+@@ -0,0 +1,106 @@
++"""
++Basic subprocess implementation for POSIX which only uses os functions. Only
++implement features required by setup.py to build C extension modules when
++subprocess is unavailable. setup.py is not used on Windows.
++"""
++import os
++
++
++def _waitstatus_to_exitcode(status):
++    if os.WIFEXITED(status):
++        return os.WEXITSTATUS(status)
++    elif os.WIFSIGNALED(status):
++        return -os.WTERMSIG(status)
++    else:
++        raise ValueError(f"invalid wait status: {status!r}")
++
++
++# distutils.spawn used by distutils.command.build_ext
++# calls subprocess.Popen().wait()
++class Popen:
++    def __init__(self, cmd, env=None):
++        self._cmd = cmd
++        self._env = env
++        self.returncode = None
++
++    def wait(self):
++        pid = os.fork()
++        if pid == 0:
++            # Child process
++            try:
++                if self._env is not None:
++                    os.execve(self._cmd[0], self._cmd, self._env)
++                else:
++                    os.execv(self._cmd[0], self._cmd)
++            finally:
++                os._exit(1)
++        else:
++            # Parent process
++            _, status = os.waitpid(pid, 0)
++            self.returncode = _waitstatus_to_exitcode(status)
++
++        return self.returncode
++
++
++def _check_cmd(cmd):
++    # Use regex [a-zA-Z0-9./-]+: reject empty string, space, etc.
++    safe_chars = []
++    for first, last in (("a", "z"), ("A", "Z"), ("0", "9")):
++        for ch in range(ord(first), ord(last) + 1):
++            safe_chars.append(chr(ch))
++    safe_chars.append("./-")
++    safe_chars = ''.join(safe_chars)
++
++    if isinstance(cmd, (tuple, list)):
++        check_strs = cmd
++    elif isinstance(cmd, str):
++        check_strs = [cmd]
++    else:
++        return False
++
++    for arg in check_strs:
++        if not isinstance(arg, str):
++            return False
++        if not arg:
++            # reject empty string
++            return False
++        for ch in arg:
++            if ch not in safe_chars:
++                return False
++
++    return True
++
++
++# _aix_support used by distutil.util calls subprocess.check_output()
++def check_output(cmd, **kwargs):
++    if kwargs:
++        raise NotImplementedError(repr(kwargs))
++
++    if not _check_cmd(cmd):
++        raise ValueError(f"unsupported command: {cmd!r}")
++
++    tmp_filename = "check_output.tmp"
++    if not isinstance(cmd, str):
++        cmd = " ".join(cmd)
++    cmd = f"{cmd} >{tmp_filename}"
++
++    try:
++        # system() spawns a shell
++        status = os.system(cmd)
++        exitcode = _waitstatus_to_exitcode(status)
++        if exitcode:
++            raise ValueError(f"Command {cmd!r} returned non-zero "
++                             f"exit status {exitcode!r}")
++
++        try:
++            with open(tmp_filename, "rb") as fp:
++                stdout = fp.read()
++        except FileNotFoundError:
++            stdout = b''
++    finally:
++        try:
++            os.unlink(tmp_filename)
++        except OSError:
++            pass
++
++    return stdout
+diff --git a/Lib/distutils/README b/Lib/distutils/README
+index 408a203b85..23f488506f 100644
+--- a/Lib/distutils/README
++++ b/Lib/distutils/README
+@@ -8,6 +8,4 @@ The Distutils-SIG web page is also a good starting point:
+ 
+     http://www.python.org/sigs/distutils-sig/
+ 
+-WARNING : Distutils must remain compatible with 2.3
+-
+ $Id$
+diff --git a/Lib/distutils/_msvccompiler.py b/Lib/distutils/_msvccompiler.py
+index 58b20a2102..03a5986d98 100644
+--- a/Lib/distutils/_msvccompiler.py
++++ b/Lib/distutils/_msvccompiler.py
+@@ -89,24 +89,19 @@ def _find_vc2017():
+ 
+     return None, None
+ 
++PLAT_SPEC_TO_RUNTIME = {
++    'x86' : 'x86',
++    'x86_amd64' : 'x64',
++    'x86_arm' : 'arm',
++    'x86_arm64' : 'arm64'
++}
++
+ def _find_vcvarsall(plat_spec):
++    # bpo-38597: Removed vcruntime return value
+     _, best_dir = _find_vc2017()
+-    vcruntime = None
+-    vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
+-    if best_dir:
+-        vcredist = os.path.join(best_dir, "..", "..", "redist", "MSVC", "**",
+-            "Microsoft.VC141.CRT", "vcruntime140.dll")
+-        try:
+-            import glob
+-            vcruntime = glob.glob(vcredist, recursive=True)[-1]
+-        except (ImportError, OSError, LookupError):
+-            vcruntime = None
+ 
+     if not best_dir:
+         best_version, best_dir = _find_vc2015()
+-        if best_version:
+-            vcruntime = os.path.join(best_dir, 'redist', vcruntime_plat,
+-                "Microsoft.VC140.CRT", "vcruntime140.dll")
+ 
+     if not best_dir:
+         log.debug("No suitable Visual C++ version found")
+@@ -117,11 +112,7 @@ def _find_vcvarsall(plat_spec):
+         log.debug("%s cannot be found", vcvarsall)
+         return None, None
+ 
+-    if not vcruntime or not os.path.isfile(vcruntime):
+-        log.debug("%s cannot be found", vcruntime)
+-        vcruntime = None
+-
+-    return vcvarsall, vcruntime
++    return vcvarsall, None
+ 
+ def _get_vc_env(plat_spec):
+     if os.getenv("DISTUTILS_USE_SDK"):
+@@ -130,7 +121,7 @@ def _get_vc_env(plat_spec):
+             for key, value in os.environ.items()
+         }
+ 
+-    vcvarsall, vcruntime = _find_vcvarsall(plat_spec)
++    vcvarsall, _ = _find_vcvarsall(plat_spec)
+     if not vcvarsall:
+         raise DistutilsPlatformError("Unable to find vcvarsall.bat")
+ 
+@@ -151,8 +142,6 @@ def _get_vc_env(plat_spec):
+         if key and value
+     }
+ 
+-    if vcruntime:
+-        env['py_vcruntime_redist'] = vcruntime
+     return env
+ 
+ def _find_exe(exe, paths=None):
+@@ -178,14 +167,10 @@ def _find_exe(exe, paths=None):
+ PLAT_TO_VCVARS = {
+     'win32' : 'x86',
+     'win-amd64' : 'x86_amd64',
++    'win-arm32' : 'x86_arm',
++    'win-arm64' : 'x86_arm64'
+ }
+ 
+-# A set containing the DLLs that are guaranteed to be available for
+-# all micro versions of this Python version. Known extension
+-# dependencies that are not in this set will be copied to the output
+-# path.
+-_BUNDLED_DLLS = frozenset(['vcruntime140.dll'])
+-
+ class MSVCCompiler(CCompiler) :
+     """Concrete class that implements an interface to Microsoft Visual C++,
+        as defined by the CCompiler abstract class."""
+@@ -249,7 +234,6 @@ class MSVCCompiler(CCompiler) :
+         self.rc = _find_exe("rc.exe", paths)   # resource compiler
+         self.mc = _find_exe("mc.exe", paths)   # message compiler
+         self.mt = _find_exe("mt.exe", paths)   # message compiler
+-        self._vcruntime_redist = vc_env.get('py_vcruntime_redist', '')
+ 
+         for dir in vc_env.get('include', '').split(os.pathsep):
+             if dir:
+@@ -260,13 +244,12 @@ class MSVCCompiler(CCompiler) :
+                 self.add_library_dir(dir.rstrip(os.sep))
+ 
+         self.preprocess_options = None
+-        # If vcruntime_redist is available, link against it dynamically. Otherwise,
+-        # use /MT[d] to build statically, then switch from libucrt[d].lib to ucrt[d].lib
+-        # later to dynamically link to ucrtbase but not vcruntime.
++        # bpo-38597: Always compile with dynamic linking
++        # Future releases of Python 3.x will include all past
++        # versions of vcruntime*.dll for compatibility.
+         self.compile_options = [
+-            '/nologo', '/Ox', '/W3', '/GL', '/DNDEBUG'
++            '/nologo', '/Ox', '/W3', '/GL', '/DNDEBUG', '/MD'
+         ]
+-        self.compile_options.append('/MD' if self._vcruntime_redist else '/MT')
+ 
+         self.compile_options_debug = [
+             '/nologo', '/Od', '/MDd', '/Zi', '/W3', '/D_DEBUG'
+@@ -275,8 +258,6 @@ class MSVCCompiler(CCompiler) :
+         ldflags = [
+             '/nologo', '/INCREMENTAL:NO', '/LTCG'
+         ]
+-        if not self._vcruntime_redist:
+-            ldflags.extend(('/nodefaultlib:libucrt.lib', 'ucrt.lib'))
+ 
+         ldflags_debug = [
+             '/nologo', '/INCREMENTAL:NO', '/LTCG', '/DEBUG:FULL'
+@@ -518,24 +499,11 @@ class MSVCCompiler(CCompiler) :
+             try:
+                 log.debug('Executing "%s" %s', self.linker, ' '.join(ld_args))
+                 self.spawn([self.linker] + ld_args)
+-                self._copy_vcruntime(output_dir)
+             except DistutilsExecError as msg:
+                 raise LinkError(msg)
+         else:
+             log.debug("skipping %s (up-to-date)", output_filename)
+ 
+-    def _copy_vcruntime(self, output_dir):
+-        vcruntime = self._vcruntime_redist
+-        if not vcruntime or not os.path.isfile(vcruntime):
+-            return
+-
+-        if os.path.basename(vcruntime).lower() in _BUNDLED_DLLS:
+-            return
+-
+-        log.debug('Copying "%s"', vcruntime)
+-        vcruntime = shutil.copy(vcruntime, output_dir)
+-        os.chmod(vcruntime, stat.S_IWRITE)
+-
+     def spawn(self, cmd):
+         old_path = os.getenv('path')
+         try:
+diff --git a/Lib/distutils/archive_util.py b/Lib/distutils/archive_util.py
+index b002dc3b84..565a3117b4 100644
+--- a/Lib/distutils/archive_util.py
++++ b/Lib/distutils/archive_util.py
+@@ -166,21 +166,21 @@ def make_zipfile(base_name, base_dir, verbose=0, dry_run=0):
+                 zip = zipfile.ZipFile(zip_filename, "w",
+                                       compression=zipfile.ZIP_STORED)
+ 
+-            if base_dir != os.curdir:
+-                path = os.path.normpath(os.path.join(base_dir, ''))
+-                zip.write(path, path)
+-                log.info("adding '%s'", path)
+-            for dirpath, dirnames, filenames in os.walk(base_dir):
+-                for name in dirnames:
+-                    path = os.path.normpath(os.path.join(dirpath, name, ''))
++            with zip:
++                if base_dir != os.curdir:
++                    path = os.path.normpath(os.path.join(base_dir, ''))
+                     zip.write(path, path)
+                     log.info("adding '%s'", path)
+-                for name in filenames:
+-                    path = os.path.normpath(os.path.join(dirpath, name))
+-                    if os.path.isfile(path):
++                for dirpath, dirnames, filenames in os.walk(base_dir):
++                    for name in dirnames:
++                        path = os.path.normpath(os.path.join(dirpath, name, ''))
+                         zip.write(path, path)
+                         log.info("adding '%s'", path)
+-            zip.close()
++                    for name in filenames:
++                        path = os.path.normpath(os.path.join(dirpath, name))
++                        if os.path.isfile(path):
++                            zip.write(path, path)
++                            log.info("adding '%s'", path)
+ 
+     return zip_filename
+ 
+diff --git a/Lib/distutils/ccompiler.py b/Lib/distutils/ccompiler.py
+index b71d1d39bc..4cfc6c7065 100644
+--- a/Lib/distutils/ccompiler.py
++++ b/Lib/distutils/ccompiler.py
+@@ -545,7 +545,7 @@ class CCompiler:
+         'extra_preargs' and 'extra_postargs' are implementation- dependent.
+         On platforms that have the notion of a command-line (e.g. Unix,
+         DOS/Windows), they are most likely lists of strings: extra
+-        command-line arguments to prepand/append to the compiler command
++        command-line arguments to prepend/append to the compiler command
+         line.  On other platforms, consult the implementation class
+         documentation.  In any event, they are intended as an escape hatch
+         for those occasions when the abstract compiler framework doesn't
+@@ -781,8 +781,9 @@ class CCompiler:
+             for incl in includes:
+                 f.write("""#include "%s"\n""" % incl)
+             f.write("""\
+-main (int argc, char **argv) {
++int main (int argc, char **argv) {
+     %s();
++    return 0;
+ }
+ """ % funcname)
+         finally:
+diff --git a/Lib/distutils/command/bdist_msi.py b/Lib/distutils/command/bdist_msi.py
+index 80104c372d..0863a1883e 100644
+--- a/Lib/distutils/command/bdist_msi.py
++++ b/Lib/distutils/command/bdist_msi.py
+@@ -6,7 +6,9 @@
+ Implements the bdist_msi command.
+ """
+ 
+-import sys, os
++import os
++import sys
++import warnings
+ from distutils.core import Command
+ from distutils.dir_util import remove_tree
+ from distutils.sysconfig import get_python_version
+@@ -122,6 +124,12 @@ class bdist_msi(Command):
+                     '3.5', '3.6', '3.7', '3.8', '3.9']
+     other_version = 'X'
+ 
++    def __init__(self, *args, **kw):
++        super().__init__(*args, **kw)
++        warnings.warn("bdist_msi command is deprecated since Python 3.9, "
++                      "use bdist_wheel (wheel packages) instead",
++                      DeprecationWarning, 2)
++
+     def initialize_options(self):
+         self.bdist_dir = None
+         self.plat_name = None
+@@ -390,18 +398,18 @@ class bdist_msi(Command):
+         #     entries for each version as the above code does
+         if self.pre_install_script:
+             scriptfn = os.path.join(self.bdist_dir, "preinstall.bat")
+-            f = open(scriptfn, "w")
+-            # The batch file will be executed with [PYTHON], so that %1
+-            # is the path to the Python interpreter; %0 will be the path
+-            # of the batch file.
+-            # rem ="""
+-            # %1 %0
+-            # exit
+-            # """
+-            # <actual script>
+-            f.write('rem ="""\n%1 %0\nexit\n"""\n')
+-            f.write(open(self.pre_install_script).read())
+-            f.close()
++            with open(scriptfn, "w") as f:
++                # The batch file will be executed with [PYTHON], so that %1
++                # is the path to the Python interpreter; %0 will be the path
++                # of the batch file.
++                # rem ="""
++                # %1 %0
++                # exit
++                # """
++                # <actual script>
++                f.write('rem ="""\n%1 %0\nexit\n"""\n')
++                with open(self.pre_install_script) as fin:
++                    f.write(fin.read())
+             add_data(self.db, "Binary",
+                 [("PreInstall", msilib.Binary(scriptfn))
+                 ])
+diff --git a/Lib/distutils/command/bdist_rpm.py b/Lib/distutils/command/bdist_rpm.py
+index 02f10dd89d..74381cc69a 100644
+--- a/Lib/distutils/command/bdist_rpm.py
++++ b/Lib/distutils/command/bdist_rpm.py
+@@ -309,10 +309,7 @@ class bdist_rpm(Command):
+ 
+         # build package
+         log.info("building RPMs")
+-        rpm_cmd = ['rpm']
+-        if os.path.exists('/usr/bin/rpmbuild') or \
+-           os.path.exists('/bin/rpmbuild'):
+-            rpm_cmd = ['rpmbuild']
++        rpm_cmd = ['rpmbuild']
+ 
+         if self.source_only: # what kind of RPMs?
+             rpm_cmd.append('-bs')
+@@ -537,7 +534,8 @@ class bdist_rpm(Command):
+                     '',
+                     '%' + rpm_opt,])
+                 if val:
+-                    spec_file.extend(open(val, 'r').read().split('\n'))
++                    with open(val) as f:
++                        spec_file.extend(f.read().split('\n'))
+                 else:
+                     spec_file.append(default)
+ 
+diff --git a/Lib/distutils/command/bdist_wininst.py b/Lib/distutils/command/bdist_wininst.py
+index fde56754e8..b5ed6f041e 100644
+--- a/Lib/distutils/command/bdist_wininst.py
++++ b/Lib/distutils/command/bdist_wininst.py
+@@ -3,7 +3,9 @@
+ Implements the Distutils 'bdist_wininst' command: create a windows installer
+ exe-program."""
+ 
+-import sys, os
++import os
++import sys
++import warnings
+ from distutils.core import Command
+ from distutils.util import get_platform
+ from distutils.dir_util import create_tree, remove_tree
+@@ -55,6 +57,15 @@ class bdist_wininst(Command):
+     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
+                        'skip-build']
+ 
++    # bpo-10945: bdist_wininst requires mbcs encoding only available on Windows
++    _unsupported = (sys.platform != "win32")
++
++    def __init__(self, *args, **kw):
++        super().__init__(*args, **kw)
++        warnings.warn("bdist_wininst command is deprecated since Python 3.8, "
++                      "use bdist_wheel (wheel packages) instead",
++                      DeprecationWarning, 2)
++
+     def initialize_options(self):
+         self.bdist_dir = None
+         self.plat_name = None
+@@ -247,47 +258,49 @@ class bdist_wininst(Command):
+         self.announce("creating %s" % installer_name)
+ 
+         if bitmap:
+-            bitmapdata = open(bitmap, "rb").read()
++            with open(bitmap, "rb") as f:
++                bitmapdata = f.read()
+             bitmaplen = len(bitmapdata)
+         else:
+             bitmaplen = 0
+ 
+-        file = open(installer_name, "wb")
+-        file.write(self.get_exe_bytes())
+-        if bitmap:
+-            file.write(bitmapdata)
+-
+-        # Convert cfgdata from unicode to ascii, mbcs encoded
+-        if isinstance(cfgdata, str):
+-            cfgdata = cfgdata.encode("mbcs")
+-
+-        # Append the pre-install script
+-        cfgdata = cfgdata + b"\0"
+-        if self.pre_install_script:
+-            # We need to normalize newlines, so we open in text mode and
+-            # convert back to bytes. "latin-1" simply avoids any possible
+-            # failures.
+-            with open(self.pre_install_script, "r",
+-                encoding="latin-1") as script:
+-                script_data = script.read().encode("latin-1")
+-            cfgdata = cfgdata + script_data + b"\n\0"
+-        else:
+-            # empty pre-install script
++        with open(installer_name, "wb") as file:
++            file.write(self.get_exe_bytes())
++            if bitmap:
++                file.write(bitmapdata)
++
++            # Convert cfgdata from unicode to ascii, mbcs encoded
++            if isinstance(cfgdata, str):
++                cfgdata = cfgdata.encode("mbcs")
++
++            # Append the pre-install script
+             cfgdata = cfgdata + b"\0"
+-        file.write(cfgdata)
+-
+-        # The 'magic number' 0x1234567B is used to make sure that the
+-        # binary layout of 'cfgdata' is what the wininst.exe binary
+-        # expects.  If the layout changes, increment that number, make
+-        # the corresponding changes to the wininst.exe sources, and
+-        # recompile them.
+-        header = struct.pack("<iii",
+-                             0x1234567B,       # tag
+-                             len(cfgdata),     # length
+-                             bitmaplen,        # number of bytes in bitmap
+-                             )
+-        file.write(header)
+-        file.write(open(arcname, "rb").read())
++            if self.pre_install_script:
++                # We need to normalize newlines, so we open in text mode and
++                # convert back to bytes. "latin-1" simply avoids any possible
++                # failures.
++                with open(self.pre_install_script, "r",
++                          encoding="latin-1") as script:
++                    script_data = script.read().encode("latin-1")
++                cfgdata = cfgdata + script_data + b"\n\0"
++            else:
++                # empty pre-install script
++                cfgdata = cfgdata + b"\0"
++            file.write(cfgdata)
++
++            # The 'magic number' 0x1234567B is used to make sure that the
++            # binary layout of 'cfgdata' is what the wininst.exe binary
++            # expects.  If the layout changes, increment that number, make
++            # the corresponding changes to the wininst.exe sources, and
++            # recompile them.
++            header = struct.pack("<iii",
++                                0x1234567B,       # tag
++                                len(cfgdata),     # length
++                                bitmaplen,        # number of bytes in bitmap
++                                )
++            file.write(header)
++            with open(arcname, "rb") as f:
++                file.write(f.read())
+ 
+     def get_installer_filename(self, fullname):
+         # Factored out to allow overriding in subclasses
+diff --git a/Lib/distutils/command/build_ext.py b/Lib/distutils/command/build_ext.py
+index 0428466b00..1a9bd1200f 100644
+--- a/Lib/distutils/command/build_ext.py
++++ b/Lib/distutils/command/build_ext.py
+@@ -490,7 +490,8 @@ class build_ext(Command):
+                   "in 'ext_modules' option (extension '%s'), "
+                   "'sources' must be present and must be "
+                   "a list of source filenames" % ext.name)
+-        sources = list(sources)
++        # sort to make the resulting .so file build reproducible
++        sources = sorted(sources)
+ 
+         ext_path = self.get_ext_fullpath(ext.name)
+         depends = sources + ext.depends
+@@ -688,7 +689,15 @@ class build_ext(Command):
+         provided, "PyInit_" + module_name.  Only relevant on Windows, where
+         the .pyd file (DLL) must export the module "PyInit_" function.
+         """
+-        initfunc_name = "PyInit_" + ext.name.split('.')[-1]
++        suffix = '_' + ext.name.split('.')[-1]
++        try:
++            # Unicode module name support as defined in PEP-489
++            # https://www.python.org/dev/peps/pep-0489/#export-hook-name
++            suffix.encode('ascii')
++        except UnicodeEncodeError:
++            suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
++
++        initfunc_name = "PyInit" + suffix
+         if initfunc_name not in ext.export_symbols:
+             ext.export_symbols.append(initfunc_name)
+         return ext.export_symbols
+@@ -714,20 +723,32 @@ class build_ext(Command):
+                 # don't extend ext.libraries, it may be shared with other
+                 # extensions, it is a reference to the original list
+                 return ext.libraries + [pythonlib]
+-            else:
+-                return ext.libraries
+-        elif sys.platform == 'darwin':
+-            # Don't use the default code below
+-            return ext.libraries
+-        elif sys.platform[:3] == 'aix':
+-            # Don't use the default code below
+-            return ext.libraries
+         else:
+-            from distutils import sysconfig
+-            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
+-                pythonlib = 'python{}.{}{}'.format(
+-                    sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff,
+-                    sysconfig.get_config_var('ABIFLAGS'))
+-                return ext.libraries + [pythonlib]
+-            else:
+-                return ext.libraries
++            # On Android only the main executable and LD_PRELOADs are considered
++            # to be RTLD_GLOBAL, all the dependencies of the main executable
++            # remain RTLD_LOCAL and so the shared libraries must be linked with
++            # libpython when python is built with a shared python library (issue
++            # bpo-21536).
++            # On Cygwin (and if required, other POSIX-like platforms based on
++            # Windows like MinGW) it is simply necessary that all symbols in
++            # shared libraries are resolved at link time.
++            from distutils.sysconfig import get_config_var
++            link_libpython = False
++            if get_config_var('Py_ENABLE_SHARED'):
++                # A native build on an Android device or on Cygwin
++                if hasattr(sys, 'getandroidapilevel'):
++                    link_libpython = True
++                elif sys.platform == 'cygwin':
++                    link_libpython = True
++                elif '_PYTHON_HOST_PLATFORM' in os.environ:
++                    # We are cross-compiling for one of the relevant platforms
++                    if get_config_var('ANDROID_API_LEVEL') != 0:
++                        link_libpython = True
++                    elif get_config_var('MACHDEP') == 'cygwin':
++                        link_libpython = True
++
++            if link_libpython:
++                ldversion = get_config_var('LDVERSION')
++                return ext.libraries + ['python' + ldversion]
++
++        return ext.libraries
+diff --git a/Lib/distutils/command/check.py b/Lib/distutils/command/check.py
+index 04c2f9642d..7ceabd3adf 100644
+--- a/Lib/distutils/command/check.py
++++ b/Lib/distutils/command/check.py
+@@ -80,8 +80,11 @@ class check(Command):
+     def check_metadata(self):
+         """Ensures that all required elements of meta-data are supplied.
+ 
+-        name, version, URL, (author and author_email) or
+-        (maintainer and maintainer_email)).
++        Required fields:
++            name, version, URL
++
++        Recommended fields:
++            (author and author_email) or (maintainer and maintainer_email))
+ 
+         Warns if any are missing.
+         """
+@@ -97,15 +100,15 @@ class check(Command):
+         if metadata.author:
+             if not metadata.author_email:
+                 self.warn("missing meta-data: if 'author' supplied, " +
+-                          "'author_email' must be supplied too")
++                          "'author_email' should be supplied too")
+         elif metadata.maintainer:
+             if not metadata.maintainer_email:
+                 self.warn("missing meta-data: if 'maintainer' supplied, " +
+-                          "'maintainer_email' must be supplied too")
++                          "'maintainer_email' should be supplied too")
+         else:
+             self.warn("missing meta-data: either (author and author_email) " +
+                       "or (maintainer and maintainer_email) " +
+-                      "must be supplied")
++                      "should be supplied")
+ 
+     def check_restructuredtext(self):
+         """Checks if the long string fields are reST-compliant."""
+diff --git a/Lib/distutils/command/config.py b/Lib/distutils/command/config.py
+index 4ae153d194..aeda408e73 100644
+--- a/Lib/distutils/command/config.py
++++ b/Lib/distutils/command/config.py
+@@ -106,15 +106,14 @@ class config(Command):
+ 
+     def _gen_temp_sourcefile(self, body, headers, lang):
+         filename = "_configtest" + LANG_EXT[lang]
+-        file = open(filename, "w")
+-        if headers:
+-            for header in headers:
+-                file.write("#include <%s>\n" % header)
+-            file.write("\n")
+-        file.write(body)
+-        if body[-1] != "\n":
+-            file.write("\n")
+-        file.close()
++        with open(filename, "w") as file:
++            if headers:
++                for header in headers:
++                    file.write("#include <%s>\n" % header)
++                file.write("\n")
++            file.write(body)
++            if body[-1] != "\n":
++                file.write("\n")
+         return filename
+ 
+     def _preprocess(self, body, headers, include_dirs, lang):
+@@ -203,17 +202,16 @@ class config(Command):
+         if isinstance(pattern, str):
+             pattern = re.compile(pattern)
+ 
+-        file = open(out)
+-        match = False
+-        while True:
+-            line = file.readline()
+-            if line == '':
+-                break
+-            if pattern.search(line):
+-                match = True
+-                break
++        with open(out) as file:
++            match = False
++            while True:
++                line = file.readline()
++                if line == '':
++                    break
++                if pattern.search(line):
++                    match = True
++                    break
+ 
+-        file.close()
+         self._clean()
+         return match
+ 
+@@ -330,7 +328,6 @@ class config(Command):
+         return self.try_cpp(body="/* No body */", headers=[header],
+                             include_dirs=include_dirs)
+ 
+-
+ def dump_file(filename, head=None):
+     """Dumps a file content into log.info.
+ 
+diff --git a/Lib/distutils/command/install.py b/Lib/distutils/command/install.py
+index 0258d3deae..aaa300efa9 100644
+--- a/Lib/distutils/command/install.py
++++ b/Lib/distutils/command/install.py
+@@ -30,14 +30,14 @@ WINDOWS_SCHEME = {
+ INSTALL_SCHEMES = {
+     'unix_prefix': {
+         'purelib': '$base/lib/python$py_version_short/site-packages',
+-        'platlib': '$platbase/lib/python$py_version_short/site-packages',
++        'platlib': '$platbase/$platlibdir/python$py_version_short/site-packages',
+         'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
+         'scripts': '$base/bin',
+         'data'   : '$base',
+         },
+     'unix_home': {
+         'purelib': '$base/lib/python',
+-        'platlib': '$base/lib/python',
++        'platlib': '$base/$platlibdir/python',
+         'headers': '$base/include/python/$dist_name',
+         'scripts': '$base/bin',
+         'data'   : '$base',
+@@ -223,7 +223,7 @@ class install(Command):
+ 
+     def finalize_options(self):
+         """Finalizes options."""
+-        # This method (and its pliant slaves, like 'finalize_unix()',
++        # This method (and its helpers, like 'finalize_unix()',
+         # 'finalize_other()', and 'select_scheme()') is where the default
+         # installation directories for modules, extension modules, and
+         # anything else we care to install from a Python module
+@@ -298,6 +298,7 @@ class install(Command):
+                             'sys_exec_prefix': exec_prefix,
+                             'exec_prefix': exec_prefix,
+                             'abiflags': abiflags,
++                            'platlibdir': sys.platlibdir,
+                            }
+ 
+         if HAS_USER_SITE:
+diff --git a/Lib/distutils/command/sdist.py b/Lib/distutils/command/sdist.py
+index 52eaa15d47..b4996fcb1d 100644
+--- a/Lib/distutils/command/sdist.py
++++ b/Lib/distutils/command/sdist.py
+@@ -407,14 +407,13 @@ class sdist(Command):
+         distribution.
+         """
+         log.info("reading manifest file '%s'", self.manifest)
+-        manifest = open(self.manifest)
+-        for line in manifest:
+-            # ignore comments and blank lines
+-            line = line.strip()
+-            if line.startswith('#') or not line:
+-                continue
+-            self.filelist.append(line)
+-        manifest.close()
++        with open(self.manifest) as manifest:
++            for line in manifest:
++                # ignore comments and blank lines
++                line = line.strip()
++                if line.startswith('#') or not line:
++                    continue
++                self.filelist.append(line)
+ 
+     def make_release_tree(self, base_dir, files):
+         """Create the directory tree that will become the source
+diff --git a/Lib/distutils/command/upload.py b/Lib/distutils/command/upload.py
+index 32dda359ba..11afa24b77 100644
+--- a/Lib/distutils/command/upload.py
++++ b/Lib/distutils/command/upload.py
+@@ -121,18 +121,13 @@ class upload(PyPIRCCommand):
+             'requires': meta.get_requires(),
+             'obsoletes': meta.get_obsoletes(),
+             }
+-        comment = ''
+-        if command == 'bdist_rpm':
+-            dist, version, id = platform.dist()
+-            if dist:
+-                comment = 'built for %s %s' % (dist, version)
+-        elif command == 'bdist_dumb':
+-            comment = 'built for %s' % platform.platform(terse=1)
+-        data['comment'] = comment
++
++        data['comment'] = ''
+ 
+         if self.sign:
+-            data['gpg_signature'] = (os.path.basename(filename) + ".asc",
+-                                     open(filename+".asc", "rb").read())
++            with open(filename + ".asc", "rb") as f:
++                data['gpg_signature'] = (os.path.basename(filename) + ".asc",
++                                         f.read())
+ 
+         # set up the authentication
+         user_pass = (self.username + ":" + self.password).encode('ascii')
+diff --git a/Lib/distutils/spawn.py b/Lib/distutils/spawn.py
+index d3a12c2833..aad277b0ca 100644
+--- a/Lib/distutils/spawn.py
++++ b/Lib/distutils/spawn.py
+@@ -8,11 +8,18 @@ executable name.
+ 
+ import sys
+ import os
++import subprocess
+ 
+ from distutils.errors import DistutilsPlatformError, DistutilsExecError
+ from distutils.debug import DEBUG
+ from distutils import log
+ 
++
++if sys.platform == 'darwin':
++    _cfg_target = None
++    _cfg_target_split = None
++
++
+ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
+     """Run another program, specified as a command list 'cmd', in a new process.
+ 
+@@ -32,69 +39,21 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
+     # cmd is documented as a list, but just in case some code passes a tuple
+     # in, protect our %-formatting code against horrible death
+     cmd = list(cmd)
+-    if os.name == 'posix':
+-        _spawn_posix(cmd, search_path, dry_run=dry_run)
+-    elif os.name == 'nt':
+-        _spawn_nt(cmd, search_path, dry_run=dry_run)
+-    else:
+-        raise DistutilsPlatformError(
+-              "don't know how to spawn programs on platform '%s'" % os.name)
+-
+-def _nt_quote_args(args):
+-    """Quote command-line arguments for DOS/Windows conventions.
+-
+-    Just wraps every argument which contains blanks in double quotes, and
+-    returns a new argument list.
+-    """
+-    # XXX this doesn't seem very robust to me -- but if the Windows guys
+-    # say it'll work, I guess I'll have to accept it.  (What if an arg
+-    # contains quotes?  What other magic characters, other than spaces,
+-    # have to be escaped?  Is there an escaping mechanism other than
+-    # quoting?)
+-    for i, arg in enumerate(args):
+-        if ' ' in arg:
+-            args[i] = '"%s"' % arg
+-    return args
+-
+-def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
+-    executable = cmd[0]
+-    cmd = _nt_quote_args(cmd)
+-    if search_path:
+-        # either we find one or it stays the same
+-        executable = find_executable(executable) or executable
+-    log.info(' '.join([executable] + cmd[1:]))
+-    if not dry_run:
+-        # spawn for NT requires a full path to the .exe
+-        try:
+-            rc = os.spawnv(os.P_WAIT, executable, cmd)
+-        except OSError as exc:
+-            # this seems to happen when the command isn't found
+-            if not DEBUG:
+-                cmd = executable
+-            raise DistutilsExecError(
+-                  "command %r failed: %s" % (cmd, exc.args[-1]))
+-        if rc != 0:
+-            # and this reflects the command running but failing
+-            if not DEBUG:
+-                cmd = executable
+-            raise DistutilsExecError(
+-                  "command %r failed with exit status %d" % (cmd, rc))
+-
+-if sys.platform == 'darwin':
+-    from distutils import sysconfig
+-    _cfg_target = None
+-    _cfg_target_split = None
+ 
+-def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
+     log.info(' '.join(cmd))
+     if dry_run:
+         return
+-    executable = cmd[0]
+-    exec_fn = search_path and os.execvp or os.execv
++
++    if search_path:
++        executable = find_executable(cmd[0])
++        if executable is not None:
++            cmd[0] = executable
++
+     env = None
+     if sys.platform == 'darwin':
+         global _cfg_target, _cfg_target_split
+         if _cfg_target is None:
++            from distutils import sysconfig
+             _cfg_target = sysconfig.get_config_var(
+                                   'MACOSX_DEPLOYMENT_TARGET') or ''
+             if _cfg_target:
+@@ -111,60 +70,17 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
+                 raise DistutilsPlatformError(my_msg)
+             env = dict(os.environ,
+                        MACOSX_DEPLOYMENT_TARGET=cur_target)
+-            exec_fn = search_path and os.execvpe or os.execve
+-    pid = os.fork()
+-    if pid == 0: # in the child
+-        try:
+-            if env is None:
+-                exec_fn(executable, cmd)
+-            else:
+-                exec_fn(executable, cmd, env)
+-        except OSError as e:
+-            if not DEBUG:
+-                cmd = executable
+-            sys.stderr.write("unable to execute %r: %s\n"
+-                             % (cmd, e.strerror))
+-            os._exit(1)
+ 
++    proc = subprocess.Popen(cmd, env=env)
++    proc.wait()
++    exitcode = proc.returncode
++
++    if exitcode:
+         if not DEBUG:
+-            cmd = executable
+-        sys.stderr.write("unable to execute %r for unknown reasons" % cmd)
+-        os._exit(1)
+-    else: # in the parent
+-        # Loop until the child either exits or is terminated by a signal
+-        # (ie. keep waiting if it's merely stopped)
+-        while True:
+-            try:
+-                pid, status = os.waitpid(pid, 0)
+-            except OSError as exc:
+-                if not DEBUG:
+-                    cmd = executable
+-                raise DistutilsExecError(
+-                      "command %r failed: %s" % (cmd, exc.args[-1]))
+-            if os.WIFSIGNALED(status):
+-                if not DEBUG:
+-                    cmd = executable
+-                raise DistutilsExecError(
+-                      "command %r terminated by signal %d"
+-                      % (cmd, os.WTERMSIG(status)))
+-            elif os.WIFEXITED(status):
+-                exit_status = os.WEXITSTATUS(status)
+-                if exit_status == 0:
+-                    return   # hey, it succeeded!
+-                else:
+-                    if not DEBUG:
+-                        cmd = executable
+-                    raise DistutilsExecError(
+-                          "command %r failed with exit status %d"
+-                          % (cmd, exit_status))
+-            elif os.WIFSTOPPED(status):
+-                continue
+-            else:
+-                if not DEBUG:
+-                    cmd = executable
+-                raise DistutilsExecError(
+-                      "unknown error executing %r: termination status %d"
+-                      % (cmd, status))
++            cmd = cmd[0]
++        raise DistutilsExecError(
++              "command %r failed with exit code %s" % (cmd, exitcode))
++
+ 
+ def find_executable(executable, path=None):
+     """Tries to find 'executable' in the directories listed in 'path'.
+diff --git a/Lib/distutils/sysconfig.py b/Lib/distutils/sysconfig.py
+index 0a034ee09b..01ee519792 100644
+--- a/Lib/distutils/sysconfig.py
++++ b/Lib/distutils/sysconfig.py
+@@ -15,6 +15,7 @@ import re
+ import sys
+ 
+ from .errors import DistutilsPlatformError
++from .util import get_platform, get_host_platform
+ 
+ # These are needed in a couple of spots, so just compute them once.
+ PREFIX = os.path.normpath(sys.prefix)
+@@ -39,10 +40,8 @@ else:
+ # python_build: (Boolean) if true, we're either building Python or
+ # building an extension with an un-installed Python, so we use
+ # different (hard-wired) directories.
+-# Setup.local is available for Makefile builds including VPATH builds,
+-# Setup.dist is available on Windows
+ def _is_python_source_dir(d):
+-    for fn in ("Setup.dist", "Setup.local"):
++    for fn in ("Setup", "Setup.local"):
+         if os.path.isfile(os.path.join(d, "Modules", fn)):
+             return True
+     return False
+@@ -147,8 +146,15 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
+             prefix = plat_specific and EXEC_PREFIX or PREFIX
+ 
+     if os.name == "posix":
+-        libpython = os.path.join(prefix,
+-                                 "lib", "python" + get_python_version())
++        if plat_specific or standard_lib:
++            # Platform-specific modules (any module from a non-pure-Python
++            # module distribution) or standard Python library modules.
++            libdir = sys.platlibdir
++        else:
++            # Pure Python
++            libdir = "lib"
++        libpython = os.path.join(prefix, libdir,
++                                 "python" + get_python_version())
+         if standard_lib:
+             return libpython
+         else:
+diff --git a/Lib/distutils/tests/support.py b/Lib/distutils/tests/support.py
+index 7385c6bbf6..259af882ec 100644
+--- a/Lib/distutils/tests/support.py
++++ b/Lib/distutils/tests/support.py
+@@ -6,6 +6,7 @@ import tempfile
+ import unittest
+ import sysconfig
+ from copy import deepcopy
++import test.support
+ 
+ from distutils import log
+ from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
+@@ -38,8 +39,6 @@ class LoggingSilencer(object):
+         self.logs.append((level, msg, args))
+ 
+     def get_logs(self, *levels):
+-        def _format(msg, args):
+-            return msg % args
+         return [msg % args for level, msg, args
+                 in self.logs if level in levels]
+ 
+@@ -64,8 +63,8 @@ class TempdirManager(object):
+         os.chdir(self.old_cwd)
+         super().tearDown()
+         while self.tempdirs:
+-            d = self.tempdirs.pop()
+-            shutil.rmtree(d, os.name in ('nt', 'cygwin'))
++            tmpdir = self.tempdirs.pop()
++            test.support.rmtree(tmpdir)
+ 
+     def mkdtemp(self):
+         """Create a temporary directory that will be cleaned up.
+diff --git a/Lib/distutils/tests/test_bdist.py b/Lib/distutils/tests/test_bdist.py
+index c80b3edc02..130d8bf155 100644
+--- a/Lib/distutils/tests/test_bdist.py
++++ b/Lib/distutils/tests/test_bdist.py
+@@ -2,6 +2,7 @@
+ import os
+ import unittest
+ from test.support import run_unittest
++import warnings
+ 
+ from distutils.command.bdist import bdist
+ from distutils.tests import support
+@@ -38,7 +39,10 @@ class BuildTestCase(support.TempdirManager,
+             names.append('bdist_msi')
+ 
+         for name in names:
+-            subcmd = cmd.get_finalized_command(name)
++            with warnings.catch_warnings():
++                warnings.filterwarnings('ignore', 'bdist_wininst command is deprecated',
++                                        DeprecationWarning)
++                subcmd = cmd.get_finalized_command(name)
+             if getattr(subcmd, '_unsupported', False):
+                 # command is not supported on this build
+                 continue
+diff --git a/Lib/distutils/tests/test_bdist_msi.py b/Lib/distutils/tests/test_bdist_msi.py
+index 15d8bdff2b..418e60ec72 100644
+--- a/Lib/distutils/tests/test_bdist_msi.py
++++ b/Lib/distutils/tests/test_bdist_msi.py
+@@ -1,7 +1,7 @@
+ """Tests for distutils.command.bdist_msi."""
+ import sys
+ import unittest
+-from test.support import run_unittest
++from test.support import run_unittest, check_warnings
+ from distutils.tests import support
+ 
+ 
+@@ -14,7 +14,8 @@ class BDistMSITestCase(support.TempdirManager,
+         # minimal test XXX need more tests
+         from distutils.command.bdist_msi import bdist_msi
+         project_dir, dist = self.create_dist()
+-        cmd = bdist_msi(dist)
++        with check_warnings(("", DeprecationWarning)):
++            cmd = bdist_msi(dist)
+         cmd.ensure_finalized()
+ 
+ 
+diff --git a/Lib/distutils/tests/test_bdist_wininst.py b/Lib/distutils/tests/test_bdist_wininst.py
+index 4c19bbab21..5c3d025d33 100644
+--- a/Lib/distutils/tests/test_bdist_wininst.py
++++ b/Lib/distutils/tests/test_bdist_wininst.py
+@@ -1,10 +1,14 @@
+ """Tests for distutils.command.bdist_wininst."""
++import sys
++import platform
+ import unittest
+-from test.support import run_unittest
++from test.support import run_unittest, check_warnings
+ 
+ from distutils.command.bdist_wininst import bdist_wininst
+ from distutils.tests import support
+ 
++@unittest.skipIf(sys.platform == 'win32' and platform.machine() == 'ARM64',
++    'bdist_wininst is not supported in this install')
+ @unittest.skipIf(getattr(bdist_wininst, '_unsupported', False),
+     'bdist_wininst is not supported in this install')
+ class BuildWinInstTestCase(support.TempdirManager,
+@@ -17,7 +21,8 @@ class BuildWinInstTestCase(support.TempdirManager,
+         # this test makes sure it works now for every platform
+         # let's create a command
+         pkg_pth, dist = self.create_dist()
+-        cmd = bdist_wininst(dist)
++        with check_warnings(("", DeprecationWarning)):
++            cmd = bdist_wininst(dist)
+         cmd.ensure_finalized()
+ 
+         # let's run the code that finds the right wininst*.exe file
+diff --git a/Lib/distutils/tests/test_build_ext.py b/Lib/distutils/tests/test_build_ext.py
+index 88847f9e9a..5e47e0773a 100644
+--- a/Lib/distutils/tests/test_build_ext.py
++++ b/Lib/distutils/tests/test_build_ext.py
+@@ -15,6 +15,7 @@ from distutils.errors import (
+ 
+ import unittest
+ from test import support
++from test.support.script_helper import assert_python_ok
+ 
+ # http://bugs.python.org/issue4373
+ # Don't load the xx module more than once.
+@@ -26,11 +27,8 @@ class BuildExtTestCase(TempdirManager,
+                        unittest.TestCase):
+     def setUp(self):
+         # Create a simple test environment
+-        # Note that we're making changes to sys.path
+         super(BuildExtTestCase, self).setUp()
+         self.tmp_dir = self.mkdtemp()
+-        self.sys_path = sys.path, sys.path[:]
+-        sys.path.append(self.tmp_dir)
+         import site
+         self.old_user_base = site.USER_BASE
+         site.USER_BASE = self.mkdtemp()
+@@ -40,15 +38,11 @@ class BuildExtTestCase(TempdirManager,
+         # bpo-30132: On Windows, a .pdb file may be created in the current
+         # working directory. Create a temporary working directory to cleanup
+         # everything at the end of the test.
+-        self.temp_cwd = support.temp_cwd()
+-        self.temp_cwd.__enter__()
+-        self.addCleanup(self.temp_cwd.__exit__, None, None, None)
++        change_cwd = support.change_cwd(self.tmp_dir)
++        change_cwd.__enter__()
++        self.addCleanup(change_cwd.__exit__, None, None, None)
+ 
+     def tearDown(self):
+-        # Get everything back to normal
+-        support.unload('xx')
+-        sys.path = self.sys_path[0]
+-        sys.path[:] = self.sys_path[1]
+         import site
+         site.USER_BASE = self.old_user_base
+         from distutils.command import build_ext
+@@ -88,19 +82,34 @@ class BuildExtTestCase(TempdirManager,
+         else:
+             ALREADY_TESTED = type(self).__name__
+ 
+-        import xx
++        code = textwrap.dedent(f"""
++            tmp_dir = {self.tmp_dir!r}
+ 
+-        for attr in ('error', 'foo', 'new', 'roj'):
+-            self.assertTrue(hasattr(xx, attr))
++            import sys
++            import unittest
++            from test import support
+ 
+-        self.assertEqual(xx.foo(2, 5), 7)
+-        self.assertEqual(xx.foo(13,15), 28)
+-        self.assertEqual(xx.new().demo(), None)
+-        if support.HAVE_DOCSTRINGS:
+-            doc = 'This is a template module just for instruction.'
+-            self.assertEqual(xx.__doc__, doc)
+-        self.assertIsInstance(xx.Null(), xx.Null)
+-        self.assertIsInstance(xx.Str(), xx.Str)
++            sys.path.insert(0, tmp_dir)
++            import xx
++
++            class Tests(unittest.TestCase):
++                def test_xx(self):
++                    for attr in ('error', 'foo', 'new', 'roj'):
++                        self.assertTrue(hasattr(xx, attr))
++
++                    self.assertEqual(xx.foo(2, 5), 7)
++                    self.assertEqual(xx.foo(13,15), 28)
++                    self.assertEqual(xx.new().demo(), None)
++                    if support.HAVE_DOCSTRINGS:
++                        doc = 'This is a template module just for instruction.'
++                        self.assertEqual(xx.__doc__, doc)
++                    self.assertIsInstance(xx.Null(), xx.Null)
++                    self.assertIsInstance(xx.Str(), xx.Str)
++
++
++            unittest.main()
++        """)
++        assert_python_ok('-c', code)
+ 
+     def test_solaris_enable_shared(self):
+         dist = Distribution({'name': 'xx'})
+@@ -295,6 +304,19 @@ class BuildExtTestCase(TempdirManager,
+         cmd.ensure_finalized()
+         self.assertEqual(cmd.get_source_files(), ['xxx'])
+ 
++    def test_unicode_module_names(self):
++        modules = [
++            Extension('foo', ['aaa'], optional=False),
++            Extension('föö', ['uuu'], optional=False),
++        ]
++        dist = Distribution({'name': 'xx', 'ext_modules': modules})
++        cmd = self.build_ext(dist)
++        cmd.ensure_finalized()
++        self.assertRegex(cmd.get_ext_filename(modules[0].name), r'foo(_d)?\..*')
++        self.assertRegex(cmd.get_ext_filename(modules[1].name), r'föö(_d)?\..*')
++        self.assertEqual(cmd.get_export_symbols(modules[0]), ['PyInit_foo'])
++        self.assertEqual(cmd.get_export_symbols(modules[1]), ['PyInitU_f_gkaa'])
++
+     def test_compiler_option(self):
+         # cmd.compiler is an option and
+         # should not be overridden by a compiler instance
+diff --git a/Lib/distutils/tests/test_config.py b/Lib/distutils/tests/test_config.py
+index 77ef788e24..344084afb7 100644
+--- a/Lib/distutils/tests/test_config.py
++++ b/Lib/distutils/tests/test_config.py
+@@ -60,6 +60,7 @@ class BasePyPIRCCommandTestCase(support.TempdirManager,
+         super(BasePyPIRCCommandTestCase, self).setUp()
+         self.tmp_dir = self.mkdtemp()
+         os.environ['HOME'] = self.tmp_dir
++        os.environ['USERPROFILE'] = self.tmp_dir
+         self.rc = os.path.join(self.tmp_dir, '.pypirc')
+         self.dist = Distribution()
+ 
+diff --git a/Lib/distutils/tests/test_config_cmd.py b/Lib/distutils/tests/test_config_cmd.py
+index 6e566e7915..8bd2c94237 100644
+--- a/Lib/distutils/tests/test_config_cmd.py
++++ b/Lib/distutils/tests/test_config_cmd.py
+@@ -39,11 +39,16 @@ class ConfigTestCase(support.LoggingSilencer,
+ 
+     @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
+     def test_search_cpp(self):
++        import shutil
+         cmd = missing_compiler_executable(['preprocessor'])
+         if cmd is not None:
+             self.skipTest('The %r command is not found' % cmd)
+         pkg_dir, dist = self.create_dist()
+         cmd = config(dist)
++        cmd._check_compiler()
++        compiler = cmd.compiler
++        if sys.platform[:3] == "aix" and "xlc" in compiler.preprocessor[0].lower():
++            self.skipTest('xlc: The -E option overrides the -P, -o, and -qsyntaxonly options')
+ 
+         # simple pattern searches
+         match = cmd.search_cpp(pattern='xxx', body='/* xxx */')
+diff --git a/Lib/distutils/tests/test_dist.py b/Lib/distutils/tests/test_dist.py
+index 0a19f0fb62..cc34725a99 100644
+--- a/Lib/distutils/tests/test_dist.py
++++ b/Lib/distutils/tests/test_dist.py
+@@ -463,7 +463,7 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
+             # win32-style
+             if sys.platform == 'win32':
+                 # home drive should be found
+-                os.environ['HOME'] = temp_dir
++                os.environ['USERPROFILE'] = temp_dir
+                 files = dist.find_config_files()
+                 self.assertIn(user_filename, files,
+                               '%r not found in %r' % (user_filename, files))
+diff --git a/Lib/distutils/tests/test_install.py b/Lib/distutils/tests/test_install.py
+index 287ab1989e..51c80e0421 100644
+--- a/Lib/distutils/tests/test_install.py
++++ b/Lib/distutils/tests/test_install.py
+@@ -58,7 +58,8 @@ class InstallTestCase(support.TempdirManager,
+ 
+         libdir = os.path.join(destination, "lib", "python")
+         check_path(cmd.install_lib, libdir)
+-        check_path(cmd.install_platlib, libdir)
++        platlibdir = os.path.join(destination, sys.platlibdir, "python")
++        check_path(cmd.install_platlib, platlibdir)
+         check_path(cmd.install_purelib, libdir)
+         check_path(cmd.install_headers,
+                    os.path.join(destination, "include", "python", "foopkg"))
+diff --git a/Lib/distutils/tests/test_msvccompiler.py b/Lib/distutils/tests/test_msvccompiler.py
+index 70a9c93a4e..b518d6a78b 100644
+--- a/Lib/distutils/tests/test_msvccompiler.py
++++ b/Lib/distutils/tests/test_msvccompiler.py
+@@ -32,57 +32,6 @@ class msvccompilerTestCase(support.TempdirManager,
+         finally:
+             _msvccompiler._find_vcvarsall = old_find_vcvarsall
+ 
+-    def test_compiler_options(self):
+-        import distutils._msvccompiler as _msvccompiler
+-        # suppress path to vcruntime from _find_vcvarsall to
+-        # check that /MT is added to compile options
+-        old_find_vcvarsall = _msvccompiler._find_vcvarsall
+-        def _find_vcvarsall(plat_spec):
+-            return old_find_vcvarsall(plat_spec)[0], None
+-        _msvccompiler._find_vcvarsall = _find_vcvarsall
+-        try:
+-            compiler = _msvccompiler.MSVCCompiler()
+-            compiler.initialize()
+-
+-            self.assertIn('/MT', compiler.compile_options)
+-            self.assertNotIn('/MD', compiler.compile_options)
+-        finally:
+-            _msvccompiler._find_vcvarsall = old_find_vcvarsall
+-
+-    def test_vcruntime_copy(self):
+-        import distutils._msvccompiler as _msvccompiler
+-        # force path to a known file - it doesn't matter
+-        # what we copy as long as its name is not in
+-        # _msvccompiler._BUNDLED_DLLS
+-        old_find_vcvarsall = _msvccompiler._find_vcvarsall
+-        def _find_vcvarsall(plat_spec):
+-            return old_find_vcvarsall(plat_spec)[0], __file__
+-        _msvccompiler._find_vcvarsall = _find_vcvarsall
+-        try:
+-            tempdir = self.mkdtemp()
+-            compiler = _msvccompiler.MSVCCompiler()
+-            compiler.initialize()
+-            compiler._copy_vcruntime(tempdir)
+-
+-            self.assertTrue(os.path.isfile(os.path.join(
+-                tempdir, os.path.basename(__file__))))
+-        finally:
+-            _msvccompiler._find_vcvarsall = old_find_vcvarsall
+-
+-    def test_vcruntime_skip_copy(self):
+-        import distutils._msvccompiler as _msvccompiler
+-
+-        tempdir = self.mkdtemp()
+-        compiler = _msvccompiler.MSVCCompiler()
+-        compiler.initialize()
+-        dll = compiler._vcruntime_redist
+-        self.assertTrue(os.path.isfile(dll), dll or "<None>")
+-
+-        compiler._copy_vcruntime(tempdir)
+-
+-        self.assertFalse(os.path.isfile(os.path.join(
+-            tempdir, os.path.basename(dll))), dll or "<None>")
+-
+     def test_get_vc_env_unicode(self):
+         import distutils._msvccompiler as _msvccompiler
+ 
+diff --git a/Lib/distutils/tests/test_spawn.py b/Lib/distutils/tests/test_spawn.py
+index f9ae69ef86..73b0f5cb73 100644
+--- a/Lib/distutils/tests/test_spawn.py
++++ b/Lib/distutils/tests/test_spawn.py
+@@ -8,7 +8,6 @@ from test.support import run_unittest, unix_shell
+ from test import support as test_support
+ 
+ from distutils.spawn import find_executable
+-from distutils.spawn import _nt_quote_args
+ from distutils.spawn import spawn
+ from distutils.errors import DistutilsExecError
+ from distutils.tests import support
+@@ -17,16 +16,6 @@ class SpawnTestCase(support.TempdirManager,
+                     support.LoggingSilencer,
+                     unittest.TestCase):
+ 
+-    def test_nt_quote_args(self):
+-
+-        for (args, wanted) in ((['with space', 'nospace'],
+-                                ['"with space"', 'nospace']),
+-                               (['nochange', 'nospace'],
+-                                ['nochange', 'nospace'])):
+-            res = _nt_quote_args(args)
+-            self.assertEqual(res, wanted)
+-
+-
+     @unittest.skipUnless(os.name in ('nt', 'posix'),
+                          'Runs only under posix or nt')
+     def test_spawn(self):
+diff --git a/Lib/distutils/tests/test_version.py b/Lib/distutils/tests/test_version.py
+index 15f14c7de3..8671cd2fc5 100644
+--- a/Lib/distutils/tests/test_version.py
++++ b/Lib/distutils/tests/test_version.py
+@@ -45,6 +45,14 @@ class VersionTestCase(unittest.TestCase):
+             self.assertEqual(res, wanted,
+                              'cmp(%s, %s) should be %s, got %s' %
+                              (v1, v2, wanted, res))
++            res = StrictVersion(v1)._cmp(v2)
++            self.assertEqual(res, wanted,
++                             'cmp(%s, %s) should be %s, got %s' %
++                             (v1, v2, wanted, res))
++            res = StrictVersion(v1)._cmp(object())
++            self.assertIs(res, NotImplemented,
++                          'cmp(%s, %s) should be NotImplemented, got %s' %
++                          (v1, v2, res))
+ 
+ 
+     def test_cmp(self):
+@@ -63,6 +71,14 @@ class VersionTestCase(unittest.TestCase):
+             self.assertEqual(res, wanted,
+                              'cmp(%s, %s) should be %s, got %s' %
+                              (v1, v2, wanted, res))
++            res = LooseVersion(v1)._cmp(v2)
++            self.assertEqual(res, wanted,
++                             'cmp(%s, %s) should be %s, got %s' %
++                             (v1, v2, wanted, res))
++            res = LooseVersion(v1)._cmp(object())
++            self.assertIs(res, NotImplemented,
++                          'cmp(%s, %s) should be NotImplemented, got %s' %
++                          (v1, v2, res))
+ 
+ def test_suite():
+     return unittest.makeSuite(VersionTestCase)
+diff --git a/Lib/distutils/util.py b/Lib/distutils/util.py
+index 30a21e4afa..4b002ecef1 100644
+--- a/Lib/distutils/util.py
++++ b/Lib/distutils/util.py
+@@ -15,7 +15,7 @@ from distutils.spawn import spawn
+ from distutils import log
+ from distutils.errors import DistutilsByteCompileError
+ 
+-def get_platform ():
++def get_host_platform():
+     """Return a string that identifies the current platform.  This is used mainly to
+     distinguish platform-specific build directories and platform-specific built
+     distributions.  Typically includes the OS name and version and the
+@@ -38,6 +38,10 @@ def get_platform ():
+     if os.name == 'nt':
+         if 'amd64' in sys.version.lower():
+             return 'win-amd64'
++        if '(arm)' in sys.version.lower():
++            return 'win-arm32'
++        if '(arm64)' in sys.version.lower():
++            return 'win-arm64'
+         return sys.platform
+ 
+     # Set for cross builds explicitly
+@@ -75,7 +79,8 @@ def get_platform ():
+             machine += ".%s" % bitness[sys.maxsize]
+         # fall through to standard osname-release-machine representation
+     elif osname[:3] == "aix":
+-        return "%s-%s.%s" % (osname, version, release)
++        from _aix_support import aix_platform
++        return aix_platform()
+     elif osname[:6] == "cygwin":
+         osname = "cygwin"
+         rel_re = re.compile (r'[\d.]+', re.ASCII)
+@@ -90,8 +95,16 @@ def get_platform ():
+ 
+     return "%s-%s-%s" % (osname, release, machine)
+ 
+-# get_platform ()
+-
++def get_platform():
++    if os.name == 'nt':
++        TARGET_TO_PLAT = {
++            'x86' : 'win32',
++            'x64' : 'win-amd64',
++            'arm' : 'win-arm32',
++        }
++        return TARGET_TO_PLAT.get(os.environ.get('VSCMD_ARG_TGT_ARCH')) or get_host_platform()
++    else:
++        return get_host_platform()
+ 
+ def convert_path (pathname):
+     """Return 'pathname' as a name that will work on the native filesystem,
+@@ -378,35 +391,34 @@ def byte_compile (py_files,
+             else:
+                 script = open(script_name, "w")
+ 
+-            script.write("""\
++            with script:
++                script.write("""\
+ from distutils.util import byte_compile
+ files = [
+ """)
+ 
+-            # XXX would be nice to write absolute filenames, just for
+-            # safety's sake (script should be more robust in the face of
+-            # chdir'ing before running it).  But this requires abspath'ing
+-            # 'prefix' as well, and that breaks the hack in build_lib's
+-            # 'byte_compile()' method that carefully tacks on a trailing
+-            # slash (os.sep really) to make sure the prefix here is "just
+-            # right".  This whole prefix business is rather delicate -- the
+-            # problem is that it's really a directory, but I'm treating it
+-            # as a dumb string, so trailing slashes and so forth matter.
+-
+-            #py_files = map(os.path.abspath, py_files)
+-            #if prefix:
+-            #    prefix = os.path.abspath(prefix)
+-
+-            script.write(",\n".join(map(repr, py_files)) + "]\n")
+-            script.write("""
++                # XXX would be nice to write absolute filenames, just for
++                # safety's sake (script should be more robust in the face of
++                # chdir'ing before running it).  But this requires abspath'ing
++                # 'prefix' as well, and that breaks the hack in build_lib's
++                # 'byte_compile()' method that carefully tacks on a trailing
++                # slash (os.sep really) to make sure the prefix here is "just
++                # right".  This whole prefix business is rather delicate -- the
++                # problem is that it's really a directory, but I'm treating it
++                # as a dumb string, so trailing slashes and so forth matter.
++
++                #py_files = map(os.path.abspath, py_files)
++                #if prefix:
++                #    prefix = os.path.abspath(prefix)
++
++                script.write(",\n".join(map(repr, py_files)) + "]\n")
++                script.write("""
+ byte_compile(files, optimize=%r, force=%r,
+              prefix=%r, base_dir=%r,
+              verbose=%r, dry_run=0,
+              direct=1)
+ """ % (optimize, force, prefix, base_dir, verbose))
+ 
+-            script.close()
+-
+         cmd = [sys.executable]
+         cmd.extend(subprocess._optim_args_from_interpreter_flags())
+         cmd.append(script_name)
+diff --git a/Lib/distutils/version.py b/Lib/distutils/version.py
+index af14cc1348..c33bebaed2 100644
+--- a/Lib/distutils/version.py
++++ b/Lib/distutils/version.py
+@@ -166,6 +166,8 @@ class StrictVersion (Version):
+     def _cmp (self, other):
+         if isinstance(other, str):
+             other = StrictVersion(other)
++        elif not isinstance(other, StrictVersion):
++            return NotImplemented
+ 
+         if self.version != other.version:
+             # numeric versions don't match
+@@ -331,6 +333,8 @@ class LooseVersion (Version):
+     def _cmp (self, other):
+         if isinstance(other, str):
+             other = LooseVersion(other)
++        elif not isinstance(other, LooseVersion):
++            return NotImplemented
+ 
+         if self.version == other.version:
+             return 0
+diff --git a/Python/sysmodule.c b/Python/sysmodule.c
+index d87b4e2c01..2b9e757a27 100644
+--- a/Python/sysmodule.c
++++ b/Python/sysmodule.c
+@@ -2448,8 +2448,6 @@ err_occurred:
+     return _Py_INIT_ERR("can't initialize sys module");
+ }
+ 
+-#undef SET_SYS_FROM_STRING
+-
+ /* Updating the sys namespace, returning integer error codes */
+ #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
+     do {                                                   \
+@@ -2482,6 +2480,13 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
+     SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
+     SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
+     SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
++    {
++        PyObject *str = PyUnicode_FromString("lib");
++        if (str == NULL) {
++            return -1;
++        }
++        SET_SYS_FROM_STRING("platlibdir", str);
++    }
+ 
+     if (config->argv != NULL) {
+         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
+@@ -2528,6 +2533,7 @@ err_occurred:
+     return -1;
+ }
+ 
++#undef SET_SYS_FROM_STRING
+ #undef SET_SYS_FROM_STRING_BORROW
+ #undef SET_SYS_FROM_STRING_INT_RESULT
+ 
+diff --git a/setup.py b/setup.py
+index bcc4bfa89d..11f18a3cda 100644
+--- a/setup.py
++++ b/setup.py
+@@ -7,6 +7,25 @@ import importlib._bootstrap
+ import importlib.util
+ import sysconfig
+ 
++
++try:
++    import subprocess
++    del subprocess
++    SUBPROCESS_BOOTSTRAP = False
++except ImportError:
++    # Bootstrap Python: distutils.spawn uses subprocess to build C extensions,
++    # subprocess requires C extensions built by setup.py like _posixsubprocess.
++    #
++    # Use _bootsubprocess which only uses the os module.
++    #
++    # It is dropped from sys.modules as soon as all C extension modules
++    # are built.
++    import _bootsubprocess
++    sys.modules['subprocess'] = _bootsubprocess
++    del _bootsubprocess
++    SUBPROCESS_BOOTSTRAP = True
++
++
+ from distutils import log
+ from distutils.errors import *
+ from distutils.core import Extension, setup
+@@ -16,6 +35,7 @@ from distutils.command.install_lib import install_lib
+ from distutils.command.build_scripts import build_scripts
+ from distutils.spawn import find_executable
+ 
++
+ cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
+ 
+ # Set common compiler and linker flags derived from the Makefile,
+@@ -309,6 +329,11 @@ class PyBuildExt(build_ext):
+ 
+         build_ext.build_extensions(self)
+ 
++        if SUBPROCESS_BOOTSTRAP:
++            # Drop our custom subprocess module:
++            # use the newly built subprocess module
++            del sys.modules['subprocess']
++
+         for ext in self.extensions:
+             self.check_extension_import(ext)
+ 

@@ -131,7 +131,7 @@ PyDoc_STRVAR(unicodedata_docstring,
 "This module provides access to the Unicode Character Database which\n\
 defines character properties for all Unicode characters. The data in\n\
 this database is based on the UnicodeData.txt file version\n\
-" UNIDATA_VERSION " which is publically available from ftp://ftp.unicode.org/.\n\
+" UNIDATA_VERSION " which is publicly available from ftp://ftp.unicode.org/.\n\
 \n\
 The module uses the same names and symbols as defined by the\n\
 UnicodeData File Format " UNIDATA_VERSION ".");
@@ -600,7 +600,9 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     Py_UCS4 *output;
-    Py_ssize_t i, o, osize, result_length;
+    Py_ssize_t i, o, osize;
+    int kind;
+    void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
@@ -625,9 +627,11 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         return NULL;
     }
     i = o = 0;
+    kind = PyUnicode_KIND(input);
+    data = PyUnicode_DATA(input);
 
     while (i < isize) {
-        stack[stackptr++] = PyUnicode_READ_CHAR(input, i++);
+        stack[stackptr++] = PyUnicode_READ(kind, data, i++);
         while(stackptr) {
             Py_UCS4 code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
@@ -687,13 +691,20 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         }
     }
 
-    result_length = o;
+    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                       output, o);
+    PyMem_Free(output);
+    if (!result)
+        return NULL;
+    /* result is guaranteed to be ready, as it is compact. */
+    kind = PyUnicode_KIND(result);
+    data = PyUnicode_DATA(result);
 
     /* Sort canonically. */
     i = 0;
-    prev = _getrecord_ex(output[i])->combining;
-    for (i++; i < result_length; i++) {
-        cur = _getrecord_ex(output[i])->combining;
+    prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
+    for (i++; i < PyUnicode_GET_LENGTH(result); i++) {
+        cur = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
         if (prev == 0 || cur == 0 || prev <= cur) {
             prev = cur;
             continue;
@@ -701,21 +712,19 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         /* Non-canonical order. Need to switch *i with previous. */
         o = i - 1;
         while (1) {
-            Py_UCS4 tmp = output[o+1];
-            output[o+1] = output[o];
-            output[o] = tmp;
+            Py_UCS4 tmp = PyUnicode_READ(kind, data, o+1);
+            PyUnicode_WRITE(kind, data, o+1,
+                            PyUnicode_READ(kind, data, o));
+            PyUnicode_WRITE(kind, data, o, tmp);
             o--;
             if (o < 0)
                 break;
-            prev = _getrecord_ex(output[o])->combining;
+            prev = _getrecord_ex(PyUnicode_READ(kind, data, o))->combining;
             if (prev == 0 || prev <= cur)
                 break;
         }
-        prev = _getrecord_ex(output[i])->combining;
+        prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
     }
-    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                       output, result_length);
-    PyMem_Free(output);
     return result;
 }
 
@@ -739,6 +748,8 @@ static PyObject*
 nfc_nfkc(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
+    int kind;
+    void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
     int f,l,index,index1,comb;
@@ -750,6 +761,8 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     if (!result)
         return NULL;
     /* result will be "ready". */
+    kind = PyUnicode_KIND(result);
+    data = PyUnicode_DATA(result);
     len = PyUnicode_GET_LENGTH(result);
 
     /* We allocate a buffer for the output.
@@ -777,24 +790,24 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       }
       /* Hangul Composition. We don't need to check for <LV,T>
          pairs, since we always have decomposed data. */
-      code = PyUnicode_READ_CHAR(result, i);
+      code = PyUnicode_READ(kind, data, i);
       if (LBase <= code && code < (LBase+LCount) &&
           i + 1 < len &&
-          VBase <= PyUnicode_READ_CHAR(result, i+1) &&
-          PyUnicode_READ_CHAR(result, i+1) < (VBase+VCount)) {
+          VBase <= PyUnicode_READ(kind, data, i+1) &&
+          PyUnicode_READ(kind, data, i+1) < (VBase+VCount)) {
           /* check L character is a modern leading consonant (0x1100 ~ 0x1112)
              and V character is a modern vowel (0x1161 ~ 0x1175). */
           int LIndex, VIndex;
           LIndex = code - LBase;
-          VIndex = PyUnicode_READ_CHAR(result, i+1) - VBase;
+          VIndex = PyUnicode_READ(kind, data, i+1) - VBase;
           code = SBase + (LIndex*VCount+VIndex)*TCount;
           i+=2;
           if (i < len &&
-              TBase < PyUnicode_READ_CHAR(result, i) &&
-              PyUnicode_READ_CHAR(result, i) < (TBase+TCount)) {
+              TBase < PyUnicode_READ(kind, data, i) &&
+              PyUnicode_READ(kind, data, i) < (TBase+TCount)) {
               /* check T character is a modern trailing consonant
                  (0x11A8 ~ 0x11C2). */
-              code += PyUnicode_READ_CHAR(result, i)-TBase;
+              code += PyUnicode_READ(kind, data, i)-TBase;
               i++;
           }
           output[o++] = code;
@@ -812,9 +825,9 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       i1 = i+1;
       comb = 0;
       /* output base character for now; might be updated later. */
-      output[o] = PyUnicode_READ_CHAR(result, i);
+      output[o] = PyUnicode_READ(kind, data, i);
       while (i1 < len) {
-          Py_UCS4 code1 = PyUnicode_READ_CHAR(result, i1);
+          Py_UCS4 code1 = PyUnicode_READ(kind, data, i1);
           int comb1 = _getrecord_ex(code1)->combining;
           if (comb) {
               if (comb1 == 0)
@@ -875,6 +888,8 @@ static int
 is_normalized(PyObject *self, PyObject *input, int nfc, int k)
 {
     Py_ssize_t i, len;
+    int kind;
+    void *data;
     unsigned char prev_combining = 0, quickcheck_mask;
 
     /* An older version of the database is requested, quickchecks must be
@@ -887,9 +902,11 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
 
     i = 0;
+    kind = PyUnicode_KIND(input);
+    data = PyUnicode_DATA(input);
     len = PyUnicode_GET_LENGTH(input);
     while (i < len) {
-        Py_UCS4 ch = PyUnicode_READ_CHAR(input, i++);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i++);
         const _PyUnicode_DatabaseRecord *record = _getrecord_ex(ch);
         unsigned char combining = record->combining;
         unsigned char quickcheck = record->normalization_quick_check;
@@ -908,7 +925,7 @@ unicodedata.UCD.normalize
 
     self: self
     form: str
-    unistr as input: object
+    unistr as input: unicode
     /
 
 Return the normal form 'form' for the Unicode string unistr.
@@ -919,17 +936,8 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 static PyObject *
 unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
                                PyObject *input)
-/*[clinic end generated code: output=62d1f8870027efdc input=05f211ffe1a12e3f]*/
+/*[clinic end generated code: output=62d1f8870027efdc input=1744c55f4ab79bf0]*/
 {
-    if (!PyUnicode_Check(input)) {
-        PyErr_Format(PyExc_TypeError,
-                     "UCD.normalize() argument 2 must be str, not %.50s",
-                     _PyType_Name(Py_TYPE(input)));
-        return NULL;
-    }
-    if (PyUnicode_READY(input) == -1)
-        return NULL;
-
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */
@@ -1030,11 +1038,12 @@ is_unified_ideograph(Py_UCS4 code)
 {
     return
         (0x3400 <= code && code <= 0x4DB5)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FD5)   || /* CJK Ideograph */
+        (0x4E00 <= code && code <= 0x9FEF)   || /* CJK Ideograph */
         (0x20000 <= code && code <= 0x2A6D6) || /* CJK Ideograph Extension B */
         (0x2A700 <= code && code <= 0x2B734) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
-        (0x2B820 <= code && code <= 0x2CEA1);   /* CJK Ideograph Extension E */
+        (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
+        (0x2CEB0 <= code && code <= 0x2EBEF);   /* CJK Ideograph Extension F */
 }
 
 /* macros used to determine if the given code point is in the PUA range that
@@ -1361,16 +1370,13 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
     return PyUnicode_FromOrdinal(code);
 }
 
+/* XXX Add doc strings. */
+
 PyMODINIT_FUNC
 PyInit_unicodedata(void)
 {
     PyObject *m, *v;
 
-    m = PyState_FindModule(&unicodedatamodule);
-    if (m != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
     m = PyModule_Create(&unicodedatamodule);
     if (!m)
         return NULL;
@@ -1398,7 +1404,6 @@ PyInit_unicodedata(void)
     v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
     if (v != NULL)
         PyModule_AddObject(m, "ucnhash_CAPI", v);
-    PyState_AddModule(m, &unicodedatamodule);
     return m;
 }
 

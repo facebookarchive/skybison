@@ -21,6 +21,7 @@
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include "openssl/err.h"
@@ -63,9 +64,7 @@ typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
-#ifdef WITH_THREAD
     PyThread_type_lock   lock;  /* OpenSSL context lock */
-#endif
 } EVPobject;
 
 
@@ -121,18 +120,17 @@ newEVPobject(PyObject *name)
         return NULL;
     }
 
-    retval->ctx = EVP_MD_CTX_new();
-    if (retval->ctx == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     /* save the name for .name to return */
     Py_INCREF(name);
     retval->name = name;
-#ifdef WITH_THREAD
     retval->lock = NULL;
-#endif
+
+    retval->ctx = EVP_MD_CTX_new();
+    if (retval->ctx == NULL) {
+        Py_DECREF(retval);
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     return retval;
 }
@@ -162,10 +160,8 @@ static void
 EVP_dealloc(EVPobject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     EVP_MD_CTX_free(self->ctx);
     Py_XDECREF(self->name);
     PyObject_Del(self);
@@ -196,6 +192,7 @@ EVP_copy(EVPobject *self, PyObject *unused)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
+        Py_DECREF(newobj);
         return _setException(PyExc_ValueError);
     }
     return (PyObject *)newobj;
@@ -277,7 +274,6 @@ EVP_update(EVPobject *self, PyObject *args)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
         /* fail? lock = NULL and we fail over to non-threaded code. */
@@ -292,9 +288,6 @@ EVP_update(EVPobject *self, PyObject *args)
     } else {
         EVP_hash(self, view.buf, view.len);
     }
-#else
-    EVP_hash(self, view.buf, view.len);
-#endif
 
     PyBuffer_Release(&view);
     Py_RETURN_NONE;
@@ -531,8 +524,6 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
         PyBuffer_Release(&view);
     return ret_obj;
 }
-
-
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) \
      && !defined(OPENSSL_NO_SHA))
@@ -811,7 +802,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
 
     if (maxmem < 0 || maxmem > INT_MAX) {
-        /* OpenSSL 1.1.0 restricts maxmem to 32MB. It may change in the
+        /* OpenSSL 1.1.0 restricts maxmem to 32 MiB. It may change in the
            future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
                      "maxmem must be positive and smaller than %d",
@@ -831,7 +822,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     if (!retval) {
         /* sorry, can't do much better */
         PyErr_SetString(PyExc_ValueError,
-                        "Invalid paramemter combination for n, r, p, maxmem.");
+                        "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
    }
 
@@ -858,6 +849,61 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     return _PyBytesWriter_Finish(&writer, key + dklen);
 }
 #endif
+
+/* Fast HMAC for hmac.digest()
+ */
+
+/*[clinic input]
+_hashlib.hmac_digest
+
+    key: Py_buffer
+    msg: Py_buffer
+    digest: str
+
+Single-shot HMAC.
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_hmac_digest_impl(PyObject *module, Py_buffer *key, Py_buffer *msg,
+                          const char *digest)
+/*[clinic end generated code: output=75630e684cdd8762 input=562d2f4249511bd3]*/
+{
+    unsigned char md[EVP_MAX_MD_SIZE] = {0};
+    unsigned int md_len = 0;
+    unsigned char *result;
+    const EVP_MD *evp;
+
+    evp = EVP_get_digestbyname(digest);
+    if (evp == NULL) {
+        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
+        return NULL;
+    }
+    if (key->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "key is too long.");
+        return NULL;
+    }
+    if (msg->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "msg is too long.");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    result = HMAC(
+        evp,
+        (const void*)key->buf, (int)key->len,
+        (const unsigned char*)msg->buf, (int)msg->len,
+        md, &md_len
+    );
+    Py_END_ALLOW_THREADS
+
+    if (result == NULL) {
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
+    return PyBytes_FromStringAndSize((const char*)md, md_len);
+}
 
 /* State for our callback function so that it can accumulate a result. */
 typedef struct _internal_name_mapper_state {
@@ -927,13 +973,13 @@ generate_hash_name_list(void)
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject *args) \
+    EVP_new_ ## NAME (PyObject *self, PyObject *const *args, Py_ssize_t nargs) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
      \
-        if (!PyArg_ParseTuple(args, "|O:" #NAME , &data_obj)) { \
+        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
             return NULL; \
         } \
      \
@@ -965,7 +1011,7 @@ generate_hash_name_list(void)
 
 /* a PyMethodDef structure for the constructor */
 #define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_VARARGS, \
+    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL, \
         PyDoc_STR("Returns a " #NAME \
                   " hash object; optionally initialized with a string") \
     }
@@ -994,6 +1040,7 @@ static struct PyMethodDef EVP_functions[] = {
      pbkdf2_hmac__doc__},
 #endif
     _HASHLIB_SCRYPT_METHODDEF
+    _HASHLIB_HMAC_DIGEST_METHODDEF
     CONSTRUCTOR_METH_DEF(md5),
     CONSTRUCTOR_METH_DEF(sha1),
     CONSTRUCTOR_METH_DEF(sha224),

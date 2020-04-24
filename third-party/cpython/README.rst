@@ -1,19 +1,19 @@
-This is Python version 3.6.8+
+This is Python version 3.7.3+
 =============================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=3.6
+.. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
 
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/3.6?svg=true
+.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
    :alt: CPython build status on Appveyor
-   :target: https://ci.appveyor.com/project/python/cpython/branch/3.6
+   :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.6
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.7
    :alt: CPython build status on Azure Pipelines
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.6
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.7
 
-.. image:: https://codecov.io/gh/python/cpython/branch/3.6/graph/badge.svg
+.. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
@@ -22,6 +22,8 @@ Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 rights reserved.
 
 See the end of this file for further copyright and license information.
+
+.. contents::
 
 General Information
 -------------------
@@ -47,7 +49,6 @@ Installable Python kits, and information about using Python, are available at
 `python.org`_.
 
 .. _python.org: https://www.python.org/
-
 
 Build Instructions
 ------------------
@@ -76,7 +77,7 @@ installs the Python executable in a place that is not normally on your PATH,
 you may want to set up a symlink in ``/usr/local/bin``.
 
 On Windows, see `PCbuild/readme.txt
-<https://github.com/python/cpython/blob/3.6/PCbuild/readme.txt>`_.
+<https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -98,32 +99,33 @@ below.
 
 
 Profile Guided Optimization
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
-either via ``configure --enable-optimizations`` above or by manually running
-``make profile-opt`` regardless of configure flags it will do several steps.
+either via ``configure --enable-optimizations`` or by manually running
+``make profile-opt`` regardless of configure flags, the optimized build
+process will perform the following steps:
 
-First, the entire Python directory is cleaned of temporary files that may have
-resulted in a previous compilation.
+The entire Python directory is cleaned of temporary files that may have
+resulted from a previous compilation.
 
-Then, an instrumented version of the interpreter is built, using suitable
-compiler flags for each flavour. Note that this is just an intermediary step.
-The binary resulting from this step is not good for real life workloads as
-it has profiling instructions embedded inside.
+An instrumented version of the interpreter is built, using suitable compiler
+flags for each flavour. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real life workloads as it has
+profiling instructions embedded inside.
 
-After this instrumented version of the interpreter is built, the Makefile will
-automatically run a training workload. This is necessary in order to profile
-the interpreter execution. Note also that any output, both stdout and stderr,
-that may appear at this step is suppressed.
+After the instrumented interpreter is built, the Makefile will run a training
+workload.  This is necessary in order to profile the interpreter execution.
+Note also that any output, both stdout and stderr, that may appear at this step
+is suppressed.
 
-Finally, the last step is to rebuild the interpreter, using the information
-collected in the previous one. The end result will be a Python binary that is
-optimized and suitable for distribution or production installation.
+The final step is to build the actual interpreter, using the information
+collected from the instrumented one.  The end result will be a Python binary
+that is optimized; suitable for distribution or production installation.
 
 
 Link Time Optimization
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
 ability of recent compiler toolchains to optimize across the otherwise
@@ -135,11 +137,11 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.6 <https://docs.python.org/3.6/whatsnew/3.6.html>`_ document.  For a more
+3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/3.6/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
-<https://github.com/python/cpython/commits/3.6>`_.
+<https://github.com/python/cpython/commits/master>`_.
 
 If you want to install multiple versions of Python see the section below
 entitled "Installing multiple versions".
@@ -148,7 +150,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.6 <https://docs.python.org/3.6/>`_ is online,
+`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -157,7 +159,7 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
-<https://github.com/python/cpython/blob/3.6/Doc/README.rst>`_.
+<https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
@@ -207,8 +209,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.5, and 3.6 with 3.6 being the
-primary version, you would execute ``make install`` in your 3.6 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
+primary version, you would execute ``make install`` in your 3.7 build directory
 and ``make altinstall`` in the others.
 
 
@@ -238,7 +240,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`494` for Python 3.6 release details.
+See :pep:`537` for Python 3.7 release details.
 
 
 Copyright and License Information

@@ -475,13 +475,13 @@ Callable types
       | :attr:`__doc__`         | The function's documentation  | Writable  |
       |                         | string, or ``None`` if        |           |
       |                         | unavailable; not inherited by |           |
-      |                         | subclasses                    |           |
+      |                         | subclasses.                   |           |
       +-------------------------+-------------------------------+-----------+
-      | :attr:`~definition.\    | The function's name           | Writable  |
+      | :attr:`~definition.\    | The function's name.          | Writable  |
       | __name__`               |                               |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`~definition.\    | The function's                | Writable  |
-      | __qualname__`           | :term:`qualified name`        |           |
+      | __qualname__`           | :term:`qualified name`.       |           |
       |                         |                               |           |
       |                         | .. versionadded:: 3.3         |           |
       +-------------------------+-------------------------------+-----------+
@@ -493,7 +493,7 @@ Callable types
       |                         | argument values for those     |           |
       |                         | arguments that have defaults, |           |
       |                         | or ``None`` if no arguments   |           |
-      |                         | have a default value          |           |
+      |                         | have a default value.         |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__code__`        | The code object representing  | Writable  |
       |                         | the compiled function body.   |           |
@@ -512,6 +512,9 @@ Callable types
       | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
       |                         | that contain bindings for the |           |
       |                         | function's free variables.    |           |
+      |                         | See below for information on  |           |
+      |                         | the ``cell_contents``         |           |
+      |                         | attribute.                    |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
@@ -531,6 +534,9 @@ Callable types
       dot-notation is used to get and set such attributes. *Note that the current
       implementation only supports function attributes on user-defined functions.
       Function attributes on built-in functions may be supported in the future.*
+
+      A cell object has the attribute ``cell_contents``. This can be used to get
+      the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
       code object; see the description of internal types below.
@@ -614,7 +620,7 @@ Callable types
       called, always returns an iterator object which can be used to execute the
       body of the function:  calling the iterator's :meth:`iterator.__next__`
       method will cause the function to execute until it provides a value
-      using the :keyword:`yield` statement.  When the function executes a
+      using the :keyword:`!yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
@@ -694,7 +700,7 @@ Modules
 
    Modules are a basic organizational unit of Python code, and are created by
    the :ref:`import system <importsystem>` as invoked either by the
-   :keyword:`import` statement (see :keyword:`import`), or by calling
+   :keyword:`import` statement, or by calling
    functions such as :func:`importlib.import_module` and built-in
    :func:`__import__`.  A module object has a namespace implemented by a
    dictionary object (this is the dictionary referenced by the ``__globals__``
@@ -946,7 +952,7 @@ Internal types
       .. index:: object: frame
 
       Frame objects represent execution frames.  They may occur in traceback objects
-      (see below).
+      (see below), and are also passed to registered trace functions.
 
       .. index::
          single: f_back (frame attribute)
@@ -966,10 +972,20 @@ Internal types
 
       .. index::
          single: f_trace (frame attribute)
+         single: f_trace_lines (frame attribute)
+         single: f_trace_opcodes (frame attribute)
          single: f_lineno (frame attribute)
 
       Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
-      called at the start of each source code line (this is used by the debugger);
+      called for various events during code execution (this is used by the debugger).
+      Normally an event is triggered for each new source line - this can be
+      disabled by setting :attr:`f_trace_lines` to :const:`False`.
+
+      Implementations *may* allow per-opcode events to be requested by setting
+      :attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
+      undefined interpreter behaviour if exceptions raised by the trace
+      function escape to the function being traced.
+
       :attr:`f_lineno` is the current line number of the frame --- writing to this
       from within a trace function jumps to the given line (only for the bottom-most
       frame).  A debugger can implement a Jump command (aka Set Next Statement)
@@ -989,6 +1005,8 @@ Internal types
 
          .. versionadded:: 3.4
 
+   .. _traceback-objects:
+
    Traceback objects
       .. index::
          object: traceback
@@ -1001,31 +1019,51 @@ Internal types
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
-      is created when an exception occurs.  When the search for an exception handler
+      is implicitly created when an exception occurs, and may also be explicitly
+      created by calling :class:`types.TracebackType`.
+
+      For implicitly created tracebacks, when the search for an exception handler
       unwinds the execution stack, at each unwound level a traceback object is
       inserted in front of the current traceback.  When an exception handler is
       entered, the stack trace is made available to the program. (See section
       :ref:`try`.) It is accessible as the third item of the
-      tuple returned by ``sys.exc_info()``. When the program contains no suitable
+      tuple returned by ``sys.exc_info()``, and as the ``__traceback__`` attribute
+      of the caught exception.
+
+      When the program contains no suitable
       handler, the stack trace is written (nicely formatted) to the standard error
       stream; if the interpreter is interactive, it is also made available to the user
       as ``sys.last_traceback``.
 
+      For explicitly created tracebacks, it is up to the creator of the traceback
+      to determine how the ``tb_next`` attributes should be linked to form a
+      full stack trace.
+
       .. index::
-         single: tb_next (traceback attribute)
          single: tb_frame (traceback attribute)
          single: tb_lineno (traceback attribute)
          single: tb_lasti (traceback attribute)
          statement: try
 
-      Special read-only attributes: :attr:`tb_next` is the next level in the stack
-      trace (towards the frame where the exception occurred), or ``None`` if there is
-      no next level; :attr:`tb_frame` points to the execution frame of the current
-      level; :attr:`tb_lineno` gives the line number where the exception occurred;
-      :attr:`tb_lasti` indicates the precise instruction.  The line number and last
-      instruction in the traceback may differ from the line number of its frame object
-      if the exception occurred in a :keyword:`try` statement with no matching except
-      clause or with a finally clause.
+      Special read-only attributes:
+      :attr:`tb_frame` points to the execution frame of the current level;
+      :attr:`tb_lineno` gives the line number where the exception occurred;
+      :attr:`tb_lasti` indicates the precise instruction.
+      The line number and last instruction in the traceback may differ from the
+      line number of its frame object if the exception occurred in a
+      :keyword:`try` statement with no matching except clause or with a
+      finally clause.
+
+      .. index::
+         single: tb_next (traceback attribute)
+
+      Special writable attribute: :attr:`tb_next` is the next level in the stack
+      trace (towards the frame where the exception occurred), or ``None`` if
+      there is no next level.
+
+      .. versionchanged:: 3.7
+         Traceback objects can now be explicitly instantiated from Python code,
+         and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
       .. index:: builtin: slice
@@ -1277,9 +1315,9 @@ Basic customization
    Called by the :func:`format` built-in function,
    and by extension, evaluation of :ref:`formatted string literals
    <f-strings>` and the :meth:`str.format` method, to produce a "formatted"
-   string representation of an object. The ``format_spec`` argument is
+   string representation of an object. The *format_spec* argument is
    a string that contains a description of the formatting options desired.
-   The interpretation of the ``format_spec`` argument is up to the type
+   The interpretation of the *format_spec* argument is up to the type
    implementing :meth:`__format__`, however most classes will either
    delegate formatting to one of the built-in types, or use a similar
    formatting option syntax.
@@ -1291,6 +1329,10 @@ Basic customization
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
       if passed any non-empty string.
+
+   .. versionchanged:: 3.7
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
 
 
 .. _richcmpfuncs:
@@ -1385,7 +1427,7 @@ Basic customization
    :meth:`__hash__` method of a class is ``None``, instances of the class will
    raise an appropriate :exc:`TypeError` when a program attempts to retrieve
    their hash value, and will also be correctly identified as unhashable when
-   checking ``isinstance(obj, collections.Hashable)``.
+   checking ``isinstance(obj, collections.abc.Hashable)``.
 
    If a class that overrides :meth:`__eq__` needs to retain the implementation
    of :meth:`__hash__` from a parent class, the interpreter must be told this
@@ -1395,7 +1437,7 @@ Basic customization
    support, it should include ``__hash__ = None`` in the class definition.
    A class which defines its own :meth:`__hash__` that explicitly raises
    a :exc:`TypeError` would be incorrectly identified as hashable by
-   an ``isinstance(obj, collections.Hashable)`` call.
+   an ``isinstance(obj, collections.abc.Hashable)`` call.
 
 
    .. note::
@@ -1410,8 +1452,8 @@ Basic customization
       dict insertion, O(n^2) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
-      Changing hash values affects the iteration order of dicts, sets and
-      other mappings.  Python has never made guarantees about this ordering
+      Changing hash values affects the iteration order of sets.
+      Python has never made guarantees about this ordering
       (and it typically varies between 32-bit and 64-bit builds).
 
       See also :envvar:`PYTHONHASHSEED`.
@@ -1508,7 +1550,22 @@ Customizing module attribute access
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
+   single: __getattr__ (module attribute)
+   single: __dir__ (module attribute)
    single: __class__ (module attribute)
+
+Special names ``__getattr__`` and ``__dir__`` can be also used to customize
+access to module attributes. The ``__getattr__`` function at the module level
+should accept one argument which is the name of an attribute and return the
+computed value or raise an :exc:`AttributeError`. If an attribute is
+not found on a module object through the normal lookup, i.e.
+:meth:`object.__getattribute__`, then ``__getattr__`` is searched in
+the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
+it is called with the attribute name and the result is returned.
+
+The ``__dir__`` function should accept no arguments, and return a list of
+strings that represents the names accessible on module. If present, this
+function overrides the standard :func:`dir` search on a module.
 
 For a more fine grained customization of the module behavior (setting
 attributes, properties, etc.), one can set the ``__class__`` attribute of
@@ -1523,18 +1580,26 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
 
        def __setattr__(self, attr, value):
            print(f'Setting {attr}...')
-           setattr(self, attr, value)
+           super().__setattr__(attr, value)
 
    sys.modules[__name__].__class__ = VerboseModule
 
 .. note::
-   Setting module ``__class__`` only affects lookups made using the attribute
-   access syntax -- directly accessing the module globals (whether by code
-   within the module, or via a reference to the module's globals dictionary)
-   is unaffected.
+   Defining module ``__getattr__`` and setting module ``__class__`` only
+   affect lookups made using the attribute access syntax -- directly accessing
+   the module globals (whether by code within the module, or via a reference
+   to the module's globals dictionary) is unaffected.
 
 .. versionchanged:: 3.5
    ``__class__`` module attribute is now writable.
+
+.. versionadded:: 3.7
+   ``__getattr__`` and ``__dir__`` module attributes.
+
+.. seealso::
+
+   :pep:`562` - Module __getattr__ and __dir__
+      Describes the ``__getattr__`` and ``__dir__`` functions on modules.
 
 
 .. _descriptors:
@@ -1660,6 +1725,7 @@ properties) and deny the creation of *__dict__* and *__weakref__*
 (unless explicitly declared in *__slots__* or available in a parent.)
 
 The space saved over using *__dict__* can be significant.
+Attribute lookup speed can be significantly improved as well.
 
 .. data:: object.__slots__
 
@@ -1795,10 +1861,26 @@ passed through to all metaclass operations described below.
 
 When a class definition is executed, the following steps occur:
 
-* the appropriate metaclass is determined
-* the class namespace is prepared
-* the class body is executed
-* the class object is created
+* MRO entries are resolved;
+* the appropriate metaclass is determined;
+* the class namespace is prepared;
+* the class body is executed;
+* the class object is created.
+
+
+Resolving MRO entries
+^^^^^^^^^^^^^^^^^^^^^
+
+If a base that appears in class definition is not an instance of :class:`type`,
+then an ``__mro_entries__`` method is searched on it. If found, it is called
+with the original bases tuple. This method must return a tuple of classes that
+will be used instead of this base. The tuple may be empty, in such case
+the original base is ignored.
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
+
 
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1807,11 +1889,11 @@ Determining the appropriate metaclass
 
 The appropriate metaclass for a class definition is determined as follows:
 
-* if no bases and no explicit metaclass are given, then :func:`type` is used
+* if no bases and no explicit metaclass are given, then :func:`type` is used;
 * if an explicit metaclass is given and it is *not* an instance of
-  :func:`type`, then it is used directly as the metaclass
+  :func:`type`, then it is used directly as the metaclass;
 * if an instance of :func:`type` is given as the explicit metaclass, or
-  bases are defined, then the most derived metaclass is used
+  bases are defined, then the most derived metaclass is used.
 
 The most derived metaclass is selected from the explicitly specified
 metaclass (if any) and the metaclasses (i.e. ``type(cls)``) of all specified
@@ -1899,7 +1981,7 @@ invoked after creating the class object:
 * first, ``type.__new__`` collects all of the descriptors in the class
   namespace that define a :meth:`~object.__set_name__` method;
 * second, all of these ``__set_name__`` methods are called with the class
-  being defined and the assigned name of that particular descriptor; and
+  being defined and the assigned name of that particular descriptor;
 * finally, the :meth:`~object.__init_subclass__` hook is called on the
   immediate parent of the new class in its method resolution order.
 
@@ -1967,6 +2049,27 @@ case the instance is itself a class.
       module) to the language.
 
 
+Emulating generic types
+-----------------------
+
+One can implement the generic class syntax as specified by :pep:`484`
+(for example ``List[int]``) by defining a special method:
+
+.. classmethod:: object.__class_getitem__(cls, key)
+
+   Return an object representing the specialization of a generic class
+   by type arguments found in *key*.
+
+This method is looked up on the class object itself, and when defined in
+the class body, this method is implicitly a class method.  Note, this
+mechanism is primarily reserved for use with static type hints, other usage
+is discouraged.
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
+
+
 .. _callable-types:
 
 Emulating callable objects
@@ -1996,7 +2099,7 @@ range of items.  It is also recommended that mappings provide the methods
 :meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
-objects.  The :mod:`collections` module provides a
+objects.  The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 abstract base class to help create those methods from a base set of
 :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`.
@@ -2322,7 +2425,7 @@ A :dfn:`context manager` is an object that defines the runtime context to be
 established when executing a :keyword:`with` statement. The context manager
 handles the entry into, and the exit from, the desired runtime context for the
 execution of the block of code.  Context managers are normally invoked using the
-:keyword:`with` statement (described in section :ref:`with`), but can also be
+:keyword:`!with` statement (described in section :ref:`with`), but can also be
 used by directly invoking their methods.
 
 .. index::
@@ -2339,7 +2442,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
    Enter the runtime context related to this object. The :keyword:`with` statement
    will bind this method's return value to the target(s) specified in the
-   :keyword:`as` clause of the statement, if any.
+   :keyword:`!as` clause of the statement, if any.
 
 
 .. method:: object.__exit__(self, exc_type, exc_value, traceback)
@@ -2529,9 +2632,8 @@ generators, coroutines do not directly support iteration.
 Asynchronous Iterators
 ----------------------
 
-An *asynchronous iterable* is able to call asynchronous code in its
-``__aiter__`` implementation, and an *asynchronous iterator* can call
-asynchronous code in its ``__anext__`` method.
+An *asynchronous iterator* can call asynchronous code in
+its ``__anext__`` method.
 
 Asynchronous iterators can be used in an :keyword:`async for` statement.
 
@@ -2561,49 +2663,17 @@ An example of an asynchronous iterable object::
 
 .. versionadded:: 3.5
 
-.. note::
+.. versionchanged:: 3.7
+   Prior to Python 3.7, ``__aiter__`` could return an *awaitable*
+   that would resolve to an
+   :term:`asynchronous iterator <asynchronous iterator>`.
 
-   .. versionchanged:: 3.5.2
-      Starting with CPython 3.5.2, ``__aiter__`` can directly return
-      :term:`asynchronous iterators <asynchronous iterator>`.  Returning
-      an :term:`awaitable` object will result in a
-      :exc:`PendingDeprecationWarning`.
+   Starting with Python 3.7, ``__aiter__`` must return an
+   asynchronous iterator object.  Returning anything else
+   will result in a :exc:`TypeError` error.
 
-      The recommended way of writing backwards compatible code in
-      CPython 3.5.x is to continue returning awaitables from
-      ``__aiter__``.  If you want to avoid the PendingDeprecationWarning
-      and keep the code backwards compatible, the following decorator
-      can be used::
 
-          import functools
-          import sys
-
-          if sys.version_info < (3, 5, 2):
-              def aiter_compat(func):
-                  @functools.wraps(func)
-                  async def wrapper(self):
-                      return func(self)
-                  return wrapper
-          else:
-              def aiter_compat(func):
-                  return func
-
-      Example::
-
-          class AsyncIterator:
-
-              @aiter_compat
-              def __aiter__(self):
-                  return self
-
-              async def __anext__(self):
-                  ...
-
-      Starting with CPython 3.6, the :exc:`PendingDeprecationWarning`
-      will be replaced with the :exc:`DeprecationWarning`.
-      In CPython 3.7, returning an awaitable from ``__aiter__`` will
-      result in a :exc:`RuntimeError`.
-
+.. _async-context-managers:
 
 Asynchronous Context Managers
 -----------------------------

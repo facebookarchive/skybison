@@ -13,12 +13,17 @@ PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
 PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
+
+PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+    const wchar_t *text,
+    size_t *error_pos);
 #endif
 
+#ifdef Py_BUILD_CORE
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
-    const char *c_str,
-    Py_ssize_t size,
-    wchar_t **result,
+    const char *arg,
+    Py_ssize_t arglen,
+    wchar_t **wstr,
     size_t *wlen,
     const char **reason,
     int surrogateescape);
@@ -31,7 +36,9 @@ PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
     int raw_malloc,
     int surrogateescape);
 
-#ifndef Py_LIMITED_API
+PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
+    const char *arg,
+    Py_ssize_t arglen);
 
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     const char *arg,
@@ -48,7 +55,9 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     const char **reason,
     int current_locale,
     int surrogateescape);
+#endif
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #if defined(MS_WINDOWS) || defined(__APPLE__)
@@ -173,6 +182,17 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
     const char **grouping);
 
 #endif   /* Py_LIMITED_API */
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_GetForceASCII(void);
+
+/* Reset "force ASCII" mode (if it was initialized).
+
+   This function should be called when Python changes the LC_CTYPE locale,
+   so the "force ASCII" mode can be detected again on the new locale
+   encoding. */
+PyAPI_FUNC(void) _Py_ResetForceASCII(void);
+#endif
 
 #ifdef __cplusplus
 }

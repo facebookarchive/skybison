@@ -98,7 +98,7 @@ mock (or other object) during the test and restored when the test ends:
 .. note::
 
    When you nest patch decorators the mocks are passed in to the decorated
-   function in the same order they applied (the normal *python* order that
+   function in the same order they applied (the normal *Python* order that
    decorators are applied). This means from the bottom up, so in the example
    above the mock for ``module.ClassName1`` is passed in first.
 
@@ -1097,13 +1097,13 @@ patch
     Instead of ``autospec=True`` you can pass ``autospec=some_object`` to use an
     arbitrary object as the spec instead of the one being replaced.
 
-    By default :func:`patch` will fail to replace attributes that don't exist. If
-    you pass in ``create=True``, and the attribute doesn't exist, patch will
-    create the attribute for you when the patched function is called, and
-    delete it again afterwards. This is useful for writing tests against
-    attributes that your production code creates at runtime. It is off by
-    default because it can be dangerous. With it switched on you can write
-    passing tests against APIs that don't actually exist!
+    By default :func:`patch` will fail to replace attributes that don't exist.
+    If you pass in ``create=True``, and the attribute doesn't exist, patch will
+    create the attribute for you when the patched function is called, and delete
+    it again after the patched function has exited. This is useful for writing
+    tests against attributes that your production code creates at runtime. It is
+    off by default because it can be dangerous. With it switched on you can
+    write passing tests against APIs that don't actually exist!
 
     .. note::
 
@@ -1224,6 +1224,27 @@ into a :func:`patch` call using ``**``:
     Traceback (most recent call last):
       ...
     KeyError
+
+By default, attempting to patch a function in a module (or a method or an
+attribute in a class) that does not exist will fail with :exc:`AttributeError`::
+
+    >>> @patch('sys.non_existing_attribute', 42)
+    ... def test():
+    ...     assert sys.non_existing_attribute == 42
+    ...
+    >>> test()
+    Traceback (most recent call last):
+      ...
+    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing'
+
+but adding ``create=True`` in the call to :func:`patch` will make the previous example
+work as expected::
+
+    >>> @patch('sys.non_existing_attribute', 42, create=True)
+    ... def test(mock_stdout):
+    ...     assert sys.non_existing_attribute == 42
+    ...
+    >>> test()
 
 
 patch.object
@@ -1397,7 +1418,7 @@ passed by keyword *after* any of the standard arguments created by :func:`patch`
     >>> test_function()
 
 If :func:`patch.multiple` is used as a context manager, the value returned by the
-context manger is a dictionary where created mocks are keyed by name:
+context manager is a dictionary where created mocks are keyed by name::
 
     >>> with patch.multiple('__main__', thing=DEFAULT, other=DEFAULT) as values:
     ...     assert 'other' in repr(values['other'])
@@ -1585,8 +1606,8 @@ do then it imports ``SomeClass`` from module a. If we use :func:`patch` to mock 
 reference to the *real* ``SomeClass`` and it looks like our patching had no
 effect.
 
-The key is to patch out ``SomeClass`` where it is used (or where it is looked up
-). In this case ``some_function`` will actually look up ``SomeClass`` in module b,
+The key is to patch out ``SomeClass`` where it is used (or where it is looked up).
+In this case ``some_function`` will actually look up ``SomeClass`` in module b,
 where we have imported it. The patching should look like::
 
     @patch('b.SomeClass')
@@ -1845,8 +1866,9 @@ sentinel
    the same attribute will always return the same object. The objects
    returned have a sensible repr so that test failure messages are readable.
 
-    The ``sentinel`` attributes don't preserve their identity when they are
-    :mod:`copied <copy>` or :mod:`pickled <pickle>`.
+   .. versionchanged:: 3.7
+      The ``sentinel`` attributes now preserve their identity when they are
+      :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 
 Sometimes when testing you need to test that a specific object is passed as an
 argument to another method, or returned. It can be common to create named
@@ -2106,6 +2128,10 @@ mock_open
 
    .. versionchanged:: 3.5
       *read_data* is now reset on each call to the *mock*.
+
+   .. versionchanged:: 3.7.1
+      Added :meth:`__iter__` to implementation so that iteration (such as in for
+      loops) correctly consumes *read_data*.
 
 Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
@@ -2377,3 +2403,24 @@ alternative object as the *autospec* argument:
    a mocked class to create a mock instance *does not* create a real instance.
    It is only attribute lookups - along with calls to :func:`dir` - that are done.
 
+Sealing mocks
+~~~~~~~~~~~~~
+
+.. function:: seal(mock)
+
+    Seal will disable the automatic creation of mocks when accessing an attribute of
+    the mock being sealed or any of its attributes that are already mocks recursively.
+
+    If a mock instance with a name or a spec is assigned to an attribute
+    it won't be considered in the sealing chain. This allows one to prevent seal from
+    fixing part of the mock object.
+
+        >>> mock = Mock()
+        >>> mock.submock.attribute1 = 2
+        >>> mock.not_submock = mock.Mock(name="sample_name")
+        >>> seal(mock)
+        >>> mock.new_attribute  # This will raise AttributeError.
+        >>> mock.submock.attribute2  # This will raise AttributeError.
+        >>> mock.not_submock.attribute2  # This won't raise.
+
+    .. versionadded:: 3.7

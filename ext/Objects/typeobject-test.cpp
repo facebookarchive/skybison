@@ -2615,13 +2615,13 @@ r1 = b.raise_attribute
   EXPECT_EQ(PyLong_AsLong(r1), 123);
 }
 
-TEST_F(TypeExtensionApiTest, PyTypeNameWithNullTypeRaisesSystemError) {
+TEST_F(TypeExtensionApiTest, PyTypeNameWithNullTypeRaisesSystemErrorPyro) {
   EXPECT_EQ(_PyType_Name(nullptr), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(TypeExtensionApiTest, PyTypeNameWithNonTypeRaisesSystemError) {
+TEST_F(TypeExtensionApiTest, PyTypeNameWithNonTypeRaisesSystemErrorPyro) {
   PyObjectPtr long_obj(PyLong_FromLong(5));
   EXPECT_EQ(_PyType_Name(reinterpret_cast<PyTypeObject*>(long_obj.get())),
             nullptr);

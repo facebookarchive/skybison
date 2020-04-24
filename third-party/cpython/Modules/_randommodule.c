@@ -300,7 +300,6 @@ random_seed(RandomObject *self, PyObject *args)
                               PY_LITTLE_ENDIAN,
                               0); /* unsigned */
     if (res == -1) {
-        PyMem_Free(key);
         goto Done;
     }
 
@@ -390,8 +389,7 @@ random_setstate(RandomObject *self, PyObject *state)
     for (i = 0; i < N; i++)
         self->state[i] = new_state[i];
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

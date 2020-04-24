@@ -107,9 +107,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     enabled. The default is ``True`` because this
                                     enables old behaviour in a
                                     backward-compatible way. This behaviour is to
-                                    disable any existing loggers unless they or
-                                    their ancestors are explicitly named in the
-                                    logging configuration.
+                                    disable any existing non-root loggers unless
+                                    they or their ancestors are explicitly named
+                                    in the logging configuration.
 
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
@@ -308,8 +308,8 @@ otherwise, the context is used to determine what to instantiate.
   If the specified value is ``True``, the configuration is processed
   as described in the section on :ref:`logging-config-dict-incremental`.
 
-* *disable_existing_loggers* - whether any existing loggers are to be
-  disabled. This setting mirrors the parameter of the same name in
+* *disable_existing_loggers* - whether any existing non-root loggers are
+  to be disabled. This setting mirrors the parameter of the same name in
   :func:`fileConfig`. If absent, this parameter defaults to ``True``.
   This value is ignored if *incremental* is ``True``.
 
@@ -719,7 +719,12 @@ a corresponding section in the configuration file.
 The ``args`` entry, when :func:`eval`\ uated in the context of the ``logging``
 package's namespace, is the list of arguments to the constructor for the handler
 class. Refer to the constructors for the relevant handlers, or to the examples
-below, to see how typical entries are constructed.
+below, to see how typical entries are constructed. If not provided, it defaults
+to ``()``.
+
+The optional ``kwargs`` entry, when :func:`eval`\ uated in the context of the
+``logging`` package's namespace, is the keyword argument dict to the constructor
+for the handler class. If not provided, it defaults to ``{}``.
 
 .. code-block:: ini
 
@@ -758,6 +763,7 @@ below, to see how typical entries are constructed.
    level=WARN
    formatter=form07
    args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
+   kwargs={'timeout': 10.0}
 
    [handler_hand08]
    class=handlers.MemoryHandler
@@ -771,6 +777,7 @@ below, to see how typical entries are constructed.
    level=NOTSET
    formatter=form09
    args=('localhost:9022', '/log', 'GET')
+   kwargs={'secure': True}
 
 Sections which specify formatter configuration are typified by the following.
 

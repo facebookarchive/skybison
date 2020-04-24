@@ -96,7 +96,7 @@
 
 /* Release Number */
 
-char *PyCursesVersion = "2.2";
+static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
@@ -188,8 +188,7 @@ static PyObject *
 PyCursesCheckERR(int code, const char *fname)
 {
     if (code != ERR) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     } else {
         if (fname == NULL) {
             PyErr_SetString(PyCursesError, catchall_ERR);
@@ -346,7 +345,8 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
         assert (wstr != NULL);
-        *wstr = _PyUnicode_AsWideCharString(obj);
+
+        *wstr = PyUnicode_AsWideCharString(obj, NULL);
         if (*wstr == NULL)
             return 0;
         return 2;
@@ -423,14 +423,14 @@ PyTypeObject PyCursesWindow_Type;
     static PyObject * PyCursesWindow_ ## X                              \
     (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
-        if (X (self->win) == FALSE) { Py_INCREF(Py_False); return Py_False; } \
-        else { Py_INCREF(Py_True); return Py_True; } }
+        if (X (self->win) == FALSE) { Py_RETURN_FALSE; } \
+        else { Py_RETURN_TRUE; } }
 
 #define Window_NoArgNoReturnVoidFunction(X)                     \
     static PyObject * PyCursesWindow_ ## X                      \
     (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     {                                                           \
-        X(self->win); Py_INCREF(Py_None); return Py_None; }
+        X(self->win); Py_RETURN_NONE; }
 
 #define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
     static PyObject * PyCursesWindow_ ## X                              \
@@ -445,7 +445,7 @@ PyTypeObject PyCursesWindow_Type;
     {                                                                   \
         TYPE arg1;                                                      \
         if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) return NULL;      \
-        X(self->win,arg1); Py_INCREF(Py_None); return Py_None; }
+        X(self->win,arg1); Py_RETURN_NONE; }
 
 #define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)                \
     static PyObject * PyCursesWindow_ ## X                              \
@@ -599,7 +599,7 @@ curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y,
     int attr_group = group_right_1;
     int rtn;
     int type;
-    chtype cch;
+    chtype cch = 0;
 #ifdef HAVE_NCURSESW
     wchar_t wstr[2];
     cchar_t wcval;
@@ -905,8 +905,7 @@ PyCursesWindow_Border(PyCursesWindowObject *self, PyObject *args)
     wborder(self->win,
             ch[0], ch[1], ch[2], ch[3],
             ch[4], ch[5], ch[6], ch[7]);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -927,8 +926,7 @@ PyCursesWindow_Box(PyCursesWindowObject *self, PyObject *args)
         }
     }
     box(self->win,ch1,ch2);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 #if defined(HAVE_NCURSES_H) || defined(MVWDELCH_IS_EXPRESSION)
@@ -1615,11 +1613,9 @@ PyCursesWindow_Is_LineTouched(PyCursesWindowObject *self, PyObject *args)
         return NULL;
     } else
         if (erg == FALSE) {
-            Py_INCREF(Py_False);
-            return Py_False;
+            Py_RETURN_FALSE;
         } else {
-            Py_INCREF(Py_True);
-            return Py_True;
+            Py_RETURN_TRUE;
         }
 }
 
@@ -1747,22 +1743,14 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
 {
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument stream. */
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *res = NULL;
 
-    strcpy(fn, "/tmp/py.curses.putwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
+    fp = tmpfile();
+    if (fp == NULL)
+        return PyErr_SetFromErrno(PyExc_OSError);
+    if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto exit;
-    fp = fdopen(fd, "wb+");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-        goto exit;
-    }
     res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
     if (res == NULL)
         goto exit;
@@ -1781,11 +1769,7 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     }
 
 exit:
-    if (fp != NULL)
-        fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    fclose(fp);
     return res;
 }
 
@@ -2188,8 +2172,7 @@ PyCurses_filter(PyObject *self)
     /* not checking for PyCursesInitialised here since filter() must
        be called before initscr() */
     filter();
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -2323,9 +2306,7 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 static PyObject *
 PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 {
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *data;
     size_t datalen;
     WINDOW *win;
@@ -2334,17 +2315,13 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 
     PyCursesInitialised;
 
-    strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
+    fp = tmpfile();
+    if (fp == NULL)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
-    fp = fdopen(fd, "wb+");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-        goto error;
-    }
+
 
     data = _PyObject_CallMethodId(stream, &PyId_read, NULL);
     if (data == NULL)
@@ -2359,7 +2336,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
         Py_DECREF(data);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrno(PyExc_OSError);
         goto error;
     }
     Py_DECREF(data);
@@ -2373,11 +2350,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     res = PyCursesWindow_New(win, NULL);
 
 error:
-    if (fp != NULL)
-        fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    fclose(fp);
     return res;
 }
 
@@ -2404,11 +2377,9 @@ PyCurses_has_key(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args,"i",&ch)) return NULL;
 
     if (has_key(ch) == FALSE) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_RETURN_TRUE;
 }
 #endif
 
@@ -2591,7 +2562,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
     }
 
     if (!initialised_setupterm && setupterm(termstr,fd,&err) == ERR) {
-        char* s = "setupterm: unknown error";
+        const char* s = "setupterm: unknown error";
 
         if (err == 0) {
             s = "setupterm: could not find terminal";
@@ -2605,8 +2576,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
 
     initialised_setupterm = TRUE;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2642,11 +2612,9 @@ PyCurses_Is_Term_Resized(PyObject *self, PyObject *args)
         return NULL;
     result = is_term_resized(lines, columns);
     if (result == TRUE) {
-        Py_INCREF(Py_True);
-        return Py_True;
+        Py_RETURN_TRUE;
     } else {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
 }
 #endif /* HAVE_CURSES_IS_TERM_RESIZED */
@@ -2857,14 +2825,12 @@ PyCurses_QiFlush(PyObject *self, PyObject *args)
     switch(PyTuple_Size(args)) {
     case 0:
         qiflush();
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     case 1:
         if (!PyArg_ParseTuple(args, "i;True(1) or False(0)", &flag)) return NULL;
         if (flag) qiflush();
         else noqiflush();
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     default:
         PyErr_SetString(PyExc_TypeError, "qiflush requires 0 or 1 arguments");
         return NULL;
@@ -2993,8 +2959,7 @@ PyCurses_setsyx(PyObject *self, PyObject *args)
 
     setsyx(y,x);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -3019,8 +2984,7 @@ PyCurses_Start_Color(PyObject *self)
             return NULL;
         PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
         Py_DECREF(cp);
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     } else {
         PyErr_SetString(PyCursesError, "start_color() returned ERR");
         return NULL;
@@ -3064,9 +3028,8 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
         return NULL;
 
     capname = tigetstr( capname );
-    if (capname == 0 || capname == (char*) -1) {
-        Py_INCREF(Py_None);
-        return Py_None;
+    if (capname == NULL || capname == (char*) -1) {
+        Py_RETURN_NONE;
     }
     return PyBytes_FromString( capname );
 }
@@ -3223,8 +3186,7 @@ PyCurses_Use_Env(PyObject *self, PyObject *args)
         return NULL;
     }
     use_env(flag);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -3239,8 +3201,7 @@ PyCurses_Use_Default_Colors(PyObject *self)
 
     code = use_default_colors();
     if (code != ERR) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     } else {
         PyErr_SetString(PyCursesError, "use_default_colors() returned ERR");
         return NULL;
@@ -3451,6 +3412,11 @@ PyInit__curses(void)
 #endif
 #ifdef A_VERTICAL
     SetDictInt("A_VERTICAL",        A_VERTICAL);
+#endif
+
+    /* ncurses extension */
+#ifdef A_ITALIC
+    SetDictInt("A_ITALIC",          A_ITALIC);
 #endif
 
     SetDictInt("COLOR_BLACK",       COLOR_BLACK);

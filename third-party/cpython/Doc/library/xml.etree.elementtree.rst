@@ -437,6 +437,11 @@ Supported XPath syntax
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
+| ``[.='text']``        | Selects all elements whose complete text content,    |
+|                       | including descendants, equals the given ``text``.    |
+|                       |                                                      |
+|                       | .. versionadded:: 3.7                                |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |
@@ -485,10 +490,12 @@ Functions
    *elem* is an element tree or an individual element.
 
 
-.. function:: fromstring(text)
+.. function:: fromstring(text, parser=None)
 
    Parses an XML section from a string constant.  Same as :func:`XML`.  *text*
-   is a string containing XML data.  Returns an :class:`Element` instance.
+   is a string containing XML data.  *parser* is an optional parser instance.
+   If not given, the standard :class:`XMLParser` parser is used.
+   Returns an :class:`Element` instance.
 
 
 .. function:: fromstringlist(sequence, parser=None)

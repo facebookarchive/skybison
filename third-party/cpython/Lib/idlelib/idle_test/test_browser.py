@@ -8,7 +8,7 @@ from idlelib.idle_test.mock_idle import Func
 
 from collections import deque
 import os.path
-from idlelib import _pyclbr as pyclbr
+import pyclbr
 from tkinter import Tk
 
 from idlelib.tree import TreeNode

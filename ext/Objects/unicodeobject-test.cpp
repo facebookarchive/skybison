@@ -355,6 +355,18 @@ TEST_F(UnicodeExtensionApiTest,
   EXPECT_EQ(0, wide_string[3]);
 }
 
+TEST_F(UnicodeExtensionApiTest, AsWideCharCopiesUpToSizeElements) {
+  PyObjectPtr unicode(PyUnicode_FromString("abcdef"));
+  wchar_t wide_string[5] = {'x', 'x', 'x', 'x', 'x'};
+  EXPECT_EQ(Py_ssize_t{3}, PyUnicode_AsWideChar(unicode, wide_string, 3));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ('b', wide_string[1]);
+  EXPECT_EQ('c', wide_string[2]);
+  EXPECT_EQ('x', wide_string[3]);
+  EXPECT_EQ('x', wide_string[4]);
+}
+
 TEST_F(UnicodeExtensionApiTest, AsWideCharWithEmbeddedNullWritesNullChar) {
   PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
   wchar_t wide_string[5];
@@ -431,16 +443,11 @@ TEST_F(UnicodeExtensionApiTest, AsWideCharStringWithNonNullSizeSetsSize) {
 }
 
 TEST_F(UnicodeExtensionApiTest,
-       AsWideCharStringWithEmbeddedNullReturnsWideStringWithNull) {
+       AsWideCharStringWithEmbeddedNullRaisesValueError) {
   PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
-  wchar_t* wide_string = PyUnicode_AsWideCharString(unicode, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ('a', wide_string[0]);
-  EXPECT_EQ('b', wide_string[1]);
-  EXPECT_EQ('\0', wide_string[2]);
-  EXPECT_EQ('c', wide_string[3]);
-  EXPECT_EQ('\0', wide_string[4]);
-  PyMem_Free(wide_string);
+  EXPECT_EQ(PyUnicode_AsWideCharString(unicode, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
 TEST_F(UnicodeExtensionApiTest, CheckWithStrReturnsTrue) {
@@ -579,20 +586,16 @@ TEST_F(UnicodeExtensionApiTest, FindReverseReturnsRightmostStartIndex) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(UnicodeExtensionApiTest, FindCharWithNegativeStartRaisesIndexError) {
+TEST_F(UnicodeExtensionApiTest, FindCharWithNegativeStartSearchesFromEnd) {
   PyObjectPtr self(PyUnicode_FromString("hello"));
-  Py_UCS4 ch = 'h';
-  EXPECT_EQ(PyUnicode_FindChar(self, ch, -1, 5, 1), -2);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+  EXPECT_EQ(4, PyUnicode_FindChar(self, Py_UCS4{'o'}, -2, 5, 1));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(UnicodeExtensionApiTest, FindCharWithNegativeEndRaisesIndexError) {
+TEST_F(UnicodeExtensionApiTest, FindCharWithNegativeEndSearchesFromEnd) {
   PyObjectPtr self(PyUnicode_FromString("hello"));
-  Py_UCS4 ch = 'h';
-  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, -5, 1), -2);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+  EXPECT_EQ(1, PyUnicode_FindChar(self, Py_UCS4{'e'}, 0, -3, 1));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(UnicodeExtensionApiTest,

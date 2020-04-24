@@ -351,7 +351,7 @@ unicodedata_UCD_normalize(PyObject *self, PyObject *const *args, Py_ssize_t narg
     const char *form;
     PyObject *input;
 
-    if (!_PyArg_ParseStack(args, nargs, "sO:normalize",
+    if (!_PyArg_ParseStack(args, nargs, "sU:normalize",
         &form, &input)) {
         goto exit;
     }
@@ -424,4 +424,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d210210e1e18963f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f1398fb9952bd94 input=a9049054013a1b77]*/

@@ -11,8 +11,8 @@
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.  See also the :mod:`queue` module.
 
-The :mod:`dummy_threading` module is provided for situations where
-:mod:`threading` cannot be used because :mod:`_thread` is missing.
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
 
 .. note::
 
@@ -100,7 +100,8 @@ This module defines the following functions:
    memory page size - platform documentation should be referred to for more
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
-   Availability: Windows, systems with POSIX threads.
+
+   .. availability:: Windows, systems with POSIX threads.
 
 
 This module also defines the following constant:
@@ -249,7 +250,7 @@ since it is impossible to detect the termination of alien threads.
 
       You may override this method in a subclass.  The standard :meth:`run`
       method invokes the callable object passed to the object's constructor as
-      the *target* argument, if any, with sequential and keyword arguments taken
+      the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
 
    .. method:: join(timeout=None)
@@ -972,8 +973,8 @@ As an example, here is a simple way to synchronize a client and server thread::
 
 .. _with-locks:
 
-Using locks, conditions, and semaphores in the :keyword:`with` statement
-------------------------------------------------------------------------
+Using locks, conditions, and semaphores in the :keyword:`!with` statement
+-------------------------------------------------------------------------
 
 All of the objects provided by this module that have :meth:`acquire` and
 :meth:`release` methods can be used as context managers for a :keyword:`with`

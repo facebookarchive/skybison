@@ -186,7 +186,7 @@ _io__IOBase_readline(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t limit = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _PyIO_ConvertSsize_t, &limit)) {
+        _Py_convert_optional_to_ssize_t, &limit)) {
         goto exit;
     }
     return_value = _io__IOBase_readline_impl(self, limit);
@@ -218,7 +218,7 @@ _io__IOBase_readlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t hint = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readlines",
-        _PyIO_ConvertSsize_t, &hint)) {
+        _Py_convert_optional_to_ssize_t, &hint)) {
         goto exit;
     }
     return_value = _io__IOBase_readlines_impl(self, hint);
@@ -230,7 +230,11 @@ exit:
 PyDoc_STRVAR(_io__IOBase_writelines__doc__,
 "writelines($self, lines, /)\n"
 "--\n"
-"\n");
+"\n"
+"Write a list of lines to stream.\n"
+"\n"
+"Line separators are not added, so it is usual for each of the\n"
+"lines provided to have a line separator at the end.");
 
 #define _IO__IOBASE_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io__IOBase_writelines, METH_O, _io__IOBase_writelines__doc__},
@@ -279,4 +283,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=8ad7079de8736f82 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f8d078401fb9d48 input=a9049054013a1b77]*/

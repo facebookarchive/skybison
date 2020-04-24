@@ -744,6 +744,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/_dummy_thread.py
   ${CPYTHON_LIBRARY_DIR}/_markupbase.py
   ${CPYTHON_LIBRARY_DIR}/_osx_support.py
+  ${CPYTHON_LIBRARY_DIR}/_py_abc.py
   ${CPYTHON_LIBRARY_DIR}/_pydecimal.py
   ${CPYTHON_LIBRARY_DIR}/_pyio.py
   ${CPYTHON_LIBRARY_DIR}/_sitebuiltins.py
@@ -761,22 +762,22 @@ set(
   ${CPYTHON_LIBRARY_DIR}/asyncio/base_futures.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/base_subprocess.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/base_tasks.py
-  ${CPYTHON_LIBRARY_DIR}/asyncio/compat.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/constants.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/coroutines.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/events.py
+  ${CPYTHON_LIBRARY_DIR}/asyncio/format_helpers.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/futures.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/locks.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/log.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/proactor_events.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/protocols.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/queues.py
+  ${CPYTHON_LIBRARY_DIR}/asyncio/runners.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/selector_events.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/sslproto.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/streams.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/subprocess.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/tasks.py
-  ${CPYTHON_LIBRARY_DIR}/asyncio/test_utils.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/transports.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/unix_events.py
   ${CPYTHON_LIBRARY_DIR}/asyncio/windows_events.py
@@ -805,18 +806,17 @@ set(
   ${CPYTHON_LIBRARY_DIR}/concurrent/futures/thread.py
   ${CPYTHON_LIBRARY_DIR}/configparser.py
   ${CPYTHON_LIBRARY_DIR}/contextlib.py
+  ${CPYTHON_LIBRARY_DIR}/contextvars.py
   ${CPYTHON_LIBRARY_DIR}/copy.py
   ${CPYTHON_LIBRARY_DIR}/copyreg.py
   ${CPYTHON_LIBRARY_DIR}/crypt.py
   ${CPYTHON_LIBRARY_DIR}/csv.py
   ${CPYTHON_LIBRARY_DIR}/ctypes/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/ctypes/_aix.py
   ${CPYTHON_LIBRARY_DIR}/ctypes/_endian.py
-  ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/README.ctypes
   ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/__init__.py
   ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/dyld.py
   ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/dylib.py
-  ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/fetch_macholib
-  ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/fetch_macholib.bat
   ${CPYTHON_LIBRARY_DIR}/ctypes/macholib/framework.py
   ${CPYTHON_LIBRARY_DIR}/ctypes/util.py
   ${CPYTHON_LIBRARY_DIR}/ctypes/wintypes.py
@@ -833,7 +833,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/decimal.py
   ${CPYTHON_LIBRARY_DIR}/difflib.py
   ${CPYTHON_LIBRARY_DIR}/dis.py
-  ${CPYTHON_LIBRARY_DIR}/distutils/README
   ${CPYTHON_LIBRARY_DIR}/distutils/__init__.py
   ${CPYTHON_LIBRARY_DIR}/distutils/_msvccompiler.py
   ${CPYTHON_LIBRARY_DIR}/distutils/archive_util.py
@@ -853,7 +852,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/distutils/command/build_scripts.py
   ${CPYTHON_LIBRARY_DIR}/distutils/command/check.py
   ${CPYTHON_LIBRARY_DIR}/distutils/command/clean.py
-  ${CPYTHON_LIBRARY_DIR}/distutils/command/command_template
   ${CPYTHON_LIBRARY_DIR}/distutils/command/config.py
   ${CPYTHON_LIBRARY_DIR}/distutils/command/install.py
   ${CPYTHON_LIBRARY_DIR}/distutils/command/install_data.py
@@ -893,7 +891,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/email/_header_value_parser.py
   ${CPYTHON_LIBRARY_DIR}/email/_parseaddr.py
   ${CPYTHON_LIBRARY_DIR}/email/_policybase.py
-  ${CPYTHON_LIBRARY_DIR}/email/architecture.rst
   ${CPYTHON_LIBRARY_DIR}/email/base64mime.py
   ${CPYTHON_LIBRARY_DIR}/email/charset.py
   ${CPYTHON_LIBRARY_DIR}/email/contentmanager.py
@@ -945,43 +942,16 @@ set(
   ${CPYTHON_LIBRARY_DIR}/http/cookiejar.py
   ${CPYTHON_LIBRARY_DIR}/http/cookies.py
   ${CPYTHON_LIBRARY_DIR}/http/server.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/CREDITS.txt
-  ${CPYTHON_LIBRARY_DIR}/idlelib/ChangeLog
-  ${CPYTHON_LIBRARY_DIR}/idlelib/HISTORY.txt
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/folder.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle.icns
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle.ico
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle_16.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle_16.png
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle_32.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle_32.png
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle_48.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/idle_48.png
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/minusnode.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/openfolder.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/plusnode.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/python.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/Icons/tk.gif
-  ${CPYTHON_LIBRARY_DIR}/idlelib/NEWS.txt
-  ${CPYTHON_LIBRARY_DIR}/idlelib/NEWS2x.txt
-  ${CPYTHON_LIBRARY_DIR}/idlelib/README.txt
-  ${CPYTHON_LIBRARY_DIR}/idlelib/TODO.txt
   ${CPYTHON_LIBRARY_DIR}/idlelib/__init__.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/__main__.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/_pyclbr.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/autocomplete.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/autocomplete_w.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/autoexpand.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/browser.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/calltip.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/calltip_w.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/calltips.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/codecontext.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/colorizer.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/config-extensions.def
-  ${CPYTHON_LIBRARY_DIR}/idlelib/config-highlight.def
-  ${CPYTHON_LIBRARY_DIR}/idlelib/config-keys.def
-  ${CPYTHON_LIBRARY_DIR}/idlelib/config-main.def
   ${CPYTHON_LIBRARY_DIR}/idlelib/config.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/config_key.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/configdialog.py
@@ -992,23 +962,75 @@ set(
   ${CPYTHON_LIBRARY_DIR}/idlelib/delegator.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/dynoption.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/editor.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/extend.txt
   ${CPYTHON_LIBRARY_DIR}/idlelib/filelist.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/grep.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/help.html
   ${CPYTHON_LIBRARY_DIR}/idlelib/help.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/help_about.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/history.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/hyperparser.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/idle.bat
   ${CPYTHON_LIBRARY_DIR}/idlelib/idle.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/idle.pyw
-  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/README.txt
   ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/__init__.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/htest.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/mock_idle.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/mock_tk.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/template.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_autocomplete.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_autocomplete_w.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_autoexpand.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_browser.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_calltip.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_calltip_w.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_codecontext.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_colorizer.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_config.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_config_key.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_configdialog.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_debugger.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_debugger_r.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_debugobj.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_debugobj_r.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_delegator.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_editmenu.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_editor.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_filelist.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_grep.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_help.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_help_about.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_history.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_hyperparser.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_iomenu.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_macosx.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_mainmenu.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_multicall.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_outwin.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_paragraph.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_parenmatch.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_pathbrowser.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_percolator.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_pyparse.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_pyshell.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_query.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_redirector.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_replace.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_rpc.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_rstrip.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_run.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_runscript.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_scrolledlist.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_search.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_searchbase.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_searchengine.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_squeezer.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_stackviewer.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_statusbar.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_text.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_textview.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_tooltip.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_tree.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_undo.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_warning.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_window.py
+  ${CPYTHON_LIBRARY_DIR}/idlelib/idle_test/test_zoomheight.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/iomenu.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/macosx.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/mainmenu.py
@@ -1039,12 +1061,12 @@ set(
   ${CPYTHON_LIBRARY_DIR}/idlelib/tree.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/undo.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/window.py
-  ${CPYTHON_LIBRARY_DIR}/idlelib/windows.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/zoomheight.py
   ${CPYTHON_LIBRARY_DIR}/idlelib/zzdummy.py
   ${CPYTHON_LIBRARY_DIR}/imaplib.py
   ${CPYTHON_LIBRARY_DIR}/imghdr.py
   ${CPYTHON_LIBRARY_DIR}/imp.py
+  ${CPYTHON_LIBRARY_DIR}/inspect.py
   ${CPYTHON_LIBRARY_DIR}/io.py
   ${CPYTHON_LIBRARY_DIR}/ipaddress.py
   ${CPYTHON_LIBRARY_DIR}/json/__init__.py
@@ -1053,8 +1075,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/json/scanner.py
   ${CPYTHON_LIBRARY_DIR}/json/tool.py
   ${CPYTHON_LIBRARY_DIR}/keyword.py
-  ${CPYTHON_LIBRARY_DIR}/lib2to3/Grammar.txt
-  ${CPYTHON_LIBRARY_DIR}/lib2to3/PatternGrammar.txt
   ${CPYTHON_LIBRARY_DIR}/lib2to3/__init__.py
   ${CPYTHON_LIBRARY_DIR}/lib2to3/__main__.py
   ${CPYTHON_LIBRARY_DIR}/lib2to3/btm_matcher.py
@@ -1128,11 +1148,37 @@ set(
   ${CPYTHON_LIBRARY_DIR}/lib2to3/pygram.py
   ${CPYTHON_LIBRARY_DIR}/lib2to3/pytree.py
   ${CPYTHON_LIBRARY_DIR}/lib2to3/refactor.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/__main__.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/bom.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/crlf.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/different_encoding.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/false_encoding.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/bad_order.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/myfixes/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/myfixes/fix_explicit.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/myfixes/fix_first.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/myfixes/fix_last.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/myfixes/fix_parrot.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/myfixes/fix_preorder.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/no_fixer_cls.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/fixers/parrot_example.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/infinite_recursion.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/py2_test_grammar.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/data/py3_test_grammar.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/pytree_idempotency.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/support.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_all_fixers.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_fixers.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_main.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_parser.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_pytree.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_refactor.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/tests/test_util.py
   ${CPYTHON_LIBRARY_DIR}/linecache.py
   ${CPYTHON_LIBRARY_DIR}/locale.py
   ${CPYTHON_LIBRARY_DIR}/lzma.py
   ${CPYTHON_LIBRARY_DIR}/macpath.py
-  ${CPYTHON_LIBRARY_DIR}/macurl2path.py
   ${CPYTHON_LIBRARY_DIR}/mailbox.py
   ${CPYTHON_LIBRARY_DIR}/mailcap.py
   ${CPYTHON_LIBRARY_DIR}/mimetypes.py
@@ -1189,7 +1235,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/pyclbr.py
   ${CPYTHON_LIBRARY_DIR}/pydoc.py
   ${CPYTHON_LIBRARY_DIR}/pydoc_data/__init__.py
-  ${CPYTHON_LIBRARY_DIR}/pydoc_data/_pydoc.css
   ${CPYTHON_LIBRARY_DIR}/pydoc_data/topics.py
   ${CPYTHON_LIBRARY_DIR}/queue.py
   ${CPYTHON_LIBRARY_DIR}/quopri.py
@@ -1204,7 +1249,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/shelve.py
   ${CPYTHON_LIBRARY_DIR}/shlex.py
   ${CPYTHON_LIBRARY_DIR}/shutil.py
-  ${CPYTHON_LIBRARY_DIR}/site-packages/README.txt
+  ${CPYTHON_LIBRARY_DIR}/signal.py
   ${CPYTHON_LIBRARY_DIR}/site.py
   ${CPYTHON_LIBRARY_DIR}/smtpd.py
   ${CPYTHON_LIBRARY_DIR}/smtplib.py
@@ -1213,6 +1258,16 @@ set(
   ${CPYTHON_LIBRARY_DIR}/sqlite3/__init__.py
   ${CPYTHON_LIBRARY_DIR}/sqlite3/dbapi2.py
   ${CPYTHON_LIBRARY_DIR}/sqlite3/dump.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/backup.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/dbapi.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/dump.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/factory.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/hooks.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/regression.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/transactions.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/types.py
+  ${CPYTHON_LIBRARY_DIR}/sqlite3/test/userfunctions.py
   ${CPYTHON_LIBRARY_DIR}/sre_compile.py
   ${CPYTHON_LIBRARY_DIR}/sre_constants.py
   ${CPYTHON_LIBRARY_DIR}/sre_parse.py
@@ -1246,6 +1301,24 @@ set(
   ${CPYTHON_LIBRARY_DIR}/tkinter/messagebox.py
   ${CPYTHON_LIBRARY_DIR}/tkinter/scrolledtext.py
   ${CPYTHON_LIBRARY_DIR}/tkinter/simpledialog.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/runtktests.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/support.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_font.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_geometry_managers.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_images.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_loadtk.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_misc.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_text.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_variables.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_tkinter/test_widgets.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_ttk/__init__.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_ttk/test_extensions.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_ttk/test_functions.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_ttk/test_style.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/test_ttk/test_widgets.py
+  ${CPYTHON_LIBRARY_DIR}/tkinter/test/widget_tests.py
   ${CPYTHON_LIBRARY_DIR}/tkinter/tix.py
   ${CPYTHON_LIBRARY_DIR}/tkinter/ttk.py
   ${CPYTHON_LIBRARY_DIR}/token.py
@@ -1274,9 +1347,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/turtledemo/round_dance.py
   ${CPYTHON_LIBRARY_DIR}/turtledemo/sorting_animate.py
   ${CPYTHON_LIBRARY_DIR}/turtledemo/tree.py
-  ${CPYTHON_LIBRARY_DIR}/turtledemo/turtle.cfg
   ${CPYTHON_LIBRARY_DIR}/turtledemo/two_canvases.py
-  ${CPYTHON_LIBRARY_DIR}/turtledemo/wikipedia.py
   ${CPYTHON_LIBRARY_DIR}/turtledemo/yinyang.py
   ${CPYTHON_LIBRARY_DIR}/urllib/__init__.py
   ${CPYTHON_LIBRARY_DIR}/urllib/error.py
@@ -1288,13 +1359,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/uuid.py
   ${CPYTHON_LIBRARY_DIR}/venv/__init__.py
   ${CPYTHON_LIBRARY_DIR}/venv/__main__.py
-  ${CPYTHON_LIBRARY_DIR}/venv/scripts/common/activate
-  ${CPYTHON_LIBRARY_DIR}/venv/scripts/nt/Activate.ps1
-  ${CPYTHON_LIBRARY_DIR}/venv/scripts/nt/activate.bat
-  ${CPYTHON_LIBRARY_DIR}/venv/scripts/nt/deactivate.bat
-  ${CPYTHON_LIBRARY_DIR}/venv/scripts/posix/activate.csh
-  ${CPYTHON_LIBRARY_DIR}/venv/scripts/posix/activate.fish
-  ${CPYTHON_LIBRARY_DIR}/warnings.py
   ${CPYTHON_LIBRARY_DIR}/wave.py
   ${CPYTHON_LIBRARY_DIR}/weakref.py
   ${CPYTHON_LIBRARY_DIR}/webbrowser.py
@@ -1655,7 +1719,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
   set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-assertions")
   set(CPYTHON_CFLAGS_NODIST "${CPYTHON_CFLAGS_NODIST} -O0")
 endif()
-set(LIBPYTHON_BIN "libpython3.6m.a")
+set(LIBPYTHON_BIN "libpython3.7m.a")
 set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
 file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
 file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)

@@ -978,6 +978,11 @@ PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* str,
          byte_index < byte_count && wchar_index < length + 1;
          byte_index += num_bytes, wchar_index += 1) {
       int32_t cp = str_str.codePointAt(byte_index, &num_bytes);
+      if (cp == '\0') {
+        PyMem_Free(result);
+        thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
+        return nullptr;
+      }
       static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
       result[wchar_index] = static_cast<wchar_t>(cp);
     }
@@ -1636,10 +1641,6 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
   DCHECK(str != nullptr, "str must not be null");
   DCHECK(direction == 1 || direction == -1, "direction must be -1 or 1");
   Thread* thread = Thread::current();
-  if (start < 0 || end < 0) {
-    thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
-    return -2;
-  }
   HandleScope scope(thread);
   Object haystack_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Runtime* runtime = thread->runtime();

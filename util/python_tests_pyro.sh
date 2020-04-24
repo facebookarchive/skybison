@@ -52,7 +52,6 @@ CPYTHON_TESTS=(
   test_html.py
   test_int_literal.py
   test_longexp.py
-  test_macurl2path.py
   test_netrc.py
   test_openpty.py
   test_osx_env.py

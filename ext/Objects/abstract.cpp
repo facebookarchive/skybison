@@ -68,14 +68,14 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
     return -1;
   }
   Int index(&scope, intUnderlying(*len));
+  if (index.isNegative()) {
+    thread->raiseWithFmt(LayoutId::kValueError, "__len__() should return >= 0");
+    return -1;
+  }
   if (index.numDigits() > 1) {
     thread->raiseWithFmt(LayoutId::kOverflowError,
                          "cannot fit '%T' into an index-sized integer",
                          &len_index);
-    return -1;
-  }
-  if (index.isNegative()) {
-    thread->raiseWithFmt(LayoutId::kValueError, "__len__() should return >= 0");
     return -1;
   }
   return index.asWord();

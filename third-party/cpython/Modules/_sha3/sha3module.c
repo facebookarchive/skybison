@@ -139,9 +139,7 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 typedef struct {
     PyObject_HEAD
     SHA3_state hash_state;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } SHA3object;
 
 
@@ -174,9 +172,7 @@ newSHA3object(PyTypeObject *type)
     if (newobj == NULL) {
         return NULL;
     }
-#ifdef WITH_THREAD
     newobj->lock = NULL;
-#endif
     return newobj;
 }
 
@@ -231,7 +227,6 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-#ifdef WITH_THREAD
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
             /* invariant: New objects can't be accessed by other code yet,
              * thus it's safe to release the GIL without locking the object.
@@ -243,9 +238,6 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         else {
             res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
         }
-#else
-        res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
-#endif
         if (res != SUCCESS) {
             PyErr_SetString(PyExc_RuntimeError,
                             "internal error in SHA3 Update()");
@@ -272,11 +264,9 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static void
 SHA3_dealloc(SHA3object *self)
 {
-#ifdef WITH_THREAD
     if (self->lock) {
         PyThread_free_lock(self->lock);
     }
-#endif
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Del(self);
     Py_DECREF(tp);
@@ -382,7 +372,6 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
 
     /* add new data, the function takes the length in bits not bytes */
-#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
     }
@@ -400,9 +389,6 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
     else {
         res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
     }
-#else
-    res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
-#endif
 
     if (res != SUCCESS) {
         PyBuffer_Release(&buf);
@@ -412,8 +398,7 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
     }
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 

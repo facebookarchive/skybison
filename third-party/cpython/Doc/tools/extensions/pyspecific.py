@@ -10,7 +10,7 @@
 """
 
 import re
-import codecs
+import io
 from os import getenv, path
 from time import asctime
 from pprint import pformat
@@ -23,6 +23,7 @@ from docutils import nodes, utils
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.locale import translators
+from sphinx.util import status_iterator
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter, TextTranslator
@@ -35,7 +36,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/3.6/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.7/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -130,6 +131,26 @@ class ImplementationDetail(Directive):
         return [pnode]
 
 
+# Support for documenting platform availability
+
+class Availability(Directive):
+
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self):
+        availability_ref = ':ref:`Availability <availability>`: '
+        pnode = nodes.paragraph(availability_ref + self.arguments[0],
+                                classes=["availability"],)
+        n, m = self.state.inline_text(availability_ref, self.lineno)
+        pnode.extend(n + m)
+        n, m = self.state.inline_text(self.arguments[0], self.lineno)
+        pnode.extend(n + m)
+        return [pnode]
+
+
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
@@ -162,6 +183,13 @@ class PyCoroutineMixin(object):
         return ret
 
 
+class PyAwaitableMixin(object):
+    def handle_signature(self, sig, signode):
+        ret = super(PyAwaitableMixin, self).handle_signature(sig, signode)
+        signode.insert(0, addnodes.desc_annotation('awaitable ', 'awaitable '))
+        return ret
+
+
 class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
     def run(self):
         self.name = 'py:function'
@@ -169,6 +197,18 @@ class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
 
 
 class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:method'
+        return PyClassmember.run(self)
+
+
+class PyAwaitableFunction(PyAwaitableMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:function'
+        return PyClassmember.run(self)
+
+
+class PyAwaitableMethod(PyAwaitableMixin, PyClassmember):
     def run(self):
         self.name = 'py:method'
         return PyClassmember.run(self)
@@ -258,11 +298,8 @@ class MiscNews(Directive):
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:
-            fp = codecs.open(fpath, encoding='utf-8')
-            try:
+            with io.open(fpath, encoding='utf-8') as fp:
                 content = fp.read()
-            finally:
-                fp.close()
         except Exception:
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
@@ -279,9 +316,9 @@ class MiscNews(Directive):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'binary',
-    'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
+    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
+    'attribute-access', 'attribute-references', 'augassign', 'await',
+    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
     'context-managers', 'continue', 'conversions', 'customization', 'debugger',
@@ -313,11 +350,6 @@ class PydocTopicsBuilder(Builder):
         return ''  # no URIs
 
     def write(self, *ignored):
-        try:  # sphinx>=1.6
-            from sphinx.util import status_iterator
-        except ImportError:  # sphinx<1.6
-            status_iterator = self.status_iterator
-
         writer = TextWriter(self)
         for label in status_iterator(pydoc_topic_labels,
                                      'building topics... ',
@@ -391,6 +423,7 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('availability', Availability)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
@@ -401,6 +434,8 @@ def setup(app):
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
+    app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
+    app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
     return {'version': '1.0', 'parallel_read_safe': True}

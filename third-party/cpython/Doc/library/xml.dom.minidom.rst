@@ -126,7 +126,7 @@ module documentation.  This section lists the differences between the API and
 
    You can avoid calling this method explicitly by using the :keyword:`with`
    statement. The following code will automatically unlink *dom* when the
-   :keyword:`with` block is exited::
+   :keyword:`!with` block is exited::
 
       with xml.dom.minidom.parse(datasource) as dom:
           ... # Work with dom.
@@ -227,21 +227,7 @@ The following interfaces have no implementation in :mod:`xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`DocumentType`
-
-* :class:`DOMImplementation`
-
-* :class:`CharacterData`
-
-* :class:`CDATASection`
-
-* :class:`Notation`
-
-* :class:`Entity`
-
 * :class:`EntityReference`
-
-* :class:`DocumentFragment`
 
 Most of these reflect information in the XML document that is not of general
 utility to most DOM users.

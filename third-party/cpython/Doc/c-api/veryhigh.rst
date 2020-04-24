@@ -109,6 +109,10 @@ the same library that the Python runtime is using.
    (:func:`sys.getfilesystemencoding`).  If *closeit* is true, the file is
    closed before PyRun_SimpleFileExFlags returns.
 
+   .. note::
+      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``.
+      Otherwise, Python may not handle script file with LF line ending correctly.
+
 
 .. c:function:: int PyRun_InteractiveOne(FILE *fp, const char *filename)
 
@@ -301,7 +305,7 @@ the same library that the Python runtime is using.
    set to *NULL*.
 
 
-.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
+.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject *const *args, int argcount, PyObject *const *kws, int kwcount, PyObject *const *defs, int defcount, PyObject *kwdefs, PyObject *closure)
 
    Evaluate a precompiled code object, given a particular environment for its
    evaluation.  This environment consists of a dictionary of global variables,

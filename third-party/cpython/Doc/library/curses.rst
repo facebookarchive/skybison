@@ -1307,6 +1307,8 @@ The exact constants available are system dependent.
 +------------------+-------------------------------+
 | ``A_INVIS``      | Invisible or blank mode       |
 +------------------+-------------------------------+
+| ``A_ITALIC``     | Italic mode                   |
++------------------+-------------------------------+
 | ``A_NORMAL``     | Normal attribute              |
 +------------------+-------------------------------+
 | ``A_PROTECT``    | Protected mode                |
@@ -1333,6 +1335,9 @@ The exact constants available are system dependent.
 | ``A_CHARTEXT``   | Bit-mask to extract a         |
 |                  | character                     |
 +------------------+-------------------------------+
+
+.. versionadded:: 3.7
+   ``A_ITALIC`` was added.
 
 Several constants are available to extract corresponding attributes returned
 by some methods.

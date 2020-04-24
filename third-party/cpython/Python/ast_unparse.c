@@ -2,24 +2,24 @@
 #include "Python.h"
 #include "Python-ast.h"
 
-struct _context {
-  PyObject *_str_open_br;
-  PyObject *_str_dbl_open_br;
-  PyObject *_str_close_br;
-  PyObject *_str_dbl_close_br;
+struct _unparse_context {
+  PyObject *open_br;
+  PyObject *dbl_open_br;
+  PyObject *close_br;
+  PyObject *dbl_close_br;
 };
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *
-expr_as_unicode(struct _context*, expr_ty e, int level);
+expr_as_unicode(struct _unparse_context*, expr_ty e, int level);
 static int
-append_ast_expr(struct _context*, _PyUnicodeWriter *writer, expr_ty e, int level);
+append_ast_expr(struct _unparse_context*, _PyUnicodeWriter *writer, expr_ty e, int level);
 static int
-append_joinedstr(struct _context*, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
+append_joinedstr(struct _unparse_context*, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
 static int
-append_formattedvalue(struct _context*, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
+append_formattedvalue(struct _unparse_context*, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
 static int
-append_ast_slice(struct _context*, _PyUnicodeWriter *writer, slice_ty slice);
+append_ast_slice(struct _unparse_context*, _PyUnicodeWriter *writer, slice_ty slice);
 
 static int
 append_charp(_PyUnicodeWriter *writer, const char *charp)
@@ -98,7 +98,7 @@ enum {
 };
 
 static int
-append_ast_boolop(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_boolop(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     Py_ssize_t i, value_count;
     asdl_seq *values;
@@ -120,7 +120,7 @@ append_ast_boolop(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int
 }
 
 static int
-append_ast_binop(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_binop(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
     int pr;
@@ -155,7 +155,7 @@ append_ast_binop(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int 
 }
 
 static int
-append_ast_unaryop(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_unaryop(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
     int pr;
@@ -179,7 +179,7 @@ append_ast_unaryop(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, in
 }
 
 static int
-append_ast_arg(struct _context* ctx, _PyUnicodeWriter *writer, arg_ty arg)
+append_ast_arg(struct _unparse_context* ctx, _PyUnicodeWriter *writer, arg_ty arg)
 {
     if (-1 == _PyUnicodeWriter_WriteStr(writer, arg->arg)) {
         return -1;
@@ -192,7 +192,7 @@ append_ast_arg(struct _context* ctx, _PyUnicodeWriter *writer, arg_ty arg)
 }
 
 static int
-append_ast_args(struct _context* ctx, _PyUnicodeWriter *writer, arguments_ty args)
+append_ast_args(struct _unparse_context* ctx, _PyUnicodeWriter *writer, arguments_ty args)
 {
     bool first;
     Py_ssize_t i, di, arg_count, default_count;
@@ -250,7 +250,7 @@ append_ast_args(struct _context* ctx, _PyUnicodeWriter *writer, arguments_ty arg
 }
 
 static int
-append_ast_lambda(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_lambda(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TEST, "(");
     APPEND_STR(asdl_seq_LEN(e->v.Lambda.args->args) ? "lambda " : "lambda");
@@ -262,7 +262,7 @@ append_ast_lambda(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int
 }
 
 static int
-append_ast_ifexp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_ifexp(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TEST, "(");
     APPEND_EXPR(e->v.IfExp.body, PR_TEST + 1);
@@ -275,7 +275,7 @@ append_ast_ifexp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int 
 }
 
 static int
-append_ast_dict(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_dict(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, value_count;
     expr_ty key_node;
@@ -301,7 +301,7 @@ append_ast_dict(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_set(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_set(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
@@ -316,7 +316,7 @@ append_ast_set(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_list(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_list(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
@@ -331,7 +331,7 @@ append_ast_list(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_tuple(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_tuple(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     Py_ssize_t i, elem_count;
 
@@ -354,7 +354,7 @@ append_ast_tuple(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int 
 }
 
 static int
-append_ast_comprehension(struct _context* ctx, _PyUnicodeWriter *writer, comprehension_ty gen)
+append_ast_comprehension(struct _unparse_context* ctx, _PyUnicodeWriter *writer, comprehension_ty gen)
 {
     Py_ssize_t i, if_count;
 
@@ -372,7 +372,7 @@ append_ast_comprehension(struct _context* ctx, _PyUnicodeWriter *writer, compreh
 }
 
 static int
-append_ast_comprehensions(struct _context* ctx, _PyUnicodeWriter *writer, asdl_seq *comprehensions)
+append_ast_comprehensions(struct _unparse_context* ctx, _PyUnicodeWriter *writer, asdl_seq *comprehensions)
 {
     Py_ssize_t i, gen_count;
     gen_count = asdl_seq_LEN(comprehensions);
@@ -385,7 +385,7 @@ append_ast_comprehensions(struct _context* ctx, _PyUnicodeWriter *writer, asdl_s
 }
 
 static int
-append_ast_genexp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_genexp(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("(");
     APPEND_EXPR(e->v.GeneratorExp.elt, PR_TEST);
@@ -394,7 +394,7 @@ append_ast_genexp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_listcomp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_listcomp(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("[");
     APPEND_EXPR(e->v.ListComp.elt, PR_TEST);
@@ -403,7 +403,7 @@ append_ast_listcomp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_setcomp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_setcomp(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("{");
     APPEND_EXPR(e->v.SetComp.elt, PR_TEST);
@@ -412,7 +412,7 @@ append_ast_setcomp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_dictcomp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_dictcomp(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("{");
     APPEND_EXPR(e->v.DictComp.key, PR_TEST);
@@ -423,7 +423,7 @@ append_ast_dictcomp(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_compare(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_compare(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
     Py_ssize_t i, comparator_count;
@@ -487,7 +487,7 @@ append_ast_compare(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, in
 }
 
 static int
-append_ast_keyword(struct _context* ctx, _PyUnicodeWriter *writer, keyword_ty kw)
+append_ast_keyword(struct _unparse_context* ctx, _PyUnicodeWriter *writer, keyword_ty kw)
 {
     if (kw->arg == NULL) {
         APPEND_STR("**");
@@ -505,7 +505,7 @@ append_ast_keyword(struct _context* ctx, _PyUnicodeWriter *writer, keyword_ty kw
 }
 
 static int
-append_ast_call(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_call(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     bool first;
     Py_ssize_t i, arg_count, kw_count;
@@ -540,21 +540,21 @@ append_ast_call(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static PyObject *
-escape_braces(struct _context* ctx, PyObject *orig)
+escape_braces(struct _unparse_context* ctx, PyObject *orig)
 {
     PyObject *temp;
     PyObject *result;
-    temp = PyUnicode_Replace(orig, ctx->_str_open_br, ctx->_str_dbl_open_br, -1);
+    temp = PyUnicode_Replace(orig, ctx->open_br, ctx->dbl_open_br, -1);
     if (!temp) {
         return NULL;
     }
-    result = PyUnicode_Replace(temp, ctx->_str_close_br, ctx->_str_dbl_close_br, -1);
+    result = PyUnicode_Replace(temp, ctx->close_br, ctx->dbl_close_br, -1);
     Py_DECREF(temp);
     return result;
 }
 
 static int
-append_fstring_unicode(struct _context* ctx, _PyUnicodeWriter *writer, PyObject *unicode)
+append_fstring_unicode(struct _unparse_context* ctx, _PyUnicodeWriter *writer, PyObject *unicode)
 {
     PyObject *escaped;
     int result = -1;
@@ -567,7 +567,7 @@ append_fstring_unicode(struct _context* ctx, _PyUnicodeWriter *writer, PyObject 
 }
 
 static int
-append_fstring_element(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+append_fstring_element(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 {
     switch (e->kind) {
     case Constant_kind:
@@ -588,7 +588,7 @@ append_fstring_element(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e
 /* Build body separately to enable wrapping the entire stream of Strs,
    Constants and FormattedValues in one opening and one closing quote. */
 static PyObject *
-build_fstring_body(struct _context* ctx, asdl_seq *values, bool is_format_spec)
+build_fstring_body(struct _unparse_context* ctx, asdl_seq *values, bool is_format_spec)
 {
     Py_ssize_t i, value_count;
     _PyUnicodeWriter body_writer;
@@ -611,7 +611,7 @@ build_fstring_body(struct _context* ctx, asdl_seq *values, bool is_format_spec)
 }
 
 static int
-append_joinedstr(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+append_joinedstr(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 {
     int result = -1;
     PyObject *body = build_fstring_body(ctx, e->v.JoinedStr.values, is_format_spec);
@@ -634,7 +634,7 @@ append_joinedstr(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool
 }
 
 static int
-append_formattedvalue(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+append_formattedvalue(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 {
     const char *conversion;
     const char *outer_brace = "{";
@@ -644,7 +644,7 @@ append_formattedvalue(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e,
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, ctx->_str_open_br, 0, 1, 1) == 0) {
+    if (PyUnicode_Find(temp_fv_str, ctx->open_br, 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
         outer_brace = "{ ";
@@ -692,7 +692,7 @@ append_formattedvalue(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e,
 }
 
 static int
-append_ast_attribute(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_attribute(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
     APPEND_EXPR(e->v.Attribute.value, PR_ATOM);
@@ -713,7 +713,7 @@ append_ast_attribute(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_simple_slice(struct _context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
+append_ast_simple_slice(struct _unparse_context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
 {
     if (slice->v.Slice.lower) {
         APPEND_EXPR(slice->v.Slice.lower, PR_TEST);
@@ -733,7 +733,7 @@ append_ast_simple_slice(struct _context* ctx, _PyUnicodeWriter *writer, slice_ty
 }
 
 static int
-append_ast_ext_slice(struct _context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
+append_ast_ext_slice(struct _unparse_context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
 {
     Py_ssize_t i, dims_count;
     dims_count = asdl_seq_LEN(slice->v.ExtSlice.dims);
@@ -745,7 +745,7 @@ append_ast_ext_slice(struct _context* ctx, _PyUnicodeWriter *writer, slice_ty sl
 }
 
 static int
-append_ast_slice(struct _context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
+append_ast_slice(struct _unparse_context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
 {
     switch (slice->kind) {
     case Slice_kind:
@@ -763,7 +763,7 @@ append_ast_slice(struct _context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
 }
 
 static int
-append_ast_subscript(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_subscript(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_EXPR(e->v.Subscript.value, PR_ATOM);
     APPEND_STR("[");
@@ -772,7 +772,7 @@ append_ast_subscript(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_starred(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_starred(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("*");
     APPEND_EXPR(e->v.Starred.value, PR_EXPR);
@@ -780,7 +780,7 @@ append_ast_starred(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_yield(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_yield(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     if (!e->v.Yield.value) {
         APPEND_STR_FINISH("(yield)");
@@ -792,7 +792,7 @@ append_ast_yield(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_yield_from(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
+append_ast_yield_from(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("(yield from ");
     APPEND_EXPR(e->v.YieldFrom.value, PR_TEST);
@@ -800,7 +800,7 @@ append_ast_yield_from(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_await(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_await(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_AWAIT, "(");
     APPEND_STR("await ");
@@ -810,7 +810,7 @@ append_ast_await(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int 
 }
 
 static int
-append_ast_expr(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+append_ast_expr(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     switch (e->kind) {
     case BoolOp_kind:
@@ -882,7 +882,7 @@ append_ast_expr(struct _context* ctx, _PyUnicodeWriter *writer, expr_ty e, int l
 }
 
 static PyObject *
-expr_as_unicode(struct _context* ctx, expr_ty e, int level)
+expr_as_unicode(struct _unparse_context* ctx, expr_ty e, int level)
 {
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
@@ -895,30 +895,30 @@ expr_as_unicode(struct _context* ctx, expr_ty e, int level)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
-void ctx_clear(struct _context* ctx) {
-    Py_XDECREF(ctx->_str_open_br);
-    Py_XDECREF(ctx->_str_dbl_open_br);
-    Py_XDECREF(ctx->_str_close_br);
-    Py_XDECREF(ctx->_str_dbl_close_br);
+void ctx_clear(struct _unparse_context* ctx) {
+    Py_XDECREF(ctx->open_br);
+    Py_XDECREF(ctx->dbl_open_br);
+    Py_XDECREF(ctx->close_br);
+    Py_XDECREF(ctx->dbl_close_br);
 }
 
 PyObject *
 _PyAST_ExprAsUnicode(expr_ty e)
 {
-    struct _context ctx;
-    memset(&ctx, 0, sizeof(struct _context));
-    if (!(ctx._str_open_br = PyUnicode_InternFromString("{"))) {
+    struct _unparse_context ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    if (!(ctx.open_br = PyUnicode_InternFromString("{"))) {
         return NULL;
     }
-    if (!(ctx._str_dbl_open_br = PyUnicode_InternFromString("{{"))) {
+    if (!(ctx.dbl_open_br = PyUnicode_InternFromString("{{"))) {
         ctx_clear(&ctx);
         return NULL;
     }
-    if (!(ctx._str_close_br = PyUnicode_InternFromString("}"))) {
+    if (!(ctx.close_br = PyUnicode_InternFromString("}"))) {
         ctx_clear(&ctx);
         return NULL;
     }
-    if (!(ctx._str_dbl_close_br = PyUnicode_InternFromString("}}"))) {
+    if (!(ctx.dbl_close_br = PyUnicode_InternFromString("}}"))) {
         ctx_clear(&ctx);
         return NULL;
     }

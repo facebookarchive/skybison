@@ -2303,8 +2303,7 @@ obj = Foo()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
 }
 
-TEST_F(AbstractExtensionApiTest,
-       PyObjectLengthWithUnderflowRaisesOverflowError) {
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithUnderflowRaisesValueError) {
   PyRun_SimpleString(R"(
 class Foo:
   def __len__(self):
@@ -2314,7 +2313,7 @@ obj = Foo()
 
   PyObjectPtr obj(mainModuleGet("obj"));
   ASSERT_EQ(PyObject_Length(obj), -1);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectLengthWithEmptyDictReturnsZero) {

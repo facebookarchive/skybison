@@ -221,7 +221,7 @@ _io__WindowsConsoleIO_read(winconsoleio *self, PyObject *const *args, Py_ssize_t
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _PyIO_ConvertSsize_t, &size)) {
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io__WindowsConsoleIO_read_impl(self, size);
@@ -328,4 +328,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=6c4609bf46eb3206 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d351a8200a8e848 input=a9049054013a1b77]*/

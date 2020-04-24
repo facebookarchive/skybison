@@ -286,6 +286,8 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
 "\n"
 "Create a new process and its primary thread.\n"
 "\n"
+"  command_line\n"
+"    Can be str or None\n"
 "  proc_attrs\n"
 "    Ignored internally, can be None.\n"
 "  thread_attrs\n"
@@ -300,10 +302,9 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
 static PyObject *
 _winapi_CreateProcess_impl(PyObject *module,
                            const Py_UNICODE *application_name,
-                           const Py_UNICODE *command_line,
-                           PyObject *proc_attrs, PyObject *thread_attrs,
-                           BOOL inherit_handles, DWORD creation_flags,
-                           PyObject *env_mapping,
+                           PyObject *command_line, PyObject *proc_attrs,
+                           PyObject *thread_attrs, BOOL inherit_handles,
+                           DWORD creation_flags, PyObject *env_mapping,
                            const Py_UNICODE *current_directory,
                            PyObject *startup_info);
 
@@ -312,7 +313,7 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const Py_UNICODE *application_name;
-    const Py_UNICODE *command_line;
+    PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
@@ -321,7 +322,7 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZZOOikOZO:CreateProcess",
+    if (!_PyArg_ParseStack(args, nargs, "ZOOOikOZO:CreateProcess",
         &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
         goto exit;
     }
@@ -462,7 +463,7 @@ _winapi_GetExitCodeProcess(PyObject *module, PyObject *arg)
         goto exit;
     }
     _return_value = _winapi_GetExitCodeProcess_impl(module, process);
-    if ((_return_value == DWORD_MAX) && PyErr_Occurred()) {
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = Py_BuildValue("k", _return_value);
@@ -489,7 +490,7 @@ _winapi_GetLastError(PyObject *module, PyObject *Py_UNUSED(ignored))
     DWORD _return_value;
 
     _return_value = _winapi_GetLastError_impl(module);
-    if ((_return_value == DWORD_MAX) && PyErr_Occurred()) {
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = Py_BuildValue("k", _return_value);
@@ -891,4 +892,56 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4fb27aafc86a5386 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetACP__doc__,
+"GetACP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETACP_METHODDEF    \
+    {"GetACP", (PyCFunction)_winapi_GetACP, METH_NOARGS, _winapi_GetACP__doc__},
+
+static PyObject *
+_winapi_GetACP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetACP_impl(module);
+}
+
+PyDoc_STRVAR(_winapi_GetFileType__doc__,
+"GetFileType($module, /, handle)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_GETFILETYPE_METHODDEF    \
+    {"GetFileType", (PyCFunction)_winapi_GetFileType, METH_FASTCALL|METH_KEYWORDS, _winapi_GetFileType__doc__},
+
+static DWORD
+_winapi_GetFileType_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"handle", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE ":GetFileType", _keywords, 0};
+    HANDLE handle;
+    DWORD _return_value;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &handle)) {
+        goto exit;
+    }
+    _return_value = _winapi_GetFileType_impl(module, handle);
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = Py_BuildValue("k", _return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=896d06ce2290aa86 input=a9049054013a1b77]*/

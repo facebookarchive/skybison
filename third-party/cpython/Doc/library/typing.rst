@@ -50,20 +50,20 @@ A type alias is defined by assigning the type to the alias. In this example,
 
 Type aliases are useful for simplifying complex type signatures. For example::
 
-   from typing import Dict, Tuple, List
+   from typing import Dict, Tuple, Sequence
 
    ConnectionOptions = Dict[str, str]
    Address = Tuple[str, int]
    Server = Tuple[Address, ConnectionOptions]
 
-   def broadcast_message(message: str, servers: List[Server]) -> None:
+   def broadcast_message(message: str, servers: Sequence[Server]) -> None:
        ...
 
    # The static type checker will treat the previous type signature as
    # being exactly equivalent to this one.
    def broadcast_message(
            message: str,
-           servers: List[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
+           servers: Sequence[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
        ...
 
 Note that ``None`` as a type hint is a special case and is replaced by
@@ -568,6 +568,10 @@ The module defines the following classes, functions and decorators:
 .. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
 
     A generic version of :class:`collections.abc.Mapping`.
+    This type can be used as follows::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
@@ -601,8 +605,8 @@ The module defines the following classes, functions and decorators:
 
    Generic version of :class:`list`.
    Useful for annotating return types. To annotate arguments it is preferred
-   to use abstract collection types such as :class:`Mapping`, :class:`Sequence`,
-   or :class:`AbstractSet`.
+   to use an abstract collection type such as :class:`Sequence` or
+   :class:`Iterable`.
 
    This type may be used as follows::
 
@@ -617,6 +621,8 @@ The module defines the following classes, functions and decorators:
 .. class:: Set(set, MutableSet[T])
 
    A generic version of :class:`builtins.set <set>`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`.
 
 .. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
@@ -671,24 +677,32 @@ The module defines the following classes, functions and decorators:
 
 .. class:: AsyncContextManager(Generic[T_co])
 
-   An ABC with async abstract :meth:`__aenter__` and :meth:`__aexit__`
-   methods.
+   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
    .. versionadded:: 3.6
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
-   The usage of this type is as follows::
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Mapping`.
 
-      def get_position_in_index(word_list: Dict[str, int], word: str) -> int:
-          return word_list[word]
+   This type can be used as follows::
+
+      def count_words(text: str) -> Dict[str, int]:
+          ...
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.defaultdict`.
 
    .. versionadded:: 3.5.2
+
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
 
 .. class:: Counter(collections.Counter, Dict[T, int])
 
@@ -801,7 +815,7 @@ The module defines the following classes, functions and decorators:
 
 .. class:: NamedTuple
 
-   Typed version of namedtuple.
+   Typed version of :func:`collections.namedtuple`.
 
    Usage::
 
@@ -893,7 +907,7 @@ The module defines the following classes, functions and decorators:
    non-``@overload``-decorated definition, while the latter is used at
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
-   ``NotImplementedError``. An example of overload that gives a more
+   :exc:`NotImplementedError`. An example of overload that gives a more
    precise type than can be expressed using a union or a type variable::
 
       @overload
@@ -927,6 +941,24 @@ The module defines the following classes, functions and decorators:
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+.. decorator:: type_check_only
+
+   Decorator to mark a class or function to be unavailable at runtime.
+
+   This decorator is itself not available at runtime. It is mainly
+   intended to mark classes that are defined in type stub files if
+   an implementation returns an instance of a private class::
+
+      @type_check_only
+      class Response:  # private or not available at runtime
+          code: int
+          def get_header(self, name: str) -> str: ...
+
+      def fetch_response() -> Response: ...
+
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
+
 .. data:: Any
 
    Special type indicating an unconstrained type.
@@ -944,7 +976,7 @@ The module defines the following classes, functions and decorators:
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
-   .. versionadded:: 3.6.5
+   .. versionadded:: 3.5.4
 
 .. data:: Union
 
@@ -970,15 +1002,14 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the latter is skipped, e.g.::
-
-       Union[int, object] == object
-
    * You cannot subclass or instantiate a union.
 
    * You cannot write ``Union[X][Y]``.
 
    * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+   .. versionchanged:: 3.7
+      Don't remove explicit subclasses from unions at runtime.
 
 .. data:: Optional
 

@@ -478,7 +478,7 @@ the constructor when it was created.
     >>> obj = Object()
     >>> f = weakref.finalize(obj, callback, 1, 2, z=3)
     >>> f.detach()                                           #doctest:+ELLIPSIS
-    (<__main__.Object object ...>, <function callback ...>, (1, 2), {'z': 3})
+    (<...Object object ...>, <function callback ...>, (1, 2), {'z': 3})
     >>> newobj, func, args, kwargs = _
     >>> assert not f.alive
     >>> assert newobj is obj
@@ -489,11 +489,14 @@ Unless you set the :attr:`~finalize.atexit` attribute to
 :const:`False`, a finalizer will be called when the program exits if it
 is still alive.  For instance
 
-    >>> obj = Object()
-    >>> weakref.finalize(obj, print, "obj dead or exiting")  #doctest:+ELLIPSIS
-    <finalize object at ...; for 'Object' at ...>
-    >>> exit()                                               #doctest:+SKIP
-    obj dead or exiting
+.. doctest::
+   :options: +SKIP
+
+   >>> obj = Object()
+   >>> weakref.finalize(obj, print, "obj dead or exiting")
+   <finalize object at ...; for 'Object' at ...>
+   >>> exit()
+   obj dead or exiting
 
 
 Comparing finalizers with :meth:`__del__` methods

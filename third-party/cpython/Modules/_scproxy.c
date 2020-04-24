@@ -67,8 +67,7 @@ get_proxy_settings(PyObject* mod __attribute__((__unused__)))
     Py_END_ALLOW_THREADS
 
     if (!proxyDict) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     result = PyDict_New();

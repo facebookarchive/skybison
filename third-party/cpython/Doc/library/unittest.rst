@@ -219,6 +219,22 @@ Command-line options
 
    Stop the test run on the first error or failure.
 
+.. cmdoption:: -k
+
+   Only run test methods and classes that match the pattern or substring.
+   This option may be used multiple times, in which case all test cases that
+   match of the given patterns are included.
+
+   Patterns that contain a wildcard character (``*``) are matched against the
+   test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
+   substring matching is used.
+
+   Patterns are matched against the fully qualified test method name as
+   imported by the test loader.
+
+   For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
+   ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
+
 .. cmdoption:: --locals
 
    Show local variables in tracebacks.
@@ -228,6 +244,9 @@ Command-line options
 
 .. versionadded:: 3.5
    The command-line option ``--locals``.
+
+.. versionadded:: 3.7
+   The command-line option ``-k``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -566,8 +585,8 @@ The following decorators implement test skipping and expected failures:
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails when run, the test
-   is not counted as a failure.
+   Mark the test as an expected failure.  If the test fails it will be
+   considered a success.  If the test passes, it will be considered a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -981,7 +1000,7 @@ Test cases
             int('XYZ')
 
       .. versionadded:: 3.1
-         under the name ``assertRaisesRegexp``.
+         Added under the name ``assertRaisesRegexp``.
 
       .. versionchanged:: 3.2
          Renamed to :meth:`assertRaisesRegex`.
@@ -1126,7 +1145,7 @@ Test cases
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order      |              |
+   |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1174,7 +1193,7 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         under the name ``assertRegexpMatches``.
+         Added under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
@@ -1464,14 +1483,14 @@ along with their deprecated aliases:
    ==============================  ====================== =======================
 
    .. deprecated:: 3.1
-         the fail* aliases listed in the second column.
+         The fail* aliases listed in the second column have been deprecated.
    .. deprecated:: 3.2
-         the assert* aliases listed in the third column.
+         The assert* aliases listed in the third column have been deprecated.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
          :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
    .. deprecated:: 3.5
-         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
@@ -1751,6 +1770,21 @@ Loading and running tests
 
       This affects all the :meth:`loadTestsFrom\*` methods.
 
+   .. attribute:: testNamePatterns
+
+      List of Unix shell-style wildcard test name patterns that test methods
+      have to match to be included in test suites (see ``-v`` option).
+
+      If this attribute is not ``None`` (the default), all test methods to be
+      included in test suites must match one of the patterns in this list.
+      Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
+      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      will have to be converted using ``*`` wildcards.
+
+      This affects all the :meth:`loadTestsFrom\*` methods.
+
+      .. versionadded:: 3.7
+
 
 .. class:: TestResult
 
@@ -2016,7 +2050,7 @@ Loading and running tests
 
    .. method:: run(test)
 
-      This method is the main public interface to the `TextTestRunner`. This
+      This method is the main public interface to the ``TextTestRunner``. This
       method takes a :class:`TestSuite` or :class:`TestCase` instance. A
       :class:`TestResult` is created by calling
       :func:`_makeResult` and the test(s) are run and the

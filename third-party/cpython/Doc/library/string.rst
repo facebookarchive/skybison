@@ -95,9 +95,9 @@ implementation as the built-in :meth:`~str.format` method.
       an arbitrary set of positional and keyword arguments.
       It is just a wrapper that calls :meth:`vformat`.
 
-      .. deprecated:: 3.5
-         Passing a format string as keyword argument *format_string* has been
-         deprecated.
+      .. versionchanged:: 3.7
+         A format string argument is now :ref:`positional-only
+         <positional-only_parameter>`.
 
    .. method:: vformat(format_string, args, kwargs)
 
@@ -770,29 +770,40 @@ Here is an example of how to use a Template::
    >>> Template('$who likes $what').safe_substitute(d)
    'tim likes $what'
 
-Advanced usage: you can derive subclasses of :class:`Template` to customize the
-placeholder syntax, delimiter character, or the entire regular expression used
-to parse template strings.  To do this, you can override these class attributes:
+Advanced usage: you can derive subclasses of :class:`Template` to customize
+the placeholder syntax, delimiter character, or the entire regular expression
+used to parse template strings.  To do this, you can override these class
+attributes:
 
-* *delimiter* -- This is the literal string describing a placeholder introducing
-  delimiter.  The default value is ``$``.  Note that this should *not* be a
-  regular expression, as the implementation will call :meth:`re.escape` on this
-  string as needed.
+* *delimiter* -- This is the literal string describing a placeholder
+  introducing delimiter.  The default value is ``$``.  Note that this should
+  *not* be a regular expression, as the implementation will call
+  :meth:`re.escape` on this string as needed.  Note further that you cannot
+  change the delimiter after class creation (i.e. a different delimiter must
+  be set in the subclass's class namespace).
 
 * *idpattern* -- This is the regular expression describing the pattern for
-  non-braced placeholders (the braces will be added automatically as
-  appropriate). The default value is the regular expression
-  ``(?-i:[_a-zA-Z][_a-zA-Z0-9]*)``.
+  non-braced placeholders.  The default value is the regular expression
+  ``(?a:[_a-z][_a-z0-9]*)``.  If this is given and *braceidpattern* is
+  ``None`` this pattern will also apply to braced placeholders.
 
   .. note::
 
      Since default *flags* is ``re.IGNORECASE``, pattern ``[a-z]`` can match
-     with some non-ASCII characters. That's why we use local ``-i`` flag here.
+     with some non-ASCII characters. That's why we use the local ``a`` flag
+     here.
 
-     While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
-     you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
-     subclassing.
+  .. versionchanged:: 3.7
+     *braceidpattern* can be used to define separate patterns used inside and
+     outside the braces.
 
+* *braceidpattern* -- This is like *idpattern* but describes the pattern for
+  braced placeholders.  Defaults to ``None`` which means to fall back to
+  *idpattern* (i.e. the same pattern is used both inside and outside braces).
+  If given, this allows you to define different patterns for braced and
+  unbraced placeholders.
+
+  .. versionadded:: 3.7
 
 * *flags* -- The regular expression flags that will be applied when compiling
   the regular expression used for recognizing substitutions.  The default value
@@ -832,4 +843,3 @@ Helper functions
    or ``None``, runs of whitespace characters are replaced by a single space
    and leading and trailing whitespace are removed, otherwise *sep* is used to
    split and join the words.
-
