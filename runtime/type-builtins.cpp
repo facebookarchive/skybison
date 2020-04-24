@@ -1080,6 +1080,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     type.setInstanceLayout(*layout);
   }
 
+  if (type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
+    type.sealAttributes();
+  }
+
   // Special-case __init_subclass__ to be a classmethod
   Object init_subclass(&scope, typeAtById(thread, type, ID(__init_subclass__)));
   if (init_subclass.isFunction()) {
@@ -1207,6 +1211,12 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
+
+void TypeBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  word flags = static_cast<word>(new_type.flags());
+  flags |= RawType::Flag::kSealSubtypeLayouts;
+  new_type.setFlags(static_cast<Type::Flag>(flags));
+}
 
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

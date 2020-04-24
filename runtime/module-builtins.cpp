@@ -303,6 +303,12 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+void ModuleBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  word flags = static_cast<word>(new_type.flags());
+  flags |= RawType::Flag::kSealSubtypeLayouts;
+  new_type.setFlags(static_cast<Type::Flag>(flags));
+}
+
 RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);

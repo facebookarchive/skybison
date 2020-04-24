@@ -1132,6 +1132,9 @@ class RawType : public RawInstance {
 
     // Has a default extension dealloc slot
     kHasDefaultDealloc = 1 << 12,
+
+    // Instance layouts are sealed
+    kSealSubtypeLayouts = 1 << 13,
   };
 
   enum class Slot {

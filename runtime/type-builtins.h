@@ -118,6 +118,8 @@ class TypeBuiltins : public Builtins<TypeBuiltins, ID(type), LayoutId::kType> {
  public:
   static const BuiltinAttribute kAttributes[];
 
+  static void postInitialize(Runtime* runtime, const Type& new_type);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeBuiltins);
 };

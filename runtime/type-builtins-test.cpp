@@ -1082,5 +1082,23 @@ C.__setattr__ = lambda self, key: 5
                "unimplemented cache invalidation for type.__setattr__ update");
 }
 
+TEST_F(TypeBuiltinsTest, TypeIsSealed) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_->typeAt(LayoutId::kType));
+  EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
+  EXPECT_TRUE(type.isSealed());
+}
+
+TEST_F(TypeBuiltinsTest, TypeSubclassIsSealed) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class Meta(type): pass
+)")
+                   .isError());
+  Type meta(&scope, mainModuleAt(runtime_, "Meta"));
+  EXPECT_TRUE(meta.hasFlag(Type::Flag::kSealSubtypeLayouts));
+  EXPECT_TRUE(meta.isSealed());
+}
+
 }  // namespace testing
 }  // namespace py
