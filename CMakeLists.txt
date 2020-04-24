@@ -932,6 +932,7 @@ set(
   ${CPYTHON_LIBRARY_DIR}/gettext.py
   ${CPYTHON_LIBRARY_DIR}/glob.py
   ${CPYTHON_LIBRARY_DIR}/gzip.py
+  ${CPYTHON_LIBRARY_DIR}/hashlib.py
   ${CPYTHON_LIBRARY_DIR}/heapq.py
   ${CPYTHON_LIBRARY_DIR}/hmac.py
   ${CPYTHON_LIBRARY_DIR}/html/__init__.py
@@ -1418,7 +1419,6 @@ set(
   ${UNFROZEN_LIBRARY_DIR}/encodings/latin_1.py
   ${UNFROZEN_LIBRARY_DIR}/encodings/utf_8.py
   ${UNFROZEN_LIBRARY_DIR}/gc.py
-  ${UNFROZEN_LIBRARY_DIR}/hashlib.py
   ${UNFROZEN_LIBRARY_DIR}/itertools.py
   ${UNFROZEN_LIBRARY_DIR}/logging/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/logging/config.py
