@@ -284,7 +284,6 @@ class Runtime;
   V(_dict__data)                                                               \
   V(_dict__first_empty_item_index)                                             \
   V(_dict__num_items)                                                          \
-  V(_dict__num_usable_items)                                                   \
   V(_dict__sparse)                                                             \
   V(_dict_check)                                                               \
   V(_dict_check_exact)                                                         \
@@ -326,7 +325,6 @@ class Runtime;
   V(_function__total_vars)                                                     \
   V(_function_guard)                                                           \
   V(_has_read1)                                                                \
-  V(_heap_dump)                                                                \
   V(_imp)                                                                      \
   V(_index)                                                                    \
   V(_init)                                                                     \
@@ -400,7 +398,6 @@ class Runtime;
   V(_pendingcr)                                                                \
   V(_pointer)                                                                  \
   V(_pos)                                                                      \
-  V(_program_name)                                                             \
   V(_python_path)                                                              \
   V(_range_check)                                                              \
   V(_range_guard)                                                              \
@@ -580,7 +577,6 @@ class Runtime;
   V(iadd)                                                                      \
   V(iand)                                                                      \
   V(iconcat)                                                                   \
-  V(id)                                                                        \
   V(ifloordiv)                                                                 \
   V(ignore)                                                                    \
   V(ilshift)                                                                   \
@@ -678,7 +674,6 @@ class Runtime;
   V(shape)                                                                     \
   V(single)                                                                    \
   V(siphash24)                                                                 \
-  V(sizeof)                                                                    \
   V(slice)                                                                     \
   V(smallbytes)                                                                \
   V(smallint)                                                                  \
@@ -697,7 +692,6 @@ class Runtime;
   V(strict)                                                                    \
   V(strict_errors)                                                             \
   V(strides)                                                                   \
-  V(structseq)                                                                 \
   V(sub)                                                                       \
   V(super)                                                                     \
   V(surrogateescape)                                                           \
@@ -715,7 +709,6 @@ class Runtime;
   V(typecode)                                                                  \
   V(ucd_3_2_0)                                                                 \
   V(unicodedata)                                                               \
-  V(unidata_version)                                                           \
   V(utf_16_encode)                                                             \
   V(utf_32_encode)                                                             \
   V(utf_8_decode)                                                              \
