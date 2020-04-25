@@ -11,9 +11,11 @@
 #include "handles.h"
 #include "ic.h"
 #include "intrinsic.h"
+#include "list-builtins.h"
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "test-utils.h"
 #include "trampolines.h"
 #include "type-builtins.h"
@@ -1182,6 +1184,141 @@ TEST_F(InterpreterDeathTest, InvalidOpcode) {
 
   ASSERT_DEATH(static_cast<void>(runCode(code)),
                "bytecode 'UNUSED_BYTECODE_6'");
+}
+
+TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  consts.atPut(0, runtime_->newStrFromCStr("test"));
+  consts.atPut(1, runtime_->newStrFromCStr("test string"));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_STR);
+
+  // Updated opcode returns the same value.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+}
+
+TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  Dict dict(&scope, runtime_->newDict());
+  Str key(&scope, runtime_->newStrFromCStr("test"));
+  word key_hash = strHash(thread_, *key);
+  dictAtPut(thread_, dict, key, key_hash, key);
+  consts.atPut(0, runtime_->newStrFromCStr("test"));
+  consts.atPut(1, *dict);
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_DICT);
+
+  // Updated opcode returns the same value.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+}
+
+TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  Tuple tuple(&scope, runtime_->newTuple(1));
+  tuple.atPut(0, runtime_->newStrFromCStr("test"));
+  consts.atPut(0, runtime_->newStrFromCStr("test"));
+  consts.atPut(1, *tuple);
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_TUPLE);
+
+  // Updated opcode returns the same value.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+}
+
+TEST_F(InterpreterTest, CompareInAnamorphicWithListRewritesOpcode) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  List list(&scope, runtime_->newList());
+  Object value0(&scope, runtime_->newStrFromCStr("value0"));
+  Object value1(&scope, runtime_->newStrFromCStr("test"));
+  listInsert(thread_, list, value0, 0);
+  listInsert(thread_, list, value1, 1);
+  consts.atPut(0, runtime_->newStrFromCStr("test"));
+  consts.atPut(1, *list);
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_LIST);
+
+  // Updated opcode returns the same value.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::trueObj());
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the

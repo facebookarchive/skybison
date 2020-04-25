@@ -204,13 +204,13 @@ namespace py {
   V(UNUSED_BYTECODE_185, 185, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_186, 186, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_187, 187, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_188, 188, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_189, 189, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_190, 190, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_191, 191, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_192, 192, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_193, 193, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_194, 194, doInvalidBytecode)                               \
+  V(COMPARE_IN_LIST, 188, doCompareInList)                                     \
+  V(COMPARE_IN_DICT, 189, doCompareInDict)                                     \
+  V(COMPARE_IN_TUPLE, 190, doCompareInTuple)                                   \
+  V(COMPARE_IN_STR, 191, doCompareInStr)                                       \
+  V(COMPARE_IN_POLYMORPHIC, 192, doCompareInPolymorphic)                       \
+  V(COMPARE_IN_MONOMORPHIC, 193, doCompareInMonomorphic)                       \
+  V(COMPARE_IN_ANAMORPHIC, 194, doCompareInAnamorphic)                         \
   V(BINARY_FLOORDIV_SMALLINT, 195, doBinaryFloordivSmallInt)                   \
   V(BINARY_AND_SMALLINT, 196, doBinaryAndSmallInt)                             \
   V(FOR_ITER_STR, 197, doForIterStr)                                           \

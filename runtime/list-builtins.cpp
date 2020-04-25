@@ -284,6 +284,17 @@ RawObject METH(list, __add__)(Thread* thread, Frame* frame, word nargs) {
   return *new_list;
 }
 
+RawObject listContains(Thread* thread, const List& list, const Object& key) {
+  for (word i = 0, num_items = list.numItems(); i < num_items; ++i) {
+    RawObject result = Runtime::objectEquals(thread, *key, list.at(i));
+    if (result == Bool::trueObj()) {
+      return Bool::trueObj();
+    }
+    if (result.isErrorException()) return result;
+  }
+  return Bool::falseObj();
+}
+
 RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -291,14 +302,9 @@ RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(list));
   }
-
   List self(&scope, *self_obj);
-  Object value(&scope, args.get(1));
-  for (word i = 0, num_items = self.numItems(); i < num_items; ++i) {
-    RawObject eq = Runtime::objectEquals(thread, *value, self.at(i));
-    if (eq != Bool::falseObj()) return eq;
-  }
-  return Bool::falseObj();
+  Object key(&scope, args.get(1));
+  return listContains(thread, self, key);
 }
 
 RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs) {

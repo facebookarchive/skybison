@@ -216,6 +216,8 @@ class Interpreter {
                                         const Object& left,
                                         const Object& right);
 
+  static Continue compareInUpdateCache(Thread* thread, word arg);
+
   static RawObject inplaceOperation(Thread* thread, Frame* frame, BinaryOp op,
                                     const Object& left, const Object& right);
   static Continue inplaceOpUpdateCache(Thread* thread, word arg);
@@ -251,6 +253,11 @@ class Interpreter {
   static RawObject sequenceContains(Thread* thread, Frame* frame,
                                     const Object& value,
                                     const Object& container);
+
+  static RawObject sequenceContainsSetMethod(Thread* thread, Frame* frame,
+                                             const Object& value,
+                                             const Object& container,
+                                             Object* method_out);
 
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
@@ -357,6 +364,13 @@ class Interpreter {
   static Continue doCallFunctionEx(Thread* thread, word arg);
   static Continue doCallFunctionKw(Thread* thread, word arg);
   static Continue doCallMethod(Thread* thread, word arg);
+  static Continue doCompareInAnamorphic(Thread* thread, word arg);
+  static Continue doCompareInStr(Thread* thread, word arg);
+  static Continue doCompareInTuple(Thread* thread, word arg);
+  static Continue doCompareInDict(Thread* thread, word arg);
+  static Continue doCompareInList(Thread* thread, word arg);
+  static Continue doCompareInMonomorphic(Thread* thread, word arg);
+  static Continue doCompareInPolymorphic(Thread* thread, word arg);
   static Continue doCompareIs(Thread* thread, word arg);
   static Continue doCompareIsNot(Thread* thread, word arg);
   static Continue doCompareOp(Thread* thread, word arg);

@@ -8,6 +8,9 @@
 
 namespace py {
 
+RawObject tupleContains(Thread* thread, const Tuple& tuple,
+                        const Object& value);
+
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
 

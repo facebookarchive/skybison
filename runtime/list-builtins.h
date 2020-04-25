@@ -8,6 +8,9 @@
 
 namespace py {
 
+// Probe `list` to see if `key` is contained in it.
+RawObject listContains(Thread* thread, const List& list, const Object& key);
+
 // Extends dst in-place with the first src_length elements from src.
 void listExtend(Thread* thread, const List& dst, const Tuple& src,
                 word src_length);

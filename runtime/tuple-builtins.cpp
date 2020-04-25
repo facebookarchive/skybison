@@ -103,6 +103,15 @@ RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {
   return new_tuple.becomeImmutable();
 }
 
+RawObject tupleContains(Thread* thread, const Tuple& tuple,
+                        const Object& value) {
+  for (word i = 0, num_items = tuple.length(); i < num_items; ++i) {
+    RawObject eq = Runtime::objectEquals(thread, *value, tuple.at(i));
+    if (eq != Bool::falseObj()) return eq;
+  }
+  return Bool::falseObj();
+}
+
 RawObject METH(tuple, __contains__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -110,14 +119,9 @@ RawObject METH(tuple, __contains__)(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfTuple(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(tuple));
   }
-
   Tuple self(&scope, tupleUnderlying(*self_obj));
   Object value(&scope, args.get(1));
-  for (word i = 0, num_items = self.length(); i < num_items; ++i) {
-    RawObject eq = Runtime::objectEquals(thread, *value, self.at(i));
-    if (eq != Bool::falseObj()) return eq;
-  }
-  return Bool::falseObj();
+  return tupleContains(thread, self, value);
 }
 
 RawObject METH(tuple, __hash__)(Thread* thread, Frame* frame, word nargs) {

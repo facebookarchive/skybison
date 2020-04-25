@@ -1039,10 +1039,18 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
 RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
                                         const Object& value,
                                         const Object& container) {
+  return sequenceContainsSetMethod(thread, frame, value, container, nullptr);
+}
+
+RawObject Interpreter::sequenceContainsSetMethod(Thread* thread, Frame* frame,
+                                                 const Object& value,
+                                                 const Object& container,
+                                                 Object* method_out) {
   HandleScope scope(thread);
   Object method(&scope,
                 lookupMethod(thread, frame, container, ID(__contains__)));
   if (!method.isError()) {
+    if (method_out != nullptr && method.isFunction()) *method_out = *method;
     Object result(&scope, callMethod2(thread, frame, method, container, value));
     if (result.isErrorException()) {
       return *result;
@@ -4714,6 +4722,182 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
   // Add one to bind receiver to the self argument. See doLoadMethod()
   // for details on the stack's shape.
   return tailcallPreparedFunction(thread, frame, maybe_method, arg + 1);
+}
+
+NEVER_INLINE
+Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object container(&scope, frame->popValue());
+  Object value(&scope, frame->popValue());
+  Object method(&scope, NoneType::object());
+  Object result(&scope, sequenceContainsSetMethod(thread, frame, value,
+                                                  container, &method));
+  if (method.isFunction()) {
+    Tuple caches(&scope, frame->caches());
+    Str dunder_contains_name(
+        &scope, thread->runtime()->symbols()->at(ID(__contains__)));
+    Function dependent(&scope, frame->function());
+    ICState next_cache_state =
+        icUpdateAttr(thread, caches, arg, container.layoutId(), method,
+                     dunder_contains_name, dependent);
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
+                               ? COMPARE_IN_MONOMORPHIC
+                               : COMPARE_IN_POLYMORPHIC);
+  }
+  if (result.isErrorException()) return Continue::UNWIND;
+  frame->pushValue(*result);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
+                                                           word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  word pc = frame->currentPC();
+  RawMutableBytes bytecode = frame->bytecode();
+  switch (container.layoutId()) {
+    case LayoutId::kSmallStr:
+    case LayoutId::kLargeStr:
+      if (frame->peek(1).isStr()) {
+        bytecode.byteAtPut(pc, COMPARE_IN_STR);
+        return doCompareInStr(thread, arg);
+      }
+      return compareInUpdateCache(thread, arg);
+    case LayoutId::kTuple:
+      bytecode.byteAtPut(pc, COMPARE_IN_TUPLE);
+      return doCompareInTuple(thread, arg);
+    case LayoutId::kDict:
+      bytecode.byteAtPut(pc, COMPARE_IN_DICT);
+      return doCompareInDict(thread, arg);
+    case LayoutId::kList:
+      bytecode.byteAtPut(pc, COMPARE_IN_LIST);
+      return doCompareInList(thread, arg);
+    default:
+      return compareInUpdateCache(thread, arg);
+  }
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  if (!container.isDict()) {
+    return compareInUpdateCache(thread, arg);
+  }
+  HandleScope scope(thread);
+  Dict dict(&scope, container);
+  Object key(&scope, frame->peek(1));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return Continue::UNWIND;
+  word hash = SmallInt::cast(*hash_obj).value();
+  RawObject result = dictAt(thread, dict, key, hash);
+  DCHECK(!result.isErrorException(), "dictAt raised an exception");
+  frame->dropValues(2);
+  if (result.isErrorNotFound()) {
+    frame->pushValue(Bool::falseObj());
+  } else {
+    frame->pushValue(Bool::trueObj());
+  }
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInList(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  if (!container.isList()) {
+    return compareInUpdateCache(thread, arg);
+  }
+  HandleScope scope(thread);
+  List list(&scope, container);
+  Object key(&scope, frame->peek(1));
+  Object result(&scope, listContains(thread, list, key));
+  if (result.isErrorException()) return Continue::UNWIND;
+  DCHECK(result.isBool(), "bool is unexpected");
+  frame->dropValues(2);
+  frame->pushValue(*result);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInStr(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  RawObject value = frame->peek(1);
+  if (!(container.isStr() && value.isStr())) {
+    return compareInUpdateCache(thread, arg);
+  }
+  HandleScope scope(thread);
+  Str haystack(&scope, container);
+  Str needle(&scope, value);
+  frame->dropValues(2);
+  frame->pushValue(Bool::fromBool(strFind(haystack, needle) != -1));
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInTuple(Thread* thread,
+                                                      word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  if (!container.isTuple()) {
+    return compareInUpdateCache(thread, arg);
+  }
+  HandleScope scope(thread);
+  Tuple tuple(&scope, container);
+  Object value(&scope, frame->peek(1));
+  RawObject result = tupleContains(thread, tuple, value);
+  if (result.isErrorException()) {
+    return Continue::UNWIND;
+  }
+  frame->dropValues(2);
+  frame->pushValue(result);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
+                                                            word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  RawObject value = frame->peek(1);
+  LayoutId container_layout_id = container.layoutId();
+  bool is_found;
+  RawObject cached =
+      icLookupMonomorphic(frame->caches(), arg, container_layout_id, &is_found);
+  if (!is_found) {
+    return compareInUpdateCache(thread, arg);
+  }
+  frame->dropValues(2);
+  frame->pushValue(cached);
+  frame->pushValue(container);
+  frame->pushValue(value);
+  // A recursive call is needed to coerce the return value to bool.
+  RawObject result = call(thread, frame, 2);
+  if (result.isErrorException()) return Continue::UNWIND;
+  frame->pushValue(isTrue(thread, result));
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
+                                                            word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(0);
+  RawObject value = frame->peek(1);
+  LayoutId container_layout_id = container.layoutId();
+  bool is_found;
+  RawObject cached =
+      icLookupPolymorphic(frame->caches(), arg, container_layout_id, &is_found);
+  if (!is_found) {
+    return compareInUpdateCache(thread, arg);
+  }
+  frame->dropValues(2);
+  frame->pushValue(cached);
+  frame->pushValue(container);
+  frame->pushValue(value);
+  // Should use a recursive call to convert it return type to bool.
+  RawObject result = call(thread, frame, 2);
+  if (result.isError()) return Continue::UNWIND;
+  frame->pushValue(isTrue(thread, result));
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(

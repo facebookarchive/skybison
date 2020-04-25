@@ -100,6 +100,9 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
         case CompareOp::GT:
         case CompareOp::GE:
           return RewrittenOp{COMPARE_OP_ANAMORPHIC, op.arg, true};
+        case CompareOp::IN:
+          return RewrittenOp{COMPARE_IN_ANAMORPHIC, op.arg, true};
+        // TODO(T61327107): Implement COMPARE_NOT_IN.
         case CompareOp::IS:
           return RewrittenOp{COMPARE_IS, 0, false};
         case CompareOp::IS_NOT:
