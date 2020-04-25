@@ -251,6 +251,56 @@ static bool dictHasUsableItem(const Dict& dict) {
   return dict.firstEmptyItemIndex() < RawTuple::cast(dict.data()).length();
 }
 
+// Insert `key`/`value` into dictionary assuming no item with an equivalent
+// key and no tombstones exist.
+static void dictInsertNoUpdate(const Tuple& data, const Tuple& indices,
+                               word item_count, const Object& key, word hash,
+                               const Object& value) {
+  DCHECK(data.length() > 0, "dict must not be empty");
+  uword perturb;
+  word indices_mask;
+  for (word current_index = probeBegin(*indices, hash, &indices_mask, &perturb);
+       ; current_index = probeNext(current_index, indices_mask, &perturb)) {
+    if (indicesIsEmpty(*indices, current_index)) {
+      word item_index = item_count * kItemNumPointers;
+      itemSet(*data, item_index, hash, *key, *value);
+      itemIndexAtPut(*indices, current_index, item_index);
+      return;
+    }
+  }
+}
+
+static void dictEnsureCapacity(Thread* thread, const Dict& dict) {
+  // TODO(T44245141): Move initialization of an empty dict here.
+  DCHECK(dict.indicesLength() > 0 && Utils::isPowerOfTwo(dict.indicesLength()),
+         "dict capacity must be power of two, greater than zero");
+  if (dictHasUsableItem(dict)) {
+    return;
+  }
+
+  // TODO(T44247845): Handle overflow here.
+  word new_indices_len = dict.indicesLength() * kDictGrowthFactor;
+  HandleScope scope(thread);
+  MutableTuple new_data(
+      &scope, thread->runtime()->newMutableTuple(
+                  sizeOfDataTuple(new_indices_len) * kItemNumPointers));
+  MutableTuple new_indices(&scope,
+                           thread->runtime()->newMutableTuple(new_indices_len));
+  // Re-insert items
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  word hash;
+  word item_count = 0;
+  for (word i = 0; dictNextItemHash(dict, &i, &key, &value, &hash);
+       item_count++) {
+    dictInsertNoUpdate(new_data, new_indices, item_count, key, hash, value);
+  }
+  DCHECK(item_count == dict.numItems(), "found entries != dictnNumItems()");
+  dict.setData(*new_data);
+  dict.setIndices(*new_indices);
+  dict.setFirstEmptyItemIndex(dict.numItems() * kItemNumPointers);
+}
+
 RawObject dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                     word hash, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
@@ -419,56 +469,6 @@ RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
   indicesSetTombstone(*indices, index);
   dict.setNumItems(dict.numItems() - 1);
   return *result;
-}
-
-// Insert `key`/`value` into dictionary assuming no item with an equivalent
-// key and no tombstones exist.
-static void dictInsertNoUpdate(const Tuple& data, const Tuple& indices,
-                               word item_count, const Object& key, word hash,
-                               const Object& value) {
-  DCHECK(data.length() > 0, "dict must not be empty");
-  uword perturb;
-  word indices_mask;
-  for (word current_index = probeBegin(*indices, hash, &indices_mask, &perturb);
-       ; current_index = probeNext(current_index, indices_mask, &perturb)) {
-    if (indicesIsEmpty(*indices, current_index)) {
-      word item_index = item_count * kItemNumPointers;
-      itemSet(*data, item_index, hash, *key, *value);
-      itemIndexAtPut(*indices, current_index, item_index);
-      return;
-    }
-  }
-}
-
-void dictEnsureCapacity(Thread* thread, const Dict& dict) {
-  // TODO(T44245141): Move initialization of an empty dict here.
-  DCHECK(dict.indicesLength() > 0 && Utils::isPowerOfTwo(dict.indicesLength()),
-         "dict capacity must be power of two, greater than zero");
-  if (dictHasUsableItem(dict)) {
-    return;
-  }
-
-  // TODO(T44247845): Handle overflow here.
-  word new_indices_len = dict.indicesLength() * kDictGrowthFactor;
-  HandleScope scope(thread);
-  MutableTuple new_data(
-      &scope, thread->runtime()->newMutableTuple(
-                  sizeOfDataTuple(new_indices_len) * kItemNumPointers));
-  MutableTuple new_indices(&scope,
-                           thread->runtime()->newMutableTuple(new_indices_len));
-  // Re-insert items
-  Object key(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  word hash;
-  word item_count = 0;
-  for (word i = 0; dictNextItemHash(dict, &i, &key, &value, &hash);
-       item_count++) {
-    dictInsertNoUpdate(new_data, new_indices, item_count, key, hash, value);
-  }
-  DCHECK(item_count == dict.numItems(), "found entries != dictnNumItems()");
-  dict.setData(*new_data);
-  dict.setIndices(*new_indices);
-  dict.setFirstEmptyItemIndex(dict.numItems() * kItemNumPointers);
 }
 
 RawObject dictKeys(Thread* thread, const Dict& dict) {

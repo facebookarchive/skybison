@@ -71,10 +71,6 @@ void dictClear(Thread* thread, const Dict& dict);
 RawObject dictIncludes(Thread* thread, const Dict& dict, const Object& key,
                        word hash);
 
-// TODO(T46009010): Make this into a private function after making
-// 'builtins._dict_setitem' into a dict builtin function
-void dictEnsureCapacity(Thread* thread, const Dict& dict);
-
 // Try to remove entry associated with `key` from `dict`.
 // Returns the value that was associated before deletion or
 // `Error:notFound()`.
