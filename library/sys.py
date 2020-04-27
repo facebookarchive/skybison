@@ -90,13 +90,6 @@ class _IOStream:
         _os_write(self._fd, text_bytes)
 
 
-class _ImplementationType:
-    # TODO(T40871632): Add sys.implementation as a namespace object
-    def __init__(self):
-        self.cache_tag = "pyro-37"
-        self.name = "pyro"
-
-
 _VersionInfo = _structseq_new_type(
     "sys.version_info", ("major", "minor", "micro", "releaselevel", "serial")
 )
@@ -222,7 +215,7 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
-implementation = _ImplementationType()
+implementation = SimpleNamespace({"cache_tag": "pyro-37", "name": "pyro"})  # noqa: F821
 
 
 def intern(string):
