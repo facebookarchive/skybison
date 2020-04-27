@@ -491,6 +491,43 @@ file(WRITE "${CMAKE_BINARY_DIR}/Modules/Setup.local" "Pretend Setup exists")
 
 set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
 add_library(
+  expat
+  STATIC
+  ${CPYTHON_DIR}/Modules/expat/ascii.h
+  ${CPYTHON_DIR}/Modules/expat/asciitab.h
+  ${CPYTHON_DIR}/Modules/expat/expat_config.h
+  ${CPYTHON_DIR}/Modules/expat/expat_external.h
+  ${CPYTHON_DIR}/Modules/expat/expat.h
+  ${CPYTHON_DIR}/Modules/expat/iasciitab.h
+  ${CPYTHON_DIR}/Modules/expat/internal.h
+  ${CPYTHON_DIR}/Modules/expat/latin1tab.h
+  ${CPYTHON_DIR}/Modules/expat/loadlibrary.c
+  ${CPYTHON_DIR}/Modules/expat/nametab.h
+  ${CPYTHON_DIR}/Modules/expat/pyexpatns.h
+  ${CPYTHON_DIR}/Modules/expat/siphash.h
+  ${CPYTHON_DIR}/Modules/expat/utf8tab.h
+  ${CPYTHON_DIR}/Modules/expat/winconfig.h
+  ${CPYTHON_DIR}/Modules/expat/xmlparse.c
+  ${CPYTHON_DIR}/Modules/expat/xmlrole.c
+  ${CPYTHON_DIR}/Modules/expat/xmlrole.h
+  ${CPYTHON_DIR}/Modules/expat/xmltok.c
+  ${CPYTHON_DIR}/Modules/expat/xmltok.h
+  ${CPYTHON_DIR}/Modules/expat/xmltok_impl.c
+  ${CPYTHON_DIR}/Modules/expat/xmltok_impl.h
+  ${CPYTHON_DIR}/Modules/expat/xmltok_ns.c
+)
+target_compile_options(
+  expat
+  PRIVATE
+  -DHAVE_EXPAT_CONFIG_H
+  -DXML_POOR_ENTROPY)
+target_link_libraries(
+  expat
+  PRIVATE
+  capi-headers
+)
+
+add_library(
   extension-modules
   STATIC
   ${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c
@@ -531,6 +568,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/clinic/md5module.c.h
   ${CPYTHON_DIR}/Modules/clinic/posixmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/pwdmodule.c.h
+  ${CPYTHON_DIR}/Modules/clinic/pyexpat.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha1module.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha256module.c.h
   ${CPYTHON_DIR}/Modules/clinic/sha512module.c.h
@@ -544,6 +582,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/posixmodule.c
   ${CPYTHON_DIR}/Modules/posixmodule.h
   ${CPYTHON_DIR}/Modules/pwdmodule.c
+  ${CPYTHON_DIR}/Modules/pyexpat.c
   ${CPYTHON_DIR}/Modules/selectmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.h
@@ -615,6 +654,7 @@ target_include_directories(
   capi/cpython-internal
   ${CPYTHON_DIR}/Modules
   ${CPYTHON_DIR}/Modules/_sha3
+  ${CPYTHON_DIR}/Modules/expat
   ${BZIP2_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIRS}
   ${XZ_INCLUDE_DIRS}
@@ -633,6 +673,7 @@ target_link_libraries(
   PUBLIC
   capi-headers
   PRIVATE
+  expat
   util
   ${BZIP2_LIBRARIES}
   ${OPENSSL_LIBRARIES}
