@@ -237,6 +237,7 @@ class Runtime;
   V(__set__)                                                                   \
   V(__setattr__)                                                               \
   V(__setitem__)                                                               \
+  V(__slots__)                                                                 \
   V(__spec__)                                                                  \
   V(__str__)                                                                   \
   V(__sub__)                                                                   \
@@ -675,6 +676,7 @@ class Runtime;
   V(single)                                                                    \
   V(siphash24)                                                                 \
   V(slice)                                                                     \
+  V(slot_descriptor)                                                           \
   V(smallbytes)                                                                \
   V(smallint)                                                                  \
   V(smallstr)                                                                  \

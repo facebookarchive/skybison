@@ -999,6 +999,50 @@ static LayoutId computeBuiltinBase(Thread* thread, const Tuple& bases) {
   return result.builtinBase();
 }
 
+static RawObject validateSlots(Thread* thread, const Type& type,
+                               const Tuple& slots,
+                               bool* should_add_dunder_dict) {
+  HandleScope scope(thread);
+  word slots_len = slots.length();
+  Runtime* runtime = thread->runtime();
+  Str dunder_dict(&scope, runtime->symbols()->at(ID(__dict__)));
+  *should_add_dunder_dict = false;
+  List result(&scope, runtime->newList());
+  Object slot_obj(&scope, NoneType::object());
+  Str slot_str(&scope, Str::empty());
+  for (word i = 0; i < slots_len; i++) {
+    slot_obj = slots.at(i);
+    if (!runtime->isInstanceOfStr(*slot_obj)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__slots__ items must be strings, not '%T'",
+                                  &slot_obj);
+    }
+    slot_str = *slot_obj;
+    if (!strIsIdentifier(slot_str)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__slots__ must be identifiers");
+    }
+    slot_str = attributeName(thread, slot_str);
+    if (slot_str == dunder_dict) {
+      if (*should_add_dunder_dict) {
+        return thread->raiseWithFmt(
+            LayoutId::kTypeError,
+            "__dict__ slot disallowed: we already got one");
+      }
+      *should_add_dunder_dict = true;
+      continue;
+    }
+    if (!typeAt(type, slot_str).isErrorNotFound()) {
+      return thread->raiseWithFmt(
+          LayoutId::kValueError,
+          "'%S' in __slots__ conflicts with class variable", &slot_str);
+    }
+    runtime->listAdd(thread, result, slot_str);
+  }
+  listSort(thread, result);
+  return *result;
+}
+
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                    const Dict& dict, const Tuple& mro) {
   type.setName(*name);
@@ -1030,6 +1074,41 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     return Error::exception();
   }
 
+  Object slots_obj(&scope, typeAtById(thread, type, ID(__slots__)));
+  bool should_add_dunder_dict = true;
+  if (!slots_obj.isErrorNotFound()) {
+    if (runtime->isInstanceOfStr(*slots_obj)) {
+      Tuple slots_tuple(&scope, runtime->newTuple(1));
+      slots_tuple.atPut(0, *slots_obj);
+      slots_obj = *slots_tuple;
+    } else if (!runtime->isInstanceOfTuple(*slots_obj)) {
+      Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
+      slots_obj = Interpreter::callFunction1(thread, thread->currentFrame(),
+                                             tuple_type, slots_obj);
+      if (slots_obj.isErrorException()) {
+        return *slots_obj;
+      }
+      DCHECK(slots_obj.isTuple(), "tuple is expected");
+    }
+    Tuple slots(&scope, *slots_obj);
+    Object sorted_slots_obj(
+        &scope, validateSlots(thread, type, slots, &should_add_dunder_dict));
+    if (sorted_slots_obj.isError()) {
+      return *sorted_slots_obj;
+    }
+    List sorted_slots(&scope, *sorted_slots_obj);
+    Object slot_descriptor(&scope, NoneType::object());
+    Object slot_name(&scope, NoneType::object());
+    for (word i = 0; i < sorted_slots.numItems(); i++) {
+      slot_name = sorted_slots.at(i);
+      slot_descriptor = runtime->newSlotDescriptor(type, slot_name);
+      typeAtPut(thread, type, slot_name, slot_descriptor);
+    }
+    // TODO(T65228299): Create attributes for these slots in
+    // type.instanceLayout() to initialize them with Unbound::object(),
+    // and disable overflow attributes.
+  }
+
   // Initialize instance layout
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, type, builtin_base));
@@ -1046,7 +1125,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   }
   flags &= ~Type::Flag::kIsAbstract;
 
-  if (!type.isBuiltin() && !(flags & Type::Flag::kIsNativeProxy)) {
+  if (should_add_dunder_dict && !type.isBuiltin() &&
+      !(flags & Type::Flag::kIsNativeProxy)) {
     // TODO(T53800222): We may need a better signal than is/is not a builtin
     // class.
     flags |= Type::Flag::kHasDunderDict;
@@ -1066,6 +1146,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                     runtime->newProperty(instance_proxy,
                                          under_instance_dunder_dict_set, none));
     typeAtPutById(thread, type, ID(__dict__), property);
+  }
+  if (!should_add_dunder_dict) {
+    Str dunder_dict(&scope, runtime->symbols()->at(ID(__dict__)));
+    typeRemove(thread, type, dunder_dict);
   }
 
   // TODO(T54448451): Decide whether type needs to become a builtin base
