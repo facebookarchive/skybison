@@ -42,6 +42,35 @@ class UnderBuiltinsTests(unittest.TestCase):
         self.assertListEqual(_builtins._list_new(0, 1), [])
         self.assertListEqual(_builtins._list_new(3, 1), [1, 1, 1])
 
+    def test_set_function_flag_iterable_coroutine_makes_generator_usable_with_await(
+        self
+    ):
+        def generator():
+            yield
+
+        async def await_on_f(f):
+            await f()
+
+        with self.assertRaises(TypeError):
+            await_on_f(generator).send(None)
+
+        _builtins._set_function_flag_iterable_coroutine(generator)
+
+        await_on_f(generator).send(None)
+
+    def test_set_function_flag_iterable_coroutine_sets_flag_in_dunder_code_dunder(self):
+        def generator():
+            yield
+
+        _builtins._set_function_flag_iterable_coroutine(generator)
+
+        # 0x100 = CO_ITERABLE_COROUTINE flag
+        self.assertTrue(generator.__code__.co_flags & 0x100)
+
+    def test_set_function_flag_iterable_coroutine_only_works_with_functions(self):
+        with self.assertRaises(TypeError):
+            _builtins._set_function_flag_iterable_coroutine("str")
+
     def test_str_mod_fast_path_returns_string(self):
         self.assertEqual(_builtins._str_mod_fast_path("", ()), "")
         self.assertEqual(_builtins._str_mod_fast_path("hello", ()), "hello")

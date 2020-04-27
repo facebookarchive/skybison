@@ -9,6 +9,8 @@ Define names for built-in types that aren't directly accessible as a builtin.
 """
 import sys
 
+from _builtins import _set_function_flag_iterable_coroutine
+
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
 # iterator.  Don't check the type!  Use hasattr to check for both
@@ -263,16 +265,18 @@ def coroutine(func):
         # Check if 'func' is a generator function.
         # (0x20 == CO_GENERATOR)
         if co_flags & 0x20:
-            # TODO: Implement this in C.
-            co = func.__code__
-            func.__code__ = CodeType(
-                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
-                co.co_stacksize,
-                co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
-                co.co_code,
-                co.co_consts, co.co_names, co.co_varnames, co.co_filename,
-                co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-                co.co_cellvars)
+            # TODO(T44845145): Remove this when func.__code__ is assignable.
+            _set_function_flag_iterable_coroutine(func)
+            # # TODO: Implement this in C.
+            # co = func.__code__
+            # func.__code__ = CodeType(
+            #     co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+            #     co.co_stacksize,
+            #     co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
+            #     co.co_code,
+            #     co.co_consts, co.co_names, co.co_varnames, co.co_filename,
+            #     co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
+            #     co.co_cellvars)
             return func
 
     # The following code is primarily to support functions that

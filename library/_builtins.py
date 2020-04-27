@@ -747,6 +747,10 @@ def _set_check(obj):
     _builtin()
 
 
+def _set_function_flag_iterable_coroutine(code):
+    _builtin()
+
+
 def _set_guard(obj):
     _builtin()
 

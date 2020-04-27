@@ -3626,6 +3626,41 @@ RawObject FUNC(_builtins, _set_check)(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
 }
 
+RawObject FUNC(_builtins, _set_function_flag_iterable_coroutine)(Thread* thread,
+                                                                 Frame* frame,
+                                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object function_obj(&scope, args.get(0));
+  if (!function_obj.isFunction()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "can only be called with a 'function' object");
+  }
+  Function function(&scope, *function_obj);
+  Code original_code(&scope, function.code());
+  Object code_code(&scope, original_code.code());
+  Object consts(&scope, original_code.consts());
+  Object names(&scope, original_code.names());
+  Object varnames(&scope, original_code.varnames());
+  Object freevars(&scope, original_code.freevars());
+  Object cellvars(&scope, original_code.cellvars());
+  Object filename(&scope, original_code.filename());
+  Object name(&scope, original_code.name());
+  Object lnotab(&scope, original_code.lnotab());
+  Code new_code(
+      &scope,
+      thread->runtime()->newCode(
+          original_code.argcount(), original_code.posonlyargcount(),
+          original_code.kwonlyargcount(), original_code.nlocals(),
+          original_code.stacksize(),
+          original_code.flags() | RawFunction::Flags::kIterableCoroutine,
+          code_code, consts, names, varnames, freevars, cellvars, filename,
+          name, original_code.firstlineno(), lnotab));
+  function.setCode(*new_code);
+  function.setFlags(function.flags() | Function::Flags::kIterableCoroutine);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _set_guard)(Thread* thread, Frame* frame,
                                       word nargs) {
   Arguments args(frame, nargs);
