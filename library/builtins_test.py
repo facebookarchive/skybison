@@ -14861,6 +14861,18 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__bases__, (A,))
         self.assertEqual(D.__bases__, (C, B))
 
+    def test_dunder_call_calls_dunder_init(self):
+        class Callable:
+            def __call__(self):
+                self.x = 42
+
+        class C:
+            __init__ = Callable()
+
+        c = C()
+        self.assertHasAttr(c, "x")
+        self.assertEqual(c.x, 42)
+
     def test_dunder_dir_with_non_type_object_raises_type_error(self):
         with self.assertRaises(TypeError):
             type.__dir__(None)

@@ -336,23 +336,6 @@ TEST_F(TypeBuiltinsTest, DunderCallWithNonTypeRaisesTypeError) {
       "'__call__' requires a 'type' object but received a 'int'"));
 }
 
-TEST_F(TypeBuiltinsTest, DunderCallCallsDunderInit) {
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-class Callable:
-  def __call__(self, obj):
-    obj.x = 42
-class C:
-  __init__ = Callable()
-c = C()
-)")
-                   .isError());
-  Object c(&scope, mainModuleAt(runtime_, "c"));
-  Object x(&scope, Runtime::internStrFromCStr(thread_, "x"));
-  RawObject attr = runtime_->attributeAt(thread_, c, x);
-  EXPECT_TRUE(isIntEqualsWord(attr, 42));
-}
-
 TEST_F(TypeBuiltinsTest,
        DunderCallWithNonTypeDudnerNewResultReturnsWithoutCallingDunderInit) {
   HandleScope scope;
