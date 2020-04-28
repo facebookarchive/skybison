@@ -33,6 +33,25 @@ void* OS::openSharedObject(const char* filename, int mode,
   return result;
 }
 
+SignalHandler OS::setSignalHandler(int signum, SignalHandler handler) {
+  struct sigaction new_context, old_context;
+  new_context.sa_handler = handler;
+  sigemptyset(&new_context.sa_mask);
+  new_context.sa_flags = 0;
+  if (::sigaction(signum, &new_context, &old_context) == -1) {
+    return SIG_ERR;
+  }
+  return old_context.sa_handler;
+}
+
+SignalHandler OS::signalHandler(int signum) {
+  struct sigaction context;
+  if (::sigaction(signum, nullptr, &context) == -1) {
+    return SIG_ERR;
+  }
+  return context.sa_handler;
+}
+
 void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol,
                                     const char** error_msg) {
   void* result = ::dlsym(handle, symbol);

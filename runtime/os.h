@@ -6,6 +6,8 @@
 
 namespace py {
 
+typedef void (*SignalHandler)(int);
+
 class OS {
  public:
   enum { kPageSize = 4 * kKiB };
@@ -39,6 +41,9 @@ class OS {
   static bool protectMemory(byte* address, word size, Protection);
 
   static bool secureRandom(byte* ptr, word size);
+
+  static SignalHandler setSignalHandler(int signum, SignalHandler handler);
+  static SignalHandler signalHandler(int signum);
 
   static char* readFile(FILE* fp, word* len_out);
 

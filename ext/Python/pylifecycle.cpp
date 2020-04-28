@@ -9,6 +9,7 @@
 #include "capi-handles.h"
 #include "exception-builtins.h"
 #include "modules.h"
+#include "os.h"
 #include "runtime.h"
 
 extern "C" int _PyCapsule_Init(void);
@@ -36,22 +37,11 @@ int Py_VerboseFlag = 0;
 namespace py {
 
 PY_EXPORT PyOS_sighandler_t PyOS_getsig(int signum) {
-  struct sigaction context;
-  if (::sigaction(signum, nullptr, &context) == -1) {
-    return SIG_ERR;
-  }
-  return context.sa_handler;
+  return OS::signalHandler(signum);
 }
 
 PY_EXPORT PyOS_sighandler_t PyOS_setsig(int signum, PyOS_sighandler_t handler) {
-  struct sigaction context, old_context;
-  context.sa_handler = handler;
-  sigemptyset(&context.sa_mask);
-  context.sa_flags = 0;
-  if (::sigaction(signum, &context, &old_context) == -1) {
-    return SIG_ERR;
-  }
-  return old_context.sa_handler;
+  return OS::setSignalHandler(signum, handler);
 }
 
 PY_EXPORT int Py_AtExit(void (*/* func */)(void)) {

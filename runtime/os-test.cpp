@@ -1,5 +1,6 @@
 #include "os.h"
 
+#include <csignal>
 #include <cstring>
 
 #include "gtest/gtest.h"
@@ -59,6 +60,27 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   // Release the pages.
   bool is_free = OS::freeMemory(page, size);
   EXPECT_TRUE(is_free);
+}
+
+TEST(OsTest, SignalHandlerWithSigusr1SetsSignalHandler) {
+  SignalHandler dummy = [](int) {};
+  SignalHandler original = OS::signalHandler(SIGUSR1);
+  SignalHandler old = OS::setSignalHandler(SIGUSR1, dummy);
+  EXPECT_EQ(old, original);
+
+  SignalHandler current = OS::signalHandler(SIGUSR1);
+  EXPECT_EQ(current, dummy);
+
+  old = OS::setSignalHandler(SIGUSR1, original);
+  EXPECT_EQ(old, dummy);
+}
+
+TEST(OsTest, SetSignalHandlerWithSigkillReturnsSigErr) {
+  EXPECT_EQ(OS::setSignalHandler(SIGKILL, SIG_IGN), SIG_ERR);
+}
+
+TEST(OsTest, SetSignalHandlerWithSigstopReturnsSigErr) {
+  EXPECT_EQ(OS::setSignalHandler(SIGSTOP, SIG_IGN), SIG_ERR);
 }
 
 }  // namespace py
