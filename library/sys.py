@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from builtins import _structseq_new_type
+from builtins import SimpleNamespace as _SimpleNamespace, _structseq_new_type
 
 from _builtins import _builtin, _int_check, _os_write, _Unbound
 
@@ -215,7 +215,7 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
-implementation = SimpleNamespace({"cache_tag": "pyro-37", "name": "pyro"})  # noqa: F821
+implementation = _SimpleNamespace(cache_tag="pyro-37", name="pyro")
 
 
 def intern(string):

@@ -11903,6 +11903,24 @@ class SetTests(unittest.TestCase):
         self.assertFalse({1, 2}.issuperset(range(1, 4)))
 
 
+class SimpleNamespaceTests(unittest.TestCase):
+    def test_dunder_init_returns_simple_namespace(self):
+        from types import SimpleNamespace
+
+        s = SimpleNamespace(foo=42, bar="baz")
+        self.assertEqual(s.foo, 42)
+        self.assertEqual(s.bar, "baz")
+
+    def test_dunder_repr_returns_str(self):
+        from types import SimpleNamespace
+
+        s = SimpleNamespace(foo=42, bar="baz")
+        r = SimpleNamespace.__repr__(s)
+        self.assertTrue(
+            r == "namespace(foo=42, bar='baz')" or r == "namespace(bar='baz', foo=42)"
+        )
+
+
 class SliceTest(unittest.TestCase):
     def test_dunder_repr_with_nones_returns_str(self):
         s = slice(None)

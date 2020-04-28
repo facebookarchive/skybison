@@ -956,9 +956,8 @@ class RuntimeWarning(Warning, bootstrap=True):
 
 
 class SimpleNamespace:
-    def __init__(self, kwds=None):
-        if kwds is not None:
-            instance_proxy(self).update(kwds)
+    def __init__(self, **kwargs):
+        instance_proxy(self).update(kwargs)
 
     def __repr__(self):
         if _repr_enter(self):
