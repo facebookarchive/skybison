@@ -30,7 +30,9 @@ TEST_RUNNING_FILTER="*test*.py"
 CPYTHON_TESTS=(
   test___future__.py
   test_augassign.py
+  test_binhex.py
   test_binop.py
+  test_cgi.py
   test_colorsys.py
   test_crashers.py
   test_decorators.py
@@ -38,6 +40,7 @@ CPYTHON_TESTS=(
   test_dummy_thread.py
   test_dynamic.py
   test_dynamicclassattribute.py
+  test_embed.py
   test_ensurepip.py
   test_eof.py
   test_errno.py
@@ -48,16 +51,31 @@ CPYTHON_TESTS=(
   test_future3.py
   test_future4.py
   test_future5.py
+  test_genericpath.py
   test_getpass.py
+  test_glob.py
+  test_grp.py
   test_html.py
   test_int_literal.py
+  test_linecache.py
+  test_locale.py
   test_longexp.py
   test_netrc.py
   test_openpty.py
   test_osx_env.py
+  test_pipes.py
+  test_pkg.py
+  test_pkgimport.py
+  test_pkgutil.py
+  test_popen.py
+  test_stat.py
   test_strftime.py
+  test_stringprep.py
+  test_textwrap.py
   test_typechecks.py
+  test_unicode_file.py
   test_webbrowser.py
+  test_with.py
 )
 PYRO_PATCHED_CPYTHON_TESTS=(
   test_dict.py
