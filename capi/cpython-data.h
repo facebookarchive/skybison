@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#define PyAPI_DATA(RTYPE) extern RTYPE
+#define PyAPI_DATA(RTYPE) extern __attribute__((visibility("default"))) RTYPE
 #define PyDoc_VAR(name) static char name[]
 #define PyDoc_STRVAR(name, str) PyDoc_VAR(name) = PyDoc_STR(str)
 #define PyDoc_STR(str) str
@@ -179,23 +179,23 @@ extern "C" {
 #define Py_MATH_E 2.7182818284590452354
 #define Py_MATH_TAU 6.2831853071795864769252867665590057683943L
 
-extern int Py_BytesWarningFlag;
-extern int Py_DebugFlag;
-extern int Py_DontWriteBytecodeFlag;
-extern int Py_FrozenFlag;
-extern int Py_HashRandomizationFlag;
-extern int Py_IgnoreEnvironmentFlag;
-extern int Py_InspectFlag;
-extern int Py_InteractiveFlag;
-extern int Py_IsolatedFlag;
-extern int Py_NoSiteFlag;
-extern int Py_NoUserSiteDirectory;
-extern int Py_OptimizeFlag;
-extern int Py_QuietFlag;
-extern int Py_UTF8Mode;
-extern int Py_UnbufferedStdioFlag;
-extern int Py_UseClassExceptionsFlag;
-extern int Py_VerboseFlag;
+PyAPI_DATA(int) Py_BytesWarningFlag;
+PyAPI_DATA(int) Py_DebugFlag;
+PyAPI_DATA(int) Py_DontWriteBytecodeFlag;
+PyAPI_DATA(int) Py_FrozenFlag;
+PyAPI_DATA(int) Py_HashRandomizationFlag;
+PyAPI_DATA(int) Py_IgnoreEnvironmentFlag;
+PyAPI_DATA(int) Py_InspectFlag;
+PyAPI_DATA(int) Py_InteractiveFlag;
+PyAPI_DATA(int) Py_IsolatedFlag;
+PyAPI_DATA(int) Py_NoSiteFlag;
+PyAPI_DATA(int) Py_NoUserSiteDirectory;
+PyAPI_DATA(int) Py_OptimizeFlag;
+PyAPI_DATA(int) Py_QuietFlag;
+PyAPI_DATA(int) Py_UTF8Mode;
+PyAPI_DATA(int) Py_UnbufferedStdioFlag;
+PyAPI_DATA(int) Py_UseClassExceptionsFlag;
+PyAPI_DATA(int) Py_VerboseFlag;
 
 #define PY_CTF_LOWER 0x01
 #define PY_CTF_UPPER 0x02
@@ -205,11 +205,11 @@ extern int Py_VerboseFlag;
 #define PY_CTF_SPACE 0x08
 #define PY_CTF_XDIGIT 0x10
 
-extern const unsigned char _Py_ascii_whitespace[128];
-extern const unsigned int _Py_ctype_table[256];
-extern const unsigned char _Py_ctype_tolower[256];
-extern const unsigned char _Py_ctype_toupper[256];
-extern const unsigned char _PyLong_DigitValue[256];
+PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[128];
+PyAPI_DATA(const unsigned int) _Py_ctype_table[256];
+PyAPI_DATA(const unsigned char) _Py_ctype_tolower[256];
+PyAPI_DATA(const unsigned char) _Py_ctype_toupper[256];
+PyAPI_DATA(const unsigned char) _PyLong_DigitValue[256];
 
 #define Py_CLEANUP_SUPPORTED 0x20000
 
@@ -353,12 +353,12 @@ extern const unsigned char _PyLong_DigitValue[256];
 #define Py_DTST_INFINITE 1
 #define Py_DTST_NAN 2
 
-extern char* PyStructSequence_UnnamedField;
+PyAPI_DATA(char*) PyStructSequence_UnnamedField;
 
-extern const char* Py_FileSystemDefaultEncoding;
-extern int Py_HasFileSystemDefaultEncoding;
-extern const char* Py_FileSystemDefaultEncodeErrors;
-extern const char* Py_hexdigits;
+PyAPI_DATA(const char*) Py_FileSystemDefaultEncoding;
+PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
+PyAPI_DATA(const char*) Py_FileSystemDefaultEncodeErrors;
+PyAPI_DATA(const char*) Py_hexdigits;
 
 /* C struct member types */
 #define T_SHORT 0

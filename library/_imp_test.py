@@ -174,6 +174,41 @@ PyObject* PyInit_foo() {
             self.assertIn("foo", nestedtest.foo.__name__)
             sys.path.pop()
 
+    def test_create_dynamic_reading_global_variable(self):
+        # Create C file
+        with tempfile.TemporaryDirectory() as dir_path:
+            self.assertEqual(len(os.listdir(dir_path)), 0)
+            file_path = f"{dir_path}/foo.c"
+            with open(file_path, "w") as c_file:
+                c_file.write(
+                    """\
+#include "Python.h"
+PyObject* PyInit_foo() {
+  static PyModuleDef def;
+  def.m_name = Py_FileSystemDefaultEncoding;
+  return PyModule_Create(&def);
+}
+"""
+                )
+            self.assertEqual(len(os.listdir(dir_path)), 1)
+
+            # Create shared object
+            dist = self.compile_so("foo", dir_path, file_path)
+            self.assertIsInstance(dist, Distribution)
+
+            # Check directory contents
+            dir_contents = sorted(os.listdir(dir_path))
+            self.assertEqual(len(dir_contents), 2)
+            self.assertTrue(dir_contents[0].endswith(".c"))
+            self.assertTrue(dir_contents[1].endswith(".so"))
+
+            # Load shared_object
+            sys.path.append(dir_path)
+            import foo
+
+            self.assertEqual(foo.__name__, "utf-8")
+            sys.path.pop()
+
     def test_fix_co_filename_updates_filenames_recursively(self):
         def foo():
             def bar():
