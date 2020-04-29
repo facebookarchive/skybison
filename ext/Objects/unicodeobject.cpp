@@ -158,9 +158,10 @@ PY_EXPORT int _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter* writer,
   }
 
   if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
-  for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
+  Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
+  for (Py_ssize_t i = 0; i < len; ++i) {
     CHECK(ascii[i] >= 0, "_PyUnicodeWriter_WriteASCIIString only takes ASCII");
-    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos, ascii[i]);
+    data[writer->pos++] = static_cast<uint8_t>(ascii[i]);
   }
   return 0;
 }
@@ -181,9 +182,9 @@ PY_EXPORT int _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter* writer,
                                                  const char* str,
                                                  Py_ssize_t len) {
   if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
-  for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
-    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
-                    str[i] & 0xFF);
+  Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
+  for (Py_ssize_t i = 0; i < len; ++i) {
+    data[writer->pos++] = static_cast<uint8_t>(str[i]);
   }
   return 0;
 }
@@ -194,11 +195,14 @@ PY_EXPORT int _PyUnicodeWriter_WriteStr(_PyUnicodeWriter* writer,
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Str src(&scope, strUnderlying(*obj));
-  Py_ssize_t len = src.charLength();
-  if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
-  for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
-    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
-                    src.charAt(i));
+  Py_ssize_t codepoints = src.codePointLength();
+  if (_PyUnicodeWriter_Prepare(writer, codepoints, kMaxUnicode) == -1) {
+    return -1;
+  }
+  Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
+  for (word i = 0, len = src.charLength(), cp_len; i < len; i += cp_len) {
+    int32_t cp = src.codePointAt(i, &cp_len);
+    data[writer->pos++] = cp;
   }
   return 0;
 }
@@ -214,9 +218,14 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Str src(&scope, strUnderlying(*obj));
-  for (Py_ssize_t i = start; i < end; ++i, writer->pos++) {
-    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
-                    src.charAt(i));
+  word start_index = src.offsetByCodePoints(0, start);
+  DCHECK_BOUND(start_index, src.charLength());
+  word end_index = src.offsetByCodePoints(start_index, len);
+  DCHECK_BOUND(end_index, src.charLength());
+  Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
+  for (word i = start_index, cp_len; i < end_index; i += cp_len) {
+    int32_t cp = src.codePointAt(i, &cp_len);
+    data[writer->pos++] = cp;
   }
   return 0;
 }

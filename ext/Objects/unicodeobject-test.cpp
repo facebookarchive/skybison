@@ -1347,13 +1347,13 @@ TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWriteStrWritesStringObject) {
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);
   PyObjectPtr hello_str(PyUnicode_FromString("hello"));
-  PyObjectPtr world_str(PyUnicode_FromString(" world"));
+  PyObjectPtr world_str(PyUnicode_FromString(" \xf0\x9f\x90\x8d world"));
   ASSERT_EQ(_PyUnicodeWriter_WriteStr(&writer, hello_str), 0);
   ASSERT_EQ(_PyUnicodeWriter_WriteStr(&writer, world_str), 0);
   PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
 
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "hello world"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "hello \xf0\x9f\x90\x8d world"));
 }
 
 TEST_F(UnicodeExtensionApiTest,
@@ -1380,13 +1380,14 @@ TEST_F(UnicodeExtensionApiTest,
        PyUnicodeWriterWriteSubstringWritesSubStringObject) {
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);
-  PyObjectPtr str(PyUnicode_FromString("hello world"));
+  PyObjectPtr str(PyUnicode_FromString("hello \xf0\x9f\x90\x8d world"));
+  ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 8, 13), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 5, 8), 0);
   ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 0, 5), 0);
-  ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 5, 11), 0);
   PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
 
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "hello world"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "world \xf0\x9f\x90\x8d hello"));
 }
 
 TEST_F(UnicodeExtensionApiTest,

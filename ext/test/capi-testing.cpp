@@ -108,8 +108,11 @@ static ::testing::AssertionResult failBadValue(PyObject* obj, const T& expected,
                                                const char* c_str) {
   if (obj == nullptr) return failNullObj(c_str, "'");
 
-  if (!PyUnicode_Check(obj) ||
-      PyUnicode_CompareWithASCIIString(obj, c_str) != 0) {
+  if (!PyUnicode_Check(obj)) {
+    return failBadValue(obj, c_str, "'");
+  }
+  PyObjectPtr expected(PyUnicode_FromString(c_str));
+  if (PyUnicode_Compare(obj, expected) != 0) {
     return failBadValue(obj, c_str, "'");
   }
   return ::testing::AssertionSuccess();
