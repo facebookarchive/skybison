@@ -11,6 +11,11 @@ namespace py {
 
 // classmethod
 
+const BuiltinAttribute ClassMethodBuiltins::kAttributes[] = {
+    {ID(__func__), RawClassMethod::kFunctionOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(classmethod, __new__)(Thread* thread, Frame*, word) {
   return thread->runtime()->newClassMethod();
 }

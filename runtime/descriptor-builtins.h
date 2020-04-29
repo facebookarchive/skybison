@@ -11,6 +11,9 @@ namespace py {
 class ClassMethodBuiltins
     : public Builtins<ClassMethodBuiltins, ID(classmethod),
                       LayoutId::kClassMethod> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ClassMethodBuiltins);
 };

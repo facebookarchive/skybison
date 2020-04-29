@@ -2679,6 +2679,25 @@ class ClassMethodTests(unittest.TestCase):
         self.assertEqual(obj.a, 123)
         self.assertEqual(obj.b, 321)
 
+    def test_dunder_func_returns_wrapped_function(self):
+        class C:
+            def foo(self):
+                return 1
+
+            bar = classmethod(foo)
+
+        self.assertIs(C.bar.__func__, C.foo)
+
+    def test_dunder_func_assignment_raises_attribute_error(self):
+        class C:
+            def foo(self):
+                return 1
+
+            bar = classmethod(foo)
+
+        with self.assertRaises(AttributeError):
+            C.bar.__func__ = C.foo
+
     def test_has_dunder_call(self):
         class C:
             @classmethod

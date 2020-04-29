@@ -342,8 +342,6 @@ class function(bootstrap=True):
 
 
 class classmethod(bootstrap=True):
-    __func__ = _unimplemented
-
     def __get__(self, instance, owner):
         _builtin()
 
