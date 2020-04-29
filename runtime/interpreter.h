@@ -266,9 +266,8 @@ class Interpreter {
                                        const Object& name, LoadAttrKind* kind,
                                        Object* location_out);
 
-  static Continue moduleImportAllFrom(Thread* thread, Frame* frame,
-                                      const Module& module,
-                                      const Object& implicit_globals);
+  static RawObject importAllFrom(Thread* thread, Frame* frame,
+                                 const Object& object);
 
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
   // on ctx->thread.

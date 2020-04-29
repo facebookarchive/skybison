@@ -357,5 +357,162 @@ class ImportNameTests(unittest.TestCase):
             exec("import foo", my_globals)
 
 
+class ImportStarTests(unittest.TestCase):
+    def test_import_star_imports_symbols(self):
+        def my_import(name, globals, locals, fromlist, level):
+            result = ModuleType("m")
+            result.foo = 1
+            result._bar = 2
+            result.baz_ = 3
+            result.__bam__ = 4
+            return result
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        exec("from m import *", my_globals)
+        self.assertEqual(my_globals["foo"], 1)
+        self.assertEqual(my_globals["baz_"], 3)
+        self.assertNotIn("_bar", my_globals)
+        self.assertNotIn("__bam__", my_globals)
+
+    def test_import_star_with_dunder_all_tuple_imports_symbols(self):
+        def my_import(name, globals, locals, fromlist, level):
+            result = ModuleType("m")
+            result.foo = 1
+            result._bar = 2
+            result.baz = 99
+            result.__all__ = ("foo", "_bar", "__repr__")
+            return result
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        exec("from m import *", my_globals)
+        self.assertEqual(my_globals["foo"], 1)
+        self.assertEqual(my_globals["_bar"], 2)
+        self.assertEqual(my_globals["__repr__"](), "<module 'm'>")
+        self.assertNotIn("baz", my_globals)
+        self.assertNotIn("__all__", my_globals)
+
+    def test_import_star_with_dunder_all_list_imports_symbols(self):
+        def my_import(name, globals, locals, fromlist, level):
+            result = ModuleType("m")
+            result.foo = 1
+            result._bar = 2
+            result.baz = 99
+            result.__all__ = ["foo", "_bar", "__all__"]
+            return result
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        exec("from m import *", my_globals)
+        self.assertEqual(my_globals["foo"], 1)
+        self.assertEqual(my_globals["_bar"], 2)
+        self.assertEqual(my_globals["__all__"], ["foo", "_bar", "__all__"])
+        self.assertNotIn("baz", my_globals)
+
+    def test_import_star_with_dunder_all_sequence_imports_symbols(self):
+        def my_import(name, globals, locals, fromlist, level):
+            class C:
+                def __getitem__(self, key):
+                    if key == 0:
+                        return "foo"
+                    if key == 1:
+                        return "_bar"
+                    raise IndexError
+
+            result = ModuleType("m")
+            result.foo = 1
+            result._bar = 2
+            result.baz = 99
+            result.__all__ = C()
+            return result
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        exec("from m import *", my_globals)
+        self.assertEqual(my_globals["foo"], 1)
+        self.assertEqual(my_globals["_bar"], 2)
+        self.assertNotIn("baz", my_globals)
+
+    def test_import_star_calls_object_dunder_dict_keys(self):
+        def my_import(name, globals, locals, fromlist, level):
+            class C:
+                def keys(self):
+                    return ["foo", "_bar", "baz_"]
+
+            class M:
+                __dict__ = C()
+
+                def __getattr__(self, key):
+                    if key == "__all__":
+                        raise AttributeError
+                    return f"value for {key}"
+
+            return M()
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        exec("from m import *", my_globals)
+        self.assertEqual(my_globals["foo"], "value for foo")
+        self.assertEqual(my_globals["baz_"], "value for baz_")
+        self.assertNotIn("_bar", my_globals)
+
+    def test_import_star_calls_implicit_globals_dunder_setitem(self):
+        def my_import(name, globals, locals, fromlist, level):
+            result = ModuleType("m")
+            result.foo = 88
+            result.bar = 77
+            return result
+
+        class G(dict):
+            def __init__(self):
+                self.setitem_keys = []
+
+            def __setitem__(self, key, value):
+                dict.__setitem__(self, key, value)
+                self.setitem_keys.append(key)
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+        my_locals = G()
+
+        exec("from m import *", my_globals, my_locals)
+        self.assertEqual(my_locals["foo"], 88)
+        self.assertEqual(my_locals["bar"], 77)
+        self.assertEqual(sorted(my_locals.setitem_keys), ["bar", "foo"])
+        self.assertNotIn("foo", my_globals)
+        self.assertNotIn("bar", my_globals)
+
+    def test_import_star_with_object_without_dunder_dict_raises_import_errro(self):
+        def my_import(name, globals, locals, fromlist, level):
+            class C:
+                def __getattribute__(self, key):
+                    if key == "__dict__":
+                        raise AttributeError
+                    return object.__getattribute__(self, key)
+
+            return C()
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        with self.assertRaisesRegex(
+            ImportError, r"from-import-\* object has no __dict__ and no __all__"
+        ):
+            exec("from m import *", my_globals)
+
+
 if __name__ == "__main__":
     unittest.main()

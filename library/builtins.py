@@ -1190,6 +1190,23 @@ def _exception_new(mod_name: str, exc_name: str, base, type_dict) -> type:
 _formatter = None
 
 
+def _import_all_from(globals, obj):
+    skip_underscore_names = False
+    try:
+        all = obj.__all__
+    except AttributeError:
+        try:
+            dict = obj.__dict__
+        except AttributeError:
+            raise ImportError("from-import-* object has no __dict__ and no __all__")
+        all = dict.keys()
+        skip_underscore_names = True
+    for name in all:
+        if skip_underscore_names and name and name[0] == "_":
+            continue
+        globals[name] = getattr(obj, name)
+
+
 def _int_format_hexadecimal(value):
     assert value >= 0
     if value == 0:

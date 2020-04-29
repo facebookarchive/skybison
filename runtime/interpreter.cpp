@@ -2216,48 +2216,91 @@ HANDLER_INLINE Continue Interpreter::doYieldValue(Thread*, word) {
   return Continue::YIELD;
 }
 
-static Continue implicitGlobalsAtPut(Thread* thread, Frame* frame,
-                                     const Object& implicit_globals_obj,
-                                     const Str& name, const Object& value) {
+static RawObject implicitGlobalsAtPut(Thread* thread, Frame* frame,
+                                      const Object& implicit_globals_obj,
+                                      const Str& name, const Object& value) {
   HandleScope scope(thread);
   if (implicit_globals_obj.isNoneType()) {
     Module module(&scope, frame->function().moduleObject());
     moduleAtPut(thread, module, name, value);
-    return Continue::NEXT;
+    return NoneType::object();
   }
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
     dictAtPutByStr(thread, implicit_globals, name, value);
   } else {
-    if (objectSetItem(thread, implicit_globals_obj, name, value)
-            .isErrorException()) {
-      return Continue::UNWIND;
-    }
+    Object result(&scope,
+                  objectSetItem(thread, implicit_globals_obj, name, value));
+    if (result.isErrorException()) return *result;
   }
-  return Continue::NEXT;
+  return NoneType::object();
 }
 
-Continue Interpreter::moduleImportAllFrom(Thread* thread, Frame* frame,
-                                          const Module& module,
-                                          const Object& implicit_globals) {
+static RawObject callImportAllFrom(Thread* thread, Frame* frame,
+                                   const Object& object) {
   HandleScope scope(thread);
-  List module_keys(&scope, moduleKeys(thread, module));
-  Str symbol_name(&scope, Str::empty());
-  Object value(&scope, NoneType::object());
-  for (word i = 0; i < module_keys.numItems(); i++) {
-    CHECK(module_keys.at(i).isStr(), "Symbol is not a String");
-    symbol_name = module_keys.at(i);
-    // Load all the symbols not starting with '_'
-    if (symbol_name.charAt(0) != '_') {
-      value = moduleAt(thread, module, symbol_name);
-      DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
-      if (implicitGlobalsAtPut(thread, frame, implicit_globals, symbol_name,
-                               value) == Continue::UNWIND) {
-        return Continue::UNWIND;
-      }
-    }
+  Object implicit_globals(&scope, frame->implicitGlobals());
+  if (implicit_globals.isNoneType()) {
+    Module module(&scope, frame->function().moduleObject());
+    implicit_globals = module.moduleProxy();
   }
-  return Continue::NEXT;
+  return thread->invokeFunction2(ID(builtins), ID(_import_all_from),
+                                 implicit_globals, object);
+}
+
+RawObject Interpreter::importAllFrom(Thread* thread, Frame* frame,
+                                     const Object& object) {
+  // We have a short-cut if `object` is a module and `__all__` does not exist
+  // or is a tuple or list; otherwise call `builtins._import_all_from`.
+  if (!object.isModule()) {
+    return callImportAllFrom(thread, frame, object);
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  bool skip_names_with_underscore_prefix = false;
+  Module module(&scope, *object);
+  Object dunder_all(&scope, runtime->symbols()->at(ID(__all__)));
+  Object all_obj(&scope, moduleGetAttribute(thread, module, dunder_all));
+  if (all_obj.isErrorException()) return *all_obj;
+  if (all_obj.isErrorNotFound()) {
+    all_obj = moduleKeys(thread, module);
+    skip_names_with_underscore_prefix = true;
+  }
+  Tuple all(&scope, runtime->emptyTuple());
+  word all_len;
+  if (all_obj.isList()) {
+    all = List::cast(*all_obj).items();
+    all_len = List::cast(*all_obj).numItems();
+  } else if (all_obj.isTuple()) {
+    all = Tuple::cast(*all_obj);
+    all_len = all.length();
+  } else {
+    return callImportAllFrom(thread, frame, object);
+  }
+
+  Object implicit_globals(&scope, frame->implicitGlobals());
+  Object name(&scope, NoneType::object());
+  Str interned(&scope, Str::empty());
+  Object value(&scope, NoneType::object());
+  for (word i = 0; i < all_len; i++) {
+    name = all.at(i);
+    interned = attributeName(thread, name);
+    if (interned.isErrorException()) return *interned;
+    if (skip_names_with_underscore_prefix && interned.charLength() > 0 &&
+        interned.charAt(0) == '_') {
+      continue;
+    }
+    value = moduleGetAttribute(thread, module, interned);
+    if (value.isErrorNotFound()) {
+      return moduleRaiseAttributeError(thread, module, interned);
+    }
+    if (value.isErrorException()) return *value;
+    value =
+        implicitGlobalsAtPut(thread, frame, implicit_globals, interned, value);
+    if (value.isErrorException()) return *value;
+  }
+  return NoneType::object();
 }
 
 HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
@@ -2268,9 +2311,11 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
   // that's not necessary anymore. You can't import * inside a function
   // body anymore.
 
-  Object implicit_globals(&scope, frame->implicitGlobals());
-  Module module(&scope, frame->popValue());
-  return moduleImportAllFrom(thread, frame, module, implicit_globals);
+  Object object(&scope, frame->popValue());
+  if (importAllFrom(thread, frame, object).isErrorException()) {
+    return Continue::UNWIND;
+  }
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doPopBlock(Thread* thread, word) {
@@ -2341,7 +2386,11 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Str name(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
   Object implicit_globals(&scope, frame->implicitGlobals());
-  return implicitGlobalsAtPut(thread, frame, implicit_globals, name, value);
+  if (implicitGlobalsAtPut(thread, frame, implicit_globals, name, value)
+          .isErrorException()) {
+    return Continue::UNWIND;
+  }
+  return Continue::NEXT;
 }
 
 static Continue raiseUndefinedName(Thread* thread, const Object& name) {

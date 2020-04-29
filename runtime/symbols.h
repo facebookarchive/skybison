@@ -123,6 +123,7 @@ class Runtime;
   V(__aenter__)                                                                \
   V(__aexit__)                                                                 \
   V(__aiter__)                                                                 \
+  V(__all__)                                                                   \
   V(__and__)                                                                   \
   V(__anext__)                                                                 \
   V(__annotations__)                                                           \
@@ -327,6 +328,7 @@ class Runtime;
   V(_function_guard)                                                           \
   V(_has_read1)                                                                \
   V(_imp)                                                                      \
+  V(_import_all_from)                                                          \
   V(_index)                                                                    \
   V(_init)                                                                     \
   V(_instance)                                                                 \

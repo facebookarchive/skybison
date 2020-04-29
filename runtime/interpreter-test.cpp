@@ -3406,30 +3406,6 @@ b = baz()
   EXPECT_FALSE(result.isError());
 }
 
-TEST_F(InterpreterTest, ModuleImportAllImportsAllPublicSymbols) {
-  HandleScope scope(thread_);
-
-  // Create Module
-  Object name(&scope, runtime_->newStrFromCStr("foo"));
-  Module module(&scope, runtime_->newModule(name));
-
-  // Add symbols
-  Str symbol_str1(&scope, Runtime::internStrFromCStr(thread_, "public_symbol"));
-  Str symbol_str2(&scope,
-                  Runtime::internStrFromCStr(thread_, "_private_symbol"));
-  moduleAtPut(thread_, module, symbol_str1, symbol_str1);
-  moduleAtPut(thread_, module, symbol_str2, symbol_str2);
-
-  // Import public symbols to dictionary
-  Dict symbols_dict(&scope, runtime_->newDict());
-  Interpreter::moduleImportAllFrom(thread_, thread_->currentFrame(), module,
-                                   symbols_dict);
-  EXPECT_EQ(symbols_dict.numItems(), 1);
-
-  Str result(&scope, dictAtByStr(thread_, symbols_dict, symbol_str1));
-  EXPECT_TRUE(isStrEqualsCStr(*result, "public_symbol"));
-}
-
 TEST_F(InterpreterTest, ImportCallsBuiltinsDunderImport) {
   ASSERT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 import builtins
