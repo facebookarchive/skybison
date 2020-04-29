@@ -209,7 +209,6 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
 
   Runtime* runtime = thread->runtime();
   runtime->cacheBuildClass(thread, module);
-  runtime->cacheDunderImport(thread, module);
   HandleScope scope(thread);
 
   // Add module variables

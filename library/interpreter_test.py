@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import unittest
+from types import ModuleType, SimpleNamespace
 from unittest import skipIf
 from unittest.mock import Mock
 
@@ -334,6 +335,26 @@ class IntepreterTest(unittest.TestCase):
         # The loaded cache doesn't match `c` since its layout id has changed.
         result = cache_attribute(c)
         self.assertIs(result, 200)
+
+
+class ImportNameTests(unittest.TestCase):
+    def test_import_name_calls_dunder_builtins_dunder_import(self):
+        def my_import(name, globals, locals, fromlist, level):
+            return SimpleNamespace(baz=42, bam=(name, fromlist, level))
+
+        builtins = ModuleType("builtins")
+        builtins.__import__ = my_import
+        my_globals = {"__builtins__": builtins}
+
+        exec("from ..foo.bar import baz, bam", my_globals)
+        self.assertEqual(my_globals["baz"], 42)
+        self.assertEqual(my_globals["bam"], ("foo.bar", ("baz", "bam"), 2))
+
+    def test_import_name_without_dunder_import_raises_import_error(self):
+        my_builtins = ModuleType("my_builtins")
+        my_globals = {"__builtins__": my_builtins}
+        with self.assertRaisesRegex(ImportError, "__import__ not found"):
+            exec("import foo", my_globals)
 
 
 if __name__ == "__main__":

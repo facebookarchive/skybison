@@ -3667,7 +3667,6 @@ HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
   Code code(&scope, frame->code());
   Object name(&scope, Tuple::cast(code.names()).at(arg));
@@ -3680,10 +3679,13 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   // ignore the value and this only matters if `__import__` is replaced.
   Object locals(&scope, NoneType::object());
 
-  // Call builtins.__import__(name, globals, locals, fromlist, level).
-  ValueCell dunder_import_cell(&scope, runtime->dunderImport());
-  DCHECK(!dunder_import_cell.isUnbound(), "builtins module not initialized");
-  Object dunder_import(&scope, dunder_import_cell.value());
+  // Call __builtins__.__import__(name, globals, locals, fromlist, level).
+  Module builtins(&scope, builtinsModule(thread, module));
+  Object dunder_import(&scope, moduleAtById(thread, builtins, ID(__import__)));
+  if (dunder_import.isErrorNotFound()) {
+    thread->raiseWithFmt(LayoutId::kImportError, "__import__ not found");
+    return Continue::UNWIND;
+  }
 
   frame->pushValue(*dunder_import);
   frame->pushValue(*name);

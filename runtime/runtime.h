@@ -279,7 +279,6 @@ class Runtime {
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
   void cacheBuildClass(Thread* thread, const Module& builtins);
-  void cacheDunderImport(Thread* thread, const Module& builtins);
   void cacheBuiltinsInstances(Thread* thread);
   void cacheSysInstances(Thread* thread, const Module& sys);
 
@@ -413,8 +412,6 @@ class Runtime {
   RawObject buildClass() { return build_class_; }
 
   RawObject displayHook() { return display_hook_; }
-
-  RawObject dunderImport() { return dunder_import_; }
 
   RawObject modules() { return modules_; }
 
@@ -950,7 +947,6 @@ class Runtime {
   // Cached instances
   RawObject build_class_ = NoneType::object();
   RawObject display_hook_ = NoneType::object();
-  RawObject dunder_import_ = NoneType::object();
   RawObject ellipsis_ = NoneType::object();
   RawObject empty_frozen_set_ = NoneType::object();
   RawObject empty_mutable_bytes_ = NoneType::object();
