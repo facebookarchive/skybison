@@ -333,6 +333,17 @@ class IntepreterTest(unittest.TestCase):
         C.keys.assert_called_once()
         self.assertEqual(C.__getitem__.call_count, 2)
 
+    def test_callfunction_kw_does_not_modify_actual_names(self):
+        def foo(a, b):
+            return (a, b)
+
+        def bar():
+            return foo(b="b", a="a")
+
+        # Call the same function twice to see the actual names are preserved.
+        self.assertEqual(bar(), ("a", "b"))
+        self.assertEqual(bar(), ("a", "b"))
+
     def test_cache_misses_after_dunder_class_update(self):
         class C:
             def foo(self):

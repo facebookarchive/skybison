@@ -156,26 +156,30 @@ static RawObject checkArgs(Thread* thread, const Function& function,
   word posonlyargcount = RawCode::cast(function.code()).posonlyargcount();
   word num_actuals = actual_names.length();
   // Helper function to swap actual arguments and names
-  auto swap = [&kw_arg_base, &actual_names](word arg_pos1,
-                                            word arg_pos2) -> void {
+  auto swap = [&kw_arg_base](RawMutableTuple ordered_names, word arg_pos1,
+                             word arg_pos2) -> void {
     RawObject tmp = *(kw_arg_base - arg_pos1);
     *(kw_arg_base - arg_pos1) = *(kw_arg_base - arg_pos2);
     *(kw_arg_base - arg_pos2) = tmp;
-    tmp = actual_names.at(arg_pos1);
-    actual_names.atPut(arg_pos1, actual_names.at(arg_pos2));
-    actual_names.atPut(arg_pos2, tmp);
+    tmp = ordered_names.at(arg_pos1);
+    ordered_names.atPut(arg_pos1, ordered_names.at(arg_pos2));
+    ordered_names.atPut(arg_pos2, tmp);
   };
   // Helper function to retrieve argument
   auto arg_at = [&kw_arg_base](word idx) -> RawObject& {
     return *(kw_arg_base - idx);
   };
   HandleScope scope(thread);
+  // In case the order of the parameters in the call does not match the
+  // declaration order, create a copy of `actual_names` to adjust it to match
+  // `formal_names`.
+  Tuple ordered_names(&scope, *actual_names);
   Object formal_name(&scope, NoneType::object());
   for (word arg_pos = 0; arg_pos < num_actuals; arg_pos++) {
     word formal_pos = arg_pos + start;
     formal_name = formal_names.at(formal_pos);
     RawObject result =
-        Runtime::objectEquals(thread, actual_names.at(arg_pos), *formal_name);
+        Runtime::objectEquals(thread, ordered_names.at(arg_pos), *formal_name);
     if (result.isErrorException()) return result;
     if (result == Bool::trueObj()) {
       if (formal_pos >= posonlyargcount) {
@@ -190,14 +194,25 @@ static RawObject checkArgs(Thread* thread, const Function& function,
           &formal_name);
     }
     // Mismatch.  Try to fix it.  Note: args grow down.
+    // TODO(T66307914): Avoid heap allocation here.
+    // In case `actual_names` needs to be adjusted, create a copy to avoid
+    // modifying `actual_names`.
+    if (ordered_names == actual_names) {
+      word actual_names_length = actual_names.length();
+      ordered_names = thread->runtime()->newMutableTuple(actual_names_length);
+      for (word i = 0; i < actual_names_length; ++i) {
+        ordered_names.atPut(i, actual_names.at(i));
+      }
+    }
+    DCHECK(ordered_names.isMutableTuple(), "MutableTuple is expected");
     bool swapped = false;
     // Look for expected Formal name in Actuals tuple.
     for (word i = arg_pos + 1; i < num_actuals; i++) {
-      result = Runtime::objectEquals(thread, actual_names.at(i), *formal_name);
+      result = Runtime::objectEquals(thread, ordered_names.at(i), *formal_name);
       if (result.isErrorException()) return result;
       if (result == Bool::trueObj()) {
-        // Found it.  Swap both the stack and the actual_names tuple.
-        swap(arg_pos, i);
+        // Found it.  Swap both the stack and the ordered_names tuple.
+        swap(MutableTuple::cast(*ordered_names), arg_pos, i);
         swapped = true;
         break;
       }
@@ -212,14 +227,14 @@ static RawObject checkArgs(Thread* thread, const Function& function,
       for (word i = arg_pos + 1; i < num_actuals; i++) {
         if (arg_at(i).isError()) {
           // Found an uninitialized slot.  Use it to save current actual.
-          swap(arg_pos, i);
+          swap(MutableTuple::cast(*ordered_names), arg_pos, i);
           break;
         }
       }
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos).isError()) {
         Object param_name(&scope, swapped ? formal_names.at(arg_pos)
-                                          : actual_names.at(arg_pos));
+                                          : ordered_names.at(arg_pos));
         return thread->raiseWithFmt(
             LayoutId::kTypeError,
             "%F() got an unexpected keyword argument '%S'", &function,
