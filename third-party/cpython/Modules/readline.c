@@ -1338,6 +1338,12 @@ PyInit_readline(void)
     PyObject *m;
     readlinestate *mod_state;
 
+    m = PyState_FindModule(&readlinemodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
 #ifdef __APPLE__
     if (strncmp(rl_library_version, libedit_version_tag, strlen(libedit_version_tag)) == 0) {
         using_libedit_emulation = 1;
@@ -1371,6 +1377,7 @@ PyInit_readline(void)
     PyOS_ReadlineFunctionPointer = call_readline;
     setup_readline(mod_state);
 
+    PyState_AddModule(m, &readlinemodule);
     return m;
 
 error:
