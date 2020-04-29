@@ -1364,6 +1364,11 @@ static Bytecode currentBytecode(Thread* thread) {
   return static_cast<Bytecode>(frame->bytecode().byteAt(pc));
 }
 
+static void rewriteCurrentBytecode(Frame* frame, Bytecode bytecode) {
+  word pc = frame->virtualPC() - kCodeUnitSize;
+  MutableBytes::cast(frame->bytecode()).byteAtPut(pc, bytecode);
+}
+
 HANDLER_INLINE Continue Interpreter::doInvalidBytecode(Thread* thread, word) {
   Bytecode bc = currentBytecode(thread);
   UNREACHABLE("bytecode '%s'", kBytecodeNames[bc]);
@@ -1501,11 +1506,9 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     ICState next_cache_state =
         icUpdateAttr(thread, caches, index, container.layoutId(), getitem,
                      get_item_name, dependent);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? BINARY_SUBSCR_MONOMORPHIC
-                               : BINARY_SUBSCR_POLYMORPHIC);
+    rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                      ? BINARY_SUBSCR_MONOMORPHIC
+                                      : BINARY_SUBSCR_POLYMORPHIC);
   }
   frame->setValueAt(*getitem, 1);
   frame->insertValueAt(*container, 1);
@@ -1715,11 +1718,9 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
     ICState next_cache_state =
         icUpdateAttr(thread, caches, arg, container.layoutId(), setitem,
                      set_item_name, dependent);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? STORE_SUBSCR_MONOMORPHIC
-                               : STORE_SUBSCR_POLYMORPHIC);
+    rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                      ? STORE_SUBSCR_MONOMORPHIC
+                                      : STORE_SUBSCR_POLYMORPHIC);
   }
   Object value(&scope, frame->popValue());
   if (callMethod3(thread, frame, setitem, container, key, value)
@@ -2474,11 +2475,9 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
       Function dependent(&scope, frame->function());
       ICState next_cache_state = icUpdateAttr(
           thread, caches, index, iter.layoutId(), next, next_name, dependent);
-      word pc = frame->currentPC();
-      RawMutableBytes bytecode = frame->bytecode();
-      bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                                 ? FOR_ITER_MONOMORPHIC
-                                 : FOR_ITER_POLYMORPHIC);
+      rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                        ? FOR_ITER_MONOMORPHIC
+                                        : FOR_ITER_POLYMORPHIC);
     }
     result = Interpreter::callMethod1(thread, frame, next, iter);
   } else {
@@ -2574,9 +2573,7 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
 static Continue retryForIterAnamorphic(Thread* thread, word arg) {
   // Revert the opcode, and retry FOR_ITER_CACHED.
   Frame* frame = thread->currentFrame();
-  word pc = frame->currentPC();
-  RawMutableBytes bytecode = frame->bytecode();
-  bytecode.byteAtPut(pc, FOR_ITER_ANAMORPHIC);
+  rewriteCurrentBytecode(frame, FOR_ITER_ANAMORPHIC);
   return Interpreter::doForIterAnamorphic(thread, arg);
 }
 
@@ -2731,23 +2728,21 @@ HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject iter = frame->topValue();
   LayoutId iter_layout_id = iter.layoutId();
-  word pc = frame->virtualPC() - kCodeUnitSize;
-  RawMutableBytes bytecode = frame->bytecode();
   switch (iter_layout_id) {
     case LayoutId::kListIterator:
-      bytecode.byteAtPut(pc, FOR_ITER_LIST);
+      rewriteCurrentBytecode(frame, FOR_ITER_LIST);
       return doForIterList(thread, arg);
     case LayoutId::kDictKeyIterator:
-      bytecode.byteAtPut(pc, FOR_ITER_DICT);
+      rewriteCurrentBytecode(frame, FOR_ITER_DICT);
       return doForIterDict(thread, arg);
     case LayoutId::kTupleIterator:
-      bytecode.byteAtPut(pc, FOR_ITER_TUPLE);
+      rewriteCurrentBytecode(frame, FOR_ITER_TUPLE);
       return doForIterTuple(thread, arg);
     case LayoutId::kRangeIterator:
-      bytecode.byteAtPut(pc, FOR_ITER_RANGE);
+      rewriteCurrentBytecode(frame, FOR_ITER_RANGE);
       return doForIterRange(thread, arg);
     case LayoutId::kStrIterator:
-      bytecode.byteAtPut(pc, FOR_ITER_STR);
+      rewriteCurrentBytecode(frame, FOR_ITER_STR);
       return doForIterStr(thread, arg);
     default:
       break;
@@ -2888,19 +2883,17 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
   Tuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
-  word pc = frame->currentPC();
-  RawMutableBytes bytecode = frame->bytecode();
   // TODO(T59400994): Clean up when storeAttrSetLocation can return a
   // StoreAttrKind.
   if (ic_state == ICState::kAnamorphic) {
     if (saved_layout_id == receiver_layout_id) {
       // No layout transition.
       if (is_in_object) {
-        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE);
+        rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE);
         icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
                      dependent);
       } else {
-        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_OVERFLOW);
+        rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE_OVERFLOW);
         icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
                      dependent);
       }
@@ -2914,22 +2907,22 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
           &scope,
           SmallInt::fromWord(offset << Header::kLayoutIdBits | new_layout_id));
       if (is_in_object) {
-        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_UPDATE);
+        rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE_UPDATE);
         icUpdateAttr(thread, caches, arg, saved_layout_id, layout_offset, name,
                      dependent);
       } else {
-        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_OVERFLOW_UPDATE);
+        rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE_OVERFLOW_UPDATE);
         icUpdateAttr(thread, caches, arg, saved_layout_id, layout_offset, name,
                      dependent);
       }
     }
   } else {
-    DCHECK(bytecode.byteAt(pc) == STORE_ATTR_INSTANCE ||
-               bytecode.byteAt(pc) == STORE_ATTR_INSTANCE_OVERFLOW ||
-               bytecode.byteAt(pc) == STORE_ATTR_POLYMORPHIC,
+    DCHECK(currentBytecode(thread) == STORE_ATTR_INSTANCE ||
+               currentBytecode(thread) == STORE_ATTR_INSTANCE_OVERFLOW ||
+               currentBytecode(thread) == STORE_ATTR_POLYMORPHIC,
            "unexpected opcode");
     if (saved_layout_id == receiver_layout_id) {
-      bytecode.byteAtPut(pc, STORE_ATTR_POLYMORPHIC);
+      rewriteCurrentBytecode(frame, STORE_ATTR_POLYMORPHIC);
       icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
                    dependent);
     }
@@ -2950,11 +2943,9 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrAnamorphic(Thread* thread,
 static Continue retryStoreAttrCached(Thread* thread, word arg) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
+  rewriteCurrentBytecode(frame, STORE_ATTR_ANAMORPHIC);
   RawTuple caches = frame->caches();
-  word pc = frame->virtualPC() - kCodeUnitSize;
   word index = arg * kIcPointersPerEntry;
-  RawMutableBytes bytecode = frame->bytecode();
-  bytecode.byteAtPut(pc, STORE_ATTR_ANAMORPHIC);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
   return Interpreter::doStoreAttrAnamorphic(thread, arg);
@@ -3360,32 +3351,30 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
   Tuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
-  word pc = frame->currentPC();
-  RawMutableBytes bytecode = frame->bytecode();
   if (ic_state == ICState::kAnamorphic) {
     switch (kind) {
       case LoadAttrKind::kInstanceOffset:
-        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE);
+        rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceFunction:
-        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD);
+        rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceProperty:
-        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
+        rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_PROPERTY);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceType:
-        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE);
+        rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceTypeDescr:
-        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE_DESCR);
+        rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE_DESCR);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
@@ -3403,14 +3392,15 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
         UNREACHABLE("kinds should have been handled before");
     }
   } else {
-    DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_INSTANCE ||
-               bytecode.byteAt(pc) == LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD ||
-               bytecode.byteAt(pc) == LOAD_ATTR_POLYMORPHIC,
-           "unexpected opcode");
+    DCHECK(
+        currentBytecode(thread) == LOAD_ATTR_INSTANCE ||
+            currentBytecode(thread) == LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD ||
+            currentBytecode(thread) == LOAD_ATTR_POLYMORPHIC,
+        "unexpected opcode");
     switch (kind) {
       case LoadAttrKind::kInstanceOffset:
       case LoadAttrKind::kInstanceFunction:
-        bytecode.byteAtPut(pc, LOAD_ATTR_POLYMORPHIC);
+        rewriteCurrentBytecode(frame, LOAD_ATTR_POLYMORPHIC);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
@@ -3493,11 +3483,9 @@ NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread,
                                                        word arg) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
+  rewriteCurrentBytecode(frame, LOAD_ATTR_ANAMORPHIC);
   RawTuple caches = frame->caches();
-  word pc = frame->virtualPC() - kCodeUnitSize;
   word index = arg * kIcPointersPerEntry;
-  RawMutableBytes bytecode = frame->bytecode();
-  bytecode.byteAtPut(pc, LOAD_ATTR_ANAMORPHIC);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
   return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kAnamorphic);
@@ -4658,14 +4646,12 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
   ICState next_ic_state = icUpdateAttr(thread, caches, arg, receiver.layoutId(),
                                        location, name, dependent);
 
-  word pc = frame->currentPC();
-  RawMutableBytes bytecode = frame->bytecode();
   switch (next_ic_state) {
     case ICState::kMonomorphic:
-      bytecode.byteAtPut(pc, LOAD_METHOD_INSTANCE_FUNCTION);
+      rewriteCurrentBytecode(frame, LOAD_METHOD_INSTANCE_FUNCTION);
       break;
     case ICState::kPolymorphic:
-      bytecode.byteAtPut(pc, LOAD_METHOD_POLYMORPHIC);
+      rewriteCurrentBytecode(frame, LOAD_METHOD_POLYMORPHIC);
       break;
     case ICState::kAnamorphic:
       UNREACHABLE("next_ic_state cannot be anamorphic");
@@ -4741,11 +4727,9 @@ Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
     ICState next_cache_state =
         icUpdateAttr(thread, caches, arg, container.layoutId(), method,
                      dunder_contains_name, dependent);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? COMPARE_IN_MONOMORPHIC
-                               : COMPARE_IN_POLYMORPHIC);
+    rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                      ? COMPARE_IN_MONOMORPHIC
+                                      : COMPARE_IN_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*result);
@@ -4756,24 +4740,22 @@ HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
                                                            word arg) {
   Frame* frame = thread->currentFrame();
   RawObject container = frame->peek(0);
-  word pc = frame->currentPC();
-  RawMutableBytes bytecode = frame->bytecode();
   switch (container.layoutId()) {
     case LayoutId::kSmallStr:
     case LayoutId::kLargeStr:
       if (frame->peek(1).isStr()) {
-        bytecode.byteAtPut(pc, COMPARE_IN_STR);
+        rewriteCurrentBytecode(frame, COMPARE_IN_STR);
         return doCompareInStr(thread, arg);
       }
       return compareInUpdateCache(thread, arg);
     case LayoutId::kTuple:
-      bytecode.byteAtPut(pc, COMPARE_IN_TUPLE);
+      rewriteCurrentBytecode(frame, COMPARE_IN_TUPLE);
       return doCompareInTuple(thread, arg);
     case LayoutId::kDict:
-      bytecode.byteAtPut(pc, COMPARE_IN_DICT);
+      rewriteCurrentBytecode(frame, COMPARE_IN_DICT);
       return doCompareInDict(thread, arg);
     case LayoutId::kList:
-      bytecode.byteAtPut(pc, COMPARE_IN_LIST);
+      rewriteCurrentBytecode(frame, COMPARE_IN_LIST);
       return doCompareInList(thread, arg);
     default:
       return compareInUpdateCache(thread, arg);
@@ -4948,11 +4930,9 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
         thread, caches, arg, left_layout_id, right_layout_id, method, flags);
     icInsertCompareOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? COMPARE_OP_MONOMORPHIC
-                               : COMPARE_OP_POLYMORPHIC);
+    rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                      ? COMPARE_OP_MONOMORPHIC
+                                      : COMPARE_OP_POLYMORPHIC);
   }
   frame->pushValue(result);
   return Continue::NEXT;
@@ -5117,26 +5097,24 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
   RawObject left = frame->peek(1);
   RawObject right = frame->peek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
     switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
       case CompareOp::EQ:
-        bytecode.byteAtPut(pc, COMPARE_EQ_SMALLINT);
+        rewriteCurrentBytecode(frame, COMPARE_EQ_SMALLINT);
         return doCompareEqSmallInt(thread, arg);
       case CompareOp::GT:
-        bytecode.byteAtPut(pc, COMPARE_GT_SMALLINT);
+        rewriteCurrentBytecode(frame, COMPARE_GT_SMALLINT);
         return doCompareGtSmallInt(thread, arg);
       case CompareOp::LT:
-        bytecode.byteAtPut(pc, COMPARE_LT_SMALLINT);
+        rewriteCurrentBytecode(frame, COMPARE_LT_SMALLINT);
         return doCompareLtSmallInt(thread, arg);
       case CompareOp::GE:
-        bytecode.byteAtPut(pc, COMPARE_GE_SMALLINT);
+        rewriteCurrentBytecode(frame, COMPARE_GE_SMALLINT);
         return doCompareGeSmallInt(thread, arg);
       case CompareOp::NE:
-        bytecode.byteAtPut(pc, COMPARE_NE_SMALLINT);
+        rewriteCurrentBytecode(frame, COMPARE_NE_SMALLINT);
         return doCompareNeSmallInt(thread, arg);
       case CompareOp::LE:
-        bytecode.byteAtPut(pc, COMPARE_LE_SMALLINT);
+        rewriteCurrentBytecode(frame, COMPARE_LE_SMALLINT);
         return doCompareLeSmallInt(thread, arg);
       default:
         return compareOpUpdateCache(thread, arg);
@@ -5145,9 +5123,7 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
   if (left.isStr() && right.isStr() &&
       static_cast<CompareOp>(originalArg(frame->function(), arg)) ==
           CompareOp::EQ) {
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, COMPARE_EQ_STR);
+    rewriteCurrentBytecode(frame, COMPARE_EQ_STR);
     return doCompareEqStr(thread, arg);
   }
   return compareOpUpdateCache(thread, arg);
@@ -5172,11 +5148,9 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
         thread, caches, arg, left_layout_id, right_layout_id, method, flags);
     icInsertInplaceOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? INPLACE_OP_MONOMORPHIC
-                               : INPLACE_OP_POLYMORPHIC);
+    rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                      ? INPLACE_OP_MONOMORPHIC
+                                      : INPLACE_OP_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(result);
@@ -5263,11 +5237,9 @@ HANDLER_INLINE
 Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
     switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
       case BinaryOp::ADD:
-        bytecode.byteAtPut(pc, INPLACE_ADD_SMALLINT);
+        rewriteCurrentBytecode(frame, INPLACE_ADD_SMALLINT);
         return doInplaceAddSmallInt(thread, arg);
       default:
         return inplaceOpUpdateCache(thread, arg);
@@ -5295,11 +5267,9 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
         thread, caches, arg, left_layout_id, right_layout_id, method, flags);
     icInsertBinaryOpDependencies(thread, function, left_layout_id,
                                  right_layout_id, op);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? BINARY_OP_MONOMORPHIC
-                               : BINARY_OP_POLYMORPHIC);
+    rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
+                                      ? BINARY_OP_MONOMORPHIC
+                                      : BINARY_OP_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*result);
@@ -5471,23 +5441,21 @@ HANDLER_INLINE
 Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
     switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
       case BinaryOp::ADD:
-        bytecode.byteAtPut(pc, BINARY_ADD_SMALLINT);
+        rewriteCurrentBytecode(frame, BINARY_ADD_SMALLINT);
         return doBinaryAddSmallInt(thread, arg);
       case BinaryOp::AND:
-        bytecode.byteAtPut(pc, BINARY_AND_SMALLINT);
+        rewriteCurrentBytecode(frame, BINARY_AND_SMALLINT);
         return doBinaryAndSmallInt(thread, arg);
       case BinaryOp::FLOORDIV:
-        bytecode.byteAtPut(pc, BINARY_FLOORDIV_SMALLINT);
+        rewriteCurrentBytecode(frame, BINARY_FLOORDIV_SMALLINT);
         return doBinaryFloordivSmallInt(thread, arg);
       case BinaryOp::SUB:
-        bytecode.byteAtPut(pc, BINARY_SUB_SMALLINT);
+        rewriteCurrentBytecode(frame, BINARY_SUB_SMALLINT);
         return doBinarySubSmallInt(thread, arg);
       case BinaryOp::OR:
-        bytecode.byteAtPut(pc, BINARY_OR_SMALLINT);
+        rewriteCurrentBytecode(frame, BINARY_OR_SMALLINT);
         return doBinaryOrSmallInt(thread, arg);
       default:
         return binaryOpUpdateCache(thread, arg);
