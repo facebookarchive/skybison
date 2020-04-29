@@ -989,6 +989,53 @@ RawObject Runtime::newTuple(word length) {
   return heap()->createTuple(length);
 }
 
+RawObject Runtime::newTupleWith1(const Object& item1) {
+  RawMutableTuple result = MutableTuple::cast(newMutableTuple(1));
+  result.atPut(0, *item1);
+  return result.becomeImmutable();
+}
+
+RawObject Runtime::newTupleWith2(const Object& item1, const Object& item2) {
+  RawMutableTuple result = MutableTuple::cast(newMutableTuple(2));
+  result.atPut(0, *item1);
+  result.atPut(1, *item2);
+  return result.becomeImmutable();
+}
+
+RawObject Runtime::newTupleWith3(const Object& item1, const Object& item2,
+                                 const Object& item3) {
+  RawMutableTuple result = MutableTuple::cast(newMutableTuple(3));
+  result.atPut(0, *item1);
+  result.atPut(1, *item2);
+  result.atPut(2, *item3);
+  return result.becomeImmutable();
+}
+
+RawObject Runtime::newTupleWith4(const Object& item1, const Object& item2,
+                                 const Object& item3, const Object& item4) {
+  RawMutableTuple result = MutableTuple::cast(newMutableTuple(4));
+  result.atPut(0, *item1);
+  result.atPut(1, *item2);
+  result.atPut(2, *item3);
+  result.atPut(3, *item4);
+  return result.becomeImmutable();
+}
+
+RawObject Runtime::newTupleWithN(word num_items, const Object* item1, ...) {
+  RawMutableTuple result = MutableTuple::cast(newMutableTuple(num_items));
+  result.atPut(0, **item1);
+
+  va_list args;
+  va_start(args, item1);
+  for (word i = 1; i < num_items; i++) {
+    const Object* item = va_arg(args, const Object*);
+    result.atPut(i, **item);
+  }
+  va_end(args);
+
+  return result.becomeImmutable();
+}
+
 RawObject Runtime::newInt(word value) {
   if (SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);

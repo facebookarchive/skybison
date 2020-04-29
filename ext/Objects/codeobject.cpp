@@ -169,24 +169,17 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
   if (obj.isNoneType() || obj.isEllipsis() || obj.isInt() || obj.isBool() ||
       obj.isBytes() || obj.isStr() || obj.isCode()) {
-    Tuple key(&scope, runtime->newTuple(2));
-    key.atPut(0, runtime->typeOf(*obj));
-    key.atPut(1, *obj);
-    return *key;
+    Object type(&scope, runtime->typeOf(*obj));
+    return runtime->newTupleWith2(type, obj);
   }
   if (obj.isFloat()) {
     double d = Float::cast(*obj).value();
+    Object type(&scope, runtime->typeOf(*obj));
     if (d == 0.0 && std::signbit(d)) {
-      Tuple key(&scope, runtime->newTuple(3));
-      key.atPut(0, runtime->typeOf(*obj));
-      key.atPut(1, *obj);
-      key.atPut(2, NoneType::object());
-      return *key;
+      Object none(&scope, NoneType::object());
+      return runtime->newTupleWith3(type, obj, none);
     }
-    Tuple key(&scope, runtime->newTuple(2));
-    key.atPut(0, runtime->typeOf(*obj));
-    key.atPut(1, *obj);
-    return *key;
+    return runtime->newTupleWith2(type, obj);
   }
   if (obj.isComplex()) {
     Complex c(&scope, *obj);
@@ -201,31 +194,20 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
     bool imag_negzero = z.imag == 0.0 && std::signbit(z.imag);
     // use True, False and None singleton as tags for the real and imag sign,
     // to make tuples different
+    Object type(&scope, runtime->typeOf(*obj));
     if (real_negzero && imag_negzero) {
-      Tuple key(&scope, runtime->newTuple(3));
-      key.atPut(0, runtime->typeOf(*obj));
-      key.atPut(1, *obj);
-      key.atPut(2, Bool::trueObj());
-      return *key;
+      Object tru(&scope, Bool::trueObj());
+      return runtime->newTupleWith3(type, obj, tru);
     }
     if (imag_negzero) {
-      Tuple key(&scope, runtime->newTuple(3));
-      key.atPut(0, runtime->typeOf(*obj));
-      key.atPut(1, *obj);
-      key.atPut(2, Bool::falseObj());
-      return *key;
+      Object fals(&scope, Bool::falseObj());
+      return runtime->newTupleWith3(type, obj, fals);
     }
     if (real_negzero) {
-      Tuple key(&scope, runtime->newTuple(3));
-      key.atPut(0, runtime->typeOf(*obj));
-      key.atPut(1, *obj);
-      key.atPut(2, NoneType::object());
-      return *key;
+      Object none(&scope, NoneType::object());
+      return runtime->newTupleWith3(type, obj, none);
     }
-    Tuple key(&scope, runtime->newTuple(2));
-    key.atPut(0, runtime->typeOf(*obj));
-    key.atPut(1, *obj);
-    return *key;
+    return runtime->newTupleWith2(type, obj);
   }
   if (obj.isTuple()) {
     Tuple tuple(&scope, *obj);
@@ -238,10 +220,7 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
       if (item_key.isError()) return *item_key;
       result.atPut(i, *item_key);
     }
-    Tuple key(&scope, runtime->newTuple(2));
-    key.atPut(0, *result);
-    key.atPut(1, *obj);
-    return *key;
+    return runtime->newTupleWith2(result, obj);
   }
   if (obj.isFrozenSet()) {
     FrozenSet set(&scope, *obj);
@@ -259,17 +238,11 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
     FrozenSet result(&scope, runtime->newFrozenSet());
     result = setUpdate(thread, result, seq);
     if (result.isError()) return *result;
-    Tuple key(&scope, runtime->newTuple(2));
-    key.atPut(0, *result);
-    key.atPut(1, *obj);
-    return *key;
+    return runtime->newTupleWith2(result, obj);
   }
   PyObject* ptr = ApiHandle::borrowedReference(thread, *obj);
   Object obj_id(&scope, runtime->newInt(reinterpret_cast<word>(ptr)));
-  Tuple key(&scope, runtime->newTuple(2));
-  key.atPut(0, *obj_id);
-  key.atPut(1, *obj);
-  return *key;
+  return runtime->newTupleWith2(obj_id, obj);
 }
 
 PY_EXPORT PyObject* _PyCode_ConstantKey(PyObject* op) {

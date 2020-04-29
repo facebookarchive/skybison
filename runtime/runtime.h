@@ -194,6 +194,15 @@ class Runtime {
   // Return a new, None-initialized tuple of the given length.
   RawObject newTuple(word length);
 
+  // Return a new tuple containing the specified arguments.
+  RawObject newTupleWith1(const Object& item1);
+  RawObject newTupleWith2(const Object& item1, const Object& item2);
+  RawObject newTupleWith3(const Object& item1, const Object& item2,
+                          const Object& item3);
+  RawObject newTupleWith4(const Object& item1, const Object& item2,
+                          const Object& item3, const Object& item4);
+  RawObject newTupleWithN(word num_items, const Object* item1, ...);
+
   RawObject newPointer(void* cptr, word length);
 
   RawObject newProperty(const Object& getter, const Object& setter,
