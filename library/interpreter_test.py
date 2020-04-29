@@ -173,6 +173,25 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
 
+    def test_delete_fast_with_assigned_name_succeeds(self):
+        def foo():
+            a = 4
+            del a
+
+        foo()
+
+    def test_delete_fast_with_deleted_name_raises_unbound_local_error(self):
+        def foo():
+            a = 4
+            del a
+            del a  # noqa: F821
+
+        with self.assertRaises(UnboundLocalError) as context:
+            foo()
+        self.assertEqual(
+            str(context.exception), "local variable 'a' referenced before assignment"
+        )
+
     def test_delete_name_calls_dunder_delitem(self):
         class C(dict):
             def __delitem__(self, key):

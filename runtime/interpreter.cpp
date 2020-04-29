@@ -3953,6 +3953,8 @@ HANDLER_INLINE Continue Interpreter::doSetupFinally(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doLoadFast(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject value = frame->local(arg);
+  // TODO(T66255738): Remove this once we can statically prove local variable
+  // are always bound.
   if (UNLIKELY(value.isErrorNotFound())) {
     HandleScope scope(thread);
     Str name(&scope, Tuple::cast(Code::cast(frame->code()).varnames()).at(arg));
@@ -3969,6 +3971,8 @@ HANDLER_INLINE Continue Interpreter::doLoadFastReverse(Thread* thread,
                                                        word arg) {
   Frame* frame = thread->currentFrame();
   RawObject value = frame->localWithReverseIndex(arg);
+  // TODO(T66255738): Remove this once we can statically prove local variable
+  // are always bound.
   if (UNLIKELY(value.isErrorNotFound())) {
     HandleScope scope(thread);
     Code code(&scope, frame->code());
@@ -3999,12 +4003,17 @@ HANDLER_INLINE Continue Interpreter::doStoreFastReverse(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doDeleteFast(Thread* thread, word arg) {
-  // TODO(T32821785): use another immediate value than Error to signal unbound
-  // local
   Frame* frame = thread->currentFrame();
+  // TODO(T66255738): Remove this once we can statically prove local variable
+  // are always bound.
   if (UNLIKELY(frame->local(arg).isErrorNotFound())) {
-    RawObject name = Tuple::cast(Code::cast(frame->code()).varnames()).at(arg);
-    UNIMPLEMENTED("unbound local %s", Str::cast(name).toCStr());
+    HandleScope scope(thread);
+    Object name(&scope,
+                Tuple::cast(Code::cast(frame->code()).varnames()).at(arg));
+    thread->raiseWithFmt(LayoutId::kUnboundLocalError,
+                         "local variable '%S' referenced before assignment",
+                         &name);
+    return Continue::UNWIND;
   }
   frame->setLocal(arg, Error::notFound());
   return Continue::NEXT;
