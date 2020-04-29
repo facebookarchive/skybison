@@ -119,11 +119,11 @@ class ExceptionTestCase(unittest.TestCase):
 
     @support.cpython_only
     def test_overflow(self):
-        with self.assertRaisesRegex(OverflowError, 'int too large'):
+        with self.assertRaisesRegex(OverflowError, "cannot fit 'int' into an index-sized integer"):
             zlib.decompress(b'', 15, sys.maxsize + 1)
-        with self.assertRaisesRegex(OverflowError, 'int too large'):
+        with self.assertRaisesRegex(OverflowError, "cannot fit 'int' into an index-sized integer"):
             zlib.decompressobj().decompress(b'', sys.maxsize + 1)
-        with self.assertRaisesRegex(OverflowError, 'int too large'):
+        with self.assertRaisesRegex(OverflowError, "cannot fit 'int' into an index-sized integer"):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
 
@@ -907,7 +907,7 @@ LAERTES
 
 
 class CustomInt:
-    def __int__(self):
+    def __index__(self):
         return 100
 
 
