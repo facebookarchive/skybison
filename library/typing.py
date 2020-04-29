@@ -925,8 +925,8 @@ def _get_defaults(func):
 
 _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType)
-# NOTE(T64356933): MethodDescriptorType, MethodWrapperType,
-# WrapperDescriptorType are not supported.
+# TODO(T64356933): No plans to support MethodDescriptorType, MethodWrapperType,
+# WrapperDescriptorType in pyro
 if (
     hasattr(types, "MethodDescriptorType")
     and hasattr(types, "MethodWrapperType")
