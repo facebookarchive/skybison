@@ -276,9 +276,8 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
                              Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, function_raw);
-  // Destructively pop the tuple of kwarg names
-  Tuple keywords(&scope, frame->topValue());
-  frame->popValue();
+  // Pop the tuple of kwarg names
+  Tuple keywords(&scope, frame->popValue());
   Code code(&scope, function.code());
   word expected_args = function.argcount() + code.kwonlyargcount();
   word num_keyword_args = keywords.length();
@@ -412,8 +411,7 @@ static RawObject processExplodeArguments(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object kw_mapping(&scope, NoneType::object());
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
-    kw_mapping = frame->topValue();
-    frame->popValue();
+    kw_mapping = frame->popValue();
   }
   Tuple positional_args(&scope, frame->popValue());
   word nargs = positional_args.length();
