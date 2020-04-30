@@ -61,7 +61,6 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
-  Tuple result(&scope, runtime->newTuple(2));
   word length;
   Bytes bytes(&scope, Bytes::empty());
   if (runtime->isInstanceOfByteArray(*data)) {
@@ -75,9 +74,9 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word outpos = asciiDecode(thread, dst, bytes, index, length);
   if (outpos == length) {
-    result.atPut(0, runtime->strFromStrArray(dst));
-    result.atPut(1, runtime->newInt(length));
-    return *result;
+    Object dst_obj(&scope, runtime->strFromStrArray(dst));
+    Object length_obj(&scope, runtime->newInt(length));
+    return runtime->newTupleWith2(dst_obj, length_obj);
   }
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
@@ -104,15 +103,16 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
       case ID(ignore):
         ++outpos;
         break;
-      default:
-        result.atPut(0, runtime->newIntFromUnsigned(outpos));
-        result.atPut(1, runtime->newIntFromUnsigned(outpos + 1));
-        return *result;
+      default: {
+        Object outpos1(&scope, runtime->newIntFromUnsigned(outpos));
+        Object outpos2(&scope, runtime->newIntFromUnsigned(outpos + 1));
+        return runtime->newTupleWith2(outpos1, outpos2);
+      }
     }
   }
-  result.atPut(0, runtime->strFromStrArray(dst));
-  result.atPut(1, runtime->newIntFromUnsigned(length));
-  return *result;
+  Object dst_obj(&scope, runtime->strFromStrArray(dst));
+  Object length_obj(&scope, runtime->newInt(length));
+  return runtime->newTupleWith2(dst_obj, length_obj);
 }
 
 static bool isSurrogate(int32_t codepoint) {
@@ -139,7 +139,6 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
   word i = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
 
-  Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   // TODO(T43252439): Optimize this by first checking whether the entire string
   // is ASCII, and just memcpy into a string if so
@@ -167,19 +166,19 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(i));
+      Object outpos1(&scope, runtime->newInt(i));
       while (byte_offset < data.charLength() &&
              data.codePointAt(byte_offset, &num_bytes) > kMaxASCII) {
         byte_offset += num_bytes;
         i++;
       }
-      result.atPut(1, runtime->newInt(i + 1));
-      return *result;
+      Object outpos2(&scope, runtime->newInt(i + 1));
+      return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, output));
-  result.atPut(1, runtime->newInt(i));
-  return *result;
+  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object outpos_obj(&scope, runtime->newInt(i));
+  return runtime->newTupleWith2(output_bytes, outpos_obj);
 }
 
 // Decodes a sequence of unicode encoded bytes into a codepoint, returns
@@ -333,11 +332,10 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
       i++;
     }
   }
-  Tuple result(&scope, runtime->newTuple(3));
-  result.atPut(0, byteArrayAsBytes(thread, dst));
-  result.atPut(1, runtime->newInt(length));
-  result.atPut(2, runtime->newInt(first_invalid_escape_index));
-  return *result;
+  Object dst_obj(&scope, byteArrayAsBytes(thread, dst));
+  Object length_obj(&scope, runtime->newInt(length));
+  Object escape_obj(&scope, runtime->newInt(first_invalid_escape_index));
+  return runtime->newTupleWith3(dst_obj, length_obj, escape_obj);
 }
 
 RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
@@ -372,10 +370,9 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
       }
     }
   }
-  Tuple result(&scope, runtime->newTuple(2));
-  result.atPut(0, runtime->strFromStrArray(array));
-  result.atPut(1, runtime->newInt(length));
-  return *result;
+  Object array_str(&scope, runtime->strFromStrArray(array));
+  Object length_obj(&scope, runtime->newInt(length));
+  return runtime->newTupleWith2(array_str, length_obj);
 }
 
 RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
@@ -391,7 +388,6 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
   word i = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
 
-  Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, i);
        byte_offset < data.charLength(); i++) {
@@ -417,19 +413,19 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(i));
+      Object outpos1(&scope, runtime->newInt(i));
       while (byte_offset < data.charLength() &&
              data.codePointAt(byte_offset, &num_bytes) > kMaxByte) {
         byte_offset += num_bytes;
         i++;
       }
-      result.atPut(1, runtime->newInt(i + 1));
-      return *result;
+      Object outpos2(&scope, runtime->newInt(i + 1));
+      return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, output));
-  result.atPut(1, runtime->newInt(i));
-  return *result;
+  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object outpos(&scope, runtime->newInt(i));
+  return runtime->newTupleWith2(output_bytes, outpos);
 }
 
 // Decodes a sequence of hexadecimal encoded bytes into a codepoint or returns
@@ -599,7 +595,6 @@ RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread, Frame* frame,
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
-  Tuple result(&scope, runtime->newTuple(4));
   word length;
   Bytes bytes(&scope, Bytes::empty());
   if (runtime->isInstanceOfByteArray(*data)) {
@@ -657,20 +652,23 @@ RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread, Frame* frame,
         }
         case ID(ignore):
           break;
-        default:
-          result.atPut(0, runtime->newInt(start_pos));
-          result.atPut(1, runtime->newInt(i));
-          result.atPut(2, runtime->newStrFromCStr(message));
-          result.atPut(3, runtime->newInt(first_invalid_escape_index));
-          return *result;
+        default: {
+          Object start_pos_obj(&scope, runtime->newInt(start_pos));
+          Object outpos_obj(&scope, runtime->newInt(i));
+          Object message_obj(&scope, runtime->newStrFromCStr(message));
+          Object escape_obj(&scope,
+                            runtime->newInt(first_invalid_escape_index));
+          return runtime->newTupleWith4(start_pos_obj, outpos_obj, message_obj,
+                                        escape_obj);
+        }
       }
     }
   }
-  result.atPut(0, runtime->strFromStrArray(dst));
-  result.atPut(1, runtime->newInt(length));
-  result.atPut(2, runtime->newStrFromCStr(""));
-  result.atPut(3, runtime->newInt(first_invalid_escape_index));
-  return *result;
+  Object dst_obj(&scope, runtime->strFromStrArray(dst));
+  Object length_obj(&scope, runtime->newInt(length));
+  Object message_obj(&scope, runtime->newStrFromCStr(""));
+  Object escape_obj(&scope, runtime->newInt(first_invalid_escape_index));
+  return runtime->newTupleWith4(dst_obj, length_obj, message_obj, escape_obj);
 }
 
 static bool isContinuationByte(byte ch) { return kMaxASCII < ch && ch < 0xC0; }
@@ -809,7 +807,6 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
-  Tuple result(&scope, runtime->newTuple(3));
   word length;
   Bytes bytes(&scope, Bytes::empty());
   // TODO(T45849551): Handle any bytes-like object
@@ -824,10 +821,10 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word i = asciiDecode(thread, dst, bytes, index, length);
   if (i == length) {
-    result.atPut(0, runtime->strFromStrArray(dst));
-    result.atPut(1, runtime->newInt(length));
-    result.atPut(2, runtime->newStrFromCStr(""));
-    return *result;
+    Object dst_obj(&scope, runtime->strFromStrArray(dst));
+    Object length_obj(&scope, runtime->newInt(length));
+    Object message_obj(&scope, runtime->newStrFromCStr(""));
+    return runtime->newTupleWith3(dst_obj, length_obj, message_obj);
   }
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
@@ -888,17 +885,18 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
       case ID(ignore):
         i = error_end;
         break;
-      default:
-        result.atPut(0, runtime->newInt(i));
-        result.atPut(1, runtime->newInt(error_end));
-        result.atPut(2, runtime->newStrFromCStr(error_message));
-        return *result;
+      default: {
+        Object outpos_obj(&scope, runtime->newInt(i));
+        Object error_end_obj(&scope, runtime->newInt(error_end));
+        Object message_obj(&scope, runtime->newStrFromCStr(error_message));
+        return runtime->newTupleWith3(outpos_obj, error_end_obj, message_obj);
+      }
     }
   }
-  result.atPut(0, runtime->strFromStrArray(dst));
-  result.atPut(1, runtime->newInt(i));
-  result.atPut(2, Str::empty());
-  return *result;
+  Object dst_obj(&scope, runtime->strFromStrArray(dst));
+  Object outpos_obj(&scope, runtime->newInt(i));
+  Object message_obj(&scope, Str::empty());
+  return runtime->newTupleWith3(dst_obj, outpos_obj, message_obj);
 }
 
 RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
@@ -914,7 +912,6 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
   word index = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
 
-  Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
        byte_offset < data.charLength(); index++) {
@@ -950,19 +947,19 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(index));
+      Object outpos1(&scope, runtime->newInt(index));
       while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
       }
-      result.atPut(1, runtime->newInt(index + 1));
-      return *result;
+      Object outpos2(&scope, runtime->newInt(index + 1));
+      return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, output));
-  result.atPut(1, runtime->newInt(index));
-  return *result;
+  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object index_obj(&scope, runtime->newInt(index));
+  return runtime->newTupleWith2(output_bytes, index_obj);
 }
 
 static void appendUtf16ToByteArray(Thread* thread, Runtime* runtime,
@@ -1003,7 +1000,6 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
                                 "Python int too large to convert to C int");
   }
 
-  Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
        byte_offset < data.charLength(); index++) {
@@ -1038,19 +1034,19 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(index));
+      Object outpos1(&scope, runtime->newInt(index));
       while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
       }
-      result.atPut(1, runtime->newInt(index + 1));
-      return *result;
+      Object outpos2(&scope, runtime->newInt(index + 1));
+      return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, output));
-  result.atPut(1, runtime->newInt(index));
-  return *result;
+  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object index_obj(&scope, runtime->newInt(index));
+  return runtime->newTupleWith2(output_bytes, index_obj);
 }
 
 static void appendUtf32ToByteArray(Thread* thread, Runtime* runtime,
@@ -1087,7 +1083,6 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
                                 "Python int too large to convert to C int");
   }
 
-  Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
        byte_offset < data.charLength(); index++) {
@@ -1115,19 +1110,19 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(index));
+      Object outpos1(&scope, runtime->newInt(index));
       while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
       }
-      result.atPut(1, runtime->newInt(index + 1));
-      return *result;
+      Object outpos2(&scope, runtime->newInt(index + 1));
+      return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  result.atPut(0, byteArrayAsBytes(thread, output));
-  result.atPut(1, runtime->newInt(index));
-  return *result;
+  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object index_obj(&scope, runtime->newInt(index));
+  return runtime->newTupleWith2(output_bytes, index_obj);
 }
 
 // Takes a ByteArray and a Str object, and appends each byte in the Str to the
