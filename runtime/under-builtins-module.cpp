@@ -1814,10 +1814,9 @@ RawObject FUNC(_builtins, _float_divmod)(Thread* thread, Frame* frame,
   double remainder;
   double quotient = floatDivmod(left, divisor, &remainder);
   Runtime* runtime = thread->runtime();
-  Tuple result(&scope, runtime->newTuple(2));
-  result.atPut(0, runtime->newFloat(quotient));
-  result.atPut(1, runtime->newFloat(remainder));
-  return *result;
+  Object quotient_obj(&scope, runtime->newFloat(quotient));
+  Object remainder_obj(&scope, runtime->newFloat(remainder));
+  return runtime->newTupleWith2(quotient_obj, remainder_obj);
 }
 
 RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
@@ -2950,7 +2949,7 @@ static RawObject listSetSlice(Thread* thread, const List& self, word start,
         src_length, slice_length);
   }
   HandleScope scope(thread);
-  Tuple dst_items(&scope, self.items());
+  MutableTuple dst_items(&scope, self.items());
   for (word dst_idx = start, src_idx = 0; src_idx < src_length;
        dst_idx += step, src_idx++) {
     dst_items.atPut(dst_idx, src.at(src_idx));
@@ -3969,17 +3968,21 @@ RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
   name = Runtime::internStr(thread, name);
   Tuple field_names(&scope, args.get(1));
   word num_fields = field_names.length();
-  Tuple field_names_interned(&scope, runtime->newTuple(num_fields));
-  Object field_name(&scope, NoneType::object());
-  for (word i = 0; i < num_fields; i++) {
-    field_name = field_names.at(i);
-    if (field_name.isNoneType()) continue;
-    field_names_interned.atPut(i, Runtime::internStr(thread, field_name));
+  if (num_fields > 0) {
+    MutableTuple field_names_interned(&scope,
+                                      runtime->newMutableTuple(num_fields));
+    Object field_name(&scope, NoneType::object());
+    for (word i = 0; i < num_fields; i++) {
+      field_name = field_names.at(i);
+      if (field_name.isNoneType()) continue;
+      field_names_interned.atPut(i, Runtime::internStr(thread, field_name));
+    }
+    field_names = field_names_interned.becomeImmutable();
   }
   word num_in_sequence = args.get(2).isUnbound()
                              ? num_fields
                              : SmallInt::cast(args.get(2)).value();
-  return structseqNewType(thread, name, field_names_interned, num_in_sequence);
+  return structseqNewType(thread, name, field_names, num_in_sequence);
 }
 
 RawObject FUNC(_builtins, _structseq_setitem)(Thread* thread, Frame* frame,
