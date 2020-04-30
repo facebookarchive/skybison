@@ -3650,7 +3650,7 @@ static RawObject layoutFollowEdge(RawObject edges, RawObject key) {
   RawList list = List::cast(edges);
   DCHECK(list.numItems() % 2 == 0,
          "edges must contain an even number of elements");
-  for (word i = 0, num_items = list.numItems(); i < num_items; i++) {
+  for (word i = 0, num_items = list.numItems(); i < num_items; i += 2) {
     if (list.at(i) == key) {
       return list.at(i + 1);
     }
