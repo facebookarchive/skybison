@@ -827,9 +827,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   bool should_add_dunder_dict = true;
   if (!slots_obj.isErrorNotFound()) {
     if (runtime->isInstanceOfStr(*slots_obj)) {
-      Tuple slots_tuple(&scope, runtime->newTuple(1));
-      slots_tuple.atPut(0, *slots_obj);
-      slots_obj = *slots_tuple;
+      slots_obj = runtime->newTupleWith1(slots_obj);
     } else if (!runtime->isInstanceOfTuple(*slots_obj)) {
       Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
       slots_obj = Interpreter::callFunction1(thread, thread->currentFrame(),
