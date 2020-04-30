@@ -96,6 +96,13 @@ RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
   return moduleValueCellAtPut(thread, module, name, value);
 }
 
+RawObject moduleAtPutByCStr(Thread* thread, const Module& module,
+                            const char* name_cstr, const Object& value) {
+  HandleScope scope(thread);
+  Object name(&scope, Runtime::internStrFromCStr(thread, name_cstr));
+  return moduleValueCellAtPut(thread, module, name, value);
+}
+
 bool moduleDictNextItem(const Dict& dict, word* index, Object* key_out,
                         Object* value_out) {
   // Iterate through until we find a non-placeholder item.

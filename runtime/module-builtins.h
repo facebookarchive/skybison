@@ -25,6 +25,9 @@ RawObject moduleValueCellAt(Thread* thread, const Module& module,
 // Associate name with value in module.
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& name,
                       const Object& value);
+// Associate name with value in module.
+RawObject moduleAtPutByCStr(Thread* thread, const Module& module,
+                            const char* name_cstr, const Object& value);
 // Associate id with value in module.
 RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value);

@@ -163,6 +163,16 @@ TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
   EXPECT_EQ(moduleAtById(thread_, module, ID(NotImplemented)), *value);
 }
 
+TEST_F(ModuleBuiltinsTest, ModuleAtReturnsValuePutByModuleAtPutByCStr) {
+  HandleScope scope(thread_);
+  Module module(&scope, createTestingModule(thread_));
+  Object value(&scope, runtime_->newStrFromCStr("a's value"));
+  const char* name_cstr = "a";
+  moduleAtPutByCStr(thread_, module, name_cstr, value);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, name_cstr));
+  EXPECT_EQ(moduleAt(thread_, module, name), *value);
+}
+
 TEST_F(ModuleBuiltinsTest,
        ModuleAtPutDoesNotInvalidateCachedModuleDictValueCell) {
   HandleScope scope(thread_);
