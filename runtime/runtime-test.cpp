@@ -1053,22 +1053,60 @@ TEST_F(RuntimeTest, TrackNativeObjectAndUntrackNativeObject) {
 }
 
 TEST_F(RuntimeTest, TypeDictOnlyLayoutReturnsLayoutWithDictOverflow) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C: pass
+
+c = C()
+)")
+                   .isError());
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
-  Type type(&scope, mainModuleAt(runtime_, "C"));
-  Layout layout(&scope, type.instanceLayout());
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Layout layout(&scope, c.instanceLayout());
+  word in_object_attributes_length =
+      Tuple::cast(layout.inObjectAttributes()).length();
   ASSERT_TRUE(!layout.hasDictOverflow());
-  Layout new_layout(&scope, runtime_->typeDictOnlyLayout(thread_, type));
+  Layout new_layout(&scope, runtime_->typeDictOnlyLayout(
+                                thread_, c, in_object_attributes_length));
   EXPECT_NE(layout, new_layout);
   EXPECT_TRUE(new_layout.hasDictOverflow());
   EXPECT_EQ(layout.describedType(), new_layout.describedType());
 
-  Layout new_layout2(&scope, runtime_->typeDictOnlyLayout(thread_, type));
+  Layout new_layout2(&scope, runtime_->typeDictOnlyLayout(
+                                 thread_, c, in_object_attributes_length));
   EXPECT_NE(layout, new_layout2);
   EXPECT_TRUE(new_layout2.hasDictOverflow());
   EXPECT_EQ(layout.describedType(), new_layout2.describedType());
 
   EXPECT_EQ(*new_layout, *new_layout2);
+}
+
+TEST_F(
+    RuntimeTest,
+    TypeDictOnlyLayoutWithDunderClassAssignedInstanceReturnsLayoutBasedOnInObjectAttributesLength) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self):
+    self.x = 10
+    self.y = 20
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type_c(&scope, mainModuleAt(runtime_, "C"));
+
+  Layout new_layout(&scope, runtime_->typeDictOnlyLayout(thread_, type_c, 3));
+  EXPECT_TRUE(new_layout.hasDictOverflow());
+  EXPECT_EQ(new_layout.dictOverflowOffset(), 24);
+  EXPECT_EQ(new_layout.describedType(), *type_c);
+
+  // Using the same value of `in_object_attributes_length` returns the same
+  // layout.
+  Layout new_layout2(&scope, runtime_->typeDictOnlyLayout(thread_, type_c, 3));
+  EXPECT_EQ(new_layout, new_layout2);
+
+  // Create a new layout for the new value of `in_object_attributes_length`.
+  Layout new_layout3(&scope,
+                     runtime_->typeDictOnlyLayout(thread_, type_c, 3 + 1));
+  EXPECT_NE(new_layout, new_layout3);
 }
 
 TEST_F(RuntimeTest, HashCodeSizeCheck) {

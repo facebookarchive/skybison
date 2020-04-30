@@ -2301,19 +2301,21 @@ RawObject FUNC(_builtins, _instance_dunder_dict_set)(Thread* thread,
                                 &dict_obj);
   }
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
-  Type type(&scope, runtime->typeAt(layout.id()));
-  if (type.isBuiltin()) {
-    // TODO(T65043421): Support builtin type.
-    UNIMPLEMENTED("_instance_dunder_dict_set(builtin_type_object)");
-  }
   // Set in-object attribute values to None.
   Tuple in_object(&scope, layout.inObjectAttributes());
-  for (word i = 0; i < in_object.length(); i++) {
+  word num_in_object_attr = in_object.length();
+  for (word i = 0; i < num_in_object_attr; i++) {
     Tuple entry(&scope, in_object.at(i));
     AttributeInfo info(entry.at(1));
     instance.instanceVariableAtPut(info.offset(), NoneType::object());
   }
-  Layout new_layout(&scope, runtime->typeDictOnlyLayout(thread, type));
+  Type type(&scope, layout.describedType());
+  if (type.isBuiltin()) {
+    // TODO(T65043421): Support builtin type.
+    UNIMPLEMENTED("_instance_dunder_dict_set(builtin_type_object)");
+  }
+  Layout new_layout(
+      &scope, runtime->typeDictOnlyLayout(thread, type, num_in_object_attr));
   DCHECK(new_layout.hasDictOverflow(), "dict overflow is expected");
   instance.setLayoutId(new_layout.id());
   instance.instanceVariableAtPut(new_layout.dictOverflowOffset(), *dict_obj);

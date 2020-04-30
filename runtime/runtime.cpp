@@ -3743,27 +3743,33 @@ RawObject Runtime::createNativeProxyLayout(Thread* thread,
 
 static RawUnbound kDictOverflowLayoutTransitionEdgeName = Unbound::object();
 
-RawObject Runtime::typeDictOnlyLayout(Thread* thread, const Type& type) {
+RawObject Runtime::typeDictOnlyLayout(Thread* thread, const Type& type,
+                                      word num_in_object_attr) {
   HandleScope scope(thread);
-  Layout layout(&scope, type.instanceLayout());
-  DCHECK(!layout.hasDictOverflow(),
-         "instance layout should not have dict overflow");
+  Layout type_instance_layout(&scope, type.instanceLayout());
+  // Find a layout derived from type, whose in-object attributes' length matches
+  // the needed `num_in_object_attr`.
+  List edges(&scope, type_instance_layout.deletions());
+  DCHECK(edges.numItems() % 2 == 0,
+         "edges must contain an even number of elements");
   // This name is used only for the internal layout transition edge from
   // a layout to a new one with dict overflow.
   Object key(&scope, kDictOverflowLayoutTransitionEdgeName);
-  // Check if a edge for the attribute addition already exists
-  Object result(&scope, layoutFollowEdge(layout.deletions(), *key));
-  if (!result.isErrorNotFound()) {
-    AttributeInfo ignored;
-    DCHECK(!layoutFindAttribute(Layout::cast(*result), key, &ignored),
-           "unexpected attribute is found");
-    return *result;
+  for (word i = 0, num_items = edges.numItems(); i < num_items; i += 2) {
+    if (edges.at(i) == key) {
+      if (Layout::cast(edges.at(i + 1)).numInObjectAttributes() ==
+          num_in_object_attr) {
+        return edges.at(i + 1);
+      }
+    }
   }
-  Layout new_layout(&scope, layoutCreateChild(thread, layout));
+  Layout new_layout(&scope, layoutCreateChild(thread, type_instance_layout));
+  // This annotates `new_layout` to return it when requested next time.
+  new_layout.setNumInObjectAttributes(num_in_object_attr);
   new_layout.setInObjectAttributes(emptyTuple());
+  new_layout.setOverflowAttributes(emptyTuple());
   new_layout.setDictOverflowOffset(new_layout.overflowOffset());
   // Add the edge to the existing layout.
-  List edges(&scope, layout.deletions());
   layoutAddEdge(thread, this, edges, key, new_layout);
   return *new_layout;
 }

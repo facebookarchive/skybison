@@ -5825,6 +5825,58 @@ class FunctionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             foo.__dict__ = 100
 
+    def test_dunder_dict_after_dunder_class_succeeds(self):
+        class C:
+            pass
+
+        class D:
+            def __init__(self):
+                self.x = 10
+                self.y = 20
+
+        c = C()
+        c.__class__ = D
+        c.__dict__ = {"baz": 100}
+        self.assertIs(c.baz, 100)
+
+    def test_dunder_dict_with_in_object_attributes_after_dunder_class_succeeds(self):
+        class C:
+            def __init__(self):
+                self.fish = -100
+
+        class D:
+            def __init__(self):
+                self.x = 10
+                self.y = 20
+
+        c = C()
+        c.__class__ = D
+        c.__dict__ = {"baz": 100}
+        self.assertIs(c.baz, 100)
+
+    def test_dunder_dict_after_dunder_class_multiple_times_succeeds(self):
+        class C:
+            def __init__(self):
+                self.fish = -100
+
+        class D:
+            def __init__(self):
+                self.x = 10
+                self.y = 20
+
+        class E:
+            def __init__(self):
+                self.z = 5000
+
+        c = C()
+        c.__class__ = D
+        c.__dict__ = {"baz": 100}
+        self.assertIs(c.baz, 100)
+
+        c.__class__ = E
+        c.__dict__ = {"baf": 200}
+        self.assertIs(c.baf, 200)
+
     def test_dunder_globals_returns_identical_object(self):
         def foo():
             pass
