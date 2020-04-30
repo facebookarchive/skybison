@@ -2400,6 +2400,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&ellipsis_, PointerKind::kRuntime);
   visitor->visitPointer(&empty_frozen_set_, PointerKind::kRuntime);
   visitor->visitPointer(&empty_mutable_bytes_, PointerKind::kRuntime);
+  visitor->visitPointer(&empty_slice_, PointerKind::kRuntime);
   visitor->visitPointer(&empty_tuple_, PointerKind::kRuntime);
   visitor->visitPointer(&implicit_bases_, PointerKind::kRuntime);
   visitor->visitPointer(&module_dunder_getattribute_, PointerKind::kRuntime);
@@ -2417,9 +2418,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit interned strings.
   visitor->visitPointer(&interned_, PointerKind::kRuntime);
 
-  // Visit canonical empty slice.
-  visitor->visitPointer(&empty_slice_, PointerKind::kRuntime);
-
   // Visit modules
   visitor->visitPointer(&modules_, PointerKind::kRuntime);
   visitor->visitPointer(&modules_by_index_, PointerKind::kRuntime);
@@ -2434,6 +2432,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit GC callbacks
   visitor->visitPointer(&callbacks_, PointerKind::kRuntime);
+
+  // Visit signal callbacks
+  visitor->visitPointer(&signal_callbacks_, PointerKind::kRuntime);
 
   // Visit finalizable native instances
   visitor->visitPointer(&finalizable_references_, PointerKind::kRuntime);
