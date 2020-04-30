@@ -19,6 +19,30 @@ TEST_F(UnderSignalModuleTest, DefaultIntHandlerRaisesKeyboardInterrupt) {
                      LayoutId::kKeyboardInterrupt));
 }
 
+TEST_F(UnderSignalModuleTest, GetsignalWithNegativeRaisesValueError) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(-1));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_signal, getsignal), signum),
+                            LayoutId::kValueError,
+                            "signal number out of range"));
+}
+
+TEST_F(UnderSignalModuleTest, GetsignalWithLargeNumberRaisesValueError) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(128));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_signal, getsignal), signum),
+                            LayoutId::kValueError,
+                            "signal number out of range"));
+}
+
+TEST_F(UnderSignalModuleTest, GetsignalWithSigintReturnsCallback) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(SIGINT));
+  Object callback(&scope, runBuiltin(FUNC(_signal, getsignal), signum));
+  EXPECT_EQ(callback,
+            moduleAtByCStr(runtime_, "_signal", "default_int_handler"));
+}
+
 TEST_F(UnderSignalModuleTest, TestNsigMatchesOS) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "import _signal").isError());
@@ -49,6 +73,46 @@ TEST_F(UnderSignalModuleTest, TestSigintExists) {
   Object sigint(&scope, moduleAtByCStr(runtime_, "_signal", "SIGINT"));
   ASSERT_TRUE(sigint.isSmallInt());
   EXPECT_TRUE(isIntEqualsWord(*sigint, SIGINT));
+}
+
+TEST_F(UnderSignalModuleTest, SignalWithNegativeRaisesValueError) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(-1));
+  Object callback(&scope, kDefaultHandler);
+  EXPECT_TRUE(raised(runBuiltin(FUNC(_signal, signal), signum, callback),
+                     LayoutId::kValueError));
+}
+
+TEST_F(UnderSignalModuleTest, SignalWithLargeNumberRaisesValueError) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(128));
+  Object callback(&scope, kIgnoreHandler);
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_signal, signal), signum, callback),
+                            LayoutId::kValueError,
+                            "signal number out of range"));
+}
+
+TEST_F(UnderSignalModuleTest, SignalWithInvalidCallbackRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(SIGINT));
+  Object callback(&scope, runtime_->emptyTuple());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_signal, signal), signum, callback),
+                            LayoutId::kTypeError,
+                            "signal handler must be signal.SIG_IGN, "
+                            "signal.SIG_DFL, or a callable object"));
+}
+
+TEST_F(UnderSignalModuleTest, SignalSetsSignalCallback) {
+  HandleScope scope(thread_);
+  Object signum(&scope, SmallInt::fromWord(SIGINT));
+  Object sig_ign(&scope, kIgnoreHandler);
+  Object old_callback(&scope,
+                      runBuiltin(FUNC(_signal, signal), signum, sig_ign));
+  Object new_callback(&scope, runBuiltin(FUNC(_signal, getsignal), signum));
+  EXPECT_EQ(new_callback, sig_ign);
+
+  ASSERT_FALSE(runBuiltin(FUNC(_signal, signal), signum, old_callback)
+                   .isErrorException());
 }
 
 }  // namespace testing

@@ -16,7 +16,7 @@ def getitimer(which):
 
 
 def getsignal(signalnum):
-    _unimplemented()
+    _builtin()
 
 
 def pause():
@@ -40,7 +40,7 @@ def siginterrupt(signalnum, flag):
 
 
 def signal(signalnum, handler):
-    _unimplemented()
+    _builtin()
 
 
 def sigpending():
