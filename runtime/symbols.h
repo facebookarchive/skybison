@@ -537,6 +537,7 @@ class Runtime;
   V(countOf)                                                                   \
   V(cr_running)                                                                \
   V(decode)                                                                    \
+  V(default_int_handler)                                                       \
   V(dict)                                                                      \
   V(dict_itemiterator)                                                         \
   V(dict_items)                                                                \

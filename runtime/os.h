@@ -15,6 +15,7 @@ class OS {
   enum Protection { kNoAccess, kReadWrite, kReadExecute };
 
   static const word kNumSignals;
+  static bool volatile pending_signals_[];
 
   static const int kRtldGlobal;
   static const int kRtldLocal;

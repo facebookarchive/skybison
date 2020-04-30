@@ -14,6 +14,11 @@ namespace testing {
 
 using UnderSignalModuleTest = RuntimeFixture;
 
+TEST_F(UnderSignalModuleTest, DefaultIntHandlerRaisesKeyboardInterrupt) {
+  EXPECT_TRUE(raised(runBuiltin(FUNC(_signal, default_int_handler)),
+                     LayoutId::kKeyboardInterrupt));
+}
+
 TEST_F(UnderSignalModuleTest, TestNsigMatchesOS) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "import _signal").isError());

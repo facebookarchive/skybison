@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from _builtins import _unimplemented
+from _builtins import _builtin, _unimplemented
 
 
 def alarm(seconds):
@@ -8,7 +8,7 @@ def alarm(seconds):
 
 
 def default_int_handler(*args, **kwargs):
-    _unimplemented()
+    _builtin()
 
 
 def getitimer(which):

@@ -85,6 +85,15 @@ class Thread {
   // frame.
   byte* stackPtr();
 
+  void interrupt() {
+    limit_ = stackPtr();
+    is_interrupted_ = true;
+  }
+
+  bool isInterrupted() { return is_interrupted_; }
+
+  bool isMainThread();
+
   void visitRoots(PointerVisitor* visitor);
 
   void visitStackRoots(PointerVisitor* visitor);
@@ -294,8 +303,12 @@ class Thread {
   Handles handles_;
 
   word size_;
-  byte* start_;
-  byte* end_;
+  byte* start_;  // base address of the stack
+  byte* end_;    // exclusive limit of the stack
+  byte* limit_;  // current limit of the stack
+
+  // Has the runtime requested a thread interruption? (e.g. signals, GC)
+  bool is_interrupted_;
 
   // current_frame_ always points to the top-most frame on the stack.
   Frame* current_frame_;

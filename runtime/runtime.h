@@ -823,6 +823,17 @@ class Runtime {
 
   const uword* hashSecret();
 
+  // Sets up the signal handlers.
+  void initializeSignals(Thread* thread, const Module& under_signal);
+
+  RawObject handlePendingSignals(Thread* thread);
+  void setPendingSignal(Thread* thread, int signum);
+
+  RawObject signalCallback(word signum);
+  RawObject setSignalCallback(word signum, const Object& callback);
+
+  Thread* mainThread() { return main_thread_; }
+
  private:
   void initializeApiData();
   void initializeExceptionTypes();
@@ -993,6 +1004,17 @@ class Runtime {
   // Weak reference callback list
   RawObject callbacks_ = NoneType::object();
 
+  // Quick check if any signals have been tripped.
+  static volatile bool is_signal_pending_;
+
+  // Tuple mapping each signal to either SIG_DFL, SIG_IGN, None,
+  // or a Python object to be called when handling the signal.
+  static RawObject signal_callbacks_;
+
+  // File descriptor for writing when a signal is received.
+  static int wakeup_fd_;
+
+  Thread* main_thread_;
   Thread* threads_;
 
   uword random_state_[2];

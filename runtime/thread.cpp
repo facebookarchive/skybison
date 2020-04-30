@@ -37,6 +37,7 @@ thread_local Thread* Thread::current_thread_ = nullptr;
 
 Thread::Thread(word size)
     : size_(Utils::roundUp(size, kPointerSize)),
+      is_interrupted_(false),
       next_(nullptr),
       runtime_(nullptr),
       pending_exc_type_(NoneType::object()),
@@ -47,6 +48,7 @@ Thread::Thread(word size)
   start_ = new byte[size_ + SIGSTKSZ]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
   end_ = start_ + size_;
+  limit_ = start_;
 
   stack_t altstack;
   altstack.ss_sp = end_;
@@ -83,6 +85,8 @@ void Thread::visitStackRoots(PointerVisitor* visitor) {
 }
 
 Thread* Thread::current() { return Thread::current_thread_; }
+
+bool Thread::isMainThread() { return this == runtime_->mainThread(); }
 
 namespace {
 
@@ -171,8 +175,14 @@ bool Thread::wouldStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
   // TODO(T36407214): Grow stack
   byte* sp = stackPtr();
-  if (LIKELY(sp - max_size >= start_)) {
+  if (LIKELY(sp - max_size >= limit_)) {
     return false;
+  }
+  if (is_interrupted_) {
+    limit_ = start_;
+    is_interrupted_ = false;
+    runtime_->handlePendingSignals(this);
+    return true;
   }
   raiseWithFmt(LayoutId::kRecursionError, "maximum recursion depth exceeded");
   return true;

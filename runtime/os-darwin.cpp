@@ -12,6 +12,7 @@
 namespace py {
 
 const word OS::kNumSignals = NSIG;
+bool volatile OS::pending_signals_[kNumSignals];
 
 const int OS::kRtldGlobal = RTLD_GLOBAL;
 const int OS::kRtldLocal = RTLD_LOCAL;

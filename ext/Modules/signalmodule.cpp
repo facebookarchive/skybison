@@ -7,7 +7,10 @@ PY_EXPORT void _PySignal_AfterFork() {
 }
 
 PY_EXPORT int PyErr_CheckSignals() {
-  // TODO(T43363720): Check thread for pending signal
+  Thread* thread = Thread::current();
+  if (thread->runtime()->handlePendingSignals(thread).isErrorException()) {
+    return -1;
+  }
   return 0;
 }
 

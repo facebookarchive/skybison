@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <climits>
+#include <csignal>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -63,6 +64,7 @@
 #include "type-builtins.h"
 #include "under-builtins-module.h"
 #include "under-io-module.h"
+#include "under-signal-module.h"
 #include "unicode.h"
 #include "utils.h"
 #include "valuecell-builtins.h"
@@ -76,6 +78,7 @@ static const SymbolId kRequiredModules[] = {
     ID(operator),
     ID(_codecs),
     ID(_frozen_importlib_external),
+    ID(_signal),
 };
 
 static const SymbolId kBinaryOperationSelector[] = {
@@ -98,6 +101,10 @@ static const SymbolId kInplaceOperationSelector[] = {
 
 static const SymbolId kComparisonSelector[] = {
     ID(__lt__), ID(__le__), ID(__eq__), ID(__ne__), ID(__gt__), ID(__ge__)};
+
+volatile bool Runtime::is_signal_pending_ = false;
+RawObject Runtime::signal_callbacks_ = NoneType::object();
+int Runtime::wakeup_fd_ = -1;
 
 word Runtime::next_module_index_ = 0;
 
@@ -153,6 +160,7 @@ Runtime::~Runtime() {
     thread = thread->next();
     delete prev;
   }
+  main_thread_ = nullptr;
   threads_ = nullptr;
   delete symbols_;
 }
@@ -1687,6 +1695,87 @@ word Runtime::valueHash(RawObject object) {
 
 const uword* Runtime::hashSecret() { return hash_secret_; }
 
+RawObject Runtime::handlePendingSignals(Thread* thread) {
+  if (!is_signal_pending_ || !thread->isMainThread()) {
+    return NoneType::object();
+  }
+
+  is_signal_pending_ = false;
+  HandleScope scope(thread);
+  for (word i = 1; i < OS::kNumSignals; i++) {
+    if (OS::pending_signals_[i]) {
+      OS::pending_signals_[i] = false;
+
+      // NOTE: we do not expose frame objects to the user
+      Object callback(&scope, signalCallback(i));
+      Object signum(&scope, SmallInt::fromWord(i));
+      Object frame(&scope, NoneType::object());
+      Object result(&scope,
+                    Interpreter::callFunction2(thread, thread->currentFrame(),
+                                               callback, signum, frame));
+
+      if (result.isErrorException()) {
+        is_signal_pending_ = true;
+        return *result;
+      }
+    }
+  }
+
+  return NoneType::object();
+}
+
+void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
+  if (!signal_callbacks_.isNoneType()) {
+    return;  // already initialized
+  }
+
+  is_signal_pending_ = false;
+  signal_callbacks_ = newMutableTuple(OS::kNumSignals);
+  RawMutableTuple callbacks = MutableTuple::cast(signal_callbacks_);
+
+  OS::pending_signals_[0] = false;
+  for (int i = 1; i < OS::kNumSignals; i++) {
+    OS::pending_signals_[i] = false;
+    SignalHandler handler = OS::signalHandler(i);
+    if (handler == SIG_DFL) {
+      callbacks.atPut(i, kDefaultHandler);
+    } else if (handler == SIG_IGN) {
+      callbacks.atPut(i, kIgnoreHandler);
+    }
+  }
+
+  if (callbacks.at(SIGINT) == kDefaultHandler) {
+    callbacks.atPut(
+        SIGINT, moduleAtById(thread, under_signal, ID(default_int_handler)));
+    OS::setSignalHandler(SIGINT, handleSignal);
+  }
+}
+
+void Runtime::setPendingSignal(Thread* thread, int signum) {
+  if (thread != main_thread_) return;
+
+  OS::pending_signals_[signum] = true;
+  is_signal_pending_ = true;
+  thread->interrupt();
+
+  if (wakeup_fd_ < 0) return;
+
+  byte b = signum;
+  File::write(wakeup_fd_, &b, 1);
+  // TODO(wmeehan): add pending call to report wakeup error
+}
+
+RawObject Runtime::setSignalCallback(word signum, const Object& callback) {
+  RawMutableTuple callbacks = MutableTuple::cast(signal_callbacks_);
+  RawObject result = callbacks.at(signum);
+  callbacks.atPut(signum, *callback);
+  return result;
+}
+
+RawObject Runtime::signalCallback(word signum) {
+  return Tuple::cast(signal_callbacks_).at(signum);
+}
+
 void Runtime::initializeTypes() {
   initializeLayouts();
   initializeHeapTypes();
@@ -2163,12 +2252,12 @@ void Runtime::initializeInterpreter() {
 }
 
 void Runtime::initializeThreads() {
-  auto main_thread = new Thread(Thread::kDefaultStackSize);
-  main_thread->setCaughtExceptionState(heap()->create<RawExceptionState>());
-  threads_ = main_thread;
-  main_thread->setRuntime(this);
-  interpreter_->setupThread(main_thread);
-  Thread::setCurrentThread(main_thread);
+  main_thread_ = new Thread(Thread::kDefaultStackSize);
+  main_thread_->setCaughtExceptionState(heap()->create<RawExceptionState>());
+  main_thread_->setRuntime(this);
+  interpreter_->setupThread(main_thread_);
+  Thread::setCurrentThread(main_thread_);
+  threads_ = main_thread_;
 }
 
 void Runtime::initializePrimitiveInstances() {
