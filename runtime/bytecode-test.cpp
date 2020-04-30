@@ -123,57 +123,6 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   EXPECT_EQ(originalArg(*function, 2), 77);
 }
 
-TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
-  HandleScope scope(thread_);
-  Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
-      NOP,          99,        EXTENDED_ARG,  0xca, LOAD_ATTR,     0xfe,
-      NOP,          LOAD_ATTR, EXTENDED_ARG,  1,    EXTENDED_ARG,  2,
-      EXTENDED_ARG, 3,         LOAD_ATTR,     4,    CALL_FUNCTION, 1,
-      LOAD_ATTR,    4,         CALL_FUNCTION, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
-  Function function(&scope,
-                    runtime_->newFunctionWithCode(thread_, name, code, module));
-
-  byte expected[] = {NOP,
-                     99,
-                     EXTENDED_ARG,
-                     0,
-                     LOAD_ATTR_ANAMORPHIC,
-                     0,
-                     NOP,
-                     LOAD_ATTR,
-                     EXTENDED_ARG,
-                     0,
-                     EXTENDED_ARG,
-                     0,
-                     EXTENDED_ARG,
-                     0,
-                     LOAD_ATTR_ANAMORPHIC,
-                     1,
-                     CALL_FUNCTION,
-                     1,
-                     LOAD_METHOD_ANAMORPHIC,
-                     2,
-                     CALL_METHOD,
-                     0};
-  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-
-  ASSERT_TRUE(function.caches().isTuple());
-  Tuple caches(&scope, function.caches());
-  EXPECT_EQ(caches.length(), 3 * kIcPointersPerEntry);
-  for (word i = 0, length = caches.length(); i < length; i++) {
-    EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
-  }
-
-  EXPECT_EQ(originalArg(*function, 0), 0xcafe);
-  EXPECT_EQ(originalArg(*function, 1), 0x01020304);
-  EXPECT_EQ(originalArg(*function, 2), 4);
-}
-
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());

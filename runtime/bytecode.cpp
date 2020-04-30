@@ -37,22 +37,6 @@ struct RewrittenOp {
   bool needs_inline_cache;
 };
 
-static void rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(
-    const MutableBytes& bytecode) {
-  word bytecode_length = bytecode.length();
-  Bytecode prev = UNUSED_BYTECODE_0;
-  word prev_index = 0;
-  for (word i = 0; i < bytecode_length;) {
-    BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    if (prev == LOAD_ATTR_ANAMORPHIC && op.bc == CALL_FUNCTION && op.arg == 0) {
-      bytecode.byteAtPut(prev_index, LOAD_METHOD_ANAMORPHIC);
-      bytecode.byteAtPut(i - kCodeUnitSize, CALL_METHOD);
-    }
-    prev = op.bc;
-    prev_index = i - kCodeUnitSize;
-  }
-}
-
 static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
   auto cached_binop = [](Interpreter::BinaryOp bin_op) {
     return RewrittenOp{BINARY_OP_ANAMORPHIC, static_cast<int32_t>(bin_op),
@@ -251,8 +235,6 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     }
   }
 
-  // TODO(T45428069): Remove this once the compiler starts emitting the opcodes.
-  rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(bytecode);
   function.setCaches(runtime->newTuple(num_caches * kIcPointersPerEntry));
   function.setOriginalArguments(*original_arguments);
 }
