@@ -6,6 +6,14 @@ import unittest
 
 
 class EncodingsModuleTest(unittest.TestCase):
+    def test_cp437_getencoder_returns_encoder(self):
+        inc = codecs.getencoder("cp437")
+        self.assertIsNot(None, inc)
+
+    def test_cp437_lookup_returns_CodecInfo_object(self):
+        inc = codecs.lookup("cp437")
+        self.assertIsInstance(inc, codecs.CodecInfo)
+
     def test_raw_unicode_escape_getencoder_returns_encoder(self):
         inc = codecs.getencoder("raw-unicode-escape")
         self.assertEqual(inc, codecs.raw_unicode_escape_encode)
