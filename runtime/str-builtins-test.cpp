@@ -485,16 +485,14 @@ TEST_F(StrBuiltinsTest, HasPrefixWithEmptyNeedleReturnsTrue) {
 
 TEST_F(StrBuiltinsTest, InternStringsInTupleInternsItems) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(3));
   Str str0(&scope, runtime_->newStrFromCStr("a"));
   Str str1(&scope, runtime_->newStrFromCStr("hello world"));
   Str str2(&scope, runtime_->newStrFromCStr("hello world foobar"));
   EXPECT_TRUE(runtime_->isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str1));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str2));
-  tuple.atPut(0, *str0);
-  tuple.atPut(1, *str1);
-  tuple.atPut(2, *str2);
+
+  Tuple tuple(&scope, runtime_->newTupleWith3(str0, str1, str2));
   strInternInTuple(thread_, tuple);
   str0 = tuple.at(0);
   str1 = tuple.at(1);
@@ -507,16 +505,13 @@ TEST_F(StrBuiltinsTest, InternStringsInTupleInternsItems) {
 TEST_F(StrBuiltinsTest,
        InternStringConstantsInternsAlphanumericStringsInTuple) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(3));
   Str str0(&scope, runtime_->newStrFromCStr("_"));
   Str str1(&scope, runtime_->newStrFromCStr("hello world"));
   Str str2(&scope, runtime_->newStrFromCStr("helloworldfoobar"));
   EXPECT_TRUE(runtime_->isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str1));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str2));
-  tuple.atPut(0, *str0);
-  tuple.atPut(1, *str1);
-  tuple.atPut(2, *str2);
+  Tuple tuple(&scope, runtime_->newTupleWith3(str0, str1, str2));
   strInternConstants(thread_, tuple);
   str0 = tuple.at(0);
   str1 = tuple.at(1);
@@ -528,20 +523,18 @@ TEST_F(StrBuiltinsTest,
 
 TEST_F(StrBuiltinsTest, InternStringConstantsInternsStringsInNestedTuples) {
   HandleScope scope(thread_);
-  Tuple outer(&scope, runtime_->newTuple(3));
-  outer.atPut(0, SmallInt::fromWord(0));
-  outer.atPut(1, SmallInt::fromWord(1));
-  Tuple inner(&scope, runtime_->newTuple(3));
-  outer.atPut(2, *inner);
   Str str0(&scope, runtime_->newStrFromCStr("_"));
   Str str1(&scope, runtime_->newStrFromCStr("hello world"));
   Str str2(&scope, runtime_->newStrFromCStr("helloworldfoobar"));
   EXPECT_TRUE(runtime_->isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str1));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str2));
-  inner.atPut(0, *str0);
-  inner.atPut(1, *str1);
-  inner.atPut(2, *str2);
+
+  Int int0(&scope, SmallInt::fromWord(0));
+  Int int1(&scope, SmallInt::fromWord(1));
+  Tuple inner(&scope, runtime_->newTupleWith3(str0, str1, str2));
+  Tuple outer(&scope, runtime_->newTupleWith3(int0, int1, inner));
+
   strInternConstants(thread_, outer);
   str0 = inner.at(0);
   str1 = inner.at(1);
@@ -554,17 +547,19 @@ TEST_F(StrBuiltinsTest, InternStringConstantsInternsStringsInNestedTuples) {
 TEST_F(StrBuiltinsTest,
        InternStringConstantsInternsStringsInFrozenSetsInTuples) {
   HandleScope scope(thread_);
-  Tuple outer(&scope, runtime_->newTuple(3));
-  outer.atPut(0, SmallInt::fromWord(0));
-  outer.atPut(1, SmallInt::fromWord(1));
-  FrozenSet inner(&scope, runtime_->newFrozenSet());
-  outer.atPut(2, *inner);
+
   Str str0(&scope, runtime_->newStrFromCStr("alpharomeo"));
   Str str1(&scope, runtime_->newStrFromCStr("hello world"));
   Str str2(&scope, runtime_->newStrFromCStr("helloworldfoobar"));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str1));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str2));
+
+  Int int0(&scope, SmallInt::fromWord(0));
+  Int int1(&scope, SmallInt::fromWord(1));
+  FrozenSet inner(&scope, runtime_->newFrozenSet());
+  Tuple outer(&scope, runtime_->newTupleWith3(int0, int1, inner));
+
   setHashAndAdd(thread_, inner, str0);
   setHashAndAdd(thread_, inner, str1);
   setHashAndAdd(thread_, inner, str2);
