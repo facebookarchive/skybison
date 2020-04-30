@@ -85,6 +85,9 @@ class Thread:
             return
         _unimplemented()
 
+    def _bootstrap(self):
+        _unimplemented()
+
     def getName(self):
         return "MainThread"
 
