@@ -1454,9 +1454,57 @@ PY_EXPORT PyObject* PyUnicode_EncodeCodePage(int /* e */, PyObject* /* e */,
   UNIMPLEMENTED("PyUnicode_EncodeCodePage");
 }
 
-PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* /* e */,
-                                           const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_EncodeLocale");
+PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* unicode,
+                                           const char* errors) {
+  int surrogateescape;
+  if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
+    surrogateescape = 0;
+  } else if (std::strcmp(errors, "surrogateescape") == 0) {
+    surrogateescape = 1;
+  } else {
+    PyErr_Format(PyExc_ValueError,
+                 "only 'strict' and 'surrogateescape' error handlers "
+                 "are supported, not '%s'",
+                 errors);
+    return nullptr;
+  }
+  Py_ssize_t wlen;
+  wchar_t* wstr = PyUnicode_AsWideCharString(unicode, &wlen);
+  if (wstr == nullptr) {
+    return nullptr;
+  }
+
+  if (static_cast<size_t>(wlen) != std::wcslen(wstr)) {
+    PyErr_SetString(PyExc_ValueError, "embedded null character");
+    PyMem_Free(wstr);
+    return nullptr;
+  }
+
+  char* str;
+  size_t error_pos;
+  const char* reason;
+  int res = _Py_EncodeLocaleEx(wstr, &str, &error_pos, &reason,
+                               /*current_locale=*/1, surrogateescape);
+  PyMem_Free(wstr);
+
+  if (res != 0) {
+    if (res == -2) {
+      PyObject* exc =
+          PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", "locale",
+                                unicode, error_pos, error_pos + 1, reason);
+      if (exc != nullptr) {
+        PyCodec_StrictErrors(exc);
+        Py_DECREF(exc);
+      }
+    } else {
+      PyErr_NoMemory();
+    }
+    return nullptr;
+  }
+
+  PyObject* bytes = PyBytes_FromString(str);
+  PyMem_RawFree(str);
+  return bytes;
 }
 
 PY_EXPORT PyObject* _PyUnicode_EncodeUTF16(PyObject* unicode,

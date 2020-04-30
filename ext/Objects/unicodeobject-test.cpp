@@ -1697,6 +1697,49 @@ TEST_F(UnicodeExtensionApiTest, EncodeFSDefaultReturnsBytes) {
   EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
 }
 
+TEST_F(UnicodeExtensionApiTest, EncodeLocaleWithEmbeddedNulRaisesValueError) {
+  PyObjectPtr nul_str(PyUnicode_FromStringAndSize("a\0b", 3));
+  PyObject* bytes = PyUnicode_EncodeLocale(nul_str, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(bytes, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeLocaleWithUnknownErrorHandlerNameRaisesValueError) {
+  PyObjectPtr str(PyUnicode_FromStringAndSize("abc", 3));
+  PyObject* bytes = PyUnicode_EncodeLocale(str, "nonexistant");
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(bytes, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest, EncodeLocaleWithStrReturnsBytes) {
+  PyObjectPtr str(PyUnicode_FromStringAndSize("abc", 3));
+  PyObjectPtr bytes(PyUnicode_EncodeLocale(str, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "abc");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeLocaleWithStrictErrorsAndSurrogatesRaisesError) {
+  PyObjectPtr str(PyUnicode_DecodeLocale("abc\x80", "surrogateescape"));
+  PyObjectPtr bytes(PyUnicode_EncodeLocale(str, "strict"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(bytes, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeEncodeError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       EncodeLocaleWithSurrogateescapeAndSurrogatesReturnsBytes) {
+  PyObjectPtr str(PyUnicode_DecodeLocale("abc\x80", "surrogateescape"));
+  PyObjectPtr bytes(PyUnicode_EncodeLocale(str, "surrogateescape"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "abc\x80");
+}
+
 TEST_F(UnicodeExtensionApiTest, FSConverterWithNullSetAddrToNull) {
   PyObject* result = PyLong_FromLong(1);
   ASSERT_EQ(PyUnicode_FSConverter(nullptr, &result), 1);
