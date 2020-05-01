@@ -252,15 +252,18 @@ word RawCode::offsetToLineNum(word offset) const {
   return line;
 }
 
-// RawLargeBytes
+// RawDataArray
 
-RawObject RawLargeBytes::becomeStr() const {
-  DCHECK(bytesIsValidStr(RawBytes::cast(*this)), "must contain valid utf-8");
-  setHeader(header().withLayoutId(LayoutId::kLargeStr));
-  return *this;
+bool RawDataArray::equalsBytes(View<byte> bytes) const {
+  word length = this->length();
+  if (bytes.length() != length) {
+    return false;
+  }
+  return std::memcmp(reinterpret_cast<const void*>(address()), bytes.data(),
+                     length) == 0;
 }
 
-word RawLargeBytes::findByte(byte value, word start, word length) const {
+word RawDataArray::findByte(byte value, word start, word length) const {
   DCHECK_BOUND(start, this->length());
   DCHECK_BOUND(start + length, this->length());
   word result = Utils::memoryFindChar(
@@ -269,7 +272,7 @@ word RawLargeBytes::findByte(byte value, word start, word length) const {
   return result;
 }
 
-bool RawLargeBytes::isASCII() const {
+bool RawDataArray::isASCII() const {
   // Depends on invariants specified in RawLargeStr::codePointLength
   word length = this->length();
   word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
@@ -281,6 +284,23 @@ bool RawLargeBytes::isASCII() const {
     if ((block & non_ascii_mask) != 0) return false;
   }
   return true;
+}
+
+char* RawDataArray::toCStr() const {
+  word length = this->length();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  CHECK(result != nullptr, "out of memory");
+  copyTo(result, length);
+  result[length] = '\0';
+  return reinterpret_cast<char*>(result);
+}
+
+// RawLargeBytes
+
+RawObject RawLargeBytes::becomeStr() const {
+  DCHECK(bytesIsValidStr(RawBytes::cast(*this)), "must contain valid utf-8");
+  setHeader(header().withLayoutId(LayoutId::kLargeStr));
+  return *this;
 }
 
 // RawLargeStr
@@ -335,19 +355,6 @@ word RawLargeStr::compare(RawObject that) const {
   return result != 0 ? result : this_length - that_length;
 }
 
-void RawLargeStr::copyTo(byte* dst, word length) const {
-  DCHECK_BOUND(length, this->length());
-  std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
-}
-
-void RawLargeStr::copyToStartAt(byte* dst, word char_length,
-                                word char_start) const {
-  DCHECK_BOUND(char_start, charLength());
-  DCHECK_BOUND(char_start + char_length, charLength());
-  std::memcpy(dst, reinterpret_cast<const byte*>(address() + char_start),
-              char_length);
-}
-
 bool RawLargeStr::equals(RawObject that) const {
   if (!that.isLargeStr()) {
     return false;
@@ -359,15 +366,6 @@ bool RawLargeStr::equals(RawObject that) const {
   auto s1 = reinterpret_cast<void*>(address());
   auto s2 = reinterpret_cast<void*>(that_str.address());
   return std::memcmp(s1, s2, length()) == 0;
-}
-
-bool RawLargeStr::equalsBytes(View<byte> bytes) const {
-  word length = this->length();
-  if (bytes.length() != length) {
-    return false;
-  }
-  const void* chars = reinterpret_cast<const void*>(address());
-  return std::memcmp(chars, bytes.data(), length) == 0;
 }
 
 static uword hasZeroByte(uword value) {
@@ -459,31 +457,8 @@ bool RawLargeStr::includes(RawObject that) const {
   return false;
 }
 
-bool RawLargeStr::isASCII() const {
-  // Depends on invariants specified in RawLargeStr::codePointLength
-  word length = this->length();
-  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
-  const uword* data = reinterpret_cast<const uword*>(address());
-  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
-  for (word i = 0; i < size_in_words; i++) {
-    // Read an entire word of code units.
-    uword block = data[i];
-    if ((block & non_ascii_mask) != 0) return false;
-  }
-  return true;
-}
-
 word RawLargeStr::offsetByCodePoints(word index, word count) const {
   return offset(this, &RawLargeStr::charAt, charLength(), index, count);
-}
-
-char* RawLargeStr::toCStr() const {
-  word length = this->length();
-  byte* result = static_cast<byte*>(std::malloc(length + 1));
-  CHECK(result != nullptr, "out of memory");
-  copyTo(result, length);
-  result[length] = '\0';
-  return reinterpret_cast<char*>(result);
 }
 
 // RawList

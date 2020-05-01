@@ -24,6 +24,7 @@ class Handle;
   V(Code)                                                                      \
   V(Complex)                                                                   \
   V(Coroutine)                                                                 \
+  V(DataArray)                                                                 \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
   V(DictKeyIterator)                                                           \

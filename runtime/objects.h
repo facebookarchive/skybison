@@ -308,6 +308,7 @@ class RawObject {
   bool isCode() const;
   bool isComplex() const;
   bool isCoroutine() const;
+  bool isDataArray() const;
   bool isDict() const;
   bool isDictItemIterator() const;
   bool isDictItems() const;
@@ -1330,22 +1331,28 @@ class RawTypeProxy : public RawInstance {
   RAW_OBJECT_COMMON(TypeProxy);
 };
 
-class RawArrayBase : public RawHeapObject {
- public:
-  word length() const;
-
-  RAW_OBJECT_COMMON_NO_CAST(ArrayBase);
-};
-
-class RawLargeBytes : public RawArrayBase {
+class RawDataArray : public RawHeapObject {
  public:
   byte byteAt(word index) const;
-  void copyTo(byte* dst, word length) const;
 
+  void copyTo(byte* dst, word length) const;
   // Copy length bytes from this to dst, starting at the given index
   void copyToStartAt(byte* dst, word length, word index) const;
 
+  bool equalsBytes(View<byte> bytes) const;
+
+  // Returns the index at which value is found in this[start:start+length] (not
+  // including end), or -1 if not found.
+  word findByte(byte value, word start, word length) const;
+
   bool isASCII() const;
+
+  word length() const;
+
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCStr() const;
+
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
@@ -1353,14 +1360,49 @@ class RawLargeBytes : public RawArrayBase {
   // Read adjacent bytes as `uint64_t` integer.
   uint64_t uint64At(word index) const;
 
+  RAW_OBJECT_COMMON(DataArray);
+
+ protected:
+  // Sizing.
+  static word allocationSize(word length);
+
+  friend class Heap;
+};
+
+class RawLargeBytes : public RawDataArray {
+ public:
   // Rewrite the header to make UTF-8 conformant bytes look like a Str
   RawObject becomeStr() const;
 
-  // Returns the index at which value is found in this[start:start+length] (not
-  // including end), or -1 if not found.
-  word findByte(byte value, word start, word length) const;
-
   RAW_OBJECT_COMMON(LargeBytes);
+
+ private:
+  // Sizing.
+  static word allocationSize(word length);
+
+  friend class Heap;
+};
+
+class RawLargeStr : public RawDataArray {
+ public:
+  // Getters and setters.
+  byte charAt(word index) const;
+  word charLength() const;
+
+  // Equality checks.
+  word compare(RawObject that) const;
+  bool equals(RawObject that) const;
+
+  bool includes(RawObject that) const;
+
+  // Codepoints
+  word codePointLength() const;
+  word offsetByCodePoints(word index, word count) const;
+
+  // Layout
+  static const int kDataOffset = RawHeapObject::kSize;
+
+  RAW_OBJECT_COMMON(LargeStr);
 
  private:
   // Sizing.
@@ -1391,6 +1433,12 @@ class RawMutableBytes : public RawLargeBytes {
   RawObject becomeStr() const;
 
   RAW_OBJECT_COMMON(MutableBytes);
+
+ private:
+  // Sizing.
+  static word allocationSize(word length);
+
+  friend class Heap;
 };
 
 // A mutable array, for the array module
@@ -1464,8 +1512,10 @@ class RawMmap : public RawInstance {
   RAW_OBJECT_COMMON(Mmap);
 };
 
-class RawTuple : public RawArrayBase {
+class RawTuple : public RawHeapObject {
  public:
+  word length() const;
+
   // Getters and setters.
   RawObject at(word index) const;
   void atPut(word index, RawObject value) const;
@@ -1520,42 +1570,6 @@ class RawUserTupleBase : public RawInstance {
 };
 
 RawTuple tupleUnderlying(RawObject object);
-
-class RawLargeStr : public RawArrayBase {
- public:
-  // Getters and setters.
-  byte charAt(word index) const;
-  word charLength() const;
-  void copyTo(byte* dst, word char_length) const;
-  void copyToStartAt(byte* dst, word char_length, word char_start) const;
-
-  // Equality checks.
-  word compare(RawObject that) const;
-  bool equals(RawObject that) const;
-  bool equalsBytes(View<byte> bytes) const;
-
-  bool includes(RawObject that) const;
-
-  // Codepoints
-  word codePointLength() const;
-  bool isASCII() const;
-  word offsetByCodePoints(word index, word count) const;
-
-  // Conversion to an unescaped C string.  The underlying memory is allocated
-  // with malloc and must be freed by the caller.
-  char* toCStr() const;
-
-  // Layout
-  static const int kDataOffset = RawHeapObject::kSize;
-
-  RAW_OBJECT_COMMON(LargeStr);
-
- private:
-  // Sizing.
-  static word allocationSize(word length);
-
-  friend class Heap;
-};
 
 // Arbitrary precision signed integer, with 64 bit digits in two's complement
 // representation
@@ -3825,6 +3839,10 @@ inline bool RawObject::isCoroutine() const {
   return isHeapObjectWithLayout(LayoutId::kCoroutine);
 }
 
+inline bool RawObject::isDataArray() const {
+  return isLargeBytes() || isLargeStr() || isMutableBytes();
+}
+
 inline bool RawObject::isDict() const {
   return isHeapObjectWithLayout(LayoutId::kDict);
 }
@@ -5032,35 +5050,33 @@ inline void RawTypeProxy::setType(RawObject type) const {
   instanceVariableAtPut(kTypeOffset, type);
 }
 
-// RawArrayBase
+// RawDataArray
 
-inline word RawArrayBase::length() const { return headerCountOrOverflow(); }
-
-// RawLargeBytes
-
-inline word RawLargeBytes::allocationSize(word length) {
+inline word RawDataArray::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline byte RawLargeBytes::byteAt(word index) const {
+inline byte RawDataArray::byteAt(word index) const {
   DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
-inline void RawLargeBytes::copyTo(byte* dst, word length) const {
+inline void RawDataArray::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   copyToStartAt(dst, length, 0);
 }
 
-inline void RawLargeBytes::copyToStartAt(byte* dst, word length,
-                                         word index) const {
+inline void RawDataArray::copyToStartAt(byte* dst, word length,
+                                        word index) const {
   DCHECK_BOUND(index + length, this->length());
   std::memmove(dst, reinterpret_cast<const byte*>(address() + index), length);
 }
 
-inline uint16_t RawLargeBytes::uint16At(word index) const {
+inline word RawDataArray::length() const { return headerCountOrOverflow(); }
+
+inline uint16_t RawDataArray::uint16At(word index) const {
   uint16_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -5068,7 +5084,7 @@ inline uint16_t RawLargeBytes::uint16At(word index) const {
   return result;
 }
 
-inline uint32_t RawLargeBytes::uint32At(word index) const {
+inline uint32_t RawDataArray::uint32At(word index) const {
   uint32_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -5076,7 +5092,7 @@ inline uint32_t RawLargeBytes::uint32At(word index) const {
   return result;
 }
 
-inline uint64_t RawLargeBytes::uint64At(word index) const {
+inline uint64_t RawDataArray::uint64At(word index) const {
   uint64_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -5084,7 +5100,19 @@ inline uint64_t RawLargeBytes::uint64At(word index) const {
   return result;
 }
 
+// RawLargeBytes
+
+inline word RawLargeBytes::allocationSize(word length) {
+  DCHECK(length > RawSmallBytes::kMaxLength, "length %ld is too small",
+         (long)length);
+  return RawDataArray::allocationSize(length);
+}
+
 // RawMutableBytes
+
+inline word RawMutableBytes::allocationSize(word length) {
+  return RawDataArray::allocationSize(length);
+}
 
 inline void RawMutableBytes::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, length());
@@ -5132,6 +5160,8 @@ inline void RawMutableTuple::swap(word i, word j) const {
 }
 
 // RawTuple
+
+inline word RawTuple::length() const { return headerCountOrOverflow(); }
 
 inline word RawTuple::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
@@ -6548,9 +6578,9 @@ inline char* RawStr::toCStr() const {
 // RawLargeStr
 
 inline word RawLargeStr::allocationSize(word length) {
-  DCHECK(length > RawSmallStr::kMaxLength, "length %ld overflows", length);
-  word size = headerSize(length) + length;
-  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
+  DCHECK(length > RawSmallStr::kMaxLength, "length %ld is too small",
+         (long)length);
+  return RawDataArray::allocationSize(length);
 }
 
 inline byte RawLargeStr::charAt(word index) const {
