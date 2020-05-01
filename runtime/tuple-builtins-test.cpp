@@ -87,12 +87,13 @@ b_len_implicit = b.__len__()
 // Equivalent to evaluating "tuple(range(start, stop))" in Python
 static RawObject tupleFromRange(word start, word stop) {
   Thread* thread = Thread::current();
+  if (stop - start == 0) return thread->runtime()->emptyTuple();
   HandleScope scope(thread);
-  Tuple result(&scope, thread->runtime()->newTuple(stop - start));
+  MutableTuple result(&scope, thread->runtime()->newMutableTuple(stop - start));
   for (word i = 0, j = start; j < stop; i++, j++) {
     result.atPut(i, SmallInt::fromWord(j));
   }
-  return *result;
+  return result.becomeImmutable();
 }
 
 TEST_F(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
@@ -144,8 +145,8 @@ repr = Foo((1, 2, 3)).__repr__()
 
 TEST_F(TupleBuiltinsTest, DunderMulWithOneElement) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(1));
-  tuple.atPut(0, SmallInt::fromWord(1));
+  Object one(&scope, SmallInt::fromWord(1));
+  Tuple tuple(&scope, runtime_->newTupleWith1(one));
   Int four(&scope, SmallInt::fromWord(4));
   Object result_obj(&scope, runBuiltin(METH(tuple, __mul__), tuple, four));
   ASSERT_FALSE(result_obj.isError());
@@ -394,10 +395,7 @@ TEST_F(TupleBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
   Int value0(&scope, runtime_->newInt(1));
   Bool value1(&scope, RawBool::falseObj());
   Str value2(&scope, runtime_->newStrFromCStr("hello"));
-  Tuple tuple(&scope, runtime_->newTuple(3));
-  tuple.atPut(0, *value0);
-  tuple.atPut(1, *value1);
-  tuple.atPut(2, *value2);
+  Tuple tuple(&scope, runtime_->newTupleWith3(value0, value1, value2));
   EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value0),
             RawBool::trueObj());
   EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value1),
@@ -410,9 +408,7 @@ TEST_F(TupleBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
   HandleScope scope(thread_);
   Int value0(&scope, runtime_->newInt(7));
   NoneType value1(&scope, RawNoneType::object());
-  Tuple tuple(&scope, runtime_->newTuple(2));
-  tuple.atPut(0, *value0);
-  tuple.atPut(1, *value1);
+  Tuple tuple(&scope, runtime_->newTupleWith2(value0, value1));
   Int value2(&scope, runtime_->newInt(42));
   Bool value3(&scope, RawBool::trueObj());
   EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value2),
