@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include <clocale>
 #include <cstdio>
 #include <cstdlib>
 
@@ -168,6 +169,11 @@ PY_EXPORT void _Py_PyAtExit(void (*func)(PyObject*), PyObject* module) {
 PY_EXPORT void _Py_RestoreSignals() {
   PyOS_setsig(SIGPIPE, SIG_DFL);
   PyOS_setsig(SIGXFSZ, SIG_DFL);
+}
+
+// NOTE: this implementation does not work for Android
+PY_EXPORT char* _Py_SetLocaleFromEnv(int category) {
+  return std::setlocale(category, "");
 }
 
 }  // namespace py

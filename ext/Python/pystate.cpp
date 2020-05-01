@@ -14,7 +14,8 @@ PY_EXPORT int PyGILState_Check() {
 }
 
 PY_EXPORT PyGILState_STATE PyGILState_Ensure() {
-  UNIMPLEMENTED("PyGILState_Ensure");
+  // TODO(T44861733): Make this do something intelligent
+  return PyGILState_LOCKED;
 }
 
 PY_EXPORT PyThreadState* PyGILState_GetThisThreadState() {
@@ -22,7 +23,7 @@ PY_EXPORT PyThreadState* PyGILState_GetThisThreadState() {
 }
 
 PY_EXPORT void PyGILState_Release(PyGILState_STATE /* e */) {
-  UNIMPLEMENTED("PyGILState_Release");
+  // TODO(T44861733): Make this do something intelligent
 }
 
 PY_EXPORT void PyInterpreterState_Clear(PyInterpreterState* /* p */) {

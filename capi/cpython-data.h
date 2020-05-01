@@ -173,6 +173,10 @@ extern "C" {
    (PY_MICRO_VERSION << 8) | (PY_RELEASE_LEVEL << 4) |                         \
    (PY_RELEASE_SERIAL << 0))
 
+extern int (*PyOS_InputHook)(void);
+extern char* (*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, const char*);
+extern PyThreadState* _PyOS_ReadlineTState;
+
 #define Py_MATH_PIl 3.1415926535897932384626433832795029L
 #define Py_MATH_PI 3.14159265358979323846
 #define Py_MATH_El 2.7182818284590452353602874713526625L

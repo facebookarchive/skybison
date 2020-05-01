@@ -30,6 +30,7 @@ extern "C" PyObject* PyInit_math();
 extern "C" PyObject* PyInit_posix();
 extern "C" PyObject* PyInit_pwd();
 extern "C" PyObject* PyInit_pyexpat();
+extern "C" PyObject* PyInit_readline();
 extern "C" PyObject* PyInit_select();
 extern "C" PyObject* PyInit_syslog();
 extern "C" PyObject* PyInit_termios();
@@ -75,6 +76,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"posix", PyInit_posix},
     {"pwd", PyInit_pwd},
     {"pyexpat", PyInit_pyexpat},
+    {"readline", PyInit_readline},
     {"select", PyInit_select},
     {"syslog", PyInit_syslog},
     {"termios", PyInit_termios},

@@ -583,6 +583,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/posixmodule.h
   ${CPYTHON_DIR}/Modules/pwdmodule.c
   ${CPYTHON_DIR}/Modules/pyexpat.c
+  ${CPYTHON_DIR}/Modules/readline.c
   ${CPYTHON_DIR}/Modules/selectmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.h
@@ -657,6 +658,7 @@ target_include_directories(
   ${CPYTHON_DIR}/Modules/expat
   ${BZIP2_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIRS}
+  ${READLINE_INCLUDE_DIRS}
   ${XZ_INCLUDE_DIRS}
   ${ZLIB_INCLUDE_DIRS})
 target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
@@ -668,6 +670,10 @@ target_compile_options(
   -DPy_BUILD_CORE
   # TODO(T48643833): Remove this define to get _hashlib.scrypt.
   -DOPENSSL_NO_SCRYPT)
+# This avoids readline headers adding (unused) legacy typedefs that trigger
+# -Wstrict-prototype warnings.
+set_source_files_properties(${CPYTHON_DIR}/Modules/readline.c
+  PROPERTIES COMPILE_DEFINITIONS "_FUNCTION_DEF;HAVE_STDARG_H")
 target_link_libraries(
   extension-modules
   PUBLIC
@@ -677,6 +683,7 @@ target_link_libraries(
   util
   ${BZIP2_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${READLINE_LIBRARIES}
   ${XZ_LIBRARIES}
   ${ZLIB_LIBRARIES})
 
@@ -1768,6 +1775,7 @@ foreach(dir
     ${BZIP2_INCLUDE_DIRS}
     ${FFI_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
+    ${READLINE_INCLUDE_DIRS}
     ${XZ_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS})
   set(CPYTHON_CPPFLAGS "${CPYTHON_CPPFLAGS} -I${dir}")
@@ -1776,6 +1784,7 @@ foreach(dir
     ${BZIP2_LIBRARY_DIRS}
     ${FFI_LIBRARY_DIRS}
     ${OPENSSL_LIBRARY_DIRS}
+    ${READLINE_LIBRARY_DIRS}
     ${XZ_LIBRARY_DIRS}
     ${ZLIB_LIBRARY_DIRS})
   set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")

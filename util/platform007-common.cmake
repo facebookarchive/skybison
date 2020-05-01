@@ -46,12 +46,20 @@ set(XZ_PREFIX /mnt/gvfs/third-party2/xz/5bc7ad7b551b4f0054348fdfbd6535413c2519a7
 set(XZ_INCLUDE_DIRS ${XZ_PREFIX}/include)
 set(XZ_LIBRARY_DIRS ${XZ_PREFIX}/lib)
 set(XZ_LIBRARIES ${XZ_PREFIX}/lib/liblzma.a)
+set(NCURSES_PREFIX /mnt/gvfs/third-party2/ncurses/69dde6a41f684aaa734053f5809585a8296aa82d/5.9/platform007/ca4da3d)
 set(OPENSSL_PREFIX /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
 set(OPENSSL_INCLUDE_DIRS ${OPENSSL_PREFIX}/include)
 set(OPENSSL_LIBRARY_DIRS ${OPENSSL_PREFIX}/lib)
 set(OPENSSL_LIBRARIES
     ${OPENSSL_PREFIX}/lib/libcrypto.so
     ${OPENSSL_PREFIX}/lib/libssl.so)
+set(READLINE_PREFIX /mnt/gvfs/third-party2/readline/fb6f3492a8fd9a591cb7450ad43e5ad619f26ab2/6.3/platform007/3dffd10)
+set(READLINE_INCLUDE_DIRS ${NCURSES_PREFIX}/include ${READLINE_PREFIX}/include)
+set(READLINE_LIBRARY_DIRS ${NCURSES_PREFIX}/lib ${READLINE_PREFIX}/lib)
+set(READLINE_LIBRARIES
+    ${NCURSES_PREFIX}/lib/libncurses.so
+    ${NCURSES_PREFIX}/lib/libtinfo.so
+    ${READLINE_PREFIX}/lib/libreadline.so)
 set(ZLIB_PREFIX /mnt/gvfs/third-party2/zlib/3c160ac5c67e257501e24c6c1d00ad5e01d73db6/1.2.8/platform007/ca4da3d)
 set(ZLIB_INCLUDE_DIRS ${ZLIB_PREFIX}/include)
 set(ZLIB_LIBRARY_DIRS ${ZLIB_PREFIX}/lib)

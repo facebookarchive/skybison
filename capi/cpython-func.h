@@ -1289,6 +1289,7 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject*, PyObject*);
 PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject*), PyObject*);
 PyAPI_FUNC(void) _Py_RestoreSignals(void);
+PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int);
 PyAPI_FUNC(PyObject*) _Py_VaBuildValue_SizeT(const char*, va_list);
 PyAPI_FUNC(double) _Py_c_abs(Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_diff(Py_complex, Py_complex);
