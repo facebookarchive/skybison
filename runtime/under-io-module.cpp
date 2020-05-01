@@ -143,8 +143,8 @@ static RawObject rewindOrInitReadBuf(Thread* thread,
   if (read_pos > 0) {
     MutableBytes read_buf(&scope, *read_buf_obj);
     word buffer_num_bytes = buffered_reader.bufferNumBytes();
-    read_buf.replaceFromWithStartAt(0, Bytes::cast(*read_buf),
-                                    buffer_num_bytes - read_pos, read_pos);
+    read_buf.replaceFromWithStartAt(0, *read_buf, buffer_num_bytes - read_pos,
+                                    read_pos);
     buffered_reader.setBufferNumBytes(buffer_num_bytes - read_pos);
     buffered_reader.setReadPos(0);
     return *read_buf;
@@ -198,7 +198,7 @@ static RawObject fillBuffer(Thread* thread, const Object& raw_file,
   if (length > wanted && wanted != -1) {
     UNIMPLEMENTED("read() returned too many bytes");
   }
-  buffer.replaceFromWith(*buffer_num_bytes, *bytes, length);
+  buffer.replaceFromWithBytes(*buffer_num_bytes, *bytes, length);
   *buffer_num_bytes += length;
   return Unbound::object();
 }
@@ -284,7 +284,8 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
   MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
   word idx = 0;
   if (available > 0) {
-    result.replaceFromWithStartAt(idx, Bytes::cast(buffered_reader.readBuf()),
+    result.replaceFromWithStartAt(idx,
+                                  MutableBytes::cast(buffered_reader.readBuf()),
                                   available, buffered_reader.readPos());
     idx += available;
     buffered_reader.setReadPos(0);
@@ -303,7 +304,7 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
         bytes = byte_array.items();
         chunk_length = byte_array.numItems();
       }
-      result.replaceFromWith(idx, *bytes, chunk_length);
+      result.replaceFromWithBytes(idx, *bytes, chunk_length);
       idx += chunk_length;
     }
   }
@@ -492,14 +493,14 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
                           runtime->newMutableBytesUninitialized(length));
       word idx = 0;
       if (available > 0) {
-        Bytes read_buf(&scope, self.readBuf());
-        result.replaceFromWithStartAt(idx, *read_buf, available, read_pos);
+        result.replaceFromWithStartAt(idx, MutableBytes::cast(self.readBuf()),
+                                      available, read_pos);
         idx += available;
         self.setReadPos(0);
         self.setBufferNumBytes(0);
       }
       if (bytes_length > 0) {
-        result.replaceFromWith(idx, *bytes, bytes_length);
+        result.replaceFromWithBytes(idx, *bytes, bytes_length);
         idx += bytes_length;
       }
       DCHECK(idx == length, "length mismatch");
@@ -667,11 +668,11 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
     for (word i = 0, num_items = list.numItems(); i < num_items; i++) {
       chunk = list.at(i);
       word chunk_length = chunk.length();
-      result.replaceFromWith(idx, *chunk, chunk_length);
+      result.replaceFromWithBytes(idx, *chunk, chunk_length);
       idx += chunk_length;
     }
   }
-  result.replaceFromWith(idx, Bytes::cast(*read_buf), line_end);
+  result.replaceFromWith(idx, *read_buf, line_end);
   DCHECK(idx + line_end == length, "length mismatch");
   self.setReadPos(line_end);
   self.setBufferNumBytes(buffer_num_bytes);
@@ -819,8 +820,7 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   if (buffer.length() < new_len) {
     MutableBytes new_buffer(&scope,
                             runtime->newMutableBytesUninitialized(new_len));
-    new_buffer.replaceFromWith(0, RawBytes::cast(buffer.becomeImmutable()),
-                               buffer.length());
+    new_buffer.replaceFromWith(0, *buffer, buffer.length());
     if (buffer.length() < start) {
       for (word i = buffer.length(); i < start; i++) {
         new_buffer.byteAtPut(i, 0);
@@ -1150,7 +1150,7 @@ RawObject METH(StringIO, truncate)(Thread* thread, Frame* frame, word nargs) {
                                   "Negative size value %d", size);
     }
   }
-  Bytes buffer(&scope, string_io.buffer());
+  MutableBytes buffer(&scope, string_io.buffer());
   if (size < buffer.length()) {
     MutableBytes new_buffer(
         &scope, thread->runtime()->newMutableBytesUninitialized(size));

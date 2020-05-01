@@ -2666,7 +2666,8 @@ void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
   word num_items = array.numItems();
   word new_length = num_items + length;
   byteArrayEnsureCapacity(thread, array, new_length);
-  MutableBytes::cast(array.items()).replaceFromWith(num_items, *bytes, length);
+  MutableBytes::cast(array.items())
+      .replaceFromWithBytes(num_items, *bytes, length);
   array.setNumItems(new_length);
 }
 
@@ -2685,8 +2686,8 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& left,
   }
   HandleScope scope(thread);
   MutableBytes result(&scope, newMutableBytesUninitialized(len));
-  result.replaceFromWith(0, *left, left_len);
-  result.replaceFromWith(left_len, *right, right_len);
+  result.replaceFromWithBytes(0, *left, left_len);
+  result.replaceFromWithBytes(left_len, *right, right_len);
   return result.becomeImmutable();
 }
 
@@ -2854,7 +2855,7 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
   HandleScope scope(thread);
   MutableBytes result(&scope, newMutableBytesUninitialized(new_length));
   for (word i = 0; i < count * length; i += length) {
-    result.replaceFromWith(i, *source, length);
+    result.replaceFromWithBytes(i, *source, length);
   }
   return is_mutable ? *result : result.becomeImmutable();
 }
@@ -2901,13 +2902,13 @@ RawObject Runtime::bytesReplace(Thread* thread, const Bytes& src,
     byte* found_ptr = reinterpret_cast<byte*>(
         ::memmem(src_ptr + src_idx, src_len - src_idx, old_ptr, old_len));
     word prefix_len = found_ptr - (src_ptr + src_idx);
-    result.replaceFromWithStartAt(dst_idx, *src, prefix_len, src_idx);
+    result.replaceFromWithBytesStartAt(dst_idx, *src, prefix_len, src_idx);
     dst_idx += prefix_len;
-    result.replaceFromWithStartAt(dst_idx, *new_bytes, new_len, 0);
+    result.replaceFromWithBytesStartAt(dst_idx, *new_bytes, new_len, 0);
     dst_idx += new_len;
     src_idx += prefix_len + old_len;
   }
-  result.replaceFromWithStartAt(dst_idx, *src, src_len - src_idx, src_idx);
+  result.replaceFromWithBytesStartAt(dst_idx, *src, src_len - src_idx, src_idx);
   return result.becomeImmutable();
 }
 

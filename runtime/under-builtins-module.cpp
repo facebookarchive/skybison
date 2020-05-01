@@ -302,7 +302,7 @@ RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Frame* frame,
   }
   word last_idx = length - 1;
   MutableBytes self_bytes(&scope, self.items());
-  self_bytes.replaceFromWithStartAt(idx, Bytes::cast(self.items()),
+  self_bytes.replaceFromWithStartAt(idx, DataArray::cast(self.items()),
                                     last_idx - idx, idx + 1);
   self.setNumItems(last_idx);
   return NoneType::object();
@@ -409,7 +409,7 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
   ByteArray result(&scope, runtime->newByteArray());
   MutableBytes result_bytes(&scope,
                             runtime->newMutableBytesUninitialized(result_len));
-  Bytes src_bytes(&scope, self.items());
+  MutableBytes src_bytes(&scope, self.items());
   result_bytes.replaceFromWithStartAt(0, *src_bytes, result_len, start);
   result.setItems(*result_bytes);
   result.setNumItems(result_len);
@@ -528,7 +528,7 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
     }
     // Copy new elements into the middle
     MutableBytes::cast(self.items())
-        .replaceFromWith(start, *src_bytes, src_length);
+        .replaceFromWithBytes(start, *src_bytes, src_length);
     return NoneType::object();
   }
 

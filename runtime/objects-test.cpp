@@ -132,7 +132,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {
     src.byteAtPut(i, src_bytes[i]);
   }
   ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
-  src.replaceFromWithStartAt(0, Bytes::cast(*src), 3, 0);
+  src.replaceFromWithStartAt(0, *src, 3, 0);
   EXPECT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
 }
 
@@ -145,7 +145,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfBackward) {
     src.byteAtPut(i, src_bytes[i]);
   }
   ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
-  src.replaceFromWithStartAt(0, Bytes::cast(*src), 3, 4);
+  src.replaceFromWithStartAt(0, *src, 3, 4);
   const byte expected[] = "ickrick";
   EXPECT_TRUE(isMutableBytesEqualsBytes(src, expected));
 }
@@ -159,7 +159,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfForward) {
     src.byteAtPut(i, src_bytes[i]);
   }
   ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
-  src.replaceFromWithStartAt(4, Bytes::cast(*src), 3, 0);
+  src.replaceFromWithStartAt(4, *src, 3, 0);
   const byte expected[] = "patrpat";
   EXPECT_TRUE(isMutableBytesEqualsBytes(src, expected));
 }
@@ -167,7 +167,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfForward) {
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtReplacesStartingAtSrcIndex) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);
-  Bytes src(&scope, runtime_->newBytesWithAll(src_bytes));
+  LargeBytes src(&scope, runtime_->newBytesWithAll(src_bytes));
   MutableBytes dst(&scope, runtime_->newMutableBytesUninitialized(8));
   dst.replaceFromWithStartAt(0, *src, 7, 20);
   const byte expected[] = "patrick";

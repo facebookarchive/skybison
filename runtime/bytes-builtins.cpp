@@ -19,10 +19,10 @@ RawObject bytesDecodeASCII(Thread* thread, const Bytes& bytes) {
   if (bytes.isSmallBytes()) {
     return SmallBytes::cast(*bytes).becomeStr();
   }
-  word bytes_len = bytes.length();
+  word bytes_len = LargeBytes::cast(*bytes).length();
   MutableBytes buf(&scope,
                    thread->runtime()->newMutableBytesUninitialized(bytes_len));
-  buf.replaceFromWith(0, *bytes, bytes_len);
+  buf.replaceFromWith(0, LargeBytes::cast(*bytes), bytes_len);
   return buf.becomeStr();
 }
 
@@ -252,7 +252,8 @@ RawObject bytesSubseq(Thread* thread, const Bytes& bytes, word start,
   HandleScope scope(thread);
   MutableBytes result(&scope,
                       thread->runtime()->newMutableBytesUninitialized(length));
-  result.replaceFromWithStartAt(/*dst_start=*/0, *bytes, length, start);
+  result.replaceFromWithStartAt(/*dst_start=*/0, DataArray::cast(*bytes),
+                                length, start);
   return result.becomeImmutable();
 }
 

@@ -382,7 +382,7 @@ RawObject runCodeNoBytecodeRewriting(const Code& code) {
                     runtime->newFunctionWithCode(thread, qualname, code, main));
   MutableBytes rewritten_bytecode(
       &scope, runtime->newMutableBytesUninitialized(bytecode.length()));
-  rewritten_bytecode.replaceFromWith(0, *bytecode, bytecode.length());
+  rewritten_bytecode.replaceFromWithBytes(0, *bytecode, bytecode.length());
   function.setRewrittenBytecode(*rewritten_bytecode);
   return Interpreter::callFunction0(thread, thread->currentFrame(), function);
 }
