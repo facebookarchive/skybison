@@ -190,10 +190,10 @@ TEST_F(UnderBuiltinsModuleTest,
        UnderBytearrayJoinWithEmptySeparatorReturnsByteArray) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_->newByteArray());
-  Tuple iter(&scope, runtime_->newTuple(3));
-  iter.atPut(0, runtime_->newBytes(1, 'A'));
-  iter.atPut(1, runtime_->newBytes(2, 'B'));
-  iter.atPut(2, runtime_->newBytes(1, 'A'));
+  Object obj1(&scope, runtime_->newBytes(1, 'A'));
+  Object obj2(&scope, runtime_->newBytes(2, 'B'));
+  Object obj3(&scope, runtime_->newBytes(1, 'A'));
+  Tuple iter(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _bytearray_join), self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ABBA"));
@@ -392,10 +392,10 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytesJoinWithEmptySeparatorReturnsBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, Bytes::empty());
-  Tuple iter(&scope, runtime_->newTuple(3));
-  iter.atPut(0, runtime_->newBytes(1, 'A'));
-  iter.atPut(1, runtime_->newBytes(2, 'B'));
-  iter.atPut(2, runtime_->newBytes(1, 'A'));
+  Object obj1(&scope, runtime_->newBytes(1, 'A'));
+  Object obj2(&scope, runtime_->newBytes(2, 'B'));
+  Object obj3(&scope, runtime_->newBytes(1, 'A'));
+  Tuple iter(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
   Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ABBA"));
 }
@@ -426,9 +426,9 @@ dc = Foo(b"DC")
                    .isError());
   HandleScope scope(thread_);
   Object self(&scope, mainModuleAt(runtime_, "sep"));
-  Tuple iter(&scope, runtime_->newTuple(2));
-  iter.atPut(0, mainModuleAt(runtime_, "ac"));
-  iter.atPut(1, mainModuleAt(runtime_, "dc"));
+  Object obj1(&scope, mainModuleAt(runtime_, "ac"));
+  Object obj2(&scope, mainModuleAt(runtime_, "dc"));
+  Tuple iter(&scope, runtime_->newTupleWith2(obj1, obj2));
   Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
@@ -2559,10 +2559,10 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrarrayIaddWithStrReturnsStrArray) {
 TEST_F(UnderBuiltinsModuleTest, UnderStrJoinWithNonStrRaisesTypeError) {
   HandleScope scope(thread_);
   Str sep(&scope, runtime_->newStrFromCStr(","));
-  Tuple elts(&scope, runtime_->newTuple(3));
-  elts.atPut(0, runtime_->newStrFromCStr("foo"));
-  elts.atPut(1, runtime_->newInt(4));
-  elts.atPut(2, runtime_->newStrFromCStr("bar"));
+  Object obj1(&scope, runtime_->newStrFromCStr("foo"));
+  Object obj2(&scope, runtime_->newInt(4));
+  Object obj3(&scope, runtime_->newStrFromCStr("bar"));
+  Tuple elts(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FUNC(_builtins, _str_join), sep, elts), LayoutId::kTypeError,
       "sequence item 1: expected str instance, int found"));
