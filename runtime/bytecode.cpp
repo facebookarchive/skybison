@@ -211,7 +211,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     function.setOriginalArguments(runtime->emptyTuple());
     return;
   }
-  Tuple original_arguments(&scope, runtime->newTuple(num_caches));
+  Object original_arguments(&scope, NoneType::object());
+  if (num_caches > 0) {
+    original_arguments = runtime->newMutableTuple(num_caches);
+  }
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
     word begin = i;
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
@@ -226,7 +229,8 @@ void rewriteBytecode(Thread* thread, const Function& function) {
       bytecode.byteAtPut(i - kCodeUnitSize + 1, static_cast<byte>(cache));
 
       // Remember original arg.
-      original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
+      MutableTuple::cast(*original_arguments)
+          .atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
     } else if (rewritten.arg != op.arg || rewritten.bc != op.bc) {
       for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
@@ -242,8 +246,9 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   if (num_caches > 0) {
     function.setCaches(
         runtime->newMutableTuple(num_caches * kIcPointersPerEntry));
+    function.setOriginalArguments(
+        MutableTuple::cast(*original_arguments).becomeImmutable());
   }
-  function.setOriginalArguments(*original_arguments);
 }
 
 }  // namespace py
