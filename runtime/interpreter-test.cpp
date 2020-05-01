@@ -199,7 +199,7 @@ result = cache_binary_op(a, b)
       isStrEqualsCStr(mainModuleAt(runtime_, "result"), "from class A"));
 
   Function cache_binary_op(&scope, mainModuleAt(runtime_, "cache_binary_op"));
-  Tuple caches(&scope, cache_binary_op.caches());
+  MutableTuple caches(&scope, cache_binary_op.caches());
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
@@ -615,7 +615,7 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
       left - right));
 
   ASSERT_TRUE(function.caches().isTuple());
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   BinaryOpFlags dummy;
   ASSERT_FALSE(icLookupBinaryOp(*caches, 0, LayoutId::kLargeInt,
                                 LayoutId::kSmallInt, &dummy)
@@ -663,7 +663,7 @@ v1 = 7
       -4));
 
   ASSERT_TRUE(function.caches().isTuple());
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   BinaryOpFlags dummy;
   ASSERT_FALSE(
       icLookupBinaryOp(*caches, 0, v0.layoutId(), v1.layoutId(), &dummy)
@@ -818,7 +818,7 @@ cache_inplace_op(a, b)
 )")
                    .isError());
   Function cache_inplace_op(&scope, mainModuleAt(runtime_, "cache_inplace_op"));
-  Tuple caches(&scope, cache_inplace_op.caches());
+  MutableTuple caches(&scope, cache_inplace_op.caches());
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
@@ -1848,7 +1848,7 @@ result = cache_compare_op(a, b)
       isStrEqualsCStr(mainModuleAt(runtime_, "result"), "from class A"));
 
   Function cache_compare_op(&scope, mainModuleAt(runtime_, "cache_compare_op"));
-  Tuple caches(&scope, cache_compare_op.caches());
+  MutableTuple caches(&scope, cache_compare_op.caches());
   Object a_obj(&scope, mainModuleAt(runtime_, "a"));
   Object b_obj(&scope, mainModuleAt(runtime_, "b"));
   BinaryOpFlags flag;
@@ -5040,7 +5040,7 @@ result = foo()
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   EXPECT_TRUE(
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 }
@@ -5061,7 +5061,7 @@ result = foo()
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   EXPECT_TRUE(
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 
@@ -5093,7 +5093,7 @@ bar()
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -5115,7 +5115,7 @@ bar()
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -5134,7 +5134,7 @@ a = 800
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -5152,7 +5152,7 @@ del a
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -5187,7 +5187,7 @@ c = C()
   Function do_not_invalidate1(&scope,
                               mainModuleAt(runtime_, "do_not_invalidate1"));
   Function invalidate(&scope, mainModuleAt(runtime_, "invalidate"));
-  Tuple caches(&scope, get_foo.caches());
+  MutableTuple caches(&scope, get_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
@@ -5246,7 +5246,7 @@ c = C()
   Function do_not_invalidate(&scope,
                              mainModuleAt(runtime_, "do_not_invalidate"));
   Function invalidate(&scope, mainModuleAt(runtime_, "invalidate"));
-  Tuple caches(&scope, call_foo.caches());
+  MutableTuple caches(&scope, call_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
@@ -5305,7 +5305,7 @@ c = C()
   Function do_not_invalidate(&scope,
                              mainModuleAt(runtime_, "do_not_invalidate"));
   Function invalidate(&scope, mainModuleAt(runtime_, "invalidate"));
-  Tuple caches(&scope, get_foo.caches());
+  MutableTuple caches(&scope, get_foo.caches());
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
@@ -5377,7 +5377,7 @@ cache_A_add(a, b)
   BinaryOpFlags flags_out;
   // Ensure that A.__add__ is cached in cache_A_add.
   Object cached_in_cache_a_add(
-      &scope, icLookupBinaryOp(Tuple::cast(cache_a_add.caches()), 0,
+      &scope, icLookupBinaryOp(MutableTuple::cast(cache_a_add.caches()), 0,
                                a.layoutId(), b.layoutId(), &flags_out));
   ASSERT_EQ(cached_in_cache_a_add, *a_add);
 
@@ -5403,7 +5403,7 @@ cache_A_add(a, b)
       Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is evicted.
-  EXPECT_TRUE(icLookupBinaryOp(Tuple::cast(cache_a_add.caches()), 0,
+  EXPECT_TRUE(icLookupBinaryOp(MutableTuple::cast(cache_a_add.caches()), 0,
                                a.layoutId(), b.layoutId(), &flags_out)
                   .isErrorNotFound());
   // Verify that the dependencies are deleted.
@@ -5446,7 +5446,7 @@ c = cache_compare_op(a, b)
 
   // Ensure that A.__ge__ is cached.
   Function cache_compare_op(&scope, mainModuleAt(runtime_, "cache_compare_op"));
-  Tuple caches(&scope, cache_compare_op.caches());
+  MutableTuple caches(&scope, cache_compare_op.caches());
   BinaryOpFlags flags_out;
   Object cached(&scope, icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(),
                                          &flags_out));
@@ -5503,7 +5503,7 @@ cache_A_iadd(a, b)
   BinaryOpFlags flags_out;
   // Ensure that A.__iadd__ is cached in cache_A_iadd.
   Object cached_in_cache_a_iadd(
-      &scope, icLookupBinaryOp(Tuple::cast(cache_a_iadd.caches()), 0,
+      &scope, icLookupBinaryOp(MutableTuple::cast(cache_a_iadd.caches()), 0,
                                a.layoutId(), b.layoutId(), &flags_out));
   ASSERT_EQ(cached_in_cache_a_iadd, *a_iadd);
 
@@ -5535,7 +5535,7 @@ cache_A_iadd(a, b)
       Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is evicted.
-  EXPECT_TRUE(icLookupBinaryOp(Tuple::cast(cache_a_iadd.caches()), 0,
+  EXPECT_TRUE(icLookupBinaryOp(MutableTuple::cast(cache_a_iadd.caches()), 0,
                                a.layoutId(), b.layoutId(), &flags_out)
                   .isErrorNotFound());
   // Verify that the dependencies are deleted.
@@ -5592,7 +5592,7 @@ def test():
 
   Object c(&scope, mainModuleAt(runtime_, "c"));
   LayoutId layout_id = c.layoutId();
-  Tuple caches(&scope, test_function.caches());
+  MutableTuple caches(&scope, test_function.caches());
   // Cache miss.
   ASSERT_TRUE(
       icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
@@ -5630,7 +5630,7 @@ c = C()
   // Cache miss.
   Object c(&scope, mainModuleAt(runtime_, "c"));
   LayoutId layout_id = c.layoutId();
-  Tuple caches(&scope, test_function.caches());
+  MutableTuple caches(&scope, test_function.caches());
   ASSERT_TRUE(
       icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
   EXPECT_TRUE(
@@ -5666,7 +5666,7 @@ call_foo(c)
   ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
   ASSERT_EQ(bytecode.byteAt(4), CALL_METHOD);
 
-  Tuple caches(&scope, call_foo.caches());
+  MutableTuple caches(&scope, call_foo.caches());
   EXPECT_TRUE(icIsCacheEmpty(caches, bytecode.byteAt(3)));
 }
 
@@ -5739,7 +5739,7 @@ c = C()
   Type type_c(&scope, mainModuleAt(runtime_, "C"));
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Function cache_attribute(&scope, mainModuleAt(runtime_, "cache_attribute"));
-  Tuple caches(&scope, cache_attribute.caches());
+  MutableTuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerEntry);
 
   // Load the cache.
@@ -5774,7 +5774,7 @@ c = C()
   Type type_c(&scope, mainModuleAt(runtime_, "C"));
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Function cache_attribute(&scope, mainModuleAt(runtime_, "cache_attribute"));
-  Tuple caches(&scope, cache_attribute.caches());
+  MutableTuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerEntry);
 
   // Load the cache.
@@ -5831,7 +5831,7 @@ function_that_caches_attr_lookup(a, b, c)
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Function function_that_caches_attr_lookup(
       &scope, mainModuleAt(runtime_, "function_that_caches_attr_lookup"));
-  Tuple caches(&scope, function_that_caches_attr_lookup.caches());
+  MutableTuple caches(&scope, function_that_caches_attr_lookup.caches());
   // 0: global variable
   // 1: a.foo
   // 2: b.foo

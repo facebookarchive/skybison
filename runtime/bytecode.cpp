@@ -181,8 +181,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   word names_length = Tuple::cast(Code::cast(function.code()).names()).length();
   word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerEntry);
   if (!function.hasOptimizedOrNewlocals()) {
-    function.setCaches(
-        runtime->newTuple(num_global_caches * kIcPointersPerEntry));
+    if (num_global_caches > 0) {
+      function.setCaches(
+          runtime->newMutableTuple(num_global_caches * kIcPointersPerEntry));
+    }
     function.setOriginalArguments(runtime->emptyTuple());
     return;
   }
@@ -202,8 +204,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   if (num_caches >= 256) {
     // Populate global variable caches unconditionally since the interpreter
     // assumes their existence.
-    function.setCaches(
-        runtime->newTuple(num_global_caches * kIcPointersPerEntry));
+    if (num_global_caches > 0) {
+      function.setCaches(
+          runtime->newMutableTuple(num_global_caches * kIcPointersPerEntry));
+    }
     function.setOriginalArguments(runtime->emptyTuple());
     return;
   }
@@ -235,7 +239,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     }
   }
 
-  function.setCaches(runtime->newTuple(num_caches * kIcPointersPerEntry));
+  if (num_caches > 0) {
+    function.setCaches(
+        runtime->newMutableTuple(num_caches * kIcPointersPerEntry));
+  }
   function.setOriginalArguments(*original_arguments);
 }
 

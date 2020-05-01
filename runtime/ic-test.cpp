@@ -16,7 +16,8 @@ TEST_F(
     IcTest,
     icLookupMonomorphicWithEmptyCacheReturnsErrorNotFoundAndSetIsFoundToFalse) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(2 * kIcPointersPerEntry));
   bool is_found;
   EXPECT_TRUE(icLookupMonomorphic(*caches, 1, LayoutId::kSmallInt, &is_found)
                   .isErrorNotFound());
@@ -26,7 +27,7 @@ TEST_F(
 TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_->newTuple(kIcPointersPerEntry));
+  MutableTuple caches(&scope, runtime_->newMutableTuple(kIcPointersPerEntry));
   BinaryOpFlags flags;
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
                                LayoutId::kSmallInt, &flags)
@@ -35,7 +36,7 @@ TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
 
 TEST_F(IcTest, IcLookupGlobalVar) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(2));
+  MutableTuple caches(&scope, runtime_->newMutableTuple(2));
   ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
   caches.atPut(0, *cache);
@@ -46,7 +47,8 @@ TEST_F(IcTest, IcLookupGlobalVar) {
 
 TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(1 * kIcPointersPerEntry));
   Object value(&scope, runtime_->newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
@@ -61,7 +63,8 @@ TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(1 * kIcPointersPerEntry));
   Object value(&scope, runtime_->newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
@@ -84,7 +87,8 @@ TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(1 * kIcPointersPerEntry));
   Object int_value(&scope, runtime_->newInt(88));
   Object str_value(&scope, runtime_->newInt(99));
   Object name(&scope, Str::empty());
@@ -106,7 +110,8 @@ TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(1 * kIcPointersPerEntry));
   Object int_value(&scope, runtime_->newInt(88));
   Object str_value(&scope, runtime_->newInt(99));
   Object name(&scope, Str::empty());
@@ -152,7 +157,7 @@ c = C()
   // Inserting dependent adds dependent to a new Placeholder in C for 'foo', and
   // to the existing ValueCell in B. A won't be affected since it's not visited
   // during MRO traversal.
-  Tuple caches(&scope, runtime_->newTuple(4));
+  MutableTuple caches(&scope, runtime_->newMutableTuple(4));
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Object value(&scope, SmallInt::fromWord(1234));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
@@ -180,7 +185,7 @@ c = C()
 TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
   HandleScope scope(thread_);
   Str instance(&scope, runtime_->newStrFromCStr("str instance"));
-  Tuple caches(&scope, runtime_->newTuple(4));
+  MutableTuple caches(&scope, runtime_->newMutableTuple(4));
   Object value(&scope, SmallInt::fromWord(1234));
   Object dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
   Function dependent(&scope, newEmptyFunction());
@@ -230,7 +235,7 @@ class B:
   HandleScope scope(thread_);
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Function cache_a_foo(&scope, mainModuleAt(runtime_, "cache_a_foo"));
-  Tuple caches(&scope, cache_a_foo.caches());
+  MutableTuple caches(&scope, cache_a_foo.caches());
   Object cached_object(&scope, mainModuleAt(runtime_, "a"));
   // Precondition check that the A.foo attribute lookup has been cached.
   ASSERT_FALSE(
@@ -308,7 +313,7 @@ cache_binop(a, b)
                    .isError());
   HandleScope scope(thread_);
   Function cache_binop(&scope, mainModuleAt(runtime_, "cache_binop"));
-  Tuple caches(&scope, cache_binop.caches());
+  MutableTuple caches(&scope, cache_binop.caches());
   Object left_operand(&scope, mainModuleAt(runtime_, "a"));
   Object right_operand(&scope, mainModuleAt(runtime_, "b"));
   Type left_operand_type(&scope, mainModuleAt(runtime_, "A"));
@@ -349,7 +354,7 @@ cache_binop(a, b)
                    .isError());
   HandleScope scope(thread_);
   Function cache_binop(&scope, mainModuleAt(runtime_, "cache_binop"));
-  Tuple caches(&scope, cache_binop.caches());
+  MutableTuple caches(&scope, cache_binop.caches());
   Object left_operand(&scope, mainModuleAt(runtime_, "a"));
   Object right_operand(&scope, mainModuleAt(runtime_, "b"));
   Type right_operand_type(&scope, mainModuleAt(runtime_, "B"));
@@ -396,7 +401,7 @@ B__le__ = B.__le__
   Object type_a_dunder_ge(&scope, mainModuleAt(runtime_, "A__ge__"));
   Object type_b_dunder_le(&scope, mainModuleAt(runtime_, "B__le__"));
   Function cache_compare_op(&scope, mainModuleAt(runtime_, "cache_compare_op"));
-  Tuple caches(&scope, cache_compare_op.caches());
+  MutableTuple caches(&scope, cache_compare_op.caches());
   BinaryOpFlags flags_out;
   // Ensure that A.__ge__ is cached for t0 = a >= b.
   ASSERT_EQ(
@@ -615,7 +620,7 @@ cache_foo(b)
   Object a_foo(&scope, mainModuleAt(runtime_, "a_foo"));
   Object b_obj(&scope, mainModuleAt(runtime_, "b"));
   Type a_type(&scope, mainModuleAt(runtime_, "A"));
-  Tuple caches(&scope, cache_foo.caches());
+  MutableTuple caches(&scope, cache_foo.caches());
   ASSERT_EQ(icLookupAttr(*caches, 1, b_obj.layoutId()), *a_foo);
   // Manually delete the cache for B.foo in cache_foo.
   caches.atPut(1 * kIcPointersPerEntry + kIcEntryKeyOffset, NoneType::object());
@@ -701,7 +706,8 @@ static RawObject testingFunctionCachingAttributes(
   names.atPut(0, *attribute_name);
   code.setNames(*names);
 
-  Tuple caches(&scope, runtime->newTuple(2 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime->newMutableTuple(2 * kIcPointersPerEntry));
   function.setCaches(*caches);
 
   return *function;
@@ -728,7 +734,7 @@ c = C()
 
   // Create an attribute cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(runtime_, "c"));
-  Tuple caches(&scope, dependent.caches());
+  MutableTuple caches(&scope, dependent.caches());
   Object value(&scope, SmallInt::fromWord(1234));
   Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, instance.layoutId(), value, name, dependent);
@@ -768,7 +774,7 @@ c = C()
 
   // Create an instance offset cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(runtime_, "c"));
-  Tuple caches(&scope, dependent.caches());
+  MutableTuple caches(&scope, dependent.caches());
   Object value(&scope, SmallInt::fromWord(1234));
   Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, instance.layoutId(), value, name, dependent);
@@ -829,7 +835,7 @@ c = C()
 
   // Create a cache for a.foo in dependent.
   Object a(&scope, mainModuleAt(runtime_, "a"));
-  Tuple caches(&scope, dependent.caches());
+  MutableTuple caches(&scope, dependent.caches());
   Object value_100(&scope, SmallInt::fromWord(100));
   Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, a.layoutId(), value_100, name, dependent);
@@ -899,7 +905,7 @@ c = C()
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
 
-  Tuple dependent0_caches(&scope, dependent0.caches());
+  MutableTuple dependent0_caches(&scope, dependent0.caches());
   Object instance(&scope, mainModuleAt(runtime_, "c"));
   {
     // Create an attribute cache for an instance of C, under name "foo" in
@@ -912,7 +918,7 @@ c = C()
               SmallInt::fromWord(1234));
   }
 
-  Tuple dependent1_caches(&scope, dependent1.caches());
+  MutableTuple dependent1_caches(&scope, dependent1.caches());
   {
     // Create an attribute cache for an instance of C, under name "bar" in
     // dependent1.
@@ -1090,7 +1096,7 @@ cache_compare_op(a, b)
   Object b(&scope, mainModuleAt(runtime_, "b"));
   Object type_a_dunder_ge(&scope, mainModuleAt(runtime_, "A__ge__"));
   Function cache_compare_op(&scope, mainModuleAt(runtime_, "cache_compare_op"));
-  Tuple caches(&scope, cache_compare_op.caches());
+  MutableTuple caches(&scope, cache_compare_op.caches());
   BinaryOpFlags flags_out;
   Object cached(&scope, icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(),
                                          &flags_out));
@@ -1156,7 +1162,7 @@ result = f(container, 0)
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Object getitem(&scope, mainModuleAt(runtime_, "getitem"));
   Function f(&scope, mainModuleAt(runtime_, "f"));
-  Tuple caches(&scope, f.caches());
+  MutableTuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_EQ(icLookupAttr(*caches, 0, container.layoutId()), *getitem);
@@ -1195,7 +1201,7 @@ result = f(container, "hi")
 
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Function f(&scope, mainModuleAt(runtime_, "f"));
-  Tuple caches(&scope, f.caches());
+  MutableTuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_TRUE(icLookupAttr(*caches, 0, container.layoutId()).isErrorNotFound());
@@ -1213,7 +1219,8 @@ result2 = f(container, "hello there!")
 
 TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(2 * kIcPointersPerEntry));
   Object value(&scope, runtime_->newStrFromCStr("this is a random value"));
   EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1227,7 +1234,8 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
 TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(2 * kIcPointersPerEntry));
   Object value(&scope, runtime_->newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1245,7 +1253,8 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
 TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  MutableTuple caches(&scope,
+                      runtime_->newMutableTuple(2 * kIcPointersPerEntry));
   Object value(&scope, runtime_->newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1304,7 +1313,7 @@ result = f(container)
   Object iterator(&scope, mainModuleAt(runtime_, "iterator"));
   Object iter_next(&scope, mainModuleAt(runtime_, "iter_next"));
   Function f(&scope, mainModuleAt(runtime_, "f"));
-  Tuple caches(&scope, f.caches());
+  MutableTuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_EQ(icLookupAttr(*caches, 0, iterator.layoutId()), *iter_next);
@@ -1339,7 +1348,7 @@ result = f(container)
 
   Object iterator(&scope, mainModuleAt(runtime_, "iterator"));
   Function f(&scope, mainModuleAt(runtime_, "f"));
-  Tuple caches(&scope, f.caches());
+  MutableTuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_TRUE(icLookupAttr(*caches, 0, iterator.layoutId()).isErrorNotFound());
@@ -1367,7 +1376,7 @@ static RawObject testingFunction(Thread* thread) {
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   code.setNames(runtime->newTuple(2));
-  Tuple caches(&scope, runtime->newTuple(2));
+  MutableTuple caches(&scope, runtime->newMutableTuple(2));
   function.setCaches(*caches);
   return *function;
 }
@@ -1421,7 +1430,7 @@ TEST_F(
 TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {
   HandleScope scope(thread_);
   Function function(&scope, testingFunction(thread_));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
 
   ValueCell cache(&scope, runtime_->newValueCell());
@@ -1445,7 +1454,7 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {
 TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
   HandleScope scope(thread_);
   Function function(&scope, testingFunction(thread_));
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
 
   MutableBytes rewritten_bytecode(&scope,
                                   runtime_->newMutableBytesUninitialized(8));
@@ -1519,8 +1528,8 @@ TEST_F(IcTest,
   HandleScope scope(thread_);
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
-  Tuple caches0(&scope, function0.caches());
-  Tuple caches1(&scope, function1.caches());
+  MutableTuple caches0(&scope, function0.caches());
+  MutableTuple caches1(&scope, function1.caches());
 
   // Both caches of Function0 & 1 caches the same cache value.
   ValueCell cache(&scope, runtime_->newValueCell());
@@ -1559,8 +1568,8 @@ TEST_F(IcTest, IcInvalidateGlobalVarDoNotDeferenceDeallocatedReferent) {
   HandleScope scope(thread_);
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
-  Tuple caches0(&scope, function0.caches());
-  Tuple caches1(&scope, function1.caches());
+  MutableTuple caches0(&scope, function0.caches());
+  MutableTuple caches1(&scope, function1.caches());
 
   // Both caches of Function0 & 1 caches the same cache value.
   ValueCell cache(&scope, runtime_->newValueCell());
@@ -1631,21 +1640,6 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, invalidated_expected));
 }
 
-TEST_F(IcTest, IcIteratorSkipsNotCachingOpcodes) {
-  HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(4));
-  bytecode.byteAtPut(0, LOAD_GLOBAL);
-  bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, LOAD_ATTR);
-  bytecode.byteAtPut(3, 0);
-
-  Function function(&scope, newEmptyFunction());
-  function.setRewrittenBytecode(*bytecode);
-
-  IcIterator it(&scope, runtime_, *function);
-  ASSERT_FALSE(it.hasNext());
-}
-
 TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   HandleScope scope(thread_);
   MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(20));
@@ -1692,7 +1686,8 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   Object name(&scope, runtime_->newStrFromCStr("name"));
   Function dependent(&scope, newEmptyFunction());
   Object value(&scope, NoneType::object());
-  Tuple caches(&scope, runtime_->newTuple(num_caches * kIcPointersPerEntry));
+  MutableTuple caches(
+      &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
   // Caches for LOAD_ATTR_ANAMORPHIC at PC 2.
   value = SmallInt::fromWord(10);
   icUpdateAttr(thread_, caches, 0, LayoutId::kBool, value, name, dependent);
@@ -1819,7 +1814,8 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   original_args.atPut(
       1, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
 
-  Tuple caches(&scope, runtime_->newTuple(num_caches * kIcPointersPerEntry));
+  MutableTuple caches(
+      &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
 
   // Caches for COMPARE_OP_ANAMORPHIC at 2.
   word compare_op_cached_index =
@@ -1901,7 +1897,8 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   original_args.atPut(
       0, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
 
-  Tuple caches(&scope, runtime_->newTuple(num_caches * kIcPointersPerEntry));
+  MutableTuple caches(
+      &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
 
   // Caches for BINARY_OP_ANAMORPHIC at 2.
   word inplace_op_cached_index =
@@ -2030,7 +2027,7 @@ TEST_F(IcTest,
   SmallInt entry_key(&scope, encodeBinaryOpKey(LayoutId::kStr, LayoutId::kInt,
                                                kBinaryOpReflected));
   Object entry_value(&scope, runtime_->newStrFromCStr("value"));
-  Tuple caches(&scope, runtime_->newTuple(kIcPointersPerEntry));
+  MutableTuple caches(&scope, runtime_->newMutableTuple(kIcPointersPerEntry));
   caches.atPut(kIcEntryKeyOffset, *entry_key);
   caches.atPut(kIcEntryValueOffset, *entry_value);
 

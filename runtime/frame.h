@@ -211,8 +211,8 @@ class Frame {
   RawMutableBytes bytecode();
   void setBytecode(RawMutableBytes bytecode);
 
-  RawTuple caches();
-  void setCaches(RawTuple caches);
+  RawObject caches();
+  void setCaches(RawObject caches);
 
   RawObject code();
 
@@ -417,9 +417,9 @@ inline void Frame::resetLocals(word num_locals) {
   atPut(kLocalsOffset, SmallInt::fromAlignedCPtr(locals));
 }
 
-inline RawTuple Frame::caches() { return RawTuple::cast(at(kCachesOffset)); }
+inline RawObject Frame::caches() { return at(kCachesOffset); }
 
-inline void Frame::setCaches(RawTuple caches) { atPut(kCachesOffset, caches); }
+inline void Frame::setCaches(RawObject caches) { atPut(kCachesOffset, caches); }
 
 inline RawMutableBytes Frame::bytecode() {
   return RawMutableBytes::cast(at(kBytecodeOffset));

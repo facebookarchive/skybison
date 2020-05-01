@@ -34,7 +34,7 @@ static void insertDependencyForTypeLookupInMro(Thread* thread,
   }
 }
 
-ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
+ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word index,
                      LayoutId layout_id, const Object& value,
                      const Object& name, const Function& dependent) {
   Runtime* runtime = thread->runtime();
@@ -50,7 +50,8 @@ ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
   if (!caches.at(i + kIcEntryKeyOffset).isUnbound()) {
     // This is currently not a polymorphic cache.
     HandleScope scope(thread);
-    Tuple polymorphic_cache(&scope, runtime->newTuple(kIcPointersPerPolyCache));
+    MutableTuple polymorphic_cache(
+        &scope, runtime->newMutableTuple(kIcPointersPerPolyCache));
     polymorphic_cache.atPut(kIcEntryKeyOffset,
                             caches.at(i + kIcEntryKeyOffset));
     polymorphic_cache.atPut(kIcEntryValueOffset,
@@ -59,7 +60,8 @@ ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
     caches.atPut(i + kIcEntryKeyOffset, Unbound::object());
     caches.atPut(i + kIcEntryValueOffset, *polymorphic_cache);
   }
-  RawTuple polymorphic_cache = Tuple::cast(caches.at(i + kIcEntryValueOffset));
+  RawMutableTuple polymorphic_cache =
+      MutableTuple::cast(caches.at(i + kIcEntryValueOffset));
   for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
     entry_key = polymorphic_cache.at(j + kIcEntryKeyOffset);
     if (entry_key.isNoneType() || entry_key == key) {
@@ -72,12 +74,12 @@ ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
   return ICState::kPolymorphic;
 }
 
-bool icIsCacheEmpty(const Tuple& caches, word index) {
+bool icIsCacheEmpty(const MutableTuple& caches, word index) {
   word i = index * kIcPointersPerEntry;
   return caches.at(i + kIcEntryKeyOffset).isNoneType();
 }
 
-void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
+void icUpdateAttrModule(Thread* thread, const MutableTuple& caches, word index,
                         const Object& receiver, const ValueCell& value_cell,
                         const Function& dependent) {
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
@@ -95,7 +97,7 @@ void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
   icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
 }
 
-void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
+void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word index,
                       const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent) {
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
@@ -635,7 +637,7 @@ RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
                             static_cast<word>(flags));
 }
 
-ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
+ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word index,
                       LayoutId left_layout_id, LayoutId right_layout_id,
                       const Object& value, BinaryOpFlags flags) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
@@ -657,8 +659,8 @@ ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
   if (!caches.at(i + kIcEntryKeyOffset).isUnbound()) {
     // Upgrade this cache to a polymorphic cache.
     HandleScope scope(thread);
-    Tuple polymorphic_cache(
-        &scope, thread->runtime()->newTuple(kIcPointersPerPolyCache));
+    MutableTuple polymorphic_cache(
+        &scope, thread->runtime()->newMutableTuple(kIcPointersPerPolyCache));
     polymorphic_cache.atPut(kIcEntryKeyOffset,
                             caches.at(i + kIcEntryKeyOffset));
     polymorphic_cache.atPut(kIcEntryValueOffset,
@@ -667,7 +669,8 @@ ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
     caches.atPut(i + kIcEntryKeyOffset, Unbound::object());
     caches.atPut(i + kIcEntryValueOffset, *polymorphic_cache);
   }
-  RawTuple polymorphic_cache = Tuple::cast(caches.at(i + kIcEntryValueOffset));
+  RawMutableTuple polymorphic_cache =
+      MutableTuple::cast(caches.at(i + kIcEntryValueOffset));
   for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
     entry_key = polymorphic_cache.at(j + kIcEntryKeyOffset);
     if (entry_key.isNoneType() ||
@@ -683,7 +686,7 @@ ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
                        const ValueCell& value_cell) {
   HandleScope scope(thread);
-  Tuple caches(&scope, function.caches());
+  MutableTuple caches(&scope, function.caches());
   // TODO(T46426927): Remove this once an invariant of updating cache only once
   // holds.
   if (!caches.at(index).isNoneType()) {
@@ -715,7 +718,6 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
 void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Tuple caches(&scope, runtime->emptyTuple());
   Object referent(&scope, NoneType::object());
   Object function(&scope, NoneType::object());
   Object link(&scope, value_cell.dependencyLink());
@@ -735,7 +737,7 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
         Tuple::cast(Code::cast(Function::cast(*function).code()).names())
             .length();
     // Empty the cache.
-    caches = Function::cast(*function).caches();
+    MutableTuple caches(&scope, Function::cast(*function).caches());
     DCHECK_BOUND(names_length, caches.length());
     word name_index_found = -1;
     for (word i = 0; i < names_length; i++) {

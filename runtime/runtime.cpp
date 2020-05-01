@@ -747,7 +747,6 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   if (!code.isNative()) {
     Bytes bytecode(&scope, code.code());
     function.setRewrittenBytecode(mutableBytesFromBytes(thread, bytecode));
-    function.setCaches(emptyTuple());
     function.setOriginalArguments(emptyTuple());
     // TODO(T45382423): Move this into a separate function to be called by a
     // relevant opcode during opcode execution.

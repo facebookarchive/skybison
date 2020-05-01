@@ -226,7 +226,7 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   word total_locals = function.totalArgs() + total_vars;
   Frame* result = openAndLinkFrame(initial_size, total_locals);
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
-  result->setCaches(Tuple::cast(function.caches()));
+  result->setCaches(function.caches());
   result->setVirtualPC(0);
   DCHECK(result->function().totalLocals() == total_locals,
          "local counts mismatch");

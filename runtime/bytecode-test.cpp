@@ -526,7 +526,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
   EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
-  EXPECT_EQ(Tuple::cast(function.caches()).length(), 0);
+  EXPECT_TRUE(function.caches().isNoneType());
 }
 
 TEST_F(BytecodeTest,

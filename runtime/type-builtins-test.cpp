@@ -68,7 +68,7 @@ cache_a_foo(a)
                    .isError());
   HandleScope scope(thread_);
   Function cache_a_foo(&scope, mainModuleAt(runtime_, "cache_a_foo"));
-  Tuple caches(&scope, cache_a_foo.caches());
+  MutableTuple caches(&scope, cache_a_foo.caches());
   Object a(&scope, mainModuleAt(runtime_, "a"));
   ASSERT_FALSE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 
@@ -93,7 +93,7 @@ cache_a_eq(a)
                    .isError());
   HandleScope scope(thread_);
   Function cache_a_eq(&scope, mainModuleAt(runtime_, "cache_a_eq"));
-  Tuple caches(&scope, cache_a_eq.caches());
+  MutableTuple caches(&scope, cache_a_eq.caches());
   Object a(&scope, mainModuleAt(runtime_, "a"));
   ASSERT_FALSE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 
@@ -158,7 +158,7 @@ cache_a_eq(a)
                    .isError());
   HandleScope scope(thread_);
   Function cache_a_eq(&scope, mainModuleAt(runtime_, "cache_a_eq"));
-  Tuple caches(&scope, cache_a_eq.caches());
+  MutableTuple caches(&scope, cache_a_eq.caches());
   Object a(&scope, mainModuleAt(runtime_, "a"));
   ASSERT_FALSE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 

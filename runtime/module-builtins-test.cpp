@@ -191,7 +191,7 @@ foo()
 
   // The looked up module entry got cached in function foo().
   Function function_foo(&scope, mainModuleAt(runtime_, "foo"));
-  Tuple caches(&scope, function_foo.caches());
+  MutableTuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
   // Updating global variable a does not invalidate the cache.
@@ -220,7 +220,7 @@ foo()
 
   // The looked up module entry got cached in function foo().
   Function function_foo(&scope, mainModuleAt(runtime_, "foo"));
-  Tuple caches(&scope, function_foo.caches());
+  MutableTuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
   ASSERT_FALSE(mainModuleAt(runtime_, "__builtins__").isErrorNotFound());
@@ -320,7 +320,7 @@ foo()
 
   // The looked up module entry got cached in function foo().
   Function function_foo(&scope, mainModuleAt(runtime_, "foo"));
-  Tuple caches(&scope, function_foo.caches());
+  MutableTuple caches(&scope, function_foo.caches());
 
   Module module(&scope, findMainModule(runtime_));
   Str a(&scope, runtime_->newStrFromCStr("a"));

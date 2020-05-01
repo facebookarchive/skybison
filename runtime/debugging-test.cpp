@@ -192,7 +192,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "__qualname__" = "footype.baz"
   (in-object) "_function__annotations" = {"return": <type "int">}
   (in-object) "_function__argcount" = 1
-  (in-object) "_function__caches" = (None, None, None, None)
+  (in-object) "_function__caches" = mutabletuple(None, None, None, None)
   (in-object) "_function__closure" = ()
   (in-object) "_function__defaults" = (-9,)
   (in-object) "_function__dict" = {"funcattr0": 4}
