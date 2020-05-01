@@ -326,9 +326,14 @@ RawObject runBuiltinImpl(NativeMethodType method,
   // Push an empty function so we have one at the expected place in the stack.
   word args_length = args.length();
   Runtime* runtime = thread->runtime();
-  Tuple parameter_names(&scope, runtime->newTuple(args_length));
-  for (word i = 0; i < args_length; i++) {
-    parameter_names.atPut(i, runtime->newStrFromFmt("arg%w", i));
+  Tuple parameter_names(&scope, runtime->emptyTuple());
+  if (args_length > 0) {
+    MutableTuple parameter_names_mut(&scope,
+                                     runtime->newMutableTuple(args_length));
+    for (word i = 0; i < args_length; i++) {
+      parameter_names_mut.atPut(i, runtime->newStrFromFmt("arg%w", i));
+    }
+    parameter_names = parameter_names_mut.becomeImmutable();
   }
 
   Object name(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));

@@ -1066,10 +1066,10 @@ TEST_F(HeapProfilerTest, WriteObjectArrayWritesObjectArrayRecord) {
   Vector<byte> result;
   HeapProfiler profiler(thread_, testWriter, &result);
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(3));
-  tuple.atPut(0, SmallInt::fromWord(0));
-  tuple.atPut(1, SmallInt::fromWord(1));
-  tuple.atPut(2, SmallInt::fromWord(2));
+  Object obj1(&scope, SmallInt::fromWord(0));
+  Object obj2(&scope, SmallInt::fromWord(1));
+  Object obj3(&scope, SmallInt::fromWord(2));
+  Tuple tuple(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
   {
     HeapProfiler::Record record(HeapProfiler::kHeapDumpSegment, &profiler);
     profiler.setRecord(&record);

@@ -743,9 +743,9 @@ class C(A, B):
 TEST_F(TypeBuiltinsTest, MroWithInvalidLinearizationRaisesTypeError) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->newType());
-  Tuple bases(&scope, runtime_->newTuple(2));
-  bases.atPut(0, runtime_->typeAt(LayoutId::kObject));
-  bases.atPut(1, runtime_->typeAt(LayoutId::kInt));
+  Object obj1(&scope, runtime_->typeAt(LayoutId::kObject));
+  Object obj2(&scope, runtime_->typeAt(LayoutId::kInt));
+  Tuple bases(&scope, runtime_->newTupleWith2(obj1, obj2));
   type.setBases(*bases);
   EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, mro), type),
                             LayoutId::kTypeError,

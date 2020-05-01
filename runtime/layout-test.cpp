@@ -147,11 +147,10 @@ TEST_F(LayoutTest, FindAttribute) {
   EXPECT_FALSE(Runtime::layoutFindAttribute(*layout, attr, &info));
 
   // Update the layout to include the new attribute as an in-object attribute
-  Tuple entry(&scope, runtime_->newTuple(2));
-  entry.atPut(0, *attr);
-  entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
-  Tuple array(&scope, runtime_->newTuple(1));
-  array.atPut(0, *entry);
+  Object info_obj(&scope,
+                  AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
+  Tuple entry(&scope, runtime_->newTupleWith2(attr, info_obj));
+  Tuple array(&scope, runtime_->newTupleWith1(entry));
   Layout::cast(*layout).setInObjectAttributes(*array);
 
   // Should find the attribute
@@ -377,11 +376,10 @@ TEST_F(LayoutTest, DeleteInObjectAttribute) {
 
   // Create a new layout with a single in-object attribute
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "myattr"));
-  Tuple entry(&scope, runtime_->newTuple(2));
-  entry.atPut(0, *attr);
-  entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
-  Tuple array(&scope, runtime_->newTuple(1));
-  array.atPut(0, *entry);
+  Object info_obj(&scope,
+                  AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
+  Tuple entry(&scope, runtime_->newTupleWith2(attr, info_obj));
+  Tuple array(&scope, runtime_->newTupleWith1(entry));
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
   layout.setInObjectAttributes(*array);
 
@@ -418,17 +416,19 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
 
   // Create a new layout with several overflow attributes
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "myattr"));
+  Object info_obj1(&scope, AttributeInfo(0, 0).asSmallInt());
+  Tuple entry1(&scope, runtime_->newTupleWith2(attr, info_obj1));
+
   Object attr2(&scope, Runtime::internStrFromCStr(thread_, "myattr2"));
+  Object info_obj2(&scope, AttributeInfo(1, 0).asSmallInt());
+  Tuple entry2(&scope, runtime_->newTupleWith2(attr2, info_obj2));
+
   Object attr3(&scope, Runtime::internStrFromCStr(thread_, "myattr3"));
-  Tuple attrs(&scope, runtime_->newTuple(3));
-  Object* names[] = {&attr, &attr2, &attr3};
-  for (word i = 0; i < attrs.length(); i++) {
-    Tuple entry(&scope, runtime_->newTuple(2));
-    entry.atPut(0, **names[i]);
-    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
-    attrs.atPut(i, *entry);
-  }
+  Object info_obj3(&scope, AttributeInfo(2, 0).asSmallInt());
+  Tuple entry3(&scope, runtime_->newTupleWith2(attr3, info_obj3));
+
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
+  Tuple attrs(&scope, runtime_->newTupleWith3(entry1, entry2, entry3));
   layout.setOverflowAttributes(*attrs);
 
   // Delete the middle attribute. Make sure a new layout is created and the
@@ -494,11 +494,9 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
 static RawObject createLayoutAttribute(Runtime* runtime, const Object& name,
                                        uword flags) {
   HandleScope scope;
-  Tuple entry(&scope, runtime->newTuple(2));
-  entry.atPut(0, *name);
-  entry.atPut(1, AttributeInfo(0, flags).asSmallInt());
-  Tuple result(&scope, runtime->newTuple(1));
-  result.atPut(0, *entry);
+  Object info(&scope, AttributeInfo(0, flags).asSmallInt());
+  Tuple entry(&scope, runtime->newTupleWith2(name, info));
+  Tuple result(&scope, runtime->newTupleWith1(entry));
   return *result;
 }
 

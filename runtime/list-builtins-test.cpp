@@ -829,8 +829,6 @@ TEST_F(ListBuiltinsTest, ExtendTuple) {
   HandleScope scope(thread_);
   List list(&scope, runtime_->newList());
   Tuple object_array0(&scope, runtime_->emptyTuple());
-  Tuple object_array1(&scope, runtime_->newTuple(1));
-  Tuple object_array16(&scope, runtime_->newTuple(16));
 
   for (int i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
@@ -839,16 +837,19 @@ TEST_F(ListBuiltinsTest, ExtendTuple) {
   listExtend(Thread::current(), list, object_array0, 0);
   EXPECT_EQ(list.numItems(), 4);
 
-  object_array1.atPut(0, NoneType::object());
+  Object none(&scope, NoneType::object());
+  Tuple object_array1(&scope, runtime_->newTupleWith1(none));
   listExtend(Thread::current(), list, object_array1, 1);
   ASSERT_GE(list.numItems(), 5);
   ASSERT_TRUE(list.at(4).isNoneType());
 
+  MutableTuple object_array16(&scope, runtime_->newMutableTuple(16));
   for (word i = 0; i < 4; i++) {
     object_array16.atPut(i, SmallInt::fromWord(i));
   }
+  Tuple object_array_immutable(&scope, object_array16.becomeImmutable());
 
-  listExtend(Thread::current(), list, object_array16, 4);
+  listExtend(Thread::current(), list, object_array_immutable, 4);
   ASSERT_GE(list.numItems(), 9);
   EXPECT_EQ(list.at(5), SmallInt::fromWord(0));
   EXPECT_EQ(list.at(6), SmallInt::fromWord(1));

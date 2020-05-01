@@ -133,17 +133,18 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
-  Tuple consts(&scope, runtime_->newTuple(10));
   // Immediate objects.
-  consts.atPut(0, NoneType::object());
-  consts.atPut(1, Bool::trueObj());
-  consts.atPut(2, Bool::falseObj());
-  consts.atPut(3, SmallInt::fromWord(0));
-  consts.atPut(4, Str::empty());
+  Object obj1(&scope, NoneType::object());
+  Object obj2(&scope, Bool::trueObj());
+  Object obj3(&scope, Bool::falseObj());
+  Object obj4(&scope, SmallInt::fromWord(0));
+  Object obj5(&scope, Str::empty());
   // Not immediate since it doesn't fit in byte.
-  consts.atPut(5, SmallInt::fromWord(64));
+  Object obj6(&scope, SmallInt::fromWord(64));
   // Not immediate since it's a heap object.
-  consts.atPut(6, runtime_->newTuple(4));
+  Object obj7(&scope, runtime_->newTuple(4));
+  Tuple consts(&scope, runtime_->newTupleWithN(7, &obj1, &obj2, &obj3, &obj4,
+                                               &obj5, &obj6, &obj7));
   code.setConsts(*consts);
 
   Module module(&scope, runtime_->findOrCreateMainModule());
@@ -486,14 +487,14 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   HandleScope scope(thread_);
-  Tuple varnames(&scope, runtime_->newTuple(3));
-  varnames.atPut(0, Runtime::internStrFromCStr(thread_, "arg0"));
-  varnames.atPut(1, Runtime::internStrFromCStr(thread_, "var0"));
-  varnames.atPut(2, Runtime::internStrFromCStr(thread_, "var1"));
-  Tuple freevars(&scope, runtime_->newTuple(1));
-  freevars.atPut(0, Runtime::internStrFromCStr(thread_, "freevar0"));
-  Tuple cellvars(&scope, runtime_->newTuple(1));
-  cellvars.atPut(0, Runtime::internStrFromCStr(thread_, "cellvar0"));
+  Object arg0(&scope, Runtime::internStrFromCStr(thread_, "arg0"));
+  Object var0(&scope, Runtime::internStrFromCStr(thread_, "var0"));
+  Object var1(&scope, Runtime::internStrFromCStr(thread_, "var1"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(arg0, var0, var1));
+  Object freevar0(&scope, Runtime::internStrFromCStr(thread_, "freevar0"));
+  Tuple freevars(&scope, runtime_->newTupleWith1(freevar0));
+  Object cellvar0(&scope, Runtime::internStrFromCStr(thread_, "cellvar0"));
+  Tuple cellvars(&scope, runtime_->newTupleWith1(cellvar0));
   word argcount = 1;
   word nlocals = 3;
   byte bytecode[] = {

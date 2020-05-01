@@ -698,12 +698,12 @@ static RawObject testingFunctionCachingAttributes(
                     runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
-  Tuple original_arguments(&scope, runtime->newTuple(2));
-  original_arguments.atPut(1, SmallInt::fromWord(0));
+  Object none(&scope, NoneType::object());
+  Object zero(&scope, SmallInt::fromWord(0));
+  Tuple original_arguments(&scope, runtime->newTupleWith2(none, zero));
   function.setOriginalArguments(*original_arguments);
 
-  Tuple names(&scope, runtime->newTuple(2));
-  names.atPut(0, *attribute_name);
+  Tuple names(&scope, runtime->newTupleWith2(attribute_name, none));
   code.setNames(*names);
 
   MutableTuple caches(&scope,
@@ -1665,23 +1665,25 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(19, 100);
 
   word num_caches = 6;
-  Tuple original_args(&scope, runtime_->newTuple(num_caches));
-  original_args.atPut(0, SmallInt::fromWord(0));
-  original_args.atPut(1, SmallInt::fromWord(1));
-  original_args.atPut(2, SmallInt::fromWord(2));
-  original_args.atPut(3, SmallInt::fromWord(3));
-  original_args.atPut(4, SmallInt::fromWord(-1));
-  original_args.atPut(5, SmallInt::fromWord(-1));
+  Object obj1(&scope, SmallInt::fromWord(0));
+  Object obj2(&scope, SmallInt::fromWord(1));
+  Object obj3(&scope, SmallInt::fromWord(2));
+  Object obj4(&scope, SmallInt::fromWord(3));
+  Object obj5(&scope, SmallInt::fromWord(-1));
+  Object obj6(&scope, SmallInt::fromWord(-1));
+  Tuple original_args(
+      &scope, runtime_->newTupleWithN(num_caches, &obj1, &obj2, &obj3, &obj4,
+                                      &obj5, &obj6));
 
-  Tuple names(&scope, runtime_->newTuple(4));
-  names.atPut(
-      0, Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name"));
-  names.atPut(
-      1, Runtime::internStrFromCStr(thread_, "load_method_cached_attr_name"));
-  names.atPut(
-      2, Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name2"));
-  names.atPut(
-      3, Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
+  Object name1(&scope, Runtime::internStrFromCStr(
+                           thread_, "load_attr_cached_attr_name"));
+  Object name2(&scope, Runtime::internStrFromCStr(
+                           thread_, "load_method_cached_attr_name"));
+  Object name3(&scope, Runtime::internStrFromCStr(
+                           thread_, "load_attr_cached_attr_name2"));
+  Object name4(&scope, Runtime::internStrFromCStr(
+                           thread_, "store_attr_cached_attr_name"));
+  Tuple names(&scope, runtime_->newTupleWith4(name1, name2, name3, name4));
 
   Object name(&scope, runtime_->newStrFromCStr("name"));
   Function dependent(&scope, newEmptyFunction());
@@ -1809,10 +1811,10 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   bytecode.byteAtPut(7, 100);
 
   word num_caches = 2;
-  Tuple original_args(&scope, runtime_->newTuple(num_caches));
-  original_args.atPut(0, SmallInt::fromWord(CompareOp::GE));
-  original_args.atPut(
-      1, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
+  Object ge(&scope, SmallInt::fromWord(CompareOp::GE));
+  Object add(&scope,
+             SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
+  Tuple original_args(&scope, runtime_->newTupleWith2(ge, add));
 
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
@@ -1893,9 +1895,9 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   bytecode.byteAtPut(5, 100);
 
   word num_caches = 1;
-  Tuple original_args(&scope, runtime_->newTuple(num_caches));
-  original_args.atPut(
-      0, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
+  Object mul(&scope,
+             SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
+  Tuple original_args(&scope, runtime_->newTupleWith1(mul));
 
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));

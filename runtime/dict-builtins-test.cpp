@@ -283,11 +283,11 @@ TEST_F(DictBuiltinsTest, GetKeys) {
   HandleScope scope(thread_);
 
   // Create keys
-  Tuple keys(&scope, runtime_->newTuple(4));
-  keys.atPut(0, SmallInt::fromWord(100));
-  keys.atPut(1, runtime_->newStrFromCStr("testing 123"));
-  keys.atPut(2, Bool::trueObj());
-  keys.atPut(3, NoneType::object());
+  Object obj1(&scope, SmallInt::fromWord(100));
+  Object obj2(&scope, runtime_->newStrFromCStr("testing 123"));
+  Object obj3(&scope, Bool::trueObj());
+  Object obj4(&scope, NoneType::object());
+  Tuple keys(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
 
   // Add keys to dict
   Dict dict(&scope, runtime_->newDict());

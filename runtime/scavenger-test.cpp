@@ -83,7 +83,7 @@ TEST_F(ScavengerTest, PreserveSomeClearSomeReferents) {
   HandleScope scope(thread_);
 
   // Create strongly referenced heap allocated objects.
-  Tuple strongrefs(&scope, runtime_->newTuple(4));
+  MutableTuple strongrefs(&scope, runtime_->newMutableTuple(4));
   for (word i = 0; i < strongrefs.length(); i++) {
     Float elt(&scope, runtime_->newFloat(i));
     strongrefs.atPut(i, *elt);
@@ -91,7 +91,7 @@ TEST_F(ScavengerTest, PreserveSomeClearSomeReferents) {
 
   // Create a parallel array of weak references with the strongly referenced
   // objects as referents.
-  Tuple weakrefs(&scope, runtime_->newTuple(4));
+  MutableTuple weakrefs(&scope, runtime_->newMutableTuple(4));
   for (word i = 0; i < weakrefs.length(); i++) {
     Object obj(&scope, strongrefs.at(i));
     Object none(&scope, NoneType::object());

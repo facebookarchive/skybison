@@ -565,7 +565,7 @@ TEST_F(StrBuiltinsTest,
   setHashAndAdd(thread_, inner, str2);
   strInternConstants(thread_, outer);
   inner = outer.at(2);
-  Tuple data(&scope, inner.data());
+  MutableTuple data(&scope, inner.data());
   bool all_interned = true;
   bool some_interned = false;
   for (word idx = Set::Bucket::kFirst; Set::Bucket::nextItem(*data, &idx);) {
