@@ -143,11 +143,18 @@ class socket(_socket.socket):
 
     __slots__ = ["__weakref__", "_io_refs", "_closed"]
 
-    def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None):
+    def __init__(self, family=-1, type=-1, proto=-1, fileno=None):
         # For user code address family and type values are IntEnum members, but
         # for the underlying _socket.socket they're just integers. The
         # constructor of _socket.socket converts the given argument to an
         # integer automatically.
+        if fileno is None:
+            if family == -1:
+                family = AF_INET
+            if type == -1:
+                type = SOCK_STREAM
+            if proto == -1:
+                proto = 0
         _socket.socket.__init__(self, family, type, proto, fileno)
         self._io_refs = 0
         self._closed = False
@@ -210,11 +217,7 @@ class socket(_socket.socket):
         For IP sockets, the address info is a pair (hostaddr, port).
         """
         fd, addr = self._accept()
-        # If our type has the SOCK_NONBLOCK flag, we shouldn't pass it onto the
-        # new socket. We do not currently allow passing SOCK_NONBLOCK to
-        # accept4, so the returned socket is always blocking.
-        type = self.type & ~globals().get("SOCK_NONBLOCK", 0)
-        sock = socket(self.family, type, self.proto, fileno=fd)
+        sock = socket(self.family, self.type, self.proto, fileno=fd)
         # Issue #7995: if no default timeout is set and the listening
         # socket had a (non-zero) timeout, force the new socket in blocking
         # mode to override platform-specific socket flags inheritance.
@@ -596,25 +599,6 @@ class SocketIO(io.RawIOBase):
                 data = self._sock.recv(len(b))
                 b[0:len(data)] = data
                 return len(data)
-            except timeout:
-                self._timeout_occurred = True
-                raise
-            except error as e:
-                if e.args[0] in _blocking_errnos:
-                    return None
-                raise
-
-    def read(self, size=-1):
-        if size < 0:
-            return self.readall()
-
-        self._checkClosed()
-        self._checkReadable()
-        if self._timeout_occurred:
-            raise OSError("cannot read from timed out object")
-        while True:
-            try:
-                return self._sock.recv(size)
             except timeout:
                 self._timeout_occurred = True
                 raise
