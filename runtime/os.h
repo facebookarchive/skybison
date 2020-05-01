@@ -21,6 +21,13 @@ class OS {
   static const int kRtldLocal;
   static const int kRtldNow;
 
+  struct Signal {
+    const char* name;
+    int signum;
+  };
+  static const Signal kStandardSignals[];
+  static const Signal kPlatformSignals[];
+
   // Allocate a page-sized chunk of memory. If allocated_size is not nullptr,
   // the rounded-up size will be written to it.
   static byte* allocateMemory(word size, word* allocated_size = nullptr);

@@ -25,8 +25,17 @@ void UnderSignalModule::initialize(Thread* thread, const Module& module) {
   Object sig_ign(&scope, kIgnoreHandler);
   moduleAtPutById(thread, module, ID(SIG_IGN), sig_ign);
 
-  Object sigint(&scope, SmallInt::fromWord(SIGINT));
-  moduleAtPutById(thread, module, ID(SIGINT), sigint);
+  Object signum(&scope, NoneType::object());
+  for (const OS::Signal* signal = OS::kStandardSignals; signal->name != nullptr;
+       signal++) {
+    signum = SmallInt::fromWord(signal->signum);
+    moduleAtPutByCStr(thread, module, signal->name, signum);
+  }
+  for (const OS::Signal* signal = OS::kPlatformSignals; signal->name != nullptr;
+       signal++) {
+    signum = SmallInt::fromWord(signal->signum);
+    moduleAtPutByCStr(thread, module, signal->name, signum);
+  }
 
   executeFrozenModule(thread, &kUnderSignalModuleData, module);
 

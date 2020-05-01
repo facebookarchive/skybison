@@ -77,7 +77,6 @@ class Runtime;
   V(RuntimeWarning)                                                            \
   V(SIG_DFL)                                                                   \
   V(SIG_IGN)                                                                   \
-  V(SIGINT)                                                                    \
   V(SimpleNamespace)                                                           \
   V(SourceFileLoader)                                                          \
   V(SourcelessFileLoader)                                                      \

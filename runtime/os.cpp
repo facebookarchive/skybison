@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -15,6 +16,38 @@
 #include "utils.h"
 
 namespace py {
+
+// clang-format off
+#define V(SIGNAL) { #SIGNAL, SIGNAL }
+const OS::Signal OS::kStandardSignals[] = {
+    V(SIGABRT),
+    V(SIGALRM),
+    V(SIGBUS),
+    V(SIGCHLD),
+    V(SIGCONT),
+    V(SIGFPE),
+    V(SIGHUP),
+    V(SIGILL),
+    V(SIGINT),
+    V(SIGKILL),
+    V(SIGPIPE),
+    V(SIGQUIT),
+    V(SIGSEGV),
+    V(SIGSTOP),
+    V(SIGTERM),
+    V(SIGTRAP),
+    V(SIGTSTP),
+    V(SIGTTIN),
+    V(SIGTTOU),
+    V(SIGURG),
+    V(SIGUSR1),
+    V(SIGUSR2),
+    V(SIGXCPU),
+    V(SIGXFSZ),
+    { nullptr, 0 },
+};
+#undef V
+// clang-format on
 
 byte* OS::allocateMemory(word size, word* allocated_size) {
   size = Utils::roundUp(size, kPageSize);

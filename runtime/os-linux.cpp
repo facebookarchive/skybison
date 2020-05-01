@@ -1,9 +1,9 @@
 #include "os.h"
 
 #include <dlfcn.h>
-#include <signal.h>
 #include <unistd.h>
 
+#include <csignal>
 #include <cstdlib>
 
 #include "utils.h"
@@ -18,6 +18,25 @@ const int OS::kRtldLocal = RTLD_LOCAL;
 const int OS::kRtldNow = RTLD_NOW;
 
 const char* OS::name() { return "linux"; }
+
+// clang-format off
+#define V(SIGNAL) { #SIGNAL, SIGNAL }
+const OS::Signal OS::kPlatformSignals[] = {
+    V(SIGCLD),
+    V(SIGIO),
+    V(SIGIOT),
+    V(SIGPOLL),
+    V(SIGPROF),
+    V(SIGPWR),
+    V(SIGRTMAX),
+    V(SIGRTMIN),
+    V(SIGSYS),
+    V(SIGVTALRM),
+    V(SIGWINCH),
+    { nullptr, 0 },
+};
+#undef V
+// clang-format on
 
 char* OS::executablePath() {
   char* buffer = readLink("/proc/self/exe");

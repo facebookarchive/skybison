@@ -2,8 +2,8 @@
 
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
-#include <signal.h>
 
+#include <csignal>
 #include <cstdint>
 #include <cstdlib>
 
@@ -19,6 +19,22 @@ const int OS::kRtldLocal = RTLD_LOCAL;
 const int OS::kRtldNow = RTLD_NOW;
 
 const char* OS::name() { return "darwin"; }
+
+// clang-format off
+#define V(SIGNAL) { #SIGNAL, SIGNAL }
+const OS::Signal OS::kPlatformSignals[] = {
+    V(SIGEMT),
+    V(SIGINFO),
+    V(SIGIO),
+    V(SIGIOT),
+    V(SIGPROF),
+    V(SIGSYS),
+    V(SIGVTALRM),
+    V(SIGWINCH),
+    { nullptr, 0 },
+};
+#undef V
+// clang-format on
 
 char* OS::executablePath() {
   uint32_t buf_len = 0;
