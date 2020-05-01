@@ -1154,11 +1154,11 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
     value = Interpreter::callFunction0(thread, frame, type);
     if (value.isErrorException()) return;
     if (!runtime->isInstanceOfBaseException(*value)) {
-      // TODO(bsimmers): Include relevant types here once we have better string
-      // formatting.
       thread->raiseWithFmt(
           LayoutId::kTypeError,
-          "calling exception type did not return an instance of BaseException");
+          "calling exception type did not return an instance of BaseException, "
+          "but '%T' object",
+          &value);
       return;
     }
   } else if (runtime->isInstanceOfBaseException(*exc)) {
@@ -2607,8 +2607,6 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
-      // TODO(bsimmers): originalArg() is only meant for slow paths, but we
-      // currently have no other way of getting this information.
       frame->setVirtualPC(frame->virtualPC() +
                           originalArg(frame->function(), arg));
       return Continue::NEXT;
@@ -4467,9 +4465,9 @@ HANDLER_INLINE Continue Interpreter::doBuildMapUnpack(Thread* thread,
     if (dictMergeOverride(thread, dict, obj).isErrorException()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
-        // TODO(bsimmers): Include type name once we have a better formatter.
         thread->clearPendingException();
-        thread->raiseWithFmt(LayoutId::kTypeError, "object is not a mapping");
+        thread->raiseWithFmt(LayoutId::kTypeError,
+                             "'%T' object is not a mapping", &obj);
       }
       return Continue::UNWIND;
     }
@@ -4492,16 +4490,16 @@ HANDLER_INLINE Continue Interpreter::doBuildMapUnpackWithCall(Thread* thread,
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         thread->clearPendingException();
-        thread->raiseWithFmt(LayoutId::kTypeError, "object is not a mapping");
+        thread->raiseWithFmt(LayoutId::kTypeError,
+                             "'%T' object is not a mapping", &obj);
       } else if (thread->pendingExceptionType() ==
                  runtime->typeAt(LayoutId::kKeyError)) {
         Object value(&scope, thread->pendingExceptionValue());
         thread->clearPendingException();
-        // TODO(bsimmers): Make these error messages more informative once
-        // we have a better formatter.
         if (runtime->isInstanceOfStr(*value)) {
           thread->raiseWithFmt(LayoutId::kTypeError,
-                               "got multiple values for keyword argument");
+                               "got multiple values for keyword argument '%S'",
+                               &value);
         } else {
           thread->raiseWithFmt(LayoutId::kTypeError,
                                "keywords must be strings");

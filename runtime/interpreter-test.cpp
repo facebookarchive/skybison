@@ -3136,7 +3136,8 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-                            LayoutId::kTypeError, "object is not a mapping"));
+                            LayoutId::kTypeError,
+                            "'Foo' object is not a mapping"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithUnsubscriptableMapping) {
@@ -3151,7 +3152,8 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-                            LayoutId::kTypeError, "object is not a mapping"));
+                            LayoutId::kTypeError,
+                            "'Foo' object is not a mapping"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithNonIterableKeys) {
@@ -3784,7 +3786,7 @@ def foo(**kwargs):
 foo(**{'a': 1, 'b': 2}, **{'c': 3, 'a': 4})
   )"),
                             LayoutId::kTypeError,
-                            "got multiple values for keyword argument"));
+                            "got multiple values for keyword argument 'a'"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithCallNonMapping) {
@@ -3797,7 +3799,8 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-                            LayoutId::kTypeError, "object is not a mapping"));
+                            LayoutId::kTypeError,
+                            "'Foo' object is not a mapping"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithCallNonSubscriptable) {
@@ -3811,7 +3814,8 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-                            LayoutId::kTypeError, "object is not a mapping"));
+                            LayoutId::kTypeError,
+                            "'Foo' object is not a mapping"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithCallListKeysNonStrKey) {
@@ -3846,7 +3850,7 @@ def foo(**kwargs):
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
                             LayoutId::kTypeError,
-                            "got multiple values for keyword argument"));
+                            "got multiple values for keyword argument 'a'"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithCallTupleKeysNonStrKeys) {
@@ -3881,7 +3885,7 @@ def foo(**kwargs):
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
                             LayoutId::kTypeError,
-                            "got multiple values for keyword argument"));
+                            "got multiple values for keyword argument 'a'"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithCallNonIterableKeys) {
@@ -3990,7 +3994,7 @@ def foo(**kwargs):
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
                             LayoutId::kTypeError,
-                            "got multiple values for keyword argument"));
+                            "got multiple values for keyword argument 'a'"));
 }
 
 TEST_F(InterpreterTest, YieldFromIterReturnsIter) {
