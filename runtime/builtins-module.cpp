@@ -565,7 +565,7 @@ RawObject FUNC(builtins, ord)(Thread* thread, Frame* frame, word nargs) {
     if (str.isSmallStr() && *str != Str::empty()) {
       word num_bytes;
       int32_t code_point = str.codePointAt(0, &num_bytes);
-      if (num_bytes == str.charLength()) {
+      if (num_bytes == str.length()) {
         return SmallInt::fromWord(code_point);
       }
     }

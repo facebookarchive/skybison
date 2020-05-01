@@ -200,7 +200,7 @@ PY_EXPORT int _PyUnicodeWriter_WriteStr(_PyUnicodeWriter* writer,
     return -1;
   }
   Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
-  for (word i = 0, len = src.charLength(), cp_len; i < len; i += cp_len) {
+  for (word i = 0, len = src.length(), cp_len; i < len; i += cp_len) {
     int32_t cp = src.codePointAt(i, &cp_len);
     data[writer->pos++] = cp;
   }
@@ -219,9 +219,9 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
   Object obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Str src(&scope, strUnderlying(*obj));
   word start_index = src.offsetByCodePoints(0, start);
-  DCHECK_BOUND(start_index, src.charLength());
+  DCHECK_BOUND(start_index, src.length());
   word end_index = src.offsetByCodePoints(start_index, len);
-  DCHECK_BOUND(end_index, src.charLength());
+  DCHECK_BOUND(end_index, src.length());
   Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
   for (word i = start_index, cp_len; i < end_index; i += cp_len) {
     int32_t cp = src.codePointAt(i, &cp_len);
@@ -623,7 +623,7 @@ PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
   }
 
   Str str(&scope, strUnderlying(*obj));
-  word length = str.charLength();
+  word length = str.length();
   if (size) *size = length;
   if (void* cache = handle->cache()) return static_cast<char*>(cache);
   auto result = static_cast<byte*>(std::malloc(length + 1));
@@ -937,7 +937,7 @@ PY_EXPORT Py_ssize_t PyUnicode_AsWideChar(PyObject* str, wchar_t* result,
   }
 
   {
-    word byte_count = str_str.charLength();
+    word byte_count = str_str.length();
     for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
          byte_index < byte_count && wchar_index < size;
          byte_index += num_bytes, wchar_index += 1) {
@@ -982,7 +982,7 @@ PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* str,
   }
 
   {
-    word byte_count = str_str.charLength();
+    word byte_count = str_str.length();
     for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
          byte_index < byte_count && wchar_index < length + 1;
          byte_index += num_bytes, wchar_index += 1) {
@@ -1058,8 +1058,7 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
   Str left_str(&scope, strUnderlying(*left_obj));
   Str right_str(&scope, strUnderlying(*right_obj));
   word dummy;
-  if (__builtin_add_overflow(left_str.charLength(), right_str.charLength(),
-                             &dummy)) {
+  if (__builtin_add_overflow(left_str.length(), right_str.length(), &dummy)) {
     thread->raiseWithFmt(LayoutId::kOverflowError,
                          "strings are too large to concat");
     return nullptr;
@@ -1967,7 +1966,7 @@ PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* obj, Py_ssize_t index) {
   Str str(&scope, strUnderlying(*str_obj));
   word byte_offset;
   if (index < 0 ||
-      (byte_offset = str.offsetByCodePoints(0, index)) >= str.charLength()) {
+      (byte_offset = str.offsetByCodePoints(0, index)) >= str.length()) {
     thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
     return -1;
   }
@@ -2068,7 +2067,7 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
   DCHECK(runtime->isInstanceOfStr(*obj),
          "PyUnicode_Substring requires a 'str' instance");
   Str self(&scope, strUnderlying(*obj));
-  word len = self.charLength();
+  word len = self.length();
   word start_index = self.offsetByCodePoints(0, start);
   if (start_index == len || end <= start) {
     return ApiHandle::newReference(thread, Str::empty());
@@ -2192,7 +2191,7 @@ PY_EXPORT void* PyUnicode_DATA_Func(PyObject* str) {
   DCHECK(thread->runtime()->isInstanceOfStr(*obj),
          "str should be a str instance");
   Str str_obj(&scope, strUnderlying(*obj));
-  word length = str_obj.charLength();
+  word length = str_obj.length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   str_obj.copyTo(result, length);
   result[length] = '\0';
@@ -2215,7 +2214,7 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject* obj, Py_ssize_t index) {
          "PyUnicode_READ_CHAR must receive a unicode object");
   Str str(&scope, strUnderlying(*str_obj));
   word byte_offset = str.offsetByCodePoints(0, index);
-  if (byte_offset == str.charLength()) return Py_UCS4{0};
+  if (byte_offset == str.length()) return Py_UCS4{0};
   word num_bytes;
   return static_cast<Py_UCS4>(str.codePointAt(byte_offset, &num_bytes));
 }

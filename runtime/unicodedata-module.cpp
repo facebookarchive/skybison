@@ -28,7 +28,7 @@ void UnicodedataModule::initialize(Thread* thread, const Module& module) {
 }
 
 static int32_t getCodePoint(const Str& src) {
-  word length = src.charLength();
+  word length = src.length();
   if (length == 0) {
     return -1;
   }
@@ -128,7 +128,7 @@ static RawObject copyName(Thread* thread, const Object& name_obj, byte* buffer,
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfStr(*name_obj)) {
     Str name(&scope, strUnderlying(*name_obj));
-    word length = name.charLength();
+    word length = name.length();
     if (length > size) {
       return thread->raiseWithFmt(LayoutId::kKeyError, "name too long");
     }
@@ -197,7 +197,7 @@ static NormalizationForm getForm(const Str& str) {
 
 static bool isNormalized(const Str& str, NormalizationForm form) {
   byte prev_combining = 0;
-  for (word i = 0, length = str.charLength(), char_length; i < length;
+  for (word i = 0, length = str.length(), char_length; i < length;
        i += char_length) {
     int32_t code_point = str.codePointAt(i, &char_length);
     const UnicodeDatabaseRecord* record = databaseRecord(code_point);
@@ -373,7 +373,7 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   }
 
   Str src(&scope, strUnderlying(*src_obj));
-  if (src.charLength() == 0) {
+  if (src.length() == 0) {
     return *src_obj;
   }
 
@@ -390,7 +390,7 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
 
   // Decomposition
   StrArray buffer(&scope, runtime->newStrArray());
-  word src_length = src.charLength();
+  word src_length = src.length();
   runtime->strArrayEnsureCapacity(thread, buffer, src_length);
   bool canonical =
       form == NormalizationForm::kNFC || form == NormalizationForm::kNFD;
@@ -575,7 +575,7 @@ RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
   }
 
   Str src(&scope, strUnderlying(*src_obj));
-  if (src.charLength() == 0) {
+  if (src.length() == 0) {
     return *src_obj;
   }
 
@@ -588,7 +588,7 @@ RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
 
   // Decomposition
   StrArray buffer(&scope, runtime->newStrArray());
-  word src_length = src.charLength();
+  word src_length = src.length();
   runtime->strArrayEnsureCapacity(thread, buffer, src_length);
   bool canonical =
       form == NormalizationForm::kNFC || form == NormalizationForm::kNFD;

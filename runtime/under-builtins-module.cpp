@@ -1825,8 +1825,8 @@ RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   double value = floatUnderlying(args.get(0)).value();
   Str format_code(&scope, args.get(1));
-  DCHECK(format_code.charLength() == 1, "expected len(format_code) == 1");
-  char format_code_char = format_code.charAt(0);
+  DCHECK(format_code.length() == 1, "expected len(format_code) == 1");
+  char format_code_char = format_code.byteAt(0);
   DCHECK(format_code_char == 'e' || format_code_char == 'E' ||
              format_code_char == 'f' || format_code_char == 'F' ||
              format_code_char == 'g' || format_code_char == 'G' ||
@@ -1925,7 +1925,7 @@ RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
   Object arg(&scope, args.get(1));
   Str str(&scope, strUnderlying(*arg));
   unique_c_ptr<char> c_str(str.toCStr());
-  word length = str.charLength();
+  word length = str.length();
   return floatNewFromDigits(thread, type, c_str.get(), length);
 }
 
@@ -2578,23 +2578,23 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   // CPython allows leading whitespace in the integer literal
   word start = strFindFirstNonWhitespace(str);
-  if (str.charLength() - start == 0) {
+  if (str.length() - start == 0) {
     return Error::error();
   }
   word sign = 1;
-  if (str.charAt(start) == '-') {
+  if (str.byteAt(start) == '-') {
     sign = -1;
     start += 1;
-  } else if (str.charAt(start) == '+') {
+  } else if (str.byteAt(start) == '+') {
     start += 1;
   }
-  if (str.charLength() - start == 0) {
+  if (str.length() - start == 0) {
     // Just the sign
     return Error::error();
   }
-  if (str.charLength() - start == 1) {
+  if (str.length() - start == 1) {
     // Single digit, potentially with +/-
-    word result = digitValue(str.charAt(start), base == 0 ? 10 : base);
+    word result = digitValue(str.byteAt(start), base == 0 ? 10 : base);
     if (result == -1) return Error::error();
     return SmallInt::fromWord(sign * result);
   }
@@ -2602,8 +2602,8 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   // Octal literals (0oFOO), hex literals (0xFOO), and binary literals (0bFOO)
   // start at index 2.
   word inferred_base = 10;
-  if (str.charAt(start) == '0' && start + 1 < str.charLength()) {
-    inferred_base = inferBase(str.charAt(start + 1));
+  if (str.byteAt(start) == '0' && start + 1 < str.length()) {
+    inferred_base = inferBase(str.byteAt(start + 1));
   }
   if (base == 0) {
     base = inferred_base;
@@ -2620,7 +2620,7 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
       // * int("0b1", 16) => 177
       start += 2;
     }
-    if (str.charLength() - start == 0) {
+    if (str.length() - start == 0) {
       // Just the prefix: 0x, 0b, 0o, etc
       return Error::error();
     }
@@ -2630,14 +2630,14 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   Int result(&scope, SmallInt::fromWord(0));
   Int digit(&scope, SmallInt::fromWord(0));
   Int base_obj(&scope, SmallInt::fromWord(base));
-  for (word i = start; i < str.charLength(); i++) {
-    byte digit_char = str.charAt(i);
+  for (word i = start; i < str.length(); i++) {
+    byte digit_char = str.byteAt(i);
     if (digit_char == '_') {
       // No leading underscores unless the number has a prefix
       if (i == start && inferred_base == 10) return Error::error();
       // No trailing underscores
-      if (i + 1 == str.charLength()) return Error::error();
-      digit_char = str.charAt(++i);
+      if (i + 1 == str.length()) return Error::error();
+      digit_char = str.byteAt(++i);
     }
     word digit_val = digitValue(digit_char, base);
     if (digit_val == -1) return Error::error();
@@ -4054,12 +4054,12 @@ RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Frame* frame,
          "_str_compare_digest requires 'str' instance");
   Str left(&scope, strUnderlying(*left_obj));
   Str right(&scope, strUnderlying(*right_obj));
-  word left_len = left.charLength();
-  word right_len = right.charLength();
+  word left_len = left.length();
+  word right_len = right.length();
   word length = Utils::minimum(left_len, right_len);
   word result = (right_len == left_len) ? 0 : 1;
   for (word i = 0; i < length; i++) {
-    result |= left.charAt(i) ^ right.charAt(i);
+    result |= left.byteAt(i) ^ right.byteAt(i);
   }
   return Bool::fromBool(result == 0);
 }
@@ -4115,9 +4115,9 @@ RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Frame* frame,
     return Bool::falseObj();
   }
   word start_offset = self.offsetByCodePoints(0, end - suffix_len);
-  word suffix_chars = suffix.charLength();
+  word suffix_chars = suffix.length();
   for (word i = start_offset, j = 0; j < suffix_chars; i++, j++) {
-    if (self.charAt(i) != suffix.charAt(j)) {
+    if (self.byteAt(i) != suffix.byteAt(j)) {
       return Bool::falseObj();
     }
   }
@@ -4177,12 +4177,12 @@ RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Frame* frame,
 }
 
 static word adjustedStrIndex(const Str& str, word index) {
-  word len = str.charLength();
+  word len = str.length();
   if (index >= 0) {
     return str.offsetByCodePoints(0, index);
   }
   if (-len < index) {
-    return Utils::maximum(0l, str.offsetByCodePoints(str.charLength(), index));
+    return Utils::maximum(0l, str.offsetByCodePoints(str.length(), index));
   }
   return 0;
 }
@@ -4210,7 +4210,7 @@ RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
     }
     if (index >= 0) {
       word offset = self.offsetByCodePoints(0, index);
-      if (offset < self.charLength()) {
+      if (offset < self.length()) {
         word ignored;
         return SmallStr::fromCodePoint(self.codePointAt(offset, &ignored));
       }
@@ -4322,21 +4322,21 @@ RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
   word arg_idx = 0;
   word result_length = 0;
   Object arg(&scope, Unbound::object());
-  word fmt_length = str.charLength();
+  word fmt_length = str.length();
   for (word i = 0; i < fmt_length; i++) {
-    if (str.charAt(i) != '%') {
+    if (str.byteAt(i) != '%') {
       result_length++;
       continue;
     }
     i++;
-    if (i >= fmt_length || str.charAt(i) != 's' || arg_idx >= num_args) {
+    if (i >= fmt_length || str.byteAt(i) != 's' || arg_idx >= num_args) {
       return Unbound::object();
     }
     arg = args_tuple.at(arg_idx);
     if (!arg.isStr()) {
       return Unbound::object();
     }
-    result_length += Str::cast(*arg).charLength();
+    result_length += Str::cast(*arg).length();
     arg_indexes[arg_idx] = i - 1;
     arg_idx++;
   }
@@ -4362,7 +4362,7 @@ RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
     fmt_idx += fragment_length + 2;
 
     arg_str = args_tuple.at(a);
-    word arg_length = arg_str.charLength();
+    word arg_length = arg_str.length();
     result.replaceFromWithStr(result_idx, *arg_str, arg_length);
     result_idx += arg_length;
   }
@@ -4411,8 +4411,8 @@ RawObject FUNC(_builtins, _str_partition)(Thread* thread, Frame* frame,
   result.atPut(0, *haystack);
   result.atPut(1, Str::empty());
   result.atPut(2, Str::empty());
-  word haystack_len = haystack.charLength();
-  word needle_len = needle.charLength();
+  word haystack_len = haystack.length();
+  word needle_len = needle.length();
   if (haystack_len < needle_len) {
     // Fast path when needle is bigger than haystack
     return result.becomeImmutable();
@@ -4484,8 +4484,8 @@ RawObject FUNC(_builtins, _str_rpartition)(Thread* thread, Frame* frame,
   result.atPut(0, Str::empty());
   result.atPut(1, Str::empty());
   result.atPut(2, *haystack);
-  word haystack_len = haystack.charLength();
-  word needle_len = needle.charLength();
+  word haystack_len = haystack.length();
+  word needle_len = needle.length();
   if (haystack_len < needle_len) {
     // Fast path when needle is bigger than haystack
     return result.becomeImmutable();
@@ -4510,7 +4510,7 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
   if (maxsplit < 0) {
     maxsplit = kMaxWord;
   }
-  word self_length = self.charLength();
+  word self_length = self.length();
   word num_split = 0;
   Str substr(&scope, Str::empty());
   for (word i = 0, j = 0; j < self_length; i = self.offsetByCodePoints(j, 1)) {
@@ -4559,7 +4559,7 @@ RawObject FUNC(_builtins, _str_split)(Thread* thread, Frame* frame,
     return strSplitWhitespace(thread, self, maxsplit);
   }
   Str sep(&scope, strUnderlying(*sep_obj));
-  if (sep.charLength() == 0) {
+  if (sep.length() == 0) {
     return thread->raiseWithFmt(LayoutId::kValueError, "empty separator");
   }
   if (maxsplit < 0) {
@@ -4608,9 +4608,9 @@ RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
     return Bool::falseObj();
   }
   word start_offset = self.offsetByCodePoints(0, start);
-  word prefix_chars = prefix.charLength();
+  word prefix_chars = prefix.length();
   for (word i = start_offset, j = 0; j < prefix_chars; i++, j++) {
-    if (self.charAt(i) != prefix.charAt(j)) {
+    if (self.byteAt(i) != prefix.byteAt(j)) {
       return Bool::falseObj();
     }
   }

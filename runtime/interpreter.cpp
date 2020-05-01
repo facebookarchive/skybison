@@ -351,7 +351,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
     if (!sp[i].isStr()) {
       UNIMPLEMENTED("Conversion of non-string values not supported.");
     }
-    new_len += Str::cast(sp[i]).charLength();
+    new_len += Str::cast(sp[i]).length();
   }
 
   if (new_len <= RawSmallStr::kMaxLength) {
@@ -359,7 +359,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
     byte* ptr = buffer;
     for (word i = num - 1; i >= 0; i--) {
       RawStr str = Str::cast(sp[i]);
-      word len = str.charLength();
+      word len = str.length();
       str.copyTo(ptr, len);
       ptr += len;
     }
@@ -371,7 +371,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   word offset = RawLargeStr::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
     RawStr str = Str::cast(sp[i]);
-    word len = str.charLength();
+    word len = str.length();
     str.copyTo(reinterpret_cast<byte*>(result.address() + offset), len);
     offset += len;
   }
@@ -2287,8 +2287,8 @@ RawObject Interpreter::importAllFrom(Thread* thread, Frame* frame,
     name = all.at(i);
     interned = attributeName(thread, name);
     if (interned.isErrorException()) return *interned;
-    if (skip_names_with_underscore_prefix && interned.charLength() > 0 &&
-        interned.charAt(0) == '_') {
+    if (skip_names_with_underscore_prefix && interned.length() > 0 &&
+        interned.byteAt(0) == '_') {
       continue;
     }
     value = moduleGetAttribute(thread, module, interned);
@@ -2729,7 +2729,7 @@ HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
   RawStrIterator iter = StrIterator::cast(iter_obj);
   word byte_offset = iter.index();
   RawStr underlying = iter.iterable().rawCast<RawStr>();
-  if (byte_offset == underlying.charLength()) {
+  if (byte_offset == underlying.length()) {
     frame->popValue();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));

@@ -62,8 +62,8 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   word dot = strRFindAsciiChar(name, '.');
   if (dot >= 0) {
     module_name = runtime->strSubstr(thread, name, 0, dot);
-    type_name = runtime->strSubstr(thread, name, dot + 1,
-                                   name.charLength() - (dot + 1));
+    type_name =
+        runtime->strSubstr(thread, name, dot + 1, name.length() - (dot + 1));
   }
 
   // Create type

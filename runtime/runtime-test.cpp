@@ -722,7 +722,7 @@ TEST_F(RuntimeTest, NewStr) {
   HandleScope scope(thread_);
   Str empty0(&scope, runtime_->newStrWithAll(View<byte>(nullptr, 0)));
   ASSERT_TRUE(empty0.isSmallStr());
-  EXPECT_EQ(empty0.charLength(), 0);
+  EXPECT_EQ(empty0.length(), 0);
 
   Str empty1(&scope, runtime_->newStrWithAll(View<byte>(nullptr, 0)));
   ASSERT_TRUE(empty1.isSmallStr());
@@ -735,25 +735,25 @@ TEST_F(RuntimeTest, NewStr) {
   const byte bytes1[1] = {0};
   Str s1(&scope, runtime_->newStrWithAll(bytes1));
   ASSERT_TRUE(s1.isSmallStr());
-  EXPECT_EQ(s1.charLength(), 1);
+  EXPECT_EQ(s1.length(), 1);
 
   const byte bytes254[254] = {0};
   Str s254(&scope, runtime_->newStrWithAll(bytes254));
-  EXPECT_EQ(s254.charLength(), 254);
+  EXPECT_EQ(s254.length(), 254);
   ASSERT_TRUE(s254.isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s254).size(),
             Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   const byte bytes255[255] = {0};
   Str s255(&scope, runtime_->newStrWithAll(bytes255));
-  EXPECT_EQ(s255.charLength(), 255);
+  EXPECT_EQ(s255.length(), 255);
   ASSERT_TRUE(s255.isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s255).size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
   const byte bytes300[300] = {0};
   Str s300(&scope, runtime_->newStrWithAll(bytes300));
-  ASSERT_EQ(s300.charLength(), 300);
+  ASSERT_EQ(s300.length(), 300);
 }
 
 TEST_F(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
@@ -868,17 +868,17 @@ TEST_F(RuntimeStrTest, NewStrWithAll) {
   HandleScope scope(thread_);
 
   Str str0(&scope, runtime_->newStrWithAll(View<byte>(nullptr, 0)));
-  EXPECT_EQ(str0.charLength(), 0);
+  EXPECT_EQ(str0.length(), 0);
   EXPECT_TRUE(str0.equalsCStr(""));
 
   const byte bytes3[] = {'A', 'B', 'C'};
   Str str3(&scope, runtime_->newStrWithAll(bytes3));
-  EXPECT_EQ(str3.charLength(), 3);
+  EXPECT_EQ(str3.length(), 3);
   EXPECT_TRUE(str3.equalsCStr("ABC"));
 
   const byte bytes10[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
   Str str10(&scope, runtime_->newStrWithAll(bytes10));
-  EXPECT_EQ(str10.charLength(), 10);
+  EXPECT_EQ(str10.length(), 10);
   EXPECT_TRUE(str10.equalsCStr("ABCDEFGHIJ"));
 }
 
@@ -886,14 +886,14 @@ TEST_F(RuntimeStrTest, NewStrFromUTF32WithZeroSizeReturnsEmpty) {
   HandleScope scope(thread_);
   int32_t str[2] = {'a', 's'};
   Str empty(&scope, runtime_->newStrFromUTF32(View<int32_t>(str, 0)));
-  EXPECT_EQ(empty.charLength(), 0);
+  EXPECT_EQ(empty.length(), 0);
 }
 
 TEST_F(RuntimeStrTest, NewStrFromUTF32WithLargeASCIIStringReturnsString) {
   HandleScope scope(thread_);
   int32_t str[7] = {'a', 'b', 'c', '1', '2', '3', '-'};
   Str unicode(&scope, runtime_->newStrFromUTF32(View<int32_t>(str, 7)));
-  EXPECT_EQ(unicode.charLength(), 7);
+  EXPECT_EQ(unicode.length(), 7);
   EXPECT_TRUE(unicode.equalsCStr("abc123-"));
 }
 
@@ -901,7 +901,7 @@ TEST_F(RuntimeStrTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
   HandleScope scope(thread_);
   int32_t str[7] = {'a', 'b'};
   Str unicode(&scope, runtime_->newStrFromUTF32(View<int32_t>(str, 2)));
-  EXPECT_EQ(unicode.charLength(), 2);
+  EXPECT_EQ(unicode.length(), 2);
   EXPECT_TRUE(unicode.equalsCStr("ab"));
 }
 

@@ -1420,13 +1420,13 @@ TEST_F(StrBuiltinsTest,
   Str str(&scope,
           runtime_->newStrFromCStr(u8"\n\r\t\f \u3000  \u202f \n\t\r\f"));
   Str lstripped_str(&scope, strStripSpaceLeft(thread_, str));
-  EXPECT_EQ(lstripped_str.charLength(), 0);
+  EXPECT_EQ(lstripped_str.length(), 0);
 
   Str rstripped_str(&scope, strStripSpaceRight(thread_, str));
-  EXPECT_EQ(rstripped_str.charLength(), 0);
+  EXPECT_EQ(rstripped_str.length(), 0);
 
   Str stripped_str(&scope, strStripSpace(thread_, str));
-  EXPECT_EQ(stripped_str.charLength(), 0);
+  EXPECT_EQ(stripped_str.length(), 0);
 }
 
 TEST_F(StrBuiltinsTest, StripSpaceLeft) {
@@ -1514,13 +1514,13 @@ TEST_F(StrBuiltinsTest, StripWithFullyStrippableStrReturnsEmptyStr) {
   Str str(&scope, runtime_->newStrFromCStr("bbbbaaaaccccdddd"));
   Str chars(&scope, runtime_->newStrFromCStr("abcd"));
   Str lstripped_str(&scope, strStripLeft(thread_, str, chars));
-  EXPECT_EQ(lstripped_str.charLength(), 0);
+  EXPECT_EQ(lstripped_str.length(), 0);
 
   Str rstripped_str(&scope, strStripRight(thread_, str, chars));
-  EXPECT_EQ(rstripped_str.charLength(), 0);
+  EXPECT_EQ(rstripped_str.length(), 0);
 
   Str stripped_str(&scope, strStrip(thread_, str, chars));
-  EXPECT_EQ(stripped_str.charLength(), 0);
+  EXPECT_EQ(stripped_str.length(), 0);
 }
 
 TEST_F(StrBuiltinsTest, StripWithEmptyCharsIsIdentity) {
@@ -1676,7 +1676,7 @@ TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithEmptyStringReturnsZero) {
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithOnlyWhitespaceReturnsLength) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr(u8" \u205f "));
-  EXPECT_EQ(strFindFirstNonWhitespace(str), str.charLength());
+  EXPECT_EQ(strFindFirstNonWhitespace(str), str.length());
 }
 
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceFindsFirstNonWhitespaceChar) {

@@ -644,7 +644,7 @@ void Thread::ignorePendingException() {
   fprintf(stderr, "ignore pending exception");
   if (pendingExceptionValue().isStr()) {
     RawStr message = Str::cast(pendingExceptionValue());
-    word len = message.charLength();
+    word len = message.length();
     byte* buffer = new byte[len + 1];
     message.copyTo(buffer, len);
     buffer[len] = 0;

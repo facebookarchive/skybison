@@ -58,8 +58,8 @@ RawObject FUNC(array, _array_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Str typecode_str(&scope, strUnderlying(args.get(1)));
-  DCHECK(typecode_str.charLength() == 1, "typecode must be a single-char str");
-  byte typecode = typecode_str.charAt(0);
+  DCHECK(typecode_str.length() == 1, "typecode must be a single-char str");
+  byte typecode = typecode_str.byteAt(0);
   word item_size = itemSize(typecode);
   if (item_size == -1) {
     return thread->raiseWithFmt(

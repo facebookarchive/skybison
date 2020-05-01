@@ -55,13 +55,13 @@ word RawSmallStr::codePointLength() const {
   block = ((block & mask_7) >> 7) & ((~block) >> 6);
   // TODO(cshapiro): evaluate using popcount instead of multiplication
   word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
-  return charLength() - num_trailing;
+  return length() - num_trailing;
 }
 
 word RawSmallStr::compare(RawObject that) const {
-  word length = charLength();
+  word length = this->length();
   for (word i = 0; i < length; i++) {
-    word result = charAt(i) - RawLargeStr::cast(that).charAt(i);
+    word result = byteAt(i) - RawLargeStr::cast(that).byteAt(i);
     if (result != 0) return result;
   }
   return -1;
@@ -125,8 +125,8 @@ bool RawSmallStr::includes(RawObject that) const {
   if (!that.isSmallStr()) {
     return false;
   }
-  word haystack_len = charLength();
-  word needle_len = SmallStr::cast(that).charLength();
+  word haystack_len = length();
+  word needle_len = SmallStr::cast(that).length();
   word diff = haystack_len - needle_len;
   if (diff < 0) {
     return false;
@@ -167,11 +167,11 @@ static inline word offset(T src, F at, word len, word index, word count) {
 
 word RawSmallStr::offsetByCodePoints(word index, word count) const {
   // TODO(T64961042): operate directly on the word
-  return offset(this, &RawSmallStr::charAt, charLength(), index, count);
+  return offset(this, &RawSmallStr::byteAt, length(), index, count);
 }
 
 char* RawSmallStr::toCStr() const {
-  word length = charLength();
+  word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
   copyTo(result, length);
@@ -346,8 +346,8 @@ word RawLargeStr::codePointLength() const {
 }
 
 word RawLargeStr::compare(RawObject that) const {
-  word this_length = charLength();
-  word that_length = RawLargeStr::cast(that).charLength();
+  word this_length = length();
+  word that_length = RawLargeStr::cast(that).length();
   word length = Utils::minimum(this_length, that_length);
   auto s1 = reinterpret_cast<void*>(address());
   auto s2 = reinterpret_cast<void*>(RawLargeStr::cast(that).address());
@@ -398,8 +398,8 @@ bool RawLargeStr::includes(RawObject that) const {
     return true;
   }
 
-  word haystack_len = charLength();
-  word needle_len = Str::cast(that).charLength();
+  word haystack_len = length();
+  word needle_len = Str::cast(that).length();
 
   word diff = haystack_len - needle_len;
   if (diff < 0) {
@@ -409,7 +409,7 @@ bool RawLargeStr::includes(RawObject that) const {
   const byte* haystack = reinterpret_cast<const byte*>(address());
 
   if (needle_len == 1) {
-    byte ch = SmallStr::cast(that).charAt(0);
+    byte ch = SmallStr::cast(that).byteAt(0);
     return includes1(haystack, haystack_len, ch);
   }
 
@@ -458,7 +458,7 @@ bool RawLargeStr::includes(RawObject that) const {
 }
 
 word RawLargeStr::offsetByCodePoints(word index, word count) const {
-  return offset(this, &RawLargeStr::charAt, charLength(), index, count);
+  return offset(this, &RawLargeStr::byteAt, length(), index, count);
 }
 
 // RawList
@@ -756,14 +756,14 @@ void RawSlice::adjustSearchIndices(word* start, word* end, word length) {
 
 word RawStr::compareCStr(const char* c_str) const {
   word c_length = std::strlen(c_str);
-  word length = Utils::minimum(charLength(), c_length);
+  word length = Utils::minimum(this->length(), c_length);
   for (word i = 0; i < length; i++) {
-    word diff = charAt(i) - static_cast<byte>(c_str[i]);
+    word diff = byteAt(i) - static_cast<byte>(c_str[i]);
     if (diff != 0) {
       return (diff > 0) ? 1 : -1;
     }
   }
-  word diff = charLength() - c_length;
+  word diff = this->length() - c_length;
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
@@ -800,16 +800,15 @@ static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
 }
 
 int32_t RawStr::codePointAt(word index, word* char_length) const {
-  return decodeCodePoint(this, &RawStr::charAt, charLength(), index,
-                         char_length);
+  return decodeCodePoint(this, &RawStr::byteAt, length(), index, char_length);
 }
 
 bool RawStr::equalsCStr(const char* c_str) const {
   const char* cp = c_str;
-  const word len = charLength();
+  const word len = length();
   for (word i = 0; i < len; i++, cp++) {
     byte ch = static_cast<byte>(*cp);
-    if (ch == '\0' || ch != charAt(i)) {
+    if (ch == '\0' || ch != byteAt(i)) {
       return false;
     }
   }

@@ -121,7 +121,7 @@ RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Frame* frame,
 
   void* addr = Int::cast(args.get(0)).asCPtr();
   Str type(&scope, args.get(1));
-  switch (type.charAt(0)) {
+  switch (type.byteAt(0)) {
     case 'i': {
       int int_result = reinterpret_cast<int (*)()>(addr)();
       return thread->runtime()->newInt(int_result);
@@ -175,7 +175,7 @@ RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
   Object value(&scope, args.get(0));
   Str type(&scope, args.get(1));
   Int offset(&scope, args.get(2));
-  switch (type.charAt(0)) {
+  switch (type.byteAt(0)) {
     case 'H':
       if (value.isMmap()) {
         Pointer value_ptr(&scope, Mmap::cast(*value).data());
@@ -241,7 +241,7 @@ RawObject FUNC(_ctypes, dlopen)(Thread* thread, Frame* frame, word nargs) {
 RawObject FUNC(_ctypes, _sizeof_typeclass)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   DCHECK(args.get(0).isStr(), "bad internal call");
-  FieldDesc* field_desc = fieldDesc(Str::cast(args.get(0)).charAt(0));
+  FieldDesc* field_desc = fieldDesc(Str::cast(args.get(0)).byteAt(0));
   size_t size = field_desc->pffi_type->size;
   return SmallInt::fromWord(size);
 }

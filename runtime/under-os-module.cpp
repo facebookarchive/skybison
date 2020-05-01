@@ -108,8 +108,8 @@ RawObject FUNC(_os, open)(Thread* thread, Frame* frame, word nargs) {
 }
 
 static bool charInMode(const char c, const Str& mode) {
-  for (word i = 0; i < mode.charLength(); i++) {
-    if (c == mode.charAt(i)) return true;
+  for (word i = 0; i < mode.length(); i++) {
+    if (c == mode.byteAt(i)) return true;
   }
   return false;
 }

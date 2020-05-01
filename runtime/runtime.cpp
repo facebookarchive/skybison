@@ -1215,7 +1215,7 @@ static word strFormat(Thread* thread, const MutableBytes& dst,
         if (value_int < 0 || value_int > kMaxASCII) {
           // Replace non-ASCII characters.
           RawSmallStr value = SmallStr::fromCodePoint(kReplacementCharacter);
-          word length = value.charLength();
+          word length = value.length();
           if (!determine_size) {
             dst.replaceFromWithStr(dst_index, Str::cast(value), length);
           }
@@ -1274,7 +1274,7 @@ static word strFormat(Thread* thread, const MutableBytes& dst,
           value_int = kReplacementCharacter;
         }
         RawSmallStr value = SmallStr::fromCodePoint(value_int);
-        word length = value.charLength();
+        word length = value.length();
         if (!determine_size) {
           dst.replaceFromWithStr(dst_index, Str::cast(value), length);
         }
@@ -1283,7 +1283,7 @@ static word strFormat(Thread* thread, const MutableBytes& dst,
       case 'S': {
         Object value_obj(&scope, **va_arg(args, Object*));
         Str value(&scope, strUnderlying(*value_obj));
-        word length = value.charLength();
+        word length = value.length();
         if (!determine_size) {
           dst.replaceFromWithStr(dst_index, *value, length);
         }
@@ -1293,7 +1293,7 @@ static word strFormat(Thread* thread, const MutableBytes& dst,
         Object obj(&scope, **va_arg(args, Object*));
         Function function(&scope, *obj);
         Str value(&scope, function.qualname());
-        word length = value.charLength();
+        word length = value.length();
         if (!determine_size) {
           dst.replaceFromWithStr(dst_index, *value, length);
         }
@@ -1303,7 +1303,7 @@ static word strFormat(Thread* thread, const MutableBytes& dst,
         Object obj(&scope, **va_arg(args, Object*));
         Type type(&scope, thread->runtime()->typeOf(*obj));
         Str value(&scope, type.name());
-        word length = value.charLength();
+        word length = value.length();
         if (!determine_size) {
           dst.replaceFromWithStr(dst_index, *value, length);
         }
@@ -1312,7 +1312,7 @@ static word strFormat(Thread* thread, const MutableBytes& dst,
       case 'Y': {
         SymbolId symbol = va_arg(args, SymbolId);
         RawStr value = Str::cast(thread->runtime()->symbols()->at(symbol));
-        word length = value.charLength();
+        word length = value.length();
         if (!determine_size) {
           dst.replaceFromWithStr(dst_index, value, length);
         }
@@ -1382,7 +1382,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
     byte dst[SmallStr::kMaxLength];
     for (word i = 0, j = 0; i < code_units.length(); ++i) {
       RawSmallStr src = SmallStr::fromCodePoint(code_units.get(i));
-      word num_bytes = src.charLength();
+      word num_bytes = src.length();
       src.copyTo(&dst[j], num_bytes);
       j += num_bytes;
     }
@@ -1400,7 +1400,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
   }
   for (word i = 0, j = 0; i < code_units.length(); ++i) {
     RawSmallStr src = SmallStr::fromCodePoint(code_units.get(i));
-    word num_bytes = src.charLength();
+    word num_bytes = src.length();
     src.copyTo(&dst[j], num_bytes);
     j += num_bytes;
   }
@@ -2161,7 +2161,7 @@ static void writeStr(word fd, RawStr str) {
   byte buffer[buffer_length];
 
   word start = 0;
-  word length = str.charLength();
+  word length = str.length();
   for (word end = buffer_length; end < length;
        start = end, end += buffer_length) {
     str.copyToStartAt(buffer, buffer_length, start);
@@ -3371,8 +3371,8 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
 RawObject Runtime::strConcat(Thread* thread, const Str& left,
                              const Str& right) {
   HandleScope scope(thread);
-  word left_len = left.charLength();
-  word right_len = right.charLength();
+  word left_len = left.length();
+  word right_len = right.length();
   word result_len = left_len + right_len;
   // Small result
   if (result_len <= RawSmallStr::kMaxLength) {
@@ -3395,10 +3395,10 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   Str str(&scope, Str::empty());
   for (word i = 0; i < allocated; ++i) {
     str = strUnderlying(items.at(i));
-    result_len += str.charLength();
+    result_len += str.length();
   }
   if (allocated > 1) {
-    result_len += sep.charLength() * (allocated - 1);
+    result_len += sep.length() * (allocated - 1);
   }
   // Small result
   Object elt(&scope, NoneType::object());
@@ -3407,13 +3407,13 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
     for (word i = 0, offset = 0; i < allocated; ++i) {
       elt = items.at(i);
       str = strUnderlying(*elt);
-      word str_len = str.charLength();
+      word str_len = str.length();
       str.copyTo(&buffer[offset], str_len);
       offset += str_len;
       if ((i + 1) < allocated) {
-        word sep_len = sep.charLength();
+        word sep_len = sep.length();
         sep.copyTo(&buffer[offset], sep_len);
-        offset += sep.charLength();
+        offset += sep.length();
       }
     }
     return SmallStr::fromBytes(View<byte>(buffer, result_len));
@@ -3423,11 +3423,11 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   for (word i = 0, offset = 0; i < allocated; ++i) {
     elt = items.at(i);
     str = strUnderlying(*elt);
-    word str_len = str.charLength();
+    word str_len = str.length();
     str.copyTo(reinterpret_cast<byte*>(result.address() + offset), str_len);
     offset += str_len;
     if ((i + 1) < allocated) {
-      word sep_len = sep.charLength();
+      word sep_len = sep.length();
       sep.copyTo(reinterpret_cast<byte*>(result.address() + offset), sep_len);
       offset += sep_len;
     }
@@ -3438,14 +3438,14 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
 RawObject Runtime::strRepeat(Thread* thread, const Str& str, word count) {
   DCHECK(count > 0, "count should be positive");
   byte buffer[SmallStr::kMaxLength];
-  word length = str.charLength();
+  word length = str.length();
   DCHECK(length > 0, "length should be positive");
   DCHECK_BOUND(count, SmallInt::kMaxValue / length);
   word new_length = length * count;
   if (new_length <= SmallStr::kMaxLength) {
     // SmallStr result
     for (word i = 0; i < new_length; i++) {
-      buffer[i] = str.charAt(i % length);
+      buffer[i] = str.byteAt(i % length);
     }
     return SmallStr::fromBytes(View<byte>(buffer, new_length));
   }
@@ -3483,14 +3483,14 @@ RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
   word result_length = 0;
   for (word i = 0, char_index = start_index; i < length;
        i++, char_index = str.offsetByCodePoints(char_index, step)) {
-    result_length += UTF8::numChars(str.charAt(char_index));
+    result_length += UTF8::numChars(str.byteAt(char_index));
   }
 
   if (result_length <= SmallStr::kMaxLength) {
     byte buffer[SmallStr::kMaxLength];
     for (word i = 0, char_index = start_index; i < result_length;
          char_index = str.offsetByCodePoints(char_index, step)) {
-      word num_chars = UTF8::numChars(str.charAt(char_index));
+      word num_chars = UTF8::numChars(str.byteAt(char_index));
       str.copyToStartAt(&buffer[i], num_chars, char_index);
       i += num_chars;
     }
@@ -3502,7 +3502,7 @@ RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
       &scope, thread->runtime()->newMutableBytesUninitialized(result_length));
   for (word i = 0, char_index = start_index; i < result_length;
        char_index = str.offsetByCodePoints(char_index, step)) {
-    word num_chars = UTF8::numChars(str.charAt(char_index));
+    word num_chars = UTF8::numChars(str.byteAt(char_index));
     result.replaceFromWithStrStartAt(i, *str, num_chars, char_index);
     i += num_chars;
   }
@@ -3515,7 +3515,7 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
   if (length <= 0) {
     return Str::empty();
   }
-  word str_len = str.charLength();
+  word str_len = str.length();
   DCHECK(start + length <= str_len, "overflow");
   if (start == 0 && length == str_len) {
     return *str;
@@ -3524,7 +3524,7 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
   if (length <= RawSmallStr::kMaxLength) {
     byte buffer[RawSmallStr::kMaxLength];
     for (word i = 0; i < length; i++) {
-      buffer[i] = str.charAt(start + i);
+      buffer[i] = str.byteAt(start + i);
     }
     return SmallStr::fromBytes(View<byte>(buffer, length));
   }
@@ -3554,7 +3554,7 @@ void Runtime::strArrayAddCodePoint(Thread* thread, const StrArray& array,
   DCHECK_BOUND(code_point, kMaxUnicode);
   RawSmallStr str = SmallStr::fromCodePoint(code_point);
   word num_items = array.numItems();
-  word length = str.charLength();
+  word length = str.length();
   word new_length = num_items + length;
   strArrayEnsureCapacity(thread, array, new_length);
   byte* dst =
@@ -3565,7 +3565,7 @@ void Runtime::strArrayAddCodePoint(Thread* thread, const StrArray& array,
 
 void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
                              const Str& str) {
-  word length = str.charLength();
+  word length = str.length();
   if (length == 0) return;
   word num_items = array.numItems();
   word new_length = length + num_items;
@@ -4985,14 +4985,14 @@ static RawObject strReplaceSmallStr(const Str& src, const Str& oldstr,
                                     const Str& newstr, word count,
                                     word result_len) {
   DCHECK_BOUND(result_len, SmallStr::kMaxLength);
-  word src_len = src.charLength();
-  word old_len = oldstr.charLength();
-  word new_len = newstr.charLength();
+  word src_len = src.length();
+  word old_len = oldstr.length();
+  word new_len = newstr.length();
   byte buffer[SmallStr::kMaxLength];
   byte* dst = buffer;
   for (word i = 0, match_count = 0; i < src_len;) {
     if (match_count == count || !strHasPrefix(src, oldstr, i)) {
-      *dst++ = src.charAt(i++);
+      *dst++ = src.byteAt(i++);
       continue;
     }
     newstr.copyTo(dst, new_len);
@@ -5005,7 +5005,7 @@ static RawObject strReplaceSmallStr(const Str& src, const Str& oldstr,
 
 RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
                               const Str& newstr, word count) {
-  word src_len = src.charLength();
+  word src_len = src.length();
   if (count < 0) {
     count = SmallInt::kMaxValue;  // PY_SSIZE_T_MAX.
   } else if (count == 0 || src_len == 0) {
@@ -5023,8 +5023,8 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
     return *src;
   }
 
-  word old_len = oldstr.charLength();
-  word new_len = newstr.charLength();
+  word old_len = oldstr.length();
+  word new_len = newstr.length();
   word result_len = src_len + (new_len - old_len) * count;
   if (result_len <= SmallStr::kMaxLength) {
     return strReplaceSmallStr(src, oldstr, newstr, count, result_len);
@@ -5047,7 +5047,7 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
       continue;
     }
     byte* dst = reinterpret_cast<byte*>(result.address());
-    dst[i + offset] = src.charAt(i);
+    dst[i + offset] = src.byteAt(i);
     i++;
   }
 
@@ -5060,7 +5060,7 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
     } else {
       for (; i < src_len; i++) {
         byte* dst = reinterpret_cast<byte*>(result.address());
-        dst[i + offset] = src.charAt(i);
+        dst[i + offset] = src.byteAt(i);
       }
     }
   }

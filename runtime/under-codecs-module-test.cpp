@@ -23,7 +23,7 @@ TEST_F(CodecsModuleTest, DecodeASCIIWithWellFormedASCIIReturnsString) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 5);
+  EXPECT_EQ(str.length(), 5);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
   EXPECT_TRUE(str.equalsCStr("hello"));
 }
@@ -41,7 +41,7 @@ TEST_F(CodecsModuleTest, DecodeASCIIWithIgnoreErrorHandlerReturnsStr) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 5);
+  EXPECT_EQ(str.length(), 5);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
   EXPECT_TRUE(str.equalsCStr("hello"));
 }
@@ -59,7 +59,7 @@ TEST_F(CodecsModuleTest, DecodeASCIIWithReplaceErrorHandlerReturnsStr) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 8);
+  EXPECT_EQ(str.length(), 8);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
   word placeholder;
   EXPECT_EQ(str.codePointAt(4, &placeholder), 0xfffd);
@@ -79,7 +79,7 @@ TEST_F(CodecsModuleTest,
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 8);
+  EXPECT_EQ(str.length(), 8);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
   word placeholder;
   EXPECT_EQ(str.codePointAt(4, &placeholder), 0xdc80);
@@ -102,7 +102,7 @@ encoded = Foo(b"hello")
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 5);
+  EXPECT_EQ(str.length(), 5);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
   EXPECT_TRUE(str.equalsCStr("hello"));
 }
@@ -159,7 +159,7 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithReplaceErrorHandlerReturnsStr) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 8);
+  EXPECT_EQ(str.length(), 8);
   word placeholder;
   EXPECT_EQ(str.codePointAt(4, &placeholder), 0xfffd);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
@@ -180,7 +180,7 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithSurroogateescapeErrorHandlerReturnsStr) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 8);
+  EXPECT_EQ(str.length(), 8);
   word placeholder;
   EXPECT_EQ(str.codePointAt(4, &placeholder), 0xdc80);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
@@ -611,7 +611,7 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithWellFormedLatin1ReturnsString) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 7);
+  EXPECT_EQ(str.length(), 7);
   EXPECT_TRUE(str.equalsCStr("hell\xC3\xA9o"));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
   EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
@@ -631,7 +631,7 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithIgnoreErrorHandlerReturnsStr) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 5);
+  EXPECT_EQ(str.length(), 5);
   EXPECT_TRUE(str.equalsCStr("hello"));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
   EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
@@ -651,7 +651,7 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithReplaceErrorHandlerReturnsStr) {
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 8);
+  EXPECT_EQ(str.length(), 8);
   word placeholder;
   EXPECT_EQ(str.codePointAt(5, &placeholder), 0xfffd);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
@@ -880,7 +880,7 @@ encoded = Foo(b"hello")
 
   Tuple result(&scope, *result_obj);
   Str str(&scope, result.at(0));
-  EXPECT_EQ(str.charLength(), 5);
+  EXPECT_EQ(str.length(), 5);
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
   EXPECT_TRUE(str.equalsCStr("hello"));
 }

@@ -538,8 +538,8 @@ class RawStr : public RawObject {
   static RawStr empty();
 
   // Getters and setters.
-  byte charAt(word index) const;
-  word charLength() const;
+  byte byteAt(word index) const;
+  word length() const;
   void copyTo(byte* dst, word char_length) const;
   void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
@@ -732,8 +732,8 @@ class RawSmallStr : public RawObject {
   static RawSmallStr empty();
 
   // Getters and setters.
-  byte charAt(word index) const;
-  word charLength() const;
+  byte byteAt(word index) const;
+  word length() const;
   void copyTo(byte* dst, word char_length) const;
   void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
@@ -1385,10 +1385,6 @@ class RawLargeBytes : public RawDataArray {
 
 class RawLargeStr : public RawDataArray {
  public:
-  // Getters and setters.
-  byte charAt(word index) const;
-  word charLength() const;
-
   // Equality checks.
   word compare(RawObject that) const;
   bool equals(RawObject that) const;
@@ -4555,29 +4551,29 @@ inline word RawSmallBytes::hash() const {
 
 inline RawSmallStr::RawSmallStr(uword raw) : RawObject(raw) {}
 
-inline word RawSmallStr::charLength() const {
+inline word RawSmallStr::length() const {
   return (raw() >> kImmediateTagBits) & kMaxLength;
 }
 
-inline byte RawSmallStr::charAt(word index) const {
-  DCHECK_INDEX(index, charLength());
+inline byte RawSmallStr::byteAt(word index) const {
+  DCHECK_INDEX(index, length());
   return raw() >> (kBitsPerByte * (index + 1));
 }
 
 inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
-  DCHECK_BOUND(char_length, charLength());
+  DCHECK_BOUND(char_length, length());
   for (word i = 0; i < char_length; ++i) {
-    *dst++ = charAt(i);
+    *dst++ = byteAt(i);
   }
 }
 
 inline void RawSmallStr::copyToStartAt(byte* dst, word char_length,
                                        word char_start) const {
-  DCHECK_BOUND(char_start, charLength());
+  DCHECK_BOUND(char_start, length());
   word char_end = char_start + char_length;
-  DCHECK_BOUND(char_end, charLength());
+  DCHECK_BOUND(char_end, length());
   for (word i = char_start; i < char_end; ++i) {
-    *dst++ = charAt(i);
+    *dst++ = byteAt(i);
   }
 }
 
@@ -6488,18 +6484,18 @@ inline void RawModuleProxy::setModule(RawObject module) const {
 
 // RawStr
 
-inline byte RawStr::charAt(word index) const {
+inline byte RawStr::byteAt(word index) const {
   if (isImmediateObjectNotSmallInt()) {
-    return RawSmallStr::cast(*this).charAt(index);
+    return RawSmallStr::cast(*this).byteAt(index);
   }
-  return RawLargeStr::cast(*this).charAt(index);
+  return RawLargeStr::cast(*this).byteAt(index);
 }
 
-inline word RawStr::charLength() const {
+inline word RawStr::length() const {
   if (isImmediateObjectNotSmallInt()) {
-    return RawSmallStr::cast(*this).charLength();
+    return RawSmallStr::cast(*this).length();
   }
-  return RawLargeStr::cast(*this).charLength();
+  return RawLargeStr::cast(*this).length();
 }
 
 inline word RawStr::compare(RawObject that) const {
@@ -6512,7 +6508,7 @@ inline word RawStr::compare(RawObject that) const {
                     __builtin_bswap64(that.raw() & ~uword{0xFF});
       return LIKELY(result != 0)
                  ? result
-                 : this->charLength() - RawSmallStr::cast(that).charLength();
+                 : this->length() - RawSmallStr::cast(that).length();
     }
     return RawSmallStr::cast(*this).compare(that);
   }
@@ -6590,13 +6586,6 @@ inline word RawLargeStr::allocationSize(word length) {
          (long)length);
   return RawDataArray::allocationSize(length);
 }
-
-inline byte RawLargeStr::charAt(word index) const {
-  DCHECK_INDEX(index, length());
-  return *reinterpret_cast<byte*>(address() + index);
-}
-
-inline word RawLargeStr::charLength() const { return length(); }
 
 // RawValueCell
 

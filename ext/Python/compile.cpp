@@ -45,20 +45,20 @@ PY_EXPORT PyObject* _Py_Mangle(PyObject* pyprivateobj, PyObject* pyident) {
   Runtime* runtime = thread->runtime();
   // Only mangle names that start with two underscores, but do not end with
   // two underscores or contain a dot.
-  word ident_length = ident.charLength();
+  word ident_length = ident.length();
   if (!runtime->isInstanceOfStr(*privateobj_obj) || ident_length < 2 ||
-      ident.charAt(0) != '_' || ident.charAt(1) != '_' ||
-      (ident.charAt(ident_length - 2) == '_' &&
-       ident.charAt(ident_length - 1) == '_') ||
+      ident.byteAt(0) != '_' || ident.byteAt(1) != '_' ||
+      (ident.byteAt(ident_length - 2) == '_' &&
+       ident.byteAt(ident_length - 1) == '_') ||
       strFindAsciiChar(ident, '.') >= 0) {
     Py_INCREF(pyident);
     return pyident;
   }
 
   Str privateobj(&scope, strUnderlying(*privateobj_obj));
-  word privateobj_length = privateobj.charLength();
+  word privateobj_length = privateobj.length();
   word begin = 0;
-  while (begin < privateobj_length && privateobj.charAt(begin) == '_') {
+  while (begin < privateobj_length && privateobj.byteAt(begin) == '_') {
     begin++;
   }
   if (begin == privateobj_length) {

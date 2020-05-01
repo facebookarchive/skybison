@@ -578,9 +578,9 @@ TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoLargeStr) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello world!"));
 
-  Object test(&scope, runtime_->newMutableBytesUninitialized(str.charLength()));
+  Object test(&scope, runtime_->newMutableBytesUninitialized(str.length()));
   ASSERT_TRUE(test.isMutableBytes());
-  MutableBytes::cast(*test).replaceFromWithStr(0, *str, str.charLength());
+  MutableBytes::cast(*test).replaceFromWithStr(0, *str, str.length());
   MutableBytes::cast(*test).becomeStr();
   EXPECT_TRUE(test.isLargeStr());
   EXPECT_TRUE(isStrEqualsCStr(*test, "hello world!"));
@@ -1048,85 +1048,85 @@ TEST_F(StringTest, CopyToStartAtWithSmallStrCopiesBytes) {
 TEST_F(SmallStrTest, CodePointLengthWithAsciiReturnsLength) {
   HandleScope scope(thread_);
   SmallStr len0(&scope, SmallStr::fromCStr(""));
-  EXPECT_EQ(len0.charLength(), 0);
+  EXPECT_EQ(len0.length(), 0);
   EXPECT_EQ(len0.codePointLength(), 0);
 
   SmallStr len1(&scope, SmallStr::fromCStr("1"));
-  EXPECT_EQ(len1.charLength(), 1);
+  EXPECT_EQ(len1.length(), 1);
   EXPECT_EQ(len1.codePointLength(), 1);
 
   SmallStr len2(&scope, SmallStr::fromCStr("12"));
-  EXPECT_EQ(len2.charLength(), 2);
+  EXPECT_EQ(len2.length(), 2);
   EXPECT_EQ(len2.codePointLength(), 2);
 
   SmallStr len3(&scope, SmallStr::fromCStr("123"));
-  EXPECT_EQ(len3.charLength(), 3);
+  EXPECT_EQ(len3.length(), 3);
   EXPECT_EQ(len3.codePointLength(), 3);
 }
 
 TEST_F(SmallStrTest, CodePointLengthWithOneCodePoint) {
   HandleScope scope(thread_);
   SmallStr len1(&scope, SmallStr::fromCStr("\x24"));
-  EXPECT_EQ(len1.charLength(), 1);
+  EXPECT_EQ(len1.length(), 1);
   EXPECT_EQ(len1.codePointLength(), 1);
 
   SmallStr len2(&scope, SmallStr::fromCStr("\xC2\xA2"));
-  EXPECT_EQ(len2.charLength(), 2);
+  EXPECT_EQ(len2.length(), 2);
   EXPECT_EQ(len2.codePointLength(), 1);
 
   SmallStr len3(&scope, SmallStr::fromCStr("\xE0\xA4\xB9"));
-  EXPECT_EQ(len3.charLength(), 3);
+  EXPECT_EQ(len3.length(), 3);
   EXPECT_EQ(len3.codePointLength(), 1);
 
   SmallStr len4(&scope, SmallStr::fromCStr("\xF0\x90\x8D\x88"));
-  EXPECT_EQ(len4.charLength(), 4);
+  EXPECT_EQ(len4.length(), 4);
   EXPECT_EQ(len4.codePointLength(), 1);
 }
 
 TEST_F(SmallStrTest, CodePointLengthWithTwoCodePoints) {
   HandleScope scope(thread_);
   SmallStr len1(&scope, SmallStr::fromCStr("\x24\x65"));
-  EXPECT_EQ(len1.charLength(), 2);
+  EXPECT_EQ(len1.length(), 2);
   EXPECT_EQ(len1.codePointLength(), 2);
 
   SmallStr len2(&scope, SmallStr::fromCStr("\xC2\xA2\xC2\xA3"));
-  EXPECT_EQ(len2.charLength(), 4);
+  EXPECT_EQ(len2.length(), 4);
   EXPECT_EQ(len2.codePointLength(), 2);
 
   SmallStr len3(&scope, SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3"));
-  EXPECT_EQ(len3.charLength(), 5);
+  EXPECT_EQ(len3.length(), 5);
   EXPECT_EQ(len3.codePointLength(), 2);
 
   SmallStr len4(&scope, SmallStr::fromCStr("\xF0\x90\x8D\x88\xC2\xA3"));
-  EXPECT_EQ(len4.charLength(), 6);
+  EXPECT_EQ(len4.length(), 6);
   EXPECT_EQ(len4.codePointLength(), 2);
 }
 
 TEST_F(SmallStrTest, CodePointLengthWithThreeCodePoints) {
   HandleScope scope(thread_);
   SmallStr len1(&scope, SmallStr::fromCStr("\x24\x65\x66"));
-  EXPECT_EQ(len1.charLength(), 3);
+  EXPECT_EQ(len1.length(), 3);
   EXPECT_EQ(len1.codePointLength(), 3);
 
   SmallStr len2(&scope, SmallStr::fromCStr("\xC2\xA2\xC2\xA3\xC2\xA4"));
-  EXPECT_EQ(len2.charLength(), 6);
+  EXPECT_EQ(len2.length(), 6);
   EXPECT_EQ(len2.codePointLength(), 3);
 
   SmallStr len3(&scope, SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3\xC2\xA4"));
-  EXPECT_EQ(len3.charLength(), 7);
+  EXPECT_EQ(len3.length(), 7);
   EXPECT_EQ(len3.codePointLength(), 3);
 
   SmallStr len4(&scope, SmallStr::fromCStr("\xF0\x90\x8D\x88\x65\xC2\xA3"));
-  EXPECT_EQ(len4.charLength(), 7);
+  EXPECT_EQ(len4.length(), 7);
   EXPECT_EQ(len4.codePointLength(), 3);
 }
 
 TEST_F(SmallStrTest, CopyToCopiesBytes) {
   HandleScope scope(thread_);
   SmallStr str(&scope, SmallStr::fromCStr("AB"));
-  EXPECT_EQ(str.charLength(), 2);
-  EXPECT_EQ(str.charAt(0), 'A');
-  EXPECT_EQ(str.charAt(1), 'B');
+  EXPECT_EQ(str.length(), 2);
+  EXPECT_EQ(str.byteAt(0), 'A');
+  EXPECT_EQ(str.byteAt(1), 'B');
 
   byte array[3]{0, 0, 0};
   str.copyTo(array, 2);
@@ -1138,41 +1138,41 @@ TEST_F(SmallStrTest, CopyToCopiesBytes) {
 TEST_F(SmallStrTest, FromCodePointOneByte) {
   HandleScope scope(thread_);
   SmallStr str(&scope, SmallStr::fromCodePoint(0x24));
-  ASSERT_EQ(str.charLength(), 1);
-  EXPECT_EQ(str.charAt(0), 0x24);
+  ASSERT_EQ(str.length(), 1);
+  EXPECT_EQ(str.byteAt(0), 0x24);
 }
 
 TEST_F(SmallStrTest, FromCodePointTwoByte) {
   HandleScope scope(thread_);
   SmallStr str(&scope, SmallStr::fromCodePoint(0xA2));
-  ASSERT_EQ(str.charLength(), 2);
-  EXPECT_EQ(str.charAt(0), 0xC2);
-  EXPECT_EQ(str.charAt(1), 0xA2);
+  ASSERT_EQ(str.length(), 2);
+  EXPECT_EQ(str.byteAt(0), 0xC2);
+  EXPECT_EQ(str.byteAt(1), 0xA2);
 }
 
 TEST_F(SmallStrTest, FromCodePointThreeByte) {
   HandleScope scope(thread_);
   SmallStr str1(&scope, SmallStr::fromCodePoint(0x0939));
-  ASSERT_EQ(str1.charLength(), 3);
-  EXPECT_EQ(str1.charAt(0), 0xE0);
-  EXPECT_EQ(str1.charAt(1), 0xA4);
-  EXPECT_EQ(str1.charAt(2), 0xB9);
+  ASSERT_EQ(str1.length(), 3);
+  EXPECT_EQ(str1.byteAt(0), 0xE0);
+  EXPECT_EQ(str1.byteAt(1), 0xA4);
+  EXPECT_EQ(str1.byteAt(2), 0xB9);
 
   SmallStr str2(&scope, SmallStr::fromCodePoint(0x20AC));
-  ASSERT_EQ(str2.charLength(), 3);
-  EXPECT_EQ(str2.charAt(0), 0xE2);
-  EXPECT_EQ(str2.charAt(1), 0x82);
-  EXPECT_EQ(str2.charAt(2), 0xAC);
+  ASSERT_EQ(str2.length(), 3);
+  EXPECT_EQ(str2.byteAt(0), 0xE2);
+  EXPECT_EQ(str2.byteAt(1), 0x82);
+  EXPECT_EQ(str2.byteAt(2), 0xAC);
 }
 
 TEST_F(SmallStrTest, FromCodePointFourByte) {
   HandleScope scope(thread_);
   SmallStr str(&scope, SmallStr::fromCodePoint(0x10348));
-  ASSERT_EQ(str.charLength(), 4);
-  EXPECT_EQ(str.charAt(0), 0xF0);
-  EXPECT_EQ(str.charAt(1), 0x90);
-  EXPECT_EQ(str.charAt(2), 0x8D);
-  EXPECT_EQ(str.charAt(3), 0x88);
+  ASSERT_EQ(str.length(), 4);
+  EXPECT_EQ(str.byteAt(0), 0xF0);
+  EXPECT_EQ(str.byteAt(1), 0x90);
+  EXPECT_EQ(str.byteAt(2), 0x8D);
+  EXPECT_EQ(str.byteAt(3), 0x88);
 }
 
 TEST_F(SmallStrTest, IncludesLargeStrReturnsFalse) {
@@ -1208,14 +1208,14 @@ TEST_F(StrTest, OffsetByCodePoints) {
   HandleScope scope(thread_);
 
   Str empty(&scope, Str::empty());
-  EXPECT_EQ(empty.charLength(), 0);
+  EXPECT_EQ(empty.length(), 0);
   EXPECT_EQ(empty.codePointLength(), 0);
   EXPECT_EQ(empty.offsetByCodePoints(0, 1), 0);
   EXPECT_EQ(empty.offsetByCodePoints(2, 0), 0);
   EXPECT_EQ(empty.offsetByCodePoints(2, 1), 0);
 
   Str ascii(&scope, runtime_->newStrFromCStr("abcd"));
-  EXPECT_EQ(ascii.charLength(), 4);
+  EXPECT_EQ(ascii.length(), 4);
   EXPECT_EQ(ascii.codePointLength(), 4);
 
   // for ASCII, each code point is one byte wide
@@ -1240,7 +1240,7 @@ TEST_F(StrTest, OffsetByCodePoints) {
 
   Str unicode(&scope,
               runtime_->newStrFromCStr("\xd7\x90pq\xd7\x91\xd7\x92-\xd7\x93"));
-  EXPECT_EQ(unicode.charLength(), 11);
+  EXPECT_EQ(unicode.length(), 11);
   EXPECT_EQ(unicode.codePointLength(), 7);
 
   // for Unicode, code points may be more than one byte wide
@@ -1279,7 +1279,7 @@ TEST_F(LargeStrTest, CodePointLengthAscii) {
 
   Str str(&scope, runtime_->newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
-  EXPECT_EQ(str.charLength(), static_cast<word>(std::strlen(code_units)));
+  EXPECT_EQ(str.length(), static_cast<word>(std::strlen(code_units)));
   EXPECT_EQ(str.codePointLength(), 17);
 }
 
@@ -1293,7 +1293,7 @@ TEST_F(LargeStrTest, CodePointLength) {
 
   Str str(&scope, runtime_->newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
-  EXPECT_EQ(str.charLength(), static_cast<word>(std::strlen(code_units)));
+  EXPECT_EQ(str.length(), static_cast<word>(std::strlen(code_units)));
   EXPECT_EQ(str.codePointLength(), 23);
 }
 
@@ -1340,7 +1340,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsEmptyString) {
   HandleScope scope(thread_);
   Str empty(&scope, Str::empty());
 
-  word i = empty.charLength();
+  word i = empty.length();
   ASSERT_EQ(0, i);
 
   EXPECT_EQ(-1, empty.offsetByCodePoints(i, -1));
@@ -1350,7 +1350,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsStringLength1) {
   HandleScope scope(thread_);
 
   Str str1(&scope, runtime_->newStrFromCStr("1"));
-  word len = str1.charLength();
+  word len = str1.length();
   ASSERT_EQ(1, len);
 
   EXPECT_EQ(1, str1.offsetByCodePoints(len, 0));
@@ -1362,7 +1362,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsStringLength3) {
   HandleScope scope(thread_);
 
   Str str3(&scope, runtime_->newStrFromCStr("123"));
-  word len = str3.charLength();
+  word len = str3.length();
   ASSERT_EQ(3, len);
 
   EXPECT_EQ(2, str3.offsetByCodePoints(len, -1));
@@ -1385,7 +1385,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsUnicodeStringLength5) {
   HandleScope scope(thread_);
 
   Str str5(&scope, runtime_->newStrFromCStr("\x41\xD7\x91\xD7\x92"));
-  word len = str5.charLength();
+  word len = str5.length();
   ASSERT_EQ(5, len);
 
   EXPECT_EQ(3, str5.offsetByCodePoints(len, -1));

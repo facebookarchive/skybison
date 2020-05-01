@@ -304,7 +304,7 @@ static RawObject printErrorText(Thread* thread, const Object& file, word offset,
                                 const Object& text_obj) {
   HandleScope scope(thread);
   Str text_str(&scope, *text_obj);
-  word length = text_str.charLength();
+  word length = text_str.length();
   // This is gross, but it greatly simplifies the string scanning done by the
   // rest of the function, and makes maintaining compatibility with CPython
   // easier.
@@ -530,7 +530,7 @@ void handleSystemExit(Thread* thread) {
   ValueCell sys_stderr_cell(&scope, runtime->sysStderr());
   if (sys_stderr_cell.isUnbound() || sys_stderr_cell.value().isNoneType()) {
     unique_c_ptr<char> buf(result_str.toCStr());
-    fwrite(buf.get(), 1, result_str.charLength(), stderr);
+    fwrite(buf.get(), 1, result_str.length(), stderr);
     fputc('\n', stderr);
   } else {
     Object file(&scope, sys_stderr_cell.value());

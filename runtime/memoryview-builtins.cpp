@@ -20,12 +20,12 @@ const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
 };
 
 static char formatChar(const Str& format) {
-  if (format.charLength() == 2) {
-    if (format.charAt(0) != '@') return -1;
-    return format.charAt(1);
+  if (format.length() == 2) {
+    if (format.byteAt(0) != '@') return -1;
+    return format.byteAt(1);
   }
-  if (format.charLength() != 1) return -1;
-  return format.charAt(0);
+  if (format.length() != 1) return -1;
+  return format.byteAt(0);
 }
 
 static word itemSize(char format) {

@@ -337,10 +337,11 @@ void HeapProfiler::writeBytes(RawBytes bytes) {
 void HeapProfiler::writeLargeStr(RawLargeStr str) {
   CHECK(!heap_object_table_.add(str.raw()), "cannot dump object twice");
   SubRecord sub(kPrimitiveArrayDump, current_record_);
-  sub.beginPrimitiveArrayDump(objectId(str), /*stack_trace=*/0,
-                              str.charLength(), BasicType::kByte);
-  for (word i = 0; i < str.charLength(); i++) {
-    sub.write8(str.charAt(i));
+  word length = str.length();
+  sub.beginPrimitiveArrayDump(objectId(str), /*stack_trace=*/0, length,
+                              BasicType::kByte);
+  for (word i = 0; i < length; i++) {
+    sub.write8(str.byteAt(i));
   }
 }
 
@@ -545,8 +546,8 @@ void HeapProfiler::writeHandleRoot(RawObject obj) {
 void HeapProfiler::writeStringInUTF8(RawStr str) {
   Record record(kStringInUtf8, this);
   record.writeObjectId(str.raw());
-  for (word i = 0; i < str.charLength(); i++) {
-    record.write8(str.charAt(i));
+  for (word i = 0, length = str.length(); i < length; i++) {
+    record.write8(str.byteAt(i));
   }
 }
 

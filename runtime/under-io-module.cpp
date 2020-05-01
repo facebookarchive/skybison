@@ -782,11 +782,11 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   }
 
   Str writenl(&scope, string_io.writenl());
-  bool long_writenl = writenl.charLength() == 2;
-  byte first_writenl_char = writenl.charAt(0);
+  bool long_writenl = writenl.length() == 2;
+  byte first_writenl_char = writenl.byteAt(0);
   bool has_write_translate =
       string_io.hasWritetranslate() && first_writenl_char != '\n';
-  word original_val_len = value.charLength();
+  word original_val_len = value.length();
   word val_len = original_val_len;
 
   // TODO(T59696801): use a more efficient counting method.
@@ -795,7 +795,7 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   // Therefore we don't have to worry about their interactions with each other
   if (has_write_translate && long_writenl) {
     for (word i = 0; i < original_val_len; i++) {
-      byte current_char = value.charAt(i);
+      byte current_char = value.byteAt(i);
       if (current_char == '\n') {
         val_len++;
       }
@@ -808,7 +808,7 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   bool has_read_translate = string_io.hasReadtranslate();
   if (has_read_translate) {
     for (word i = 0; i < val_len - 1; i++) {
-      if (value.charAt(i) == '\r' && value.charAt(i + 1) == '\n') {
+      if (value.byteAt(i) == '\r' && value.byteAt(i + 1) == '\n') {
         new_len--;
         i++;
       }
@@ -833,9 +833,9 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   if (has_read_translate) {
     word new_seen_nl = Int::cast(string_io.seennl()).asWord();
     for (word str_i = 0, byte_i = start; str_i < val_len; ++str_i, ++byte_i) {
-      byte ch = value.charAt(str_i);
+      byte ch = value.byteAt(str_i);
       if (ch == '\r') {
-        if (val_len > str_i + 1 && value.charAt(str_i + 1) == '\n') {
+        if (val_len > str_i + 1 && value.byteAt(str_i + 1) == '\n') {
           new_seen_nl |= NewlineFound::kCRLF;
           buffer.byteAtPut(byte_i, '\n');
           str_i++;
@@ -854,11 +854,11 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   } else if (has_write_translate) {
     for (word str_i = 0, byte_i = start; str_i < original_val_len;
          ++str_i, ++byte_i) {
-      byte ch = value.charAt(str_i);
+      byte ch = value.byteAt(str_i);
       if (ch == '\n') {
         buffer.byteAtPut(byte_i, first_writenl_char);
         if (long_writenl) {
-          buffer.byteAtPut(++byte_i, writenl.charAt(1));
+          buffer.byteAtPut(++byte_i, writenl.byteAt(1));
         }
         continue;
       }
@@ -971,7 +971,7 @@ static word stringIOReadline(Thread* thread, const StringIO& string_io,
       }
     }
   } else {
-    byte first_nl_byte = newline.charAt(0);
+    byte first_nl_byte = newline.byteAt(0);
     while (i < start + size) {
       word index = buffer.findByte(first_nl_byte, i, (size + start - i));
       if (index == -1) {
@@ -979,15 +979,15 @@ static word stringIOReadline(Thread* thread, const StringIO& string_io,
         break;
       }
       i = index + 1;
-      if (buf_len >= (i + newline.charLength() - 1)) {
+      if (buf_len >= (i + newline.length() - 1)) {
         bool match = true;
-        for (int j = 1; j < newline.charLength(); j++) {
-          if (buffer.byteAt(i + j - 1) != newline.charAt(j)) {
+        for (int j = 1; j < newline.length(); j++) {
+          if (buffer.byteAt(i + j - 1) != newline.byteAt(j)) {
             match = false;
           }
         }
         if (match) {
-          i += (newline.charLength() - 1);
+          i += (newline.length() - 1);
           break;
         }
       }

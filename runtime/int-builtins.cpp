@@ -371,7 +371,7 @@ RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs) {
   }
   Str spec(&scope, strUnderlying(*spec_obj));
 
-  if (spec.charLength() == 0) {
+  if (spec.length() == 0) {
     // We return the equivalent of `str(self)` for an empty spec.
     if (self_obj.isSmallInt() || self_obj.isLargeInt()) {
       return formatIntDecimalSimple(thread, self);

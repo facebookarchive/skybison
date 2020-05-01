@@ -43,7 +43,7 @@ static word strCountCharFromTo(const Str& haystack, byte needle, word start,
   if (haystack.isSmallStr()) {
     RawSmallStr small = SmallStr::cast(*haystack);
     for (word i = start; i < end; i++) {
-      if (small.charAt(i) == needle) result++;
+      if (small.byteAt(i) == needle) result++;
     }
     return result;
   }
@@ -67,34 +67,33 @@ RawObject strCount(const Str& haystack, const Str& needle, word start,
   }
 
   word start_index = start == 0 ? 0 : haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.charLength() && needle.charLength() > 0) {
+  if (start_index == haystack.length() && needle.length() > 0) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(0);
   }
 
   word end_index = end == kMaxWord
-                       ? haystack.charLength()
+                       ? haystack.length()
                        : haystack.offsetByCodePoints(start_index, end - start);
-  if ((end_index - start_index) < needle.charLength() ||
-      start_index > end_index) {
+  if ((end_index - start_index) < needle.length() || start_index > end_index) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(0);
   }
 
-  if (needle.charLength() == 1) {
+  if (needle.length() == 1) {
     return SmallInt::fromWord(strCountCharFromTo(
-        haystack, SmallStr::cast(*needle).charAt(0), start_index, end_index));
+        haystack, SmallStr::cast(*needle).byteAt(0), start_index, end_index));
   }
 
   // TODO(T41400083): Use a different search algorithm
-  return SmallInt::fromWord(strCountSubStrFromTo(
-      haystack, needle, start_index, end_index, haystack.charLength()));
+  return SmallInt::fromWord(strCountSubStrFromTo(haystack, needle, start_index,
+                                                 end_index, haystack.length()));
 }
 
 word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
                           word end, word max_count) {
   DCHECK(max_count >= 0, "max_count must be non-negative");
-  word needle_len = needle.charLength();
+  word needle_len = needle.length();
   word num_match = 0;
   // Loop is in byte space, not code point space
   for (word i = start; i <= end - needle_len && num_match < max_count;) {
@@ -109,7 +108,7 @@ word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
 }
 
 word strCountSubStr(const Str& haystack, const Str& needle, word max_count) {
-  return strCountSubStrFromTo(haystack, needle, 0, haystack.charLength(),
+  return strCountSubStrFromTo(haystack, needle, 0, haystack.length(),
                               max_count);
 }
 
@@ -121,7 +120,7 @@ RawObject strEncodeASCII(Thread* thread, const Str& str) {
   if (str.isSmallStr()) {
     return SmallStr::cast(*str).becomeBytes();
   }
-  word str_len = str.charLength();
+  word str_len = str.length();
   MutableBytes bytes(&scope,
                      thread->runtime()->newMutableBytesUninitialized(str_len));
   bytes.replaceFromWithStr(0, *str, str_len);
@@ -133,25 +132,25 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
   CHECK(str_obj.isStr(), "strEscapeNonASCII cannot currently handle non-str");
   HandleScope scope(thread);
   Str str(&scope, *str_obj);
-  for (word i = 0; i < str.charLength(); i++) {
-    if (str.charAt(i) > kMaxASCII) {
+  for (word i = 0; i < str.length(); i++) {
+    if (str.byteAt(i) > kMaxASCII) {
       UNIMPLEMENTED(
           "Character '%d' at index %ld is not yet escapable in strEscape",
-          str.charAt(i), i);
+          str.byteAt(i), i);
     }
   }
   return *str;
 }
 
 word strSpan(const Str& src, const Str& str) {
-  word length = src.charLength();
-  word str_length = str.charLength();
+  word length = src.length();
+  word str_length = str.length();
   word first = 0;
   for (; first < length; first++) {
     bool has_match = false;
-    byte ch = src.charAt(first);
+    byte ch = src.byteAt(first);
     for (word j = 0; j < str_length; j++) {
-      if (ch == str.charAt(j)) {
+      if (ch == str.byteAt(j)) {
         has_match = true;
         break;
       }
@@ -165,14 +164,14 @@ word strSpan(const Str& src, const Str& str) {
 
 word strRSpan(const Str& src, const Str& str, word rend) {
   DCHECK(rend >= 0, "string index underflow");
-  word length = src.charLength();
-  word str_length = str.charLength();
+  word length = src.length();
+  word str_length = str.length();
   word result = 0;
   for (word i = length - 1; i >= rend; i--, result++) {
-    byte ch = src.charAt(i);
+    byte ch = src.byteAt(i);
     bool has_match = false;
     for (word j = 0; j < str_length; j++) {
-      if (ch == str.charAt(j)) {
+      if (ch == str.byteAt(j)) {
         has_match = true;
         break;
       }
@@ -212,7 +211,7 @@ RawObject strSplit(Thread* thread, const Str& str, const Str& sep,
   word result_len = num_splits + 1;
   MutableTuple result_items(&scope, runtime->newMutableTuple(result_len));
   word last_idx = 0;
-  word sep_len = sep.charLength();
+  word sep_len = sep.length();
   for (word i = 0, result_idx = 0; result_idx < num_splits;) {
     if (strHasPrefix(str, sep, i)) {
       result_items.atPut(result_idx++, runtime->strSubstr(thread, str, last_idx,
@@ -223,9 +222,8 @@ RawObject strSplit(Thread* thread, const Str& str, const Str& sep,
       i = str.offsetByCodePoints(i, 1);
     }
   }
-  result_items.atPut(
-      num_splits,
-      runtime->strSubstr(thread, str, last_idx, str.charLength() - last_idx));
+  result_items.atPut(num_splits, runtime->strSubstr(thread, str, last_idx,
+                                                    str.length() - last_idx));
   List result(&scope, runtime->newList());
   result.setItems(*result_items);
   result.setNumItems(result_len);
@@ -237,21 +235,20 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
   Runtime* runtime = thread->runtime();
   List result(&scope, runtime->newList());
   // Looping over code points, not bytes, but i is a byte offset
-  for (word i = 0, j = 0; i < str.charLength(); j = i) {
+  for (word i = 0, j = 0; i < str.length(); j = i) {
     // Skip newline chars
     word num_bytes;
-    while (i < str.charLength() &&
-           !isLineBreak(str.codePointAt(i, &num_bytes))) {
+    while (i < str.length() && !isLineBreak(str.codePointAt(i, &num_bytes))) {
       i += num_bytes;
     }
 
     word eol_pos = i;
-    if (i < str.charLength()) {
+    if (i < str.length()) {
       int32_t cp = str.codePointAt(i, &num_bytes);
       word next = i + num_bytes;
       word next_num_bytes;
       // Check for \r\n specifically
-      if (cp == '\r' && next < str.charLength() &&
+      if (cp == '\r' && next < str.length() &&
           str.codePointAt(next, &next_num_bytes) == '\n') {
         i += next_num_bytes;
       }
@@ -262,7 +259,7 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
     }
 
     // If there are no newlines, the str returned should be identity-equal
-    if (j == 0 && eol_pos == str.charLength() && str.isStr()) {
+    if (j == 0 && eol_pos == str.length() && str.isStr()) {
       runtime->listAdd(thread, result, str);
       return *result;
     }
@@ -275,11 +272,11 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
 }
 
 RawObject strStripSpace(Thread* thread, const Str& src) {
-  word length = src.charLength();
+  word length = src.length();
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && ASCII::isSpace(src.charAt(0))) {
+  if (length == 1 && ASCII::isSpace(src.byteAt(0))) {
     return Str::empty();
   }
   word first = 0;
@@ -305,11 +302,11 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
 }
 
 RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
-  word length = src.charLength();
+  word length = src.length();
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && ASCII::isSpace(src.charAt(0))) {
+  if (length == 1 && ASCII::isSpace(src.byteAt(0))) {
     return Str::empty();
   }
   word first = 0;
@@ -325,11 +322,11 @@ RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
 }
 
 RawObject strStripSpaceRight(Thread* thread, const Str& src) {
-  word length = src.charLength();
+  word length = src.length();
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && ASCII::isSpace(src.charAt(0))) {
+  if (length == 1 && ASCII::isSpace(src.byteAt(0))) {
     return Str::empty();
   }
   word last = length;
@@ -346,8 +343,8 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
 }
 
 RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
-  word length = src.charLength();
-  if (length == 0 || str.charLength() == 0) {
+  word length = src.length();
+  if (length == 0 || str.length() == 0) {
     return *src;
   }
   word first = strSpan(src, str);
@@ -357,8 +354,8 @@ RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
 }
 
 RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
-  word length = src.charLength();
-  if (length == 0 || str.charLength() == 0) {
+  word length = src.length();
+  if (length == 0 || str.length() == 0) {
     return *src;
   }
   word first = strSpan(src, str);
@@ -366,8 +363,8 @@ RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
 }
 
 RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
-  word length = src.charLength();
-  if (length == 0 || str.charLength() == 0) {
+  word length = src.length();
+  if (length == 0 || str.length() == 0) {
     return *src;
   }
   word first = 0;
@@ -376,22 +373,22 @@ RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
 }
 
 RawObject strTranslateASCII(Thread* thread, const Str& src, const Str& table) {
-  if (table.charLength() > kMaxASCII || !table.isASCII()) {
+  if (table.length() > kMaxASCII || !table.isASCII()) {
     return Unbound::object();
   }
-  word src_len = src.charLength();
-  word table_len = table.charLength();
+  word src_len = src.length();
+  word table_len = table.length();
   HandleScope scope(thread);
   MutableBytes result(&scope,
                       thread->runtime()->newMutableBytesUninitialized(src_len));
   // Since all non-ASCII bytes in UTF-8 have a 1 in front, we can iterate by
   // bytes instead of codepoints
-  for (word i = 0; i < src.charLength(); i++) {
-    byte to_translate = src.charAt(i);
+  for (word i = 0; i < src.length(); i++) {
+    byte to_translate = src.byteAt(i);
     if (to_translate > table_len) {
       result.byteAtPut(i, to_translate);
     } else {
-      result.byteAtPut(i, table.charAt(to_translate));
+      result.byteAtPut(i, table.byteAt(to_translate));
     }
   }
   return result.becomeStr();
@@ -401,7 +398,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   HandleScope scope(thread);
   word byte_offset = iter.index();
   Str underlying(&scope, iter.iterable());
-  if (byte_offset >= underlying.charLength()) {
+  if (byte_offset >= underlying.length()) {
     return Error::noMoreItems();
   }
   word num_bytes = 0;
@@ -511,7 +508,7 @@ RawObject METH(str, __format__)(Thread* thread, Frame* frame, word nargs) {
   }
   Str spec(&scope, strUnderlying(*spec_obj));
 
-  if (spec.charLength() == 0) {
+  if (spec.length() == 0) {
     return *self;
   }
 
@@ -607,8 +604,8 @@ void strInternInTuple(Thread* thread, const Object& items) {
 }
 
 static bool allNameChars(const Str& str) {
-  for (word i = 0; i < str.charLength(); i++) {
-    if (!isalnum(str.charAt(i))) {
+  for (word i = 0; i < str.length(); i++) {
+    if (!isalnum(str.byteAt(i))) {
       return false;
     }
   }
@@ -659,8 +656,8 @@ bool strInternConstants(Thread* thread, const Object& items) {
 }
 
 word strFind(const Str& haystack, const Str& needle) {
-  word haystack_len = haystack.charLength();
-  word needle_len = needle.charLength();
+  word haystack_len = haystack.length();
+  word needle_len = needle.length();
   if (needle_len > haystack_len) {
     return -1;
   }
@@ -668,7 +665,7 @@ word strFind(const Str& haystack, const Str& needle) {
     return 0;
   }
   if (needle_len == 1 && haystack.isASCII()) {
-    return strFindAsciiChar(haystack, needle.charAt(0));
+    return strFindAsciiChar(haystack, needle.byteAt(0));
   }
   // Loop is in byte space, not code point space
   word result = 0;
@@ -689,14 +686,13 @@ word strFindWithRange(const Str& haystack, const Str& needle, word start,
   }
 
   word start_index = haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.charLength() && needle.charLength() > 0) {
+  if (start_index == haystack.length() && needle.length() > 0) {
     // Haystack is too small; fast early return
     return -1;
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
 
-  if ((end_index - start_index) < needle.charLength() ||
-      start_index > end_index) {
+  if ((end_index - start_index) < needle.length() || start_index > end_index) {
     // Haystack is too small; fast early return
     return -1;
   }
@@ -704,7 +700,7 @@ word strFindWithRange(const Str& haystack, const Str& needle, word start,
   // Loop is in byte space, not code point space
   word result = start;
   // TODO(T41400083): Use a different search algorithm
-  for (word i = start_index; i <= end_index - needle.charLength(); result++) {
+  for (word i = start_index; i <= end_index - needle.length(); result++) {
     bool has_match = strHasPrefix(haystack, needle, i);
     word next = haystack.offsetByCodePoints(i, 1);
     if (i == next) {
@@ -727,8 +723,8 @@ word strFindWithRange(const Str& haystack, const Str& needle, word start,
 
 word strFindAsciiChar(const Str& haystack, byte needle) {
   DCHECK(needle <= kMaxASCII, "must only be called for ASCII `needle`");
-  for (word i = 0, length = haystack.charLength(); i < length; i++) {
-    if (haystack.charAt(i) == needle) {
+  for (word i = 0, length = haystack.length(); i < length; i++) {
+    if (haystack.byteAt(i) == needle) {
       return i;
     }
   }
@@ -737,7 +733,7 @@ word strFindAsciiChar(const Str& haystack, byte needle) {
 
 word strFindFirstNonWhitespace(const Str& str) {
   word i = 0;
-  for (word codepoint_len, length = str.charLength(); i < length;
+  for (word codepoint_len, length = str.length(); i < length;
        i += codepoint_len) {
     if (!Unicode::isSpace(str.codePointAt(i, &codepoint_len))) return i;
   }
@@ -745,13 +741,13 @@ word strFindFirstNonWhitespace(const Str& str) {
 }
 
 bool strHasPrefix(const Str& str, const Str& prefix, word start) {
-  word str_len = str.charLength();
-  word prefix_len = prefix.charLength();
+  word str_len = str.length();
+  word prefix_len = prefix.length();
   if (str_len - start < prefix_len) {
     return false;
   }
   for (word i = 0; i < prefix_len; i++) {
-    if (str.charAt(start + i) != prefix.charAt(i)) {
+    if (str.byteAt(start + i) != prefix.byteAt(i)) {
       return false;
     }
   }
@@ -764,13 +760,12 @@ word strRFind(const Str& haystack, const Str& needle, word start, word end) {
   // Needle is empty
   if (needle == Str::empty()) return end;
   word start_index = haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.charLength()) {
+  if (start_index == haystack.length()) {
     // Haystack is too small; fast early return
     return -1;
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
-  if ((end_index - start_index) < needle.charLength() ||
-      start_index > end_index) {
+  if ((end_index - start_index) < needle.length() || start_index > end_index) {
     // Haystack is too small; fast early return
     return -1;
   }
@@ -791,8 +786,8 @@ word strRFind(const Str& haystack, const Str& needle, word start, word end) {
 
 word strRFindAsciiChar(const Str& haystack, byte needle) {
   DCHECK(needle <= kMaxASCII, "must only be called for ASCII `needle`");
-  for (word i = haystack.charLength() - 1; i >= 0; i--) {
-    if (haystack.charAt(i) == needle) {
+  for (word i = haystack.length() - 1; i >= 0; i--) {
+    if (haystack.byteAt(i) == needle) {
       return i;
     }
   }
@@ -835,19 +830,19 @@ RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word length = self.charLength();
+  word length = self.length();
   if (self.isASCII()) {
     if (self.isSmallStr()) {
       byte buf[SmallStr::kMaxLength] = {};
       for (word i = 0; i < length; i++) {
-        buf[i] = ASCII::toLower(self.charAt(i));
+        buf[i] = ASCII::toLower(self.byteAt(i));
       }
       return SmallStr::fromBytes({buf, length});
     }
     // Search for the first uppercase character.
     word first_uppercase = 0;
     for (; first_uppercase < length; first_uppercase++) {
-      if (ASCII::isUpper(self.charAt(first_uppercase))) {
+      if (ASCII::isUpper(self.byteAt(first_uppercase))) {
         break;
       }
     }
@@ -858,7 +853,7 @@ RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs) {
     MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
     result.replaceFromWithStr(0, *self, first_uppercase);
     for (word i = first_uppercase; i < length; i++) {
-      byte lower = ASCII::toLower(self.charAt(i));
+      byte lower = ASCII::toLower(self.byteAt(i));
       result.byteAtPut(i, lower);
     }
     return result.becomeStr();
@@ -906,7 +901,7 @@ RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs) {
   }
 
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
 
   bool previous_is_cased = false;
   StrArray result(&scope, runtime->newStrArray());
@@ -934,19 +929,19 @@ RawObject METH(str, upper)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word length = self.charLength();
+  word length = self.length();
   if (self.isASCII()) {
     if (self.isSmallStr()) {
       byte buf[SmallStr::kMaxLength];
       for (word i = 0; i < length; i++) {
-        buf[i] = ASCII::toUpper(self.charAt(i));
+        buf[i] = ASCII::toUpper(self.byteAt(i));
       }
       return SmallStr::fromBytes({buf, length});
     }
     // Search for the first lowercase character.
     word first_lowercase = 0;
     for (; first_lowercase < length; first_lowercase++) {
-      if (ASCII::isLower(self.charAt(first_lowercase))) {
+      if (ASCII::isLower(self.byteAt(first_lowercase))) {
         break;
       }
     }
@@ -957,7 +952,7 @@ RawObject METH(str, upper)(Thread* thread, Frame* frame, word nargs) {
     MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
     result.replaceFromWithStr(0, *self, first_lowercase);
     for (word i = first_lowercase; i < length; i++) {
-      byte lower = ASCII::toUpper(self.charAt(i));
+      byte lower = ASCII::toUpper(self.byteAt(i));
       result.byteAtPut(i, lower);
     }
     return result.becomeStr();
@@ -1029,7 +1024,7 @@ RawObject METH(str, __mul__)(Thread* thread, Frame* frame, word nargs) {
                                 &count_obj);
   }
   Str self(&scope, *self_obj);
-  word length = self.charLength();
+  word length = self.length();
   if (count <= 0 || length == 0) {
     return Str::empty();
   }
@@ -1090,7 +1085,7 @@ RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  const word self_len = self.charLength();
+  const word self_len = self.length();
   word result_len = 0;
   word squote = 0;
   word dquote = 0;
@@ -1167,7 +1162,7 @@ RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs) {
       out += 2;
     } else if (Unicode::isPrintable(code_point)) {
       for (word i = 0; i < char_len; i++) {
-        buf.byteAtPut(out + i, self.charAt(in + i));
+        buf.byteAtPut(out + i, self.byteAt(in + i));
       }
       out += char_len;
     } else if (code_point <= 0xff) {
@@ -1202,13 +1197,13 @@ RawObject METH(str, isalnum)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   if (char_length == 0) {
     return Bool::falseObj();
   }
   word i = 0;
   do {
-    byte b = self.charAt(i++);
+    byte b = self.byteAt(i++);
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
@@ -1227,13 +1222,13 @@ RawObject METH(str, isalpha)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   if (char_length == 0) {
     return Bool::falseObj();
   }
   word i = 0;
   do {
-    byte b = self.charAt(i++);
+    byte b = self.byteAt(i++);
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
@@ -1263,13 +1258,13 @@ RawObject METH(str, isdecimal)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   if (char_length == 0) {
     return Bool::falseObj();
   }
   word i = 0;
   do {
-    byte b = self.charAt(i++);
+    byte b = self.byteAt(i++);
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
@@ -1288,13 +1283,13 @@ RawObject METH(str, isdigit)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   if (char_length == 0) {
     return Bool::falseObj();
   }
   word i = 0;
   do {
-    byte b = self.charAt(i++);
+    byte b = self.byteAt(i++);
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
@@ -1306,7 +1301,7 @@ RawObject METH(str, isdigit)(Thread* thread, Frame* frame, word nargs) {
 }
 
 bool strIsIdentifier(const Str& str) {
-  word char_length = str.charLength();
+  word char_length = str.length();
   if (char_length == 0) {
     return false;
   }
@@ -1343,7 +1338,7 @@ RawObject METH(str, islower)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   bool cased = false;
   for (word i = 0, len; i < char_length; i += len) {
     int32_t code_point = self.codePointAt(i, &len);
@@ -1365,13 +1360,13 @@ RawObject METH(str, isnumeric)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   if (char_length == 0) {
     return Bool::falseObj();
   }
   word i = 0;
   do {
-    byte b = self.charAt(i++);
+    byte b = self.byteAt(i++);
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
@@ -1390,8 +1385,8 @@ RawObject METH(str, isprintable)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  for (word i = 0, char_length = self.charLength(); i < char_length; i++) {
-    byte b = self.charAt(i);
+  for (word i = 0, char_length = self.length(); i < char_length; i++) {
+    byte b = self.byteAt(i);
     if (b > kMaxASCII) {
       UNIMPLEMENTED("non-ASCII character");
     }
@@ -1410,12 +1405,12 @@ RawObject METH(str, isspace)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   if (char_length == 0) {
     return Bool::falseObj();
   }
   if (char_length == 1) {
-    return ASCII::isSpace(self.charAt(0)) ? Bool::trueObj() : Bool::falseObj();
+    return ASCII::isSpace(self.byteAt(0)) ? Bool::trueObj() : Bool::falseObj();
   }
   word byte_index = 0;
   do {
@@ -1439,7 +1434,7 @@ RawObject METH(str, istitle)(Thread* thread, Frame* frame, word nargs) {
   Str self(&scope, strUnderlying(*self_obj));
   bool cased = false;
   bool previous_is_cased = false;
-  word char_length = self.charLength();
+  word char_length = self.length();
   for (word i = 0, len; i < char_length; i += len) {
     int32_t code_point = self.codePointAt(i, &len);
     if (Unicode::isUpper(code_point) || Unicode::isTitle(code_point)) {
@@ -1465,7 +1460,7 @@ RawObject METH(str, isupper)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.charLength();
+  word char_length = self.length();
   bool cased = false;
   for (word i = 0, len; i < char_length; i += len) {
     int32_t code_point = self.codePointAt(i, &len);
@@ -1582,7 +1577,7 @@ RawObject METH(str_iterator, __length_hint__)(Thread* thread, Frame* frame,
   }
   StrIterator str_iterator(&scope, *self);
   Str str(&scope, str_iterator.iterable());
-  return SmallInt::fromWord(str.charLength() - str_iterator.index());
+  return SmallInt::fromWord(str.length() - str_iterator.index());
 }
 
 }  // namespace py

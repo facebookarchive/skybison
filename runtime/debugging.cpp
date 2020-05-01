@@ -323,7 +323,7 @@ std::ostream& operator<<(std::ostream& os, RawByteArray value) {
   if (repr_obj.isError()) return os << "<ERROR: An exception occurred.>";
   Str repr(&scope, *repr_obj);
   unique_c_ptr<char[]> data(repr.toCStr());
-  return os.write(data.get(), repr.charLength());
+  return os.write(data.get(), repr.length());
 }
 
 std::ostream& operator<<(std::ostream& os, RawBytes value) {
@@ -332,7 +332,7 @@ std::ostream& operator<<(std::ostream& os, RawBytes value) {
   Bytes self(&scope, value);
   Str repr(&scope, bytesReprSmartQuotes(thread, self));
   unique_c_ptr<char[]> data(repr.toCStr());
-  return os.write(data.get(), repr.charLength());
+  return os.write(data.get(), repr.length());
 }
 
 std::ostream& operator<<(std::ostream& os, RawCode value) {
@@ -419,7 +419,7 @@ std::ostream& operator<<(std::ostream& os, RawLargeStr value) {
   Str str(&scope, value);
   unique_c_ptr<char[]> data(str.toCStr());
   os << '"';
-  os.write(data.get(), str.charLength());
+  os.write(data.get(), str.length());
   return os << '"';
 }
 
@@ -465,7 +465,7 @@ std::ostream& operator<<(std::ostream& os, RawSmallStr value) {
   HandleScope scope;
   Str str(&scope, value);
   byte buffer[RawSmallStr::kMaxLength];
-  word length = str.charLength();
+  word length = str.length();
   DCHECK(static_cast<size_t>(length) <= sizeof(buffer), "Buffer too small");
   str.copyTo(buffer, length);
   os << '"';

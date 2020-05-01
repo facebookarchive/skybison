@@ -38,7 +38,7 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
   result->precision = -1;
 
   word index = 0;
-  word length = spec.charLength();
+  word length = spec.length();
   int32_t cp = nextCodePoint(spec, length, &index);
 
   bool fill_char_specified = false;
@@ -202,7 +202,7 @@ RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {
     return *str;
   }
 
-  word char_length = str.charLength();
+  word char_length = str.length();
   word codepoint_length;
   word str_end_index;
   if (precision >= 0) {
@@ -226,7 +226,7 @@ RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {
   // Construct result.
   HandleScope scope(thread);
   Str fill_char(&scope, SmallStr::fromCodePoint(format->fill_char));
-  word fill_char_length = fill_char.charLength();
+  word fill_char_length = fill_char.length();
   word padding_char_length = padding * fill_char_length;
   word result_char_length = str_end_index + padding_char_length;
   MutableBytes result(
@@ -707,7 +707,7 @@ RawObject formatIntDecimal(Thread* thread, const Int& value,
 
   HandleScope scope(thread);
   Str fill_cp(&scope, SmallStr::fromCodePoint(format->fill_char));
-  word fill_cp_chars = fill_cp.charLength();
+  word fill_cp_chars = fill_cp.length();
   word padding_chars = padding * fill_cp_chars;
   word result_chars = padding_chars + number_chars;
   MutableBytes result(
@@ -785,7 +785,7 @@ static inline RawObject formatIntImpl(Thread* thread, const Int& value,
 
   HandleScope scope(thread);
   Str fill_cp(&scope, SmallStr::fromCodePoint(format->fill_char));
-  word fill_cp_chars = fill_cp.charLength();
+  word fill_cp_chars = fill_cp.length();
   word padding_chars = padding * fill_cp_chars;
   word result_chars = padding_chars + number_chars;
   MutableBytes result(

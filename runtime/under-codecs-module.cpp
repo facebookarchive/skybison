@@ -143,7 +143,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
   // TODO(T43252439): Optimize this by first checking whether the entire string
   // is ASCII, and just memcpy into a string if so
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.charLength(); i++) {
+       byte_offset < data.length(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
@@ -167,7 +167,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
           break;
       }
       Object outpos1(&scope, runtime->newInt(i));
-      while (byte_offset < data.charLength() &&
+      while (byte_offset < data.length() &&
              data.codePointAt(byte_offset, &num_bytes) > kMaxASCII) {
         byte_offset += num_bytes;
         i++;
@@ -291,8 +291,8 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
         continue;
       }
       Str temp(&scope, SmallStr::fromCodePoint(ch));
-      byteArrayAdd(thread, runtime, dst, temp.charAt(0));
-      byteArrayAdd(thread, runtime, dst, temp.charAt(1));
+      byteArrayAdd(thread, runtime, dst, temp.byteAt(0));
+      byteArrayAdd(thread, runtime, dst, temp.byteAt(1));
       continue;
     }
     if (i >= length) {
@@ -390,7 +390,7 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.charLength(); i++) {
+       byte_offset < data.length(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
@@ -414,7 +414,7 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
           break;
       }
       Object outpos1(&scope, runtime->newInt(i));
-      while (byte_offset < data.charLength() &&
+      while (byte_offset < data.length() &&
              data.codePointAt(byte_offset, &num_bytes) > kMaxByte) {
         byte_offset += num_bytes;
         i++;
@@ -914,13 +914,13 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
-       byte_offset < data.charLength(); index++) {
+       byte_offset < data.length(); index++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (!isSurrogate(codepoint)) {
       for (word j = byte_offset - num_bytes; j < byte_offset; j++) {
-        byteArrayAdd(thread, runtime, output, data.charAt(j));
+        byteArrayAdd(thread, runtime, output, data.byteAt(j));
       }
     } else {
       switch (error_symbol) {
@@ -938,9 +938,9 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
           break;
         case ID(surrogatepass):
           if (isSurrogate(codepoint)) {
-            byteArrayAdd(thread, runtime, output, data.charAt(byte_offset - 3));
-            byteArrayAdd(thread, runtime, output, data.charAt(byte_offset - 2));
-            byteArrayAdd(thread, runtime, output, data.charAt(byte_offset - 1));
+            byteArrayAdd(thread, runtime, output, data.byteAt(byte_offset - 3));
+            byteArrayAdd(thread, runtime, output, data.byteAt(byte_offset - 2));
+            byteArrayAdd(thread, runtime, output, data.byteAt(byte_offset - 1));
             continue;
           }
           break;
@@ -948,7 +948,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
           break;
       }
       Object outpos1(&scope, runtime->newInt(index));
-      while (byte_offset < data.charLength() &&
+      while (byte_offset < data.length() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
@@ -1002,7 +1002,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
-       byte_offset < data.charLength(); index++) {
+       byte_offset < data.length(); index++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -1035,7 +1035,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
           break;
       }
       Object outpos1(&scope, runtime->newInt(index));
-      while (byte_offset < data.charLength() &&
+      while (byte_offset < data.length() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
@@ -1085,7 +1085,7 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
-       byte_offset < data.charLength(); index++) {
+       byte_offset < data.length(); index++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -1111,7 +1111,7 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
           break;
       }
       Object outpos1(&scope, runtime->newInt(index));
-      while (byte_offset < data.charLength() &&
+      while (byte_offset < data.length() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
@@ -1133,8 +1133,8 @@ RawObject FUNC(_codecs, _bytearray_string_append)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   ByteArray dst(&scope, args.get(0));
   Str data(&scope, args.get(1));
-  for (word i = 0; i < data.charLength(); ++i) {
-    byteArrayAdd(thread, thread->runtime(), dst, data.charAt(i));
+  for (word i = 0; i < data.length(); ++i) {
+    byteArrayAdd(thread, thread->runtime(), dst, data.byteAt(i));
   }
   return NoneType::object();
 }
