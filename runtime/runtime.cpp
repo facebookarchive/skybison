@@ -238,12 +238,12 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
 }
 
 void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
-                                      const Tuple& dst, word start_index) {
+                                      const MutableTuple& dst,
+                                      word start_index) {
   if (attributes.length() == 0) {
     return;
   }
   HandleScope scope;
-  Tuple entry(&scope, empty_tuple_);
   for (word i = 0; i < attributes.length(); i++) {
     DCHECK((attributes.get(i).flags &
             (AttributeFlags::kInObject | AttributeFlags::kDeleted |
@@ -252,15 +252,12 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
     AttributeInfo info(attributes.get(i).offset,
                        attributes.get(i).flags | AttributeFlags::kInObject |
                            AttributeFlags::kFixedOffset);
-    entry = newTuple(2);
     SymbolId symbol_id = attributes.get(i).name;
-    if (symbol_id == SymbolId::kInvalid) {
-      entry.atPut(0, NoneType::object());
-    } else {
-      entry.atPut(0, symbols()->at(symbol_id));
-    }
-    entry.atPut(1, info.asSmallInt());
-    dst.atPut(start_index + i, *entry);
+    Object name(&scope, symbol_id == SymbolId::kInvalid
+                            ? NoneType::object()
+                            : symbols()->at(symbol_id));
+    Object info_obj(&scope, info.asSmallInt());
+    dst.atPut(start_index + i, newTupleWith2(name, info_obj));
   }
 }
 
@@ -293,9 +290,7 @@ RawObject Runtime::addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
       static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
   subclass.setFlagsAndBuiltinBase(flags, builtin_base);
 
-  Tuple bases(&scope, newTuple(1));
-  bases.atPut(0, *superclass);
-  subclass.setBases(*bases);
+  subclass.setBases(newTupleWith1(superclass));
 
   // Install the layout and class
   layoutAtPut(subclass_id, *layout);
@@ -591,7 +586,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
 
   // Create mapping between cells and arguments if needed
   if (result.numCellvars() > 0) {
-    Tuple cell2arg(&scope, newTuple(result.numCellvars()));
+    MutableTuple cell2arg(&scope, newMutableTuple(result.numCellvars()));
     bool value_set = false;
     for (word i = 0; i < result.numCellvars(); i++) {
       for (word j = 0; j < result.totalArgs(); j++) {
@@ -601,7 +596,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
         }
       }
     }
-    if (value_set) result.setCell2arg(*cell2arg);
+    if (value_set) result.setCell2arg(cell2arg.becomeImmutable());
   }
 
   DCHECK(result.totalArgs() <= result.nlocals(), "invalid nlocals count");
@@ -924,12 +919,10 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& obj,
   result.setFormat(RawSmallStr::fromCodePoint('B'));
   result.setReadOnly(read_only == ReadOnly::ReadOnly);
   result.setStart(0);
-  Tuple shape(&scope, newTuple(1));
-  shape.atPut(0, SmallInt::fromWord(length));
-  result.setShape(*shape);
-  Tuple strides(&scope, newTuple(1));
-  strides.atPut(0, SmallInt::fromWord(1));
-  result.setStrides(*strides);
+  Object length_obj(&scope, SmallInt::fromWord(length));
+  result.setShape(newTupleWith1(length_obj));
+  Object one(&scope, SmallInt::fromWord(1));
+  result.setStrides(newTupleWith1(one));
   return *result;
 }
 
@@ -1798,12 +1791,12 @@ RawObject Runtime::createMro(const Layout& subclass_layout,
         "subclass layout must have a described class");
   Type superclass(&scope, typeAt(superclass_id));
   Tuple src(&scope, superclass.mro());
-  Tuple dst(&scope, newTuple(1 + src.length()));
+  MutableTuple dst(&scope, newMutableTuple(1 + src.length()));
   dst.atPut(0, subclass_layout.describedType());
   for (word i = 0; i < src.length(); i++) {
     dst.atPut(1 + i, src.at(i));
   }
-  return *dst;
+  return dst.becomeImmutable();
 }
 
 void Runtime::initializeHeapTypes() {
@@ -3192,11 +3185,11 @@ RawObject Runtime::tupleSubseq(Thread* thread, const Tuple& tuple, word start,
   DCHECK_BOUND(length, tuple.length() - start);
   if (length == 0) return empty_tuple_;
   HandleScope scope(thread);
-  Tuple result(&scope, newTuple(length));
+  MutableTuple result(&scope, newMutableTuple(length));
   for (word i = 0; i < length; i++) {
     result.atPut(i, tuple.at(i + start));
   }
-  return *result;
+  return result.becomeImmutable();
 }
 
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
@@ -3715,10 +3708,8 @@ RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
   MutableTuple new_entries(&scope, newMutableTuple(entries_len + 1));
   new_entries.replaceFromWith(0, *entries, entries_len);
 
-  Tuple entry(&scope, newTuple(2));
-  entry.atPut(0, *name);
-  entry.atPut(1, info.asSmallInt());
-  new_entries.atPut(entries_len, *entry);
+  Object info_obj(&scope, info.asSmallInt());
+  new_entries.atPut(entries_len, newTupleWith2(name, info_obj));
 
   return new_entries.becomeImmutable();
 }
@@ -3855,17 +3846,19 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
   HandleScope scope(thread);
   Tuple entries_old(&scope, entries);
   word length = entries_old.length();
+  DCHECK(length > 0, "length must be positive");
   Runtime* runtime = thread->runtime();
   MutableTuple entries_new(&scope, runtime->newMutableTuple(length));
   Tuple entry(&scope, runtime->emptyTuple());
+  Object entry_name(&scope, NoneType::object());
+  Object info(&scope, NoneType::object());
   for (word i = 0; i < length; i++) {
     entry = entries_old.at(i);
     if (entry.at(0) == name) {
       AttributeInfo old_info(entry.at(1));
-      entry = runtime->newTuple(2);
-      entry.atPut(0, NoneType::object());
-      entry.atPut(1, AttributeInfo(old_info.offset(), AttributeFlags::kDeleted)
-                         .asSmallInt());
+      info = AttributeInfo(old_info.offset(), AttributeFlags::kDeleted)
+                 .asSmallInt();
+      entry = runtime->newTupleWith2(entry_name, info);
     }
     entries_new.atPut(i, *entry);
   }

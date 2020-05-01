@@ -893,7 +893,7 @@ class Runtime {
   // attribute entries starting at a specific index.  Useful for constructing
   // the in-object attributes array for built-in classes with fixed attributes.
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
-                               const Tuple& dst, word start_index);
+                               const MutableTuple& dst, word start_index);
 
   // Creates a new layout that will be a child layout of the supplied parent.
   //
