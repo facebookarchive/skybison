@@ -96,8 +96,7 @@ def test(callable):
   Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, *method);
+  Tuple args(&scope, runtime_->newTupleWith1(method));
   callFunction(func, args);
 
   Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
@@ -138,8 +137,7 @@ def test(callable):
   Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, *method);
+  Tuple args(&scope, runtime_->newTupleWith1(method));
   callFunction(func, args);
 
   Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
@@ -180,8 +178,7 @@ def test(callable):
   Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, *method);
+  Tuple args(&scope, runtime_->newTupleWith1(method));
   callFunction(func, args);
 
   Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
@@ -223,8 +220,7 @@ def test(callable):
   Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, *method);
+  Tuple args(&scope, runtime_->newTupleWith1(method));
   callFunction(func, args);
 
   Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
@@ -707,11 +703,9 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
 
   // Create code object
   word nlocals = 1;
-  Tuple varnames(&scope, runtime_->newTuple(nlocals));
-  Tuple cellvars(&scope, runtime_->newTuple(1));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  varnames.atPut(0, *bar);
-  cellvars.atPut(0, *bar);
+  Tuple varnames(&scope, runtime_->newTupleWithN(nlocals, &bar));
+  Tuple cellvars(&scope, runtime_->newTupleWith1(bar));
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
   Bytes bc(&scope, runtime_->newBytesWithAll(bytecode));
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
@@ -732,8 +726,8 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   Module module(&scope, runtime_->findOrCreateMainModule());
   Function foo(&scope,
                runtime_->newFunctionWithCode(thread_, qualname, code, module));
-  Tuple closure_tuple(&scope, runtime_->newTuple(1));
-  closure_tuple.atPut(0, runtime_->newInt(99));
+  Object obj(&scope, runtime_->newInt(99));
+  Tuple closure_tuple(&scope, runtime_->newTupleWith1(obj));
   foo.setClosure(*closure_tuple);
 
   Object argument(&scope, runtime_->newInt(3));
@@ -774,9 +768,9 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
   Object name(&scope, Runtime::internStrFromCStr(thread, "foo"));
   const byte bytecode[] = {LOAD_FAST,   0, LOAD_FAST,    1,
                            BUILD_TUPLE, 2, RETURN_VALUE, 0};
-  Tuple varnames(&scope, runtime->newTuple(2));
-  varnames.atPut(0, Runtime::internStrFromCStr(thread, "a"));
-  varnames.atPut(1, Runtime::internStrFromCStr(thread, "b"));
+  Object a(&scope, Runtime::internStrFromCStr(thread, "a"));
+  Object b(&scope, Runtime::internStrFromCStr(thread, "b"));
+  Tuple varnames(&scope, runtime->newTupleWith2(a, b));
   Bytes bc(&scope, runtime->newBytesWithAll(bytecode));
   Object empty_tuple(&scope, runtime->emptyTuple());
   Object empty_str(&scope, Str::empty());
@@ -805,10 +799,9 @@ TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
   frame->pushValue(*function);
   frame->pushValue(runtime_->newInt(2));
   frame->pushValue(runtime_->newInt(4));
-  Tuple keywords(&scope, runtime_->newTuple(2));
-  keywords.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
-  keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
-  frame->pushValue(*keywords);
+  Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
+  Object b(&scope, Runtime::internStrFromCStr(thread_, "b"));
+  frame->pushValue(runtime_->newTupleWith2(a, b));
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
   EXPECT_TRUE(raisedWithStr(
       *result_obj, LayoutId::kTypeError,
@@ -824,9 +817,8 @@ TEST_F(TrampolinesTest, KeywordCallAcceptsNonPositionalOnlyArgumentNames) {
   frame->pushValue(*function);
   frame->pushValue(runtime_->newInt(2));
   frame->pushValue(runtime_->newInt(9));
-  Tuple keywords(&scope, runtime_->newTuple(1));
-  keywords.atPut(0, Runtime::internStrFromCStr(thread_, "b"));
-  frame->pushValue(*keywords);
+  Object b(&scope, Runtime::internStrFromCStr(thread_, "b"));
+  frame->pushValue(runtime_->newTupleWith1(b));
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
@@ -844,11 +836,11 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   const byte bytecode[] = {LOAD_FAST, 0, LOAD_FAST,   1, LOAD_FAST,    2,
                            LOAD_FAST, 3, BUILD_TUPLE, 4, RETURN_VALUE, 0};
-  Tuple varnames(&scope, runtime_->newTuple(4));
-  varnames.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
-  varnames.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
-  varnames.atPut(2, Runtime::internStrFromCStr(thread_, "c"));
-  varnames.atPut(3, Runtime::internStrFromCStr(thread_, "kwargs"));
+  Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
+  Object b(&scope, Runtime::internStrFromCStr(thread_, "b"));
+  Object c(&scope, Runtime::internStrFromCStr(thread_, "c"));
+  Object kwargs(&scope, Runtime::internStrFromCStr(thread_, "kwargs"));
+  Tuple varnames(&scope, runtime_->newTupleWith4(a, b, c, kwargs));
   Bytes bc(&scope, runtime_->newBytesWithAll(bytecode));
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_str(&scope, Str::empty());
@@ -869,20 +861,16 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   Module module(&scope, runtime_->findOrCreateMainModule());
   Function foo(&scope,
                runtime_->newFunctionWithCode(thread_, name, code, module));
-  Tuple defaults(&scope, runtime_->newTuple(2));
-  defaults.atPut(0, runtime_->newInt(7));
-  defaults.atPut(1, runtime_->newInt(10));
-  foo.setDefaults(*defaults);
+  Object seven(&scope, runtime_->newInt(7));
+  Object ten(&scope, runtime_->newInt(10));
+  foo.setDefaults(runtime_->newTupleWith2(seven, ten));
   // Call foo(1, c=13, b=5).
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*foo);
   frame->pushValue(runtime_->newInt(1));
   frame->pushValue(runtime_->newInt(13));
   frame->pushValue(runtime_->newInt(5));
-  Tuple keywords(&scope, runtime_->newTuple(2));
-  keywords.atPut(0, Runtime::internStrFromCStr(thread_, "c"));
-  keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
-  frame->pushValue(*keywords);
+  frame->pushValue(runtime_->newTupleWith2(c, b));
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 3));
 
   // Expect a `(1, 7, 13, {'b': 5})` result.
@@ -1225,8 +1213,8 @@ TEST_F(TrampolinesTest,
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsKwWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple kw_names(&scope, runtime_->newTuple(1));
-  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Object key(&scope, runtime_->newStrFromCStr("key"));
+  Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionNoArgs(thread_));
   frame->pushValue(runtime_->newStrFromCStr("the self argument"));
@@ -1239,8 +1227,8 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsKwWithKeywordArgRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithoutKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Tuple args(&scope, runtime_->newTupleWith1(self));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionNoArgs(thread_));
   frame->pushValue(*args);
@@ -1249,8 +1237,8 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithoutKwargs) {
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Tuple args(&scope, runtime_->newTupleWith1(self));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionNoArgs(thread_));
   frame->pushValue(*args);
@@ -1271,10 +1259,10 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithoutSelfRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newStrFromCStr("bar"));
-  args.atPut(2, runtime_->newInt(88));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object bar(&scope, runtime_->newStrFromCStr("bar"));
+  Object num(&scope, runtime_->newInt(88));
+  Tuple args(&scope, runtime_->newTupleWith3(self, bar, num));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionNoArgs(thread_));
   frame->pushValue(*args);
@@ -1285,8 +1273,8 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithArgRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Tuple args(&scope, runtime_->newTupleWith1(self));
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
@@ -1386,8 +1374,8 @@ TEST_F(TrampolinesTest,
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgKwWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple kw_names(&scope, runtime_->newTuple(1));
-  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Object key(&scope, runtime_->newStrFromCStr("key"));
+  Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionOneArg(thread_));
   frame->pushValue(runtime_->newFloat(42.5));
@@ -1400,9 +1388,9 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgKwWithKeywordArgRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithoutKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(2));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(42.5));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num(&scope, runtime_->newFloat(42.5));
+  Tuple args(&scope, runtime_->newTupleWith2(self, num));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionOneArg(thread_));
   frame->pushValue(*args);
@@ -1411,9 +1399,9 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithoutKwargs) {
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(2));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(42.5));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num(&scope, runtime_->newFloat(42.5));
+  Tuple args(&scope, runtime_->newTupleWith2(self, num));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionOneArg(thread_));
   frame->pushValue(*args);
@@ -1434,8 +1422,8 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithoutSelfRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithTooFewArgsRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Tuple args(&scope, runtime_->newTupleWith1(self));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionOneArg(thread_));
   frame->pushValue(*args);
@@ -1447,9 +1435,9 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithTooFewArgsRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(2));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(42.5));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num(&scope, runtime_->newFloat(42.5));
+  Tuple args(&scope, runtime_->newTupleWith2(self, num));
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
@@ -1532,8 +1520,8 @@ TEST_F(TrampolinesTest,
        MethodTrampolineVarArgsKwWithKeywordArgRausesTypeError) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
-  Tuple kw_names(&scope, runtime_->newTuple(1));
-  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Object key(&scope, runtime_->newStrFromCStr("key"));
+  Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   frame->pushValue(newFunctionVarArgs(thread_));
   frame->pushValue(runtime_->newStrFromCStr("the self argument"));
   frame->pushValue(runtime_->newInt(88));
@@ -1547,10 +1535,10 @@ TEST_F(TrampolinesTest,
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithoutKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newInt(88));
-  args.atPut(2, runtime_->newInt(33));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newInt(88));
+  Object num2(&scope, runtime_->newInt(33));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionVarArgs(thread_));
   frame->pushValue(*args);
@@ -1559,10 +1547,10 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithoutKwargs) {
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newInt(88));
-  args.atPut(2, runtime_->newInt(33));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newInt(88));
+  Object num2(&scope, runtime_->newInt(33));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionVarArgs(thread_));
   frame->pushValue(*args);
@@ -1585,10 +1573,10 @@ TEST_F(TrampolinesTest,
        MethodTrampolineVarArgsExWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newInt(88));
-  args.atPut(2, runtime_->newInt(33));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newInt(88));
+  Object num2(&scope, runtime_->newInt(33));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
@@ -1687,8 +1675,8 @@ static RawObject newFunctionKeywords(Thread* thread) {
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsKw) {
   HandleScope scope(thread_);
-  Tuple kw_names(&scope, runtime_->newTuple(1));
-  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Object key(&scope, runtime_->newStrFromCStr("key"));
+  Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionKeywords(thread_));
   frame->pushValue(runtime_->newStrFromCStr("the self argument"));
@@ -1701,8 +1689,8 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsKw) {
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsKwWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple kw_names(&scope, runtime_->newTuple(1));
-  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Object key(&scope, runtime_->newStrFromCStr("key"));
+  Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newFunctionKeywords(thread_));
   frame->pushValue(runtime_->newStrFromCStr("value"));
@@ -1715,10 +1703,10 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsKwWithoutSelfRaisesTypeError) {
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithoutKwargs) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newInt(17));
-  args.atPut(2, runtime_->newInt(-8));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newInt(17));
+  Object num2(&scope, runtime_->newInt(-8));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   frame->pushValue(newFunctionKeywordsNullKwargs(thread_));
   frame->pushValue(*args);
   EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1237));
@@ -1727,10 +1715,10 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithoutKwargs) {
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithKwargs) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newInt(17));
-  args.atPut(2, runtime_->newInt(-8));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newInt(17));
+  Object num2(&scope, runtime_->newInt(-8));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
@@ -1819,8 +1807,8 @@ TEST_F(TrampolinesTest, MethodTrampolineFastKwWithoutSelfRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineFastKwWithKeywordRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple kw_names(&scope, runtime_->newTuple(1));
-  kw_names.atPut(0, runtime_->newStrFromCStr("key"));
+  Object key(&scope, runtime_->newStrFromCStr("key"));
+  Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newExtensionFunctionFast(thread_));
   frame->pushValue(runtime_->newStrFromCStr("the self argument"));
@@ -1835,10 +1823,10 @@ TEST_F(TrampolinesTest, MethodTrampolineFastKwWithKeywordRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(-13.));
-  args.atPut(2, runtime_->newFloat(0.125));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newFloat(-13.));
+  Object num2(&scope, runtime_->newFloat(0.125));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newExtensionFunctionFast(thread_));
   frame->pushValue(*args);
@@ -1847,10 +1835,10 @@ TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutKwargs) {
 
 TEST_F(TrampolinesTest, MethodTrampolineFastExWithKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(-13.));
-  args.atPut(2, runtime_->newFloat(0.125));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newFloat(-13.));
+  Object num2(&scope, runtime_->newFloat(0.125));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newExtensionFunctionFast(thread_));
   frame->pushValue(*args);
@@ -1871,10 +1859,10 @@ TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutSelfRaisesTypeError) {
 
 TEST_F(TrampolinesTest, MethodTrampolineFastExWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(-13.));
-  args.atPut(2, runtime_->newFloat(0.125));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newFloat(-13.));
+  Object num2(&scope, runtime_->newFloat(0.125));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
@@ -1986,9 +1974,9 @@ static RawObject newExtensionFunctionFastWithKeywords(Thread* thread) {
 
 TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsKw) {
   HandleScope scope(thread_);
-  Tuple kw_names(&scope, runtime_->newTuple(2));
-  kw_names.atPut(0, runtime_->newStrFromCStr("foo"));
-  kw_names.atPut(1, runtime_->newStrFromCStr("bar"));
+  Object foo(&scope, runtime_->newStrFromCStr("foo"));
+  Object bar(&scope, runtime_->newStrFromCStr("bar"));
+  Tuple kw_names(&scope, runtime_->newTupleWith2(foo, bar));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newExtensionFunctionFastWithKeywords(thread_));
   frame->pushValue(runtime_->newStrFromCStr("the self argument"));
@@ -2012,10 +2000,10 @@ TEST_F(TrampolinesTest,
 
 TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithoutKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(42.5));
-  args.atPut(2, runtime_->newFloat(-8.8));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newFloat(42.5));
+  Object num2(&scope, runtime_->newFloat(-8.8));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Frame* frame = thread_->currentFrame();
   frame->pushValue(newExtensionFunctionFastWithKeywordsNullKwnames(thread_));
   frame->pushValue(*args);
@@ -2024,10 +2012,10 @@ TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithoutKwargs) {
 
 TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithKwargs) {
   HandleScope scope(thread_);
-  Tuple args(&scope, runtime_->newTuple(3));
-  args.atPut(0, runtime_->newStrFromCStr("the self argument"));
-  args.atPut(1, runtime_->newFloat(42.5));
-  args.atPut(2, runtime_->newFloat(-8.8));
+  Object self(&scope, runtime_->newStrFromCStr("the self argument"));
+  Object num1(&scope, runtime_->newFloat(42.5));
+  Object num2(&scope, runtime_->newFloat(-8.8));
+  Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   Dict kwargs(&scope, runtime_->newDict());
   Object foo(&scope, runtime_->newStrFromCStr("foo"));
   Object foo_value(&scope, runtime_->newStrFromCStr("foo_value"));
