@@ -5,7 +5,7 @@
 namespace py {
 
 // Fills merge_lists with the MROs of the parents, followed by the parents list.
-static word populateMergeLists(Thread* thread, const Tuple& merge_lists,
+static word populateMergeLists(Thread* thread, const MutableTuple& merge_lists,
                                const Tuple& parents,
                                Vector<word>* merge_list_indices /* out */) {
   word num_parents = parents.length();
@@ -80,7 +80,7 @@ RawObject computeMro(Thread* thread, const Type& type) {
   Vector<word> merge_list_indices;
   word merge_list_length = num_parents + 1;
   merge_list_indices.reserve(merge_list_length);
-  Tuple merge_lists(&scope, runtime->newTuple(merge_list_length));
+  MutableTuple merge_lists(&scope, runtime->newMutableTuple(merge_list_length));
   word new_mro_length =
       populateMergeLists(thread, merge_lists, parents, &merge_list_indices);
   DCHECK(merge_list_indices.size() == merge_list_length,
@@ -89,7 +89,7 @@ RawObject computeMro(Thread* thread, const Type& type) {
 
   // The length of new_mro will be longer than necessary when there is overlap
   // between the MROs of the parents.
-  Tuple new_mro(&scope, runtime->newTuple(new_mro_length));
+  MutableTuple new_mro(&scope, runtime->newMutableTuple(new_mro_length));
 
   word next_idx = 0;
   new_mro.atPut(next_idx, *type);
@@ -117,14 +117,16 @@ RawObject computeMro(Thread* thread, const Type& type) {
 
   for (word i = 0; i < merge_list_length; i++) {
     if (merge_list_indices[i] != Tuple::cast(merge_lists.at(i)).length()) {
-      Tuple names(&scope, runtime->newTuple(num_parents));
+      MutableTuple names(&scope, runtime->newMutableTuple(num_parents));
       Type parent(&scope, runtime->typeAt(LayoutId::kNoneType));
       for (word j = 0; j < num_parents; j++) {
         parent = parents.at(j);
         names.atPut(j, parent.name());
       }
       Str sep(&scope, SmallStr::fromCStr(", "));
-      Object bases(&scope, runtime->strJoin(thread, sep, names, num_parents));
+      Tuple names_immutable(&scope, names.becomeImmutable());
+      Object bases(&scope,
+                   runtime->strJoin(thread, sep, names_immutable, num_parents));
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "Cannot create a consistent method "
                                   "resolution order (MRO) for bases %S",
@@ -133,7 +135,8 @@ RawObject computeMro(Thread* thread, const Type& type) {
   }
 
   // Copy the mro to an array of exact size. (new_mro_length is an upper bound).
-  return runtime->tupleSubseq(thread, new_mro, 0, next_idx);
+  Tuple new_mro_immutable(&scope, new_mro.becomeImmutable());
+  return runtime->tupleSubseq(thread, new_mro_immutable, 0, next_idx);
 }
 
 }  // namespace py
