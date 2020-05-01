@@ -491,6 +491,19 @@ std::ostream& operator<<(std::ostream& os, RawTuple value) {
   return os << ')';
 }
 
+std::ostream& operator<<(std::ostream& os, RawMutableTuple value) {
+  HandleScope scope;
+  MutableTuple tuple(&scope, value);
+  os << "mutabletuple(";
+  word length = tuple.length();
+  for (word i = 0; i < length; i++) {
+    if (i > 0) os << ", ";
+    os << tuple.at(i);
+  }
+  if (length == 1) os << ',';
+  return os << ')';
+}
+
 std::ostream& operator<<(std::ostream& os, RawType value) {
   return os << "<type " << value.name() << ">";
 }
@@ -649,6 +662,9 @@ static bool dumpSimple(std::ostream& os, RawObject value) {
       return true;
     case LayoutId::kMutableBytes:
       os << Bytes::cast(value);
+      return true;
+    case LayoutId::kMutableTuple:
+      os << MutableTuple::cast(value);
       return true;
     case LayoutId::kNoneType:
       os << NoneType::cast(value);

@@ -33,6 +33,7 @@ std::ostream& operator<<(std::ostream& os, RawLargeStr value);
 std::ostream& operator<<(std::ostream& os, RawLayout value);
 std::ostream& operator<<(std::ostream& os, RawList value);
 std::ostream& operator<<(std::ostream& os, RawModule value);
+std::ostream& operator<<(std::ostream& os, RawMutableTuple value);
 std::ostream& operator<<(std::ostream& os, RawNoneType value);
 std::ostream& operator<<(std::ostream& os, RawObject value);
 std::ostream& operator<<(std::ostream& os, RawSmallInt value);

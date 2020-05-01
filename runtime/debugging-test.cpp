@@ -19,19 +19,20 @@ static RawObject makeTestCode(Thread* thread) {
   HandleScope scope;
   const byte bytes_array[] = {LOAD_CONST, 0, LOAD_ATTR, 0, RETURN_VALUE, 0};
   Bytes bytes(&scope, runtime->newBytesWithAll(bytes_array));
-  Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, runtime->newStrFromCStr("const0"));
-  Tuple names(&scope, runtime->newTuple(1));
-  names.atPut(0, runtime->newStrFromCStr("name0"));
-  Tuple varnames(&scope, runtime->newTuple(4));
-  varnames.atPut(0, runtime->newStrFromCStr("argument0"));
-  varnames.atPut(1, runtime->newStrFromCStr("varargs"));
-  varnames.atPut(2, runtime->newStrFromCStr("varkeyargs"));
-  varnames.atPut(3, runtime->newStrFromCStr("variable0"));
-  Tuple freevars(&scope, runtime->newTuple(1));
-  freevars.atPut(0, runtime->newStrFromCStr("freevar0"));
-  Tuple cellvars(&scope, runtime->newTuple(1));
-  cellvars.atPut(0, runtime->newStrFromCStr("cellvar0"));
+  Object const0(&scope, runtime->newStrFromCStr("const0"));
+  Tuple consts(&scope, runtime->newTupleWith1(const0));
+  Object name0(&scope, runtime->newStrFromCStr("name0"));
+  Tuple names(&scope, runtime->newTupleWith1(name0));
+  Object argument0(&scope, runtime->newStrFromCStr("argument0"));
+  Object varargs(&scope, runtime->newStrFromCStr("varargs"));
+  Object varkeyargs(&scope, runtime->newStrFromCStr("varkeyargs"));
+  Object variable0(&scope, runtime->newStrFromCStr("variable0"));
+  Tuple varnames(&scope, runtime->newTupleWith4(argument0, varargs, varkeyargs,
+                                                variable0));
+  Object freevar0(&scope, runtime->newStrFromCStr("freevar0"));
+  Tuple freevars(&scope, runtime->newTupleWith1(freevar0));
+  Object cellvar0(&scope, runtime->newStrFromCStr("cellvar0"));
+  Tuple cellvars(&scope, runtime->newTupleWith1(cellvar0));
   Str filename(&scope, runtime->newStrFromCStr("filename0"));
   Str name(&scope, runtime->newStrFromCStr("name0"));
   Object lnotab(&scope, Bytes::empty());
@@ -69,8 +70,8 @@ static RawObject makeTestFunction(Thread* thread) {
   Object none(&scope, NoneType::object());
   dictAtPutByStr(thread, kw_defaults, name0, none);
   func.setKwDefaults(*kw_defaults);
-  Tuple defaults(&scope, runtime->newTuple(1));
-  defaults.atPut(0, runtime->newInt(-9));
+  Object num(&scope, runtime->newInt(-9));
+  Tuple defaults(&scope, runtime->newTupleWith1(num));
   func.setDefaults(*defaults);
   func.setIntrinsicId(static_cast<word>(ID(list)));
   func.setModuleName(runtime->newStrFromCStr("barmodule"));
@@ -246,29 +247,25 @@ TEST_F(DebuggingTests, DumpExtendedLayout) {
   Object attr(&scope, runtime_->newStrFromCStr("myattr"));
   Object attr2(&scope, runtime_->newStrFromCStr("myattr2"));
   Object attr3(&scope, runtime_->newStrFromCStr("myattr3"));
-  Tuple overflow(&scope, runtime_->newTuple(3));
+  MutableTuple overflow(&scope, runtime_->newMutableTuple(3));
   Object* overflow_names[] = {&attr, &attr2, &attr3};
   for (word i = 0; i < overflow.length(); i++) {
-    Tuple entry(&scope, runtime_->newTuple(2));
-    entry.atPut(0, **overflow_names[i]);
-    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
-    overflow.atPut(i, *entry);
+    Object info(&scope, AttributeInfo(i, 0).asSmallInt());
+    overflow.atPut(i, runtime_->newTupleWith2(*overflow_names[i], info));
   }
   Layout layout(&scope, layoutCreateEmpty(thread_));
-  layout.setOverflowAttributes(*overflow);
+  layout.setOverflowAttributes(overflow.becomeImmutable());
 
   // Set some in-object attributes
   Object inobj1(&scope, runtime_->newStrFromCStr("foo"));
   Object inobj2(&scope, runtime_->newStrFromCStr("bar"));
-  Tuple inobj(&scope, runtime_->newTuple(2));
+  MutableTuple inobj(&scope, runtime_->newMutableTuple(2));
   Object* inobj_names[] = {&inobj1, &inobj2};
   for (word i = 0; i < inobj.length(); i++) {
-    Tuple entry(&scope, runtime_->newTuple(2));
-    entry.atPut(0, **inobj_names[i]);
-    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
-    inobj.atPut(i, *entry);
+    Object info(&scope, AttributeInfo(i, 0).asSmallInt());
+    inobj.atPut(i, runtime_->newTupleWith2(*inobj_names[i], info));
   }
-  layout.setInObjectAttributes(*inobj);
+  layout.setInObjectAttributes(inobj.becomeImmutable());
   layout.setNumInObjectAttributes(9);
   layout.setId(static_cast<LayoutId>(103));
 
@@ -296,13 +293,11 @@ TEST_F(DebuggingTests, DumpExtendedLayoutWithSealedLayout) {
   // Set some in-object attributes
   Object inobj1(&scope, runtime_->newStrFromCStr("foo"));
   Object inobj2(&scope, runtime_->newStrFromCStr("bar"));
-  Tuple inobj(&scope, runtime_->newTuple(2));
+  MutableTuple inobj(&scope, runtime_->newMutableTuple(2));
   Object* inobj_names[] = {&inobj1, &inobj2};
   for (word i = 0; i < inobj.length(); i++) {
-    Tuple entry(&scope, runtime_->newTuple(2));
-    entry.atPut(0, **inobj_names[i]);
-    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
-    inobj.atPut(i, *entry);
+    Object info(&scope, AttributeInfo(i, 0).asSmallInt());
+    inobj.atPut(i, runtime_->newTupleWith2(*inobj_names[i], info));
   }
   layout.setInObjectAttributes(*inobj);
   layout.setId(static_cast<LayoutId>(13));
@@ -622,11 +617,21 @@ TEST_F(DebuggingTests, FormatSmallStr) {
   EXPECT_EQ(ss.str(), "\"aa\"");
 }
 
-TEST_F(DebuggingTests, FormatTuple) {
+TEST_F(DebuggingTests, FormatMutableTuple) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(2));
+  MutableTuple tuple(&scope, runtime_->newMutableTuple(2));
   tuple.atPut(0, Bool::trueObj());
   tuple.atPut(1, runtime_->newStrFromCStr("hey"));
+  std::stringstream ss;
+  ss << tuple;
+  EXPECT_EQ(ss.str(), R"(mutabletuple(True, "hey"))");
+}
+
+TEST_F(DebuggingTests, FormatTuple) {
+  HandleScope scope(thread_);
+  Object true_obj(&scope, Bool::trueObj());
+  Object hey(&scope, runtime_->newStrFromCStr("hey"));
+  Tuple tuple(&scope, runtime_->newTupleWith2(true_obj, hey));
   std::stringstream ss;
   ss << tuple;
   EXPECT_EQ(ss.str(), R"((True, "hey"))");
@@ -640,8 +645,8 @@ TEST_F(DebuggingTests, FormatTupleWithoutElements) {
 
 TEST_F(DebuggingTests, FormatTupleWithOneElement) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(1));
-  tuple.atPut(0, runtime_->newInt(77));
+  Object obj(&scope, runtime_->newInt(77));
+  Tuple tuple(&scope, runtime_->newTupleWith1(obj));
   std::stringstream ss;
   ss << tuple;
   EXPECT_EQ(ss.str(), "(77,)");
@@ -662,11 +667,10 @@ class MyClass:
 
 TEST_F(DebuggingTests, FormatForwardedObjects) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(1));
   List list1(&scope, runtime_->newList());
   Int i(&scope, runtime_->newInt(1234));
   runtime_->listAdd(thread_, list1, i);
-  tuple.atPut(0, *list1);
+  Tuple tuple(&scope, runtime_->newTupleWith1(list1));
 
   i = runtime_->newInt(5678);
   List list2(&scope, runtime_->newList());
