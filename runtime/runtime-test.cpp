@@ -48,8 +48,8 @@ RawObject makeTestFunction() {
   Code code(&scope, newEmptyCode());
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime->newBytesWithAll(bytecode));
-  Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, NoneType::object());
+  Object obj(&scope, NoneType::object());
+  Tuple consts(&scope, runtime->newTupleWith1(obj));
   code.setConsts(*consts);
   Object qualname(&scope, runtime->newStrFromCStr("foo"));
   Module module(&scope, runtime->findOrCreateMainModule());
@@ -440,9 +440,10 @@ TEST_F(RuntimeBytesTest, Concat) {
 
 TEST_F(RuntimeBytesTest, FromTupleWithSizeReturnsBytesMatchingSize) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(3));
-  tuple.atPut(0, SmallInt::fromWord(42));
-  tuple.atPut(1, SmallInt::fromWord(123));
+  Object obj1(&scope, SmallInt::fromWord(42));
+  Object obj2(&scope, SmallInt::fromWord(123));
+  Object obj3(&scope, SmallInt::fromWord(456));
+  Tuple tuple(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
   Object result(&scope, runtime_->bytesFromTuple(thread_, tuple, 2));
   const byte bytes[] = {42, 123};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -450,15 +451,15 @@ TEST_F(RuntimeBytesTest, FromTupleWithSizeReturnsBytesMatchingSize) {
 
 TEST_F(RuntimeBytesTest, FromTupleWithNonIndexReturnsNone) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(1));
-  tuple.atPut(0, runtime_->newFloat(1));
+  Object obj(&scope, runtime_->newFloat(1));
+  Tuple tuple(&scope, runtime_->newTupleWith1(obj));
   EXPECT_EQ(runtime_->bytesFromTuple(thread_, tuple, 1), NoneType::object());
 }
 
 TEST_F(RuntimeBytesTest, FromTupleWithNegativeIntRaisesValueError) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(1));
-  tuple.atPut(0, SmallInt::fromWord(-1));
+  Object obj(&scope, SmallInt::fromWord(-1));
+  Tuple tuple(&scope, runtime_->newTupleWith1(obj));
   Object result(&scope, runtime_->bytesFromTuple(thread_, tuple, 1));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
                             "bytes must be in range(0, 256)"));
@@ -466,8 +467,8 @@ TEST_F(RuntimeBytesTest, FromTupleWithNegativeIntRaisesValueError) {
 
 TEST_F(RuntimeBytesTest, FromTupleWithBigIntRaisesValueError) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(1));
-  tuple.atPut(0, SmallInt::fromWord(256));
+  Object obj(&scope, SmallInt::fromWord(256));
+  Tuple tuple(&scope, runtime_->newTupleWith1(obj));
   Object result(&scope, runtime_->bytesFromTuple(thread_, tuple, 1));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
                             "bytes must be in range(0, 256)"));
@@ -482,10 +483,10 @@ c = C(99)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_->newTuple(3));
-  tuple.atPut(0, mainModuleAt(runtime_, "a"));
-  tuple.atPut(1, mainModuleAt(runtime_, "b"));
-  tuple.atPut(2, mainModuleAt(runtime_, "c"));
+  Object obj1(&scope, mainModuleAt(runtime_, "a"));
+  Object obj2(&scope, mainModuleAt(runtime_, "b"));
+  Object obj3(&scope, mainModuleAt(runtime_, "c"));
+  Tuple tuple(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
   Object result(&scope, runtime_->bytesFromTuple(thread_, tuple, 3));
   EXPECT_TRUE(isBytesEqualsCStr(result, "abc"));
 }
@@ -708,8 +709,10 @@ TEST_F(RuntimeTest, NewTuple) {
   Tuple a1(&scope, runtime_->newTuple(1));
   ASSERT_EQ(a1.length(), 1);
   EXPECT_EQ(a1.at(0), NoneType::object());
-  a1.atPut(0, SmallInt::fromWord(42));
-  EXPECT_EQ(a1.at(0), SmallInt::fromWord(42));
+
+  Object obj(&scope, SmallInt::fromWord(42));
+  Tuple a2(&scope, runtime_->newTupleWith1(obj));
+  EXPECT_TRUE(isIntEqualsWord(a2.at(0), 42));
 
   Tuple a300(&scope, runtime_->newTuple(300));
   ASSERT_EQ(a300.length(), 300);
@@ -1229,18 +1232,16 @@ TEST_F(RuntimeTest, CollectAttributes) {
   Str bar(&scope, runtime_->newStrFromCStr("bar"));
   Str baz(&scope, runtime_->newStrFromCStr("baz"));
 
-  Tuple names(&scope, runtime_->newTuple(3));
-  names.atPut(0, *foo);
-  names.atPut(1, *bar);
-  names.atPut(2, *baz);
+  Tuple names(&scope, runtime_->newTupleWith3(foo, bar, baz));
 
-  Tuple consts(&scope, runtime_->newTuple(4));
-  consts.atPut(0, SmallInt::fromWord(100));
-  consts.atPut(1, SmallInt::fromWord(200));
-  consts.atPut(2, SmallInt::fromWord(300));
-  consts.atPut(3, NoneType::object());
+  Object obj1(&scope, SmallInt::fromWord(100));
+  Object obj2(&scope, SmallInt::fromWord(200));
+  Object obj3(&scope, SmallInt::fromWord(300));
+  Object obj4(&scope, NoneType::object());
+  Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
 
   Code code(&scope, newEmptyCode());
+  code.setConsts(*consts);
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -1297,14 +1298,13 @@ TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
   Str foo(&scope, runtime_->newStrFromCStr("foo"));
   Str bar(&scope, runtime_->newStrFromCStr("bar"));
 
-  Tuple names(&scope, runtime_->newTuple(2));
-  names.atPut(0, *foo);
-  names.atPut(1, *bar);
+  Tuple names(&scope, runtime_->newTupleWith2(foo, bar));
 
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, NoneType::object());
+  Object obj(&scope, NoneType::object());
+  Tuple consts(&scope, runtime_->newTupleWith1(obj));
 
   Code code(&scope, newEmptyCode());
+  code.setConsts(*consts);
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -1785,7 +1785,7 @@ TEST_F(RuntimeSetTest, UpdateListIterator) {
 
 TEST_F(RuntimeSetTest, UpdateTuple) {
   HandleScope scope(thread_);
-  Tuple object_array(&scope, runtime_->newTuple(8));
+  MutableTuple object_array(&scope, runtime_->newMutableTuple(8));
   Set set(&scope, runtime_->newSet());
   for (word i = 0; i < 8; i++) {
     object_array.atPut(i, SmallInt::fromWord(i));
@@ -1795,7 +1795,7 @@ TEST_F(RuntimeSetTest, UpdateTuple) {
     setHashAndAdd(thread_, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
-  Object object_array_handle(&scope, *object_array);
+  Object object_array_handle(&scope, object_array.becomeImmutable());
   ASSERT_FALSE(setUpdate(thread_, set, object_array_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
@@ -2313,8 +2313,8 @@ def test(module):
 )";
   ASSERT_FALSE(runFromCStr(runtime_, src).isError());
   Function test(&scope, mainModuleAt(runtime_, "test"));
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, findMainModule(runtime_));
+  Object obj(&scope, findMainModule(runtime_));
+  Tuple args(&scope, runtime_->newTupleWith1(obj));
   EXPECT_TRUE(raised(callFunction(test, args), LayoutId::kAttributeError));
 }
 
@@ -2329,8 +2329,8 @@ def test(module):
                    .isError());
   HandleScope scope(thread_);
   Function test(&scope, mainModuleAt(runtime_, "test"));
-  Tuple args(&scope, runtime_->newTuple(1));
-  args.atPut(0, findMainModule(runtime_));
+  Object obj(&scope, findMainModule(runtime_));
+  Tuple args(&scope, runtime_->newTupleWith1(obj));
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "foo"));
@@ -2765,18 +2765,13 @@ TEST_F(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   word argcount = 3;
   word kwargcount = 0;
   word nlocals = 3;
-  Tuple varnames(&scope, runtime_->newTuple(argcount + kwargcount));
-  Tuple cellvars(&scope, runtime_->newTuple(2));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(foo, bar, baz));
   Object foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
   Object foobaz(&scope, Runtime::internStrFromCStr(thread_, "foobaz"));
-  varnames.atPut(0, *foo);
-  varnames.atPut(1, *bar);
-  varnames.atPut(2, *baz);
-  cellvars.atPut(0, *foobar);
-  cellvars.atPut(1, *foobaz);
+  Tuple cellvars(&scope, runtime_->newTupleWith2(foobar, foobaz));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
@@ -2794,17 +2789,12 @@ TEST_F(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   word argcount = 3;
   word kwargcount = 0;
   word nlocals = 3;
-  Tuple varnames(&scope, runtime_->newTuple(argcount + kwargcount));
-  Tuple cellvars(&scope, runtime_->newTuple(2));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(foo, bar, baz));
   Object foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
-  varnames.atPut(0, *foo);
-  varnames.atPut(1, *bar);
-  varnames.atPut(2, *baz);
-  cellvars.atPut(0, *baz);
-  cellvars.atPut(1, *foobar);
+  Tuple cellvars(&scope, runtime_->newTupleWith2(baz, foobar));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
@@ -2827,17 +2817,12 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   HandleScope scope(thread_);
   word argcount = 3;
   word nlocals = 3;
-  Tuple varnames(&scope, runtime_->newTuple(argcount));
-  Tuple cellvars(&scope, runtime_->newTuple(2));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(foo, bar, baz));
   Object foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
-  varnames.atPut(0, *foo);
-  varnames.atPut(1, *bar);
-  varnames.atPut(2, *baz);
-  cellvars.atPut(0, *baz);
-  cellvars.atPut(1, *foobar);
+  Tuple cellvars(&scope, runtime_->newTupleWith2(baz, foobar));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
@@ -2852,8 +2837,8 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
 
 TEST_F(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
   HandleScope scope(thread_);
-  Tuple varnames(&scope, runtime_->newTuple(1));
-  varnames.atPut(0, runtime_->newStrFromCStr("foobar"));
+  Object foobar(&scope, runtime_->newStrFromCStr("foobar"));
+  Tuple varnames(&scope, runtime_->newTupleWith1(foobar));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
