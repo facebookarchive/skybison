@@ -445,9 +445,7 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     dict_obj = runtime->newDict();
   } else {
     frame->pushValue(*prepare_method);
-    Tuple pargs(&scope, runtime->newTuple(2));
-    pargs.atPut(0, *name);
-    pargs.atPut(1, *bases);
+    Tuple pargs(&scope, runtime->newTupleWith2(name, bases));
     frame->pushValue(*pargs);
     frame->pushValue(*kwargs);
     dict_obj =
@@ -481,10 +479,7 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
   }
 
   frame->pushValue(*metaclass);
-  Tuple pargs(&scope, runtime->newTuple(3));
-  pargs.atPut(0, *name);
-  pargs.atPut(1, *bases);
-  pargs.atPut(2, *type_dict);
+  Tuple pargs(&scope, runtime->newTupleWith3(name, bases, type_dict));
   frame->pushValue(*pargs);
   frame->pushValue(*kwargs);
   return Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
