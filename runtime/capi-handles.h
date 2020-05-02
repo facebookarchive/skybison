@@ -17,6 +17,8 @@ class IdentityDict {
         num_usable_items_(0),
         data_(NoneType::object()) {}
 
+  void initialize(Runtime* runtime, word capacity);
+
   word capacity() { return capacity_; }
   void setCapacity(word capacity) { capacity_ = capacity; }
 

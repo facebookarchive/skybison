@@ -2526,8 +2526,8 @@ void Runtime::initializeModules() {
 }
 
 void Runtime::initializeApiData() {
-  api_handles_.setData(empty_tuple_);
-  api_caches_.setData(empty_tuple_);
+  api_handles_.initialize(this, kInitialApiHandlesCapacity);
+  api_caches_.initialize(this, kInitialApiCachesCapacity);
 }
 
 RawObject Runtime::concreteTypeAt(LayoutId layout_id) {

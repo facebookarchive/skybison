@@ -10,7 +10,6 @@
 
 namespace py {
 
-static const int kInitialIdentityDictCapacity = 8;
 static const int kIdentityDictGrowthFactor = 2;
 
 namespace {
@@ -19,7 +18,7 @@ namespace {
 // IdentityDict.
 class Bucket {
  public:
-  static word bucket(RawTuple data, word hash, word* bucket_mask,
+  static word bucket(RawMutableTuple data, word hash, word* bucket_mask,
                      uword* perturb) {
     const word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
@@ -51,48 +50,48 @@ class Bucket {
     return (current * 5 + 1 + *perturb) & bucket_mask;
   }
 
-  static word hash(RawTuple data, word index) {
+  static word hash(RawMutableTuple data, word index) {
     return RawSmallInt::cast(data.at(index + kHashOffset)).value();
   }
 
-  static RawObject hashRaw(RawTuple data, word index) {
+  static RawObject hashRaw(RawMutableTuple data, word index) {
     return data.at(index + kHashOffset);
   }
 
-  static bool isEmpty(RawTuple data, word index) {
+  static bool isEmpty(RawMutableTuple data, word index) {
     return data.at(index + kHashOffset).isNoneType();
   }
 
-  static bool isTombstone(RawTuple data, word index) {
+  static bool isTombstone(RawMutableTuple data, word index) {
     return data.at(index + kHashOffset).isUnbound();
   }
 
-  static RawObject key(RawTuple data, word index) {
+  static RawObject key(RawMutableTuple data, word index) {
     return data.at(index + kKeyOffset);
   }
 
-  static void set(RawTuple data, word index, word hash, RawObject key,
+  static void set(RawMutableTuple data, word index, word hash, RawObject key,
                   RawObject value) {
     data.atPut(index + kHashOffset, RawSmallInt::fromWordTruncated(hash));
     data.atPut(index + kKeyOffset, key);
     data.atPut(index + kValueOffset, value);
   }
 
-  static void setTombstone(RawTuple data, word index) {
+  static void setTombstone(RawMutableTuple data, word index) {
     data.atPut(index + kHashOffset, Unbound::object());
     data.atPut(index + kKeyOffset, RawNoneType::object());
     data.atPut(index + kValueOffset, RawNoneType::object());
   }
 
-  static void setValue(RawTuple data, word index, RawObject value) {
+  static void setValue(RawMutableTuple data, word index, RawObject value) {
     data.atPut(index + kValueOffset, value);
   }
 
-  static RawObject value(RawTuple data, word index) {
+  static RawObject value(RawMutableTuple data, word index) {
     return data.at(index + kValueOffset);
   }
 
-  static bool nextItem(RawTuple data, word* idx) {
+  static bool nextItem(RawMutableTuple data, word* idx) {
     // Calling next on an invalid index should not advance that index.
     if (*idx >= data.length()) {
       return false;
@@ -111,7 +110,7 @@ class Bucket {
   static const word kFirst = -kNumPointers;
 
  private:
-  static bool isEmptyOrTombstone(RawTuple data, word index) {
+  static bool isEmptyOrTombstone(RawMutableTuple data, word index) {
     return isEmpty(data, index) || isTombstone(data, index);
   }
 
@@ -122,8 +121,9 @@ class Bucket {
 
 // Insert `key`/`value` into dictionary assuming no bucket with an equivalent
 // key and no tombstones exist.
-static void identityDictInsertNoUpdate(const Tuple& data, const Object& key,
-                                       word hash, const Object& value) {
+static void identityDictInsertNoUpdate(const MutableTuple& data,
+                                       const Object& key, word hash,
+                                       const Object& value) {
   DCHECK(data.length() > 0, "table must not be empty");
   uword perturb;
   word bucket_mask;
@@ -147,7 +147,7 @@ static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
   word new_capacity = dict->capacity() * kIdentityDictGrowthFactor;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Tuple data(&scope, dict->data());
+  MutableTuple data(&scope, dict->data());
   MutableTuple new_data(
       &scope, runtime->newMutableTuple(new_capacity * Bucket::kNumPointers));
   // Re-insert items
@@ -168,7 +168,7 @@ static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
 
 // TODO(T44244793): Remove these 2 functions when handles have their own
 // specialized hash table.
-static bool identityDictLookup(RawTuple data, RawObject key, word hash,
+static bool identityDictLookup(RawMutableTuple data, RawObject key, word hash,
                                word* index) {
   if (data.length() == 0) {
     *index = -1;
@@ -203,11 +203,17 @@ static bool identityDictLookup(RawTuple data, RawObject key, word hash,
   }
 }
 
+void IdentityDict::initialize(Runtime* runtime, word capacity) {
+  setCapacity(capacity);
+  setData(runtime->newMutableTuple(capacity * Bucket::kNumPointers));
+  setNumUsableItems((capacity * 2) / 3);
+}
+
 // Look up the value associated with key. Checks for identity equality, not
 // structural equality. Returns Error::object() if the key was not found.
 RawObject IdentityDict::at(Thread* thread, const Object& key, word hash) {
   HandleScope scope(thread);
-  Tuple data_tuple(&scope, data());
+  MutableTuple data_tuple(&scope, data());
   word index = -1;
   bool found = identityDictLookup(*data_tuple, *key, hash, &index);
   if (found) {
@@ -223,15 +229,8 @@ bool IdentityDict::includes(Thread* thread, const Object& key, word hash) {
 
 void IdentityDict::atPut(Thread* thread, const Object& key, word hash,
                          const Object& value) {
-  Runtime* runtime = thread->runtime();
-  if (capacity() == 0) {
-    setCapacity(kInitialIdentityDictCapacity);
-    setData(runtime->newMutableTuple(kInitialIdentityDictCapacity *
-                                     Bucket::kNumPointers));
-    setNumUsableItems((capacity() * 2) / 3);
-  }
   HandleScope scope(thread);
-  Tuple data_tuple(&scope, data());
+  MutableTuple data_tuple(&scope, data());
   word index = -1;
   bool found = identityDictLookup(*data_tuple, *key, hash, &index);
   DCHECK(index != -1, "invalid index %ld", index);
@@ -250,7 +249,7 @@ void IdentityDict::atPut(Thread* thread, const Object& key, word hash,
 
 RawObject IdentityDict::remove(Thread* thread, const Object& key, word hash) {
   HandleScope scope(thread);
-  Tuple data_tuple(&scope, data());
+  MutableTuple data_tuple(&scope, data());
   word index = -1;
   Object result(&scope, Error::notFound());
   bool found = identityDictLookup(*data_tuple, *key, hash, &index);
@@ -265,7 +264,7 @@ RawObject IdentityDict::remove(Thread* thread, const Object& key, word hash) {
 
 ApiHandle* ApiHandle::atIndex(Runtime* runtime, word index) {
   return castFromObject(
-      Bucket::value(Tuple::cast(runtime->apiHandles()->data()), index));
+      Bucket::value(MutableTuple::cast(runtime->apiHandles()->data()), index));
 }
 
 ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
@@ -355,7 +354,7 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
 void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
                                           IdentityDict* caches) {
   HandleScope scope(thread);
-  Tuple handle_data(&scope, handles->data());
+  MutableTuple handle_data(&scope, handles->data());
   Object key(&scope, NoneType::object());
   Object cache_value(&scope, NoneType::object());
   // Loops through the handle table clearing out handles which are not
@@ -382,9 +381,9 @@ void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
 
 void ApiHandle::disposeHandles(Thread* thread, IdentityDict* api_handles) {
   HandleScope scope(thread);
-  Tuple handles_buckets(&scope, api_handles->data());
+  MutableTuple data(&scope, api_handles->data());
   Runtime* runtime = thread->runtime();
-  for (word i = Bucket::kFirst; Bucket::nextItem(*handles_buckets, &i);) {
+  for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
     ApiHandle* handle = ApiHandle::atIndex(runtime, i);
     handle->dispose();
   }
@@ -398,7 +397,7 @@ void ApiHandle::visitReferences(IdentityDict* handles,
   // read barrier until we have a more principled solution in place.
   HeapObject data_raw(&scope, handles->data());
   if (data_raw.isForwarding()) data_raw = data_raw.forward();
-  Tuple data(&scope, *data_raw);
+  MutableTuple data(&scope, *data_raw);
 
   for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
     Object value(&scope, Bucket::value(*data, i));

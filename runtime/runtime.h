@@ -703,6 +703,9 @@ class Runtime {
 
   static const word kInitialLayoutTupleCapacity = 1024;
 
+  static const word kInitialApiHandlesCapacity = 256;
+  static const word kInitialApiCachesCapacity = 128;
+
   static const int kHashSecretSize = 3;
 
   // Explicitly seed the random number generator
