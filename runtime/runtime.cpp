@@ -899,15 +899,6 @@ RawObject Runtime::newModuleProxy(const Module& module) {
   return *result;
 }
 
-RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  SlotDescriptor result(&scope, heap()->create<RawSlotDescriptor>());
-  result.setType(*type);
-  result.setName(*name);
-  return *result;
-}
-
 RawObject Runtime::newMemoryView(Thread* thread, const Object& obj,
                                  const Object& buffer, word length,
                                  ReadOnly read_only) {
@@ -1872,7 +1863,6 @@ void Runtime::initializeHeapTypes() {
   SeqIteratorBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
   SliceBuiltins::initialize(this);
-  SlotDescriptorBuiltins::initialize(this);
   StrIteratorBuiltins::initialize(this);
   StaticMethodBuiltins::initialize(this);
   SuperBuiltins::initialize(this);

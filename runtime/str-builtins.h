@@ -58,9 +58,6 @@ void strInternInTuple(Thread* thread, const Object& items);
 // tuple, frozenset)
 bool strInternConstants(Thread* thread, const Object& items);
 
-// Returns true if `str` can be used as an identifier in Python.
-bool strIsIdentifier(const Str& str);
-
 // Look for needle in haystack in the range [start, end). Return the last
 // index found in that range, or -1 if needle was not found. Note that start
 // and end are code point offsets, not byte offsets.

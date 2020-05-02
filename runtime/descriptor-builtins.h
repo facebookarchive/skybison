@@ -18,13 +18,6 @@ class ClassMethodBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ClassMethodBuiltins);
 };
 
-class SlotDescriptorBuiltins
-    : public Builtins<SlotDescriptorBuiltins, ID(slot_descriptor),
-                      LayoutId::kSlotDescriptor> {
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SlotDescriptorBuiltins);
-};
-
 class StaticMethodBuiltins
     : public Builtins<StaticMethodBuiltins, ID(staticmethod),
                       LayoutId::kStaticMethod> {

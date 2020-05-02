@@ -74,7 +74,6 @@ class Handle;
   V(SeqIterator)                                                               \
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
-  V(SlotDescriptor)                                                            \
   V(SmallBytes)                                                                \
   V(SmallInt)                                                                  \
   V(SmallStr)                                                                  \
