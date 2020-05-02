@@ -1561,6 +1561,11 @@ static void inheritSlots(const Type& type, const Type& base) {
   inheritFree(type, type_flags, base, base_flags);
 }
 
+static int object_init(PyObject*, PyObject*, PyObject*) {
+  // TODO(T63876696): call object.__init__.
+  return 0;
+}
+
 static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -1577,6 +1582,47 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   DCHECK(basic_size.asWord() >= static_cast<word>(sizeof(PyObject)),
          "sizeof(PyObject) is the minimum size required for an extension "
          "instance");
+
+  // tp_dealloc -> subtypeDealloc
+  if (!type.hasSlot(Type::Slot::kDealloc)) {
+    Object default_dealloc(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
+    type.setSlot(Type::Slot::kDealloc, *default_dealloc);
+  }
+
+  // tp_repr -> PyObject_Repr
+  if (!type.hasSlot(Type::Slot::kRepr)) {
+    Object default_repr(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyObject_Repr)));
+    type.setSlot(Type::Slot::kRepr, *default_repr);
+    // PyObject_Repr delegates its job to type.__repr__().
+    DCHECK(!typeLookupInMroById(thread, type, ID(__repr__)).isErrorNotFound(),
+           "__repr__ is expected");
+  }
+
+  // tp_str -> object_str
+  if (!type.hasSlot(Type::Slot::kStr)) {
+    Object default_str(&scope,
+                       runtime->newIntFromCPtr(bit_cast<void*>(&PyObject_Str)));
+    type.setSlot(Type::Slot::kStr, *default_str);
+    // PyObject_Str delegates its job to type.__str__().
+    DCHECK(!typeLookupInMroById(thread, type, ID(__str__)).isErrorNotFound(),
+           "__str__ is expected");
+  }
+
+  // tp_init -> object_init
+  if (!type.hasSlot(Type::Slot::kInit)) {
+    Object default_init(&scope,
+                        runtime->newIntFromCPtr(bit_cast<void*>(&object_init)));
+    type.setSlot(Type::Slot::kInit, *default_init);
+  }
+
+  // tp_alloc -> PyType_GenericAlloc
+  if (!type.hasSlot(Type::Slot::kAlloc)) {
+    Object default_alloc(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericAlloc)));
+    type.setSlot(Type::Slot::kAlloc, *default_alloc);
+  }
 
   // tp_new -> PyType_GenericNew
   if (!type.hasSlot(Type::Slot::kNew)) {
@@ -1600,18 +1646,15 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
     typeAtPutById(thread, type, ID(__new__), func_obj);
   }
 
-  // tp_alloc -> PyType_GenericAlloc
-  if (!type.hasSlot(Type::Slot::kAlloc)) {
-    Object default_alloc(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericAlloc)));
-    type.setSlot(Type::Slot::kAlloc, *default_alloc);
-  }
-
-  // tp_dealloc -> subtypeDealloc
-  if (!type.hasSlot(Type::Slot::kDealloc)) {
-    Object default_dealloc(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
-    type.setSlot(Type::Slot::kDealloc, *default_dealloc);
+  // tp_free.
+  if (!type.hasSlot(Type::Slot::kFree)) {
+    unsigned long type_flags =
+        Int::cast(type.slot(Type::Slot::kFlags)).asWord();
+    Object default_free(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(
+                    (type_flags & Py_TPFLAGS_HAVE_GC) ? &PyObject_GC_Del
+                                                      : &PyObject_Del)));
+    type.setSlot(Type::Slot::kFree, *default_free);
   }
 
   return NoneType::object();
@@ -1659,6 +1702,11 @@ RawObject addInheritedSlots(const Type& type) {
     }
     inheritSlots(type, base);
   }
+
+  // Inherit all the default slots that would have been inherited
+  // through the base object type in CPython
+  Object result(&scope, addDefaultsForRequiredSlots(thread, type));
+  if (result.isError()) return *result;
 
   return NoneType::object();
 }
@@ -1752,10 +1800,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (addGetSet(thread, type).isError()) return nullptr;
 
   if (addInheritedSlots(type).isError()) return nullptr;
-
-  // Finally, inherit all the default slots that would have been inherited
-  // through the base object type in CPython
-  if (addDefaultsForRequiredSlots(thread, type).isError()) return nullptr;
 
   return ApiHandle::newReference(thread, *type);
 }

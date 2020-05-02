@@ -3048,6 +3048,111 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsIfGcFlagIsPresentOnBoth) {
             empty_free_func);
 }
 
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesPopulatesTpDeallocIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto dealloc_func =
+      reinterpret_cast<destructor>(PyType_GetSlot(tp, Py_tp_dealloc));
+  EXPECT_NE(dealloc_func, nullptr);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsObjectReprIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto repr_func = reinterpret_cast<reprfunc>(PyType_GetSlot(tp, Py_tp_repr));
+  ASSERT_NE(repr_func, nullptr);
+
+  PyObjectPtr instance(_PyObject_CallNoArg(subclassed_type));
+  PyObjectPtr slot_result(repr_func(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr repr_result(PyObject_Repr(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_Compare(slot_result, repr_result), 0);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsObjectStrIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto str_func = reinterpret_cast<reprfunc>(PyType_GetSlot(tp, Py_tp_str));
+  ASSERT_NE(str_func, nullptr);
+
+  PyObjectPtr instance(_PyObject_CallNoArg(subclassed_type));
+  PyObjectPtr slot_result(str_func(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr str_result(PyObject_Str(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_Compare(slot_result, str_result), 0);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesPopulatesTpInitIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto init_proc = reinterpret_cast<initproc>(PyType_GetSlot(tp, Py_tp_init));
+  ASSERT_NE(init_proc, nullptr);
+
+  PyObjectPtr instance(_PyObject_CallNoArg(subclassed_type));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  EXPECT_EQ(init_proc(instance, args, kwargs), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesInheritsPyTypeGenericAllocIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto alloc_func =
+      reinterpret_cast<allocfunc>(PyType_GetSlot(tp, Py_tp_alloc));
+  EXPECT_EQ(alloc_func, &PyType_GenericAlloc);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesPopulatesTpNewIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto new_func = reinterpret_cast<newfunc>(PyType_GetSlot(tp, Py_tp_init));
+  EXPECT_NE(new_func, nullptr);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesWithoutGcFlagInheritsObjectDelIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, /*base=*/nullptr));
+  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  auto free_func = reinterpret_cast<freefunc>(PyType_GetSlot(tp, Py_tp_free));
+  EXPECT_EQ(free_func, &PyObject_Del);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesWithGcFlagInheritsObjectGcDelIfNotDefined) {
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, /*bases=*/nullptr));
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  auto free_func = reinterpret_cast<freefunc>(PyType_GetSlot(tp, Py_tp_free));
+  EXPECT_EQ(free_func, &PyObject_GC_Del);
+}
+
 TEST_F(TypeExtensionApiTest, MethodIsInheirtedFromClassFromWinningParent) {
   // class C:
   //  def __int__(self):
