@@ -607,6 +607,26 @@ class SocketIO(io.RawIOBase):
                     return None
                 raise
 
+    #NOTE: pyro only optimization
+    def read(self, size=-1):
+        if size < 0:
+            return self.readall()
+
+        self._checkClosed()
+        self._checkReadable()
+        if self._timeout_occurred:
+            raise OSError("cannot read from timed out object")
+        while True:
+            try:
+                return self._sock.recv(size)
+            except timeout:
+                self._timeout_occurred = True
+                raise
+            except error as e:
+                if e.args[0] in _blocking_errnos:
+                    return None
+                raise
+
     def write(self, b):
         """Write the given bytes or bytearray object *b* to the socket
         and return the number of bytes written.  This can be less than
