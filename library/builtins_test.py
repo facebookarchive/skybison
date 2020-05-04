@@ -9238,6 +9238,21 @@ class MethodTests(unittest.TestCase):
 
 
 class ModuleTests(unittest.TestCase):
+    def test_del_invalidates_cache(self):
+        from types import ModuleType
+
+        mymodule = ModuleType("mymodule")
+        mymodule.x = 40
+        exec("def foo(): return x", mymodule.__dict__)
+        result = mymodule.foo()
+        self.assertEqual(result, 40)
+
+        del mymodule.x
+
+        with self.assertRaises(NameError) as context:
+            mymodule.foo()
+        self.assertEqual(str(context.exception), "name 'x' is not defined")
+
     def test_dunder_dir_returns_newly_created_list_object(self):
         from types import ModuleType
 
