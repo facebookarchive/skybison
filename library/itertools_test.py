@@ -68,7 +68,7 @@ class CycleTests(unittest.TestCase):
         C.__iter__.assert_called_once()
 
     def test_dunder_init_with_seq_dunder_iter_returning_non_iter_raises_type_error(
-        self
+        self,
     ):
         class C:
             def __iter__(self):

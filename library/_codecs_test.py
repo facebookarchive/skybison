@@ -257,7 +257,7 @@ class DecodeASCIITests(unittest.TestCase):
         self.assertEqual(consumed, 5)
 
     def test_decode_ascii_with_well_formed_ascii_bytearray_subclass_returns_string(
-        self
+        self,
     ):
         class B(bytearray):
             pass
@@ -378,7 +378,7 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(consumed, 6)
 
     def test_decode_unicode_escape_with_well_formed_latin_1_bytearray_returns_string(
-        self
+        self,
     ):
         decoded, consumed = _codecs.unicode_escape_decode(bytearray(b"hello\x95"))
         self.assertEqual(decoded, "hello\x95")
@@ -588,7 +588,7 @@ class EncodeLatin1Tests(unittest.TestCase):
             _codecs.ascii_encode("hell\u01ff")
 
     def test_encode_latin_1_with_custom_error_handler_mid_bytes_error_returns_bytes(
-        self
+        self,
     ):
         _codecs.register_error("test", lambda x: (b"-testing-", x.end))
         encoded, consumed = _codecs.latin_1_encode("ab\udc80c", "test")
@@ -596,7 +596,7 @@ class EncodeLatin1Tests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
     def test_encode_latin_1_with_custom_error_handler_end_bytes_error_returns_bytes(
-        self
+        self,
     ):
         _codecs.register_error("test", lambda x: (b"-testing-", x.end))
         encoded, consumed = _codecs.latin_1_encode("ab\u0180", "test")
@@ -666,7 +666,7 @@ class EncodeUTF16Tests(unittest.TestCase):
         self.assertEqual(consumed, 3)
 
     def test_encode_utf_16_with_custom_error_handler_mid_bytes_error_returns_bytes(
-        self
+        self,
     ):
         _codecs.register_error("test", lambda x: (b"--", x.end))
         encoded, consumed = _codecs.utf_16_encode("ab\udc80c", "test")
@@ -674,7 +674,7 @@ class EncodeUTF16Tests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
     def test_encode_utf_16_with_custom_error_handler_end_bytes_error_returns_bytes(
-        self
+        self,
     ):
         _codecs.register_error("test", lambda x: (b"--", x.end))
         encoded, consumed = _codecs.utf_16_encode("ab\udc80", "test")
@@ -746,7 +746,7 @@ class EncodeUTF32Tests(unittest.TestCase):
         self.assertEqual(consumed, 3)
 
     def test_encode_utf_32_with_custom_error_handler_mid_bytes_error_returns_bytes(
-        self
+        self,
     ):
         _codecs.register_error("test", lambda x: (b"----", x.end))
         encoded, consumed = _codecs.utf_32_encode("ab\udc80c", "test")
@@ -756,7 +756,7 @@ class EncodeUTF32Tests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
     def test_encode_utf_32_with_custom_error_handler_end_bytes_error_returns_bytes(
-        self
+        self,
     ):
         _codecs.register_error("test", lambda x: (b"----", x.end))
         encoded, consumed = _codecs.utf_32_encode("ab\udc80", "test")

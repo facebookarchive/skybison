@@ -589,7 +589,7 @@ class ByteArrayTests(unittest.TestCase):
         self.assertEqual(result, bytearray(b"abc000"))
 
     def test_dunder_setitem_slice_with_rhs_bigger_than_slice_length_raises_value_error(
-        self
+        self,
     ):
         result = bytearray(b"0123456789xxxx")
         with self.assertRaises(ValueError) as context:
@@ -601,7 +601,7 @@ class ByteArrayTests(unittest.TestCase):
         )
 
     def test_dunder_setitem_slice_with_rhs_shorter_than_slice_length_raises_value_error(
-        self
+        self,
     ):
         result = bytearray(b"0123456789")
         with self.assertRaises(ValueError) as context:
@@ -4991,7 +4991,7 @@ class FloatTests(unittest.TestCase):
             float.__divmod__(1.0, 0.0)
 
     def test_dunder_divmod_with_negative_zero_denominator_raises_zero_division_error(
-        self
+        self,
     ):
         with self.assertRaises(ZeroDivisionError):
             float.__divmod__(1.0, -0.0)
@@ -5121,7 +5121,7 @@ class FloatTests(unittest.TestCase):
         import sys
 
         self.assertEqual(float.__hash__(float("inf")), sys.hash_info.inf)
-        self.assertEqual(float.__hash__(float("-inf")), -sys.hash_info.inf)
+        self.assertEqual(float.__hash__(float("-inf")), -(sys.hash_info.inf))
         self.assertEqual(float.__hash__(float("nan")), sys.hash_info.nan)
 
     def test_dunder_hash_returns_int(self):
@@ -5304,7 +5304,7 @@ class FloatTests(unittest.TestCase):
         self.assertIs(float.__rdivmod__(1.0, "1"), NotImplemented)
 
     def test_dunder_rdivmod_with_int_returns_same_result_as_divmod_with_reversed_args(
-        self
+        self,
     ):
         self.assertEqual(float.__rdivmod__(1.0, 3), float.__divmod__(float(3), 1.0))
 
@@ -5458,7 +5458,7 @@ class FloatTests(unittest.TestCase):
             float.__rpow__(None, 2.0)
 
     def test_dunder_rpow_with_float_float_returns_result_from_pow_with_swapped_args(
-        self
+        self,
     ):
         self.assertEqual(float.__rpow__(2.0, 5.0), float.__pow__(5.0, 2.0))
 
@@ -5967,7 +5967,7 @@ def foo():
         self.assertEqual(new_func.__closure__, _f.__closure__)
 
     def test_dunder_new_with_name_override_as_subclassed_str_returns_function_object(
-        self
+        self,
     ):
         import types
 
@@ -10761,7 +10761,7 @@ class RangeTests(unittest.TestCase):
         self.assertFalse(range(1, 5, 2).__contains__(4))
 
     def test_dunder_contains_with_negative_step_and_int_greater_than_start_returns_false(  # noqa: B950
-        self
+        self,
     ):
         self.assertFalse(range(5, 1, -1).__contains__(6))
 
@@ -10769,7 +10769,7 @@ class RangeTests(unittest.TestCase):
         self.assertTrue(range(5, 1, -1).__contains__(5))
 
     def test_dunder_contains_with_negative_step_and_int_less_than_start_returns_true(  # noqa: B950
-        self
+        self,
     ):
         self.assertTrue(range(5, 1, -1).__contains__(4))
 
@@ -10777,7 +10777,7 @@ class RangeTests(unittest.TestCase):
         self.assertFalse(range(5, 1, -1).__contains__(1))
 
     def test_dunder_contains_with_negative_step_and_int_greater_than_stop_returns_true(  # noqa: B950
-        self
+        self,
     ):
         self.assertTrue(range(5, 1, -1).__contains__(2))
 
@@ -11752,7 +11752,7 @@ class SetTests(unittest.TestCase):
             set.symmetric_difference_update(1, set())
 
     def test_symmetric_difference_update_with_non_iterable_other_raises_type_error(
-        self
+        self,
     ):
         with self.assertRaisesRegex(TypeError, "object is not iterable"):
             set.symmetric_difference_update(set(), 1)
@@ -13712,7 +13712,7 @@ class StrModTests(unittest.TestCase):
         self.assertEqual(str.__mod__("%f", (-0.0,)), "-0.000000")
         self.assertEqual(str.__mod__("%f", (1.0,)), "1.000000")
         self.assertEqual(str.__mod__("%f", (-1.0,)), "-1.000000")
-        self.assertEqual(str.__mod__("%f", (42.125)), "42.125000")
+        self.assertEqual(str.__mod__("%f", (42.125,)), "42.125000")
 
         self.assertEqual(str.__mod__("%f", (1e3,)), "1000.000000")
         self.assertEqual(str.__mod__("%f", (1e6,)), "1000000.000000")
@@ -13722,14 +13722,14 @@ class StrModTests(unittest.TestCase):
         )
 
     def test_F_format_returns_string(self):
-        self.assertEqual(str.__mod__("%F", (42.125)), "42.125000")
+        self.assertEqual(str.__mod__("%F", (42.125,)), "42.125000")
 
     def test_e_format_returns_string(self):
         self.assertEqual(str.__mod__("%e", (0.0,)), "0.000000e+00")
         self.assertEqual(str.__mod__("%e", (-0.0,)), "-0.000000e+00")
         self.assertEqual(str.__mod__("%e", (1.0,)), "1.000000e+00")
         self.assertEqual(str.__mod__("%e", (-1.0,)), "-1.000000e+00")
-        self.assertEqual(str.__mod__("%e", (42.125)), "4.212500e+01")
+        self.assertEqual(str.__mod__("%e", (42.125,)), "4.212500e+01")
 
         self.assertEqual(str.__mod__("%e", (1e3,)), "1.000000e+03")
         self.assertEqual(str.__mod__("%e", (1e6,)), "1.000000e+06")
@@ -14068,7 +14068,7 @@ class StrModTests(unittest.TestCase):
 
     def test_unknown_specifier_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            str.__mod__("try %Y", (42))
+            str.__mod__("try %Y", (42,))
         self.assertEqual(
             str(context.exception), "unsupported format character 'Y' (0x59) at index 5"
         )
@@ -14082,7 +14082,7 @@ class StrModTests(unittest.TestCase):
 
     def test_too_many_args_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            str.__mod__("hello", (42))
+            str.__mod__("hello", 42)
         self.assertEqual(
             str(context.exception),
             "not all arguments converted during string formatting",

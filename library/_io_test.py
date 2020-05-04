@@ -970,7 +970,7 @@ class FileIOTests(unittest.TestCase):
         )
 
     def test_dunder_init_with_filename_and_closefd_equals_false_raises_value_error(
-        self
+        self,
     ):
         with self.assertRaises(ValueError) as context:
             _io.FileIO("foobar", closefd=False)

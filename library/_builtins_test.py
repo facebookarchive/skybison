@@ -43,7 +43,7 @@ class UnderBuiltinsTests(unittest.TestCase):
         self.assertListEqual(_builtins._list_new(3, 1), [1, 1, 1])
 
     def test_set_function_flag_iterable_coroutine_makes_generator_usable_with_await(
-        self
+        self,
     ):
         def generator():
             yield
