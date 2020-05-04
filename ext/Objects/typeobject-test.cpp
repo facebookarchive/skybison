@@ -3097,12 +3097,6 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesPopulatesTpInitIfNotDefined) {
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   auto init_proc = reinterpret_cast<initproc>(PyType_GetSlot(tp, Py_tp_init));
   ASSERT_NE(init_proc, nullptr);
-
-  PyObjectPtr instance(_PyObject_CallNoArg(subclassed_type));
-  PyObjectPtr args(PyTuple_New(0));
-  PyObjectPtr kwargs(PyDict_New());
-  EXPECT_EQ(init_proc(instance, args, kwargs), 0);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(TypeExtensionApiTest,

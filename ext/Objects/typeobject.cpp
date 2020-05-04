@@ -1561,9 +1561,8 @@ static void inheritSlots(const Type& type, const Type& base) {
   inheritFree(type, type_flags, base, base_flags);
 }
 
-static int object_init(PyObject*, PyObject*, PyObject*) {
-  // TODO(T63876696): call object.__init__.
-  return 0;
+static int objectInit(PyObject*, PyObject*, PyObject*) {
+  UNIMPLEMENTED("should not directly call tp_init");
 }
 
 static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
@@ -1613,7 +1612,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   // tp_init -> object_init
   if (!type.hasSlot(Type::Slot::kInit)) {
     Object default_init(&scope,
-                        runtime->newIntFromCPtr(bit_cast<void*>(&object_init)));
+                        runtime->newIntFromCPtr(bit_cast<void*>(&objectInit)));
     type.setSlot(Type::Slot::kInit, *default_init);
   }
 
