@@ -2681,7 +2681,7 @@ HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   // NOTE: This should be synced with tupleIteratorNext in tuple-builtins.cpp.
   RawTupleIterator iter = TupleIterator::cast(iter_obj);
   word idx = iter.index();
-  if (idx == iter.tupleLength()) {
+  if (idx == iter.length()) {
     frame->popValue();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));

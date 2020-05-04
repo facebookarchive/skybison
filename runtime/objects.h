@@ -2050,12 +2050,12 @@ class RawStrIterator : public RawIteratorBase {
 class RawTupleIterator : public RawIteratorBase {
  public:
   // Getters and setters.
-  word tupleLength() const;
-  void setTupleLength(word length) const;
+  word length() const;
+  void setLength(word length) const;
 
   // Layout.
-  static const int kTupleLengthOffset = RawIteratorBase::kSize;
-  static const int kSize = kTupleLengthOffset + kPointerSize;
+  static const int kLengthOffset = RawIteratorBase::kSize;
+  static const int kSize = kLengthOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(TupleIterator);
 };
@@ -6902,12 +6902,12 @@ inline void RawSuper::setObjectType(RawObject type) const {
 
 // RawTupleIterator
 
-inline word RawTupleIterator::tupleLength() const {
-  return RawSmallInt::cast(instanceVariableAt(kTupleLengthOffset)).value();
+inline word RawTupleIterator::length() const {
+  return RawSmallInt::cast(instanceVariableAt(kLengthOffset)).value();
 }
 
-inline void RawTupleIterator::setTupleLength(word length) const {
-  instanceVariableAtPut(kTupleLengthOffset, RawSmallInt::fromWord(length));
+inline void RawTupleIterator::setLength(word length) const {
+  instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(length));
 }
 
 // RawExceptionState

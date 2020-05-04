@@ -3624,7 +3624,7 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
   TupleIterator result(&scope, heap()->create<RawTupleIterator>());
   result.setIndex(0);
   result.setIterable(*tuple);
-  result.setTupleLength(length);
+  result.setLength(length);
   return *result;
 }
 

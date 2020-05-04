@@ -17,7 +17,7 @@ namespace py {
 
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   word idx = iter.index();
-  if (idx == iter.tupleLength()) {
+  if (idx == iter.length()) {
     return Error::noMoreItems();
   }
   HandleScope scope(thread);
