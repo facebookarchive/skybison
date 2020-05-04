@@ -7,6 +7,7 @@ from weakref import ref
 from _builtins import (
     _builtin,
     _bytes_check,
+    _bytes_len,
     _float_check,
     _int_check,
     _memoryview_check,
@@ -16,6 +17,7 @@ from _builtins import (
     _str_check,
     _str_len,
     _tuple_check,
+    _tuple_getitem,
     _tuple_len,
     _type,
     _type_check,
@@ -54,7 +56,7 @@ class _CDataType(type):
     def from_buffer(cls, obj, offset=0):
         if not hasattr(cls, "_type_"):
             raise TypeError("abstract class")
-        if not _type_issubclass(cls, _SimpleCData):
+        if not _type_issubclass(cls, _SimpleCData) and not _type_issubclass(cls, Array):
             _unimplemented()
         if not _memoryview_check(obj) or not _mmap_check(obj.obj):
             _unimplemented()
@@ -104,8 +106,53 @@ class _CDataType(type):
         return result
 
 
+def _CharArray_value_to_bytes(obj, le):
+    _builtin()
+
+
+def _CharArray_value_getter(self):
+    return _CharArray_value_to_bytes(self._value, self._length_)
+
+
+def _CharArray_value_setter(self, value):
+    if not _bytes_check(value):
+        raise TypeError(f"bytes expected instead of {_type(value).__name__} instance")
+    val_len = _bytes_len(value)
+    if val_len > self._length_:
+        raise ValueError("byte string too long")
+    if _mmap_check(self._value):
+        memoryview(self._value)[:val_len] = value
+    else:
+        self._value[:val_len] = value
+        if val_len < self._length_:
+            self._value[val_len] = 0
+
+
 class PyCArrayType(_CDataType):
-    pass
+    def __new__(cls, name, bases, namespace):
+        result = super().__new__(cls, name, bases, namespace)
+        # The base class (Array), no checking necessary
+        if bases[0] == _CData:
+            return result
+
+        length = getattr(result, "_length_", None)
+        if not _int_check(length):
+            raise AttributeError(
+                "class must define a '_length_' attribute, "
+                "which must be a positive integer"
+            )
+        if length < 0:
+            raise ValueError("The '_length_' attribute must not be negative")
+
+        if not hasattr(result, "_type_"):
+            raise AttributeError("class must define a '_type_' attribute")
+        result_type = result._type_
+        if not _type_check(result_type) or not hasattr(result_type, "_type_"):
+            raise TypeError("_type_ must have storage info")
+        if result_type._type_ == "c":
+            result.value = _property(_CharArray_value_getter, _CharArray_value_setter)
+
+        return result
 
 
 class PyCFuncPtrType(_CDataType):
@@ -214,11 +261,30 @@ class ArgumentError(Exception):
 
 
 class Array(_CData, metaclass=PyCArrayType):
+    def __init__(self, *args, **kwargs):
+        self._offset = 0
+        if _tuple_len(args) > 1:
+            _unimplemented()
+        elif _tuple_len(args) == 1:
+            if self._type_._type_ != "c":
+                _unimplemented()
+            arg0 = _tuple_getitem(args, 0)
+            if not _bytes_check(arg0) or _bytes_len(arg0) != 1:
+                _unimplemented()
+            self.value = arg0
+
     def __len__(self):
         _unimplemented()
 
     def __getitem__(self):
         _unimplemented()
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "_type_"):
+            raise TypeError("abstract class")
+        result = super().__new__(cls, args, kwargs)
+        result._value = bytearray(bytes(cls._length_))
+        return result
 
     def __setitem__(self):
         _unimplemented()
@@ -309,7 +375,10 @@ def _shared_object_symbol_address(handle, name):
 def addressof(obj):
     if not issubclass(type(obj), _CData):
         raise TypeError("invalid type")
-    if not _type_issubclass(_type(obj), _SimpleCData) or not _mmap_check(obj._value):
+    if (
+        not _type_issubclass(_type(obj), _SimpleCData)
+        and not _type_issubclass(_type(obj), Array)
+    ) or not _mmap_check(obj._value):
         _unimplemented()
     return _addressof(obj._value)
 

@@ -5,6 +5,7 @@
 #include "cpython-data.h"
 
 #include "builtins.h"
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -112,6 +113,27 @@ void UnderCtypesModule::initialize(Thread* thread, const Module& module) {
   Object wstring_at_addr(&scope,
                          runtime->newIntFromCPtr(bit_cast<void*>(&wstringAt)));
   moduleAtPut(thread, module, wstring_at_addr_name, wstring_at_addr);
+}
+
+RawObject FUNC(_ctypes, _CharArray_value_to_bytes)(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object value(&scope, args.get(0));
+  word length = intUnderlying(args.get(1)).asWord();
+  if (value.isMmap()) {
+    Pointer value_ptr(&scope, Mmap::cast(*value).data());
+    DCHECK(value_ptr.length() >= length, "Mmap shorter than ctypes.Array");
+    byte* cptr = reinterpret_cast<byte*>(value_ptr.cptr());
+    word first_nul = Utils::memoryFindChar(cptr, '\0', length);
+    return thread->runtime()->newBytesWithAll(
+        {cptr, first_nul == -1 ? length : first_nul});
+  }
+  CHECK(value.isByteArray(), "unexpected ctypes.Array._value type");
+  Bytes value_bytes(&scope, ByteArray::cast(*value).items());
+  word first_nul = value_bytes.findByte(0, '\0', length);
+  return bytesSubseq(thread, value_bytes, 0,
+                     first_nul == -1 ? length : first_nul);
 }
 
 RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Frame* frame,

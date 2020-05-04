@@ -21,6 +21,77 @@ class CtypesTests(unittest.TestCase):
         self.assertIsInstance(addr, int)
         self.assertGreater(addr, 0)
 
+    def test_array_subclass_is_instantiable(self):
+        class ArraySub(ctypes.Array):
+            _length_ = 2
+            _type_ = ctypes.c_bool
+
+        self.assertEqual(ctypes.sizeof(ArraySub()), 2)
+
+    def test_array_without_length_raises_attribute_error(self):
+        with self.assertRaises(AttributeError) as ctx:
+
+            class ArraySub(ctypes.Array):
+                _type_ = ctypes.c_bool
+
+        self.assertEqual(
+            str(ctx.exception),
+            "class must define a '_length_' attribute, "
+            "which must be a positive integer",
+        )
+
+    def test_array_with_non_int_length_raises_attribute_error(self):
+        with self.assertRaises(AttributeError) as ctx:
+
+            class ArraySub(ctypes.Array):
+                _length_ = 1.0
+                _type_ = ctypes.c_bool
+
+        self.assertEqual(
+            str(ctx.exception),
+            "class must define a '_length_' attribute, "
+            "which must be a positive integer",
+        )
+
+    @pyro_only
+    # This is replicating 3.8 behavior
+    def test_array_with_negative_length_raises_attribute_error(self):
+        with self.assertRaises(ValueError) as ctx:
+
+            class ArraySub(ctypes.Array):
+                _length_ = -1
+                _type_ = ctypes.c_bool
+
+        self.assertEqual(
+            str(ctx.exception), "The '_length_' attribute must not be negative"
+        )
+
+    def test_array_without_type_raises_attribute_error(self):
+        with self.assertRaises(AttributeError) as ctx:
+
+            class ArraySub(ctypes.Array):
+                _length_ = 1
+
+        self.assertEqual(str(ctx.exception), "class must define a '_type_' attribute")
+
+    def test_array_with_non_class_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+
+            class ArraySub(ctypes.Array):
+                _length_ = 1
+                _type_ = "b"
+
+        self.assertEqual(str(ctx.exception), "_type_ must have storage info")
+
+    def test_array_with_non_CData_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+
+            class ArraySub(ctypes.Array):
+                _length_ = 1
+                _type_ = int
+
+        self.assertEqual(str(ctx.exception), "_type_ must have storage info")
+
     def test_cfuncptr_dunder_call_no_args_c_int_restype_returns_int(self):
         lib_name = ctypes.util.find_library("python")
         lib = ctypes.CDLL(lib_name)
@@ -40,6 +111,52 @@ class CtypesTests(unittest.TestCase):
         self.assertIs(type(result), bytes)
         self.assertTrue(result in [b"linux", b"darwin"])
 
+    def test_char_array_from_buffer_is_readable_and_writeable(self):
+        import mmap
+
+        m = mmap.mmap(-1, 6)
+        array_type = ctypes.c_char * 6
+        c = array_type.from_buffer(memoryview(m))
+        view = memoryview(m)
+        view[0] = ord("f")
+        view[1] = ord("b")
+        self.assertEqual(c.value, b"fb")
+        c.value = b"foobar"
+        self.assertEqual(c.value, b"foobar")
+        self.assertEqual(view.tolist(), list(b"foobar"))
+
+    def test_char_array_with_zero_initialization_rewrites_first_byte_memory(self):
+        import mmap
+
+        m = mmap.mmap(-1, 3)
+        array_type = ctypes.c_char * 3
+        view = memoryview(m)
+        view[:3] = b"foo"
+        c = array_type.from_buffer(memoryview(m))
+        c.__init__(b"\0")
+        self.assertEqual(c.value, b"")
+        self.assertEqual(view.tolist(), list(b"\0oo"))
+
+    def test_char_array_with_non_bytes_value_raises_type_error(self):
+        c = (ctypes.c_char * 3)()
+        with self.assertRaises(TypeError) as ctx:
+            c.value = 1
+        self.assertEqual(str(ctx.exception), "bytes expected instead of int instance")
+
+    def test_char_array_with_too_long_value_raises_value_error(self):
+        c = (ctypes.c_char * 3)()
+        with self.assertRaises(ValueError) as ctx:
+            c.value = b"foobar"
+        self.assertEqual(str(ctx.exception), "byte string too long")
+
+    def test_non_char_array_class_raises_attribute_error_on_value(self):
+        array_type = ctypes.c_uint16 * 5
+        with self.assertRaises(AttributeError) as ctx:
+            array_type().value
+        self.assertEqual(
+            str(ctx.exception), "'c_ushort_Array_5' object has no attribute 'value'"
+        )
+
     def test_ctypes_array_creation_with_type_returns_array_type(self):
         arr = ctypes.c_ubyte * 14
         self.assertEqual(arr._type_, ctypes.c_ubyte)
@@ -51,6 +168,9 @@ class CtypesTests(unittest.TestCase):
         arr2 = ctypes.c_ubyte * 2
         self.assertIs(arr1, arr2)
 
+    # TODO(T47024191): Since inline caches hold strongrefs to their objects, array
+    # types don't get collected on _gc().
+    @unittest.skip("Disable until our inline caches store weakrefs")
     @pyro_only
     def test_ctypes_array_creation_cache_cleared_when_type_gced(self):
         from _builtins import _gc
