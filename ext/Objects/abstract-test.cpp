@@ -1531,6 +1531,28 @@ def func(*args):
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "((3, 7), 'aaa', 99)"));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCallFunctionWithTypeAndTupleCalls) {
+  PyObjectPtr result(
+      PyObject_CallFunction(reinterpret_cast<PyObject*>(&PyList_Type),
+                            "((ss#i))", "bce", "aaaa", 3, 99));
+  EXPECT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 3);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "bce"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "aaa"));
+  EXPECT_TRUE(isLongEqualsLong(PyList_GetItem(result, 2), 99));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallFunctionWithTypeAndListCalls) {
+  PyObjectPtr result(
+      PyObject_CallFunction(reinterpret_cast<PyObject*>(&PyList_Type), "[ss#i]",
+                            "bce", "aaaa", 3, 99));
+  EXPECT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 3);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "bce"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "aaa"));
+  EXPECT_TRUE(isLongEqualsLong(PyList_GetItem(result, 2), 99));
+}
+
 TEST_F(AbstractExtensionApiTest,
        PyObjectCallFunctionWithNonCallableRaisesTypeError) {
   PyObjectPtr result(PyObject_CallFunction(Py_None, nullptr));
