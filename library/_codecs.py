@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 from builtins import _index, _strarray
 
 from _builtins import (
@@ -15,6 +16,7 @@ from _builtins import (
     _str_check,
     _str_encode,
     _str_encode_ascii,
+    _str_guard,
     _str_len,
     _strarray_iadd,
     _tuple_check,
@@ -200,6 +202,40 @@ def ascii_encode(data: str, errors: str = "strict"):
     # _ascii_encode encountered an error and _call_encode_errorhandler was the
     # last function to write to `result`.
     return bytes(result), i
+
+
+def charmap_decode(data, errors="strict", mapping=None):
+    _byteslike_guard(data)
+    _str_guard(errors)
+    if errors != "strict":
+        _unimplemented()
+
+    result = _strarray()
+    data_len = _bytes_len(data)
+    i = 0
+    while i < data_len:
+        try:
+            mapped = mapping[data[i]]
+            if mapped is None or mapped == "\ufffe":
+                raise UnicodeDecodeError(
+                    "charmap", data, data[i], i, "character maps to <undefined>"
+                )
+            if _int_check(mapped):
+                if mapped < 0 or mapped > sys.maxunicode:
+                    raise TypeError(
+                        f"character mapping must be in range ({sys.maxunicode + 1:#x})"
+                    )
+                mapped = chr(mapped)
+            elif not _str_check(mapped):
+                raise TypeError("character mapping must return integer, None or str")
+            _strarray_iadd(result, mapped)
+        except (IndexError, KeyError):
+            raise UnicodeDecodeError(
+                "charmap", data, data[i], i, "character maps to <undefined>"
+            )
+        i += 1
+
+    return str(result), data_len
 
 
 def _escape_decode(data: bytes, errors: str, recode_encoding: str):

@@ -11,6 +11,124 @@ except ImportError:
     pass
 
 
+class CharmapTests(unittest.TestCase):
+    def test_charmap_decode_with_empty_bytes_input_returns_tuple(self):
+        self.assertEqual(_codecs.charmap_decode(b"", "strict", "abc"), ("", 0))
+        self.assertEqual(
+            _codecs.charmap_decode(b"", "strict", {0: "a", 1: "b", 2: "c"}), ("", 0)
+        )
+
+    def test_charmap_decode_with_string_map_raises_unicode_decode_error(self):
+        self.assertRaises(
+            UnicodeDecodeError, _codecs.charmap_decode, b"\x00\x01\x02", "strict", "ab"
+        )
+
+    def test_charmap_decode_with_string_map_with_bom_raises_unicode_decode_error(self):
+        self.assertRaises(
+            UnicodeDecodeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            "ab\ufffe",
+        )
+
+    def test_charmap_decode_with_string_map_returns_tuple(self):
+        self.assertEqual(
+            _codecs.charmap_decode(b"\x00\x01\x02", "strict", "abc"), ("abc", 3)
+        )
+
+    def test_charmap_decode_with_int2str_map_returns_tuple(self):
+        self.assertEqual(
+            _codecs.charmap_decode(b"\x00\x01\x02", "strict", {0: "a", 1: "b", 2: "c"}),
+            ("abc", 3),
+        )
+        self.assertEqual(
+            _codecs.charmap_decode(
+                b"\x00\x01\x02", "strict", {0: "Aa", 1: "Bb", 2: "Cc"}
+            ),
+            ("AaBbCc", 3),
+        )
+        self.assertEqual(
+            _codecs.charmap_decode(
+                b"\x00\x01\x02", "strict", {0: "\U0010FFFF", 1: "b", 2: "c"}
+            ),
+            ("\U0010FFFFbc", 3),
+        )
+        self.assertEqual(
+            _codecs.charmap_decode(b"\x00\x01\x02", "strict", {0: "a", 1: "b", 2: ""}),
+            ("ab", 3),
+        )
+        self.assertEqual(
+            _codecs.charmap_decode(b"\x00\x01\x02", "strict", {0: "A", 1: "Bb", 2: 37}),
+            ("ABb%", 3),
+        )
+
+    def test_charmap_decode_with_int2str_map_raises_unicode_decode_error(self):
+        self.assertRaises(
+            UnicodeDecodeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b"},
+        )
+
+    def test_charmap_decode_with_int2str_map_with_none_raises_unicode_decode_error(
+        self,
+    ):
+        self.assertRaises(
+            UnicodeDecodeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b", 2: None},
+        )
+
+    def test_charmap_decode_with_int2str_map_with_bom_raises_unicode_decode_error(self):
+        self.assertRaises(
+            UnicodeDecodeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b", 2: "\ufffe"},
+        )
+
+    def test_charmap_decode_with_mapped_value_tuple_raises_type_error(self):
+        self.assertRaises(
+            TypeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b", 2: ("c",)},
+        )
+
+    def test_charmap_decode_with_mapped_value_list_raises_type_error(self):
+        self.assertRaises(
+            TypeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b", 2: ["c"]},
+        )
+
+    def test_charmap_decode_with_mapped_value_out_of_range_min_raises_type_error(self):
+        self.assertRaises(
+            TypeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b", 2: -2},
+        )
+
+    def test_charmap_decode_with_mapped_value_out_of_range_max_raises_type_error(self):
+        self.assertRaises(
+            TypeError,
+            _codecs.charmap_decode,
+            b"\x00\x01\x02",
+            "strict",
+            {0: "a", 1: "b", 2: 9999999},
+        )
+
+
 class CodecsTests(unittest.TestCase):
     def test_register_error_with_non_string_first_raises_type_error(self):
         with self.assertRaises(TypeError):
