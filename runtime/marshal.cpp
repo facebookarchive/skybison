@@ -358,15 +358,23 @@ RawObject Marshal::Reader::readTypeTuple() {
 }
 
 RawObject Marshal::Reader::doTupleElements(int32_t length) {
-  RawObject result = runtime_->newTuple(length);
+  if (length == 0) {
+    RawObject result = runtime_->emptyTuple();
+    if (isRef_) {
+      addRef(result);
+    }
+    return result;
+  }
+  RawMutableTuple result =
+      MutableTuple::cast(runtime_->newMutableTuple(length));
   if (isRef_) {
     addRef(result);
   }
   for (int32_t i = 0; i < length; i++) {
     RawObject value = readObject();
-    Tuple::cast(result).atPut(i, value);
+    result.atPut(i, value);
   }
-  return result;
+  return result.becomeImmutable();
 }
 
 RawObject Marshal::Reader::readTypeSet() {
