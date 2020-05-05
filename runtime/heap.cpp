@@ -106,6 +106,17 @@ RawObject Heap::createComplex(double real, double imag) {
   return Complex::cast(result);
 }
 
+RawObject Heap::createDict() {
+  word num_attributes = Dict::kSize / kPointerSize;
+  word size = Instance::allocationSize(num_attributes);
+  RawObject raw = allocate(size, HeapObject::headerSize(num_attributes));
+  CHECK(!raw.isError(), "out of memory");
+  auto result = raw.rawCast<RawInstance>();
+  result.setHeaderAndOverflow(num_attributes, 0, LayoutId::kDict,
+                              ObjectFormat::kObjects);
+  return result;
+}
+
 RawObject Heap::createFloat(double value) {
   RawObject raw = allocate(allocationSize<RawFloat>(), RawHeader::kSize);
   CHECK(!raw.isError(), "out of memory");

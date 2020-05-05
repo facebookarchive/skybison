@@ -25,8 +25,7 @@ TEST_F(DictBuiltinsTest, EmptyDictInvariants) {
   Dict dict(&scope, runtime_->newDict());
 
   EXPECT_EQ(dict.numItems(), 0);
-  ASSERT_TRUE(dict.data().isTuple());
-  EXPECT_EQ(Tuple::cast(dict.data()).length(), 0);
+  ASSERT_TRUE(isIntEqualsWord(dict.data(), 0));
 }
 
 TEST_F(DictBuiltinsTest, DictAtPutRetainsExistingKeyObject) {

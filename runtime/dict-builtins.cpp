@@ -18,7 +18,7 @@ namespace {
 
 // Helper functions for accessing sparse array from dict.indices().
 
-static word probeBegin(RawTuple indices, word hash, word* indices_mask,
+static word probeBegin(RawMutableTuple indices, word hash, word* indices_mask,
                        uword* perturb) {
   const word nindices = indices.length();
   DCHECK(Utils::isPowerOfTwo(nindices), "%ld is not a power of 2", nindices);
@@ -40,29 +40,30 @@ static word probeNext(word current, word indices_mask, uword* perturb) {
 }
 
 // Return the item index stored at indices[index].
-static word itemIndexAt(RawTuple indices, word index) {
+static word itemIndexAt(RawMutableTuple indices, word index) {
   return SmallInt::cast(indices.at(index)).value();
 }
 
 // Set `item_index` at indices[index].
-static void itemIndexAtPut(RawTuple indices, word index, word item_index) {
+static void itemIndexAtPut(RawMutableTuple indices, word index,
+                           word item_index) {
   indices.atPut(index, SmallInt::fromWord(item_index));
 }
 
 // Set a tombstone at indices[index] given `data_length` from
 // data.length().
-static void indicesSetTombstone(RawTuple indices, word index) {
+static void indicesSetTombstone(RawMutableTuple indices, word index) {
   DCHECK(indices.at(index).isSmallInt(), "unexpected call");
   indices.atPut(index, Unbound::object());
 }
 
 // Return true if the indices[index] is filled with an active item.
-static bool indicesIsFull(RawTuple indices, word index) {
+static bool indicesIsFull(RawMutableTuple indices, word index) {
   return indices.at(index).isSmallInt();
 }
 
 // Return true if the indices[index] is never used.
-static bool indicesIsEmpty(RawTuple indices, word index) {
+static bool indicesIsEmpty(RawMutableTuple indices, word index) {
   return indices.at(index).isNoneType();
 }
 
@@ -74,48 +75,48 @@ static const word kItemKeyOffset = 1;
 static const word kItemValueOffset = 2;
 static const word kItemNumPointers = 3;
 
-static RawObject itemKey(RawTuple data, word index) {
+static RawObject itemKey(RawMutableTuple data, word index) {
   return data.at(index + kItemKeyOffset);
 }
 
-static RawObject itemValue(RawTuple data, word index) {
+static RawObject itemValue(RawMutableTuple data, word index) {
   return data.at(index + kItemValueOffset);
 }
 
-static word itemHash(RawTuple data, word index) {
+static word itemHash(RawMutableTuple data, word index) {
   return SmallInt::cast(data.at(index + kItemHashOffset)).value();
 }
 
-static RawObject itemHashRaw(RawTuple data, word index) {
+static RawObject itemHashRaw(RawMutableTuple data, word index) {
   return data.at(index + kItemHashOffset);
 }
 
-static void itemSet(RawTuple data, word index, word hash, RawObject key,
+static void itemSet(RawMutableTuple data, word index, word hash, RawObject key,
                     RawObject value) {
   data.atPut(index + kItemHashOffset, SmallInt::fromWordTruncated(hash));
   data.atPut(index + kItemKeyOffset, key);
   data.atPut(index + kItemValueOffset, value);
 }
 
-static void itemSetTombstone(RawTuple data, word index) {
+static void itemSetTombstone(RawMutableTuple data, word index) {
   data.atPut(index + kItemHashOffset, Unbound::object());
   data.atPut(index + kItemKeyOffset, NoneType::object());
   data.atPut(index + kItemValueOffset, NoneType::object());
 }
 
-static void itemSetValue(RawTuple data, word index, RawObject value) {
+static void itemSetValue(RawMutableTuple data, word index, RawObject value) {
   data.atPut(index + kItemValueOffset, value);
 }
 
-static bool itemIsEmpty(RawTuple data, word index) {
+static bool itemIsEmpty(RawMutableTuple data, word index) {
   return data.at(index + kItemHashOffset).isNoneType();
 }
 
-static bool itemIsFull(RawTuple data, word index) {
+static bool itemIsFull(RawMutableTuple data, word index) {
   return data.at(index + kItemHashOffset).isSmallInt();
 }
 
-static bool itemIsTombstone(RawTuple data, word index) {
+static bool itemIsTombstone(RawMutableTuple data, word index) {
   return data.at(index + kItemHashOffset).isUnbound();
 }
 
@@ -160,9 +161,9 @@ static RawObject dictLookup(Thread* thread, const MutableTuple& data,
   UNREACHABLE("Expected to have found an empty index");
 }
 
-static word nextItemIndex(RawTuple data, word* index, word end) {
+static word nextItemIndex(RawObject data, word* index, word end) {
   for (word i = *index; i < end; i += kItemNumPointers) {
-    if (!itemIsFull(data, i)) continue;
+    if (!itemIsFull(MutableTuple::cast(data), i)) continue;
     *index = i + kItemNumPointers;
     return i;
   }
@@ -171,58 +172,58 @@ static word nextItemIndex(RawTuple data, word* index, word end) {
 
 bool dictNextItem(const Dict& dict, word* index, Object* key_out,
                   Object* value_out) {
-  RawTuple data = RawTuple::cast(dict.data());
+  RawObject data = dict.data();
   word next_item_index = nextItemIndex(data, index, dict.firstEmptyItemIndex());
   if (next_item_index < 0) {
     return false;
   }
-  *key_out = itemKey(data, next_item_index);
-  *value_out = itemValue(data, next_item_index);
+  *key_out = itemKey(MutableTuple::cast(data), next_item_index);
+  *value_out = itemValue(MutableTuple::cast(data), next_item_index);
   return true;
 }
 
 bool dictNextItemHash(const Dict& dict, word* index, Object* key_out,
                       Object* value_out, word* hash_out) {
-  RawTuple data = RawTuple::cast(dict.data());
+  RawObject data = dict.data();
   word next_item_index = nextItemIndex(data, index, dict.firstEmptyItemIndex());
   if (next_item_index < 0) {
     return false;
   }
-  *key_out = itemKey(data, next_item_index);
-  *value_out = itemValue(data, next_item_index);
-  *hash_out = itemHash(data, next_item_index);
+  *key_out = itemKey(MutableTuple::cast(data), next_item_index);
+  *value_out = itemValue(MutableTuple::cast(data), next_item_index);
+  *hash_out = itemHash(MutableTuple::cast(data), next_item_index);
   return true;
 }
 
 bool dictNextKey(const Dict& dict, word* index, Object* key_out) {
-  RawTuple data = RawTuple::cast(dict.data());
+  RawObject data = dict.data();
   word next_item_index = nextItemIndex(data, index, dict.firstEmptyItemIndex());
   if (next_item_index < 0) {
     return false;
   }
-  *key_out = itemKey(data, next_item_index);
+  *key_out = itemKey(MutableTuple::cast(data), next_item_index);
   return true;
 }
 
 bool dictNextKeyHash(const Dict& dict, word* index, Object* key_out,
                      word* hash_out) {
-  RawTuple data = RawTuple::cast(dict.data());
+  RawObject data = dict.data();
   word next_item_index = nextItemIndex(data, index, dict.firstEmptyItemIndex());
   if (next_item_index < 0) {
     return false;
   }
-  *key_out = itemKey(data, next_item_index);
-  *hash_out = itemHash(data, next_item_index);
+  *key_out = itemKey(MutableTuple::cast(data), next_item_index);
+  *hash_out = itemHash(MutableTuple::cast(data), next_item_index);
   return true;
 }
 
 bool dictNextValue(const Dict& dict, word* index, Object* value_out) {
-  RawTuple data = RawTuple::cast(dict.data());
+  RawObject data = dict.data();
   word next_item_index = nextItemIndex(data, index, dict.firstEmptyItemIndex());
   if (next_item_index < 0) {
     return false;
   }
-  *value_out = itemValue(data, next_item_index);
+  *value_out = itemValue(MutableTuple::cast(data), next_item_index);
   return true;
 }
 
@@ -248,13 +249,15 @@ void dictAllocateArrays(Thread* thread, const Dict& dict, word indices_len) {
 
 // Return true if `dict` has an available item for insertion.
 static bool dictHasUsableItem(const Dict& dict) {
-  return dict.firstEmptyItemIndex() < RawTuple::cast(dict.data()).length();
+  return dict.firstEmptyItemIndex() <
+         RawMutableTuple::cast(dict.data()).length();
 }
 
 // Insert `key`/`value` into dictionary assuming no item with an equivalent
 // key and no tombstones exist.
-static void dictInsertNoUpdate(const Tuple& data, const Tuple& indices,
-                               word item_count, const Object& key, word hash,
+static void dictInsertNoUpdate(const MutableTuple& data,
+                               const MutableTuple& indices, word item_count,
+                               const Object& key, word hash,
                                const Object& value) {
   DCHECK(data.length() > 0, "dict must not be empty");
   uword perturb;
@@ -305,7 +308,7 @@ RawObject dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                     word hash, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
-  if (dict.indicesLength() == 0) {
+  if (dict.indices().isNull()) {
     dictAllocateArrays(thread, dict, kInitialDictIndicesLength);
   }
   HandleScope scope(thread);
@@ -382,7 +385,7 @@ RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                     const Object& name, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
-  if (dict.indicesLength() == 0) {
+  if (dict.indices().isNull()) {
     dictAllocateArrays(thread, dict, kInitialDictIndicesLength);
   }
   HandleScope scope(thread);
@@ -415,7 +418,7 @@ RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
 }
 
 void dictClear(Thread* thread, const Dict& dict) {
-  if (dict.indicesLength() == 0) return;
+  if (dict.indices().isNull()) return;
 
   HandleScope scope(thread);
   MutableTuple data(&scope, dict.data());
@@ -478,7 +481,7 @@ RawObject dictKeys(Thread* thread, const Dict& dict) {
     return runtime->newList();
   }
   HandleScope scope(thread);
-  Tuple keys(&scope, runtime->newMutableTuple(len));
+  MutableTuple keys(&scope, runtime->newMutableTuple(len));
   Object key(&scope, NoneType::object());
   word num_keys = 0;
   for (word i = 0; dictNextKey(dict, &i, &key);) {
@@ -707,12 +710,9 @@ RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter) {
   Object value(&scope, NoneType::object());
   word i = iter.index();
   if (dictNextItem(dict, &i, &key, &value)) {
-    Tuple kv_pair(&scope, thread->runtime()->newTuple(2));
-    kv_pair.atPut(0, *key);
-    kv_pair.atPut(1, *value);
     iter.setIndex(i);
     iter.setNumFound(iter.numFound() + 1);
-    return *kv_pair;
+    return thread->runtime()->newTupleWith2(key, value);
   }
 
   // We hit the end.
@@ -899,18 +899,18 @@ RawObject METH(dict, popitem)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kKeyError,
                                 "popitem(): dictionary is empty");
   }
-  Tuple data(&scope, dict.data());
+  MutableTuple data(&scope, dict.data());
   for (word item_index = dict.firstEmptyItemIndex() - kItemNumPointers;
        item_index >= 0; item_index -= kItemNumPointers) {
     if (!itemIsEmpty(*data, item_index) &&
         !itemIsTombstone(*data, item_index)) {
-      Tuple result(&scope, thread->runtime()->newTuple(2));
-      result.atPut(0, itemKey(*data, item_index));
-      result.atPut(1, itemValue(*data, item_index));
+      Object key(&scope, itemKey(*data, item_index));
+      Object value(&scope, itemValue(*data, item_index));
+      Tuple result(&scope, runtime->newTupleWith2(key, value));
       // Find the item for the entry and set a tombstone in it.
       // Note that this would take amortized cost O(1).
       word indices_index = -1;
-      Tuple indices(&scope, dict.indices());
+      MutableTuple indices(&scope, dict.indices());
       uword perturb;
       word indices_mask;
       word hash = itemHash(*data, item_index);
@@ -960,8 +960,8 @@ RawObject METH(dict, __new__)(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   Dict result(&scope, runtime->newInstance(layout));
   result.setNumItems(0);
-  result.setData(runtime->emptyTuple());
-  result.setIndices(runtime->emptyTuple());
+  result.setData(SmallInt::fromWord(0));
+  result.setIndices(SmallInt::fromWord(0));
   result.setFirstEmptyItemIndex(0);
   return *result;
 }

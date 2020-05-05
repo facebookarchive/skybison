@@ -28,6 +28,8 @@ class Heap {
 
   RawObject createComplex(double real, double imag);
 
+  RawObject createDict();
+
   RawObject createFloat(double value);
 
   RawObject createEllipsis();

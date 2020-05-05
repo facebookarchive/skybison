@@ -3020,15 +3020,7 @@ void Runtime::listAdd(Thread* thread, const List& list, const Object& value) {
 
 // Dict
 
-RawObject Runtime::newDict() {
-  HandleScope scope;
-  Dict result(&scope, heap()->create<RawDict>());
-  result.setNumItems(0);
-  result.setData(empty_tuple_);
-  result.setIndices(empty_tuple_);
-  result.setFirstEmptyItemIndex(0);
-  return *result;
-}
+RawObject Runtime::newDict() { return heap()->createDict(); }
 
 RawObject Runtime::newDictWithSize(word initial_size) {
   Thread* thread = Thread::current();
