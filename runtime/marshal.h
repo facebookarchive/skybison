@@ -15,7 +15,7 @@ class Marshal {
    public:
     // TODO(T38902583): Generalize Marshal::Reader to take a Bytes or buffer
     // protocol object
-    Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer);
+    Reader(HandleScope* scope, Thread* thread, View<byte> buffer);
 
     RawObject readPycHeader(const Str& filename);
 
@@ -61,6 +61,7 @@ class Marshal {
     RawObject doSetElements(int32_t length, RawObject set_obj);
     RawObject doTupleElements(int32_t length);
 
+    Thread* thread_;
     Runtime* runtime_;
     List refs_;
     const Function::Entry* builtin_functions_;

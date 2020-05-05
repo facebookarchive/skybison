@@ -66,7 +66,7 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
 
   Object code_obj(&scope, NoneType::object());
   View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
-  Marshal::Reader reader(&scope, runtime, data);
+  Marshal::Reader reader(&scope, thread, data);
   Str filename_str(&scope, runtime->newStrFromCStr(filename));
   if (reader.readPycHeader(filename_str).isErrorException()) {
     return nullptr;

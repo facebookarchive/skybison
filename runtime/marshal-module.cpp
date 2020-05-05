@@ -26,7 +26,7 @@ RawObject FUNC(marshal, loads)(Thread* thread, Frame* frame, word nargs) {
   // directly
   std::unique_ptr<byte[]> buffer(new byte[length]);
   bytes.copyTo(buffer.get(), length);
-  Marshal::Reader reader(&scope, runtime, View<byte>(buffer.get(), length));
+  Marshal::Reader reader(&scope, thread, View<byte>(buffer.get(), length));
   return reader.readObject();
 }
 

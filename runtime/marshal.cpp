@@ -51,9 +51,10 @@ enum {
   TYPE_UNKNOWN = '?',
 };
 
-Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer)
-    : runtime_(runtime),
-      refs_(scope, runtime->newList()),
+Marshal::Reader::Reader(HandleScope* scope, Thread* thread, View<byte> buffer)
+    : thread_(thread),
+      runtime_(thread->runtime()),
+      refs_(scope, runtime_->newList()),
       start_(buffer.data()),
       depth_(0),
       length_(buffer.length()),
@@ -62,16 +63,15 @@ Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer)
 }
 
 RawObject Marshal::Reader::readPycHeader(const Str& filename) {
-  Thread* thread = Thread::current();
   if (length_ - pos_ < 4) {
-    return thread->raiseWithFmt(
+    return thread_->raiseWithFmt(
         LayoutId::kEOFError, "reached end of file while reading header of '%S'",
         &filename);
   }
   int32_t magic = readLong();
   if (magic == kPycMagic37b5) {
     if (length_ - pos_ < 12) {
-      return thread->raiseWithFmt(
+      return thread_->raiseWithFmt(
           LayoutId::kEOFError,
           "reached end of file while reading header of '%S'", &filename);
     }
@@ -81,7 +81,7 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
     DCHECK(pos_ == 16, "size mismatch");
   } else if (magic == kPycMagic36rc1) {
     if (length_ - pos_ < 8) {
-      return thread->raiseWithFmt(
+      return thread_->raiseWithFmt(
           LayoutId::kEOFError,
           "reached end of file while reading header of '%S'", &filename);
     }
@@ -89,8 +89,8 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
     readLong();  // read source length.
     DCHECK(pos_ == 12, "size mismatch");
   } else {
-    return thread->raiseWithFmt(LayoutId::kImportError,
-                                "unsupported magic number in '%S'", &filename);
+    return thread_->raiseWithFmt(LayoutId::kImportError,
+                                 "unsupported magic number in '%S'", &filename);
   }
   return NoneType::object();
 }
@@ -273,11 +273,10 @@ RawObject Marshal::Reader::readObject() {
 }
 
 word Marshal::Reader::addRef(RawObject value) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope(thread_);
   Object value_handle(&scope, value);
   word result = refs_.numItems();
-  runtime_->listAdd(thread, refs_, value_handle);
+  runtime_->listAdd(thread_, refs_, value_handle);
   return result;
 }
 
@@ -338,9 +337,8 @@ RawObject Marshal::Reader::readStr(word length) {
 
 RawObject Marshal::Reader::readAndInternStr(word length) {
   const byte* data = readBytes(length);
-  Thread* thread = Thread::current();
   RawObject result =
-      Runtime::internStrFromAll(thread, View<byte>(data, length));
+      Runtime::internStrFromAll(thread_, View<byte>(data, length));
   if (isRef_) {
     addRef(result);
   }
@@ -394,17 +392,16 @@ RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
   if (isRef_) {
     addRef(set_obj);
   }
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope(thread_);
   SetBase set(&scope, set_obj);
   Object value(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
   for (int32_t i = 0; i < length; i++) {
     value = readObject();
-    hash_obj = Interpreter::hash(thread, value);
+    hash_obj = Interpreter::hash(thread_, value);
     DCHECK(!hash_obj.isErrorException(), "must be hashable");
     word hash = SmallInt::cast(*hash_obj).value();
-    RawObject result = setAdd(thread, set, value, hash);
+    RawObject result = setAdd(thread_, set, value, hash);
     if (result.isError()) {
       return result;
     }
