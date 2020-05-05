@@ -883,7 +883,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   Register r_scratch = RAX;
 
   __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kBoundMethod)
-                                 << Header::kLayoutIdOffset));
+                                 << RawHeader::kLayoutIdOffset));
   Label slow_path;
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kFarJump);
 
@@ -955,9 +955,9 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
   __ movl(r_layout_id,
           Address(r_callable, heapObjectDisp(HeapObject::kHeaderOffset)));
   __ andl(r_layout_id,
-          Immediate(Header::kLayoutIdMask << Header::kLayoutIdOffset));
+          Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
   __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kFunction)
-                                 << Header::kLayoutIdOffset));
+                                 << RawHeader::kLayoutIdOffset));
   Label prepare_callable_generic;
   __ jcc(NOT_EQUAL, &prepare_callable_generic, Assembler::kFarJump);
   Label prepared;

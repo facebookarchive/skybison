@@ -79,9 +79,9 @@ RawObject FUNC(array, _array_new)(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinAttribute ArrayBuiltins::kAttributes[] = {
-    {ID(_array__buffer), Array::kBufferOffset, AttributeFlags::kHidden},
-    {ID(_array__length), Array::kLengthOffset, AttributeFlags::kHidden},
-    {ID(typecode), Array::kTypecodeOffset, AttributeFlags::kReadOnly},
+    {ID(_array__buffer), RawArray::kBufferOffset, AttributeFlags::kHidden},
+    {ID(_array__length), RawArray::kLengthOffset, AttributeFlags::kHidden},
+    {ID(typecode), RawArray::kTypecodeOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

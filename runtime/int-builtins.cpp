@@ -149,7 +149,8 @@ word largeIntHash(RawLargeInt value) {
 
 // Used only for UserIntBase as a heap-allocated object.
 const BuiltinAttribute IntBuiltins::kAttributes[] = {
-    {ID(_UserInt__value), UserIntBase::kValueOffset, AttributeFlags::kHidden},
+    {ID(_UserInt__value), RawUserIntBase::kValueOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
 };
 

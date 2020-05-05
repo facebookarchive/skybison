@@ -9,9 +9,9 @@
 namespace py {
 
 const BuiltinAttribute SliceBuiltins::kAttributes[] = {
-    {ID(start), Slice::kStartOffset, AttributeFlags::kReadOnly},
-    {ID(stop), Slice::kStopOffset, AttributeFlags::kReadOnly},
-    {ID(step), Slice::kStepOffset, AttributeFlags::kReadOnly},
+    {ID(start), RawSlice::kStartOffset, AttributeFlags::kReadOnly},
+    {ID(stop), RawSlice::kStopOffset, AttributeFlags::kReadOnly},
+    {ID(step), RawSlice::kStepOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

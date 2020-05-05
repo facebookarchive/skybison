@@ -5,7 +5,7 @@
 namespace py {
 
 const BuiltinAttribute MappingProxyBuiltins::kAttributes[] = {
-    {ID(_mappingproxy__mapping), MappingProxy::kMappingOffset,
+    {ID(_mappingproxy__mapping), RawMappingProxy::kMappingOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };

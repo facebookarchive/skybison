@@ -134,9 +134,9 @@ RawObject METH(mmap, close)(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinAttribute MmapBuiltins::kAttributes[] = {
-    {ID(_mmap__access), Mmap::kAccessOffset, AttributeFlags::kHidden},
-    {ID(_mmap__data), Mmap::kDataOffset, AttributeFlags::kHidden},
-    {ID(_mmap__fd), Mmap::kFdOffset, AttributeFlags::kHidden},
+    {ID(_mmap__access), RawMmap::kAccessOffset, AttributeFlags::kHidden},
+    {ID(_mmap__data), RawMmap::kDataOffset, AttributeFlags::kHidden},
+    {ID(_mmap__fd), RawMmap::kFdOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

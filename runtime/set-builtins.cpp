@@ -586,8 +586,9 @@ static RawObject dunderGtImpl(Thread* thread, Frame* frame, word nargs,
 }
 
 const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
-    {ID(_frozenset__data), Set::kDataOffset, AttributeFlags::kHidden},
-    {ID(_frozenset__num_items), Set::kNumItemsOffset, AttributeFlags::kHidden},
+    {ID(_frozenset__data), RawSet::kDataOffset, AttributeFlags::kHidden},
+    {ID(_frozenset__num_items), RawSet::kNumItemsOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -769,8 +770,8 @@ RawObject METH(frozenset, isdisjoint)(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute SetBuiltins::kAttributes[] = {
-    {ID(_set__data), Set::kDataOffset, AttributeFlags::kHidden},
-    {ID(_set__num_items), Set::kNumItemsOffset, AttributeFlags::kHidden},
+    {ID(_set__data), RawSet::kDataOffset, AttributeFlags::kHidden},
+    {ID(_set__num_items), RawSet::kNumItemsOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

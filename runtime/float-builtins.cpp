@@ -36,7 +36,7 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 }
 
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
-    {ID(_UserFloat__value), UserFloatBase::kValueOffset,
+    {ID(_UserFloat__value), RawUserFloatBase::kValueOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
 };

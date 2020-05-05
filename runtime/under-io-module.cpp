@@ -680,16 +680,16 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
-    {ID(_closed), UnderIOBase::kClosedOffset},
+    {ID(_closed), RawUnderIOBase::kClosedOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute IncrementalNewlineDecoderBuiltins::kAttributes[] = {
-    {ID(_errors), IncrementalNewlineDecoder::kErrorsOffset},
-    {ID(_translate), IncrementalNewlineDecoder::kTranslateOffset},
-    {ID(_decoder), IncrementalNewlineDecoder::kDecoderOffset},
-    {ID(_seennl), IncrementalNewlineDecoder::kSeennlOffset},
-    {ID(_pendingcr), IncrementalNewlineDecoder::kPendingcrOffset},
+    {ID(_errors), RawIncrementalNewlineDecoder::kErrorsOffset},
+    {ID(_translate), RawIncrementalNewlineDecoder::kTranslateOffset},
+    {ID(_decoder), RawIncrementalNewlineDecoder::kDecoderOffset},
+    {ID(_seennl), RawIncrementalNewlineDecoder::kSeennlOffset},
+    {ID(_pendingcr), RawIncrementalNewlineDecoder::kPendingcrOffset},
     {SymbolId::kSentinelId, 0},
 };
 
@@ -703,42 +703,43 @@ void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
 }
 
 const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
-    {ID(_raw), UnderBufferedIOMixin::kUnderlyingOffset},
+    {ID(_raw), RawUnderBufferedIOMixin::kUnderlyingOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BufferedRandomBuiltins::kAttributes[] = {
-    {ID(_raw), BufferedRandom::kUnderlyingOffset},
-    {ID(_reader), BufferedRandom::kReaderOffset},
-    {ID(_write_buf), BufferedRandom::kWriteBufOffset},
-    {ID(_write_lock), BufferedRandom::kWriteLockOffset},
-    {ID(buffer_size), BufferedRandom::kBufferSizeOffset},
+    {ID(_raw), RawBufferedRandom::kUnderlyingOffset},
+    {ID(_reader), RawBufferedRandom::kReaderOffset},
+    {ID(_write_buf), RawBufferedRandom::kWriteBufOffset},
+    {ID(_write_lock), RawBufferedRandom::kWriteLockOffset},
+    {ID(buffer_size), RawBufferedRandom::kBufferSizeOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
-    {ID(_raw), BufferedReader::kUnderlyingOffset},
-    {ID(_buffer_size), BufferedReader::kBufferSizeOffset,
+    {ID(_raw), RawBufferedReader::kUnderlyingOffset},
+    {ID(_buffer_size), RawBufferedReader::kBufferSizeOffset,
      AttributeFlags::kReadOnly},
-    {SymbolId::kInvalid, BufferedReader::kReadBufOffset},
-    {ID(_read_pos), BufferedReader::kReadPosOffset, AttributeFlags::kReadOnly},
-    {ID(_buffer_num_bytes), BufferedReader::kBufferNumBytesOffset,
+    {SymbolId::kInvalid, RawBufferedReader::kReadBufOffset},
+    {ID(_read_pos), RawBufferedReader::kReadPosOffset,
+     AttributeFlags::kReadOnly},
+    {ID(_buffer_num_bytes), RawBufferedReader::kBufferNumBytesOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BufferedWriterBuiltins::kAttributes[] = {
-    {ID(_raw), BufferedWriter::kUnderlyingOffset},
-    {ID(_write_buf), BufferedWriter::kWriteBufOffset},
-    {ID(_write_lock), BufferedWriter::kWriteLockOffset},
-    {ID(buffer_size), BufferedWriter::kBufferSizeOffset},
+    {ID(_raw), RawBufferedWriter::kUnderlyingOffset},
+    {ID(_write_buf), RawBufferedWriter::kWriteBufOffset},
+    {ID(_write_lock), RawBufferedWriter::kWriteLockOffset},
+    {ID(buffer_size), RawBufferedWriter::kBufferSizeOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
-    {ID(__dict__), BytesIO::kDictOffset},
-    {ID(_buffer), BytesIO::kBufferOffset},
-    {ID(_pos), BytesIO::kPosOffset},
+    {ID(__dict__), RawBytesIO::kDictOffset},
+    {ID(_buffer), RawBytesIO::kBufferOffset},
+    {ID(_pos), RawBytesIO::kPosOffset},
     {SymbolId::kSentinelId, 0},
 };
 
@@ -747,26 +748,26 @@ void BytesIOBuiltins::postInitialize(Runtime*, const Type& new_type) {
 }
 
 const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
-    {ID(_fd), FileIO::kFdOffset},
-    {ID(name), FileIO::kNameOffset},
-    {ID(_created), FileIO::kCreatedOffset},
-    {ID(_readable), FileIO::kReadableOffset},
-    {ID(_writable), FileIO::kWritableOffset},
-    {ID(_appending), FileIO::kAppendingOffset},
-    {ID(_seekable), FileIO::kSeekableOffset},
-    {ID(_closefd), FileIO::kCloseFdOffset},
+    {ID(_fd), RawFileIO::kFdOffset},
+    {ID(name), RawFileIO::kNameOffset},
+    {ID(_created), RawFileIO::kCreatedOffset},
+    {ID(_readable), RawFileIO::kReadableOffset},
+    {ID(_writable), RawFileIO::kWritableOffset},
+    {ID(_appending), RawFileIO::kAppendingOffset},
+    {ID(_seekable), RawFileIO::kSeekableOffset},
+    {ID(_closefd), RawFileIO::kCloseFdOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
-    {ID(_buffer), StringIO::kBufferOffset},
-    {ID(_pos), StringIO::kPosOffset},
-    {ID(_readnl), StringIO::kReadnlOffset},
-    {ID(_readtranslate), StringIO::kReadtranslateOffset},
-    {ID(_readuniversal), StringIO::kReaduniversalOffset},
-    {ID(_seennl), StringIO::kSeennlOffset},
-    {ID(_writenl), StringIO::kWritenlOffset},
-    {ID(_writetranslate), StringIO::kWritetranslateOffset},
+    {ID(_buffer), RawStringIO::kBufferOffset},
+    {ID(_pos), RawStringIO::kPosOffset},
+    {ID(_readnl), RawStringIO::kReadnlOffset},
+    {ID(_readtranslate), RawStringIO::kReadtranslateOffset},
+    {ID(_readuniversal), RawStringIO::kReaduniversalOffset},
+    {ID(_seennl), RawStringIO::kSeennlOffset},
+    {ID(_writenl), RawStringIO::kWritenlOffset},
+    {ID(_writetranslate), RawStringIO::kWritetranslateOffset},
     {SymbolId::kInvalid, RawFunction::kDictOffset},
     {SymbolId::kSentinelId, 0},
 };
@@ -1181,25 +1182,25 @@ RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
-    {ID(_b2cratio), TextIOWrapper::kB2cratioOffset},
-    {ID(_buffer), TextIOWrapper::kBufferOffset},
-    {ID(_decoded_chars), TextIOWrapper::kDecodedCharsOffset},
-    {ID(_decoded_chars_used), TextIOWrapper::kDecodedCharsUsedOffset},
-    {ID(_decoder), TextIOWrapper::kDecoderOffset},
-    {ID(_encoder), TextIOWrapper::kEncoderOffset},
-    {ID(_encoding), TextIOWrapper::kEncodingOffset},
-    {ID(_errors), TextIOWrapper::kErrorsOffset},
-    {ID(_has_read1), TextIOWrapper::kHasRead1Offset},
-    {ID(_line_buffering), TextIOWrapper::kLineBufferingOffset},
-    {ID(_readnl), TextIOWrapper::kReadnlOffset},
-    {ID(_readtranslate), TextIOWrapper::kReadtranslateOffset},
-    {ID(_readuniversal), TextIOWrapper::kReaduniversalOffset},
-    {ID(_seekable), TextIOWrapper::kSeekableOffset},
-    {ID(_snapshot), TextIOWrapper::kSnapshotOffset},
-    {ID(_telling), TextIOWrapper::kTellingOffset},
-    {ID(_writenl), TextIOWrapper::kWritenlOffset},
-    {ID(_writetranslate), TextIOWrapper::kWritetranslateOffset},
-    {ID(mode), TextIOWrapper::kModeOffset},  // TODO(T54575279): remove
+    {ID(_b2cratio), RawTextIOWrapper::kB2cratioOffset},
+    {ID(_buffer), RawTextIOWrapper::kBufferOffset},
+    {ID(_decoded_chars), RawTextIOWrapper::kDecodedCharsOffset},
+    {ID(_decoded_chars_used), RawTextIOWrapper::kDecodedCharsUsedOffset},
+    {ID(_decoder), RawTextIOWrapper::kDecoderOffset},
+    {ID(_encoder), RawTextIOWrapper::kEncoderOffset},
+    {ID(_encoding), RawTextIOWrapper::kEncodingOffset},
+    {ID(_errors), RawTextIOWrapper::kErrorsOffset},
+    {ID(_has_read1), RawTextIOWrapper::kHasRead1Offset},
+    {ID(_line_buffering), RawTextIOWrapper::kLineBufferingOffset},
+    {ID(_readnl), RawTextIOWrapper::kReadnlOffset},
+    {ID(_readtranslate), RawTextIOWrapper::kReadtranslateOffset},
+    {ID(_readuniversal), RawTextIOWrapper::kReaduniversalOffset},
+    {ID(_seekable), RawTextIOWrapper::kSeekableOffset},
+    {ID(_snapshot), RawTextIOWrapper::kSnapshotOffset},
+    {ID(_telling), RawTextIOWrapper::kTellingOffset},
+    {ID(_writenl), RawTextIOWrapper::kWritenlOffset},
+    {ID(_writetranslate), RawTextIOWrapper::kWritetranslateOffset},
+    {ID(mode), RawTextIOWrapper::kModeOffset},  // TODO(T54575279): remove
     {SymbolId::kSentinelId, 0},
 };
 

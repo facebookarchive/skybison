@@ -241,7 +241,7 @@ Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
   }
 
   byte* src = reinterpret_cast<byte*>(generator_frame.address() +
-                                      GeneratorFrame::kFrameOffset);
+                                      RawGeneratorFrame::kFrameOffset);
   byte* dest = stackPtr() - size;
   std::memcpy(dest, src, num_frame_words * kPointerSize);
   word value_stack_size = generator_frame.maxStackSize() * kPointerSize;
@@ -300,7 +300,7 @@ Frame* Thread::popFrameToGeneratorFrame(const GeneratorFrame& generator_frame) {
   DCHECK(frame->valueStackSize() <= generator_frame.maxStackSize(),
          "not enough space in RawGeneratorBase to save live stack");
   byte* dest = reinterpret_cast<byte*>(generator_frame.address() +
-                                       GeneratorFrame::kFrameOffset);
+                                       RawGeneratorFrame::kFrameOffset);
   byte* src = reinterpret_cast<byte*>(frame->valueStackBase() -
                                       generator_frame.maxStackSize());
   std::memcpy(dest, src, generator_frame.numFrameWords() * kPointerSize);

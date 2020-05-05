@@ -10,9 +10,9 @@
 namespace py {
 
 const BuiltinAttribute RefBuiltins::kAttributes[] = {
-    {ID(_ref__referent), WeakRef::kReferentOffset, AttributeFlags::kHidden},
-    {ID(_ref__callback), WeakRef::kCallbackOffset, AttributeFlags::kHidden},
-    {ID(_ref__link), WeakRef::kLinkOffset, AttributeFlags::kHidden},
+    {ID(_ref__referent), RawWeakRef::kReferentOffset, AttributeFlags::kHidden},
+    {ID(_ref__callback), RawWeakRef::kCallbackOffset, AttributeFlags::kHidden},
+    {ID(_ref__link), RawWeakRef::kLinkOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -53,8 +53,8 @@ RawObject METH(weakref, __new__)(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinAttribute WeakLinkBuiltins::kAttributes[] = {
-    {ID(__weaklink__next), WeakLink::kNextOffset, AttributeFlags::kHidden},
-    {ID(__weaklink__prev), WeakLink::kPrevOffset, AttributeFlags::kHidden},
+    {ID(__weaklink__next), RawWeakLink::kNextOffset, AttributeFlags::kHidden},
+    {ID(__weaklink__prev), RawWeakLink::kPrevOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

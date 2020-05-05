@@ -5,10 +5,10 @@
 namespace py {
 
 const BuiltinAttribute FrameProxyBuiltins::kAttributes[] = {
-    {ID(_function), FrameProxy::kFunctionOffset, AttributeFlags::kReadOnly},
-    {ID(f_back), FrameProxy::kBackOffset, AttributeFlags::kReadOnly},
-    {ID(f_lasti), FrameProxy::kLastiOffset, AttributeFlags::kReadOnly},
-    {ID(f_locals), FrameProxy::kLocalsOffset, AttributeFlags::kReadOnly},
+    {ID(_function), RawFrameProxy::kFunctionOffset, AttributeFlags::kReadOnly},
+    {ID(f_back), RawFrameProxy::kBackOffset, AttributeFlags::kReadOnly},
+    {ID(f_lasti), RawFrameProxy::kLastiOffset, AttributeFlags::kReadOnly},
+    {ID(f_locals), RawFrameProxy::kLocalsOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

@@ -421,7 +421,8 @@ void LargeStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
 }
 
 const BuiltinAttribute StrBuiltins::kAttributes[] = {
-    {ID(_UserStr__value), UserStrBase::kValueOffset, AttributeFlags::kHidden},
+    {ID(_UserStr__value), RawUserStrBase::kValueOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
 };
 

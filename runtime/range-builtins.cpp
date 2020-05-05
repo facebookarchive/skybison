@@ -95,9 +95,9 @@ RawObject METH(longrange_iterator, __next__)(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute RangeBuiltins::kAttributes[] = {
-    {ID(start), Range::kStartOffset, AttributeFlags::kReadOnly},
-    {ID(step), Range::kStepOffset, AttributeFlags::kReadOnly},
-    {ID(stop), Range::kStopOffset, AttributeFlags::kReadOnly},
+    {ID(start), RawRange::kStartOffset, AttributeFlags::kReadOnly},
+    {ID(step), RawRange::kStepOffset, AttributeFlags::kReadOnly},
+    {ID(stop), RawRange::kStopOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

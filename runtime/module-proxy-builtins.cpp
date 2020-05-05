@@ -7,7 +7,7 @@
 namespace py {
 
 const BuiltinAttribute ModuleProxyBuiltins::kAttributes[] = {
-    {ID(__module_object__), ModuleProxy::kModuleOffset},
+    {ID(__module_object__), RawModuleProxy::kModuleOffset},
     {SymbolId::kSentinelId, 0},
 };
 

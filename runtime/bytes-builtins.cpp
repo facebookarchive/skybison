@@ -387,7 +387,7 @@ void LargeBytesBuiltins::postInitialize(Runtime* runtime,
 
 // Used only for UserBytesBase as a heap-allocated object.
 const BuiltinAttribute BytesBuiltins::kAttributes[] = {
-    {ID(_UserBytes__value), UserBytesBase::kValueOffset,
+    {ID(_UserBytes__value), RawUserBytesBase::kValueOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
 };
