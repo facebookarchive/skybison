@@ -189,11 +189,12 @@ RawObject Marshal::Reader::readObject() {
       if (!SmallInt::isValid(n)) {
         UNIMPLEMENTED("value '%ld' outside range supported by RawSmallInt", n);
       }
-      RawObject result = SmallInt::fromWord(n);
+      HandleScope scope(thread_);
+      Object result(&scope, SmallInt::fromWord(n));
       if (isRef_) {
         addRef(result);
       }
-      return result;
+      return *result;
     }
 
     case TYPE_FLOAT:
@@ -201,11 +202,12 @@ RawObject Marshal::Reader::readObject() {
 
     case TYPE_BINARY_FLOAT: {
       double n = readBinaryFloat();
-      RawObject result = runtime_->newFloat(n);
+      HandleScope scope(thread_);
+      Object result(&scope, runtime_->newFloat(n));
       if (isRef_) {
         addRef(result);
       }
-      return result;
+      return *result;
     }
 
     case TYPE_COMPLEX:
@@ -214,11 +216,12 @@ RawObject Marshal::Reader::readObject() {
     case TYPE_BINARY_COMPLEX: {
       double real = readBinaryFloat();
       double imag = readBinaryFloat();
-      RawObject result = runtime_->newComplex(real, imag);
+      HandleScope scope(thread_);
+      Object result(&scope, runtime_->newComplex(real, imag));
       if (isRef_) {
         addRef(result);
       }
-      return result;
+      return *result;
     }
 
     case TYPE_STRING:  // Misnomer, should be TYPE_BYTES
@@ -272,11 +275,9 @@ RawObject Marshal::Reader::readObject() {
   UNREACHABLE("all cases should be covered");
 }
 
-word Marshal::Reader::addRef(RawObject value) {
-  HandleScope scope(thread_);
-  Object value_handle(&scope, value);
+word Marshal::Reader::addRef(const Object& value) {
   word result = refs_.numItems();
-  runtime_->listAdd(thread_, refs_, value_handle);
+  runtime_->listAdd(thread_, refs_, value);
   return result;
 }
 
@@ -291,18 +292,19 @@ word Marshal::Reader::numRefs() { return refs_.numItems(); }
 RawObject Marshal::Reader::readTypeString() {
   int32_t length = readLong();
   const byte* data = readBytes(length);
-  RawObject result = runtime_->newBytesWithAll(View<byte>(data, length));
+  HandleScope scope(thread_);
+  Object result(&scope, runtime_->newBytesWithAll(View<byte>(data, length)));
   if (isRef_) {
     addRef(result);
   }
-  return result;
+  return *result;
 }
 
 RawObject Marshal::Reader::readTypeAscii() {
   word length = readLong();
   if (length < 0) {
-    return Thread::current()->raiseWithFmt(
-        LayoutId::kValueError, "bad marshal data (string size out of range)");
+    return thread_->raiseWithFmt(LayoutId::kValueError,
+                                 "bad marshal data (string size out of range)");
   }
   return readStr(length);
 }
@@ -310,8 +312,8 @@ RawObject Marshal::Reader::readTypeAscii() {
 RawObject Marshal::Reader::readTypeAsciiInterned() {
   word length = readLong();
   if (length < 0) {
-    return Thread::current()->raiseWithFmt(
-        LayoutId::kValueError, "bad marshal data (string size out of range)");
+    return thread_->raiseWithFmt(LayoutId::kValueError,
+                                 "bad marshal data (string size out of range)");
   }
   return readAndInternStr(length);
 }
@@ -328,21 +330,23 @@ RawObject Marshal::Reader::readTypeShortAsciiInterned() {
 
 RawObject Marshal::Reader::readStr(word length) {
   const byte* data = readBytes(length);
-  RawObject result = runtime_->newStrWithAll(View<byte>(data, length));
+  HandleScope scope(thread_);
+  Object result(&scope, runtime_->newStrWithAll(View<byte>(data, length)));
   if (isRef_) {
     addRef(result);
   }
-  return result;
+  return *result;
 }
 
 RawObject Marshal::Reader::readAndInternStr(word length) {
   const byte* data = readBytes(length);
-  RawObject result =
-      Runtime::internStrFromAll(thread_, View<byte>(data, length));
+  HandleScope scope(thread_);
+  Object result(&scope,
+                Runtime::internStrFromAll(thread_, View<byte>(data, length)));
   if (isRef_) {
     addRef(result);
   }
-  return result;
+  return *result;
 }
 
 RawObject Marshal::Reader::readTypeSmallTuple() {
@@ -356,15 +360,15 @@ RawObject Marshal::Reader::readTypeTuple() {
 }
 
 RawObject Marshal::Reader::doTupleElements(int32_t length) {
+  HandleScope scope(thread_);
   if (length == 0) {
-    RawObject result = runtime_->emptyTuple();
+    Object result(&scope, runtime_->emptyTuple());
     if (isRef_) {
       addRef(result);
     }
-    return result;
+    return *result;
   }
-  RawMutableTuple result =
-      MutableTuple::cast(runtime_->newMutableTuple(length));
+  MutableTuple result(&scope, runtime_->newMutableTuple(length));
   if (isRef_) {
     addRef(result);
   }
@@ -377,7 +381,9 @@ RawObject Marshal::Reader::doTupleElements(int32_t length) {
 
 RawObject Marshal::Reader::readTypeSet() {
   int32_t n = readLong();
-  return doSetElements(n, runtime_->newSet());
+  HandleScope scope(thread_);
+  Set set(&scope, runtime_->newSet());
+  return doSetElements(n, set);
 }
 
 RawObject Marshal::Reader::readTypeFrozenSet() {
@@ -385,15 +391,16 @@ RawObject Marshal::Reader::readTypeFrozenSet() {
   if (n == 0) {
     return runtime_->emptyFrozenSet();
   }
-  return doSetElements(n, runtime_->newFrozenSet());
+  HandleScope scope(thread_);
+  FrozenSet set(&scope, runtime_->newFrozenSet());
+  return doSetElements(n, set);
 }
 
-RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
+RawObject Marshal::Reader::doSetElements(int32_t length, const SetBase& set) {
   if (isRef_) {
-    addRef(set_obj);
+    addRef(set);
   }
   HandleScope scope(thread_);
-  SetBase set(&scope, set_obj);
   Object value(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
   for (int32_t i = 0; i < length; i++) {
@@ -411,10 +418,12 @@ RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
 
 RawObject Marshal::Reader::readTypeCode() {
   word index = -1;
+  HandleScope scope(thread_);
   if (isRef_) {
-    index = addRef(NoneType::object());
+    // Reserve a reflist index
+    Object none(&scope, NoneType::object());
+    index = addRef(none);
   }
-  HandleScope scope;
   int32_t argcount = readLong();
   int32_t posonlyargcount = 0;
   int32_t kwonlyargcount = readLong();
@@ -470,15 +479,16 @@ RawObject Marshal::Reader::readTypeRef() {
 RawObject Marshal::Reader::readLongObject() {
   int32_t n = readLong();
   if (n == 0) {
-    RawObject zero = SmallInt::fromWord(0);
+    HandleScope scope(thread_);
+    Object zero(&scope, SmallInt::fromWord(0));
     if (isRef_) {
       addRef(zero);
     }
-    return zero;
+    return *zero;
   }
   if (n < kMinInt32 || n > kMaxInt32) {
-    return Thread::current()->raiseWithFmt(
-        LayoutId::kValueError, "bad marshal data (string size out of range)");
+    return thread_->raiseWithFmt(LayoutId::kValueError,
+                                 "bad marshal data (string size out of range)");
   }
   word bits_consumed = 0;
   word n_bits = std::abs(n) * kBitsPerLongDigit;
@@ -490,8 +500,8 @@ RawObject Marshal::Reader::readLongObject() {
   while (bits_consumed < n_bits) {
     int16_t digit = readShort();
     if (digit < 0) {
-      return Thread::current()->raiseWithFmt(
-          LayoutId::kValueError, "bad marshal data (negative long digit)");
+      return thread_->raiseWithFmt(LayoutId::kValueError,
+                                   "bad marshal data (negative long digit)");
     }
     auto unsigned_digit = static_cast<uword>(digit);
     if (word_offset + kBitsPerLongDigit <= kBitsPerWord) {
@@ -533,12 +543,13 @@ RawObject Marshal::Reader::readLongObject() {
     }
   }
 
-  RawObject result =
-      runtime_->newIntWithDigits(View<uword>(digits.get(), digits_idx));
+  HandleScope scope(thread_);
+  Object result(&scope, runtime_->newIntWithDigits(
+                            View<uword>(digits.get(), digits_idx)));
   if (isRef_) {
     addRef(result);
   }
-  return result;
+  return *result;
 }
 
 }  // namespace py

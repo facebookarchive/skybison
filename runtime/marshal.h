@@ -51,14 +51,14 @@ class Marshal {
     RawObject getRef(word index);
 
    private:
-    word addRef(RawObject value);
+    word addRef(const Object& value);
     void setRef(word index, RawObject value);
 
     RawObject readStr(word length);
     RawObject readAndInternStr(word length);
     RawObject readLongObject();
 
-    RawObject doSetElements(int32_t length, RawObject set_obj);
+    RawObject doSetElements(int32_t length, const SetBase& set);
     RawObject doTupleElements(int32_t length);
 
     Thread* thread_;
