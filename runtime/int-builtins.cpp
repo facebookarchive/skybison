@@ -279,10 +279,7 @@ RawObject METH(int, __divmod__)(Thread* thread, Frame* frame, word nargs) {
           return t->raiseWithFmt(LayoutId::kZeroDivisionError,
                                  "integer division or modulo by zero");
         }
-        Tuple result(&scope, runtime->newTuple(2));
-        result.atPut(0, *quotient);
-        result.atPut(1, *remainder);
-        return *result;
+        return runtime->newTupleWith2(quotient, remainder);
       });
 }
 
