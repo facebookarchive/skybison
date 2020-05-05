@@ -56,7 +56,6 @@ Marshal::Reader::Reader(HandleScope* scope, Thread* thread, View<byte> buffer)
       runtime_(thread->runtime()),
       refs_(scope, runtime_->newList()),
       start_(buffer.data()),
-      depth_(0),
       length_(buffer.length()),
       pos_(0) {
   end_ = start_ + length_;
@@ -145,19 +144,7 @@ double Marshal::Reader::readBinaryFloat() {
   return result;
 }
 
-template <typename T>
-class ScopedCounter {
- public:
-  explicit ScopedCounter(T* counter) : counter_(counter) { (*counter_)++; }
-  ~ScopedCounter() { (*counter_)--; }
-
- public:
-  T* counter_;
-  DISALLOW_COPY_AND_ASSIGN(ScopedCounter);
-};
-
 RawObject Marshal::Reader::readObject() {
-  ScopedCounter<int> counter(&depth_);
   byte code = readByte();
   byte flag = code & FLAG_REF;
   byte type = code & ~FLAG_REF;

@@ -70,7 +70,6 @@ class Marshal {
 
     const byte* start_;
     const byte* end_;
-    int depth_;
     int length_;
     int pos_;
 
