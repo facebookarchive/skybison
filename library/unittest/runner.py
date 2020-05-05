@@ -13,7 +13,6 @@ import warnings
 from . import result
 from .signals import registerResult
 
-
 __unittest = True
 
 
@@ -203,9 +202,8 @@ class TextTestRunner(object):
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
         run = result.testsRun
-        self.stream.writeln(
-            "Ran %d test%s in %.3fs" % (run, run != 1 and "s" or "", timeTaken)
-        )
+        self.stream.writeln("Ran %d test%s in %.3fs" %
+                            (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
 
         expectedFails = unexpectedSuccesses = skipped = 0

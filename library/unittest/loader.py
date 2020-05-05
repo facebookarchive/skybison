@@ -6,18 +6,18 @@
 # isort:skip_file
 """Loading unittests."""
 
-import functools
 import os
 import re
 import sys
 # TODO(T42595911): traceback module
 # import traceback
 import types
+import functools
 import warnings
-from fnmatch import fnmatch
+
+from fnmatch import fnmatch, fnmatchcase
 
 from . import case, suite, util
-
 
 __unittest = True
 
@@ -79,6 +79,7 @@ class TestLoader(object):
     """
     testMethodPrefix = 'test'
     sortTestMethodsUsing = staticmethod(util.three_way_cmp)
+    testNamePatterns = None
     suiteClass = suite.TestSuite
     _top_level_dir = None
 
@@ -232,11 +233,18 @@ class TestLoader(object):
     def getTestCaseNames(self, testCaseClass):
         """Return a sorted sequence of method names found within testCaseClass
         """
-        def isTestMethod(attrname, testCaseClass=testCaseClass,
-                         prefix=self.testMethodPrefix):
-            return attrname.startswith(prefix) and \
-                callable(getattr(testCaseClass, attrname))
-        testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
+        def shouldIncludeMethod(attrname):
+            if not attrname.startswith(self.testMethodPrefix):
+                return False
+            testFunc = getattr(testCaseClass, attrname)
+            if not callable(testFunc):
+                return False
+            fullName = f'%s.%s.%s' % (
+                testCaseClass.__module__, testCaseClass.__qualname__, attrname
+            )
+            return self.testNamePatterns is None or \
+                any(fnmatchcase(fullName, pattern) for pattern in self.testNamePatterns)
+        testFnNames = list(filter(shouldIncludeMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
@@ -380,6 +388,7 @@ class TestLoader(object):
         return sys.modules[name]
 
     def _match_path(self, path, full_path, pattern):
+        # override this method to use alternative matching strategy
         return fnmatch(path, pattern)
 
     def _find_tests(self, start_dir, pattern, namespace=False):
@@ -495,16 +504,17 @@ class TestLoader(object):
 defaultTestLoader = TestLoader()
 
 
-def _makeLoader(prefix, sortUsing, suiteClass=None):
+def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
     loader = TestLoader()
     loader.sortTestMethodsUsing = sortUsing
     loader.testMethodPrefix = prefix
+    loader.testNamePatterns = testNamePatterns
     if suiteClass:
         loader.suiteClass = suiteClass
     return loader
 
-def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp):
-    return _makeLoader(prefix, sortUsing).getTestCaseNames(testCaseClass)
+def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNamePatterns=None):
+    return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
 
 def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
               suiteClass=suite.TestSuite):

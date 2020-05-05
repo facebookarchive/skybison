@@ -6,9 +6,8 @@
 # isort:skip_file
 """Various utility functions."""
 
-from collections import OrderedDict, namedtuple
+from collections import namedtuple, Counter
 from os.path import commonprefix
-
 
 __unittest = True
 
@@ -124,7 +123,6 @@ def three_way_cmp(x, y):
     return (x > y) - (x < y)
 
 _Mismatch = namedtuple('Mismatch', 'actual expected value')
-def _Mismatch(actual, expected, value): return (actual, expected, value)
 
 def _count_diff_all_purpose(actual, expected):
     'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
@@ -161,17 +159,10 @@ def _count_diff_all_purpose(actual, expected):
         result.append(diff)
     return result
 
-def _ordered_count(iterable):
-    'Return dict of element counts, in the order they were first seen'
-    c = OrderedDict()
-    for elem in iterable:
-        c[elem] = c.get(elem, 0) + 1
-    return c
-
 def _count_diff_hashable(actual, expected):
     'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
     # elements must be hashable
-    s, t = _ordered_count(actual), _ordered_count(expected)
+    s, t = Counter(actual), Counter(expected)
     result = []
     for elem, cnt_s in s.items():
         cnt_t = t.get(elem, 0)

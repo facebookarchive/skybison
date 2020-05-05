@@ -13,7 +13,7 @@ import sys
 from functools import wraps
 
 from . import util
-
+from functools import wraps
 
 __unittest = True
 
@@ -74,7 +74,6 @@ class TestResult(object):
             if self._stderr_buffer is None:
                 self._stderr_buffer = io.StringIO()
                 self._stdout_buffer = io.StringIO()
-                pass
             sys.stdout = self._stdout_buffer
             sys.stderr = self._stderr_buffer
 
