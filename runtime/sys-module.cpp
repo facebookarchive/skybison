@@ -114,16 +114,19 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, &kSysModuleData, module);
 
   // Fill in hash_info.
-  Tuple hash_info_data(&scope, runtime->newMutableTuple(9));
-  hash_info_data.atPut(0, SmallInt::fromWord(SmallInt::kBits));
-  hash_info_data.atPut(1, SmallInt::fromWord(kArithmeticHashModulus));
-  hash_info_data.atPut(2, SmallInt::fromWord(kHashInf));
-  hash_info_data.atPut(3, SmallInt::fromWord(kHashNan));
-  hash_info_data.atPut(4, SmallInt::fromWord(kHashImag));
-  hash_info_data.atPut(5, symbols->at(ID(siphash24)));
-  hash_info_data.atPut(6, SmallInt::fromWord(64));
-  hash_info_data.atPut(7, SmallInt::fromWord(128));
-  hash_info_data.atPut(8, SmallInt::fromWord(SmallStr::kMaxLength));
+  Object hash_width(&scope, SmallInt::fromWord(SmallInt::kBits));
+  Object hash_modulus(&scope, SmallInt::fromWord(kArithmeticHashModulus));
+  Object hash_inf(&scope, SmallInt::fromWord(kHashInf));
+  Object hash_nan(&scope, SmallInt::fromWord(kHashNan));
+  Object hash_imag(&scope, SmallInt::fromWord(kHashImag));
+  Object hash_algorithm(&scope, symbols->at(ID(siphash24)));
+  Object hash_bits(&scope, SmallInt::fromWord(64));
+  Object hash_seed_bits(&scope, SmallInt::fromWord(128));
+  Object hash_cutoff(&scope, SmallInt::fromWord(SmallStr::kMaxLength));
+  Tuple hash_info_data(&scope, runtime->newTupleWithN(
+                                   9, &hash_width, &hash_modulus, &hash_inf,
+                                   &hash_nan, &hash_imag, &hash_algorithm,
+                                   &hash_bits, &hash_seed_bits, &hash_cutoff));
   Object hash_info(
       &scope, thread->invokeFunction1(ID(sys), ID(_HashInfo), hash_info_data));
   moduleAtPutById(thread, module, ID(hash_info), hash_info);
@@ -134,12 +137,15 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   Str version(&scope, runtime->newStrFromCStr(kVersionInfo));
   moduleAtPutById(thread, module, ID(version), version);
 
-  MutableTuple version_info_data(&scope, runtime->newMutableTuple(5));
-  version_info_data.atPut(0, SmallInt::fromWord(kVersionMajor));
-  version_info_data.atPut(1, SmallInt::fromWord(kVersionMinor));
-  version_info_data.atPut(2, SmallInt::fromWord(kVersionMicro));
-  version_info_data.atPut(3, runtime->newStrFromCStr(kReleaseLevel));
-  version_info_data.atPut(4, SmallInt::fromWord(kReleaseSerial));
+  Object version_major(&scope, SmallInt::fromWord(kVersionMajor));
+  Object version_minor(&scope, SmallInt::fromWord(kVersionMinor));
+  Object version_micro(&scope, SmallInt::fromWord(kVersionMicro));
+  Object version_release_level(&scope, runtime->newStrFromCStr(kReleaseLevel));
+  Object version_release_serial(&scope, SmallInt::fromWord(kReleaseSerial));
+  Tuple version_info_data(
+      &scope,
+      runtime->newTupleWithN(5, &version_major, &version_minor, &version_micro,
+                             &version_release_level, &version_release_serial));
   Object version_info(&scope, thread->invokeFunction1(ID(sys), ID(_VersionInfo),
                                                       version_info_data));
   moduleAtPutById(thread, module, ID(version_info), version_info);
@@ -251,17 +257,16 @@ RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
 RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
                               word /* nargs */) {
   HandleScope scope(thread);
-  Tuple result(&scope, thread->runtime()->newTuple(3));
   if (thread->hasCaughtException()) {
-    result.atPut(0, thread->caughtExceptionType());
-    result.atPut(1, thread->caughtExceptionValue());
-    result.atPut(2, thread->caughtExceptionTraceback());
-  } else {
-    result.atPut(0, RawNoneType::object());
-    result.atPut(1, RawNoneType::object());
-    result.atPut(2, RawNoneType::object());
+    Object type(&scope, thread->caughtExceptionType());
+    Object value(&scope, thread->caughtExceptionValue());
+    Object traceback(&scope, thread->caughtExceptionTraceback());
+    return thread->runtime()->newTupleWith3(type, value, traceback);
   }
-  return *result;
+  Object type(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Object traceback(&scope, NoneType::object());
+  return thread->runtime()->newTupleWith3(type, value, traceback);
 }
 
 RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs) {
