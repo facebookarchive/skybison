@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(python LANGUAGES C CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(NOT CMAKE_TOOLCHAIN_FILE AND NOT SKIP_TOOLCHAIN_CHECK)
   message(SEND_ERROR "
 ")
