@@ -3234,13 +3234,17 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildTuple(Thread* thread, word arg) {
-  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Tuple tuple(&scope, thread->runtime()->newTuple(arg));
+  if (arg == 0) {
+    frame->pushValue(thread->runtime()->emptyTuple());
+    return Continue::NEXT;
+  }
+  HandleScope scope(thread);
+  MutableTuple tuple(&scope, thread->runtime()->newMutableTuple(arg));
   for (word i = arg - 1; i >= 0; i--) {
     tuple.atPut(i, frame->popValue());
   }
-  frame->pushValue(*tuple);
+  frame->pushValue(tuple.becomeImmutable());
   return Continue::NEXT;
 }
 
