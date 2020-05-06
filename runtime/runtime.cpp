@@ -178,7 +178,6 @@ RawObject Runtime::newLayout(LayoutId id) {
   Layout layout(&scope, heap()->createLayout(LayoutId::kError));
   layout.setId(id);
   layout.setInObjectAttributes(empty_tuple_);
-  layout.setOverflowAttributes(empty_tuple_);
   layout.setAdditions(newList());
   layout.setDeletions(newList());
   layout.setNumInObjectAttributes(0);
@@ -219,6 +218,7 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   Layout result(&scope, newLayout(subclass_id));
 
   // Copy down all of the superclass attributes into the subclass layout
+  result.setOverflowAttributes(super_layout.overflowAttributes());
   word super_attributes_len = super_attributes.length();
   word in_object_len = super_attributes_len + attributes.length();
   if (in_object_len == 0) {
@@ -263,8 +263,11 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 
 RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                                        LayoutId superclass_id) {
-  return addBuiltinType(name, subclass_id, superclass_id,
-                        BuiltinsBase::kAttributes);
+  HandleScope scope;
+  Type type(&scope, addBuiltinType(name, subclass_id, superclass_id,
+                                   BuiltinsBase::kAttributes));
+  layoutSetTupleOverflow(Layout::cast(type.instanceLayout()));
+  return *type;
 }
 
 RawObject Runtime::addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
@@ -3238,6 +3241,9 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   Layout layout(&scope, layoutCreateSubclassWithBuiltins(
                             layout_id, base_layout_id,
                             View<BuiltinAttribute>(nullptr, 0)));
+  if (!type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
+    layoutSetTupleOverflow(*layout);
+  }
 
   Tuple mro(&scope, type.mro());
   Dict attrs(&scope, newDict());
@@ -3873,6 +3879,10 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   layoutAddEdge(thread, this, edges, name, new_layout);
 
   return *new_layout;
+}
+
+void Runtime::layoutSetTupleOverflow(RawLayout layout) {
+  layout.setOverflowAttributes(emptyTuple());
 }
 
 void Runtime::clearHandleScopes() {

@@ -779,28 +779,33 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     return Error::exception();
   }
 
+  // Add this type as a direct subclass of each of its bases; Merge flags.
+  word flags = static_cast<word>(type.flags());
+  Type base_type(&scope, *type);
+  word bases_length = bases.length();
+  for (word i = 0; i < bases_length; i++) {
+    base_type = bases.at(i);
+    flags |= base_type.flags();
+  }
+  flags &= ~Type::Flag::kIsAbstract;
+
+  if (!(flags & Type::Flag::kIsNativeProxy)) {
+    // TODO(T53800222): We may need a better signal than is/is not a builtin
+    // class.
+    flags |= Type::Flag::kHasDunderDict;
+  }
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
+
   // Initialize instance layout
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, type, builtin_base));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
-  // Add this type as a direct subclass of each of its bases; Merge flags.
-  word flags = static_cast<word>(type.flags());
-  Type base_type(&scope, *type);
-  for (word i = 0; i < bases.length(); i++) {
+  for (word i = 0; i < bases_length; i++) {
     base_type = bases.at(i);
     addSubclass(thread, base_type, type);
-    flags |= base_type.flags();
   }
-  flags &= ~Type::Flag::kIsAbstract;
-
-  if (!type.isBuiltin() && !(flags & Type::Flag::kIsNativeProxy)) {
-    // TODO(T53800222): We may need a better signal than is/is not a builtin
-    // class.
-    flags |= Type::Flag::kHasDunderDict;
-  }
-  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
 
   if (type.hasFlag(Type::Flag::kHasDunderDict) &&
       typeLookupInMroById(thread, type, ID(__dict__)).isErrorNotFound()) {
@@ -827,10 +832,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     layout = runtime->createNativeProxyLayout(thread, layout);
     layout.setDescribedType(*type);
     type.setInstanceLayout(*layout);
-  }
-
-  if (type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
-    type.sealAttributes();
   }
 
   // Special-case __init_subclass__ to be a classmethod

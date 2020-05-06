@@ -162,6 +162,7 @@ TEST_F(LayoutTest, FindAttribute) {
 TEST_F(LayoutTest, AddNewAttributes) {
   HandleScope scope(thread_);
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
+  runtime_->layoutSetTupleOverflow(*layout);
 
   // Should fail to find an attribute that isn't present
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "myattr"));
@@ -204,6 +205,7 @@ TEST_F(LayoutTest, AddNewAttributes) {
 TEST_F(LayoutTest, AddDuplicateAttributes) {
   HandleScope scope(thread_);
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
+  runtime_->layoutSetTupleOverflow(*layout);
 
   // Add an attribute
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "myattr"));
@@ -532,6 +534,7 @@ TEST_F(LayoutTest, DeleteAndAddInObjectAttribute) {
 TEST_F(LayoutTest, VerifyChildLayout) {
   HandleScope scope(thread_);
   Layout parent(&scope, testing::layoutCreateEmpty(thread_));
+  runtime_->layoutSetTupleOverflow(*parent);
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   Layout child(&scope,

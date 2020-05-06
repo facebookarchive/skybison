@@ -461,6 +461,7 @@ instance = C()
 TEST_F(HeapProfilerTest, WriteClassDumpWithOverflowAttributes) {
   HandleScope scope(thread_);
   Layout empty(&scope, testing::layoutCreateEmpty(thread_));
+  runtime_->layoutSetTupleOverflow(*empty);
 
   // Should fail to find an attribute that isn't present
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "a"));
@@ -636,6 +637,7 @@ TEST_F(HeapProfilerTest, WriteInstanceWithOverflowAttributes) {
   HandleScope scope(thread_);
   // Make a new type, C
   Layout empty(&scope, testing::layoutCreateEmpty(thread_));
+  runtime_->layoutSetTupleOverflow(*empty);
   Type type(&scope, runtime_->newType());
   type.setName(SmallStr::fromCStr("C"));
   type.setInstanceLayout(*empty);

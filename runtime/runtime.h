@@ -392,6 +392,8 @@ class Runtime {
     layout_type_transitions_ = value;
   }
 
+  void layoutSetTupleOverflow(RawLayout layout);
+
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes and/or methods.
   RawObject addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
@@ -1066,7 +1068,6 @@ class Builtins : public BuiltinsBase {
     Type new_type(&scope,
                   runtime->addBuiltinType(T::kName, T::kType, T::kSuperType,
                                           T::kAttributes));
-    new_type.sealAttributes();
     T::postInitialize(runtime, new_type);
   }
 
@@ -1090,7 +1091,6 @@ class ImmediateBuiltins : public BuiltinsBase {
     if (T::kSuperType == LayoutId::kObject) {
       new_type.setBuiltinBase(T::kType);
     }
-    new_type.sealAttributes();
     T::postInitialize(runtime, new_type);
   }
 
