@@ -103,8 +103,8 @@ RawObject moduleAtPutByCStr(Thread* thread, const Module& module,
   return moduleValueCellAtPut(thread, module, name, value);
 }
 
-bool moduleDictNextItem(const Dict& dict, word* index, Object* key_out,
-                        Object* value_out) {
+static bool moduleDictNextItem(const Dict& dict, word* index, Object* key_out,
+                               Object* value_out) {
   // Iterate through until we find a non-placeholder item.
   while (dictNextItem(dict, index, key_out, value_out)) {
     if (!ValueCell::cast(**value_out).isPlaceholder()) {

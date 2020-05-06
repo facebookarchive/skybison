@@ -60,10 +60,6 @@ RawObject moduleRaiseAttributeError(Thread* thread, const Module& module,
 RawObject moduleSetAttr(Thread* thread, const Module& module,
                         const Object& name, const Object& value);
 
-// A version of dictNextItem for module dict to filter out placeholders.
-bool moduleDictNextItem(const Dict& dict, word* index, Object* key_out,
-                        Object* value_out);
-
 // Runs the executable functions found in the PyModuleDef
 int execDef(Thread* thread, const Module& module, PyModuleDef* def);
 
