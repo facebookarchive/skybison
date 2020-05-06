@@ -943,7 +943,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
 
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {ID(__doc__), RawType::kDocOffset},
-    {ID(__flags__), RawType::kFlagsOffset, AttributeFlags::kReadOnly},
+    {ID(_type__flags), RawType::kFlagsOffset, AttributeFlags::kHidden},
     {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
     {ID(__name__), RawType::kNameOffset},
     {ID(_type__abstract_methods), RawType::kAbstractMethodsOffset,

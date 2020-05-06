@@ -155,7 +155,6 @@ class Runtime;
   V(__eq__)                                                                    \
   V(__exit__)                                                                  \
   V(__file__)                                                                  \
-  V(__flags__)                                                                 \
   V(__float__)                                                                 \
   V(__floordiv__)                                                              \
   V(__format__)                                                                \
@@ -507,6 +506,7 @@ class Runtime;
   V(_type__attributes)                                                         \
   V(_type__attributes_remaining)                                               \
   V(_type__bases)                                                              \
+  V(_type__flags)                                                              \
   V(_type__instance_layout)                                                    \
   V(_type__proxy)                                                              \
   V(_type__slots)                                                              \

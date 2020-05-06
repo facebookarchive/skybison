@@ -522,14 +522,6 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "type"));
 }
 
-TEST_F(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
-  HandleScope scope;
-  ASSERT_FALSE(
-      runFromCStr(runtime_, "result = str.__class__.__flags__").isError());
-  Object result(&scope, mainModuleAt(runtime_, "result"));
-  ASSERT_TRUE(result.isInt());
-}
-
 TEST_F(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   HandleScope scope;
   ASSERT_FALSE(
