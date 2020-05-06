@@ -332,10 +332,11 @@ void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
   __ jcc(NOT_ZERO, &not_heap_object, Assembler::kNearJump);
 
   // It is a HeapObject.
-  static_assert(Header::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
+  static_assert(RawHeader::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
                 "expected layout id in lower 32 bits");
-  __ movl(r_dst, Address(r_obj, heapObjectDisp(HeapObject::kHeaderOffset)));
-  __ shrl(r_dst, Immediate(Header::kLayoutIdOffset - Object::kSmallIntTagBits));
+  __ movl(r_dst, Address(r_obj, heapObjectDisp(RawHeapObject::kHeaderOffset)));
+  __ shrl(r_dst,
+          Immediate(RawHeader::kLayoutIdOffset - Object::kSmallIntTagBits));
   __ andl(r_dst, Immediate(Header::kLayoutIdMask << Object::kSmallIntTagBits));
   Label done;
   __ jmp(&done, Assembler::kNearJump);
@@ -437,10 +438,11 @@ void emitPushBoundMethod(EmitEnv* env, Label* slow_path, Register r_self,
   RawHeader header = Header::from(num_attrs, 0, LayoutId::kBoundMethod,
                                   ObjectFormat::kObjects);
   __ movq(Address(r_scratch, 0), Immediate(header.raw()));
-  __ leaq(r_scratch, Address(r_scratch, -BoundMethod::kHeaderOffset +
+  __ leaq(r_scratch, Address(r_scratch, -RawBoundMethod::kHeaderOffset +
                                             Object::kHeapObjectTag));
-  __ movq(Address(r_scratch, heapObjectDisp(BoundMethod::kSelfOffset)), r_self);
-  __ movq(Address(r_scratch, heapObjectDisp(BoundMethod::kFunctionOffset)),
+  __ movq(Address(r_scratch, heapObjectDisp(RawBoundMethod::kSelfOffset)),
+          r_self);
+  __ movq(Address(r_scratch, heapObjectDisp(RawBoundMethod::kFunctionOffset)),
           r_function);
   __ pushq(r_scratch);
 }
@@ -466,8 +468,9 @@ void emitLoadOverflowTuple(EmitEnv* env, Register r_dst, Register r_layout_id,
   // Load layouts_[r_layout_id]
   __ movq(r_dst, Address(r_dst, r_layout_id, TIMES_4, heapObjectDisp(0)));
   // Load layout.numInObjectAttributes
-  __ movq(r_dst,
-          Address(r_dst, heapObjectDisp(Layout::kNumInObjectAttributesOffset)));
+  __ movq(
+      r_dst,
+      Address(r_dst, heapObjectDisp(RawLayout::kNumInObjectAttributesOffset)));
   __ movq(r_dst, Address(r_obj, r_dst, TIMES_4, heapObjectDisp(0)));
 }
 
@@ -687,8 +690,10 @@ void emitHandler<LOAD_CONST>(EmitEnv* env) {
   __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffset));
   __ movq(r_scratch,
           Address(r_scratch, Frame::kFunctionOffsetFromLocals * kPointerSize));
-  __ movq(r_scratch, Address(r_scratch, heapObjectDisp(Function::kCodeOffset)));
-  __ movq(r_scratch, Address(r_scratch, heapObjectDisp(Code::kConstsOffset)));
+  __ movq(r_scratch,
+          Address(r_scratch, heapObjectDisp(RawFunction::kCodeOffset)));
+  __ movq(r_scratch,
+          Address(r_scratch, heapObjectDisp(RawCode::kConstsOffset)));
   __ movq(r_scratch, Address(r_scratch, kOpargReg, TIMES_8, heapObjectDisp(0)));
   __ pushq(r_scratch);
   emitNextOpcode(env);
@@ -820,7 +825,7 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   Register r_max_size = RAX;
 
   __ movq(r_total_vars,
-          Address(r_callable, heapObjectDisp(Function::kTotalVarsOffset)));
+          Address(r_callable, heapObjectDisp(RawFunction::kTotalVarsOffset)));
   static_assert(kPointerSize == 8, "unexpected size");
   static_assert(Object::kSmallIntTag == 0 && Object::kSmallIntTagBits == 1,
                 "unexpected tag");
@@ -828,7 +833,7 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   //    <=> r_total_vars * 4!
   __ leaq(r_initial_size, Address(r_total_vars, TIMES_4, Frame::kSize));
   __ movq(r_max_size,
-          Address(r_callable, heapObjectDisp(Function::kStacksizeOffset)));
+          Address(r_callable, heapObjectDisp(RawFunction::kStacksizeOffset)));
   // Same reasoning as above.
   __ leaq(r_max_size, Address(r_initial_size, r_max_size, TIMES_4, 0));
 
@@ -847,7 +852,7 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   // Note that the involved registers contain smallints.
   Register r_total_locals = r_total_vars;
   __ movq(r_scratch,
-          Address(r_callable, heapObjectDisp(Function::kTotalArgsOffset)));
+          Address(r_callable, heapObjectDisp(RawFunction::kTotalArgsOffset)));
   __ addq(r_total_locals, r_scratch);
   // new_frame.setLocalsOffset(sp + kSize + (total_locals - 1) * kPointerSize)
   __ leaq(r_scratch,
@@ -859,12 +864,13 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   // new_frame.setPreviousFrame(kFrameReg)
   __ movq(Address(RSP, Frame::kPreviousFrameOffset), kFrameReg);
   // kBCReg = callable.rewritteBytecode(); new_frame.setBytecode(kBCReg);
-  __ movq(kBCReg, Address(r_callable,
-                          heapObjectDisp(Function::kRewrittenBytecodeOffset)));
+  __ movq(kBCReg,
+          Address(r_callable,
+                  heapObjectDisp(RawFunction::kRewrittenBytecodeOffset)));
   __ movq(Address(RSP, Frame::kBytecodeOffset), kBCReg);
   // new_frame.setCaches(callable.caches())
   __ movq(r_scratch,
-          Address(r_callable, heapObjectDisp(Function::kCachesOffset)));
+          Address(r_callable, heapObjectDisp(RawFunction::kCachesOffset)));
   __ movq(Address(RSP, Frame::kCachesOffset), r_scratch);
   // caller_frame.setVirtualPC(kPCReg); kPCReg = 0
   emitSaveInterpreterState(env, SaveRestoreFlags::kVMPC);
@@ -902,11 +908,11 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   // restore and increment kOparg.
   __ leaq(kOpargReg, Address(r_oparg_saved, 1));
   // Insert bound_method.function() and bound_method.self().
-  __ movq(r_scratch,
-          Address(r_saved_callable, heapObjectDisp(BoundMethod::kSelfOffset)));
+  __ movq(r_scratch, Address(r_saved_callable,
+                             heapObjectDisp(RawBoundMethod::kSelfOffset)));
   __ movq(Address(RSP, kOpargReg, TIMES_8, -kPointerSize), r_scratch);
   __ movq(r_callable, Address(r_saved_callable,
-                              heapObjectDisp(BoundMethod::kFunctionOffset)));
+                              heapObjectDisp(RawBoundMethod::kFunctionOffset)));
   __ movq(Address(RSP, kOpargReg, TIMES_8, 0), r_callable);
   __ jmp(prepared, Assembler::kFarJump);
 
@@ -953,7 +959,7 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
   // Check whether callable is a function.
   static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
   __ movl(r_layout_id,
-          Address(r_callable, heapObjectDisp(HeapObject::kHeaderOffset)));
+          Address(r_callable, heapObjectDisp(RawHeapObject::kHeaderOffset)));
   __ andl(r_layout_id,
           Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
   __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kFunction)
@@ -964,10 +970,11 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
   __ bind(&prepared);
 
   // Check whether we have intrinsic code for the function.
-  static_assert(Function::kIntrinsicIdOffset + SmallInt::kSmallIntTagBits == 32,
-                "unexpected intrinsic id offset");
+  static_assert(
+      RawFunction::kIntrinsicIdOffset + SmallInt::kSmallIntTagBits == 32,
+      "unexpected intrinsic id offset");
   __ movl(r_intrinsic_id,
-          Address(r_callable, heapObjectDisp(Function::kFlagsOffset) + 4));
+          Address(r_callable, heapObjectDisp(RawFunction::kFlagsOffset) + 4));
   __ cmpl(r_intrinsic_id, Immediate(static_cast<word>(SymbolId::kInvalid)));
   Label no_intrinsic;
   __ jcc(EQUAL, &no_intrinsic, Assembler::kNearJump);
@@ -993,7 +1000,8 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
           Address(RSP, kOpargReg, TIMES_8, kPointerSize + extra_pop));
 
   // Check whether the call is interpreted.
-  __ movl(r_flags, Address(r_callable, heapObjectDisp(Function::kFlagsOffset)));
+  __ movl(r_flags,
+          Address(r_callable, heapObjectDisp(RawFunction::kFlagsOffset)));
   __ testl(r_flags, smallIntImmediate(Function::Flags::kInterpreted));
   Label call_trampoline;
   __ jcc(ZERO, &call_trampoline, Assembler::kFarJump);
@@ -1005,7 +1013,7 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
 
   // prepareDefaultArgs.
   __ movl(r_scratch,
-          Address(r_callable, heapObjectDisp(Function::kArgcountOffset)));
+          Address(r_callable, heapObjectDisp(RawFunction::kArgcountOffset)));
   __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
   __ cmpl(r_scratch, kOpargReg);
   __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
@@ -1027,7 +1035,7 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ movq(r_saved_post_call_sp, r_post_call_sp);
   __ movq(r_scratch,
-          Address(r_callable, heapObjectDisp(Function::kEntryOffset)));
+          Address(r_callable, heapObjectDisp(RawFunction::kEntryOffset)));
   __ movq(kArgRegs[0], kThreadReg);
   __ movq(kArgRegs[2], kOpargReg);
   __ movq(kArgRegs[1], kFrameReg);
@@ -1102,7 +1110,7 @@ template <>
 void emitHandler<LOAD_GLOBAL_CACHED>(EmitEnv* env) {
   __ movq(RAX, Address(kFrameReg, Frame::kCachesOffset));
   __ movq(RAX, Address(RAX, kOpargReg, TIMES_8, heapObjectDisp(0)));
-  __ pushq(Address(RAX, heapObjectDisp(ValueCell::kValueOffset)));
+  __ pushq(Address(RAX, heapObjectDisp(RawValueCell::kValueOffset)));
   emitNextOpcode(env);
 }
 

@@ -181,7 +181,8 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   dumpExtendedInstance(ss, RawInstance::cast(*func));
   std::stringstream expected;
   word raw_flags =
-      SmallInt::cast(func.instanceVariableAt(Function::kFlagsOffset)).value();
+      SmallInt::cast(func.instanceVariableAt(RawFunction::kFlagsOffset))
+          .value();
   expected << "heap object with layout " << static_cast<word>(func.layoutId())
            << R"( (<type "function">):
   (in-object) "__code__" = <code "name0">
