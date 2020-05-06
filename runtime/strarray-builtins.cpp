@@ -5,6 +5,13 @@
 
 namespace py {
 
+const BuiltinAttribute StrArrayBuiltins::kAttributes[] = {
+    {ID(_strarray__items), RawStrArray::kItemsOffset, AttributeFlags::kHidden},
+    {ID(_strarray__num_items), RawStrArray::kNumItemsOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(_strarray, __init__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

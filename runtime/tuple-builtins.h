@@ -32,6 +32,9 @@ class TupleBuiltins
 class TupleIteratorBuiltins
     : public Builtins<TupleIteratorBuiltins, ID(tuple_iterator),
                       LayoutId::kTupleIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);
 };

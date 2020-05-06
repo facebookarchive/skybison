@@ -389,12 +389,20 @@ void LargeBytesBuiltins::postInitialize(Runtime* runtime,
 const BuiltinAttribute BytesBuiltins::kAttributes[] = {
     {ID(_UserBytes__value), RawUserBytesBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 void BytesBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kBytes);
 }
+
+const BuiltinAttribute BytesIteratorBuiltins::kAttributes[] = {
+    {ID(_bytes_iterator__iterable), RawBytesIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_bytes_iterator__index), RawBytesIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
 
 RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

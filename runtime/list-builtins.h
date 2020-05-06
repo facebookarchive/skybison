@@ -52,6 +52,9 @@ class ListBuiltins : public Builtins<ListBuiltins, ID(list), LayoutId::kList> {
 class ListIteratorBuiltins
     : public Builtins<ListIteratorBuiltins, ID(list_iterator),
                       LayoutId::kListIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIteratorBuiltins);
 };

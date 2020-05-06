@@ -761,6 +761,46 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+const BuiltinAttribute DictItemIteratorBuiltins::kAttributes[] = {
+    {ID(_dict_item_iterator__iterable), RawDictItemIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_dict_item_iterator__index), RawDictItemIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
+const BuiltinAttribute DictItemsBuiltins::kAttributes[] = {
+    {ID(_dict_items__dict), RawDictItems::kDictOffset, AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
+const BuiltinAttribute DictKeyIteratorBuiltins::kAttributes[] = {
+    {ID(_dict_key_iterator__iterable), RawDictKeyIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_dict_key_iterator__index), RawDictKeyIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
+const BuiltinAttribute DictKeysBuiltins::kAttributes[] = {
+    {ID(_dict_keys__dict), RawDictKeys::kDictOffset, AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
+const BuiltinAttribute DictValueIteratorBuiltins::kAttributes[] = {
+    {ID(_dict_value_iterator__iterable), RawDictValueIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_dict_value_iterator__index), RawDictValueIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
+const BuiltinAttribute DictValuesBuiltins::kAttributes[] = {
+    {ID(_dict_values__dict), RawDictValues::kDictOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

@@ -12,6 +12,9 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
 class LongRangeIteratorBuiltins
     : public Builtins<LongRangeIteratorBuiltins, ID(longrange_iterator),
                       LayoutId::kLongRangeIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LongRangeIteratorBuiltins);
 };
@@ -28,6 +31,9 @@ class RangeBuiltins
 class RangeIteratorBuiltins
     : public Builtins<RangeIteratorBuiltins, ID(range_iterator),
                       LayoutId::kRangeIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);
 };

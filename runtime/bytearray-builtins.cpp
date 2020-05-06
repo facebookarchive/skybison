@@ -29,6 +29,14 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+const BuiltinAttribute ByteArrayIteratorBuiltins::kAttributes[] = {
+    {ID(_bytearray_iterator__iterable), RawByteArrayIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_bytearray_iterator__index), RawByteArrayIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

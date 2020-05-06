@@ -84,7 +84,7 @@ RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs) {
 const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {
     {ID(__func__), RawBoundMethod::kFunctionOffset, AttributeFlags::kReadOnly},
     {ID(__self__), RawBoundMethod::kSelfOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 }  // namespace py

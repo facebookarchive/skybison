@@ -151,7 +151,7 @@ word largeIntHash(RawLargeInt value) {
 const BuiltinAttribute IntBuiltins::kAttributes[] = {
     {ID(_UserInt__value), RawUserIntBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 RawObject convertBoolToInt(RawObject object) {

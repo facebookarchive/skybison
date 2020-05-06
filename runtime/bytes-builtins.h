@@ -93,6 +93,9 @@ class BytesBuiltins
 class BytesIteratorBuiltins
     : public Builtins<BytesIteratorBuiltins, ID(bytes_iterator),
                       LayoutId::kBytesIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesIteratorBuiltins);
 };

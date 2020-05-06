@@ -42,6 +42,11 @@ RawObject METH(classmethod, __get__)(Thread* thread, Frame* frame, word nargs) {
 
 // staticmethod
 
+const BuiltinAttribute StaticMethodBuiltins::kAttributes[] = {
+    {ID(__func__), RawStaticMethod::kFunctionOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame,
                                       word nargs) {
   HandleScope scope(thread);

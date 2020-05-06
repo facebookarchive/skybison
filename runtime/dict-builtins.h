@@ -131,12 +131,18 @@ class DictBuiltins : public Builtins<DictBuiltins, ID(dict), LayoutId::kDict> {
 class DictItemIteratorBuiltins
     : public Builtins<DictItemIteratorBuiltins, ID(dict_itemiterator),
                       LayoutId::kDictItemIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemIteratorBuiltins);
 };
 
 class DictItemsBuiltins
     : public Builtins<DictItemsBuiltins, ID(dict_items), LayoutId::kDictItems> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemsBuiltins);
 };
@@ -144,12 +150,18 @@ class DictItemsBuiltins
 class DictKeyIteratorBuiltins
     : public Builtins<DictKeyIteratorBuiltins, ID(dict_keyiterator),
                       LayoutId::kDictKeyIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
 };
 
 class DictKeysBuiltins
     : public Builtins<DictKeysBuiltins, ID(dict_keys), LayoutId::kDictKeys> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeysBuiltins);
 };
@@ -157,12 +169,18 @@ class DictKeysBuiltins
 class DictValueIteratorBuiltins
     : public Builtins<DictValueIteratorBuiltins, ID(dict_valueiterator),
                       LayoutId::kDictValueIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
 };
 
 class DictValuesBuiltins : public Builtins<DictValuesBuiltins, ID(dict_values),
                                            LayoutId::kDictValues> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValuesBuiltins);
 };

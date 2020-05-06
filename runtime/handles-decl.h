@@ -10,6 +10,7 @@ class Handle;
 // TODO(T34683229): This macro and its uses are temporary as part of an
 // in-progress migration.
 #define HANDLE_TYPES(V)                                                        \
+  V(AsyncGenerator)                                                            \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \

@@ -250,6 +250,12 @@ class Runtime;
   V(_appending)                                                                \
   V(_array__buffer)                                                            \
   V(_array__length)                                                            \
+  V(_async_generator__closed)                                                  \
+  V(_async_generator__exception_state)                                         \
+  V(_async_generator__finalizer)                                               \
+  V(_async_generator__frame)                                                   \
+  V(_async_generator__hooks_inited)                                            \
+  V(_async_generator__running)                                                 \
   V(_b2cratio)                                                                 \
   V(_base_dir)                                                                 \
   V(_bool_check)                                                               \
@@ -262,9 +268,13 @@ class Runtime;
   V(_bytearray__num_items)                                                     \
   V(_bytearray_check)                                                          \
   V(_bytearray_guard)                                                          \
+  V(_bytearray_iterator__index)                                                \
+  V(_bytearray_iterator__iterable)                                             \
   V(_bytearray_len)                                                            \
   V(_bytes_check)                                                              \
   V(_bytes_guard)                                                              \
+  V(_bytes_iterator__index)                                                    \
+  V(_bytes_iterator__iterable)                                                 \
   V(_bytes_len)                                                                \
   V(_bytes_new)                                                                \
   V(_byteslike_check)                                                          \
@@ -275,6 +285,10 @@ class Runtime;
   V(_codecs)                                                                   \
   V(_compile_flags_mask)                                                       \
   V(_complex_check)                                                            \
+  V(_coroutine__await)                                                         \
+  V(_coroutine__exception_state)                                               \
+  V(_coroutine__frame)                                                         \
+  V(_coroutine__origin)                                                        \
   V(_created)                                                                  \
   V(_ctypes)                                                                   \
   V(_decoded_chars)                                                            \
@@ -288,7 +302,16 @@ class Runtime;
   V(_dict_check)                                                               \
   V(_dict_check_exact)                                                         \
   V(_dict_guard)                                                               \
+  V(_dict_item_iterator__index)                                                \
+  V(_dict_item_iterator__iterable)                                             \
+  V(_dict_items__dict)                                                         \
+  V(_dict_key_iterator__index)                                                 \
+  V(_dict_key_iterator__iterable)                                              \
+  V(_dict_keys__dict)                                                          \
   V(_dict_len)                                                                 \
+  V(_dict_value_iterator__index)                                               \
+  V(_dict_value_iterator__iterable)                                            \
+  V(_dict_values__dict)                                                        \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
   V(_err_program_text)                                                         \
@@ -324,6 +347,9 @@ class Runtime;
   V(_function__total_args)                                                     \
   V(_function__total_vars)                                                     \
   V(_function_guard)                                                           \
+  V(_generator__exception_state)                                               \
+  V(_generator__frame)                                                         \
+  V(_generator__yield_from)                                                    \
   V(_has_read1)                                                                \
   V(_imp)                                                                      \
   V(_import_all_from)                                                          \
@@ -352,8 +378,13 @@ class Runtime;
   V(_list_check_exact)                                                         \
   V(_list_getitem)                                                             \
   V(_list_guard)                                                               \
+  V(_list_iterator__index)                                                     \
+  V(_list_iterator__iterable)                                                  \
   V(_list_len)                                                                 \
   V(_list_setitem)                                                             \
+  V(_longrange_iterator__next)                                                 \
+  V(_longrange_iterator__step)                                                 \
+  V(_longrange_iterator__stop)                                                 \
   V(_lookup_text)                                                              \
   V(_lt)                                                                       \
   V(_mappingproxy__mapping)                                                    \
@@ -402,6 +433,9 @@ class Runtime;
   V(_python_path)                                                              \
   V(_range_check)                                                              \
   V(_range_guard)                                                              \
+  V(_range_iterator__length)                                                   \
+  V(_range_iterator__next)                                                     \
+  V(_range_iterator__step)                                                     \
   V(_raw)                                                                      \
   V(_read_pos)                                                                 \
   V(_readable)                                                                 \
@@ -423,6 +457,8 @@ class Runtime;
   V(_set__num_items)                                                           \
   V(_set_check)                                                                \
   V(_set_guard)                                                                \
+  V(_set_iterator__index)                                                      \
+  V(_set_iterator__iterable)                                                   \
   V(_set_len)                                                                  \
   V(_signal)                                                                   \
   V(_slice_check)                                                              \
@@ -437,9 +473,13 @@ class Runtime;
   V(_str_check)                                                                \
   V(_str_check_exact)                                                          \
   V(_str_guard)                                                                \
+  V(_str_iterator__index)                                                      \
+  V(_str_iterator__iterable)                                                   \
   V(_str_len)                                                                  \
   V(_str_mod)                                                                  \
   V(_strarray)                                                                 \
+  V(_strarray__items)                                                          \
+  V(_strarray__num_items)                                                      \
   V(_strarray_ctor)                                                            \
   V(_string_at_addr)                                                           \
   V(_structseq_field)                                                          \
@@ -449,15 +489,18 @@ class Runtime;
   V(_telling)                                                                  \
   V(_thread)                                                                   \
   V(_traceback)                                                                \
-  V(_traceback__next)                                                          \
   V(_traceback__frame)                                                         \
   V(_traceback__lasti)                                                         \
   V(_traceback__lineno)                                                        \
+  V(_traceback__next)                                                          \
   V(_translate)                                                                \
   V(_tuple_check)                                                              \
   V(_tuple_check_exact)                                                        \
   V(_tuple_getitem)                                                            \
   V(_tuple_guard)                                                              \
+  V(_tuple_iterator__index)                                                    \
+  V(_tuple_iterator__iterable)                                                 \
+  V(_tuple_iterator__length)                                                   \
   V(_tuple_len)                                                                \
   V(_type)                                                                     \
   V(_type__abstract_methods)                                                   \

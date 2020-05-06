@@ -423,12 +423,20 @@ void LargeStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
 const BuiltinAttribute StrBuiltins::kAttributes[] = {
     {ID(_UserStr__value), RawUserStrBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 void StrBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kStr);
 }
+
+const BuiltinAttribute StrIteratorBuiltins::kAttributes[] = {
+    {ID(_str_iterator__iterable), RawStrIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_str_iterator__index), RawStrIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
 
 RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

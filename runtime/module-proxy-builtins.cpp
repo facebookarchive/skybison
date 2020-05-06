@@ -8,7 +8,7 @@ namespace py {
 
 const BuiltinAttribute ModuleProxyBuiltins::kAttributes[] = {
     {ID(__module_object__), RawModuleProxy::kModuleOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 RawObject METH(module_proxy, __contains__)(Thread* thread, Frame* frame,

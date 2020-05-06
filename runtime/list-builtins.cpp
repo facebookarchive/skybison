@@ -239,6 +239,14 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+const BuiltinAttribute ListIteratorBuiltins::kAttributes[] = {
+    {ID(_list_iterator__iterable), RawListIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_list_iterator__index), RawListIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

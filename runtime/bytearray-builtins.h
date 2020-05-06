@@ -32,6 +32,9 @@ class ByteArrayBuiltins
 class ByteArrayIteratorBuiltins
     : public Builtins<ByteArrayIteratorBuiltins, ID(bytearray_iterator),
                       LayoutId::kByteArrayIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArrayIteratorBuiltins);
 };

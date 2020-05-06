@@ -70,6 +70,16 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+const BuiltinAttribute TupleIteratorBuiltins::kAttributes[] = {
+    {ID(_tuple_iterator__iterable), RawTupleIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_tuple_iterator__index), RawTupleIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {ID(_tuple_iterator__length), RawTupleIterator::kLengthOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);

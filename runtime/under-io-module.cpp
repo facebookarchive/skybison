@@ -681,7 +681,7 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
     {ID(_closed), RawUnderIOBase::kClosedOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinAttribute IncrementalNewlineDecoderBuiltins::kAttributes[] = {
@@ -690,7 +690,7 @@ const BuiltinAttribute IncrementalNewlineDecoderBuiltins::kAttributes[] = {
     {ID(_decoder), RawIncrementalNewlineDecoder::kDecoderOffset},
     {ID(_seennl), RawIncrementalNewlineDecoder::kSeennlOffset},
     {ID(_pendingcr), RawIncrementalNewlineDecoder::kPendingcrOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 void UnderRawIOBaseBuiltins::postInitialize(Runtime*, const Type& new_type) {
@@ -704,7 +704,7 @@ void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
 
 const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
     {ID(_raw), RawUnderBufferedIOMixin::kUnderlyingOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinAttribute BufferedRandomBuiltins::kAttributes[] = {
@@ -713,7 +713,7 @@ const BuiltinAttribute BufferedRandomBuiltins::kAttributes[] = {
     {ID(_write_buf), RawBufferedRandom::kWriteBufOffset},
     {ID(_write_lock), RawBufferedRandom::kWriteLockOffset},
     {ID(buffer_size), RawBufferedRandom::kBufferSizeOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
@@ -725,7 +725,7 @@ const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
      AttributeFlags::kReadOnly},
     {ID(_buffer_num_bytes), RawBufferedReader::kBufferNumBytesOffset,
      AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinAttribute BufferedWriterBuiltins::kAttributes[] = {
@@ -733,14 +733,14 @@ const BuiltinAttribute BufferedWriterBuiltins::kAttributes[] = {
     {ID(_write_buf), RawBufferedWriter::kWriteBufOffset},
     {ID(_write_lock), RawBufferedWriter::kWriteLockOffset},
     {ID(buffer_size), RawBufferedWriter::kBufferSizeOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
     {ID(__dict__), RawBytesIO::kDictOffset},
     {ID(_buffer), RawBytesIO::kBufferOffset},
     {ID(_pos), RawBytesIO::kPosOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 void BytesIOBuiltins::postInitialize(Runtime*, const Type& new_type) {
@@ -756,7 +756,7 @@ const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
     {ID(_appending), RawFileIO::kAppendingOffset},
     {ID(_seekable), RawFileIO::kSeekableOffset},
     {ID(_closefd), RawFileIO::kCloseFdOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
@@ -769,7 +769,7 @@ const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
     {ID(_writenl), RawStringIO::kWritenlOffset},
     {ID(_writetranslate), RawStringIO::kWritetranslateOffset},
     {SymbolId::kInvalid, RawFunction::kDictOffset},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 enum NewlineFound { kLF = 0x1, kCR = 0x2, kCRLF = 0x4 };
@@ -1201,7 +1201,7 @@ const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
     {ID(_writenl), RawTextIOWrapper::kWritenlOffset},
     {ID(_writetranslate), RawTextIOWrapper::kWritetranslateOffset},
     {ID(mode), RawTextIOWrapper::kModeOffset},  // TODO(T54575279): remove
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 }  // namespace py

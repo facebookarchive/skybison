@@ -29,6 +29,9 @@ class CoroutineBuiltins
 class AsyncGeneratorBuiltins
     : public Builtins<AsyncGeneratorBuiltins, ID(async_generator),
                       LayoutId::kAsyncGenerator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AsyncGeneratorBuiltins);
 };

@@ -38,7 +38,7 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
     {ID(_UserFloat__value), RawUserFloatBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, 0},
+    {SymbolId::kSentinelId, -1},
 };
 
 RawObject METH(float, __abs__)(Thread* thread, Frame* frame, word nargs) {

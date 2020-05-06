@@ -75,6 +75,9 @@ class FrozenSetBuiltins
 class SetIteratorBuiltins
     : public Builtins<SetIteratorBuiltins, ID(set_iterator),
                       LayoutId::kSetIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);
 };

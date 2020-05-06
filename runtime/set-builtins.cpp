@@ -775,6 +775,14 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+const BuiltinAttribute SetIteratorBuiltins::kAttributes[] = {
+    {ID(_set_iterator__iterable), RawSetIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_set_iterator__index), RawSetIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject setCopy(Thread* thread, const SetBase& set) {
   word num_items = set.numItems();
   Runtime* runtime = thread->runtime();

@@ -94,10 +94,30 @@ RawObject METH(longrange_iterator, __next__)(Thread* thread, Frame* frame,
   return *next;
 }
 
+const BuiltinAttribute LongRangeIteratorBuiltins::kAttributes[] = {
+    {ID(_longrange_iterator__next), RawLongRangeIterator::kNextOffset,
+     AttributeFlags::kHidden},
+    {ID(_longrange_iterator__stop), RawLongRangeIterator::kStopOffset,
+     AttributeFlags::kHidden},
+    {ID(_longrange_iterator__step), RawLongRangeIterator::kStepOffset,
+     AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 const BuiltinAttribute RangeBuiltins::kAttributes[] = {
     {ID(start), RawRange::kStartOffset, AttributeFlags::kReadOnly},
     {ID(step), RawRange::kStepOffset, AttributeFlags::kReadOnly},
     {ID(stop), RawRange::kStopOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
+};
+
+const BuiltinAttribute RangeIteratorBuiltins::kAttributes[] = {
+    {ID(_range_iterator__next), RawRangeIterator::kNextOffset,
+     AttributeFlags::kHidden},
+    {ID(_range_iterator__step), RawRangeIterator::kStepOffset,
+     AttributeFlags::kHidden},
+    {ID(_range_iterator__length), RawRangeIterator::kLengthOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

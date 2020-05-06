@@ -137,6 +137,9 @@ class StrBuiltins : public Builtins<StrBuiltins, ID(str), LayoutId::kStr> {
 class StrIteratorBuiltins
     : public Builtins<StrIteratorBuiltins, ID(str_iterator),
                       LayoutId::kStrIterator> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
 };

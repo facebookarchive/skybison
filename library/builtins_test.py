@@ -11993,6 +11993,24 @@ class StaticMethodTests(unittest.TestCase):
         method = staticmethod(foo)
         self.assertIs(method.__isabstractmethod__, True)
 
+    def test_dunder_func_returns_function(self):
+        def foo():
+            pass
+
+        method = staticmethod(foo)
+        self.assertIs(method.__func__, foo)
+
+    def test_dunder_func_assign_raises_attribute_error(self):
+        def foo():
+            pass
+
+        def bar():
+            pass
+
+        method = staticmethod(foo)
+        with self.assertRaises(AttributeError):
+            method.__func__ = bar
+
     def test_has_dunder_call(self):
         class C:
             @staticmethod
