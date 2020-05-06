@@ -19,6 +19,9 @@ RawObject icLookupPolymorphic(RawMutableTuple caches, word index,
 RawObject icLookupMonomorphic(RawMutableTuple caches, word index,
                               LayoutId layout_id, bool* is_found);
 
+// Returns the current state of the cache at caches[index].
+ICState icCurrentState(RawTuple caches, word index);
+
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
 // `ErrorNotFound` if none was found.

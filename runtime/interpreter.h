@@ -621,10 +621,8 @@ class Interpreter {
                                  word nargs, RawObject* post_call_sp);
 
   static Continue retryLoadAttrCached(Thread* thread, word arg);
-  static Continue loadAttrUpdateCache(Thread* thread, word arg,
-                                      ICState ic_state);
-  static Continue storeAttrUpdateCache(Thread* thread, word arg,
-                                       ICState ic_state);
+  static Continue loadAttrUpdateCache(Thread* thread, word arg);
+  static Continue storeAttrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscr(Thread* thread, RawObject set_item_method);
 

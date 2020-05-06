@@ -5735,6 +5735,57 @@ c = C()
             *cache_attribute);
 }
 
+TEST_F(InterpreterTest,
+       LoadAttrInstanceOnInvalidatedCacheUpdatesCacheCorrectly) {
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self):
+    self.foo = "instance attribute"
+
+def cache_attribute(c):
+  return c.foo
+
+def invalidate_attribute(c):
+  C.foo = property(lambda e: "descriptor attribute")
+
+c = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object c(&scope, mainModuleAt(runtime_, "c"));
+  Function cache_attribute(&scope, mainModuleAt(runtime_, "cache_attribute"));
+  MutableBytes bytecode(&scope, cache_attribute.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
+  Tuple caches(&scope, cache_attribute.caches());
+  ASSERT_EQ(caches.length(), 2 * kIcPointersPerEntry);
+
+  // Load the cache.
+  ASSERT_EQ(icCurrentState(*caches, 1), ICState::kAnamorphic);
+  ASSERT_TRUE(
+      isStrEqualsCStr(Interpreter::callFunction1(
+                          thread_, thread_->currentFrame(), cache_attribute, c),
+                      "instance attribute"));
+  ASSERT_EQ(icCurrentState(*caches, 1), ICState::kMonomorphic);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE);
+
+  // Invalidate the cache.
+  Function invalidate_attribute(&scope,
+                                mainModuleAt(runtime_, "invalidate_attribute"));
+  ASSERT_TRUE(Interpreter::callFunction1(thread_, thread_->currentFrame(),
+                                         invalidate_attribute, c)
+                  .isNoneType());
+  ASSERT_EQ(icCurrentState(*caches, 1), ICState::kAnamorphic);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE);
+
+  // Load the cache again.
+  EXPECT_TRUE(
+      isStrEqualsCStr(Interpreter::callFunction1(
+                          thread_, thread_->currentFrame(), cache_attribute, c),
+                      "descriptor attribute"));
+  EXPECT_EQ(icCurrentState(*caches, 1), ICState::kMonomorphic);
+  EXPECT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE_PROPERTY);
+}
+
 TEST_F(InterpreterTest, StoreAttrCachedInsertsExecutingFunctionAsDependent) {
   EXPECT_FALSE(runFromCStr(runtime_, R"(
 class C:

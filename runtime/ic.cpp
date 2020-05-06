@@ -10,6 +10,20 @@
 
 namespace py {
 
+ICState icCurrentState(RawTuple caches, word index) {
+  word i = index * kIcPointersPerEntry;
+  RawObject key = caches.at(i + kIcEntryKeyOffset);
+  if (key.isNoneType()) {
+    return ICState::kAnamorphic;
+  }
+  if (key.isSmallInt()) {
+    return ICState::kMonomorphic;
+  }
+  DCHECK(key.isUnbound(),
+         "unbound is the expected key for a polymorphic cache");
+  return ICState::kPolymorphic;
+}
+
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
 static void insertDependencyForTypeLookupInMro(Thread* thread,

@@ -2908,8 +2908,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   return *result;
 }
 
-Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
-                                           ICState ic_state) {
+Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
   HandleScope scope(thread);
@@ -2928,6 +2927,7 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
   bool is_in_object = SmallInt::cast(*location).value() >= 0;
 
   MutableTuple caches(&scope, frame->caches());
+  ICState ic_state = icCurrentState(*caches, arg);
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
   // TODO(T59400994): Clean up when storeAttrSetLocation can return a
@@ -2979,7 +2979,7 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
 
 HANDLER_INLINE Continue Interpreter::doStoreAttrAnamorphic(Thread* thread,
                                                            word arg) {
-  return storeAttrUpdateCache(thread, arg, ICState::kAnamorphic);
+  return storeAttrUpdateCache(thread, arg);
 }
 
 // This code cleans-up a monomorphic cache and prepares it for its potential
@@ -3007,7 +3007,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstance(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
-    return storeAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+    return storeAttrUpdateCache(thread, arg);
   }
   word offset = SmallInt::cast(cached).value();
   DCHECK(offset >= 0, "unexpected offset");
@@ -3026,7 +3026,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
-    return storeAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+    return storeAttrUpdateCache(thread, arg);
   }
   word offset = SmallInt::cast(cached).value();
   DCHECK(offset < 0, "unexpected offset");
@@ -3105,7 +3105,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, layout_id, &is_found);
   if (!is_found) {
-    return storeAttrUpdateCache(thread, arg, ICState::kPolymorphic);
+    return storeAttrUpdateCache(thread, arg);
   }
   RawObject value = frame->peek(1);
   frame->dropValues(2);
@@ -3380,8 +3380,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
   return thread->runtime()->attributeAt(thread, receiver, name);
 }
 
-Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
-                                          ICState ic_state) {
+Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
@@ -3401,6 +3400,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
 
   // Cache the attribute load
   MutableTuple caches(&scope, frame->caches());
+  ICState ic_state = icCurrentState(*caches, arg);
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
   if (ic_state == ICState::kAnamorphic) {
@@ -3489,7 +3489,7 @@ HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrAnamorphic(Thread* thread,
                                                           word arg) {
-  return loadAttrUpdateCache(thread, arg, ICState::kAnamorphic);
+  return loadAttrUpdateCache(thread, arg);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
@@ -3501,7 +3501,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
-    return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+    return Interpreter::loadAttrUpdateCache(thread, arg);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
   frame->setTopValue(result);
@@ -3517,7 +3517,7 @@ Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
-    return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+    return Interpreter::loadAttrUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
   Object self(&scope, receiver);
@@ -3540,7 +3540,7 @@ NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread,
   word index = arg * kIcPointersPerEntry;
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
-  return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kAnamorphic);
+  return Interpreter::loadAttrUpdateCache(thread, arg);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
@@ -3628,7 +3628,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, layout_id, &is_found);
   if (!is_found) {
-    return loadAttrUpdateCache(thread, arg, ICState::kPolymorphic);
+    return loadAttrUpdateCache(thread, arg);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
   frame->setTopValue(result);
