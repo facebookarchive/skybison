@@ -190,15 +190,23 @@ RawObject moduleGetAttribute(Thread* thread, const Module& module,
 RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
                                         const Object& name,
                                         Object* location_out) {
-  // Note that PEP 562 adds support for data descriptors in module objects.
-  // We are targeting python 3.6 for now, so we won't worry about that.
-
   HandleScope scope(thread);
-  Object result(&scope, moduleValueCellAt(thread, module, name));
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(*module));
+  // TODO(T66579052): Skip type lookups for `module` type when `name` doesn't
+  // start with "__".
+  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  if (!type_attr.isError()) {
+    Type type_attr_type(&scope, runtime->typeOf(*type_attr));
+    if (typeIsDataDescriptor(thread, type_attr_type)) {
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            type_attr, module, type);
+    }
+  }
 
+  Object result(&scope, moduleValueCellAt(thread, module, name));
   DCHECK(result.isValueCell() || result.isErrorNotFound(),
          "result must be a value cell or not found");
-
   if (!result.isErrorNotFound() && !ValueCell::cast(*result).isPlaceholder()) {
     if (location_out != nullptr) {
       *location_out = *result;
@@ -206,10 +214,22 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
     return ValueCell::cast(*result).value();
   }
 
-  // TODO(T42983855) dispatching to objectGetAttribute like this does not make
-  // data properties on the type override module members.
+  if (!type_attr.isError()) {
+    Type type_attr_type(&scope, thread->runtime()->typeOf(*type_attr));
+    if (!typeIsNonDataDescriptor(thread, type_attr_type)) {
+      return *type_attr;
+    }
+    return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                          type_attr, module, type);
+  }
 
-  return objectGetAttribute(thread, module, name);
+  Object dunder_getattr(&scope, moduleAtById(thread, module, ID(__getattr__)));
+  if (!dunder_getattr.isErrorNotFound()) {
+    return Interpreter::callFunction1(thread, thread->currentFrame(),
+                                      dunder_getattr, name);
+  }
+
+  return Error::notFound();
 }
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,

@@ -120,6 +120,81 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
 
+    def test_load_attr_with_module_prioritizes_data_descr_than_instance_attr(self):
+        from types import ModuleType
+
+        class MyModule(ModuleType):
+            @property
+            def foo(self):
+                return "data descriptor"
+
+        m = MyModule("m")
+        m.__dict__["foo"] = "instance attribute"
+
+        self.assertEqual(m.foo, "data descriptor")
+
+    def test_load_attr_with_module_prioritizes_instance_attr_than_non_data_descr(self):
+        from types import ModuleType
+
+        class NonDataDescriptor:
+            def __get__(self, obj, obj_type):
+                return "non-data descriptor"
+
+        class MyModule(ModuleType):
+            foo = NonDataDescriptor()
+
+        m = MyModule("m")
+        m.foo = "instance attribute"
+
+        self.assertEqual(m.foo, "instance attribute")
+
+    def test_load_attr_with_module_prioritizes_non_data_descr_than_instance_getattr(
+        self,
+    ):
+        from types import ModuleType
+
+        class NonDataDescriptor:
+            def __get__(self, obj, obj_type):
+                return "non-data descriptor"
+
+        class MyModule(ModuleType):
+            foo = NonDataDescriptor()
+
+        m = MyModule("m")
+        exec('def __getattr__(name): return name + " instance.__getattr__"', m.__dict__)
+        self.assertEqual(m.foo, "non-data descriptor")
+
+    def test_load_attr_with_module_prioritizes_instance_getattr_than_type_getattr(self):
+        from types import ModuleType
+
+        class MyModule(ModuleType):
+            def __getattr__(self, name):
+                return name + " type.__getattr__"
+
+        m = MyModule("m")
+        exec('def __getattr__(name): return name + " instance.__getattr__"', m.__dict__)
+        self.assertEqual(m.foo, "foo instance.__getattr__")
+
+    def test_load_attr_with_module_returns_type_getattr(self):
+        from types import ModuleType
+
+        class MyModule(ModuleType):
+            def __getattr__(self, name):
+                return name + " type.__getattr__"
+
+        m = MyModule("m")
+        self.assertEqual(m.foo, "foo type.__getattr__")
+
+    def test_load_attr_with_module_returns_type_getattr(self):
+        from types import ModuleType
+
+        class MyModule(ModuleType):
+            pass
+
+        m = MyModule("m")
+        with self.assertRaises(AttributeError):
+            m.foo
+
     def test_load_name_calls_dunder_getitem(self):
         class C:
             def __getitem__(self, key):
