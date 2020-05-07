@@ -491,6 +491,35 @@ c = C(99)
   EXPECT_TRUE(isBytesEqualsCStr(result, "abc"));
 }
 
+TEST_F(RuntimeTest, LayoutAddAttributeReturnsExistingEdgeMatchingName) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Layout instance_layout(&scope, c.instanceLayout());
+  Str name(&scope, runtime_->newStrFromCStr("attr"));
+  AttributeInfo info;
+  Layout layout(&scope, runtime_->layoutAddAttribute(thread_, instance_layout,
+                                                     name, 0, &info));
+
+  // Using the same name returns the same layout.
+  EXPECT_EQ(*layout, runtime_->layoutAddAttribute(thread_, instance_layout,
+                                                  name, 0, &info));
+
+  // A different name creates a new layout.
+  Str different_name(&scope, runtime_->newStrFromCStr("attr_new"));
+  EXPECT_NE(*layout, runtime_->layoutAddAttribute(thread_, instance_layout,
+                                                  different_name, 0, &info));
+
+  // Using the existing layout as `name` also creates a new layout.
+  EXPECT_NE(*layout, runtime_->layoutAddAttribute(thread_, instance_layout,
+                                                  layout, 0, &info));
+}
+
 TEST_F(RuntimeListTest, ListGrowth) {
   HandleScope scope(thread_);
   List list(&scope, runtime_->newList());
