@@ -318,18 +318,18 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                                   superclass_id);
 }
 
-RawObject Runtime::newByteArray() {
+RawObject Runtime::newBytearray() {
   HandleScope scope;
-  ByteArray result(&scope, heap()->create<RawByteArray>());
+  Bytearray result(&scope, heap()->create<RawBytearray>());
   result.setItems(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
 }
 
-RawObject Runtime::newByteArrayIterator(Thread* thread,
-                                        const ByteArray& bytearray) {
+RawObject Runtime::newBytearrayIterator(Thread* thread,
+                                        const Bytearray& bytearray) {
   HandleScope scope(thread);
-  ByteArrayIterator result(&scope, heap()->create<RawByteArrayIterator>());
+  BytearrayIterator result(&scope, heap()->create<RawBytearrayIterator>());
   result.setIterable(*bytearray);
   result.setIndex(0);
   return *result;
@@ -1151,7 +1151,7 @@ RawObject Runtime::newStrArray() {
   return *result;
 }
 
-RawObject Runtime::newStrFromByteArray(const ByteArray& array) {
+RawObject Runtime::newStrFromBytearray(const Bytearray& array) {
   word length = array.numItems();
   if (length <= SmallStr::kMaxLength) {
     byte buffer[SmallStr::kMaxLength];
@@ -1818,8 +1818,8 @@ void Runtime::initializeHeapTypes() {
   // Concrete classes.
   ArrayBuiltins::initialize(this);
   AsyncGeneratorBuiltins::initialize(this);
-  ByteArrayBuiltins::initialize(this);
-  ByteArrayIteratorBuiltins::initialize(this);
+  BytearrayBuiltins::initialize(this);
+  BytearrayIteratorBuiltins::initialize(this);
   BytesIteratorBuiltins::initialize(this);
   CellBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);
@@ -2621,9 +2621,9 @@ word Runtime::newCapacity(word curr_capacity, word min_capacity) {
   return Utils::minimum(new_capacity, SmallInt::kMaxValue);
 }
 
-// ByteArray
+// Bytearray
 
-void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
+void Runtime::bytearrayEnsureCapacity(Thread* thread, const Bytearray& array,
                                       word min_capacity) {
   DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
   word curr_capacity = array.capacity();
@@ -2639,26 +2639,26 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
   array.setItems(*new_bytes);
 }
 
-void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
+void Runtime::bytearrayExtend(Thread* thread, const Bytearray& array,
                               View<byte> view) {
   word length = view.length();
   if (length == 0) return;
   word num_items = array.numItems();
   word new_length = num_items + length;
-  byteArrayEnsureCapacity(thread, array, new_length);
+  bytearrayEnsureCapacity(thread, array, new_length);
   byte* dst =
       reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
   std::memcpy(dst + num_items, view.data(), view.length());
   array.setNumItems(new_length);
 }
 
-void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
+void Runtime::bytearrayIadd(Thread* thread, const Bytearray& array,
                             const Bytes& bytes, word length) {
   DCHECK_BOUND(length, bytes.length());
   if (length == 0) return;
   word num_items = array.numItems();
   word new_length = num_items + length;
-  byteArrayEnsureCapacity(thread, array, new_length);
+  bytearrayEnsureCapacity(thread, array, new_length);
   MutableBytes::cast(array.items())
       .replaceFromWithBytes(num_items, *bytes, length);
   array.setNumItems(new_length);
@@ -2781,8 +2781,8 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
       Bytes bytes(&scope, bytesUnderlying(*item));
       result_length += bytes.length();
     } else {
-      DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
-      ByteArray array(&scope, *item);
+      DCHECK(isInstanceOfBytearray(*item), "source is not bytes-like");
+      Bytearray array(&scope, *item);
       result_length += array.numItems();
     }
   }
@@ -2811,8 +2811,8 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
       bytes = bytesUnderlying(*item);
       length = bytes.length();
     } else {
-      DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
-      ByteArray array(&scope, *item);
+      DCHECK(isInstanceOfBytearray(*item), "source is not bytes-like");
+      Bytearray array(&scope, *item);
       bytes = array.items();
       length = array.numItems();
     }

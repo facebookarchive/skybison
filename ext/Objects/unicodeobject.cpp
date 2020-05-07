@@ -784,7 +784,7 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
   if (runtime->isInstanceOfBytes(*result)) {
     return ApiHandle::newReference(thread, *result);
   }
-  if (runtime->isInstanceOfByteArray(*result)) {
+  if (runtime->isInstanceOfBytearray(*result)) {
     // Equivalent to calling PyErr_WarnFormat
     if (!ensureBuiltinModuleById(thread, ID(warnings)).isErrorException()) {
       Object category(&scope, runtime->typeAt(LayoutId::kRuntimeWarning));
@@ -799,9 +799,9 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
                               stack_level, source);
       thread->clearPendingException();
     }
-    ByteArray result_bytearray(&scope, *result);
+    Bytearray result_bytearray(&scope, *result);
     return ApiHandle::newReference(thread,
-                                   byteArrayAsBytes(thread, result_bytearray));
+                                   bytearrayAsBytes(thread, result_bytearray));
   }
   thread->raiseWithFmt(LayoutId::kTypeError,
                        "'%s' encoder returned '%T' instead of 'bytes'; "

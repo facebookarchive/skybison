@@ -20,12 +20,12 @@ static bool underBoolGuard(Frame* frame) {
 
 static bool underBytearrayCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
-      thread->runtime()->isInstanceOfByteArray(frame->popValue())));
+      thread->runtime()->isInstanceOfBytearray(frame->popValue())));
   return true;
 }
 
 static bool underBytearrayGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfByteArray(frame->topValue())) {
+  if (thread->runtime()->isInstanceOfBytearray(frame->topValue())) {
     frame->popValue();
     frame->setTopValue(NoneType::object());
     return true;
@@ -35,8 +35,8 @@ static bool underBytearrayGuard(Thread* thread, Frame* frame) {
 
 static bool underBytearrayLen(Frame* frame) {
   RawObject arg = frame->popValue();
-  if (arg.isByteArray()) {
-    frame->setTopValue(SmallInt::fromWord(ByteArray::cast(arg).numItems()));
+  if (arg.isBytearray()) {
+    frame->setTopValue(SmallInt::fromWord(Bytearray::cast(arg).numItems()));
     return true;
   }
   return false;
@@ -535,8 +535,8 @@ static bool len(Frame* frame) {
   RawObject arg = frame->topValue();
   word length;
   switch (arg.layoutId()) {
-    case LayoutId::kByteArray:
-      length = ByteArray::cast(arg).numItems();
+    case LayoutId::kBytearray:
+      length = Bytearray::cast(arg).numItems();
       break;
     case LayoutId::kDict:
       length = Dict::cast(arg).numItems();

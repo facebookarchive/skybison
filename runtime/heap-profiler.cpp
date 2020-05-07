@@ -11,7 +11,7 @@
 
 namespace py {
 
-const char HeapProfiler::kByteArrayClassName[] = "byte[]";
+const char HeapProfiler::kBytearrayClassName[] = "byte[]";
 const char HeapProfiler::kDoubleArrayClassName[] = "double[]";
 const char HeapProfiler::kInvalid[] = "<INVALID>";
 const char HeapProfiler::kOverflow[] = "<OVERFLOW>";
@@ -800,8 +800,8 @@ RawObject heapDump(Thread* thread, const char* filename) {
                                 HeapProfiler::kJavaLangString,
                                 HeapProfiler::FakeClass::kJavaLangObject);
     // byte[]
-    profiler.writeFakeClassDump(HeapProfiler::FakeClass::kByteArray,
-                                HeapProfiler::kByteArrayClassName,
+    profiler.writeFakeClassDump(HeapProfiler::FakeClass::kBytearray,
+                                HeapProfiler::kBytearrayClassName,
                                 HeapProfiler::FakeClass::kJavaLangObject);
     // double[]
     profiler.writeFakeClassDump(HeapProfiler::FakeClass::kDoubleArray,

@@ -184,8 +184,8 @@ static RawObject fillBuffer(Thread* thread, const Object& raw_file,
   if (runtime->isInstanceOfBytes(*result_obj)) {
     bytes = bytesUnderlying(*result_obj);
     length = bytes.length();
-  } else if (runtime->isInstanceOfByteArray(*result_obj)) {
-    ByteArray byte_array(&scope, *result_obj);
+  } else if (runtime->isInstanceOfBytearray(*result_obj)) {
+    Bytearray byte_array(&scope, *result_obj);
     bytes = byte_array.items();
     length = byte_array.numItems();
   } else if (runtime->isByteslike(*result_obj)) {
@@ -248,8 +248,8 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
       bytes = bytesUnderlying(*result_obj);
       chunk = *bytes;
       chunk_length = bytes.length();
-    } else if (runtime->isInstanceOfByteArray(*result_obj)) {
-      ByteArray byte_array(&scope, *result_obj);
+    } else if (runtime->isInstanceOfBytearray(*result_obj)) {
+      Bytearray byte_array(&scope, *result_obj);
       bytes = byte_array.items();
       chunk = *byte_array;
       chunk_length = byte_array.numItems();
@@ -300,7 +300,7 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
         bytes = *chunk;
         chunk_length = bytes.length();
       } else {
-        ByteArray byte_array(&scope, *chunk);
+        Bytearray byte_array(&scope, *chunk);
         bytes = byte_array.items();
         chunk_length = byte_array.numItems();
       }
@@ -477,8 +477,8 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
       } else if (runtime->isInstanceOfBytes(*readall_result)) {
         bytes = bytesUnderlying(*readall_result);
         bytes_length = bytes.length();
-      } else if (runtime->isInstanceOfByteArray(*readall_result)) {
-        ByteArray byte_array(&scope, *readall_result);
+      } else if (runtime->isInstanceOfBytearray(*readall_result)) {
+        Bytearray byte_array(&scope, *readall_result);
         bytes = byte_array.items();
         bytes_length = byte_array.numItems();
       } else if (runtime->isByteslike(*readall_result)) {

@@ -472,7 +472,7 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
                                   right_layout_id, flags_out);
 }
 
-::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
+::testing::AssertionResult isBytearrayEqualsBytes(const Object& result,
                                                   View<byte> expected) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -486,12 +486,12 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
     }
     return ::testing::AssertionFailure() << "is an " << result;
   }
-  if (!runtime->isInstanceOfByteArray(*result)) {
+  if (!runtime->isInstanceOfBytearray(*result)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *result) << "'";
   }
-  ByteArray result_array(&scope, *result);
-  Bytes result_bytes(&scope, byteArrayAsBytes(thread, result_array));
+  Bytearray result_array(&scope, *result);
+  Bytes result_bytes(&scope, bytearrayAsBytes(thread, result_array));
   Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
   if (result_bytes.compare(*expected_bytes) != 0) {
     return ::testing::AssertionFailure()
@@ -501,9 +501,9 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
   return ::testing::AssertionSuccess();
 }
 
-::testing::AssertionResult isByteArrayEqualsCStr(const Object& result,
+::testing::AssertionResult isBytearrayEqualsCStr(const Object& result,
                                                  const char* expected) {
-  return isByteArrayEqualsBytes(
+  return isBytearrayEqualsBytes(
       result, View<byte>(reinterpret_cast<const byte*>(expected),
                          static_cast<word>(std::strlen(expected))));
 }

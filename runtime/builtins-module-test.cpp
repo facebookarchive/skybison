@@ -198,7 +198,7 @@ TEST_F(BuiltinsModuleTest, BuiltinOrd) {
                             "Unsupported type in builtin 'ord'"));
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinOrdWithByteArray) {
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithBytearray) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 a_bytearray = bytearray(b'A')
 )")
@@ -209,7 +209,7 @@ a_bytearray = bytearray(b'A')
       isIntEqualsWord(runBuiltin(FUNC(builtins, ord), a_bytearray), 65));
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyByteArrayRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyBytearrayRaisesTypeError) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 a_bytearray = bytearray(b'')
 )")
@@ -221,7 +221,7 @@ a_bytearray = bytearray(b'')
                             "Builtin 'ord' expects string of length 1"));
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinOrdWithLongByteArrayRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithLongBytearrayRaisesTypeError) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 a_bytearray = bytearray(b'AB')
 )")

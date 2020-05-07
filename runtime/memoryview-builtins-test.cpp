@@ -364,13 +364,13 @@ TEST_F(MemoryViewBuiltinsTest, SetitemWithMemoryBufferWritesMemory) {
   EXPECT_EQ(memory[4], 4);
 }
 
-TEST_F(MemoryViewBuiltinsTest, SetitemWithByteArraySetsMutableBytes) {
+TEST_F(MemoryViewBuiltinsTest, SetitemWithBytearraySetsMutableBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, runtime_->typeAt(LayoutId::kMemoryView));
-  ByteArray bytearray(&scope, runtime_->newByteArray());
+  Bytearray bytearray(&scope, runtime_->newBytearray());
   const byte byte_array[] = {0xCE};
-  runtime_->byteArrayExtend(thread, bytearray, byte_array);
+  runtime_->bytearrayExtend(thread, bytearray, byte_array);
   EXPECT_EQ(bytearray.byteAt(0), 0xCE);
 
   Object result_obj(&scope,
@@ -430,13 +430,13 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
   EXPECT_TRUE(isIntEqualsWord(strides.at(0), 1));
 }
 
-TEST_F(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
+TEST_F(MemoryViewBuiltinsTest, DunderNewWithBytearrayReturnsMemoryView) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, runtime_->typeAt(LayoutId::kMemoryView));
-  ByteArray bytearray(&scope, runtime_->newByteArray());
+  Bytearray bytearray(&scope, runtime_->newBytearray());
   const byte byte_array[] = {0xce};
-  runtime_->byteArrayExtend(thread, bytearray, byte_array);
+  runtime_->bytearrayExtend(thread, bytearray, byte_array);
   Object result_obj(&scope,
                     runBuiltin(METH(memoryview, __new__), type, bytearray));
   ASSERT_TRUE(result_obj.isMemoryView());

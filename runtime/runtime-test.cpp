@@ -24,7 +24,7 @@ namespace py {
 namespace testing {
 
 using RuntimeAttributeTest = RuntimeFixture;
-using RuntimeByteArrayTest = RuntimeFixture;
+using RuntimeBytearrayTest = RuntimeFixture;
 using RuntimeBytesTest = RuntimeFixture;
 using RuntimeClassAttrTest = RuntimeFixture;
 using RuntimeFunctionAttrTest = RuntimeFixture;
@@ -279,32 +279,32 @@ TEST_F(RuntimeTest, ConcreteStrTypeBaseIsUserType) {
   EXPECT_EQ(largestr_type.builtinBase(), LayoutId::kStr);
 }
 
-TEST_F(RuntimeByteArrayTest, EnsureCapacity) {
+TEST_F(RuntimeBytearrayTest, EnsureCapacity) {
   HandleScope scope(thread_);
 
-  ByteArray array(&scope, runtime_->newByteArray());
+  Bytearray array(&scope, runtime_->newBytearray());
   word length = 1;
   word expected_capacity = 16;
-  runtime_->byteArrayEnsureCapacity(thread_, array, length);
+  runtime_->bytearrayEnsureCapacity(thread_, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
   length = 17;
   expected_capacity = 24;
-  runtime_->byteArrayEnsureCapacity(thread_, array, length);
+  runtime_->bytearrayEnsureCapacity(thread_, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
   length = 40;
   expected_capacity = 40;
-  runtime_->byteArrayEnsureCapacity(thread_, array, length);
+  runtime_->bytearrayEnsureCapacity(thread_, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 }
 
-TEST_F(RuntimeByteArrayTest, Extend) {
+TEST_F(RuntimeBytearrayTest, Extend) {
   HandleScope scope(thread_);
 
-  ByteArray array(&scope, runtime_->newByteArray());
+  Bytearray array(&scope, runtime_->newBytearray());
   View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 5);
-  runtime_->byteArrayExtend(thread_, array, hello);
+  runtime_->bytearrayExtend(thread_, array, hello);
   EXPECT_GE(array.capacity(), 5);
   EXPECT_EQ(array.numItems(), 5);
 
@@ -627,10 +627,10 @@ TEST_F(RuntimeTest, MutableBytesFromBytesWithMutableBytes) {
   EXPECT_EQ(dst.byteAt(2), 0x33);
 }
 
-TEST_F(RuntimeTest, NewByteArray) {
+TEST_F(RuntimeTest, NewBytearray) {
   HandleScope scope(thread_);
 
-  ByteArray array(&scope, runtime_->newByteArray());
+  Bytearray array(&scope, runtime_->newBytearray());
   EXPECT_EQ(array.numItems(), 0);
   EXPECT_EQ(array.capacity(), 0);
 }
@@ -785,21 +785,21 @@ TEST_F(RuntimeTest, NewStr) {
   ASSERT_EQ(s300.length(), 300);
 }
 
-TEST_F(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
+TEST_F(RuntimeTest, NewStrFromBytearrayCopiesBytearray) {
   HandleScope scope(thread_);
 
-  ByteArray array(&scope, runtime_->newByteArray());
-  Object result(&scope, runtime_->newStrFromByteArray(array));
+  Bytearray array(&scope, runtime_->newBytearray());
+  Object result(&scope, runtime_->newStrFromBytearray(array));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 
   const byte byte_array[] = {'h', 'e', 'l', 'l', 'o'};
-  runtime_->byteArrayExtend(thread_, array, byte_array);
-  result = runtime_->newStrFromByteArray(array);
+  runtime_->bytearrayExtend(thread_, array, byte_array);
+  result = runtime_->newStrFromBytearray(array);
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 
   const byte byte_array2[] = {' ', 'w', 'o', 'r', 'l', 'd'};
-  runtime_->byteArrayExtend(thread_, array, byte_array2);
-  result = runtime_->newStrFromByteArray(array);
+  runtime_->bytearrayExtend(thread_, array, byte_array2);
+  result = runtime_->newStrFromBytearray(array);
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
 }
 

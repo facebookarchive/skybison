@@ -176,13 +176,13 @@ PY_EXPORT PyObject* PyBytes_FromFormat(const char* format, ...) {
 }
 
 static void writeBytes(Thread* thread, Runtime* runtime,
-                       const ByteArray& writer, const char* buffer) {
+                       const Bytearray& writer, const char* buffer) {
   View<byte> array(reinterpret_cast<const byte*>(buffer), std::strlen(buffer));
-  runtime->byteArrayExtend(thread, writer, array);
+  runtime->bytearrayExtend(thread, writer, array);
 }
 
 static const char* writeArg(Thread* thread, Runtime* runtime,
-                            const ByteArray& writer, const char* start,
+                            const Bytearray& writer, const char* start,
                             va_list vargs) {
   DCHECK(*start == '%', "index is not at a format specifier");
   const char* current = start + 1;
@@ -234,7 +234,7 @@ static const char* writeArg(Thread* thread, Runtime* runtime,
                              "%%c format expects an integer in [0,255]");
         return nullptr;
       }
-      byteArrayAdd(thread, runtime, writer, static_cast<byte>(c));
+      bytearrayAdd(thread, runtime, writer, static_cast<byte>(c));
       return current + 1;
     }
     case 'd':
@@ -273,7 +273,7 @@ static const char* writeArg(Thread* thread, Runtime* runtime,
         len = precision;
       }
       View<byte> array(reinterpret_cast<const byte*>(arg), len);
-      runtime->byteArrayExtend(thread, writer, array);
+      runtime->bytearrayExtend(thread, writer, array);
       return current + 1;
     }
     case 'p':
@@ -290,12 +290,12 @@ static const char* writeArg(Thread* thread, Runtime* runtime,
       writeBytes(thread, runtime, writer, buffer);
       return current + 1;
     case '%':
-      byteArrayAdd(thread, runtime, writer, '%');
+      bytearrayAdd(thread, runtime, writer, '%');
       return current + 1;
     default:
       word len = static_cast<word>(std::strlen(start));
       View<byte> array(reinterpret_cast<const byte*>(start), len);
-      runtime->byteArrayExtend(thread, writer, array);
+      runtime->bytearrayExtend(thread, writer, array);
       return start + len;
   }
 }
@@ -304,8 +304,8 @@ PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  ByteArray writer(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, writer, std::strlen(format));
+  Bytearray writer(&scope, runtime->newBytearray());
+  runtime->bytearrayEnsureCapacity(thread, writer, std::strlen(format));
   while (*format) {
     if (*format == '%') {
       format = writeArg(thread, runtime, writer, format, vargs);
@@ -314,11 +314,11 @@ PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
       const char* next = format + 1;
       while (*next && *next != '%') next++;
       View<byte> view(reinterpret_cast<const byte*>(format), next - format);
-      runtime->byteArrayExtend(thread, writer, view);
+      runtime->bytearrayExtend(thread, writer, view);
       format = next;
     }
   }
-  return ApiHandle::newReference(thread, byteArrayAsBytes(thread, writer));
+  return ApiHandle::newReference(thread, bytearrayAsBytes(thread, writer));
 }
 
 PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
@@ -459,7 +459,7 @@ static bool writerIsConsistent(_PyBytesWriter* writer) {
     CHECK(!writer->heap_buffer, "heap buffer was allocated too early");
   }
   if (writer->use_bytearray) {
-    CHECK(!writer->overallocate, "ByteArray has its own overallocation scheme");
+    CHECK(!writer->overallocate, "bytearray has its own overallocation scheme");
   }
   CHECK(0 <= writer->allocated, "allocated size must be non-negative");
   CHECK_BOUND(writer->min_size, writer->allocated);
@@ -490,7 +490,7 @@ PY_EXPORT void _PyBytesWriter_Dealloc(_PyBytesWriter* writer) {
   }
 }
 
-// Converts the memory written to the writer into a Bytes or ByteArray object.
+// Converts the memory written to the writer into a bytes or bytearray object.
 // Assumes that str points to the end of the written data. Frees all memory
 // that was allocated by malloc.
 PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
@@ -503,13 +503,13 @@ PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
   if (size == 0) {
     _PyBytesWriter_Dealloc(writer);
     return ApiHandle::newReference(thread, writer->use_bytearray
-                                               ? runtime->newByteArray()
+                                               ? runtime->newBytearray()
                                                : Bytes::empty());
   }
   if (writer->use_bytearray) {
     HandleScope scope(thread);
-    ByteArray result(&scope, runtime->newByteArray());
-    runtime->byteArrayExtend(thread, result, View<byte>{start, size});
+    Bytearray result(&scope, runtime->newBytearray());
+    runtime->bytearrayExtend(thread, result, View<byte>{start, size});
     return ApiHandle::newReference(thread, *result);
   }
   PyObject* result = ApiHandle::newReference(

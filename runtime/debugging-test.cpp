@@ -400,11 +400,11 @@ bound_method = C().foo
   EXPECT_EQ(ss.str(), "<bound_method \"C.foo\", <\"C\" object>>");
 }
 
-TEST_F(DebuggingTests, FormatByteArray) {
+TEST_F(DebuggingTests, FormatBytearray) {
   ASSERT_FALSE(runFromCStr(runtime_, "ba = bytearray(b\"foo'\")").isError());
   HandleScope scope(thread_);
   Object bytearray(&scope, mainModuleAt(runtime_, "ba"));
-  ASSERT_TRUE(bytearray.isByteArray());
+  ASSERT_TRUE(bytearray.isBytearray());
   std::stringstream ss;
   ss << bytearray;
   EXPECT_EQ(ss.str(), R"(bytearray(b"foo\'"))");

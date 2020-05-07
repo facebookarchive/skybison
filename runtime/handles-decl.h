@@ -16,7 +16,7 @@ class Handle;
   V(BufferedRandom)                                                            \
   V(BufferedReader)                                                            \
   V(BufferedWriter)                                                            \
-  V(ByteArrayIterator)                                                         \
+  V(BytearrayIterator)                                                         \
   V(Bytes)                                                                     \
   V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
@@ -100,7 +100,7 @@ class Handle;
 #define SUBTYPE_HANDLE_TYPES(V)                                                \
   V(Array)                                                                     \
   V(BaseException)                                                             \
-  V(ByteArray)                                                                 \
+  V(Bytearray)                                                                 \
   V(Dict)                                                                      \
   V(FrozenSet)                                                                 \
   V(ImportError)                                                               \

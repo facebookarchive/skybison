@@ -69,8 +69,8 @@ class Runtime {
 
   RawObject newBoundMethod(const Object& function, const Object& self);
 
-  RawObject newByteArray();
-  RawObject newByteArrayIterator(Thread* thread, const ByteArray& bytearray);
+  RawObject newBytearray();
+  RawObject newBytearrayIterator(Thread* thread, const Bytearray& bytearray);
 
   RawObject newBytes(word length, byte fill);
   RawObject newBytesWithAll(View<byte> array);
@@ -223,7 +223,7 @@ class Runtime {
 
   RawObject newStrArray();
 
-  RawObject newStrFromByteArray(const ByteArray& array);
+  RawObject newStrFromBytearray(const Bytearray& array);
   RawObject newStrFromCStr(const char* c_str);
   RawObject strFromStrArray(const StrArray& array);
 
@@ -451,12 +451,12 @@ class Runtime {
 
   // Ensures that the byte array has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
-  void byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
+  void bytearrayEnsureCapacity(Thread* thread, const Bytearray& array,
                                word min_capacity);
 
   // Appends multiple bytes to the end of the array.
-  void byteArrayExtend(Thread* thread, const ByteArray& array, View<byte> view);
-  void byteArrayIadd(Thread* thread, const ByteArray& array, const Bytes& bytes,
+  void bytearrayExtend(Thread* thread, const Bytearray& array, View<byte> view);
+  void bytearrayIadd(Thread* thread, const Bytearray& array, const Bytes& bytes,
                      word length);
 
   // Returns a new Bytes containing the elements of `left` and `right`.
@@ -487,7 +487,7 @@ class Runtime {
 
   // Creates a new Bytes or MutableBytes (depending on `source`'s type)
   // containing the first `length` bytes of the `source` repeated `count` times.
-  // Specifies `length` explicitly to allow for ByteArrays with extra allocated
+  // Specifies `length` explicitly to allow for Bytearrays with extra allocated
   // space.
   RawObject bytesRepeat(Thread* thread, const Bytes& source, word length,
                         word count);
@@ -616,7 +616,7 @@ class Runtime {
   }
   DEFINE_IS_INSTANCE(Array)
   DEFINE_IS_INSTANCE(BufferedReader)
-  DEFINE_IS_INSTANCE(ByteArray)
+  DEFINE_IS_INSTANCE(Bytearray)
   DEFINE_IS_INSTANCE(Bytes)
   DEFINE_IS_INSTANCE(Complex)
   DEFINE_IS_INSTANCE(Dict)
@@ -688,7 +688,7 @@ class Runtime {
 
   inline bool isByteslike(RawObject obj) {
     // TODO(T38246066): support bytes-like objects other than bytes, bytearray
-    return isInstanceOfBytes(obj) || isInstanceOfByteArray(obj) ||
+    return isInstanceOfBytes(obj) || isInstanceOfBytearray(obj) ||
            obj.isMemoryView();
   }
 
@@ -926,7 +926,7 @@ class Runtime {
   void freeApiHandles();
 
   // The size newCapacity grows to if array is empty. Must be large enough to
-  // guarantee a LargeBytes/LargeStr for ByteArray/StrArray.
+  // guarantee a LargeBytes/LargeStr for Bytearray/StrArray.
   static const int kInitialEnsuredCapacity = kWordSize * 2;
   static_assert(kInitialEnsuredCapacity > SmallStr::kMaxLength,
                 "array must be backed by a heap type");

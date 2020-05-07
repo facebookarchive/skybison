@@ -143,8 +143,8 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(_traceback), LayoutId::kTraceback},
     {ID(async_generator), LayoutId::kAsyncGenerator},
     {ID(bool), LayoutId::kBool},
-    {ID(bytearray), LayoutId::kByteArray},
-    {ID(bytearray_iterator), LayoutId::kByteArrayIterator},
+    {ID(bytearray), LayoutId::kBytearray},
+    {ID(bytearray_iterator), LayoutId::kBytearrayIterator},
     {ID(bytes), LayoutId::kBytes},
     {ID(bytes_iterator), LayoutId::kBytesIterator},
     {ID(classmethod), LayoutId::kClassMethod},
@@ -568,8 +568,8 @@ RawObject FUNC(builtins, ord)(Thread* thread, Frame* frame, word nargs) {
         return SmallInt::fromWord(code_point);
       }
     }
-  } else if (runtime->isInstanceOfByteArray(*obj)) {
-    ByteArray byte_array(&scope, *obj);
+  } else if (runtime->isInstanceOfBytearray(*obj)) {
+    Bytearray byte_array(&scope, *obj);
     if (byte_array.numItems() == 1) {
       int32_t code_point = byte_array.byteAt(0);
       return SmallInt::fromWord(code_point);

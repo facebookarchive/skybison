@@ -331,9 +331,9 @@ TEST_F(BytesBuiltinsTest, DunderAddWithBytesLikeOtherReturnsBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object self(&scope, runtime_->newBytes(1, '1'));
-  ByteArray other(&scope, runtime_->newByteArray());
+  Bytearray other(&scope, runtime_->newBytearray());
   const byte buf[] = {'2', '3'};
-  runtime_->byteArrayExtend(thread, other, buf);
+  runtime_->bytearrayExtend(thread, other, buf);
   Object sum(&scope, runBuiltin(METH(bytes, __add__), self, other));
   EXPECT_TRUE(isBytesEqualsCStr(sum, "123"));
 }
@@ -1277,7 +1277,7 @@ TEST_F(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
-TEST_F(BytesBuiltinsTest, DunderNewWithByteArrayReturnsBytesCopy) {
+TEST_F(BytesBuiltinsTest, DunderNewWithBytearrayReturnsBytesCopy) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = bytes(bytearray(b'123'))").isError());
@@ -1549,7 +1549,7 @@ TEST_F(BytesBuiltinsTest, TranslateWithEmptyBytesReturnsEmptyBytes) {
   HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
   Object table(&scope, NoneType::object());
-  Object del(&scope, runtime_->newByteArray());
+  Object del(&scope, runtime_->newBytearray());
   Object result(&scope, runBuiltin(METH(bytes, translate), self, table, del));
   EXPECT_EQ(result, Bytes::empty());
 }

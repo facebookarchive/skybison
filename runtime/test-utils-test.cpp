@@ -10,35 +10,35 @@ namespace testing {
 
 using TestUtils = RuntimeFixture;
 
-TEST_F(TestUtils, IsByteArrayEquals) {
+TEST_F(TestUtils, IsBytearrayEquals) {
   HandleScope scope(thread_);
 
   const byte view[] = {'f', 'o', 'o'};
   Object bytes(&scope, runtime_->newBytesWithAll(view));
-  auto const type_err = isByteArrayEqualsBytes(bytes, view);
+  auto const type_err = isBytearrayEqualsBytes(bytes, view);
   EXPECT_FALSE(type_err);
   const char* type_msg = "is a 'bytes'";
   EXPECT_STREQ(type_err.message(), type_msg);
 
-  ByteArray array(&scope, runtime_->newByteArray());
-  runtime_->byteArrayExtend(thread_, array, view);
-  auto const ok = isByteArrayEqualsBytes(array, view);
+  Bytearray array(&scope, runtime_->newBytearray());
+  runtime_->bytearrayExtend(thread_, array, view);
+  auto const ok = isBytearrayEqualsBytes(array, view);
   EXPECT_TRUE(ok);
 
-  auto const not_equal = isByteArrayEqualsCStr(array, "bar");
+  auto const not_equal = isBytearrayEqualsCStr(array, "bar");
   EXPECT_FALSE(not_equal);
   const char* ne_msg = "bytearray(b'foo') is not equal to bytearray(b'bar')";
   EXPECT_STREQ(not_equal.message(), ne_msg);
 
   Object err(&scope, Error::error());
-  auto const error = isByteArrayEqualsCStr(err, "");
+  auto const error = isBytearrayEqualsCStr(err, "");
   EXPECT_FALSE(error);
   const char* error_msg = "is an Error";
   EXPECT_STREQ(error.message(), error_msg);
 
   Object result(&scope,
                 thread_->raiseWithFmt(LayoutId::kValueError, "bad things"));
-  auto const exc = isByteArrayEqualsBytes(result, view);
+  auto const exc = isBytearrayEqualsBytes(result, view);
   EXPECT_FALSE(exc);
   const char* exc_msg = "pending 'ValueError' exception";
   EXPECT_STREQ(exc.message(), exc_msg);

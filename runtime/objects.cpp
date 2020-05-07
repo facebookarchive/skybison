@@ -184,9 +184,9 @@ char* RawSmallStr::toCStr() const {
 const word RawSmallInt::kMinValue;
 const word RawSmallInt::kMaxValue;
 
-// RawByteArray
+// RawBytearray
 
-word RawByteArray::compare(RawBytes that, word that_len) {
+word RawBytearray::compare(RawBytes that, word that_len) {
   DCHECK_BOUND(that_len, that.length());
   word this_len = this->numItems();
   word len = Utils::minimum(this_len, that_len);
@@ -197,7 +197,7 @@ word RawByteArray::compare(RawBytes that, word that_len) {
   return this_len - that_len;
 }
 
-void RawByteArray::downsize(word new_length) const {
+void RawBytearray::downsize(word new_length) const {
   word original_length = numItems();
   DCHECK_BOUND(new_length, original_length);
   if (original_length == 0) return;
@@ -206,14 +206,14 @@ void RawByteArray::downsize(word new_length) const {
   setNumItems(new_length);
 }
 
-void RawByteArray::replaceFromWith(word dst_start, RawByteArray src,
+void RawBytearray::replaceFromWith(word dst_start, RawBytearray src,
                                    word count) const {
   DCHECK_BOUND(dst_start + count, numItems());
   MutableBytes::cast(items()).replaceFromWithBytes(
       dst_start, Bytes::cast(src.items()), count);
 }
 
-void RawByteArray::replaceFromWithStartAt(word dst_start, RawByteArray src,
+void RawBytearray::replaceFromWithStartAt(word dst_start, RawBytearray src,
                                           word count, word src_start) const {
   DCHECK_BOUND(dst_start + count, numItems());
   DCHECK_BOUND(src_start + count, src.numItems());

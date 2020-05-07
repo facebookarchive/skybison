@@ -114,7 +114,7 @@ class HeapProfiler {
         (2 << RawObject::kPrimaryTagBits) | RawObject::kHeapObjectTag,
     kJavaLangString =
         (3 << RawObject::kPrimaryTagBits) | RawObject::kHeapObjectTag,
-    kByteArray = (4 << RawObject::kPrimaryTagBits) | RawObject::kHeapObjectTag,
+    kBytearray = (4 << RawObject::kPrimaryTagBits) | RawObject::kHeapObjectTag,
     kDoubleArray =
         (5 << RawObject::kPrimaryTagBits) | RawObject::kHeapObjectTag,
     kLongArray = (6 << RawObject::kPrimaryTagBits) | RawObject::kHeapObjectTag,
@@ -330,7 +330,7 @@ class HeapProfiler {
   void writeCStringInUTF8(const char* c_str);
   void writeStringInUTF8(RawStr str);
 
-  static const char kByteArrayClassName[];
+  static const char kBytearrayClassName[];
   static const char kDoubleArrayClassName[];
   static const char kInvalid[];
   static const char kOverflow[];

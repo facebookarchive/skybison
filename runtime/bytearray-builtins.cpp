@@ -9,30 +9,30 @@
 
 namespace py {
 
-RawObject byteArrayAsBytes(Thread* thread, const ByteArray& array) {
+RawObject bytearrayAsBytes(Thread* thread, const Bytearray& array) {
   HandleScope scope(thread);
   Bytes bytes(&scope, array.items());
   return bytesSubseq(thread, bytes, 0, array.numItems());
 }
 
-void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value) {
+void writeByteAsHexDigits(Thread* thread, const Bytearray& array, byte value) {
   const byte* hex_digits = reinterpret_cast<const byte*>("0123456789abcdef");
   const byte bytes[] = {hex_digits[value >> 4], hex_digits[value & 0xf]};
-  thread->runtime()->byteArrayExtend(thread, array, bytes);
+  thread->runtime()->bytearrayExtend(thread, array, bytes);
 }
 
-const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
-    {ID(_bytearray__bytes), RawByteArray::kItemsOffset,
+const BuiltinAttribute BytearrayBuiltins::kAttributes[] = {
+    {ID(_bytearray__bytes), RawBytearray::kItemsOffset,
      AttributeFlags::kHidden},
-    {ID(_bytearray__num_items), RawByteArray::kNumItemsOffset,
+    {ID(_bytearray__num_items), RawBytearray::kNumItemsOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute ByteArrayIteratorBuiltins::kAttributes[] = {
-    {ID(_bytearray_iterator__iterable), RawByteArrayIterator::kIterableOffset,
+const BuiltinAttribute BytearrayIteratorBuiltins::kAttributes[] = {
+    {ID(_bytearray_iterator__iterable), RawBytearrayIterator::kIterableOffset,
      AttributeFlags::kHidden},
-    {ID(_bytearray_iterator__index), RawByteArrayIterator::kIndexOffset,
+    {ID(_bytearray_iterator__index), RawBytearrayIterator::kIndexOffset,
      AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
@@ -42,13 +42,13 @@ RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
   Object other_obj(&scope, args.get(1));
   word other_len;
-  if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray array(&scope, *other_obj);
+  if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray array(&scope, *other_obj);
     other_len = array.numItems();
     other_obj = array.items();
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
@@ -61,15 +61,15 @@ RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {
         "can only concatenate bytearray or bytes to bytearray");
   }
 
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.items());
   word self_len = self.numItems();
   Bytes other_bytes(&scope, *other_obj);
 
-  ByteArray result(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, result, self_len + other_len);
-  runtime->byteArrayIadd(thread, result, self_bytes, self_len);
-  runtime->byteArrayIadd(thread, result, other_bytes, other_len);
+  Bytearray result(&scope, runtime->newBytearray());
+  runtime->bytearrayEnsureCapacity(thread, result, self_len + other_len);
+  runtime->bytearrayIadd(thread, result, self_bytes, self_len);
+  runtime->bytearrayIadd(thread, result, other_bytes, other_len);
   return *result;
 }
 
@@ -78,17 +78,17 @@ RawObject METH(bytearray, __eq__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
-  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
+  } else if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
     Bytes other_bytes(&scope, other.items());
     comparison = self.compare(*other_bytes, other.numItems());
   } else {
@@ -103,17 +103,17 @@ RawObject METH(bytearray, __ge__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
-  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
+  } else if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
     Bytes other_bytes(&scope, other.items());
     comparison = self.compare(*other_bytes, other.numItems());
   } else {
@@ -128,17 +128,17 @@ RawObject METH(bytearray, __gt__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
-  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
+  } else if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
     Bytes other_bytes(&scope, other.items());
     comparison = self.compare(*other_bytes, other.numItems());
   } else {
@@ -153,14 +153,14 @@ RawObject METH(bytearray, __iadd__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word other_len;
-  if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray array(&scope, *other_obj);
+  if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray array(&scope, *other_obj);
     other_len = array.numItems();
     other_obj = array.items();
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
@@ -173,7 +173,7 @@ RawObject METH(bytearray, __iadd__)(Thread* thread, Frame* frame, word nargs) {
         "can only concatenate bytearray or bytes to bytearray");
   }
   Bytes other(&scope, *other_obj);
-  runtime->byteArrayIadd(thread, self, other, other_len);
+  runtime->bytearrayIadd(thread, self, other, other_len);
   return *self;
 }
 
@@ -182,10 +182,10 @@ RawObject METH(bytearray, __imul__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
@@ -212,7 +212,7 @@ RawObject METH(bytearray, __imul__)(Thread* thread, Frame* frame, word nargs) {
   if (new_length <= self.capacity()) {
     // fits into existing backing LargeBytes - repeat in place
     for (word i = 1; i < count; i++) {
-      runtime->byteArrayIadd(thread, self, source, length);
+      runtime->bytearrayIadd(thread, self, source, length);
     }
     return *self;
   }
@@ -228,11 +228,11 @@ RawObject METH(bytearray, __iter__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
-  return runtime->newByteArrayIterator(thread, self);
+  Bytearray self(&scope, *self_obj);
+  return runtime->newBytearrayIterator(thread, self);
 }
 
 RawObject METH(bytearray, __le__)(Thread* thread, Frame* frame, word nargs) {
@@ -240,17 +240,17 @@ RawObject METH(bytearray, __le__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
-  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
+  } else if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
     Bytes other_bytes(&scope, other.items());
     comparison = self.compare(*other_bytes, other.numItems());
   } else {
@@ -264,10 +264,10 @@ RawObject METH(bytearray, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfByteArray(*self_obj)) {
+  if (!thread->runtime()->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   return SmallInt::fromWord(self.numItems());
 }
 
@@ -276,17 +276,17 @@ RawObject METH(bytearray, __lt__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
-  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
+  } else if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
     Bytes other_bytes(&scope, other.items());
     comparison = self.compare(*other_bytes, other.numItems());
   } else {
@@ -301,10 +301,10 @@ RawObject METH(bytearray, __mul__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
@@ -316,7 +316,7 @@ RawObject METH(bytearray, __mul__)(Thread* thread, Frame* frame, word nargs) {
   }
   word length = self.numItems();
   if (count <= 0 || length == 0) {
-    return runtime->newByteArray();
+    return runtime->newBytearray();
   }
   word new_length;
   if (__builtin_mul_overflow(length, count, &new_length) ||
@@ -324,11 +324,11 @@ RawObject METH(bytearray, __mul__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseMemoryError();
   }
   Bytes source(&scope, self.items());
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   Bytes repeated(&scope, runtime->bytesRepeat(thread, source, length, count));
   DCHECK(repeated.length() == new_length, "unexpected result length");
   if (repeated.isSmallBytes()) {
-    runtime->byteArrayIadd(thread, result, repeated, new_length);
+    runtime->bytearrayIadd(thread, result, repeated, new_length);
   } else {
     result.setItems(*repeated);
     result.setNumItems(new_length);
@@ -341,17 +341,17 @@ RawObject METH(bytearray, __ne__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
-  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
+  } else if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
     Bytes other_bytes(&scope, other.items());
     comparison = self.compare(*other_bytes, other.numItems());
   } else {
@@ -370,18 +370,18 @@ RawObject METH(bytearray, __new__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   Type type(&scope, *type_obj);
-  if (type.builtinBase() != LayoutId::kByteArray) {
+  if (type.builtinBase() != LayoutId::kBytearray) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "not a subtype of bytearray");
   }
   Layout layout(&scope, type.instanceLayout());
-  ByteArray result(&scope, runtime->newInstance(layout));
+  Bytearray result(&scope, runtime->newInstance(layout));
   result.setItems(runtime->emptyMutableBytes());
   result.setNumItems(0);
   return *result;
 }
 
-RawObject byteArrayRepr(Thread* thread, const ByteArray& array) {
+RawObject bytearrayRepr(Thread* thread, const Bytearray& array) {
   word length = array.numItems();
   word affix_length = 14;  // strlen("bytearray(b'')") == 14
   if (length > (kMaxWord - affix_length) / 4) {
@@ -405,38 +405,38 @@ RawObject byteArrayRepr(Thread* thread, const ByteArray& array) {
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  ByteArray buffer(&scope, runtime->newByteArray());
+  Bytearray buffer(&scope, runtime->newBytearray());
   // Each byte will be mapped to one or more ASCII characters.
-  runtime->byteArrayEnsureCapacity(thread, buffer, length + affix_length);
+  runtime->bytearrayEnsureCapacity(thread, buffer, length + affix_length);
   const byte bytearray_str[] = {'b', 'y', 't', 'e', 'a', 'r',
                                 'r', 'a', 'y', '(', 'b', quote};
-  runtime->byteArrayExtend(thread, buffer, bytearray_str);
+  runtime->bytearrayExtend(thread, buffer, bytearray_str);
   for (word i = 0; i < length; i++) {
     byte current = array.byteAt(i);
     if (current == '\'' || current == '\\') {
       const byte bytes[] = {'\\', current};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      runtime->bytearrayExtend(thread, buffer, bytes);
     } else if (current == '\t') {
       const byte bytes[] = {'\\', 't'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      runtime->bytearrayExtend(thread, buffer, bytes);
     } else if (current == '\n') {
       const byte bytes[] = {'\\', 'n'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      runtime->bytearrayExtend(thread, buffer, bytes);
     } else if (current == '\r') {
       const byte bytes[] = {'\\', 'r'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      runtime->bytearrayExtend(thread, buffer, bytes);
     } else if (current < ' ' || current >= 0x7f) {
       const byte bytes[] = {'\\', 'x'};
-      runtime->byteArrayExtend(thread, buffer, bytes);
+      runtime->bytearrayExtend(thread, buffer, bytes);
       writeByteAsHexDigits(thread, buffer, current);
     } else {
-      byteArrayAdd(thread, runtime, buffer, current);
+      bytearrayAdd(thread, runtime, buffer, current);
     }
   }
 
   const byte quote_with_paren[] = {quote, ')'};
-  runtime->byteArrayExtend(thread, buffer, quote_with_paren);
-  return runtime->newStrFromByteArray(buffer);
+  runtime->bytearrayExtend(thread, buffer, quote_with_paren);
+  return runtime->newStrFromBytearray(buffer);
 }
 
 RawObject METH(bytearray, __repr__)(Thread* thread, Frame* frame, word nargs) {
@@ -444,21 +444,21 @@ RawObject METH(bytearray, __repr__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
-  return byteArrayRepr(thread, self);
+  Bytearray self(&scope, *self_obj);
+  return bytearrayRepr(thread, self);
 }
 
 RawObject METH(bytearray, hex)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfByteArray(*obj)) {
+  if (!thread->runtime()->isInstanceOfBytearray(*obj)) {
     return thread->raiseRequiresType(obj, ID(bytearray));
   }
-  ByteArray self(&scope, *obj);
+  Bytearray self(&scope, *obj);
   Bytes bytes(&scope, self.items());
   return bytesHex(thread, bytes, self.numItems());
 }
@@ -468,10 +468,10 @@ RawObject METH(bytearray, lower)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes items(&scope, self.items());
   word num_items = self.numItems();
   MutableBytes lowered(&scope,
@@ -479,7 +479,7 @@ RawObject METH(bytearray, lower)(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < num_items; i++) {
     lowered.byteAtPut(i, ASCII::toLower(items.byteAt(i)));
   }
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   result.setItems(*lowered);
   result.setNumItems(num_items);
   return *result;
@@ -490,10 +490,10 @@ RawObject METH(bytearray, lstrip)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.items());
   Object chars_obj(&scope, args.get(1));
   Bytes result_bytes(&scope, Bytes::empty());
@@ -503,8 +503,8 @@ RawObject METH(bytearray, lstrip)(Thread* thread, Frame* frame, word nargs) {
     Bytes chars(&scope, bytesUnderlying(*chars_obj));
     result_bytes = bytesStripLeft(thread, self_bytes, self.numItems(), chars,
                                   chars.length());
-  } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
-    ByteArray chars(&scope, *chars_obj);
+  } else if (runtime->isInstanceOfBytearray(*chars_obj)) {
+    Bytearray chars(&scope, *chars_obj);
     Bytes chars_bytes(&scope, chars.items());
     result_bytes = bytesStripLeft(thread, self_bytes, self.numItems(),
                                   chars_bytes, chars.numItems());
@@ -514,8 +514,8 @@ RawObject METH(bytearray, lstrip)(Thread* thread, Frame* frame, word nargs) {
                                 "a bytes-like object is required, not '%T'",
                                 &chars_obj);
   }
-  ByteArray result(&scope, runtime->newByteArray());
-  runtime->byteArrayIadd(thread, result, result_bytes, result_bytes.length());
+  Bytearray result(&scope, runtime->newBytearray());
+  runtime->bytearrayIadd(thread, result, result_bytes, result_bytes.length());
   return *result;
 }
 
@@ -524,10 +524,10 @@ RawObject METH(bytearray, rstrip)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.items());
   Object chars_obj(&scope, args.get(1));
   Bytes result_bytes(&scope, Bytes::empty());
@@ -537,8 +537,8 @@ RawObject METH(bytearray, rstrip)(Thread* thread, Frame* frame, word nargs) {
     Bytes chars(&scope, bytesUnderlying(*chars_obj));
     result_bytes = bytesStripRight(thread, self_bytes, self.numItems(), chars,
                                    chars.length());
-  } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
-    ByteArray chars(&scope, *chars_obj);
+  } else if (runtime->isInstanceOfBytearray(*chars_obj)) {
+    Bytearray chars(&scope, *chars_obj);
     Bytes chars_bytes(&scope, chars.items());
     result_bytes = bytesStripRight(thread, self_bytes, self.numItems(),
                                    chars_bytes, chars.numItems());
@@ -548,8 +548,8 @@ RawObject METH(bytearray, rstrip)(Thread* thread, Frame* frame, word nargs) {
                                 "a bytes-like object is required, not '%T'",
                                 &chars_obj);
   }
-  ByteArray result(&scope, runtime->newByteArray());
-  runtime->byteArrayIadd(thread, result, result_bytes, result_bytes.length());
+  Bytearray result(&scope, runtime->newBytearray());
+  runtime->bytearrayIadd(thread, result, result_bytes, result_bytes.length());
   return *result;
 }
 
@@ -558,10 +558,10 @@ RawObject METH(bytearray, strip)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.items());
   Object chars_obj(&scope, args.get(1));
   Bytes result_bytes(&scope, Bytes::empty());
@@ -571,8 +571,8 @@ RawObject METH(bytearray, strip)(Thread* thread, Frame* frame, word nargs) {
     Bytes chars(&scope, bytesUnderlying(*chars_obj));
     result_bytes =
         bytesStrip(thread, self_bytes, self.numItems(), chars, chars.length());
-  } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
-    ByteArray chars(&scope, *chars_obj);
+  } else if (runtime->isInstanceOfBytearray(*chars_obj)) {
+    Bytearray chars(&scope, *chars_obj);
     Bytes chars_bytes(&scope, chars.items());
     result_bytes = bytesStrip(thread, self_bytes, self.numItems(), chars_bytes,
                               chars.numItems());
@@ -582,8 +582,8 @@ RawObject METH(bytearray, strip)(Thread* thread, Frame* frame, word nargs) {
                                 "a bytes-like object is required, not '%T'",
                                 &chars_obj);
   }
-  ByteArray result(&scope, runtime->newByteArray());
-  runtime->byteArrayIadd(thread, result, result_bytes, result_bytes.length());
+  Bytearray result(&scope, runtime->newBytearray());
+  runtime->bytearrayIadd(thread, result, result_bytes, result_bytes.length());
   return *result;
 }
 
@@ -592,10 +592,10 @@ RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.items());
   Object table_obj(&scope, args.get(1));
   word table_length;
@@ -606,8 +606,8 @@ RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
     Bytes bytes(&scope, bytesUnderlying(*table_obj));
     table_length = bytes.length();
     table_obj = *bytes;
-  } else if (runtime->isInstanceOfByteArray(*table_obj)) {
-    ByteArray array(&scope, *table_obj);
+  } else if (runtime->isInstanceOfBytearray(*table_obj)) {
+    Bytearray array(&scope, *table_obj);
     table_length = array.numItems();
     table_obj = array.items();
   } else {
@@ -629,8 +629,8 @@ RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
     translated =
         runtime->bytesTranslate(thread, self_bytes, self.numItems(), table,
                                 table_length, bytes, bytes.length());
-  } else if (runtime->isInstanceOfByteArray(*del)) {
-    ByteArray array(&scope, *del);
+  } else if (runtime->isInstanceOfBytearray(*del)) {
+    Bytearray array(&scope, *del);
     Bytes bytes(&scope, array.items());
     translated =
         runtime->bytesTranslate(thread, self_bytes, self.numItems(), table,
@@ -641,9 +641,9 @@ RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
                                 "a bytes-like object is required, not '%T'",
                                 &del);
   }
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   if (translated.isSmallBytes()) {
-    runtime->byteArrayIadd(thread, result, translated, translated.length());
+    runtime->bytearrayIadd(thread, result, translated, translated.length());
   } else {
     result.setItems(*translated);
     result.setNumItems(translated.length());
@@ -656,10 +656,10 @@ RawObject METH(bytearray, upper)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes items(&scope, self.items());
   word num_items = self.numItems();
   MutableBytes uppered(&scope,
@@ -667,7 +667,7 @@ RawObject METH(bytearray, upper)(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < num_items; i++) {
     uppered.byteAtPut(i, ASCII::toUpper(items.byteAt(i)));
   }
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   result.setItems(*uppered);
   result.setNumItems(num_items);
   return *result;
@@ -678,7 +678,7 @@ RawObject METH(bytearray_iterator, __iter__)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self.isByteArrayIterator()) {
+  if (!self.isBytearrayIterator()) {
     return thread->raiseRequiresType(self, ID(bytearray_iterator));
   }
   return *self;
@@ -689,11 +689,11 @@ RawObject METH(bytearray_iterator, __next__)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isByteArrayIterator()) {
+  if (!self_obj.isBytearrayIterator()) {
     return thread->raiseRequiresType(self_obj, ID(bytearray_iterator));
   }
-  ByteArrayIterator self(&scope, *self_obj);
-  ByteArray bytearray(&scope, self.iterable());
+  BytearrayIterator self(&scope, *self_obj);
+  Bytearray bytearray(&scope, self.iterable());
   if (self.index() >= bytearray.numItems()) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
@@ -707,11 +707,11 @@ RawObject METH(bytearray_iterator, __length_hint__)(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isByteArrayIterator()) {
+  if (!self_obj.isBytearrayIterator()) {
     return thread->raiseRequiresType(self_obj, ID(bytearray_iterator));
   }
-  ByteArrayIterator self(&scope, *self_obj);
-  ByteArray bytearray(&scope, self.iterable());
+  BytearrayIterator self(&scope, *self_obj);
+  Bytearray bytearray(&scope, self.iterable());
   return SmallInt::fromWord(bytearray.numItems() - self.index());
 }
 

@@ -129,8 +129,8 @@ RawObject FUNC(_ctypes, _CharArray_value_to_bytes)(Thread* thread, Frame* frame,
     return thread->runtime()->newBytesWithAll(
         {cptr, first_nul == -1 ? length : first_nul});
   }
-  CHECK(value.isByteArray(), "unexpected ctypes.Array._value type");
-  Bytes value_bytes(&scope, ByteArray::cast(*value).items());
+  CHECK(value.isBytearray(), "unexpected ctypes.Array._value type");
+  Bytes value_bytes(&scope, Bytearray::cast(*value).items());
   word first_nul = value_bytes.findByte(0, '\0', length);
   return bytesSubseq(thread, value_bytes, 0,
                      first_nul == -1 ? length : first_nul);

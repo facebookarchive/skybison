@@ -1887,9 +1887,9 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
       iterator = runtime->newStrIterator(str);
       break;
     }
-    case LayoutId::kByteArray: {
-      ByteArray byte_array(&scope, *iterable);
-      iterator = runtime->newByteArrayIterator(thread, byte_array);
+    case LayoutId::kBytearray: {
+      Bytearray byte_array(&scope, *iterable);
+      iterator = runtime->newBytearrayIterator(thread, byte_array);
       break;
     }
     case LayoutId::kBytes: {

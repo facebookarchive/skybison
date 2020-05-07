@@ -315,11 +315,11 @@ std::ostream& operator<<(std::ostream& os, RawBoundMethod value) {
             << ", " << value.self() << '>';
 }
 
-std::ostream& operator<<(std::ostream& os, RawByteArray value) {
+std::ostream& operator<<(std::ostream& os, RawBytearray value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  ByteArray self(&scope, value);
-  Object repr_obj(&scope, byteArrayRepr(thread, self));
+  Bytearray self(&scope, value);
+  Object repr_obj(&scope, bytearrayRepr(thread, self));
   if (repr_obj.isError()) return os << "<ERROR: An exception occurred.>";
   Str repr(&scope, *repr_obj);
   unique_c_ptr<char[]> data(repr.toCStr());
@@ -624,8 +624,8 @@ static bool dumpSimple(std::ostream& os, RawObject value) {
     case LayoutId::kBoundMethod:
       os << BoundMethod::cast(value);
       return true;
-    case LayoutId::kByteArray:
-      os << ByteArray::cast(value);
+    case LayoutId::kBytearray:
+      os << Bytearray::cast(value);
       return true;
     case LayoutId::kCode:
       os << Code::cast(value);

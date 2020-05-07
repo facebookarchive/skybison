@@ -204,10 +204,10 @@ RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Object item_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*item_obj)) {
     return Unbound::object();
@@ -217,7 +217,7 @@ RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "byte must be in range(0, 256)");
   }
-  byteArrayAdd(thread, runtime, self, item_opt.value);
+  bytearrayAdd(thread, runtime, self, item_opt.value);
   return NoneType::object();
 }
 
@@ -225,7 +225,7 @@ RawObject FUNC(_builtins, _bytearray_clear)(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
   self.downsize(0);
   return NoneType::object();
 }
@@ -236,7 +236,7 @@ RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
   Object key_obj(&scope, args.get(1));
@@ -248,7 +248,7 @@ RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "byte must be in range(0, 256)");
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   MutableBytes bytes(&scope, self.items());
   return Bool::fromBool(bytes.findByte(key_opt.value, 0, self.numItems()) >= 0);
 }
@@ -259,13 +259,13 @@ RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   Bytes src(&scope, self.items());
   MutableBytes dst(&scope, runtime->mutableBytesFromBytes(thread, src));
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   result.setItems(*dst);
   result.setNumItems(self.numItems());
   return *result;
@@ -274,13 +274,13 @@ RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Frame* frame,
 RawObject FUNC(_builtins, _bytearray_check)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
-  return Bool::fromBool(thread->runtime()->isInstanceOfByteArray(args.get(0)));
+  return Bool::fromBool(thread->runtime()->isInstanceOfBytearray(args.get(0)));
 }
 
 RawObject FUNC(_builtins, _bytearray_guard)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
-  if (thread->runtime()->isInstanceOfByteArray(args.get(0))) {
+  if (thread->runtime()->isInstanceOfBytearray(args.get(0))) {
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
@@ -290,7 +290,7 @@ RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
   word length = self.numItems();
   word idx = intUnderlying(args.get(1)).asWordSaturated();
   if (idx < 0) {
@@ -317,7 +317,7 @@ RawObject FUNC(_builtins, _bytearray_delslice)(Thread* thread, Frame* frame,
   // with None.
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
 
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
@@ -372,12 +372,12 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
-    ByteArray self(&scope, *self_obj);
+    Bytearray self(&scope, *self_obj);
     word index = intUnderlying(*key).asWordSaturated();
     if (!SmallInt::isValid(index)) {
       return thread->raiseWithFmt(LayoutId::kIndexError,
@@ -400,13 +400,13 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
     return Unbound::object();
   }
 
-  ByteArray self(&scope, *self_obj);
+  Bytearray self(&scope, *self_obj);
   word result_len = Slice::adjustIndices(self.numItems(), &start, &stop, 1);
   if (result_len == 0) {
-    return runtime->newByteArray();
+    return runtime->newBytearray();
   }
 
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   MutableBytes result_bytes(&scope,
                             runtime->newMutableBytesUninitialized(result_len));
   MutableBytes src_bytes(&scope, self.items());
@@ -420,14 +420,14 @@ RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Frame* frame,
                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
   word step = SmallInt::cast(args.get(3)).value();
   word len = Slice::length(start, stop, step);
   Runtime* runtime = thread->runtime();
-  ByteArray result(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, result, len);
+  Bytearray result(&scope, runtime->newBytearray());
+  runtime->bytearrayEnsureCapacity(thread, result, len);
   result.setNumItems(len);
   for (word i = 0, idx = start; i < len; i++, idx += step) {
     result.byteAtPut(i, self.byteAt(idx));
@@ -439,7 +439,7 @@ RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Frame* frame,
                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
   word index = intUnderlying(args.get(1)).asWordSaturated();
   if (!SmallInt::isValid(index)) {
     Object key_obj(&scope, args.get(1));
@@ -467,7 +467,7 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
   word step = SmallInt::cast(args.get(3)).value();
@@ -480,8 +480,8 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
     Bytes src(&scope, bytesUnderlying(*src_obj));
     src_bytes = *src;
     src_length = src.length();
-  } else if (runtime->isInstanceOfByteArray(*src_obj)) {
-    ByteArray src(&scope, *src_obj);
+  } else if (runtime->isInstanceOfBytearray(*src_obj)) {
+    Bytearray src(&scope, *src_obj);
     src_bytes = src.items();
     src_length = src.numItems();
   } else {
@@ -510,7 +510,7 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
       // Assignment grows the length of the bytearray. Ensure there is enough
       // free space in the underlying tuple for the new bytes and move stuff
       // out of the way.
-      thread->runtime()->byteArrayEnsureCapacity(thread, self, new_length);
+      thread->runtime()->bytearrayEnsureCapacity(thread, self, new_length);
       // Make the free space part of the bytearray. Must happen before shifting
       // so we can index into the free space.
       self.setNumItems(new_length);
@@ -635,10 +635,10 @@ RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object sep_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*sep_obj)) {
+  if (!runtime->isInstanceOfBytearray(*sep_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
-  ByteArray sep(&scope, args.get(0));
+  Bytearray sep(&scope, args.get(0));
   Bytes sep_bytes(&scope, sep.items());
   Object iterable(&scope, args.get(1));
   Tuple tuple(&scope, runtime->emptyTuple());
@@ -657,7 +657,7 @@ RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
   for (word i = 0; i < length; i++) {
     elt = tuple.at(i);
     if (!runtime->isInstanceOfBytes(*elt) &&
-        !runtime->isInstanceOfByteArray(*elt)) {
+        !runtime->isInstanceOfBytearray(*elt)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "sequence item %w: expected a bytes-like object, '%T' found", i,
@@ -666,7 +666,7 @@ RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
   }
   Bytes joined(&scope, runtime->bytesJoin(thread, sep_bytes, sep.numItems(),
                                           tuple, length));
-  ByteArray result(&scope, runtime->newByteArray());
+  Bytearray result(&scope, runtime->newBytearray());
   result.setItems(*joined);
   result.setNumItems(joined.length());
   return *result;
@@ -676,7 +676,7 @@ RawObject FUNC(_builtins, _bytearray_len)(Thread* thread, Frame* frame,
                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ByteArray self(&scope, args.get(0));
+  Bytearray self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
@@ -704,9 +704,9 @@ RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Frame* frame,
   if (runtime->isInstanceOfBytes(*src)) {
     return *src;
   }
-  if (runtime->isInstanceOfByteArray(*src)) {
-    ByteArray source(&scope, *src);
-    return byteArrayAsBytes(thread, source);
+  if (runtime->isInstanceOfBytearray(*src)) {
+    Bytearray source(&scope, *src);
+    return bytearrayAsBytes(thread, source);
   }
   if (src.isList()) {
     List source(&scope, *src);
@@ -802,7 +802,7 @@ RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Frame* frame,
   for (word i = 0; i < length; i++) {
     elt = tuple.at(i);
     if (!runtime->isInstanceOfBytes(*elt) &&
-        !runtime->isInstanceOfByteArray(*elt)) {
+        !runtime->isInstanceOfBytearray(*elt)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "sequence item %w: expected a bytes-like object, %T found", i, &elt);
@@ -828,8 +828,8 @@ RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
     Bytes bytes(&scope, bytesUnderlying(*from_obj));
     length = bytes.length();
     from_obj = *bytes;
-  } else if (runtime->isInstanceOfByteArray(*from_obj)) {
-    ByteArray array(&scope, *from_obj);
+  } else if (runtime->isInstanceOfBytearray(*from_obj)) {
+    Bytearray array(&scope, *from_obj);
     length = array.numItems();
     from_obj = array.items();
   } else {
@@ -839,8 +839,8 @@ RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
     Bytes bytes(&scope, bytesUnderlying(*to_obj));
     DCHECK(bytes.length() == length, "lengths should already be the same");
     to_obj = *bytes;
-  } else if (runtime->isInstanceOfByteArray(*to_obj)) {
-    ByteArray array(&scope, *to_obj);
+  } else if (runtime->isInstanceOfBytearray(*to_obj)) {
+    Bytearray array(&scope, *to_obj);
     DCHECK(array.numItems() == length, "lengths should already be the same");
     to_obj = array.items();
   } else {
@@ -920,8 +920,8 @@ RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
     Bytes bytes(&scope, bytesUnderlying(*old_bytes_obj));
     old_bytes_obj = *bytes;
     old_bytes_len = bytes.length();
-  } else if (runtime->isInstanceOfByteArray(*old_bytes_obj)) {
-    ByteArray bytearray(&scope, *old_bytes_obj);
+  } else if (runtime->isInstanceOfBytearray(*old_bytes_obj)) {
+    Bytearray bytearray(&scope, *old_bytes_obj);
     old_bytes_obj = bytearray.items();
     old_bytes_len = bytearray.numItems();
   } else {
@@ -933,8 +933,8 @@ RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
     Bytes bytes(&scope, bytesUnderlying(*new_bytes_obj));
     new_bytes_obj = *bytes;
     new_bytes_len = bytes.length();
-  } else if (runtime->isInstanceOfByteArray(*new_bytes_obj)) {
-    ByteArray bytearray(&scope, *new_bytes_obj);
+  } else if (runtime->isInstanceOfBytearray(*new_bytes_obj)) {
+    Bytearray bytearray(&scope, *new_bytes_obj);
     new_bytes_obj = bytearray.items();
     new_bytes_len = bytearray.numItems();
   } else {
@@ -971,8 +971,8 @@ RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
     Bytes sep(&scope, bytesUnderlying(*sep_obj));
     sep_obj = *sep;
     sep_len = sep.length();
-  } else if (runtime->isInstanceOfByteArray(*sep_obj)) {
-    ByteArray sep(&scope, *sep_obj);
+  } else if (runtime->isInstanceOfBytearray(*sep_obj)) {
+    Bytearray sep(&scope, *sep_obj);
     sep_obj = sep.items();
     sep_len = sep.numItems();
   } else {
@@ -1091,10 +1091,10 @@ RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
   Object left_obj(&scope, args.get(0));
   Object right_obj(&scope, args.get(1));
   DCHECK(runtime->isInstanceOfBytes(*left_obj) ||
-             runtime->isInstanceOfByteArray(*left_obj),
+             runtime->isInstanceOfBytearray(*left_obj),
          "_byteslike_compare_digest requires 'bytes' or 'bytearray' instance");
   DCHECK(runtime->isInstanceOfBytes(*right_obj) ||
-             runtime->isInstanceOfByteArray(*right_obj),
+             runtime->isInstanceOfBytearray(*right_obj),
          "_byteslike_compare_digest requires 'bytes' or 'bytearray' instance");
   // TODO(T57794178): Use volatile
   Bytes left(&scope, Bytes::empty());
@@ -1105,7 +1105,7 @@ RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
     left = bytesUnderlying(*left_obj);
     left_len = left.length();
   } else {
-    ByteArray byte_array(&scope, *left_obj);
+    Bytearray byte_array(&scope, *left_obj);
     left = byte_array.items();
     left_len = byte_array.numItems();
   }
@@ -1113,7 +1113,7 @@ RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
     right = bytesUnderlying(*right_obj);
     right_len = right.length();
   } else {
-    ByteArray byte_array(&scope, *right_obj);
+    Bytearray byte_array(&scope, *right_obj);
     right = byte_array.items();
     right_len = byte_array.numItems();
   }
@@ -1136,8 +1136,8 @@ RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Frame* frame,
     Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     haystack_len = self.length();
-  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  } else if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     self_obj = self.items();
     haystack_len = self.numItems();
   } else {
@@ -1150,8 +1150,8 @@ RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Frame* frame,
     Bytes sub(&scope, bytesUnderlying(*sub_obj));
     sub_obj = *sub;
     needle_len = sub.length();
-  } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
-    ByteArray sub(&scope, *sub_obj);
+  } else if (runtime->isInstanceOfBytearray(*sub_obj)) {
+    Bytearray sub(&scope, *sub_obj);
     sub_obj = sub.items();
     needle_len = sub.numItems();
   } else if (runtime->isInstanceOfInt(*sub_obj)) {
@@ -1187,8 +1187,8 @@ RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Frame* frame,
     Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     self_len = self.length();
-  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  } else if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     self_obj = self.items();
     self_len = self.numItems();
   } else {
@@ -1202,8 +1202,8 @@ RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Frame* frame,
     Bytes suffix(&scope, bytesUnderlying(*suffix_obj));
     suffix_obj = *suffix;
     suffix_len = suffix.length();
-  } else if (runtime->isInstanceOfByteArray(*suffix_obj)) {
-    ByteArray suffix(&scope, *suffix_obj);
+  } else if (runtime->isInstanceOfBytearray(*suffix_obj)) {
+    Bytearray suffix(&scope, *suffix_obj);
     suffix_obj = suffix.items();
     suffix_len = suffix.numItems();
   } else {
@@ -1236,8 +1236,8 @@ RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
     Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     haystack_len = self.length();
-  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  } else if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     self_obj = self.items();
     haystack_len = self.numItems();
   } else {
@@ -1249,8 +1249,8 @@ RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
     Bytes sub(&scope, bytesUnderlying(*sub_obj));
     sub_obj = *sub;
     needle_len = sub.length();
-  } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
-    ByteArray sub(&scope, *sub_obj);
+  } else if (runtime->isInstanceOfBytearray(*sub_obj)) {
+    Bytearray sub(&scope, *sub_obj);
     sub_obj = sub.items();
     needle_len = sub.numItems();
   } else {
@@ -1283,8 +1283,8 @@ RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Frame* frame,
     return SmallInt::fromWord(bytesFind(haystack, haystack.length(), needle,
                                         needle.length(), start, end));
   }
-  if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     Bytes haystack(&scope, self.items());
     return SmallInt::fromWord(bytesFind(haystack, self.numItems(), needle,
                                         needle.length(), start, end));
@@ -1316,8 +1316,8 @@ RawObject FUNC(_builtins, _byteslike_rfind_byteslike)(Thread* thread,
     Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     haystack_len = self.length();
-  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  } else if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     self_obj = self.items();
     haystack_len = self.numItems();
   } else {
@@ -1329,8 +1329,8 @@ RawObject FUNC(_builtins, _byteslike_rfind_byteslike)(Thread* thread,
     Bytes sub(&scope, bytesUnderlying(*sub_obj));
     sub_obj = *sub;
     needle_len = sub.length();
-  } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
-    ByteArray sub(&scope, *sub_obj);
+  } else if (runtime->isInstanceOfBytearray(*sub_obj)) {
+    Bytearray sub(&scope, *sub_obj);
     sub_obj = sub.items();
     needle_len = sub.numItems();
   } else {
@@ -1363,8 +1363,8 @@ RawObject FUNC(_builtins, _byteslike_rfind_int)(Thread* thread, Frame* frame,
     return SmallInt::fromWord(bytesRFind(haystack, haystack.length(), needle,
                                          needle.length(), start, end));
   }
-  if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     Bytes haystack(&scope, self.items());
     return SmallInt::fromWord(bytesRFind(haystack, self.numItems(), needle,
                                          needle.length(), start, end));
@@ -1383,8 +1383,8 @@ RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
     Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     self_len = self.length();
-  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
-    ByteArray self(&scope, *self_obj);
+  } else if (runtime->isInstanceOfBytearray(*self_obj)) {
+    Bytearray self(&scope, *self_obj);
     self_obj = self.items();
     self_len = self.numItems();
   } else {
@@ -1398,8 +1398,8 @@ RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
     Bytes prefix(&scope, bytesUnderlying(*prefix_obj));
     prefix_obj = *prefix;
     prefix_len = prefix.length();
-  } else if (runtime->isInstanceOfByteArray(*prefix_obj)) {
-    ByteArray prefix(&scope, *prefix_obj);
+  } else if (runtime->isInstanceOfBytearray(*prefix_obj)) {
+    Bytearray prefix(&scope, *prefix_obj);
     prefix_obj = prefix.items();
     prefix_len = prefix.numItems();
   } else {
@@ -2529,12 +2529,12 @@ RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
-  ByteArray array(&scope, args.get(1));
+  Bytearray array(&scope, args.get(1));
   Bytes bytes(&scope, array.items());
   word base = intUnderlying(args.get(2)).asWord();
   Object result(&scope, intFromBytes(thread, bytes, array.numItems(), base));
   if (result.isError()) {
-    Bytes truncated(&scope, byteArrayAsBytes(thread, array));
+    Bytes truncated(&scope, bytearrayAsBytes(thread, array));
     Str repr(&scope, bytesReprSmartQuotes(thread, truncated));
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "invalid literal for int() with base %w: %S",
@@ -3473,9 +3473,9 @@ RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
   size_t count;
   // TODO(T55505775): Add support for more byteslike types instead of switching
   // on bytes/bytearray
-  if (bytes_obj.isByteArray()) {
-    bytes_buf = ByteArray::cast(*bytes_obj).items();
-    count = ByteArray::cast(*bytes_obj).numItems();
+  if (bytes_obj.isBytearray()) {
+    bytes_buf = Bytearray::cast(*bytes_obj).items();
+    count = Bytearray::cast(*bytes_obj).numItems();
   } else {
     bytes_buf = *bytes_obj;
     count = bytes_buf.length();

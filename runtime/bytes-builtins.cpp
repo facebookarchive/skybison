@@ -68,12 +68,12 @@ word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  ByteArray buffer(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, buffer, length * 2);
+  Bytearray buffer(&scope, runtime->newBytearray());
+  runtime->bytearrayEnsureCapacity(thread, buffer, length * 2);
   for (word i = 0; i < length; i++) {
     writeByteAsHexDigits(thread, buffer, bytes.byteAt(i));
   }
-  return runtime->newStrFromByteArray(buffer);
+  return runtime->newStrFromBytearray(buffer);
 }
 
 word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
@@ -97,38 +97,38 @@ static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& bytes,
                                         byte delimiter) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  ByteArray buffer(&scope, runtime->newByteArray());
+  Bytearray buffer(&scope, runtime->newBytearray());
   word len = bytes.length();
   // Each byte will be mapped to one or more ASCII characters. Add 3 to the
   // length for the 2-character prefix (b') and the 1-character suffix (').
   // We expect mostly ASCII bytes, so we usually will not have to resize again.
-  runtime->byteArrayEnsureCapacity(thread, buffer, len + 3);
+  runtime->bytearrayEnsureCapacity(thread, buffer, len + 3);
   const byte bytes_delim[] = {'b', delimiter};
-  runtime->byteArrayExtend(thread, buffer, bytes_delim);
+  runtime->bytearrayExtend(thread, buffer, bytes_delim);
   for (word i = 0; i < len; i++) {
     byte current = bytes.byteAt(i);
     if (current == delimiter || current == '\\') {
       const byte escaped[] = {'\\', current};
-      runtime->byteArrayExtend(thread, buffer, escaped);
+      runtime->bytearrayExtend(thread, buffer, escaped);
     } else if (current == '\t') {
       const byte escaped[] = {'\\', 't'};
-      runtime->byteArrayExtend(thread, buffer, escaped);
+      runtime->bytearrayExtend(thread, buffer, escaped);
     } else if (current == '\n') {
       const byte escaped[] = {'\\', 'n'};
-      runtime->byteArrayExtend(thread, buffer, escaped);
+      runtime->bytearrayExtend(thread, buffer, escaped);
     } else if (current == '\r') {
       const byte escaped[] = {'\\', 'r'};
-      runtime->byteArrayExtend(thread, buffer, escaped);
+      runtime->bytearrayExtend(thread, buffer, escaped);
     } else if (current < ' ' || current >= 0x7f) {
       const byte escaped[] = {'\\', 'x'};
-      runtime->byteArrayExtend(thread, buffer, escaped);
+      runtime->bytearrayExtend(thread, buffer, escaped);
       writeByteAsHexDigits(thread, buffer, current);
     } else {
-      byteArrayAdd(thread, runtime, buffer, current);
+      bytearrayAdd(thread, runtime, buffer, current);
     }
   }
-  byteArrayAdd(thread, runtime, buffer, delimiter);
-  return runtime->newStrFromByteArray(buffer);
+  bytearrayAdd(thread, runtime, buffer, delimiter);
+  return runtime->newStrFromBytearray(buffer);
 }
 
 RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes) {
@@ -418,9 +418,9 @@ RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
     Bytes other(&scope, bytesUnderlying(*other_obj));
     return runtime->bytesConcat(thread, self, other);
   }
-  if (runtime->isInstanceOfByteArray(*other_obj)) {
-    ByteArray other(&scope, *other_obj);
-    Bytes other_bytes(&scope, byteArrayAsBytes(thread, other));
+  if (runtime->isInstanceOfBytearray(*other_obj)) {
+    Bytearray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, bytearrayAsBytes(thread, other));
     return runtime->bytesConcat(thread, self, other_bytes);
   }
   // TODO(T38246066): buffers besides bytes/bytearray
@@ -668,8 +668,8 @@ RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
     Bytes chars(&scope, bytesUnderlying(*chars_obj));
     return bytesStripLeft(thread, self, self.length(), chars, chars.length());
   }
-  if (runtime->isInstanceOfByteArray(*chars_obj)) {
-    ByteArray chars(&scope, *chars_obj);
+  if (runtime->isInstanceOfBytearray(*chars_obj)) {
+    Bytearray chars(&scope, *chars_obj);
     Bytes chars_bytes(&scope, chars.items());
     return bytesStripLeft(thread, self, self.length(), chars_bytes,
                           chars.numItems());
@@ -697,8 +697,8 @@ RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs) {
     Bytes chars(&scope, bytesUnderlying(*chars_obj));
     return bytesStripRight(thread, self, self.length(), chars, chars.length());
   }
-  if (runtime->isInstanceOfByteArray(*chars_obj)) {
-    ByteArray chars(&scope, *chars_obj);
+  if (runtime->isInstanceOfBytearray(*chars_obj)) {
+    Bytearray chars(&scope, *chars_obj);
     Bytes chars_bytes(&scope, chars.items());
     return bytesStripRight(thread, self, self.length(), chars_bytes,
                            chars.numItems());
@@ -726,8 +726,8 @@ RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
     Bytes chars(&scope, bytesUnderlying(*chars_obj));
     return bytesStrip(thread, self, self.length(), chars, chars.length());
   }
-  if (runtime->isInstanceOfByteArray(*chars_obj)) {
-    ByteArray chars(&scope, *chars_obj);
+  if (runtime->isInstanceOfBytearray(*chars_obj)) {
+    Bytearray chars(&scope, *chars_obj);
     Bytes chars_bytes(&scope, chars.items());
     return bytesStrip(thread, self, self.length(), chars_bytes,
                       chars.numItems());
@@ -756,8 +756,8 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
     Bytes bytes(&scope, bytesUnderlying(*table_obj));
     table_length = bytes.length();
     table_obj = *bytes;
-  } else if (runtime->isInstanceOfByteArray(*table_obj)) {
-    ByteArray array(&scope, *table_obj);
+  } else if (runtime->isInstanceOfBytearray(*table_obj)) {
+    Bytearray array(&scope, *table_obj);
     table_length = array.numItems();
     table_obj = array.items();
   } else {
@@ -778,8 +778,8 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
     return runtime->bytesTranslate(thread, self, self.length(), table,
                                    table_length, bytes, bytes.length());
   }
-  if (runtime->isInstanceOfByteArray(*del)) {
-    ByteArray array(&scope, *del);
+  if (runtime->isInstanceOfBytearray(*del)) {
+    Bytearray array(&scope, *del);
     Bytes bytes(&scope, array.items());
     return runtime->bytesTranslate(thread, self, self.length(), table,
                                    table_length, bytes, array.numItems());

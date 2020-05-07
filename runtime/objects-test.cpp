@@ -9,7 +9,7 @@
 namespace py {
 namespace testing {
 
-using ByteArrayTest = RuntimeFixture;
+using BytearrayTest = RuntimeFixture;
 using LargeBytesTest = RuntimeFixture;
 using SmallBytesTest = RuntimeFixture;
 using CodeTest = RuntimeFixture;
@@ -30,11 +30,11 @@ using StringTest = RuntimeFixture;
 using ValueCellTest = RuntimeFixture;
 using WeakRefTest = RuntimeFixture;
 
-TEST_F(ByteArrayTest, DownsizeMaintainsCapacity) {
+TEST_F(BytearrayTest, DownsizeMaintainsCapacity) {
   HandleScope scope(thread_);
-  ByteArray array(&scope, runtime_->newByteArray());
+  Bytearray array(&scope, runtime_->newBytearray());
   const byte byte_array[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  runtime_->byteArrayExtend(thread_, array, byte_array);
+  runtime_->bytearrayExtend(thread_, array, byte_array);
   ASSERT_EQ(array.numItems(), 9);
   word capacity = array.capacity();
   array.downsize(5);

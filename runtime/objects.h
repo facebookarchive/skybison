@@ -46,8 +46,8 @@ class Handle;
   V(BufferedRandom)                                                            \
   V(BufferedReader)                                                            \
   V(BufferedWriter)                                                            \
-  V(ByteArray)                                                                 \
-  V(ByteArrayIterator)                                                         \
+  V(Bytearray)                                                                 \
+  V(BytearrayIterator)                                                         \
   V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
   V(Cell)                                                                      \
@@ -299,8 +299,8 @@ class RawObject {
   bool isBufferedRandom() const;
   bool isBufferedReader() const;
   bool isBufferedWriter() const;
-  bool isByteArray() const;
-  bool isByteArrayIterator() const;
+  bool isBytearray() const;
+  bool isBytearrayIterator() const;
   bool isBytesIO() const;
   bool isBytesIterator() const;
   bool isCell() const;
@@ -1934,9 +1934,9 @@ class RawIteratorBase : public RawInstance {
   static const int kSize = kIndexOffset + kPointerSize;
 };
 
-class RawByteArrayIterator : public RawIteratorBase {
+class RawBytearrayIterator : public RawIteratorBase {
  public:
-  RAW_OBJECT_COMMON(ByteArrayIterator);
+  RAW_OBJECT_COMMON(BytearrayIterator);
 };
 
 class RawBytesIterator : public RawIteratorBase {
@@ -2543,7 +2543,7 @@ class RawModuleProxy : public RawInstance {
 //   [Header  ]
 //   [Items   ] - Pointer to a RawMutableBytes with the underlying data.
 //   [NumItems] - Number of bytes currently in the array.
-class RawByteArray : public RawInstance {
+class RawBytearray : public RawInstance {
  public:
   // Getters and setters
   byte byteAt(word index) const;
@@ -2564,11 +2564,11 @@ class RawByteArray : public RawInstance {
   word compare(RawBytes that, word that_len);
 
   // Replace the bytes from dst_start with count bytes from src
-  void replaceFromWith(word dst_start, RawByteArray src, word count) const;
+  void replaceFromWith(word dst_start, RawBytearray src, word count) const;
 
   // Replace the bytes from dst_start with count bytes from src, starting at
   // src_start in src
-  void replaceFromWithStartAt(word dst_start, RawByteArray src, word count,
+  void replaceFromWithStartAt(word dst_start, RawBytearray src, word count,
                               word src_start) const;
 
   // Layout
@@ -2576,7 +2576,7 @@ class RawByteArray : public RawInstance {
   static const int kNumItemsOffset = kItemsOffset + kPointerSize;
   static const int kSize = kNumItemsOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(ByteArray);
+  RAW_OBJECT_COMMON(Bytearray);
 };
 
 // A mutable Unicode array, for internal string building.
@@ -3789,12 +3789,12 @@ inline bool RawObject::isUnderBufferedIOMixin() const {
   return isHeapObjectWithLayout(LayoutId::kUnderBufferedIOMixin);
 }
 
-inline bool RawObject::isByteArray() const {
-  return isHeapObjectWithLayout(LayoutId::kByteArray);
+inline bool RawObject::isBytearray() const {
+  return isHeapObjectWithLayout(LayoutId::kBytearray);
 }
 
-inline bool RawObject::isByteArrayIterator() const {
-  return isHeapObjectWithLayout(LayoutId::kByteArrayIterator);
+inline bool RawObject::isBytearrayIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kBytearrayIterator);
 }
 
 inline bool RawObject::isBytesIO() const {
@@ -5199,7 +5199,7 @@ inline RawObject RawUnicodeErrorBase::object() const {
 }
 
 inline void RawUnicodeErrorBase::setObject(RawObject value) const {
-  DCHECK(value.isBytes() || value.isByteArray() || value.isStr(),
+  DCHECK(value.isBytes() || value.isBytearray() || value.isStr(),
          "Only str or bytes-like types are permitted as values");
   instanceVariableAtPut(kObjectOffset, value);
 }
@@ -5777,42 +5777,42 @@ inline void RawStaticMethod::setFunction(RawObject function) const {
   instanceVariableAtPut(kFunctionOffset, function);
 }
 
-// RawByteArray
+// RawBytearray
 
-inline byte RawByteArray::byteAt(word index) const {
+inline byte RawBytearray::byteAt(word index) const {
   DCHECK_INDEX(index, numItems());
   return RawMutableBytes::cast(items()).byteAt(index);
 }
 
-inline void RawByteArray::byteAtPut(word index, byte value) const {
+inline void RawBytearray::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, numItems());
   RawMutableBytes::cast(items()).byteAtPut(index, value);
 }
 
-inline void RawByteArray::copyTo(byte* dst, word length) const {
+inline void RawBytearray::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, numItems());
   RawMutableBytes::cast(items()).copyTo(dst, length);
 }
 
-inline word RawByteArray::numItems() const {
+inline word RawBytearray::numItems() const {
   return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
 }
 
-inline void RawByteArray::setNumItems(word num_bytes) const {
+inline void RawBytearray::setNumItems(word num_bytes) const {
   DCHECK_BOUND(num_bytes, capacity());
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_bytes));
 }
 
-inline RawObject RawByteArray::items() const {
+inline RawObject RawBytearray::items() const {
   return instanceVariableAt(kItemsOffset);
 }
 
-inline void RawByteArray::setItems(RawObject new_items) const {
+inline void RawBytearray::setItems(RawObject new_items) const {
   DCHECK(new_items.isMutableBytes(), "backed by mutable bytes");
   instanceVariableAtPut(kItemsOffset, new_items);
 }
 
-inline word RawByteArray::capacity() const {
+inline word RawBytearray::capacity() const {
   return RawMutableBytes::cast(items()).length();
 }
 

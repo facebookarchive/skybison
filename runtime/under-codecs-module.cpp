@@ -63,8 +63,8 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
 
   word length;
   Bytes bytes(&scope, Bytes::empty());
-  if (runtime->isInstanceOfByteArray(*data)) {
-    ByteArray array(&scope, *data);
+  if (runtime->isInstanceOfBytearray(*data)) {
+    Bytearray array(&scope, *data);
     bytes = array.items();
     length = array.numItems();
   } else {
@@ -132,12 +132,12 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+  DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _ascii_encode must be bytearray");
   Str data(&scope, strUnderlying(args.get(0)));
   Str errors(&scope, strUnderlying(args.get(1)));
   word i = intUnderlying(args.get(2)).asWord();
-  ByteArray output(&scope, *output_obj);
+  Bytearray output(&scope, *output_obj);
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   // TODO(T43252439): Optimize this by first checking whether the entire string
@@ -148,17 +148,17 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (codepoint <= kMaxASCII) {
-      byteArrayAdd(thread, runtime, output, codepoint);
+      bytearrayAdd(thread, runtime, output, codepoint);
     } else {
       switch (error_symbol) {
         case ID(ignore):
           continue;
         case ID(replace):
-          byteArrayAdd(thread, runtime, output, kASCIIReplacement);
+          bytearrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
-            byteArrayAdd(thread, runtime, output,
+            bytearrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
             continue;
           }
@@ -176,7 +176,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
       return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object output_bytes(&scope, bytearrayAsBytes(thread, output));
   Object outpos_obj(&scope, runtime->newInt(i));
   return runtime->newTupleWith2(output_bytes, outpos_obj);
 }
@@ -278,21 +278,21 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
   Bytes bytes(&scope, bytesUnderlying(*bytes_obj));
   Str errors(&scope, strUnderlying(args.get(1)));
 
-  ByteArray dst(&scope, runtime->newByteArray());
+  Bytearray dst(&scope, runtime->newBytearray());
   word length = bytes.length();
-  runtime->byteArrayEnsureCapacity(thread, dst, length);
+  runtime->bytearrayEnsureCapacity(thread, dst, length);
   word first_invalid_escape_index = -1;
   for (word i = 0; i < length;) {
     byte ch = bytes.byteAt(i++);
     if (ch != '\\') {
       // TODO(T45134397): Support the recode_encoding parameter
       if (ch <= kMaxASCII) {
-        byteArrayAdd(thread, runtime, dst, ch);
+        bytearrayAdd(thread, runtime, dst, ch);
         continue;
       }
       Str temp(&scope, SmallStr::fromCodePoint(ch));
-      byteArrayAdd(thread, runtime, dst, temp.byteAt(0));
-      byteArrayAdd(thread, runtime, dst, temp.byteAt(1));
+      bytearrayAdd(thread, runtime, dst, temp.byteAt(0));
+      bytearrayAdd(thread, runtime, dst, temp.byteAt(1));
       continue;
     }
     if (i >= length) {
@@ -301,13 +301,13 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
     word invalid_escape_index = -1;
     int32_t decoded = decodeEscaped(bytes, &i, &invalid_escape_index);
     if (invalid_escape_index != -1) {
-      byteArrayAdd(thread, runtime, dst, '\\');
+      bytearrayAdd(thread, runtime, dst, '\\');
       if (first_invalid_escape_index == -1) {
         first_invalid_escape_index = invalid_escape_index;
       }
     }
     if (decoded >= 0) {
-      byteArrayAdd(thread, runtime, dst, decoded);
+      bytearrayAdd(thread, runtime, dst, decoded);
       continue;
     }
     if (decoded == -1) {
@@ -319,7 +319,7 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
         return runtime->newStrFromFmt("invalid \\x escape at position %d",
                                       i - 2);
       case ID(replace): {
-        byteArrayAdd(thread, runtime, dst, '?');
+        bytearrayAdd(thread, runtime, dst, '?');
         break;
       }
       case ID(ignore):
@@ -332,7 +332,7 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
       i++;
     }
   }
-  Object dst_obj(&scope, byteArrayAsBytes(thread, dst));
+  Object dst_obj(&scope, bytearrayAsBytes(thread, dst));
   Object length_obj(&scope, runtime->newInt(length));
   Object escape_obj(&scope, runtime->newInt(first_invalid_escape_index));
   return runtime->newTupleWith3(dst_obj, length_obj, escape_obj);
@@ -347,8 +347,8 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
   StrArray array(&scope, runtime->newStrArray());
   word length;
   Bytes bytes(&scope, Bytes::empty());
-  if (runtime->isInstanceOfByteArray(*data)) {
-    ByteArray byte_array(&scope, *data);
+  if (runtime->isInstanceOfBytearray(*data)) {
+    Bytearray byte_array(&scope, *data);
     bytes = byte_array.items();
     length = byte_array.numItems();
   } else {
@@ -381,12 +381,12 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+  DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _latin_1_encode must be bytearray");
   Str data(&scope, strUnderlying(args.get(0)));
   Str errors(&scope, strUnderlying(args.get(1)));
   word i = intUnderlying(args.get(2)).asWord();
-  ByteArray output(&scope, *output_obj);
+  Bytearray output(&scope, *output_obj);
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, i);
@@ -395,17 +395,17 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (codepoint <= kMaxByte) {
-      byteArrayAdd(thread, runtime, output, codepoint);
+      bytearrayAdd(thread, runtime, output, codepoint);
     } else {
       switch (error_symbol) {
         case ID(ignore):
           continue;
         case ID(replace):
-          byteArrayAdd(thread, runtime, output, kASCIIReplacement);
+          bytearrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
-            byteArrayAdd(thread, runtime, output,
+            bytearrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
             continue;
           }
@@ -423,7 +423,7 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
       return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object output_bytes(&scope, bytearrayAsBytes(thread, output));
   Object outpos(&scope, runtime->newInt(i));
   return runtime->newTupleWith2(output_bytes, outpos);
 }
@@ -597,8 +597,8 @@ RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread, Frame* frame,
 
   word length;
   Bytes bytes(&scope, Bytes::empty());
-  if (runtime->isInstanceOfByteArray(*data)) {
-    ByteArray array(&scope, *data);
+  if (runtime->isInstanceOfBytearray(*data)) {
+    Bytearray array(&scope, *data);
     bytes = array.items();
     length = array.numItems();
   } else {
@@ -810,8 +810,8 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
   word length;
   Bytes bytes(&scope, Bytes::empty());
   // TODO(T45849551): Handle any bytes-like object
-  if (runtime->isInstanceOfByteArray(*data)) {
-    ByteArray array(&scope, *data);
+  if (runtime->isInstanceOfBytearray(*data)) {
+    Bytearray array(&scope, *data);
     bytes = array.items();
     length = array.numItems();
   } else {
@@ -905,12 +905,12 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+  DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _utf_8_encode must be bytearray");
   Str data(&scope, strUnderlying(args.get(0)));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
-  ByteArray output(&scope, *output_obj);
+  Bytearray output(&scope, *output_obj);
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   for (word byte_offset = data.offsetByCodePoints(0, index);
@@ -920,27 +920,27 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
     byte_offset += num_bytes;
     if (!isSurrogate(codepoint)) {
       for (word j = byte_offset - num_bytes; j < byte_offset; j++) {
-        byteArrayAdd(thread, runtime, output, data.byteAt(j));
+        bytearrayAdd(thread, runtime, output, data.byteAt(j));
       }
     } else {
       switch (error_symbol) {
         case ID(ignore):
           continue;
         case ID(replace):
-          byteArrayAdd(thread, runtime, output, kASCIIReplacement);
+          bytearrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
-            byteArrayAdd(thread, runtime, output,
+            bytearrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
             continue;
           }
           break;
         case ID(surrogatepass):
           if (isSurrogate(codepoint)) {
-            byteArrayAdd(thread, runtime, output, data.byteAt(byte_offset - 3));
-            byteArrayAdd(thread, runtime, output, data.byteAt(byte_offset - 2));
-            byteArrayAdd(thread, runtime, output, data.byteAt(byte_offset - 1));
+            bytearrayAdd(thread, runtime, output, data.byteAt(byte_offset - 3));
+            bytearrayAdd(thread, runtime, output, data.byteAt(byte_offset - 2));
+            bytearrayAdd(thread, runtime, output, data.byteAt(byte_offset - 1));
             continue;
           }
           break;
@@ -957,20 +957,20 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
       return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object output_bytes(&scope, bytearrayAsBytes(thread, output));
   Object index_obj(&scope, runtime->newInt(index));
   return runtime->newTupleWith2(output_bytes, index_obj);
 }
 
-static void appendUtf16ToByteArray(Thread* thread, Runtime* runtime,
-                                   const ByteArray& writer, int32_t codepoint,
+static void appendUtf16ToBytearray(Thread* thread, Runtime* runtime,
+                                   const Bytearray& writer, int32_t codepoint,
                                    endian endianness) {
   if (endianness == endian::little) {
-    byteArrayAdd(thread, runtime, writer, codepoint);
-    byteArrayAdd(thread, runtime, writer, codepoint >> kBitsPerByte);
+    bytearrayAdd(thread, runtime, writer, codepoint);
+    bytearrayAdd(thread, runtime, writer, codepoint >> kBitsPerByte);
   } else {
-    byteArrayAdd(thread, runtime, writer, codepoint >> kBitsPerByte);
-    byteArrayAdd(thread, runtime, writer, codepoint);
+    bytearrayAdd(thread, runtime, writer, codepoint >> kBitsPerByte);
+    bytearrayAdd(thread, runtime, writer, codepoint);
   }
 }
 
@@ -988,12 +988,12 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+  DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _utf_16_encode must be bytearray");
   Str data(&scope, strUnderlying(args.get(0)));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
-  ByteArray output(&scope, *output_obj);
+  Bytearray output(&scope, *output_obj);
   OptInt<int32_t> byteorder = intUnderlying(args.get(4)).asInt<int32_t>();
   if (byteorder.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -1009,11 +1009,11 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
     byte_offset += num_bytes;
     if (!isSurrogate(codepoint)) {
       if (codepoint < kHighSurrogateStart) {
-        appendUtf16ToByteArray(thread, runtime, output, codepoint, endianness);
+        appendUtf16ToBytearray(thread, runtime, output, codepoint, endianness);
       } else {
-        appendUtf16ToByteArray(thread, runtime, output,
+        appendUtf16ToBytearray(thread, runtime, output,
                                highSurrogate(codepoint), endianness);
-        appendUtf16ToByteArray(thread, runtime, output, lowSurrogate(codepoint),
+        appendUtf16ToBytearray(thread, runtime, output, lowSurrogate(codepoint),
                                endianness);
       }
     } else {
@@ -1021,12 +1021,12 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
         case ID(ignore):
           continue;
         case ID(replace):
-          appendUtf16ToByteArray(thread, runtime, output, kASCIIReplacement,
+          appendUtf16ToBytearray(thread, runtime, output, kASCIIReplacement,
                                  endianness);
           continue;
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
-            appendUtf16ToByteArray(thread, runtime, output,
+            appendUtf16ToBytearray(thread, runtime, output,
                                    codepoint - kLowSurrogateStart, endianness);
             continue;
           }
@@ -1044,24 +1044,24 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
       return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object output_bytes(&scope, bytearrayAsBytes(thread, output));
   Object index_obj(&scope, runtime->newInt(index));
   return runtime->newTupleWith2(output_bytes, index_obj);
 }
 
-static void appendUtf32ToByteArray(Thread* thread, Runtime* runtime,
-                                   const ByteArray& writer, int32_t codepoint,
+static void appendUtf32ToBytearray(Thread* thread, Runtime* runtime,
+                                   const Bytearray& writer, int32_t codepoint,
                                    endian endianness) {
   if (endianness == endian::little) {
-    byteArrayAdd(thread, runtime, writer, codepoint);
-    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte));
-    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 2));
-    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 3));
+    bytearrayAdd(thread, runtime, writer, codepoint);
+    bytearrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte));
+    bytearrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 2));
+    bytearrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 3));
   } else {
-    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 3));
-    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 2));
-    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte));
-    byteArrayAdd(thread, runtime, writer, codepoint);
+    bytearrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 3));
+    bytearrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 2));
+    bytearrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte));
+    bytearrayAdd(thread, runtime, writer, codepoint);
   }
 }
 
@@ -1071,12 +1071,12 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+  DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _utf_32_encode must be bytearray");
   Str data(&scope, strUnderlying(args.get(0)));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
-  ByteArray output(&scope, *output_obj);
+  Bytearray output(&scope, *output_obj);
   OptInt<int32_t> byteorder = intUnderlying(args.get(4)).asInt<int32_t>();
   if (byteorder.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -1091,18 +1091,18 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (!isSurrogate(codepoint)) {
-      appendUtf32ToByteArray(thread, runtime, output, codepoint, endianness);
+      appendUtf32ToBytearray(thread, runtime, output, codepoint, endianness);
     } else {
       switch (error_id) {
         case ID(ignore):
           continue;
         case ID(replace):
-          appendUtf32ToByteArray(thread, runtime, output, kASCIIReplacement,
+          appendUtf32ToBytearray(thread, runtime, output, kASCIIReplacement,
                                  endianness);
           continue;
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
-            appendUtf32ToByteArray(thread, runtime, output,
+            appendUtf32ToBytearray(thread, runtime, output,
                                    codepoint - kLowSurrogateStart, endianness);
             continue;
           }
@@ -1120,21 +1120,21 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
       return runtime->newTupleWith2(outpos1, outpos2);
     }
   }
-  Object output_bytes(&scope, byteArrayAsBytes(thread, output));
+  Object output_bytes(&scope, bytearrayAsBytes(thread, output));
   Object index_obj(&scope, runtime->newInt(index));
   return runtime->newTupleWith2(output_bytes, index_obj);
 }
 
-// Takes a ByteArray and a Str object, and appends each byte in the Str to the
-// ByteArray one by one
+// Takes a Bytearray and a Str object, and appends each byte in the Str to the
+// Bytearray one by one
 RawObject FUNC(_codecs, _bytearray_string_append)(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ByteArray dst(&scope, args.get(0));
+  Bytearray dst(&scope, args.get(0));
   Str data(&scope, args.get(1));
   for (word i = 0; i < data.length(); ++i) {
-    byteArrayAdd(thread, thread->runtime(), dst, data.byteAt(i));
+    bytearrayAdd(thread, thread->runtime(), dst, data.byteAt(i));
   }
   return NoneType::object();
 }
