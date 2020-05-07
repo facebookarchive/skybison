@@ -4692,6 +4692,22 @@ class DunderSlotsTests(unittest.TestCase):
         self.assertIsInstance(C.b, slot_descriptor_type)
         self.assertIsInstance(C.c, slot_descriptor_type)
 
+    def test_dunder_slots_sharing_same_layout_base_can_servce_as_bases(self):
+        class C:
+            __slots__ = "x"
+
+        class D(C):
+            pass
+
+        class E(C):
+            __slots__ = "y"
+
+        class F(D, E):
+            pass
+
+        self.assertTrue(hasattr(F, "x"))
+        self.assertTrue(hasattr(F, "y"))
+
 
 class EllipsisTypeTests(unittest.TestCase):
     def test_repr_returns_not_implemented(self):

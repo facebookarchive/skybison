@@ -1139,6 +1139,12 @@ class RawType : public RawInstance {
 
     // Instance layouts are sealed
     kSealSubtypeLayouts = 1 << 13,
+
+    // Has __slots__ in itself or its base
+    kHasSlots = 1 << 14,
+
+    // Runtime expects some attributes of this type to be at a fixed address.
+    kIsFixedAttributeBase = 1 << 15,
   };
 
   enum class Slot {

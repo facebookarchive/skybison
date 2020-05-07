@@ -194,6 +194,16 @@ RawObject Runtime::layoutAtSafe(LayoutId layout_id) {
   return result;
 }
 
+// Sanity check that a subclass that has fixed attributes does inherit from a
+// superclass with attributes that are fixed.
+static void checkInObjectAttributesWithFixedOffset(const Tuple& attributes) {
+  for (word i = 0; i < attributes.length(); i++) {
+    AttributeInfo info(Tuple::cast(attributes.at(i)).at(1));
+    CHECK(info.isInObject() && info.isFixedOffset(),
+          "all superclass attributes must be in-object and fixed");
+  }
+}
+
 RawObject Runtime::layoutCreateSubclassWithBuiltins(
     LayoutId subclass_id, LayoutId superclass_id,
     View<BuiltinAttribute> attributes) {
@@ -204,15 +214,7 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   // are packed at the beginning of the layout starting at offset 0.
   Layout super_layout(&scope, layoutAt(superclass_id));
   Tuple super_attributes(&scope, super_layout.inObjectAttributes());
-
-  // Sanity check that a subclass that has fixed attributes does inherit from a
-  // superclass with attributes that are not fixed.
-  for (word i = 0; i < super_attributes.length(); i++) {
-    Tuple elt(&scope, super_attributes.at(i));
-    AttributeInfo info(elt.at(1));
-    CHECK(info.isInObject() && info.isFixedOffset(),
-          "all superclass attributes must be in-object and fixed");
-  }
+  checkInObjectAttributesWithFixedOffset(super_attributes);
 
   // Create an empty layout for the subclass
   Layout result(&scope, newLayout(subclass_id));
@@ -259,6 +261,58 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
     Object info_obj(&scope, info.asSmallInt());
     dst.atPut(start_index + i, newTupleWith2(name, info_obj));
   }
+}
+
+static void appendSlotAttributes(Thread* thread, const List& slots,
+                                 const Tuple& dst, word start_offset,
+                                 word start_index) {
+  HandleScope scope(thread);
+  Tuple entry(&scope, thread->runtime()->emptyTuple());
+  Str name(&scope, Str::empty());
+  Runtime* runtime = thread->runtime();
+  for (word i = 0, offset = start_offset; i < slots.numItems();
+       i++, offset += kPointerSize) {
+    name = slots.at(i);
+    AttributeInfo info(offset, AttributeFlags::kInObject |
+                                   AttributeFlags::kFixedOffset |
+                                   AttributeFlags::kInitWithUnbound);
+    entry = runtime->newTuple(2);
+    entry.atPut(0, *name);
+    entry.atPut(1, info.asSmallInt());
+    dst.atPut(start_index + i, *entry);
+  }
+}
+
+RawObject Runtime::layoutCreateSubclassWithSlotAttributes(
+    Thread* thread, LayoutId subclass_id, LayoutId superclass_id,
+    const List& attributes) {
+  HandleScope scope(thread);
+  Layout super_layout(&scope, layoutAt(superclass_id));
+  Tuple super_attributes(&scope, super_layout.inObjectAttributes());
+  checkInObjectAttributesWithFixedOffset(super_attributes);
+
+  // Create an empty layout for the subclass
+  Layout result(&scope, newLayout(subclass_id));
+
+  // Copy down all of the superclass attributes into the subclass layout
+  word super_attributes_len = super_attributes.length();
+  word in_object_len = super_attributes_len + attributes.numItems();
+  if (in_object_len == 0) {
+    result.setInObjectAttributes(emptyTuple());
+    result.setNumInObjectAttributes(0);
+  } else {
+    word attribute_start_offset = super_attributes_len * kPointerSize;
+    MutableTuple in_object(&scope, newMutableTuple(in_object_len));
+    in_object.replaceFromWith(0, *super_attributes, super_attributes_len);
+    appendSlotAttributes(thread, attributes, in_object, attribute_start_offset,
+                         super_attributes_len);
+
+    // Install the in-object attributes
+    result.setInObjectAttributes(in_object.becomeImmutable());
+    result.setNumInObjectAttributes(in_object_len);
+  }
+
+  return *result;
 }
 
 RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
@@ -3243,26 +3297,16 @@ RawObject Runtime::classConstructor(const Type& type) {
   return typeAtById(thread, type, ID(__init__));
 }
 
-RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
-                                        LayoutId base_layout_id) {
+// Collect set of in-object attributes by scanning the __init__ method of
+// each class in the MRO
+static word numInferredInObjectAttributes(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  // Create the layout
-  LayoutId layout_id = reserveLayoutId(thread);
-  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
-                            layout_id, base_layout_id,
-                            View<BuiltinAttribute>(nullptr, 0)));
-  if (!type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
-    layoutSetTupleOverflow(*layout);
-  }
-
   Tuple mro(&scope, type.mro());
-  Dict attrs(&scope, newDict());
-
-  // Collect set of in-object attributes by scanning the __init__ method of
-  // each class in the MRO
+  Runtime* runtime = thread->runtime();
+  Dict attrs(&scope, runtime->newDict());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
-    Object maybe_init(&scope, classConstructor(mro_type));
+    Object maybe_init(&scope, runtime->classConstructor(mro_type));
     if (!maybe_init.isFunction()) {
       continue;
     }
@@ -3275,13 +3319,42 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
     if (code.code().isSmallInt()) {
       continue;  // builtin trampoline
     }
-    collectAttributes(code, attrs);
+    runtime->collectAttributes(code, attrs);
   }
+  return attrs.numItems();
+}
 
+RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
+                                        LayoutId base_layout_id) {
+  HandleScope scope(thread);
+  // Create the layout
+  LayoutId layout_id = reserveLayoutId(thread);
+  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
+                            layout_id, base_layout_id,
+                            View<BuiltinAttribute>(nullptr, 0)));
+  if (!type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
+    layoutSetTupleOverflow(*layout);
+  }
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
-                                  attrs.numItems());
+                                  numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);
+  return *layout;
+}
 
+RawObject Runtime::computeInitialLayoutWithSlotAttributes(
+    Thread* thread, const Type& type, LayoutId base_layout_id,
+    const List& slots) {
+  HandleScope scope(thread);
+  // Create the layout
+  LayoutId layout_id = reserveLayoutId(thread);
+  Layout layout(&scope, layoutCreateSubclassWithSlotAttributes(
+                            thread, layout_id, base_layout_id, slots));
+  if (!type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
+    layoutSetTupleOverflow(*layout);
+  }
+  layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
+                                  numInferredInObjectAttributes(thread, type));
+  layoutAtPut(layout_id, *layout);
   return *layout;
 }
 
@@ -3722,7 +3795,8 @@ RawObject Runtime::createNativeProxyLayout(Thread* thread,
   Object none(&scope, NoneType::object());
   Layout layout(&scope, layoutCreateChild(thread, base_layout));
   for (word i = 0; i < RawNativeProxy::kSize; i += kPointerSize) {
-    AttributeInfo info(i, AttributeFlags::kInObject);
+    AttributeInfo info(
+        i, AttributeFlags::kInObject | AttributeFlags::kFixedOffset);
     Tuple entries(&scope, layout.inObjectAttributes());
     layout.setInObjectAttributes(
         layoutAddAttributeEntry(thread, entries, none, info));

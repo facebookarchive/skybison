@@ -6,6 +6,7 @@
 #include "dict-builtins.h"
 #include "handles.h"
 #include "ic.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -504,6 +505,327 @@ TEST_F(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, __setattr__), c, name, value),
                             LayoutId::kTypeError,
                             "attribute name must be string, not 'NoneType'"));
+}
+
+TEST_F(TypeBuiltinsTest, DunderSlotsCreatesLayoutWithInObjectAttributes) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = "x", "y", "z"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasSlots));
+
+  Layout layout(&scope, c.instanceLayout());
+  EXPECT_TRUE(layout.isSealed());
+
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  ASSERT_EQ(attributes.length(), 3);
+
+  Tuple elt0(&scope, attributes.at(0));
+  EXPECT_TRUE(isStrEqualsCStr(elt0.at(0), "x"));
+  AttributeInfo info0(elt0.at(1));
+  EXPECT_TRUE(info0.isInObject());
+  EXPECT_TRUE(info0.isFixedOffset());
+
+  Tuple elt1(&scope, attributes.at(1));
+  EXPECT_TRUE(isStrEqualsCStr(elt1.at(0), "y"));
+  AttributeInfo info1(elt1.at(1));
+  EXPECT_TRUE(info1.isInObject());
+  EXPECT_TRUE(info1.isFixedOffset());
+
+  Tuple elt2(&scope, attributes.at(2));
+  EXPECT_TRUE(isStrEqualsCStr(elt2.at(0), "z"));
+  AttributeInfo info2(elt2.at(1));
+  EXPECT_TRUE(info2.isInObject());
+  EXPECT_TRUE(info2.isFixedOffset());
+}
+
+TEST_F(TypeBuiltinsTest, DunderSlotsWithEmptyTupleCreatesEmptyLayout) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = ()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  EXPECT_FALSE(c.hasFlag(Type::Flag::kHasSlots));
+
+  Layout layout(&scope, c.instanceLayout());
+  EXPECT_TRUE(layout.isSealed());
+
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  ASSERT_EQ(attributes.length(), 0);
+}
+
+TEST_F(TypeBuiltinsTest, DunderSlotsAreInheritedFromLayoutBase) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+
+class D(C):
+  __slots__ = "x", "y"
+
+class E(D, C):
+  __slots__ = "z"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type e(&scope, mainModuleAt(runtime_, "E"));
+  Layout layout(&scope, e.instanceLayout());
+  // The layout of E is not sealed due to C.
+  EXPECT_FALSE(layout.isSealed());
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  // D is chosen as the layout base for E since D is a subtype of C.
+  ASSERT_EQ(attributes.length(), 3);
+
+  Tuple elt0(&scope, attributes.at(0));
+  EXPECT_TRUE(isStrEqualsCStr(elt0.at(0), "x"));
+  AttributeInfo info0(elt0.at(1));
+  EXPECT_TRUE(info0.isInObject());
+  EXPECT_TRUE(info0.isFixedOffset());
+
+  Tuple elt1(&scope, attributes.at(1));
+  EXPECT_TRUE(isStrEqualsCStr(elt1.at(0), "y"));
+  AttributeInfo info1(elt1.at(1));
+  EXPECT_TRUE(info1.isInObject());
+  EXPECT_TRUE(info1.isFixedOffset());
+
+  Tuple elt2(&scope, attributes.at(2));
+  EXPECT_TRUE(isStrEqualsCStr(elt2.at(0), "z"));
+  AttributeInfo info2(elt2.at(1));
+  EXPECT_TRUE(info2.isInObject());
+  EXPECT_TRUE(info2.isFixedOffset());
+}
+
+TEST_F(TypeBuiltinsTest, DunderSlotsSealsTypeWhenAllBasesAreSealed) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = ()
+
+class D:
+  __slots__ = ()
+
+class E(C, D):
+  __slots__ = "x"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type e(&scope, mainModuleAt(runtime_, "E"));
+  Layout layout(&scope, e.instanceLayout());
+  EXPECT_TRUE(layout.isSealed());
+}
+
+TEST_F(TypeBuiltinsTest, DunderSlotsDoesNotSealTypeWhenBaseHasDunderDict) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+
+class D:
+  __slots__ = ()
+
+class E(C, D):
+  __slots__ = "x"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  ASSERT_TRUE(c.hasFlag(Type::Flag::kHasDunderDict));
+
+  Type e(&scope, mainModuleAt(runtime_, "E"));
+  Layout layout(&scope, e.instanceLayout());
+  EXPECT_FALSE(layout.isSealed());
+}
+
+TEST_F(TypeBuiltinsTest,
+       DunderSlotsWithNonObjectBuiltinBaseAddsInObjectAttributes) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C(dict):
+  __slots__ = "x"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Layout dict_layout(&scope, runtime_->layoutAt(LayoutId::kDict));
+  ASSERT_TRUE(dict_layout.isSealed());
+  Tuple dict_attributes(&scope, dict_layout.inObjectAttributes());
+  ASSERT_EQ(dict_attributes.length(), 4);
+  Tuple dict_elt3(&scope, dict_attributes.at(3));
+  AttributeInfo dict_elt3_info(dict_elt3.at(1));
+  EXPECT_TRUE(dict_elt3_info.isInObject());
+  EXPECT_TRUE(dict_elt3_info.isFixedOffset());
+
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Layout layout(&scope, c.instanceLayout());
+  // C's layout is sealed since it has only a sealed base.
+  EXPECT_TRUE(layout.isSealed());
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  ASSERT_EQ(attributes.length(), 5);
+
+  Tuple elt0(&scope, attributes.at(4));
+  EXPECT_TRUE(isStrEqualsCStr(elt0.at(0), "x"));
+  AttributeInfo info0(elt0.at(1));
+  EXPECT_TRUE(info0.isInObject());
+  EXPECT_TRUE(info0.isFixedOffset());
+  EXPECT_EQ(info0.offset(), dict_elt3_info.offset() + kPointerSize);
+}
+
+TEST_F(TypeBuiltinsTest,
+       DunderSlotsWithConflictingLayoutBasesOfUserTypeRaisesTypeError) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = "x"
+
+class D:
+  __slots__ = "y"
+)")
+                   .isError());
+  ASSERT_TRUE(raisedWithStr(runFromCStr(runtime_, "class E(C, D): pass"),
+                            LayoutId::kTypeError,
+                            "multiple bases have instance lay-out conflict"));
+}
+
+TEST_F(TypeBuiltinsTest,
+       DunderSlotsWithConflictingLayoutBasesOfBuiltinTypeRaisesTypeError) {
+  // Confliction between a builtin type and a user-defined type.
+  ASSERT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = "x" # This is conflicting with dict's in-object attributes.
+
+class D(C, dict):
+  pass
+)"),
+                            LayoutId::kTypeError,
+                            "multiple bases have instance lay-out conflict"));
+}
+
+TEST_F(TypeBuiltinsTest,
+       DunderSlotsWithEmptyTupleDoesNotConflictWithOtherDunderSlots) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = ()
+
+class D:
+  __slots__ = "x"
+
+class E(C, D):
+  pass
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type e(&scope, mainModuleAt(runtime_, "E"));
+  Layout layout(&scope, e.instanceLayout());
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  ASSERT_EQ(attributes.length(), 1);
+
+  Tuple elt0(&scope, attributes.at(0));
+  EXPECT_TRUE(isStrEqualsCStr(elt0.at(0), "x"));
+  AttributeInfo info0(elt0.at(1));
+  EXPECT_TRUE(info0.isInObject());
+  EXPECT_TRUE(info0.isFixedOffset());
+}
+
+TEST_F(TypeBuiltinsTest, DunderSlotsSharingSameLayoutBaseCanServceAsBases) {
+  // Although F's bases, D, E do not appear in the same type hierarchy
+  // (neither D is a subtype of E nor E is a subtype of D), but
+  // D's layout base (C) is the supertype of E, which makes the type checking
+  // succeed.
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = "x"
+
+class D(C):
+  pass
+
+class E(C):
+  __slots__ = "y"
+
+class F(D, E):
+  pass
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type f(&scope, mainModuleAt(runtime_, "F"));
+  Layout layout(&scope, f.instanceLayout());
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  ASSERT_EQ(attributes.length(), 2);
+
+  Tuple elt0(&scope, attributes.at(0));
+  EXPECT_TRUE(isStrEqualsCStr(elt0.at(0), "x"));
+  AttributeInfo info0(elt0.at(1));
+  EXPECT_TRUE(info0.isInObject());
+  EXPECT_TRUE(info0.isFixedOffset());
+
+  Tuple elt1(&scope, attributes.at(1));
+  EXPECT_TRUE(isStrEqualsCStr(elt1.at(0), "y"));
+  AttributeInfo info1(elt1.at(1));
+  EXPECT_TRUE(info1.isInObject());
+  EXPECT_TRUE(info1.isFixedOffset());
+}
+
+static RawObject newExtensionType(PyObject* extension_type) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  // Initialize Type
+  Type type(&scope, runtime->newType());
+
+  // Compute MRO
+  Tuple mro(&scope, runtime->newTuple(2));
+  mro.atPut(0, *type);
+  mro.atPut(1, runtime->typeAt(LayoutId::kObject));
+  type.setMro(*mro);
+
+  // Initialize instance Layout
+  Layout layout(&scope,
+                runtime->computeInitialLayout(thread, type, LayoutId::kObject));
+  layout.setNumInObjectAttributes(3);
+  layout.setDescribedType(*type);
+  type.setInstanceLayout(*layout);
+  type.setFlagsAndBuiltinBase(RawType::Flag::kIsNativeProxy, LayoutId::kObject);
+
+  extension_type->reference_ = type.raw();
+  return *type;
+}
+
+TEST_F(TypeBuiltinsTest,
+       DunderSlotsWithExtensionTypeAsBaseAddsInObjectAttributes) {
+  // Create a main module.
+  ASSERT_FALSE(runFromCStr(runtime_, "").isError());
+  HandleScope scope(thread_);
+  PyObject extension_type;
+  Type type(&scope, newExtensionType(&extension_type));
+  ASSERT_TRUE(type.hasFlag(Type::Flag::kIsNativeProxy));
+
+  Module main_module(&scope, findMainModule(runtime_));
+  Str type_name(&scope, runtime_->newStrFromCStr("ExtType"));
+  moduleAtPut(thread_, main_module, type_name, type);
+
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C(ExtType):
+  __slots__ = "x", "y"
+)")
+                   .isError());
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  ASSERT_TRUE(c.hasFlag(Type::Flag::kIsNativeProxy));
+
+  Layout layout(&scope, c.instanceLayout());
+  Tuple attributes(&scope, layout.inObjectAttributes());
+  // 3 for NativeProxy, and 2 for "x", y".
+  ASSERT_EQ(attributes.length(), 3 + 2);
+
+  Tuple elt3(&scope, attributes.at(3));
+  EXPECT_TRUE(isStrEqualsCStr(elt3.at(0), "x"));
+  AttributeInfo info3(elt3.at(1));
+  EXPECT_TRUE(info3.isInObject());
+  EXPECT_TRUE(info3.isFixedOffset());
+
+  Tuple elt4(&scope, attributes.at(4));
+  EXPECT_TRUE(isStrEqualsCStr(elt4.at(0), "y"));
+  AttributeInfo info4(elt4.at(1));
+  EXPECT_TRUE(info4.isInObject());
+  EXPECT_TRUE(info4.isFixedOffset());
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderMroAttribute) {

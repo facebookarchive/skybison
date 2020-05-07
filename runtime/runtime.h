@@ -545,6 +545,15 @@ class Runtime {
   RawObject computeInitialLayout(Thread* thread, const Type& type,
                                  LayoutId base_layout_id);
 
+  // Constructs the initial layout for instances of type.
+  //
+  // The layout contains the set of in-object attributes, as given by
+  // `in_object_attributes`.
+  RawObject computeInitialLayoutWithSlotAttributes(Thread* thread,
+                                                   const Type& type,
+                                                   LayoutId base_layout_id,
+                                                   const List& slots);
+
   // Returns type's __init__ method, or None
   RawObject classConstructor(const Type& type);
 
@@ -893,6 +902,13 @@ class Runtime {
   RawObject layoutCreateSubclassWithBuiltins(LayoutId subclass_id,
                                              LayoutId superclass_id,
                                              View<BuiltinAttribute> attributes);
+
+  // Creates a layout that is a subclass of `subclass_id` with additional
+  // slot attributes in object as described by `attributes`.
+  RawObject layoutCreateSubclassWithSlotAttributes(Thread* thread,
+                                                   LayoutId subclass_id,
+                                                   LayoutId superclass_id,
+                                                   const List& attributes);
 
   // Appends attribute entries for fixed attributes to an array of in-object
   // attribute entries starting at a specific index.  Useful for constructing

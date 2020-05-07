@@ -281,7 +281,18 @@ RawObject objectNew(Thread* thread, const Type& type) {
           "object.__new__(%S) is not safe. Use %S.__new__()", &type_name,
           &type_name);
     }
-    return runtime->newInstance(layout);
+    Instance result(&scope, runtime->newInstance(layout));
+    if (type.hasFlag(Type::Flag::kHasSlots)) {
+      Tuple attributes(&scope, layout.inObjectAttributes());
+      for (word i = 0, length = attributes.length(); i < length; i++) {
+        AttributeInfo info(Tuple::cast(attributes.at(i)).at(1));
+        if (info.isInitWithUnbound()) {
+          DCHECK(info.isInObject(), "in-object is expected");
+          result.instanceVariableAtPut(info.offset(), Unbound::object());
+        }
+      }
+    }
+    return *result;
   }
   // `type` is an abstract class and cannot be instantiated.
   Object name(&scope, type.name());

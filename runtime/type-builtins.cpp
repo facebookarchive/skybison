@@ -720,36 +720,53 @@ void typeAddDocstring(Thread* thread, const Type& type) {
   }
 }
 
-static LayoutId computeBuiltinBase(Thread* thread, const Tuple& bases) {
-  // The base class can only be one of the builtin bases including object.
-  // We use the first non-object builtin base if any, throw if multiple.
+static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases);
+
+// Returns the most generic base of `type` on `type's type hierarchy that
+// contains all in-object attributes of `type`. Note that this is designed to
+// simulate `solid_base` from CPython's typeobject.c.
+static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type) {
+  if (type.hasFlag(Type::Flag::kIsFixedAttributeBase)) {
+    return *type;
+  }
+  if (!type.hasFlag(Type::Flag::kHasSlots)) {
+    return thread->runtime()->typeAt(type.builtinBase());
+  }
+  HandleScope scope(thread);
+  Tuple bases(&scope, type.bases());
+  return computeFixedAttributeBase(thread, bases);
+}
+
+// Returns the most generic base among `bases` that captures inherited
+// attributes with a fixed offset (either from __slots__ or builtin types)
+// Note that this simulates `best_base` from CPython's typeobject.c.
+static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
   HandleScope scope(thread);
   Type base0(&scope, bases.at(0));
   word length = bases.length();
-  if (length == 1) {
-    return base0.builtinBase();
-  }
-  Runtime* runtime = thread->runtime();
-  Type result(&scope, runtime->typeAt(base0.builtinBase()));
+  Type result(&scope, fixedAttributeBaseOfType(thread, base0));
+  if (length == 1) return *result;
+
   for (word i = 1; i < length; i++) {
     Type base(&scope, bases.at(i));
-    Type builtin_base(&scope, runtime->typeAt(base.builtinBase()));
-    if (result == builtin_base || typeIsSubclass(result, builtin_base)) {
+    Type fixed_attr_base(&scope, fixedAttributeBaseOfType(thread, base));
+    if (result == fixed_attr_base || typeIsSubclass(result, fixed_attr_base)) {
       continue;
     }
-    if (typeIsSubclass(builtin_base, result)) {
-      result = *builtin_base;
+    if (typeIsSubclass(fixed_attr_base, result)) {
+      result = *fixed_attr_base;
     } else {
-      thread->raiseWithFmt(LayoutId::kTypeError,
-                           "multiple bases have instance lay-out conflict");
-      return LayoutId::kError;
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "multiple bases have instance lay-out conflict");
     }
   }
-  return result.builtinBase();
+  return *result;
 }
 
 static RawObject validateSlots(Thread* thread, const Type& type,
                                const Tuple& slots,
+                               LayoutId fixed_attr_base_layout_id,
                                bool* should_add_dunder_dict) {
   HandleScope scope(thread);
   word slots_len = slots.length();
@@ -759,6 +776,7 @@ static RawObject validateSlots(Thread* thread, const Type& type,
   List result(&scope, runtime->newList());
   Object slot_obj(&scope, NoneType::object());
   Str slot_str(&scope, Str::empty());
+  Layout base_layout(&scope, runtime->layoutAt(fixed_attr_base_layout_id));
   for (word i = 0; i < slots_len; i++) {
     slot_obj = slots.at(i);
     if (!runtime->isInstanceOfStr(*slot_obj)) {
@@ -786,7 +804,11 @@ static RawObject validateSlots(Thread* thread, const Type& type,
           LayoutId::kValueError,
           "'%S' in __slots__ conflicts with class variable", &slot_str);
     }
-    runtime->listAdd(thread, result, slot_str);
+    AttributeInfo ignored;
+    // Filter out attribute already defined by `fixed_attr_base`.
+    if (!Runtime::layoutFindAttribute(*base_layout, slot_str, &ignored)) {
+      runtime->listAdd(thread, result, slot_str);
+    }
   }
   listSort(thread, result);
   return *result;
@@ -818,73 +840,146 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   typeAddDocstring(thread, type);
 
   Tuple bases(&scope, type.bases());
-  LayoutId builtin_base = computeBuiltinBase(thread, bases);
-  if (builtin_base == LayoutId::kError) {
-    return Error::exception();
+  Object fixed_attr_base_obj(&scope, computeFixedAttributeBase(thread, bases));
+  if (fixed_attr_base_obj.isErrorException()) {
+    return *fixed_attr_base_obj;
   }
+  Type fixed_attr_base_type(&scope, *fixed_attr_base_obj);
+  LayoutId fixed_attr_base =
+      Layout::cast(fixed_attr_base_type.instanceLayout()).id();
 
-  Object slots_obj(&scope, typeAtById(thread, type, ID(__slots__)));
-  bool should_add_dunder_dict = true;
-  if (!slots_obj.isErrorNotFound()) {
-    if (runtime->isInstanceOfStr(*slots_obj)) {
-      Tuple slots_tuple(&scope, runtime->newTuple(1));
-      slots_tuple.atPut(0, *slots_obj);
-      slots_obj = *slots_tuple;
-    } else if (!runtime->isInstanceOfTuple(*slots_obj)) {
-      Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
-      slots_obj = Interpreter::callFunction1(thread, thread->currentFrame(),
-                                             tuple_type, slots_obj);
-      if (slots_obj.isErrorException()) {
-        return *slots_obj;
-      }
-      DCHECK(slots_obj.isTuple(), "tuple is expected");
-    }
-    Tuple slots(&scope, *slots_obj);
-    Object sorted_slots_obj(
-        &scope, validateSlots(thread, type, slots, &should_add_dunder_dict));
-    if (sorted_slots_obj.isError()) {
-      return *sorted_slots_obj;
-    }
-    List sorted_slots(&scope, *sorted_slots_obj);
-    Object slot_descriptor(&scope, NoneType::object());
-    Object slot_name(&scope, NoneType::object());
-    for (word i = 0; i < sorted_slots.numItems(); i++) {
-      slot_name = sorted_slots.at(i);
-      slot_descriptor = runtime->newSlotDescriptor(type, slot_name);
-      typeAtPut(thread, type, slot_name, slot_descriptor);
-    }
-    // TODO(T65228299): Create attributes for these slots in
-    // type.instanceLayout() to initialize them with Unbound::object(),
-    // and disable overflow attributes.
-  }
-
-  // Add this type as a direct subclass of each of its bases; Merge flags.
+  // Merge flags.
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
-  word bases_length = bases.length();
-  for (word i = 0; i < bases_length; i++) {
+  for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     flags |= base_type.flags();
   }
   flags &= ~Type::Flag::kIsAbstract;
+  // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
+  type.setFlags(static_cast<Type::Flag>(flags));
 
-  if (should_add_dunder_dict && !(flags & Type::Flag::kIsNativeProxy)) {
-    // TODO(T53800222): We may need a better signal than is/is not a builtin
-    // class.
-    flags |= Type::Flag::kHasDunderDict;
+  // Add NativeProxy's attributes only if fixed_attr_base is not added with
+  // NativeProxy's attributes.
+  bool should_add_native_proxy_attributes = false;
+  if (flags & Type::Flag::kIsNativeProxy) {
+    if (addInheritedSlots(type).isError()) {
+      return Error::exception();
+    }
+    if (!fixed_attr_base_type.hasFlag(Type::Flag::kIsNativeProxy)) {
+      should_add_native_proxy_attributes = true;
+      DCHECK(fixed_attr_base == LayoutId::kObject,
+             "A NativeProxy is not compatible with builtin type layouts");
+    }
   }
-  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
+  // TODO(T53800222): We may need a better signal than is/is not a builtin
+  // class.
+  bool should_add_dunder_dict = !(flags & Type::Flag::kIsNativeProxy);
 
-  // Initialize instance layout
-  Layout layout(&scope,
-                runtime->computeInitialLayout(thread, type, builtin_base));
+  Layout layout(&scope, runtime->layoutAt(LayoutId::kNoneType));
+  Object dunder_slots_obj(&scope, typeAtById(thread, type, ID(__slots__)));
+  bool has_non_empty_dunder_slots = false;
+  if (dunder_slots_obj.isErrorNotFound()) {
+    layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
+    if (should_add_native_proxy_attributes) {
+      layout = runtime->createNativeProxyLayout(thread, layout);
+    }
+  } else {
+    // NOTE: CPython raises an exception when slots are given to a subtype of a
+    // type with type.tp_itemsize != 0, which means having a variable length.
+    // For example, __slots__ in int's subtype or str's type is disallowed.
+    // This behavior is ignored in Pyro since all objects' size in RawObject is
+    // fixed in Pyro.
+    if (runtime->isInstanceOfStr(*dunder_slots_obj)) {
+      Tuple slots_tuple(&scope, runtime->newTuple(1));
+      slots_tuple.atPut(0, *dunder_slots_obj);
+      dunder_slots_obj = *slots_tuple;
+    } else if (!runtime->isInstanceOfTuple(*dunder_slots_obj)) {
+      Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
+      dunder_slots_obj = Interpreter::callFunction1(
+          thread, thread->currentFrame(), tuple_type, dunder_slots_obj);
+      if (dunder_slots_obj.isErrorException()) {
+        return *dunder_slots_obj;
+      }
+      DCHECK(dunder_slots_obj.isTuple(), "tuple is expected");
+    }
+    Tuple slots_tuple(&scope, *dunder_slots_obj);
+    Object sorted_dunder_slots_obj(
+        &scope, validateSlots(thread, type, slots_tuple, fixed_attr_base,
+                              &should_add_dunder_dict));
+    if (sorted_dunder_slots_obj.isErrorException()) {
+      return *sorted_dunder_slots_obj;
+    }
+    List slots(&scope, *sorted_dunder_slots_obj);
+    if (slots.numItems() > 0) {
+      // Add descriptors that mediate access to __slots__ attributes.
+      Object slot_descriptor(&scope, NoneType::object());
+      Object slot_name(&scope, NoneType::object());
+      for (word i = 0; i < slots.numItems(); i++) {
+        slot_name = slots.at(i);
+        slot_descriptor = runtime->newSlotDescriptor(type, slot_name);
+        typeAtPut(thread, type, slot_name, slot_descriptor);
+      }
+      if (should_add_native_proxy_attributes) {
+        // If NativeProxy is used with __slots__, we should start the layout
+        // with NativeProxy first.
+        Layout initial_fixed_attr_based_on_object(
+            &scope,
+            runtime->computeInitialLayout(thread, type, LayoutId::kObject));
+        Layout native_proxy_layout(
+            &scope, runtime->createNativeProxyLayout(
+                        thread, initial_fixed_attr_based_on_object));
+        // This layout contains NativeProxy's attributes at the beginning, so
+        // that we can add __slots__ attributes after them.
+        fixed_attr_base = native_proxy_layout.id();
+      }
+      // Create a new layout with in-object attributes for __slots__ based off
+      // fixed_attr_base.
+      layout = runtime->computeInitialLayoutWithSlotAttributes(
+          thread, type, fixed_attr_base, slots);
+    } else {
+      layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
+      if (should_add_native_proxy_attributes) {
+        layout = runtime->createNativeProxyLayout(thread, layout);
+      }
+    }
+    if (!should_add_dunder_dict && !(flags & Type::Flag::kHasDunderDict)) {
+      // Seal the type when bases do not have __dict__, and __dict_ does not
+      // appear in __slots__.
+      layout.setOverflowAttributes(NoneType::object());
+      DCHECK(layout.isSealed(), "layout.isSealed() is expected");
+    }
+    has_non_empty_dunder_slots = slots.numItems() > 0;
+  }
+
+  // Initialize instance layout.
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
-  for (word i = 0; i < bases_length; i++) {
+  // Add this type as a direct subclass of each of its bases.
+  for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     addSubclass(thread, base_type, type);
   }
+
+  if (should_add_dunder_dict) {
+    flags |= Type::Flag::kHasDunderDict;
+  }
+
+  if (has_non_empty_dunder_slots) {
+    flags |= Type::Flag::kHasSlots;
+    flags |= Type::Flag::kIsFixedAttributeBase;
+  }
+
+  if (!has_non_empty_dunder_slots) {
+    flags &= ~Type::Flag::kIsFixedAttributeBase;
+  }
+
+  LayoutId builtin_base = fixed_attr_base_type.builtinBase();
+  if (builtin_base == LayoutId::kError) {
+    return Error::exception();
+  }
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
 
   if (type.hasFlag(Type::Flag::kHasDunderDict) &&
       typeLookupInMroById(thread, type, ID(__dict__)).isErrorNotFound()) {
@@ -903,18 +998,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   if (!should_add_dunder_dict) {
     Str dunder_dict(&scope, runtime->symbols()->at(ID(__dict__)));
     typeRemove(thread, type, dunder_dict);
-  }
-
-  // TODO(T54448451): Decide whether type needs to become a builtin base
-  if (type.hasFlag(Type::Flag::kIsNativeProxy)) {
-    DCHECK(type.builtinBase() == LayoutId::kObject,
-           "A NativeProxy is not compatible with builtin type layouts");
-    if (addInheritedSlots(type).isError()) {
-      return Error::exception();
-    }
-    layout = runtime->createNativeProxyLayout(thread, layout);
-    layout.setDescribedType(*type);
-    type.setInstanceLayout(*layout);
   }
 
   // Special-case __init_subclass__ to be a classmethod
