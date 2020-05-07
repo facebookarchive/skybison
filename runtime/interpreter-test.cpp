@@ -3427,11 +3427,13 @@ a = AsyncIterator()
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(a));
   code.setConsts(*consts);
-  const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST,  0, GET_ANEXT,    0,
+                           BUILD_TUPLE, 2, RETURN_VALUE, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
-  Object result(&scope, runCode(code));
-  EXPECT_EQ(*a, *result);
+  Tuple result(&scope, runCode(code));
+  EXPECT_EQ(*a, result.at(0));
+  EXPECT_EQ(*a, result.at(1));
   Object anext(&scope, mainModuleAt(runtime_, "anext_called"));
   EXPECT_EQ(*a, *anext);
   Object await(&scope, mainModuleAt(runtime_, "await_called"));

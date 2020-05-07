@@ -1593,7 +1593,7 @@ HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object obj(&scope, frame->popValue());
+  Object obj(&scope, frame->topValue());
   Object anext(&scope, lookupMethod(thread, frame, obj, ID(__anext__)));
   if (anext.isError()) {
     if (anext.isErrorException()) {
