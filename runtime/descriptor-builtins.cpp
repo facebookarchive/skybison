@@ -3,9 +3,11 @@
 #include "builtins.h"
 #include "frame.h"
 #include "globals.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -38,6 +40,69 @@ RawObject METH(classmethod, __get__)(Thread* thread, Frame* frame, word nargs) {
 
   Object method(&scope, ClassMethod::cast(*self).function());
   return thread->runtime()->newBoundMethod(method, owner);
+}
+
+// slot_descriptor
+
+static RawObject slotDescriptorRaiseTypeError(
+    Thread* thread, const SlotDescriptor& slot_descriptor,
+    const Object& instance_obj) {
+  HandleScope scope(thread);
+  Str slot_descriptor_name(&scope, slot_descriptor.name());
+  Type slot_descriptor_type(&scope, slot_descriptor.type());
+  Str slot_descriptor_type_name(&scope, slot_descriptor_type.name());
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "descriptor '%S' for '%S' objects "
+                              "doesn't apply to '%T' object",
+                              &slot_descriptor_name, &slot_descriptor_type_name,
+                              &instance_obj);
+}
+
+RawObject METH(slot_descriptor, __get__)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  SlotDescriptor slot_descriptor(&scope, args.get(0));
+  Type slot_descriptor_type(&scope, slot_descriptor.type());
+  Object instance_obj(&scope, args.get(1));
+  Type instance_type(&scope,
+                     thread->runtime()->typeAt(instance_obj.layoutId()));
+  if (!typeIsSubclass(instance_type, slot_descriptor_type)) {
+    return slotDescriptorRaiseTypeError(thread, slot_descriptor, instance_obj);
+  }
+  DCHECK(instance_type.hasFlag(Type::Flag::kHasSlots),
+         "instance type is expected to set kHasSlots");
+  Instance instance(&scope, *instance_obj);
+  word offset = slot_descriptor.offset();
+  DCHECK_BOUND(offset, instance.size() - kPointerSize);
+  Object attribute_value(&scope, instance.instanceVariableAt(offset));
+  if (attribute_value.isUnbound()) {
+    Object attribute_name(&scope, slot_descriptor.name());
+    return objectRaiseAttributeError(thread, instance, attribute_name);
+  }
+  return *attribute_value;
+}
+
+RawObject METH(slot_descriptor, __set__)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  SlotDescriptor slot_descriptor(&scope, args.get(0));
+  Type slot_descriptor_type(&scope, slot_descriptor.type());
+  Object instance_obj(&scope, args.get(1));
+  Object value(&scope, args.get(2));
+  Type instance_type(&scope,
+                     thread->runtime()->typeAt(instance_obj.layoutId()));
+  if (!typeIsSubclass(instance_type, slot_descriptor_type)) {
+    return slotDescriptorRaiseTypeError(thread, slot_descriptor, instance_obj);
+  }
+  DCHECK(instance_type.hasFlag(Type::Flag::kHasSlots),
+         "instance type is expected to set kHasSlots");
+  Instance instance(&scope, *instance_obj);
+  word offset = slot_descriptor.offset();
+  DCHECK_BOUND(offset, instance.size() - kPointerSize);
+  instance.instanceVariableAtPut(offset, *value);
+  return NoneType::object();
 }
 
 // staticmethod

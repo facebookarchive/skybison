@@ -763,6 +763,53 @@ class F(D, E):
   EXPECT_TRUE(info1.isFixedOffset());
 }
 
+TEST_F(TypeBuiltinsTest, DunderSlotsPopulatesSlotDescriptorsWithCorrectValues) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  __slots__ = "x"
+
+class D(C):
+  __slots__ = "y"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Layout c_layout(&scope, c.instanceLayout());
+  // Checking descriptor for "x" in C.
+  {
+    Str x(&scope, runtime_->newStrFromCStr("x"));
+    SlotDescriptor descriptor_x(&scope, typeAt(c, x));
+    EXPECT_EQ(descriptor_x.type(), *c);
+    EXPECT_TRUE(isStrEqualsCStr(descriptor_x.name(), "x"));
+    AttributeInfo info;
+    ASSERT_TRUE(Runtime::layoutFindAttribute(*c_layout, x, &info));
+    EXPECT_EQ(descriptor_x.offset(), info.offset());
+  }
+
+  Type d(&scope, mainModuleAt(runtime_, "D"));
+  Layout d_layout(&scope, d.instanceLayout());
+  // Checking descriptors for "x" and "y" in D.
+  {
+    // "x" is inherited from C to D.
+    Str x(&scope, runtime_->newStrFromCStr("x"));
+    ASSERT_TRUE(typeAt(d, x).isErrorNotFound());
+    SlotDescriptor descriptor_x(&scope, typeLookupInMro(thread_, d, x));
+    EXPECT_EQ(descriptor_x.type(), *c);
+    EXPECT_TRUE(isStrEqualsCStr(descriptor_x.name(), "x"));
+    AttributeInfo info;
+    ASSERT_TRUE(Runtime::layoutFindAttribute(*d_layout, x, &info));
+    EXPECT_EQ(descriptor_x.offset(), info.offset());
+
+    // "y" is populated in D itself.
+    Str y(&scope, runtime_->newStrFromCStr("y"));
+    SlotDescriptor descriptor_y(&scope, typeAt(d, y));
+    EXPECT_EQ(descriptor_y.type(), *d);
+    EXPECT_TRUE(isStrEqualsCStr(descriptor_y.name(), "y"));
+    ASSERT_TRUE(Runtime::layoutFindAttribute(*d_layout, y, &info));
+    EXPECT_EQ(descriptor_y.offset(), info.offset());
+  }
+}
+
 static RawObject newExtensionType(PyObject* extension_type) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();

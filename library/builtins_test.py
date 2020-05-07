@@ -4708,6 +4708,109 @@ class DunderSlotsTests(unittest.TestCase):
         self.assertTrue(hasattr(F, "x"))
         self.assertTrue(hasattr(F, "y"))
 
+    def test_dunder_slots_attributes_raises_attribute_error_before_set(self):
+        class C:
+            __slots__ = "x"
+
+        c = C()
+        self.assertFalse(hasattr(c, "x"))
+        with self.assertRaises(AttributeError):
+            c.x
+
+    def test_dunder_slots_attributes_return_set_attributes(self):
+        class C:
+            __slots__ = "x"
+
+        c = C()
+        c.x = 500
+        self.assertEqual(c.x, 500)
+
+    def test_dunder_slots_with_sealed_base_seals_type(self):
+        class C:
+            __slots__ = ()
+
+        c = C()
+        with self.assertRaises(AttributeError):
+            c.x = 500
+        self.assertFalse(hasattr(c, "__dict__"))
+
+    def test_dunder_slots_with_unsealed_base_unseals_type(self):
+        class C:
+            pass
+
+        class D(C):
+            __slots__ = ()
+
+        d = D()
+        d.x = 500
+        self.assertEqual(d.x, 500)
+        self.assertTrue(hasattr(d, "__dict__"))
+
+    def test_dunder_slots_inherit_from_bases(self):
+        class C:
+            __slots__ = ()
+
+        class D(C):
+            __slots__ = "x", "y"
+
+        class E(D, C):
+            __slots__ = "z"
+
+        e = E()
+        e.x = 1
+        e.y = 2
+        e.z = 3
+        self.assertEqual(e.x, 1)
+        self.assertEqual(e.y, 2)
+        self.assertEqual(e.z, 3)
+        with self.assertRaises(AttributeError):
+            e.w = 500
+        self.assertFalse(hasattr(e, "__dict__"))
+
+    def test_dunder_slots_inherit_from_builtin_type(self):
+        class C(dict):
+            __slots__ = "x"
+
+        c = C()
+        c.x = 500
+        c["p"] = 4
+        c["q"] = 5
+        self.assertEqual(c.x, 500)
+        self.assertEqual(c["p"], 4)
+        self.assertEqual(c["q"], 5)
+
+    def test_dunder_slots_member_descriptor_works_only_for_subtypes(self):
+        class C:
+            __slots__ = "x"
+
+        class D(C):
+            __slots__ = "y"
+
+        class E:
+            __slots__ = "x"
+
+        d = D()
+        # C's member_descriptor for "x" works for D instances.
+        C.x.__set__(d, 500)
+        self.assertEqual(C.x.__get__(d), 500)
+        self.assertEqual(d.x, 500)
+
+        e = E()
+        with self.assertRaises(TypeError) as context:
+            C.x.__set__(e, 500)
+        self.assertEqual(
+            str(context.exception),
+            "descriptor 'x' for 'C' objects doesn't apply to 'E' object",
+        )
+
+        e.x = 600
+        with self.assertRaises(TypeError) as context:
+            C.x.__get__(e)
+        self.assertEqual(
+            str(context.exception),
+            "descriptor 'x' for 'C' objects doesn't apply to 'E' object",
+        )
+
 
 class EllipsisTypeTests(unittest.TestCase):
     def test_repr_returns_not_implemented(self):

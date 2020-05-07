@@ -956,12 +956,14 @@ RawObject Runtime::newModuleProxy(const Module& module) {
   return *result;
 }
 
-RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name) {
+RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name,
+                                     word offset) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   SlotDescriptor result(&scope, heap()->create<RawSlotDescriptor>());
   result.setType(*type);
   result.setName(*name);
+  result.setOffset(offset);
   return *result;
 }
 

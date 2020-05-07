@@ -1925,10 +1925,15 @@ class RawSlotDescriptor : public RawInstance {
   RawObject name() const;
   void setName(RawObject name) const;
 
+  // Offset of the attribute this descriptor is for.
+  word offset() const;
+  void setOffset(word offset) const;
+
   // Layout.
   static const int kTypeOffset = RawHeapObject::kSize + kPointerSize;
   static const int kNameOffset = kTypeOffset + kPointerSize;
-  static const int kSize = kNameOffset + kPointerSize;
+  static const int kOffsetOffset = kNameOffset + kPointerSize;
+  static const int kSize = kOffsetOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(SlotDescriptor);
 };
@@ -5814,6 +5819,15 @@ inline RawObject RawSlotDescriptor::name() const {
 
 inline void RawSlotDescriptor::setName(RawObject name) const {
   instanceVariableAtPut(kNameOffset, name);
+}
+
+inline word RawSlotDescriptor::offset() const {
+  return RawSmallInt::cast(RawSlotDescriptor::instanceVariableAt(kOffsetOffset))
+      .value();
+}
+
+inline void RawSlotDescriptor::setOffset(word offset) const {
+  instanceVariableAtPut(kOffsetOffset, RawSmallInt::fromWord(offset));
 }
 
 // RawStaticMethod

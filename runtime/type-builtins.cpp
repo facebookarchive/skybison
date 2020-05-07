@@ -244,7 +244,9 @@ Type::Slot slotToTypeSlot(int slot) {
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
   if (type.isBuiltin()) {
-    return Layout::cast(type.instanceLayout()).id() == LayoutId::kProperty;
+    LayoutId layout_id = Layout::cast(type.instanceLayout()).id();
+    return layout_id == LayoutId::kProperty ||
+           layout_id == LayoutId::kSlotDescriptor;
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   return !typeLookupInMroById(thread, type, ID(__set__)).isError();
@@ -912,14 +914,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
     List slots(&scope, *sorted_dunder_slots_obj);
     if (slots.numItems() > 0) {
-      // Add descriptors that mediate access to __slots__ attributes.
-      Object slot_descriptor(&scope, NoneType::object());
-      Object slot_name(&scope, NoneType::object());
-      for (word i = 0; i < slots.numItems(); i++) {
-        slot_name = slots.at(i);
-        slot_descriptor = runtime->newSlotDescriptor(type, slot_name);
-        typeAtPut(thread, type, slot_name, slot_descriptor);
-      }
       if (should_add_native_proxy_attributes) {
         // If NativeProxy is used with __slots__, we should start the layout
         // with NativeProxy first.
@@ -937,6 +931,21 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       // fixed_attr_base.
       layout = runtime->computeInitialLayoutWithSlotAttributes(
           thread, type, fixed_attr_base, slots);
+      // Add descriptors that mediate access to __slots__ attributes.
+      Object slot_descriptor(&scope, NoneType::object());
+      Object slot_name(&scope, NoneType::object());
+      for (word i = 0; i < slots.numItems(); i++) {
+        slot_name = slots.at(i);
+        AttributeInfo info;
+        CHECK(Runtime::layoutFindAttribute(*layout, slot_name, &info),
+              "expected to find the slot attribute");
+        DCHECK(
+            info.isInObject() && info.isFixedOffset(),
+            "slot attributes are expected to be in object with a fixed offset");
+        slot_descriptor =
+            runtime->newSlotDescriptor(type, slot_name, info.offset());
+        typeAtPut(thread, type, slot_name, slot_descriptor);
+      }
     } else {
       layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
       if (should_add_native_proxy_attributes) {

@@ -5577,13 +5577,13 @@ class slice(bootstrap=True):
 
 class slot_descriptor(bootstrap=True):
     def __get__(self, instance, owner=None):
-        _unimplemented()
+        _builtin()
 
     def __new__(cls, *args, **kwargs):
         raise TypeError("cannot create 'slot_descriptor' instances")
 
     def __set__(self, instance, value):
-        _unimplemented()
+        _builtin()
 
 
 def sorted(iterable, *, key=None, reverse=False):
