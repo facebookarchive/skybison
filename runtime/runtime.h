@@ -156,6 +156,8 @@ class Runtime {
 
   RawObject newSeqIterator(const Object& sequence);
 
+  RawObject newSlotDescriptor(const Type& type, const Object& name);
+
   // Create a new MemoryView object. Initializes the view format to "B".
   RawObject newMemoryView(Thread* thread, const Object& obj,
                           const Object& buffer, word length,

@@ -88,6 +88,7 @@ class Handle;
   V(Set)                                                                       \
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
+  V(SlotDescriptor)                                                            \
   V(StaticMethod)                                                              \
   V(StrArray)                                                                  \
   V(StrIterator)                                                               \
@@ -360,6 +361,7 @@ class RawObject {
   bool isSet() const;
   bool isSetIterator() const;
   bool isSlice() const;
+  bool isSlotDescriptor() const;
   bool isStaticMethod() const;
   bool isStopIteration() const;
   bool isStrArray() const;
@@ -1904,6 +1906,25 @@ class RawSlice : public RawInstance {
   void setStop(RawObject value) const;
 
   friend class Runtime;
+};
+
+class RawSlotDescriptor : public RawInstance {
+ public:
+  // Setters and getters.
+  // Type that this descriptor is created for.
+  RawObject type() const;
+  void setType(RawObject type) const;
+
+  // Name of attribute that this descriptor wraps.
+  RawObject name() const;
+  void setName(RawObject name) const;
+
+  // Layout.
+  static const int kTypeOffset = RawHeapObject::kSize + kPointerSize;
+  static const int kNameOffset = kTypeOffset + kPointerSize;
+  static const int kSize = kNameOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(SlotDescriptor);
 };
 
 class RawStaticMethod : public RawInstance {
@@ -4029,6 +4050,10 @@ inline bool RawObject::isSlice() const {
   return isHeapObjectWithLayout(LayoutId::kSlice);
 }
 
+inline bool RawObject::isSlotDescriptor() const {
+  return isHeapObjectWithLayout(LayoutId::kSlotDescriptor);
+}
+
 inline bool RawObject::isStaticMethod() const {
   return isHeapObjectWithLayout(LayoutId::kStaticMethod);
 }
@@ -5765,6 +5790,24 @@ inline RawObject RawSlice::step() const {
 
 inline void RawSlice::setStep(RawObject value) const {
   instanceVariableAtPut(kStepOffset, value);
+}
+
+// RawSlotDescriptor
+
+inline RawObject RawSlotDescriptor::type() const {
+  return RawSlotDescriptor::instanceVariableAt(kTypeOffset);
+}
+
+inline void RawSlotDescriptor::setType(RawObject type) const {
+  instanceVariableAtPut(kTypeOffset, type);
+}
+
+inline RawObject RawSlotDescriptor::name() const {
+  return RawSlotDescriptor::instanceVariableAt(kNameOffset);
+}
+
+inline void RawSlotDescriptor::setName(RawObject name) const {
+  instanceVariableAtPut(kNameOffset, name);
 }
 
 // RawStaticMethod

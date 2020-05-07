@@ -182,6 +182,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(set), LayoutId::kSet},
     {ID(set_iterator), LayoutId::kSetIterator},
     {ID(slice), LayoutId::kSlice},
+    {ID(slot_descriptor), LayoutId::kSlotDescriptor},
     {ID(staticmethod), LayoutId::kStaticMethod},
     {ID(str), LayoutId::kStr},
     {ID(str_iterator), LayoutId::kStrIterator},

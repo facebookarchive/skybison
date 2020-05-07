@@ -1309,6 +1309,25 @@ RawObject METH(str, isdigit)(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
+bool strIsIdentifier(const Str& str) {
+  word char_length = str.length();
+  if (char_length == 0) {
+    return false;
+  }
+  word len;
+  int32_t first = str.codePointAt(0, &len);
+  if (!Unicode::isXidStart(first) && first != '_') {
+    return false;
+  }
+  for (word i = len; i < char_length; i += len) {
+    int32_t code_point = str.codePointAt(i, &len);
+    if (!Unicode::isXidContinue(code_point)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1317,22 +1336,7 @@ RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  word char_length = self.length();
-  if (char_length == 0) {
-    return Bool::falseObj();
-  }
-  word len;
-  int32_t first = self.codePointAt(0, &len);
-  if (!Unicode::isXidStart(first) && first != '_') {
-    return Bool::falseObj();
-  }
-  for (word i = len; i < char_length; i += len) {
-    int32_t code_point = self.codePointAt(i, &len);
-    if (!Unicode::isXidContinue(code_point)) {
-      return Bool::falseObj();
-    }
-  }
-  return Bool::trueObj();
+  return Bool::fromBool(strIsIdentifier(self));
 }
 
 RawObject METH(str, islower)(Thread* thread, Frame* frame, word nargs) {
