@@ -1974,7 +1974,21 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   Object value(&scope, frame->popValue());
   Object iterator(&scope, frame->topValue());
   Object result(&scope, NoneType::object());
-  if (value.isNoneType()) {
+  if (iterator.isGenerator() || iterator.isCoroutine() || !value.isNoneType()) {
+    Object send_method(&scope, lookupMethod(thread, frame, iterator, ID(send)));
+    if (send_method.isError()) {
+      if (send_method.isErrorException()) {
+        thread->clearPendingException();
+      } else {
+        DCHECK(send_method.isErrorNotFound(),
+               "expected Error::exception() or Error::notFound()");
+      }
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "iter() returned non-iterator");
+      return Continue::UNWIND;
+    }
+    result = callMethod2(thread, frame, send_method, iterator, value);
+  } else {
     Object next_method(&scope,
                        lookupMethod(thread, frame, iterator, ID(__next__)));
     if (next_method.isError()) {
@@ -1989,20 +2003,6 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
       return Continue::UNWIND;
     }
     result = callMethod1(thread, frame, next_method, iterator);
-  } else {
-    Object send_method(&scope, lookupMethod(thread, frame, iterator, ID(send)));
-    if (send_method.isError()) {
-      if (send_method.isErrorException()) {
-        thread->clearPendingException();
-      } else {
-        DCHECK(send_method.isErrorNotFound(),
-               "expected Error::exception() or Error::notFound()");
-      }
-      thread->raiseWithFmt(LayoutId::kTypeError,
-                           "iter() returned non-iterator");
-      return Continue::UNWIND;
-    }
-    result = callMethod2(thread, frame, send_method, iterator, value);
   }
   if (result.isErrorException()) {
     if (!thread->hasPendingStopIteration()) return Continue::UNWIND;

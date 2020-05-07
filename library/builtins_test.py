@@ -3362,6 +3362,36 @@ class ComplexTests(unittest.TestCase):
         self.assertEqual(r, 1.0)
 
 
+class CoroutineTests(unittest.TestCase):
+    def test_coroutine_awaiting_on_further_coroutine_with_no_arguments(self):
+        async def f():
+            pass
+
+        async def g():
+            return await f()
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            g().send(None)
+
+        self.assertIs(exc.exception.value, None)
+
+    def test_coroutine_awaiting_on_further_coroutine_with_an_argument(self):
+        v = "foo"
+
+        async def f(v):
+            return v
+
+        async def g():
+            return await f(v)
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            g().send(None)
+
+        self.assertIs(exc.exception.value, v)
+
+
 class DelattrTests(unittest.TestCase):
     def test_non_str_as_name_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
