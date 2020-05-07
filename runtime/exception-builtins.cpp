@@ -25,6 +25,8 @@ LayoutId errorLayoutFromErrno(int errno_value) {
       return LayoutId::kBlockingIOError;
     case EALREADY:
       return LayoutId::kBlockingIOError;
+    case EINPROGRESS:
+      return LayoutId::kBlockingIOError;
     case EPIPE:
       return LayoutId::kBrokenPipeError;
     case ECHILD:
