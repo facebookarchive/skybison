@@ -620,7 +620,6 @@ RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
   if (object.isMmap()) {
     Mmap mmap_obj(&scope, *object);
     Pointer pointer(&scope, mmap_obj.data());
-    // TODO(T64584485): Store the Pointer itself inside the memoryview
     MemoryView result(
         &scope,
         runtime->newMemoryViewFromCPtr(
