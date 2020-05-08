@@ -1,12 +1,12 @@
 #pragma once
 
-#include "frame.h"
 #include "globals.h"
-#include "modules.h"
-#include "objects.h"
-#include "runtime.h"
+#include "handles-decl.h"
+#include "symbols.h"
 
 namespace py {
+
+class Thread;
 
 RawObject delAttribute(Thread* thread, const Object& object,
                        const Object& name);
@@ -20,13 +20,6 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
 RawObject compile(Thread* thread, const Object& source, const Object& filename,
                   SymbolId mode, word flags, int optimize);
 
-class BuiltinsModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
-
- private:
-  static const BuiltinType kBuiltinTypes[];
-  static const SymbolId kIntrinsicIds[];
-};
+void initializeBuiltinsModule(Thread* thread, const Module& module);
 
 }  // namespace py

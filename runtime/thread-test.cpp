@@ -12,6 +12,7 @@
 #include "interpreter.h"
 #include "marshal.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 #include "test-utils.h"
 #include "type-builtins.h"

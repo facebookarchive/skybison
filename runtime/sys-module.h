@@ -2,11 +2,9 @@
 
 #include <cstdarg>
 
-#include "frame.h"
 #include "globals.h"
-#include "modules.h"
-#include "objects.h"
-#include "runtime.h"
+#include "handles-decl.h"
+#include "thread.h"
 
 namespace py {
 
@@ -30,12 +28,6 @@ void writeStderrV(Thread* thread, const char* format, va_list va);
 
 RawObject initialSysPath(Thread* thread);
 
-class SysModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SysModule);
-};
+void initializeSysModule(Thread* thread, const Module& module);
 
 }  // namespace py

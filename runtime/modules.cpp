@@ -31,35 +31,36 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 }
 
 const ModuleInitializer kBuiltinModules[] = {
-    {ID(_builtins), &UnderBuiltinsModule::initialize},
+    {ID(_builtins), &initializeUnderBuiltinsModule},
     {ID(_codecs), &initializeFrozenModule<&kUnderCodecsModuleData>},
-    {ID(_ctypes), UnderCtypesModule::initialize},
+    {ID(_ctypes), initializeUnderCtypesModule},
     {ID(_frozen_importlib),
      &initializeFrozenModule<&kUnderBootstrapModuleData>},
     {ID(_frozen_importlib_external),
      &initializeFrozenModule<&kUnderBootstrapExternalModuleData>},
     {ID(_imp), &initializeFrozenModule<&kUnderImpModuleData>},
-    {ID(_io), &UnderIoModule::initialize},
+    {ID(_io), &initializeUnderIOModule},
     {ID(_os), &initializeFrozenModule<&kUnderOsModuleData>},
     {ID(_path), &initializeFrozenModule<&kUnderPathModuleData>},
-    {ID(_signal), &UnderSignalModule::initialize},
+    {ID(_signal), &initializeUnderSignalModule},
     {ID(_str_mod), &initializeFrozenModule<&kUnderStrModModuleData>},
     {ID(_thread), &initializeFrozenModule<&kUnderThreadModuleData>},
     {ID(_valgrind), &initializeFrozenModule<&kUnderValgrindModuleData>},
     {ID(_warnings), &initializeFrozenModule<&kUnderWarningsModuleData>},
-    {ID(_weakref), &UnderWeakrefModule::initialize},
-    {ID(array), &ArrayModule::initialize},
-    {ID(builtins), &BuiltinsModule::initialize},
+    {ID(_weakref), &initializeUnderWeakrefModule},
+    {ID(array), &initializeArrayModule},
+    {ID(builtins), &initializeBuiltinsModule},
     {ID(faulthandler), &initializeFrozenModule<&kFaulthandlerModuleData>},
     {ID(marshal), &initializeFrozenModule<&kMarshalModuleData>},
-    {ID(mmap), &MmapModule::initialize},
+    {ID(mmap), &initializeMmapModule},
     {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
-    {ID(sys), &SysModule::initialize},
-    {ID(unicodedata), &UnicodedataModule::initialize},
+    {ID(sys), &initializeSysModule},
+    {ID(unicodedata), &initializeUnicodedataModule},
     {ID(warnings), &initializeFrozenModule<&kWarningsModuleData>},
     {ID(zipimport), &initializeFrozenModule<&kZipimportModuleData>},
-    {SymbolId::kSentinelId, nullptr},
 };
+
+const word kNumBuiltinModules = ARRAYSIZE(kBuiltinModules);
 
 static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
   // Ensure builtin types have been declared.
@@ -97,7 +98,7 @@ static word extensionModuleIndex(const Str& name) {
 static word builtinModuleIndex(Thread* thread, const Str& name) {
   DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
   Runtime* runtime = thread->runtime();
-  for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
+  for (word i = 0; i < kNumBuiltinModules; i++) {
     if (runtime->symbols()->at(kBuiltinModules[i].name) == name) {
       return i;
     }
@@ -199,13 +200,13 @@ bool isBuiltinModule(Thread* thread, const Str& name) {
 }
 
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
-                           const BuiltinType* types) {
+                           View<BuiltinType> types) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object type(&scope, NoneType::object());
-  for (word i = 0; types[i].name != SymbolId::kSentinelId; i++) {
-    type = runtime->typeAt(types[i].type);
-    moduleAtPutById(thread, module, types[i].name, type);
+  for (word i = 0, length = types.length(); i < length; i++) {
+    type = runtime->typeAt(types.get(i).type);
+    moduleAtPutById(thread, module, types.get(i).name, type);
   }
 }
 

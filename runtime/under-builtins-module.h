@@ -1,20 +1,11 @@
 #pragma once
 
-#include "frame.h"
-#include "globals.h"
-#include "handles.h"
-#include "modules.h"
-#include "objects.h"
-#include "runtime.h"
+#include "handles-decl.h"
 
 namespace py {
 
-class UnderBuiltinsModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
+class Thread;
 
- private:
-  static const SymbolId kIntrinsicIds[];
-};
+void initializeUnderBuiltinsModule(Thread* thread, const Module& module);
 
 }  // namespace py

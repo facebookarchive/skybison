@@ -29,7 +29,7 @@ namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
-void SysModule::initialize(Thread* thread, const Module& module) {
+void initializeSysModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object modules(&scope, runtime->modules());
@@ -87,23 +87,19 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   while (_PyImport_Inittab[num_external_modules].name != nullptr) {
     num_external_modules++;
   }
-  uword num_builtin_modules = 0;
-  while (kBuiltinModules[num_builtin_modules].name != SymbolId::kSentinelId) {
-    num_builtin_modules++;
-  }
 
-  uword num_modules = num_builtin_modules + num_external_modules;
+  word num_modules = kNumBuiltinModules + num_external_modules;
   MutableTuple builtins_tuple(&scope, runtime->newMutableTuple(num_modules));
 
   // Add all the available builtin modules
   Symbols* symbols = runtime->symbols();
-  for (uword i = 0; i < num_builtin_modules; i++) {
+  for (word i = 0; i < kNumBuiltinModules; i++) {
     builtins_tuple.atPut(i, symbols->at(kBuiltinModules[i].name));
   }
 
   // Add all the available extension builtin modules
   for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    builtins_tuple.atPut(num_builtin_modules + i,
+    builtins_tuple.atPut(kNumBuiltinModules + i,
                          runtime->newStrFromCStr(_PyImport_Inittab[i].name));
   }
 

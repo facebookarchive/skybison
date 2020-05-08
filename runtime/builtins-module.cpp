@@ -72,7 +72,7 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
   return NoneType::object();
 }
 
-const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
+static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(ArithmeticError), LayoutId::kArithmeticError},
     {ID(AssertionError), LayoutId::kAssertionError},
     {ID(AttributeError), LayoutId::kAttributeError},
@@ -191,21 +191,21 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {ID(tuple_iterator), LayoutId::kTupleIterator},
     {ID(type), LayoutId::kType},
     {ID(type_proxy), LayoutId::kTypeProxy},
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-const SymbolId BuiltinsModule::kIntrinsicIds[] = {
+// clang-format off
+static const SymbolId kBuiltinsIntrinsicIds[] = {
     ID(_index),
     ID(_number_check),
     ID(_slice_index),
     ID(_slice_index_not_none),
     ID(isinstance),
     ID(len),
-    SymbolId::kSentinelId,
 };
+// clang-format on
 
-void BuiltinsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+void initializeBuiltinsModule(Thread* thread, const Module& module) {
+  moduleAddBuiltinTypes(thread, module, kBuiltinsBuiltinTypes);
 
   Runtime* runtime = thread->runtime();
   runtime->cacheBuildClass(thread, module);
@@ -248,8 +248,7 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
   }
 
   // Mark functions that have an intrinsic implementation.
-  for (word i = 0; kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
-    SymbolId intrinsic_id = kIntrinsicIds[i];
+  for (SymbolId intrinsic_id : kBuiltinsIntrinsicIds) {
     Function::cast(moduleAtById(thread, module, intrinsic_id))
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }

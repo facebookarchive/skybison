@@ -17,7 +17,7 @@
 
 namespace py {
 
-const BuiltinType UnderIoModule::kBuiltinTypes[] = {
+static const BuiltinType kUnderIOBuiltinTypes[] = {
     {ID(BufferedRandom), LayoutId::kBufferedRandom},
     {ID(BufferedReader), LayoutId::kBufferedReader},
     {ID(BufferedWriter), LayoutId::kBufferedWriter},
@@ -31,11 +31,10 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {ID(_IOBase), LayoutId::kUnderIOBase},
     {ID(_RawIOBase), LayoutId::kUnderRawIOBase},
     {ID(_TextIOBase), LayoutId::kUnderTextIOBase},
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-void UnderIoModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+void initializeUnderIOModule(Thread* thread, const Module& module) {
+  moduleAddBuiltinTypes(thread, module, kUnderIOBuiltinTypes);
   executeFrozenModule(thread, &kUnderIoModuleData, module);
 }
 

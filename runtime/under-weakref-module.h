@@ -1,16 +1,11 @@
 #pragma once
 
-#include "modules.h"
-#include "symbols.h"
+#include "handles-decl.h"
 
 namespace py {
 
-class UnderWeakrefModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
+class Thread;
 
- private:
-  static const BuiltinType kBuiltinTypes[];
-};
+void initializeUnderWeakrefModule(Thread* thread, const Module& module);
 
 }  // namespace py

@@ -47,8 +47,9 @@ NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
 bool isBuiltinModule(Thread* thread, const Str& name);
 
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
-                           const BuiltinType* types);
+                           View<BuiltinType> types);
 
 extern const ModuleInitializer kBuiltinModules[];
+extern const word kNumBuiltinModules;
 
 }  // namespace py

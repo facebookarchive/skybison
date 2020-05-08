@@ -12,13 +12,12 @@
 
 namespace py {
 
-const BuiltinType ArrayModule::kBuiltinTypes[] = {
+static const BuiltinType kArrayBuiltinTypes[] = {
     {ID(array), LayoutId::kArray},
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-void ArrayModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+void initializeArrayModule(Thread* thread, const Module& module) {
+  moduleAddBuiltinTypes(thread, module, kArrayBuiltinTypes);
   executeFrozenModule(thread, &kArrayModuleData, module);
 }
 

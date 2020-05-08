@@ -1,22 +1,12 @@
 #pragma once
 
-#include "frame.h"
-#include "globals.h"
-#include "modules.h"
-#include "objects.h"
-#include "runtime.h"
+#include "handles-decl.h"
 
 namespace py {
 
-class MmapModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
+class Thread;
 
- private:
-  static const BuiltinType kBuiltinTypes[];
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(MmapModule);
-};
+void initializeMmapModule(Thread* thread, const Module& module);
 
 void initializeMmapType(Thread* thread);
 

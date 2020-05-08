@@ -21,12 +21,11 @@
 
 namespace py {
 
-const BuiltinType MmapModule::kBuiltinTypes[] = {
+static const BuiltinType kMmapBuiltinTypes[] = {
     {ID(mmap), LayoutId::kMmap},
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-void MmapModule::initialize(Thread* thread, const Module& module) {
+void initializeMmapModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Object page_size(&scope, SmallInt::fromWord(OS::pageSize()));
   moduleAtPutById(thread, module, ID(PAGESIZE), page_size);
@@ -47,7 +46,7 @@ void MmapModule::initialize(Thread* thread, const Module& module) {
                      SmallInt::fromWord(static_cast<word>(MAP_PRIVATE)));
   moduleAtPutById(thread, module, ID(MAP_PRIVATE), map_private);
 
-  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+  moduleAddBuiltinTypes(thread, module, kMmapBuiltinTypes);
   executeFrozenModule(thread, &kMmapModuleData, module);
 }
 

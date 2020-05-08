@@ -76,7 +76,7 @@ static PyObject* wstringAt(const wchar_t* /* ptr */, int /* size */) {
   UNIMPLEMENTED("_ctypes wstringAt");
 }
 
-void UnderCtypesModule::initialize(Thread* thread, const Module& module) {
+void initializeUnderCtypesModule(Thread* thread, const Module& module) {
   executeFrozenModule(thread, &kUnderCtypesModuleData, module);
 
   HandleScope scope(thread);

@@ -13,6 +13,7 @@
 #include "intrinsic.h"
 #include "list-builtins.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"

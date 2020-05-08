@@ -46,7 +46,7 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
 }
 
 // clang-format off
-const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
+static const SymbolId kUnderBuiltinsIntrinsicIds[] = {
     ID(_bool_check),
     ID(_bool_guard),
     ID(_bytearray_check),
@@ -98,11 +98,10 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     ID(_type_check_exact),
     ID(_type_guard),
     ID(_type_subclass_guard),
-    SymbolId::kSentinelId,
 };
 // clang-format on
 
-void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
+void initializeUnderBuiltinsModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Object unbound_value(&scope, Unbound::object());
   moduleAtPutById(thread, module, ID(_Unbound), unbound_value);
@@ -118,8 +117,7 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, &kUnderBuiltinsModuleData, module);
 
   // Mark functions that have an intrinsic implementation.
-  for (word i = 0; kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
-    SymbolId intrinsic_id = kIntrinsicIds[i];
+  for (SymbolId intrinsic_id : kUnderBuiltinsIntrinsicIds) {
     Function::cast(moduleAtById(thread, module, intrinsic_id))
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }

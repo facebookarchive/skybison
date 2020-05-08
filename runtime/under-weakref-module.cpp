@@ -9,13 +9,12 @@
 
 namespace py {
 
-const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
+static const BuiltinType kUnderWeakrefBuiltinTypes[] = {
     {ID(weakref), LayoutId::kWeakRef},
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-void UnderWeakrefModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+void initializeUnderWeakrefModule(Thread* thread, const Module& module) {
+  moduleAddBuiltinTypes(thread, module, kUnderWeakrefBuiltinTypes);
   executeFrozenModule(thread, &kUnderWeakrefModuleData, module);
 }
 

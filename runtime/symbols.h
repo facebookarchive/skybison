@@ -782,7 +782,6 @@ enum class SymbolId {
   FOREACH_SYMBOL(DEFINE_SYMBOL_INDEX)
 #undef DEFINE_SYMBOL_INDEX
   kMaxId,
-  kSentinelId,
 };
 // clang-format on
 

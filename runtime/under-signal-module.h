@@ -2,10 +2,9 @@
 
 #include <csignal>
 
-#include "frame.h"
 #include "globals.h"
-#include "modules.h"
-#include "runtime.h"
+#include "handles.h"
+#include "objects.h"
 #include "thread.h"
 
 namespace py {
@@ -17,9 +16,6 @@ const RawSmallInt kIgnoreHandler =
 
 void handleSignal(int signum);
 
-class UnderSignalModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
-};
+void initializeUnderSignalModule(Thread* thread, const Module& module);
 
 }  // namespace py

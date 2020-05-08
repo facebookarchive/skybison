@@ -14,7 +14,7 @@
 
 namespace py {
 
-void UnderSignalModule::initialize(Thread* thread, const Module& module) {
+void initializeUnderSignalModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Object nsig(&scope, SmallInt::fromWord(OS::kNumSignals));
   moduleAtPutById(thread, module, ID(NSIG), nsig);

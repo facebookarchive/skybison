@@ -1,20 +1,12 @@
 #pragma once
 
-#include "frame.h"
-#include "globals.h"
-#include "modules.h"
-#include "objects.h"
-#include "runtime.h"
+#include "handles-decl.h"
 
 namespace py {
 
-class UnderIoModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
+class Thread;
 
- private:
-  static const BuiltinType kBuiltinTypes[];
-};
+void initializeUnderIOModule(Thread* thread, const Module& module);
 
 void initializeUnderIOTypes(Thread* thread);
 

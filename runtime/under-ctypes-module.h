@@ -1,15 +1,11 @@
 #pragma once
 
-#include "handles.h"
-#include "modules.h"
-#include "runtime.h"
-#include "thread.h"
+#include "handles-decl.h"
 
 namespace py {
 
-class UnderCtypesModule {
- public:
-  static void initialize(Thread* thread, const Module& module);
-};
+class Thread;
+
+void initializeUnderCtypesModule(Thread* thread, const Module& module);
 
 }  // namespace py

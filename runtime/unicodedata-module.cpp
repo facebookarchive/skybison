@@ -16,7 +16,7 @@
 
 namespace py {
 
-void UnicodedataModule::initialize(Thread* thread, const Module& module) {
+void initializeUnicodedataModule(Thread* thread, const Module& module) {
   executeFrozenModule(thread, &kUnicodedataModuleData, module);
 
   HandleScope scope(thread);
