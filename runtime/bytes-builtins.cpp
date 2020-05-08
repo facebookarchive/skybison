@@ -750,7 +750,7 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   Object table_obj(&scope, args.get(1));
   word table_length;
   if (table_obj.isNoneType()) {
-    table_length = BytesBuiltins::kTranslationTableLength;
+    table_length = kByteTranslationTableLength;
     table_obj = Bytes::empty();
   } else if (runtime->isInstanceOfBytes(*table_obj)) {
     Bytes bytes(&scope, bytesUnderlying(*table_obj));
@@ -766,10 +766,10 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
                                 "a bytes-like object is required, not '%T'",
                                 &table_obj);
   }
-  if (table_length != BytesBuiltins::kTranslationTableLength) {
+  if (table_length != kByteTranslationTableLength) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "translation table must be %w characters long",
-                                BytesBuiltins::kTranslationTableLength);
+                                kByteTranslationTableLength);
   }
   Bytes table(&scope, *table_obj);
   Object del(&scope, args.get(2));

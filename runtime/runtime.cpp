@@ -3016,21 +3016,21 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& bytes,
   DCHECK_BOUND(length, bytes.length());
   DCHECK_BOUND(del_len, del.length());
   // calculate mapping table
-  byte new_byte[BytesBuiltins::kTranslationTableLength];
+  byte new_byte[kByteTranslationTableLength];
   if (table == Bytes::empty()) {
-    for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
+    for (word i = 0; i < kByteTranslationTableLength; i++) {
       new_byte[i] = i;
     }
   } else {
     DCHECK_BOUND(table_len, table.length());
-    DCHECK(table_len == BytesBuiltins::kTranslationTableLength,
+    DCHECK(table_len == kByteTranslationTableLength,
            "translation table must map every possible byte value");
-    for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
+    for (word i = 0; i < kByteTranslationTableLength; i++) {
       new_byte[i] = table.byteAt(i);
     }
   }
   // make initial pass to calculate length
-  bool delete_byte[BytesBuiltins::kTranslationTableLength] = {};
+  bool delete_byte[kByteTranslationTableLength] = {};
   for (word i = 0; i < del_len; i++) {
     delete_byte[del.byteAt(i)] = true;
   }

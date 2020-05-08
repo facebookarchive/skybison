@@ -848,8 +848,8 @@ RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
   }
   Bytes from(&scope, *from_obj);
   Bytes to(&scope, *to_obj);
-  byte table[BytesBuiltins::kTranslationTableLength];
-  for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
+  byte table[kByteTranslationTableLength];
+  for (word i = 0; i < kByteTranslationTableLength; i++) {
     table[i] = i;
   }
   for (word i = 0; i < length; i++) {

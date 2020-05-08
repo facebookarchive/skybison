@@ -5,6 +5,8 @@
 
 namespace py {
 
+const word kByteTranslationTableLength = kMaxByte + 1;
+
 // Counts distinct occurrences of needle in haystack in the range [start, end).
 word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end);
@@ -84,7 +86,6 @@ class BytesBuiltins
   static void postInitialize(Runtime*, const Type& new_type);
 
   static const BuiltinAttribute kAttributes[];
-  static const word kTranslationTableLength = 1 << kBitsPerByte;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);
