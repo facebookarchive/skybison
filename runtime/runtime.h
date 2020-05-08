@@ -19,12 +19,6 @@ class RawTuple;
 class PointerVisitor;
 class Thread;
 
-struct BuiltinAttribute {
-  SymbolId name;
-  int offset;
-  AttributeFlags flags;
-};
-
 struct ListEntry {
   ListEntry* prev;
   ListEntry* next;
@@ -1049,61 +1043,6 @@ inline RawObject Runtime::internStr(Thread* thread, const Object& str) {
   }
   return internLargeStr(thread, str);
 }
-
-class BuiltinsBase {
- public:
-  static void postInitialize(Runtime*, const Type&) {}
-
-  static const BuiltinAttribute kAttributes[];
-
- protected:
-  static const SymbolId kName;
-  static const LayoutId kType;
-  static const LayoutId kSuperType;
-};
-
-template <class T, SymbolId name, LayoutId type,
-          LayoutId supertype = LayoutId::kObject>
-class Builtins : public BuiltinsBase {
- public:
-  static void initialize(Runtime* runtime) {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    word num_attributes = 0;
-    while (T::kAttributes[num_attributes].name != SymbolId::kSentinelId) {
-      num_attributes++;
-    }
-    Type new_type(
-        &scope,
-        addBuiltinType(thread, T::kName, T::kType, T::kSuperType,
-                       View<BuiltinAttribute>(T::kAttributes, num_attributes)));
-    T::postInitialize(runtime, new_type);
-  }
-
- protected:
-  static const SymbolId kName = name;
-  static const LayoutId kType = type;
-  static const LayoutId kSuperType = supertype;
-};
-
-template <class T, SymbolId name, LayoutId type, LayoutId supertype>
-class ImmediateBuiltins : public BuiltinsBase {
- public:
-  static void initialize(Runtime* runtime) {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    LayoutId builtin_base =
-        T::kSuperType == LayoutId::kObject ? T::kType : T::kSuperType;
-    Type new_type(&scope, addImmediateBuiltinType(thread, name, T::kType,
-                                                  builtin_base, T::kSuperType));
-    T::postInitialize(runtime, new_type);
-  }
-
- protected:
-  static const SymbolId kName = name;
-  static const LayoutId kType = type;
-  static const LayoutId kSuperType = supertype;
-};
 
 #define METH(type, name) type##_##name##_meth
 

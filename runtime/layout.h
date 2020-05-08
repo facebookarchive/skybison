@@ -1,6 +1,7 @@
 #pragma once
 
 #include "objects.h"
+#include "symbols.h"
 #include "utils.h"
 
 namespace py {
@@ -98,6 +99,12 @@ class AttributeInfo {
 
  private:
   uword value_;
+};
+
+struct BuiltinAttribute {
+  SymbolId name;
+  int offset;
+  AttributeFlags flags;
 };
 
 inline word AttributeInfo::offset() {

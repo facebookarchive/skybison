@@ -4858,8 +4858,4 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
 // TODO(T30392425) Ensure thread safety
 word Runtime::nextModuleIndex() { return ++next_module_index_; }
 
-const BuiltinAttribute BuiltinsBase::kAttributes[] = {
-    {SymbolId::kSentinelId, -1},
-};
-
 }  // namespace py
