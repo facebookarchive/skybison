@@ -1,10 +1,11 @@
 #include "code-builtins.h"
 
 #include "builtins.h"
+#include "type-builtins.h"
 
 namespace py {
 
-const BuiltinAttribute CodeBuiltins::kAttributes[] = {
+static const BuiltinAttribute kCodeAttributes[] = {
     {ID(co_argcount), RawCode::kArgcountOffset, AttributeFlags::kReadOnly},
     {ID(co_cellvars), RawCode::kCellvarsOffset, AttributeFlags::kReadOnly},
     {ID(co_code), RawCode::kCodeOffset, AttributeFlags::kReadOnly},
@@ -24,7 +25,11 @@ const BuiltinAttribute CodeBuiltins::kAttributes[] = {
      AttributeFlags::kReadOnly},
     {ID(co_stacksize), RawCode::kStacksizeOffset, AttributeFlags::kReadOnly},
     {ID(co_varnames), RawCode::kVarnamesOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeCodeType(Thread* thread) {
+  addBuiltinType(thread, ID(code), LayoutId::kCode,
+                 /*superclass_id=*/LayoutId::kObject, kCodeAttributes);
+}
 
 }  // namespace py

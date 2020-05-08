@@ -12,33 +12,9 @@
 #include "objects.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
-
-void IntBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  new_type.setBuiltinBase(LayoutId::kInt);
-}
-
-void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  runtime->setSmallIntType(new_type);
-  RawObject layout = new_type.instanceLayout();
-  Layout::cast(layout).setDescribedType(runtime->typeAt(kSuperType));
-  // We want to lookup the class of an immediate type by using the 5-bit tag
-  // value as an index into the class table.  Replicate the layout object for
-  // SmallInt to all locations that decode to a SmallInt tag.
-  for (word i = 2; i < (1 << Object::kImmediateTagBits); i += 2) {
-    DCHECK(runtime->layoutAt(static_cast<LayoutId>(i)) == NoneType::object(),
-           "list collision");
-    runtime->layoutAtPut(static_cast<LayoutId>(i), layout);
-  }
-}
-
-void LargeIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-  runtime->setLargeIntType(new_type);
-  Layout::cast(new_type.instanceLayout())
-      .setDescribedType(runtime->typeAt(kSuperType));
-}
 
 word largeIntHash(RawLargeInt value) {
   const word bits_per_half = kBitsPerWord / 2;
@@ -148,11 +124,51 @@ word largeIntHash(RawLargeInt value) {
 }
 
 // Used only for UserIntBase as a heap-allocated object.
-const BuiltinAttribute IntBuiltins::kAttributes[] = {
+static const BuiltinAttribute kIntAttributes[] = {
     {ID(_UserInt__value), RawUserIntBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeIntTypes(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Type int_type(&scope, addBuiltinType(thread, ID(int), LayoutId::kInt,
+                                       /*superclass_id=*/LayoutId::kObject,
+                                       kIntAttributes));
+
+  {
+    Type type(&scope,
+              addImmediateBuiltinType(thread, ID(largeint), LayoutId::kLargeInt,
+                                      /*builtin_base=*/LayoutId::kInt,
+                                      /*superclass_id=*/LayoutId::kObject));
+    Layout layout(&scope, type.instanceLayout());
+    layout.setDescribedType(*int_type);
+    runtime->setLargeIntType(type);
+  }
+
+  {
+    Type type(&scope,
+              addImmediateBuiltinType(thread, ID(smallint), LayoutId::kSmallInt,
+                                      /*builtin_base=*/LayoutId::kInt,
+                                      /*superclass_id=*/LayoutId::kObject));
+    Layout layout(&scope, type.instanceLayout());
+    layout.setDescribedType(*int_type);
+    runtime->setSmallIntType(type);
+    // We want to lookup the class of an immediate type by using the 5-bit tag
+    // value as an index into the class table.  Replicate the layout object for
+    // SmallInt to all locations that decode to a SmallInt tag.
+    for (word i = 2; i < (1 << Object::kImmediateTagBits); i += 2) {
+      DCHECK(runtime->layoutAt(static_cast<LayoutId>(i)) == NoneType::object(),
+             "list collision");
+      runtime->layoutAtPut(static_cast<LayoutId>(i), *layout);
+    }
+  }
+
+  addImmediateBuiltinType(thread, ID(bool), LayoutId::kBool,
+                          /*builtin_base=*/LayoutId::kInt,
+                          /*superclass_id=*/LayoutId::kInt);
+}
 
 RawObject convertBoolToInt(RawObject object) {
   DCHECK(object.isBool(), "conversion from bool to int requires a bool object");

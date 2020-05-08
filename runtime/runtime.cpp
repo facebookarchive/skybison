@@ -128,6 +128,7 @@ Runtime::Runtime(word heap_size) : heap_(heap_size) {
   initializePrimitiveInstances();
   initializeInterned();
   initializeSymbols();
+  initializeLayouts();
   initializeTypes(thread);
   initializeApiData();
   initializeModules();
@@ -1771,12 +1772,6 @@ RawObject Runtime::signalCallback(word signum) {
   return Tuple::cast(signal_callbacks_).at(signum);
 }
 
-void Runtime::initializeTypes(Thread* thread) {
-  initializeLayouts();
-  initializeHeapTypes(thread);
-  initializeImmediateTypes();
-}
-
 void Runtime::initializeLayouts() {
   layouts_ = newMutableTuple(kInitialLayoutTupleCapacity);
   static_assert(
@@ -1787,10 +1782,43 @@ void Runtime::initializeLayouts() {
       newMutableTuple(LayoutTypeTransition::kTransitionSize);
 }
 
-void Runtime::initializeHeapTypes(Thread* thread) {
-  ObjectBuiltins::initialize(this);
+void Runtime::initializeTypes(Thread* thread) {
+  initializeObjectTypes(thread);
 
-  // Runtime-internal classes.
+  initializeArrayType(thread);
+  initializeBytearrayTypes(thread);
+  initializeBytesTypes(thread);
+  initializeCodeType(thread);
+  initializeComplexType(thread);
+  initializeDescriptorTypes(thread);
+  initializeDictTypes(thread);
+  initializeExceptionTypes(thread);
+  initializeFloatType(thread);
+  initializeFrameProxyType(thread);
+  initializeFunctionTypes(thread);
+  initializeGeneratorTypes(thread);
+  initializeIntTypes(thread);
+  initializeIteratorType(thread);
+  initializeLayoutType(thread);
+  initializeListTypes(thread);
+  initializeMappingProxyType(thread);
+  initializeMemoryViewType(thread);
+  initializeMmapType(thread);
+  initializeModuleProxyType(thread);
+  initializeModuleType(thread);
+  initializeRangeTypes(thread);
+  initializeRefTypes(thread);
+  initializeSetTypes(thread);
+  initializeSliceType(thread);
+  initializeStrArrayType(thread);
+  initializeStrTypes(thread);
+  initializeSuperType(thread);
+  initializeTracebackType(thread);
+  initializeTupleTypes(thread);
+  initializeTypeTypes(thread);
+  initializeUnderIOTypes(thread);
+  initializeValueCellTypes(thread);
+
   addEmptyBuiltinType(thread, ID(ExceptionState), LayoutId::kExceptionState,
                       LayoutId::kObject);
   addEmptyBuiltinType(thread, ID(_mutablebytes), LayoutId::kMutableBytes,
@@ -1799,267 +1827,10 @@ void Runtime::initializeHeapTypes(Thread* thread) {
                       LayoutId::kObject);
   addEmptyBuiltinType(thread, ID(_pointer), LayoutId::kPointer,
                       LayoutId::kObject);
-  WeakLinkBuiltins::initialize(this);
-  StrArrayBuiltins::initialize(this);
-
-  // Abstract classes.
-  BytesBuiltins::initialize(this);
-  IntBuiltins::initialize(this);
-  StrBuiltins::initialize(this);
-
-  // Exception hierarchy.
-  initializeExceptionTypes();
-
-  // Concrete classes.
-  ArrayBuiltins::initialize(this);
-  AsyncGeneratorBuiltins::initialize(this);
-  BytearrayBuiltins::initialize(this);
-  BytearrayIteratorBuiltins::initialize(this);
-  BytesIteratorBuiltins::initialize(this);
-  CellBuiltins::initialize(this);
-  ClassMethodBuiltins::initialize(this);
-  CodeBuiltins::initialize(this);
-  ComplexBuiltins::initialize(this);
-  CoroutineBuiltins::initialize(this);
-  DictBuiltins::initialize(this);
-  DictItemsBuiltins::initialize(this);
-  DictItemIteratorBuiltins::initialize(this);
-  DictKeysBuiltins::initialize(this);
-  DictKeyIteratorBuiltins::initialize(this);
-  DictValuesBuiltins::initialize(this);
-  DictValueIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(thread, ID(ellipsis), LayoutId::kEllipsis,
                       LayoutId::kObject);
-  FloatBuiltins::initialize(this);
   addEmptyBuiltinType(thread, ID(frame), LayoutId::kGeneratorFrame,
                       LayoutId::kObject);
-  FrameProxyBuiltins::initialize(this);
-  FrozenSetBuiltins::initialize(this);
-  FunctionBuiltins::initialize(this);
-  GeneratorBuiltins::initialize(this);
-  InstanceProxyBuiltins::initialize(this);
-  LayoutBuiltins::initialize(this);
-  LargeBytesBuiltins::initialize(this);
-  LargeIntBuiltins::initialize(this);
-  LargeStrBuiltins::initialize(this);
-  ListBuiltins::initialize(this);
-  ListIteratorBuiltins::initialize(this);
-  LongRangeIteratorBuiltins::initialize(this);
-  BoundMethodBuiltins::initialize(this);
-  MappingProxyBuiltins::initialize(this);
-  MemoryViewBuiltins::initialize(this);
-  MmapBuiltins::initialize(this);
-  ModuleBuiltins::initialize(this);
-  ModuleProxyBuiltins::initialize(this);
-  NotImplementedBuiltins::initialize(this);
-  TupleBuiltins::initialize(this);
-  TupleIteratorBuiltins::initialize(this);
-  UnboundBuiltins::initialize(this);
-  PropertyBuiltins::initialize(this);
-  RangeBuiltins::initialize(this);
-  RangeIteratorBuiltins::initialize(this);
-  RefBuiltins::initialize(this);
-  SetBuiltins::initialize(this);
-  SeqIteratorBuiltins::initialize(this);
-  SetIteratorBuiltins::initialize(this);
-  SliceBuiltins::initialize(this);
-  SlotDescriptorBuiltins::initialize(this);
-  StrIteratorBuiltins::initialize(this);
-  StaticMethodBuiltins::initialize(this);
-  SuperBuiltins::initialize(this);
-  TracebackBuiltins::initialize(this);
-  TypeBuiltins::initialize(this);
-  TypeProxyBuiltins::initialize(this);
-  ValueCellBuiltins::initialize(this);
-
-  // IO types
-  UnderIOBaseBuiltins::initialize(this);
-  IncrementalNewlineDecoderBuiltins::initialize(this);
-  // _RawIOBase is a subclass of _IOBase
-  UnderRawIOBaseBuiltins::initialize(this);
-  // _BufferedIOBase is a subclass of _RawIOBase
-  UnderBufferedIOBaseBuiltins::initialize(this);
-  // BytesIO is a subclass of _BufferedIOBase
-  BytesIOBuiltins::initialize(this);
-  // _BufferedIOMixin is a subclass of _BufferedIOBase
-  UnderBufferedIOMixinBuiltins::initialize(this);
-  // BufferedRandom is a subclass of _BufferedIOMixin
-  BufferedRandomBuiltins::initialize(this);
-  // BufferedReader is a subclass of _BufferedIOMixin
-  BufferedReaderBuiltins::initialize(this);
-  // BufferedWriter is a subclass of _BufferedIOMixin
-  BufferedWriterBuiltins::initialize(this);
-  // FileIO is a subclass of _RawIOBase
-  FileIOBuiltins::initialize(this);
-  // _TextIOBase is a subclass of _IOBase
-  UnderTextIOBaseBuiltins::initialize(this);
-  // TextIOWrapper is a subclass of _TextIOBase
-  TextIOWrapperBuiltins::initialize(this);
-  // StringIO is a subclass of _TextIOBase
-  StringIOBuiltins::initialize(this);
-}
-
-void Runtime::initializeExceptionTypes() {
-  Thread* thread = Thread::current();
-  BaseExceptionBuiltins::initialize(this);
-
-  // BaseException subclasses
-  addEmptyBuiltinType(thread, ID(Exception), LayoutId::kException,
-                      LayoutId::kBaseException);
-  addEmptyBuiltinType(thread, ID(KeyboardInterrupt),
-                      LayoutId::kKeyboardInterrupt, LayoutId::kBaseException);
-  addEmptyBuiltinType(thread, ID(GeneratorExit), LayoutId::kGeneratorExit,
-                      LayoutId::kBaseException);
-  SystemExitBuiltins::initialize(this);
-
-  // Exception subclasses
-  addEmptyBuiltinType(thread, ID(ArithmeticError), LayoutId::kArithmeticError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(AssertionError), LayoutId::kAssertionError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(AttributeError), LayoutId::kAttributeError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(BufferError), LayoutId::kBufferError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(EOFError), LayoutId::kEOFError,
-                      LayoutId::kException);
-  ImportErrorBuiltins::initialize(this);
-  addEmptyBuiltinType(thread, ID(LookupError), LayoutId::kLookupError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(MemoryError), LayoutId::kMemoryError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(NameError), LayoutId::kNameError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(OSError), LayoutId::kOSError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(ReferenceError), LayoutId::kReferenceError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(RuntimeError), LayoutId::kRuntimeError,
-                      LayoutId::kException);
-  StopIterationBuiltins::initialize(this);
-  addEmptyBuiltinType(thread, ID(StopAsyncIteration),
-                      LayoutId::kStopAsyncIteration, LayoutId::kException);
-  SyntaxErrorBuiltins::initialize(this);
-  addEmptyBuiltinType(thread, ID(SystemError), LayoutId::kSystemError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(TypeError), LayoutId::kTypeError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(ValueError), LayoutId::kValueError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(thread, ID(Warning), LayoutId::kWarning,
-                      LayoutId::kException);
-
-  // ArithmeticError subclasses
-  addEmptyBuiltinType(thread, ID(FloatingPointError),
-                      LayoutId::kFloatingPointError,
-                      LayoutId::kArithmeticError);
-  addEmptyBuiltinType(thread, ID(OverflowError), LayoutId::kOverflowError,
-                      LayoutId::kArithmeticError);
-  addEmptyBuiltinType(thread, ID(ZeroDivisionError),
-                      LayoutId::kZeroDivisionError, LayoutId::kArithmeticError);
-
-  // ImportError subclasses
-  addEmptyBuiltinType(thread, ID(ModuleNotFoundError),
-                      LayoutId::kModuleNotFoundError, LayoutId::kImportError);
-
-  // LookupError subclasses
-  addEmptyBuiltinType(thread, ID(IndexError), LayoutId::kIndexError,
-                      LayoutId::kLookupError);
-  addEmptyBuiltinType(thread, ID(KeyError), LayoutId::kKeyError,
-                      LayoutId::kLookupError);
-
-  // NameError subclasses
-  addEmptyBuiltinType(thread, ID(UnboundLocalError),
-                      LayoutId::kUnboundLocalError, LayoutId::kNameError);
-
-  // OSError subclasses
-  addEmptyBuiltinType(thread, ID(BlockingIOError), LayoutId::kBlockingIOError,
-                      LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(ChildProcessError),
-                      LayoutId::kChildProcessError, LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(ConnectionError), LayoutId::kConnectionError,
-                      LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(FileExistsError), LayoutId::kFileExistsError,
-                      LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(FileNotFoundError),
-                      LayoutId::kFileNotFoundError, LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(InterruptedError), LayoutId::kInterruptedError,
-                      LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(IsADirectoryError),
-                      LayoutId::kIsADirectoryError, LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(NotADirectoryError),
-                      LayoutId::kNotADirectoryError, LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(PermissionError), LayoutId::kPermissionError,
-                      LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(ProcessLookupError),
-                      LayoutId::kProcessLookupError, LayoutId::kOSError);
-  addEmptyBuiltinType(thread, ID(TimeoutError), LayoutId::kTimeoutError,
-                      LayoutId::kOSError);
-
-  // ConnectionError subclasses
-  addEmptyBuiltinType(thread, ID(BrokenPipeError), LayoutId::kBrokenPipeError,
-                      LayoutId::kConnectionError);
-  addEmptyBuiltinType(thread, ID(ConnectionAbortedError),
-                      LayoutId::kConnectionAbortedError,
-                      LayoutId::kConnectionError);
-  addEmptyBuiltinType(thread, ID(ConnectionRefusedError),
-                      LayoutId::kConnectionRefusedError,
-                      LayoutId::kConnectionError);
-  addEmptyBuiltinType(thread, ID(ConnectionResetError),
-                      LayoutId::kConnectionResetError,
-                      LayoutId::kConnectionError);
-
-  // RuntimeError subclasses
-  addEmptyBuiltinType(thread, ID(NotImplementedError),
-                      LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
-  addEmptyBuiltinType(thread, ID(RecursionError), LayoutId::kRecursionError,
-                      LayoutId::kRuntimeError);
-
-  // SyntaxError subclasses
-  addEmptyBuiltinType(thread, ID(IndentationError), LayoutId::kIndentationError,
-                      LayoutId::kSyntaxError);
-
-  // IndentationError subclasses
-  addEmptyBuiltinType(thread, ID(TabError), LayoutId::kTabError,
-                      LayoutId::kIndentationError);
-
-  // ValueError subclasses
-  UnicodeErrorBuiltins::initialize(this);
-
-  // UnicodeError subclasses
-  UnicodeDecodeErrorBuiltins::initialize(this);
-  UnicodeEncodeErrorBuiltins::initialize(this);
-  UnicodeTranslateErrorBuiltins::initialize(this);
-
-  // Warning subclasses
-  addEmptyBuiltinType(thread, ID(UserWarning), LayoutId::kUserWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(DeprecationWarning),
-                      LayoutId::kDeprecationWarning, LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(PendingDeprecationWarning),
-                      LayoutId::kPendingDeprecationWarning, LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(SyntaxWarning), LayoutId::kSyntaxWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(RuntimeWarning), LayoutId::kRuntimeWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(FutureWarning), LayoutId::kFutureWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(ImportWarning), LayoutId::kImportWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(UnicodeWarning), LayoutId::kUnicodeWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(BytesWarning), LayoutId::kBytesWarning,
-                      LayoutId::kWarning);
-  addEmptyBuiltinType(thread, ID(ResourceWarning), LayoutId::kResourceWarning,
-                      LayoutId::kWarning);
-}
-
-void Runtime::initializeImmediateTypes() {
-  BoolBuiltins::initialize(this);
-  NoneBuiltins::initialize(this);
-  SmallBytesBuiltins::initialize(this);
-  SmallStrBuiltins::initialize(this);
-  SmallIntBuiltins::initialize(this);
 }
 
 void Runtime::collectGarbage() {

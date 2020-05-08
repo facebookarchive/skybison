@@ -5,15 +5,20 @@
 #include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "type-builtins.h"
 
 namespace py {
 
-const BuiltinAttribute SliceBuiltins::kAttributes[] = {
+static const BuiltinAttribute kSliceAttributes[] = {
     {ID(start), RawSlice::kStartOffset, AttributeFlags::kReadOnly},
     {ID(stop), RawSlice::kStopOffset, AttributeFlags::kReadOnly},
     {ID(step), RawSlice::kStepOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeSliceType(Thread* thread) {
+  addBuiltinType(thread, ID(slice), LayoutId::kSlice,
+                 /*superclass_id=*/LayoutId::kObject, kSliceAttributes);
+}
 
 RawObject METH(slice, __new__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

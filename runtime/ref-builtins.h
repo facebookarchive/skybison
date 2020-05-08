@@ -8,22 +8,6 @@
 
 namespace py {
 
-class RefBuiltins
-    : public Builtins<RefBuiltins, ID(weakref), LayoutId::kWeakRef> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RefBuiltins);
-};
-
-class WeakLinkBuiltins
-    : public Builtins<WeakLinkBuiltins, ID(_weaklink), LayoutId::kWeakLink> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(WeakLinkBuiltins);
-};
+void initializeRefTypes(Thread* thread);
 
 }  // namespace py

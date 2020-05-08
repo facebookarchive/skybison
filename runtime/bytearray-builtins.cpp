@@ -5,6 +5,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
+#include "type-builtins.h"
 #include "unicode.h"
 
 namespace py {
@@ -21,21 +22,28 @@ void writeByteAsHexDigits(Thread* thread, const Bytearray& array, byte value) {
   thread->runtime()->bytearrayExtend(thread, array, bytes);
 }
 
-const BuiltinAttribute BytearrayBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBytearrayAttributes[] = {
     {ID(_bytearray__bytes), RawBytearray::kItemsOffset,
      AttributeFlags::kHidden},
     {ID(_bytearray__num_items), RawBytearray::kNumItemsOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute BytearrayIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBytearrayIteratorAttributes[] = {
     {ID(_bytearray_iterator__iterable), RawBytearrayIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_bytearray_iterator__index), RawBytearrayIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeBytearrayTypes(Thread* thread) {
+  addBuiltinType(thread, ID(bytearray), LayoutId::kBytearray,
+                 /*superclass_id=*/LayoutId::kObject, kBytearrayAttributes);
+
+  addBuiltinType(thread, ID(bytearray_iterator), LayoutId::kBytearrayIterator,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kBytearrayIteratorAttributes);
+}
 
 RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

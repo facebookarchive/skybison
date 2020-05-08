@@ -62,13 +62,17 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
   return objectGetAttribute(thread, super, name);
 }
 
-const BuiltinAttribute SuperBuiltins::kAttributes[] = {
+static const BuiltinAttribute kSuperAttributes[] = {
     {ID(__thisclass__), RawSuper::kTypeOffset, AttributeFlags::kReadOnly},
     {ID(__self__), RawSuper::kObjectOffset, AttributeFlags::kReadOnly},
     {ID(__self_class__), RawSuper::kObjectTypeOffset,
      AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeSuperType(Thread* thread) {
+  addBuiltinType(thread, ID(super), LayoutId::kSuper,
+                 /*superclass_id=*/LayoutId::kObject, kSuperAttributes);
+}
 
 RawObject METH(super, __getattribute__)(Thread* thread, Frame* frame,
                                         word nargs) {

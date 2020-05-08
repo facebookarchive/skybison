@@ -13,6 +13,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -679,44 +680,31 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
   return result.becomeImmutable();
 }
 
-const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
+static const BuiltinAttribute kUnderIOBaseAttributes[] = {
     {ID(_closed), RawUnderIOBase::kClosedOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute IncrementalNewlineDecoderBuiltins::kAttributes[] = {
+static const BuiltinAttribute kIncrementalNewlineDecoderAttributes[] = {
     {ID(_errors), RawIncrementalNewlineDecoder::kErrorsOffset},
     {ID(_translate), RawIncrementalNewlineDecoder::kTranslateOffset},
     {ID(_decoder), RawIncrementalNewlineDecoder::kDecoderOffset},
     {ID(_seennl), RawIncrementalNewlineDecoder::kSeennlOffset},
     {ID(_pendingcr), RawIncrementalNewlineDecoder::kPendingcrOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-void UnderRawIOBaseBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-}
-
-void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
-                                                 const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-}
-
-const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
+static const BuiltinAttribute kUnderBufferedIOMixinAttributes[] = {
     {ID(_raw), RawUnderBufferedIOMixin::kUnderlyingOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute BufferedRandomBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBufferedRandomAttributes[] = {
     {ID(_raw), RawBufferedRandom::kUnderlyingOffset},
     {ID(_reader), RawBufferedRandom::kReaderOffset},
     {ID(_write_buf), RawBufferedRandom::kWriteBufOffset},
     {ID(_write_lock), RawBufferedRandom::kWriteLockOffset},
     {ID(buffer_size), RawBufferedRandom::kBufferSizeOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBufferedReaderAttributes[] = {
     {ID(_raw), RawBufferedReader::kUnderlyingOffset},
     {ID(_buffer_size), RawBufferedReader::kBufferSizeOffset,
      AttributeFlags::kReadOnly},
@@ -725,29 +713,22 @@ const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
      AttributeFlags::kReadOnly},
     {ID(_buffer_num_bytes), RawBufferedReader::kBufferNumBytesOffset,
      AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute BufferedWriterBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBufferedWriterAttributes[] = {
     {ID(_raw), RawBufferedWriter::kUnderlyingOffset},
     {ID(_write_buf), RawBufferedWriter::kWriteBufOffset},
     {ID(_write_lock), RawBufferedWriter::kWriteLockOffset},
     {ID(buffer_size), RawBufferedWriter::kBufferSizeOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBytesIOAttributes[] = {
     {ID(__dict__), RawBytesIO::kDictOffset},
     {ID(_buffer), RawBytesIO::kBufferOffset},
     {ID(_pos), RawBytesIO::kPosOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-void BytesIOBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-}
-
-const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
+static const BuiltinAttribute kFileIOAttributes[] = {
     {ID(_fd), RawFileIO::kFdOffset},
     {ID(name), RawFileIO::kNameOffset},
     {ID(_created), RawFileIO::kCreatedOffset},
@@ -756,10 +737,9 @@ const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
     {ID(_appending), RawFileIO::kAppendingOffset},
     {ID(_seekable), RawFileIO::kSeekableOffset},
     {ID(_closefd), RawFileIO::kCloseFdOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
+static const BuiltinAttribute kStringIOAttributes[] = {
     {ID(_buffer), RawStringIO::kBufferOffset},
     {ID(_pos), RawStringIO::kPosOffset},
     {ID(_readnl), RawStringIO::kReadnlOffset},
@@ -769,7 +749,6 @@ const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
     {ID(_writenl), RawStringIO::kWritenlOffset},
     {ID(_writetranslate), RawStringIO::kWritetranslateOffset},
     {SymbolId::kInvalid, RawFunction::kDictOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
 enum NewlineFound { kLF = 0x1, kCR = 0x2, kCRLF = 0x4 };
@@ -1181,7 +1160,7 @@ RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs) {
   return stringIOWrite(thread, string_io, str);
 }
 
-const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
+static const BuiltinAttribute kTextIOWrapperAttributes[] = {
     {ID(_b2cratio), RawTextIOWrapper::kB2cratioOffset},
     {ID(_buffer), RawTextIOWrapper::kBufferOffset},
     {ID(_decoded_chars), RawTextIOWrapper::kDecodedCharsOffset},
@@ -1201,7 +1180,73 @@ const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
     {ID(_writenl), RawTextIOWrapper::kWritenlOffset},
     {ID(_writetranslate), RawTextIOWrapper::kWritetranslateOffset},
     {ID(mode), RawTextIOWrapper::kModeOffset},  // TODO(T54575279): remove
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeUnderIOTypes(Thread* thread) {
+  HandleScope scope(thread);
+
+  addBuiltinType(thread, ID(_IOBase), LayoutId::kUnderIOBase,
+                 /*superclass_id=*/LayoutId::kObject, kUnderIOBaseAttributes);
+
+  addBuiltinType(thread, ID(IncrementalNewlineDecoder),
+                 LayoutId::kIncrementalNewlineDecoder,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kIncrementalNewlineDecoderAttributes);
+
+  {
+    Type type(
+        &scope,
+        addBuiltinType(thread, ID(_RawIOBase), LayoutId::kUnderRawIOBase,
+                       /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0}));
+    type.setBuiltinBase(LayoutId::kUnderIOBase);
+  }
+
+  {
+    Type type(&scope, addBuiltinType(thread, ID(_BufferedIOBase),
+                                     LayoutId::kUnderBufferedIOBase,
+                                     /*superclass_id=*/LayoutId::kUnderIOBase,
+                                     {nullptr, 0}));
+    type.setBuiltinBase(LayoutId::kUnderIOBase);
+  }
+
+  {
+    Type type(&scope,
+              addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
+                             /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
+                             kBytesIOAttributes));
+    type.setBuiltinBase(LayoutId::kUnderBufferedIOBase);
+  }
+
+  addBuiltinType(thread, ID(_BufferedIOMixin), LayoutId::kUnderBufferedIOMixin,
+                 /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
+                 kUnderBufferedIOMixinAttributes);
+
+  addBuiltinType(thread, ID(BufferedRandom), LayoutId::kBufferedRandom,
+                 /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
+                 kBufferedRandomAttributes);
+
+  addBuiltinType(thread, ID(BufferedReader), LayoutId::kBufferedReader,
+                 /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
+                 kBufferedReaderAttributes);
+
+  addBuiltinType(thread, ID(BufferedWriter), LayoutId::kBufferedWriter,
+                 /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
+                 kBufferedWriterAttributes);
+
+  addBuiltinType(thread, ID(FileIO), LayoutId::kFileIO,
+                 /*superclass_id=*/LayoutId::kUnderRawIOBase,
+                 kFileIOAttributes);
+
+  addBuiltinType(thread, ID(_TextIOBase), LayoutId::kUnderTextIOBase,
+                 /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0});
+
+  addBuiltinType(thread, ID(TextIOWrapper), LayoutId::kTextIOWrapper,
+                 /*superclass_id=*/LayoutId::kUnderTextIOBase,
+                 kTextIOWrapperAttributes);
+
+  addBuiltinType(thread, ID(StringIO), LayoutId::kStringIO,
+                 /*superclass_id=*/LayoutId::kUnderTextIOBase,
+                 kStringIOAttributes);
+}
 
 }  // namespace py

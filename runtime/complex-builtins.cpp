@@ -6,6 +6,7 @@
 #include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -44,8 +45,12 @@ static RawObject unpackNumber(Thread* thread, const Object& obj, double* real,
   return NotImplementedType::object();
 }
 
-void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  new_type.setBuiltinBase(LayoutId::kComplex);
+void initializeComplexType(Thread* thread) {
+  HandleScope scope(thread);
+  Type type(&scope,
+            addBuiltinType(thread, ID(complex), LayoutId::kComplex,
+                           /*superclass_id=*/LayoutId::kObject, {nullptr, 0}));
+  type.setBuiltinBase(LayoutId::kComplex);
 }
 
 RawObject METH(complex, __add__)(Thread* thread, Frame* frame, word nargs) {

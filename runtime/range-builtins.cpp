@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "int-builtins.h"
 #include "runtime.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -94,32 +95,41 @@ RawObject METH(longrange_iterator, __next__)(Thread* thread, Frame* frame,
   return *next;
 }
 
-const BuiltinAttribute LongRangeIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kLongRangeIteratorAttributes[] = {
     {ID(_longrange_iterator__next), RawLongRangeIterator::kNextOffset,
      AttributeFlags::kHidden},
     {ID(_longrange_iterator__stop), RawLongRangeIterator::kStopOffset,
      AttributeFlags::kHidden},
     {ID(_longrange_iterator__step), RawLongRangeIterator::kStepOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute RangeBuiltins::kAttributes[] = {
+static const BuiltinAttribute kRangeAttributes[] = {
     {ID(start), RawRange::kStartOffset, AttributeFlags::kReadOnly},
     {ID(step), RawRange::kStepOffset, AttributeFlags::kReadOnly},
     {ID(stop), RawRange::kStopOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute RangeIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kRangeIteratorAttributes[] = {
     {ID(_range_iterator__next), RawRangeIterator::kNextOffset,
      AttributeFlags::kHidden},
     {ID(_range_iterator__step), RawRangeIterator::kStepOffset,
      AttributeFlags::kHidden},
     {ID(_range_iterator__length), RawRangeIterator::kLengthOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeRangeTypes(Thread* thread) {
+  addBuiltinType(thread, ID(range), LayoutId::kRange,
+                 /*superclass_id=*/LayoutId::kObject, kRangeAttributes);
+
+  addBuiltinType(thread, ID(range_iterator), LayoutId::kRangeIterator,
+                 /*superclass_id=*/LayoutId::kObject, kRangeIteratorAttributes);
+
+  addBuiltinType(thread, ID(longrange_iterator), LayoutId::kLongRangeIterator,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kLongRangeIteratorAttributes);
+}
 
 RawObject METH(range, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

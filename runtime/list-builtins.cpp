@@ -9,6 +9,7 @@
 #include "slice-builtins.h"
 #include "thread.h"
 #include "tuple-builtins.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -233,19 +234,25 @@ RawObject listIteratorNext(Thread* thread, const ListIterator& iter) {
   return item;
 }
 
-const BuiltinAttribute ListBuiltins::kAttributes[] = {
+static const BuiltinAttribute kListAttributes[] = {
     {ID(_list__items), RawList::kItemsOffset, AttributeFlags::kHidden},
     {ID(_list__num_items), RawList::kNumItemsOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute ListIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kListIteratorAttributes[] = {
     {ID(_list_iterator__iterable), RawListIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_list_iterator__index), RawListIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeListTypes(Thread* thread) {
+  addBuiltinType(thread, ID(list), LayoutId::kList,
+                 /*superclass_id=*/LayoutId::kObject, kListAttributes);
+
+  addBuiltinType(thread, ID(list_iterator), LayoutId::kListIterator,
+                 /*superclass_id=*/LayoutId::kObject, kListIteratorAttributes);
+}
 
 RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

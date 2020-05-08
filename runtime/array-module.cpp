@@ -8,6 +8,7 @@
 #include "runtime.h"
 #include "symbols.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -78,11 +79,15 @@ RawObject FUNC(array, _array_new)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-const BuiltinAttribute ArrayBuiltins::kAttributes[] = {
+static const BuiltinAttribute kArrayAttributes[] = {
     {ID(_array__buffer), RawArray::kBufferOffset, AttributeFlags::kHidden},
     {ID(_array__length), RawArray::kLengthOffset, AttributeFlags::kHidden},
     {ID(typecode), RawArray::kTypecodeOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeArrayType(Thread* thread) {
+  addBuiltinType(thread, ID(array), LayoutId::kArray,
+                 /*superclass_id=*/LayoutId::kObject, kArrayAttributes);
+}
 
 }  // namespace py

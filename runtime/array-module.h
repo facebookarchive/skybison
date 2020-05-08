@@ -18,13 +18,6 @@ class ArrayModule {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ArrayModule);
 };
 
-class ArrayBuiltins
-    : public Builtins<ArrayBuiltins, ID(array), LayoutId::kArray> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ArrayBuiltins);
-};
+void initializeArrayType(Thread* thread);
 
 }  // namespace py

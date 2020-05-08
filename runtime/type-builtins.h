@@ -124,21 +124,7 @@ RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
 RawObject typeValueCellAtPut(Thread* thread, const Type& type,
                              const Object& name);
 
-class TypeBuiltins : public Builtins<TypeBuiltins, ID(type), LayoutId::kType> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TypeBuiltins);
-};
-
-class TypeProxyBuiltins
-    : public Builtins<TypeProxyBuiltins, ID(type_proxy), LayoutId::kTypeProxy> {
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TypeProxyBuiltins);
-};
+void initializeTypeTypes(Thread* thread);
 
 inline bool typeIsSubclass(const Type& subclass, const Type& superclass) {
   DCHECK(Tuple::cast(subclass.mro()).at(0) == subclass, "unexpected mro");

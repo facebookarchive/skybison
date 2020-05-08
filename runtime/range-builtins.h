@@ -9,33 +9,6 @@ namespace py {
 RawObject rangeLen(Thread* thread, const Object& start_obj,
                    const Object& stop_obj, const Object& step_obj);
 
-class LongRangeIteratorBuiltins
-    : public Builtins<LongRangeIteratorBuiltins, ID(longrange_iterator),
-                      LayoutId::kLongRangeIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LongRangeIteratorBuiltins);
-};
-
-class RangeBuiltins
-    : public Builtins<RangeBuiltins, ID(range), LayoutId::kRange> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RangeBuiltins);
-};
-
-class RangeIteratorBuiltins
-    : public Builtins<RangeIteratorBuiltins, ID(range_iterator),
-                      LayoutId::kRangeIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);
-};
+void initializeRangeTypes(Thread* thread);
 
 }  // namespace py

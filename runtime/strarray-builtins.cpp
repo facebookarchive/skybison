@@ -2,15 +2,20 @@
 
 #include "builtins.h"
 #include "runtime.h"
+#include "type-builtins.h"
 
 namespace py {
 
-const BuiltinAttribute StrArrayBuiltins::kAttributes[] = {
+static const BuiltinAttribute kStrArrayAttributes[] = {
     {ID(_strarray__items), RawStrArray::kItemsOffset, AttributeFlags::kHidden},
     {ID(_strarray__num_items), RawStrArray::kNumItemsOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeStrArrayType(Thread* thread) {
+  addBuiltinType(thread, ID(_strarray), LayoutId::kStrArray,
+                 /*superclass_id=*/LayoutId::kObject, kStrArrayAttributes);
+}
 
 RawObject METH(_strarray, __init__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

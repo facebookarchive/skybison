@@ -9,10 +9,11 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
-const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
+static const BuiltinAttribute kFunctionAttributes[] = {
     // TODO(T44845145) Support assignment to __code__.
     {ID(__code__), RawFunction::kCodeOffset, AttributeFlags::kReadOnly},
     {ID(__doc__), RawFunction::kDocOffset},
@@ -49,13 +50,23 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_function__total_vars), RawFunction::kTotalVarsOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-void FunctionBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  HandleScope scope;
-  Layout layout(&scope, new_type.instanceLayout());
+static const BuiltinAttribute kBoundMethodAttributes[] = {
+    {ID(__func__), RawBoundMethod::kFunctionOffset, AttributeFlags::kReadOnly},
+    {ID(__self__), RawBoundMethod::kSelfOffset, AttributeFlags::kReadOnly},
+};
+
+void initializeFunctionTypes(Thread* thread) {
+  HandleScope scope(thread);
+  Type type(&scope, addBuiltinType(thread, ID(function), LayoutId::kFunction,
+                                   /*superclass_id=*/LayoutId::kObject,
+                                   kFunctionAttributes));
+  Layout layout(&scope, type.instanceLayout());
   layout.setDictOverflowOffset(RawFunction::kDictOffset);
+
+  addBuiltinType(thread, ID(method), LayoutId::kBoundMethod,
+                 /*superclass_id=*/LayoutId::kObject, kBoundMethodAttributes);
 }
 
 RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs) {
@@ -80,11 +91,5 @@ RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs) {
   }
   return thread->runtime()->newBoundMethod(self, instance);
 }
-
-const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {
-    {ID(__func__), RawBoundMethod::kFunctionOffset, AttributeFlags::kReadOnly},
-    {ID(__self__), RawBoundMethod::kSelfOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
-};
 
 }  // namespace py

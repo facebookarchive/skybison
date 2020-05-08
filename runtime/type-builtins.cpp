@@ -118,7 +118,7 @@ RawObject addEmptyBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
                               LayoutId superclass_id) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, name, layout_id, superclass_id,
-                                   View<BuiltinAttribute>(nullptr, 0)));
+                                   {nullptr, 0}));
   Layout layout(&scope, type.instanceLayout());
   thread->runtime()->layoutSetTupleOverflow(*layout);
   return *type;
@@ -1172,7 +1172,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
   return NoneType::object();
 }
 
-const BuiltinAttribute TypeBuiltins::kAttributes[] = {
+static const BuiltinAttribute kTypeAttributes[] = {
     {ID(__doc__), RawType::kDocOffset},
     {ID(_type__flags), RawType::kFlagsOffset, AttributeFlags::kHidden},
     {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
@@ -1190,13 +1190,19 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {ID(_type__slots), RawType::kSlotsOffset, AttributeFlags::kHidden},
     {ID(_type__subclasses), RawType::kSubclassesOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-void TypeBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  word flags = static_cast<word>(new_type.flags());
+void initializeTypeTypes(Thread* thread) {
+  HandleScope scope(thread);
+  Type type(&scope, addBuiltinType(thread, ID(type), LayoutId::kType,
+                                   /*superclass_id=*/LayoutId::kObject,
+                                   kTypeAttributes));
+  word flags = static_cast<word>(type.flags());
   flags |= RawType::Flag::kSealSubtypeLayouts;
-  new_type.setFlags(static_cast<Type::Flag>(flags));
+  type.setFlags(static_cast<Type::Flag>(flags));
+
+  addBuiltinType(thread, ID(type_proxy), LayoutId::kTypeProxy,
+                 /*superclass_id=*/LayoutId::kObject, {nullptr, 0});
 }
 
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {

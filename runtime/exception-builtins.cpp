@@ -543,13 +543,12 @@ void handleSystemExit(Thread* thread) {
   do_exit(EXIT_FAILURE);
 }
 
-const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBaseExceptionAttributes[] = {
     {ID(args), RawBaseException::kArgsOffset},
     {ID(__traceback__), RawBaseException::kTracebackOffset},
     {ID(__context__), RawBaseException::kContextOffset},
     {ID(__cause__), RawBaseException::kCauseOffset},
     {ID(__suppress_context__), RawBaseException::kSuppressContextOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
 RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
@@ -570,9 +569,8 @@ RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
+static const BuiltinAttribute kStopIterationAttributes[] = {
     {ID(value), RawStopIteration::kValueOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
 RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
@@ -595,19 +593,17 @@ RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
+static const BuiltinAttribute kSystemExitAttributes[] = {
     {ID(value), RawSystemExit::kCodeOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute SyntaxErrorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kSyntaxErrorAttributes[] = {
     {ID(filename), RawSyntaxError::kFilenameOffset},
     {ID(lineno), RawSyntaxError::kLinenoOffset},
     {ID(msg), RawSyntaxError::kMsgOffset},
     {ID(offset), RawSyntaxError::kOffsetOffset},
     {ID(print_file_and_line), RawSyntaxError::kPrintFileAndLineOffset},
     {ID(text), RawSyntaxError::kTextOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
 RawObject METH(SystemExit, __init__)(Thread* thread, Frame* frame, word nargs) {
@@ -629,11 +625,10 @@ RawObject METH(SystemExit, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kImportErrorAttributes[] = {
     {ID(msg), RawImportError::kMsgOffset},
     {ID(name), RawImportError::kNameOffset},
     {ID(path), RawImportError::kPathOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
 static const BuiltinAttribute kUnicodeErrorBaseAttributes[] = {
@@ -642,16 +637,176 @@ static const BuiltinAttribute kUnicodeErrorBaseAttributes[] = {
     {ID(start), RawUnicodeErrorBase::kStartOffset},
     {ID(end), RawUnicodeErrorBase::kEndOffset},
     {ID(reason), RawUnicodeErrorBase::kReasonOffset},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute* const UnicodeDecodeErrorBuiltins::kAttributes =
-    kUnicodeErrorBaseAttributes;
+void initializeExceptionTypes(Thread* thread) {
+  addBuiltinType(thread, ID(BaseException), LayoutId::kBaseException,
+                 /*superclass_id=*/LayoutId::kObject, kBaseExceptionAttributes);
 
-const BuiltinAttribute* const UnicodeEncodeErrorBuiltins::kAttributes =
-    kUnicodeErrorBaseAttributes;
+  // BaseException subclasses
+  addEmptyBuiltinType(thread, ID(Exception), LayoutId::kException,
+                      LayoutId::kBaseException);
+  addEmptyBuiltinType(thread, ID(KeyboardInterrupt),
+                      LayoutId::kKeyboardInterrupt, LayoutId::kBaseException);
+  addEmptyBuiltinType(thread, ID(GeneratorExit), LayoutId::kGeneratorExit,
+                      LayoutId::kBaseException);
+  addBuiltinType(thread, ID(SystemExit), LayoutId::kSystemExit,
+                 /*superclass_id=*/LayoutId::kBaseException,
+                 kSystemExitAttributes);
 
-const BuiltinAttribute* const UnicodeTranslateErrorBuiltins::kAttributes =
-    kUnicodeErrorBaseAttributes;
+  // Exception subclasses
+  addEmptyBuiltinType(thread, ID(ArithmeticError), LayoutId::kArithmeticError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(AssertionError), LayoutId::kAssertionError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(AttributeError), LayoutId::kAttributeError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(BufferError), LayoutId::kBufferError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(EOFError), LayoutId::kEOFError,
+                      LayoutId::kException);
+  addBuiltinType(thread, ID(ImportError), LayoutId::kImportError,
+                 /*superclass_id=*/LayoutId::kException,
+                 kImportErrorAttributes);
+  addEmptyBuiltinType(thread, ID(LookupError), LayoutId::kLookupError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(MemoryError), LayoutId::kMemoryError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(NameError), LayoutId::kNameError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(OSError), LayoutId::kOSError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(ReferenceError), LayoutId::kReferenceError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(RuntimeError), LayoutId::kRuntimeError,
+                      LayoutId::kException);
+  addBuiltinType(thread, ID(StopIteration), LayoutId::kStopIteration,
+                 /*superclass_id=*/LayoutId::kException,
+                 kStopIterationAttributes);
+  addEmptyBuiltinType(thread, ID(StopAsyncIteration),
+                      LayoutId::kStopAsyncIteration, LayoutId::kException);
+  addBuiltinType(thread, ID(SyntaxError), LayoutId::kSyntaxError,
+                 /*superclass_id=*/LayoutId::kException,
+                 kSyntaxErrorAttributes);
+  addEmptyBuiltinType(thread, ID(SystemError), LayoutId::kSystemError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(TypeError), LayoutId::kTypeError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(ValueError), LayoutId::kValueError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(thread, ID(Warning), LayoutId::kWarning,
+                      LayoutId::kException);
+
+  // ArithmeticError subclasses
+  addEmptyBuiltinType(thread, ID(FloatingPointError),
+                      LayoutId::kFloatingPointError,
+                      LayoutId::kArithmeticError);
+  addEmptyBuiltinType(thread, ID(OverflowError), LayoutId::kOverflowError,
+                      LayoutId::kArithmeticError);
+  addEmptyBuiltinType(thread, ID(ZeroDivisionError),
+                      LayoutId::kZeroDivisionError, LayoutId::kArithmeticError);
+
+  // ImportError subclasses
+  addEmptyBuiltinType(thread, ID(ModuleNotFoundError),
+                      LayoutId::kModuleNotFoundError, LayoutId::kImportError);
+
+  // LookupError subclasses
+  addEmptyBuiltinType(thread, ID(IndexError), LayoutId::kIndexError,
+                      LayoutId::kLookupError);
+  addEmptyBuiltinType(thread, ID(KeyError), LayoutId::kKeyError,
+                      LayoutId::kLookupError);
+
+  // NameError subclasses
+  addEmptyBuiltinType(thread, ID(UnboundLocalError),
+                      LayoutId::kUnboundLocalError, LayoutId::kNameError);
+
+  // OSError subclasses
+  addEmptyBuiltinType(thread, ID(BlockingIOError), LayoutId::kBlockingIOError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(ChildProcessError),
+                      LayoutId::kChildProcessError, LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(ConnectionError), LayoutId::kConnectionError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(FileExistsError), LayoutId::kFileExistsError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(FileNotFoundError),
+                      LayoutId::kFileNotFoundError, LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(InterruptedError), LayoutId::kInterruptedError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(IsADirectoryError),
+                      LayoutId::kIsADirectoryError, LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(NotADirectoryError),
+                      LayoutId::kNotADirectoryError, LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(PermissionError), LayoutId::kPermissionError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(ProcessLookupError),
+                      LayoutId::kProcessLookupError, LayoutId::kOSError);
+  addEmptyBuiltinType(thread, ID(TimeoutError), LayoutId::kTimeoutError,
+                      LayoutId::kOSError);
+
+  // ConnectionError subclasses
+  addEmptyBuiltinType(thread, ID(BrokenPipeError), LayoutId::kBrokenPipeError,
+                      LayoutId::kConnectionError);
+  addEmptyBuiltinType(thread, ID(ConnectionAbortedError),
+                      LayoutId::kConnectionAbortedError,
+                      LayoutId::kConnectionError);
+  addEmptyBuiltinType(thread, ID(ConnectionRefusedError),
+                      LayoutId::kConnectionRefusedError,
+                      LayoutId::kConnectionError);
+  addEmptyBuiltinType(thread, ID(ConnectionResetError),
+                      LayoutId::kConnectionResetError,
+                      LayoutId::kConnectionError);
+
+  // RuntimeError subclasses
+  addEmptyBuiltinType(thread, ID(NotImplementedError),
+                      LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
+  addEmptyBuiltinType(thread, ID(RecursionError), LayoutId::kRecursionError,
+                      LayoutId::kRuntimeError);
+
+  // SyntaxError subclasses
+  addEmptyBuiltinType(thread, ID(IndentationError), LayoutId::kIndentationError,
+                      LayoutId::kSyntaxError);
+
+  // IndentationError subclasses
+  addEmptyBuiltinType(thread, ID(TabError), LayoutId::kTabError,
+                      LayoutId::kIndentationError);
+
+  // Warning subclasses
+  addEmptyBuiltinType(thread, ID(UserWarning), LayoutId::kUserWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(DeprecationWarning),
+                      LayoutId::kDeprecationWarning, LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(PendingDeprecationWarning),
+                      LayoutId::kPendingDeprecationWarning, LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(SyntaxWarning), LayoutId::kSyntaxWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(RuntimeWarning), LayoutId::kRuntimeWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(FutureWarning), LayoutId::kFutureWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(ImportWarning), LayoutId::kImportWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(UnicodeWarning), LayoutId::kUnicodeWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(BytesWarning), LayoutId::kBytesWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(thread, ID(ResourceWarning), LayoutId::kResourceWarning,
+                      LayoutId::kWarning);
+
+  addBuiltinType(thread, ID(UnicodeError), LayoutId::kUnicodeError,
+                 /*superclass_id=*/LayoutId::kValueError, {nullptr, 0});
+
+  addBuiltinType(thread, ID(UnicodeDecodeError), LayoutId::kUnicodeDecodeError,
+                 /*superclass_id=*/LayoutId::kUnicodeError,
+                 kUnicodeErrorBaseAttributes);
+
+  addBuiltinType(thread, ID(UnicodeEncodeError), LayoutId::kUnicodeEncodeError,
+                 /*superclass_id=*/LayoutId::kUnicodeError,
+                 kUnicodeErrorBaseAttributes);
+
+  addBuiltinType(
+      thread, ID(UnicodeTranslateError), LayoutId::kUnicodeTranslateError,
+      /*superclass_id=*/LayoutId::kUnicodeError, kUnicodeErrorBaseAttributes);
+}
 
 }  // namespace py

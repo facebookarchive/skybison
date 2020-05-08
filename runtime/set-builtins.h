@@ -55,31 +55,6 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter);
 
 RawSmallInt frozensetHash(Thread* thread, const Object& frozenset);
 
-class SetBuiltins : public Builtins<SetBuiltins, ID(set), LayoutId::kSet> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SetBuiltins);
-};
-
-class FrozenSetBuiltins
-    : public Builtins<FrozenSetBuiltins, ID(frozenset), LayoutId::kFrozenSet> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FrozenSetBuiltins);
-};
-
-class SetIteratorBuiltins
-    : public Builtins<SetIteratorBuiltins, ID(set_iterator),
-                      LayoutId::kSetIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);
-};
+void initializeSetTypes(Thread* thread);
 
 }  // namespace py

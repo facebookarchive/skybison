@@ -60,46 +60,7 @@ bool bytesIsValidUTF8(RawBytes bytes);
 // in strings, because python supports things like UTF-8B (aka surrogateescape).
 bool bytesIsValidStr(RawBytes bytes);
 
-class SmallBytesBuiltins
-    : public ImmediateBuiltins<SmallBytesBuiltins, ID(smallbytes),
-                               LayoutId::kSmallBytes, LayoutId::kBytes> {
- public:
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallBytesBuiltins);
-};
-
-class LargeBytesBuiltins
-    : public Builtins<LargeBytesBuiltins, ID(largebytes), LayoutId::kLargeBytes,
-                      LayoutId::kBytes> {
- public:
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeBytesBuiltins);
-};
-
-class BytesBuiltins
-    : public Builtins<BytesBuiltins, ID(bytes), LayoutId::kBytes> {
- public:
-  static void postInitialize(Runtime*, const Type& new_type);
-
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);
-};
-
-class BytesIteratorBuiltins
-    : public Builtins<BytesIteratorBuiltins, ID(bytes_iterator),
-                      LayoutId::kBytesIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(BytesIteratorBuiltins);
-};
+void initializeBytesTypes(Thread* thread);
 
 inline word bytesHash(Thread* thread, RawObject object) {
   if (object.isSmallBytes()) {

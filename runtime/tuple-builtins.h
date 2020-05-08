@@ -20,23 +20,6 @@ RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
 
 RawObject tupleHash(Thread* thread, const Tuple& tuple);
 
-class TupleBuiltins
-    : public Builtins<TupleBuiltins, ID(tuple), LayoutId::kTuple> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TupleBuiltins);
-};
-
-class TupleIteratorBuiltins
-    : public Builtins<TupleIteratorBuiltins, ID(tuple_iterator),
-                      LayoutId::kTupleIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);
-};
+void initializeTupleTypes(Thread* thread);
 
 }  // namespace py

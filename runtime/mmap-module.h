@@ -18,12 +18,6 @@ class MmapModule {
   DISALLOW_IMPLICIT_CONSTRUCTORS(MmapModule);
 };
 
-class MmapBuiltins : public Builtins<MmapBuiltins, ID(mmap), LayoutId::kMmap> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(MmapBuiltins);
-};
+void initializeMmapType(Thread* thread);
 
 }  // namespace py

@@ -6,6 +6,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
+#include "type-builtins.h"
 #include "unicode.h"
 #include "utils.h"
 
@@ -370,39 +371,48 @@ bool bytesIsValidStr(RawBytes bytes) {
   return bytesIsValidUTF8Impl(bytes, /*allow_surrogates=*/true);
 }
 
-void SmallBytesBuiltins::postInitialize(Runtime* runtime,
-                                        const Type& new_type) {
-  runtime->setSmallBytesType(new_type);
-  Layout::cast(new_type.instanceLayout())
-      .setDescribedType(runtime->typeAt(kSuperType));
-}
-
-void LargeBytesBuiltins::postInitialize(Runtime* runtime,
-                                        const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-  runtime->setLargeBytesType(new_type);
-  Layout::cast(new_type.instanceLayout())
-      .setDescribedType(runtime->typeAt(kSuperType));
-}
-
 // Used only for UserBytesBase as a heap-allocated object.
-const BuiltinAttribute BytesBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBytesAttributes[] = {
     {ID(_UserBytes__value), RawUserBytesBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-void BytesBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  new_type.setBuiltinBase(LayoutId::kBytes);
-}
-
-const BuiltinAttribute BytesIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kBytesIteratorAttributes[] = {
     {ID(_bytes_iterator__iterable), RawBytesIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_bytes_iterator__index), RawBytesIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeBytesTypes(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Type bytes(&scope, addBuiltinType(thread, ID(bytes), LayoutId::kBytes,
+                                    /*superclass_id=*/LayoutId::kObject,
+                                    kBytesAttributes));
+
+  {
+    Type type(&scope, addImmediateBuiltinType(
+                          thread, ID(largebytes), LayoutId::kLargeBytes,
+                          /*builtin_base=*/LayoutId::kBytes,
+                          /*superclass_id=*/LayoutId::kObject));
+    Layout::cast(type.instanceLayout()).setDescribedType(*bytes);
+    runtime->setLargeBytesType(type);
+  }
+
+  {
+    Type type(&scope, addImmediateBuiltinType(
+                          thread, ID(smallbytes), LayoutId::kSmallBytes,
+                          /*builtin_base=*/LayoutId::kBytes,
+                          /*superclass_id=*/LayoutId::kObject));
+    Layout::cast(type.instanceLayout()).setDescribedType(*bytes);
+    runtime->setSmallBytesType(type);
+  }
+
+  addBuiltinType(thread, ID(bytes_iterator), LayoutId::kBytesIterator,
+                 /*superclass_id=*/LayoutId::kObject, kBytesIteratorAttributes);
+}
 
 RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

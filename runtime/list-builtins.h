@@ -41,22 +41,6 @@ RawObject listSort(Thread* thread, const List& list);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
 
-class ListBuiltins : public Builtins<ListBuiltins, ID(list), LayoutId::kList> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ListBuiltins);
-};
-
-class ListIteratorBuiltins
-    : public Builtins<ListIteratorBuiltins, ID(list_iterator),
-                      LayoutId::kListIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ListIteratorBuiltins);
-};
+void initializeListTypes(Thread* thread);
 
 }  // namespace py

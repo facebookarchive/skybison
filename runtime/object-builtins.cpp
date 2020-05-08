@@ -393,49 +393,6 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
   return *result;
 }
 
-void ObjectBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-
-  Layout layout(&scope, runtime->newLayout(LayoutId::kObject));
-  Type object_type(&scope, runtime->newType());
-  layout.setDescribedType(*object_type);
-  object_type.setName(runtime->symbols()->at(ID(object)));
-  Tuple mro(&scope, runtime->newTuple(1));
-  mro.atPut(0, *object_type);
-  object_type.setMro(*mro);
-  object_type.setInstanceLayout(*layout);
-  object_type.setBases(runtime->emptyTuple());
-  runtime->layoutAtPut(LayoutId::kObject, *layout);
-
-  postInitialize(runtime, object_type);
-}
-
-void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  // Add object as the implicit base class for new types.
-  runtime->initializeImplicitBases();
-
-  // Manually create `__getattribute__` method to avoid bootstrap problems.
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Tuple parameter_names(&scope, runtime->newTuple(2));
-  parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
-  parameter_names.atPut(1, runtime->symbols()->at(ID(name)));
-  Object name(&scope, runtime->symbols()->at(ID(__getattribute__)));
-  Code code(
-      &scope,
-      runtime->newBuiltinCode(
-          /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
-          /*flags=*/0, METH(object, __getattribute__), parameter_names, name));
-  Object qualname(
-      &scope, Runtime::internStrFromCStr(thread, "object.__getattribute__"));
-  Object module_obj(&scope, NoneType::object());
-  Function dunder_getattribute(
-      &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));
-
-  typeAtPutById(thread, new_type, ID(__getattribute__), dunder_getattribute);
-}
-
 RawObject METH(object, __getattribute__)(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
@@ -532,9 +489,62 @@ RawObject METH(NoneType, __repr__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->symbols()->at(ID(None));
 }
 
-const BuiltinAttribute InstanceProxyBuiltins::kAttributes[] = {
+static const BuiltinAttribute kInstanceProxyAttributes[] = {
     {ID(_instance), RawInstanceProxy::kInstanceOffset},
-    {SymbolId::kSentinelId, -1},
 };
+
+static void addObjectType(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->newLayout(LayoutId::kObject));
+  runtime->layoutAtPut(LayoutId::kObject, *layout);
+  Type type(&scope, runtime->newType());
+  layout.setDescribedType(*type);
+  type.setName(runtime->symbols()->at(ID(object)));
+  Tuple mro(&scope, runtime->newTupleWith1(type));
+  type.setMro(*mro);
+  type.setInstanceLayout(*layout);
+  type.setBases(runtime->emptyTuple());
+
+  // Add object as the implicit base class for new types.
+  runtime->initializeImplicitBases();
+
+  // Manually create `__getattribute__` method to avoid bootstrap problems.
+  Tuple parameter_names(&scope, runtime->newTuple(2));
+  parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
+  parameter_names.atPut(1, runtime->symbols()->at(ID(name)));
+  Object name(&scope, runtime->symbols()->at(ID(__getattribute__)));
+  Code code(
+      &scope,
+      runtime->newBuiltinCode(
+          /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
+          /*flags=*/0, METH(object, __getattribute__), parameter_names, name));
+  Object qualname(
+      &scope, Runtime::internStrFromCStr(thread, "object.__getattribute__"));
+  Object module_obj(&scope, NoneType::object());
+  Function dunder_getattribute(
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));
+  typeAtPutById(thread, type, ID(__getattribute__), dunder_getattribute);
+}
+
+void initializeObjectTypes(Thread* thread) {
+  addObjectType(thread);
+
+  addImmediateBuiltinType(thread, ID(NoneType), LayoutId::kNoneType,
+                          /*builtin_base=*/LayoutId::kNoneType,
+                          /*superclass_id=*/LayoutId::kObject);
+
+  addImmediateBuiltinType(thread, ID(NotImplementedType),
+                          LayoutId::kNotImplementedType,
+                          /*builtin_base=*/LayoutId::kNotImplementedType,
+                          /*superclass_id=*/LayoutId::kObject);
+
+  addImmediateBuiltinType(thread, ID(_Unbound), LayoutId::kUnbound,
+                          /*builtin_base=*/LayoutId::kUnbound,
+                          /*superclass_id=*/LayoutId::kObject);
+
+  addBuiltinType(thread, ID(instance_proxy), LayoutId::kInstanceProxy,
+                 /*superclass_id=*/LayoutId::kObject, kInstanceProxyAttributes);
+}
 
 }  // namespace py

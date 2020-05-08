@@ -5,6 +5,7 @@
 #include "builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -174,8 +175,10 @@ static RawObject genThrowImpl(Thread* thread, Frame* frame, word nargs) {
   return genThrowImpl(thread, gen, exc, value, tb);
 }
 
-const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kGeneratorAttributes[] = {
     {ID(_generator__frame), RawGenerator::kFrameOffset,
+     AttributeFlags::kHidden},
+    {ID(_generator__exception_state), RawGenerator::kExceptionStateOffset,
      AttributeFlags::kHidden},
     {ID(_generator__exception_state), RawGenerator::kExceptionStateOffset,
      AttributeFlags::kHidden},
@@ -183,8 +186,49 @@ const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
     {ID(__qualname__), RawGenerator::kQualnameOffset},
     {ID(_generator__yield_from), RawGenerator::kYieldFromOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+static const BuiltinAttribute kCoroutineAttributes[] = {
+    {ID(_coroutine__frame), RawCoroutine::kFrameOffset,
+     AttributeFlags::kHidden},
+    {ID(_coroutine__exception_state), RawCoroutine::kExceptionStateOffset,
+     AttributeFlags::kHidden},
+    {ID(cr_running), RawCoroutine::kRunningOffset, AttributeFlags::kHidden},
+    {ID(__qualname__), RawCoroutine::kQualnameOffset},
+    {ID(_coroutine__await), RawCoroutine::kAwaitOffset,
+     AttributeFlags::kHidden},
+    {ID(_coroutine__origin), RawCoroutine::kOriginOffset,
+     AttributeFlags::kHidden},
+};
+
+static const BuiltinAttribute kAsyncGeneratorAttributes[] = {
+    {ID(_async_generator__frame), RawAsyncGenerator::kFrameOffset,
+     AttributeFlags::kHidden},
+    {ID(_async_generator__exception_state),
+     RawAsyncGenerator::kExceptionStateOffset, AttributeFlags::kHidden},
+    {ID(_async_generator__running), RawAsyncGenerator::kRunningOffset,
+     AttributeFlags::kHidden},
+    {ID(__qualname__), RawAsyncGenerator::kQualnameOffset,
+     AttributeFlags::kReadOnly},
+    {ID(_async_generator__finalizer), RawAsyncGenerator::kFinalizerOffset,
+     AttributeFlags::kHidden},
+    {ID(_async_generator__hooks_inited), RawAsyncGenerator::kHooksInitedOffset,
+     AttributeFlags::kHidden},
+    {ID(_async_generator__closed), RawAsyncGenerator::kClosedOffset,
+     AttributeFlags::kHidden},
+};
+
+void initializeGeneratorTypes(Thread* thread) {
+  addBuiltinType(thread, ID(generator), LayoutId::kGenerator,
+                 /*superclass_id=*/LayoutId::kObject, kGeneratorAttributes);
+
+  addBuiltinType(thread, ID(coroutine), LayoutId::kCoroutine,
+                 /*superclass_id=*/LayoutId::kObject, kCoroutineAttributes);
+
+  addBuiltinType(thread, ID(async_generator), LayoutId::kAsyncGenerator,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kAsyncGeneratorAttributes);
+}
 
 RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
@@ -220,40 +264,8 @@ RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
                                                            nargs);
 }
 
-const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
-    {ID(_coroutine__frame), RawCoroutine::kFrameOffset,
-     AttributeFlags::kHidden},
-    {ID(_coroutine__exception_state), RawCoroutine::kExceptionStateOffset,
-     AttributeFlags::kHidden},
-    {ID(cr_running), RawCoroutine::kRunningOffset, AttributeFlags::kHidden},
-    {ID(__qualname__), RawCoroutine::kQualnameOffset},
-    {ID(_coroutine__await), RawCoroutine::kAwaitOffset,
-     AttributeFlags::kHidden},
-    {ID(_coroutine__origin), RawCoroutine::kOriginOffset,
-     AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
-};
-
 RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
   return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
 }
-
-const BuiltinAttribute AsyncGeneratorBuiltins::kAttributes[] = {
-    {ID(_async_generator__frame), RawAsyncGenerator::kFrameOffset,
-     AttributeFlags::kHidden},
-    {ID(_async_generator__exception_state),
-     RawAsyncGenerator::kExceptionStateOffset, AttributeFlags::kHidden},
-    {ID(_async_generator__running), RawAsyncGenerator::kRunningOffset,
-     AttributeFlags::kHidden},
-    {ID(__qualname__), RawAsyncGenerator::kQualnameOffset,
-     AttributeFlags::kReadOnly},
-    {ID(_async_generator__finalizer), RawAsyncGenerator::kFinalizerOffset,
-     AttributeFlags::kHidden},
-    {ID(_async_generator__hooks_inited), RawAsyncGenerator::kHooksInitedOffset,
-     AttributeFlags::kHidden},
-    {ID(_async_generator__closed), RawAsyncGenerator::kClosedOffset,
-     AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
-};
 
 }  // namespace py

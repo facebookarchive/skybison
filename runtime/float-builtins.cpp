@@ -12,6 +12,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -35,11 +36,15 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
   return NotImplementedType::object();
 }
 
-const BuiltinAttribute FloatBuiltins::kAttributes[] = {
+static const BuiltinAttribute kFloatAttributes[] = {
     {ID(_UserFloat__value), RawUserFloatBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeFloatType(Thread* thread) {
+  addBuiltinType(thread, ID(float), LayoutId::kFloat,
+                 /*superclass_id=*/LayoutId::kObject, kFloatAttributes);
+}
 
 RawObject METH(float, __abs__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

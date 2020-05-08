@@ -5,10 +5,11 @@
 #include "float-builtins.h"
 #include "int-builtins.h"
 #include "mmap-module.h"
+#include "type-builtins.h"
 
 namespace py {
 
-const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
+static const BuiltinAttribute kMemoryViewAttributes[] = {
     {ID(format), RawMemoryView::kFormatOffset, AttributeFlags::kReadOnly},
     {ID(obj), RawMemoryView::kObjectOffset, AttributeFlags::kReadOnly},
     {ID(readonly), RawMemoryView::kReadOnlyOffset, AttributeFlags::kReadOnly},
@@ -16,8 +17,12 @@ const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
     {ID(strides), RawMemoryView::kStridesOffset, AttributeFlags::kReadOnly},
     {ID(_memoryview__start), RawMemoryView::kStartOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeMemoryViewType(Thread* thread) {
+  addBuiltinType(thread, ID(memoryview), LayoutId::kMemoryView,
+                 /*superclass_id=*/LayoutId::kObject, kMemoryViewAttributes);
+}
 
 static char formatChar(const Str& format) {
   if (format.length() == 2) {

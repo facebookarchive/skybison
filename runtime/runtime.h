@@ -847,9 +847,7 @@ class Runtime {
 
  private:
   void initializeApiData();
-  void initializeExceptionTypes();
   void initializeHeapTypes(Thread* thread);
-  void initializeImmediateTypes();
   void initializeInterned();
   void initializeInterpreter();
   void initializeLayouts();

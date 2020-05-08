@@ -6,15 +6,28 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
-const BuiltinAttribute RefBuiltins::kAttributes[] = {
+static const BuiltinAttribute kRefAttributes[] = {
     {ID(_ref__referent), RawWeakRef::kReferentOffset, AttributeFlags::kHidden},
     {ID(_ref__callback), RawWeakRef::kCallbackOffset, AttributeFlags::kHidden},
     {ID(_ref__link), RawWeakRef::kLinkOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+static const BuiltinAttribute kWeakLinkAttributes[] = {
+    {ID(__weaklink__next), RawWeakLink::kNextOffset, AttributeFlags::kHidden},
+    {ID(__weaklink__prev), RawWeakLink::kPrevOffset, AttributeFlags::kHidden},
+};
+
+void initializeRefTypes(Thread* thread) {
+  addBuiltinType(thread, ID(weakref), LayoutId::kWeakRef,
+                 /*superclass_id=*/LayoutId::kObject, kRefAttributes);
+
+  addBuiltinType(thread, ID(_weaklink), LayoutId::kWeakLink,
+                 /*superclass_id=*/LayoutId::kObject, kWeakLinkAttributes);
+}
 
 RawObject METH(weakref, __call__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
@@ -51,11 +64,5 @@ RawObject METH(weakref, __new__)(Thread* thread, Frame* frame, word nargs) {
   instance.setValue(*result);
   return *instance;
 }
-
-const BuiltinAttribute WeakLinkBuiltins::kAttributes[] = {
-    {ID(__weaklink__next), RawWeakLink::kNextOffset, AttributeFlags::kHidden},
-    {ID(__weaklink__prev), RawWeakLink::kPrevOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
-};
 
 }  // namespace py

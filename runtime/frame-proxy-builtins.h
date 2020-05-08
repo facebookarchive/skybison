@@ -5,13 +5,6 @@
 
 namespace py {
 
-class FrameProxyBuiltins
-    : public Builtins<FrameProxyBuiltins, ID(frame), LayoutId::kFrameProxy> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FrameProxyBuiltins);
-};
+void initializeFrameProxyType(Thread* thread);
 
 }  // namespace py

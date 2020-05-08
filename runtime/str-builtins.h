@@ -108,44 +108,7 @@ RawObject strTranslateASCII(Thread* thread, const Str& src, const Str& table);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
-class SmallStrBuiltins
-    : public ImmediateBuiltins<SmallStrBuiltins, ID(smallstr),
-                               LayoutId::kSmallStr, LayoutId::kStr> {
- public:
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStrBuiltins);
-};
-
-class LargeStrBuiltins : public Builtins<LargeStrBuiltins, ID(largestr),
-                                         LayoutId::kLargeStr, LayoutId::kStr> {
- public:
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStrBuiltins);
-};
-
-class StrBuiltins : public Builtins<StrBuiltins, ID(str), LayoutId::kStr> {
- public:
-  static void postInitialize(Runtime*, const Type& new_type);
-
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
-};
-
-class StrIteratorBuiltins
-    : public Builtins<StrIteratorBuiltins, ID(str_iterator),
-                      LayoutId::kStrIterator> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
-};
+void initializeStrTypes(Thread* thread);
 
 inline word strHash(Thread* thread, RawObject object) {
   if (object.isSmallStr()) {

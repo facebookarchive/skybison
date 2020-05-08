@@ -17,6 +17,7 @@
 #include "runtime.h"
 #include "symbols.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -133,11 +134,15 @@ RawObject METH(mmap, close)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-const BuiltinAttribute MmapBuiltins::kAttributes[] = {
+static const BuiltinAttribute kMmapAttributes[] = {
     {ID(_mmap__access), RawMmap::kAccessOffset, AttributeFlags::kHidden},
     {ID(_mmap__data), RawMmap::kDataOffset, AttributeFlags::kHidden},
     {ID(_mmap__fd), RawMmap::kFdOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeMmapType(Thread* thread) {
+  addBuiltinType(thread, ID(mmap), LayoutId::kMmap,
+                 /*superclass_id=*/LayoutId::kObject, kMmapAttributes);
+}
 
 }  // namespace py

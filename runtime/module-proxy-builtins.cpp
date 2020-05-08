@@ -6,10 +6,14 @@
 
 namespace py {
 
-const BuiltinAttribute ModuleProxyBuiltins::kAttributes[] = {
+static const BuiltinAttribute kModuleProxyAttributes[] = {
     {ID(__module_object__), RawModuleProxy::kModuleOffset},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeModuleProxyType(Thread* thread) {
+  addBuiltinType(thread, ID(module_proxy), LayoutId::kModuleProxy,
+                 /*superclass_id=*/LayoutId::kObject, kModuleProxyAttributes);
+}
 
 RawObject METH(module_proxy, __contains__)(Thread* thread, Frame* frame,
                                            word nargs) {

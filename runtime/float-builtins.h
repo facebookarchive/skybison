@@ -1,24 +1,18 @@
 #pragma once
 
-#include "frame.h"
+#include "globals.h"
+#include "handles.h"
 #include "objects.h"
-#include "runtime.h"
-#include "thread.h"
 
 namespace py {
+
+class Thread;
 
 word doubleHash(double value);
 
 word floatHash(RawObject value);
 
-class FloatBuiltins
-    : public Builtins<FloatBuiltins, ID(float), LayoutId::kFloat> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FloatBuiltins);
-};
+void initializeFloatType(Thread* thread);
 
 void decodeDouble(double value, bool* is_neg, int* exp, int64_t* mantissa);
 

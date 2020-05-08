@@ -208,6 +208,7 @@ class Runtime;
   V(__neg__)                                                                   \
   V(__new__)                                                                   \
   V(__next__)                                                                  \
+  V(__objclass__)                                                              \
   V(__or__)                                                                    \
   V(__orig_bases__)                                                            \
   V(__package__)                                                               \
@@ -465,6 +466,7 @@ class Runtime;
   V(_slice_guard)                                                              \
   V(_slice_index)                                                              \
   V(_slice_index_not_none)                                                     \
+  V(_slot_descriptor__offset)                                                  \
   V(_snapshot)                                                                 \
   V(_stderr_fd)                                                                \
   V(_stdin_fd)                                                                 \
@@ -553,6 +555,7 @@ class Runtime;
   V(bytes)                                                                     \
   V(bytes_iterator)                                                            \
   V(callable_iterator)                                                         \
+  V(cell)                                                                      \
   V(cell_contents)                                                             \
   V(classmethod)                                                               \
   V(co_argcount)                                                               \

@@ -13,6 +13,7 @@
 #include "slice-builtins.h"
 #include "thread.h"
 #include "tuple-builtins.h"
+#include "type-builtins.h"
 #include "unicode.h"
 
 namespace py {
@@ -407,36 +408,47 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   return RawSmallStr::fromCodePoint(code_point);
 }
 
-void SmallStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  runtime->setSmallStrType(new_type);
-  Layout::cast(new_type.instanceLayout())
-      .setDescribedType(runtime->typeAt(kSuperType));
-}
-
-void LargeStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-  runtime->setLargeStrType(new_type);
-  Layout::cast(new_type.instanceLayout())
-      .setDescribedType(runtime->typeAt(kSuperType));
-}
-
-const BuiltinAttribute StrBuiltins::kAttributes[] = {
+static const BuiltinAttribute kStrAttributes[] = {
     {ID(_UserStr__value), RawUserStrBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-void StrBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  new_type.setBuiltinBase(LayoutId::kStr);
-}
-
-const BuiltinAttribute StrIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kStrIteratorAttributes[] = {
     {ID(_str_iterator__iterable), RawStrIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_str_iterator__index), RawStrIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeStrTypes(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Type str(&scope,
+           addBuiltinType(thread, ID(str), LayoutId::kStr,
+                          /*superclass_id=*/LayoutId::kObject, kStrAttributes));
+
+  {
+    Type type(&scope,
+              addImmediateBuiltinType(thread, ID(largestr), LayoutId::kLargeStr,
+                                      /*builtin_base=*/LayoutId::kStr,
+                                      /*superclass_id=*/LayoutId::kObject));
+    Layout::cast(type.instanceLayout()).setDescribedType(*str);
+    runtime->setLargeStrType(type);
+  }
+
+  {
+    Type type(&scope,
+              addImmediateBuiltinType(thread, ID(smallstr), LayoutId::kSmallStr,
+                                      /*builtin_base=*/LayoutId::kStr,
+                                      /*superclass_id=*/LayoutId::kObject));
+    Layout::cast(type.instanceLayout()).setDescribedType(*str);
+    runtime->setSmallStrType(type);
+  }
+
+  addBuiltinType(thread, ID(str_iterator), LayoutId::kStrIterator,
+                 /*superclass_id=*/LayoutId::kObject, kStrIteratorAttributes);
+}
 
 RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

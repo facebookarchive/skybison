@@ -57,47 +57,6 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
 
 RawObject METH(object, __getattribute__)(Thread*, Frame*, word);
 
-class ObjectBuiltins
-    : public ImmediateBuiltins<ObjectBuiltins, ID(object), LayoutId::kObject,
-                               LayoutId::kObject> {
- public:
-  static void initialize(Runtime* runtime);
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
-};
-
-class InstanceProxyBuiltins
-    : public Builtins<InstanceProxyBuiltins, ID(instance_proxy),
-                      LayoutId::kInstanceProxy, LayoutId::kObject> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(InstanceProxyBuiltins);
-};
-
-class NoneBuiltins
-    : public ImmediateBuiltins<NoneBuiltins, ID(NoneType), LayoutId::kNoneType,
-                               LayoutId::kObject> {
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);
-};
-
-class NotImplementedBuiltins
-    : public ImmediateBuiltins<NotImplementedBuiltins, ID(NotImplementedType),
-                               LayoutId::kNotImplementedType,
-                               LayoutId::kObject> {
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplementedBuiltins);
-};
-
-class UnboundBuiltins
-    : public ImmediateBuiltins<UnboundBuiltins, ID(_Unbound),
-                               LayoutId::kUnbound, LayoutId::kObject> {
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(UnboundBuiltins);
-};
+void initializeObjectTypes(Thread* thread);
 
 }  // namespace py

@@ -7,6 +7,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -585,11 +586,10 @@ static RawObject dunderGtImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(setIsProperSubset(thread, other_set, set));
 }
 
-const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
-    {ID(_frozenset__data), RawSet::kDataOffset, AttributeFlags::kHidden},
-    {ID(_frozenset__num_items), RawSet::kNumItemsOffset,
+static const BuiltinAttribute kFrozenSetAttributes[] = {
+    {ID(_frozenset__num_items), RawFrozenSet::kNumItemsOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
+    {ID(_frozenset__data), RawFrozenSet::kDataOffset, AttributeFlags::kHidden},
 };
 
 RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs) {
@@ -769,20 +769,6 @@ RawObject METH(frozenset, isdisjoint)(Thread* thread, Frame* frame,
   return isdisjointImpl(thread, frame, nargs, ID(frozenset));
 }
 
-const BuiltinAttribute SetBuiltins::kAttributes[] = {
-    {ID(_set__data), RawSet::kDataOffset, AttributeFlags::kHidden},
-    {ID(_set__num_items), RawSet::kNumItemsOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
-};
-
-const BuiltinAttribute SetIteratorBuiltins::kAttributes[] = {
-    {ID(_set_iterator__iterable), RawSetIterator::kIterableOffset,
-     AttributeFlags::kHidden},
-    {ID(_set_iterator__index), RawSetIterator::kIndexOffset,
-     AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
-};
-
 RawObject setCopy(Thread* thread, const SetBase& set) {
   word num_items = set.numItems();
   Runtime* runtime = thread->runtime();
@@ -872,6 +858,11 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   iter.setIndex(idx);
   return RawSet::Bucket::value(*data, idx);
 }
+
+static const BuiltinAttribute kSetAttributes[] = {
+    {ID(_set__data), RawSet::kDataOffset, AttributeFlags::kHidden},
+    {ID(_set__num_items), RawSet::kNumItemsOffset, AttributeFlags::kHidden},
+};
 
 RawObject METH(set, __and__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
@@ -1112,6 +1103,13 @@ RawObject METH(set, update)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
+static const BuiltinAttribute kSetIteratorAttributes[] = {
+    {ID(_set_iterator__iterable), RawSetIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_set_iterator__index), RawSetIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+};
+
 RawObject METH(set_iterator, __iter__)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
@@ -1150,6 +1148,17 @@ RawObject METH(set_iterator, __length_hint__)(Thread* thread, Frame* frame,
   SetIterator set_iterator(&scope, *self);
   Set set(&scope, set_iterator.iterable());
   return SmallInt::fromWord(set.numItems() - set_iterator.consumedCount());
+}
+
+void initializeSetTypes(Thread* thread) {
+  addBuiltinType(thread, ID(set), LayoutId::kSet,
+                 /*superclass_id=*/LayoutId::kObject, kSetAttributes);
+
+  addBuiltinType(thread, ID(frozenset), LayoutId::kFrozenSet,
+                 /*superclass_id=*/LayoutId::kObject, kFrozenSetAttributes);
+
+  addBuiltinType(thread, ID(set_iterator), LayoutId::kSetIterator,
+                 /*superclass_id=*/LayoutId::kObject, kSetIteratorAttributes);
 }
 
 }  // namespace py

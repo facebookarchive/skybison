@@ -15,13 +15,6 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                              word stop, word step, word slice_len,
                              const Object& value);
 
-class MemoryViewBuiltins : public Builtins<MemoryViewBuiltins, ID(memoryview),
-                                           LayoutId::kMemoryView> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(MemoryViewBuiltins);
-};
+void initializeMemoryViewType(Thread* thread);
 
 }  // namespace py

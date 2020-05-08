@@ -2,13 +2,14 @@
 
 #include "cpython-types.h"
 
-#include "frame.h"
 #include "globals.h"
+#include "handles-decl.h"
 #include "objects.h"
-#include "runtime.h"
-#include "thread.h"
+#include "symbols.h"
 
 namespace py {
+
+class Thread;
 
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
@@ -63,15 +64,6 @@ RawObject moduleSetAttr(Thread* thread, const Module& module,
 // Runs the executable functions found in the PyModuleDef
 int execDef(Thread* thread, const Module& module, PyModuleDef* def);
 
-class ModuleBuiltins
-    : public Builtins<ModuleBuiltins, ID(module), LayoutId::kModule> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleBuiltins);
-};
+void initializeModuleType(Thread* thread);
 
 }  // namespace py

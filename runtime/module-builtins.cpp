@@ -320,20 +320,23 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
   return NoneType::object();
 }
 
-const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
+static const BuiltinAttribute kModuleAttributes[] = {
     {ID(_module__def), RawModule::kDefOffset, AttributeFlags::kHidden},
     {ID(_module__state), RawModule::kStateOffset, AttributeFlags::kHidden},
     {ID(_module__dict), RawModule::kDictOffset, AttributeFlags::kHidden},
     {ID(_module__proxy), RawModule::kModuleProxyOffset,
      AttributeFlags::kHidden},
     {ID(_module__name), RawModule::kNameOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-void ModuleBuiltins::postInitialize(Runtime*, const Type& new_type) {
-  word flags = static_cast<word>(new_type.flags());
+void initializeModuleType(Thread* thread) {
+  HandleScope scope(thread);
+  Type type(&scope, addBuiltinType(thread, ID(module), LayoutId::kModule,
+                                   /*superclass_id=*/LayoutId::kObject,
+                                   kModuleAttributes));
+  word flags = static_cast<word>(type.flags());
   flags |= RawType::Flag::kSealSubtypeLayouts;
-  new_type.setFlags(static_cast<Type::Flag>(flags));
+  type.setFlags(static_cast<Type::Flag>(flags));
 }
 
 RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,

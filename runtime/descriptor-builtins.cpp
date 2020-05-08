@@ -11,12 +11,45 @@
 
 namespace py {
 
-// classmethod
-
-const BuiltinAttribute ClassMethodBuiltins::kAttributes[] = {
+static const BuiltinAttribute kClassMethodAttributes[] = {
     {ID(__func__), RawClassMethod::kFunctionOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
 };
+
+static const BuiltinAttribute kPropertyAttributes[] = {
+    {ID(fget), RawProperty::kGetterOffset, AttributeFlags::kReadOnly},
+    {ID(fset), RawProperty::kSetterOffset, AttributeFlags::kReadOnly},
+    {ID(fdel), RawProperty::kDeleterOffset, AttributeFlags::kReadOnly},
+    {ID(__doc__), RawProperty::kDocOffset},
+};
+
+static const BuiltinAttribute kSlotDescriptorAttributes[] = {
+    {ID(__objclass__), RawSlotDescriptor::kTypeOffset,
+     AttributeFlags::kReadOnly},
+    {ID(__name__), RawSlotDescriptor::kNameOffset, AttributeFlags::kReadOnly},
+    {ID(_slot_descriptor__offset), RawSlotDescriptor::kOffsetOffset,
+     AttributeFlags::kHidden},
+};
+
+static const BuiltinAttribute kStaticMethodAttributes[] = {
+    {ID(__func__), RawStaticMethod::kFunctionOffset, AttributeFlags::kReadOnly},
+};
+
+void initializeDescriptorTypes(Thread* thread) {
+  addBuiltinType(thread, ID(classmethod), LayoutId::kClassMethod,
+                 /*superclass_id=*/LayoutId::kObject, kClassMethodAttributes);
+
+  addBuiltinType(thread, ID(property), LayoutId::kProperty,
+                 /*superclass_id=*/LayoutId::kObject, kPropertyAttributes);
+
+  addBuiltinType(thread, ID(slot_descriptor), LayoutId::kSlotDescriptor,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kSlotDescriptorAttributes);
+
+  addBuiltinType(thread, ID(staticmethod), LayoutId::kStaticMethod,
+                 /*superclass_id=*/LayoutId::kObject, kStaticMethodAttributes);
+}
+
+// classmethod
 
 RawObject METH(classmethod, __new__)(Thread* thread, Frame*, word) {
   return thread->runtime()->newClassMethod();
@@ -107,11 +140,6 @@ RawObject METH(slot_descriptor, __set__)(Thread* thread, Frame* frame,
 
 // staticmethod
 
-const BuiltinAttribute StaticMethodBuiltins::kAttributes[] = {
-    {ID(__func__), RawStaticMethod::kFunctionOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
-};
-
 RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame,
                                       word nargs) {
   HandleScope scope(thread);
@@ -136,14 +164,6 @@ RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
 }
 
 // property
-
-const BuiltinAttribute PropertyBuiltins::kAttributes[] = {
-    {ID(__doc__), RawProperty::kDocOffset},
-    {ID(fget), RawProperty::kGetterOffset, AttributeFlags::kReadOnly},
-    {ID(fset), RawProperty::kSetterOffset, AttributeFlags::kReadOnly},
-    {ID(fdel), RawProperty::kDeleterOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kSentinelId, -1},
-};
 
 RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

@@ -752,54 +752,73 @@ RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
   return Error::noMoreItems();
 }
 
-const BuiltinAttribute DictBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictAttributes[] = {
     {ID(_dict__num_items), RawDict::kNumItemsOffset, AttributeFlags::kHidden},
     {ID(_dict__data), RawDict::kDataOffset, AttributeFlags::kHidden},
     {ID(_dict__sparse), RawDict::kIndicesOffset, AttributeFlags::kHidden},
     {ID(_dict__first_empty_item_index), RawDict::kFirstEmptyItemIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute DictItemIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictItemIteratorAttributes[] = {
     {ID(_dict_item_iterator__iterable), RawDictItemIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_dict_item_iterator__index), RawDictItemIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute DictItemsBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictItemsAttributes[] = {
     {ID(_dict_items__dict), RawDictItems::kDictOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute DictKeyIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictKeyIteratorAttributes[] = {
     {ID(_dict_key_iterator__iterable), RawDictKeyIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_dict_key_iterator__index), RawDictKeyIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute DictKeysBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictKeysAttributes[] = {
     {ID(_dict_keys__dict), RawDictKeys::kDictOffset, AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute DictValueIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictValueIteratorAttributes[] = {
     {ID(_dict_value_iterator__iterable), RawDictValueIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_dict_value_iterator__index), RawDictValueIterator::kIndexOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute DictValuesBuiltins::kAttributes[] = {
+static const BuiltinAttribute kDictValuesAttributes[] = {
     {ID(_dict_values__dict), RawDictValues::kDictOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeDictTypes(Thread* thread) {
+  addBuiltinType(thread, ID(dict), LayoutId::kDict,
+                 /*superclass_id=*/LayoutId::kObject, kDictAttributes);
+
+  addBuiltinType(thread, ID(dict_itemiterator), LayoutId::kDictItemIterator,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kDictItemIteratorAttributes);
+
+  addBuiltinType(thread, ID(dict_items), LayoutId::kDictItems,
+                 /*superclass_id=*/LayoutId::kObject, kDictItemsAttributes);
+
+  addBuiltinType(thread, ID(dict_keyiterator), LayoutId::kDictKeyIterator,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kDictKeyIteratorAttributes);
+
+  addBuiltinType(thread, ID(dict_keys), LayoutId::kDictKeys,
+                 /*superclass_id=*/LayoutId::kObject, kDictKeysAttributes);
+
+  addBuiltinType(thread, ID(dict_valueiterator), LayoutId::kDictValueIterator,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kDictValueIteratorAttributes);
+
+  addBuiltinType(thread, ID(dict_values), LayoutId::kDictValues,
+                 /*superclass_id=*/LayoutId::kObject, kDictValuesAttributes);
+}
 
 RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

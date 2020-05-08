@@ -1,18 +1,13 @@
 #pragma once
 
-#include "runtime.h"
+#include "objects.h"
 
 namespace py {
 
+class Thread;
+
 word complexHash(RawObject value);
 
-class ComplexBuiltins
-    : public Builtins<ComplexBuiltins, ID(complex), LayoutId::kComplex> {
- public:
-  static void postInitialize(Runtime*, const Type& new_type);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ComplexBuiltins);
-};
+void initializeComplexType(Thread* thread);
 
 }  // namespace py

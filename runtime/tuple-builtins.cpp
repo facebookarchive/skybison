@@ -64,21 +64,27 @@ RawObject tupleHash(Thread* thread, const Tuple& tuple) {
   return SmallInt::fromWordTruncated(result);
 }
 
-const BuiltinAttribute TupleBuiltins::kAttributes[] = {
+static const BuiltinAttribute kTupleAttributes[] = {
     {ID(_UserTuple__value), RawUserTupleBase::kValueOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute TupleIteratorBuiltins::kAttributes[] = {
+static const BuiltinAttribute kTupleIteratorAttributes[] = {
     {ID(_tuple_iterator__iterable), RawTupleIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_tuple_iterator__index), RawTupleIterator::kIndexOffset,
      AttributeFlags::kHidden},
     {ID(_tuple_iterator__length), RawTupleIterator::kLengthOffset,
      AttributeFlags::kHidden},
-    {SymbolId::kSentinelId, -1},
 };
+
+void initializeTupleTypes(Thread* thread) {
+  addBuiltinType(thread, ID(tuple), LayoutId::kTuple,
+                 /*superclass_id=*/LayoutId::kObject, kTupleAttributes);
+
+  addBuiltinType(thread, ID(tuple_iterator), LayoutId::kTupleIterator,
+                 /*superclass_id=*/LayoutId::kObject, kTupleIteratorAttributes);
+}
 
 RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
