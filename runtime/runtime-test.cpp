@@ -2981,11 +2981,10 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
 
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
-      {SymbolId::kSentinelId, -1},
   };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope, runtime_->addBuiltinType(ID(version), layout_id,
-                                             LayoutId::kObject, attrs));
+  Type type(&scope, addBuiltinType(thread_, ID(version), layout_id,
+                                   LayoutId::kObject, attrs));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_->newInstance(layout));
@@ -3423,23 +3422,20 @@ TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
 
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
-      {SymbolId::kSentinelId, -1},
   };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope, runtime_->addBuiltinType(ID(version), layout_id,
-                                             LayoutId::kObject, attrs));
+  Type type(&scope, addBuiltinType(thread_, ID(version), layout_id,
+                                   LayoutId::kObject, attrs));
   EXPECT_EQ(type.builtinBase(), layout_id);
 }
 
 TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   HandleScope scope(thread_);
 
-  BuiltinAttribute attrs[] = {
-      {SymbolId::kSentinelId, -1},
-  };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope, runtime_->addBuiltinType(ID(version), layout_id,
-                                             LayoutId::kObject, attrs));
+  Type type(&scope,
+            addBuiltinType(thread_, ID(version), layout_id, LayoutId::kObject,
+                           View<BuiltinAttribute>(nullptr, 0)));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
 }
 

@@ -15,6 +15,16 @@ RawObject attributeName(Thread* thread, const Object& name_obj);
 
 RawObject attributeNameNoException(Thread* thread, const Object& name_obj);
 
+RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
+                         LayoutId superclass_id, View<BuiltinAttribute> attrs);
+
+RawObject addEmptyBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
+                              LayoutId superclass_id);
+
+RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
+                                  LayoutId layout_id, LayoutId builtin_base,
+                                  LayoutId superclass_id);
+
 bool typeIsSubclass(const Type& subclass, const Type& superclass);
 
 // Convert an CPython's extension slot ints into a RawType::Slot

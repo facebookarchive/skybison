@@ -79,6 +79,62 @@ RawObject attributeNameNoException(Thread* thread, const Object& name_obj) {
   return Runtime::internStr(thread, name_str);
 }
 
+static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
+                                          SymbolId name, LayoutId builtin_base,
+                                          LayoutId superclass_id) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->newType());
+  type.setName(runtime->symbols()->at(name));
+  Type superclass(&scope, runtime->typeAt(superclass_id));
+  Tuple superclass_mro(&scope, superclass.mro());
+  word mro_length = superclass_mro.length() + 1;
+  MutableTuple mro(&scope, runtime->newMutableTuple(mro_length));
+  mro.atPut(0, *type);
+  mro.replaceFromWith(1, *superclass_mro, mro_length - 1);
+  type.setMro(mro.becomeImmutable());
+  type.setInstanceLayout(*layout);
+  Type::Flag flags =
+      static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
+  type.setFlagsAndBuiltinBase(flags, builtin_base);
+  type.setBases(runtime->newTupleWith1(superclass));
+  layout.setDescribedType(*type);
+  return *type;
+}
+
+RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
+                         LayoutId superclass_id, View<BuiltinAttribute> attrs) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->layoutCreateSubclassWithBuiltins(
+                            layout_id, superclass_id, attrs));
+  runtime->layoutAtPut(layout_id, *layout);
+  LayoutId builtin_base = attrs.length() == 0 ? superclass_id : layout_id;
+  return addBuiltinTypeWithLayout(thread, layout, name, builtin_base,
+                                  superclass_id);
+}
+
+RawObject addEmptyBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
+                              LayoutId superclass_id) {
+  HandleScope scope(thread);
+  Type type(&scope, addBuiltinType(thread, name, layout_id, superclass_id,
+                                   View<BuiltinAttribute>(nullptr, 0)));
+  Layout layout(&scope, type.instanceLayout());
+  thread->runtime()->layoutSetTupleOverflow(*layout);
+  return *type;
+}
+
+RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
+                                  LayoutId layout_id, LayoutId builtin_base,
+                                  LayoutId superclass_id) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->newLayout(layout_id));
+  runtime->layoutAtPut(layout_id, *layout);
+  return addBuiltinTypeWithLayout(thread, layout, name, builtin_base,
+                                  superclass_id);
+}
+
 Type::Slot slotToTypeSlot(int slot) {
   switch (slot) {
     case Py_mp_ass_subscript:

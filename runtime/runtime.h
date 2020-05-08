@@ -397,18 +397,6 @@ class Runtime {
 
   void layoutSetTupleOverflow(RawLayout layout);
 
-  // Bootstrapping primitive for creating a built-in class that has built-in
-  // attributes and/or methods.
-  RawObject addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
-                                LayoutId superclass_id);
-  RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
-                           LayoutId superclass_id,
-                           const BuiltinAttribute attrs[]);
-  RawObject addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
-                                     LayoutId builtin_base,
-                                     LayoutId subclass_id,
-                                     LayoutId superclass_id);
-
   LayoutId reserveLayoutId(Thread* thread);
 
   word reserveModuleId();
@@ -534,6 +522,12 @@ class Runtime {
 
   RawObject tupleSubseq(Thread* thread, const Tuple& tuple, word start,
                         word length);
+
+  // Creates a layout that is a subclass of a built-in class and zero or more
+  // additional built-in attributes.
+  RawObject layoutCreateSubclassWithBuiltins(LayoutId subclass_id,
+                                             LayoutId superclass_id,
+                                             View<BuiltinAttribute> attributes);
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
@@ -854,7 +848,7 @@ class Runtime {
  private:
   void initializeApiData();
   void initializeExceptionTypes();
-  void initializeHeapTypes();
+  void initializeHeapTypes(Thread* thread);
   void initializeImmediateTypes();
   void initializeInterned();
   void initializeInterpreter();
@@ -864,7 +858,7 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
   void initializeThreads();
-  void initializeTypes();
+  void initializeTypes(Thread* thread);
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
@@ -875,8 +869,6 @@ class Runtime {
   word siphash24(View<byte> array);
 
   void growInternSet(Thread* thread);
-
-  RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
   RawObject newFunction(Thread* thread, const Object& name, const Object& code,
                         word flags, word argcount, word total_args,
@@ -897,12 +889,6 @@ class Runtime {
   // TODO(T55871582): Remove code paths that can raise from the Runtime
   NODISCARD RawObject moduleDelAttr(Thread* thread, const Object& receiver,
                                     const Object& name);
-
-  // Creates a layout that is a subclass of a built-in class and zero or more
-  // additional built-in attributes.
-  RawObject layoutCreateSubclassWithBuiltins(LayoutId subclass_id,
-                                             LayoutId superclass_id,
-                                             View<BuiltinAttribute> attributes);
 
   // Creates a layout that is a subclass of `subclass_id` with additional
   // slot attributes in object as described by `attributes`.
@@ -1083,10 +1069,16 @@ template <class T, SymbolId name, LayoutId type,
 class Builtins : public BuiltinsBase {
  public:
   static void initialize(Runtime* runtime) {
-    HandleScope scope;
-    Type new_type(&scope,
-                  runtime->addBuiltinType(T::kName, T::kType, T::kSuperType,
-                                          T::kAttributes));
+    Thread* thread = Thread::current();
+    HandleScope scope(thread);
+    word num_attributes = 0;
+    while (T::kAttributes[num_attributes].name != SymbolId::kSentinelId) {
+      num_attributes++;
+    }
+    Type new_type(
+        &scope,
+        addBuiltinType(thread, T::kName, T::kType, T::kSuperType,
+                       View<BuiltinAttribute>(T::kAttributes, num_attributes)));
     T::postInitialize(runtime, new_type);
   }
 
@@ -1100,16 +1092,12 @@ template <class T, SymbolId name, LayoutId type, LayoutId supertype>
 class ImmediateBuiltins : public BuiltinsBase {
  public:
   static void initialize(Runtime* runtime) {
-    HandleScope scope;
-    Layout layout(&scope, runtime->newLayout(T::kType));
-    Type new_type(
-        &scope, runtime->addBuiltinTypeWithLayout(
-                    /*layout=*/layout, /*name=*/T::kName,
-                    /*builtin_base=*/T::kSuperType,
-                    /*subclass_id=*/T::kType, /*superclass_id=*/T::kSuperType));
-    if (T::kSuperType == LayoutId::kObject) {
-      new_type.setBuiltinBase(T::kType);
-    }
+    Thread* thread = Thread::current();
+    HandleScope scope(thread);
+    LayoutId builtin_base =
+        T::kSuperType == LayoutId::kObject ? T::kType : T::kSuperType;
+    Type new_type(&scope, addImmediateBuiltinType(thread, name, T::kType,
+                                                  builtin_base, T::kSuperType));
     T::postInitialize(runtime, new_type);
   }
 

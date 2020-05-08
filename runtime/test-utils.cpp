@@ -688,6 +688,7 @@ RawObject layoutCreateEmpty(Thread* thread) {
   Runtime* runtime = thread->runtime();
   LayoutId id = runtime->reserveLayoutId(thread);
   Layout result(&scope, runtime->newLayout(id));
+  runtime->layoutSetTupleOverflow(*result);
   runtime->layoutAtPut(id, *result);
   return *result;
 }
