@@ -209,6 +209,23 @@ PyObject* PyInit_foo() {
             self.assertEqual(foo.__name__, "utf-8")
             sys.path.pop()
 
+    def test_extension_suffixes_returns_list(self):
+        result = _imp.extension_suffixes()
+        self.assertIsInstance(result, list)
+        self.assertTrue(len(result) > 0)
+
+    def test_extension_suffixes_matches_sysconfig(self):
+        import sysconfig
+
+        self.assertEqual(
+            _imp.extension_suffixes(),
+            [
+                sysconfig.get_config_var("EXT_SUFFIX"),
+                ".abi3" + sysconfig.get_config_var("SHLIB_SUFFIX"),
+                sysconfig.get_config_var("SHLIB_SUFFIX"),
+            ],
+        )
+
     def test_fix_co_filename_updates_filenames_recursively(self):
         def foo():
             def bar():

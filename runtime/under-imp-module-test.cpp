@@ -170,13 +170,6 @@ mod = _imp.exec_dynamic("foo")
   ASSERT_TRUE(mod.isNoneType());
 }
 
-TEST_F(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
-  HandleScope scope(thread_);
-  Object result(&scope, runBuiltin(FUNC(_imp, extension_suffixes)));
-  ASSERT_TRUE(result.isList());
-  EXPECT_PYLIST_EQ(result, {".so"});
-}
-
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));

@@ -153,16 +153,6 @@ RawObject FUNC(_imp, exec_builtin)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(execDef(thread, module, def));
 }
 
-RawObject FUNC(_imp, extension_suffixes)(Thread* thread, Frame* /* frame */,
-                                         word /* nargs */) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  List list(&scope, runtime->newList());
-  Object so(&scope, Runtime::internStrFromCStr(thread, ".so"));
-  runtime->listAdd(thread, list, so);
-  return *list;
-}
-
 RawObject FUNC(_imp, is_builtin)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
