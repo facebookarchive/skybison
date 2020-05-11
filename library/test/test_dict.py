@@ -278,10 +278,58 @@ class DictTest(unittest.TestCase):
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
-        d = {1:1, 2:2, 3:3}
-        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = {1: 1, 2: 2, 3: 3}
+        self.assertIsNot(d.copy(), d)
+        self.assertEqual(d.copy(), d)
+        self.assertEqual(d.copy(), {1: 1, 2: 2, 3: 3})
+
+        copy = d.copy()
+        d[4] = 4
+        self.assertNotEqual(copy, d)
+
         self.assertEqual({}.copy(), {})
         self.assertRaises(TypeError, d.copy, None)
+
+    def test_copy_fuzz(self):
+        for dict_size in [10, 100, 1000, 10000, 100000]:
+            dict_size = random.randrange(
+                dict_size // 2, dict_size + dict_size // 2)
+            with self.subTest(dict_size=dict_size):
+                d = {}
+                for i in range(dict_size):
+                    d[i] = i
+
+                d2 = d.copy()
+                self.assertIsNot(d2, d)
+                self.assertEqual(d, d2)
+                d2['key'] = 'value'
+                self.assertNotEqual(d, d2)
+                self.assertEqual(len(d2), len(d) + 1)
+
+    # TODO(T66751420): Implement gc.is_tracked 
+    @unittest.skip("Implement gc.is_tracked")
+    def test_copy_maintains_tracking(self):
+        class A:
+            pass
+
+        key = A()
+
+        for d in ({}, {'a': 1}, {key: 'val'}):
+            d2 = d.copy()
+            self.assertEqual(gc.is_tracked(d), gc.is_tracked(d2))
+
+    def test_copy_noncompact(self):
+        # Dicts don't compact themselves on del/pop operations.
+        # Copy will use a slow merging strategy that produces
+        # a compacted copy when roughly 33% of dict is a non-used
+        # keys-space (to optimize memory footprint).
+        # In this test we want to hit the slow/compacting
+        # branch of dict.copy() and make sure it works OK.
+        d = {k: k for k in range(1000)}
+        for k in range(950):
+            del d[k]
+        d2 = d.copy()
+        self.assertEqual(d2, d)
 
     def test_get(self):
         d = {}
@@ -673,8 +721,6 @@ class DictTest(unittest.TestCase):
             d[(1,)]
         self.assertEqual(c.exception.args, ((1,),))
 
-    # TODO(T36407403): Functions should point to a module object
-    @unittest.skip("Fix exec with locals in class")
     def test_bad_key(self):
         # Dictionary lookups should fail if __eq__() raises an exception.
         class CustomException(Exception):
@@ -924,6 +970,7 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'z', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
+    @support.cpython_only
     def test_splittable_pop(self):
         """split table must be combined when d.pop(k)"""
         a, b = self.make_shared_key_dict(2)
@@ -934,6 +981,8 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             a.pop('y')
 
+        # TODO(T66752762): Shared dict size is innacurate after pop
+        #self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -942,6 +991,7 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'z', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
+    @support.cpython_only
     def test_splittable_pop_pending(self):
         """pop a pending key in a splitted table should not crash"""
         a, b = self.make_shared_key_dict(2)
@@ -998,7 +1048,7 @@ class DictTest(unittest.TestCase):
         a.a = 3
         self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
 
-    # TODD(T54077858): Implement dict_keyiterator.__reduce__
+    # TODO(T54077858): Implement dict_keyiterator.__reduce__
     @unittest.skip("Implement dict_keyiterator.__reduce__")
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1018,8 +1068,8 @@ class DictTest(unittest.TestCase):
             del data[drop]
             self.assertEqual(sorted(it), sorted(data))
 
-    # TODD(T54077858): Implement dict_itemiterator.__reduce__
-    @unittest.skip("Implement dict_itemiterator.__reduce__")
+    # TODO(T54077858): Implement dict_keyiterator.__reduce__
+    @unittest.skip("Implement dict_keyiterator.__reduce__")
     def test_itemiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
@@ -1042,8 +1092,8 @@ class DictTest(unittest.TestCase):
             del data[drop[0]]
             self.assertEqual(dict(it), data)
 
-    # TODD(T54077858): Implement dict_valueiterator.__reduce__
-    @unittest.skip("Implement dict_valueiterator.__reduce__")
+    # TODO(T54077858): Implement dict_keyiterator.__reduce__
+    @unittest.skip("Implement dict_keyiterator.__reduce__")
     def test_valuesiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
@@ -1060,8 +1110,6 @@ class DictTest(unittest.TestCase):
             values = list(it) + [drop]
             self.assertEqual(sorted(values), sorted(list(data.values())))
 
-    # TODO(T54088094): Support str subclass in getattr
-    @unittest.skip("Support str subclass in getattr")
     def test_instance_dict_getattr_str_subclass(self):
         class Foo:
             def __init__(self, msg):

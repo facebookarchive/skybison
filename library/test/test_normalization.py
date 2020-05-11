@@ -5,18 +5,15 @@
 # fmt: off
 # isort:skip_file
 
-import unittest
-
-import os.path
 import sys
+import unittest
+from http.client import HTTPException
+from test.support import open_urlresource
 from unicodedata import normalize, unidata_version
 
-# NOTE: these paths have been changed to avoid network calls
-TESTDATA_FILE = "NormalizationTest.txt"
-PYRO_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..", ".."))
-TESTDATA_PATH = os.path.join(
-    PYRO_DIR, "third-party", f"ucd-{unidata_version}", TESTDATA_FILE
-)
+
+TESTDATAFILE = "NormalizationTest.txt"
+TESTDATAURL = "http://www.pythontest.net/unicode/" + unidata_version + "/" + TESTDATAFILE
 
 def check_version(testfile):
     hdr = testfile.readline()
@@ -45,9 +42,20 @@ def unistr(data):
     return "".join([chr(x) for x in data])
 
 class NormalizationTest(unittest.TestCase):
+    # TODO(T66751447): Normalization module fails to download test data
+    @unittest.skip("Normalization module fails to download test data")
     def test_main(self):
-        with open(TESTDATA_PATH, encoding="utf-8") as testdata:
-            self.assertTrue(check_version(testdata))
+        # Hit the exception early
+        try:
+            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
+                                        check=check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
+        except (OSError, HTTPException):
+            self.fail(f"Could not retrieve {TESTDATAURL}")
+
+        with testdata:
             self.run_normalization_tests(testdata)
 
     def run_normalization_tests(self, testdata):

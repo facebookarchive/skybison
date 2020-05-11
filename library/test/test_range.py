@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# WARNING: This is a temporary copy of code from the CPython library to
+# WARNING: This is a temporary copy of code from the cpython library to
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
@@ -377,7 +377,7 @@ class RangeTest(unittest.TestCase):
                     self.assertEqual(list(pickle.loads(pickle.dumps(r, proto))),
                                      list(r))
 
-    # TODD(T54077858): Implement range_iterator.__reduce__
+    # TODO(T54077858): Implement range_iterator.__reduce__
     @unittest.skip("Range iterator pickling needed")
     def test_iterator_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
@@ -401,7 +401,7 @@ class RangeTest(unittest.TestCase):
                 it = pickle.loads(d)
                 self.assertEqual(list(it), data[1:])
 
-    # TODD(T54077858): Implement range_iterator.__reduce__
+    # TODO(T54077858): Implement range_iterator.__reduce__
     @unittest.skip("Range iterator pickling needed")
     def test_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -416,7 +416,7 @@ class RangeTest(unittest.TestCase):
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
 
-    # TODD(T54077858): Implement longrange_iterator.__reduce__
+    # TODO(T54077858): Implement longrange_iterator.__reduce__
     @unittest.skip("Long range iterator pickling needed")
     def test_large_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -523,34 +523,12 @@ class RangeTest(unittest.TestCase):
     @test.support.cpython_only
     def test_range_iterator_invocation(self):
         import _testcapi
+        # verify range iterators instances cannot be created by
+        # calling their type
         rangeiter_type = type(iter(range(0)))
-
-        self.assertWarns(DeprecationWarning, rangeiter_type, 1, 3, 1)
-
-        with test.support.check_warnings(('', DeprecationWarning)):
-            # rangeiter_new doesn't take keyword arguments
-            with self.assertRaises(TypeError):
-                rangeiter_type(a=1)
-
-            # rangeiter_new takes exactly 3 arguments
-            self.assertRaises(TypeError, rangeiter_type)
-            self.assertRaises(TypeError, rangeiter_type, 1)
-            self.assertRaises(TypeError, rangeiter_type, 1, 1)
-            self.assertRaises(TypeError, rangeiter_type, 1, 1, 1, 1)
-
-            # start, stop and stop must fit in C long
-            for good_val in [_testcapi.LONG_MAX, _testcapi.LONG_MIN]:
-                rangeiter_type(good_val, good_val, good_val)
-            for bad_val in [_testcapi.LONG_MAX + 1, _testcapi.LONG_MIN - 1]:
-                self.assertRaises(OverflowError,
-                                  rangeiter_type, bad_val, 1, 1)
-                self.assertRaises(OverflowError,
-                                  rangeiter_type, 1, bad_val, 1)
-                self.assertRaises(OverflowError,
-                                  rangeiter_type, 1, 1, bad_val)
-
-            # step mustn't be zero
-            self.assertRaises(ValueError, rangeiter_type, 1, 1, 0)
+        self.assertRaises(TypeError, rangeiter_type, 1, 3, 1)
+        long_rangeiter_type = type(iter(range(1 << 1000)))
+        self.assertRaises(TypeError, long_rangeiter_type, 1, 3, 1)
 
     def test_slice(self):
         def check(start, stop, step=None):

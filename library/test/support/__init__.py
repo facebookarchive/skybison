@@ -21,8 +21,7 @@ import importlib
 import importlib.util
 import io
 import logging.handlers
-# TODO(T53553323): Import nntplib
-#import nntplib
+import nntplib
 import os
 import platform
 import re
@@ -34,20 +33,18 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import threading
 import time
 import types
 import unittest
 import urllib.error
 import warnings
 
+import _thread
+
 from .testresult import get_test_runner
 
 
-try:
-    import _thread, threading
-except ImportError:
-    _thread = None
-    threading = None
 try:
     import multiprocessing.process
 except ImportError:
@@ -102,7 +99,7 @@ __all__ = [
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__", "requires_android_level", "requires_multiprocessing_queue",
+    "check__all__", "skip_unless_bind_unix_socket",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -164,14 +161,13 @@ def import_module(name, deprecated=False, *, required_on=()):
     others, set required_on to an iterable of platform prefixes which will be
     compared against sys.platform.
     """
-    # TODO(T53690874): Fix __exit__ bug
-    # with _ignore_deprecated_imports(deprecated):
-    try:
-        return importlib.import_module(name)
-    except ImportError as msg:
-        if sys.platform.startswith(tuple(required_on)):
-            raise
-        raise unittest.SkipTest(str(msg))
+    with _ignore_deprecated_imports(deprecated):
+        try:
+            return importlib.import_module(name)
+        except ImportError as msg:
+            if sys.platform.startswith(tuple(required_on)):
+                raise
+            raise unittest.SkipTest(str(msg))
 
 
 def _save_and_remove_module(name, orig_modules):
@@ -637,9 +633,8 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
-# Don't use "localhost", since resolving it uses the DNS under recent
-# Windows versions (see issue #18792).
-HOST = "127.0.0.1"
+HOST = "localhost"
+HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
 
 
@@ -774,7 +769,7 @@ def system_must_validate_cert(f):
     def dec(*args, **kwargs):
         try:
             f(*args, **kwargs)
-        except IOError as e:
+        except OSError as e:
             if "CERTIFICATE_VERIFY_FAILED" in str(e):
                 raise unittest.SkipTest("system does not contain "
                                         "necessary certificates")
@@ -810,8 +805,7 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 
-_ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
-is_android = (_ANDROID_API_LEVEL is not None and _ANDROID_API_LEVEL > 0)
+is_android = hasattr(sys, 'getandroidapilevel')
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -828,6 +822,10 @@ else:
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
+# Define the URL of a dedicated HTTP server for the network tests.
+# The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
+TEST_HTTP_URL = "http://www.pythontest.net"
 
 # FS_NONASCII: non-ASCII character encodable by os.fsencode(),
 # or None if there is no such character.
@@ -879,13 +877,12 @@ for character in (
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
-# TODO(T47682853): Introduce new PyUnicode_VARBYTE_KIND
-#if sys.platform == 'darwin':
-#    # In Mac OS X's VFS API file names are, by definition, canonically
-#    # decomposed Unicode, encoded using UTF-8. See QA1173:
-#    # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
-#    import unicodedata
-#    TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
+if sys.platform == 'darwin':
+    # In Mac OS X's VFS API file names are, by definition, canonically
+    # decomposed Unicode, encoded using UTF-8. See QA1173:
+    # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+    import unicodedata
+    TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
 TESTFN_ENCODING = sys.getfilesystemencoding()
 
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
@@ -986,10 +983,11 @@ def temp_dir(path=None, quiet=False):
         try:
             os.mkdir(path)
             dir_created = True
-        except OSError:
+        except OSError as exc:
             if not quiet:
                 raise
-            warnings.warn('tests may fail, unable to create temp dir: ' + path,
+            warnings.warn(f'tests may fail, unable to create '
+                          f'temporary directory {path!r}: {exc}',
                           RuntimeWarning, stacklevel=3)
     if dir_created:
         pid = os.getpid()
@@ -997,7 +995,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -1017,10 +1015,11 @@ def change_cwd(path, quiet=False):
     saved_dir = os.getcwd()
     try:
         os.chdir(path)
-    except OSError:
+    except OSError as exc:
         if not quiet:
             raise
-        warnings.warn('tests may fail, unable to change CWD to: ' + path,
+        warnings.warn(f'tests may fail, unable to change the current working '
+                      f'directory to {path!r}: {exc}',
                       RuntimeWarning, stacklevel=3)
     try:
         yield os.getcwd()
@@ -1201,7 +1200,7 @@ def _filterwarnings(filters, quiet=False):
     frame = sys._getframe(2)
     registry = frame.f_globals.get('__warningregistry__')
     if registry:
-       registry.clear()
+        registry.clear()
     with warnings.catch_warnings(record=True) as w:
         # Set filter "always" to record all warnings.  Because
         # test_warnings swap the module, we need to look up in
@@ -1418,6 +1417,22 @@ socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
+def get_socket_conn_refused_errs():
+    """
+    Get the different socket error numbers ('errno') which can be received
+    when a connection is refused.
+    """
+    errors = [errno.ECONNREFUSED]
+    if hasattr(errno, 'ENETUNREACH'):
+        # On Solaris, ENETUNREACH is returned sometimes instead of ECONNREFUSED
+        errors.append(errno.ENETUNREACH)
+    if hasattr(errno, 'EADDRNOTAVAIL'):
+        # bpo-31910: socket.create_connection() fails randomly
+        # with EADDRNOTAVAIL on Travis CI
+        errors.append(errno.EADDRNOTAVAIL)
+    return errors
+
+
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
@@ -1470,11 +1485,10 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         if timeout is not None:
             socket.setdefaulttimeout(timeout)
         yield
-    # TODO(T53553323): Import nntplib
-    #except nntplib.NNTPTemporaryError as err:
-    #    if verbose:
-    #        sys.stderr.write(denied.args[0] + "\n")
-    #    raise denied from err
+    except nntplib.NNTPTemporaryError as err:
+        if verbose:
+            sys.stderr.write(denied.args[0] + "\n")
+        raise denied from err
     except OSError as err:
         # urllib can wrap original socket errors multiple times (!), we must
         # unwrap to get at the original error.
@@ -1821,13 +1835,6 @@ def requires_resource(resource):
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
 
-def requires_android_level(level, reason):
-    if is_android and _ANDROID_API_LEVEL < level:
-        return unittest.skip('%s at Android API level %d' %
-                             (reason, _ANDROID_API_LEVEL))
-    else:
-        return _id
-
 def cpython_only(test):
     """
     Decorator for tests only applicable on CPython.
@@ -1846,22 +1853,6 @@ def impl_detail(msg=None, **guards):
         guardnames = sorted(guardnames.keys())
         msg = msg.format(' or '.join(guardnames))
     return unittest.skip(msg)
-
-_have_mp_queue = None
-def requires_multiprocessing_queue(test):
-    """Skip decorator for tests that use multiprocessing.Queue."""
-    global _have_mp_queue
-    if _have_mp_queue is None:
-        import multiprocessing
-        # Without a functioning shared semaphore implementation attempts to
-        # instantiate a Queue will result in an ImportError (issue #3770).
-        try:
-            multiprocessing.Queue()
-            _have_mp_queue = True
-        except ImportError:
-            _have_mp_queue = False
-    msg = "requires a functioning shared semaphore implementation"
-    return test if _have_mp_queue else unittest.skip(msg)(test)
 
 def _parse_guards(guards):
     # Returns a tuple ({platform_name: run_me}, default_value)
@@ -1934,7 +1925,7 @@ def _run_suite(suite):
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
-    if not result.testsRun:
+    if not result.testsRun and not result.skipped:
         raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
@@ -1983,7 +1974,7 @@ def set_match_tests(patterns):
         patterns = ()
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
-        # The test.bisect utility only uses such full test identifiers.
+        # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
@@ -2116,31 +2107,43 @@ environment_altered = False
 # at the end of a test run.
 
 def threading_setup():
-    if _thread:
-        return _thread._count(), threading._dangling.copy()
-    else:
-        return 1, ()
+    return _thread._count(), threading._dangling.copy()
 
 def threading_cleanup(*original_values):
-    if not _thread:
-        return
+    global environment_altered
+
     _MAX_COUNT = 100
+
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
+
+        if not count:
+            # Display a warning at the first iteration
+            environment_altered = True
+            dangling_threads = values[1]
+            print("Warning -- threading_cleanup() failed to cleanup "
+                  "%s threads (count: %s, dangling: %s)"
+                  % (values[0] - original_values[0],
+                     values[0], len(dangling_threads)),
+                  file=sys.stderr)
+            for thread in dangling_threads:
+                print(f"Dangling thread: {thread!r}", file=sys.stderr)
+            sys.stderr.flush()
+
+            # Don't hold references to threads
+            dangling_threads = None
+        values = None
+
         time.sleep(0.01)
         gc_collect()
-    # XXX print a warning in case of failure?
+
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
     ensure that the threads are cleaned up even when the test fails.
-    If threading is unavailable this function does nothing.
     """
-    if not _thread:
-        return func
-
     @functools.wraps(func)
     def decorator(*args):
         key = threading_setup()
@@ -2186,26 +2189,44 @@ def wait_threads_exit(timeout=60.0):
             gc_collect()
 
 
+def join_thread(thread, timeout=30.0):
+    """Join a thread. Raise an AssertionError if the thread is still alive
+    after timeout seconds.
+    """
+    thread.join(timeout)
+    if thread.is_alive():
+        msg = f"failed to join the thread in {timeout:.1f} seconds"
+        raise AssertionError(msg)
+
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
+    global environment_altered
+
+    # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
+    if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
+        return
+
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
-    if hasattr(os, 'waitpid'):
-        any_process = -1
-        while True:
-            try:
-                # This will raise an exception on Windows.  That's ok.
-                pid, status = os.waitpid(any_process, os.WNOHANG)
-                if pid == 0:
-                    break
-                print("Warning -- reap_children() reaped child process %s"
-                      % pid, file=sys.stderr)
-            except:
-                break
+    while True:
+        try:
+            # Read the exit status of any child process which already completed
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except OSError:
+            break
+
+        if pid == 0:
+            break
+
+        print("Warning -- reap_children() reaped child process %s"
+              % pid, file=sys.stderr)
+        environment_altered = True
+
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
@@ -2226,11 +2247,11 @@ def start_threads(threads, unlock=None):
         try:
             if unlock:
                 unlock()
-            endtime = starttime = time.time()
+            endtime = starttime = time.monotonic()
             for timeout in range(1, 16):
                 endtime += 60
                 for t in started:
-                    t.join(max(endtime - time.time(), 0.01))
+                    t.join(max(endtime - time.monotonic(), 0.01))
                 started = [t for t in started if t.is_alive()]
                 if not started:
                     break
@@ -2452,6 +2473,28 @@ def skip_unless_xattr(test):
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
+
+_bind_nix_socket_error = None
+def skip_unless_bind_unix_socket(test):
+    """Decorator for tests requiring a functional bind() for unix sockets."""
+    if not hasattr(socket, 'AF_UNIX'):
+        return unittest.skip('No UNIX Sockets')(test)
+    global _bind_nix_socket_error
+    if _bind_nix_socket_error is None:
+        path = TESTFN + "can_bind_unix_socket"
+        with socket.socket(socket.AF_UNIX) as sock:
+            try:
+                sock.bind(path)
+                _bind_nix_socket_error = False
+            except OSError as e:
+                _bind_nix_socket_error = e
+            finally:
+                unlink(path)
+    if _bind_nix_socket_error:
+        msg = 'Requires a functional unix bind(): %s' % _bind_nix_socket_error
+        return unittest.skip(msg)(test)
+    else:
+        return test
 
 
 def fs_is_case_insensitive(directory):
@@ -2837,7 +2880,7 @@ class SaveSignals:
         import signal
         self.signal = signal
         self.signals = list(range(1, signal.NSIG))
-        # SIGKILL and SIGSTOP signals cannot be ignored nor catched
+        # SIGKILL and SIGSTOP signals cannot be ignored nor caught
         for signame in ('SIGKILL', 'SIGSTOP'):
             try:
                 signum = getattr(signal, signame)
@@ -2861,6 +2904,11 @@ class SaveSignals:
     def restore(self):
         for signum, handler in self.handlers.items():
             self.signal.signal(signum, handler)
+
+
+def with_pymalloc():
+    import _testcapi
+    return _testcapi.WITH_PYMALLOC
 
 
 class FakePath:
