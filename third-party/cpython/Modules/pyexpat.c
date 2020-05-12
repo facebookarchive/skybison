@@ -780,17 +780,18 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if (str == NULL)
         goto error;
 
-    if (PyBytes_Check(str))
+    if (PyBytes_Check(str)) {
         ptr = PyBytes_AS_STRING(str);
-    else if (PyByteArray_Check(str))
+        len = PyBytes_Size(str);
+    } else if (PyByteArray_Check(str)) {
         ptr = PyByteArray_AS_STRING(str);
-    else {
+        len = PyByteArray_Size(str);
+    } else {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a bytes object (type=%.400s)",
                       _PyType_Name(Py_TYPE(str)));
         goto error;
     }
-    len = Py_SIZE(str);
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
