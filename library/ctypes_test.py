@@ -280,6 +280,17 @@ class CtypesTests(unittest.TestCase):
 
         self.assertIsNotNone(uuid)
 
+    def test_memset_sets_memoryview_array(self):
+        import mmap
+
+        m = mmap.mmap(-1, 4)
+        view = memoryview(m)
+        view[:] = b"1234"
+        array = (ctypes.c_char * 4).from_buffer(view)
+        array_addr = ctypes.addressof(array)
+        self.assertEqual(array_addr, ctypes.memset(array_addr, 1, 2))
+        self.assertEqual(view.tolist(), list(b"\x01\x0134"))
+
     def test_sizeof_non_cdata_type_raises_type_error(self):
         with self.assertRaises(TypeError) as ctx:
             ctypes.sizeof(TypeError)

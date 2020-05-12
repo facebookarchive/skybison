@@ -293,8 +293,23 @@ class Array(_CData, metaclass=PyCArrayType):
         _unimplemented()
 
 
+# TODO(T66886328): Delete the memset patch once __call__ is complete
+def _memset(addr, val, size):
+    _builtin()
+
+
 class CFuncPtr(_CData, metaclass=PyCFuncPtrType):
     def __call__(self, *args, **kwargs):
+        # TODO(T66886328): Delete the memset patch once __call__ is complete
+        if self.fn_pointer == _memset_addr:  # noqa: F821
+            if _tuple_len(args) != 3:
+                raise TypeError("this function takes at least 3 arguments")
+            addr = _tuple_getitem(args, 0)
+            val = _tuple_getitem(args, 1)
+            size = _tuple_getitem(args, 2)
+            if not _int_check(addr) or not _int_check(val) or not _int_check(size):
+                _unimplemented()
+            return _memset(addr, val, size)
         if _tuple_len(args) != 0:
             _unimplemented()
         if hasattr(self, "callable") and self.callable is not None:

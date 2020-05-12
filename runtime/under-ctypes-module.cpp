@@ -159,6 +159,22 @@ RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Frame* frame,
   }
 }
 
+RawObject FUNC(_ctypes, _memset)(Thread* /* thread */, Frame* frame,
+                                 word nargs) {
+  Arguments args(frame, nargs);
+  void* addr = Int::cast(args.get(0)).asCPtr();
+  OptInt<int> val = Int::cast(args.get(1)).asInt<int>();
+  if (val.error != CastError::None) {
+    UNIMPLEMENTED("ctypes.memset called with non-integer value");
+  }
+  OptInt<size_t> size = Int::cast(args.get(2)).asInt<size_t>();
+  if (size.error != CastError::None) {
+    UNIMPLEMENTED("ctypes.memset called with non-size_t size");
+  }
+  std::memset(addr, val.value, size.value);
+  return args.get(0);
+}
+
 RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
                                                        Frame* frame,
                                                        word nargs) {
