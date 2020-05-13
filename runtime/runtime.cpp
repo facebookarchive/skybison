@@ -1161,20 +1161,6 @@ RawObject Runtime::newStrArray() {
   return *result;
 }
 
-RawObject Runtime::newStrFromBytearray(const Bytearray& array) {
-  word length = array.numItems();
-  if (length <= SmallStr::kMaxLength) {
-    byte buffer[SmallStr::kMaxLength];
-    array.copyTo(buffer, length);
-    return SmallStr::fromBytes({buffer, length});
-  }
-  HandleScope scope;
-  LargeStr result(&scope, heap()->createLargeStr(length));
-  byte* dst = reinterpret_cast<byte*>(result.address());
-  array.copyTo(dst, length);
-  return *result;
-}
-
 RawObject Runtime::newStrFromCStr(const char* c_str) {
   word length = std::strlen(c_str);
   auto data = reinterpret_cast<const byte*>(c_str);
@@ -2678,6 +2664,55 @@ RawObject Runtime::bytesReplace(Thread* thread, const Bytes& src,
   }
   result.replaceFromWithBytesStartAt(dst_idx, *src, src_len - src_idx, src_idx);
   return result.becomeImmutable();
+}
+
+static void writeBytesRepr(const Bytes& bytes, byte* dst, word result_length,
+                           byte delimiter) {
+  byte* ptr = dst;
+  *ptr++ = 'b';
+  *ptr++ = delimiter;
+
+  word length = bytes.length();
+  for (word i = 0; i < length; i++) {
+    byte current = bytes.byteAt(i);
+    if (current == delimiter || current == '\\') {
+      *ptr++ = '\\';
+      *ptr++ = current;
+    } else if (current == '\t') {
+      *ptr++ = '\\';
+      *ptr++ = 't';
+    } else if (current == '\n') {
+      *ptr++ = '\\';
+      *ptr++ = 'n';
+    } else if (current == '\r') {
+      *ptr++ = '\\';
+      *ptr++ = 'r';
+    } else if (ASCII::isPrintable(current)) {
+      *ptr++ = current;
+    } else {
+      *ptr++ = '\\';
+      *ptr++ = 'x';
+      Utils::writeHexLowercase(ptr, current);
+      ptr += 2;
+    }
+  }
+  *ptr++ = delimiter;
+  DCHECK(ptr - dst == result_length, "precalculated repr length was incorrect");
+}
+
+RawObject Runtime::bytesRepr(Thread* thread, const Bytes& bytes,
+                             word result_length, byte delimiter) {
+  if (result_length <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    writeBytesRepr(bytes, buffer, result_length, delimiter);
+    return SmallStr::fromBytes({buffer, result_length});
+  }
+
+  HandleScope scope(thread);
+  LargeStr result(&scope, heap()->createLargeStr(result_length));
+  writeBytesRepr(bytes, reinterpret_cast<byte*>(result.address()),
+                 result_length, delimiter);
+  return *result;
 }
 
 RawObject Runtime::bytesSlice(Thread* thread, const Bytes& bytes, word start,

@@ -994,7 +994,7 @@ TEST_F(BytearrayBuiltinsTest,
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'_"_\'_'))"));
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
+TEST_F(BytearrayBuiltinsTest, DunderReprWithSpecialBytesUsesEscapeSequences) {
   HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   const byte bytes[] = {'\\', '\t', '\n', '\r'};
@@ -1010,6 +1010,18 @@ TEST_F(BytearrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   runtime_->bytearrayExtend(thread_, self, bytes);
   Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\x00\x1f\x80\xff'))"));
+}
+
+TEST_F(BytearrayBuiltinsTest, DunderReprWithSubclassUsesClassName) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C(bytearray): pass
+obj = C(b'hello world')
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object obj(&scope, mainModuleAt(runtime_, "obj"));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), obj));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "C(b'hello world')"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderRmulCallsDunderMul) {

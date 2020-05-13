@@ -114,6 +114,12 @@ class Utils {
     return dest;
   }
 
+  static void writeHexLowercase(byte* addr, byte value) {
+    const char* hex_digits = "0123456789abcdef";
+    *addr++ = hex_digits[value >> kBitsPerHexDigit];
+    *addr = hex_digits[value & 0xf];
+  }
+
   // Prints a python level stack trace to stderr or the stream of your choice.
   static void printTraceback(std::ostream* os);
   static void printTracebackToStderr();

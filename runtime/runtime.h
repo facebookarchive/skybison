@@ -220,7 +220,6 @@ class Runtime {
 
   RawObject newStrArray();
 
-  RawObject newStrFromBytearray(const Bytearray& array);
   RawObject newStrFromCStr(const char* c_str);
   RawObject strFromStrArray(const StrArray& array);
 
@@ -485,6 +484,10 @@ class Runtime {
   RawObject bytesReplace(Thread* thread, const Bytes& src,
                          const Bytes& old_bytes, word old_len,
                          const Bytes& new_bytes, word new_len, word max_count);
+
+  // Returns `repr(bytes)`, with the length and delimiter quote precalculated.
+  RawObject bytesRepr(Thread* thread, const Bytes& bytes, word result_length,
+                      byte delimiter);
 
   // Returns a new Bytes that contains the specified slice of bytes.
   RawObject bytesSlice(Thread* thread, const Bytes& bytes, word start,

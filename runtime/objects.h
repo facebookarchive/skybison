@@ -1418,6 +1418,9 @@ class RawMutableBytes : public RawLargeBytes {
  public:
   void byteAtPut(word index, byte value) const;
 
+  // Writes the hex representation of the byte at the given index.
+  void putHex(word index, byte value) const;
+
   // Replace the bytes from dst_start with count bytes from src
   void replaceFromWith(word dst_start, RawDataArray src, word count) const;
 
@@ -5135,6 +5138,12 @@ inline word RawMutableBytes::allocationSize(word length) {
 inline void RawMutableBytes::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
+}
+
+inline void RawMutableBytes::putHex(word index, byte value) const {
+  DCHECK_INDEX(index, length());
+  DCHECK_INDEX(index + 1, length());
+  Utils::writeHexLowercase(reinterpret_cast<byte*>(address()) + index, value);
 }
 
 // RawArray

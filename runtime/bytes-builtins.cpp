@@ -6,6 +6,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
+#include "strarray-builtins.h"
 #include "type-builtins.h"
 #include "unicode.h"
 #include "utils.h"
@@ -69,12 +70,13 @@ word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Bytearray buffer(&scope, runtime->newBytearray());
-  runtime->bytearrayEnsureCapacity(thread, buffer, length * 2);
-  for (word i = 0; i < length; i++) {
-    writeByteAsHexDigits(thread, buffer, bytes.byteAt(i));
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(length * 2));
+  for (word i = 0, j = 0; i < length; i++) {
+    result.putHex(j, bytes.byteAt(i));
+    j += 2;
   }
-  return runtime->newStrFromBytearray(buffer);
+  return result.becomeStr();
 }
 
 word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
@@ -94,63 +96,76 @@ word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
   return -1;
 }
 
-static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& bytes,
-                                        byte delimiter) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Bytearray buffer(&scope, runtime->newBytearray());
-  word len = bytes.length();
-  // Each byte will be mapped to one or more ASCII characters. Add 3 to the
-  // length for the 2-character prefix (b') and the 1-character suffix (').
-  // We expect mostly ASCII bytes, so we usually will not have to resize again.
-  runtime->bytearrayEnsureCapacity(thread, buffer, len + 3);
-  const byte bytes_delim[] = {'b', delimiter};
-  runtime->bytearrayExtend(thread, buffer, bytes_delim);
-  for (word i = 0; i < len; i++) {
+RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes) {
+  // Precalculate the length of the result to minimize allocation.
+  word length = bytes.length();
+  word result_length = length + 3;  // b''
+  for (word i = 0; i < length; i++) {
     byte current = bytes.byteAt(i);
-    if (current == delimiter || current == '\\') {
-      const byte escaped[] = {'\\', current};
-      runtime->bytearrayExtend(thread, buffer, escaped);
-    } else if (current == '\t') {
-      const byte escaped[] = {'\\', 't'};
-      runtime->bytearrayExtend(thread, buffer, escaped);
-    } else if (current == '\n') {
-      const byte escaped[] = {'\\', 'n'};
-      runtime->bytearrayExtend(thread, buffer, escaped);
-    } else if (current == '\r') {
-      const byte escaped[] = {'\\', 'r'};
-      runtime->bytearrayExtend(thread, buffer, escaped);
-    } else if (current < ' ' || current >= 0x7f) {
-      const byte escaped[] = {'\\', 'x'};
-      runtime->bytearrayExtend(thread, buffer, escaped);
-      writeByteAsHexDigits(thread, buffer, current);
-    } else {
-      bytearrayAdd(thread, runtime, buffer, current);
+    switch (current) {
+      case '\t':
+      case '\n':
+      case '\r':
+      case '\'':
+      case '\\':
+        result_length++;
+        break;
+      default:
+        if (!ASCII::isPrintable(current)) {
+          result_length += 3;
+        }
     }
   }
-  bytearrayAdd(thread, runtime, buffer, delimiter);
-  return runtime->newStrFromBytearray(buffer);
-}
 
-RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes) {
-  return bytesReprWithDelimiter(thread, bytes, '\'');
+  if (result_length > SmallInt::kMaxValue) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "bytes object is too large to make repr");
+  }
+  return thread->runtime()->bytesRepr(thread, bytes, result_length, '\'');
 }
 
 RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& bytes) {
-  word len = bytes.length();
-  bool has_single_quote = false;
-  for (word i = 0; i < len; i++) {
-    switch (bytes.byteAt(i)) {
+  // Precalculate the length of the result to minimize allocation.
+  word length = bytes.length();
+  word num_single_quotes = 0;
+  bool has_double_quotes = false;
+  word result_length = length + 3;  // b''
+  for (word i = 0; i < length; i++) {
+    byte current = bytes.byteAt(i);
+    switch (current) {
       case '\'':
-        has_single_quote = true;
+        num_single_quotes++;
         break;
       case '"':
-        return bytesReprWithDelimiter(thread, bytes, '\'');
-      default:
+        has_double_quotes = true;
         break;
+      case '\t':
+      case '\n':
+      case '\r':
+      case '\\':
+        result_length++;
+        break;
+      default:
+        if (!ASCII::isPrintable(current)) {
+          result_length += 3;
+        }
     }
   }
-  return bytesReprWithDelimiter(thread, bytes, has_single_quote ? '"' : '\'');
+
+  byte delimiter = '\'';
+  if (num_single_quotes > 0) {
+    if (has_double_quotes) {
+      result_length += num_single_quotes;
+    } else {
+      delimiter = '"';
+    }
+  }
+
+  if (result_length > SmallInt::kMaxValue) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "bytes object is too large to make repr");
+  }
+  return thread->runtime()->bytesRepr(thread, bytes, result_length, delimiter);
 }
 
 // Returns the index of the first byte in bytes that is not in chars.

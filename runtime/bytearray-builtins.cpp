@@ -16,12 +16,6 @@ RawObject bytearrayAsBytes(Thread* thread, const Bytearray& array) {
   return bytesSubseq(thread, bytes, 0, array.numItems());
 }
 
-void writeByteAsHexDigits(Thread* thread, const Bytearray& array, byte value) {
-  const byte* hex_digits = reinterpret_cast<const byte*>("0123456789abcdef");
-  const byte bytes[] = {hex_digits[value >> 4], hex_digits[value & 0xf]};
-  thread->runtime()->bytearrayExtend(thread, array, bytes);
-}
-
 static const BuiltinAttribute kBytearrayAttributes[] = {
     {ID(_bytearray__bytes), RawBytearray::kItemsOffset,
      AttributeFlags::kHidden},
@@ -390,61 +384,93 @@ RawObject METH(bytearray, __new__)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject bytearrayRepr(Thread* thread, const Bytearray& array) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type cls(&scope, runtime->typeOf(*array));
+  Str name(&scope, cls.name());
+  word name_length = name.length();
   word length = array.numItems();
-  word affix_length = 14;  // strlen("bytearray(b'')") == 14
-  if (length > (kMaxWord - affix_length) / 4) {
+  if (length > (kMaxWord - 6 - name_length) / 4) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "bytearray object is too large to make repr");
   }
 
-  // Figure out which quote to use; single is preferred
+  // Precalculate length and determine which quote to use; single is preferred
+  word result_length = name_length + length + 5;  // <cls>(b'<contents>')
   bool has_single_quote = false;
   bool has_double_quote = false;
   for (word i = 0; i < length; i++) {
     byte current = array.byteAt(i);
-    if (current == '\'') {
-      has_single_quote = true;
-    } else if (current == '"') {
-      has_double_quote = true;
-      break;
+    switch (current) {
+      case '\'':
+        result_length++;
+        has_single_quote = true;
+        break;
+      case '"':
+        has_double_quote = true;
+        break;
+      case '\t':
+      case '\n':
+      case '\r':
+      case '\\':
+        result_length++;
+        break;
+      default:
+        if (!ASCII::isPrintable(current)) {
+          result_length += 3;
+        }
     }
   }
-  byte quote = (has_single_quote && !has_double_quote) ? '"' : '\'';
+  byte delimiter = (has_single_quote && !has_double_quote) ? '"' : '\'';
 
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Bytearray buffer(&scope, runtime->newBytearray());
-  // Each byte will be mapped to one or more ASCII characters.
-  runtime->bytearrayEnsureCapacity(thread, buffer, length + affix_length);
-  const byte bytearray_str[] = {'b', 'y', 't', 'e', 'a', 'r',
-                                'r', 'a', 'y', '(', 'b', quote};
-  runtime->bytearrayExtend(thread, buffer, bytearray_str);
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  word j = 0;
+  result.replaceFromWithStr(0, *name, name_length);
+  j += name_length;
+  result.byteAtPut(j++, '(');
+  result.byteAtPut(j++, 'b');
+  result.byteAtPut(j++, delimiter);
+
   for (word i = 0; i < length; i++) {
     byte current = array.byteAt(i);
-    if (current == '\'' || current == '\\') {
-      const byte bytes[] = {'\\', current};
-      runtime->bytearrayExtend(thread, buffer, bytes);
-    } else if (current == '\t') {
-      const byte bytes[] = {'\\', 't'};
-      runtime->bytearrayExtend(thread, buffer, bytes);
-    } else if (current == '\n') {
-      const byte bytes[] = {'\\', 'n'};
-      runtime->bytearrayExtend(thread, buffer, bytes);
-    } else if (current == '\r') {
-      const byte bytes[] = {'\\', 'r'};
-      runtime->bytearrayExtend(thread, buffer, bytes);
-    } else if (current < ' ' || current >= 0x7f) {
-      const byte bytes[] = {'\\', 'x'};
-      runtime->bytearrayExtend(thread, buffer, bytes);
-      writeByteAsHexDigits(thread, buffer, current);
-    } else {
-      bytearrayAdd(thread, runtime, buffer, current);
+    switch (current) {
+      case '\'':
+        result.byteAtPut(j++, '\\');
+        result.byteAtPut(j++, current);
+        break;
+      case '\t':
+        result.byteAtPut(j++, '\\');
+        result.byteAtPut(j++, 't');
+        break;
+      case '\n':
+        result.byteAtPut(j++, '\\');
+        result.byteAtPut(j++, 'n');
+        break;
+      case '\r':
+        result.byteAtPut(j++, '\\');
+        result.byteAtPut(j++, 'r');
+        break;
+      case '\\':
+        result.byteAtPut(j++, '\\');
+        result.byteAtPut(j++, '\\');
+        break;
+      default:
+        if (ASCII::isPrintable(current)) {
+          result.byteAtPut(j++, current);
+        } else {
+          result.byteAtPut(j++, '\\');
+          result.byteAtPut(j++, 'x');
+          result.putHex(j, current);
+          j += 2;
+        }
     }
   }
 
-  const byte quote_with_paren[] = {quote, ')'};
-  runtime->bytearrayExtend(thread, buffer, quote_with_paren);
-  return runtime->newStrFromBytearray(buffer);
+  result.byteAtPut(j++, delimiter);
+  result.byteAtPut(j++, ')');
+  DCHECK(j == result_length, "expected %ld bytes, wrote %ld", result_length, j);
+  return result.becomeStr();
 }
 
 RawObject METH(bytearray, __repr__)(Thread* thread, Frame* frame, word nargs) {

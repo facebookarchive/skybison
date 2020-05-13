@@ -13,12 +13,9 @@ inline void bytearrayAdd(Thread* thread, Runtime* runtime,
 // Returns a new RawBytes containing the bytes in the array.
 RawObject bytearrayAsBytes(Thread* thread, const Bytearray& array);
 
-// Returns a new Str containing the repr of `array`. On error, raise & return
-// OverflowError.
+// Returns a new Str containing the repr of `array`. Raises an OverflowError
+// if the resulting string cannot be allocated.
 RawObject bytearrayRepr(Thread* thread, const Bytearray& array);
-
-// Writes the value to the array as two hex digits.
-void writeByteAsHexDigits(Thread* thread, const Bytearray& array, byte value);
 
 void initializeBytearrayTypes(Thread* thread);
 

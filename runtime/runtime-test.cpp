@@ -785,24 +785,6 @@ TEST_F(RuntimeTest, NewStr) {
   ASSERT_EQ(s300.length(), 300);
 }
 
-TEST_F(RuntimeTest, NewStrFromBytearrayCopiesBytearray) {
-  HandleScope scope(thread_);
-
-  Bytearray array(&scope, runtime_->newBytearray());
-  Object result(&scope, runtime_->newStrFromBytearray(array));
-  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
-
-  const byte byte_array[] = {'h', 'e', 'l', 'l', 'o'};
-  runtime_->bytearrayExtend(thread_, array, byte_array);
-  result = runtime_->newStrFromBytearray(array);
-  EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
-
-  const byte byte_array2[] = {' ', 'w', 'o', 'r', 'l', 'd'};
-  runtime_->bytearrayExtend(thread_, array, byte_array2);
-  result = runtime_->newStrFromBytearray(array);
-  EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
-}
-
 TEST_F(RuntimeTest, NewStrFromFmtFormatsWord) {
   word x = 5;
   HandleScope scope(thread_);
