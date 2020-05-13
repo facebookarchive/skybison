@@ -456,27 +456,7 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
       return raiseDifferentStructureError(thread);
     }
     value_bytes = value_bytearray.items();
-  }
-  if (value_bytes != Bytes::empty()) {
-    byte* address = nullptr;
-    if (buffer.isMutableBytes()) {
-      address = reinterpret_cast<byte*>(LargeBytes::cast(*buffer).address());
-    } else {
-      DCHECK(buffer.isPointer(),
-             "memoryview.__setitem__ with non bytes/memory");
-      address = static_cast<byte*>(Pointer::cast(*buffer).cptr());
-    }
-    if (step == 1) {
-      value_bytes.copyTo(address + start, slice_len);
-      return NoneType::object();
-    }
-    for (word i = 0; start < stop; i++, start += step) {
-      address[start] = value_bytes.byteAt(i);
-    }
-    return NoneType::object();
-  }
-
-  if (value_obj.isMemoryView()) {
+  } else if (value_obj.isMemoryView()) {
     MemoryView value(&scope, *value_obj);
     Str value_format(&scope, value.format());
     char value_fmt = formatChar(value_format);
@@ -518,8 +498,28 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                   reinterpret_cast<void*>(value_address), item_size);
     }
     return NoneType::object();
+  } else if (runtime->isByteslike(*value_obj)) {
+    UNIMPLEMENTED("unsupported bytes-like type");
+  } else {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &value_obj);
   }
-  UNIMPLEMENTED("unexpected buffer");
+  byte* address;
+  if (buffer.isMutableBytes()) {
+    address = reinterpret_cast<byte*>(LargeBytes::cast(*buffer).address());
+  } else {
+    DCHECK(buffer.isPointer(), "memoryview.__setitem__ with non bytes/memory");
+    address = static_cast<byte*>(Pointer::cast(*buffer).cptr());
+  }
+  if (step == 1) {
+    value_bytes.copyTo(address + start, slice_len);
+    return NoneType::object();
+  }
+  for (word i = 0; start < stop; i++, start += step) {
+    address[start] = value_bytes.byteAt(i);
+  }
+  return NoneType::object();
 }
 
 static word pow2_remainder(word dividend, word divisor) {

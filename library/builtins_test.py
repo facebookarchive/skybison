@@ -9333,6 +9333,43 @@ class MemoryviewTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_setitem_with_zero_len_slice_and_empty_bytes_raises_type_error(self):
+        content = b"foobar"
+        view = memoryview(content)
+        with self.assertRaises(TypeError) as context:
+            view[:0] = b""
+        self.assertIn("cannot modify read-only memory", str(context.exception))
+
+    def test_setitem_with_zero_len_slice_and_nonempty_bytes_raises_value_error(self):
+        content = bytearray(b"foobar")
+        view = memoryview(content)
+        with self.assertRaises(ValueError) as context:
+            view[:0] = b"123"
+        self.assertIn(
+            "memoryview assignment: lvalue and rvalue have different structures",
+            str(context.exception),
+        )
+
+    def test_setitem_with_zero_len_slice_and_empty_bytes_value_returns_mv_unmodified(
+        self,
+    ):
+        content = bytearray(b"foobar")
+        view = memoryview(content)
+        view[:0] = b""
+        self.assertEqual(view, b"foobar")
+
+    def test_setitem_with_zero_len_slice_and_empty_mv_value_returns_mv_unmodified(self):
+        content = bytearray(b"foobar")
+        view = memoryview(content)
+        view[:0] = memoryview(b"")
+        self.assertEqual(view, b"foobar")
+
+    def test_setitem_with_zero_len_slice_and_negative_stop_returns_mv_unmodified(self):
+        content = bytearray(b"foobar")
+        view = memoryview(content)
+        view[:-6] = b""
+        self.assertEqual(view, b"foobar")
+
     def test_setitem_with_slices_and_bytes_and_step_1(self):
         view = memoryview(bytearray(b"0000"))
         view[:2] = b"zz"
