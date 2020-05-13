@@ -9135,39 +9135,31 @@ class MemoryviewTests(unittest.TestCase):
 
     def test_dunder_getitem_with_valid_indices_returns_submemoryview(self):
         view = memoryview(b"movie")
-        self.assertEqual(
-            memoryview.__getitem__(view, slice(2, -1)).tolist(), [ord("v"), ord("i")]
-        )
+        self.assertEqual(memoryview.__getitem__(view, slice(2, -1)), b"vi")
 
     def test_dunder_getitem_with_negative_start_returns_trailing(self):
         view = memoryview(b"bam")
-        self.assertEqual(
-            memoryview.__getitem__(view, slice(-2, 5)).tolist(), [ord("a"), ord("m")]
-        )
+        self.assertEqual(memoryview.__getitem__(view, slice(-2, 5)), b"am")
 
     def test_dunder_getitem_with_positive_stop_returns_leading(self):
         view = memoryview(b"bam")
-        self.assertEqual(
-            memoryview.__getitem__(view, slice(2)).tolist(), [ord("b"), ord("a")]
-        )
+        self.assertEqual(memoryview.__getitem__(view, slice(2)), b"ba")
 
     def test_dunder_getitem_with_negative_stop_returns_all_but_trailing(self):
         view = memoryview(b"bam")
-        self.assertEqual(memoryview.__getitem__(view, slice(-2)).tolist(), [ord("b")])
+        self.assertEqual(memoryview.__getitem__(view, slice(-2)), b"b")
 
     def test_dunder_getitem_with_large_negative_start_returns_copy(self):
         view = memoryview(b"bam")
-        self.assertEqual(
-            memoryview.__getitem__(view, slice(-10, 10)).tolist(), view.tolist()
-        )
+        self.assertEqual(memoryview.__getitem__(view, slice(-10, 10)), view)
 
     def test_dunder_getitem_with_large_positive_start_returns_empty(self):
         view = memoryview(b"bam")
-        self.assertEqual(memoryview.__getitem__(view, slice(10, 10)).tolist(), [])
+        self.assertEqual(memoryview.__getitem__(view, slice(10, 10)), b"")
 
     def test_dunder_getitem_with_large_negative_stop_returns_empty(self):
         view = memoryview(b"bam")
-        self.assertEqual(memoryview.__getitem__(view, slice(-10)).tolist(), [])
+        self.assertEqual(memoryview.__getitem__(view, slice(-10)), b"")
 
     def test_dunder_getitem_with_int_subclass_does_not_call_dunder_index(self):
         class C(int):
@@ -9217,7 +9209,7 @@ class MemoryviewTests(unittest.TestCase):
 
         view = memoryview(C(b"hello"))
         self.assertIsInstance(view, memoryview)
-        self.assertEqual(view.tolist(), list(b"hello"))
+        self.assertEqual(view, b"hello")
 
     def test_itemsize_returns_size_of_item_chars(self):
         src = b"abcd"
@@ -9373,44 +9365,44 @@ class MemoryviewTests(unittest.TestCase):
     def test_setitem_with_slices_and_bytes_and_step_1(self):
         view = memoryview(bytearray(b"0000"))
         view[:2] = b"zz"
-        self.assertEqual(view.tolist(), [122, 122, 48, 48])
+        self.assertEqual(view, b"zz00")
 
     def test_setitem_with_slices_and_bytearray_and_step_1(self):
         view = memoryview(bytearray(b"0000"))
         view[1:3] = bytearray(b"zz")
-        self.assertEqual(view.tolist(), [48, 122, 122, 48])
+        self.assertEqual(view, b"0zz0")
 
     def test_setitem_with_slices_and_memoryview_byte_format_and_step_1(self):
         view = memoryview(bytearray(b"0000"))
         view[:2] = memoryview(b"zz")
-        self.assertEqual(view.tolist(), [122, 122, 48, 48])
+        self.assertEqual(view, b"zz00")
 
     def test_setitem_with_slices_and_memoryview_short_format_and_step_1(self):
         view = memoryview(bytearray(b"0000"))
         short_view = view.cast("h")
         short_view[:1] = memoryview(b"zz").cast("h")
-        self.assertEqual(view.tolist(), [122, 122, 48, 48])
+        self.assertEqual(view, b"zz00")
 
     def test_setitem_with_slices_and_bytes_and_step_2(self):
         view = memoryview(bytearray(b"0000"))
         view[::2] = b"zz"
-        self.assertEqual(view.tolist(), [122, 48, 122, 48])
+        self.assertEqual(view, b"z0z0")
 
     def test_setitem_with_slices_and_bytearray_and_step_2(self):
         view = memoryview(bytearray(b"0000"))
         view[1::2] = bytearray(b"zz")
-        self.assertEqual(view.tolist(), [48, 122, 48, 122])
+        self.assertEqual(view, b"0z0z")
 
     def test_setitem_with_slices_and_memoryview_byte_format_and_step_2(self):
         view = memoryview(bytearray(b"0000"))
         view[::2] = memoryview(b"zz")
-        self.assertEqual(view.tolist(), [122, 48, 122, 48])
+        self.assertEqual(view, b"z0z0")
 
     def test_setitem_with_slices_and_memoryview_short_format_and_step_2(self):
         view = memoryview(bytearray(b"000000"))
         short_view = view.cast("h")
         short_view[1::2] = memoryview(b"zz").cast("h")
-        self.assertEqual(view.tolist(), [48, 48, 122, 122, 48, 48])
+        self.assertEqual(view, b"00zz00")
 
     def test_tolist_with_non_memoryview_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
