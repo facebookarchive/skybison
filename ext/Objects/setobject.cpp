@@ -70,6 +70,11 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   return 0;
 }
 
+PY_EXPORT int PySet_Check_Func(PyObject* obj) {
+  return Thread::current()->runtime()->isInstanceOfSet(
+      ApiHandle::fromPyObject(obj)->asObject());
+}
+
 PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
                                PyObject** pkey, Py_hash_t* phash) {
   Thread* thread = Thread::current();

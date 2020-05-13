@@ -59,6 +59,26 @@ TEST_F(SetExtensionApiTest, FrozenSetCheckExactWithFrozenSetReturnsTrue) {
   EXPECT_TRUE(PyFrozenSet_CheckExact(set));
 }
 
+TEST_F(SetExtensionApiTest, SetCheckWithFrozenSetReturnsFalse) {
+  PyObjectPtr set(PyFrozenSet_New(nullptr));
+  EXPECT_FALSE(PySet_Check(set));
+}
+
+TEST_F(SetExtensionApiTest, SetCheckWithSetSubclassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C(set):
+  pass
+c = C()
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  EXPECT_TRUE(PySet_Check(c));
+}
+
+TEST_F(SetExtensionApiTest, SetCheckWithSetReturnsTrue) {
+  PyObjectPtr set(PySet_New(nullptr));
+  EXPECT_TRUE(PySet_Check(set));
+}
+
 TEST_F(SetExtensionApiTest, ContainsReturnsPositiveAfterAdd) {
   PyObjectPtr set(PySet_New(nullptr));
   PyObjectPtr key(PyLong_FromLong(1));

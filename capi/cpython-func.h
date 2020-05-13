@@ -187,6 +187,7 @@ PyAPI_FUNC(int) PyModule_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyModule_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyObject_CheckBuffer_Func(PyObject*);
 PyAPI_FUNC(int) PyObject_TypeCheck_Func(PyObject*, PyTypeObject*);
+PyAPI_FUNC(int) PySet_Check_Func(PyObject*);
 PyAPI_FUNC(PyObject*) PySequence_Fast_GET_ITEM_Func(PyObject*, Py_ssize_t);
 PyAPI_FUNC(Py_ssize_t) PySequence_Fast_GET_SIZE_Func(PyObject*);
 PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
@@ -1385,6 +1386,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 #define PyObject_CheckBuffer(op) (PyObject_CheckBuffer_Func((PyObject*)(op)))
 #define PyObject_TypeCheck(op, tp)                                             \
   (PyObject_TypeCheck_Func((PyObject*)(op), (PyTypeObject*)(tp)))
+#define PySet_Check(op) (PySet_Check_Func((PyObject*)(op)))
 #define PySlice_Check(op) (PySlice_Check_Func((PyObject*)(op)))
 #define PyTraceBack_Check(op) (PyTraceBack_Check_Func((PyObject*)(op)))
 #define PyTuple_Check(op) (PyTuple_Check_Func((PyObject*)(op)))
