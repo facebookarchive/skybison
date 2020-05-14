@@ -52,6 +52,62 @@ TEST_F(ImportExtensionApiTest,
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ImportExtensionApiTest, GetModuleWithNotExistingModuleNameReturnsNull) {
+  PyObjectPtr name(PyUnicode_FromString("not_existing"));
+  EXPECT_EQ(PyImport_GetModule(name), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ImportExtensionApiTest,
+       GetModuleWithNotNotYetLoadedModuleNameReturnsNull) {
+  PyObjectPtr name(PyUnicode_FromString("test"));
+  EXPECT_EQ(PyImport_GetModule(name), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ImportExtensionApiTest,
+       GetModuleWithObjectRaisingNonKeyErrorPropagatesIt) {
+  PyRun_SimpleString(R"(
+class C:
+  def __hash__(self):
+    raise UserWarning("do not call me")
+
+c = C()
+  )");
+  PyObjectPtr c(mainModuleGet("c"));
+  EXPECT_EQ(PyImport_GetModule(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+// TODO(T67033642): Add a test verifying that a non-dict modules supresses
+// KeyError.
+TEST_F(ImportExtensionApiTest, GetModuleWithObjectRaisingKeyErrorPropagatesIt) {
+  PyRun_SimpleString(R"(
+class C:
+  def __hash__(self):
+    raise KeyError("key_error")
+
+c = C()
+  )");
+  PyObjectPtr c(mainModuleGet("c"));
+  EXPECT_EQ(PyImport_GetModule(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
+}
+
+TEST_F(ImportExtensionApiTest, GetModuleWithExistingModuleNameReturnsModule) {
+  PyObjectPtr imported_module(PyImport_ImportModule("test"));
+  ASSERT_TRUE(PyModule_Check(imported_module));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr name(PyUnicode_FromString("test"));
+  PyObjectPtr found_module(PyImport_GetModule(name));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyModule_Check(found_module));
+  EXPECT_EQ(imported_module, found_module);
+}
+
 TEST_F(ImportExtensionApiTest, PyImportAcquireLockAndReleaseLockDoesNothing) {
   _PyImport_AcquireLock();
   EXPECT_EQ(_PyImport_ReleaseLock(), 1);

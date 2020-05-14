@@ -474,6 +474,7 @@ PyAPI_FUNC(PyObject*)
                                          const char*);
 PyAPI_FUNC(long) PyImport_GetMagicNumber(void);
 PyAPI_FUNC(const char*) PyImport_GetMagicTag(void);
+PyAPI_FUNC(PyObject*) PyImport_GetModule(PyObject* name);
 PyAPI_FUNC(PyObject*) PyImport_GetModuleDict(void);
 PyAPI_FUNC(PyObject*) PyImport_Import(PyObject*);
 PyAPI_FUNC(int) PyImport_ImportFrozenModule(const char*);

@@ -4,10 +4,38 @@
 #include "dict-builtins.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
+#include "object-builtins.h"
 #include "runtime.h"
 #include "under-imp-module.h"
 
 namespace py {
+
+PY_EXPORT PyObject* PyImport_GetModule(PyObject* name) {
+  DCHECK(name != nullptr, "name is expected to be non null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object modules(&scope, thread->runtime()->modules());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  if (modules.isDict()) {
+    Dict modules_dict(&scope, *modules);
+    Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
+    if (hash_obj.isErrorException()) return nullptr;
+    word hash = SmallInt::cast(*hash_obj).value();
+    Object result(&scope, dictAt(thread, modules_dict, name_obj, hash));
+    if (result.isError()) {
+      return nullptr;
+    }
+    return ApiHandle::newReference(thread, *result);
+  }
+  Object result(&scope, objectGetItem(thread, modules, name_obj));
+  if (result.isErrorException()) {
+    if (thread->pendingExceptionMatches(LayoutId::kKeyError)) {
+      thread->clearPendingException();
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
+}
 
 PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
   Thread* thread = Thread::current();
