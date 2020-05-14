@@ -196,6 +196,31 @@ RawObject FUNC(_builtins, _bound_method)(Thread* thread, Frame* frame,
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
+RawObject FUNC(_builtins, _byte_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (runtime->isInstanceOfBytes(*obj)) {
+    Bytes bytes(&scope, bytesUnderlying(*obj));
+    if (bytes.length() == 1) {
+      return SmallInt::fromWord(bytes.byteAt(0));
+    }
+  } else if (runtime->isInstanceOfBytearray(*obj)) {
+    Bytearray array(&scope, *obj);
+    if (array.numItems() == 1) {
+      return SmallInt::fromWord(array.byteAt(0));
+    }
+  }
+  Function function(&scope, frame->previousFrame()->function());
+  Str function_name(&scope, function.name());
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
+      "%S() argument 2 must be a byte string of length 1, not %T",
+      &function_name, &obj);
+}
+
 RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
                                              word nargs) {
   Runtime* runtime = thread->runtime();
@@ -430,6 +455,63 @@ RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Frame* frame,
   for (word i = 0, idx = start; i < len; i++, idx += step) {
     result.byteAtPut(i, self.byteAt(idx));
   }
+  return *result;
+}
+
+RawObject FUNC(_builtins, _bytearray_ljust)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+  }
+
+  word width;
+  Object width_obj(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*width_obj)) {
+    width = intUnderlying(args.get(1)).asWordSaturated();
+    if (!SmallInt::isValid(width)) {
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "Python int too large to convert to C ssize_t");
+    }
+  } else {
+    return Unbound::object();
+  }
+
+  byte fill;
+  Object fillbyte_obj(&scope, args.get(2));
+  if (runtime->isInstanceOfBytes(*fillbyte_obj)) {
+    Bytes fillbyte(&scope, bytesUnderlying(*fillbyte_obj));
+    if (fillbyte.length() != 1) {
+      return Unbound::object();
+    }
+    fill = fillbyte.byteAt(0);
+  } else if (runtime->isInstanceOfBytearray(*fillbyte_obj)) {
+    Bytearray fillbyte(&scope, *fillbyte_obj);
+    if (fillbyte.numItems() != 1) {
+      return Unbound::object();
+    }
+    fill = fillbyte.byteAt(0);
+  } else {
+    return Unbound::object();
+  }
+
+  Bytearray self(&scope, *self_obj);
+  word self_length = self.numItems();
+  word result_length = Utils::maximum(width, self_length);
+  MutableBytes buffer(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  buffer.replaceFromWith(0, DataArray::cast(self.items()), self_length);
+  for (word i = self_length; i < result_length; i++) {
+    buffer.byteAtPut(i, fill);
+  }
+
+  Bytearray result(&scope, runtime->newBytearray());
+  result.setItems(*buffer);
+  result.setNumItems(result_length);
   return *result;
 }
 

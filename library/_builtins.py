@@ -32,6 +32,10 @@ def _bound_method(fn, owner):
     _builtin()
 
 
+def _byte_guard(obj):
+    _builtin()
+
+
 def _bytearray_append(obj, item):
     _builtin()
 
@@ -77,6 +81,10 @@ def _bytearray_join(self, iterable):
 
 
 def _bytearray_len(self):
+    _builtin()
+
+
+def _bytearray_ljust(self, width, fillbyte):
     _builtin()
 
 

@@ -1075,6 +1075,92 @@ class ByteArrayTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_ljust_without_growth_returns_copy(self):
+        foo = bytearray(b"foo")
+        self.assertEqual(foo.ljust(-1), foo)
+        self.assertEqual(foo.ljust(0), foo)
+        self.assertEqual(foo.ljust(1), foo)
+        self.assertEqual(foo.ljust(2), foo)
+        self.assertEqual(foo.ljust(3), foo)
+
+        self.assertIsNot(foo.ljust(-1), foo)
+        self.assertIsNot(foo.ljust(0), foo)
+        self.assertIsNot(foo.ljust(1), foo)
+        self.assertIsNot(foo.ljust(2), foo)
+        self.assertIsNot(foo.ljust(3), foo)
+
+    def test_ljust_with_custom_fillchar_returns_bytearray(self):
+        orig = bytearray(b"ba")
+        filled = bytearray(b"ba").ljust(7, b"@")
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"ba@@@@@")
+        self.assertEqual(orig, b"ba")
+
+    def test_ljust_pads_end_of_array(self):
+        self.assertEqual(bytearray(b"abc").ljust(4), b"abc ")
+        self.assertEqual(bytearray(b"abc").ljust(7), b"abc    ")
+
+    def test_ljust_with_bytearray_fillchar_returns_bytearray(self):
+        orig = bytearray(b"ba")
+        fillchar = bytearray(b"@")
+        filled = bytearray(b"ba").ljust(7, fillchar)
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"ba@@@@@")
+        self.assertEqual(orig, b"ba")
+
+    def test_ljust_with_bytes_subclass_fillchar_returns_bytearray(self):
+        class C(bytes):
+            # access to character is done in native, so this is not called
+            def __getitem__(self, key):
+                return 0
+
+        orig = bytearray(b"ba")
+        fillchar = C(b"@")
+        filled = bytearray(b"ba").ljust(7, fillchar)
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"ba@@@@@")
+        self.assertEqual(orig, b"ba")
+
+    def test_ljust_with_bytearray_subclass_fillchar_returns_bytearray(self):
+        class C(bytearray):
+            # access to character is done in native, so this is not called
+            def __getitem__(self, key):
+                return 0
+
+        orig = bytearray(b"ba")
+        fillchar = C(b"@")
+        filled = bytearray(b"ba").ljust(7, fillchar)
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"ba@@@@@")
+        self.assertEqual(orig, b"ba")
+
+    def test_ljust_with_dunder_index_returns_bytearray(self):
+        class C:
+            def __index__(self):
+                return 5
+
+        orig = bytearray(b"ba")
+        filled = bytearray(b"ba").ljust(C(), b"@")
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"ba@@@")
+        self.assertEqual(orig, b"ba")
+
+    def test_ljust_with_wrong_type_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().ljust(2, ord(" "))
+        self.assertEqual(
+            str(context.exception),
+            "ljust() argument 2 must be a byte string of length 1, not int",
+        )
+
+    def test_ljust_with_wrong_length_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().ljust(2, b",,")
+        self.assertEqual(
+            str(context.exception),
+            "ljust() argument 2 must be a byte string of length 1, not bytes",
+        )
+
     def test_lower_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.lower("not a bytearray")
