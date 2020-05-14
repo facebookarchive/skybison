@@ -49,6 +49,29 @@ module_dict = locals()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(CevalExtensionApiTest, EvalCodeWithDictGlobalsUpdatesDict) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  PyArena* arena = PyArena_New();
+  const char* filename = "<string>";
+  struct _mod* node = PyParser_ASTFromString("global a; a = 1 + 2", filename,
+                                             Py_file_input, &flags, arena);
+  ASSERT_NE(node, nullptr);
+  PyObjectPtr code(reinterpret_cast<PyObject*>(
+      PyAST_CompileEx(node, filename, &flags, 0, arena)));
+  ASSERT_NE(code, nullptr);
+  PyArena_Free(arena);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr globals(PyDict_New());
+  PyObjectPtr locals(PyDict_New());
+  EXPECT_NE(PyEval_EvalCode(code, globals, locals), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(PyDict_GetItemString(globals, "a"));
+  EXPECT_TRUE(isLongEqualsLong(result, 3));
+  EXPECT_EQ(PyDict_Size(locals), 0);
+}
+
 TEST_F(CevalExtensionApiTest, EvalCodeWithModuleDictAsGlobalsReturnsNonNull) {
   PyCompilerFlags flags;
   flags.cf_flags = 0;

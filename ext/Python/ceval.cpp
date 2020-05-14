@@ -2,6 +2,8 @@
 #include "cpython-func.h"
 
 #include "capi-handles.h"
+#include "dict-builtins.h"
+#include "module-builtins.h"
 #include "runtime.h"
 
 namespace py {
@@ -23,8 +25,6 @@ PY_EXPORT void PyEval_AcquireThread(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyEval_AcquireThread");
 }
 
-// NOTE: This function only accepts module dictionaries (ie with ValueCells),
-// not normal user-facing dictionaries.
 PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
                                     PyObject* locals) {
   Thread* thread = Thread::current();
@@ -44,11 +44,25 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
   Runtime* runtime = thread->runtime();
   Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
   Object module_obj(&scope, NoneType::object());
+  bool must_update_globals = false;
   if (globals_obj.isModuleProxy()) {
     module_obj = ModuleProxy::cast(*globals_obj).module();
+  } else if (globals_obj.isDict()) {
+    // Create a temporary module and fill it with the keys/values from globals
+    Str empty_name(&scope, Str::empty());
+    Module tmp_module(&scope, runtime->newModule(empty_name));
+    Dict globals_dict(&scope, *globals_obj);
+    Object key(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    Object result(&scope, NoneType::object());
+    for (word i = 0; dictNextItem(globals_dict, &i, &key, &value);) {
+      result = moduleAtPut(thread, tmp_module, key, value);
+      if (result.isError()) return nullptr;
+    }
+    module_obj = *tmp_module;
+    must_update_globals = true;
   } else if (runtime->isInstanceOfDict(*globals_obj)) {
-    // TODO(T54956257): Create a temporary module object from globals.
-    UNIMPLEMENTED("User-defined globals is unsupported");
+    UNIMPLEMENTED("PyEval_EvalCode with dict subclass globals");
   } else {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -65,6 +79,15 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
   Module module(&scope, *module_obj);
   Object result(&scope, thread->exec(code_code, module, implicit_globals));
   if (result.isErrorException()) return nullptr;
+  if (must_update_globals) {
+    // Update globals with the (potentially changed) contents of the module
+    // proxy
+    Dict globals_dict(&scope, *globals_obj);
+    Object module_proxy(&scope, module.moduleProxy());
+    if (dictMergeOverride(thread, globals_dict, module_proxy).isError()) {
+      return nullptr;
+    }
+  }
   return ApiHandle::newReference(thread, *result);
 }
 
