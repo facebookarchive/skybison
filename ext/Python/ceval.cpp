@@ -7,7 +7,12 @@
 namespace py {
 
 PY_EXPORT PyObject* PyEval_GetBuiltins() {
-  UNIMPLEMENTED("PyEval_GetBuiltins");
+  // TODO(T66852536): For full compatibility, try looking up on current frame
+  // first and then use the Runtime-cached builtins
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Module builtins(&scope, thread->runtime()->findModuleById(ID(builtins)));
+  return ApiHandle::borrowedReference(thread, builtins.moduleProxy());
 }
 
 PY_EXPORT PyObject* PyEval_GetGlobals() { UNIMPLEMENTED("PyEval_GetGlobals"); }

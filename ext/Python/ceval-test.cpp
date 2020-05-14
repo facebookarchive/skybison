@@ -107,6 +107,16 @@ module_dict = locals()
   EXPECT_EQ(PyLong_AsDouble(result), 3.0);
 }
 
+TEST_F(CevalExtensionApiTest, GetBuiltinsReturnsMapping) {
+  PyObjectPtr builtins(PyEval_GetBuiltins());  // returns a borrowed reference
+  ASSERT_NE(builtins, nullptr);
+  Py_INCREF(builtins);
+  EXPECT_EQ(1, PyMapping_Check(builtins));
+  // Check some sample builtins
+  EXPECT_EQ(1, PyMapping_HasKeyString(builtins, "int"));
+  EXPECT_EQ(1, PyMapping_HasKeyString(builtins, "compile"));
+}
+
 TEST_F(CevalExtensionApiTest, MergeCompilerFlagsReturnsTrue) {
   PyCompilerFlags flags;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
