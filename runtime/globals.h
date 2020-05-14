@@ -12,6 +12,7 @@ typedef uintptr_t uword;
 static_assert(sizeof(word) == sizeof(size_t),
               "word must be the same size as size_t");
 
+const int kBoolSize = sizeof(bool);
 const int kByteSize = sizeof(byte);
 const int kDoubleSize = sizeof(double);
 const int kFloatSize = sizeof(float);

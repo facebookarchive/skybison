@@ -38,30 +38,30 @@ static word itemSize(char format) {
     case 'c':
     case 'b':
     case 'B':
-      return sizeof(char);
+      return kByteSize;
     case 'h':
     case 'H':
-      return sizeof(short);
+      return kShortSize;
     case 'i':
     case 'I':
-      return sizeof(int);
+      return kIntSize;
     case 'l':
     case 'L':
-      return sizeof(long);
+      return kLongSize;
     case 'q':
     case 'Q':
-      return sizeof(long long);
+      return kLongLongSize;
     case 'n':
     case 'N':
-      return sizeof(size_t);
+      return kWordSize;
     case 'f':
-      return sizeof(float);
+      return kFloatSize;
     case 'd':
-      return sizeof(double);
+      return kDoubleSize;
     case '?':
-      return sizeof(bool);
+      return kBoolSize;
     case 'P':
-      return sizeof(void*);
+      return kPointerSize;
     default:
       return -1;
   }
