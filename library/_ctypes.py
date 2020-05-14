@@ -390,6 +390,11 @@ def _shared_object_symbol_address(handle, name):
 def addressof(obj):
     if not issubclass(type(obj), _CData):
         raise TypeError("invalid type")
+    # TODO(T67017526): Remove mmap patch
+    # addressof can only be called on objects which are not allocated on Pyro's
+    # internal heap (such as an mmap). Objects on Pyro's heap do not have stable
+    # addresses due to the relocating garbage collector, so we should not make them
+    # visible to the user
     if (
         not _type_issubclass(_type(obj), _SimpleCData)
         and not _type_issubclass(_type(obj), Array)
