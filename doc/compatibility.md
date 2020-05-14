@@ -42,12 +42,21 @@ Interpreter
   boundaries. We generally do not recommend to reassign `__builtins__` and may
   further limit the ability to do so in the future.
 
+- A dictionary passed to the `globals` parameter of `builtins.exec`,
+  `builtins.eval`, `PyEval_EvalCode` is not updated while the code is
+  being executed, but will be updated only upon completion of the call.
+  Note that this does not affect passing `<some_module>.__dict__` for
+  globals; `__dict__` of a module returns a specialized proxy object
+  which leads to module attributes being updated immediately as the
+  code is running.
+
 C-API
 -----
 
 - `PyCFunction_Type` and `PyCFunction_Check` are not supported;
   `PyCFunction_New` works and returns something that behaves similar.
 
+- `PyEval_EvalCode`: See `builtins.exec`.
 
 Runtime Inspection
 ------------------
