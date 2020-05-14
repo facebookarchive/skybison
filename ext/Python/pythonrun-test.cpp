@@ -13,6 +13,21 @@ namespace testing {
 
 using PythonrunExtensionApiTest = ExtensionApi;
 
+TEST_F(PythonrunExtensionApiTest, CompileWithSourceIsUTF8RaisesValueError) {
+  int flags = PyCF_SOURCE_IS_UTF8;
+  EXPECT_EQ(0, moduleSet("__main__", "flags", PyLong_FromLong(flags)));
+  EXPECT_EQ(-1, PyRun_SimpleString(R"(
+try:
+  compile("1", "filename", "exec", flags=flags)
+  failed = False
+except ValueError:
+  failed = True
+  raise
+)"));
+  PyObjectPtr failed(mainModuleGet("failed"));
+  EXPECT_EQ(Py_True, failed);
+}
+
 TEST_F(PythonrunExtensionApiTest, PyRunAnyFileReturnsZero) {
   CaptureStdStreams streams;
   const char* buffer = R"(print(f"good morning by {__file__}"))";

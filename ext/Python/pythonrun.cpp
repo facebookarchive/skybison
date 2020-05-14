@@ -384,6 +384,8 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   HandleScope scope(thread);
 
   int iflags = flags != nullptr ? flags->cf_flags : 0;
+  // C-API uses this flag but it's an error for managed to pass it in
+  iflags &= ~PyCF_SOURCE_IS_UTF8;
 
   View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
   Object source(&scope, runtime->newStrWithAll(data));
