@@ -49,6 +49,8 @@ bool isBuiltinModule(Thread* thread, const Str& name);
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            View<BuiltinType> types);
 
+int moduleAddToState(Thread* thread, Module* module);
+
 extern const ModuleInitializer kBuiltinModules[];
 extern const word kNumBuiltinModules;
 

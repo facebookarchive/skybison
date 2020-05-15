@@ -234,4 +234,18 @@ PY_EXPORT PyTypeObject* PyModule_Type_Ptr() {
       thread, thread->runtime()->typeAt(LayoutId::kModule)));
 }
 
+int moduleAddToState(Thread* thread, Module* module) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Int def(&scope, module->def());
+  PyModuleDef* module_def = static_cast<PyModuleDef*>(def.asCPtr());
+  if (module_def == nullptr) {
+    return -1;
+  }
+  if (!runtime->moduleListAtPut(thread, *module, module_def->m_base.m_index)) {
+    return -1;
+  }
+  return 0;
+}
+
 }  // namespace py

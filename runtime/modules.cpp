@@ -132,6 +132,7 @@ static RawObject createBuiltinModule(Thread* thread, const Str& name) {
     }
     Module module(&scope, *module_obj);
     runtime->addModule(module);
+    moduleAddToState(thread, &module);
     return *module;
   }
 

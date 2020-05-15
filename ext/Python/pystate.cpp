@@ -2,6 +2,7 @@
 
 #include "capi-handles.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 
 namespace py {
@@ -42,23 +43,21 @@ PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
     Py_FatalError("PyState_AddModule: Module Definition is NULL");
     return -1;
   }
+  HandleScope scope(thread);
+  Object find_module(&scope,
+                     runtime->moduleListAt(thread, def->m_base.m_index));
+  if (!find_module.isErrorNotFound()) {
+    Py_FatalError("PyState_AddModule: Module already added!");
+    return -1;
+  }
   if (def->m_slots != nullptr) {
     thread->raiseWithFmt(LayoutId::kSystemError,
                          "PyState_AddModule called on module with slots");
     return -1;
   }
-  HandleScope scope(thread);
   Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   module_obj.setDef(runtime->newIntFromCPtr(def));
-  Object doc_value(&scope, def->m_doc == nullptr
-                               ? NoneType::object()
-                               : runtime->newStrFromCStr(def->m_doc));
-  moduleAtPutById(thread, module_obj, ID(__doc__), doc_value);
-  if (!runtime->moduleListAtPut(thread, module_obj, def->m_base.m_index)) {
-    Py_FatalError("PyState_AddModule: Module already added!");
-    return -1;
-  }
-  return 0;
+  return moduleAddToState(thread, &module_obj);
 }
 
 PY_EXPORT PyObject* PyState_FindModule(PyModuleDef* def) {

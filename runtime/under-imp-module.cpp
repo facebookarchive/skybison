@@ -94,7 +94,9 @@ RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Frame* frame,
     }
     return Error::exception();
   }
-  return module->asObject();
+  Module module_obj(&scope, module->asObject());
+  moduleAddToState(thread, &module_obj);
+  return *module_obj;
 }
 
 RawObject FUNC(_imp, acquire_lock)(Thread* thread, Frame*, word) {
