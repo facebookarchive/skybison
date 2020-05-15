@@ -5583,6 +5583,9 @@ class slice(bootstrap=True):
 
 
 class slot_descriptor(bootstrap=True):
+    def __delete__(self, instance):
+        _builtin()
+
     def __get__(self, instance, owner=None):
         _builtin()
 

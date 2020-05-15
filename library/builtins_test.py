@@ -4811,6 +4811,24 @@ class DunderSlotsTests(unittest.TestCase):
         c.x = 500
         self.assertEqual(c.x, 500)
 
+    def test_dunder_slots_attributes_raises_attribute_error_after_deletion(self):
+        class C:
+            __slots__ = "x"
+
+        c = C()
+        c.x = 50
+        del c.x
+        with self.assertRaises(AttributeError):
+            c.x
+
+    def test_dunder_slots_attributes_delete_raises_attribute_before_set(self):
+        class C:
+            __slots__ = "x"
+
+        c = C()
+        with self.assertRaises(AttributeError):
+            del c.x
+
     def test_dunder_slots_with_sealed_base_seals_type(self):
         class C:
             __slots__ = ()
