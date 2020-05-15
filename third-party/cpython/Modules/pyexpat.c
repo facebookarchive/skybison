@@ -1901,8 +1901,6 @@ MODULE_INITFUNC(void)
     if (capi_object)
         PyModule_AddObject(m, "expat_CAPI", capi_object);
 
-    PyState_AddModule(m, &pyexpatmodule);
-
     Py_DECREF(errmod_name);
     Py_DECREF(modelmod_name);
 

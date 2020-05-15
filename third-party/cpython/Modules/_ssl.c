@@ -6270,7 +6270,5 @@ PyInit__ssl(void)
     if (_sslmodulestate(m)->verify_code == NULL)
         return NULL;
 
-    PyState_AddModule(m, &_sslmodule);
-
     return m;
 }

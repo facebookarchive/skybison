@@ -112,6 +112,5 @@ PyInit__symtable(void)
         Py_DECREF(m);
         m = 0;
     }
-    PyState_AddModule(m, &symtablemodule);
     return m;
 }

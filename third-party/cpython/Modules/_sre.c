@@ -2828,7 +2828,6 @@ PyMODINIT_FUNC PyInit__sre(void)
         PyModule_AddObject(m, "copyright", x);
     }
 
-    PyState_AddModule(m, &sremodule);
     return m;
 }
 

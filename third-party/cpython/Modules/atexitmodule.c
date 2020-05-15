@@ -351,6 +351,5 @@ PyInit_atexit(void)
         return NULL;
 
     _Py_PyAtExit(atexit_callfuncs, m);
-    PyState_AddModule(m, &atexitmodule);
     return m;
 }

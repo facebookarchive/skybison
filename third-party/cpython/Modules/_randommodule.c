@@ -571,7 +571,6 @@ PyInit__random(void)
     Py_DECREF(longval);
     _randomstate(m)->Long___abs__ = abs;
 
-    PyState_AddModule(m, &_randommodule);
     return m;
 
 fail:

@@ -1664,7 +1664,5 @@ PyInit__csv(void)
     Py_INCREF(_csvstate(module)->error_obj);
     PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
 
-    PyState_AddModule(module, &_csvmodule);
-
     return module;
 }

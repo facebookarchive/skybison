@@ -1116,7 +1116,6 @@ PyInit__hashlib(void)
         Py_DECREF(EVP_Type);
         return NULL;
     }
-    PyState_AddModule(m, &_hashlibmodule);
 
     _hashlibstate(m)->EVP_Type = EVP_Type;
 

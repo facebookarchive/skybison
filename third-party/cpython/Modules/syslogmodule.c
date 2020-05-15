@@ -364,6 +364,5 @@ PyInit_syslog(void)
     PyModule_AddIntMacro(m, LOG_AUTHPRIV);
 #endif
 
-    PyState_AddModule(m, &syslogmodule);
     return m;
 }

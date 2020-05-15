@@ -851,6 +851,5 @@ PyInit__posixsubprocess(void)
     _posixsubprocessstate(m)->enable = PyUnicode_InternFromString("enable");
     _posixsubprocessstate(m)->isenabled = PyUnicode_InternFromString("isenabled");
 
-    PyState_AddModule(m, &_posixsubprocessmodule);
     return m;
 }

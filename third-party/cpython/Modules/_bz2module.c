@@ -747,6 +747,5 @@ PyInit__bz2(void)
     bz2state(m)->BZ2Decompressor_Type = BZ2Decompressor_Type;
     PyModule_AddObject(m, "BZ2Decompressor", BZ2Decompressor_Type);
 
-    PyState_AddModule(m, &_bz2module);
     return m;
 }

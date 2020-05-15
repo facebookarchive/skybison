@@ -274,6 +274,5 @@ PyInit_grp(void)
     Py_INCREF(state->StructGrpType);
     PyModule_AddObject(m, "struct_group", (PyObject *) state->StructGrpType);
 
-    PyState_AddModule(m, &grpmodule);
     return m;
 }

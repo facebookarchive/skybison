@@ -986,7 +986,6 @@ PyInit__sha3(void)
                                    KeccakP1600_implementation) < 0) {
         goto error;
     }
-    PyState_AddModule(m, &_SHA3module);
     return m;
   error:
     Py_DECREF(m);

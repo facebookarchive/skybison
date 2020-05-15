@@ -596,7 +596,6 @@ PyInit__stat(void)
     if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_VIRTUAL)) return NULL;
 #endif
 
-    PyState_AddModule(m, &statmodule);
     return m;
 }
 

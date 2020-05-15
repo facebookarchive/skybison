@@ -118,6 +118,5 @@ PyInit__blake2(void)
     PyModule_AddIntConstant(m, "BLAKE2S_MAX_KEY_SIZE", BLAKE2S_KEYBYTES);
     PyModule_AddIntConstant(m, "BLAKE2S_MAX_DIGEST_SIZE", BLAKE2S_OUTBYTES);
 
-    PyState_AddModule(m, &blake2_module);
     return m;
 }

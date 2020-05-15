@@ -941,6 +941,5 @@ PyInit_errno(void)
 #endif
 
     Py_DECREF(de);
-    PyState_AddModule(m, &errnomodule);
     return m;
 }

@@ -1377,7 +1377,6 @@ PyInit_readline(void)
     PyOS_ReadlineFunctionPointer = call_readline;
     setup_readline(mod_state);
 
-    PyState_AddModule(m, &readlinemodule);
     return m;
 
 error:

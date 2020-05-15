@@ -1423,6 +1423,5 @@ PyInit_zlib(void)
 
     PyModule_AddStringConstant(m, "__version__", "1.0");
 
-    PyState_AddModule(m, &zlibmodule);
     return m;
 }

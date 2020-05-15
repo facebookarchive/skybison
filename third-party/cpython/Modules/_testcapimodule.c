@@ -5673,6 +5673,5 @@ PyInit__testcapi(void)
     Py_DECREF(subclass_with_finalizer_bases);
     PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
 
-    PyState_AddModule(m, &_testcapimodule);
     return m;
 }

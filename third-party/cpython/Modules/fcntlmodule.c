@@ -657,6 +657,5 @@ PyInit_fcntl(void)
     if (all_ins(m) < 0)
         return NULL;
 
-    PyState_AddModule(m, &fcntlmodule);
     return m;
 }

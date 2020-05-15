@@ -2593,6 +2593,5 @@ PyInit_select(void)
 #endif
 
 #endif /* HAVE_KQUEUE */
-    PyState_AddModule(m, &selectmodule);
     return m;
 }

@@ -221,6 +221,5 @@ PyInit__multiprocessing(void)
     if (PyModule_AddObject(module, "flags", temp) < 0)
         return NULL;
 
-    PyState_AddModule(module, &multiprocessing_module);
     return module;
 }

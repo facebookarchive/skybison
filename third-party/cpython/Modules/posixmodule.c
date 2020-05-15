@@ -13757,7 +13757,6 @@ INITFUNC(void)
     }
     PyModule_AddObject(m, "_have_functions", list);
 
-    PyState_AddModule(m, &posixmodule);
     return m;
 }
 

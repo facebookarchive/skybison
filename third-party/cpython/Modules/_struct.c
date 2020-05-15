@@ -2389,7 +2389,5 @@ PyInit__struct(void)
     Py_INCREF(StructError);
     PyModule_AddObject(m, "error", StructError);
     _structmodulestate(m)->StructError = StructError;
-
-    PyState_AddModule(m, &_structmodule);
     return m;
 }

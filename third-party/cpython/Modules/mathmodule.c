@@ -2468,6 +2468,5 @@ PyInit_math(void)
     if ((mathstate(m)->dunder_trunc = PyUnicode_InternFromString("__trunc__")) == NULL)
         return NULL;
 
-    PyState_AddModule(m, &mathmodule);
     return m;
 }

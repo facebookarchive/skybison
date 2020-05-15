@@ -1652,7 +1652,6 @@ PyInit_binascii(void)
         goto error;
     }
 
-    PyState_AddModule(m, &binasciimodule);
     return m;
 
  error:

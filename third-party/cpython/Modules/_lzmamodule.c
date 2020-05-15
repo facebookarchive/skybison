@@ -1490,6 +1490,5 @@ PyInit__lzma(void)
         return NULL;
     state->Decompressor_type = Decompressor_type;
 
-    PyState_AddModule(m, &_lzmamodule);
     return m;
 }

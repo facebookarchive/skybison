@@ -1950,6 +1950,5 @@ PyInit_audioop(void)
     Py_INCREF(AudioopError);
     PyModule_AddObject(m, "error", AudioopError);
     _audioopstate(m)->AudioopError = AudioopError;
-    PyState_AddModule(m, &audioopmodule);
     return m;
 }

@@ -8023,7 +8023,5 @@ PyInit__socket(void)
     /* remove some flags on older version Windows during run-time */
     remove_unusable_flags(m);
 #endif
-
-    PyState_AddModule(m, &socketmodule);
     return m;
 }

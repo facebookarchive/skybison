@@ -1819,7 +1819,6 @@ PyInit_time(void)
     if (PyErr_Occurred()) {
         return NULL;
     }
-    PyState_AddModule(m, &timemodule);
     return m;
 }
 

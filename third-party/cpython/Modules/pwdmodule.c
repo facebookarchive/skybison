@@ -262,6 +262,5 @@ PyInit_pwd(void)
     Py_INCREF(state->StructPwdType);
     PyModule_AddObject(m, "struct_passwd", (PyObject *) state->StructPwdType);
 
-    PyState_AddModule(m, &pwdmodule);
     return m;
 }
