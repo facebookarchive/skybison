@@ -82,6 +82,8 @@ typedef struct _PyWeakReference PyWeakReference;
 typedef struct _structsequence PyStructSequence;
 typedef struct PyBaseExceptionObject PyBaseExceptionObject;
 
+struct PyMemberDef;
+
 #if defined(__GNUC__) && __GNUC__ < 10 && !defined(__clang__) &&               \
     !defined(__cplusplus)
 /* GCC has a bug where applying `&*` to a pointer to an incomplete type is
@@ -290,14 +292,6 @@ typedef struct PyModuleDef {
   inquiry m_clear;
   freefunc m_free;
 } PyModuleDef;
-
-typedef struct PyMemberDef {
-  const char* name;
-  int type;
-  Py_ssize_t offset;
-  int flags;
-  const char* doc;
-} PyMemberDef;
 
 typedef struct PyGetSetDef {
   const char* name;

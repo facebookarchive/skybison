@@ -5,6 +5,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "cpython-types.h"
+#include "structmember.h"
 
 #include "builtins-module.h"
 #include "capi-handles.h"

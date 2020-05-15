@@ -11,7 +11,7 @@ IncludeCategories:
   - Regex:           '^<.*'
     Priority:        2
   # third-party headers
-  - Regex:           'Python\.h|cpython-.*\.h|.*/.*'
+  - Regex:           'Python\.h|cpython-.*\.h|structmember\.h|.*/.*'
     Priority:        3
   # Pyro headers
   - Regex:           '.*'

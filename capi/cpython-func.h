@@ -325,7 +325,7 @@ PyAPI_FUNC(double) PyComplex_ImagAsDouble(PyObject*);
 PyAPI_FUNC(double) PyComplex_RealAsDouble(PyObject*);
 PyAPI_FUNC(PyObject*) PyDescr_NewClassMethod(PyTypeObject*, PyMethodDef*);
 PyAPI_FUNC(PyObject*) PyDescr_NewGetSet(PyTypeObject*, PyGetSetDef*);
-PyAPI_FUNC(PyObject*) PyDescr_NewMember(PyTypeObject*, PyMemberDef*);
+PyAPI_FUNC(PyObject*) PyDescr_NewMember(PyTypeObject*, struct PyMemberDef*);
 PyAPI_FUNC(PyObject*) PyDescr_NewMethod(PyTypeObject*, PyMethodDef*);
 PyAPI_FUNC(PyObject*) PyDictProxy_New(PyObject*);
 PyAPI_FUNC(void) PyDict_Clear(PyObject*);
