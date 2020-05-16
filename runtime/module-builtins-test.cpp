@@ -376,14 +376,14 @@ result = sys.__repr__()
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
 }
 
-TEST_F(ModuleBuiltinsTest, ModuleIsSealed) {
+TEST_F(ModuleBuiltinsTest, ModuleLayoutIsSealed) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->typeAt(LayoutId::kModule));
   EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
-  EXPECT_TRUE(type.isSealed());
+  EXPECT_TRUE(Layout::cast(type.instanceLayout()).isSealed());
 }
 
-TEST_F(ModuleBuiltinsTest, ModuleSubclassIsSealed) {
+TEST_F(ModuleBuiltinsTest, ModuleSubclassLayoutIsSealed) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
 class C(module): pass
@@ -391,7 +391,7 @@ class C(module): pass
                    .isError());
   Type type(&scope, mainModuleAt(runtime_, "C"));
   EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
-  EXPECT_TRUE(type.isSealed());
+  EXPECT_TRUE(Layout::cast(type.instanceLayout()).isSealed());
 }
 
 }  // namespace testing

@@ -32,12 +32,12 @@ static void insertDependencyForTypeLookupInMro(Thread* thread,
                                                const Object& dependent) {
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeAt(layout_id));
-  if (type.isSealed()) return;
+  if (!type.hasMutableDict()) return;
   Tuple mro(&scope, type.mro());
   Type mro_type(&scope, *type);
   for (word i = 0; i < mro.length(); i++) {
     mro_type = mro.at(i);
-    if (mro_type.isSealed()) break;
+    if (!mro_type.hasMutableDict()) return;
     ValueCell value_cell(&scope, typeValueCellAtPut(thread, mro_type, name));
     icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
     if (!value_cell.isPlaceholder()) {
@@ -291,9 +291,9 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
   word hash = strHash(thread, *attr_name);
   for (word i = 0; i < mro.length(); ++i) {
     mro_type = mro.at(i);
-    // If a mro_type is sealed, its parents must be sealed.  We can stop the MRO
-    // search here.
-    if (mro_type.isSealed()) break;
+    // If a mro_type's dict is not mutable, its parents must be not imutable.
+    // Therefore, we can stop the MRO search here.
+    if (!mro_type.hasMutableDict()) break;
     ValueCell value_cell(&scope,
                          typeValueCellAtWithHash(mro_type, attr_name, hash));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
@@ -320,7 +320,7 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
   Type mro_type(&scope, *type);
   for (word i = 0; i < mro.length(); ++i) {
     mro_type = mro.at(i);
-    if (mro_type.isSealed()) {
+    if (!mro_type.hasMutableDict()) {
       break;
     }
     if (typeValueCellAtWithHash(mro_type, attr_name, hash).isErrorNotFound() ||
@@ -351,9 +351,9 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   word hash = strHash(thread, *attribute_name);
   for (word i = 0; i < mro.length(); ++i) {
     mro_type = mro.at(i);
-    // If a type is sealed, its parents must be sealed.  We can stop the MRO
-    // search here.
-    if (mro_type.isSealed()) break;
+    // If a mro_type's dict is not mutable, its parents must be not immutable.
+    // Therefore, we can stop the MRO search here.
+    if (!mro_type.hasMutableDict()) break;
     result = typeValueCellAtWithHash(mro_type, attribute_name, hash);
     if (mro_type == updated_type) {
       // The current type in MRO is the searched type, and the searched

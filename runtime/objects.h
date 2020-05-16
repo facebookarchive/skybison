@@ -1296,8 +1296,9 @@ class RawType : public RawInstance {
 
   bool isBaseExceptionSubclass() const;
 
-  // Check if the attributes on the type are sealed.
-  bool isSealed() const;
+  // Check if the type dictionary is mutable. If the current type's dict is
+  // immutable, its parents' dicts are immutable too.
+  bool hasMutableDict() const;
 
   // Seal the attributes of the type. Sets the layout's overflowAttributes to
   // RawNoneType::object().
@@ -5043,8 +5044,9 @@ inline bool RawType::isBaseExceptionSubclass() const {
   return base >= LayoutId::kFirstException && base <= LayoutId::kLastException;
 }
 
-inline bool RawType::isSealed() const {
-  return RawLayout::cast(instanceLayout()).isSealed();
+inline bool RawType::hasMutableDict() const {
+  // TODO(T66738428): Include more types with mutable dictionaries.
+  return !isBuiltin();
 }
 
 inline void RawType::sealAttributes() const {

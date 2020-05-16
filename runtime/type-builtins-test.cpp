@@ -1426,14 +1426,14 @@ C.__setattr__ = lambda self, key: 5
                "unimplemented cache invalidation for type.__setattr__ update");
 }
 
-TEST_F(TypeBuiltinsTest, TypeIsSealed) {
+TEST_F(TypeBuiltinsTest, TypeLayoutIsSealed) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
-  EXPECT_TRUE(type.isSealed());
+  EXPECT_TRUE(Layout::cast(type.instanceLayout()).isSealed());
 }
 
-TEST_F(TypeBuiltinsTest, TypeSubclassIsSealed) {
+TEST_F(TypeBuiltinsTest, TypeSubclassLayoutIsSealed) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
 class Meta(type): pass
@@ -1441,7 +1441,7 @@ class Meta(type): pass
                    .isError());
   Type meta(&scope, mainModuleAt(runtime_, "Meta"));
   EXPECT_TRUE(meta.hasFlag(Type::Flag::kSealSubtypeLayouts));
-  EXPECT_TRUE(meta.isSealed());
+  EXPECT_TRUE(Layout::cast(meta.instanceLayout()).isSealed());
 }
 
 }  // namespace testing
