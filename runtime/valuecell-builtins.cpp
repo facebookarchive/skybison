@@ -5,7 +5,7 @@
 namespace py {
 
 static const BuiltinAttribute kCellAttributes[] = {
-    {ID(cell_contents), RawCell::kValueOffset, AttributeFlags::kHidden},
+    {ID(cell_contents), RawCell::kValueOffset},
 };
 
 static const BuiltinAttribute kValueCellAttributes[] = {
@@ -16,7 +16,7 @@ static const BuiltinAttribute kValueCellAttributes[] = {
 };
 
 void initializeValueCellTypes(Thread* thread) {
-  addBuiltinType(thread, ID(valuecell), LayoutId::kCell,
+  addBuiltinType(thread, ID(cell), LayoutId::kCell,
                  /*superclass_id=*/LayoutId::kObject, kCellAttributes);
 
   addBuiltinType(thread, ID(valuecell), LayoutId::kValueCell,

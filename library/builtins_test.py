@@ -6033,7 +6033,7 @@ class FunctionTests(unittest.TestCase):
 
         self.assertIsNone(foo.__closure__)
 
-    def test_dunder_closure_returns_tuple_with_valuecell_if_function_is_closure(self):
+    def test_dunder_closure_returns_tuple_with_cell_if_function_is_closure(self):
         def foo(x):
             def bar(n):
                 return x + n
@@ -6043,6 +6043,7 @@ class FunctionTests(unittest.TestCase):
         add_three = foo(3)
         self.assertIsInstance(add_three.__closure__, tuple)
         self.assertEqual(len(add_three.__closure__), 1)
+        self.assertEqual(type(add_three.__closure__[0]).__name__, "cell")
         self.assertEqual(add_three.__closure__[0].cell_contents, 3)
 
     def test_dunder_closure_is_read_only_attribute(self):
