@@ -422,6 +422,7 @@ class Runtime;
   V(_new_member_set_double)                                                    \
   V(_new_member_set_float)                                                     \
   V(_new_member_set_integral)                                                  \
+  V(_new_member_set_integral_unsigned)                                         \
   V(_new_member_set_pyobject)                                                  \
   V(_new_member_set_readonly)                                                  \
   V(_new_member_set_readonly_strings)                                          \

@@ -779,6 +779,10 @@ def _set_member_integral(addr, value, num_bytes):
     _builtin()
 
 
+def _set_member_integral_unsigned(addr, value, num_bytes):
+    _builtin()
+
+
 def _set_member_pyobject(addr, value):
     _builtin()
 

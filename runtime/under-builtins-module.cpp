@@ -3779,9 +3779,26 @@ RawObject FUNC(_builtins, _set_member_float)(Thread*, Frame* frame,
 RawObject FUNC(_builtins, _set_member_integral)(Thread*, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
-  auto addr = Int::cast(args.get(0)).asCPtr();
-  auto value = RawInt::cast(args.get(1)).asWord();
-  auto num_bytes = RawInt::cast(args.get(2)).asWord();
+  void* addr = Int::cast(args.get(0)).asCPtr();
+  OptInt<long long> optint = RawInt::cast(args.get(1)).asInt<long long>();
+  CHECK(optint.error == CastError::None, "Overflow casting to primitive type");
+  long long value = optint.value;
+  word num_bytes = RawInt::cast(args.get(2)).asWord();
+  static_assert(endian::native == endian::little, "expected little endian");
+  std::memcpy(reinterpret_cast<void*>(addr), &value, num_bytes);
+  return NoneType::object();
+}
+
+RawObject FUNC(_builtins, _set_member_integral_unsigned)(Thread*, Frame* frame,
+                                                         word nargs) {
+  Arguments args(frame, nargs);
+  void* addr = Int::cast(args.get(0)).asCPtr();
+  OptInt<unsigned long long> optint =
+      RawInt::cast(args.get(1)).asInt<unsigned long long>();
+  CHECK(optint.error == CastError::None, "Overflow casting to primitive type");
+  unsigned long long value = optint.value;
+  word num_bytes = RawInt::cast(args.get(2)).asWord();
+  static_assert(endian::native == endian::little, "expected little endian");
   std::memcpy(reinterpret_cast<void*>(addr), &value, num_bytes);
   return NoneType::object();
 }

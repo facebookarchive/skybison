@@ -1,9 +1,9 @@
 #include "Python.h"
 #include "gtest/gtest.h"
+#include "structmember.h"
 
 #include "capi-fixture.h"
 #include "capi-testing.h"
-#include "structmember.h"
 
 namespace py {
 namespace testing {
@@ -1913,9 +1913,10 @@ except RuntimeError as e:
   EXPECT_EQ(PyErr_GivenExceptionMatches(exc, PyExc_RuntimeError), 1);
 }
 
-static void createBarTypeWithMembers() {
+typedef void (*verifyfunc)(PyObject*);
+static verifyfunc createBarTypeWithMembers() {
   struct BarObject {
-    PyObject_HEAD int t_bool;
+    PyObject_HEAD char t_bool;
     char t_byte;
     unsigned char t_ubyte;
     short t_short;
@@ -1935,38 +1936,37 @@ static void createBarTypeWithMembers() {
     unsigned long long t_ulonglong;
   };
 
-  static PyMemberDef members[22];
-  members[0] = {"t_bool", T_BOOL, offsetof(BarObject, t_bool)};
-  members[1] = {"t_byte", T_BYTE, offsetof(BarObject, t_byte)};
-  members[2] = {"t_ubyte", T_UBYTE, offsetof(BarObject, t_ubyte)};
-  members[3] = {"t_short", T_SHORT, offsetof(BarObject, t_short)};
-  members[4] = {"t_ushort", T_USHORT, offsetof(BarObject, t_ushort)};
-  members[5] = {"t_int", T_INT, offsetof(BarObject, t_int)};
-  members[6] = {"t_uint", T_UINT, offsetof(BarObject, t_uint)};
-  members[7] = {"t_long", T_LONG, offsetof(BarObject, t_long)};
-  members[8] = {"t_ulong", T_ULONG, offsetof(BarObject, t_ulong)};
-  members[9] = {"t_pyssize", T_PYSSIZET, offsetof(BarObject, t_pyssizet)};
-  members[10] = {"t_float", T_FLOAT, offsetof(BarObject, t_float)};
-  members[11] = {"t_double", T_DOUBLE, offsetof(BarObject, t_double)};
-  members[12] = {"t_string", T_STRING, offsetof(BarObject, t_string)};
-  members[13] = {"t_char", T_CHAR, offsetof(BarObject, t_char)};
-  members[14] = {"t_object", T_OBJECT, offsetof(BarObject, t_object)};
-  members[15] = {"t_object_null", T_OBJECT, offsetof(BarObject, t_object_null)};
-  members[16] = {"t_objectex", T_OBJECT_EX, offsetof(BarObject, t_object)};
-  members[17] = {"t_objectex_null", T_OBJECT_EX,
-                 offsetof(BarObject, t_object_null)};
-  members[18] = {"t_longlong", T_LONGLONG, offsetof(BarObject, t_longlong)};
-  members[19] = {"t_ulonglong", T_ULONGLONG, offsetof(BarObject, t_ulonglong)};
-  members[20] = {"t_int_readonly", T_INT, offsetof(BarObject, t_int), READONLY};
-  members[21] = {nullptr};
-
+  static const PyMemberDef members[] = {
+      {"t_bool", T_BOOL, offsetof(BarObject, t_bool)},
+      {"t_byte", T_BYTE, offsetof(BarObject, t_byte)},
+      {"t_ubyte", T_UBYTE, offsetof(BarObject, t_ubyte)},
+      {"t_short", T_SHORT, offsetof(BarObject, t_short)},
+      {"t_ushort", T_USHORT, offsetof(BarObject, t_ushort)},
+      {"t_int", T_INT, offsetof(BarObject, t_int)},
+      {"t_uint", T_UINT, offsetof(BarObject, t_uint)},
+      {"t_long", T_LONG, offsetof(BarObject, t_long)},
+      {"t_ulong", T_ULONG, offsetof(BarObject, t_ulong)},
+      {"t_pyssize", T_PYSSIZET, offsetof(BarObject, t_pyssizet)},
+      {"t_float", T_FLOAT, offsetof(BarObject, t_float)},
+      {"t_double", T_DOUBLE, offsetof(BarObject, t_double)},
+      {"t_string", T_STRING, offsetof(BarObject, t_string)},
+      {"t_char", T_CHAR, offsetof(BarObject, t_char)},
+      {"t_object", T_OBJECT, offsetof(BarObject, t_object)},
+      {"t_object_null", T_OBJECT, offsetof(BarObject, t_object_null)},
+      {"t_objectex", T_OBJECT_EX, offsetof(BarObject, t_object)},
+      {"t_objectex_null", T_OBJECT_EX, offsetof(BarObject, t_object_null)},
+      {"t_longlong", T_LONGLONG, offsetof(BarObject, t_longlong)},
+      {"t_ulonglong", T_ULONGLONG, offsetof(BarObject, t_ulonglong)},
+      {"t_int_readonly", T_INT, offsetof(BarObject, t_int), READONLY},
+      {nullptr},
+  };
   newfunc new_func = [](PyTypeObject* type, PyObject*, PyObject*) {
     void* slot = PyType_GetSlot(type, Py_tp_alloc);
     return reinterpret_cast<allocfunc>(slot)(type, 0);
   };
   freefunc dealloc_func = [](void* self_ptr) {
-    PyObject* self = reinterpret_cast<PyObject*>(self_ptr);
-    BarObject* self_bar = reinterpret_cast<BarObject*>(self);
+    PyObject* self = static_cast<PyObject*>(self_ptr);
+    BarObject* self_bar = static_cast<BarObject*>(self_ptr);
     // Guaranteed to be null or initialized by something
     Py_XDECREF(self_bar->t_object);
     PyTypeObject* type = Py_TYPE(self);
@@ -1978,58 +1978,78 @@ static void createBarTypeWithMembers() {
     Py_DECREF(type);
   };
   initproc init_func = [](PyObject* self, PyObject*, PyObject*) {
-    reinterpret_cast<BarObject*>(self)->t_bool = 1;
-    reinterpret_cast<BarObject*>(self)->t_byte = -12;
-    reinterpret_cast<BarObject*>(self)->t_ubyte = -1;
-    reinterpret_cast<BarObject*>(self)->t_short = -12;
-    reinterpret_cast<BarObject*>(self)->t_ushort = -1;
-    reinterpret_cast<BarObject*>(self)->t_int = -1234;
-    reinterpret_cast<BarObject*>(self)->t_uint = -1;
-    reinterpret_cast<BarObject*>(self)->t_long = -1234;
-    reinterpret_cast<BarObject*>(self)->t_ulong = -1;
-    reinterpret_cast<BarObject*>(self)->t_pyssizet = 1234;
-    reinterpret_cast<BarObject*>(self)->t_float = 1.0;
-    reinterpret_cast<BarObject*>(self)->t_double = 1.0;
-    reinterpret_cast<BarObject*>(self)->t_string = "foo";
-    reinterpret_cast<BarObject*>(self)->t_char = 'a';
-    reinterpret_cast<BarObject*>(self)->t_object = PyList_New(0);
-    reinterpret_cast<BarObject*>(self)->t_object_null = nullptr;
-    reinterpret_cast<BarObject*>(self)->t_longlong =
-        std::numeric_limits<long long>::max();
-    reinterpret_cast<BarObject*>(self)->t_ulonglong = -1;
+    BarObject* bar_obj = reinterpret_cast<BarObject*>(self);
+    bar_obj->t_bool = 1;
+    bar_obj->t_byte = -12;
+    bar_obj->t_ubyte = std::numeric_limits<unsigned char>::max();
+    bar_obj->t_short = -12;
+    bar_obj->t_ushort = std::numeric_limits<unsigned short>::max();
+    bar_obj->t_int = -1234;
+    bar_obj->t_uint = std::numeric_limits<unsigned int>::max();
+    bar_obj->t_long = -1234;
+    bar_obj->t_ulong = std::numeric_limits<unsigned long>::max();
+    bar_obj->t_pyssizet = 1234;
+    bar_obj->t_float = 1.0;
+    bar_obj->t_double = 1.0;
+    bar_obj->t_string = "foo";
+    bar_obj->t_char = 'a';
+    bar_obj->t_object = PyList_New(0);
+    bar_obj->t_object_null = nullptr;
+    bar_obj->t_longlong = std::numeric_limits<long long>::max();
+    bar_obj->t_ulonglong = std::numeric_limits<unsigned long long>::max();
     return 0;
   };
-  static PyType_Slot slots[7];
-  // TODO(T40540469): Most of functions should be inherited from object.
-  // However, inheritance is not supported yet. For now, just set them manually.
-  slots[0] = {Py_tp_new, reinterpret_cast<void*>(new_func)};
-  slots[1] = {Py_tp_init, reinterpret_cast<void*>(init_func)};
-  slots[2] = {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
-  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
-  slots[4] = {Py_tp_members, reinterpret_cast<void*>(members)};
-  slots[5] = {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)};
-  slots[6] = {0, nullptr};
-  static PyType_Spec spec;
-  spec = {
+  static const PyType_Slot slots[] = {
+      {Py_tp_new, reinterpret_cast<void*>(new_func)},
+      {Py_tp_init, reinterpret_cast<void*>(init_func)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {Py_tp_members, const_cast<PyMemberDef*>(members)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec = {
       "__main__.Bar",
       sizeof(BarObject),
       0,
       Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-      slots,
+      const_cast<PyType_Slot*>(slots),
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyType_CheckExact(type), 1);
-  ASSERT_EQ(moduleSet("__main__", "Bar", type), 0);
+  moduleSet("__main__", "Bar", type);
+
+  // Verifies the original values
+  return [](PyObject* self) {
+    BarObject* bar_obj = reinterpret_cast<BarObject*>(self);
+    ASSERT_EQ(bar_obj->t_bool, 1);
+    ASSERT_EQ(bar_obj->t_byte, -12);
+    ASSERT_EQ(bar_obj->t_ubyte, std::numeric_limits<unsigned char>::max());
+    ASSERT_EQ(bar_obj->t_short, -12);
+    ASSERT_EQ(bar_obj->t_ushort, std::numeric_limits<unsigned short>::max());
+    ASSERT_EQ(bar_obj->t_int, -1234);
+    ASSERT_EQ(bar_obj->t_uint, std::numeric_limits<unsigned int>::max());
+    ASSERT_EQ(bar_obj->t_long, -1234);
+    ASSERT_EQ(bar_obj->t_ulong, std::numeric_limits<unsigned long>::max());
+    ASSERT_EQ(bar_obj->t_pyssizet, 1234);
+    ASSERT_EQ(bar_obj->t_float, 1.0);
+    ASSERT_EQ(bar_obj->t_double, 1.0);
+    ASSERT_EQ(bar_obj->t_string, "foo");
+    ASSERT_EQ(bar_obj->t_char, 'a');
+    ASSERT_TRUE(PyList_CheckExact(bar_obj->t_object));
+    ASSERT_EQ(PyList_Size(bar_obj->t_object), 0);
+    ASSERT_EQ(bar_obj->t_object_null, nullptr);
+    ASSERT_EQ(bar_obj->t_longlong, std::numeric_limits<long long>::max());
+    ASSERT_EQ(bar_obj->t_ulonglong,
+              std::numeric_limits<unsigned long long>::max());
+  };
 }
 
 TEST_F(TypeExtensionApiTest, MemberBool) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_bool
 b.t_bool = False
 r2 = b.t_bool
+b.t_bool = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2038,15 +2058,18 @@ r2 = b.t_bool
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyBool_Check(r2), 1);
   EXPECT_EQ(r2, Py_False);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberByte) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_byte
 b.t_byte = 21
 r2 = b.t_byte
+b.t_byte = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2055,15 +2078,18 @@ r2 = b.t_byte
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberUByte) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_ubyte
 b.t_ubyte = 21
 r2 = b.t_ubyte
+b.t_ubyte = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2072,15 +2098,18 @@ r2 = b.t_ubyte
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberShort) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_short
 b.t_short = 21
 r2 = b.t_short
+b.t_short = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2089,15 +2118,18 @@ r2 = b.t_short
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberUShort) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_ushort
 b.t_ushort = 21
 r2 = b.t_ushort
+b.t_ushort = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2106,15 +2138,18 @@ r2 = b.t_ushort
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberInt) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_int
 b.t_int = 4321
 r2 = b.t_int
+b.t_int = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2123,15 +2158,18 @@ r2 = b.t_int
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberUInt) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_uint
 b.t_uint = 4321
 r2 = b.t_uint
+b.t_uint = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2141,15 +2179,18 @@ r2 = b.t_uint
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321UL);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberLong) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_long
 b.t_long = 4321
 r2 = b.t_long
+b.t_long = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2158,15 +2199,18 @@ r2 = b.t_long
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberULong) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_ulong
 b.t_ulong = 4321
 r2 = b.t_ulong
+b.t_ulong = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2176,15 +2220,18 @@ r2 = b.t_ulong
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321UL);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberLongLong) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_longlong
 b.t_longlong = -4321
 r2 = b.t_longlong
+b.t_longlong = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2193,15 +2240,18 @@ r2 = b.t_longlong
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, -4321));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberULongLong) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_ulonglong
 b.t_ulonglong = 4321
 r2 = b.t_ulonglong
+b.t_ulonglong = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2211,15 +2261,18 @@ r2 = b.t_ulonglong
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(r2), 4321UL);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberFloat) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_float
 b.t_float = 1.5
 r2 = b.t_float
+b.t_float = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2228,15 +2281,18 @@ r2 = b.t_float
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyFloat_Check(r2), 1);
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberDouble) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_double
 b.t_double = 1.5
 r2 = b.t_double
+b.t_double = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2245,15 +2301,18 @@ r2 = b.t_double
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyFloat_Check(r2), 1);
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberChar) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_char
 b.t_char = 'b'
 r2 = b.t_char
+b.t_char = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2262,9 +2321,12 @@ r2 = b.t_char
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyUnicode_Check(r2), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r2, "b"));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberString) {
+  // T_STRING is read-only
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2283,15 +2345,20 @@ TEST_F(TypeExtensionApiTest, MemberStringWithNullReturnsNone) {
     char* name;
   };
   // clang-format on
-  static PyMemberDef members[2];
-  members[0] = {"name", T_STRING, offsetof(BarObject, name), 0, nullptr};
-  members[1] = {nullptr};
-  static PyType_Slot slots[2];
-  slots[0] = {Py_tp_members, reinterpret_cast<void*>(members)};
-  slots[1] = {0, nullptr};
-  static PyType_Spec spec;
-  spec = {
-      "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  static const PyMemberDef members[] = {
+      {"name", T_STRING, offsetof(BarObject, name), 0, nullptr},
+      {nullptr},
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_members, const_cast<PyMemberDef*>(members)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec = {
+      "__main__.Bar",
+      sizeof(BarObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      const_cast<PyType_Slot*>(slots),
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   ASSERT_TRUE(PyType_Check(type));
@@ -2305,10 +2372,10 @@ none = b.name
             0);
   PyObjectPtr none(mainModuleGet("none"));
   ASSERT_EQ(none, Py_None);
-}
+}  // namespace testing
 
 TEST_F(TypeExtensionApiTest, MemberStringRaisesTypeError) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 raised = False
@@ -2325,31 +2392,32 @@ r1 = b.t_string
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberObject) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
-b.t_object.append(9)
 r1 = b.t_object
 b.t_object = (1, "a", 2, "b", 3, "c")
 r2 = b.t_object
+b.t_object = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyList_Check(r1), 1);
-  EXPECT_EQ(PyList_Size(r1), 1);
-  PyObject* item = PyList_GetItem(r1, 0);
-  ASSERT_EQ(PyLong_Check(item), 1);
-  EXPECT_TRUE(isLongEqualsLong(item, 9));
+  EXPECT_EQ(PyList_Size(r1), 0);
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   EXPECT_EQ(PyTuple_Size(r2), 6);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectWithNull) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_object_null
@@ -2357,31 +2425,32 @@ r1 = b.t_object_null
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
   EXPECT_EQ(r1, Py_None);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectEx) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
-b.t_objectex.append(9)
 r1 = b.t_objectex
 b.t_objectex = tuple()
 r2 = b.t_objectex
+b.t_objectex = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
   ASSERT_EQ(PyList_Check(r1), 1);
-  EXPECT_EQ(PyList_Size(r1), 1);
-  PyObject* item = PyList_GetItem(r1, 0);
-  ASSERT_EQ(PyLong_Check(item), 1);
-  EXPECT_TRUE(isLongEqualsLong(item, 9));
+  EXPECT_EQ(PyList_Size(r1), 0);
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   EXPECT_EQ(PyTuple_Size(r2), 0);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectExWithNullRaisesAttributeError) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 raised = False
@@ -2394,15 +2463,18 @@ except AttributeError:
             0);
   PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberPySsizeT) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_pyssize
 b.t_pyssize = 4321
 r2 = b.t_pyssize
+b.t_pyssize = r1
 )"),
             0);
   PyObjectPtr r1(mainModuleGet("r1"));
@@ -2411,10 +2483,12 @@ r2 = b.t_pyssize
   PyObjectPtr r2(mainModuleGet("r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsSsize_t(r2), 4321);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberReadOnlyRaisesAttributeError) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_int_readonly
@@ -2431,10 +2505,12 @@ except AttributeError:
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
   PyObjectPtr raised(mainModuleGet("raised"));
   EXPECT_EQ(raised, Py_True);
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberIntSetIncorrectTypeRaisesTypeError) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 raised = False
@@ -2451,10 +2527,12 @@ r1 = b.t_int
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 TEST_F(TypeExtensionApiTest, MemberCharIncorrectSizeRaisesTypeError) {
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  auto verify_func = createBarTypeWithMembers();
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 raised = False
@@ -2471,6 +2549,8 @@ r1 = b.t_char
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
+  PyObjectPtr b(mainModuleGet("b"));
+  ASSERT_NO_FATAL_FAILURE(verify_func(b));
 }
 
 // Pyro raises a SystemError but CPython returns a new type.
@@ -2483,15 +2563,20 @@ TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
     int value;
   };
   // clang-format on
-  static PyMemberDef members[2];
-  members[0] = {"value", unknown_type, offsetof(BarObject, value), 0, nullptr};
-  members[1] = {nullptr};
-  static PyType_Slot slots[2];
-  slots[0] = {Py_tp_members, reinterpret_cast<void*>(members)};
-  slots[1] = {0, nullptr};
-  static PyType_Spec spec;
-  spec = {
-      "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  static const PyMemberDef members[] = {
+      {"value", unknown_type, offsetof(BarObject, value), 0, nullptr},
+      {nullptr},
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_members, const_cast<PyMemberDef*>(members)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec = {
+      "__main__.Bar",
+      sizeof(BarObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      const_cast<PyType_Slot*>(slots),
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   ASSERT_EQ(type, nullptr);

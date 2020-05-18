@@ -194,6 +194,7 @@ from _builtins import (
     _set_member_double,
     _set_member_float,
     _set_member_integral,
+    _set_member_integral_unsigned,
     _set_member_pyobject,
     _slice_check,
     _slice_guard,
@@ -1319,7 +1320,7 @@ def _mapping_repr(left, mapping, right) -> str:
 
 
 def _new_member_get_bool(offset):
-    return lambda instance: bool(_get_member_int(_pyobject_offset(instance, offset)))
+    return lambda instance: bool(_get_member_byte(_pyobject_offset(instance, offset)))
 
 
 def _new_member_get_byte(offset):
@@ -1384,7 +1385,7 @@ def _new_member_set_bool(offset):
     def setter(instance, value):
         if not _bool_check(value):
             raise TypeError("attribute value type must be bool")
-        _set_member_integral(_pyobject_offset(instance, offset), int(value), 4)
+        _set_member_integral(_pyobject_offset(instance, offset), int(value), 1)
 
     return setter
 
@@ -1424,6 +1425,19 @@ def _new_member_set_integral(offset, num_bytes, min_value, max_value, primitive_
             raise TypeError("attribute value type must be int")
         _set_member_integral(_pyobject_offset(instance, offset), value, num_bytes)
         if value < min_value or value > max_value:
+            _warn(f"Truncation of value to {primitive_type}")
+
+    return setter
+
+
+def _new_member_set_integral_unsigned(offset, num_bytes, max_value, primitive_type):
+    def setter(instance, value):
+        if not _int_check(value):
+            raise TypeError("attribute value type must be int")
+        _set_member_integral_unsigned(
+            _pyobject_offset(instance, offset), value, num_bytes
+        )
+        if value < 0 or value > max_value:
             _warn(f"Truncation of value to {primitive_type}")
 
     return setter
