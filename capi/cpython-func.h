@@ -216,7 +216,7 @@ PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
 PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func(void);
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
-PyAPI_FUNC(Py_ssize_t) Py_SIZE_Func(PyVarObject*);
+PyAPI_FUNC(Py_ssize_t*) Py_SIZE_Func(PyVarObject*);
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
@@ -1535,7 +1535,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 #define PyObject_NewVar(type, typeobj, n)                                      \
   ((type*)_PyObject_NewVar((PyTypeObject*)typeobj, n))
 #define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
-#define Py_SIZE(obj) Py_SIZE_Func((PyVarObject*)(obj))
+#define Py_SIZE(obj) (*Py_SIZE_Func((PyVarObject*)(obj)))
 #define Py_TYPE(obj) Py_TYPE_Func((PyObject*)(obj))
 #define PyExceptionClass_Check(obj)                                            \
   PyExceptionClass_Check_Func((PyObject*)(obj))

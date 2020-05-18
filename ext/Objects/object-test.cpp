@@ -375,6 +375,26 @@ obj = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(ObjectExtensionApiTest, PySizeReturnsLvalue) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", sizeof(PyObject) + 10, 5, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+
+  PyObjectPtr result(
+      PyType_GenericAlloc(reinterpret_cast<PyTypeObject*>(type.get()), 5));
+  EXPECT_EQ(Py_SIZE(result.get()), 5);
+
+  Py_SIZE(result.get()) = 4;
+  EXPECT_EQ(Py_SIZE(result.get()), 4);
+}
+
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
   PyObjectPtr key(PyUnicode_FromString("a_key"));
   PyObjectPtr value(PyLong_FromLong(5));

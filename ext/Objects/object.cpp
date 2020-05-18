@@ -70,10 +70,10 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
   if (obj->ob_refcnt == 0) _Py_Dealloc(obj);
 }
 
-PY_EXPORT Py_ssize_t Py_SIZE_Func(PyVarObject* obj) {
+PY_EXPORT Py_ssize_t* Py_SIZE_Func(PyVarObject* obj) {
   DCHECK(!ApiHandle::isManaged(reinterpret_cast<PyObject*>(obj)),
          "Py_SIZE should only be necessary for user-defined extension types");
-  return obj->ob_size;
+  return &(obj->ob_size);
 }
 
 PY_EXPORT int PyCallable_Check(PyObject* obj) {
