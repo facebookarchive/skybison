@@ -192,15 +192,15 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
                                         Object* location_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*module));
+  Type module_type(&scope, runtime->typeOf(*module));
   // TODO(T66579052): Skip type lookups for `module` type when `name` doesn't
   // start with "__".
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
-  if (!type_attr.isError()) {
-    Type type_attr_type(&scope, runtime->typeOf(*type_attr));
-    if (typeIsDataDescriptor(thread, type_attr_type)) {
+  Object attr(&scope, typeLookupInMro(thread, module_type, name));
+  if (!attr.isError()) {
+    Type attr_type(&scope, runtime->typeOf(*attr));
+    if (typeIsDataDescriptor(thread, attr_type)) {
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            type_attr, module, type);
+                                            attr, module, module_type);
     }
   }
 
@@ -214,13 +214,13 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
     return ValueCell::cast(*result).value();
   }
 
-  if (!type_attr.isError()) {
-    Type type_attr_type(&scope, thread->runtime()->typeOf(*type_attr));
-    if (!typeIsNonDataDescriptor(thread, type_attr_type)) {
-      return *type_attr;
+  if (!attr.isError()) {
+    Type attr_type(&scope, runtime->typeOf(*attr));
+    if (typeIsNonDataDescriptor(thread, attr_type)) {
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            attr, module, module_type);
     }
-    return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                          type_attr, module, type);
+    return *attr;
   }
 
   Object dunder_getattr(&scope, moduleAtById(thread, module, ID(__getattr__)));
