@@ -1025,32 +1025,6 @@ name = ty.__name__
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
 }
 
-TEST_F(TypeBuiltinsTest, TypeNewAddsToBaseSubclasses) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-class A: pass
-class B: pass
-class C(A, B): pass
-class D(A): pass
-)")
-                   .isError());
-  Type a(&scope, mainModuleAt(runtime_, "A"));
-  Type b(&scope, mainModuleAt(runtime_, "B"));
-  Type c(&scope, mainModuleAt(runtime_, "C"));
-  Type d(&scope, mainModuleAt(runtime_, "D"));
-
-  ASSERT_TRUE(a.subclasses().isDict());
-  Dict a_subclasses(&scope, a.subclasses());
-  EXPECT_EQ(a_subclasses.numItems(), 2);
-
-  ASSERT_TRUE(b.subclasses().isDict());
-  Dict b_subclasses(&scope, b.subclasses());
-  EXPECT_EQ(b_subclasses.numItems(), 1);
-
-  EXPECT_EQ(c.subclasses(), NoneType::object());
-  EXPECT_EQ(d.subclasses(), NoneType::object());
-}
-
 TEST_F(TypeBuiltinsTest, TypeCallWithInitReturningNonNoneRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class C:

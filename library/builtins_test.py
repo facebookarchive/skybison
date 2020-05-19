@@ -10,6 +10,7 @@ from test_support import pyro_only
 
 try:
     from builtins import _number_check, instance_proxy
+    from _builtins import _gc
 except ImportError:
     pass
 
@@ -15369,6 +15370,16 @@ class TypeTests(unittest.TestCase):
         X = type.__new__(type, "X", (object,), {})
         self.assertIsInstance(X, type)
 
+    def test_dunder_new_adds_to_base_dunder_subclasses(self):
+        A = type.__new__(type, "A", (object,), {})
+        B = type.__new__(type, "B", (object,), {})
+        C = type.__new__(type, "C", (A, B), {})
+        D = type.__new__(type, "D", (A,), {})
+        self.assertEqual(A.__subclasses__(), [C, D])
+        self.assertEqual(B.__subclasses__(), [C])
+        self.assertEqual(C.__subclasses__(), [])
+        self.assertEqual(D.__subclasses__(), [])
+
     def test_dunder_subclasses_with_leaf_type_returns_empty_list(self):
         class C:
             pass
@@ -15389,6 +15400,46 @@ class TypeTests(unittest.TestCase):
             pass
 
         self.assertIsNot(C.__subclasses__(), C.__subclasses__())
+
+    @pyro_only
+    def test_dunder_subclasses_does_not_return_dead_types(self):
+        class C:
+            pass
+
+        class D(C):
+            pass
+
+        D = None  # noqa: F841
+        _gc()
+        self.assertEqual(type.__subclasses__(C), [])
+
+    @pyro_only
+    def test_dunder_subclasses_with_multiple_subclasses_returns_list(self):
+        class B:
+            pass
+
+        class S0(B):
+            pass
+
+        class S1(B):
+            pass
+
+        class S2(B):
+            pass
+
+        class S3(B):
+            pass
+
+        class S4(B):
+            pass
+
+        S1 = None  # noqa: F841
+        S3 = None  # noqa: F841
+        _gc()
+        self.assertEqual(len(type.__subclasses__(B)), 3)
+        S0 = None  # noqa: F841
+        _gc()
+        self.assertEqual(type.__subclasses__(B), [S2, S4])
 
     def test_mro_with_custom_method_propagates_exception(self):
         class Meta(type):

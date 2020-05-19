@@ -755,17 +755,12 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (base.subclasses().isNoneType()) {
-    base.setSubclasses(runtime->newDict());
+    base.setSubclasses(runtime->newList());
   }
-  DCHECK(base.subclasses().isDict(), "direct subclasses must be dict");
-  Dict subclasses(&scope, base.subclasses());
-  LayoutId type_id = Layout::cast(type.instanceLayout()).id();
-  Object key(&scope, SmallInt::fromWord(static_cast<word>(type_id)));
-  word hash = SmallInt::cast(*key).hash();
+  List subclasses(&scope, base.subclasses());
   Object none(&scope, NoneType::object());
   Object value(&scope, runtime->newWeakRef(thread, type, none));
-  UNUSED Object result(&scope, dictAtPut(thread, subclasses, key, hash, value));
-  DCHECK(!result.isError(), "result must not be an error");
+  runtime->listAdd(thread, subclasses, value);
 }
 
 void typeAddDocstring(Thread* thread, const Type& type) {
@@ -906,12 +901,13 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   LayoutId fixed_attr_base =
       Layout::cast(fixed_attr_base_type.instanceLayout()).id();
 
-  // Merge flags.
+  // Analyze bases: Merge flags; add to subclasses list.
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     flags |= base_type.flags();
+    addSubclass(thread, base_type, type);
   }
   flags &= ~Type::Flag::kIsAbstract;
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
@@ -1020,12 +1016,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // Initialize instance layout.
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
-
-  // Add this type as a direct subclass of each of its bases.
-  for (word i = 0; i < bases.length(); i++) {
-    base_type = bases.at(i);
-    addSubclass(thread, base_type, type);
-  }
 
   if (should_add_dunder_dict) {
     flags |= Type::Flag::kHasDunderDict;
@@ -1299,18 +1289,35 @@ RawObject METH(type, __subclasses__)(Thread* thread, Frame* frame, word nargs) {
   if (subclasses_obj.isNoneType()) {
     return runtime->newList();
   }
-  Dict subclasses(&scope, *subclasses_obj);
-  DictValueIterator iter(&scope,
-                         runtime->newDictValueIterator(thread, subclasses));
-  List result(&scope, runtime->newList());
-  Object value(&scope, Unbound::object());
-  while (!(value = dictValueIteratorNext(thread, iter)).isErrorNoMoreItems()) {
-    DCHECK(value.isWeakRef(), "__subclasses__ element is not a WeakRef");
-    WeakRef ref(&scope, *value);
-    value = ref.referent();
-    if (!value.isNoneType()) {
-      runtime->listAdd(thread, result, value);
+
+  // Check list for `None` and compact it.
+  List subclasses(&scope, *subclasses_obj);
+  word num_items = subclasses.numItems();
+  Object ref(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  word compact_shift = 0;
+  for (word i = 0; i < num_items; i++) {
+    ref = subclasses.at(i);
+    value = WeakRef::cast(*ref).referent();
+    if (value.isNoneType()) {
+      compact_shift++;
+      continue;
     }
+    if (compact_shift > 0) {
+      subclasses.atPut(i - compact_shift, *ref);
+    }
+  }
+  if (compact_shift > 0) {
+    num_items -= compact_shift;
+    subclasses.setNumItems(num_items);
+  }
+
+  List result(&scope, runtime->newList());
+  runtime->listEnsureCapacity(thread, result, num_items);
+  for (word i = 0; i < num_items; i++) {
+    ref = subclasses.at(i);
+    value = WeakRef::cast(*ref).referent();
+    runtime->listAdd(thread, result, value);
   }
   return *result;
 }
