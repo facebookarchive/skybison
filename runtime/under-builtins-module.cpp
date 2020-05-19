@@ -515,6 +515,65 @@ RawObject FUNC(_builtins, _bytearray_ljust)(Thread* thread, Frame* frame,
   return *result;
 }
 
+RawObject FUNC(_builtins, _bytearray_rjust)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+  }
+
+  word width;
+  Object width_obj(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*width_obj)) {
+    width = intUnderlying(args.get(1)).asWordSaturated();
+    if (!SmallInt::isValid(width)) {
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "Python int too large to convert to C ssize_t");
+    }
+  } else {
+    return Unbound::object();
+  }
+
+  byte fill;
+  Object fillbyte_obj(&scope, args.get(2));
+  if (runtime->isInstanceOfBytes(*fillbyte_obj)) {
+    Bytes fillbyte(&scope, bytesUnderlying(*fillbyte_obj));
+    if (fillbyte.length() != 1) {
+      return Unbound::object();
+    }
+    fill = fillbyte.byteAt(0);
+  } else if (runtime->isInstanceOfBytearray(*fillbyte_obj)) {
+    Bytearray fillbyte(&scope, *fillbyte_obj);
+    if (fillbyte.numItems() != 1) {
+      return Unbound::object();
+    }
+    fill = fillbyte.byteAt(0);
+  } else {
+    return Unbound::object();
+  }
+
+  Bytearray self(&scope, *self_obj);
+  word self_length = self.numItems();
+  word result_length = Utils::maximum(width, self_length);
+  word pad_length = result_length - self_length;
+  MutableBytes buffer(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  for (word i = 0; i < pad_length; i++) {
+    buffer.byteAtPut(i, fill);
+  }
+  buffer.replaceFromWith(pad_length, DataArray::cast(self.items()),
+                         self_length);
+
+  Bytearray result(&scope, runtime->newBytearray());
+  result.setItems(*buffer);
+  result.setNumItems(result_length);
+  return *result;
+}
+
 RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Frame* frame,
                                               word nargs) {
   HandleScope scope(thread);

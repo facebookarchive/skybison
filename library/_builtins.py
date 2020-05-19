@@ -88,6 +88,10 @@ def _bytearray_ljust(self, width, fillbyte):
     _builtin()
 
 
+def _bytearray_rjust(self, width, fillbyte):
+    _builtin()
+
+
 def _bytearray_setitem(self, key, value):
     _builtin()
 

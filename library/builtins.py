@@ -33,6 +33,7 @@ from _builtins import (
     _bytearray_join,
     _bytearray_len,
     _bytearray_ljust,
+    _bytearray_rjust,
     _bytearray_setitem,
     _bytearray_setslice,
     _bytes_check,
@@ -2027,8 +2028,13 @@ class bytearray(bootstrap=True):
             raise ValueError("subsection not found")
         return result
 
-    def rjust(self, width, fillchar=_Unbound):
-        _unimplemented()
+    def rjust(self, width, fillchar=b" "):
+        result = _bytearray_rjust(self, width, fillchar)
+        if result is not _Unbound:
+            return result
+        width = _index(width)
+        _byte_guard(fillchar)
+        return _bytearray_rjust(self, width, fillchar)
 
     def rpartition(self, sep):
         _unimplemented()

@@ -1356,6 +1356,92 @@ class ByteArrayTests(unittest.TestCase):
             haystack.rindex(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
 
+    def test_rjust_without_growth_returns_copy(self):
+        foo = bytearray(b"foo")
+        self.assertEqual(foo.rjust(-1), foo)
+        self.assertEqual(foo.rjust(0), foo)
+        self.assertEqual(foo.rjust(1), foo)
+        self.assertEqual(foo.rjust(2), foo)
+        self.assertEqual(foo.rjust(3), foo)
+
+        self.assertIsNot(foo.rjust(-1), foo)
+        self.assertIsNot(foo.rjust(0), foo)
+        self.assertIsNot(foo.rjust(1), foo)
+        self.assertIsNot(foo.rjust(2), foo)
+        self.assertIsNot(foo.rjust(3), foo)
+
+    def test_rjust_with_custom_fillchar_returns_bytearray(self):
+        orig = bytearray(b"ba")
+        filled = bytearray(b"ba").rjust(7, b"@")
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"@@@@@ba")
+        self.assertEqual(orig, b"ba")
+
+    def test_rjust_pads_beginning_of_array(self):
+        self.assertEqual(bytearray(b"abc").rjust(4), b" abc")
+        self.assertEqual(bytearray(b"abc").rjust(7), b"    abc")
+
+    def test_rjust_with_bytearray_fillchar_returns_bytearray(self):
+        orig = bytearray(b"ba")
+        fillchar = bytearray(b"@")
+        filled = bytearray(b"ba").rjust(7, fillchar)
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"@@@@@ba")
+        self.assertEqual(orig, b"ba")
+
+    def test_rjust_with_bytes_subclass_fillchar_returns_bytearray(self):
+        class C(bytes):
+            # access to character is done in native, so this is not called
+            def __getitem__(self, key):
+                return 0
+
+        orig = bytearray(b"ba")
+        fillchar = C(b"@")
+        filled = bytearray(b"ba").rjust(7, fillchar)
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"@@@@@ba")
+        self.assertEqual(orig, b"ba")
+
+    def test_rjust_with_bytearray_subclass_fillchar_returns_bytearray(self):
+        class C(bytearray):
+            # access to character is done in native, so this is not called
+            def __getitem__(self, key):
+                return 0
+
+        orig = bytearray(b"ba")
+        fillchar = C(b"@")
+        filled = bytearray(b"ba").rjust(7, fillchar)
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"@@@@@ba")
+        self.assertEqual(orig, b"ba")
+
+    def test_rjust_with_dunder_index_returns_bytearray(self):
+        class C:
+            def __index__(self):
+                return 5
+
+        orig = bytearray(b"ba")
+        filled = bytearray(b"ba").rjust(C(), b"@")
+        self.assertIsInstance(filled, bytearray)
+        self.assertEqual(filled, b"@@@ba")
+        self.assertEqual(orig, b"ba")
+
+    def test_rjust_with_wrong_type_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().rjust(2, ord(" "))
+        self.assertEqual(
+            str(context.exception),
+            "rjust() argument 2 must be a byte string of length 1, not int",
+        )
+
+    def test_rjust_with_wrong_length_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().rjust(2, b",,")
+        self.assertEqual(
+            str(context.exception),
+            "rjust() argument 2 must be a byte string of length 1, not bytes",
+        )
+
     def test_rstrip_with_non_byteslike_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray().rstrip("")
