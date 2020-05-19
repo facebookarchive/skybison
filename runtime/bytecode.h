@@ -203,7 +203,7 @@ namespace py {
   V(UNUSED_BYTECODE_184, 184, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_185, 185, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_186, 186, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_187, 187, doInvalidBytecode)                               \
+  V(LOAD_ATTR_INSTANCE_SLOT_DESCR, 187, doLoadAttrInstanceSlotDescr)           \
   V(COMPARE_IN_LIST, 188, doCompareInList)                                     \
   V(COMPARE_IN_DICT, 189, doCompareInDict)                                     \
   V(COMPARE_IN_TUPLE, 190, doCompareInTuple)                                   \
@@ -354,6 +354,7 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case INPLACE_OP_ANAMORPHIC:
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_PROPERTY:
+    case LOAD_ATTR_INSTANCE_SLOT_DESCR:
     case LOAD_ATTR_INSTANCE_TYPE:
     case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_INSTANCE_TYPE_DESCR:

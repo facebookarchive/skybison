@@ -442,6 +442,89 @@ class IntepreterTest(unittest.TestCase):
         self.assertIs(result, 200)
 
 
+class InlineCacheTests(unittest.TestCase):
+    def test_load_slot_descriptor(self):
+        class C:
+            __slots__ = "x"
+
+        def read_x(c):
+            return c.x
+
+        c = C()
+        c.x = 50
+
+        # Cache C.x.
+        self.assertEqual(read_x(c), 50)
+        # Use the cached descriptor.
+        self.assertEqual(read_x(c), 50)
+
+        # The cached descriptor raises AttributeError after its corresponding
+        # attribute gets deleted.
+        del c.x
+        with self.assertRaises(AttributeError):
+            read_x(c)
+
+    def test_load_slot_descriptor_invalidated_by_updating_type_attr(self):
+        class C:
+            __slots__ = "x"
+
+        def read_x(c):
+            return c.x
+
+        c = C()
+        c.x = 50
+
+        # Cache C.x.
+        self.assertEqual(read_x(c), 50)
+
+        # Invalidate the cache.
+        C.x = property(lambda self: 100)
+
+        # Verify that the updated type attribute is used for `c.x`.
+        self.assertEqual(read_x(c), 100)
+
+    def test_store_slot_descriptor(self):
+        class C:
+            __slots__ = "x"
+
+        def write_x(c, v):
+            c.x = v
+
+        c = C()
+
+        # Cache C.x.
+        write_x(c, 1)
+        self.assertEqual(c.x, 1)
+
+        # Use the cached descriptor.
+        write_x(c, 2)
+        self.assertEqual(c.x, 2)
+
+    def test_store_slot_descriptor_invalidated_by_updating_type_attr(self):
+        class C:
+            __slots__ = "x"
+
+        def write_x(c, v):
+            c.x = v
+
+        c = C()
+
+        # Cache C.x.
+        write_x(c, 1)
+        self.assertEqual(c.x, 1)
+
+        # Invalidate the cache.
+        def setter(self, value):
+            value["setter_executed"] = True
+
+        C.x = property(lambda self: 100, setter)
+
+        # Verify that the updated type attribute is used for `c.x`.
+        v = {"setter_executed": False}
+        write_x(c, v)
+        self.assertTrue(v["setter_executed"], True)
+
+
 class ImportNameTests(unittest.TestCase):
     def test_import_name_calls_dunder_builtins_dunder_import(self):
         def my_import(name, globals, locals, fromlist, level):

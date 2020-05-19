@@ -32,6 +32,7 @@ enum class LoadAttrKind {
   kInstanceOffset = 1,
   kInstanceFunction,
   kInstanceProperty,
+  kInstanceSlotDescr,
   kInstanceType,
   kInstanceTypeDescr,
   kModule,
@@ -427,6 +428,7 @@ class Interpreter {
   static Continue doLoadAttrInstance(Thread* thread, word arg);
   static Continue doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg);
   static Continue doLoadAttrInstanceProperty(Thread* thread, word arg);
+  static Continue doLoadAttrInstanceSlotDescr(Thread* thread, word arg);
   static Continue doLoadAttrInstanceType(Thread* thread, word arg);
   static Continue doLoadAttrInstanceTypeDescr(Thread* thread, word arg);
   static Continue doLoadAttrModule(Thread* thread, word arg);

@@ -3420,6 +3420,11 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                      dependent);
         break;
+      case LoadAttrKind::kInstanceSlotDescr:
+        rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_SLOT_DESCR);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
       case LoadAttrKind::kInstanceType:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE);
         icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
@@ -3557,6 +3562,27 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   frame->pushValue(receiver);
   frame->setValueAt(cached, 1);
   return tailcallPreparedFunction(thread, frame, cached, 1);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
+                                                                 word arg) {
+  Frame* frame = thread->currentFrame();
+  RawMutableTuple caches = MutableTuple::cast(frame->caches());
+  RawObject receiver = frame->topValue();
+  bool is_found;
+  RawObject cached =
+      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+  if (!is_found) {
+    return retryLoadAttrCached(thread, arg);
+  }
+  word offset = SmallInt::cast(cached).value();
+  RawObject value = Instance::cast(receiver).instanceVariableAt(offset);
+  if (!value.isUnbound()) {
+    frame->setTopValue(value);
+    return Continue::NEXT;
+  }
+  // If the value is unbound, we remove the cached slot descriptor.
+  return retryLoadAttrCached(thread, arg);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,

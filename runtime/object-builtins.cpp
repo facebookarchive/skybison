@@ -3,6 +3,7 @@
 #include <cinttypes>
 
 #include "builtins.h"
+#include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -212,6 +213,18 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
                                           getter, object);
       }
     }
+    if (type_attr.isSlotDescriptor()) {
+      SlotDescriptor slot_descriptor(&scope, *type_attr);
+      Object result(&scope, slotDescriptorGet(thread, slot_descriptor, object));
+      if (!result.isErrorException() && location_out != nullptr) {
+        // Cache slot_descriptor at success only to avoid type checking
+        // afterwards. However, unbound check should be performed when
+        // cache is hit.
+        *location_out = SmallInt::fromWord(slot_descriptor.offset());
+        *kind = LoadAttrKind::kInstanceSlotDescr;
+      }
+      return *result;
+    }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
       if (location_out != nullptr) {
@@ -318,6 +331,19 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   Type type(&scope, runtime->typeOf(*object));
   Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
+    if (type_attr.isSlotDescriptor()) {
+      SlotDescriptor slot_descriptor(&scope, *type_attr);
+      Object result(&scope,
+                    slotDescriptorSet(thread, slot_descriptor, object, value));
+      if (!result.isErrorException() && location_out != nullptr) {
+        // Cache slot_descriptor at success only to avoid type checking
+        // afterwards. Note that writes via slot_descriptor are treated equally
+        // as ones to in-object instance attributes since the same cache
+        // invalidation rule applies to them.
+        *location_out = SmallInt::fromWord(slot_descriptor.offset());
+      }
+      return *result;
+    }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
       // Do not cache data descriptors.

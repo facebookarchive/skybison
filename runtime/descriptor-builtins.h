@@ -10,4 +10,12 @@ namespace py {
 
 void initializeDescriptorTypes(Thread* thread);
 
+RawObject slotDescriptorGet(Thread* thread,
+                            const SlotDescriptor& slot_descriptor,
+                            const Object& instance_obj);
+
+RawObject slotDescriptorSet(Thread* thread,
+                            const SlotDescriptor& slot_descriptor,
+                            const Object& instance_obj, const Object& value);
+
 }  // namespace py
