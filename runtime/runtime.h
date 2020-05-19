@@ -485,7 +485,9 @@ class Runtime {
                          const Bytes& old_bytes, word old_len,
                          const Bytes& new_bytes, word new_len, word max_count);
 
-  // Returns `repr(bytes)`, with the length and delimiter quote precalculated.
+  // Returns the repr-string for a bytes object.  The caller must provide the
+  // size of the resulting string, accounting for escaping, and the correct
+  // delimiter character, which is either a single- or double-quote.
   RawObject bytesRepr(Thread* thread, const Bytes& bytes, word result_length,
                       byte delimiter);
 
