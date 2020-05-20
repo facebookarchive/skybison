@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 from _builtins import _Unbound, _unimplemented
-from _thread import Lock  # noqa: F401
-from _thread import RLock as _RLock
+from _thread import RLock as _RLock, allocate_lock as _allocate_lock
 
 
 class Barrier:
@@ -68,6 +67,9 @@ class Event:
             # single-threaded setting, let's abort...
             _unimplemented()
         return signaled
+
+
+Lock = _allocate_lock
 
 
 def RLock(*args, **kwargs):

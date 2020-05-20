@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from _builtins import _unimplemented
+from _builtins import _Unbound, _unimplemented
 
 
 # TODO(T53322979): Re-write to be thread-safe
-class Lock:
+class LockType:
     def __exit__(self, t, v, tb):
         self.release()
 
@@ -49,8 +49,51 @@ class RLock:
         self.release()
 
 
-allocate_lock = Lock
+def _count():
+    _unimplemented()
+
+
+class _local:
+    pass
+
+
+def _set_sentinel():
+    _unimplemented()
+
+
+def allocate():
+    _unimplemented()
+
+
+allocate_lock = LockType
+
+
+error = RuntimeError
+
+
+def exit():
+    _unimplemented()
+
+
+def exit_thread():
+    _unimplemented()
 
 
 def get_ident():
     return 0
+
+
+def interrupt_main():
+    _unimplemented()
+
+
+def stack_size(size=0):
+    _unimplemented()
+
+
+def start_new(function, args, kwargs=_Unbound):
+    _unimplemented()
+
+
+def start_new_thread(function, args, kwargs=_Unbound):
+    _unimplemented()

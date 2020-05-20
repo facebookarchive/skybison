@@ -18,6 +18,7 @@
 #include "under-imp-module.h"
 #include "under-io-module.h"
 #include "under-signal-module.h"
+#include "under-thread-module.h"
 #include "under-weakref-module.h"
 #include "unicodedata-module.h"
 
@@ -44,7 +45,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {ID(_path), &initializeFrozenModule<&kUnderPathModuleData>},
     {ID(_signal), &initializeUnderSignalModule},
     {ID(_str_mod), &initializeFrozenModule<&kUnderStrModModuleData>},
-    {ID(_thread), &initializeFrozenModule<&kUnderThreadModuleData>},
+    {ID(_thread), &initializeUnderThreadModule},
     {ID(_valgrind), &initializeFrozenModule<&kUnderValgrindModuleData>},
     {ID(_warnings), &initializeFrozenModule<&kUnderWarningsModuleData>},
     {ID(_weakref), &initializeUnderWeakrefModule},

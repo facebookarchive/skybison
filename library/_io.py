@@ -68,7 +68,7 @@ from _os import (
     read as _os_read,
     set_noinheritable as _os_set_noinheritable,
 )
-from _thread import Lock as _thread_Lock
+from _thread import LockType as _thread_Lock
 
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes

@@ -89,6 +89,7 @@ class Runtime;
   V(SystemExit)                                                                \
   V(TabError)                                                                  \
   V(TextIOWrapper)                                                             \
+  V(TIMEOUT_MAX)                                                               \
   V(TimeoutError)                                                              \
   V(True)                                                                      \
   V(TypeError)                                                                 \

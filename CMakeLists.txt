@@ -439,6 +439,8 @@ add_library(
   runtime/under-path-module.cpp
   runtime/under-signal-module.cpp
   runtime/under-signal-module.h
+  runtime/under-thread-module.cpp
+  runtime/under-thread-module.h
   runtime/under-valgrind-module.cpp
   runtime/under-warnings-module.cpp
   runtime/under-weakref-module.cpp
