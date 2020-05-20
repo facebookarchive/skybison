@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 
 #include "capi-handles.h"
