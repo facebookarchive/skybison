@@ -3707,6 +3707,28 @@ RawObject FUNC(_builtins, _range_len)(Thread* thread, Frame* frame,
   return rangeLen(thread, start, stop, step);
 }
 
+// TODO(T67311848): Remove this. This is a temporary workaround until we fork
+// the readline module into the runtime.
+extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
+
+RawObject FUNC(_builtins, _readline)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Str prompt(&scope, strUnderlying(args.get(0)));
+  word length = prompt.length();
+  std::unique_ptr<char> prompt_buf(new char[length + 1]);
+  prompt.copyTo(reinterpret_cast<byte*>(prompt_buf.get()), length);
+  prompt_buf.get()[length] = '\0';
+  char* line = PyOS_Readline(stdin, stdout, prompt_buf.get());
+  if (line == nullptr) {
+    CHECK(thread->hasPendingException(), "there must be an exception raised");
+    return Error::exception();
+  }
+  Object result(&scope, thread->runtime()->newStrFromCStr(line));
+  std::free(line);
+  return *result;
+}
+
 RawObject FUNC(_builtins, _repr_enter)(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);

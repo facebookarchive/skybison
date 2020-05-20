@@ -183,6 +183,7 @@ from _builtins import (
     _range_check,
     _range_guard,
     _range_len,
+    _readline,
     _repr_enter,
     _repr_leave,
     _seq_index,
@@ -3767,7 +3768,60 @@ def id(obj):
 
 
 def input(prompt=None):
-    _unimplemented()
+    try:
+        stdin = _sys.stdin
+    except AttributeError:
+        raise RuntimeError("input: lost sys.stdin")
+    if stdin is None:
+        raise RuntimeError("input: lost sys.stdin")
+    try:
+        stdout = _sys.stdout
+    except AttributeError:
+        raise RuntimeError("input: lost sys.stdout")
+    if stdout is None:
+        raise RuntimeError("input: lost sys.stdout")
+    try:
+        stderr = _sys.stderr
+    except AttributeError:
+        raise RuntimeError("input: lost sys.stderr")
+    if stderr is None:
+        raise RuntimeError("input: lost sys.stderr")
+    try:
+        stderr.flush()
+    except BaseException:
+        pass
+    try:
+        stdin_fileno = stdin.fileno()
+        stdout_fileno = stdout.fileno()
+        import os
+
+        isatty = (
+            stdin_fileno == 0
+            and os.isatty(stdin_fileno)
+            and stdout_fileno == 1
+            and os.isatty(stdout_fileno)
+        )
+    except BaseException:
+        isatty = False
+    if isatty:
+        line = _readline("") if prompt is None else _readline(str(prompt))
+        try:
+            stdout.flush()
+        except BaseException:
+            pass
+    else:
+        if prompt is not None:
+            stdout.write(str(prompt))
+        try:
+            stdout.flush()
+        except BaseException:
+            pass
+        line = stdin.readline()
+    if not line:
+        raise EOFError
+    if line[-1] == "\n":
+        return line[:-1]
+    return line
 
 
 class instance_proxy(bootstrap=True):

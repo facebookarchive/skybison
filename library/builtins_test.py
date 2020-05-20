@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import builtins
+import contextlib
 import sys
 import unittest
 import warnings
@@ -6869,6 +6870,146 @@ class HexTests(unittest.TestCase):
         self.assertEqual(
             str(context.exception), "'str' object cannot be interpreted as an integer"
         )
+
+
+class DeleteStream(contextlib.AbstractContextManager):
+    _stream = None
+
+    def __init__(self):
+        self._old_targets = []
+
+    def __enter__(self):
+        self._old_targets.append(getattr(sys, self._stream))
+        delattr(sys, self._stream)
+
+    def __exit__(self, exctype, excinst, exctb):
+        setattr(sys, self._stream, self._old_targets.pop())
+
+
+class delete_stderr(DeleteStream):
+    _stream = "stderr"
+
+
+class delete_stdin(DeleteStream):
+    _stream = "stdin"
+
+
+class delete_stdout(DeleteStream):
+    _stream = "stdout"
+
+
+class redirect_stdin(contextlib._RedirectStream):
+    _stream = "stdin"
+
+
+class InputTests(unittest.TestCase):
+    def test_input_with_deleted_stderr_raises_runtime_error(self):
+
+        with delete_stderr():
+            with self.assertRaises(RuntimeError):
+                input()
+
+    def test_input_with_deleted_stdin_raises_runtime_error(self):
+
+        with delete_stdin():
+            with self.assertRaises(RuntimeError):
+                input()
+
+    def test_input_with_deleted_stdout_raises_runtime_error(self):
+
+        with delete_stdout():
+            with self.assertRaises(RuntimeError):
+                input()
+
+    def test_input_with_none_stderr_raises_runtime_error(self):
+
+        with contextlib.redirect_stderr(None):
+            with self.assertRaises(RuntimeError):
+                input()
+
+    def test_input_with_none_stdin_raises_runtime_error(self):
+
+        with redirect_stdin(None):
+            with self.assertRaises(RuntimeError):
+                input()
+
+    def test_input_with_none_stdout_raises_runtime_error(self):
+
+        with contextlib.redirect_stdout(None):
+            with self.assertRaises(RuntimeError):
+                input()
+
+    def test_input_strips_trailing_newline(self):
+        class MyInStream:
+            def readline(self):
+                return "foobar\n"
+
+        with redirect_stdin(MyInStream()):
+            self.assertEqual(input(), "foobar")
+
+    def test_input_keeps_trailing_non_newline_char(self):
+        class MyInStream:
+            def readline(self):
+                return "foobarX"
+
+        with redirect_stdin(MyInStream()):
+            self.assertEqual(input(), "foobarX")
+
+    def test_input_does_not_strip_trailing_cr_nl(self):
+        class MyInStream:
+            def readline(self):
+                return "foobar\r\n"
+
+        with redirect_stdin(MyInStream()):
+            self.assertEqual(input(), "foobar\r")
+
+    def test_input_with_empty_input_raises_eof_error(self):
+        class MyInStream:
+            def readline(self):
+                return ""
+
+        with redirect_stdin(MyInStream()):
+            self.assertRaises(EOFError, input)
+
+    def test_input_with_prompt_writes_prompt(self):
+        class MyInStream:
+            def readline(self):
+                return "foobar\n"
+
+        class MyOutStream:
+            def write(self, value):
+                self.value = value
+
+        with redirect_stdin(MyInStream()):
+            with contextlib.redirect_stdout(MyOutStream()):
+                self.assertEqual(input("> "), "foobar")
+                self.assertEqual(sys.stdout.value, "> ")
+
+    def test_input_calls_stdout_flush(self):
+        class MyInStream:
+            def readline(self):
+                return "foobar\n"
+
+        class MyOutStream:
+            flush = Mock(name="flush")
+
+        with redirect_stdin(MyInStream()):
+            with contextlib.redirect_stdout(MyOutStream()):
+                self.assertEqual(input(), "foobar")
+        MyOutStream.flush.assert_called_once()
+
+    def test_input_calls_stderr_flush(self):
+        class MyInStream:
+            def readline(self):
+                return "foobar\n"
+
+        class MyOutStream:
+            flush = Mock(name="flush")
+
+        with redirect_stdin(MyInStream()):
+            with contextlib.redirect_stderr(MyOutStream()):
+                self.assertEqual(input(), "foobar")
+        MyOutStream.flush.assert_called_once()
 
 
 @pyro_only

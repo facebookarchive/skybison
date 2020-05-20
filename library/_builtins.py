@@ -731,6 +731,10 @@ def _range_len(self):
     _builtin()
 
 
+def _readline(prompt):
+    _builtin()
+
+
 def _repr_enter(obj):
     _builtin()
 
