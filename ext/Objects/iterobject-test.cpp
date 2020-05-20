@@ -42,5 +42,22 @@ TEST_F(IterExtensionApiTest, SeqIterNewWithSequenceReturnsIterator) {
   Py_DECREF(seq);
 }
 
+TEST_F(IterExtensionApiTest, IterCheckWithListIteratorReturnsTrue) {
+  PyRun_SimpleString("iterator = iter([1, 2, 3])");
+  PyObjectPtr iterator(mainModuleGet("iterator"));
+  EXPECT_TRUE(PyIter_Check(iterator.get()));
+}
+
+TEST_F(IterExtensionApiTest, IterCheckWithObjectWithDunderNextReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C:
+  def __next__(self):
+    pass
+iterator = C()
+)");
+  PyObjectPtr iterator(mainModuleGet("iterator"));
+  EXPECT_TRUE(PyIter_Check(iterator.get()));
+}
+
 }  // namespace testing
 }  // namespace py

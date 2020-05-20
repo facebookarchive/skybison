@@ -34,7 +34,11 @@ PY_EXPORT PyObject* PyCallIter_New(PyObject* pycallable, PyObject* pysentinel) {
 }
 
 PY_EXPORT int PyIter_Check_Func(PyObject* iter) {
-  return ApiHandle::fromPyObject(iter)->asObject().isSeqIterator();
+  DCHECK(iter != nullptr, "expected iter to be non-null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object iterator(&scope, ApiHandle::fromPyObject(iter)->asObject());
+  return thread->runtime()->isIterator(thread, iterator);
 }
 
 }  // namespace py
