@@ -588,6 +588,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/pwdmodule.c
   ${CPYTHON_DIR}/Modules/pyexpat.c
   ${CPYTHON_DIR}/Modules/readline.c
+  ${CPYTHON_DIR}/Modules/resource.c
   ${CPYTHON_DIR}/Modules/selectmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.c
   ${CPYTHON_DIR}/Modules/socketmodule.h
