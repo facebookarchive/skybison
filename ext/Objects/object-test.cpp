@@ -1312,7 +1312,8 @@ TEST_F(ObjectExtensionApiTest, InitWithNullRaisesNoMemoryError) {
 
 TEST_F(ObjectExtensionApiTest, NewReturnsAllocatedObject) {
   struct BarObject {
-    PyObject_HEAD int value;
+    PyObject_HEAD
+    int value;
   };
   PyType_Slot slots[] = {
       {0, nullptr},
@@ -1334,10 +1335,12 @@ TEST_F(ObjectExtensionApiTest, NewReturnsAllocatedObject) {
 
 TEST_F(ObjectExtensionApiTest, NewVarReturnsAllocatedObject) {
   struct BarObject {
-    PyObject_HEAD int value;
+    PyObject_HEAD
+    int value;
   };
   struct BarContainer {
-    PyObject_VAR_HEAD BarObject* items[1];
+    PyObject_VAR_HEAD
+    BarObject* items[1];
   };
   PyType_Slot slots[] = {
       {0, nullptr},

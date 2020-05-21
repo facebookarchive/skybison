@@ -97,7 +97,8 @@ struct _typeobject {
 #endif
 
 typedef struct _object {
-  _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
+  _PyObject_HEAD_EXTRA
+  Py_ssize_t ob_refcnt;
 } PyObject;
 
 typedef struct {
@@ -261,7 +262,8 @@ struct PyMethodDef {
 typedef struct PyMethodDef PyMethodDef;
 
 typedef struct PyModuleDef_Base {
-  PyObject_HEAD PyObject* (*m_init)(void);
+  PyObject_HEAD
+  PyObject* (*m_init)(void);
   Py_ssize_t m_index;
   PyObject* m_copy;
 } PyModuleDef_Base;

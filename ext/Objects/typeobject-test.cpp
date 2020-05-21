@@ -100,12 +100,10 @@ TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotRaisesError) {
 }
 
 TEST_F(TypeExtensionApiTest, CallExtensionTypeReturnsExtensionInstancePyro) {
-  // clang-format off
   struct BarObject {
     PyObject_HEAD
     int value;
   };
-  // clang-format on
   newfunc new_func = [](PyTypeObject* type, PyObject*, PyObject*) {
     void* slot = PyType_GetSlot(type, Py_tp_alloc);
     return reinterpret_cast<allocfunc>(slot)(type, 0);
@@ -1155,11 +1153,9 @@ TEST_F(TypeExtensionApiTest, GetObjectCreatedInManagedCode) {
 }
 
 TEST_F(TypeExtensionApiTest, GenericNewReturnsExtensionInstance) {
-  // clang-format off
   struct BarObject {
     PyObject_HEAD
   };
-  // clang-format on
   PyType_Slot slots[] = {
       {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
       {Py_tp_new, reinterpret_cast<void*>(PyType_GenericNew)},
@@ -1916,7 +1912,8 @@ except RuntimeError as e:
 typedef void (*verifyfunc)(PyObject*);
 static verifyfunc createBarTypeWithMembers() {
   struct BarObject {
-    PyObject_HEAD char t_bool;
+    PyObject_HEAD
+    char t_bool;
     char t_byte;
     unsigned char t_ubyte;
     short t_short;
@@ -2339,12 +2336,10 @@ r1 = b.t_string
 }
 
 TEST_F(TypeExtensionApiTest, MemberStringWithNullReturnsNone) {
-  // clang-format off
   struct BarObject {
     PyObject_HEAD
     char* name;
   };
-  // clang-format on
   static const PyMemberDef members[] = {
       {"name", T_STRING, offsetof(BarObject, name), 0, nullptr},
       {nullptr},
@@ -2557,12 +2552,10 @@ r1 = b.t_char
 // TODO(T56634824): Figure out why Pyro differs from CPython.
 TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
   int unknown_type = -1;
-  // clang-format off
   struct BarObject {
     PyObject_HEAD
     int value;
   };
-  // clang-format on
   static const PyMemberDef members[] = {
       {"value", unknown_type, offsetof(BarObject, value), 0, nullptr},
       {nullptr},
@@ -2586,7 +2579,8 @@ TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
 
 static void createBarTypeWithGetSetObject() {
   struct BarObject {
-    PyObject_HEAD long attribute;
+    PyObject_HEAD
+    long attribute;
     long readonly_attribute;
   };
 
@@ -3416,11 +3410,9 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutNewInheritsDefaultNew) {
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
-  // clang-format off
   struct FooObject {
     PyObject_HEAD
   };
-  // clang-format on
   static PyType_Slot slots[1];
   slots[0] = {0, nullptr};
   static PyType_Spec spec;
@@ -3449,11 +3441,9 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
 }
 
 TEST_F(TypeExtensionApiTest, DefaultDeallocCallsDelAndFinalize) {
-  // clang-format off
   struct FooObject {
     PyObject_HEAD
   };
-  // clang-format on
   destructor del_func = [](PyObject*) {
     moduleSet("__main__", "called_del", Py_True);
   };
@@ -3488,14 +3478,12 @@ TEST_F(TypeExtensionApiTest, DefaultDeallocCallsDelAndFinalize) {
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
-  // clang-format off
   struct FooObject {
     PyObject_HEAD
   };
   struct FooSubclassObject {
     FooObject base;
   };
-  // clang-format on
   destructor dealloc_func = [](PyObject* self) {
     PyTypeObject* tp = Py_TYPE(self);
     PyObject_Del(self);
@@ -3549,14 +3537,12 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
-  // clang-format off
   struct FooObject {
     PyObject_HEAD
   };
   struct FooSubclassObject {
     FooObject base;
   };
-  // clang-format on
   static PyType_Slot base_slots[1];
   base_slots[0] = {0, nullptr};
   static PyType_Spec base_spec;
@@ -3750,7 +3736,8 @@ class Foo:
   PyObjectPtr foo_type(mainModuleGet("Foo"));
 
   struct FooObject {
-    PyObject_HEAD PyObject* dict;
+    PyObject_HEAD
+    PyObject* dict;
     int t_int;
   };
   static PyMemberDef members[2];

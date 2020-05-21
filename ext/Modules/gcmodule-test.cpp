@@ -40,7 +40,8 @@ TEST_F(GcModuleExtensionApiTest, GCTrackWithUnTrackedObjectSucceeds) {
 
 TEST_F(GcModuleExtensionApiTest, NewReturnsAllocatedObject) {
   struct BarObject {
-    PyObject_HEAD int value;
+    PyObject_HEAD
+    int value;
   };
   destructor dealloc = [](PyObject* self) {
     PyTypeObject* type = Py_TYPE(self);
@@ -70,10 +71,12 @@ TEST_F(GcModuleExtensionApiTest, NewReturnsAllocatedObject) {
 
 TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
   struct BarObject {
-    PyObject_HEAD int value;
+    PyObject_HEAD
+    int value;
   };
   struct BarContainer {
-    PyObject_VAR_HEAD BarObject* items[1];
+    PyObject_VAR_HEAD
+    BarObject* items[1];
   };
   destructor dealloc = [](PyObject* self) {
     PyTypeObject* type = Py_TYPE(self);
