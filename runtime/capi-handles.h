@@ -107,6 +107,9 @@ class ApiHandle : public PyObject {
   // or build a new extension instance.
   RawObject asObject();
 
+  // Return native proxy belonging to an extension object.
+  RawNativeProxy asNativeProxy();
+
   // Each ApiHandle can have one pointer to cached data, which will be freed
   // when the handle is destroyed.
   void* cache();

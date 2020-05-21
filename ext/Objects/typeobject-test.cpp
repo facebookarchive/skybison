@@ -4223,5 +4223,61 @@ bar.__class__ = C
   EXPECT_NE(err.find("differs"), std::string::npos);
 }
 
+TEST_F(TypeExtensionApiTest, TpDeallocWithoutFreeingMemoryUntracksNativeProxy) {
+  // We test this indirectly with a typical freelist pattern; `PyObject_Init`
+  // only works on memory that has been untracked before.
+  static const int max_free = 4;
+  static int numfree = 0;
+  static PyObject* freelist[max_free];
+
+  newfunc new_func = [](PyTypeObject* type, PyObject*, PyObject*) {
+    PyObject* object;
+    if (numfree > 0) {
+      object = freelist[--numfree];
+      PyObject_Init(object, type);
+    } else {
+      object = PyObject_New(PyObject, type);
+    }
+    return object;
+  };
+  destructor dealloc = [](PyObject* self) {
+    PyTypeObject* type = Py_TYPE(self);
+    Py_DECREF(type);
+    if (numfree + 1 < max_free) {
+      freelist[numfree++] = self;
+    } else {
+      freefunc tp_free =
+          reinterpret_cast<freefunc>(PyType_GetSlot(type, Py_tp_free));
+      tp_free(self);
+    }
+  };
+
+  static const PyType_Slot slots[] = {
+      {Py_tp_new, reinterpret_cast<void*>(new_func)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc)},
+      {0, nullptr},
+  };
+  static const PyType_Spec spec = {
+      "foo", 0, 0, Py_TPFLAGS_DEFAULT, const_cast<PyType_Slot*>(slots),
+  };
+  PyObjectPtr type(PyType_FromSpec(const_cast<PyType_Spec*>(&spec)));
+  ASSERT_NE(type, nullptr);
+
+  PyObject* o0 = _PyObject_CallNoArg(type);
+  PyObject* o1 = _PyObject_CallNoArg(type);
+  Py_DECREF(o0);
+  collectGarbage();
+  PyObject* o2 = _PyObject_CallNoArg(type);
+  EXPECT_EQ(o0, o2);
+  Py_DECREF(o1);
+  collectGarbage();
+  PyObject* o3 = _PyObject_CallNoArg(type);
+  EXPECT_EQ(o1, o3);
+  PyObject* o4 = _PyObject_CallNoArg(type);
+  Py_DECREF(o3);
+  Py_DECREF(o2);
+  Py_DECREF(o4);
+}
+
 }  // namespace testing
 }  // namespace py

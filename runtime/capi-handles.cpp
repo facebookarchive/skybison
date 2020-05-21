@@ -430,6 +430,12 @@ RawObject ApiHandle::asObject() {
   return RawObject{reference_};
 }
 
+RawNativeProxy ApiHandle::asNativeProxy() {
+  DCHECK(!isImmediate(this) && reference_ != 0,
+         "expected extension object handle");
+  return RawObject{reference_}.rawCast<RawNativeProxy>();
+}
+
 void* ApiHandle::cache() {
   // Only managed objects can have a cached value
   DCHECK(!isImmediate(this), "immediate handles do not have caches");

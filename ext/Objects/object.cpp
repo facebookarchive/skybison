@@ -657,8 +657,9 @@ PY_EXPORT void _PyTrash_thread_destroy_chain() {
 
 void finalizeExtensionObject(Thread* thread, RawObject object) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   NativeProxy proxy(&scope, object);
-  Type type(&scope, thread->runtime()->typeOf(*proxy));
+  Type type(&scope, runtime->typeOf(*proxy));
   DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
          "A native instance must come from an extension type");
   DCHECK(type.hasSlot(Type::Slot::kDealloc),
@@ -672,7 +673,15 @@ void finalizeExtensionObject(Thread* thread, RawObject object) {
         "Expecting a refcount of 1, but found %ld\n",
         reinterpret_cast<void*>(obj), obj->ob_refcnt);
   obj->ob_refcnt--;
-  tp_dealloc(obj);
+  (*tp_dealloc)(obj);
+  if (!proxy.native().isNoneType() && obj->ob_refcnt == 0) {
+    // `proxy.native()` being `None` indicates the extension object memory was
+    // not freed. `ob_refcnt == 0` means the object was not resurrected.
+    // This typically indicates that the user maintains a free-list and wants to
+    // call `PyObject_Init` on the memory again, we have to untrack it!
+    ListEntry* entry = reinterpret_cast<ListEntry*>(obj) - 1;
+    runtime->untrackNativeObject(entry);
+  }
 }
 
 }  // namespace py

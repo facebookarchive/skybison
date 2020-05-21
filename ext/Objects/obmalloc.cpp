@@ -42,7 +42,13 @@ PY_EXPORT void* PyObject_Realloc(void* ptr, size_t size) {
 PY_EXPORT void PyObject_Free(void* ptr) {
   if (ptr == nullptr) return;
   ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
-  Thread::current()->runtime()->untrackNativeObject(entry);
+  bool removed = Thread::current()->runtime()->untrackNativeObject(entry);
+  if (removed) {
+    // Set native pointer to `None` to signal the `finalizeExtensionObject` code
+    // that the object memory was freed.
+    PyObject* obj = reinterpret_cast<PyObject*>(ptr);
+    ApiHandle::fromPyObject(obj)->asNativeProxy().setNative(NoneType::object());
+  }
   return PyMem_RawFree(entry);
 }
 
