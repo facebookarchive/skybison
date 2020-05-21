@@ -498,16 +498,10 @@ class BufferedRandomTests(unittest.TestCase):
             result = buffered.read(3)
             self.assertEqual(result, b"hel")
 
-    # TODO(T65863013): Make read1 behavior match CPython and remove this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_read1_with_negative_raises_value_error(self):
-        with _io.BytesIO(b"hello") as bytes_io:
-            buffered = _io.BufferedRandom(bytes_io, buffer_size=10)
-            with self.assertRaisesRegex(ValueError, "must be positive"):
-                buffered.read1(-1)
+    def test_read1_with_negative_size_returns_rest_in_buffer(self):
+        with _io.BytesIO(b"hello world") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=5)
+            self.assertEqual(buffered.read1(-1), b"hello")
 
     def test_read1_calls_read(self):
         with _io.BytesIO(b"hello") as bytes_io:
@@ -758,10 +752,26 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.read(), b"")
         f.close()
 
+    def test_read_with_none_size_returns_rest(self):
+        f = _io.BytesIO(b"foo")
+        self.assertEqual(f.read(1), b"f")
+        self.assertEqual(f.read(None), b"oo")
+
     def test_read1_reads_bytes(self):
         f = _io.BytesIO(b"foo")
         self.assertEqual(f.read1(3), b"foo")
         self.assertEqual(f.read1(3), b"")
+        f.close()
+
+    def test_read1_with_none_size_returns_rest(self):
+        f = _io.BytesIO(b"foo")
+        self.assertEqual(f.read1(1), b"f")
+        self.assertEqual(f.read1(None), b"oo")
+
+    def test_read1_with_size_not_specified_returns_rest(self):
+        f = _io.BytesIO(b"foo")
+        self.assertEqual(f.read1(1), b"f")
+        self.assertEqual(f.read1(), b"oo")
         f.close()
 
     # TODO(T47880928): Test BytesIO.readinto
@@ -2065,6 +2075,19 @@ class BufferedReaderTests(unittest.TestCase):
             buffered.read(1)
             result = buffered.read1(10)
             self.assertEqual(result, b"ell")
+
+    def test_read1_with_size_not_specified_returns_rest_in_buffer(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io, buffer_size=4)
+            buffered.read(1)
+            result = buffered.read1()
+            self.assertEqual(result, b"ell")
+
+    def test_read1_with_none_size_raises_type_error(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io, buffer_size=4)
+            with self.assertRaises(TypeError):
+                buffered.read1(None)
 
     def test_readable_calls_raw_readable(self):
         readable_calls = 0

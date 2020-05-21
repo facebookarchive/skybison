@@ -917,9 +917,9 @@ class BufferedReader(_BufferedIOMixin, bootstrap=True):
 
     read = _buffered_reader_read
 
-    def read1(self, size):
+    def read1(self, size=-1):
         if size < 0:
-            raise ValueError("number of bytes to read must be positive")
+            size = self._buffer_size
         if size == 0:
             return b""
         # Returns up to size bytes. If at least one byte is buffered, we only
@@ -1074,7 +1074,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         self._buffer.clear()
         _BufferedIOBase.close(self)
 
-    def read(self, size=None):
+    def read(self, size=-1):
         if self.closed:
             raise ValueError("read from closed file")
         if size is None:
@@ -1094,7 +1094,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         self._pos = newpos
         return bytes(b)
 
-    def read1(self, size):
+    def read1(self, size=-1):
         """This is the same as read.
         """
         return self.read(size)
