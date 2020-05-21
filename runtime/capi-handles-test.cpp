@@ -177,11 +177,11 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   Layout layout(&scope, type.instanceLayout());
 
   // Create instance
-  Object native_proxy(&scope, runtime_->newInstance(layout));
+  NativeProxy proxy(&scope, runtime_->newInstance(layout));
   PyObject pyobj = {0, 1};
-  runtime_->setNativeProxyPtr(*native_proxy, static_cast<void*>(&pyobj));
+  proxy.setNative(runtime_->newIntFromCPtr(&pyobj));
 
-  PyObject* result = ApiHandle::newReference(thread_, *native_proxy);
+  PyObject* result = ApiHandle::newReference(thread_, *proxy);
   EXPECT_TRUE(result);
   EXPECT_EQ(result, &pyobj);
 }

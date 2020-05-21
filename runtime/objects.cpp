@@ -906,13 +906,13 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
 // RawNativeProxy
 
 void RawNativeProxy::enqueue(RawObject reference, RawObject* tail) {
-  DCHECK(Thread::current()->runtime()->isNativeProxy(reference),
+  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(reference),
          "expected native proxy");
   enqueueReference(reference, tail, RawNativeProxy::kLinkOffset);
 }
 
 RawObject RawNativeProxy::dequeue(RawObject* tail) {
-  DCHECK(Thread::current()->runtime()->isNativeProxy(*tail),
+  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(*tail),
          "expected native proxy");
   return dequeueReference(tail, RawNativeProxy::kLinkOffset);
 }

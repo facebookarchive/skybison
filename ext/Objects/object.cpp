@@ -383,12 +383,12 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   HandleScope scope(thread);
   Type type_obj(&scope, ApiHandle::fromPyTypeObject(typeobj)->asObject());
   Layout layout(&scope, type_obj.instanceLayout());
-  Object native_proxy(&scope, runtime->newInstance(layout));
-  runtime->setNativeProxyPtr(*native_proxy, obj);
+  NativeProxy proxy(&scope, runtime->newInstance(layout));
+  proxy.setNative(runtime->newIntFromCPtr(obj));
   runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
 
   // Initialize the native object
-  obj->reference_ = native_proxy.raw();
+  obj->reference_ = proxy.raw();
   Py_INCREF(typeobj);
   obj->ob_refcnt = 2;
   return obj;

@@ -271,8 +271,9 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Runtime* runtime = thread->runtime();
 
   // Get the PyObject pointer from extension instances
-  if (runtime->isNativeProxy(obj)) {
-    ApiHandle* result = static_cast<ApiHandle*>(runtime->nativeProxyPtr(obj));
+  if (runtime->isInstanceOfNativeProxy(obj)) {
+    ApiHandle* result = static_cast<ApiHandle*>(
+        Int::cast(obj.rawCast<RawNativeProxy>().native()).asCPtr());
     result->incref();
     return result;
   }

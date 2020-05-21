@@ -1862,16 +1862,16 @@ void Runtime::processFinalizers() {
   thread->clearPendingException();
 
   while (finalizable_references_ != NoneType::object()) {
-    Object native_proxy(&scope,
-                        RawNativeProxy::dequeue(&finalizable_references_));
-    Type type(&scope, typeOf(*native_proxy));
+    NativeProxy proxy(&scope,
+                      RawNativeProxy::dequeue(&finalizable_references_));
+    Type type(&scope, typeOf(*proxy));
     DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
            "A native instance must come from an extension type");
     DCHECK(type.hasSlot(Type::Slot::kDealloc),
            "Extension types must have a dealloc slot");
     Int slot(&scope, type.slot(Type::Slot::kDealloc));
-    auto func = reinterpret_cast<destructor>(slot.asWord());
-    PyObject* obj = reinterpret_cast<PyObject*>(nativeProxyPtr(*native_proxy));
+    destructor func = reinterpret_cast<destructor>(slot.asWord());
+    PyObject* obj = static_cast<PyObject*>(Int::cast(proxy.native()).asCPtr());
     CHECK(obj->ob_refcnt == 1,
           "The runtime must hold the last reference to the PyObject* (%p). "
           "Expecting a refcount of 1, but found %ld\n",
@@ -3419,17 +3419,6 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   array.copyTo(dst, old_length);
   std::memset(dst + old_length, 0, new_capacity - old_length);
   array.setItems(*new_bytes);
-}
-
-void* Runtime::nativeProxyPtr(RawObject object) {
-  DCHECK(isNativeProxy(object), "Must have a NativeProxy layout");
-  return Int::cast(object.rawCast<RawNativeProxy>().native()).asCPtr();
-}
-
-void Runtime::setNativeProxyPtr(RawObject object, void* c_ptr) {
-  DCHECK(isNativeProxy(object), "Must have a NativeProxy layout");
-  DCHECK(c_ptr != nullptr, "The native instance must have a valid address");
-  object.rawCast<RawNativeProxy>().setNative(newIntFromCPtr(c_ptr));
 }
 
 RawObject Runtime::newCell() { return heap()->create<RawCell>(); }

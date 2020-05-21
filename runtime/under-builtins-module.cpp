@@ -3675,11 +3675,12 @@ RawObject FUNC(_builtins, _property_isabstract)(Thread* thread, Frame* frame,
 
 RawObject FUNC(_builtins, _pyobject_offset)(Thread* thread, Frame* frame,
                                             word nargs) {
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  auto addr =
-      reinterpret_cast<uword>(thread->runtime()->nativeProxyPtr(args.get(0)));
-  addr += RawInt::cast(args.get(1)).asWord();
-  return thread->runtime()->newIntFromCPtr(bit_cast<void*>(addr));
+  NativeProxy proxy(&scope, args.get(0));
+  uword addr = reinterpret_cast<uword>(Int::cast(proxy.native()).asCPtr());
+  addr += Int::cast(args.get(1)).asWord();
+  return thread->runtime()->newIntFromCPtr(reinterpret_cast<void*>(addr));
 }
 
 RawObject FUNC(_builtins, _range_check)(Thread*, Frame* frame, word nargs) {

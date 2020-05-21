@@ -108,6 +108,7 @@ class Handle;
   V(List)                                                                      \
   V(Mmap)                                                                      \
   V(Module)                                                                    \
+  V(NativeProxy)                                                               \
   V(Set)                                                                       \
   V(SetBase)                                                                   \
   V(StopIteration)                                                             \

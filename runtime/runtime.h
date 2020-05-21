@@ -607,10 +607,6 @@ class Runtime {
   RawObject typeDictOnlyLayout(Thread* thread, const Type& type,
                                word num_in_object_attr);
 
-  void* nativeProxyPtr(RawObject object);
-
-  void setNativeProxyPtr(RawObject object, void* c_ptr);
-
   // For commonly-subclassed builtin types, define isInstanceOfFoo(RawObject)
   // that does a check including subclasses (unlike RawObject::isFoo(), which
   // only gets exact types).
@@ -663,9 +659,13 @@ class Runtime {
   DEFINE_IS_USER_INSTANCE(WeakRef)
 #undef DEFINE_IS_USER_INSTANCE
 
-  bool isNativeProxy(RawObject obj) {
-    return typeOf(obj).rawCast<RawType>().hasFlag(
-        RawType::Flag::kIsNativeProxy);
+  bool isInstanceOfNativeProxy(RawObject obj) {
+    // Note that this reports true when the object can be used safely via
+    // `RawNativeProxy` or assigned to a `NativeProxy` handle. The function
+    // name is required for `Hanlde<>` to work. It is misleading in that we
+    // consider native proxy to be more of a property of the type than is
+    // orthogonal to the subtyping relationships.
+    return typeOf(obj).rawCast<RawType>().isExtensionType();
   }
 
   // BaseException must be handled specially because it has builtin subclasses
