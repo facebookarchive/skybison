@@ -585,8 +585,12 @@ RawObject Thread::raiseMemoryError() {
 }
 
 RawObject Thread::raiseOSErrorFromErrno(int errno_value) {
-  return raiseWithFmt(errorLayoutFromErrno(errno_value), "[Errno %d] %s",
-                      errno_value, std::strerror(errno_value));
+  // TODO(T67323177): Pass filename & filname2.
+  HandleScope scope(this);
+  SmallInt errno_value_int(&scope, SmallInt::fromWord(errno_value));
+  Object message(&scope, runtime()->newStrFromCStr(std::strerror(errno_value)));
+  Tuple args(&scope, runtime()->newTupleWith2(errno_value_int, message));
+  return raise(errorLayoutFromErrno(errno_value), *args);
 }
 
 RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {

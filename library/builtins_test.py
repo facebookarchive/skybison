@@ -5053,6 +5053,27 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(exc.filename, "file")
         self.assertIs(exc.filename2, "file2")
 
+    def test_oserror_dunder_str_without_errno_or_strerror(self):
+        exc = OSError()
+        self.assertEqual(OSError.__str__(exc), "")
+
+        exc = OSError(999)
+        self.assertEqual(OSError.__str__(exc), "999")
+
+    def test_oserror_dunder_str_without_filename(self):
+        exc = OSError(999, "some error")
+        self.assertEqual(OSError.__str__(exc), "[Errno 999] some error")
+
+    def test_oserror_dunder_str_with_filename(self):
+        exc = OSError(999, "some error", "file")
+        self.assertEqual(OSError.__str__(exc), "[Errno 999] some error: 'file'")
+
+    def test_oserror_dunder_str_with_filename_and_filename2(self):
+        exc = OSError(999, "some error", "file", 0, "file2")
+        self.assertEqual(
+            OSError.__str__(exc), "[Errno 999] some error: 'file' -> 'file2'"
+        )
+
     def test_maybe_unbound_attributes(self):
         exc = BaseException()
         exc2 = BaseException()

@@ -913,13 +913,31 @@ class OSError(Exception, bootstrap=True):
         self.filename2 = None
 
         arg_len = _tuple_len(args)
-        if arg_len > 2:
+        if arg_len >= 2:
             self.errno = _tuple_getitem(args, 0)
             self.strerror = _tuple_getitem(args, 1)
+
+        if arg_len > 2:
             self.filename = _tuple_getitem(args, 2)
+
+        # 3rd arg is winerror, ignored in a Unix environment.
 
         if arg_len > 4:
             self.filename2 = _tuple_getitem(args, 4)
+
+    def __str__(self):
+        if self.filename:
+            if self.filename2:
+                return (
+                    f"[Errno {self.errno}] {self.strerror}: "
+                    + f"{self.filename!r} -> {self.filename2!r}"
+                )
+            return f"[Errno {self.errno}] {self.strerror}: " + f"{self.filename!r}"
+
+        if self.errno and self.strerror:
+            return f"[Errno {self.errno}] {self.strerror}"
+
+        return BaseException.__str__(self)
 
 
 class OverflowError(ArithmeticError, bootstrap=True):

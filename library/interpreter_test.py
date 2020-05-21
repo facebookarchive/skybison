@@ -524,6 +524,14 @@ class InlineCacheTests(unittest.TestCase):
         write_x(c, v)
         self.assertTrue(v["setter_executed"], True)
 
+    def test_raise_oserror_with_errno_and_strerror(self):
+        with self.assertRaises(FileNotFoundError) as context:
+            open("/tmp/nonexisting_file")
+        exc = context.exception
+        self.assertEqual(exc.errno, 2)
+        self.assertEqual(exc.strerror, "No such file or directory")
+        # TODO(T67323177): Check filename.
+
 
 class ImportNameTests(unittest.TestCase):
     def test_import_name_calls_dunder_builtins_dunder_import(self):
