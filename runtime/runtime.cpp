@@ -1862,22 +1862,8 @@ void Runtime::processFinalizers() {
   thread->clearPendingException();
 
   while (finalizable_references_ != NoneType::object()) {
-    NativeProxy proxy(&scope,
-                      RawNativeProxy::dequeue(&finalizable_references_));
-    Type type(&scope, typeOf(*proxy));
-    DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
-           "A native instance must come from an extension type");
-    DCHECK(type.hasSlot(Type::Slot::kDealloc),
-           "Extension types must have a dealloc slot");
-    Int slot(&scope, type.slot(Type::Slot::kDealloc));
-    destructor func = reinterpret_cast<destructor>(slot.asWord());
-    PyObject* obj = static_cast<PyObject*>(Int::cast(proxy.native()).asCPtr());
-    CHECK(obj->ob_refcnt == 1,
-          "The runtime must hold the last reference to the PyObject* (%p). "
-          "Expecting a refcount of 1, but found %ld\n",
-          reinterpret_cast<void*>(obj), obj->ob_refcnt);
-    obj->ob_refcnt--;
-    (*func)(reinterpret_cast<PyObject*>(obj));
+    finalizeExtensionObject(thread,
+                            RawNativeProxy::dequeue(&finalizable_references_));
   }
 
   thread->setPendingExceptionType(*saved_type);
@@ -3715,20 +3701,6 @@ void Runtime::clearHandleScopes() {
   }
 }
 
-static void freeModule(Thread* thread, const Module& module) {
-  if (module.hasDef()) {
-    auto def = reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
-    if (def->m_free != nullptr) {
-      def->m_free(ApiHandle::borrowedReference(thread, *module));
-    }
-    module.setDef(SmallInt::fromWord(0));
-    if (module.hasState()) {
-      std::free(Int::cast(module.state()).asCPtr());
-      module.setState(SmallInt::fromWord(0));
-    }
-  }
-}
-
 void Runtime::freeApiHandles() {
   // Dealloc the Module handles first as they are the handle roots
   Thread* thread = Thread::current();
@@ -3744,7 +3716,9 @@ void Runtime::freeApiHandles() {
     Object module_obj(&scope, modules_list.at(i));
     if (!isInstanceOfModule(*module_obj)) continue;
     Module module(&scope, *module_obj);
-    freeModule(thread, module);
+    if (module.hasDef()) {
+      freeExtensionModule(thread, module);
+    }
   }
 
   // Process any native instance that is only referenced through the NativeProxy

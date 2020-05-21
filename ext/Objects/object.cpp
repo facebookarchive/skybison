@@ -655,4 +655,24 @@ PY_EXPORT void _PyTrash_thread_destroy_chain() {
   UNIMPLEMENTED("_PyTrash_thread_destroy_chain");
 }
 
+void finalizeExtensionObject(Thread* thread, RawObject object) {
+  HandleScope scope(thread);
+  NativeProxy proxy(&scope, object);
+  Type type(&scope, thread->runtime()->typeOf(*proxy));
+  DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
+         "A native instance must come from an extension type");
+  DCHECK(type.hasSlot(Type::Slot::kDealloc),
+         "Extension types must have a dealloc slot");
+  destructor tp_dealloc = reinterpret_cast<destructor>(
+      Int::cast(type.slot(Type::Slot::kDealloc)).asCPtr());
+  PyObject* obj =
+      reinterpret_cast<PyObject*>(Int::cast(proxy.native()).asCPtr());
+  CHECK(obj->ob_refcnt == 1,
+        "The runtime must hold the last reference to the PyObject* (%p). "
+        "Expecting a refcount of 1, but found %ld\n",
+        reinterpret_cast<void*>(obj), obj->ob_refcnt);
+  obj->ob_refcnt--;
+  tp_dealloc(obj);
+}
+
 }  // namespace py
