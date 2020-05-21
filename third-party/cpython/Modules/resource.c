@@ -66,8 +66,63 @@ static PyStructSequence_Desc struct_rusage_desc = {
     16          /* n_in_sequence */
 };
 
-static int initialized;
-static PyTypeObject StructRUsageType;
+typedef struct {
+    PyObject *StructRUsageType;
+} resourcemodulestate;
+
+
+#define modulestate(o) ((resourcemodulestate*)PyModule_GetState(o))
+#define modulestate_global modulestate(PyState_FindModule(&resourcemodule))
+
+static struct PyModuleDef resourcemodule;
+
+static int
+resourcemodule_clear(PyObject *m)
+{
+    Py_CLEAR(modulestate(m)->StructRUsageType);
+    return 0;
+}
+
+static int
+resourcemodule_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    Py_VISIT(modulestate(m)->StructRUsageType);
+    return 0;
+}
+
+static void
+resourcemodule_free(void *m)
+{
+   resourcemodule_clear((PyObject *)m);
+}
+
+/* List of functions */
+
+static struct PyMethodDef
+resource_methods[] = {
+    RESOURCE_GETRUSAGE_METHODDEF
+    RESOURCE_GETRLIMIT_METHODDEF
+    RESOURCE_PRLIMIT_METHODDEF
+    RESOURCE_SETRLIMIT_METHODDEF
+    RESOURCE_GETPAGESIZE_METHODDEF
+    {NULL, NULL}                             /* sentinel */
+};
+
+
+/* Module initialization */
+
+static struct PyModuleDef resourcemodule = {
+    PyModuleDef_HEAD_INIT,
+    "resource",
+    NULL,
+    sizeof(resourcemodulestate),
+    resource_methods,
+    NULL,
+    resourcemodule_traverse,
+    resourcemodule_clear,
+    resourcemodule_free,
+};
+
 
 /*[clinic input]
 resource.getrusage
@@ -94,7 +149,7 @@ resource_getrusage_impl(PyObject *module, int who)
         return NULL;
     }
 
-    result = PyStructSequence_New(&StructRUsageType);
+    result = PyStructSequence_New((PyTypeObject *)modulestate_global->StructRUsageType);
     if (!result)
         return NULL;
 
@@ -317,38 +372,17 @@ resource_getpagesize_impl(PyObject *module)
     return pagesize;
 }
 
-/* List of functions */
-
-static struct PyMethodDef
-resource_methods[] = {
-    RESOURCE_GETRUSAGE_METHODDEF
-    RESOURCE_GETRLIMIT_METHODDEF
-    RESOURCE_PRLIMIT_METHODDEF
-    RESOURCE_SETRLIMIT_METHODDEF
-    RESOURCE_GETPAGESIZE_METHODDEF
-    {NULL, NULL}                             /* sentinel */
-};
-
-
-/* Module initialization */
-
-
-static struct PyModuleDef resourcemodule = {
-    PyModuleDef_HEAD_INIT,
-    "resource",
-    NULL,
-    -1,
-    resource_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
 
 PyMODINIT_FUNC
 PyInit_resource(void)
 {
     PyObject *m, *v;
+
+    /* Search for the module */
+    if ((m = PyState_FindModule(&resourcemodule)) != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
 
     /* Create the module and add the functions */
     m = PyModule_Create(&resourcemodule);
@@ -358,15 +392,13 @@ PyInit_resource(void)
     /* Add some symbolic constants to the module */
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructRUsageType,
-                                       &struct_rusage_desc) < 0)
-            return NULL;
-    }
 
-    Py_INCREF(&StructRUsageType);
-    PyModule_AddObject(m, "struct_rusage",
-                       (PyObject*) &StructRUsageType);
+    PyTypeObject *StructRUsageType = PyStructSequence_NewType(&struct_rusage_desc);
+    if (StructRUsageType == NULL)
+        return NULL;
+    Py_INCREF(StructRUsageType);
+    PyModule_AddObject(m, "struct_rusage", (PyObject *)StructRUsageType);
+    modulestate(m)->StructRUsageType = (PyObject *)StructRUsageType;
 
     /* insert constants */
 #ifdef RLIMIT_CPU
@@ -482,6 +514,5 @@ PyInit_resource(void)
     if (v) {
         PyModule_AddObject(m, "RLIM_INFINITY", v);
     }
-    initialized = 1;
     return m;
 }
