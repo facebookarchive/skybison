@@ -734,13 +734,7 @@ TEST_F(ObjectExtensionApiTest,
   Py_DECREF(obj);  // Drop the reference to it
   // Trigger a GC. PyObject_CallFinalizerFromDealloc is called during GC in
   // Pyro and immmediately in the decref in CPython.
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   EXPECT_TRUE(dealloc_called);
   EXPECT_FALSE(finalizer_called);
 }
@@ -779,13 +773,7 @@ TEST_F(ObjectExtensionApiTest,
   Py_DECREF(obj);  // Drop the reference to it
   // Trigger a GC. PyObject_CallFinalizerFromDealloc is called during GC in
   // Pyro and immmediately in the decref in CPython.
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   EXPECT_TRUE(dealloc_called);
   EXPECT_TRUE(finalizer_called);
 }
@@ -828,13 +816,7 @@ TEST_F(
   Py_DECREF(obj);  // Drop the reference to it
   // Trigger a GC. PyObject_CallFinalizerFromDealloc is called during GC in
   // Pyro and immmediately in the decref in CPython.
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   EXPECT_TRUE(dealloc_called);
   EXPECT_TRUE(finalizer_called);
   EXPECT_GE(Py_REFCNT(obj), 1);

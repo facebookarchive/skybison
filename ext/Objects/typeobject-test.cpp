@@ -3444,13 +3444,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3487,13 +3481,7 @@ TEST_F(TypeExtensionApiTest, DefaultDeallocCallsDelAndFinalize) {
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
   PyObjectPtr called_del(testing::mainModuleGet("called_del"));
   EXPECT_EQ(called_del, Py_True);
@@ -3556,13 +3544,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3617,13 +3599,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3704,13 +3680,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithGCFlagCallsDealloc) {
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
   PyObjectPtr called_del(testing::mainModuleGet("called_del"));
   EXPECT_EQ(called_del, Py_True);

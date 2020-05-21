@@ -9,6 +9,16 @@
 namespace py {
 namespace testing {
 
+void collectGarbage() {
+  PyRun_SimpleString(R"(
+try:
+  from _builtins import _gc
+  _gc()
+except:
+  pass
+)");
+}
+
 PyObject* mainModuleGet(const char* name) {
   return moduleGet("__main__", name);
 }

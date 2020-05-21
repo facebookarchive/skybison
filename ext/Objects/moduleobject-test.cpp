@@ -202,13 +202,7 @@ TEST_F(ModuleExtensionApiTest, GetStateReturnsValidStateAfterGarbageCollected) {
   Py_DECREF(module);
 
   // Trigger GC to remove the module object from the handle table.
-  PyRun_SimpleString(R"(
-try:
-    from _builtins import _gc
-    _gc()
-except ModuleNotFoundError:
-    pass
-)");
+  collectGarbage();
 
   // Verify that the module still retains the state.
   module = PyState_FindModule(&def);

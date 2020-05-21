@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace py {
 namespace testing {
@@ -81,14 +82,7 @@ TEST_F(ObmallocExtensionApiTest, PyMemReallocOnlyRetracksPyObjects) {
   ASSERT_NE(ptr, nullptr);
   *ptr = 98;
 
-  // Trigger a gc
-  PyRun_SimpleString(R"(
-try:
-  import _builtins
-  _builtins._gc()
-except:
-  pass
-)");
+  collectGarbage();
 
   ptr = reinterpret_cast<char*>(PyObject_Realloc(ptr, 2));
   ASSERT_NE(ptr, nullptr);

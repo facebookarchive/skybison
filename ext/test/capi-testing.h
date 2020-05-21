@@ -51,6 +51,8 @@ class __attribute__((warn_unused)) PyObjectPtr {
   PyObject* obj_ = nullptr;
 };
 
+void collectGarbage();
+
 PyObject* mainModuleGet(const char* name);
 PyObject* moduleGet(const char* module, const char* name);
 int moduleSet(const char* module, const char* name, PyObject*);
