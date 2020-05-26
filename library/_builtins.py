@@ -148,6 +148,10 @@ def _bytes_len(self):
     _builtin()
 
 
+def _bytes_ljust(self, width, fillbyte):
+    _builtin()
+
+
 def _bytes_maketrans(frm, to):
     _builtin()
 

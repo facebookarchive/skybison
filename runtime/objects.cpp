@@ -610,6 +610,13 @@ void RawMutableBytes::replaceFromWithBytes(word dst_start, RawBytes src,
   src.copyTo(dst + dst_start, count);
 }
 
+void RawMutableBytes::replaceFromWithByte(word dst_start, byte value,
+                                          word count) const {
+  DCHECK_BOUND(dst_start + count, length());
+  byte* dst = reinterpret_cast<byte*>(address());
+  std::memset(dst + dst_start, value, count);
+}
+
 void RawMutableBytes::replaceFromWithBytesStartAt(word dst_start, RawBytes src,
                                                   word count,
                                                   word src_start) const {

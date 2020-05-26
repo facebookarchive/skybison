@@ -2285,6 +2285,13 @@ class BytesTests(unittest.TestCase):
             "ljust() argument 2 must be a byte string of length 1, not bytes",
         )
 
+    def test_ljust_with_swapped_width_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".ljust(b",", 2)
+        self.assertEqual(
+            str(context.exception), "'bytes' object cannot be interpreted as an integer"
+        )
+
     def test_lstrip_with_non_byteslike_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             b"".lstrip("")

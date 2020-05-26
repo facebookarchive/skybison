@@ -505,9 +505,7 @@ RawObject FUNC(_builtins, _bytearray_ljust)(Thread* thread, Frame* frame,
   MutableBytes buffer(&scope,
                       runtime->newMutableBytesUninitialized(result_length));
   buffer.replaceFromWith(0, DataArray::cast(self.items()), self_length);
-  for (word i = self_length; i < result_length; i++) {
-    buffer.byteAtPut(i, fill);
-  }
+  buffer.replaceFromWithByte(self_length, fill, result_length - self_length);
 
   Bytearray result(&scope, runtime->newBytearray());
   result.setItems(*buffer);
@@ -562,9 +560,7 @@ RawObject FUNC(_builtins, _bytearray_rjust)(Thread* thread, Frame* frame,
   word pad_length = result_length - self_length;
   MutableBytes buffer(&scope,
                       runtime->newMutableBytesUninitialized(result_length));
-  for (word i = 0; i < pad_length; i++) {
-    buffer.byteAtPut(i, fill);
-  }
+  buffer.replaceFromWithByte(0, fill, pad_length);
   buffer.replaceFromWith(pad_length, DataArray::cast(self.items()),
                          self_length);
 
@@ -953,6 +949,68 @@ RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Frame* frame,
 RawObject FUNC(_builtins, _bytes_len)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return SmallInt::fromWord(bytesUnderlying(args.get(0)).length());
+}
+
+RawObject FUNC(_builtins, _bytes_ljust)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+  }
+
+  Object width_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*width_obj)) {
+    return Unbound::object();
+  }
+
+  Int width_int(&scope, intUnderlying(*width_obj));
+  if (width_int.isLargeInt()) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+  word width = width_int.asWord();
+
+  byte fill;
+  Object fillbyte_obj(&scope, args.get(2));
+  if (runtime->isInstanceOfBytes(*fillbyte_obj)) {
+    Bytes fillbyte(&scope, bytesUnderlying(*fillbyte_obj));
+    if (fillbyte.length() != 1) {
+      return Unbound::object();
+    }
+    fill = fillbyte.byteAt(0);
+  } else if (runtime->isInstanceOfBytearray(*fillbyte_obj)) {
+    Bytearray fillbyte(&scope, *fillbyte_obj);
+    if (fillbyte.numItems() != 1) {
+      return Unbound::object();
+    }
+    fill = fillbyte.byteAt(0);
+  } else {
+    return Unbound::object();
+  }
+
+  Bytes self(&scope, *self_obj);
+  word self_length = self.length();
+  if (self_length >= width) {
+    return *self_obj;
+  }
+
+  if (width <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+
+    std::memset(buffer, fill, SmallBytes::kMaxLength);
+    self.copyTo(buffer, self_length);
+
+    return SmallBytes::fromBytes({buffer, width});
+  }
+
+  MutableBytes buffer(&scope, runtime->newMutableBytesUninitialized(width));
+  buffer.replaceFromWithBytes(0, *self, self_length);
+  buffer.replaceFromWithByte(self_length, fill, width - self_length);
+
+  return buffer.becomeImmutable();
 }
 
 RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,

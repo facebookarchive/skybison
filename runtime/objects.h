@@ -1433,6 +1433,9 @@ class RawMutableBytes : public RawLargeBytes {
   // Replace the bytes from dst_start with count bytes from src
   void replaceFromWithBytes(word dst_start, RawBytes src, word count) const;
 
+  // Replace the bytes from dst_start with count bytes of value
+  void replaceFromWithByte(word dst_start, byte value, word count) const;
+
   // Replace the bytes from dst_start with count bytes from src, starting at
   // src_start in src
   void replaceFromWithBytesStartAt(word dst_start, RawBytes src, word count,

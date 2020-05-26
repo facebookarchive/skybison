@@ -47,6 +47,7 @@ from _builtins import (
     _bytes_guard,
     _bytes_join,
     _bytes_len,
+    _bytes_ljust,
     _bytes_maketrans,
     _bytes_repeat,
     _bytes_replace,
@@ -2377,21 +2378,12 @@ class bytes(bootstrap=True):
         return _bytes_join(self, items)
 
     def ljust(self, width, fillbyte=b" "):
-        _bytes_guard(self)
+        result = _bytes_ljust(self, width, fillbyte)
+        if result is not _Unbound:
+            return result
         width = _index(width)
-        if _bytes_check(fillbyte) and _bytes_len(fillbyte) == 1:
-            pass
-        elif _bytearray_check(fillbyte) and _bytearray_len(fillbyte) == 1:
-            # convert into bytes
-            fillbyte = _bytes_from_ints(fillbyte)
-        else:
-            raise TypeError(
-                "ljust() argument 2 must be a byte string of length 1, not "
-                f"{_type(fillbyte).__name__}"
-            )
-
-        padding = width - _bytes_len(self)
-        return self + fillbyte * padding if padding > 0 else self
+        _byte_guard(fillbyte)
+        return _bytes_ljust(self, width, fillbyte)
 
     def lower(self):
         _builtin()
