@@ -6316,6 +6316,12 @@ def foo():
         with self.assertRaises(TypeError):
             foo()
 
+    def test_dunder_dir_returns_list(self):
+        def foo():
+            pass
+
+        self.assertIsInstance(foo.__dir__(), list)
+
     def test_dunder_kwdefaults_returns_kwdefaults(self):
         def foo(*args, kwarg=42):
             return kwarg

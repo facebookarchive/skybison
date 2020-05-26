@@ -3619,11 +3619,15 @@ RawObject FUNC(_builtins, _object_keys)(Thread* thread, Frame* frame,
     // TODO(T57446141): Dict overflow should be handled by a __dict__ descriptor
     // on the type, like `type` or `function`
     Instance instance(&scope, *object);
-    Dict dict(&scope, instance.instanceVariableAt(layout.dictOverflowOffset()));
-    Object key(&scope, NoneType::object());
-    Object value(&scope, NoneType::object());
-    for (word i = 0; dictNextItem(dict, &i, &key, &value);) {
-      runtime->listAdd(thread, result, key);
+    Object overflow_obj(
+        &scope, instance.instanceVariableAt(layout.dictOverflowOffset()));
+    if (!overflow_obj.isNoneType()) {
+      Dict overflow(&scope, *overflow_obj);
+      Object key(&scope, NoneType::object());
+      Object value(&scope, NoneType::object());
+      for (word i = 0; dictNextItem(overflow, &i, &key, &value);) {
+        runtime->listAdd(thread, result, key);
+      }
     }
   }
   return *result;
