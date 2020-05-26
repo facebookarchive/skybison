@@ -1926,7 +1926,7 @@ HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
 
   if (iterable.isCoroutine()) {
     Function function(&scope, frame->function());
-    if (function.isCoroutine() || function.isIterableCoroutine()) {
+    if (!(function.isCoroutine() || function.isIterableCoroutine())) {
       thread->raiseWithFmt(
           LayoutId::kTypeError,
           "cannot 'yield from' a coroutine object in a non-coroutine "

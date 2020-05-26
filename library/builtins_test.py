@@ -3572,6 +3572,16 @@ class CoroutineTests(unittest.TestCase):
 
         self.assertIs(exc.exception.value, v)
 
+    def test_yield_from_coroutine_in_non_coroutine_iter_raises_exception(self):
+        async def coro():
+            pass
+
+        def f():
+            yield from coro()
+
+        with self.assertRaises(TypeError):
+            f().send(None)
+
 
 class DelattrTests(unittest.TestCase):
     def test_non_str_as_name_raises_type_error(self):

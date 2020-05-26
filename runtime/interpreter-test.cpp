@@ -4069,6 +4069,23 @@ for i in yield_from_func():
                             "'int' object is not iterable"));
 }
 
+TEST_F(InterpreterTest, YieldFromCoroutineInNonCoroutineIterRaisesException) {
+  const char* src = R"(
+async def coro():
+  pass
+
+def f():
+    yield from coro()
+
+f().send(None)
+	)";
+
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, src), LayoutId::kTypeError,
+                    "cannot 'yield from' a coroutine object in a non-coroutine "
+                    "generator"));
+}
+
 TEST_F(InterpreterTest, MakeFunctionSetsDunderModule) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
