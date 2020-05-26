@@ -2827,6 +2827,121 @@ manager = M()
   EXPECT_EQ(*exit, NoneType::object());
 }
 
+TEST_F(InterpreterTest, BeforeAsyncWithRaisesAttributeErrorIfAexitNotDefined) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class M:
+  pass
+
+manager = M()
+  )")
+                   .isError());
+
+  Code code(&scope, newEmptyCode());
+  code.setNlocals(0);
+  Tuple consts(&scope, runtime_->newTuple(1));
+  consts.atPut(0, mainModuleAt(runtime_, "manager"));
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_->newTuple(1));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kAttributeError,
+                            "'M' object has no attribute '__aexit__'"));
+}
+
+TEST_F(InterpreterTest, BeforeAsyncWithRaisesAttributeErrorIfAenterNotDefined) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class M:
+  def __aexit__(self):
+    pass
+
+manager = M()
+  )")
+                   .isError());
+
+  Code code(&scope, newEmptyCode());
+  code.setNlocals(0);
+  Tuple consts(&scope, runtime_->newTuple(1));
+  consts.atPut(0, mainModuleAt(runtime_, "manager"));
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_->newTuple(1));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kAttributeError,
+                            "'M' object has no attribute '__aenter__'"));
+}
+
+TEST_F(InterpreterTest,
+       BeforeAsyncWithPropagatesExceptionIfResolvingAexitDynamicallyRaises) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class A:
+  def __get__(self, obj, type=None):
+    raise RuntimeError("foo")
+
+class M:
+  __aexit__ = A()
+
+  async def __aenter__(self):
+    pass
+
+manager = M()
+  )")
+                   .isError());
+
+  Code code(&scope, newEmptyCode());
+  code.setNlocals(0);
+  Tuple consts(&scope, runtime_->newTuple(1));
+  consts.atPut(0, mainModuleAt(runtime_, "manager"));
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_->newTuple(1));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kRuntimeError, "foo"));
+}
+
+TEST_F(InterpreterTest,
+       BeforeAsyncWithPropagatesExceptionIfResolvingAenterDynamicallyRaises) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class A:
+  def __get__(self, obj, type=None):
+    raise RuntimeError("foo")
+
+class M:
+  __aenter__ = A()
+
+  async def __aexit__(self, a, b, c):
+    pass
+
+manager = M()
+  )")
+                   .isError());
+
+  Code code(&scope, newEmptyCode());
+  code.setNlocals(0);
+  Tuple consts(&scope, runtime_->newTuple(1));
+  consts.atPut(0, mainModuleAt(runtime_, "manager"));
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_->newTuple(1));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kRuntimeError, "foo"));
+}
+
 TEST_F(InterpreterTest, SetupAsyncWithPushesBlock) {
   HandleScope scope(thread_);
 

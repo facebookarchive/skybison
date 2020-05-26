@@ -1633,18 +1633,25 @@ HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   Object manager(&scope, frame->popValue());
 
-  // resolve __aexit__ an push it
+  // resolve __aexit__ and push it
   Runtime* runtime = thread->runtime();
   Object exit(&scope, runtime->attributeAtById(thread, manager, ID(__aexit__)));
   if (exit.isErrorException()) {
-    UNIMPLEMENTED("throw TypeError");
+    return Continue::UNWIND;
   }
   frame->pushValue(*exit);
 
   // resolve __aenter__ call it and push the return value
   Object enter(&scope, lookupMethod(thread, frame, manager, ID(__aenter__)));
   if (enter.isError()) {
-    UNIMPLEMENTED("throw TypeError");
+    if (enter.isErrorNotFound()) {
+      Object aenter_str(&scope, runtime->newStrFromFmt("__aenter__"));
+      objectRaiseAttributeError(thread, manager, aenter_str);
+      return Continue::UNWIND;
+    }
+    if (enter.isErrorException()) {
+      return Continue::UNWIND;
+    }
   }
   return tailcallMethod1(thread, *enter, *manager);
 }
