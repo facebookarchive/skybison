@@ -747,7 +747,7 @@ static const BuiltinAttribute kStringIOAttributes[] = {
     {ID(_seennl), RawStringIO::kSeennlOffset},
     {ID(_writenl), RawStringIO::kWritenlOffset},
     {ID(_writetranslate), RawStringIO::kWritetranslateOffset},
-    {SymbolId::kInvalid, RawFunction::kDictOffset},
+    {ID(__dict__), RawStringIO::kDictOffset},
 };
 
 enum NewlineFound { kLF = 0x1, kCR = 0x2, kCRLF = 0x4 };
