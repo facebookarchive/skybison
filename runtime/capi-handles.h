@@ -59,6 +59,8 @@ class IdentityDict {
   DISALLOW_COPY_AND_ASSIGN(IdentityDict);
 };
 
+static const word kImmediateRefcnt = 1L << 30;
+
 class ApiHandle : public PyObject {
  public:
   // Returns a handle for a managed object.  Increments the reference count of
@@ -175,6 +177,8 @@ class ApiHandle : public PyObject {
   static const long kImmediateTag = 0x1;
   static const long kImmediateMask = 0x7;
 
+  static_assert(kBorrowedBit == kImmediateRefcnt,
+                "keep kBorrowedBit and kImmediateRefcnt in sync");
   static_assert(kImmediateMask < alignof(PyObject*),
                 "Stronger alignment guarantees are required for immediate "
                 "tagged PyObject* to work.");

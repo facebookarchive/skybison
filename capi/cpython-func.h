@@ -215,7 +215,7 @@ PyAPI_FUNC(void) Py_DECREF_Func(PyObject*);
 PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
 PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func(void);
-PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
+PyAPI_FUNC(Py_ssize_t*) Py_REFCNT_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t*) Py_SIZE_Func(PyVarObject*);
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
@@ -1501,7 +1501,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
   } while (0)
 #define Py_DECREF(op) Py_DECREF_Func((PyObject*)op)
 #define Py_INCREF(op) Py_INCREF_Func((PyObject*)op)
-#define Py_REFCNT(op) Py_REFCNT_Func(((PyObject*)op))
+#define Py_REFCNT(op) (*Py_REFCNT_Func(((PyObject*)op)))
 #define Py_XDECREF(op) Py_DecRef((PyObject*)op)
 #define Py_XINCREF(op) Py_IncRef((PyObject*)op)
 #define Py_SETREF(op, op2)                                                     \
