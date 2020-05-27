@@ -2877,7 +2877,7 @@ class coroutine(bootstrap=True):
         _builtin()
 
     def throw(self, exc, value=_Unbound, tb=_Unbound):
-        pass
+        _builtin()
 
     def __repr__(self):
         return f"<coroutine object {self.__qualname__} at {_address(self):#x}>"

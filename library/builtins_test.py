@@ -3544,6 +3544,85 @@ class ComplexTests(unittest.TestCase):
 
 
 class CoroutineTests(unittest.TestCase):
+    class MyError(Exception):
+        pass
+
+    class Awaitable:
+        def __init__(self, yield_value):
+            self._yield_value = yield_value
+
+        def __await__(self):
+            yield self._yield_value
+
+    @staticmethod
+    async def simple_coro():
+        await CoroutineTests.Awaitable(1)
+        await CoroutineTests.Awaitable(2)
+
+    @staticmethod
+    async def catching_coro():
+        try:
+            await CoroutineTests.Awaitable(1)
+        except CoroutineTests.MyError:
+            await CoroutineTests.Awaitable("caught")
+
+    @staticmethod
+    async def catching_returning_coro():
+        try:
+            await CoroutineTests.Awaitable(1)
+        except CoroutineTests.MyError:
+            return "all done!"  # noqa
+
+    def test_throw(self):
+        g = self.simple_coro()
+        self.assertRaises(CoroutineTests.MyError, g.throw, CoroutineTests.MyError())
+
+    def test_throw_caught(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(g.throw(CoroutineTests.MyError()), "caught")
+
+    def test_throw_type(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(g.throw(CoroutineTests.MyError), "caught")
+
+    def test_throw_type_and_value(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(
+            g.throw(CoroutineTests.MyError, CoroutineTests.MyError()), "caught"
+        )
+
+    def test_throw_uncaught_type(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(RuntimeError, g.throw, RuntimeError)
+
+    def test_throw_finished(self):
+        g = self.catching_returning_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(StopIteration, g.throw, CoroutineTests.MyError)
+
+    def test_throw_two_values(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(
+            TypeError, g.throw, CoroutineTests.MyError(), CoroutineTests.MyError()
+        )
+
+    def test_throw_bad_traceback(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(
+            TypeError, g.throw, CoroutineTests.MyError, CoroutineTests.MyError(), 5
+        )
+
+    def test_throw_bad_type(self):
+        g = self.catching_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(TypeError, g.throw, 1234)
+
     def test_coroutine_awaiting_on_further_coroutine_with_no_arguments(self):
         async def f():
             pass

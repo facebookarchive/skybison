@@ -41,9 +41,9 @@ static RawObject findYieldFrom(Thread* thread, const GeneratorBase& gen) {
 }
 
 // Validate the given exception and send it to gen.
-static RawObject genThrowDoRaise(Thread* thread, const GeneratorBase& gen,
-                                 const Object& exc_in, const Object& value_in,
-                                 const Object& tb_in) {
+static RawObject throwDoRaise(Thread* thread, const GeneratorBase& gen,
+                              const Object& exc_in, const Object& value_in,
+                              const Object& tb_in) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object exc(&scope, *exc_in);
@@ -84,9 +84,9 @@ static RawObject genThrowDoRaise(Thread* thread, const GeneratorBase& gen,
 
 // Delegate the given exception to yf.throw(). If yf does not have a throw
 // attribute, send the exception to gen like normal.
-static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
-                                   const Object& yf, const Object& exc,
-                                   const Object& value, const Object& tb) {
+static RawObject throwYieldFrom(Thread* thread, const GeneratorBase& gen,
+                                const Object& yf, const Object& exc,
+                                const Object& value, const Object& tb) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   // TODO(bsimmers): If exc == GeneratorExit, close the subiterator. See
@@ -99,7 +99,7 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
     if (throw_obj.isErrorNotFound() ||
         thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
       thread->clearPendingException();
-      return genThrowDoRaise(thread, gen, exc, value, tb);
+      return throwDoRaise(thread, gen, exc, value, tb);
     }
     return *throw_obj;
   }
@@ -150,19 +150,19 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
   return *result;
 }
 
-static RawObject genThrowImpl(Thread* thread, const GeneratorBase& gen,
-                              const Object& exc, const Object& value,
-                              const Object& tb) {
+static RawObject throwImpl(Thread* thread, const GeneratorBase& gen,
+                           const Object& exc, const Object& value,
+                           const Object& tb) {
   HandleScope scope(thread);
   Object yf(&scope, findYieldFrom(thread, gen));
   if (!yf.isNoneType()) {
-    return genThrowYieldFrom(thread, gen, yf, exc, value, tb);
+    return throwYieldFrom(thread, gen, yf, exc, value, tb);
   }
-  return genThrowDoRaise(thread, gen, exc, value, tb);
+  return throwDoRaise(thread, gen, exc, value, tb);
 }
 
 template <SymbolId name, LayoutId type>
-static RawObject genThrowImpl(Thread* thread, Frame* frame, word nargs) {
+static RawObject throwImpl(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -172,7 +172,7 @@ static RawObject genThrowImpl(Thread* thread, Frame* frame, word nargs) {
   Object value(&scope, args.get(2));
   Object tb(&scope, args.get(3));
 
-  return genThrowImpl(thread, gen, exc, value, tb);
+  return throwImpl(thread, gen, exc, value, tb);
 }
 
 static const BuiltinAttribute kGeneratorAttributes[] = {
@@ -260,12 +260,15 @@ RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
-  return genThrowImpl<ID(generator), LayoutId::kGenerator>(thread, frame,
-                                                           nargs);
+  return throwImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
 }
 
 RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
   return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
+}
+
+RawObject METH(coroutine, throw)(Thread* thread, Frame* frame, word nargs) {
+  return throwImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
 }
 
 }  // namespace py
