@@ -24,6 +24,8 @@ class Handle;
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
+  V(Context)                                                                   \
+  V(ContextVar)                                                                \
   V(Coroutine)                                                                 \
   V(DataArray)                                                                 \
   V(DictItemIterator)                                                          \
@@ -85,6 +87,7 @@ class Handle;
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \
+  V(Token)                                                                     \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(TypeProxy)                                                                 \

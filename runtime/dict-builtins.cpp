@@ -703,6 +703,39 @@ RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
   return dictMergeImpl(thread, dict, mapping, Override::kIgnore);
 }
 
+RawObject dictEq(Thread* thread, const Dict& left, const Dict& right) {
+  if (left.numItems() != right.numItems()) {
+    return Bool::falseObj();
+  }
+  HandleScope scope(thread);
+  Object key(&scope, NoneType::object());
+  Object left_value(&scope, NoneType::object());
+  word hash;
+  Object right_value(&scope, NoneType::object());
+  Object result(&scope, NoneType::object());
+  for (word i = 0; dictNextItemHash(left, &i, &key, &left_value, &hash);) {
+    right_value = dictAt(thread, right, key, hash);
+    if (right_value.isErrorNotFound()) {
+      return Bool::falseObj();
+    }
+    if (left_value == right_value) {
+      continue;
+    }
+    result = Interpreter::compareOperation(thread, thread->currentFrame(), EQ,
+                                           left_value, right_value);
+    if (result.isErrorException()) {
+      // equality comparison raised
+      return *result;
+    }
+    result = Interpreter::isTrue(thread, *result);
+    if (result != Bool::trueObj()) {
+      // bool conversion raised or returned false
+      return *result;
+    }
+  }
+  return Bool::trueObj();
+}
+
 RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.iterable());
@@ -864,37 +897,9 @@ RawObject METH(dict, __eq__)(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfDict(*other_obj)) {
     return NotImplementedType::object();
   }
-  Dict self(&scope, *self_obj);
-  Dict other(&scope, *other_obj);
-  if (self.numItems() != other.numItems()) {
-    return Bool::falseObj();
-  }
-  Object key(&scope, NoneType::object());
-  Object left_value(&scope, NoneType::object());
-  word hash;
-  Object right_value(&scope, NoneType::object());
-  Object cmp_result(&scope, NoneType::object());
-  Object cmp_result_bool(&scope, NoneType::object());
-  for (word i = 0; dictNextItemHash(self, &i, &key, &left_value, &hash);) {
-    right_value = dictAt(thread, other, key, hash);
-    if (right_value.isErrorNotFound()) {
-      return Bool::falseObj();
-    }
-    if (left_value == right_value) {
-      continue;
-    }
-    cmp_result = Interpreter::compareOperation(thread, frame, EQ, left_value,
-                                               right_value);
-    if (cmp_result.isErrorException()) {
-      return *cmp_result;
-    }
-    cmp_result_bool = Interpreter::isTrue(thread, *cmp_result);
-    if (cmp_result_bool.isErrorException()) return *cmp_result_bool;
-    if (cmp_result_bool == Bool::falseObj()) {
-      return Bool::falseObj();
-    }
-  }
-  return Bool::trueObj();
+  Dict a(&scope, *self_obj);
+  Dict b(&scope, *other_obj);
+  return dictEq(thread, a, b);
 }
 
 RawObject METH(dict, __len__)(Thread* thread, Frame* frame, word nargs) {

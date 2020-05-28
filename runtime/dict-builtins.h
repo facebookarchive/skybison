@@ -108,6 +108,9 @@ RawObject dictMergeError(Thread* thread, const Dict& dict,
 RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
                           const Object& mapping);
 
+// Returns a value consistent with the semantics of 'left == right' in Python.
+RawObject dictEq(Thread* thread, const Dict& left, const Dict& right);
+
 // Returns next item in the dict as (key, value) tuple (Tuple)
 // Returns Error::object() if there are no more objects
 RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter);

@@ -6,6 +6,14 @@
 _Unbound = _Unbound  # noqa: F821
 
 
+def _ContextVar_guard(obj):
+    _builtin()
+
+
+def _Token_guard(obj):
+    _builtin()
+
+
 def _builtin():
     """This function acts as a marker to `freeze_modules.py` it should never
     actually be called."""

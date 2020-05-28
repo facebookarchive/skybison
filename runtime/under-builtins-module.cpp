@@ -158,6 +158,24 @@ static bool trySlice(const Object& key, word* start, word* stop) {
   return true;
 }
 
+RawObject FUNC(_builtins, _ContextVar_guard)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isContextVar()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(ContextVar));
+}
+
+RawObject FUNC(_builtins, _Token_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isToken()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(Token));
+}
+
 RawObject FUNC(_builtins, _address)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->newInt(args.get(0).raw());

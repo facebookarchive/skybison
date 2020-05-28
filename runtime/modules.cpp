@@ -14,6 +14,7 @@
 #include "sys-module.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
+#include "under-contextvars-module.h"
 #include "under-ctypes-module.h"
 #include "under-imp-module.h"
 #include "under-io-module.h"
@@ -34,6 +35,7 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 const ModuleInitializer kBuiltinModules[] = {
     {ID(_builtins), &initializeUnderBuiltinsModule},
     {ID(_codecs), &initializeFrozenModule<&kUnderCodecsModuleData>},
+    {ID(_contextvars), &UnderContextvarsModule::initialize},
     {ID(_ctypes), initializeUnderCtypesModule},
     {ID(_frozen_importlib),
      &initializeFrozenModule<&kUnderBootstrapModuleData>},

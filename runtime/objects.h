@@ -53,6 +53,8 @@ class Handle;
   V(Cell)                                                                      \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
+  V(Context)                                                                   \
+  V(ContextVar)                                                                \
   V(Coroutine)                                                                 \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
@@ -95,6 +97,7 @@ class Handle;
   V(StringIO)                                                                  \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \
+  V(Token)                                                                     \
   V(Traceback)                                                                 \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
@@ -308,6 +311,8 @@ class RawObject {
   bool isClassMethod() const;
   bool isCode() const;
   bool isComplex() const;
+  bool isContext() const;
+  bool isContextVar() const;
   bool isCoroutine() const;
   bool isDataArray() const;
   bool isDict() const;
@@ -371,6 +376,7 @@ class RawObject {
   bool isSyntaxError() const;
   bool isSystemExit() const;
   bool isTextIOWrapper() const;
+  bool isToken() const;
   bool isTraceback() const;
   bool isTuple() const;
   bool isTupleIterator() const;
@@ -1324,6 +1330,40 @@ class RawType : public RawInstance {
   static const int kBuiltinBaseMask = 0xff;
 
   RAW_OBJECT_COMMON(Type);
+};
+
+class RawContext : public RawInstance {
+ public:
+  // Getters and setters
+  RawObject data() const;
+  void setData(RawObject data) const;
+
+  RawObject prevContext() const;
+  void setPrevContext(RawObject prev_context) const;
+
+  // Layout
+  static const int kDataOffset = RawHeapObject::kSize;
+  static const int kPrevContextOffset = kDataOffset + kPointerSize;
+  static const int kSize = kPrevContextOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Context);
+};
+
+class RawContextVar : public RawInstance {
+ public:
+  // Getters and setters
+  RawObject defaultValue() const;
+  void setDefaultValue(RawObject default_value) const;
+
+  RawObject name() const;
+  void setName(RawObject name) const;
+
+  // Layout
+  static const int kDefaultValueOffset = RawHeapObject::kSize;
+  static const int kNameOffset = kDefaultValueOffset + kPointerSize;
+  static const int kSize = kNameOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ContextVar);
 };
 
 class RawTypeProxy : public RawInstance {
@@ -2894,6 +2934,31 @@ class RawEllipsis : public RawHeapObject {
   RAW_OBJECT_COMMON(Ellipsis);
 };
 
+class RawToken : public RawInstance {
+ public:
+  // Getters and setters
+  RawObject context() const;
+  void setContext(RawObject context) const;
+
+  RawObject oldValue() const;
+  void setOldValue(RawObject old_value) const;
+
+  bool used() const;
+  void setUsed(bool used) const;
+
+  RawObject var() const;
+  void setVar(RawObject var) const;
+
+  // Layout
+  static const int kContextOffset = RawHeapObject::kSize;
+  static const int kOldValueOffset = kContextOffset + kPointerSize;
+  static const int kUsedOffset = kOldValueOffset + kPointerSize;
+  static const int kVarOffset = kUsedOffset + kPointerSize;
+  static const int kSize = kVarOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Token);
+};
+
 class RawWeakRef : public RawInstance {
  public:
   // Getters and setters
@@ -3860,6 +3925,14 @@ inline bool RawObject::isComplex() const {
   return isHeapObjectWithLayout(LayoutId::kComplex);
 }
 
+inline bool RawObject::isContext() const {
+  return isHeapObjectWithLayout(LayoutId::kContext);
+}
+
+inline bool RawObject::isContextVar() const {
+  return isHeapObjectWithLayout(LayoutId::kContextVar);
+}
+
 inline bool RawObject::isCoroutine() const {
   return isHeapObjectWithLayout(LayoutId::kCoroutine);
 }
@@ -4106,6 +4179,10 @@ inline bool RawObject::isSystemExit() const {
 
 inline bool RawObject::isTextIOWrapper() const {
   return isHeapObjectWithLayout(LayoutId::kTextIOWrapper);
+}
+
+inline bool RawObject::isToken() const {
+  return isHeapObjectWithLayout(LayoutId::kToken);
 }
 
 inline bool RawObject::isTraceback() const {
@@ -5064,6 +5141,42 @@ inline void RawType::sealAttributes() const {
   DCHECK(RawTuple::cast(layout.overflowAttributes()).length() == 0,
          "Cannot seal a layout with outgoing edges");
   layout.seal();
+}
+
+// RawContext
+
+inline RawObject RawContext::data() const {
+  return instanceVariableAt(kDataOffset);
+}
+
+inline void RawContext::setData(RawObject data) const {
+  instanceVariableAtPut(kDataOffset, data);
+}
+
+inline RawObject RawContext::prevContext() const {
+  return instanceVariableAt(kPrevContextOffset);
+}
+
+inline void RawContext::setPrevContext(RawObject prev_context) const {
+  instanceVariableAtPut(kPrevContextOffset, prev_context);
+}
+
+// RawContextVar
+
+inline RawObject RawContextVar::defaultValue() const {
+  return instanceVariableAt(kDefaultValueOffset);
+}
+
+inline void RawContextVar::setDefaultValue(RawObject default_value) const {
+  instanceVariableAtPut(kDefaultValueOffset, default_value);
+}
+
+inline RawObject RawContextVar::name() const {
+  return instanceVariableAt(kNameOffset);
+}
+
+inline void RawContextVar::setName(RawObject name) const {
+  instanceVariableAtPut(kNameOffset, name);
 }
 
 // RawTypeProxy
@@ -6706,6 +6819,40 @@ inline RawObject RawClassMethod::function() const {
 
 inline void RawClassMethod::setFunction(RawObject function) const {
   instanceVariableAtPut(kFunctionOffset, function);
+}
+
+// RawToken
+
+inline RawObject RawToken::context() const {
+  return instanceVariableAt(kContextOffset);
+}
+
+inline void RawToken::setContext(RawObject context) const {
+  instanceVariableAtPut(kContextOffset, context);
+}
+
+inline RawObject RawToken::oldValue() const {
+  return instanceVariableAt(kOldValueOffset);
+}
+
+inline void RawToken::setOldValue(RawObject old_value) const {
+  instanceVariableAtPut(kOldValueOffset, old_value);
+}
+
+inline bool RawToken::used() const {
+  return RawBool::cast(instanceVariableAt(kUsedOffset)).value();
+}
+
+inline void RawToken::setUsed(bool used) const {
+  instanceVariableAtPut(kUsedOffset, RawBool::fromBool(used));
+}
+
+inline RawObject RawToken::var() const {
+  return instanceVariableAt(kVarOffset);
+}
+
+inline void RawToken::setVar(RawObject var) const {
+  instanceVariableAtPut(kVarOffset, var);
 }
 
 // RawWeakRef

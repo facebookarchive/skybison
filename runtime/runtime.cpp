@@ -63,6 +63,7 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
+#include "under-contextvars-module.h"
 #include "under-io-module.h"
 #include "under-signal-module.h"
 #include "unicode.h"
@@ -1802,6 +1803,7 @@ void Runtime::initializeTypes(Thread* thread) {
   initializeTracebackType(thread);
   initializeTupleTypes(thread);
   initializeTypeTypes(thread);
+  initializeUnderContextvarsTypes(thread);
   initializeUnderIOTypes(thread);
   initializeValueCellTypes(thread);
 
@@ -3427,6 +3429,33 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
   result.setIndex(0);
   result.setIterable(*tuple);
   result.setLength(length);
+  return *result;
+}
+
+RawObject Runtime::newContext(const Dict& data) {
+  HandleScope scope;
+  Context result(&scope, heap()->create<RawContext>());
+  result.setData(*data);
+  result.setPrevContext(NoneType::object());
+  return *result;
+}
+
+RawObject Runtime::newContextVar(const Str& name, const Object& default_value) {
+  HandleScope scope;
+  ContextVar result(&scope, heap()->create<RawContextVar>());
+  result.setName(*name);
+  result.setDefaultValue(*default_value);
+  return *result;
+}
+
+RawObject Runtime::newToken(const Context& ctx, const ContextVar& var,
+                            const Object& old_value) {
+  HandleScope scope;
+  Token result(&scope, heap()->create<RawToken>());
+  result.setContext(*ctx);
+  result.setVar(*var);
+  result.setOldValue(*old_value);
+  result.setUsed(false);
   return *result;
 }
 

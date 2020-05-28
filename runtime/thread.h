@@ -284,6 +284,12 @@ class Thread {
   RawObject reprEnter(const Object& obj);
   void reprLeave(const Object& obj);
 
+  // Get/set the current thread-global _contextvars.Context
+  RawObject contextvarsContext() { return contextvars_context_; }
+  void setContextvarsContext(RawObject context) {
+    contextvars_context_ = context;
+  }
+
   // Returns thread ID.
   word id() {
     // Currently we only ever have a single thread.
@@ -327,6 +333,8 @@ class Thread {
   RawObject caught_exc_stack_;
 
   RawObject api_repr_list_;
+
+  RawObject contextvars_context_;
 
   // C-API current recursion depth used via _PyThreadState_GetRecursionDepth
   int recursion_depth_ = 0;

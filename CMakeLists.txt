@@ -226,6 +226,7 @@ set(
   FROZEN_MODULE_INPUT
   library/_builtins.py
   library/_codecs.py
+  library/_contextvars.py
   library/_ctypes.py
   library/_imp.py
   library/_io.py
@@ -429,6 +430,8 @@ add_library(
   runtime/under-builtins-module.cpp
   runtime/under-builtins-module.h
   runtime/under-codecs-module.cpp
+  runtime/under-contextvars-module.cpp
+  runtime/under-contextvars-module.h
   runtime/under-ctypes-module.cpp
   runtime/under-ctypes-module.h
   runtime/under-imp-module.cpp

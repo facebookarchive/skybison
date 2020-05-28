@@ -242,6 +242,12 @@ class Runtime {
 
   RawObject newTupleIterator(const Tuple& tuple, word length);
 
+  // Constructors from _contextvars
+  RawObject newContext(const Dict& data);
+  RawObject newContextVar(const Str& name, const Object& default_value);
+  RawObject newToken(const Context& ctx, const ContextVar& ctx_var,
+                     const Object& old_value);
+
   void processCallbacks();
   void processFinalizers();
 

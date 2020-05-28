@@ -26,6 +26,8 @@ class Runtime;
   V(ConnectionError)                                                           \
   V(ConnectionRefusedError)                                                    \
   V(ConnectionResetError)                                                      \
+  V(Context)                                                                   \
+  V(ContextVar)                                                                \
   V(DeprecationWarning)                                                        \
   V(EOFError)                                                                  \
   V(Exception)                                                                 \
@@ -49,6 +51,7 @@ class Runtime;
   V(LookupError)                                                               \
   V(MAP_SHARED)                                                                \
   V(MAP_PRIVATE)                                                               \
+  V(MISSING)                                                                   \
   V(MemoryError)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(NSIG)                                                                      \
@@ -91,6 +94,7 @@ class Runtime;
   V(TextIOWrapper)                                                             \
   V(TIMEOUT_MAX)                                                               \
   V(TimeoutError)                                                              \
+  V(Token)                                                                     \
   V(True)                                                                      \
   V(TypeError)                                                                 \
   V(UCD)                                                                       \
@@ -291,6 +295,7 @@ class Runtime;
   V(_coroutine__exception_state)                                               \
   V(_coroutine__frame)                                                         \
   V(_coroutine__origin)                                                        \
+  V(_contextvars)                                                              \
   V(_created)                                                                  \
   V(_ctypes)                                                                   \
   V(_decoded_chars)                                                            \
@@ -694,6 +699,7 @@ class Runtime;
   V(obj)                                                                       \
   V(object)                                                                    \
   V(offset)                                                                    \
+  V(old_value)                                                                 \
   V(operator)                                                                  \
   V(or_)                                                                       \
   V(owner)                                                                     \
@@ -767,6 +773,7 @@ class Runtime;
   V(utf_8_encode)                                                              \
   V(value)                                                                     \
   V(valuecell)                                                                 \
+  V(var)                                                                       \
   V(version)                                                                   \
   V(version_info)                                                              \
   V(warn)                                                                      \
