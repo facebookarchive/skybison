@@ -152,6 +152,7 @@ from _builtins import (
     _list_setitem,
     _list_setslice,
     _list_sort,
+    _list_sort_by_key,
     _list_swap,
     _mappingproxy_guard,
     _mappingproxy_mapping,
@@ -4653,15 +4654,16 @@ class list(bootstrap=True):
             length = _list_len(self)
             while i < length:
                 item = _list_getitem(self, i)
-                list.__setitem__(self, i, (key(item), item))
+                _list_setitem(self, i, (key(item), item))
                 i += 1
-        _list_sort(self)
-        if key:
+            _list_sort_by_key(self)
             i = 0
             while i < length:
                 item = _list_getitem(self, i)
-                list.__setitem__(self, i, item[1])
+                _list_setitem(self, i, _tuple_getitem(item, 1))
                 i += 1
+        else:
+            _list_sort(self)
         if reverse:
             list.reverse(self)
 

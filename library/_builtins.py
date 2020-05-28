@@ -599,6 +599,10 @@ def _list_sort(list):
     _builtin()
 
 
+def _list_sort_by_key(list):
+    _builtin()
+
+
 def _list_swap(list, i, j):
     _builtin()
 
@@ -606,6 +610,10 @@ def _list_swap(list, i, j):
 def _lt(obj, other):
     "Same as obj < other."
     return obj < other
+
+
+def _lt_key(obj, other):
+    return _tuple_getitem(obj, 0) < _tuple_getitem(other, 0)
 
 
 def _mappingproxy_guard(obj):

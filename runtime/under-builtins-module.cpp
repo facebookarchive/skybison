@@ -3112,6 +3112,16 @@ RawObject FUNC(_builtins, _list_sort)(Thread* thread, Frame* frame,
   return listSort(thread, list);
 }
 
+RawObject FUNC(_builtins, _list_sort_by_key)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  CHECK(thread->runtime()->isInstanceOfList(args.get(0)),
+        "Unsupported argument type for 'ls'");
+  List list(&scope, args.get(0));
+  return listSortWithCompareMethod(thread, list, ID(_lt_key));
+}
+
 static RawObject listSetSlice(Thread* thread, const List& self, word start,
                               word stop, word step, const Tuple& src,
                               word src_length) {

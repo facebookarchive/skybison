@@ -105,7 +105,8 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
 static const int kListInsertionSortSize = 8;
 
 static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
-                                   word start, word end) {
+                                   SymbolId compare_method, word start,
+                                   word end) {
   HandleScope scope(thread);
   Object item_i(&scope, NoneType::object());
   Object item_j(&scope, NoneType::object());
@@ -115,8 +116,8 @@ static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
     word j = i - 1;
     for (; j >= start; j--) {
       item_j = data.at(j);
-      compare_result =
-          thread->invokeFunction2(ID(_builtins), ID(_lt), item_i, item_j);
+      compare_result = thread->invokeFunction2(ID(_builtins), compare_method,
+                                               item_i, item_j);
       if (compare_result.isError()) {
         return *compare_result;
       }
@@ -137,8 +138,8 @@ static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
 // Merge 2 sublists, input[left: right], input[right: end] into
 // output[left: end].
 static RawObject listMerge(Thread* thread, const MutableTuple& input,
-                           const MutableTuple& output, word left, word right,
-                           word end) {
+                           const MutableTuple& output, SymbolId compare_method,
+                           word left, word right, word end) {
   HandleScope scope(thread);
   Object item_i(&scope, NoneType::object());
   Object item_j(&scope, NoneType::object());
@@ -150,7 +151,7 @@ static RawObject listMerge(Thread* thread, const MutableTuple& input,
     item_i = input.at(i);
     item_j = input.at(j);
     compare_result =
-        thread->invokeFunction2(ID(_builtins), ID(_lt), item_j, item_i);
+        thread->invokeFunction2(ID(_builtins), compare_method, item_j, item_i);
     if (compare_result.isError()) {
       return *compare_result;
     }
@@ -177,13 +178,18 @@ static RawObject listMerge(Thread* thread, const MutableTuple& input,
   return NoneType::object();
 }
 
+RawObject listSort(Thread* thread, const List& list) {
+  return listSortWithCompareMethod(thread, list, ID(_lt));
+}
+
 // This uses an adaptation of merge sort. It sorts sublists of size
 // kListInsertionSortSize or less using insertion sort first. Afterwards, it is
 // using a bottom-up merge sort to increase the sublists' size by power of 2.
 // Also, this function allocates a temporary space to ease merging and swaps
 // `input` and `output` to avoid further allocation.
 // TODO(T39107329): Consider using Timsort for further optimization.
-RawObject listSort(Thread* thread, const List& list) {
+RawObject listSortWithCompareMethod(Thread* thread, const List& list,
+                                    SymbolId compare_method) {
   word num_items = list.numItems();
   if (num_items == 0) {
     return NoneType::object();
@@ -193,7 +199,8 @@ RawObject listSort(Thread* thread, const List& list) {
   Object compare_result(&scope, NoneType::object());
   for (word left = 0; left < num_items; left += kListInsertionSortSize) {
     word right = Utils::minimum(left + kListInsertionSortSize, num_items);
-    compare_result = listInsertionSort(thread, input, left, right);
+    compare_result =
+        listInsertionSort(thread, input, compare_method, left, right);
     if (compare_result.isError()) {
       return *compare_result;
     }
@@ -209,7 +216,8 @@ RawObject listSort(Thread* thread, const List& list) {
     for (word left = 0; left < num_items; left += width * 2) {
       word right = Utils::minimum(num_items, left + width);
       word end = Utils::minimum(num_items, left + width * 2);
-      compare_result = listMerge(thread, input, output, left, right, end);
+      compare_result =
+          listMerge(thread, input, output, compare_method, left, right, end);
       if (compare_result.isError()) {
         return *compare_result;
       }

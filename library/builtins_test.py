@@ -9459,6 +9459,28 @@ class ListTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_sort_with_key(self):
+        ls = [1, 2, 3, 4, 5, 6]
+        ls.sort(key=lambda x: -x)
+        self.assertEqual(ls, [6, 5, 4, 3, 2, 1])
+
+    def test_sort_with_key_handles_duplicates(self):
+        ls = [1, 1, 2, 2]
+        ls.sort(key=lambda x: -x)
+        self.assertEqual(ls, [2, 2, 1, 1])
+
+    def test_sort_with_key_handles_noncomparable_item(self):
+        class C:
+            def __init__(self, val):
+                self.val = val
+
+            def __eq__(self, other):
+                return self.val == other.val
+
+        ls = [C(i % 2) for i in range(4)]
+        ls.sort(key=lambda x: x.val)
+        self.assertEqual(ls, [C(0), C(0), C(1), C(1)])
+
 
 class LocalsTests(unittest.TestCase):
     def test_returns_local_vars(self):

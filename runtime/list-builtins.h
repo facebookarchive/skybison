@@ -38,6 +38,12 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
 // Error otherwise.
 RawObject listSort(Thread* thread, const List& list);
 
+// Sort a list in place with the specified compare method id (from _builtins)
+// Returns None when there has been no error, or throws a TypeError and returns
+// Error otherwise.
+RawObject listSortWithCompareMethod(Thread* thread, const List& list,
+                                    SymbolId compare_method);
+
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
 

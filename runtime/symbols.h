@@ -394,6 +394,7 @@ class Runtime;
   V(_longrange_iterator__stop)                                                 \
   V(_lookup_text)                                                              \
   V(_lt)                                                                       \
+  V(_lt_key)                                                                   \
   V(_mappingproxy__mapping)                                                    \
   V(_memmove_addr)                                                             \
   V(_memoryview_guard)                                                         \
