@@ -1111,6 +1111,45 @@ TEST_F(ThreadTest, PendingStopIterationValueInspectsTuple) {
   EXPECT_TRUE(isIntEqualsWord(thread_->pendingStopIterationValue(), 123));
 }
 
+TEST_F(ThreadTest,
+       RaiseStopIterationWithTupleReturnedByPendingStopIterationValue) {
+  HandleScope scope(thread_);
+
+  Object obj1(&scope, runtime_->newInt(123));
+  Object obj2(&scope, runtime_->newInt(456));
+  Tuple tuple(&scope, runtime_->newTupleWith2(obj1, obj2));
+  thread_->raiseStopIterationWithValue(tuple);
+
+  ASSERT_TRUE(thread_->hasPendingStopIteration());
+  EXPECT_EQ(thread_->pendingStopIterationValue(), tuple);
+}
+
+TEST_F(ThreadTest,
+       RaiseStopIterationWithStopIterationReturnedByPendingStopIterationValue) {
+  HandleScope scope(thread_);
+
+  Object obj1(&scope, runtime_->newInt(123));
+  Type stop_iteration_type(&scope, runtime_->typeAt(LayoutId::kStopIteration));
+  Object stop_iteration(
+      &scope, Interpreter::callFunction1(thread_, thread_->currentFrame(),
+                                         stop_iteration_type, obj1));
+  thread_->raiseStopIterationWithValue(stop_iteration);
+
+  ASSERT_TRUE(thread_->hasPendingStopIteration());
+  EXPECT_EQ(thread_->pendingStopIterationValue(), stop_iteration);
+}
+
+TEST_F(ThreadTest,
+       RaiseStopIterationWithIntReturnedByPendingStopIterationValue) {
+  HandleScope scope(thread_);
+
+  Object obj1(&scope, runtime_->newInt(123));
+  thread_->raiseStopIterationWithValue(obj1);
+
+  ASSERT_TRUE(thread_->hasPendingStopIteration());
+  EXPECT_EQ(thread_->pendingStopIterationValue(), obj1);
+}
+
 // MRO tests
 
 static RawStr className(RawObject obj) {

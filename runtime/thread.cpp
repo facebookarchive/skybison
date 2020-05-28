@@ -604,6 +604,33 @@ RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
                       &function_name, expected_type, &obj);
 }
 
+RawObject Thread::raiseStopAsyncIteration() {
+  return raise(LayoutId::kStopAsyncIteration, NoneType::object());
+}
+
+RawObject Thread::raiseStopIterationWithValue(const Object& value) {
+  if (runtime()->isInstanceOfTuple(*value) ||
+      runtime()->isInstanceOfStopIteration(*value)) {
+    // TODO(T67598788): Remove this special case. For now this works around
+    // the behavior of normalizeException() when it's called in
+    // Interpreter::unwind() as part of returning values from generators. Our
+    // desired end-state is StopIterations will be treated as a special
+    // optimized path which, among other properties, are not processed by
+    // normalization.
+    HandleScope scope(this);
+    Layout layout(&scope, runtime()->layoutAt(LayoutId::kStopIteration));
+    StopIteration stop_iteration(&scope, runtime()->newInstance(layout));
+    stop_iteration.setArgs(*value);
+    stop_iteration.setValue(*value);
+    stop_iteration.setCause(Unbound::object());
+    stop_iteration.setContext(Unbound::object());
+    stop_iteration.setTraceback(Unbound::object());
+    stop_iteration.setSuppressContext(RawBool::falseObj());
+    return raise(LayoutId::kStopIteration, *stop_iteration);
+  }
+  return raise(LayoutId::kStopIteration, *value);
+}
+
 bool Thread::hasPendingException() { return !pending_exc_type_.isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {

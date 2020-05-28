@@ -5590,8 +5590,9 @@ static RawObject resumeGeneratorImpl(Thread* thread,
     thread->popFrameToGeneratorFrame(generator_frame);
     return *result;
   }
-  // Generator ended with return.
   generator_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
+
+  // Return now if generator ended with exception.
   if (result.isErrorException()) {
     if (thread->pendingExceptionMatches(LayoutId::kStopIteration)) {
       thread->clearPendingException();
@@ -5602,7 +5603,14 @@ static RawObject resumeGeneratorImpl(Thread* thread,
     // asynchronous generators.
     return *result;
   }
-  return thread->raise(LayoutId::kStopIteration, *result);
+  // Process generator return value.
+  if (generator.isAsyncGenerator()) {
+    // The Python compiler should disallow non-None return from asynchronous
+    // generators.
+    CHECK(result.isNoneType(), "Asynchronous generators cannot return values");
+    return thread->raiseStopAsyncIteration();
+  }
+  return thread->raiseStopIterationWithValue(result);
 }
 
 RawObject Interpreter::resumeGenerator(Thread* thread,

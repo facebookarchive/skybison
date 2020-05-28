@@ -5635,6 +5635,76 @@ class ExecTests(unittest.TestCase):
         exec("a = 2", d)
         self.assertEqual(d["a"], 2)
 
+    def test_coroutine_returning_arbitrary_exception_passes_through_unchanged(self):
+        v = RuntimeError("banana")
+
+        async def f():
+            return v
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            f().send(None)
+
+        self.assertIs(exc.exception.value, v)
+
+    def test_coroutine_returning_explicit_stop_iteration_value_passes_through_unchanged(
+        self,
+    ):
+        v = StopIteration(10)
+
+        async def f():
+            return v
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            f().send(None)
+
+        self.assertIs(exc.exception.value, v)
+
+    def test_coroutine_returning_stop_iteration_sub_class_passes_through_unchanged(
+        self,
+    ):
+        class SubClassedStopIteration(StopIteration):
+            pass
+
+        v = SubClassedStopIteration(1)
+
+        async def f():
+            return v
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            f().send(None)
+
+        self.assertIs(exc.exception.value, v)
+
+    def test_coroutine_returning_tuple_passes_through_as_tuple(self):
+        v = (1,)
+
+        async def f():
+            return v
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            f().send(None)
+
+        self.assertIs(exc.exception.value, v)
+
+    def test_coroutine_returning_tuple_sub_class_passes_through_unchanged(self):
+        class NewTuple(tuple):
+            pass
+
+        v = NewTuple()
+
+        async def f():
+            return v
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            f().send(None)
+
+        self.assertIs(exc.exception.value, v)
+
 
 class FloatTests(unittest.TestCase):
     def test_dunder_divmod_raises_type_error(self):

@@ -168,6 +168,15 @@ class Thread {
   // must be returned up the stack by the caller.
   RawObject raiseRequiresType(const Object& obj, SymbolId expected_type);
 
+  // Raise a StopAsyncIteration exception, indicating an asynchronous generator
+  // has returned. Note, unlike generators and coroutines, asynchoronous
+  // generators cannot have non-None return values.
+  RawObject raiseStopAsyncIteration();
+
+  // Raise a StopIteration exception with the value attribute set. This is
+  // typically used to transport a return value from a generator or coroutine.
+  RawObject raiseStopIterationWithValue(const Object& value);
+
   // Raises a TypeError exception and returns an Error object that must be
   // returned up the stack by the caller.
   RawObject raiseUnsupportedBinaryOperation(const Object& left,
