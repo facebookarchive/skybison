@@ -3072,6 +3072,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);
+  layout.setDescribedType(*type);
   return *layout;
 }
 
@@ -3089,6 +3090,7 @@ RawObject Runtime::computeInitialLayoutWithSlotAttributes(
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);
+  layout.setDescribedType(*type);
   return *layout;
 }
 
