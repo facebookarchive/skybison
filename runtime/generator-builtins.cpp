@@ -175,6 +175,29 @@ static RawObject throwImpl(Thread* thread, Frame* frame, word nargs) {
   return throwImpl(thread, gen, exc, value, tb);
 }
 
+static RawObject closeImpl(Thread* thread, Frame* frame, word nargs,
+                           SymbolId name, LayoutId type) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (self.layoutId() != type) return thread->raiseRequiresType(self, name);
+  GeneratorBase gen(&scope, *self);
+  Runtime* runtime = thread->runtime();
+  Object gen_exit_exc(&scope, runtime->typeAt(LayoutId::kGeneratorExit));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, throwImpl(thread, gen, gen_exit_exc, none, none));
+  if (!result.isError()) {
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "ignored GeneratorExit");
+  }
+  if (thread->pendingExceptionMatches(LayoutId::kGeneratorExit) ||
+      thread->pendingExceptionMatches(LayoutId::kStopIteration)) {
+    thread->clearPendingException();
+    return NoneType::object();
+  }
+  return *result;
+}
+
 static const BuiltinAttribute kGeneratorAttributes[] = {
     {ID(_generator__frame), RawGenerator::kFrameOffset,
      AttributeFlags::kHidden},
@@ -255,12 +278,20 @@ RawObject METH(generator, __next__)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::resumeGenerator(thread, gen, value);
 }
 
+RawObject METH(generator, close)(Thread* thread, Frame* frame, word nargs) {
+  return closeImpl(thread, frame, nargs, ID(generator), LayoutId::kGenerator);
+}
+
 RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs) {
   return sendImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
 }
 
 RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
   return throwImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
+}
+
+RawObject METH(coroutine, close)(Thread* thread, Frame* frame, word nargs) {
+  return closeImpl(thread, frame, nargs, ID(coroutine), LayoutId::kCoroutine);
 }
 
 RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {

@@ -3573,6 +3573,89 @@ class CoroutineTests(unittest.TestCase):
         except CoroutineTests.MyError:
             return "all done!"  # noqa
 
+    def test_close_with_invalid_self_raises_type_error(self):
+        g = self.simple_coro()
+        with self.assertRaises(TypeError):
+            type(g).close(None)
+        # Silence unawaited coro warning
+        g.close()
+
+    def test_close_when_exhausted_returns_none(self):
+        g = self.simple_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(g.send(None), 2)
+        self.assertRaises(StopIteration, g.send, None)
+        self.assertIsNone(g.close())
+
+    def test_close_when_generator_exit_propagates_returns_none(self):
+        saw_generator_exit = False
+
+        async def f():
+            nonlocal saw_generator_exit
+            try:
+                await CoroutineTests.Awaitable(1)
+            except GeneratorExit:
+                saw_generator_exit = True
+                raise
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        self.assertIsNone(g.close())
+        self.assertTrue(saw_generator_exit)
+
+    def test_close_when_generator_exit_derived_exception_raised_returns_none(self):
+        class GeneratorExitDerived(GeneratorExit):
+            pass
+
+        async def f():
+            try:
+                await CoroutineTests.Awaitable(1)
+            except GeneratorExit:
+                raise GeneratorExitDerived
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        self.assertIsNone(g.close())
+
+    def test_close_when_stop_iteration_raised_returns_none(self):
+        saw_generator_exit = False
+
+        async def f():
+            nonlocal saw_generator_exit
+            try:
+                await CoroutineTests.Awaitable(1)
+            except GeneratorExit:
+                saw_generator_exit = True
+                # Implicitly raises StopIteration(2)
+                return 2
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        self.assertIsNone(g.close())
+        self.assertTrue(saw_generator_exit)
+
+    def test_close_generator_raises_exception_propagates(self):
+        async def f():
+            try:
+                await CoroutineTests.Awaitable(1)
+            except GeneratorExit:
+                raise ValueError
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(ValueError, g.close)
+
+    def test_close_generator_awaits_raises_runtime_error(self):
+        async def f():
+            try:
+                await CoroutineTests.Awaitable(1)
+            except GeneratorExit:
+                await CoroutineTests.Awaitable(2)
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(RuntimeError, g.close)
+
     def test_throw(self):
         g = self.simple_coro()
         self.assertRaises(CoroutineTests.MyError, g.throw, CoroutineTests.MyError())
@@ -6702,6 +6785,86 @@ class GeneratorTests(unittest.TestCase):
     def delegate_gen(g):
         r = yield from g
         yield r
+
+    def test_close_with_invalid_self_raises_type_error(self):
+        g = self.simple_gen()
+        with self.assertRaises(TypeError):
+            type(g).close(None)
+
+    def test_close_when_exhausted_returns_none(self):
+        g = self.simple_gen()
+        self.assertEqual(next(g), 1)
+        self.assertEqual(next(g), 2)
+        self.assertIsNone(g.close())
+
+    def test_close_when_generator_exit_propagates_returns_none(self):
+        saw_generator_exit = False
+
+        def f():
+            nonlocal saw_generator_exit
+            try:
+                yield 1
+            except GeneratorExit:
+                saw_generator_exit = True
+                raise
+
+        g = f()
+        self.assertEqual(next(g), 1)
+        self.assertIsNone(g.close())
+        self.assertTrue(saw_generator_exit)
+
+    def test_close_when_generator_exit_derived_exception_raised_returns_none(self):
+        class GeneratorExitDerived(GeneratorExit):
+            pass
+
+        def f():
+            try:
+                yield 1
+            except GeneratorExit:
+                raise GeneratorExitDerived
+
+        g = f()
+        self.assertEqual(next(g), 1)
+        self.assertIsNone(g.close())
+
+    def test_close_when_stop_iteration_raised_returns_none(self):
+        saw_generator_exit = False
+
+        def f():
+            nonlocal saw_generator_exit
+            try:
+                yield 1
+            except GeneratorExit:
+                saw_generator_exit = True
+                # Implicitly raises StopIteration(2)
+                return 2  # noqa
+
+        g = f()
+        self.assertEqual(next(g), 1)
+        self.assertIsNone(g.close())
+        self.assertTrue(saw_generator_exit)
+
+    def test_close_generator_raises_exception_propagates(self):
+        def f():
+            try:
+                yield 1
+            except GeneratorExit:
+                raise ValueError
+
+        g = f()
+        self.assertEqual(next(g), 1)
+        self.assertRaises(ValueError, g.close)
+
+    def test_close_generator_yields_raises_runtime_error(self):
+        def f():
+            try:
+                yield 1
+            except GeneratorExit:
+                yield 2
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        self.assertRaises(RuntimeError, g.close)
 
     def test_throw(self):
         g = self.simple_gen()

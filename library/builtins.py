@@ -2873,8 +2873,7 @@ class coroutine(bootstrap=True):
         return f"<coroutine object {self.__qualname__} at {_address(self):#x}>"
 
     def close(self):
-        # TODO(T42623564): implement this.
-        pass
+        _builtin()
 
     def send(self, value):
         _builtin()
@@ -3700,6 +3699,9 @@ class generator(bootstrap=True):
 
     def __repr__(self):
         return f"<generator object {self.__qualname__} at {_address(self):#x}>"
+
+    def close(self):
+        _builtin()
 
     def send(self, value):
         _builtin()
