@@ -3651,15 +3651,64 @@ class CoroutineTests(unittest.TestCase):
 
         self.assertIs(exc.exception.value, v)
 
+    def test_stop_iteration_raised_from_coroutine_turns_into_runtime_error(self):
+        async def f():
+            raise StopIteration
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(RuntimeError):
+            f().send(None)
+
+    def test_stop_iteration_raised_from_coroutine_but_caught_can_return_a_value(self):
+        async def f():
+            try:
+                raise StopIteration
+            except StopIteration:
+                return 1
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(StopIteration) as exc:
+            f().send(None)
+
+        self.assertEqual(exc.exception.value, 1)
+
+    def test_stop_iteration_raised_from_inner_coroutine_turns_into_runtime_error(self):
+        async def f():
+            raise StopIteration
+
+        async def g():
+            return await f()
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(RuntimeError):
+            g().send(None)
+
+    def test_sub_classed_stop_iteration_raised_from_coroutine_turns_into_runtime_error(
+        self,
+    ):
+        class SubClassedStopIteration(AttributeError, StopIteration):
+            pass
+
+        async def f():
+            raise SubClassedStopIteration
+
+        # Send in None to trigger initial execution of coroutine
+        with self.assertRaises(RuntimeError):
+            f().send(None)
+
     def test_yield_from_coroutine_in_non_coroutine_iter_raises_exception(self):
         async def coro():
             pass
 
-        def f():
-            yield from coro()
+        def f(coro_inst):
+            yield from coro_inst
 
+        coro_inst = coro()
         with self.assertRaises(TypeError):
-            f().send(None)
+            f(coro_inst).send(None)
+
+        # Silence warning from CPython
+        coro_inst.close()
 
 
 class DelattrTests(unittest.TestCase):
@@ -6578,31 +6627,25 @@ def foo():
 
 
 class GeneratorTests(unittest.TestCase):
-    # TODO(T65863013): Make generator behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_managed_stop_iteration(self):
-        warnings.filterwarnings(
-            action="ignore",
-            category=DeprecationWarning,
-            message="generator.*raised StopIteration",
-            module=__name__,
-        )
-
+    def test_managed_yield_from_stop_iteration_turns_into_runtime_error(self):
         def inner_gen():
-            yield None
-            raise StopIteration("hello")
+            raise StopIteration
 
         def outer_gen():
             val = yield from inner_gen()
             yield val
 
         g = outer_gen()
-        self.assertIs(next(g), None)
-        self.assertEqual(next(g), "hello")
+        with self.assertRaises(RuntimeError):
+            next(g)
+
+    def test_managed_stop_iteration_turns_into_runtime_error(self):
+        def gen():
+            raise StopIteration
+            yield
+
+        with self.assertRaises(RuntimeError):
+            next(gen())
 
     def test_gi_running(self):
         def gen():

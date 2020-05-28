@@ -5592,7 +5592,16 @@ static RawObject resumeGeneratorImpl(Thread* thread,
   }
   // Generator ended with return.
   generator_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
-  if (result.isErrorException()) return *result;
+  if (result.isErrorException()) {
+    if (thread->pendingExceptionMatches(LayoutId::kStopIteration)) {
+      thread->clearPendingException();
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "coroutine raised StopIteration");
+    }
+    // TODO(T67596941): Equivalent check above for StopAsyncIteration in
+    // asynchronous generators.
+    return *result;
+  }
   return thread->raise(LayoutId::kStopIteration, *result);
 }
 
