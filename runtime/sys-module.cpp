@@ -107,6 +107,14 @@ void initializeSysModule(Thread* thread, const Module& module) {
   Object builtins(&scope, builtins_tuple.becomeImmutable());
   moduleAtPutById(thread, module, ID(builtin_module_names), builtins);
 
+  // Fill in version-related fields.
+  Int hexversion(&scope, SmallInt::fromWord(kVersionHex));
+  moduleAtPutById(thread, module, ID(hexversion), hexversion);
+  Str version(&scope, runtime->newStrFromCStr(kVersionInfo));
+  moduleAtPutById(thread, module, ID(version), version);
+  Object release_level(&scope, runtime->newStrFromCStr(kReleaseLevel));
+  moduleAtPutById(thread, module, ID(_version_releaselevel), release_level);
+
   executeFrozenModule(thread, &kSysModuleData, module);
 
   // Fill in hash_info.
@@ -126,25 +134,6 @@ void initializeSysModule(Thread* thread, const Module& module) {
   Object hash_info(
       &scope, thread->invokeFunction1(ID(sys), ID(_HashInfo), hash_info_data));
   moduleAtPutById(thread, module, ID(hash_info), hash_info);
-
-  // Fill in version-related fields.
-  Int hexversion(&scope, SmallInt::fromWord(kVersionHex));
-  moduleAtPutById(thread, module, ID(hexversion), hexversion);
-  Str version(&scope, runtime->newStrFromCStr(kVersionInfo));
-  moduleAtPutById(thread, module, ID(version), version);
-
-  Object version_major(&scope, SmallInt::fromWord(kVersionMajor));
-  Object version_minor(&scope, SmallInt::fromWord(kVersionMinor));
-  Object version_micro(&scope, SmallInt::fromWord(kVersionMicro));
-  Object version_release_level(&scope, runtime->newStrFromCStr(kReleaseLevel));
-  Object version_release_serial(&scope, SmallInt::fromWord(kReleaseSerial));
-  Tuple version_info_data(
-      &scope,
-      runtime->newTupleWithN(5, &version_major, &version_minor, &version_micro,
-                             &version_release_level, &version_release_serial));
-  Object version_info(&scope, thread->invokeFunction1(ID(sys), ID(_VersionInfo),
-                                                      version_info_data));
-  moduleAtPutById(thread, module, ID(version_info), version_info);
 
   runtime->cacheSysInstances(thread, module);
 }

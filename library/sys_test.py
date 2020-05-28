@@ -144,6 +144,9 @@ class SysTests(unittest.TestCase):
         cache_tag = f"{name}-{major}{minor}"
         self.assertEqual(sys.implementation.cache_tag, cache_tag)
 
+    def test_implementation_version_matches_module_version_info(self):
+        self.assertEqual(sys.implementation.version, sys.version_info)
+
     def test_setrecursionlimit_with_large_limit_raises_overflowerror(self):
         with self.assertRaises(OverflowError) as context:
             sys.setrecursionlimit(230992039023490234904329023904239023)

@@ -12,7 +12,9 @@ _python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdin_fd = _stdin_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
+_version_releaselevel = _version_releaselevel  # noqa: F821
 executable = executable  # noqa: F821
+hexversion = hexversion  # noqa: F821
 
 
 _Flags = _structseq_new_type(
@@ -215,7 +217,19 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
-implementation = _SimpleNamespace(cache_tag="pyro-37", name="pyro")
+implementation = _SimpleNamespace(
+    cache_tag="pyro-37",
+    name="pyro",
+    version=_VersionInfo(
+        (
+            (hexversion >> 24) & 0xFF,  # major
+            (hexversion >> 16) & 0xFF,  # minor
+            (hexversion >> 8) & 0xFF,  # micro
+            _version_releaselevel,  # releaselevel
+            hexversion & 0x0F,  # serial
+        )
+    ),
+)
 
 
 def intern(string):
@@ -259,6 +273,9 @@ stdin = _IOStream(_stdin_fd)
 
 
 stdout = _IOStream(_stdout_fd)
+
+
+version_info = implementation.version
 
 
 warnoptions = []
