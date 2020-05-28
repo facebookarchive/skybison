@@ -2869,6 +2869,9 @@ copyright = ""
 
 
 class coroutine(bootstrap=True):
+    def __repr__(self):
+        return f"<coroutine object {self.__qualname__} at {_address(self):#x}>"
+
     def close(self):
         # TODO(T42623564): implement this.
         pass
@@ -2878,9 +2881,6 @@ class coroutine(bootstrap=True):
 
     def throw(self, exc, value=_Unbound, tb=_Unbound):
         _builtin()
-
-    def __repr__(self):
-        return f"<coroutine object {self.__qualname__} at {_address(self):#x}>"
 
 
 credits = ""
@@ -3698,14 +3698,14 @@ class generator(bootstrap=True):
     def __next__(self):
         _builtin()
 
+    def __repr__(self):
+        return f"<generator object {self.__qualname__} at {_address(self):#x}>"
+
     def send(self, value):
         _builtin()
 
     def throw(self, exc, value=_Unbound, tb=_Unbound):
         _builtin()
-
-    def __repr__(self):
-        return f"<generator object {self.__qualname__} at {_address(self):#x}>"
 
 
 def getattr(obj, key, default=_Unbound):
