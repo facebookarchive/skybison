@@ -4875,11 +4875,13 @@ inline void RawHeapObject::forwardTo(RawObject object) const {
 }
 
 inline RawObject RawInstance::instanceVariableAt(word offset) const {
+  DCHECK_INDEX(offset, headerCountOrOverflow() * kPointerSize);
   return *reinterpret_cast<RawObject*>(address() + offset);
 }
 
 inline void RawInstance::instanceVariableAtPut(word offset,
                                                RawObject value) const {
+  DCHECK_INDEX(offset, headerCountOrOverflow() * kPointerSize);
   *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
