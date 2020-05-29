@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "handles-decl.h"
 #include "objects.h"
+#include "os.h"
 #include "symbols.h"
 #include "vector.h"
 
@@ -299,11 +300,7 @@ class Thread {
     contextvars_context_ = context;
   }
 
-  // Returns thread ID.
-  word id() {
-    // Currently we only ever have a single thread.
-    return 0;
-  }
+  uint64_t id() { return OS::threadID(); }
 
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
 

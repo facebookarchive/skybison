@@ -59,6 +59,8 @@ class OS {
 
   static char* temporaryFile(const char* prefix, int* fd);
 
+  static uint64_t threadID();
+
   static const char* name();
 
   static bool dirExists(const char* dir);

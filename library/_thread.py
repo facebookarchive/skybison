@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # $builtin-init-module$
 
-from _builtins import _Unbound, _unimplemented
+from _builtins import _builtin, _Unbound, _unimplemented
 
 
 # TODO(T53322979): Re-write to be thread-safe
@@ -81,7 +81,7 @@ def exit_thread():
 
 
 def get_ident():
-    return 0
+    _builtin()
 
 
 def interrupt_main():

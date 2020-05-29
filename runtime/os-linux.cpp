@@ -1,6 +1,7 @@
 #include "os.h"
 
 #include <dlfcn.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 #include <csignal>
@@ -80,5 +81,7 @@ void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol,
   }
   return result;
 }
+
+uint64_t OS::threadID() { return syscall(SYS_gettid); }
 
 }  // namespace py

@@ -535,7 +535,9 @@ void HeapProfiler::writeHandleRoot(RawObject obj) {
   sub.writeObjectId(objectId(obj));
   // thread serial number
   // TODO(emacs): Write an ID from the thread the handle belongs to
-  sub.write32(thread_->id());
+  uint64_t id = thread_->id();
+  DCHECK(id <= kMaxUint32, "thread id out of bounds");
+  sub.write32(id);
 }
 
 // STRING IN UTF8 - 0x01

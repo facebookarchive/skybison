@@ -2,6 +2,7 @@
 
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
+#include <pthread.h>
 
 #include <csignal>
 #include <cstdint>
@@ -84,6 +85,12 @@ void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol,
     *error_msg = ::dlerror();
   }
   return result;
+}
+
+uint64_t OS::threadID() {
+  uint64_t tid;
+  pthread_threadid_np(nullptr, &tid);
+  return tid;
 }
 
 }  // namespace py
