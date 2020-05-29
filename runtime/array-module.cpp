@@ -1,7 +1,6 @@
 #include "array-module.h"
 
 #include "builtins.h"
-#include "frozen-modules.h"
 #include "handles.h"
 #include "modules.h"
 #include "objects.h"
@@ -16,9 +15,10 @@ static const BuiltinType kArrayBuiltinTypes[] = {
     {ID(array), LayoutId::kArray},
 };
 
-void initializeArrayModule(Thread* thread, const Module& module) {
+void FUNC(array, __init_module__)(Thread* thread, const Module& module,
+                                  View<byte> bytecode) {
   moduleAddBuiltinTypes(thread, module, kArrayBuiltinTypes);
-  executeFrozenModule(thread, &kArrayModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 }
 
 RawObject FUNC(array, _array_check)(Thread* thread, Frame* frame, word nargs) {

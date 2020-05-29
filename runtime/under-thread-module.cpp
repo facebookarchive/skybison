@@ -1,6 +1,4 @@
-#include "under-thread-module.h"
-
-#include "frozen-modules.h"
+#include "builtins.h"
 #include "globals.h"
 #include "handles.h"
 #include "module-builtins.h"
@@ -9,8 +7,9 @@
 
 namespace py {
 
-void initializeUnderThreadModule(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnderThreadModuleData, module);
+void FUNC(_thread, __init_module__)(Thread* thread, const Module& module,
+                                    View<byte> bytecode) {
+  executeFrozenModule(thread, module, bytecode);
 }
 
 }  // namespace py

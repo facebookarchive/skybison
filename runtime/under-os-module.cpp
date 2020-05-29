@@ -6,7 +6,6 @@
 
 #include "builtins.h"
 #include "file.h"
-#include "frozen-modules.h"
 #include "module-builtins.h"
 #include "modules.h"
 #include "os.h"

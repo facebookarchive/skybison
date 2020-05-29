@@ -1,8 +1,5 @@
-#include "under-weakref-module.h"
-
 #include "builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "globals.h"
 #include "modules.h"
 #include "objects.h"
@@ -13,9 +10,10 @@ static const BuiltinType kUnderWeakrefBuiltinTypes[] = {
     {ID(weakref), LayoutId::kWeakRef},
 };
 
-void initializeUnderWeakrefModule(Thread* thread, const Module& module) {
+void FUNC(_weakref, __init_module__)(Thread* thread, const Module& module,
+                                     View<byte> bytecode) {
   moduleAddBuiltinTypes(thread, module, kUnderWeakrefBuiltinTypes);
-  executeFrozenModule(thread, &kUnderWeakrefModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 }
 
 RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Frame* frame,

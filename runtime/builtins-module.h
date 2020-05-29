@@ -20,6 +20,4 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
 RawObject compile(Thread* thread, const Object& source, const Object& filename,
                   SymbolId mode, word flags, int optimize);
 
-void initializeBuiltinsModule(Thread* thread, const Module& module);
-
 }  // namespace py

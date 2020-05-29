@@ -228,6 +228,8 @@ set(
   library/_codecs.py
   library/_contextvars.py
   library/_ctypes.py
+  library/_frozen_importlib.py
+  library/_frozen_importlib_external.py
   library/_imp.py
   library/_io.py
   library/_os.py
@@ -241,8 +243,6 @@ set(
   library/array.py
   library/builtins.py
   library/faulthandler.py
-  library/importlib/_bootstrap.py
-  library/importlib/_bootstrap_external.py
   library/marshal.py
   library/mmap.py
   library/operator.py
@@ -428,12 +428,10 @@ add_library(
   runtime/tuple-builtins.h
   runtime/type-builtins.cpp
   runtime/under-builtins-module.cpp
-  runtime/under-builtins-module.h
   runtime/under-codecs-module.cpp
   runtime/under-contextvars-module.cpp
   runtime/under-contextvars-module.h
   runtime/under-ctypes-module.cpp
-  runtime/under-ctypes-module.h
   runtime/under-imp-module.cpp
   runtime/under-imp-module.h
   runtime/under-io-module.cpp
@@ -443,17 +441,14 @@ add_library(
   runtime/under-signal-module.cpp
   runtime/under-signal-module.h
   runtime/under-thread-module.cpp
-  runtime/under-thread-module.h
   runtime/under-valgrind-module.cpp
   runtime/under-warnings-module.cpp
   runtime/under-weakref-module.cpp
-  runtime/under-weakref-module.h
   runtime/unicode-db.cpp
   runtime/unicode-db.h
   runtime/unicode.cpp
   runtime/unicode.h
   runtime/unicodedata-module.cpp
-  runtime/unicodedata-module.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/valuecell-builtins.cpp

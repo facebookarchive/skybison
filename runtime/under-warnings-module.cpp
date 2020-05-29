@@ -1,6 +1,5 @@
 #include "builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "handles.h"
 #include "modules.h"
 #include "runtime.h"

@@ -28,7 +28,6 @@
 #include "float-builtins.h"
 #include "frame-proxy-builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "function-builtins.h"
 #include "generator-builtins.h"
 #include "globals.h"
@@ -62,7 +61,6 @@
 #include "traceback-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
-#include "under-builtins-module.h"
 #include "under-contextvars-module.h"
 #include "under-io-module.h"
 #include "under-signal-module.h"
@@ -1873,14 +1871,6 @@ void Runtime::processFinalizers() {
   thread->setPendingExceptionTraceback(*saved_traceback);
 }
 
-RawObject Runtime::createModule(Thread* thread, SymbolId name) {
-  HandleScope scope(thread);
-  Object name_str(&scope, symbols()->at(name));
-  Module module(&scope, newModule(name_str));
-  addModule(module);
-  return *module;
-}
-
 RawObject Runtime::findOrCreateMainModule() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -1889,8 +1879,10 @@ RawObject Runtime::findOrCreateMainModule() {
     return *maybe_main;
   }
 
-  Module main(&scope, createModule(thread, ID(__main__)));
-  // Fill in __main__...
+  Object name(&scope, symbols()->at(ID(__main__)));
+  Module main(&scope, newModule(name));
+  addModule(main);
+  // TODO(T67704743) Fill in __main__...
   return *main;
 }
 

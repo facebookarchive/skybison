@@ -8,7 +8,6 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "formatter.h"
-#include "frozen-modules.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
 #include "marshal.h"
@@ -19,7 +18,6 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "type-builtins.h"
-#include "under-builtins-module.h"
 
 namespace py {
 
@@ -205,7 +203,8 @@ static const SymbolId kBuiltinsIntrinsicIds[] = {
 };
 // clang-format on
 
-void initializeBuiltinsModule(Thread* thread, const Module& module) {
+void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
+                                     View<byte> bytecode) {
   moduleAddBuiltinTypes(thread, module, kBuiltinsBuiltinTypes);
 
   Runtime* runtime = thread->runtime();
@@ -230,7 +229,7 @@ void initializeBuiltinsModule(Thread* thread, const Module& module) {
     moduleAtPutById(thread, module, ID(True), true_obj);
   }
 
-  executeFrozenModule(thread, &kBuiltinsModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
   runtime->cacheBuiltinsInstances(thread);
 
   // Populate some builtin types with shortcut constructors.

@@ -1,69 +1,18 @@
 #include "modules.h"
 
-#include "array-module.h"
-#include "builtins-module.h"
 #include "builtins.h"
 #include "capi-handles.h"
 #include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"
-#include "mmap-module.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
-#include "sys-module.h"
 #include "type-builtins.h"
-#include "under-builtins-module.h"
-#include "under-contextvars-module.h"
-#include "under-ctypes-module.h"
-#include "under-imp-module.h"
-#include "under-io-module.h"
-#include "under-signal-module.h"
-#include "under-thread-module.h"
-#include "under-weakref-module.h"
-#include "unicodedata-module.h"
 
 namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
-
-template <const FrozenModule* data>
-static void initializeFrozenModule(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, data, module);
-}
-
-const ModuleInitializer kBuiltinModules[] = {
-    {ID(_builtins), &initializeUnderBuiltinsModule},
-    {ID(_codecs), &initializeFrozenModule<&kUnderCodecsModuleData>},
-    {ID(_contextvars), &UnderContextvarsModule::initialize},
-    {ID(_ctypes), initializeUnderCtypesModule},
-    {ID(_frozen_importlib),
-     &initializeFrozenModule<&kUnderBootstrapModuleData>},
-    {ID(_frozen_importlib_external),
-     &initializeFrozenModule<&kUnderBootstrapExternalModuleData>},
-    {ID(_imp), &initializeFrozenModule<&kUnderImpModuleData>},
-    {ID(_io), &initializeUnderIOModule},
-    {ID(_os), &initializeFrozenModule<&kUnderOsModuleData>},
-    {ID(_path), &initializeFrozenModule<&kUnderPathModuleData>},
-    {ID(_signal), &initializeUnderSignalModule},
-    {ID(_str_mod), &initializeFrozenModule<&kUnderStrModModuleData>},
-    {ID(_thread), &initializeUnderThreadModule},
-    {ID(_valgrind), &initializeFrozenModule<&kUnderValgrindModuleData>},
-    {ID(_warnings), &initializeFrozenModule<&kUnderWarningsModuleData>},
-    {ID(_weakref), &initializeUnderWeakrefModule},
-    {ID(array), &initializeArrayModule},
-    {ID(builtins), &initializeBuiltinsModule},
-    {ID(faulthandler), &initializeFrozenModule<&kFaulthandlerModuleData>},
-    {ID(marshal), &initializeFrozenModule<&kMarshalModuleData>},
-    {ID(mmap), &initializeMmapModule},
-    {ID(operator), &initializeFrozenModule<&kOperatorModuleData>},
-    {ID(sys), &initializeSysModule},
-    {ID(unicodedata), &initializeUnicodedataModule},
-    {ID(warnings), &initializeFrozenModule<&kWarningsModuleData>},
-    {ID(zipimport), &initializeFrozenModule<&kZipimportModuleData>},
-};
-
-const word kNumBuiltinModules = ARRAYSIZE(kBuiltinModules);
 
 static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
   // Ensure builtin types have been declared.
@@ -98,11 +47,9 @@ static word extensionModuleIndex(const Str& name) {
   return -1;
 }
 
-static word builtinModuleIndex(Thread* thread, const Str& name) {
-  DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
-  Runtime* runtime = thread->runtime();
-  for (word i = 0; i < kNumBuiltinModules; i++) {
-    if (runtime->symbols()->at(kBuiltinModules[i].name) == name) {
+static word builtinModuleIndex(const Str& name) {
+  for (word i = 0; i < kNumFrozenModules; i++) {
+    if (name.equalsCStr(kFrozenModules[i].name)) {
       return i;
     }
   }
@@ -112,11 +59,18 @@ static word builtinModuleIndex(Thread* thread, const Str& name) {
 static RawObject createBuiltinModule(Thread* thread, const Str& name) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  word builtin_index = builtinModuleIndex(thread, name);
+  word builtin_index = builtinModuleIndex(name);
   if (builtin_index >= 0) {
-    SymbolId id = kBuiltinModules[builtin_index].name;
-    Module module(&scope, runtime->createModule(thread, id));
-    kBuiltinModules[builtin_index].init(thread, module);
+    const FrozenModule* frozen_module = &kFrozenModules[builtin_index];
+    Module module(&scope, runtime->newModule(name));
+    runtime->addModule(module);
+    ModuleInitFunc init = frozen_module->init;
+    if (init == nullptr) {
+      init = executeFrozenModule;
+    }
+    View<byte> bytecode(frozen_module->marshalled_code,
+                        frozen_module->marshalled_code_length);
+    init(thread, module, bytecode);
     return *module;
   }
 
@@ -160,12 +114,10 @@ RawObject ensureBuiltinModuleById(Thread* thread, SymbolId id) {
   return createBuiltinModule(thread, name);
 }
 
-void executeFrozenModule(Thread* thread, const FrozenModule* frozen_module,
-                         const Module& module) {
+void executeFrozenModule(Thread* thread, const Module& module,
+                         View<byte> bytecode) {
   HandleScope scope(thread);
-  View<byte> data(reinterpret_cast<const byte*>(frozen_module->marshalled_code),
-                  frozen_module->marshalled_code_length);
-  Marshal::Reader reader(&scope, thread, data);
+  Marshal::Reader reader(&scope, thread, bytecode);
   reader.setBuiltinFunctions(kBuiltinFunctions, kNumBuiltinFunctions);
   Str filename(&scope, module.name());
   CHECK(!reader.readPycHeader(filename).isErrorException(),
@@ -198,9 +150,8 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
   return *module;
 }
 
-bool isBuiltinModule(Thread* thread, const Str& name) {
-  return builtinModuleIndex(thread, name) >= 0 ||
-         extensionModuleIndex(name) >= 0;
+bool isBuiltinModule(const Str& name) {
+  return builtinModuleIndex(name) >= 0 || extensionModuleIndex(name) >= 0;
 }
 
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,

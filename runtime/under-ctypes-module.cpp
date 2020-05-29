@@ -1,5 +1,3 @@
-#include "under-ctypes-module.h"
-
 #include <ffi.h>
 
 #include "cpython-data.h"
@@ -7,7 +5,6 @@
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "globals.h"
 #include "module-builtins.h"
 #include "modules.h"
@@ -76,8 +73,9 @@ static PyObject* wstringAt(const wchar_t* /* ptr */, int /* size */) {
   UNIMPLEMENTED("_ctypes wstringAt");
 }
 
-void initializeUnderCtypesModule(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnderCtypesModuleData, module);
+void FUNC(_ctypes, __init_module__)(Thread* thread, const Module& module,
+                                    View<byte> bytecode) {
+  executeFrozenModule(thread, module, bytecode);
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

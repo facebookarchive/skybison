@@ -2,7 +2,6 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "int-builtins.h"
 #include "modules.h"
 #include "runtime.h"

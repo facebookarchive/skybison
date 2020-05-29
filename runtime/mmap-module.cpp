@@ -8,7 +8,6 @@
 
 #include "builtins.h"
 #include "file.h"
-#include "frozen-modules.h"
 #include "handles.h"
 #include "module-builtins.h"
 #include "modules.h"
@@ -25,7 +24,8 @@ static const BuiltinType kMmapBuiltinTypes[] = {
     {ID(mmap), LayoutId::kMmap},
 };
 
-void initializeMmapModule(Thread* thread, const Module& module) {
+void FUNC(mmap, __init_module__)(Thread* thread, const Module& module,
+                                 View<byte> bytecode) {
   HandleScope scope(thread);
   Object page_size(&scope, SmallInt::fromWord(OS::pageSize()));
   moduleAtPutById(thread, module, ID(PAGESIZE), page_size);
@@ -47,7 +47,7 @@ void initializeMmapModule(Thread* thread, const Module& module) {
   moduleAtPutById(thread, module, ID(MAP_PRIVATE), map_private);
 
   moduleAddBuiltinTypes(thread, module, kMmapBuiltinTypes);
-  executeFrozenModule(thread, &kMmapModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 }
 
 RawObject FUNC(mmap, _mmap_new)(Thread* thread, Frame* frame, word nargs) {

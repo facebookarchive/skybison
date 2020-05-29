@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 
 from builtins import SimpleNamespace as _SimpleNamespace, _structseq_new_type
 

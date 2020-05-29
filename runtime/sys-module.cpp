@@ -29,7 +29,8 @@ namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
-void initializeSysModule(Thread* thread, const Module& module) {
+void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
+                                View<byte> bytecode) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object modules(&scope, runtime->modules());
@@ -88,19 +89,20 @@ void initializeSysModule(Thread* thread, const Module& module) {
     num_external_modules++;
   }
 
-  word num_modules = kNumBuiltinModules + num_external_modules;
+  word num_modules = kNumFrozenModules + num_external_modules;
   MutableTuple builtins_tuple(&scope, runtime->newMutableTuple(num_modules));
 
   // Add all the available builtin modules
-  Symbols* symbols = runtime->symbols();
-  for (word i = 0; i < kNumBuiltinModules; i++) {
-    builtins_tuple.atPut(i, symbols->at(kBuiltinModules[i].name));
+  for (word i = 0; i < kNumFrozenModules; i++) {
+    builtins_tuple.atPut(
+        i, Runtime::internStrFromCStr(thread, kFrozenModules[i].name));
   }
 
   // Add all the available extension builtin modules
   for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    builtins_tuple.atPut(kNumBuiltinModules + i,
-                         runtime->newStrFromCStr(_PyImport_Inittab[i].name));
+    builtins_tuple.atPut(
+        kNumFrozenModules + i,
+        Runtime::internStrFromCStr(thread, _PyImport_Inittab[i].name));
   }
 
   // Create builtin_module_names tuple
@@ -115,7 +117,7 @@ void initializeSysModule(Thread* thread, const Module& module) {
   Object release_level(&scope, runtime->newStrFromCStr(kReleaseLevel));
   moduleAtPutById(thread, module, ID(_version_releaselevel), release_level);
 
-  executeFrozenModule(thread, &kSysModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 
   // Fill in hash_info.
   Object hash_width(&scope, SmallInt::fromWord(SmallInt::kBits));
@@ -123,7 +125,7 @@ void initializeSysModule(Thread* thread, const Module& module) {
   Object hash_inf(&scope, SmallInt::fromWord(kHashInf));
   Object hash_nan(&scope, SmallInt::fromWord(kHashNan));
   Object hash_imag(&scope, SmallInt::fromWord(kHashImag));
-  Object hash_algorithm(&scope, symbols->at(ID(siphash24)));
+  Object hash_algorithm(&scope, runtime->symbols()->at(ID(siphash24)));
   Object hash_bits(&scope, SmallInt::fromWord(64));
   Object hash_seed_bits(&scope, SmallInt::fromWord(128));
   Object hash_cutoff(&scope, SmallInt::fromWord(SmallStr::kMaxLength));

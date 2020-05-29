@@ -2,20 +2,20 @@
 
 #include "builtins.h"
 #include "dict-builtins.h"
-#include "frozen-modules.h"
 #include "type-builtins.h"
 
 namespace py {
 
-const BuiltinType UnderContextvarsModule::kBuiltinTypes[] = {
+static const BuiltinType kUnderContextvarsBuiltinTypes[] = {
     {ID(Context), LayoutId::kContext},
     {ID(ContextVar), LayoutId::kContextVar},
     {ID(Token), LayoutId::kToken},
 };
 
-void UnderContextvarsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
-  executeFrozenModule(thread, &kUnderContextvarsModuleData, module);
+void FUNC(_contextvars, __init_module__)(Thread* thread, const Module& module,
+                                         View<byte> bytecode) {
+  moduleAddBuiltinTypes(thread, module, kUnderContextvarsBuiltinTypes);
+  executeFrozenModule(thread, module, bytecode);
 }
 
 static const BuiltinAttribute kContextVarAttributes[] = {

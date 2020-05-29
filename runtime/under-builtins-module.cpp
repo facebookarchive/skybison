@@ -1,5 +1,3 @@
-#include "under-builtins-module.h"
-
 #include <unistd.h>
 
 #include <cerrno>
@@ -13,7 +11,6 @@
 #include "exception-builtins.h"
 #include "float-builtins.h"
 #include "float-conversion.h"
-#include "frozen-modules.h"
 #include "heap-profiler.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
@@ -101,7 +98,8 @@ static const SymbolId kUnderBuiltinsIntrinsicIds[] = {
 };
 // clang-format on
 
-void initializeUnderBuiltinsModule(Thread* thread, const Module& module) {
+void FUNC(_builtins, __init_module__)(Thread* thread, const Module& module,
+                                      View<byte> bytecode) {
   HandleScope scope(thread);
   Object unbound_value(&scope, Unbound::object());
   moduleAtPutById(thread, module, ID(_Unbound), unbound_value);
@@ -114,7 +112,7 @@ void initializeUnderBuiltinsModule(Thread* thread, const Module& module) {
   // `__builtins__` to this module instead.
   moduleAtPutById(thread, module, ID(__builtins__), module);
 
-  executeFrozenModule(thread, &kUnderBuiltinsModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 
   // Mark functions that have an intrinsic implementation.
   for (SymbolId intrinsic_id : kUnderBuiltinsIntrinsicIds) {

@@ -11,7 +11,6 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "test-utils.h"
-#include "under-builtins-module.h"
 
 namespace py {
 namespace testing {

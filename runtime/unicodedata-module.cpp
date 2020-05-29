@@ -1,7 +1,4 @@
-#include "unicodedata-module.h"
-
 #include "builtins.h"
-#include "frozen-modules.h"
 #include "handles-decl.h"
 #include "layout.h"
 #include "module-builtins.h"
@@ -16,8 +13,9 @@
 
 namespace py {
 
-void initializeUnicodedataModule(Thread* thread, const Module& module) {
-  executeFrozenModule(thread, &kUnicodedataModuleData, module);
+void FUNC(unicodedata, __init_module__)(Thread* thread, const Module& module,
+                                        View<byte> bytecode) {
+  executeFrozenModule(thread, module, bytecode);
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

@@ -3,7 +3,6 @@
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "globals.h"
 #include "int-builtins.h"
 #include "modules.h"
@@ -33,9 +32,10 @@ static const BuiltinType kUnderIOBuiltinTypes[] = {
     {ID(_TextIOBase), LayoutId::kUnderTextIOBase},
 };
 
-void initializeUnderIOModule(Thread* thread, const Module& module) {
+void FUNC(_io, __init_module__)(Thread* thread, const Module& module,
+                                View<byte> bytecode) {
   moduleAddBuiltinTypes(thread, module, kUnderIOBuiltinTypes);
-  executeFrozenModule(thread, &kUnderIoModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 }
 
 RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,

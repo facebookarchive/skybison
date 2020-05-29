@@ -11,9 +11,7 @@ from collections import namedtuple
 from types import CodeType
 
 
-NAMESPACE_HEADER = "namespace py {"
-NAMESPACE_FOOTER = "}  // namespace py"
-UPPERCASE_RE = re.compile("_([a-zA-Z])")
+INIT_MODULE_NAME = "__init_module__"
 
 
 # Pyro specific flag to mark code objects for builtin functions.
@@ -42,6 +40,8 @@ def mark_native_functions(code, builtins, module_name, fqname=()):
         assert code.co_stacksize == 1
         assert code.co_freevars == ()
         assert code.co_cellvars == ()
+        # INIT_MODULE_NAME is magic and should not be used.
+        assert code.co_name != INIT_MODULE_NAME
 
         if len(fqname) == 1:
             builtin_cpp_id = f"FUNC({module_name}, {fqname[0]})"
@@ -125,46 +125,19 @@ def to_char_array(byte_array):
     return f"{{{members}}}"
 
 
-def symbol_to_cpp(name, upcase):
-    """
-    Transcribe symbol to C++ symbol syntax. Examples:
-      'foo' => 'foo'
-      '_hello' => 'underHello'
-      '__foo_bar__' => 'dunderFooBar'
-    """
-    words = []
-    if name.startswith("__") and name.endswith("__"):
-        words.append("dunder")
-        name = name[2:-2]
-    if name.startswith("_"):
-        words.append("under")
-        name = name[1:]
-    assert not name.startswith("_")
-    assert not name.endswith("_")
-    words += name.split("_")
-    word0 = words[0]
-    if upcase:
-        result = word0[0].upper() + word0[1:].lower()
-    else:
-        result = word0.lower()
-    for word in words[1:]:
-        result += word[0].upper() + word[1:].lower()
-    return result
-
-
-ModuleData = namedtuple("ModuleData", ("cpp_name", "initializer"))
+ModuleData = namedtuple("ModuleData", ("name", "initializer", "builtin_init"))
 
 
 def process_module(filename, builtins):
-    module_name = os.path.splitext(os.path.basename(filename))[0]
+    name = os.path.splitext(os.path.basename(filename))[0]
     with open(filename) as fp:
         source = fp.read()
+    builtin_init = "$builtin-init-module$" in source
     module_code = compile(source, filename, "exec", dont_inherit=True, optimize=0)
-    marked_code = mark_native_functions(module_code, builtins, module_name)
+    marked_code = mark_native_functions(module_code, builtins, name)
     bytecode = importlib._bootstrap_external._code_to_bytecode(marked_code)
     initializer = to_char_array(bytecode)
-    module_cpp_name = symbol_to_cpp(module_name, upcase=True)
-    return ModuleData(module_cpp_name, initializer)
+    return ModuleData(name, initializer, builtin_init)
 
 
 def write_source(fp, modules):
@@ -173,27 +146,42 @@ def write_source(fp, modules):
         f"""\
 #include "frozen-modules.h"
 
+#include "builtins.h"
 #include "globals.h"
 #include "modules.h"
 
-{NAMESPACE_HEADER}
+namespace py {{
 """
     )
 
     for module in modules:
-        cpp_name = module.cpp_name
         fp.write(
             f"""
-static const byte k{cpp_name}Data[] = {module.initializer};
-const FrozenModule k{cpp_name}ModuleData = {{
-  ARRAYSIZE(k{cpp_name}Data),
-  k{cpp_name}Data,
-}};"""
+static const byte kData_{module.name}[] = {module.initializer};
+"""
+        )
+
+    fp.write(
+        f"""
+const FrozenModule kFrozenModules[] = {{
+"""
+    )
+
+    for module in modules:
+        name = module.name
+        init = f"FUNC({name}, {INIT_MODULE_NAME})" if module.builtin_init else "nullptr"
+        fp.write(
+            f"""\
+    {{"{name}", ARRAYSIZE(kData_{name}), kData_{name}, {init}}},
+"""
         )
 
     fp.write(
         f"""\
-{NAMESPACE_FOOTER}
+}};
+const word kNumFrozenModules = ARRAYSIZE(kFrozenModules);
+
+}}  // namespace py
 """
     )
 
@@ -204,20 +192,12 @@ def write_header(fp, modules):
         f"""\
 #include "modules.h"
 
-{NAMESPACE_HEADER}
-"""
-    )
+namespace py {{
 
-    for module in modules:
-        fp.write(
-            f"""\
-extern const FrozenModule k{module.cpp_name}ModuleData;
-"""
-        )
+extern const FrozenModule kFrozenModules[];
+extern const word kNumFrozenModules;
 
-    fp.write(
-        f"""\
-{NAMESPACE_FOOTER}
+}}  // namespace py
 """
     )
 
@@ -227,7 +207,7 @@ def write_builtins_source(fp, builtins):
         f"""\
 #include "builtins.h"
 
-{NAMESPACE_HEADER}
+namespace py {{
 
 const Function::Entry kBuiltinFunctions[] = {{
 """
@@ -240,18 +220,22 @@ const Function::Entry kBuiltinFunctions[] = {{
         f"""
 }};
 const word kNumBuiltinFunctions = ARRAYSIZE(kBuiltinFunctions);
-{NAMESPACE_FOOTER}
+}}  // namespace py
 """
     )
 
 
-def write_builtins_header(fp, builtins):
+def write_builtins_header(fp, modules, builtins):
     fp.write(
         f"""\
+#include "globals.h"
+#include "handles-decl.h"
 #include "modules.h"
-#include "runtime.h"
+#include "view.h"
 
-{NAMESPACE_HEADER}
+namespace py {{
+
+class Thread;
 
 extern const Function::Entry kBuiltinFunctions[];
 extern const word kNumBuiltinFunctions;
@@ -260,11 +244,23 @@ extern const word kNumBuiltinFunctions;
     )
 
     for builtin in builtins:
-        fp.write(f"RawObject {builtin}(Thread*, Frame*, word);\n")
+        fp.write(
+            f"""\
+RawObject {builtin}(Thread*, Frame*, word);
+"""
+        )
+    fp.write("\n")
+    for module in modules:
+        if module.builtin_init:
+            fp.write(
+                f"""\
+void FUNC({module.name}, {INIT_MODULE_NAME})(Thread*, const Module&, View<byte>);
+"""
+            )
 
     fp.write(
         f"""
-{NAMESPACE_FOOTER}
+}}  // namespace py
 """
     )
 
@@ -277,6 +273,7 @@ def main(argv):
     os.makedirs(args.dir, exist_ok=True)
     builtins = []
     modules = [process_module(filename, builtins) for filename in args.files]
+    modules.sort(key=lambda x: x.name)
     with open(pathlib.Path(args.dir, "frozen-modules.cpp"), "w") as f:
         write_source(f, modules)
     with open(pathlib.Path(args.dir, "frozen-modules.h"), "w") as f:
@@ -284,7 +281,7 @@ def main(argv):
     with open(pathlib.Path(args.dir, "builtins.cpp"), "w") as f:
         write_builtins_source(f, builtins)
     with open(pathlib.Path(args.dir, "builtins.h"), "w") as f:
-        write_builtins_header(f, builtins)
+        write_builtins_header(f, modules, builtins)
 
 
 if __name__ == "__main__":

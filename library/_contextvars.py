@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 
 from _builtins import _address, _builtin, _ContextVar_guard, _Token_guard, _Unbound
 

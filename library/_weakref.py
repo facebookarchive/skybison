@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 """Weak-reference support module."""
 
 from builtins import _index

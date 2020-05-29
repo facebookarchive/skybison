@@ -4,7 +4,6 @@
 #include "builtins.h"
 #include "capi-handles.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "globals.h"
 #include "module-builtins.h"
 #include "modules.h"
@@ -165,7 +164,7 @@ RawObject FUNC(_imp, is_builtin)(Thread* thread, Frame* frame, word nargs) {
   }
   Str name(&scope, strUnderlying(*name_obj));
   name = Runtime::internStr(thread, name);
-  return SmallInt::fromWord(isBuiltinModule(thread, name) ? 1 : 0);
+  return SmallInt::fromWord(isBuiltinModule(name) ? 1 : 0);
 }
 
 RawObject FUNC(_imp, is_frozen)(Thread* thread, Frame* frame, word nargs) {

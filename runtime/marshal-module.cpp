@@ -1,7 +1,6 @@
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "frame.h"
-#include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"
 #include "modules.h"

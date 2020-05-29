@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 
 
 # These values are injected by our boot process. flake8 has no knowledge about

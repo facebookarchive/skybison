@@ -4,7 +4,6 @@
 #include <csignal>
 
 #include "builtins.h"
-#include "frozen-modules.h"
 #include "module-builtins.h"
 #include "modules.h"
 #include "os.h"
@@ -14,7 +13,8 @@
 
 namespace py {
 
-void initializeUnderSignalModule(Thread* thread, const Module& module) {
+void FUNC(_signal, __init_module__)(Thread* thread, const Module& module,
+                                    View<byte> bytecode) {
   HandleScope scope(thread);
   Object nsig(&scope, SmallInt::fromWord(OS::kNumSignals));
   moduleAtPutById(thread, module, ID(NSIG), nsig);
@@ -37,7 +37,7 @@ void initializeUnderSignalModule(Thread* thread, const Module& module) {
     moduleAtPutByCStr(thread, module, signal->name, signum);
   }
 
-  executeFrozenModule(thread, &kUnderSignalModuleData, module);
+  executeFrozenModule(thread, module, bytecode);
 
   thread->runtime()->initializeSignals(thread, module);
 }

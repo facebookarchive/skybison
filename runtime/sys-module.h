@@ -28,6 +28,4 @@ void writeStderrV(Thread* thread, const char* format, va_list va);
 
 RawObject initialSysPath(Thread* thread);
 
-void initializeSysModule(Thread* thread, const Module& module);
-
 }  // namespace py

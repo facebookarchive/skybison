@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 """ctypes support module"""
 
 from builtins import _int

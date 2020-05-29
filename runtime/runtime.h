@@ -819,9 +819,6 @@ class Runtime {
 
   static word nextModuleIndex();
 
-  // Create and return the specified module.
-  RawObject createModule(Thread* thread, SymbolId name);
-
   // If the main module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
   RawObject findOrCreateMainModule();

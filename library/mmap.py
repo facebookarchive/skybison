@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 
 from _builtins import _builtin, _int_guard, _type_subclass_guard, _unimplemented
 
