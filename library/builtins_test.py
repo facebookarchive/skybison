@@ -3573,6 +3573,26 @@ class CoroutineTests(unittest.TestCase):
         except CoroutineTests.MyError:
             return "all done!"  # noqa
 
+    def test_calling_iter_raises_type_error(self):
+        with contextlib.closing(self.simple_coro()) as g:
+            with self.assertRaises(TypeError):
+                iter(g)
+
+    def test_calling_next_raises_type_error(self):
+        with contextlib.closing(self.simple_coro()) as g:
+            with self.assertRaises(TypeError):
+                next(g)
+
+    def test_dunder_await_with_invalid_self_raises_type_error(self):
+        with contextlib.closing(self.simple_coro()) as g:
+            with self.assertRaises(TypeError):
+                type(g).__await__(None)
+
+    def test_dunder_await_returns_iterable(self):
+        it = self.simple_coro().__await__()
+        self.assertEqual(next(it), 1)
+        self.assertEqual(next(it), 2)
+
     def test_close_with_invalid_self_raises_type_error(self):
         g = self.simple_coro()
         with self.assertRaises(TypeError):
@@ -3792,6 +3812,124 @@ class CoroutineTests(unittest.TestCase):
 
         # Silence warning from CPython
         coro_inst.close()
+
+
+class CoroutineWrapperTests(unittest.TestCase):
+    def test_dunder_iter_with_invalid_self_raises_type_error(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(TypeError):
+                type(g.__await__()).__iter__(None)
+
+    def test_dunder_next_with_invalid_self_raises_type_error(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(TypeError):
+                type(g.__await__()).__next__(None)
+
+    def test_close_with_invalid_self_raises_type_error(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(TypeError):
+                type(g.__await__()).close(None)
+
+    def test_send_with_invalid_self_raises_type_error(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(TypeError):
+                type(g.__await__()).send(None, None)
+
+    def test_throw_with_invalid_self_raises_type_error(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(TypeError):
+                type(g.__await__()).throw(None, None, None, None)
+
+    def test_dunder_iter_returns_self(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as g:
+            wrapper = g.__await__()
+            self.assertIs(wrapper.__iter__(), wrapper)
+
+    def test_dunder_next_raises_stop_iteration_with_yielded_value(self):
+        async def f():
+            return 1
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(StopIteration) as exc:
+                g.__await__().__next__()
+        self.assertEqual(exc.exception.value, 1)
+
+    def test_dunder_repr(self):
+        async def f():
+            return 1
+
+        with contextlib.closing(f()) as g:
+            self.assertTrue(
+                g.__await__().__repr__().startswith("<coroutine_wrapper object at ")
+            )
+
+    def test_close_throws_in_generator_exit(self):
+        saw_generator_exit = False
+
+        async def f():
+            nonlocal saw_generator_exit
+
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            try:
+                await Awaitable()
+            except GeneratorExit:
+                saw_generator_exit = True
+
+        g = f()
+        self.assertEqual(g.send(None), 1)
+        g.__await__().close()
+        self.assertTrue(saw_generator_exit)
+
+    def test_send_raises_stop_iteration_with_yielded_value(self):
+        async def f():
+            return 1
+
+        with contextlib.closing(f()) as g:
+            with self.assertRaises(StopIteration) as exc:
+                g.__await__().send(None)
+        self.assertEqual(exc.exception.value, 1)
+
+    def test_throw_raises_in_generator(self):
+        saw_value_error = False
+
+        async def f():
+            nonlocal saw_value_error
+
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            try:
+                await Awaitable()
+            except ValueError:
+                saw_value_error = True
+
+        with contextlib.closing(f()) as g:
+            self.assertEqual(g.send(None), 1)
+            with self.assertRaises(StopIteration):
+                g.__await__().throw(ValueError, None)
+        self.assertTrue(saw_value_error)
 
 
 class DelattrTests(unittest.TestCase):

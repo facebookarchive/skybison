@@ -296,6 +296,7 @@ class Runtime;
   V(_coroutine__frame)                                                         \
   V(_coroutine__origin)                                                        \
   V(_contextvars)                                                              \
+  V(_coroutine_wrapper__cw_coroutine)                                          \
   V(_created)                                                                  \
   V(_ctypes)                                                                   \
   V(_decoded_chars)                                                            \
@@ -588,6 +589,7 @@ class Runtime;
   V(complex)                                                                   \
   V(contains)                                                                  \
   V(coroutine)                                                                 \
+  V(coroutine_wrapper)                                                         \
   V(countOf)                                                                   \
   V(cr_running)                                                                \
   V(decode)                                                                    \

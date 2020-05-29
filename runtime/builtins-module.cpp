@@ -151,6 +151,7 @@ static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(code), LayoutId::kCode},
     {ID(complex), LayoutId::kComplex},
     {ID(coroutine), LayoutId::kCoroutine},
+    {ID(coroutine_wrapper), LayoutId::kCoroutineWrapper},
     {ID(dict), LayoutId::kDict},
     {ID(dict_itemiterator), LayoutId::kDictItemIterator},
     {ID(dict_items), LayoutId::kDictItems},

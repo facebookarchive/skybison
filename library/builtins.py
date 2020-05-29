@@ -2870,8 +2870,31 @@ copyright = ""
 
 
 class coroutine(bootstrap=True):
+    def __await__(self):
+        _builtin()
+
     def __repr__(self):
         return f"<coroutine object {self.__qualname__} at {_address(self):#x}>"
+
+    def close(self):
+        _builtin()
+
+    def send(self, value):
+        _builtin()
+
+    def throw(self, exc, value=_Unbound, tb=_Unbound):
+        _builtin()
+
+
+class coroutine_wrapper(bootstrap=True):
+    def __iter__(self):
+        _builtin()
+
+    def __next__(self):
+        _builtin()
+
+    def __repr__(self):
+        return f"<coroutine_wrapper object at {_address(self):#x}>"
 
     def close(self):
         _builtin()

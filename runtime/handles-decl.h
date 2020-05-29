@@ -27,6 +27,7 @@ class Handle;
   V(Context)                                                                   \
   V(ContextVar)                                                                \
   V(Coroutine)                                                                 \
+  V(CoroutineWrapper)                                                          \
   V(DataArray)                                                                 \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \

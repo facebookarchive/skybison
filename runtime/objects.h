@@ -56,6 +56,7 @@ class Handle;
   V(Context)                                                                   \
   V(ContextVar)                                                                \
   V(Coroutine)                                                                 \
+  V(CoroutineWrapper)                                                          \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
@@ -314,6 +315,7 @@ class RawObject {
   bool isContext() const;
   bool isContextVar() const;
   bool isCoroutine() const;
+  bool isCoroutineWrapper() const;
   bool isDataArray() const;
   bool isDict() const;
   bool isDictItemIterator() const;
@@ -3392,6 +3394,18 @@ class RawCoroutine : public RawGeneratorBase {
   RAW_OBJECT_COMMON(Coroutine);
 };
 
+class RawCoroutineWrapper : public RawInstance {
+ public:
+  RawObject coroutine() const;
+  void setCoroutine(RawObject coroutine) const;
+
+  // Layout.
+  static const int kCoroutineOffset = RawHeapObject::kSize;
+  static const int kSize = kCoroutineOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(CoroutineWrapper);
+};
+
 class RawAsyncGenerator : public RawGeneratorBase {
  public:
   // Layout.
@@ -3935,6 +3949,10 @@ inline bool RawObject::isContextVar() const {
 
 inline bool RawObject::isCoroutine() const {
   return isHeapObjectWithLayout(LayoutId::kCoroutine);
+}
+
+inline bool RawObject::isCoroutineWrapper() const {
+  return isHeapObjectWithLayout(LayoutId::kCoroutineWrapper);
 }
 
 inline bool RawObject::isDataArray() const {
@@ -7229,6 +7247,16 @@ inline void RawGeneratorFrame::setMaxStackSize(word offset) const {
 inline RawObject RawGeneratorFrame::function() const {
   return instanceVariableAt(kFrameOffset +
                             (numFrameWords() - 1) * kPointerSize);
+}
+
+// RawCoroutineWrapper
+
+inline RawObject RawCoroutineWrapper::coroutine() const {
+  return instanceVariableAt(kCoroutineOffset);
+}
+
+inline void RawCoroutineWrapper::setCoroutine(RawObject coroutine) const {
+  instanceVariableAtPut(kCoroutineOffset, coroutine);
 }
 
 // RawUnderIOBase

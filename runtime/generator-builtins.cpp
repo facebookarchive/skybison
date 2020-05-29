@@ -175,13 +175,8 @@ static RawObject throwImpl(Thread* thread, Frame* frame, word nargs) {
   return throwImpl(thread, gen, exc, value, tb);
 }
 
-static RawObject closeImpl(Thread* thread, Frame* frame, word nargs,
-                           SymbolId name, LayoutId type) {
-  Arguments args(frame, nargs);
+static RawObject closeImpl(Thread* thread, const GeneratorBase& gen) {
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (self.layoutId() != type) return thread->raiseRequiresType(self, name);
-  GeneratorBase gen(&scope, *self);
   Runtime* runtime = thread->runtime();
   Object gen_exit_exc(&scope, runtime->typeAt(LayoutId::kGeneratorExit));
   Object none(&scope, NoneType::object());
@@ -224,6 +219,11 @@ static const BuiltinAttribute kCoroutineAttributes[] = {
      AttributeFlags::kHidden},
 };
 
+static const BuiltinAttribute kCoroutineWrapperAttributes[] = {
+    {ID(_coroutine_wrapper__cw_coroutine),
+     RawCoroutineWrapper::kCoroutineOffset, AttributeFlags::kHidden},
+};
+
 static const BuiltinAttribute kAsyncGeneratorAttributes[] = {
     {ID(_async_generator__frame), RawAsyncGenerator::kFrameOffset,
      AttributeFlags::kHidden},
@@ -247,6 +247,10 @@ void initializeGeneratorTypes(Thread* thread) {
 
   addBuiltinType(thread, ID(coroutine), LayoutId::kCoroutine,
                  /*superclass_id=*/LayoutId::kObject, kCoroutineAttributes);
+
+  addBuiltinType(thread, ID(coroutine_wrapper), LayoutId::kCoroutineWrapper,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kCoroutineWrapperAttributes);
 
   addBuiltinType(thread, ID(async_generator), LayoutId::kAsyncGenerator,
                  /*superclass_id=*/LayoutId::kObject,
@@ -279,7 +283,14 @@ RawObject METH(generator, __next__)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject METH(generator, close)(Thread* thread, Frame* frame, word nargs) {
-  return closeImpl(thread, frame, nargs, ID(generator), LayoutId::kGenerator);
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isGenerator()) {
+    return thread->raiseRequiresType(self, ID(generator));
+  }
+  GeneratorBase gen(&scope, *self);
+  return closeImpl(thread, gen);
 }
 
 RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs) {
@@ -290,8 +301,31 @@ RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
   return throwImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
 }
 
+RawObject METH(coroutine, __await__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isCoroutine()) {
+    return thread->raiseRequiresType(self_obj, ID(coroutine));
+  }
+  Coroutine self(&scope, *self_obj);
+  Runtime* runtime = thread->runtime();
+  Layout coro_wrap_layout(&scope,
+                          runtime->layoutAt(LayoutId::kCoroutineWrapper));
+  CoroutineWrapper coro_wrap(&scope, runtime->newInstance(coro_wrap_layout));
+  coro_wrap.setCoroutine(*self);
+  return *coro_wrap;
+}
+
 RawObject METH(coroutine, close)(Thread* thread, Frame* frame, word nargs) {
-  return closeImpl(thread, frame, nargs, ID(coroutine), LayoutId::kCoroutine);
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isCoroutine()) {
+    return thread->raiseRequiresType(self, ID(coroutine));
+  }
+  GeneratorBase gen(&scope, *self);
+  return closeImpl(thread, gen);
 }
 
 RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
@@ -300,6 +334,73 @@ RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
 
 RawObject METH(coroutine, throw)(Thread* thread, Frame* frame, word nargs) {
   return throwImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
+}
+
+RawObject METH(coroutine_wrapper, __iter__)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  RawObject self = args.get(0);
+  if (self.isCoroutineWrapper()) return self;
+  HandleScope scope(thread);
+  Object self_obj(&scope, self);
+  return thread->raiseRequiresType(self_obj, ID(coroutine));
+}
+
+RawObject METH(coroutine_wrapper, __next__)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isCoroutineWrapper()) {
+    return thread->raiseRequiresType(self_obj, ID(coroutine));
+  }
+  CoroutineWrapper self(&scope, *self_obj);
+  GeneratorBase gen(&scope, self.coroutine());
+  Object none(&scope, NoneType::object());
+  return Interpreter::resumeGenerator(thread, gen, none);
+}
+
+RawObject METH(coroutine_wrapper, close)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isCoroutineWrapper()) {
+    return thread->raiseRequiresType(self_obj, ID(coroutine));
+  }
+  CoroutineWrapper self(&scope, *self_obj);
+  GeneratorBase gen(&scope, self.coroutine());
+  return closeImpl(thread, gen);
+}
+
+RawObject METH(coroutine_wrapper, send)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isCoroutineWrapper()) {
+    return thread->raiseRequiresType(self_obj, ID(coroutine));
+  }
+  CoroutineWrapper self(&scope, *self_obj);
+  GeneratorBase gen(&scope, self.coroutine());
+  Object val(&scope, args.get(1));
+  return Interpreter::resumeGenerator(thread, gen, val);
+}
+
+RawObject METH(coroutine_wrapper, throw)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isCoroutineWrapper()) {
+    return thread->raiseRequiresType(self_obj, ID(coroutine));
+  }
+  CoroutineWrapper self(&scope, *self_obj);
+  GeneratorBase gen(&scope, self.coroutine());
+  Object exc(&scope, args.get(1));
+  Object value(&scope, args.get(2));
+  Object tb(&scope, args.get(3));
+  return throwImpl(thread, gen, exc, value, tb);
 }
 
 }  // namespace py
