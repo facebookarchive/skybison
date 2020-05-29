@@ -3064,6 +3064,8 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);
+  // TODO(T67674517): Delete this once heap dumper can deal with partially
+  // filled objects.
   layout.setDescribedType(*type);
   return *layout;
 }
@@ -3082,6 +3084,8 @@ RawObject Runtime::computeInitialLayoutWithSlotAttributes(
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);
+  // TODO(T67674517): Delete this once heap dumper can deal with partially
+  // filled objects.
   layout.setDescribedType(*type);
   return *layout;
 }
