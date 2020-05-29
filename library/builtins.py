@@ -66,6 +66,7 @@ from _builtins import (
 from _builtins import (
     _caller_function,
     _caller_locals,
+    _char_guard,
     _classmethod,
     _classmethod_isabstract,
     _code_check,
@@ -223,6 +224,7 @@ from _builtins import (
     _str_ischr,
     _str_join,
     _str_len,
+    _str_ljust,
     _str_mod_fast_path,
     _str_partition,
     _str_replace,
@@ -6024,16 +6026,13 @@ class str(bootstrap=True):
         return _str_join(self, [*it])
 
     def ljust(self, width: int, fillchar: str = " ") -> str:
-        _str_guard(self)
+        result = _str_ljust(self, width, fillchar)
+        if result is not _Unbound:
+            return result
+
+        _char_guard(fillchar)
         width = _index(width)
-        if not _str_check(fillchar):
-            raise TypeError(
-                f"rjust() argument 2 must be str, not {_type(fillchar).__name__}"
-            )
-        if _str_len(fillchar) != 1:
-            raise TypeError("The fill character must be exactly one character long")
-        padding = width - _str_len(self)
-        return self + fillchar * padding if padding > 0 else self
+        return _str_ljust(self, width, fillchar)
 
     def lower(self):
         _builtin()

@@ -14011,14 +14011,9 @@ class StrTests(unittest.TestCase):
         self.assertIs(str.ljust(s, len(s)), s)
 
     def test_ljust_with_fillchar_not_char_raises_type_error(self):
-        with self.assertRaisesRegex(
-            TypeError, "The fill character must be exactly one character long"
-        ):
-            str.ljust("", 2, "")
-        with self.assertRaisesRegex(
-            TypeError, "The fill character must be exactly one character long"
-        ):
-            str.ljust("", 2, ",,")
+        self.assertRaises(TypeError, str.ljust, "", 2, "")
+        self.assertRaises(TypeError, str.ljust, "", 2, ",,")
+        self.assertRaises(TypeError, str.ljust, "", 2, 3)
 
     def test_lower_returns_lowercased_string(self):
         self.assertEqual(str.lower("HELLO"), "hello")

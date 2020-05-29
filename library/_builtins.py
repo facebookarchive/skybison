@@ -228,6 +228,10 @@ def _caller_locals():
     _builtin()
 
 
+def _char_guard(obj):
+    _builtin()
+
+
 def _classmethod(function):
     _builtin()
 
@@ -900,6 +904,10 @@ def _str_ischr(obj):
 
 
 def _str_join(sep, iterable):
+    _builtin()
+
+
+def _str_ljust(self, width, fillchar):
     _builtin()
 
 

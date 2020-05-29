@@ -1641,6 +1641,34 @@ RawObject FUNC(_builtins, _caller_locals)(Thread* thread, Frame*, word) {
                      thread->currentFrame()->previousFrame()->previousFrame());
 }
 
+RawObject FUNC(_builtins, _char_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object obj(&scope, args.get(0));
+
+  if (!thread->runtime()->isInstanceOfStr(*obj)) {
+    Function function(&scope, frame->previousFrame()->function());
+    Str function_name(&scope, function.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "%S() argument must be a unicode character, not %T", &function_name,
+        &obj);
+  }
+
+  Str str(&scope, strUnderlying(*obj));
+  if (!str.isSmallStr() || str.codePointLength() != 1) {
+    Function function(&scope, frame->previousFrame()->function());
+    Str function_name(&scope, function.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "%S() argument must be a unicode character, not unicode of length %d",
+        &function_name, str.codePointLength());
+  }
+
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _classmethod)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -4566,6 +4594,69 @@ RawObject FUNC(_builtins, _str_len)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Str self(&scope, strUnderlying(args.get(0)));
   return SmallInt::fromWord(self.codePointLength());
+}
+
+RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Frame* frame,
+                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+  }
+
+  Object width_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*width_obj)) {
+    return Unbound::object();
+  }
+  Int width_int(&scope, intUnderlying(*width_obj));
+  if (width_int.isLargeInt()) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "int too large to convert to an index");
+  }
+  word width = width_int.asWord();
+
+  Object fillchar_obj(&scope, args.get(2));
+  if (!runtime->isInstanceOfStr(*fillchar_obj)) {
+    return Unbound::object();
+  }
+
+  Str fillchar(&scope, strUnderlying(*fillchar_obj));
+  if (!fillchar.isSmallStr() || fillchar.codePointLength() != 1) {
+    return Unbound::object();
+  }
+
+  Str self(&scope, strUnderlying(*self_obj));
+
+  word self_codepoints = self.codePointLength();
+  if (self_codepoints >= width) {
+    return *self;
+  }
+
+  word self_length = self.length();
+  word fill_length = fillchar.length();
+  word result_length = self_length + fill_length * (width - self_codepoints);
+
+  if (result_length <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+
+    self.copyTo(buffer, self_length);
+    for (word i = self_length; i < result_length; i += fill_length) {
+      fillchar.copyTo(&buffer[i], fill_length);
+    }
+
+    return SmallStr::fromBytes({buffer, result_length});
+  }
+
+  MutableBytes buffer(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  buffer.replaceFromWithStr(0, *self, self_length);
+  for (word i = self_length; i < result_length; i += fill_length) {
+    buffer.replaceFromWithStr(i, *fillchar, fill_length);
+  }
+
+  return buffer.becomeStr();
 }
 
 RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
