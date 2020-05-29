@@ -1015,14 +1015,14 @@ class Runtime {
   RawObject callbacks_ = NoneType::object();
 
   // Quick check if any signals have been tripped.
-  static volatile bool is_signal_pending_;
+  volatile bool is_signal_pending_ = false;
 
   // Tuple mapping each signal to either SIG_DFL, SIG_IGN, None,
   // or a Python object to be called when handling the signal.
-  static RawObject signal_callbacks_;
+  RawObject signal_callbacks_ = NoneType::object();
 
   // File descriptor for writing when a signal is received.
-  static int wakeup_fd_;
+  int wakeup_fd_ = -1;
 
   Thread* main_thread_;
   Thread* threads_;

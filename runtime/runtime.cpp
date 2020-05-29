@@ -101,10 +101,6 @@ static const SymbolId kInplaceOperationSelector[] = {
 static const SymbolId kComparisonSelector[] = {
     ID(__lt__), ID(__le__), ID(__eq__), ID(__ne__), ID(__gt__), ID(__ge__)};
 
-volatile bool Runtime::is_signal_pending_ = false;
-RawObject Runtime::signal_callbacks_ = NoneType::object();
-int Runtime::wakeup_fd_ = -1;
-
 word Runtime::next_module_index_ = 0;
 
 wchar_t Runtime::program_name_[NAME_MAX + 1] = L"python3";
