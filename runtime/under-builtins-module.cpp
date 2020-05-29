@@ -4206,8 +4206,8 @@ RawObject FUNC(_builtins, _stop_iteration_ctor)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject FUNC(_builtins, _strarray_clear)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _str_array_clear)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   StrArray self(&scope, args.get(0));
@@ -4215,23 +4215,13 @@ RawObject FUNC(_builtins, _strarray_clear)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _strarray_iadd)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  StrArray self(&scope, args.get(0));
-  Str other(&scope, strUnderlying(args.get(1)));
-  thread->runtime()->strArrayAddStr(thread, self, other);
-  return *self;
-}
-
-RawObject FUNC(_builtins, _strarray_ctor)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _str_array_ctor)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStrArray),
-         "_strarray.__new__(X): X is not '_strarray'");
+         "_str_array.__new__(X): X is not '_str_array'");
   Object self_obj(&scope, runtime->newStrArray());
   if (self_obj.isError()) return *self_obj;
   StrArray self(&scope, *self_obj);
@@ -4242,10 +4232,20 @@ RawObject FUNC(_builtins, _strarray_ctor)(Thread* thread, Frame* frame,
   }
   if (!runtime->isInstanceOfStr(*source_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "_strarray can only be initialized with str");
+                                "_str_array can only be initialized with str");
   }
   Str source(&scope, strUnderlying(*source_obj));
   runtime->strArrayAddStr(thread, self, source);
+  return *self;
+}
+
+RawObject FUNC(_builtins, _str_array_iadd)(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  StrArray self(&scope, args.get(0));
+  Str other(&scope, strUnderlying(args.get(1)));
+  thread->runtime()->strArrayAddStr(thread, self, other);
   return *self;
 }
 

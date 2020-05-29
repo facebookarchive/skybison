@@ -210,6 +210,7 @@ from _builtins import (
     _slice_stop,
     _slice_stop_long,
     _staticmethod_isabstract,
+    _str_array_iadd,
     _str_check,
     _str_check_exact,
     _str_count,
@@ -236,7 +237,6 @@ from _builtins import (
     _str_translate,
 )
 from _builtins import (
-    _strarray_iadd,
     _structseq_getitem,
     _structseq_new_type,
     _structseq_setitem,
@@ -1536,19 +1536,19 @@ def _slice_index_not_none(num) -> int:
     raise TypeError("slice indices must be integers or have an __index__ method")
 
 
-class _strarray(bootstrap=True):  # noqa: F821
+class _str_array(bootstrap=True):  # noqa: F821
     def __init__(self, source=_Unbound) -> None:
         _builtin()
 
     __hash__ = None
 
-    def __new__(cls, source=_Unbound) -> _strarray:  # noqa: F821
+    def __new__(cls, source=_Unbound) -> _str_array:  # noqa: F821
         _builtin()
 
     def __repr__(self) -> str:
-        if _type(self) is not _strarray:
-            raise TypeError("'__repr__' requires a '_strarray' object")
-        return f"_strarray('{self.__str__()}')"
+        if _type(self) is not _str_array:
+            raise TypeError("'__repr__' requires a '_str_array' object")
+        return f"_str_array('{self.__str__()}')"
 
     def __str__(self) -> str:  # noqa: T484
         _builtin()
@@ -5931,15 +5931,15 @@ class str(bootstrap=True):
         chars_seen = 0
         col_pos = 0
         substr_start = 0
-        result = _strarray()
+        result = _str_array()
         for char in self:
             if char == "\n" or char == "\r":
                 chars_seen += 1
                 col_pos = 0
                 continue
             if char == "\t":
-                _strarray_iadd(result, self[substr_start : substr_start + chars_seen])
-                _strarray_iadd(result, " " * (tabsize - (col_pos % tabsize)))
+                _str_array_iadd(result, self[substr_start : substr_start + chars_seen])
+                _str_array_iadd(result, " " * (tabsize - (col_pos % tabsize)))
                 substr_start += chars_seen + 1
                 chars_seen = 0
                 col_pos = 0
@@ -5947,7 +5947,7 @@ class str(bootstrap=True):
             chars_seen += 1
             col_pos += 1
         if chars_seen != 0:
-            _strarray_iadd(result, self[substr_start : substr_start + chars_seen + 1])
+            _str_array_iadd(result, self[substr_start : substr_start + chars_seen + 1])
         return str(result)
 
     def find(self, sub, start=None, end=None):
@@ -6190,7 +6190,7 @@ class str(bootstrap=True):
         result = _str_translate(self, table)
         if result is not _Unbound:
             return result
-        result = _strarray()
+        result = _str_array()
         if _dict_check(table):
             for ch in self:
                 value = _dict_get(table, ord(ch), ch)
@@ -6200,7 +6200,7 @@ class str(bootstrap=True):
                     value = chr(value)
                 elif not _str_check(value):
                     raise TypeError("character mapping must return int, None or str")
-                _strarray_iadd(result, value)
+                _str_array_iadd(result, value)
             return str(result)
 
         dunder_getitem = _object_type_getattr(table, "__getitem__")
@@ -6210,15 +6210,15 @@ class str(bootstrap=True):
             try:
                 table_entry = dunder_getitem(ord(ch))
                 if _int_check(table_entry):
-                    _strarray_iadd(result, chr(table_entry))
+                    _str_array_iadd(result, chr(table_entry))
                 elif _str_check(table_entry):
-                    _strarray_iadd(result, table_entry)
+                    _str_array_iadd(result, table_entry)
                 elif table_entry is not None:
                     raise TypeError(
                         "character mapping must return integer, None, or str"
                     )
             except LookupError:
-                _strarray_iadd(result, ch)
+                _str_array_iadd(result, ch)
         return str(result)
 
     def upper(self):
@@ -6234,12 +6234,12 @@ class str(bootstrap=True):
         if width <= str_len:
             return self
 
-        result = _strarray()
+        result = _str_array()
         has_prefix = str.startswith(self, ("+", "-"))
         if has_prefix:
-            _strarray_iadd(result, _str_getitem(self, 0))
-        _strarray_iadd(result, "0" * (width - str_len))
-        _strarray_iadd(result, _str_getslice(self, int(has_prefix), str_len, 1))
+            _str_array_iadd(result, _str_getitem(self, 0))
+        _str_array_iadd(result, "0" * (width - str_len))
+        _str_array_iadd(result, _str_getslice(self, int(has_prefix), str_len, 1))
         return str(result)
 
 

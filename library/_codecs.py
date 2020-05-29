@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from builtins import _index, _strarray
+from builtins import _index, _str_array
 
 from _builtins import (
     _builtin,
@@ -13,12 +13,12 @@ from _builtins import (
     _byteslike_guard,
     _int_check,
     _object_type_hasattr,
+    _str_array_iadd,
     _str_check,
     _str_encode,
     _str_encode_ascii,
     _str_guard,
     _str_len,
-    _strarray_iadd,
     _tuple_check,
     _tuple_len,
     _type,
@@ -123,7 +123,7 @@ def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:
         raise TypeError("encoder must return a tuple (object, integer)")
 
 
-def _ascii_decode(data: str, errors: str, index: int, out: _strarray):
+def _ascii_decode(data: str, errors: str, index: int, out: _str_array):
     _builtin()
 
 
@@ -137,7 +137,7 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     result = _bytes_decode_ascii(data)
     if result is not _Unbound:
         return result, _bytes_len(data)
-    result = _strarray()
+    result = _str_array()
     i = 0
     encoded = ""
     length = len(data)
@@ -210,7 +210,7 @@ def charmap_decode(data, errors="strict", mapping=None):
     if errors != "strict":
         _unimplemented()
 
-    result = _strarray()
+    result = _str_array()
     data_len = _bytes_len(data)
     i = 0
     while i < data_len:
@@ -228,7 +228,7 @@ def charmap_decode(data, errors="strict", mapping=None):
                 mapped = chr(mapped)
             elif not _str_check(mapped):
                 raise TypeError("character mapping must return integer, None or str")
-            _strarray_iadd(result, mapped)
+            _str_array_iadd(result, mapped)
         except (IndexError, KeyError):
             raise UnicodeDecodeError(
                 "charmap", data, data[i], i, "character maps to <undefined>"
@@ -341,8 +341,8 @@ def raw_unicode_escape_encode(data, errors: str = "strict"):
     _unimplemented()
 
 
-def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _strarray):
-    """Tries to decode `data`, starting from `index`, into the `out` _strarray.
+def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _str_array):
+    """Tries to decode `data`, starting from `index`, into the `out` _str_array.
     If it runs into any errors, it returns a tuple of
     (error_start, error_end, error_message, first_invalid_escape),
     where the first_invalid_escape is either the index into the data of the first
@@ -361,7 +361,7 @@ def _unicode_escape_decode_stateful(data: bytes, errors: str = "strict"):
             "unicode_escape_decode() argument 2 must be str or None, not "
             f"{type(errors).__name__}"
         )
-    result = _strarray()
+    result = _str_array()
     i = 0
     decoded = ""
     length = len(data)
@@ -388,8 +388,10 @@ def unicode_escape_encode(data, errors: str = "strict"):
     _unimplemented()
 
 
-def _utf_8_decode(data: bytes, errors: str, index: int, out: _strarray, is_final: bool):
-    """Tries to decode `data`, starting from `index`, into the `out` _strarray.
+def _utf_8_decode(
+    data: bytes, errors: str, index: int, out: _str_array, is_final: bool
+):
+    """Tries to decode `data`, starting from `index`, into the `out` _str_array.
     If it runs into any errors, it returns a tuple of
     (error_start, error_end, error_message),
     If it finishes encoding, it returns a tuple of
@@ -408,7 +410,7 @@ def utf_8_decode(data: bytes, errors: str = "strict", is_final: bool = False):
     result = _bytes_decode_utf_8(data)
     if result is not _Unbound:
         return result, _bytes_len(data)
-    result = _strarray()
+    result = _str_array()
     i = 0
     encoded = ""
     length = len(data)
@@ -697,7 +699,7 @@ def register_error(name: str, error_func):
 def _call_decode_errorhandler(
     errors: str,
     input: bytes,
-    output: _strarray,
+    output: _str_array,
     reason: str,
     encoding: str,
     start: int,
@@ -708,7 +710,7 @@ def _call_decode_errorhandler(
     Creates a UnicodeDecodeError, looks up an error handler, and calls the
     error handler with the UnicodeDecodeError.
     Makes sure the error handler returns a (str, int) tuple and returns it and
-    writes the str to the output _strarray passed in.
+    writes the str to the output _str_array passed in.
     Since the error handler can change the object that's being decoded by
     replacing the object of the UnicodeDecodeError, this function returns the
     Error's object field, along with the integer returned from the function
@@ -739,7 +741,7 @@ def _call_decode_errorhandler(
         pos += _bytes_len(input)
     if not 0 <= pos <= _bytes_len(input):
         raise IndexError(f"position {pos} from error handler out of bounds")
-    _strarray_iadd(output, replacement)
+    _str_array_iadd(output, replacement)
 
     return (input, pos)
 

@@ -481,6 +481,10 @@ class Runtime;
   V(_stdin_fd)                                                                 \
   V(_stdout_fd)                                                                \
   V(_stop_iteration_ctor)                                                      \
+  V(_str_array)                                                                \
+  V(_str_array__items)                                                         \
+  V(_str_array__num_items)                                                     \
+  V(_str_array_ctor)                                                           \
   V(_str_check)                                                                \
   V(_str_check_exact)                                                          \
   V(_str_guard)                                                                \
@@ -488,10 +492,6 @@ class Runtime;
   V(_str_iterator__iterable)                                                   \
   V(_str_len)                                                                  \
   V(_str_mod)                                                                  \
-  V(_strarray)                                                                 \
-  V(_strarray__items)                                                          \
-  V(_strarray__num_items)                                                      \
-  V(_strarray_ctor)                                                            \
   V(_string_at_addr)                                                           \
   V(_structseq_field)                                                          \
   V(_structseq_field_names)                                                    \

@@ -139,7 +139,7 @@ static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(ValueError), LayoutId::kValueError},
     {ID(Warning), LayoutId::kWarning},
     {ID(ZeroDivisionError), LayoutId::kZeroDivisionError},
-    {ID(_strarray), LayoutId::kStrArray},
+    {ID(_str_array), LayoutId::kStrArray},
     {ID(_traceback), LayoutId::kTraceback},
     {ID(async_generator), LayoutId::kAsyncGenerator},
     {ID(bool), LayoutId::kBool},
@@ -242,10 +242,10 @@ void initializeBuiltinsModule(Thread* thread, const Module& module) {
     CHECK(ctor.isFunction(), "_stop_iteration_ctor should be a function");
     stop_iteration_type.setCtor(*ctor);
 
-    Type strarray_type(&scope, runtime->typeAt(LayoutId::kStrArray));
-    ctor = moduleAtById(thread, under_builtins, ID(_strarray_ctor));
-    CHECK(ctor.isFunction(), "_strarray_ctor should be a function");
-    strarray_type.setCtor(*ctor);
+    Type str_array_type(&scope, runtime->typeAt(LayoutId::kStrArray));
+    ctor = moduleAtById(thread, under_builtins, ID(_str_array_ctor));
+    CHECK(ctor.isFunction(), "_str_array_ctor should be a function");
+    str_array_type.setCtor(*ctor);
   }
 
   // Mark functions that have an intrinsic implementation.

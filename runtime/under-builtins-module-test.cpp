@@ -2530,13 +2530,13 @@ result = result[:2]
   EXPECT_TRUE(isStrEqualsCStr(*result, "va"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderStrarrayClearSetsNumItemsToZero) {
+TEST_F(UnderBuiltinsModuleTest, UnderStrArrayClearSetsNumItemsToZero) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_->newStrArray());
   Str other(&scope, runtime_->newStrFromCStr("hello"));
   runtime_->strArrayAddStr(thread_, self, other);
   ASSERT_EQ(self.numItems(), 5);
-  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _strarray_clear), self).isNoneType());
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _str_array_clear), self).isNoneType());
   EXPECT_EQ(self.numItems(), 0);
 
   // Make sure that str does not show up again
@@ -2545,13 +2545,13 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrarrayClearSetsNumItemsToZero) {
   EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(self), "abcd"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderStrarrayIaddWithStrReturnsStrArray) {
+TEST_F(UnderBuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_->newStrArray());
   const char* test_str = "hello";
   Str other(&scope, runtime_->newStrFromCStr(test_str));
   StrArray result(&scope,
-                  runBuiltin(FUNC(_builtins, _strarray_iadd), self, other));
+                  runBuiltin(FUNC(_builtins, _str_array_iadd), self, other));
   EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(result), test_str));
   EXPECT_EQ(self, result);
 }

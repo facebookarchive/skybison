@@ -9,16 +9,16 @@ from builtins import (
     _int_format_octal,
     _mapping_check,
     _number_check,
-    _strarray,
+    _str_array,
 )
 
 from _builtins import (
     _float_format,
     _float_signbit,
     _int_check,
+    _str_array_iadd,
     _str_check,
     _str_len,
-    _strarray_iadd,
     _tuple_check,
     _tuple_getitem,
     _tuple_len,
@@ -34,24 +34,24 @@ def _format_string(result, flags, width, precision, fragment):
     if precision >= 0:
         fragment = fragment[:precision]
     if width <= 0:
-        _strarray_iadd(result, fragment)
+        _str_array_iadd(result, fragment)
         return
 
     padding_len = -1
     padding_len = width - _str_len(fragment)
     if padding_len > 0 and not (flags & _FLAG_LJUST):
-        _strarray_iadd(result, " " * padding_len)
+        _str_array_iadd(result, " " * padding_len)
         padding_len = 0
-    _strarray_iadd(result, fragment)
+    _str_array_iadd(result, fragment)
     if padding_len > 0:
-        _strarray_iadd(result, " " * padding_len)
+        _str_array_iadd(result, " " * padding_len)
 
 
 def _format_number(result, flags, width, precision, sign, prefix, fragment):
     if width <= 0 and precision < 0:
-        _strarray_iadd(result, sign)
-        _strarray_iadd(result, prefix)
-        _strarray_iadd(result, fragment)
+        _str_array_iadd(result, sign)
+        _str_array_iadd(result, prefix)
+        _str_array_iadd(result, fragment)
         return
 
     # Compute a couple values before assembling the result:
@@ -78,15 +78,15 @@ def _format_number(result, flags, width, precision, sign, prefix, fragment):
 
     # Compose the result.
     if padding_len > 0 and not (flags & _FLAG_LJUST):
-        _strarray_iadd(result, " " * padding_len)
+        _str_array_iadd(result, " " * padding_len)
         padding_len = 0
-    _strarray_iadd(result, sign)
-    _strarray_iadd(result, prefix)
+    _str_array_iadd(result, sign)
+    _str_array_iadd(result, prefix)
     if num_leading_zeros > 0:
-        _strarray_iadd(result, "0" * num_leading_zeros)
-    _strarray_iadd(result, fragment)
+        _str_array_iadd(result, "0" * num_leading_zeros)
+    _str_array_iadd(result, fragment)
     if padding_len > 0:
-        _strarray_iadd(result, " " * padding_len)
+        _str_array_iadd(result, " " * padding_len)
 
 
 def format(string: str, args) -> str:  # noqa: C901
@@ -99,7 +99,7 @@ def format(string: str, args) -> str:  # noqa: C901
         args_len = 1
     arg_idx = 0
 
-    result = _strarray()
+    result = _str_array()
     idx = -1
     begin = 0
     in_specifier = False
@@ -111,7 +111,7 @@ def format(string: str, args) -> str:  # noqa: C901
             if c is not "%":  # noqa: F632
                 continue
 
-            _strarray_iadd(result, string[begin:idx])
+            _str_array_iadd(result, string[begin:idx])
 
             in_specifier = True
             c = it.__next__()
@@ -229,7 +229,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 arg_idx += 1
 
             if c is "%":  # noqa: F632
-                _strarray_iadd(result, "%")
+                _str_array_iadd(result, "%")
             elif c is "s":  # noqa: F632
                 fragment = str(arg)
                 _format_string(result, flags, width, precision, fragment)
@@ -347,7 +347,7 @@ def format(string: str, args) -> str:  # noqa: C901
 
     if in_specifier:
         raise ValueError("incomplete format")
-    _strarray_iadd(result, string[begin:])
+    _str_array_iadd(result, string[begin:])
 
     if arg_idx < args_len and args_dict is None:
         # Lazily check that the user did not specify an args dictionary and if

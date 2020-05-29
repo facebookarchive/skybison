@@ -859,6 +859,18 @@ def _stop_iteration_ctor(cls, *args):
     _builtin()
 
 
+def _str_array_clear(self):
+    _builtin()
+
+
+def _str_array_ctor(cls, source=_Unbound):
+    _builtin()
+
+
+def _str_array_iadd(self, other):
+    _builtin()
+
+
 def _str_check(obj):
     _builtin()
 
@@ -960,18 +972,6 @@ def _str_startswith(self, prefix, start, end):
 
 
 def _str_translate(obj, table):
-    _builtin()
-
-
-def _strarray_clear(self):
-    _builtin()
-
-
-def _strarray_iadd(self, other):
-    _builtin()
-
-
-def _strarray_ctor(cls, source=_Unbound):
     _builtin()
 
 
