@@ -13431,6 +13431,40 @@ class StrTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_casefold_with_non_str_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.casefold(1)
+        self.assertIn(
+            "'casefold' requires a 'str' object but received a 'int'",
+            str(context.exception),
+        )
+
+    def test_casefold_with_empty_string_returns_itself(self):
+        self.assertEqual("".casefold(), "")
+
+    def test_casefold_with_ascii_returns_folded_str(self):
+        self.assertEqual("abc".casefold(), "abc")
+        self.assertEqual("ABC".casefold(), "abc")
+        self.assertEqual("aBcDe".casefold(), "abcde")
+        self.assertEqual("aBc123".casefold(), "abc123")
+
+    def test_casefold_with_nonascii_returns_folded_str(self):
+        self.assertEqual("\u00c5\u00c6\u00c7".casefold(), "\u00e5\u00e6\u00e7")
+        self.assertEqual("\u00c5A\u00c6B\u00c7".casefold(), "\u00e5a\u00e6b\u00e7")
+        self.assertEqual("A\u00c5\u00c6\u00c7C".casefold(), "a\u00e5\u00e6\u00e7c")
+
+    def test_casefold_with_lower_extended_case_returns_folded_str(self):
+        self.assertEqual("der Flu\u00DF".casefold(), "der fluss")
+        self.assertEqual("\u00DF".casefold(), "ss")
+
+    def test_casefold_with_str_subclass_returns_folded_str(self):
+        class C(str):
+            pass
+
+        s = C("der Flu\u00DF").casefold()
+        self.assertIs(type(s), str)
+        self.assertEqual(s, "der fluss")
+
     def test_center_returns_justified_string(self):
         self.assertEqual(str.center("abc", -1), "abc")
         self.assertEqual(str.center("abc", 0), "abc")

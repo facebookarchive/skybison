@@ -89,11 +89,13 @@ class Unicode {
   static bool isPrintable(int32_t code_point);
   static bool isSpace(int32_t code_point);
   static bool isTitle(int32_t code_point);
+  static bool isUnfolded(int32_t code_point);
   static bool isUpper(int32_t code_point);
   static bool isXidContinue(int32_t code_point);
   static bool isXidStart(int32_t code_point);
 
   // Conversion
+  static FullCasing toFolded(int32_t code_point);
   static FullCasing toLower(int32_t code_point);
   static FullCasing toTitle(int32_t code_point);
   static FullCasing toUpper(int32_t code_point);
@@ -105,9 +107,11 @@ class Unicode {
   static bool isLowerDB(int32_t code_point);
   static bool isSpaceDB(int32_t code_point);
   static bool isTitleDB(int32_t code_point);
+  static bool isUnfoldedDB(int32_t code_point);
   static bool isUpperDB(int32_t code_point);
   static bool isXidContinueDB(int32_t code_point);
   static bool isXidStartDB(int32_t code_point);
+  static FullCasing toFoldedDB(int32_t code_point);
   static FullCasing toLowerDB(int32_t code_point);
   static FullCasing toTitleDB(int32_t code_point);
   static FullCasing toUpperDB(int32_t code_point);
@@ -285,6 +289,13 @@ inline bool Unicode::isTitle(int32_t code_point) {
   return isTitleDB(code_point);
 }
 
+inline bool Unicode::isUnfolded(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return false;
+  }
+  return isUnfoldedDB(code_point);
+}
+
 inline bool Unicode::isUpper(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isUpper(code_point);
@@ -304,6 +315,13 @@ inline bool Unicode::isXidStart(int32_t code_point) {
     return ASCII::isXidStart(code_point);
   }
   return isXidStartDB(code_point);
+}
+
+inline FullCasing Unicode::toFolded(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return {ASCII::toLower(code_point), -1};
+  }
+  return toFoldedDB(code_point);
 }
 
 inline FullCasing Unicode::toLower(int32_t code_point) {

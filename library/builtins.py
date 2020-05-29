@@ -5868,7 +5868,7 @@ class str(bootstrap=True):
         return first_letter + lowercase_str
 
     def casefold(self):
-        _unimplemented()
+        _builtin()
 
     def center(self, width: int, fillchar: str = " ") -> str:
         _str_guard(self)

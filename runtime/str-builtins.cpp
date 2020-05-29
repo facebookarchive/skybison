@@ -842,6 +842,84 @@ RawObject METH(str, __len__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(self.codePointLength());
 }
 
+static RawObject strLowerASCII(Thread* thread, Object& str_obj, Str& str,
+                               word length) {
+  if (str.isSmallStr()) {
+    byte buf[SmallStr::kMaxLength];
+    for (word i = 0; i < length; i++) {
+      buf[i] = ASCII::toLower(str.byteAt(i));
+    }
+    return SmallStr::fromBytes({buf, length});
+  }
+  // Search for the first uppercase character.
+  word first_uppercase = 0;
+  for (; first_uppercase < length; first_uppercase++) {
+    if (ASCII::isUpper(str.byteAt(first_uppercase))) {
+      break;
+    }
+  }
+  if (first_uppercase >= length && str_obj.isStr()) {
+    return *str_obj;
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  result.replaceFromWithStr(0, *str, first_uppercase);
+  for (word i = first_uppercase; i < length; i++) {
+    byte lower = ASCII::toLower(str.byteAt(i));
+    result.byteAtPut(i, lower);
+  }
+  return result.becomeStr();
+}
+
+RawObject METH(str, casefold)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(str));
+  }
+  Str self(&scope, strUnderlying(*self_obj));
+  word length = self.length();
+  if (self.isASCII()) {
+    return strLowerASCII(thread, self_obj, self, length);
+  }
+
+  // Search for the first uppercase character.
+  word first_uppercase = 0;
+  for (word char_length; first_uppercase < length;
+       first_uppercase += char_length) {
+    int32_t code_point = self.codePointAt(first_uppercase, &char_length);
+    if (Unicode::isUpper(code_point) || Unicode::isTitle(code_point) ||
+        Unicode::isUnfolded(code_point)) {
+      break;
+    }
+  }
+  if (first_uppercase >= length && self_obj.isStr()) {
+    return *self_obj;
+  }
+
+  StrArray result(&scope, runtime->newStrArray());
+  runtime->strArrayEnsureCapacity(thread, result, length);
+  // Since the prefix is valid UTF-8 and guaranteed to fit, it's safe to write
+  // directly to the underlying MutableBytes.
+  MutableBytes result_bytes(&scope, result.items());
+  result_bytes.replaceFromWithStr(0, *self, first_uppercase);
+  result.setNumItems(first_uppercase);
+  for (word char_length, i = first_uppercase; i < length; i += char_length) {
+    struct FullCasing casefold =
+        Unicode::toFolded(self.codePointAt(i, &char_length));
+    for (word j = 0; j < 3; j++) {
+      int32_t decoded = casefold.code_points[j];
+      if (decoded == -1) break;
+      runtime->strArrayAddCodePoint(thread, result, decoded);
+    }
+  }
+  return runtime->strFromStrArray(result);
+}
+
 RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -853,31 +931,7 @@ RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs) {
   Str self(&scope, strUnderlying(*self_obj));
   word length = self.length();
   if (self.isASCII()) {
-    if (self.isSmallStr()) {
-      byte buf[SmallStr::kMaxLength] = {};
-      for (word i = 0; i < length; i++) {
-        buf[i] = ASCII::toLower(self.byteAt(i));
-      }
-      return SmallStr::fromBytes({buf, length});
-    }
-    // Search for the first uppercase character.
-    word first_uppercase = 0;
-    for (; first_uppercase < length; first_uppercase++) {
-      if (ASCII::isUpper(self.byteAt(first_uppercase))) {
-        break;
-      }
-    }
-    if (first_uppercase >= length && self_obj.isStr()) {
-      return *self_obj;
-    }
-
-    MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
-    result.replaceFromWithStr(0, *self, first_uppercase);
-    for (word i = first_uppercase; i < length; i++) {
-      byte lower = ASCII::toLower(self.byteAt(i));
-      result.byteAtPut(i, lower);
-    }
-    return result.becomeStr();
+    return strLowerASCII(thread, self_obj, self, length);
   }
 
   // Search for the first uppercase character.
