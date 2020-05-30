@@ -620,7 +620,7 @@ RawObject Thread::raiseStopIterationWithValue(const Object& value) {
     HandleScope scope(this);
     Layout layout(&scope, runtime()->layoutAt(LayoutId::kStopIteration));
     StopIteration stop_iteration(&scope, runtime()->newInstance(layout));
-    stop_iteration.setArgs(*value);
+    stop_iteration.setArgs(runtime()->newTupleWith1(value));
     stop_iteration.setValue(*value);
     stop_iteration.setCause(Unbound::object());
     stop_iteration.setContext(Unbound::object());

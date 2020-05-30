@@ -5784,6 +5784,7 @@ class ExecTests(unittest.TestCase):
             f().send(None)
 
         self.assertIs(exc.exception.value, v)
+        self.assertEqual(exc.exception.args, (v,))
 
     def test_coroutine_returning_explicit_stop_iteration_value_passes_through_unchanged(
         self,
@@ -5798,6 +5799,7 @@ class ExecTests(unittest.TestCase):
             f().send(None)
 
         self.assertIs(exc.exception.value, v)
+        self.assertEqual(exc.exception.args, (v,))
 
     def test_coroutine_returning_stop_iteration_sub_class_passes_through_unchanged(
         self,
@@ -5815,6 +5817,7 @@ class ExecTests(unittest.TestCase):
             f().send(None)
 
         self.assertIs(exc.exception.value, v)
+        self.assertEqual(exc.exception.args, (v,))
 
     def test_coroutine_returning_tuple_passes_through_as_tuple(self):
         v = (1,)
@@ -5827,6 +5830,7 @@ class ExecTests(unittest.TestCase):
             f().send(None)
 
         self.assertIs(exc.exception.value, v)
+        self.assertEqual(exc.exception.args, (v,))
 
     def test_coroutine_returning_tuple_sub_class_passes_through_unchanged(self):
         class NewTuple(tuple):
@@ -5842,6 +5846,7 @@ class ExecTests(unittest.TestCase):
             f().send(None)
 
         self.assertIs(exc.exception.value, v)
+        self.assertEqual(exc.exception.args, (v,))
 
 
 class FloatTests(unittest.TestCase):
