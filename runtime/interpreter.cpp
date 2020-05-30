@@ -1594,6 +1594,7 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object obj(&scope, frame->topValue());
+  // TODO(T67736679) Add inline caching for this method lookup.
   Object anext(&scope, lookupMethod(thread, frame, obj, ID(__anext__)));
   if (anext.isError()) {
     if (anext.isErrorException()) {
@@ -1609,23 +1610,10 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   }
   Object awaitable(&scope, callMethod1(thread, frame, anext, obj));
   if (awaitable.isErrorException()) return Continue::UNWIND;
-
-  // TODO(T33628943): Check if `awaitable` is a native or generator-based
-  // coroutine and if it is, no need to call __await__
-  Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
-  if (await.isError()) {
-    if (await.isErrorException()) {
-      thread->clearPendingException();
-    } else {
-      DCHECK(await.isErrorNotFound(),
-             "expected Error::exception() or Error::notFound()");
-    }
-    thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "'async for' received an invalid object from __anext__");
-    return Continue::UNWIND;
-  }
-  return tailcallMethod1(thread, *await, *obj);
+  frame->pushValue(*awaitable);
+  // TODO(T67736679) Add inline caching for the lookupMethod() in awaitableIter.
+  return awaitableIter(thread,
+                       "'async for' received an invalid object from __anext__");
 }
 
 HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
@@ -2026,7 +2014,8 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   return Continue::YIELD;
 }
 
-HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
+Continue Interpreter::awaitableIter(Thread* thread,
+                                    const char* invalid_type_message) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object obj(&scope, frame->topValue());
@@ -2040,9 +2029,7 @@ HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
     if (func.isIterableCoroutine()) {
       return Continue::NEXT;
     }
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "generator object not flagged as iterable coroutine "
-                         "can't be used in 'await' expression");
+    thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
     return Continue::UNWIND;
   }
   frame->popValue();
@@ -2054,11 +2041,15 @@ HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
       DCHECK(await.isErrorNotFound(),
              "expected Error::exception() or Error::notFound()");
     }
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "object can't be used in 'await' expression");
+    thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
     return Continue::UNWIND;
   }
   return tailcallMethod1(thread, *await, *obj);
+}
+
+HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
+  // TODO(T67736679) Add inline caching for the lookupMethod() in awaitableIter.
+  return awaitableIter(thread, "object can't be used in 'await' expression");
 }
 
 HANDLER_INLINE Continue Interpreter::doInplaceLshift(Thread* thread, word) {

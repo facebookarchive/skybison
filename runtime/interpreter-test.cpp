@@ -3556,6 +3556,39 @@ a = AsyncIterator()
   EXPECT_EQ(*a, *await);
 }
 
+TEST_F(InterpreterTest, GetAnextCallsAnextButNotAwaitOnAsyncGenerator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+async def f():
+  yield
+
+async_gen = f()
+
+class AsyncIterator:
+  def __anext__(self):
+    return async_gen
+
+async_it = AsyncIterator()
+)")
+                   .isError());
+  Object async_gen(&scope, mainModuleAt(runtime_, "async_gen"));
+  Object async_it(&scope, mainModuleAt(runtime_, "async_it"));
+  // The async generator object instance should not have an __await__() method.
+  ASSERT_TRUE(Interpreter::lookupMethod(thread_, thread_->currentFrame(),
+                                        async_gen, ID(__await__))
+                  .isErrorNotFound());
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTupleWith1(async_it));
+  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST,  0, GET_ANEXT,    0,
+                           BUILD_TUPLE, 2, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Tuple result(&scope, runCode(code));
+  EXPECT_EQ(*async_it, result.at(0));
+  EXPECT_EQ(runtime_->typeOf(result.at(1)),
+            runtime_->typeAt(LayoutId::kAsyncGenerator));
+}
+
 TEST_F(InterpreterTest, GetAnextOnNonIterable) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
