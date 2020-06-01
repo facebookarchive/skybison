@@ -3594,11 +3594,9 @@ class CoroutineTests(unittest.TestCase):
         self.assertEqual(next(it), 2)
 
     def test_close_with_invalid_self_raises_type_error(self):
-        g = self.simple_coro()
-        with self.assertRaises(TypeError):
-            type(g).close(None)
-        # Silence unawaited coro warning
-        g.close()
+        with contextlib.closing(self.simple_coro()) as g:
+            with self.assertRaises(TypeError):
+                type(g).close(None)
 
     def test_close_when_exhausted_returns_none(self):
         g = self.simple_coro()
@@ -3806,12 +3804,9 @@ class CoroutineTests(unittest.TestCase):
         def f(coro_inst):
             yield from coro_inst
 
-        coro_inst = coro()
-        with self.assertRaises(TypeError):
-            f(coro_inst).send(None)
-
-        # Silence warning from CPython
-        coro_inst.close()
+        with contextlib.closing(coro()) as coro_inst:
+            with self.assertRaises(TypeError):
+                f(coro_inst).send(None)
 
 
 class CoroutineWrapperTests(unittest.TestCase):
