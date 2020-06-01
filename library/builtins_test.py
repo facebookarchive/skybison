@@ -2,6 +2,7 @@
 import builtins
 import contextlib
 import sys
+import types
 import unittest
 import warnings
 from unittest.mock import Mock, call as mock_call
@@ -31,6 +32,81 @@ class AbsTests(unittest.TestCase):
         instance = C()
         with self.assertRaisesRegex(TypeError, "'NoneType' object is not callable"):
             abs(instance)
+
+
+class AwaitablesTest(unittest.TestCase):
+    def test_await_on_awaitable_raising_an_exception_propagates(self):
+        class Awaitable:
+            def __await__(self):
+                raise ValueError
+
+        async def f():
+            return await Awaitable()
+
+        with self.assertRaises(ValueError):
+            f().send(None)
+
+    def test_await_on_awaitable_returning_non_iterator_is_type_error(self):
+        class Awaitable:
+            def __await__(self):
+                return 1
+
+        async def f():
+            return await Awaitable()
+
+        with self.assertRaisesRegex(
+            TypeError, "__await__.* returned non-iterator of type 'int'"
+        ):
+            f().send(None)
+
+    def test_await_on_awaitable_returning_coroutine_raises_type_error(self):
+        async def f():
+            pass
+
+        with contextlib.closing(f()) as coro:
+
+            class Awaitable:
+                def __await__(self):
+                    return coro
+
+            async def g():
+                return await Awaitable()
+
+            with self.assertRaisesRegex(TypeError, "__await__.* returned a coroutine"):
+                g().send(None)
+
+    def test_await_on_awaitable_returning_iterable_coroutine_raises_type_error(self):
+        class Awaitable:
+            def __await__(self):
+                @types.coroutine
+                def f():
+                    yield
+
+                return f()
+
+        async def g():
+            return await Awaitable()
+
+        with self.assertRaisesRegex(TypeError, "__await__.* returned a coroutine"):
+            g().send(None)
+
+    def test_async_for_over_awaitable_raising_on_await_raises_type_error(self):
+        class AsyncIterator:
+            def __aiter__(self):
+                return self
+
+            def __anext__(self):
+                return self
+
+            def __await__(self):
+                raise ValueError
+
+        async def f():
+            async for _ in AsyncIterator():
+                pass
+
+        with self.assertRaisesRegex(TypeError, "an invalid object from __anext__"):
+            f().send(None)
 
 
 class BinTests(unittest.TestCase):

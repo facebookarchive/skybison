@@ -3535,6 +3535,10 @@ class AsyncIterator:
     await_called = self
     return self
 
+  # Return from __await__ must be an "iterable" type
+  def __next__(self):
+    pass
+
 a = AsyncIterator()
 )")
                    .isError());
@@ -3639,17 +3643,21 @@ static RawObject runCodeCallingGetAwaitableOnObject(Thread* thread,
 TEST_F(InterpreterTest, GetAwaitableCallsAwait) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
+# Return from __await__ must be an "iterable" type
+iterable = iter([])
+
 class Awaitable:
   def __await__(self):
-    return 42
+    return iterable
 
 a = Awaitable()
 )")
                    .isError());
 
+  Object iterable(&scope, mainModuleAt(runtime_, "iterable"));
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object result(&scope, runCodeCallingGetAwaitableOnObject(thread_, a));
-  EXPECT_TRUE(isIntEqualsWord(*result, 42));
+  EXPECT_EQ(result, iterable);
 }
 
 TEST_F(InterpreterTest, GetAwaitableIsNoOpOnCoroutine) {

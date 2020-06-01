@@ -1611,9 +1611,18 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   Object awaitable(&scope, callMethod1(thread, frame, anext, obj));
   if (awaitable.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*awaitable);
-  // TODO(T67736679) Add inline caching for the lookupMethod() in awaitableIter.
-  return awaitableIter(thread,
+  // TODO(T67736679) Add inline caching for the lookupMethod() in
+  // awaitableIter.
+  Object result(
+      &scope,
+      awaitableIter(thread,
+                    "'async for' received an invalid object from __anext__"));
+  if (!result.isError()) return Continue::NEXT;
+  thread->clearPendingException();
+  // TODO(T67750587) Chain the original exception as the "cause" of TypeError.
+  thread->raiseWithFmt(LayoutId::kTypeError,
                        "'async for' received an invalid object from __anext__");
+  return Continue::UNWIND;
 }
 
 HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
@@ -2014,23 +2023,22 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   return Continue::YIELD;
 }
 
-Continue Interpreter::awaitableIter(Thread* thread,
-                                    const char* invalid_type_message) {
+RawObject Interpreter::awaitableIter(Thread* thread,
+                                     const char* invalid_type_message) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object obj(&scope, frame->topValue());
   if (obj.isCoroutine() || obj.isAsyncGenerator()) {
-    return Continue::NEXT;
+    return NoneType::object();
   }
   if (obj.isGenerator()) {
     Generator generator(&scope, *obj);
     GeneratorFrame generator_frame(&scope, generator.generatorFrame());
     Function func(&scope, generator_frame.function());
     if (func.isIterableCoroutine()) {
-      return Continue::NEXT;
+      return NoneType::object();
     }
-    thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
-    return Continue::UNWIND;
+    return thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
   }
   frame->popValue();
   Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
@@ -2041,15 +2049,42 @@ Continue Interpreter::awaitableIter(Thread* thread,
       DCHECK(await.isErrorNotFound(),
              "expected Error::exception() or Error::notFound()");
     }
-    thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
-    return Continue::UNWIND;
+    return thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
   }
-  return tailcallMethod1(thread, *await, *obj);
+  Object result(&scope, callMethod1(thread, frame, await, obj));
+  if (result.isError()) return *result;
+  if (result.isGenerator()) {
+    Generator gen(&scope, *result);
+    GeneratorFrame gen_frame(&scope, gen.generatorFrame());
+    Function gen_func(&scope, gen_frame.function());
+    if (gen_func.isIterableCoroutine()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__await__() returned a coroutine");
+    }
+  }
+  if (result.isCoroutine()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__await__() returned a coroutine");
+  }
+  // This check is lower priority than for coroutine above which will also fail
+  // isIterator() and raise TypeError but with a different string.
+  if (!thread->runtime()->isIterator(thread, result)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "__await__() returned non-iterator of type '%T'",
+        &result);
+  }
+  frame->pushValue(*result);
+  return NoneType::object();
 }
 
 HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
   // TODO(T67736679) Add inline caching for the lookupMethod() in awaitableIter.
-  return awaitableIter(thread, "object can't be used in 'await' expression");
+  RawObject result =
+      awaitableIter(thread, "object can't be used in 'await' expression");
+  if (result.isError()) {
+    return Continue::UNWIND;
+  }
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doInplaceLshift(Thread* thread, word) {

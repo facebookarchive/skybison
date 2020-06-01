@@ -648,8 +648,8 @@ class Interpreter {
   static Continue inplaceOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
 
-  static Continue awaitableIter(Thread* thread,
-                                const char* invalid_type_message);
+  static RawObject awaitableIter(Thread* thread,
+                                 const char* invalid_type_message);
 };
 
 Interpreter* createCppInterpreter();
