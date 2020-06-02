@@ -274,7 +274,6 @@ static void dictInsertNoUpdate(const MutableTuple& data,
 }
 
 static void dictEnsureCapacity(Thread* thread, const Dict& dict) {
-  // TODO(T44245141): Move initialization of an empty dict here.
   DCHECK(dict.indicesLength() > 0 && Utils::isPowerOfTwo(dict.indicesLength()),
          "dict capacity must be power of two, greater than zero");
   if (dictHasUsableItem(dict)) {
@@ -306,8 +305,6 @@ static void dictEnsureCapacity(Thread* thread, const Dict& dict) {
 
 RawObject dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                     word hash, const Object& value) {
-  // TODO(T44245141): Move initialization of an empty dict to
-  // dictEnsureCapacity.
   if (dict.indices().isNull()) {
     dictAllocateArrays(thread, dict, kInitialDictIndicesLength);
   }
@@ -383,8 +380,6 @@ RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
 
 RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                     const Object& name, const Object& value) {
-  // TODO(T44245141): Move initialization of an empty dict to
-  // dictEnsureCapacity.
   if (dict.indices().isNull()) {
     dictAllocateArrays(thread, dict, kInitialDictIndicesLength);
   }
