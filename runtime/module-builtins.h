@@ -57,6 +57,10 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
                                         const Object& name,
                                         Object* location_out);
 
+// Load extension module `name` from dynamic library in file `path`.
+RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
+                                     const Str& path);
+
 RawObject moduleRaiseAttributeError(Thread* thread, const Module& module,
                                     const Object& name);
 

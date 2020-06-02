@@ -10,10 +10,13 @@
 #include "handles.h"
 #include "module-builtins.h"
 #include "objects.h"
+#include "os.h"
 #include "runtime.h"
 #include "trampolines.h"
 
 namespace py {
+
+typedef PyObject* (*ModuleInitFunc)();
 
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isModule();
@@ -259,6 +262,47 @@ int moduleAddToState(Thread* thread, Module* module) {
     return -1;
   }
   return 0;
+}
+
+RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
+                                     const Str& path) {
+  unique_c_ptr<char> path_cstr(path.toCStr());
+  const char* error_msg;
+  void* handle =
+      OS::openSharedObject(path_cstr.get(), OS::kRtldNow, &error_msg);
+  if (handle == nullptr) {
+    return thread->raiseWithFmt(
+        LayoutId::kImportError, "dlerror: '%s' importing: '%S' from '%S'",
+        error_msg != nullptr ? error_msg : "", &name, &path);
+  }
+
+  // Resolve PyInit_xxx symbol.
+  unique_c_ptr<char> name_cstr(name.toCStr());
+  char init_name[256];
+  std::snprintf(init_name, sizeof(init_name), "PyInit_%s", name_cstr.get());
+  ModuleInitFunc init = reinterpret_cast<ModuleInitFunc>(
+      OS::sharedObjectSymbolAddress(handle, init_name, /*error_msg=*/nullptr));
+  if (init == nullptr) {
+    return thread->raiseWithFmt(LayoutId::kImportError,
+                                "dlsym error: dynamic module '%S' does not "
+                                "define export function: '%s'",
+                                &name, init_name);
+  }
+
+  // Call init.
+  PyObject* module = (*init)();
+  if (module == nullptr) {
+    if (!thread->hasPendingException()) {
+      return thread->raiseWithFmt(
+          LayoutId::kSystemError,
+          "Initialization of '%s' failed without raising", init_name);
+    }
+    return Error::exception();
+  }
+  HandleScope scope(thread);
+  Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
+  moduleAddToState(thread, &module_obj);
+  return *module_obj;
 }
 
 }  // namespace py
