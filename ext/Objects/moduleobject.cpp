@@ -251,18 +251,32 @@ void freeExtensionModule(Thread* thread, const Module& module) {
   }
 }
 
-int moduleAddToState(Thread* thread, Module* module) {
+static RawObject initializeModule(Thread* thread, ModuleInitFunc init,
+                                  const Str& name) {
+  PyObject* module_or_def = (*init)();
+  if (module_or_def == nullptr) {
+    if (!thread->hasPendingException()) {
+      return thread->raiseWithFmt(
+          LayoutId::kSystemError,
+          "Initialization of '%S' failed without raising", &name);
+    }
+    return Error::exception();
+  }
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Int def(&scope, module->def());
-  PyModuleDef* module_def = static_cast<PyModuleDef*>(def.asCPtr());
-  if (module_def == nullptr) {
-    return -1;
+  Module module(&scope, ApiHandle::fromPyObject(module_or_def)->asObject());
+  runtime->addModule(module);
+  if (!runtime->isInstanceOfModule(*module)) {
+    // TODO(T39542987): Enable multi-phase module initialization
+    UNIMPLEMENTED("Multi-phase module initialization");
   }
-  if (!runtime->moduleListAtPut(thread, *module, module_def->m_base.m_index)) {
-    return -1;
+
+  PyModuleDef* def =
+      static_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
+  if (_PyState_AddModule(module_or_def, def) < 0) {
+    return Error::exception();
   }
-  return 0;
+  return *module;
 }
 
 RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
@@ -290,20 +304,7 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
                                 &name, init_name);
   }
 
-  // Call init.
-  PyObject* module = (*init)();
-  if (module == nullptr) {
-    if (!thread->hasPendingException()) {
-      return thread->raiseWithFmt(
-          LayoutId::kSystemError,
-          "Initialization of '%s' failed without raising", init_name);
-    }
-    return Error::exception();
-  }
-  HandleScope scope(thread);
-  Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
-  moduleAddToState(thread, &module_obj);
-  return *module_obj;
+  return initializeModule(thread, init, name);
 }
 
 static word inittabIndex(const Str& name) {
@@ -322,25 +323,7 @@ bool isBuiltinExtensionModule(const Str& name) {
 RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name) {
   word index = inittabIndex(name);
   if (index < 0) return Error::notFound();
-
-  ModuleInitFunc init = _PyImport_Inittab[index].initfunc;
-  PyObject* pymodule = (*init)();
-  if (pymodule == nullptr) {
-    if (thread->hasPendingException()) return Error::exception();
-    return thread->raiseWithFmt(LayoutId::kSystemError,
-                                "NULL return without exception set");
-  }
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!runtime->isInstanceOfModule(*module_obj)) {
-    // TODO(T39542987): Enable multi-phase module initialization
-    UNIMPLEMENTED("Multi-phase module initialization");
-  }
-  Module module(&scope, *module_obj);
-  runtime->addModule(module);
-  moduleAddToState(thread, &module);
-  return *module;
+  return initializeModule(thread, _PyImport_Inittab[index].initfunc, name);
 }
 
 }  // namespace py

@@ -57,6 +57,4 @@ bool isFrozenModule(const Str& name);
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            View<BuiltinType> types);
 
-int moduleAddToState(Thread* thread, Module* module);
-
 }  // namespace py
