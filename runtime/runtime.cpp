@@ -2227,15 +2227,8 @@ bool Runtime::moduleListAtPut(Thread* thread, const Module& module,
                               word index) {
   HandleScope scope(thread);
   List module_list(&scope, modulesByIndex());
-
-  word num_items = module_list.numItems();
-  if (num_items > index) {
-    if (module == module_list.at(index)) {
-      return false;
-    }
-  }
   Object none(&scope, NoneType::object());
-  for (int i = index - num_items; i >= 0; i--) {
+  for (int i = index - module_list.numItems(); i >= 0; i--) {
     listAdd(thread, module_list, none);
   }
   module_list.atPut(index, *module);

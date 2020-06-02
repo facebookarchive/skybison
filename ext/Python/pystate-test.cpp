@@ -34,13 +34,16 @@ TEST_F(PystateExtensionApiTestDeathTest, AddExistingModuleDoesNotOverride) {
 }
 
 TEST_F(PystateExtensionApiTest, AddModuleWithSlotsRaisesSystemError) {
+  struct PyModuleDef_Slot slots[] = {
+      {0, nullptr},
+  };
   struct PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "rutabaga",
       "I'm sure this module will turnip somewhere.",
       0,
       nullptr,
-      reinterpret_cast<PyModuleDef_Slot*>(5),
+      slots,
       nullptr,
       nullptr,
   };
@@ -48,23 +51,6 @@ TEST_F(PystateExtensionApiTest, AddModuleWithSlotsRaisesSystemError) {
   EXPECT_EQ(PyState_AddModule(Py_None, &def), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
-}
-
-TEST_F(PystateExtensionApiTest, AddModuleWithNullDocUsesNone) {
-  static struct PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "foo",
-      nullptr,
-      0,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-  };
-  PyObjectPtr module(PyModule_Create(&def));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr docstring(PyObject_GetAttrString(module, "__doc__"));
-  EXPECT_EQ(docstring, Py_None);
 }
 
 TEST_F(PystateExtensionApiTest, AddModuleAddsModule) {
@@ -81,6 +67,46 @@ TEST_F(PystateExtensionApiTest, AddModuleAddsModule) {
   PyObject* module = PyModule_Create(&def);
   ASSERT_NE(module, nullptr);
   ASSERT_EQ(PyState_AddModule(module, &def), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObject* found_module = PyState_FindModule(&def);
+  ASSERT_NE(found_module, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyModule_CheckExact(found_module));
+  PyObjectPtr found_name(PyModule_GetNameObject(found_module));
+  PyObjectPtr module_name(PyModule_GetNameObject(module));
+  EXPECT_EQ(PyUnicode_Compare(found_name, module_name), 0);
+  Py_DECREF(module);
+}
+
+TEST_F(PystateExtensionApiTest, _PyState_AddModuleWithSlotsRaisesSystemError) {
+  struct PyModuleDef_Slot slots[] = {
+      {0, nullptr},
+  };
+  struct PyModuleDef def = {
+      PyModuleDef_HEAD_INIT, "foo", "bar", 0, nullptr, slots, nullptr, nullptr,
+  };
+  PyModuleDef_Init(&def);
+  EXPECT_EQ(PyState_AddModule(Py_None, &def), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(PystateExtensionApiTest, _PyState_AddModuleTwiceAddsModule) {
+  static struct PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "foo",
+      "bar",
+      0,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+  };
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  ASSERT_EQ(_PyState_AddModule(module, &def), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(_PyState_AddModule(module, &def), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObject* found_module = PyState_FindModule(&def);
   ASSERT_NE(found_module, nullptr);

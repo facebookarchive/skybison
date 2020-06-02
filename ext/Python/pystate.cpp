@@ -35,19 +35,9 @@ PY_EXPORT void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Delete");
 }
 
-PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
-  DCHECK(module != nullptr, "module must not be null");
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
+static int moduleListAdd(Thread* thread, PyObject* module, PyModuleDef* def) {
   if (def == nullptr) {
-    Py_FatalError("PyState_AddModule: Module Definition is NULL");
-    return -1;
-  }
-  HandleScope scope(thread);
-  Object find_module(&scope,
-                     runtime->moduleListAt(thread, def->m_base.m_index));
-  if (!find_module.isErrorNotFound()) {
-    Py_FatalError("PyState_AddModule: Module already added!");
+    DCHECK(PyErr_Occurred() != nullptr, "expected raised error");
     return -1;
   }
   if (def->m_slots != nullptr) {
@@ -55,9 +45,27 @@ PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
                          "PyState_AddModule called on module with slots");
     return -1;
   }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   module_obj.setDef(runtime->newIntFromCPtr(def));
-  return moduleAddToState(thread, &module_obj);
+  return runtime->moduleListAtPut(thread, module_obj, def->m_base.m_index) ? 0
+                                                                           : -1;
+}
+
+PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
+  DCHECK(module != nullptr, "module must not be null");
+  if (def == nullptr) {
+    Py_FatalError("PyState_AddModule: Module Definition is NULL");
+    return -1;
+  }
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  if (!runtime->moduleListAt(thread, def->m_base.m_index).isErrorNotFound()) {
+    Py_FatalError("PyState_AddModule: Module already added!");
+    return -1;
+  }
+  return moduleListAdd(thread, module, def);
 }
 
 PY_EXPORT PyObject* PyState_FindModule(PyModuleDef* def) {
@@ -123,8 +131,9 @@ PY_EXPORT void _PyGILState_Reinit() {
   // TODO(T39596544): do nothing until we have a GIL.
 }
 
-PY_EXPORT int _PyState_AddModule(PyObject* /* e */, PyModuleDef* /* f */) {
-  UNIMPLEMENTED("_PyState_AddModule");
+PY_EXPORT int _PyState_AddModule(PyObject* module, PyModuleDef* def) {
+  Thread* thread = Thread::current();
+  return moduleListAdd(thread, module, def);
 }
 
 PY_EXPORT void _PyThreadState_Init(PyThreadState* /* e */) {
