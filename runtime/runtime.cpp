@@ -103,9 +103,54 @@ static const SymbolId kComparisonSelector[] = {
 
 word Runtime::next_module_index_ = 0;
 
+wchar_t Runtime::exec_prefix_[PATH_MAX + 1] = L"";
+wchar_t Runtime::module_search_path_[PATH_MAX + 1] = L"";
+wchar_t Runtime::prefix_[PATH_MAX + 1] = L"";
 wchar_t Runtime::program_name_[NAME_MAX + 1] = L"python3";
 
 wchar_t* Runtime::programName() { return program_name_; }
+
+void Runtime::setExecPrefix(Thread* thread, const Object& exec_prefix) {
+  HandleScope scope(thread);
+  CHECK(exec_prefix.isStr(), "sys.exec_prefix must be str");
+  Str exec_prefix_str(&scope, *exec_prefix);
+  CHECK(exec_prefix_str.codePointLength() <= PATH_MAX,
+        "exec_prefix length must not exceed PATH_MAX");
+
+  wchar_t buf[PATH_MAX + 1];
+  strCopyToWCStr(buf, ARRAYSIZE(buf), exec_prefix_str);
+  std::wcscpy(exec_prefix_, buf);
+}
+
+void Runtime::setModuleSearchPath(Thread* thread, const Object& search_path) {
+  HandleScope scope(thread);
+  CHECK(search_path.isStr(), "module_search_path must be str");
+  Str search_path_str(&scope, *search_path);
+  CHECK(search_path_str.codePointLength() <= PATH_MAX,
+        "module_search_path length must not exceed PATH_MAX");
+
+  wchar_t buf[PATH_MAX + 1];
+  strCopyToWCStr(buf, ARRAYSIZE(buf), search_path_str);
+  std::wcscpy(module_search_path_, buf);
+}
+
+void Runtime::setModuleSearchPathFromWCstr(const wchar_t* module_search_path) {
+  CHECK(std::wcslen(module_search_path) <= PATH_MAX,
+        "module_search_path length must not exceed PATH_MAX");
+  std::wcscpy(module_search_path_, module_search_path);
+}
+
+void Runtime::setPrefix(Thread* thread, const Object& prefix) {
+  HandleScope scope(thread);
+  CHECK(prefix.isStr(), "sys.prefix must be str");
+  Str prefix_str(&scope, *prefix);
+  CHECK(prefix_str.codePointLength() <= PATH_MAX,
+        "prefix length must not exceed PATH_MAX");
+
+  wchar_t buf[PATH_MAX + 1];
+  strCopyToWCStr(buf, ARRAYSIZE(buf), prefix_str);
+  std::wcscpy(prefix_, buf);
+}
 
 void Runtime::setProgramName(const wchar_t* program_name) {
   CHECK(std::wcslen(program_name) <= NAME_MAX,

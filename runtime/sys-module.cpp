@@ -140,6 +140,23 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   runtime->cacheSysInstances(thread, module);
 }
 
+void initializeRuntimePaths(Thread* thread) {
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeFunction0(ID(sys), ID(_calculate_path)));
+  if (result.isError()) {
+    return thread->raiseBadInternalCall();
+  }
+  CHECK(result.isTuple(), "sys._calculate_path must return tuple");
+  Tuple paths(&scope, *result);
+
+  Object prefix(&scope, paths.at(0));
+  Runtime::setPrefix(thread, prefix);
+  Object exec_prefix(&scope, paths.at(1));
+  Runtime::setExecPrefix(thread, exec_prefix);
+  Object search_path(&scope, paths.at(2));
+  Runtime::setModuleSearchPath(thread, search_path);
+}
+
 static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,
                       const char* format, va_list va) {
   HandleScope scope(thread);

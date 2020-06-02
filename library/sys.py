@@ -284,3 +284,10 @@ warnoptions = []
 
 def _program_name():
     _builtin()
+
+
+def _calculate_path():
+    """Returns a tuple representing (prefix, exec_prefix, module_search_path)"""
+    # TODO(T61328507): Implement the path lookup algorithm. In the meantime, return
+    # the compiled-in defaults that CPython returns when run out of a build directory.
+    return "/usr/local", "/usr/local", ""

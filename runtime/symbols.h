@@ -285,6 +285,7 @@ class Runtime;
   V(_bytes_new)                                                                \
   V(_byteslike_check)                                                          \
   V(_byteslike_guard)                                                          \
+  V(_calculate_path)                                                           \
   V(_cast_addr)                                                                \
   V(_closed)                                                                   \
   V(_closefd)                                                                  \

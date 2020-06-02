@@ -26,6 +26,8 @@ void writeStderr(Thread* thread, const char* format, ...)
     FORMAT_ATTRIBUTE(2, 3);
 void writeStderrV(Thread* thread, const char* format, va_list va);
 
+void initializeRuntimePaths(Thread* thread);
+
 RawObject initialSysPath(Thread* thread);
 
 }  // namespace py

@@ -1716,6 +1716,7 @@ set(
   ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp
+  ext/Python/pathconfig-test.cpp
   ext/Python/pyhash-test.cpp
   ext/Python/pylifecycle-test.cpp
   ext/Python/pystate-test.cpp

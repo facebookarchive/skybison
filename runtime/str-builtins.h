@@ -11,6 +11,7 @@ namespace py {
 RawObject newStrFromWideChar(Thread* thread, const wchar_t* wc_str);
 RawObject newStrFromWideCharWithLength(Thread* thread, const wchar_t* wc_str,
                                        word length);
+void strCopyToWCStr(wchar_t* buf, size_t buf_length, const Str& str);
 
 // Look for needle in haystack in the range [start, end]. Return the number of
 // occurrences found in that range. Note that start and end are code point

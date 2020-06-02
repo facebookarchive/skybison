@@ -38,6 +38,18 @@ RawObject newStrFromWideCharWithLength(Thread* thread, const wchar_t* wc_str,
       View<int32_t>(reinterpret_cast<const int32_t*>(wc_str), length));
 }
 
+void strCopyToWCStr(wchar_t* buf, size_t buf_length, const Str& str) {
+  uword wchar_index = 0;
+  for (word byte_index = 0, num_bytes = 0, byte_count = str.length();
+       byte_index < byte_count && wchar_index < buf_length;
+       byte_index += num_bytes, wchar_index += 1) {
+    int32_t cp = Str::cast(*str).codePointAt(byte_index, &num_bytes);
+    static_assert(sizeof(*buf) == sizeof(cp), "Requires 32bit wchar_t");
+    buf[wchar_index] = static_cast<wchar_t>(cp);
+  }
+  buf[wchar_index] = '\0';
+}
+
 static word strCountCharFromTo(const Str& haystack, byte needle, word start,
                                word end) {
   word result = 0;
