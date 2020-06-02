@@ -17,6 +17,7 @@
 namespace py {
 
 typedef PyObject* (*ModuleInitFunc)();
+extern struct _inittab _PyImport_Inittab[];
 
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isModule();
@@ -303,6 +304,43 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
   Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   moduleAddToState(thread, &module_obj);
   return *module_obj;
+}
+
+static word inittabIndex(const Str& name) {
+  for (word i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+bool isBuiltinExtensionModule(const Str& name) {
+  return inittabIndex(name) >= 0;
+}
+
+RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name) {
+  word index = inittabIndex(name);
+  if (index < 0) return Error::notFound();
+
+  ModuleInitFunc init = _PyImport_Inittab[index].initfunc;
+  PyObject* pymodule = (*init)();
+  if (pymodule == nullptr) {
+    if (thread->hasPendingException()) return Error::exception();
+    return thread->raiseWithFmt(LayoutId::kSystemError,
+                                "NULL return without exception set");
+  }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+  if (!runtime->isInstanceOfModule(*module_obj)) {
+    // TODO(T39542987): Enable multi-phase module initialization
+    UNIMPLEMENTED("Multi-phase module initialization");
+  }
+  Module module(&scope, *module_obj);
+  runtime->addModule(module);
+  moduleAddToState(thread, &module);
+  return *module;
 }
 
 }  // namespace py

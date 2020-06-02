@@ -1,7 +1,6 @@
 #include "modules.h"
 
 #include "builtins.h"
-#include "capi-handles.h"
 #include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"
@@ -11,8 +10,6 @@
 #include "type-builtins.h"
 
 namespace py {
-
-extern "C" struct _inittab _PyImport_Inittab[];
 
 static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
   // Ensure builtin types have been declared.
@@ -36,15 +33,6 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
     DCHECK(false, "Builtin type %s.%s not defined", module_name_cstr.get(),
            name_cstr.get());
   }
-}
-
-static word extensionModuleIndex(const Str& name) {
-  for (word i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
-      return i;
-    }
-  }
-  return -1;
 }
 
 static word builtinModuleIndex(const Str& name) {
@@ -74,26 +62,7 @@ static RawObject createBuiltinModule(Thread* thread, const Str& name) {
     return *module;
   }
 
-  word extension_index = extensionModuleIndex(name);
-  if (extension_index >= 0) {
-    PyObject* pymodule = (*_PyImport_Inittab[extension_index].initfunc)();
-    if (pymodule == nullptr) {
-      if (thread->hasPendingException()) return Error::exception();
-      return thread->raiseWithFmt(LayoutId::kSystemError,
-                                  "NULL return without exception set");
-    };
-    Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-    if (!runtime->isInstanceOfModule(*module_obj)) {
-      // TODO(T39542987): Enable multi-phase module initialization
-      UNIMPLEMENTED("Multi-phase module initialization");
-    }
-    Module module(&scope, *module_obj);
-    runtime->addModule(module);
-    moduleAddToState(thread, &module);
-    return *module;
-  }
-
-  return Error::notFound();
+  return moduleInitBuiltinExtension(thread, name);
 }
 
 RawObject ensureBuiltinModule(Thread* thread, const Str& name) {
@@ -150,9 +119,7 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
   return *module;
 }
 
-bool isBuiltinModule(const Str& name) {
-  return builtinModuleIndex(name) >= 0 || extensionModuleIndex(name) >= 0;
-}
+bool isFrozenModule(const Str& name) { return builtinModuleIndex(name) >= 0; }
 
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            View<BuiltinType> types) {

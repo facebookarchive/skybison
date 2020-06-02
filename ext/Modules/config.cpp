@@ -38,6 +38,8 @@ extern "C" PyObject* PyInit_termios();
 extern "C" PyObject* PyInit_time();
 extern "C" PyObject* PyInit_zlib();
 
+namespace py {
+
 // _empty module to test loading from init tab
 PyObject* PyInit__empty() {
   static PyModuleDef def;
@@ -87,3 +89,5 @@ struct _inittab _PyImport_Inittab[] = {
     {nullptr, nullptr},
 };
 // clang-format on
+
+}  // namespace py

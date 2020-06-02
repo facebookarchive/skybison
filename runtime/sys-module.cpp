@@ -27,7 +27,7 @@
 
 namespace py {
 
-extern "C" struct _inittab _PyImport_Inittab[];
+extern struct _inittab _PyImport_Inittab[];
 
 void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
                                 View<byte> bytecode) {

@@ -127,7 +127,8 @@ RawObject FUNC(_imp, is_builtin)(Thread* thread, Frame* frame, word nargs) {
   }
   Str name(&scope, strUnderlying(*name_obj));
   name = Runtime::internStr(thread, name);
-  return SmallInt::fromWord(isBuiltinModule(name) ? 1 : 0);
+  bool result = isFrozenModule(name) || isBuiltinExtensionModule(name);
+  return SmallInt::fromWord(result ? 1 : 0);
 }
 
 RawObject FUNC(_imp, is_frozen)(Thread* thread, Frame* frame, word nargs) {
