@@ -3786,20 +3786,23 @@ TEST_F(AbstractExtensionApiTest,
 
 TEST_F(AbstractExtensionApiTest, ObjectFormatCallsDunderFormat) {
   PyRun_SimpleString(R"(
-sideeffect = 0
+last_arguments = None
 class C:
   def __format__(self, format_spec):
-    global sideeffect
-    sideeffect = 10
+    global last_arguments
+    last_arguments = (self, format_spec)
     return "foo"
 c = C()
 )");
   PyObjectPtr c(mainModuleGet("c"));
-  PyObjectPtr result(PyObject_Format(c, nullptr));
+  PyObjectPtr fmt(PyUnicode_FromString("foo"));
+  PyObjectPtr result(PyObject_Format(c, fmt));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "foo"));
-  PyObjectPtr sideeffect(mainModuleGet("sideeffect"));
-  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+  PyObjectPtr last_arguments(mainModuleGet("last_arguments"));
+  ASSERT_TRUE(PyTuple_Check(last_arguments));
+  EXPECT_EQ(PyTuple_GetItem(last_arguments, 0), c);
+  EXPECT_EQ(PyTuple_GetItem(last_arguments, 1), fmt);
 }
 
 TEST_F(AbstractExtensionApiTest,

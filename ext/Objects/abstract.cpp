@@ -885,10 +885,10 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object format_spec_obj(&scope,
-                         format_spec == nullptr
-                             ? Str::empty()
-                             : ApiHandle::fromPyObject(obj)->asObject());
+  Object format_spec_obj(
+      &scope, format_spec == nullptr
+                  ? Str::empty()
+                  : ApiHandle::fromPyObject(format_spec)->asObject());
   Object result(&scope, thread->invokeFunction2(ID(builtins), ID(format),
                                                 object, format_spec_obj));
   if (result.isError()) {
