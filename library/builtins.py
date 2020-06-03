@@ -3909,6 +3909,9 @@ class instance_proxy(bootstrap=True):
     def __len__(self):
         return len(self.keys())
 
+    def __reduce__(self):
+        return dict, (), None, None, iter(self.items())
+
     def __repr__(self):
         return _mapping_repr("instance_proxy({", self, "})")
 
