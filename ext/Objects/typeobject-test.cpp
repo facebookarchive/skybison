@@ -4266,5 +4266,223 @@ TEST_F(TypeExtensionApiTest, TpDeallocWithoutFreeingMemoryUntracksNativeProxy) {
   Py_DECREF(o4);
 }
 
+struct TpSlotTestObject {
+  PyObject_HEAD
+  int val0;
+  int val1;
+};
+static PyObject* makeTestInstanceWithSlots(const PyType_Slot* slots) {
+  const PyType_Spec spec = {
+      "foo",
+      sizeof(TpSlotTestObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      const_cast<PyType_Slot*>(slots),
+  };
+  PyObjectPtr type(PyType_FromSpec(const_cast<PyType_Spec*>(&spec)));
+  if (type == nullptr) return nullptr;
+  PyObject* instance(PyObject_CallFunction(type, nullptr));
+  if (instance == nullptr) return nullptr;
+  TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(instance);
+  data->val0 = 42;
+  data->val1 = 128077;
+  return instance;
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderStrReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<str %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_str, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__str__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<str 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderReprReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<repr %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_repr, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__repr__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<repr 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderIterReturnsStr) {
+  getiterfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<iter %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_iter, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__iter__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<iter 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderAwaitReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<await %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_am_await, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__await__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<await 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderAiterReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<aiter %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_am_aiter, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__aiter__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<aiter 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderAnextReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<aiter %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_am_anext, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__anext__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<aiter 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderNegReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<neg %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_negative, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__neg__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<neg 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderPosReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<pos %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_positive, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__pos__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<pos 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderAbsReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<abs %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_absolute, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__abs__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<abs 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderInvertReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<invert %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_invert, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__invert__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<invert 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderIntReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<int %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_int, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__int__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<int 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderFloatReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<float %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_float, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__float__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<float 42 \xf0\x9f\x91\x8d>"));
+}
+
+TEST_F(TypeExtensionApiTest, CallDunderIndexReturnsStr) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    TpSlotTestObject* data = reinterpret_cast<TpSlotTestObject*>(obj);
+    return PyUnicode_FromFormat("<index %d %c>", data->val0, data->val1);
+  };
+  static const PyType_Slot slots[] = {
+      {Py_nb_index, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__index__", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "<index 42 \xf0\x9f\x91\x8d>"));
+}
+
 }  // namespace testing
 }  // namespace py

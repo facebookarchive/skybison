@@ -470,8 +470,8 @@ static const SymbolId kParamsTypeArgsKwargs[] = {ID(type), ID(args),
     NAME, Type::Slot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER,        \
         Code::Flags::kVarargs | Code::Flags::kVarkeyargs, DOC                  \
   }
-#define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
-  TPSLOT(NAME, SLOT, kParamsSelf, FUNCTION, WRAPPER,                           \
+#define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, DOC)                              \
+  TPSLOT(NAME, SLOT, kParamsSelf, FUNCTION, wrapUnaryfunc,                     \
          C_NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
   TPSLOT(NAME, SLOT, kParamsSelfValue, FUNCTION, WRAPPER,                      \
@@ -496,16 +496,14 @@ static const SlotDef kSlotdefs[] = {
     TPSLOT(ID(__setattr__), kSetattr, kParamsSelfNameValue, nullptr, nullptr,
            ""),
     TPSLOT(ID(__delattr__), kSetattr, kParamsSelfName, nullptr, nullptr, ""),
-    TPSLOT(ID(__repr__), kRepr, kParamsSelf, slot_tp_repr, wrapUnaryfunc,
-           "__repr__($self, /)\n--\n\nReturn repr(self)."),
+    UNSLOT(ID(__repr__), "__repr__", kRepr, slot_tp_repr, "Return repr(self)."),
     TPSLOT(ID(__hash__), kHash, kParamsSelf, slot_tp_hash, wrapHashfunc,
            "__hash__($self, /)\n--\n\nReturn hash(self)."),
     KWSLOT(
         ID(__call__), kCall, kParamsSelfArgsKwargs, slot_tp_call,
         wrapVarkwTernaryfunc,
         "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function."),
-    TPSLOT(ID(__str__), kStr, kParamsSelfArgsKwargs, slot_tp_str, wrapUnaryfunc,
-           "__str__($self, /)\n--\n\nReturn str(self)."),
+    UNSLOT(ID(__str__), "__str__", kStr, slot_tp_str, "Return str(self)."),
     TPSLOT(ID(__getattribute__), kGetattro, kParamsSelfName,
            slot_tp_getattr_hook, wrapBinaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, "
@@ -537,8 +535,8 @@ static const SlotDef kSlotdefs[] = {
     TPSLOT(ID(__ge__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<GE>,
            "__ge__($self, value, /)\n--\n\nReturn self>=value."),
-    TPSLOT(ID(__iter__), kIter, kParamsSelf, slot_tp_iter, wrapUnaryfunc,
-           "__iter__($self, /)\n--\n\nImplement iter(self)."),
+    UNSLOT(ID(__iter__), "__iter__", kIter, slot_tp_iter,
+           "Implement iter(self)."),
     TPSLOT(ID(__next__), kIternext, kParamsSelf, slot_tp_iternext, wrapNext,
            "__next__($self, /)\n--\n\nImplement next(self)."),
     TPSLOT(ID(__get__), kDescrGet, kParamsSelfInstanceOwner, slot_tp_descr_get,
@@ -562,18 +560,12 @@ static const SlotDef kSlotdefs[] = {
            "Create and return new object.  See help(type) for accurate "
            "signature."),
     TPSLOT(ID(__del__), kFinalize, kParamsSelf, slot_tp_finalize, wrapDel, ""),
-    TPSLOT(ID(__await__), kAsyncAwait, kParamsSelf, slot_am_await,
-           wrapUnaryfunc,
-           "__await__($self, /)\n--\n\nReturn an iterator to be used in await "
-           "expression."),
-    TPSLOT(ID(__aiter__), kAsyncAiter, kParamsSelf, slot_am_aiter,
-           wrapUnaryfunc,
-           "__aiter__($self, /)\n--\n\nReturn an awaitable, that resolves in "
-           "asynchronous iterator."),
-    TPSLOT(ID(__anext__), kAsyncAnext, kParamsSelf, slot_am_anext,
-           wrapUnaryfunc,
-           "__anext__($self, /)\n--\n\nReturn a value or raise "
-           "StopAsyncIteration."),
+    UNSLOT(ID(__await__), "__await__", kAsyncAwait, slot_am_await,
+           "Return an iterator to be used in await expression."),
+    UNSLOT(ID(__aiter__), "__aiter__", kAsyncAiter, slot_am_aiter,
+           "Return an awaitable, that resolves in asynchronous iterator."),
+    UNSLOT(ID(__anext__), "__anext__", kAsyncAnext, slot_am_anext,
+           "Return a value or raise StopAsyncIteration."),
     BINSLOT(ID(__add__), "__add__", kNumberAdd, slot_nb_add, "+"),
     RBINSLOT(ID(__radd__), "__radd__", kNumberAdd, slot_nb_add, "+"),
     BINSLOT(ID(__sub__), "__sub__", kNumberSubtract, slot_nb_subtract, "-"),
@@ -595,16 +587,14 @@ static const SlotDef kSlotdefs[] = {
            wrapTernaryfuncSwapped,
            "__rpow__($self, value, mod=None, /)\n--\n\nReturn pow(value, self, "
            "mod)."),
-    UNSLOT(ID(__neg__), "__neg__", kNumberNegative, slot_nb_negative,
-           wrapUnaryfunc, "-self"),
-    UNSLOT(ID(__pos__), "__pos__", kNumberPositive, slot_nb_positive,
-           wrapUnaryfunc, "+self"),
+    UNSLOT(ID(__neg__), "__neg__", kNumberNegative, slot_nb_negative, "-self"),
+    UNSLOT(ID(__pos__), "__pos__", kNumberPositive, slot_nb_positive, "+self"),
     UNSLOT(ID(__abs__), "__abs__", kNumberAbsolute, slot_nb_absolute,
-           wrapUnaryfunc, "abs(self)"),
-    UNSLOT(ID(__bool__), "__bool__", kNumberBool, slot_nb_bool, wrapInquirypred,
-           "self != 0"),
+           "abs(self)"),
+    TPSLOT(ID(__bool__), kNumberBool, kParamsSelf, slot_nb_bool,
+           wrapInquirypred, "__bool__($self, /)\n--\n\nself != 0"),
     UNSLOT(ID(__invert__), "__invert__", kNumberInvert, slot_nb_invert,
-           wrapUnaryfunc, "~self"),
+           "~self"),
     BINSLOT(ID(__lshift__), "__lshift__", kNumberLshift, slot_nb_lshift, "<<"),
     RBINSLOT(ID(__rlshift__), "__rlshift__", kNumberLshift, slot_nb_lshift,
              "<<"),
@@ -617,10 +607,9 @@ static const SlotDef kSlotdefs[] = {
     RBINSLOT(ID(__rxor__), "__rxor__", kNumberXor, slot_nb_xor, "^"),
     BINSLOT(ID(__or__), "__or__", kNumberOr, slot_nb_or, "|"),
     RBINSLOT(ID(__ror__), "__ror__", kNumberOr, slot_nb_or, "|"),
-    UNSLOT(ID(__int__), "__int__", kNumberInt, slot_nb_int, wrapUnaryfunc,
-           "int(self)"),
+    UNSLOT(ID(__int__), "__int__", kNumberInt, slot_nb_int, "int(self)"),
     UNSLOT(ID(__float__), "__float__", kNumberFloat, slot_nb_float,
-           wrapUnaryfunc, "float(self)"),
+           "float(self)"),
     IBSLOT(ID(__iadd__), "__iadd__", kNumberInplaceAdd, slot_nb_inplace_add,
            wrapBinaryfunc, "+="),
     IBSLOT(ID(__isub__), "__isub__", kNumberInplaceSubtract,
@@ -653,9 +642,7 @@ static const SlotDef kSlotdefs[] = {
            slot_nb_inplace_floor_divide, wrapBinaryfunc, "//="),
     IBSLOT(ID(__itruediv__), "__itruediv__", kNumberInplaceTrueDivide,
            slot_nb_inplace_true_divide, wrapBinaryfunc, "/="),
-    TPSLOT(ID(__index__), kNumberIndex, kParamsSelf, slot_nb_index,
-           wrapUnaryfunc,
-           "__index__($self, /)\n--\n\n"
+    UNSLOT(ID(__index__), "__index__", kNumberIndex, slot_nb_index,
            "Return self converted to an integer, if self is suitable "
            "for use as an index into a list."),
     BINSLOT(ID(__matmul__), "__matmul__", kNumberMatrixMultiply,
