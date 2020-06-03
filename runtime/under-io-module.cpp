@@ -794,19 +794,10 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
     }
   }
 
-  // TODO(T59697431): use a more efficient growing operation.
   MutableBytes buffer(&scope, string_io.buffer());
   if (buffer.length() < new_len) {
-    MutableBytes new_buffer(&scope,
-                            runtime->newMutableBytesUninitialized(new_len));
-    new_buffer.replaceFromWith(0, *buffer, buffer.length());
-    if (buffer.length() < start) {
-      for (word i = buffer.length(); i < start; i++) {
-        new_buffer.byteAtPut(i, 0);
-      }
-    }
-    string_io.setBuffer(*new_buffer);
-    buffer = *new_buffer;
+    buffer = runtime->mutableBytesCopyWithLength(thread, buffer, new_len);
+    string_io.setBuffer(*buffer);
   }
 
   if (has_read_translate) {
