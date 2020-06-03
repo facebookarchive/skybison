@@ -52,12 +52,16 @@ void Scavenger::scavengePointer(RawObject* pointer) {
     return;
   }
   RawHeapObject object = HeapObject::cast(*pointer);
-  if (from_->contains(object.address())) {
-    if (object.isForwarding()) {
-      *pointer = object.forward();
-    } else {
-      *pointer = transport(object);
-    }
+  if (!from_->contains(object.address())) {
+    DCHECK(object.header().isHeader(), "object must have a header");
+    DCHECK(to_->contains(object.address()),
+           "object must be in 'from' or 'to' space");
+  } else if (object.isForwarding()) {
+    DCHECK(to_->contains(HeapObject::cast(object.forward()).address()),
+           "transported object must be located in 'to' space");
+    *pointer = object.forward();
+  } else {
+    *pointer = transport(object);
   }
 }
 
@@ -218,7 +222,10 @@ void Scavenger::processFinalizableReferences() {
 
 RawObject Scavenger::transport(RawObject old_object) {
   RawHeapObject from_object = HeapObject::cast(old_object);
-  DCHECK(!from_object.isForwarding(), "old_object should not be forwarding");
+  DCHECK(from_->contains(from_object.address()),
+         "objects must be transported from 'from' space");
+  DCHECK(from_object.header().isHeader(),
+         "object must have a header and must not forward");
   word size = from_object.size();
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);
