@@ -82,7 +82,7 @@ Func getNativeFunc(Thread* thread, Frame* frame) {
   Tuple consts(&scope, code.consts());
   DCHECK(consts.length() == 1, "Unexpected tuple length");
   Int raw_fn(&scope, consts.at(0));
-  return bit_cast<Func>(raw_fn.asCPtr());
+  return reinterpret_cast<Func>(raw_fn.asCPtr());
 }
 
 RawObject wrapUnaryfunc(Thread* thread, Frame* frame, word nargs) {
@@ -490,8 +490,8 @@ static const SymbolId kParamsTypeArgsKwargs[] = {ID(type), ID(args),
          C_NAME "($self, value, /)\n--\n\n" DOC)
 
 static const SlotDef kSlotdefs[] = {
-    TPSLOT(ID(__getattribute__), kGetattr, kParamsSelfName, nullptr,
-           bit_cast<Function::Entry>(nullptr), ""),
+    TPSLOT(ID(__getattribute__), kGetattr, kParamsSelfName, nullptr, nullptr,
+           ""),
     TPSLOT(ID(__getattr__), kGetattr, kParamsSelfName, nullptr, nullptr, ""),
     TPSLOT(ID(__setattr__), kSetattr, kParamsSelfNameValue, nullptr, nullptr,
            ""),
@@ -763,25 +763,28 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // rather than a wrapper. CPython does this regardless of which slot it
     // was given for, so we do too.
     void* slot_value_ptr = Int::cast(*slot_value).asCPtr();
-    if (slot_value_ptr == bit_cast<void*>(&PyObject_HashNotImplemented)) {
+    if (slot_value_ptr ==
+        reinterpret_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
       typeAtPutById(thread, type, slot.name, none);
       return NoneType::object();
     }
 
     Object func_obj(&scope, NoneType::object());
-    if (slot_value_ptr == bit_cast<void*>(&PyObject_GenericGetAttr)) {
+    if (slot_value_ptr == reinterpret_cast<void*>(&PyObject_GenericGetAttr)) {
       func_obj = runtime->objectDunderGetattribute();
-    } else if (slot_value_ptr == bit_cast<void*>(&PyObject_GenericSetAttr)) {
+    } else if (slot_value_ptr ==
+               reinterpret_cast<void*>(&PyObject_GenericSetAttr)) {
       func_obj = runtime->objectDunderSetattr();
     } else {
       // Create the wrapper function.
       Str slot_name(&scope, runtime->symbols()->at(slot.name));
       Str qualname(&scope,
                    runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
-      Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
-                                   slot.num_parameters, slot.flags,
-                                   bit_cast<void*>(slot.wrapper), slot_value));
+      Code code(&scope,
+                newExtCode(thread, slot_name, slot.parameters,
+                           slot.num_parameters, slot.flags,
+                           reinterpret_cast<void*>(slot.wrapper), slot_value));
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
                                                          globals));
@@ -854,7 +857,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
 void* defaultSlot(Type::Slot slot) {
   switch (slot) {
     case Type::Slot::kNew:
-      return bit_cast<void*>(&slotTpNew);
+      return reinterpret_cast<void*>(&slotTpNew);
     default:
       UNIMPLEMENTED("Unsupported default slot %d", static_cast<int>(slot));
   }
@@ -1196,10 +1199,12 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
   if (def.get == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.get)));
-  Code code(&scope,
-            newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
-                       /*flags=*/0, bit_cast<void*>(&getterWrapper), value));
+  Object value(&scope,
+               runtime->newIntFromCPtr(reinterpret_cast<void*>(def.get)));
+  Code code(
+      &scope,
+      newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
+                 /*flags=*/0, reinterpret_cast<void*>(&getterWrapper), value));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -1215,10 +1220,11 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   if (def.set == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
+  Object value(&scope,
+               runtime->newIntFromCPtr(reinterpret_cast<void*>(def.set)));
   Code code(&scope, newExtCode(thread, name, kParamsSelfValue,
                                ARRAYSIZE(kParamsSelfValue), /*flags=*/0,
-                               bit_cast<void*>(&setterWrapper), value));
+                               reinterpret_cast<void*>(&setterWrapper), value));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -1234,7 +1240,8 @@ RawObject addMethods(Thread* thread, const Type& type) {
   Object slot_value(&scope, type.slot(Type::Slot::kMethods));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
-  auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
+  auto methods =
+      reinterpret_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
   Object none(&scope, NoneType::object());
   Object unbound(&scope, Unbound::object());
   Object name(&scope, NoneType::object());
@@ -1266,7 +1273,8 @@ RawObject addMembers(Thread* thread, const Type& type) {
   Object slot_value(&scope, type.slot(Type::Slot::kMembers));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
-  auto members = bit_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
+  auto members =
+      reinterpret_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
@@ -1286,7 +1294,8 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   Object slot_value(&scope, type.slot(Type::Slot::kGetset));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
-  auto getsets = bit_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
+  auto getsets =
+      reinterpret_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
@@ -1581,14 +1590,15 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   // tp_dealloc -> subtypeDealloc
   if (!type.hasSlot(Type::Slot::kDealloc)) {
     Object default_dealloc(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
+        &scope,
+        runtime->newIntFromCPtr(reinterpret_cast<void*>(&subtypeDealloc)));
     type.setSlot(Type::Slot::kDealloc, *default_dealloc);
   }
 
   // tp_repr -> PyObject_Repr
   if (!type.hasSlot(Type::Slot::kRepr)) {
-    Object default_repr(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyObject_Repr)));
+    Object default_repr(&scope, runtime->newIntFromCPtr(
+                                    reinterpret_cast<void*>(&PyObject_Repr)));
     type.setSlot(Type::Slot::kRepr, *default_repr);
     // PyObject_Repr delegates its job to type.__repr__().
     DCHECK(!typeLookupInMroById(thread, type, ID(__repr__)).isErrorNotFound(),
@@ -1597,8 +1607,8 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
 
   // tp_str -> object_str
   if (!type.hasSlot(Type::Slot::kStr)) {
-    Object default_str(&scope,
-                       runtime->newIntFromCPtr(bit_cast<void*>(&PyObject_Str)));
+    Object default_str(&scope, runtime->newIntFromCPtr(
+                                   reinterpret_cast<void*>(&PyObject_Str)));
     type.setSlot(Type::Slot::kStr, *default_str);
     // PyObject_Str delegates its job to type.__str__().
     DCHECK(!typeLookupInMroById(thread, type, ID(__str__)).isErrorNotFound(),
@@ -1607,22 +1617,24 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
 
   // tp_init -> object_init
   if (!type.hasSlot(Type::Slot::kInit)) {
-    Object default_init(&scope,
-                        runtime->newIntFromCPtr(bit_cast<void*>(&objectInit)));
+    Object default_init(
+        &scope, runtime->newIntFromCPtr(reinterpret_cast<void*>(&objectInit)));
     type.setSlot(Type::Slot::kInit, *default_init);
   }
 
   // tp_alloc -> PyType_GenericAlloc
   if (!type.hasSlot(Type::Slot::kAlloc)) {
     Object default_alloc(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericAlloc)));
+        &scope,
+        runtime->newIntFromCPtr(reinterpret_cast<void*>(&PyType_GenericAlloc)));
     type.setSlot(Type::Slot::kAlloc, *default_alloc);
   }
 
   // tp_new -> PyType_GenericNew
   if (!type.hasSlot(Type::Slot::kNew)) {
     Object default_new(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericNew)));
+        &scope,
+        runtime->newIntFromCPtr(reinterpret_cast<void*>(&PyType_GenericNew)));
     type.setSlot(Type::Slot::kNew, *default_new);
     Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
     Str qualname(&scope,
@@ -1631,7 +1643,8 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
               newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
                          ARRAYSIZE(kParamsTypeArgsKwargs),
                          Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
-                         bit_cast<void*>(&wrapVarkwTernaryfunc), default_new));
+                         reinterpret_cast<void*>(&wrapVarkwTernaryfunc),
+                         default_new));
     Object globals(&scope, NoneType::object());
     Function func(
         &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
@@ -1646,7 +1659,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
     unsigned long type_flags =
         Int::cast(type.slot(Type::Slot::kFlags)).asWord();
     Object default_free(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(
+        &scope, runtime->newIntFromCPtr(reinterpret_cast<void*>(
                     (type_flags & Py_TPFLAGS_HAVE_GC) ? &PyObject_GC_Del
                                                       : &PyObject_Del)));
     type.setSlot(Type::Slot::kFree, *default_free);
