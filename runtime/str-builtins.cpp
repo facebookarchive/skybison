@@ -1,5 +1,6 @@
 #include "str-builtins.h"
 
+#include <cctype>
 #include <cwchar>
 
 #include "builtins.h"
@@ -638,7 +639,7 @@ void strInternInTuple(Thread* thread, const Object& items) {
 
 static bool allNameChars(const Str& str) {
   for (word i = 0; i < str.length(); i++) {
-    if (!isalnum(str.byteAt(i))) {
+    if (!std::isalnum(str.byteAt(i))) {
       return false;
     }
   }

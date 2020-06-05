@@ -2,6 +2,8 @@
 
 #include <pthread.h>
 
+#include <cerrno>
+
 #include "utils.h"
 
 namespace py {

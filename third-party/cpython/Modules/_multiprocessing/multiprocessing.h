@@ -96,7 +96,8 @@
 
 PyObject *_PyMp_SetError(PyObject *Type, int num);
 
-PyType_Spec _PyMp_SemLockType_spec;
+extern PyType_Spec _PyMp_SemLockType_spec;
+
 /*
  * Externs - not all will really exist on all platforms
  */
