@@ -3,6 +3,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -95,8 +96,8 @@ class TracebackPrinter : public FrameVisitor {
   std::vector<std::string> lines_;
 };
 
-word Utils::memoryFind(byte* haystack, word haystack_len, byte* needle,
-                       word needle_len) {
+word Utils::memoryFind(const byte* haystack, word haystack_len,
+                       const byte* needle, word needle_len) {
   DCHECK(haystack != nullptr, "haystack cannot be null");
   DCHECK(needle != nullptr, "needle cannot be null");
   DCHECK(haystack_len >= 0, "haystack length must be nonnegative");
@@ -105,36 +106,38 @@ word Utils::memoryFind(byte* haystack, word haystack_len, byte* needle,
   if (haystack_len == 0 || needle_len == 0) return -1;
   // The needle is too big to be contained in haystack
   if (haystack_len < needle_len) return -1;
-  void* result;
+  const void* result;
   if (needle_len == 1) {
     // Fast path: one character
-    result = ::memchr(haystack, *needle, haystack_len);
+    result = std::memchr(haystack, *needle, haystack_len);
   } else {
     result = ::memmem(haystack, haystack_len, needle, needle_len);
   }
   if (result == nullptr) return -1;
-  return reinterpret_cast<byte*>(result) - haystack;
+  return static_cast<const byte*>(result) - haystack;
 }
 
-word Utils::memoryFindChar(byte* haystack, byte needle, word length) {
+word Utils::memoryFindChar(const byte* haystack, word haystack_len,
+                           byte needle) {
   DCHECK(haystack != nullptr, "haystack cannot be null");
-  DCHECK(length >= 0, "haystack length must be nonnegative");
-  byte* result = reinterpret_cast<byte*>(::memchr(haystack, needle, length));
+  DCHECK(haystack_len >= 0, "haystack length must be nonnegative");
+  const void* result = std::memchr(haystack, needle, haystack_len);
   if (result == nullptr) return -1;
-  return result - haystack;
+  return static_cast<const byte*>(result) - haystack;
 }
 
-word Utils::memoryFindCharReverse(byte* haystack, byte needle, word length) {
+word Utils::memoryFindCharReverse(const byte* haystack, word haystack_len,
+                                  byte needle) {
   DCHECK(haystack != nullptr, "haystack cannot be null");
-  DCHECK(length >= 0, "haystack length must be nonnegative");
-  for (word i = length - 1; i >= 0; i--) {
+  DCHECK(haystack_len >= 0, "haystack length must be nonnegative");
+  for (word i = haystack_len - 1; i >= 0; i--) {
     if (haystack[i] == needle) return i;
   }
   return -1;
 }
 
-word Utils::memoryFindReverse(byte* haystack, word haystack_len, byte* needle,
-                              word needle_len) {
+word Utils::memoryFindReverse(const byte* haystack, word haystack_len,
+                              const byte* needle, word needle_len) {
   DCHECK(haystack != nullptr, "haystack cannot be null");
   DCHECK(needle != nullptr, "needle cannot be null");
   DCHECK(haystack_len >= 0, "haystack length must be nonnegative");
@@ -146,7 +149,7 @@ word Utils::memoryFindReverse(byte* haystack, word haystack_len, byte* needle,
   byte needle_start = *needle;
   if (needle_len == 1) {
     // Fast path: one character
-    return memoryFindCharReverse(haystack, needle_start, haystack_len);
+    return memoryFindCharReverse(haystack, haystack_len, needle_start);
   }
   // The last position where its possible to find needle in haystack
   word last_offset = haystack_len - needle_len;

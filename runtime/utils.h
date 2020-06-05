@@ -68,21 +68,23 @@ class Utils {
 
   // Search forwards through `haystack` looking for `needle`. Return the byte
   // offset, or -1 if not found.
-  static word memoryFind(byte* haystack, word haystack_len, byte* needle,
-                         word needle_len);
+  static word memoryFind(const byte* haystack, word haystack_len,
+                         const byte* needle, word needle_len);
 
   // Search forwards through `haystack` looking for `needle`. Return the byte
   // offset, or -1 if not found.
-  static word memoryFindChar(byte* haystack, byte needle, word length);
+  static word memoryFindChar(const byte* haystack, word haystack_len,
+                             byte needle);
 
   // Search backwards through `haystack` looking for `needle`. Return the byte
   // offset, or -1 if not found.
-  static word memoryFindCharReverse(byte* haystack, byte needle, word length);
+  static word memoryFindCharReverse(const byte* haystack, word haystack_len,
+                                    byte needle);
 
   // Search backwards through `haystack` looking for `needle`. Return the byte
   // offset, or -1 if not found.
-  static word memoryFindReverse(byte* haystack, word haystack_len, byte* needle,
-                                word needle_len);
+  static word memoryFindReverse(const byte* haystack, word haystack_len,
+                                const byte* needle, word needle_len);
 
   template <typename T>
   static T minimum(T x, T y) {

@@ -4733,8 +4733,8 @@ RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
 
 static word strScan(const Str& haystack, word haystack_len, const Str& needle,
                     word needle_len,
-                    word (*find_func)(byte* haystack, word haystack_len,
-                                      byte* needle, word needle_len)) {
+                    word (*find_func)(const byte* haystack, word haystack_len,
+                                      const byte* needle, word needle_len)) {
   byte haystack_buf[SmallStr::kMaxLength];
   byte* haystack_ptr = haystack_buf;
   if (haystack.isSmallStr()) {

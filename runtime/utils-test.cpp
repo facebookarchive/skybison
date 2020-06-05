@@ -71,41 +71,41 @@ TEST(UtilsTestNoFixture, MemoryFindWithNeedleNotInHaystackReturnsNegativeOne) {
 TEST(UtilsTestNoFixture, MemoryFindCharWithEmptyHaystackReturnsNegativeOne) {
   byte haystack[] = "hello";
   int needle = 'h';
-  EXPECT_EQ(Utils::memoryFindChar(haystack, needle, 0), -1);
+  EXPECT_EQ(Utils::memoryFindChar(haystack, 0, needle), -1);
 }
 
 TEST(UtilsTestNoFixture, MemoryFindCharWithNeedleInHaystackReturnsLocation) {
   byte haystack[] = "hello";
   int needle = 'h';
-  EXPECT_EQ(Utils::memoryFindChar(haystack, needle, 5), 0);
+  EXPECT_EQ(Utils::memoryFindChar(haystack, 5, needle), 0);
 }
 
 TEST(UtilsTestNoFixture,
      MemoryFindCharWithNeedleInHaystackReturnsLeftmostLocation) {
   byte haystack[] = "helloh";
   int needle = 'h';
-  EXPECT_EQ(Utils::memoryFindChar(haystack, needle, 6), 0);
+  EXPECT_EQ(Utils::memoryFindChar(haystack, 6, needle), 0);
 }
 
 TEST(UtilsTestNoFixture,
      MemoryFindCharReverseWithEmptyHaystackReturnsNegativeOne) {
   byte haystack[] = "hello";
   int needle = 'h';
-  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 0), -1);
+  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, 0, needle), -1);
 }
 
 TEST(UtilsTestNoFixture,
      MemoryFindCharReverseWithNeedleInHaystackReturnsLocation) {
   byte haystack[] = "hello";
   int needle = 'h';
-  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 5), 0);
+  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, 5, needle), 0);
 }
 
 TEST(UtilsTestNoFixture,
      MemoryFindCharReverseWithNeedleInHaystackReturnsRightmostLocation) {
   byte haystack[] = "helloh";
   int needle = 'h';
-  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 6), 5);
+  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, 6, needle), 5);
 }
 
 TEST(UtilsTestNoFixture, MemoryFindReverseWithEmptyHaystackReturnsNegativeOne) {

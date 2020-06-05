@@ -267,7 +267,7 @@ word RawDataArray::findByte(byte value, word start, word length) const {
   DCHECK_BOUND(start, this->length());
   DCHECK_BOUND(start + length, this->length());
   word result = Utils::memoryFindChar(
-      reinterpret_cast<byte*>(address() + start), value, length);
+      reinterpret_cast<byte*>(address() + start), length, value);
   if (result != -1) result += start;
   return result;
 }

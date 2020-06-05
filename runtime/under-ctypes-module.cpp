@@ -123,7 +123,7 @@ RawObject FUNC(_ctypes, _CharArray_value_to_bytes)(Thread* thread, Frame* frame,
     Pointer value_ptr(&scope, Mmap::cast(*value).data());
     DCHECK(value_ptr.length() >= length, "Mmap shorter than ctypes.Array");
     byte* cptr = reinterpret_cast<byte*>(value_ptr.cptr());
-    word first_nul = Utils::memoryFindChar(cptr, '\0', length);
+    word first_nul = Utils::memoryFindChar(cptr, length, '\0');
     return thread->runtime()->newBytesWithAll(
         {cptr, first_nul == -1 ? length : first_nul});
   }
