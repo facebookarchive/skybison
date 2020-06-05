@@ -30,9 +30,6 @@ bool typeIsSubclass(const Type& subclass, const Type& superclass);
 // Convert an CPython's extension slot ints into a RawType::Slot
 Type::Slot slotToTypeSlot(int slot);
 
-// Inherit slots defined by a C Extension
-RawObject addInheritedSlots(const Type& type);
-
 void typeAddDocstring(Thread* thread, const Type& type);
 
 // Assign all key/values from the dict to the type. This interns the keys as
@@ -80,9 +77,12 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance_type);
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Dict& dict, const Tuple& mro);
+                   const Dict& dict, const Tuple& mro, bool inherit_slots);
 
 void typeInitAttributes(Thread* thread, const Type& type);
+
+// Inherit slots defined by a C Extension
+RawObject typeInheritSlots(Thread* thread, const Type& type);
 
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
@@ -95,6 +95,7 @@ RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
 // `Error::notFound()` if the name was not found.
 RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id);
 
+// Creates a new type. This function does not perform typeslot inheritance.
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict, Type::Flag flags);
 

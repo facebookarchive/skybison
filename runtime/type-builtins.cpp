@@ -868,7 +868,7 @@ static RawObject validateSlots(Thread* thread, const Type& type,
 }
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Dict& dict, const Tuple& mro) {
+                   const Dict& dict, const Tuple& mro, bool inherit_slots) {
   type.setName(*name);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -917,8 +917,9 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // NativeProxy's attributes.
   bool should_add_native_proxy_attributes = false;
   if (flags & Type::Flag::kIsNativeProxy) {
-    if (addInheritedSlots(type).isError()) {
-      return Error::exception();
+    if (inherit_slots) {
+      result = typeInheritSlots(thread, type);
+      if (result.isErrorException()) return *result;
     }
     if (!fixed_attr_base_type.hasFlag(Type::Flag::kIsNativeProxy)) {
       should_add_native_proxy_attributes = true;
@@ -1097,7 +1098,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   if (mro_obj.isError()) return *mro_obj;
   Tuple mro(&scope, *mro_obj);
   type.setFlags(flags);
-  return typeInit(thread, type, name, dict, mro);
+  return typeInit(thread, type, name, dict, mro, /*inherit_slots=*/false);
 }
 
 // NOTE: Keep the order of these type attributes same as the one from

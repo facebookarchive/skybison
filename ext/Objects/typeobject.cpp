@@ -1655,8 +1655,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-RawObject addInheritedSlots(const Type& type) {
-  Thread* thread = Thread::current();
+RawObject typeInheritSlots(Thread* thread, const Type& type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Type base_type(&scope, Tuple::cast(type.mro()).at(1));
@@ -1746,6 +1745,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Type type(&scope, *type_obj);
 
   // Initialize the extension slots tuple
+  DCHECK(!type.hasSlots(), "must not have slots yet");
   Object extension_slots(&scope,
                          runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
   type.setSlots(*extension_slots);
@@ -1794,7 +1794,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (addGetSet(thread, type).isError()) return nullptr;
 
-  if (addInheritedSlots(type).isError()) return nullptr;
+  if (typeInheritSlots(thread, type).isError()) return nullptr;
 
   return ApiHandle::newReference(thread, *type);
 }

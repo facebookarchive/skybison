@@ -5405,7 +5405,7 @@ RawObject FUNC(_builtins, _type_init)(Thread* thread, Frame* frame,
   } else {
     mro = args.get(3);
   }
-  return typeInit(thread, type, name, dict, mro);
+  return typeInit(thread, type, name, dict, mro, /*inherit_slots=*/true);
 }
 
 RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,
