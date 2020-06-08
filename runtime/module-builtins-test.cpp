@@ -109,7 +109,7 @@ static RawModule createTestingModule(Thread* thread) {
   // Create a builtins module.
   Object name(&scope, runtime->symbols()->at(ID(builtins)));
   Module builtins_module(&scope, runtime->newModule(name));
-  runtime->addModule(builtins_module);
+  runtime->addModule(thread, builtins_module);
   Dict builtins_dict(&scope, runtime->newDict());
   builtins_module.setDict(*builtins_dict);
 

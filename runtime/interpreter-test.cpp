@@ -858,7 +858,7 @@ TEST_F(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {
   HandleScope scope(thread_);
   Str name(&scope, runtime_->newStrFromCStr("foo"));
   Module module(&scope, runtime_->newModule(name));
-  runtime_->addModule(module);
+  runtime_->addModule(thread_, module);
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "from foo import bar"),
                             LayoutId::kImportError,
                             "cannot import name 'bar' from 'foo'"));

@@ -51,7 +51,7 @@ static RawObject createBuiltinModule(Thread* thread, const Str& name) {
   if (builtin_index >= 0) {
     const FrozenModule* frozen_module = &kFrozenModules[builtin_index];
     Module module(&scope, runtime->newModule(name));
-    runtime->addModule(module);
+    runtime->addModule(thread, module);
     ModuleInitFunc init = frozen_module->init;
     if (init == nullptr) {
       init = executeFrozenModule;
@@ -113,7 +113,7 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module module(&scope, runtime->newModule(name));
-  runtime->addModule(module);
+  runtime->addModule(thread, module);
   Object result(&scope, executeModule(thread, code, module));
   if (result.isError()) return *result;
   return *module;

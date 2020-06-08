@@ -2740,7 +2740,7 @@ TEST_F(RuntimeModuleTest, NewModuleSetsDictValuesAndModuleProxy) {
   // Create Module
   Object name(&scope, runtime_->newStrFromCStr("mymodule"));
   Module module(&scope, runtime_->newModule(name));
-  runtime_->addModule(module);
+  runtime_->addModule(thread_, module);
 
   Str mod_name(&scope, moduleAtByCStr(runtime_, "mymodule", "__name__"));
   EXPECT_TRUE(mod_name.equalsCStr("mymodule"));

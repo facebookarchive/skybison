@@ -166,12 +166,12 @@ Runtime::Runtime(word heap_size) : heap_(heap_size) {
   // This must be called before initializeTypes is called. Methods in
   // initializeTypes rely on instances that are created in this method.
   initializePrimitiveInstances();
-  initializeInterned();
-  initializeSymbols();
+  initializeInterned(thread);
+  initializeSymbols(thread);
   initializeLayouts();
   initializeTypes(thread);
   initializeApiData();
-  initializeModules();
+  initializeModules(thread);
 
   // This creates a reference that prevents the linker from garbage collecting
   // all of the symbols in debugging.cpp.  This is a temporary workaround until
@@ -1405,7 +1405,7 @@ RawObject Runtime::newStrFromFmt(const char* fmt, ...) {
   va_start(args, fmt);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object result(&scope, newStrFromFmtV(Thread::current(), fmt, args));
+  Object result(&scope, newStrFromFmtV(thread, fmt, args));
   va_end(args);
   return *result;
 }
@@ -1939,7 +1939,7 @@ RawObject Runtime::findOrCreateMainModule() {
 
   Object name(&scope, symbols()->at(ID(__main__)));
   Module main(&scope, newModule(name));
-  addModule(main);
+  addModule(thread, main);
   // TODO(T67704743) Fill in __main__...
   return *main;
 }
@@ -2058,10 +2058,10 @@ void Runtime::initializeImplicitBases() {
   Tuple::cast(implicit_bases_).atPut(0, typeAt(LayoutId::kObject));
 }
 
-void Runtime::initializeInterned() {
+void Runtime::initializeInterned(Thread* thread) {
   interned_ = emptyTuple();
   interned_remaining_ = 0;
-  growInternSet(Thread::current());
+  growInternSet(thread);
 }
 
 void Runtime::initializeRandom() {
@@ -2101,8 +2101,7 @@ void Runtime::initializeRandom() {
   seedRandom(random_state, hash_secret);
 }
 
-void Runtime::initializeSymbols() {
-  Thread* thread = Thread::current();
+void Runtime::initializeSymbols(Thread* thread) {
   HandleScope scope(thread);
   symbols_ = new Symbols(this);
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
@@ -2230,8 +2229,7 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
   }
 }
 
-void Runtime::addModule(const Module& module) {
-  Thread* thread = Thread::current();
+void Runtime::addModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Dict dict(&scope, modules());
   // TODO(T53728922) module.name() may be `None`.
@@ -2291,8 +2289,7 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   return moduleAtById(thread, module, name);
 }
 
-void Runtime::initializeModules() {
-  Thread* thread = Thread::current();
+void Runtime::initializeModules(Thread* thread) {
   modules_ = newDict();
   modules_by_index_ = newList();
   for (SymbolId id : kRequiredModules) {

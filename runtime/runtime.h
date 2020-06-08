@@ -331,7 +331,7 @@ class Runtime {
 
   void visitRoots(PointerVisitor* visitor);
 
-  void addModule(const Module& module);
+  void addModule(Thread* thread, const Module& module);
   bool moduleListAtPut(Thread* thread, const Module& module, word index);
 
   RawObject findModule(const Object& name);
@@ -872,13 +872,13 @@ class Runtime {
  private:
   void initializeApiData();
   void initializeHeapTypes(Thread* thread);
-  void initializeInterned();
+  void initializeInterned(Thread* thread);
   void initializeInterpreter();
   void initializeLayouts();
-  void initializeModules();
+  void initializeModules(Thread* thread);
   void initializePrimitiveInstances();
   void initializeRandom();
-  void initializeSymbols();
+  void initializeSymbols(Thread* thread);
   void initializeThreads();
   void initializeTypes(Thread* thread);
 

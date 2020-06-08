@@ -109,7 +109,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   }
 
   Module new_module(&scope, runtime->newModule(name_obj));
-  runtime->addModule(new_module);
+  runtime->addModule(thread, new_module);
   return ApiHandle::borrowedReference(thread, *new_module);
 }
 
