@@ -12,6 +12,7 @@ build_time_vars = {
     "CFLAGS": "-Wno-unused-result -Wsign-compare -g -Wall",
     "CXX": "c++",
     "EXT_SUFFIX": ".pyro.so",
+    "LDCXXSHARED": "c++ -bundle -undefined dynamic_lookup",
     "LDSHARED": "cc -bundle -undefined dynamic_lookup",
     "OPT": "",
     "SHLIB_SUFFIX": ".so",
