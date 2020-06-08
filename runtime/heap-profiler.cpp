@@ -227,8 +227,8 @@ void HeapProfiler::writeClassDump(RawLayout layout) {
   // number of instance fields (not include super class's)
   RawTuple in_object = Tuple::cast(layout.inObjectAttributes());
   word num_in_object = in_object.length();
-  bool has_overflow = layout.hasTupleOverflow() || layout.hasDictOverflow();
-  word num_overflow = has_overflow ? 1 : 0;
+  bool has_tuple_overflow = layout.hasTupleOverflow();
+  word num_overflow = has_tuple_overflow ? 1 : 0;
   word num_attributes = num_in_object + num_overflow;
   sub.write16(num_attributes);
   // instance fields
@@ -242,9 +242,9 @@ void HeapProfiler::writeClassDump(RawLayout layout) {
     }
     sub.write8(BasicType::kObject);
   }
-  // TODO(emacs): Remove this special case once tuple/dict overflow fit neatly
-  // into the allocated in-object attributes
-  if (has_overflow) {
+  // TODO(emacs): Remove this special case once tuple overflow fits neatly into
+  // the allocated in-object attributes
+  if (has_tuple_overflow) {
     sub.writeObjectId(cStringId(kOverflow));
     sub.write8(BasicType::kObject);
   }
@@ -256,8 +256,8 @@ void HeapProfiler::writeInstanceDump(RawInstance obj) {
   RawLayout layout = Layout::cast(Thread::current()->runtime()->layoutOf(obj));
   RawTuple in_object = Tuple::cast(layout.inObjectAttributes());
   word num_in_object = in_object.length();
-  bool has_overflow = layout.hasTupleOverflow() || layout.hasDictOverflow();
-  word num_overflow = has_overflow ? 1 : 0;
+  bool has_tuple_overflow = layout.hasTupleOverflow();
+  word num_overflow = has_tuple_overflow ? 1 : 0;
   word num_attributes = num_in_object + num_overflow;
   sub.beginInstanceDump(obj, /*stack_trace=*/0, num_attributes * kPointerSize,
                         classId(layout));
@@ -268,8 +268,8 @@ void HeapProfiler::writeInstanceDump(RawInstance obj) {
     sub.writeObjectId(
         objectId(Instance::cast(obj).instanceVariableAt(info.offset())));
   }
-  // write tuple or dict overflow
-  if (has_overflow) {
+  // write tuple overflow (dict overflow is in-object)
+  if (has_tuple_overflow) {
     sub.writeObjectId(objectId(
         Instance::cast(obj).instanceVariableAt(layout.overflowOffset())));
   }
