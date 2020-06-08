@@ -50,6 +50,10 @@ PY_EXPORT void _Py_Dealloc(PyObject*) {
   UNIMPLEMENTED("_Py_Dealloc");
 }
 
+PY_EXPORT void _Py_NewReference(PyObject*) {
+  UNIMPLEMENTED("_Py_NewReference");
+}
+
 PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
   if (ApiHandle::isManaged(obj)) return ApiHandle::fromPyObject(obj)->incref();
   obj->ob_refcnt++;
