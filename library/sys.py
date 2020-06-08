@@ -291,3 +291,13 @@ def _calculate_path():
     # TODO(T61328507): Implement the path lookup algorithm. In the meantime, return
     # the compiled-in defaults that CPython returns when run out of a build directory.
     return "/usr/local", "/usr/local", ""
+
+
+# TODO(T67866692) Implement these two functions as part of asynchronous generators.
+# They are stubbed here for now so asyncio can start-up.
+def set_asyncgen_hooks(firstiter=None, finalizer=None):
+    pass
+
+
+def get_asyncgen_hooks():
+    return None, None
