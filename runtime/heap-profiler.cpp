@@ -402,6 +402,11 @@ void HeapProfiler::writeHeapDumpEnd() { Record record(kHeapDumpEnd, this); }
 
 uword HeapProfiler::objectId(RawObject obj) {
   uword id = obj.raw();
+  if (obj.isHeader()) {
+    std::fprintf(stderr,
+                 "objectId called on header @ 0x%lx, indicating misalignment\n",
+                 id);
+  }
   if (!obj.isError() && !obj.isHeapObject()) {
     immediate_table_.add(id);
   }

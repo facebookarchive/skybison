@@ -1420,6 +1420,16 @@ TEST_F(HeapProfilerTest, SubRecordWrite64WritesToBodyInBigEndian) {
   EXPECT_TRUE(recordEqualsBytes(record, expected));
 }
 
+TEST_F(HeapProfilerTest, HeapDumpAfterFullRuntimeBootDoesNotCrash) {
+  // Create a __main__ and everything
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+import site
+from _builtins import _heap_dump
+_heap_dump("/dev/null")
+)")
+                   .isError());
+}
+
 }  // namespace testing
 
 }  // namespace py
