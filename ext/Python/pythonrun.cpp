@@ -13,6 +13,33 @@
 
 namespace py {
 
+PY_EXPORT PyObject* Py_CompileString(const char* str, const char* filename,
+                                     int start) {
+  DCHECK(str != nullptr, "str must not be null");
+  DCHECK(filename != nullptr, "filename must not be null");
+  PyObject* filename_obj = PyUnicode_DecodeFSDefault(filename);
+  if (filename_obj == nullptr) return nullptr;
+
+  PyArena* arena = PyArena_New();
+  if (arena == nullptr) {
+    Py_DECREF(filename_obj);
+    return nullptr;
+  }
+
+  struct _mod* mod =
+      PyParser_ASTFromStringObject(str, filename_obj, start, nullptr, arena);
+  if (mod == nullptr) {
+    PyArena_Free(arena);
+    Py_DECREF(filename_obj);
+    return nullptr;
+  }
+  PyObject* result = reinterpret_cast<PyObject*>(
+      PyAST_CompileObject(mod, filename_obj, nullptr, -1, arena));
+  PyArena_Free(arena);
+  Py_DECREF(filename_obj);
+  return result;
+}
+
 PY_EXPORT int PyRun_AnyFile(FILE* fp, const char* filename) {
   return PyRun_AnyFileExFlags(fp, filename, /*closeit=*/0, /*flags=*/nullptr);
 }

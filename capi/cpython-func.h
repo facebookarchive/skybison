@@ -1009,6 +1009,7 @@ PyAPI_FUNC(int) Py_AddPendingCall(int (*)(void*), void*);
 PyAPI_FUNC(int) Py_AtExit(void (*)(void));
 PyAPI_FUNC(PyObject*) Py_BuildValue(const char*, ...);
 PyAPI_FUNC(int) Py_BytesMain(int, char**);
+PyAPI_FUNC(PyObject*) Py_CompileString(const char*, const char*, int);
 PyAPI_FUNC(void) Py_DecRef(PyObject*);
 PyAPI_FUNC(wchar_t*) Py_DecodeLocale(const char*, size_t*);
 PyAPI_FUNC(char*) Py_EncodeLocale(const wchar_t*, size_t*);

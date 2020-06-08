@@ -13,6 +13,35 @@ namespace testing {
 
 using PythonrunExtensionApiTest = ExtensionApi;
 
+TEST_F(PythonrunExtensionApiTest, CompileStringWithEmptyStrReturnsCode) {
+  PyObjectPtr result(Py_CompileString("", "<string>", Py_file_input));
+  EXPECT_NE(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyCode_Check(result));
+}
+
+TEST_F(PythonrunExtensionApiTest, CompileStringCompilesCode) {
+  PyObjectPtr result(Py_CompileString("a = 3", "<string>", Py_file_input));
+  EXPECT_NE(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyCode_Check(result));
+  PyObjectPtr locals(PyDict_New());
+  PyObjectPtr globals(PyDict_New());
+  EXPECT_NE(PyEval_EvalCode(result, globals, locals), nullptr);
+
+  EXPECT_EQ(PyDict_Size(locals), 1);
+  PyObjectPtr local(PyDict_GetItemString(locals, "a"));
+  EXPECT_TRUE(isLongEqualsLong(local, 3));
+}
+
+TEST_F(PythonrunExtensionApiTest,
+       CompileStringWithInvalidCodeRaisesSyntaxError) {
+  PyObjectPtr result(Py_CompileString(";", "<string>", Py_file_input));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyErr_ExceptionMatches(PyExc_SyntaxError), 1);
+}
+
 TEST_F(PythonrunExtensionApiTest, CompileWithSourceIsUTF8RaisesValueError) {
   int flags = PyCF_SOURCE_IS_UTF8;
   EXPECT_EQ(0, moduleSet("__main__", "flags", PyLong_FromLong(flags)));
