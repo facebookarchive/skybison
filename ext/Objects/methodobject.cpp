@@ -65,7 +65,7 @@ PY_EXPORT PyCFunction PyCFunction_GetFunction(PyObject* obj) {
   Object function(
       &scope, getExtensionFunction(ApiHandle::fromPyObject(obj)->asObject()));
   if (function.isErrorNotFound()) {
-    PyErr_BadInternalCall();
+    thread->raiseBadInternalCall();
     return nullptr;
   }
   return reinterpret_cast<PyCFunction>(
@@ -78,7 +78,7 @@ PY_EXPORT PyObject* PyCFunction_GetSelf(PyObject* obj) {
   Object bound_method(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object function(&scope, getExtensionFunction(*bound_method));
   if (function.isErrorNotFound()) {
-    PyErr_BadInternalCall();
+    thread->raiseBadInternalCall();
     return nullptr;
   }
   Object self(&scope, BoundMethod::cast(*bound_method).self());
