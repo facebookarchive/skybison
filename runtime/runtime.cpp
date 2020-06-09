@@ -834,7 +834,8 @@ RawObject Runtime::newExtensionFunction(Thread* thread, const Object& name,
       UNIMPLEMENTED("Unsupported MethodDef type");
   }
   Object code(&scope, newIntFromCPtr(function));
-  return newFunction(thread, name, code, /*flags=*/0, /*argcount=*/-1,
+  word flags = Function::Flags::kExtension;
+  return newFunction(thread, name, code, flags, /*argcount=*/-1,
                      /*total_args=*/-1, /*total_vars=*/-1, /*stacksize=*/-1,
                      entry, entry_kw, entry_ex);
 }

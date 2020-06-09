@@ -2304,7 +2304,8 @@ class RawFunction : public RawInstance {
     kAsyncGenerator = RawCode::Flags::kAsyncGenerator,
     kSimpleCall = RawCode::Flags::kLast << 1,   // Speeds detection of fast call
     kInterpreted = RawCode::Flags::kLast << 2,  // Executable by the interpreter
-    kLast = kInterpreted,
+    kExtension = RawCode::Flags::kLast << 3,    // C-API extension function
+    kLast = kExtension,
   };
 
   // Getters and setters.
@@ -2360,6 +2361,9 @@ class RawFunction : public RawInstance {
 
   // Returns true if the function is a coroutine.
   bool isCoroutine() const;
+
+  // Returns true if function has `kExtension` flag set.
+  bool isExtension() const;
 
   // Returns true if the function is a coroutine, a generator, or an async
   // generator.
@@ -6229,6 +6233,10 @@ inline bool RawFunction::isAsyncGenerator() const {
 
 inline bool RawFunction::isCoroutine() const {
   return flags() & Flags::kCoroutine;
+}
+
+inline bool RawFunction::isExtension() const {
+  return flags() & Flags::kExtension;
 }
 
 inline bool RawFunction::isGeneratorLike() const {

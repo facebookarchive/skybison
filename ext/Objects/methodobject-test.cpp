@@ -18,6 +18,43 @@ PyObject* getPyCFunctionDunderModule(PyObject* function) {
   return PyObject_GetAttrString(real_function, "__module__");
 }
 
+TEST_F(PyCFunctionExtensionApiTest, CheckWithNonFunctionReturnsFalse) {
+  EXPECT_FALSE(PyCFunction_Check(Py_True));
+}
+
+TEST_F(PyCFunctionExtensionApiTest, CheckWithNonExtensionFunctionReturnsFalse) {
+  PyRun_SimpleString("def func(): pass");
+  PyObjectPtr func(mainModuleGet("func"));
+  EXPECT_FALSE(PyCFunction_Check(func));
+}
+
+TEST_F(PyCFunctionExtensionApiTest, CheckWithBoundMethodReturnsFalse) {
+  PyRun_SimpleString(R"(
+class C:
+  def foo(self):
+    pass
+method = C.foo
+)");
+  PyObjectPtr method(mainModuleGet("method"));
+  EXPECT_FALSE(PyCFunction_Check(method));
+}
+
+TEST_F(PyCFunctionExtensionApiTest,
+       GetFunctionWithNonCFunctionRaisesBadInternalCall) {
+  PyObjectPtr value(PyLong_FromLong(42));
+  EXPECT_EQ(PyCFunction_GetFunction(value), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(PyCFunctionExtensionApiTest,
+       GetSelfWithNonCFunctionRaisesBadInternalCall) {
+  PyObjectPtr value(PyLong_FromLong(42));
+  EXPECT_EQ(PyCFunction_GetFunction(value), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
 TEST_F(PyCFunctionExtensionApiTest, NewReturnsCallable) {
   PyObjectPtr self_value(PyUnicode_FromString("baz"));
   binaryfunc meth = [](PyObject* self, PyObject* arg) {
@@ -33,6 +70,10 @@ TEST_F(PyCFunctionExtensionApiTest, NewReturnsCallable) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr dunder_module(getPyCFunctionDunderModule(func));
   EXPECT_EQ(dunder_module, Py_None);
+
+  EXPECT_TRUE(PyCFunction_Check(func));
+  EXPECT_EQ(PyCFunction_GetFunction(func), meth);
+  EXPECT_EQ(PyCFunction_GetSelf(func), self_value.get());
 }
 
 TEST_F(PyCFunctionExtensionApiTest, NewExWithModuleReturnsCallable) {
@@ -52,6 +93,10 @@ TEST_F(PyCFunctionExtensionApiTest, NewExWithModuleReturnsCallable) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr dunder_module(getPyCFunctionDunderModule(func));
   EXPECT_EQ(dunder_module, module_name);
+
+  EXPECT_TRUE(PyCFunction_Check(func));
+  EXPECT_EQ(PyCFunction_GetFunction(func), meth);
+  EXPECT_EQ(PyCFunction_GetSelf(func), self_value.get());
 }
 
 TEST_F(PyCFunctionExtensionApiTest, NewExWithNullSelfReturnsCallable) {
@@ -71,6 +116,11 @@ TEST_F(PyCFunctionExtensionApiTest, NewExWithNullSelfReturnsCallable) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyObjectPtr dunder_module(getPyCFunctionDunderModule(func));
   EXPECT_EQ(dunder_module, Py_None);
+
+  EXPECT_TRUE(PyCFunction_Check(func));
+  EXPECT_EQ(PyCFunction_GetFunction(func), meth);
+  EXPECT_EQ(PyCFunction_GetSelf(func), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(PyCFunctionExtensionApiTest, NewExResultDoesNotBindSelfInClass) {
