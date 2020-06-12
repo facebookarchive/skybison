@@ -3,11 +3,11 @@
 import argparse
 import importlib
 import os
-import pathlib
 import re
 import sys
 import tempfile
 from collections import namedtuple
+from pathlib import Path
 from types import CodeType
 
 
@@ -140,10 +140,8 @@ def process_module(filename, builtins):
     return ModuleData(name, initializer, builtin_init)
 
 
-def write_source(fp, modules):
-    """Writes the frozen module definitions to a C++ source file."""
-    fp.write(
-        f"""\
+def gen_frozen_modules_cpp(modules):
+    result = f"""\
 #include "frozen-modules.h"
 
 #include "builtins.h"
@@ -152,44 +150,34 @@ def write_source(fp, modules):
 
 namespace py {{
 """
-    )
 
     for module in modules:
-        fp.write(
-            f"""
+        result += f"""
 static const byte kData_{module.name}[] = {module.initializer};
 """
-        )
 
-    fp.write(
-        f"""
+    result += f"""
 const FrozenModule kFrozenModules[] = {{
 """
-    )
 
     for module in modules:
         name = module.name
         init = f"FUNC({name}, {INIT_MODULE_NAME})" if module.builtin_init else "nullptr"
-        fp.write(
-            f"""\
+        result += f"""\
     {{"{name}", ARRAYSIZE(kData_{name}), kData_{name}, {init}}},
 """
-        )
 
-    fp.write(
-        f"""\
+    result += f"""\
 }};
 const word kNumFrozenModules = ARRAYSIZE(kFrozenModules);
 
 }}  // namespace py
 """
-    )
+    return result
 
 
-def write_header(fp, modules):
-    """Writes the frozen module declarations to a C++ header file."""
-    fp.write(
-        f"""\
+def gen_frozen_modules_h():
+    return f"""\
 #include "modules.h"
 
 namespace py {{
@@ -199,35 +187,32 @@ extern const word kNumFrozenModules;
 
 }}  // namespace py
 """
-    )
 
 
-def write_builtins_source(fp, builtins):
-    fp.write(
-        f"""\
+def gen_builtins_cpp(builtins):
+    result = f"""\
 #include "builtins.h"
 
 namespace py {{
 
 const Function::Entry kBuiltinFunctions[] = {{
 """
-    )
 
     for builtin in builtins:
-        fp.write(f"    {builtin},\n")
+        result += f"""\
+    {builtin},
+"""
 
-    fp.write(
-        f"""
+    result += f"""
 }};
 const word kNumBuiltinFunctions = ARRAYSIZE(kBuiltinFunctions);
 }}  // namespace py
 """
-    )
+    return result
 
 
-def write_builtins_header(fp, modules, builtins):
-    fp.write(
-        f"""\
+def gen_builtins_h(modules, builtins):
+    result = f"""\
 #include "globals.h"
 #include "handles-decl.h"
 #include "modules.h"
@@ -241,28 +226,33 @@ extern const Function::Entry kBuiltinFunctions[];
 extern const word kNumBuiltinFunctions;
 
 """
-    )
 
     for builtin in builtins:
-        fp.write(
-            f"""\
+        result += f"""\
 RawObject {builtin}(Thread*, Frame*, word);
 """
-        )
-    fp.write("\n")
+    result += "\n"
     for module in modules:
         if module.builtin_init:
-            fp.write(
-                f"""\
+            result += f"""\
 void FUNC({module.name}, {INIT_MODULE_NAME})(Thread*, const Module&, View<byte>);
 """
-            )
 
-    fp.write(
-        f"""
+    result += f"""
 }}  // namespace py
 """
-    )
+    return result
+
+
+def write_if_different(path, string):
+    try:
+        if path.read_text() == string:
+            return
+    except OSError:
+        pass
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False, mode="w+t") as fp:
+        fp.write(string)
+    Path(fp.name).replace(path)
 
 
 def main(argv):
@@ -274,14 +264,12 @@ def main(argv):
     builtins = []
     modules = [process_module(filename, builtins) for filename in args.files]
     modules.sort(key=lambda x: x.name)
-    with open(pathlib.Path(args.dir, "frozen-modules.cpp"), "w") as f:
-        write_source(f, modules)
-    with open(pathlib.Path(args.dir, "frozen-modules.h"), "w") as f:
-        write_header(f, modules)
-    with open(pathlib.Path(args.dir, "builtins.cpp"), "w") as f:
-        write_builtins_source(f, builtins)
-    with open(pathlib.Path(args.dir, "builtins.h"), "w") as f:
-        write_builtins_header(f, modules, builtins)
+    write_if_different(Path(args.dir, "builtins.cpp"), gen_builtins_cpp(builtins))
+    write_if_different(Path(args.dir, "builtins.h"), gen_builtins_h(modules, builtins))
+    write_if_different(
+        Path(args.dir, "frozen-modules.cpp"), gen_frozen_modules_cpp(modules)
+    )
+    write_if_different(Path(args.dir, "frozen-modules.h"), gen_frozen_modules_h())
 
 
 if __name__ == "__main__":
