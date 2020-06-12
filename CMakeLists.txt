@@ -673,10 +673,6 @@ target_compile_options(
   -DPy_BUILD_CORE
   # TODO(T48643833): Remove this define to get _hashlib.scrypt.
   -DOPENSSL_NO_SCRYPT)
-# This avoids readline headers adding (unused) legacy typedefs that trigger
-# -Wstrict-prototype warnings.
-set_source_files_properties(${CPYTHON_DIR}/Modules/readline.c
-  PROPERTIES COMPILE_DEFINITIONS "_FUNCTION_DEF;HAVE_STDARG_H")
 target_link_libraries(
   extension-modules
   PUBLIC

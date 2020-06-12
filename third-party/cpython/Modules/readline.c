@@ -28,6 +28,10 @@
 
 /* GNU readline definitions */
 #undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
+/* The following two definitions make the readline header skip some definitions
+ * that we do not use but which trigger -Wstrict-prototype warnings */
+#define _FUNCTION_DEF
+#define HAVE_STDARG_H
 #include <readline/readline.h>
 #include <readline/history.h>
 

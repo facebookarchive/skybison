@@ -43,10 +43,6 @@ LDFLAGS+=" -L ${SQLITE_DIR}/lib"
 LDFLAGS+=" -L ${XZ_DIR}/lib"
 LDFLAGS+=" -L ${ZLIB_DIR}/lib"
 
-# This avoids readline headers adding (unused) legacy typedefs that trigger
-# -Wstrict-prototype warnings.
-CFLAGS_NODIST+=" -D_FUNCTION_DEF -DHAVE_STDARG_H"
-
 CFLAGS_NODIST+=" -Werror -Wno-error=unreachable-code"
 export CPPFLAGS
 export LDFLAGS
