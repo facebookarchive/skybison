@@ -867,6 +867,8 @@ class Runtime {
   RawObject signalCallback(word signum);
   RawObject setSignalCallback(word signum, const Object& callback);
 
+  bool isFinalizing() { return is_finalizing_; }
+
   Thread* mainThread() { return main_thread_; }
 
  private:
@@ -951,6 +953,8 @@ class Runtime {
 
   // Clear the allocated memory from all extension related objects
   void freeApiHandles();
+
+  bool is_finalizing_ = false;
 
   // The size newCapacity grows to if array is empty. Must be large enough to
   // guarantee a LargeBytes/LargeStr for Bytearray/StrArray.

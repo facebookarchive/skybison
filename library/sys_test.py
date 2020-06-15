@@ -220,6 +220,9 @@ class SysTests(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "can't intern NewString")
 
+    def test_is_finalizing_before_shutdown_returns_false(self):
+        self.assertEqual(sys.is_finalizing(), False)
+
     def test_under_getframe_returns_frame(self):
         frame = sys._getframe(0)
         self.assertTrue(frame.f_globals is not None)

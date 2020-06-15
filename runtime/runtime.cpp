@@ -183,6 +183,7 @@ Runtime::Runtime(word heap_size) : heap_(heap_size) {
 Runtime::Runtime() : Runtime(128 * kMiB) {}
 
 Runtime::~Runtime() {
+  is_finalizing_ = true;
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple
   // runtimes created and destroyed by a single thread.
   if (Thread::current() == nullptr) {

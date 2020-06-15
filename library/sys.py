@@ -237,6 +237,10 @@ def intern(string):
     _builtin()
 
 
+def is_finalizing():
+    _builtin()
+
+
 meta_path = []
 
 

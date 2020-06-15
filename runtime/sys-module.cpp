@@ -292,6 +292,11 @@ RawObject FUNC(sys, getrecursionlimit)(Thread* thread, Frame* /* frame */,
   return thread->runtime()->newInt(thread->recursionLimit());
 }
 
+RawObject FUNC(sys, is_finalizing)(Thread* thread, Frame* /* frame */,
+                                   word /* nargs */) {
+  return Bool::fromBool(thread->runtime()->isFinalizing());
+}
+
 RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
