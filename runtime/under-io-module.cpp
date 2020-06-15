@@ -915,17 +915,17 @@ static word stringIOReadline(Thread* thread, const StringIO& string_io,
   }
   word i = start;
 
-  // TODO(T59800533): use a more efficient character scanning method similar to
-  // strchr, strcspn, or strstr.
   if (has_read_universal) {
-    while (i < start + size) {
+    const byte crlf[] = {'\r', '\n'};
+    i = buffer.indexOfAny(crlf, start);
+    // when this condition is met, either '\r' or '\n' is found
+    if (buf_len > i) {
+      // ch is the '\n' or '\r'
       byte ch = buffer.byteAt(i++);
-      if (ch == '\n') break;
       if (ch == '\r') {
         if (buf_len > i && buffer.byteAt(i) == '\n') {
           i++;
         }
-        break;
       }
     }
   } else {

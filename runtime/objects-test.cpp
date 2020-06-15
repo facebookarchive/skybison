@@ -123,6 +123,39 @@ TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   EXPECT_STREQ(reinterpret_cast<char*>(result), "patrick");
 }
 
+TEST_F(MutableBytesTest,
+       IndexOfAnyWithDifferentStartReturnsFirstMatchIndexAfterStart) {
+  HandleScope scope(thread_);
+
+  const byte src_bytes[] = {'h', 'e', 'l', 'l', 'o', ' ',
+                            'w', 'o', 'r', 'l', 'd'};
+  word src_length = ARRAYSIZE(src_bytes);
+  MutableBytes src(&scope, runtime_->newMutableBytesUninitialized(src_length));
+  for (word i = 0; i < src_length; i++) {
+    src.byteAtPut(i, src_bytes[i]);
+  }
+  const byte needle[] = "eor";
+  EXPECT_EQ(src.indexOfAny(needle, 0), 1);
+  EXPECT_EQ(src.indexOfAny(needle, 2), 4);
+  EXPECT_EQ(src.indexOfAny(needle, 5), 7);
+}
+
+TEST_F(MutableBytesTest, IndexOfAnyWithNeedleNoMatchReturnsHaystackLength) {
+  HandleScope scope(thread_);
+
+  const byte src_bytes[] = {'h', 'e', 'l', 'l', 'o', ' ',
+                            'w', 'o', 'r', 'l', 'd'};
+  word src_length = ARRAYSIZE(src_bytes);
+  MutableBytes src(&scope, runtime_->newMutableBytesUninitialized(src_length));
+  for (word i = 0; i < src_length; i++) {
+    src.byteAtPut(i, src_bytes[i]);
+  }
+  const byte needle[] = "abc";
+  EXPECT_EQ(src.indexOfAny(needle, 0), src_length);
+  EXPECT_EQ(src.indexOfAny(needle, 5), src_length);
+  EXPECT_EQ(src.indexOfAny(needle, 9), src_length);
+}
+
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";

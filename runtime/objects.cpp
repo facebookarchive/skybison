@@ -648,6 +648,26 @@ void RawLargeInt::copyFrom(RawBytes bytes, byte sign_extension) const {
 
 // RawMutableBytes
 
+word RawMutableBytes::indexOfAny(View<byte> needle, word start) const {
+  DCHECK(needle.length() >= 0, "needle length must be non-negative");
+  if (needle.length() == 0) {
+    return length();
+  }
+  uword bitmap[(kMaxByte + 1) / kBitsPerWord] = {0};
+  for (word i = 0; i < needle.length(); i++) {
+    byte ch = needle.get(i);
+    bitmap[ch / kBitsPerWord] |= uword{1} << (ch % kBitsPerWord);
+  }
+  word result;
+  for (result = start; result < length(); result++) {
+    byte ch = byteAt(result);
+    if (bitmap[ch / kBitsPerWord] & (uword{1} << (ch % kBitsPerWord))) {
+      break;
+    }
+  }
+  return result;
+}
+
 void RawMutableBytes::replaceFromWith(word dst_start, RawDataArray src,
                                       word count) const {
   DCHECK_BOUND(dst_start + count, length());

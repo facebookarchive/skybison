@@ -2561,6 +2561,10 @@ class StringIOTests(unittest.TestCase):
         strio = _io.StringIO("a\r\nb", newline=None)
         self.assertEqual(strio.read(3), "a\nb")
 
+    def test_newline_none_with_r_end_not_raise_exception(self):
+        strio = _io.StringIO("a\nb\r\nc\r", newline=None)
+        self.assertEqual(list(strio), ["a\n", "b\n", "c\n"])
+
     def test_newline_empty(self):
         strio = _io.StringIO("a\nb\r\nc\rd", newline="")
         self.assertEqual(list(strio), ["a\n", "b\r\n", "c\r", "d"])

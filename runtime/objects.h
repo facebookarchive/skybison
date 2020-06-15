@@ -1468,6 +1468,10 @@ class RawMutableBytes : public RawLargeBytes {
  public:
   void byteAtPut(word index, byte value) const;
 
+  // Find the first occurrence from a specified start of any byte in the given
+  // byte sequence, return the number of bytes read before the occurrence
+  word indexOfAny(View<byte> needle, word start) const;
+
   // Writes the hex representation of the byte at the given index.
   void putHex(word index, byte value) const;
 
