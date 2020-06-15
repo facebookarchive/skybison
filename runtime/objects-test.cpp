@@ -1204,6 +1204,41 @@ TEST_F(SmallStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
   EXPECT_FALSE(some_non_ascii.isASCII());
 }
 
+TEST_F(SmallStrTest, OccurrencesOfWithEmptyStringReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, SmallStr::fromCStr("hello"));
+  Str needle(&scope, runtime_->newStrFromCStr(""));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 0);
+}
+
+TEST_F(SmallStrTest, OccurrencesOfWithLargeStrReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, SmallStr::fromCStr("abab"));
+  Str needle(&scope, runtime_->newStrFromCStr("ababababab"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 0);
+}
+
+TEST_F(SmallStrTest, OccurrencesOfWithNoOccurenceReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, SmallStr::fromCStr("abab"));
+  Str needle(&scope, SmallStr::fromCStr("cd"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 0);
+}
+
+TEST_F(SmallStrTest, OccurrencesOfWithSmallStrFindsOccurrenceAtSecondChar) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, SmallStr::fromCStr("abab"));
+  Str needle(&scope, SmallStr::fromCStr("ba"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 1);
+}
+
+TEST_F(SmallStrTest, OccurrencesOfWithSmallStrMultipleOccurrencesFindsAll) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, SmallStr::fromCStr("hello"));
+  Str needle(&scope, SmallStr::fromCStr("l"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 2);
+}
+
 TEST_F(StrTest, OffsetByCodePoints) {
   HandleScope scope(thread_);
 
@@ -1334,6 +1369,55 @@ TEST_F(LargeStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
   Str unicode(&scope, runtime_->newStrFromCStr("ascii \xd7\x99\xd7\xa9 pad"));
   EXPECT_TRUE(unicode.isLargeStr());
   EXPECT_FALSE(unicode.isASCII());
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithEmptyStringReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("hello world"));
+  Str needle(&scope, runtime_->newStrFromCStr(""));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 0);
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithLargeStrFindsOccurrenceAtFirstChar) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("hello world"));
+  Str needle(&scope, runtime_->newStrFromCStr("hello wor"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 1);
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithLargeStrMultipleOccurrencesFindsAll) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("hello world hello world"));
+  Str needle(&scope, runtime_->newStrFromCStr("hello world"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 2);
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithNoOccurenceReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("hello world"));
+  Str needle(&scope, runtime_->newStrFromCStr("is not here"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 0);
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithSmallStrFindsOccurrenceAtThirdChar) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("hello world"));
+  Str needle(&scope, SmallStr::fromCStr("llo"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 1);
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithSmallStrMultipleOccurrencesFindsAll) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("hello hello"));
+  Str needle(&scope, SmallStr::fromCStr("llo"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 2);
+}
+
+TEST_F(LargeStrTest, OccurrencesOfWithSmallStrUsesCorrectEndian) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_->newStrFromCStr("ababababab"));
+  Str needle(&scope, SmallStr::fromCStr("ab"));
+  EXPECT_EQ(haystack.occurrencesOf(*needle), 5);
 }
 
 TEST_F(StringTest, ReverseOffsetByCodePointsEmptyString) {

@@ -768,30 +768,18 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   word original_val_len = value.length();
   word val_len = original_val_len;
 
-  // TODO(T59696801): use a more efficient counting method.
   // If write_translate is true, read_translate is false
   // Contrapositively, if read_translate is true, write_translate is false
   // Therefore we don't have to worry about their interactions with each other
   if (has_write_translate && long_writenl) {
-    for (word i = 0; i < original_val_len; i++) {
-      byte current_char = value.byteAt(i);
-      if (current_char == '\n') {
-        val_len++;
-      }
-    }
+    val_len += value.occurrencesOf(SmallStr::fromCStr("\n"));
   }
 
-  // TODO(T59696801): use a more efficient counting method.
   word start = string_io.pos();
   word new_len = start + val_len;
   bool has_read_translate = string_io.hasReadtranslate();
   if (has_read_translate) {
-    for (word i = 0; i < val_len - 1; i++) {
-      if (value.byteAt(i) == '\r' && value.byteAt(i + 1) == '\n') {
-        new_len--;
-        i++;
-      }
-    }
+    new_len -= value.occurrencesOf(SmallStr::fromCStr("\r\n"));
   }
 
   MutableBytes buffer(&scope, string_io.buffer());

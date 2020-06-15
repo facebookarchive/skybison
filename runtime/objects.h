@@ -565,6 +565,9 @@ class RawStr : public RawObject {
   word codePointLength() const;
   bool isASCII() const;
 
+  // Find the number of occurences of substring `needle`.
+  word occurrencesOf(RawObject that) const;
+
   // Returns an index into a string offset by either a positive or negative
   // number of code points.  Otherwise, if the new index would be negative, -1
   // is returned or if the new index would be greater than the length of the
@@ -755,6 +758,8 @@ class RawSmallStr : public RawObject {
   word codePointLength() const;
   bool isASCII() const;
   word offsetByCodePoints(word index, word count) const;
+
+  word occurrencesOf(RawObject that) const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -1444,6 +1449,8 @@ class RawLargeStr : public RawDataArray {
   // Codepoints
   word codePointLength() const;
   word offsetByCodePoints(word index, word count) const;
+
+  word occurrencesOf(RawObject that) const;
 
   // Layout
   static const int kDataOffset = RawHeapObject::kSize;
@@ -6743,6 +6750,13 @@ inline bool RawStr::isASCII() const {
     return RawSmallStr::cast(*this).isASCII();
   }
   return RawLargeStr::cast(*this).isASCII();
+}
+
+inline word RawStr::occurrencesOf(RawObject that) const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallStr::cast(*this).occurrencesOf(that);
+  }
+  return RawLargeStr::cast(*this).occurrencesOf(that);
 }
 
 inline word RawStr::offsetByCodePoints(word index, word count) const {

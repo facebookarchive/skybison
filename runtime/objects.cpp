@@ -170,6 +170,33 @@ word RawSmallStr::offsetByCodePoints(word index, word count) const {
   return offset(this, &RawSmallStr::byteAt, length(), index, count);
 }
 
+word RawSmallStr::occurrencesOf(RawObject that) const {
+  DCHECK(that.isStr(), "must be searching for a Str object");
+  if (!that.isSmallStr()) {
+    return 0;
+  }
+  word haystack_len = length();
+  word needle_len = SmallStr::cast(that).length();
+  DCHECK(needle_len >= 0, "needle length must be non-negative");
+  if (needle_len == 0) {
+    return 0;
+  }
+  word diff = haystack_len - needle_len;
+  uword needle = that.raw() >> kBitsPerByte;
+  uword haystack = raw() >> kBitsPerByte;
+  uword mask = (1 << (needle_len * kBitsPerByte)) - 1;
+  word result = 0;
+  for (word i = 0; i <= diff; i++) {
+    if ((haystack & mask) == needle) {
+      result++;
+      i += needle_len - 1;
+      haystack >>= (kBitsPerByte * (needle_len - 1));
+    }
+    haystack >>= kBitsPerByte;
+  }
+  return result;
+}
+
 char* RawSmallStr::toCStr() const {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
@@ -459,6 +486,39 @@ bool RawLargeStr::includes(RawObject that) const {
 
 word RawLargeStr::offsetByCodePoints(word index, word count) const {
   return offset(this, &RawLargeStr::byteAt, length(), index, count);
+}
+
+word RawLargeStr::occurrencesOf(RawObject that) const {
+  DCHECK(that.isStr(), "must be searching for a Str object");
+  const byte* needle;
+  word needle_len;
+  byte buffer[SmallStr::kMaxLength];
+  if (that.isSmallStr()) {
+    RawSmallStr str = RawSmallStr::cast(that);
+    needle_len = str.length();
+    str.copyTo(buffer, needle_len);
+    needle = buffer;
+  } else {
+    RawLargeStr str = RawLargeStr::cast(that);
+    needle = reinterpret_cast<byte*>(str.address());
+    needle_len = str.length();
+  }
+  DCHECK(needle != nullptr, "needle cannot be null");
+  DCHECK(needle_len >= 0, "needle length must be non-negative");
+  word haystack_len = length();
+  byte* haystack = reinterpret_cast<byte*>(address());
+  if (haystack_len < needle_len) {
+    return 0;
+  }
+  word result = 0;
+  for (word pos = Utils::memoryFind(haystack, haystack_len, needle, needle_len);
+       pos != -1 && pos + needle_len <= haystack_len; result++) {
+    pos += needle_len;
+    haystack += pos;
+    haystack_len -= pos;
+    pos = Utils::memoryFind(haystack, haystack_len, needle, needle_len);
+  }
+  return result;
 }
 
 // RawList
