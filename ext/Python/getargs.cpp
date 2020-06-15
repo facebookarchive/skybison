@@ -1827,7 +1827,7 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
 
   // grab the function name or custom error msg first (mutually exclusive)
   parser->fname = strchr(parser->format, ':');
-  if (parser->fname) {
+  if (parser->fname != nullptr) {
     parser->fname++;
     parser->custom_msg = nullptr;
   } else {
@@ -1837,24 +1837,24 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
 
   const char* const* keywords = parser->keywords;
   // scan keywords and count the number of positional-only parameters
-  int i;
-  for (i = 0; keywords[i] != nullptr && !*keywords[i]; i++) {
+  parser->pos = 0;
+  for (int i = 0; keywords[i] != nullptr && !*keywords[i]; i++) {
     parser->pos++;
   }
 
   // scan keywords and get greatest possible nbr of args
-  for (; keywords[i]; i++) {
-    if (!*keywords[i]) {
+  int len = parser->pos;
+  for (; keywords[len] != nullptr; len++) {
+    if (*keywords[len] == '\0') {
       PyErr_SetString(PyExc_SystemError, "Empty keyword parameter name");
       return false;
     }
   }
 
-  int len = i;
   int min, max;
   min = max = INT_MAX;
   const char* format = parser->format;
-  for (i = 0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     if (*format == '|') {
       if (min != INT_MAX) {
         PyErr_SetString(PyExc_SystemError,
