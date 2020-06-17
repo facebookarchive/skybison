@@ -1691,13 +1691,13 @@ class bool(int, bootstrap=True):
         _builtin()
 
     def __rxor__(self, other):
-        _unimplemented()
+        _builtin()
 
     def __str__(self) -> str:  # noqa: T484
         return bool.__repr__(self)
 
     def __xor__(self, other):
-        _unimplemented()
+        _builtin()
 
 
 class bytearray(bootstrap=True):

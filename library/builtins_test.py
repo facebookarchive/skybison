@@ -247,6 +247,50 @@ class BoolTests(unittest.TestCase):
         self.assertIs(bool.__ror__(True, "string"), NotImplemented)
         self.assertIs(bool.__ror__(True, 1.8), NotImplemented)
 
+    def test_dunder_xor_with_non_bool_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            bool.__xor__(1, 1)
+        self.assertIn(
+            "'__xor__' requires a 'bool' object but received a 'int'",
+            str(ctx.exception),
+        )
+
+    def test_dunder_xor_success(self):
+        self.assertEqual(bool.__xor__(True, True), False)
+        self.assertEqual(bool.__xor__(True, False), True)
+        self.assertEqual(bool.__xor__(True, 1024 - 1), 1022)
+        self.assertEqual(bool.__xor__(True, 1024), 1025)
+        self.assertEqual(bool.__xor__(False, True), True)
+        self.assertEqual(bool.__xor__(False, False), False)
+        self.assertEqual(bool.__xor__(False, 1), 1)
+        self.assertEqual(bool.__xor__(False, 0), 0)
+
+    def test_dunder_xor_with_non_int_returns_notimplemented(self):
+        self.assertIs(bool.__xor__(True, "string"), NotImplemented)
+        self.assertIs(bool.__xor__(True, 1.8), NotImplemented)
+
+    def test_dunder_xor_with_non_bool_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            bool.__rxor__(1, 1)
+        self.assertIn(
+            "'__rxor__' requires a 'bool' object but received a 'int'",
+            str(ctx.exception),
+        )
+
+    def test_dunder_rxor_success(self):
+        self.assertEqual(bool.__rxor__(True, True), False)
+        self.assertEqual(bool.__rxor__(False, True), True)
+        self.assertEqual(bool.__rxor__(True, 1024 - 1), 1022)
+        self.assertEqual(bool.__rxor__(True, 1024), 1025)
+        self.assertEqual(bool.__rxor__(True, False), True)
+        self.assertEqual(bool.__rxor__(False, False), False)
+        self.assertEqual(bool.__rxor__(False, 1), 1)
+        self.assertEqual(bool.__rxor__(False, 0), 0)
+
+    def test_dunder_rxor_with_non_int_returns_notimplemented(self):
+        self.assertIs(bool.__rxor__(True, "string"), NotImplemented)
+        self.assertIs(bool.__rxor__(True, 1.8), NotImplemented)
+
 
 class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):

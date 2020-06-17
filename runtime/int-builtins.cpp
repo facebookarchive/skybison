@@ -793,12 +793,42 @@ static RawObject boolOrImpl(Thread* thread, Frame* frame, word nargs) {
   return NotImplementedType::object();
 }
 
+static RawObject boolXorImpl(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isBool()) {
+    return thread->raiseRequiresType(self_obj, ID(bool));
+  }
+  Bool self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  if (other_obj.isBool()) {
+    return Bool::fromBool(self.value() ^ Bool::cast(*other_obj).value());
+  }
+  if (runtime->isInstanceOfInt(*other_obj)) {
+    return intBinaryOp(thread, frame, nargs,
+                       [](Thread* t, const Int& left, const Int& right) {
+                         return t->runtime()->intBinaryXor(t, left, right);
+                       });
+  }
+  return NotImplementedType::object();
+}
+
 RawObject METH(bool, __or__)(Thread* thread, Frame* frame, word nargs) {
   return boolOrImpl(thread, frame, nargs);
 }
 
 RawObject METH(bool, __ror__)(Thread* thread, Frame* frame, word nargs) {
   return boolOrImpl(thread, frame, nargs);
+}
+
+RawObject METH(bool, __xor__)(Thread* thread, Frame* frame, word nargs) {
+  return boolXorImpl(thread, frame, nargs);
+}
+
+RawObject METH(bool, __rxor__)(Thread* thread, Frame* frame, word nargs) {
+  return boolXorImpl(thread, frame, nargs);
 }
 
 enum RoundingDirection {
