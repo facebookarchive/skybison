@@ -351,8 +351,21 @@ PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* _PyLong_GCD(PyObject*, PyObject*) {
-  UNIMPLEMENTED("_PyLong_GCD");
+PY_EXPORT PyObject* _PyLong_GCD(PyObject* a, PyObject* b) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object dividend_obj(&scope, ApiHandle::fromPyObject(a)->asObject());
+  Object divisor_obj(&scope, ApiHandle::fromPyObject(b)->asObject());
+  Runtime* runtime = thread->runtime();
+
+  DCHECK(runtime->isInstanceOfInt(*dividend_obj),
+         "dividend argument to _PyLong_GCD must be an int");
+  DCHECK(runtime->isInstanceOfInt(*divisor_obj),
+         "divisor argument to _PyLong_GCD must be an int");
+  Int dividend(&scope, intUnderlying(*dividend_obj));
+  Int divisor(&scope, intUnderlying(*divisor_obj));
+
+  return ApiHandle::newReference(thread, intGCD(thread, dividend, divisor));
 }
 
 PY_EXPORT PyLongObject* _PyLong_FromNbInt(PyObject*) {

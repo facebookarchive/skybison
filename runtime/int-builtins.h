@@ -12,6 +12,9 @@ RawObject convertBoolToInt(RawObject object);
 // conversion was successful, raises an OverflowError otherwise.
 RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
 
+// Calculates the GCD of two Ints using the Euclidean algorithm
+RawObject intGCD(Thread* thread, const Int& a, const Int& b);
+
 // Returns true if the Float `left` is equals Int `right`. Returns false if
 // `right` cannot be exactly represented as a Float.
 bool doubleEqualsInt(Thread* thread, double left, const Int& right);

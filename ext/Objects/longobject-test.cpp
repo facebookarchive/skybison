@@ -11,6 +11,71 @@ namespace testing {
 
 using LongExtensionApiTest = ExtensionApi;
 
+TEST_F(LongExtensionApiTest, GCDWithSameNumberReturnsSameNumber) {
+  PyObjectPtr dividend(PyLong_FromLong(3));
+  PyObjectPtr divisor(PyLong_FromLong(3));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 3);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithDifferentNumbersReturnsGCD) {
+  PyObjectPtr dividend(PyLong_FromLong(3));
+  PyObjectPtr divisor(PyLong_FromLong(6));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 3);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithOneNegativeReturnsPositive) {
+  PyObjectPtr dividend(PyLong_FromLong(-3));
+  PyObjectPtr divisor(PyLong_FromLong(3));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 3);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithBothNegativeReturnsPositive) {
+  PyObjectPtr dividend(PyLong_FromLong(-1));
+  PyObjectPtr divisor(PyLong_FromLong(-2));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 1);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithZeroAndThreeReturnsThree) {
+  PyObjectPtr dividend(PyLong_FromLong(0));
+  PyObjectPtr divisor(PyLong_FromLong(3));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 3);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithThreeAndZeroReturnsThree) {
+  PyObjectPtr dividend(PyLong_FromLong(3));
+  PyObjectPtr divisor(PyLong_FromLong(0));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 3);
+}
+TEST_F(LongExtensionApiTest, GCDWithZeroandNegativeReturnsOne) {
+  PyObjectPtr dividend(PyLong_FromLong(0));
+  PyObjectPtr divisor(PyLong_FromLong(-1));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 1);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithsSameLargeIntsReturnsSame) {
+  PyObjectPtr dividend(PyLong_FromString("7FFFFFFFFFFFFFFF", nullptr, 16));
+  PyObjectPtr divisor(PyLong_FromString("7FFFFFFFFFFFFFFF", nullptr, 16));
+  PyObjectPtr expected(PyLong_FromString("7FFFFFFFFFFFFFFF", nullptr, 16));
+  int res =
+      PyObject_RichCompareBool(_PyLong_GCD(dividend, divisor), expected, Py_EQ);
+  EXPECT_EQ(res, 1);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithLargeIntsReturnsGCD) {
+  PyObjectPtr dividend(PyLong_FromString("7FFFFFFFFFFFFFFF", nullptr, 16));
+  PyObjectPtr divisor(PyLong_FromString("FFFFFFFFFFFFFFFE", nullptr, 16));
+  PyObjectPtr expected(PyLong_FromString("7FFFFFFFFFFFFFFF", nullptr, 16));
+  int res =
+      PyObject_RichCompareBool(_PyLong_GCD(dividend, divisor), expected, Py_EQ);
+  EXPECT_EQ(res, 1);
+}
+
+TEST_F(LongExtensionApiTest, GCDWithLargeIntsReturnsSmallIntGCD) {
+  PyObjectPtr dividend(PyLong_FromString("FFFFFFFFFFFFFFFE", nullptr, 16));
+  PyObjectPtr divisor(PyLong_FromString("10000000000000002", nullptr, 16));
+  EXPECT_EQ(PyLong_AsLong(_PyLong_GCD(dividend, divisor)), 2);
+}
+
 TEST_F(LongExtensionApiTest, CheckWithIntReturnsTrue) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   EXPECT_TRUE(PyLong_Check(pylong));

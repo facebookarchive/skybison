@@ -207,6 +207,71 @@ inline static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   return intBinaryOpSubclass(thread, frame, nargs, op);
 }
 
+static word gcd(word dividend, word divisor) {
+  while (divisor > 0) {
+    word modulo = dividend % divisor;
+    dividend = divisor;
+    divisor = modulo;
+  }
+  return dividend;
+}
+
+RawObject intGCD(Thread* thread, const Int& a, const Int& b) {
+  Runtime* runtime = thread->runtime();
+
+  if (a.isSmallInt() && b.isSmallInt()) {
+    // Take a shortcut because we know the result fits in a word.
+    word small_dividend = SmallInt::cast(*a).value();
+    word small_divisor = SmallInt::cast(*b).value();
+    if (small_dividend < 0) {
+      small_dividend = -small_dividend;
+    }
+    if (small_divisor < 0) {
+      small_divisor = -small_divisor;
+    }
+
+    if (small_dividend < small_divisor) {
+      word temp = small_divisor;
+      small_divisor = small_dividend;
+      small_dividend = temp;
+    }
+    return runtime->newInt(gcd(small_dividend, small_divisor));
+  }
+
+  HandleScope scope(thread);
+  Int dividend(&scope, *a);
+  Int divisor(&scope, *b);
+
+  if (dividend.isNegative()) {
+    dividend = runtime->intNegate(thread, dividend);
+  }
+  if (divisor.isNegative()) {
+    divisor = runtime->intNegate(thread, divisor);
+  }
+
+  if (dividend.compare(*divisor) < 0) {
+    Object temp(&scope, *divisor);
+    divisor = *dividend;
+    dividend = *temp;
+  }
+
+  while (divisor.isPositive()) {
+    if (dividend.isSmallInt() || dividend.isBool()) {
+      // Take a shortcut because we know the result fits in a word.
+      word small_dividend = dividend.asWord();
+      word small_divisor = divisor.asWord();
+      return runtime->newInt(gcd(small_dividend, small_divisor));
+    }
+    Object modulo(&scope, NoneType::object());
+    bool division_succeeded =
+        runtime->intDivideModulo(thread, dividend, divisor, nullptr, &modulo);
+    DCHECK(division_succeeded, "divisor_int must be nonzero");
+    dividend = *divisor;
+    divisor = *modulo;
+  }
+  return *dividend;
+}
+
 static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
                             RawObject (*op)(Thread* t, const Int& self)) {
   Arguments args(frame, nargs);
