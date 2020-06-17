@@ -1123,6 +1123,8 @@ set(
   ${CPYTHON_LIBRARY_DIR}/json/scanner.py
   ${CPYTHON_LIBRARY_DIR}/json/tool.py
   ${CPYTHON_LIBRARY_DIR}/keyword.py
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/Grammar.txt
+  ${CPYTHON_LIBRARY_DIR}/lib2to3/PatternGrammar.txt
   ${CPYTHON_LIBRARY_DIR}/lib2to3/__init__.py
   ${CPYTHON_LIBRARY_DIR}/lib2to3/__main__.py
   ${CPYTHON_LIBRARY_DIR}/lib2to3/btm_matcher.py
