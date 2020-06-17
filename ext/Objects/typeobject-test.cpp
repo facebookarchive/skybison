@@ -227,6 +227,15 @@ TEST_F(TypeExtensionApiTest, IsSubtypeWithDifferentTypesReturnsFalse) {
                        reinterpret_cast<PyTypeObject*>(pyuni_type.get())));
 }
 
+TEST_F(TypeExtensionApiTest, PyTypeModifiedWithHeapTypeDoesNothing) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+)");
+  PyObjectPtr c(mainModuleGet("C"));
+  PyType_Modified(c.asTypeObject());
+}
+
 TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeRaisesSystemError) {
   PyObjectPtr pylong(PyLong_FromLong(5));
   PyObjectPtr pylong_type(PyObject_Type(pylong));

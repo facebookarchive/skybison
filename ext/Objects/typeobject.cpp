@@ -1888,7 +1888,7 @@ PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
 }
 
 PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
-  UNIMPLEMENTED("PyType_Modified");
+  // We invalidate caches incrementally, so do nothing.
 }
 
 PY_EXPORT PyTypeObject* PyType_Type_Ptr() {
