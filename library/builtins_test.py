@@ -6646,6 +6646,52 @@ class FrozensetTests(unittest.TestCase):
         self.assertFalse(frozenset({1, 2}).issuperset([1, 2, 3]))
         self.assertFalse(frozenset({1, 2}).issuperset(range(1, 4)))
 
+    def test_union_with_non_frozenset_as_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.union(set(), set())
+
+    def test_union_with_frozenset_returns_union(self):
+        set1 = frozenset({1, 2})
+        set2 = frozenset({2, 3})
+        set3 = frozenset({4, 5})
+        self.assertEqual(frozenset.union(set1, set2, set3), frozenset({1, 2, 3, 4, 5}))
+
+    def test_union_with_self_returns_copy(self):
+        a_set = frozenset({1, 2, 3})
+        self.assertIs(type(frozenset.union(a_set)), frozenset)
+        self.assertIsNot(frozenset.union(a_set), a_set)
+        self.assertIsNot(frozenset.union(a_set, a_set), a_set)
+        self.assertEqual(frozenset.union(a_set, a_set), a_set)
+
+    def test_union_with_iterable_contains_iterable_items(self):
+        a_set = frozenset({1, 2})
+        a_dict = {2: True, 3: True}
+        self.assertEqual(frozenset.union(a_set, a_dict), frozenset({1, 2, 3}))
+
+    def test_union_with_custom_iterable(self):
+        class C:
+            def __init__(self, start, end):
+                self.pos = start
+                self.end = end
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.pos == self.end:
+                    raise StopIteration
+                result = self.pos
+                self.pos += 1
+                return result
+
+        self.assertEqual(
+            frozenset.union(frozenset(), C(1, 3), C(6, 9)), frozenset({1, 2, 6, 7, 8})
+        )
+
+    def test_union_with_non_iterable_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            frozenset.union(frozenset({1, 2, 3}), 1.5)
+
 
 class FunctionTests(unittest.TestCase):
     def test_dunder_closure_returns_none_if_function_is_not_a_closure(self):

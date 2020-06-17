@@ -3713,8 +3713,14 @@ class frozenset(bootstrap=True):
     def symmetric_difference(self, other):
         _unimplemented()
 
-    def union(self, other):
-        _unimplemented()
+    def union(self, *others):
+        _frozenset_guard(self)
+        result = set(self)
+        for item in others:
+            if item is self:
+                continue
+            set.update(result, item)
+        return frozenset(result)
 
 
 class generator(bootstrap=True):
