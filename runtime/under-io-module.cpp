@@ -1161,8 +1161,6 @@ static const BuiltinAttribute kTextIOWrapperAttributes[] = {
 };
 
 void initializeUnderIOTypes(Thread* thread) {
-  HandleScope scope(thread);
-
   addBuiltinType(thread, ID(_IOBase), LayoutId::kUnderIOBase,
                  /*superclass_id=*/LayoutId::kObject, kUnderIOBaseAttributes);
 
@@ -1171,29 +1169,15 @@ void initializeUnderIOTypes(Thread* thread) {
                  /*superclass_id=*/LayoutId::kObject,
                  kIncrementalNewlineDecoderAttributes);
 
-  {
-    Type type(
-        &scope,
-        addBuiltinType(thread, ID(_RawIOBase), LayoutId::kUnderRawIOBase,
-                       /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0}));
-    type.setBuiltinBase(LayoutId::kUnderIOBase);
-  }
+  addBuiltinType(thread, ID(_RawIOBase), LayoutId::kUnderRawIOBase,
+                 /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0});
 
-  {
-    Type type(&scope, addBuiltinType(thread, ID(_BufferedIOBase),
-                                     LayoutId::kUnderBufferedIOBase,
-                                     /*superclass_id=*/LayoutId::kUnderIOBase,
-                                     {nullptr, 0}));
-    type.setBuiltinBase(LayoutId::kUnderIOBase);
-  }
+  addBuiltinType(thread, ID(_BufferedIOBase), LayoutId::kUnderBufferedIOBase,
+                 /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0});
 
-  {
-    Type type(&scope,
-              addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
-                             /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
-                             kBytesIOAttributes));
-    type.setBuiltinBase(LayoutId::kUnderBufferedIOBase);
-  }
+  addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
+                 /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
+                 kBytesIOAttributes);
 
   addBuiltinType(thread, ID(_BufferedIOMixin), LayoutId::kUnderBufferedIOMixin,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOBase,

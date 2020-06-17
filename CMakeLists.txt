@@ -1642,7 +1642,6 @@ add_library(
   runtime/under-builtins-module-test.cpp
   runtime/under-codecs-module-test.cpp
   runtime/under-imp-module-test.cpp
-  runtime/under-io-module-test.cpp
   runtime/under-os-module-test.cpp
   runtime/under-path-module-test.cpp
   runtime/under-signal-module-test.cpp
