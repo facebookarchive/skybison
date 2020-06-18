@@ -194,7 +194,7 @@ TEST_F(SysModuleExtensionApiTest,
 TEST_F(SysModuleExtensionApiTest,
        SetArgvWithAbsolutePathInsertsPathIntoSysPath) {
   TempDirectory tmpdir;
-  std::string tmpfile = tmpdir.path + "scriptfile.py";
+  std::string tmpfile = tmpdir.path() + "scriptfile.py";
   std::string touch = "touch " + tmpfile;
   int result = std::system(touch.c_str());
   ASSERT_EQ(result, 0);
@@ -206,7 +206,7 @@ TEST_F(SysModuleExtensionApiTest,
 
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
-  char* abs_realpath = ::realpath(tmpdir.path.c_str(), nullptr);
+  char* abs_realpath = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
   PyMem_Free(arg1);
@@ -216,7 +216,7 @@ TEST_F(SysModuleExtensionApiTest,
 TEST_F(SysModuleExtensionApiTest, SetArgvWithLocalPathAddsPathStringToSysPath) {
   TempDirectory tmpdir;
   char* cwd = ::getcwd(nullptr, 0);
-  int result = ::chdir(tmpdir.path.c_str());
+  int result = ::chdir(tmpdir.path().c_str());
   ASSERT_EQ(result, 0);
 
   std::string tmpfile = "scriptfile.py";
@@ -231,7 +231,7 @@ TEST_F(SysModuleExtensionApiTest, SetArgvWithLocalPathAddsPathStringToSysPath) {
 
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
-  char* abs_path = ::realpath(tmpdir.path.c_str(), nullptr);
+  char* abs_path = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_path));
 
   result = ::chdir(cwd);
@@ -244,7 +244,7 @@ TEST_F(SysModuleExtensionApiTest, SetArgvWithLocalPathAddsPathStringToSysPath) {
 TEST_F(SysModuleExtensionApiTest, SetArgvWithRelativePathAddsPathToSysPath) {
   TempDirectory tmpdir;
   char* cwd = ::getcwd(nullptr, 0);
-  int result = ::chdir(tmpdir.path.c_str());
+  int result = ::chdir(tmpdir.path().c_str());
   ASSERT_EQ(result, 0);
 
   std::string relative_path = "./";
@@ -284,8 +284,8 @@ TEST_F(SysModuleExtensionApiTest, SetArgvWithRootPathInsertsRootIntoSysPath) {
 TEST_F(SysModuleExtensionApiTest,
        SetArgvWithLocalSymlinkInsertsPathIntoSysPath) {
   TempDirectory tmpdir;
-  std::string tmpfile = tmpdir.path + "scriptfile.py";
-  std::string linkfile = tmpdir.path + "scriptlink.py";
+  std::string tmpfile = tmpdir.path() + "scriptfile.py";
+  std::string linkfile = tmpdir.path() + "scriptlink.py";
   std::string touch = "touch " + tmpfile;
   int result = std::system(touch.c_str());
   ASSERT_EQ(result, 0);
@@ -300,7 +300,7 @@ TEST_F(SysModuleExtensionApiTest,
 
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
-  char* abs_realpath = ::realpath(tmpdir.path.c_str(), nullptr);
+  char* abs_realpath = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
   PyMem_Free(arg1);
@@ -311,8 +311,8 @@ TEST_F(SysModuleExtensionApiTest,
        SetArgvWithAbsoluteSymlinkInsertsPathIntoSysPath) {
   TempDirectory tmpdir1;
   TempDirectory tmpdir2;
-  std::string tmpfile = tmpdir1.path + "scriptfile.py";
-  std::string linkfile = tmpdir2.path + "scriptlink.py";
+  std::string tmpfile = tmpdir1.path() + "scriptfile.py";
+  std::string linkfile = tmpdir2.path() + "scriptlink.py";
   std::string touch = "touch " + tmpfile;
   int result = std::system(touch.c_str());
   ASSERT_EQ(result, 0);
@@ -327,7 +327,7 @@ TEST_F(SysModuleExtensionApiTest,
 
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
-  char* abs_realpath = ::realpath(tmpdir1.path.c_str(), nullptr);
+  char* abs_realpath = ::realpath(tmpdir1.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
   PyMem_Free(arg1);
@@ -337,8 +337,8 @@ TEST_F(SysModuleExtensionApiTest,
 TEST_F(SysModuleExtensionApiTest,
        SetArgvWithRelativeSymlinkInsertsPathIntoSysPath) {
   TempDirectory tmpdir;
-  std::string tmpfile = tmpdir.path + "scriptfile.py";
-  std::string linkfile = tmpdir.path + "scriptlink.py";
+  std::string tmpfile = tmpdir.path() + "scriptfile.py";
+  std::string linkfile = tmpdir.path() + "scriptlink.py";
   std::string touch = "touch " + tmpfile;
   int result = std::system(touch.c_str());
   ASSERT_EQ(result, 0);
@@ -353,7 +353,7 @@ TEST_F(SysModuleExtensionApiTest,
 
   PyObject* sys_path = PySys_GetObject("path");
   PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
-  char* abs_realpath = ::realpath(tmpdir.path.c_str(), nullptr);
+  char* abs_realpath = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
   PyMem_Free(arg1);

@@ -182,13 +182,13 @@ TempDirectory::TempDirectory(const char* prefix) {
   std::snprintf(buffer.get(), length, format, tmpdir, prefix);
   char* result(::mkdtemp(buffer.get()));
   assert(result != nullptr);
-  path = result;
-  assert(!path.empty());
-  if (path.back() != '/') path += "/";
+  path_ = result;
+  assert(!path_.empty());
+  if (path_.back() != '/') path_ += "/";
 }
 
 TempDirectory::~TempDirectory() {
-  std::string cleanup = "rm -rf " + path;
+  std::string cleanup = "rm -rf " + path_;
   int result = system(cleanup.c_str());
   (void)result;
   assert(result == 0);

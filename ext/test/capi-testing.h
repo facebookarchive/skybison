@@ -45,7 +45,7 @@ class __attribute__((warn_unused)) PyObjectPtr {
 
   // disable copy and assignment
   PyObjectPtr(const PyObjectPtr&) = delete;
-  PyObjectPtr& operator=(PyObjectPtr const&) = delete;
+  void operator=(const PyObjectPtr&) = delete;
 
  private:
   PyObject* obj_ = nullptr;
@@ -87,6 +87,9 @@ class CaptureStdStreams {
   // Return the captured stderr and restore the previous stream.
   std::string err();
 
+  CaptureStdStreams(const CaptureStdStreams&) = delete;
+  void operator=(const CaptureStdStreams&) = delete;
+
  private:
   bool restored_stdout_{false};
   bool restored_stderr_{false};
@@ -98,10 +101,16 @@ class CaptureStdStreams {
 class TempDirectory {
  public:
   TempDirectory();
-  TempDirectory(const char* prefix);
+  explicit TempDirectory(const char* prefix);
   ~TempDirectory();
 
-  std::string path;
+  const std::string& path() { return path_; }
+
+  TempDirectory(const TempDirectory&) = delete;
+  void operator=(const TempDirectory&) = delete;
+
+ private:
+  std::string path_;
 };
 
 }  // namespace testing
