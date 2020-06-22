@@ -299,6 +299,10 @@ def _complex_real(c):
     _builtin()
 
 
+def _deque_guard(obj):
+    _builtin()
+
+
 def _dict_check(obj):
     _builtin()
 

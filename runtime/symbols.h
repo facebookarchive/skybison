@@ -303,6 +303,7 @@ class Runtime;
   V(_decoded_chars)                                                            \
   V(_decoded_chars_used)                                                       \
   V(_decoder)                                                                  \
+  V(_deque_guard)                                                              \
   V(_descrclassmethod)                                                         \
   V(_dict__data)                                                               \
   V(_dict__first_empty_item_index)                                             \
@@ -595,6 +596,7 @@ class Runtime;
   V(cr_running)                                                                \
   V(decode)                                                                    \
   V(default_int_handler)                                                       \
+  V(deque)                                                                     \
   V(dict)                                                                      \
   V(dict_itemiterator)                                                         \
   V(dict_items)                                                                \
@@ -684,6 +686,7 @@ class Runtime;
   V(mappingproxy)                                                              \
   V(marshal)                                                                   \
   V(matmul)                                                                    \
+  V(maxlen)                                                                    \
   V(maxsize)                                                                   \
   V(maxunicode)                                                                \
   V(memoryview)                                                                \

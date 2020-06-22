@@ -57,6 +57,7 @@ class Handle;
   V(ContextVar)                                                                \
   V(Coroutine)                                                                 \
   V(CoroutineWrapper)                                                          \
+  V(Deque)                                                                     \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
@@ -317,6 +318,7 @@ class RawObject {
   bool isCoroutine() const;
   bool isCoroutineWrapper() const;
   bool isDataArray() const;
+  bool isDeque() const;
   bool isDict() const;
   bool isDictItemIterator() const;
   bool isDictItems() const;
@@ -2714,6 +2716,23 @@ class RawStrArray : public RawInstance {
   RAW_OBJECT_COMMON(StrArray);
 };
 
+// A double-ended queue
+//
+// RawLayout:
+//   [Header  ]
+//   [Maxlen  ] - maximum capacity
+class RawDeque : public RawInstance {
+ public:
+  // Getters and Setters
+  RawObject maxlen() const;
+  void setMaxlen(RawObject maxlen) const;
+
+  // Layout.
+  static const int kMaxlenOffset = RawHeapObject::kSize;
+  static const int kSize = kMaxlenOffset + kPointerSize;
+  RAW_OBJECT_COMMON(Deque);
+};
+
 // A simple dict that uses open addressing and linear probing.
 //
 // RawLayout:
@@ -3972,6 +3991,10 @@ inline bool RawObject::isCoroutineWrapper() const {
 
 inline bool RawObject::isDataArray() const {
   return isLargeBytes() || isLargeStr() || isMutableBytes();
+}
+
+inline bool RawObject::isDeque() const {
+  return isHeapObjectWithLayout(LayoutId::kDeque);
 }
 
 inline bool RawObject::isDict() const {
@@ -6070,6 +6093,15 @@ inline word RawStrArray::capacity() const {
   return RawMutableBytes::cast(items()).length();
 }
 
+// RawDeque
+
+inline RawObject RawDeque::maxlen() const {
+  return instanceVariableAt(kMaxlenOffset);
+}
+
+inline void RawDeque::setMaxlen(RawObject maxlen) const {
+  instanceVariableAtPut(kMaxlenOffset, maxlen);
+}
 // RawDict
 
 inline word RawDict::numItems() const {

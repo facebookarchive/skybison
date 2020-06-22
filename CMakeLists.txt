@@ -226,6 +226,7 @@ set(
   FROZEN_MODULE_INPUT
   library/_builtins.py
   library/_codecs.py
+  library/_collections.py
   library/_contextvars.py
   library/_ctypes.py
   library/_frozen_importlib.py
@@ -429,6 +430,8 @@ add_library(
   runtime/type-builtins.cpp
   runtime/under-builtins-module.cpp
   runtime/under-codecs-module.cpp
+  runtime/under-collections-module.cpp
+  runtime/under-collections-module.h
   runtime/under-contextvars-module.cpp
   runtime/under-contextvars-module.h
   runtime/under-ctypes-module.cpp
@@ -1454,7 +1457,6 @@ string(
 set(UNFROZEN_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/library")
 set(
   UNFROZEN_MODULE_INPUT
-  ${UNFROZEN_LIBRARY_DIR}/_collections.py
   ${UNFROZEN_LIBRARY_DIR}/_operator.py
   ${UNFROZEN_LIBRARY_DIR}/_string.py
   ${UNFROZEN_LIBRARY_DIR}/_sysconfigdata__darwin_.py
@@ -1641,6 +1643,7 @@ add_library(
   runtime/type-builtins-test.cpp
   runtime/under-builtins-module-test.cpp
   runtime/under-codecs-module-test.cpp
+  runtime/under-collections-module-test.cpp
   runtime/under-imp-module-test.cpp
   runtime/under-os-module-test.cpp
   runtime/under-path-module-test.cpp

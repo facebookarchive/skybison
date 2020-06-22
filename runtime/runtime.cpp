@@ -61,6 +61,7 @@
 #include "traceback-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
+#include "under-collections-module.h"
 #include "under-contextvars-module.h"
 #include "under-io-module.h"
 #include "under-signal-module.h"
@@ -1861,6 +1862,7 @@ void Runtime::initializeTypes(Thread* thread) {
   initializeTracebackType(thread);
   initializeTupleTypes(thread);
   initializeTypeTypes(thread);
+  initializeUnderCollectionsTypes(thread);
   initializeUnderContextvarsTypes(thread);
   initializeUnderIOTypes(thread);
   initializeValueCellTypes(thread);

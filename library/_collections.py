@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 
 from builtins import _index
 
 from _builtins import (
+    _builtin,
+    _deque_guard,
     _int_check,
     _int_guard,
     _repr_enter,
@@ -10,14 +13,6 @@ from _builtins import (
     _type,
     _unimplemented,
 )
-
-
-def _deque_guard(self):
-    if not isinstance(self, deque):
-        raise TypeError(
-            "requires a 'collections.deque' object but received a "
-            f"{_type(self).__name__!r}"
-        )
 
 
 class _deque_iterator:
@@ -39,7 +34,11 @@ class _deque_iterator:
         return self
 
 
-class deque:
+def _deque_set_maxlen(self, maxlen):
+    _builtin()
+
+
+class deque(bootstrap=True):
     def __add__(self, other):
         _unimplemented()
 
@@ -111,7 +110,10 @@ class deque:
         return self
 
     def __init__(self, iterable=(), maxlen=None):
-        _unimplemented()
+        _deque_guard(self)
+        # TODO(T67100024): call clear here after its implemented
+        _deque_set_maxlen(self, maxlen)
+        # TODO(T67099753): handle iterable
 
     def __iter__(self):
         _deque_guard(self)
@@ -146,9 +148,7 @@ class deque:
             return NotImplemented
 
     def __new__(cls, iterable=(), *args, **kw):
-        self = super(deque, cls).__new__(cls)
-        deque.clear(self)
-        return self
+        _builtin()
 
     def __reduce__(self):
         _unimplemented()
@@ -221,11 +221,6 @@ class deque:
 
     def insert(self, value):
         _unimplemented()
-
-    @property
-    def maxlen(self):
-        _deque_guard(self)
-        return self._maxlen
 
     def pop(self):
         _unimplemented()

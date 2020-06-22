@@ -55,6 +55,7 @@ static const SymbolId kUnderBuiltinsIntrinsicIds[] = {
     ID(_byteslike_check),
     ID(_byteslike_guard),
     ID(_complex_check),
+    ID(_deque_guard),
     ID(_dict_check),
     ID(_dict_check_exact),
     ID(_dict_guard),
@@ -1871,6 +1872,15 @@ RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newFloat(self.real());
+}
+
+RawObject FUNC(_builtins, _deque_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfDeque(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(deque));
 }
 
 RawObject FUNC(_builtins, _dict_check)(Thread* thread, Frame* frame,

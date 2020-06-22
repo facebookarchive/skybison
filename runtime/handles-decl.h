@@ -106,6 +106,7 @@ class Handle;
   V(Array)                                                                     \
   V(BaseException)                                                             \
   V(Bytearray)                                                                 \
+  V(Deque)                                                                     \
   V(Dict)                                                                      \
   V(FrozenSet)                                                                 \
   V(ImportError)                                                               \

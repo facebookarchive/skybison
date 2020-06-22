@@ -88,6 +88,15 @@ static bool underComplexCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underDequeGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfDeque(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underDictCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfDict(frame->popValue())));
@@ -597,6 +606,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underByteslikeGuard(thread, frame);
     case ID(_complex_check):
       return underComplexCheck(thread, frame);
+    case ID(_deque_guard):
+      return underDequeGuard(thread, frame);
     case ID(_dict_check):
       return underDictCheck(thread, frame);
     case ID(_dict_check_exact):
