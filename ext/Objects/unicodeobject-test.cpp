@@ -2811,9 +2811,6 @@ encoding = sys.getfilesystemencoding()
   EXPECT_TRUE(isUnicodeEqualsCStr(errors, Py_FileSystemDefaultEncoding));
 }
 
-// TODO(T57404483): Remove this ifdef after targeting CPython 3.7
-#if defined(__APPLE__) || defined(__ANDROID__)
-
 TEST_F(UnicodeExtensionApiTest,
        DecodeUTF8SurrogateEscapeWithEmptyStringReturnsEmptyString) {
   wchar_t* wpath = _Py_DecodeUTF8_surrogateescape("", 0);
@@ -2827,8 +2824,6 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8SurrogateEscapeReturnsWideString) {
   EXPECT_STREQ(wpath, L"/foo/bar/bat");
   PyMem_RawFree(wpath);
 }
-
-#endif  // __APPLE__ or __ANDROID__
 
 }  // namespace testing
 }  // namespace py
