@@ -1076,24 +1076,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         _BufferedIOBase.close(self)
 
     def read(self, size=-1):
-        if self.closed:
-            raise ValueError("read from closed file")
-        if size is None:
-            size = -1
-        if size < 0:
-            size = len(self._buffer)
-        if len(self._buffer) <= self._pos:
-            return b""
-        # TODO(T47866758): Use less generic code to do this computation and
-        # slicing since all of the types are known ahead of time.
-        newpos = min(len(self._buffer), self._pos + size)
-        # TODO(T47866758): This should slice directly into the bytearray and
-        # produce a bytes object, no intermediate bytearray.
-        # TODO(T41628357): Implement bytearray.__setitem__ and
-        # _bytearray_setslice so we can use that here
-        b = self._buffer[self._pos : newpos]
-        self._pos = newpos
-        return bytes(b)
+        _builtin()
 
     def read1(self, size=-1):
         """This is the same as read.

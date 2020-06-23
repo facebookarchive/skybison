@@ -727,6 +727,52 @@ static const BuiltinAttribute kBytesIOAttributes[] = {
     {ID(_pos), RawBytesIO::kPosOffset},
 };
 
+RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytesIO(*self)) {
+    return thread->raiseRequiresType(self, ID(BytesIO));
+  }
+  BytesIO bytes_io(&scope, *self);
+  if (bytes_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+
+  Object size_obj(&scope, args.get(1));
+  Bytearray buffer(&scope, bytes_io.buffer());
+  word size;
+  if (size_obj.isNoneType()) {
+    size = buffer.numItems();
+  } else {
+    size_obj = intFromIndex(thread, size_obj);
+    if (size_obj.isError()) return *size_obj;
+    if (!size_obj.isSmallInt() && !size_obj.isBool()) {
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "cannot fit value into an index-sized integer");
+    }
+    Int size_int(&scope, intUnderlying(*size_obj));
+    if (size_int.isNegative()) {
+      size = buffer.numItems();
+    } else {
+      size = size_int.asWord();
+    }
+  }
+  word buffer_len = buffer.numItems();
+  word pos = bytes_io.pos();
+  if (buffer_len <= pos) {
+    return Bytes::empty();
+  }
+  word new_pos = Utils::minimum(buffer_len, pos + size);
+  bytes_io.setPos(new_pos);
+  // TODO(T66835625): Change buffer to MutableBytes and optimize this process
+  Bytes result(&scope, buffer.items());
+  return bytesSubseq(thread, result, pos, new_pos - pos);
+}
+
 static const BuiltinAttribute kFileIOAttributes[] = {
     {ID(_fd), RawFileIO::kFdOffset},
     {ID(name), RawFileIO::kNameOffset},

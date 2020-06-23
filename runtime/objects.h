@@ -3575,8 +3575,8 @@ class RawBytesIO : public RawUnderBufferedIOBase {
   // Getters and setters
   RawObject buffer() const;
   void setBuffer(RawObject buffer) const;
-  RawObject pos() const;
-  void setPos(RawObject pos) const;
+  word pos() const;
+  void setPos(word pos) const;
   RawObject dict() const;
   void setDict(RawObject dict) const;
 
@@ -7460,12 +7460,12 @@ inline void RawBytesIO::setBuffer(RawObject buffer) const {
   instanceVariableAtPut(kBufferOffset, buffer);
 }
 
-inline RawObject RawBytesIO::pos() const {
-  return instanceVariableAt(kPosOffset);
+inline word RawBytesIO::pos() const {
+  return RawSmallInt::cast(instanceVariableAt(kPosOffset)).value();
 }
 
-inline void RawBytesIO::setPos(RawObject pos) const {
-  instanceVariableAtPut(kPosOffset, pos);
+inline void RawBytesIO::setPos(word pos) const {
+  instanceVariableAtPut(kPosOffset, RawSmallInt::fromWord(pos));
 }
 
 // RawFileIO

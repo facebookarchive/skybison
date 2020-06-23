@@ -18,7 +18,6 @@ class Handle;
   V(BufferedWriter)                                                            \
   V(BytearrayIterator)                                                         \
   V(Bytes)                                                                     \
-  V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
   V(Cell)                                                                      \
   V(ClassMethod)                                                               \
@@ -106,6 +105,7 @@ class Handle;
   V(Array)                                                                     \
   V(BaseException)                                                             \
   V(Bytearray)                                                                 \
+  V(BytesIO)                                                                   \
   V(Deque)                                                                     \
   V(Dict)                                                                      \
   V(FrozenSet)                                                                 \
