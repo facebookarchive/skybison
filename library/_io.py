@@ -1470,9 +1470,8 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
     ):
         # Argument parsing happens first in CPython's _io module
         if encoding is None:
-            # TODO(T53865493): Get correct device/locale encoding using
-            # os.device_encoding and locale.getpreferredencoding
-            encoding = "ascii"
+            encoding = "UTF-8"
+
         elif not _str_check(encoding):
             raise TypeError(
                 "TextIOWrapper() argument 2 must be str or None, not "

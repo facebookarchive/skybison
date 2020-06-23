@@ -2220,6 +2220,11 @@ class TextIOWrapperTests(unittest.TestCase):
         with self._sample() as text_io:
             self.assertEqual(text_io.encoding, "ascii")
 
+    def test_default_encoding_is_UTF8(self):
+        with _io.BytesIO() as bytes_io:
+            with _io.TextIOWrapper(bytes_io) as text_io:
+                self.assertEqual(text_io.encoding, "UTF-8")
+
     def test_errors_returns_default_errors(self):
         with self._sample() as text_io:
             self.assertEqual(text_io.errors, "strict")

@@ -164,7 +164,7 @@ def exit(code=_Unbound):
     raise SystemExit(code)
 
 
-flags = _Flags((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, False, 0))
+flags = _Flags((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, False, 1))
 
 
 float_info = _FloatInfo(
