@@ -189,24 +189,6 @@ c = a + b
                             "can only concatenate list to list"));
 }
 
-TEST_F(ListBuiltinsTest, ListAppend) {
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-a = list()
-b = list()
-a.append(1)
-a.append("2")
-b.append(3)
-a.append(b)
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  List a(&scope, mainModuleAt(runtime_, "a"));
-  EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
-  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "2"));
-  List b(&scope, a.at(2));
-  EXPECT_TRUE(isIntEqualsWord(b.at(0), 3));
-}
-
 TEST_F(ListBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
   HandleScope scope(thread_);
   Int value0(&scope, runtime_->newInt(1));

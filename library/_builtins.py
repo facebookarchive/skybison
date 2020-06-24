@@ -556,6 +556,10 @@ def _int_new_from_str(cls, x, base):
     _builtin()
 
 
+def _list_append(self, item):
+    _builtin()
+
+
 def _list_check(obj):
     _builtin()
 

@@ -1739,6 +1739,31 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kValueError, "invalid literal for int() with base 8: '0b1'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderListAppendAppendsObject) {
+  HandleScope scope(thread_);
+  List list(&scope, runtime_->newList());
+  Object value0(&scope, runtime_->newInt(42));
+  Object value1(&scope, runtime_->newStrFromCStr("foo"));
+  EXPECT_EQ(list.numItems(), 0);
+  EXPECT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_append), list, value0).isNoneType());
+  EXPECT_EQ(list.numItems(), 1);
+  EXPECT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_append), list, value1).isNoneType());
+  ASSERT_EQ(list.numItems(), 2);
+  EXPECT_EQ(list.at(0), value0);
+  EXPECT_EQ(list.at(1), value1);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderListAppendWithNonListRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object not_a_list(&scope, runtime_->newInt(42));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FUNC(_builtins, _list_append), not_a_list, not_a_list),
+      LayoutId::kTypeError,
+      "'<anonymous>' requires a 'list' object but received a 'int'"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderListCheckExactWithExactListReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());

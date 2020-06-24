@@ -141,6 +141,7 @@ from _builtins import (
     _int_new_from_int,
     _int_new_from_str,
     _iter,
+    _list_append,
     _list_check,
     _list_check_exact,
     _list_delitem,
@@ -4601,8 +4602,7 @@ class list(bootstrap=True):
             f"list indices must be integers or slices, not {_type(key).__name__}"
         )
 
-    def append(self, other):
-        _builtin()
+    append = _list_append
 
     def clear(self):
         _builtin()
@@ -4629,7 +4629,7 @@ class list(bootstrap=True):
             return
         # NOTE: this loop prevents recursion in (*other,)
         for item in other:
-            list.append(self, item)
+            _list_append(self, item)
 
     def index(self, obj, start=0, end=_Unbound):
         _list_guard(self)

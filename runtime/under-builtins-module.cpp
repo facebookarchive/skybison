@@ -2926,6 +2926,21 @@ RawObject FUNC(_builtins, _iter)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::createIterator(thread, thread->currentFrame(), object);
 }
 
+RawObject FUNC(_builtins, _list_append)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self)) {
+    return thread->raiseRequiresType(self, ID(list));
+  }
+  List list(&scope, *self);
+  Object value(&scope, args.get(1));
+  runtime->listAdd(thread, list, value);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _list_check)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);

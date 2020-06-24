@@ -342,19 +342,6 @@ RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(list, append)(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, ID(list));
-  }
-  List list(&scope, *self);
-  Object value(&scope, args.get(1));
-  thread->runtime()->listAdd(thread, list, value);
-  return NoneType::object();
-}
-
 RawObject METH(list, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
