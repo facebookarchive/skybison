@@ -6,7 +6,7 @@
 set(CMAKE_C_COMPILER "/usr/local/fbcode/platform007/bin/gcc.par" CACHE STRING "")
 set(CMAKE_CXX_COMPILER "/usr/local/fbcode/platform007/bin/g++.par" CACHE STRING "")
 
-include(${CMAKE_CURRENT_LIST_DIR}/platform007-common.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/platform007/common.cmake)
 
 # There's some bug with platform007 gcc such that -fsanitize=address can't find
 # libdl, librt, or libpthread

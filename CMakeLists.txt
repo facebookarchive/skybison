@@ -226,6 +226,7 @@ add_custom_target(copy-capi-headers ALL DEPENDS ${C_API_HEADERS_OUTPUT})
 
 set(
   FROZEN_MODULE_INPUT
+  ${SYSCONFIGDATA}
   library/_builtins.py
   library/_codecs.py
   library/_collections.py
@@ -1470,8 +1471,6 @@ set(
   UNFROZEN_MODULE_INPUT
   ${UNFROZEN_LIBRARY_DIR}/_operator.py
   ${UNFROZEN_LIBRARY_DIR}/_string.py
-  ${UNFROZEN_LIBRARY_DIR}/_sysconfigdata__darwin_.py
-  ${UNFROZEN_LIBRARY_DIR}/_sysconfigdata__linux_.py
   ${UNFROZEN_LIBRARY_DIR}/array.py
   ${UNFROZEN_LIBRARY_DIR}/collections/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/collections/abc.py

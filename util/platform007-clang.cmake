@@ -23,7 +23,7 @@ set(CMAKE_RANLIB "/bin/true")
 set(CMAKE_OBJCOPY "${LLVM_BIN}/llvm-objcopy")
 set(CMAKE_OBJDUMP "${LLVM_BIN}/llvm-objdump")
 
-include(${CMAKE_CURRENT_LIST_DIR}/platform007-common.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/platform007/common.cmake)
 
 string_join(" " PLATFORM_LINKER_FLAGS
   ${PLATFORM_LINKER_FLAGS}

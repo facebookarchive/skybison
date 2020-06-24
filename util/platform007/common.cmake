@@ -1,6 +1,8 @@
 # Common toolchain settings for facebook platform007
 # This should be used by including this file in platform007-gcc/clang
 
+set(SYSCONFIGDATA ${CMAKE_CURRENT_LIST_DIR}/_sysconfigdata__linux_.py)
+
 # This is the same as `string(JOIN)` which is only available in cmake >= 3.12
 function(string_join GLUE OUT_VAR)
   set(result "")
