@@ -118,6 +118,76 @@ set(
   -fno-optimize-sibling-calls
   -fno-rtti)
 
+set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
+set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
+file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
+set(LIBPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7m.a)
+set(CPYTHON_EXECUTABLE ${CPYTHON_BUILD_DIR}/python)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  # The binary has a .exe suffix on systems with a case-insensitive filesystem.
+  set(CPYTHON_EXECUTABLE ${CPYTHON_EXECUTABLE}.exe)
+endif()
+file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)
+# Filter out files starting with a dot (to catch vim .xxx.swp files)
+list(FILTER CPYTHON_FILES EXCLUDE REGEX "/\\.")
+# Filter out emacs temp files
+list(FILTER CPYTHON_FILES EXCLUDE REGEX "~$")
+list(FILTER CPYTHON_FILES EXCLUDE REGEX "/#.*#$")
+
+set(CPYTHON_CONFIGURE_FLAGS)
+set(CPYTHON_CFLAGS_NODIST ${CMAKE_C_FLAGS})
+set(CPYTHON_CPPFLAGS)
+set(CPYTHON_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
+if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
+  set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-assertions")
+  set(CPYTHON_CFLAGS_NODIST "${CPYTHON_CFLAGS_NODIST} -O0")
+endif()
+foreach(dir
+    ${BZIP2_INCLUDE_DIRS}
+    ${FFI_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIRS}
+    ${READLINE_INCLUDE_DIRS}
+    ${XZ_INCLUDE_DIRS}
+    ${ZLIB_INCLUDE_DIRS})
+  set(CPYTHON_CPPFLAGS "${CPYTHON_CPPFLAGS} -I${dir}")
+endforeach()
+foreach(dir
+    ${BZIP2_LIBRARY_DIRS}
+    ${FFI_LIBRARY_DIRS}
+    ${OPENSSL_LIBRARY_DIRS}
+    ${READLINE_LIBRARY_DIRS}
+    ${XZ_LIBRARY_DIRS}
+    ${ZLIB_LIBRARY_DIRS})
+  set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")
+endforeach()
+
+# Write commands into a script to avoid quoting problems.
+file(GENERATE OUTPUT ${CPYTHON_BUILD_DIR}/build.sh CONTENT "
+set -eu
+export CC=\"${CMAKE_C_COMPILER}\"
+export CXX=\"${CMAKE_CXX_COMPILER}\"
+export CFLAGS_NODIST=\"${CPYTHON_CFLAGS_NODIST}\"
+export CPPFLAGS=\"${CPYTHON_CPPFLAGS}\"
+export LDFLAGS=\"${CPYTHON_LDFLAGS}\"
+unset CFLAGS
+rm -f ${CPYTHON_BUILD_DIR}/Modules/Setup
+${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
+make -j
+")
+add_custom_command(
+  OUTPUT ${LIBPYTHON_BIN} ${CPYTHON_EXECUTABLE}
+  COMMAND cat ${CPYTHON_BUILD_DIR}/build.sh
+  COMMAND /bin/sh ${CPYTHON_BUILD_DIR}/build.sh
+  COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${LIBPYTHON_BIN}
+    ${CPYTHON_EXECUTABLE}
+  DEPENDS ${CPYTHON_FILES}
+  WORKING_DIRECTORY ${CPYTHON_BUILD_DIR}
+  USES_TERMINAL)
+add_custom_target(cpython DEPENDS ${LIBPYTHON_BIN})
+add_library(libpython STATIC IMPORTED)
+add_dependencies(libpython cpython)
+set_target_properties(libpython PROPERTIES IMPORTED_LOCATION ${LIBPYTHON_BIN})
+
 set(
   C_API_HEADERS
   ${CMAKE_SOURCE_DIR}/capi/Python.h
@@ -263,14 +333,17 @@ set(
   ${FROZEN_MODULE_OUTPUT_DIR}/builtins.h
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.cpp
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.h)
+# TODO(T68981062) At some point we would like to get rid of the cpython build
+# embedded in the cmake build and should not depend on ${CPYTHON_EXECUTABLE}.
 add_custom_command(
   OUTPUT
   ${FROZEN_MODULE_OUTPUT}
   COMMAND
-  util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR} ${FROZEN_MODULE_INPUT}
+  ${CPYTHON_EXECUTABLE} util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
+    ${FROZEN_MODULE_INPUT}
   WORKING_DIRECTORY
   ${CMAKE_SOURCE_DIR}
-  DEPENDS util/freeze_modules.py ${FROZEN_MODULE_INPUT})
+  DEPENDS cpython util/freeze_modules.py ${FROZEN_MODULE_INPUT})
 # This target is built in util/run_clang_tidy.py:create_compile_commands() to
 # ensure all generated files are present when clang-tidy runs.
 add_custom_target(
@@ -497,7 +570,6 @@ target_include_directories(runtime PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Modules")
 file(WRITE "${CMAKE_BINARY_DIR}/Modules/Setup.local" "Pretend Setup exists")
 
-set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
 add_library(
   expat
   STATIC
@@ -1772,66 +1844,6 @@ target_link_libraries(
   benchmark
   gtest
   runtime)
-
-set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
-file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
-set(LIBPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7m.a)
-file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)
-# Filter out files starting with a dot (to catch vim .xxx.swp files)
-list(FILTER CPYTHON_FILES EXCLUDE REGEX "/\\.")
-# Filter out emacs temp files
-list(FILTER CPYTHON_FILES EXCLUDE REGEX "~$")
-list(FILTER CPYTHON_FILES EXCLUDE REGEX "/#.*#$")
-
-set(CPYTHON_CONFIGURE_FLAGS)
-set(CPYTHON_CFLAGS_NODIST ${CMAKE_C_FLAGS})
-set(CPYTHON_CPPFLAGS)
-set(CPYTHON_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
-if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
-  set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-assertions")
-  set(CPYTHON_CFLAGS_NODIST "${CPYTHON_CFLAGS_NODIST} -O0")
-endif()
-foreach(dir
-    ${BZIP2_INCLUDE_DIRS}
-    ${FFI_INCLUDE_DIRS}
-    ${OPENSSL_INCLUDE_DIRS}
-    ${READLINE_INCLUDE_DIRS}
-    ${XZ_INCLUDE_DIRS}
-    ${ZLIB_INCLUDE_DIRS})
-  set(CPYTHON_CPPFLAGS "${CPYTHON_CPPFLAGS} -I${dir}")
-endforeach()
-foreach(dir
-    ${BZIP2_LIBRARY_DIRS}
-    ${FFI_LIBRARY_DIRS}
-    ${OPENSSL_LIBRARY_DIRS}
-    ${READLINE_LIBRARY_DIRS}
-    ${XZ_LIBRARY_DIRS}
-    ${ZLIB_LIBRARY_DIRS})
-  set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")
-endforeach()
-
-# Write commands into a script to avoid quoting problems.
-file(GENERATE OUTPUT ${CPYTHON_BUILD_DIR}/build.sh CONTENT "
-export CC=\"${CMAKE_C_COMPILER}\"
-export CXX=\"${CMAKE_CXX_COMPILER}\"
-export CFLAGS_NODIST=\"${CPYTHON_CFLAGS_NODIST}\"
-export CPPFLAGS=\"${CPYTHON_CPPFLAGS}\"
-export LDFLAGS=\"${CPYTHON_LDFLAGS}\"
-rm -f ${CPYTHON_BUILD_DIR}/Modules/Setup
-${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
-make -j
-")
-add_custom_command(
-  OUTPUT ${LIBPYTHON_BIN}
-  COMMAND cat ${CPYTHON_BUILD_DIR}/build.sh
-  COMMAND /bin/sh ${CPYTHON_BUILD_DIR}/build.sh
-  DEPENDS ${CPYTHON_FILES} ${CPYTHON_BUILD_DIR}/build.sh
-  WORKING_DIRECTORY ${CPYTHON_BUILD_DIR}
-  USES_TERMINAL)
-add_custom_target(cpython DEPENDS ${LIBPYTHON_BIN})
-add_library(libpython STATIC IMPORTED)
-add_dependencies(libpython cpython)
-set_target_properties(libpython PROPERTIES IMPORTED_LOCATION ${LIBPYTHON_BIN})
 
 if (ENABLE_CPYTHON_TESTS)
   add_executable(

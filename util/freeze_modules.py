@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 
 import argparse
 import importlib
@@ -135,7 +135,7 @@ def process_module(filename, builtins):
     builtin_init = "$builtin-init-module$" in source
     module_code = compile(source, filename, "exec", dont_inherit=True, optimize=0)
     marked_code = mark_native_functions(module_code, builtins, name)
-    bytecode = importlib._bootstrap_external._code_to_bytecode(marked_code)
+    bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(marked_code)
     initializer = to_char_array(bytecode)
     return ModuleData(name, initializer, builtin_init)
 
