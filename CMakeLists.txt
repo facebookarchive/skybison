@@ -1773,19 +1773,24 @@ target_link_libraries(
   gtest
   runtime)
 
-# Extension tests with CPython
+set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
+file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
+set(LIBPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7m.a)
+file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)
+# Filter out files starting with a dot (to catch vim .xxx.swp files)
+list(FILTER CPYTHON_FILES EXCLUDE REGEX "/\\.")
+# Filter out emacs temp files
+list(FILTER CPYTHON_FILES EXCLUDE REGEX "~$")
+list(FILTER CPYTHON_FILES EXCLUDE REGEX "/#.*#$")
+
 set(CPYTHON_CONFIGURE_FLAGS)
-set(CPYTHON_CFLAGS_NODIST)
+set(CPYTHON_CFLAGS_NODIST ${CMAKE_C_FLAGS})
 set(CPYTHON_CPPFLAGS)
-set(CPYTHON_LDFLAGS)
+set(CPYTHON_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
   set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-assertions")
   set(CPYTHON_CFLAGS_NODIST "${CPYTHON_CFLAGS_NODIST} -O0")
 endif()
-set(LIBPYTHON_BIN "libpython3.7m.a")
-set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
-file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
-file(GLOB_RECURSE CPYTHON_FILES ${CPYTHON_DIR}/*)
 foreach(dir
     ${BZIP2_INCLUDE_DIRS}
     ${FFI_INCLUDE_DIRS}
@@ -1804,6 +1809,7 @@ foreach(dir
     ${ZLIB_LIBRARY_DIRS})
   set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")
 endforeach()
+
 # Write commands into a script to avoid quoting problems.
 file(GENERATE OUTPUT ${CPYTHON_BUILD_DIR}/build.sh CONTENT "
 export CC=\"${CMAKE_C_COMPILER}\"
@@ -1816,20 +1822,16 @@ ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
 make -j
 ")
 add_custom_command(
-  OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
+  OUTPUT ${LIBPYTHON_BIN}
   COMMAND cat ${CPYTHON_BUILD_DIR}/build.sh
   COMMAND /bin/sh ${CPYTHON_BUILD_DIR}/build.sh
   DEPENDS ${CPYTHON_FILES} ${CPYTHON_BUILD_DIR}/build.sh
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR}
   USES_TERMINAL)
-add_custom_target(
-  cpython
-  DEPENDS ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
+add_custom_target(cpython DEPENDS ${LIBPYTHON_BIN})
 add_library(libpython STATIC IMPORTED)
 add_dependencies(libpython cpython)
-set_target_properties(
-  libpython
-  PROPERTIES IMPORTED_LOCATION ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
+set_target_properties(libpython PROPERTIES IMPORTED_LOCATION ${LIBPYTHON_BIN})
 
 if (ENABLE_CPYTHON_TESTS)
   add_executable(
