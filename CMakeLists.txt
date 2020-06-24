@@ -65,7 +65,9 @@ else()
   message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
 endif()
 
+set(CMAKE_C_EXTENSIONS NO)
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED YES)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 
 set(CMAKE_CXX_EXTENSIONS NO)
@@ -671,11 +673,20 @@ target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
 target_compile_options(
   extension-modules
   PRIVATE
+  -Wall
   -Werror
+  -Wextra
+  -Wno-missing-field-initializers
+  -Wno-unused-parameter
+  -Wno-unused-result
+  -Wsign-compare
   -Wstrict-prototypes
   -DPy_BUILD_CORE
   # TODO(T48643833): Remove this define to get _hashlib.scrypt.
   -DOPENSSL_NO_SCRYPT)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU")
+  target_compile_options(extension-modules PRIVATE -Wno-cast-function-type)
+endif()
 target_link_libraries(
   extension-modules
   PUBLIC

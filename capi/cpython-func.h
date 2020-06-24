@@ -19,7 +19,7 @@ extern "C" {
 #define PyMODINIT_FUNC PyObject*
 #endif
 #define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static type
+#define Py_LOCAL_INLINE(type) static inline type
 
 #define Py_GCC_ATTRIBUTE(x) __attribute__(x)
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
@@ -825,7 +825,7 @@ PyAPI_FUNC(void) PyThread_exit_thread(void);
 PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(void*) PyThread_get_key_value(int);
 PyAPI_FUNC(size_t) PyThread_get_stacksize(void);
-PyAPI_FUNC(long) PyThread_get_thread_ident(void);
+PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(void) PyThread_release_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_set_key_value(int, void*);

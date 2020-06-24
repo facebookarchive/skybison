@@ -53,8 +53,8 @@ PY_EXPORT size_t PyThread_get_stacksize() {
   UNIMPLEMENTED("PyThread_get_stacksize");
 }
 
-PY_EXPORT long PyThread_get_thread_ident() {
-  return bit_cast<long>(pthread_self());
+PY_EXPORT unsigned long PyThread_get_thread_ident() {
+  return reinterpret_cast<unsigned long>(pthread_self());
 }
 
 PY_EXPORT void PyThread_init_thread() { UNIMPLEMENTED("PyThread_init_thread"); }
