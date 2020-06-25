@@ -1199,23 +1199,23 @@ TEST_F(RuntimeTest, HashCodeSizeCheck) {
 
 TEST_F(RuntimeTest, NewCapacity) {
   // ensure initial capacity
-  EXPECT_GE(runtime_->newCapacity(1, 0), 16);
+  EXPECT_GE(Runtime::newCapacity(1, 0), 16);
 
   // grow by factor of 1.5, rounding down
-  EXPECT_EQ(runtime_->newCapacity(20, 22), 30);
-  EXPECT_EQ(runtime_->newCapacity(64, 77), 96);
-  EXPECT_EQ(runtime_->newCapacity(25, 30), 37);
+  EXPECT_EQ(Runtime::newCapacity(20, 22), 30);
+  EXPECT_EQ(Runtime::newCapacity(64, 77), 96);
+  EXPECT_EQ(Runtime::newCapacity(25, 30), 37);
 
   // ensure growth
-  EXPECT_EQ(runtime_->newCapacity(20, 17), 30);
-  EXPECT_EQ(runtime_->newCapacity(20, 20), 30);
+  EXPECT_EQ(Runtime::newCapacity(20, 17), 30);
+  EXPECT_EQ(Runtime::newCapacity(20, 20), 30);
 
   // if factor of 1.5 is insufficient, grow exactly to minimum capacity
-  EXPECT_EQ(runtime_->newCapacity(20, 40), 40);
-  EXPECT_EQ(runtime_->newCapacity(20, 70), 70);
+  EXPECT_EQ(Runtime::newCapacity(20, 40), 40);
+  EXPECT_EQ(Runtime::newCapacity(20, 70), 70);
 
   // capacity has ceiling of SmallInt::kMaxValue
-  EXPECT_EQ(runtime_->newCapacity(SmallInt::kMaxValue - 1, SmallInt::kMaxValue),
+  EXPECT_EQ(Runtime::newCapacity(SmallInt::kMaxValue - 1, SmallInt::kMaxValue),
             SmallInt::kMaxValue);
 }
 

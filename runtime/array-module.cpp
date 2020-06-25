@@ -343,13 +343,12 @@ static void arrayEnsureCapacity(Thread* thread, const Array& array,
                                 word min_length) {
   DCHECK_BOUND(min_length, SmallInt::kMaxValue);
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   MutableBytes buffer(&scope, array.buffer());
   word curr_length = buffer.length();
   if (min_length <= curr_length) return;
-  word new_length = runtime->newCapacity(curr_length, min_length);
-  array.setBuffer(
-      runtime->mutableBytesCopyWithLength(thread, buffer, new_length));
+  word new_length = Runtime::newCapacity(curr_length, min_length);
+  array.setBuffer(thread->runtime()->mutableBytesCopyWithLength(thread, buffer,
+                                                                new_length));
 }
 
 RawObject FUNC(array, _array_reserve)(Thread* thread, Frame* frame,
