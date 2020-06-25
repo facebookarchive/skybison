@@ -5,6 +5,11 @@
 
 namespace py {
 
+PY_EXPORT int _PyObject_DebugMallocStats(FILE* /*out*/) {
+  // A return value of 0 means no debugging hooks are installed.
+  return 0;
+}
+
 PY_EXPORT void* PyObject_Malloc(size_t size) {
   ListEntry* entry =
       static_cast<ListEntry*>(PyMem_RawMalloc(sizeof(ListEntry) + size));

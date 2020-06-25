@@ -222,6 +222,7 @@ PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject*);
+PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE*);
 PyAPI_FUNC(Py_ssize_t) _PyObject_SIZE_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) _PyObject_VAR_SIZE_Func(PyObject*, Py_ssize_t);
 

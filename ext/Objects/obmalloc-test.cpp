@@ -9,6 +9,10 @@ namespace testing {
 
 using ObmallocExtensionApiTest = ExtensionApi;
 
+TEST_F(ObmallocExtensionApiTest, PyObjectDebugMallocStatsReturnsZeroPyro) {
+  EXPECT_EQ(_PyObject_DebugMallocStats(nullptr), 0);
+}
+
 TEST_F(ObmallocExtensionApiTest, PyMemRawStrdupDuplicatesStr) {
   const char* str = "hello, world";
   char* dup = _PyMem_RawStrdup(str);
