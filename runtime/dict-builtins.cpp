@@ -305,7 +305,7 @@ static void dictEnsureCapacity(Thread* thread, const Dict& dict) {
 
 RawObject dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                     word hash, const Object& value) {
-  if (dict.indices().isNull()) {
+  if (dict.indices() == SmallInt::fromWord(0)) {
     dictAllocateArrays(thread, dict, kInitialDictIndicesLength);
   }
   HandleScope scope(thread);
@@ -380,7 +380,7 @@ RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
 
 RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                     const Object& name, const Object& value) {
-  if (dict.indices().isNull()) {
+  if (dict.indices() == SmallInt::fromWord(0)) {
     dictAllocateArrays(thread, dict, kInitialDictIndicesLength);
   }
   HandleScope scope(thread);
@@ -413,7 +413,7 @@ RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
 }
 
 void dictClear(Thread* thread, const Dict& dict) {
-  if (dict.indices().isNull()) return;
+  if (dict.indices() == SmallInt::fromWord(0)) return;
 
   HandleScope scope(thread);
   MutableTuple data(&scope, dict.data());

@@ -291,7 +291,6 @@ class RawObject {
   bool isImmediateObjectNotSmallInt() const;
   bool isNoneType() const;
   bool isNotImplementedType() const;
-  bool isNull() const;
   bool isSmallBytes() const;
   bool isSmallInt() const;
   bool isSmallStr() const;
@@ -3864,8 +3863,6 @@ inline bool RawObject::isNotImplementedType() const {
   return (raw() & kImmediateTagMask) == kNotImplementedTag;
 }
 
-inline bool RawObject::isNull() const { return raw() == 0; }
-
 inline bool RawObject::isSmallBytes() const {
   return (raw() & kImmediateTagMask) == kSmallBytesTag;
 }
@@ -6140,7 +6137,7 @@ inline void RawDict::setFirstEmptyItemIndex(word first_empty_item_index) const {
 
 inline word RawDict::indicesLength() const {
   RawObject indices_obj = indices();
-  if (indices_obj.isNull()) return 0;
+  if (indices_obj == RawSmallInt::fromWord(0)) return 0;
   return RawMutableTuple::cast(indices_obj).length();
 }
 
