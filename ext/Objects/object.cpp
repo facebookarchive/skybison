@@ -14,6 +14,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "type-builtins.h"
+#include "typeslots.h"
 
 namespace py {
 
@@ -675,10 +676,9 @@ void finalizeExtensionObject(Thread* thread, RawObject object) {
   Type type(&scope, runtime->typeOf(*proxy));
   DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
          "A native instance must come from an extension type");
-  DCHECK(type.hasSlot(Type::Slot::kDealloc),
-         "Extension types must have a dealloc slot");
-  destructor tp_dealloc = reinterpret_cast<destructor>(
-      Int::cast(type.slot(Type::Slot::kDealloc)).asCPtr());
+  destructor tp_dealloc =
+      reinterpret_cast<destructor>(typeSlotAt(type, Py_tp_dealloc));
+  DCHECK(tp_dealloc != nullptr, "Extension types must have a dealloc slot");
   PyObject* obj =
       reinterpret_cast<PyObject*>(Int::cast(proxy.native()).asCPtr());
   CHECK(obj->ob_refcnt == 1,

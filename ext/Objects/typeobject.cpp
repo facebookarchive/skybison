@@ -20,6 +20,7 @@
 #include "str-builtins.h"
 #include "trampolines.h"
 #include "type-builtins.h"
+#include "typeslots.h"
 #include "utils.h"
 
 namespace py {
@@ -47,12 +48,11 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
   Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   if (type.isBuiltin()) return Py_TPFLAGS_DEFAULT;
 
-  if (type.slots().isNoneType()) {
+  if (!typeHasSlots(type)) {
     UNIMPLEMENTED("GetFlags from types initialized through Python code");
   }
 
-  Int flags(&scope, type.slot(Type::Slot::kFlags));
-  return flags.asWord();
+  return typeSlotUWordAt(type, kSlotFlags);
 }
 
 namespace {
@@ -424,8 +424,8 @@ struct SlotDef {
   // The name of the method in managed code.
   SymbolId name;
 
-  // Our equivalent of the slot id from PyType_Slot.
-  Type::Slot id;
+  // type slot it.
+  int id;
 
   // List of parameter names/symbols.
   const SymbolId* parameters;
@@ -464,10 +464,10 @@ static const SymbolId kParamsTypeArgsKwargs[] = {ID(type), ID(args),
 // method, along with logic to update slots as needed when a user assigns to a
 // type dict.
 #define TPSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
-  { NAME, Type::Slot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER, 0, DOC }
+  { NAME, SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER, 0, DOC }
 #define KWSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
   {                                                                            \
-    NAME, Type::Slot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER,        \
+    NAME, SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER,                    \
         Code::Flags::kVarargs | Code::Flags::kVarkeyargs, DOC                  \
   }
 #define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, DOC)                              \
@@ -490,211 +490,213 @@ static const SymbolId kParamsTypeArgsKwargs[] = {ID(type), ID(args),
          C_NAME "($self, value, /)\n--\n\n" DOC)
 
 static const SlotDef kSlotdefs[] = {
-    TPSLOT(ID(__getattribute__), kGetattr, kParamsSelfName, nullptr, nullptr,
+    TPSLOT(ID(__getattribute__), Py_tp_getattr, kParamsSelfName, nullptr,
+           nullptr, ""),
+    TPSLOT(ID(__getattr__), Py_tp_getattr, kParamsSelfName, nullptr, nullptr,
            ""),
-    TPSLOT(ID(__getattr__), kGetattr, kParamsSelfName, nullptr, nullptr, ""),
-    TPSLOT(ID(__setattr__), kSetattr, kParamsSelfNameValue, nullptr, nullptr,
+    TPSLOT(ID(__setattr__), Py_tp_setattr, kParamsSelfNameValue, nullptr,
+           nullptr, ""),
+    TPSLOT(ID(__delattr__), Py_tp_setattr, kParamsSelfName, nullptr, nullptr,
            ""),
-    TPSLOT(ID(__delattr__), kSetattr, kParamsSelfName, nullptr, nullptr, ""),
-    UNSLOT(ID(__repr__), "__repr__", kRepr, slot_tp_repr, "Return repr(self)."),
-    TPSLOT(ID(__hash__), kHash, kParamsSelf, slot_tp_hash, wrapHashfunc,
+    UNSLOT(ID(__repr__), "__repr__", Py_tp_repr, slot_tp_repr,
+           "Return repr(self)."),
+    TPSLOT(ID(__hash__), Py_tp_hash, kParamsSelf, slot_tp_hash, wrapHashfunc,
            "__hash__($self, /)\n--\n\nReturn hash(self)."),
     KWSLOT(
-        ID(__call__), kCall, kParamsSelfArgsKwargs, slot_tp_call,
+        ID(__call__), Py_tp_call, kParamsSelfArgsKwargs, slot_tp_call,
         wrapVarkwTernaryfunc,
         "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function."),
-    UNSLOT(ID(__str__), "__str__", kStr, slot_tp_str, "Return str(self)."),
-    TPSLOT(ID(__getattribute__), kGetattro, kParamsSelfName,
+    UNSLOT(ID(__str__), "__str__", Py_tp_str, slot_tp_str, "Return str(self)."),
+    TPSLOT(ID(__getattribute__), Py_tp_getattro, kParamsSelfName,
            slot_tp_getattr_hook, wrapBinaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, "
            "name)."),
-    TPSLOT(ID(__getattr__), kGetattro, kParamsSelfName, slot_tp_getattr_hook,
-           nullptr, ""),
-    TPSLOT(ID(__setattr__), kSetattro, kParamsSelfNameValue, slot_tp_setattro,
-           wrapSetattr,
+    TPSLOT(ID(__getattr__), Py_tp_getattro, kParamsSelfName,
+           slot_tp_getattr_hook, nullptr, ""),
+    TPSLOT(ID(__setattr__), Py_tp_setattro, kParamsSelfNameValue,
+           slot_tp_setattro, wrapSetattr,
            "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, "
            "name, value)."),
-    TPSLOT(ID(__delattr__), kSetattro, kParamsSelfName, slot_tp_setattro,
+    TPSLOT(ID(__delattr__), Py_tp_setattro, kParamsSelfName, slot_tp_setattro,
            wrapDelattr,
            "__delattr__($self, name, /)\n--\n\nImplement delattr(self, name)."),
-    TPSLOT(ID(__lt__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+    TPSLOT(ID(__lt__), Py_tp_richcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<LT>,
            "__lt__($self, value, /)\n--\n\nReturn self<value."),
-    TPSLOT(ID(__le__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+    TPSLOT(ID(__le__), Py_tp_richcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<LE>,
            "__le__($self, value, /)\n--\n\nReturn self<=value."),
-    TPSLOT(ID(__eq__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+    TPSLOT(ID(__eq__), Py_tp_richcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<EQ>,
            "__eq__($self, value, /)\n--\n\nReturn self==value."),
-    TPSLOT(ID(__ne__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+    TPSLOT(ID(__ne__), Py_tp_richcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<NE>,
            "__ne__($self, value, /)\n--\n\nReturn self!=value."),
-    TPSLOT(ID(__gt__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+    TPSLOT(ID(__gt__), Py_tp_richcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<GT>,
            "__gt__($self, value, /)\n--\n\nReturn self>value."),
-    TPSLOT(ID(__ge__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+    TPSLOT(ID(__ge__), Py_tp_richcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<GE>,
            "__ge__($self, value, /)\n--\n\nReturn self>=value."),
-    UNSLOT(ID(__iter__), "__iter__", kIter, slot_tp_iter,
+    UNSLOT(ID(__iter__), "__iter__", Py_tp_iter, slot_tp_iter,
            "Implement iter(self)."),
-    TPSLOT(ID(__next__), kIternext, kParamsSelf, slot_tp_iternext, wrapNext,
-           "__next__($self, /)\n--\n\nImplement next(self)."),
-    TPSLOT(ID(__get__), kDescrGet, kParamsSelfInstanceOwner, slot_tp_descr_get,
-           wrapDescrGet,
+    TPSLOT(ID(__next__), Py_tp_iternext, kParamsSelf, slot_tp_iternext,
+           wrapNext, "__next__($self, /)\n--\n\nImplement next(self)."),
+    TPSLOT(ID(__get__), Py_tp_descr_get, kParamsSelfInstanceOwner,
+           slot_tp_descr_get, wrapDescrGet,
            "__get__($self, instance, owner, /)\n--\n\nReturn an attribute of "
            "instance, which is of type owner."),
-    TPSLOT(ID(__set__), kDescrSet, kParamsSelfInstanceValue, slot_tp_descr_set,
-           wrapDescrSet,
+    TPSLOT(ID(__set__), Py_tp_descr_set, kParamsSelfInstanceValue,
+           slot_tp_descr_set, wrapDescrSet,
            "__set__($self, instance, value, /)\n--\n\nSet an attribute of "
            "instance to value."),
-    TPSLOT(ID(__delete__), kDescrSet, kParamsSelfInstance, slot_tp_descr_set,
-           wrapDescrDelete,
+    TPSLOT(ID(__delete__), Py_tp_descr_set, kParamsSelfInstance,
+           slot_tp_descr_set, wrapDescrDelete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of "
            "instance."),
-    KWSLOT(ID(__init__), kInit, kParamsSelfArgsKwargs, slot_tp_init, wrapInit,
+    KWSLOT(ID(__init__), Py_tp_init, kParamsSelfArgsKwargs, slot_tp_init,
+           wrapInit,
            "__init__($self, /, *args, **kwargs)\n--\n\nInitialize self.  See "
            "help(type(self)) for accurate signature."),
-    KWSLOT(ID(__new__), kNew, kParamsTypeArgsKwargs, slot_tp_new,
+    KWSLOT(ID(__new__), Py_tp_new, kParamsTypeArgsKwargs, slot_tp_new,
            wrapVarkwTernaryfunc,
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate "
            "signature."),
-    TPSLOT(ID(__del__), kFinalize, kParamsSelf, slot_tp_finalize, wrapDel, ""),
-    UNSLOT(ID(__await__), "__await__", kAsyncAwait, slot_am_await,
+    TPSLOT(ID(__del__), Py_tp_finalize, kParamsSelf, slot_tp_finalize, wrapDel,
+           ""),
+    UNSLOT(ID(__await__), "__await__", Py_am_await, slot_am_await,
            "Return an iterator to be used in await expression."),
-    UNSLOT(ID(__aiter__), "__aiter__", kAsyncAiter, slot_am_aiter,
+    UNSLOT(ID(__aiter__), "__aiter__", Py_am_aiter, slot_am_aiter,
            "Return an awaitable, that resolves in asynchronous iterator."),
-    UNSLOT(ID(__anext__), "__anext__", kAsyncAnext, slot_am_anext,
+    UNSLOT(ID(__anext__), "__anext__", Py_am_anext, slot_am_anext,
            "Return a value or raise StopAsyncIteration."),
-    BINSLOT(ID(__add__), "__add__", kNumberAdd, slot_nb_add, "+"),
-    RBINSLOT(ID(__radd__), "__radd__", kNumberAdd, slot_nb_add, "+"),
-    BINSLOT(ID(__sub__), "__sub__", kNumberSubtract, slot_nb_subtract, "-"),
-    RBINSLOT(ID(__rsub__), "__rsub__", kNumberSubtract, slot_nb_subtract, "-"),
-    BINSLOT(ID(__mul__), "__mul__", kNumberMultiply, slot_nb_multiply, "*"),
-    RBINSLOT(ID(__rmul__), "__rmul__", kNumberMultiply, slot_nb_multiply, "*"),
-    BINSLOT(ID(__mod__), "__mod__", kNumberRemainder, slot_nb_remainder, "%"),
-    RBINSLOT(ID(__rmod__), "__rmod__", kNumberRemainder, slot_nb_remainder,
-             "%"),
-    BINSLOTNOTINFIX(ID(__divmod__), "__divmod__", kNumberDivmod, slot_nb_divmod,
+    BINSLOT(ID(__add__), "__add__", Py_nb_add, slot_nb_add, "+"),
+    RBINSLOT(ID(__radd__), "__radd__", Py_nb_add, slot_nb_add, "+"),
+    BINSLOT(ID(__sub__), "__sub__", Py_nb_subtract, slot_nb_subtract, "-"),
+    RBINSLOT(ID(__rsub__), "__rsub__", Py_nb_subtract, slot_nb_subtract, "-"),
+    BINSLOT(ID(__mul__), "__mul__", Py_nb_multiply, slot_nb_multiply, "*"),
+    RBINSLOT(ID(__rmul__), "__rmul__", Py_nb_multiply, slot_nb_multiply, "*"),
+    BINSLOT(ID(__mod__), "__mod__", Py_nb_remainder, slot_nb_remainder, "%"),
+    RBINSLOT(ID(__rmod__), "__rmod__", Py_nb_remainder, slot_nb_remainder, "%"),
+    BINSLOTNOTINFIX(ID(__divmod__), "__divmod__", Py_nb_divmod, slot_nb_divmod,
                     "Return divmod(self, value)."),
-    RBINSLOTNOTINFIX(ID(__rdivmod__), "__rdivmod__", kNumberDivmod,
+    RBINSLOTNOTINFIX(ID(__rdivmod__), "__rdivmod__", Py_nb_divmod,
                      slot_nb_divmod, "Return divmod(value, self)."),
-    TPSLOT(ID(__pow__), kNumberPower, kParamsSelfValueMod, slot_nb_power,
+    TPSLOT(ID(__pow__), Py_nb_power, kParamsSelfValueMod, slot_nb_power,
            wrapTernaryfunc,
            "__pow__($self, value, mod=None, /)\n--\n\nReturn pow(self, value, "
            "mod)."),
-    TPSLOT(ID(__rpow__), kNumberPower, kParamsSelfValueMod, slot_nb_power,
+    TPSLOT(ID(__rpow__), Py_nb_power, kParamsSelfValueMod, slot_nb_power,
            wrapTernaryfuncSwapped,
            "__rpow__($self, value, mod=None, /)\n--\n\nReturn pow(value, self, "
            "mod)."),
-    UNSLOT(ID(__neg__), "__neg__", kNumberNegative, slot_nb_negative, "-self"),
-    UNSLOT(ID(__pos__), "__pos__", kNumberPositive, slot_nb_positive, "+self"),
-    UNSLOT(ID(__abs__), "__abs__", kNumberAbsolute, slot_nb_absolute,
+    UNSLOT(ID(__neg__), "__neg__", Py_nb_negative, slot_nb_negative, "-self"),
+    UNSLOT(ID(__pos__), "__pos__", Py_nb_positive, slot_nb_positive, "+self"),
+    UNSLOT(ID(__abs__), "__abs__", Py_nb_absolute, slot_nb_absolute,
            "abs(self)"),
-    TPSLOT(ID(__bool__), kNumberBool, kParamsSelf, slot_nb_bool,
-           wrapInquirypred, "__bool__($self, /)\n--\n\nself != 0"),
-    UNSLOT(ID(__invert__), "__invert__", kNumberInvert, slot_nb_invert,
-           "~self"),
-    BINSLOT(ID(__lshift__), "__lshift__", kNumberLshift, slot_nb_lshift, "<<"),
-    RBINSLOT(ID(__rlshift__), "__rlshift__", kNumberLshift, slot_nb_lshift,
+    TPSLOT(ID(__bool__), Py_nb_bool, kParamsSelf, slot_nb_bool, wrapInquirypred,
+           "__bool__($self, /)\n--\n\nself != 0"),
+    UNSLOT(ID(__invert__), "__invert__", Py_nb_invert, slot_nb_invert, "~self"),
+    BINSLOT(ID(__lshift__), "__lshift__", Py_nb_lshift, slot_nb_lshift, "<<"),
+    RBINSLOT(ID(__rlshift__), "__rlshift__", Py_nb_lshift, slot_nb_lshift,
              "<<"),
-    BINSLOT(ID(__rshift__), "__rshift__", kNumberRshift, slot_nb_rshift, ">>"),
-    RBINSLOT(ID(__rrshift__), "__rrshift__", kNumberRshift, slot_nb_rshift,
+    BINSLOT(ID(__rshift__), "__rshift__", Py_nb_rshift, slot_nb_rshift, ">>"),
+    RBINSLOT(ID(__rrshift__), "__rrshift__", Py_nb_rshift, slot_nb_rshift,
              ">>"),
-    BINSLOT(ID(__and__), "__and__", kNumberAnd, slot_nb_and, "&"),
-    RBINSLOT(ID(__rand__), "__rand__", kNumberAnd, slot_nb_and, "&"),
-    BINSLOT(ID(__xor__), "__xor__", kNumberXor, slot_nb_xor, "^"),
-    RBINSLOT(ID(__rxor__), "__rxor__", kNumberXor, slot_nb_xor, "^"),
-    BINSLOT(ID(__or__), "__or__", kNumberOr, slot_nb_or, "|"),
-    RBINSLOT(ID(__ror__), "__ror__", kNumberOr, slot_nb_or, "|"),
-    UNSLOT(ID(__int__), "__int__", kNumberInt, slot_nb_int, "int(self)"),
-    UNSLOT(ID(__float__), "__float__", kNumberFloat, slot_nb_float,
+    BINSLOT(ID(__and__), "__and__", Py_nb_and, slot_nb_and, "&"),
+    RBINSLOT(ID(__rand__), "__rand__", Py_nb_and, slot_nb_and, "&"),
+    BINSLOT(ID(__xor__), "__xor__", Py_nb_xor, slot_nb_xor, "^"),
+    RBINSLOT(ID(__rxor__), "__rxor__", Py_nb_xor, slot_nb_xor, "^"),
+    BINSLOT(ID(__or__), "__or__", Py_nb_or, slot_nb_or, "|"),
+    RBINSLOT(ID(__ror__), "__ror__", Py_nb_or, slot_nb_or, "|"),
+    UNSLOT(ID(__int__), "__int__", Py_nb_int, slot_nb_int, "int(self)"),
+    UNSLOT(ID(__float__), "__float__", Py_nb_float, slot_nb_float,
            "float(self)"),
-    IBSLOT(ID(__iadd__), "__iadd__", kNumberInplaceAdd, slot_nb_inplace_add,
+    IBSLOT(ID(__iadd__), "__iadd__", Py_nb_inplace_add, slot_nb_inplace_add,
            wrapBinaryfunc, "+="),
-    IBSLOT(ID(__isub__), "__isub__", kNumberInplaceSubtract,
+    IBSLOT(ID(__isub__), "__isub__", Py_nb_inplace_subtract,
            slot_nb_inplace_subtract, wrapBinaryfunc, "-="),
-    IBSLOT(ID(__imul__), "__imul__", kNumberInplaceMultiply,
+    IBSLOT(ID(__imul__), "__imul__", Py_nb_inplace_multiply,
            slot_nb_inplace_multiply, wrapBinaryfunc, "*="),
-    IBSLOT(ID(__imod__), "__imod__", kNumberInplaceRemainder,
+    IBSLOT(ID(__imod__), "__imod__", Py_nb_inplace_remainder,
            slot_nb_inplace_remainder, wrapBinaryfunc, "%="),
-    IBSLOT(ID(__ipow__), "__ipow__", kNumberInplacePower, slot_nb_inplace_power,
+    IBSLOT(ID(__ipow__), "__ipow__", Py_nb_inplace_power, slot_nb_inplace_power,
            wrapBinaryfunc, "**="),
-    IBSLOT(ID(__ilshift__), "__ilshift__", kNumberInplaceLshift,
+    IBSLOT(ID(__ilshift__), "__ilshift__", Py_nb_inplace_lshift,
            slot_nb_inplace_lshift, wrapBinaryfunc, "<<="),
-    IBSLOT(ID(__irshift__), "__irshift__", kNumberInplaceRshift,
+    IBSLOT(ID(__irshift__), "__irshift__", Py_nb_inplace_rshift,
            slot_nb_inplace_rshift, wrapBinaryfunc, ">>="),
-    IBSLOT(ID(__iand__), "__iand__", kNumberInplaceAnd, slot_nb_inplace_and,
+    IBSLOT(ID(__iand__), "__iand__", Py_nb_inplace_and, slot_nb_inplace_and,
            wrapBinaryfunc, "&="),
-    IBSLOT(ID(__ixor__), "__ixor__", kNumberInplaceXor, slot_nb_inplace_xor,
+    IBSLOT(ID(__ixor__), "__ixor__", Py_nb_inplace_xor, slot_nb_inplace_xor,
            wrapBinaryfunc, "^="),
-    IBSLOT(ID(__ior__), "__ior__", kNumberInplaceOr, slot_nb_inplace_or,
+    IBSLOT(ID(__ior__), "__ior__", Py_nb_inplace_or, slot_nb_inplace_or,
            wrapBinaryfunc, "|="),
-    BINSLOT(ID(__floordiv__), "__floordiv__", kNumberFloorDivide,
+    BINSLOT(ID(__floordiv__), "__floordiv__", Py_nb_floor_divide,
             slot_nb_floor_divide, "//"),
-    RBINSLOT(ID(__rfloordiv__), "__rfloordiv__", kNumberFloorDivide,
+    RBINSLOT(ID(__rfloordiv__), "__rfloordiv__", Py_nb_floor_divide,
              slot_nb_floor_divide, "//"),
-    BINSLOT(ID(__truediv__), "__truediv__", kNumberTrueDivide,
+    BINSLOT(ID(__truediv__), "__truediv__", Py_nb_true_divide,
             slot_nb_true_divide, "/"),
-    RBINSLOT(ID(__rtruediv__), "__rtruediv__", kNumberTrueDivide,
+    RBINSLOT(ID(__rtruediv__), "__rtruediv__", Py_nb_true_divide,
              slot_nb_true_divide, "/"),
-    IBSLOT(ID(__ifloordiv__), "__ifloordiv__", kNumberInplaceFloorDivide,
+    IBSLOT(ID(__ifloordiv__), "__ifloordiv__", Py_nb_inplace_floor_divide,
            slot_nb_inplace_floor_divide, wrapBinaryfunc, "//="),
-    IBSLOT(ID(__itruediv__), "__itruediv__", kNumberInplaceTrueDivide,
+    IBSLOT(ID(__itruediv__), "__itruediv__", Py_nb_inplace_true_divide,
            slot_nb_inplace_true_divide, wrapBinaryfunc, "/="),
-    UNSLOT(ID(__index__), "__index__", kNumberIndex, slot_nb_index,
+    UNSLOT(ID(__index__), "__index__", Py_nb_index, slot_nb_index,
            "Return self converted to an integer, if self is suitable "
            "for use as an index into a list."),
-    BINSLOT(ID(__matmul__), "__matmul__", kNumberMatrixMultiply,
+    BINSLOT(ID(__matmul__), "__matmul__", Py_nb_matrix_multiply,
             slot_nb_matrix_multiply, "@"),
-    RBINSLOT(ID(__rmatmul__), "__rmatmul__", kNumberMatrixMultiply,
+    RBINSLOT(ID(__rmatmul__), "__rmatmul__", Py_nb_matrix_multiply,
              slot_nb_matrix_multiply, "@"),
-    IBSLOT(ID(__imatmul__), "__imatmul__", kNumberInplaceMatrixMultiply,
+    IBSLOT(ID(__imatmul__), "__imatmul__", Py_nb_inplace_matrix_multiply,
            slot_nb_inplace_matrix_multiply, wrapBinaryfunc, "@="),
-    TPSLOT(ID(__len__), kMapLength, kParamsSelf, slot_mp_length, wrapLenfunc,
+    TPSLOT(ID(__len__), Py_mp_length, kParamsSelf, slot_mp_length, wrapLenfunc,
            "__len__($self, /)\n--\n\nReturn len(self)."),
-    TPSLOT(ID(__getitem__), kMapSubscript, kParamsSelfKey, slot_mp_subscript,
+    TPSLOT(ID(__getitem__), Py_mp_subscript, kParamsSelfKey, slot_mp_subscript,
            wrapBinaryfunc,
            "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
-    TPSLOT(ID(__setitem__), kMapAssSubscript, kParamsSelfKeyValue,
+    TPSLOT(ID(__setitem__), Py_mp_ass_subscript, kParamsSelfKeyValue,
            slot_mp_ass_subscript, wrapObjobjargproc,
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
-    TPSLOT(ID(__delitem__), kMapAssSubscript, kParamsSelfKey,
+    TPSLOT(ID(__delitem__), Py_mp_ass_subscript, kParamsSelfKey,
            slot_mp_ass_subscript, wrapDelitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
-    TPSLOT(ID(__len__), kSequenceLength, kParamsSelf, slot_sq_length,
-           wrapLenfunc, "__len__($self, /)\n--\n\nReturn len(self)."),
-    TPSLOT(ID(__add__), kSequenceConcat, kParamsSelfValue, nullptr,
-           wrapBinaryfunc,
+    TPSLOT(ID(__len__), Py_sq_length, kParamsSelf, slot_sq_length, wrapLenfunc,
+           "__len__($self, /)\n--\n\nReturn len(self)."),
+    TPSLOT(ID(__add__), Py_sq_concat, kParamsSelfValue, nullptr, wrapBinaryfunc,
            "__add__($self, value, /)\n--\n\nReturn self+value."),
-    TPSLOT(ID(__mul__), kSequenceRepeat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__mul__), Py_sq_repeat, kParamsSelfValue, nullptr,
            wrapIndexargfunc,
            "__mul__($self, value, /)\n--\n\nReturn self*value."),
-    TPSLOT(ID(__rmul__), kSequenceRepeat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__rmul__), Py_sq_repeat, kParamsSelfValue, nullptr,
            wrapIndexargfunc,
            "__rmul__($self, value, /)\n--\n\nReturn value*self."),
-    TPSLOT(ID(__getitem__), kSequenceItem, kParamsSelfKey, slot_sq_item,
+    TPSLOT(ID(__getitem__), Py_sq_item, kParamsSelfKey, slot_sq_item,
            wrapSqItem, "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
-    TPSLOT(ID(__setitem__), kSequenceAssItem, kParamsSelfKeyValue,
+    TPSLOT(ID(__setitem__), Py_sq_ass_item, kParamsSelfKeyValue,
            slot_sq_ass_item, wrapSqSetitem,
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
-    TPSLOT(ID(__delitem__), kSequenceAssItem, kParamsSelfKey, slot_sq_ass_item,
+    TPSLOT(ID(__delitem__), Py_sq_ass_item, kParamsSelfKey, slot_sq_ass_item,
            wrapSqDelitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
-    TPSLOT(ID(__contains__), kSequenceContains, kParamsSelfKey,
-           slot_sq_contains, wrapObjobjproc,
+    TPSLOT(ID(__contains__), Py_sq_contains, kParamsSelfKey, slot_sq_contains,
+           wrapObjobjproc,
            "__contains__($self, key, /)\n--\n\nReturn key in self."),
-    TPSLOT(ID(__iadd__), kSequenceInplaceConcat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__iadd__), Py_sq_inplace_concat, kParamsSelfValue, nullptr,
            wrapBinaryfunc,
            "__iadd__($self, value, /)\n--\n\nImplement self+=value."),
-    TPSLOT(ID(__imul__), kSequenceInplaceRepeat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__imul__), Py_sq_inplace_repeat, kParamsSelfValue, nullptr,
            wrapIndexargfunc,
            "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 };
 
 static RawObject newExtCode(Thread* thread, const Object& name,
                             const SymbolId* parameters, word num_parameters,
-                            word flags, void* fptr, const Object& slot_value) {
+                            word flags, void* fptr, void* slot_value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object code_code(&scope, runtime->newIntFromCPtr(fptr));
@@ -714,7 +716,7 @@ static RawObject newExtCode(Thread* thread, const Object& name,
   Object filename(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
   Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, *slot_value);
+  consts.atPut(0, runtime->newIntFromCPtr(slot_value));
   return runtime->newCode(argcount, /*posonlyargcount=*/num_parameters,
                           /*kwonlyargcount=*/0,
                           /*nlocals=*/num_parameters,
@@ -736,31 +738,28 @@ RawObject addOperators(Thread* thread, const Type& type) {
 
   for (const SlotDef& slot : kSlotdefs) {
     if (slot.wrapper == nullptr) continue;
-    Object slot_value(&scope, type.slot(slot.id));
-    if (slot_value.isNoneType()) continue;
-    DCHECK(slot_value.isInt(), "unexpected slot type");
+    void* slot_value = typeSlotAt(type, slot.id);
+    if (slot_value == nullptr) continue;
 
     // Unlike most slots, we always allow __new__ to be overwritten by a subtype
-    if (slot.id != Type::Slot::kNew &&
-        !typeAtById(thread, type, slot.name).isError()) {
+    if (slot.id != Py_tp_new &&
+        !typeAtById(thread, type, slot.name).isErrorNotFound()) {
       continue;
     }
 
     // When given PyObject_HashNotImplemented, put None in the type dict
     // rather than a wrapper. CPython does this regardless of which slot it
     // was given for, so we do too.
-    void* slot_value_ptr = Int::cast(*slot_value).asCPtr();
-    if (slot_value_ptr ==
-        reinterpret_cast<void*>(&PyObject_HashNotImplemented)) {
+    if (slot_value == reinterpret_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
       typeAtPutById(thread, type, slot.name, none);
       return NoneType::object();
     }
 
     Object func_obj(&scope, NoneType::object());
-    if (slot_value_ptr == reinterpret_cast<void*>(&PyObject_GenericGetAttr)) {
+    if (slot_value == reinterpret_cast<void*>(&PyObject_GenericGetAttr)) {
       func_obj = runtime->objectDunderGetattribute();
-    } else if (slot_value_ptr ==
+    } else if (slot_value ==
                reinterpret_cast<void*>(&PyObject_GenericSetAttr)) {
       func_obj = runtime->objectDunderSetattr();
     } else {
@@ -775,14 +774,14 @@ RawObject addOperators(Thread* thread, const Type& type) {
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
                                                          globals));
-      if (slot.id == Type::Slot::kNumberPower) {
+      if (slot.id == Py_nb_power) {
         func.setDefaults(runtime->newTuple(1));
       }
 
       // __new__ is the one special-case static method, so wrap it
       // appropriately.
       func_obj = *func;
-      if (slot.id == Type::Slot::kNew) {
+      if (slot.id == Py_tp_new) {
         func_obj =
             thread->invokeFunction1(ID(builtins), ID(staticmethod), func);
         if (func_obj.isError()) return *func_obj;
@@ -841,20 +840,20 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
 // This performs similar duties to update_one_slot() in CPython, but it's
 // drastically simpler. This is intentional, and will only change if a real C
 // extension exercises slots in a way that exposes the differences.
-void* defaultSlot(Type::Slot slot) {
-  switch (slot) {
-    case Type::Slot::kNew:
+void* defaultSlot(int slot_id) {
+  switch (slot_id) {
+    case Py_tp_new:
       return reinterpret_cast<void*>(&slotTpNew);
     default:
-      UNIMPLEMENTED("Unsupported default slot %d", static_cast<int>(slot));
+      UNIMPLEMENTED("Unsupported default slot %d", slot_id);
   }
 }
 
 }  // namespace
 
-PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
+PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
   Thread* thread = Thread::current();
-  if (slot < 0) {
+  if (slot_id < 0) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
@@ -872,27 +871,21 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   // Extension module requesting slot from a future version
-  Type::Slot field_id = slotToTypeSlot(slot);
-  if (field_id >= Type::Slot::kEnd) {
+  if (!isValidSlotId(slot_id)) {
     return nullptr;
   }
 
-  if (!type.hasSlots()) {
+  if (!typeHasSlots(type)) {
     // The Type was not created by PyType_FromSpec(), so return a default slot
     // implementation that delegates to managed methods.
-    return defaultSlot(field_id);
+    return defaultSlot(slot_id);
+  }
+  if (isObjectSlotId(slot_id)) {
+    return ApiHandle::borrowedReference(thread,
+                                        typeSlotObjectAt(type, slot_id));
   }
 
-  DCHECK(type.hasSlots(), "Type is not extension type");
-  Object slot_obj(&scope, type.slot(field_id));
-  if (slot_obj.isNoneType()) {
-    return nullptr;
-  }
-  if (slot_obj.isInt()) {
-    Int address(&scope, *slot_obj);
-    return address.asCPtr();
-  }
-  return ApiHandle::borrowedReference(thread, *slot_obj);
+  return typeSlotAt(type, slot_id);
 }
 
 PY_EXPORT int PyType_Ready(PyTypeObject*) {
@@ -1186,12 +1179,10 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
   if (def.get == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object value(&scope,
-               runtime->newIntFromCPtr(reinterpret_cast<void*>(def.get)));
-  Code code(
-      &scope,
-      newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
-                 /*flags=*/0, reinterpret_cast<void*>(&getterWrapper), value));
+  Code code(&scope,
+            newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
+                       /*flags=*/0, reinterpret_cast<void*>(&getterWrapper),
+                       reinterpret_cast<void*>(def.get)));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -1207,11 +1198,10 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   if (def.set == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object value(&scope,
-               runtime->newIntFromCPtr(reinterpret_cast<void*>(def.set)));
   Code code(&scope, newExtCode(thread, name, kParamsSelfValue,
                                ARRAYSIZE(kParamsSelfValue), /*flags=*/0,
-                               reinterpret_cast<void*>(&setterWrapper), value));
+                               reinterpret_cast<void*>(&setterWrapper),
+                               reinterpret_cast<void*>(def.set)));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -1224,11 +1214,9 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
 
 RawObject addMethods(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, type.slot(Type::Slot::kMethods));
-  if (slot_value.isNoneType()) return NoneType::object();
-  DCHECK(slot_value.isInt(), "unexpected slot type");
-  auto methods =
-      reinterpret_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
+  PyMethodDef* methods =
+      static_cast<PyMethodDef*>(typeSlotAt(type, Py_tp_methods));
+  if (methods == nullptr) return NoneType::object();
   Object none(&scope, NoneType::object());
   Object unbound(&scope, Unbound::object());
   Object name(&scope, NoneType::object());
@@ -1257,11 +1245,9 @@ RawObject addMethods(Thread* thread, const Type& type) {
 
 RawObject addMembers(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, type.slot(Type::Slot::kMembers));
-  if (slot_value.isNoneType()) return NoneType::object();
-  DCHECK(slot_value.isInt(), "unexpected slot type");
-  auto members =
-      reinterpret_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
+  PyMemberDef* members =
+      static_cast<PyMemberDef*>(typeSlotAt(type, Py_tp_members));
+  if (members == nullptr) return NoneType::object();
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
@@ -1278,11 +1264,9 @@ RawObject addMembers(Thread* thread, const Type& type) {
 
 RawObject addGetSet(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, type.slot(Type::Slot::kGetset));
-  if (slot_value.isNoneType()) return NoneType::object();
-  DCHECK(slot_value.isInt(), "unexpected slot type");
-  auto getsets =
-      reinterpret_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
+  PyGetSetDef* getsets =
+      static_cast<PyGetSetDef*>(typeSlotAt(type, Py_tp_getset));
+  if (getsets == nullptr) return NoneType::object();
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
@@ -1349,55 +1333,57 @@ static void subtypeDealloc(PyObject* self) {
 }
 
 // Copy the slot from the base type if it defined.
-static void copySlot(const Type& type, const Type& base, Type::Slot slot_id) {
-  if (!type.hasSlot(slot_id) && base.hasSlot(slot_id)) {
-    type.setSlot(slot_id, base.slot(slot_id));
-  }
+static void copySlot(Thread* thread, const Type& type, const Type& base,
+                     int slot_id) {
+  if (typeSlotAt(type, slot_id) != nullptr) return;
+  void* base_slot = typeSlotAt(base, slot_id);
+  typeSlotAtPut(thread, type, slot_id, base_slot);
 }
 
-static void* baseBaseSlot(const Type& base, Type::Slot slot) {
-  if (!base.hasSlot(Type::Slot::kBase)) return nullptr;
-  HandleScope scope(Thread::current());
-  Type basebase(&scope, base.slot(Type::Slot::kBase));
-  if (!basebase.hasSlots() || !basebase.hasSlot(slot)) {
+static void* baseBaseSlot(Thread* thread, const Type& base, int slot_id) {
+  if (typeSlotObjectAt(base, Py_tp_base) != SmallInt::fromWord(0)) {
     return nullptr;
   }
-  Int basebase_slot(&scope, basebase.slot(slot));
-  return basebase_slot.asCPtr();
+  HandleScope scope(thread);
+  Type basebase(&scope, typeSlotObjectAt(base, Py_tp_base));
+  if (!typeHasSlots(basebase)) return nullptr;
+  return typeSlotAt(basebase, slot_id);
 }
 
 // Copy the slot from the base type if defined and it is the first type that
 // defines it. If base's base type defines the same slot, then base inherited
 // it. Thus, it is not the first type to define it.
-static void copySlotIfImplementedInBase(const Type& type, const Type& base,
-                                        Type::Slot slot_id) {
-  if (!type.hasSlot(slot_id) && base.hasSlot(slot_id)) {
-    RawObject base_slot = base.slot(slot_id);
-    void* basebase_slot = baseBaseSlot(base, slot_id);
-    if (basebase_slot == nullptr ||
-        Int::cast(base_slot).asCPtr() != basebase_slot) {
-      type.setSlot(slot_id, base_slot);
+static void copySlotIfImplementedInBase(Thread* thread, const Type& type,
+                                        const Type& base, int slot_id) {
+  if (typeSlotAt(type, slot_id) != nullptr) return;
+  void* base_slot = typeSlotAt(base, slot_id);
+  if (base_slot != nullptr) {
+    void* basebase_slot = baseBaseSlot(thread, base, slot_id);
+    if (basebase_slot == nullptr || base_slot != basebase_slot) {
+      typeSlotAtPut(thread, type, slot_id, base_slot);
     }
   }
 }
 
-static void inheritFinalize(const Type& type, unsigned long type_flags,
-                            const Type& base, unsigned long base_flags) {
+static void inheritFinalize(Thread* thread, const Type& type,
+                            unsigned long type_flags, const Type& base,
+                            unsigned long base_flags) {
   if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
       (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
-    copySlotIfImplementedInBase(type, base, Type::Slot::kFinalize);
+    copySlotIfImplementedInBase(thread, type, base, Py_tp_finalize);
   }
   if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
       (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
-    copySlotIfImplementedInBase(type, base, Type::Slot::kFinalize);
+    copySlotIfImplementedInBase(thread, type, base, Py_tp_finalize);
   }
 }
 
-static void inheritFree(const Type& type, unsigned long type_flags,
-                        const Type& base, unsigned long base_flags) {
+static void inheritFree(Thread* thread, const Type& type,
+                        unsigned long type_flags, const Type& base,
+                        unsigned long base_flags) {
   // Both child and base are GC or non GC
   if ((type_flags & Py_TPFLAGS_HAVE_GC) == (base_flags & Py_TPFLAGS_HAVE_GC)) {
-    copySlotIfImplementedInBase(type, base, Type::Slot::kFree);
+    copySlotIfImplementedInBase(thread, type, base, Py_tp_free);
     return;
   }
 
@@ -1405,116 +1391,113 @@ static void inheritFree(const Type& type, unsigned long type_flags,
 
   // Only the child is GC
   // Set the free function if the base has a default free
-  if ((type_flags & Py_TPFLAGS_HAVE_GC) && !type.hasSlot(Type::Slot::kFree) &&
-      base.hasSlot(Type::Slot::kFree)) {
-    void* free_slot = reinterpret_cast<void*>(
-        Int::cast(base.slot(Type::Slot::kFree)).asWord());
-    if (free_slot == reinterpret_cast<void*>(PyObject_Free)) {
-      type.setSlot(Type::Slot::kFree,
-                   Thread::current()->runtime()->newIntFromCPtr(
-                       reinterpret_cast<void*>(PyObject_GC_Del)));
+  if ((type_flags & Py_TPFLAGS_HAVE_GC) &&
+      typeSlotAt(type, Py_tp_free) == nullptr) {
+    if (typeSlotAt(base, Py_tp_free) ==
+        reinterpret_cast<void*>(&PyObject_Free)) {
+      typeSlotAtPut(thread, type, Py_tp_free,
+                    reinterpret_cast<void*>(&PyObject_GC_Del));
     }
   }
 }
 
 static void inheritGCFlagsAndSlots(Thread* thread, const Type& type,
                                    const Type& base) {
-  unsigned long type_flags = Int::cast(type.slot(Type::Slot::kFlags)).asWord();
-  unsigned long base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
+  unsigned long type_flags = typeSlotUWordAt(type, kSlotFlags);
+  unsigned long base_flags = typeSlotUWordAt(base, kSlotFlags);
   if (!(type_flags & Py_TPFLAGS_HAVE_GC) && (base_flags & Py_TPFLAGS_HAVE_GC) &&
-      !type.hasSlot(Type::Slot::kTraverse) &&
-      !type.hasSlot(Type::Slot::kClear)) {
-    type.setSlot(Type::Slot::kFlags,
-                 thread->runtime()->newInt(type_flags | Py_TPFLAGS_HAVE_GC));
-    if (!type.hasSlot(Type::Slot::kTraverse)) {
-      copySlot(type, base, Type::Slot::kTraverse);
-    }
-    if (!type.hasSlot(Type::Slot::kClear)) {
-      copySlot(type, base, Type::Slot::kClear);
-    }
+      typeSlotAt(type, Py_tp_traverse) == nullptr &&
+      typeSlotAt(type, Py_tp_clear) == nullptr) {
+    typeSlotUWordAtPut(thread, type, kSlotFlags,
+                       type_flags | Py_TPFLAGS_HAVE_GC);
+    copySlot(thread, type, base, Py_tp_traverse);
+    copySlot(thread, type, base, Py_tp_clear);
   }
 }
 
-static void inheritNonFunctionSlots(const Type& type, const Type& base) {
-  if (Int::cast(type.slot(Type::Slot::kBasicSize)).asWord() == 0) {
-    type.setSlot(Type::Slot::kBasicSize, base.slot(Type::Slot::kBasicSize));
+static void inheritNonFunctionSlots(Thread* thread, const Type& type,
+                                    const Type& base) {
+  if (typeSlotUWordAt(type, kSlotBasicSize) == 0) {
+    typeSlotUWordAtPut(thread, type, kSlotBasicSize,
+                       typeSlotUWordAt(base, kSlotBasicSize));
   }
-  type.setSlot(Type::Slot::kItemSize, base.slot(Type::Slot::kItemSize));
+  typeSlotUWordAtPut(thread, type, kSlotItemSize,
+                     typeSlotUWordAt(base, kSlotItemSize));
 }
 
 // clang-format off
-static const Type::Slot kInheritableSlots[] = {
+static const int kInheritableSlots[] = {
   // Number slots
-  Type::Slot::kNumberAdd,
-  Type::Slot::kNumberSubtract,
-  Type::Slot::kNumberMultiply,
-  Type::Slot::kNumberRemainder,
-  Type::Slot::kNumberDivmod,
-  Type::Slot::kNumberPower,
-  Type::Slot::kNumberNegative,
-  Type::Slot::kNumberPositive,
-  Type::Slot::kNumberAbsolute,
-  Type::Slot::kNumberBool,
-  Type::Slot::kNumberInvert,
-  Type::Slot::kNumberLshift,
-  Type::Slot::kNumberRshift,
-  Type::Slot::kNumberAnd,
-  Type::Slot::kNumberXor,
-  Type::Slot::kNumberOr,
-  Type::Slot::kNumberInt,
-  Type::Slot::kNumberFloat,
-  Type::Slot::kNumberInplaceAdd,
-  Type::Slot::kNumberInplaceSubtract,
-  Type::Slot::kNumberInplaceMultiply,
-  Type::Slot::kNumberInplaceRemainder,
-  Type::Slot::kNumberInplacePower,
-  Type::Slot::kNumberInplaceLshift,
-  Type::Slot::kNumberInplaceRshift,
-  Type::Slot::kNumberInplaceAnd,
-  Type::Slot::kNumberInplaceXor,
-  Type::Slot::kNumberInplaceOr,
-  Type::Slot::kNumberTrueDivide,
-  Type::Slot::kNumberFloorDivide,
-  Type::Slot::kNumberInplaceTrueDivide,
-  Type::Slot::kNumberInplaceFloorDivide,
-  Type::Slot::kNumberIndex,
-  Type::Slot::kNumberMatrixMultiply,
-  Type::Slot::kNumberInplaceMatrixMultiply,
+  Py_nb_add,
+  Py_nb_subtract,
+  Py_nb_multiply,
+  Py_nb_remainder,
+  Py_nb_divmod,
+  Py_nb_power,
+  Py_nb_negative,
+  Py_nb_positive,
+  Py_nb_absolute,
+  Py_nb_bool,
+  Py_nb_invert,
+  Py_nb_lshift,
+  Py_nb_rshift,
+  Py_nb_and,
+  Py_nb_xor,
+  Py_nb_or,
+  Py_nb_int,
+  Py_nb_float,
+  Py_nb_inplace_add,
+  Py_nb_inplace_subtract,
+  Py_nb_inplace_multiply,
+  Py_nb_inplace_remainder,
+  Py_nb_inplace_power,
+  Py_nb_inplace_lshift,
+  Py_nb_inplace_rshift,
+  Py_nb_inplace_and,
+  Py_nb_inplace_xor,
+  Py_nb_inplace_or,
+  Py_nb_true_divide,
+  Py_nb_floor_divide,
+  Py_nb_inplace_true_divide,
+  Py_nb_inplace_floor_divide,
+  Py_nb_index,
+  Py_nb_matrix_multiply,
+  Py_nb_inplace_matrix_multiply,
 
   // Await slots
-  Type::Slot::kAsyncAwait,
-  Type::Slot::kAsyncAiter,
-  Type::Slot::kAsyncAnext,
+  Py_am_await,
+  Py_am_aiter,
+  Py_am_anext,
 
   // Sequence slots
-  Type::Slot::kSequenceLength,
-  Type::Slot::kSequenceConcat,
-  Type::Slot::kSequenceRepeat,
-  Type::Slot::kSequenceItem,
-  Type::Slot::kSequenceAssItem,
-  Type::Slot::kSequenceContains,
-  Type::Slot::kSequenceInplaceConcat,
-  Type::Slot::kSequenceInplaceRepeat,
+  Py_sq_length,
+  Py_sq_concat,
+  Py_sq_repeat,
+  Py_sq_item,
+  Py_sq_ass_item,
+  Py_sq_contains,
+  Py_sq_inplace_concat,
+  Py_sq_inplace_repeat,
 
   // Mapping slots
-  Type::Slot::kMapLength,
-  Type::Slot::kMapSubscript,
-  Type::Slot::kMapAssSubscript,
+  Py_mp_length,
+  Py_mp_subscript,
+  Py_mp_ass_subscript,
 
   // Buffer protocol is not part of PEP-384
 
   // Type slots
-  Type::Slot::kDealloc,
-  Type::Slot::kRepr,
-  Type::Slot::kCall,
-  Type::Slot::kStr,
-  Type::Slot::kIter,
-  Type::Slot::kIternext,
-  Type::Slot::kDescrGet,
-  Type::Slot::kDescrSet,
-  Type::Slot::kInit,
-  Type::Slot::kAlloc,
-  Type::Slot::kIsGc,
+  Py_tp_dealloc,
+  Py_tp_repr,
+  Py_tp_call,
+  Py_tp_str,
+  Py_tp_iter,
+  Py_tp_iternext,
+  Py_tp_descr_get,
+  Py_tp_descr_set,
+  Py_tp_init,
+  Py_tp_alloc,
+  Py_tp_is_gc,
 
   // Instance dictionary is not part of PEP-384
 
@@ -1522,35 +1505,35 @@ static const Type::Slot kInheritableSlots[] = {
 };
 // clang-format on
 
-static void inheritSlots(const Type& type, const Type& base) {
+static void inheritSlots(Thread* thread, const Type& type, const Type& base) {
   // Heap allocated types are guaranteed to have slot space, no check is needed
   // i.e. CPython does: `if (type->tp_as_number != NULL)`
   // Only static types need to do this type of check.
-  for (const Type::Slot slot : kInheritableSlots) {
-    copySlotIfImplementedInBase(type, base, slot);
+  for (int slot_id : kInheritableSlots) {
+    copySlotIfImplementedInBase(thread, type, base, slot_id);
   }
 
   // Inherit conditional type slots
-  if (!type.hasSlot(Type::Slot::kGetattr) &&
-      !type.hasSlot(Type::Slot::kGetattro)) {
-    copySlot(type, base, Type::Slot::kGetattr);
-    copySlot(type, base, Type::Slot::kGetattro);
+  if (typeSlotAt(type, Py_tp_getattr) == nullptr &&
+      typeSlotAt(type, Py_tp_getattro) == nullptr) {
+    copySlot(thread, type, base, Py_tp_getattr);
+    copySlot(thread, type, base, Py_tp_getattro);
   }
-  if (!type.hasSlot(Type::Slot::kSetattr) &&
-      !type.hasSlot(Type::Slot::kSetattro)) {
-    copySlot(type, base, Type::Slot::kSetattr);
-    copySlot(type, base, Type::Slot::kSetattro);
+  if (typeSlotAt(type, Py_tp_setattr) == nullptr &&
+      typeSlotAt(type, Py_tp_setattro) == nullptr) {
+    copySlot(thread, type, base, Py_tp_setattr);
+    copySlot(thread, type, base, Py_tp_setattro);
   }
-  if (!type.hasSlot(Type::Slot::kRichcompare) &&
-      !type.hasSlot(Type::Slot::kHash)) {
-    copySlot(type, base, Type::Slot::kRichcompare);
-    copySlot(type, base, Type::Slot::kHash);
+  if (typeSlotAt(type, Py_tp_richcompare) == nullptr &&
+      typeSlotAt(type, Py_tp_hash) == nullptr) {
+    copySlot(thread, type, base, Py_tp_richcompare);
+    copySlot(thread, type, base, Py_tp_hash);
   }
 
-  unsigned long type_flags = Int::cast(type.slot(Type::Slot::kFlags)).asWord();
-  unsigned long base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
-  inheritFinalize(type, type_flags, base, base_flags);
-  inheritFree(type, type_flags, base, base_flags);
+  unsigned long type_flags = typeSlotUWordAt(type, kSlotFlags);
+  unsigned long base_flags = typeSlotUWordAt(base, kSlotFlags);
+  inheritFinalize(thread, type, type_flags, base, base_flags);
+  inheritFree(thread, type, type_flags, base, base_flags);
 }
 
 static int objectInit(PyObject*, PyObject*, PyObject*) {
@@ -1563,66 +1546,56 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   Str type_name(&scope, type.name());
 
   // tp_basicsize -> sizeof(PyObject)
-  DCHECK(type.hasSlot(Type::Slot::kBasicSize),
-         "Basic size must always be present");
-  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
-  if (basic_size.asWord() == 0) {
-    basic_size = runtime->newInt(sizeof(PyObject));
-    type.setSlot(Type::Slot::kBasicSize, *basic_size);
+  uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
+  if (basic_size == 0) {
+    basic_size = sizeof(PyObject);
+    typeSlotUWordAtPut(thread, type, kSlotBasicSize, basic_size);
   }
-  DCHECK(basic_size.asWord() >= static_cast<word>(sizeof(PyObject)),
+  DCHECK(basic_size >= sizeof(PyObject),
          "sizeof(PyObject) is the minimum size required for an extension "
          "instance");
 
   // tp_dealloc -> subtypeDealloc
-  if (!type.hasSlot(Type::Slot::kDealloc)) {
-    Object default_dealloc(
-        &scope,
-        runtime->newIntFromCPtr(reinterpret_cast<void*>(&subtypeDealloc)));
-    type.setSlot(Type::Slot::kDealloc, *default_dealloc);
+  if (typeSlotAt(type, Py_tp_dealloc) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_dealloc,
+                  reinterpret_cast<void*>(&subtypeDealloc));
   }
 
   // tp_repr -> PyObject_Repr
-  if (!type.hasSlot(Type::Slot::kRepr)) {
-    Object default_repr(&scope, runtime->newIntFromCPtr(
-                                    reinterpret_cast<void*>(&PyObject_Repr)));
-    type.setSlot(Type::Slot::kRepr, *default_repr);
+  if (typeSlotAt(type, Py_tp_repr) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_repr,
+                  reinterpret_cast<void*>(&PyObject_Repr));
     // PyObject_Repr delegates its job to type.__repr__().
     DCHECK(!typeLookupInMroById(thread, type, ID(__repr__)).isErrorNotFound(),
            "__repr__ is expected");
   }
 
   // tp_str -> object_str
-  if (!type.hasSlot(Type::Slot::kStr)) {
-    Object default_str(&scope, runtime->newIntFromCPtr(
-                                   reinterpret_cast<void*>(&PyObject_Str)));
-    type.setSlot(Type::Slot::kStr, *default_str);
+  if (typeSlotAt(type, Py_tp_str) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_str,
+                  reinterpret_cast<void*>(&PyObject_Str));
     // PyObject_Str delegates its job to type.__str__().
     DCHECK(!typeLookupInMroById(thread, type, ID(__str__)).isErrorNotFound(),
            "__str__ is expected");
   }
 
   // tp_init -> object_init
-  if (!type.hasSlot(Type::Slot::kInit)) {
-    Object default_init(
-        &scope, runtime->newIntFromCPtr(reinterpret_cast<void*>(&objectInit)));
-    type.setSlot(Type::Slot::kInit, *default_init);
+  if (typeSlotAt(type, Py_tp_init) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_init,
+                  reinterpret_cast<void*>(&objectInit));
   }
 
   // tp_alloc -> PyType_GenericAlloc
-  if (!type.hasSlot(Type::Slot::kAlloc)) {
-    Object default_alloc(
-        &scope,
-        runtime->newIntFromCPtr(reinterpret_cast<void*>(&PyType_GenericAlloc)));
-    type.setSlot(Type::Slot::kAlloc, *default_alloc);
+  if (typeSlotAt(type, Py_tp_alloc) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_alloc,
+                  reinterpret_cast<void*>(&PyType_GenericAlloc));
   }
 
   // tp_new -> PyType_GenericNew
-  if (!type.hasSlot(Type::Slot::kNew)) {
-    Object default_new(
-        &scope,
-        runtime->newIntFromCPtr(reinterpret_cast<void*>(&PyType_GenericNew)));
-    type.setSlot(Type::Slot::kNew, *default_new);
+  if (typeSlotAt(type, Py_tp_new) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_new,
+                  reinterpret_cast<void*>(&PyType_GenericNew));
+
     Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
@@ -1631,7 +1604,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
                          ARRAYSIZE(kParamsTypeArgsKwargs),
                          Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
                          reinterpret_cast<void*>(&wrapVarkwTernaryfunc),
-                         default_new));
+                         reinterpret_cast<void*>(&PyType_GenericNew)));
     Object globals(&scope, NoneType::object());
     Function func(
         &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
@@ -1642,43 +1615,37 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   }
 
   // tp_free.
-  if (!type.hasSlot(Type::Slot::kFree)) {
-    unsigned long type_flags =
-        Int::cast(type.slot(Type::Slot::kFlags)).asWord();
-    Object default_free(
-        &scope, runtime->newIntFromCPtr(reinterpret_cast<void*>(
-                    (type_flags & Py_TPFLAGS_HAVE_GC) ? &PyObject_GC_Del
-                                                      : &PyObject_Del)));
-    type.setSlot(Type::Slot::kFree, *default_free);
+  if (typeSlotAt(type, Py_tp_free) == nullptr) {
+    unsigned long type_flags = typeSlotUWordAt(type, kSlotFlags);
+    freefunc func =
+        (type_flags & Py_TPFLAGS_HAVE_GC) ? &PyObject_GC_Del : &PyObject_Del;
+    typeSlotAtPut(thread, type, Py_tp_free, reinterpret_cast<void*>(func));
   }
 
   return NoneType::object();
 }
 
 RawObject typeInheritSlots(Thread* thread, const Type& type) {
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Type base_type(&scope, Tuple::cast(type.mro()).at(1));
 
-  if (!type.hasSlots()) {
-    type.setSlots(runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
-    if (base_type.hasSlots()) {
-      type.setSlot(Type::Slot::kFlags, base_type.slot(Type::Slot::kFlags));
-    } else {
-      type.setSlot(Type::Slot::kFlags, SmallInt::fromWord(0));
-    }
-    type.setSlot(Type::Slot::kBasicSize, SmallInt::fromWord(0));
-    type.setSlot(Type::Slot::kItemSize, SmallInt::fromWord(0));
-    type.setSlot(Type::Slot::kBase, *base_type);
+  if (!typeHasSlots(type)) {
+    typeSlotsAllocate(thread, type);
+    unsigned long flags =
+        typeHasSlots(base_type) ? typeSlotUWordAt(base_type, kSlotFlags) : 0;
+    typeSlotUWordAtPut(thread, type, kSlotFlags, flags);
+    typeSlotUWordAtPut(thread, type, kSlotBasicSize, 0);
+    typeSlotUWordAtPut(thread, type, kSlotItemSize, 0);
+    typeSlotObjectAtPut(type, Py_tp_base, *base_type);
   }
 
   // Inherit special slots from dominant base
-  if (base_type.hasSlots()) {
+  if (typeHasSlots(base_type)) {
     inheritGCFlagsAndSlots(thread, type, base_type);
-    if (!type.hasSlot(Type::Slot::kNew)) {
-      copySlot(type, base_type, Type::Slot::kNew);
+    if (typeSlotAt(type, Py_tp_new) == nullptr) {
+      copySlot(thread, type, base_type, Py_tp_new);
     }
-    inheritNonFunctionSlots(type, base_type);
+    inheritNonFunctionSlots(thread, type, base_type);
   }
 
   // Inherit slots from the MRO
@@ -1686,15 +1653,15 @@ RawObject typeInheritSlots(Thread* thread, const Type& type) {
   for (word i = 1; i < mro.length(); i++) {
     Type base(&scope, mro.at(i));
     // Skip inheritance if base does not define slots
-    if (!base.hasSlots()) continue;
+    if (!typeHasSlots(base)) continue;
     // Bases must define Py_TPFLAGS_BASETYPE
-    word base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
+    unsigned long base_flags = typeSlotUWordAt(base, kSlotFlags);
     if ((base_flags & Py_TPFLAGS_BASETYPE) == 0) {
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "type is not an acceptable base type");
       return Error::exception();
     }
-    inheritSlots(type, base);
+    inheritSlots(thread, type, base);
   }
 
   // Inherit all the default slots that would have been inherited
@@ -1745,41 +1712,31 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Type type(&scope, *type_obj);
 
   // Initialize the extension slots tuple
-  DCHECK(!type.hasSlots(), "must not have slots yet");
-  Object extension_slots(&scope,
-                         runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
-  type.setSlots(*extension_slots);
+  typeSlotsAllocate(thread, type);
 
-  // Set Py_tp_bases and Py_tp_base
-  type.setSlot(Type::Slot::kBases, *bases_obj);
-  type.setSlot(Type::Slot::kBase, Tuple::cast(type.mro()).at(1));
-
-  // Set tp_flags
-  Object tp_flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
-                                          Py_TPFLAGS_HEAPTYPE));
-  type.setSlot(Type::Slot::kFlags, *tp_flags);
-
-  // Set the native instance size
-  Object basic_size(&scope, runtime->newInt(spec->basicsize));
-  Object item_size(&scope, runtime->newInt(spec->itemsize));
-  type.setSlot(Type::Slot::kBasicSize, *basic_size);
-  type.setSlot(Type::Slot::kItemSize, *item_size);
+  typeSlotObjectAtPut(type, Py_tp_bases, *bases_obj);
+  typeSlotObjectAtPut(type, Py_tp_base, Tuple::cast(type.mro()).at(1));
+  unsigned long extension_flags =
+      spec->flags | Py_TPFLAGS_READY | Py_TPFLAGS_HEAPTYPE;
+  typeSlotUWordAtPut(thread, type, kSlotFlags, extension_flags);
+  typeSlotUWordAtPut(thread, type, kSlotBasicSize, spec->basicsize);
+  typeSlotUWordAtPut(thread, type, kSlotItemSize, spec->itemsize);
 
   // Set the type slots
   bool has_default_dealloc = true;
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
-    void* slot_ptr = slot->pfunc;
-    Object field(&scope, runtime->newIntFromCPtr(slot_ptr));
-    Type::Slot field_id = slotToTypeSlot(slot->slot);
-    if (field_id >= Type::Slot::kEnd) {
+    int slot_id = slot->slot;
+    if (!isValidSlotId(slot_id)) {
       thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
       return nullptr;
     }
-    if (field_id == Type::Slot::kDealloc || field_id == Type::Slot::kDel ||
-        field_id == Type::Slot::kFinalize) {
-      has_default_dealloc = false;
+    switch (slot_id) {
+      case Py_tp_dealloc:
+      case Py_tp_del:
+      case Py_tp_finalize:
+        has_default_dealloc = false;
     }
-    type.setSlot(field_id, *field);
+    typeSlotAtPut(thread, type, slot_id, slot->pfunc);
   }
   if (has_default_dealloc) {
     type.setFlags(
@@ -1809,14 +1766,13 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   DCHECK(!type.isBuiltin(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
-  DCHECK(type.hasSlots(),
+  DCHECK(typeHasSlots(type),
          "GenericAlloc from types initialized through Python code");
 
   // Allocate a new instance
-  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
-  Int item_size(&scope, type.slot(Type::Slot::kItemSize));
-  Py_ssize_t size = Utils::roundUp(
-      nitems * item_size.asWord() + basic_size.asWord(), kWordSize);
+  uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
+  uword item_size = typeSlotUWordAt(type, kSlotItemSize);
+  Py_ssize_t size = Utils::roundUp(nitems * item_size + basic_size, kWordSize);
 
   PyObject* result = nullptr;
   if (type.hasFlag(Type::Flag::kHasCycleGC)) {
@@ -1830,7 +1786,7 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   }
 
   // Initialize the newly-allocated instance
-  if (item_size.asWord() == 0) {
+  if (item_size == 0) {
     PyObject_Init(result, type_obj);
   } else {
     PyObject_InitVar(reinterpret_cast<PyVarObject*>(result), type_obj, nitems);
@@ -1847,17 +1803,15 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
 PY_EXPORT Py_ssize_t _PyObject_SIZE_Func(PyObject* obj) {
   HandleScope scope;
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
-  return basic_size.asWord();
+  return typeSlotUWordAt(type, kSlotBasicSize);
 }
 
 PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyObject* obj, Py_ssize_t nitems) {
   HandleScope scope;
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
-  Int item_size(&scope, type.slot(Type::Slot::kItemSize));
-  return Utils::roundUp(nitems * item_size.asWord() + basic_size.asWord(),
-                        kWordSize);
+  uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
+  uword item_size = typeSlotUWordAt(type, kSlotItemSize);
+  return Utils::roundUp(nitems * item_size + basic_size, kWordSize);
 }
 
 PY_EXPORT unsigned int PyType_ClearCache() {

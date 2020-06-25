@@ -27,9 +27,6 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
 
 bool typeIsSubclass(const Type& subclass, const Type& superclass);
 
-// Convert an CPython's extension slot ints into a RawType::Slot
-Type::Slot slotToTypeSlot(int slot);
-
 void typeAddDocstring(Thread* thread, const Type& type);
 
 // Assign all key/values from the dict to the type. This interns the keys as

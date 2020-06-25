@@ -1161,91 +1161,6 @@ class RawType : public RawInstance {
     kIsFixedAttributeBase = 1 << 15,
   };
 
-  enum class Slot {
-    kFlags,
-    kBasicSize,
-    kItemSize,
-    kMapAssSubscript,
-    kMapLength,
-    kMapSubscript,
-    kNumberAbsolute,
-    kNumberAdd,
-    kNumberAnd,
-    kNumberBool,
-    kNumberDivmod,
-    kNumberFloat,
-    kNumberFloorDivide,
-    kNumberIndex,
-    kNumberInplaceAdd,
-    kNumberInplaceAnd,
-    kNumberInplaceFloorDivide,
-    kNumberInplaceLshift,
-    kNumberInplaceMultiply,
-    kNumberInplaceOr,
-    kNumberInplacePower,
-    kNumberInplaceRemainder,
-    kNumberInplaceRshift,
-    kNumberInplaceSubtract,
-    kNumberInplaceTrueDivide,
-    kNumberInplaceXor,
-    kNumberInt,
-    kNumberInvert,
-    kNumberLshift,
-    kNumberMultiply,
-    kNumberNegative,
-    kNumberOr,
-    kNumberPositive,
-    kNumberPower,
-    kNumberRemainder,
-    kNumberRshift,
-    kNumberSubtract,
-    kNumberTrueDivide,
-    kNumberXor,
-    kSequenceAssItem,
-    kSequenceConcat,
-    kSequenceContains,
-    kSequenceInplaceConcat,
-    kSequenceInplaceRepeat,
-    kSequenceItem,
-    kSequenceLength,
-    kSequenceRepeat,
-    kAlloc,
-    kBase,
-    kBases,
-    kCall,
-    kClear,
-    kDealloc,
-    kDel,
-    kDescrGet,
-    kDescrSet,
-    kDoc,
-    kGetattr,
-    kGetattro,
-    kHash,
-    kInit,
-    kIsGc,
-    kIter,
-    kIternext,
-    kMethods,
-    kNew,
-    kRepr,
-    kRichcompare,
-    kSetattr,
-    kSetattro,
-    kStr,
-    kTraverse,
-    kMembers,
-    kGetset,
-    kFree,
-    kNumberMatrixMultiply,
-    kNumberInplaceMatrixMultiply,
-    kAsyncAwait,
-    kAsyncAiter,
-    kAsyncAnext,
-    kFinalize,
-    kEnd,
-  };
-
   // Getters and setters.
   RawObject instanceLayout() const;
   void setInstanceLayout(RawObject layout) const;
@@ -1286,12 +1201,9 @@ class RawType : public RawInstance {
   bool isBuiltin() const;
 
   bool isExtensionType() const;
-  bool hasSlots() const;
+
   RawObject slots() const;
   void setSlots(RawObject slots) const;
-  bool hasSlot(Slot slot_id) const;
-  RawObject slot(Slot slot_id) const;
-  void setSlot(Slot slot_id, RawObject slot_obj) const;
 
   RawObject abstractMethods() const;
   void setAbstractMethods(RawObject methods) const;
@@ -5114,28 +5026,12 @@ inline bool RawType::isExtensionType() const {
   return hasFlag(RawType::Flag::kIsNativeProxy);
 }
 
-inline bool RawType::hasSlots() const { return !slots().isNoneType(); }
-
 inline RawObject RawType::slots() const {
   return instanceVariableAt(kSlotsOffset);
 }
 
 inline void RawType::setSlots(RawObject slots) const {
   instanceVariableAtPut(kSlotsOffset, slots);
-}
-
-inline bool RawType::hasSlot(Slot slot_id) const {
-  return !slot(slot_id).isNoneType();
-}
-
-inline RawObject RawType::slot(Slot slot_id) const {
-  DCHECK(hasSlots(), "Type is not an extension Type");
-  return RawTuple::cast(slots()).at(static_cast<word>(slot_id));
-}
-
-inline void RawType::setSlot(Slot slot_id, RawObject slot_obj) const {
-  DCHECK(hasSlots(), "Type is not an extension Type");
-  RawTuple::cast(slots()).atPut(static_cast<word>(slot_id), slot_obj);
 }
 
 inline RawObject RawType::abstractMethods() const {
