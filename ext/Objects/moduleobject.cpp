@@ -265,7 +265,6 @@ static RawObject initializeModule(Thread* thread, ModuleInitFunc init,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module module(&scope, ApiHandle::fromPyObject(module_or_def)->asObject());
-  runtime->addModule(thread, module);
   if (!runtime->isInstanceOfModule(*module)) {
     // TODO(T39542987): Enable multi-phase module initialization
     UNIMPLEMENTED("Multi-phase module initialization");
