@@ -43,10 +43,11 @@ if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 endif()
 
-set(BENCHMARK_ENABLE_TESTING CACHE BOOL OFF)
-set(BENCHMARK_ENABLE_EXCEPTIONS CACHE BOOL OFF)
-set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF)
+set(BENCHMARK_ENABLE_TESTING CACHE BOOL OFF FORCE)
+set(BENCHMARK_ENABLE_EXCEPTIONS CACHE BOOL OFF FORCE)
+set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF FORCE)
 add_subdirectory(third-party/benchmark-1.5.1)
+set(INSTALL_GTEST CACHE BOOL OFF FORCE)
 add_subdirectory(third-party/googletest-1.8.1)
 add_subdirectory(third-party/siphash-20170224)
 add_subdirectory(third-party/valgrind-3.15.0)
@@ -959,7 +960,8 @@ target_link_libraries(
 set_target_properties(
   python
   PROPERTIES
-  ENABLE_EXPORTS 1)
+  ENABLE_EXPORTS 1
+  PUBLIC_HEADER "${C_API_HEADERS}")
 
 add_executable(
   test_lldb_support
@@ -1191,3 +1193,28 @@ if (ENABLE_CPYTHON_TESTS)
     POST_BUILD
     COMMAND cp -a ${CPYTHON_DIR}/Lib/. ${CPYTHON_BUILD_DIR}/Lib/)
 endif()
+
+set(CMAKE_INSTALL_MESSAGE NEVER)
+install(TARGETS python
+  RUNTIME DESTINATION bin
+  PUBLIC_HEADER DESTINATION include/${IMPLEMENTATION_DIR}
+)
+foreach(file ${cpython_library_files})
+  set(src_file ${CPYTHON_DIR}/Lib/${file})
+  get_filename_component(dest_dir lib/${IMPLEMENTATION_DIR}/${file} DIRECTORY)
+  install(FILES ${src_file} DESTINATION ${dest_dir})
+endforeach()
+foreach(file ${library_files})
+  set(src_file ${CMAKE_SOURCE_DIR}/library/${file})
+  get_filename_component(dest_dir lib/${IMPLEMENTATION_DIR}/${file} DIRECTORY)
+  install(FILES ${src_file} DESTINATION ${dest_dir})
+endforeach()
+# TODO(T68707629) Stop filtering modules with unsupported encodings.
+# TODO(T68705525) stop filtering those test_xxx files with \\N sequences.
+install(CODE "
+  message(STATUS \"Compiling bytecode\")
+  execute_process(
+    COMMAND \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/python -m compileall -q
+      -x \"(lib2to3/tests/data)|(test/bad.*)|(test/encoded_modules)|(test_source_encoding)|(test_code_module.py)|(test_complex.py)|(test_float.py)|(test_int.py)|(test_unicode.py)|(turtledemo/clock.py)\"
+      \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${IMPLEMENTATION_DIR})
+")
