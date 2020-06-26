@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import distutils.sysconfig
 import importlib.machinery
 import os
 import tempfile
@@ -11,6 +12,15 @@ import _imp
 
 
 class DistutilsModuleTest(unittest.TestCase):
+    def test_sysconfig_get_python_inc_returns_string(self):
+        python_inc = distutils.sysconfig.get_python_inc()
+        self.assertTrue(os.path.isdir(python_inc))
+        self.assertTrue(os.path.isfile(os.path.join(python_inc, "Python.h")))
+
+    def test_sysconfig_get_python_lib_returns_string(self):
+        python_lib = distutils.sysconfig.get_python_lib()
+        self.assertIn("site-packages", python_lib)
+
     def test_build_ext_with_c_file_creates_library(self):
         with tempfile.TemporaryDirectory() as dir_path:
             file_path = f"{dir_path}/foo.c"

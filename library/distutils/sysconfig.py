@@ -19,6 +19,7 @@ import _imp
 import os
 import re
 import sys
+import sysconfig as _sysconfig
 
 from .errors import DistutilsPlatformError
 from .util import get_platform, get_host_platform
@@ -102,33 +103,25 @@ def get_python_inc(plat_specific=0, prefix=None):
     If 'prefix' is supplied, use it instead of sys.base_prefix or
     sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
     """
+    if os.name != "nt":
+        vars = None
+        if prefix is not None:
+            vars = {
+                "installed_base": prefix,
+                "installed_platbase": prefix,
+            }
+        if plat_specific:
+            return _sysconfig.get_path("platinclude", vars=vars)
+        return _sysconfig.get_path("include", vars=vars)
+
     if prefix is None:
         prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
-    if os.name == "posix":
-        if python_build:
-            # Assume the executable is in the build directory.  The
-            # pyconfig.h file should be in the same directory.  Since
-            # the build directory may not be the source directory, we
-            # must use "srcdir" from the makefile to find the "Include"
-            # directory.
-            if plat_specific:
-                return _sys_home or project_base
-            else:
-                incdir = os.path.join(get_config_var('srcdir'), 'Include')
-                return os.path.normpath(incdir)
-        python_dir = 'python' + get_python_version() + build_flags
-        return os.path.join(prefix, "include", python_dir)
-    elif os.name == "nt":
-        if python_build:
-            # Include both the include and PC dir to ensure we can find
-            # pyconfig.h
-            return (os.path.join(prefix, "include") + os.path.pathsep +
-                    os.path.join(prefix, "PC"))
-        return os.path.join(prefix, "include")
-    else:
-        raise DistutilsPlatformError(
-            "I don't know where Python installs its C header files "
-            "on platform '%s'" % os.name)
+    if python_build:
+        # Include both the include and PC dir to ensure we can find
+        # pyconfig.h
+        return (os.path.join(prefix, "include") + os.path.pathsep +
+                os.path.join(prefix, "PC"))
+    return os.path.join(prefix, "include")
 
 
 def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
@@ -145,36 +138,22 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     If 'prefix' is supplied, use it instead of sys.base_prefix or
     sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
     """
-    if prefix is None:
-        if standard_lib:
-            prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
-        else:
-            prefix = plat_specific and EXEC_PREFIX or PREFIX
-
-    if os.name == "posix":
-        if plat_specific or standard_lib:
-            # Platform-specific modules (any module from a non-pure-Python
-            # module distribution) or standard Python library modules.
-            libdir = sys.platlibdir
-        else:
-            # Pure Python
-            libdir = "lib"
-        libpython = os.path.join(prefix, libdir,
-                                 "python" + get_python_version())
-        if standard_lib:
-            return libpython
-        else:
-            return os.path.join(libpython, "site-packages")
-    elif os.name == "nt":
-        if standard_lib:
-            return os.path.join(prefix, "Lib")
-        else:
-            return os.path.join(prefix, "Lib", "site-packages")
+    vars = None
+    if prefix is not None:
+        vars = {
+            "base": prefix,
+            "installed_base": prefix,
+            "platbase": prefix,
+            "userbase": prefix,
+        }
+    if standard_lib:
+        if plat_specific:
+            return _sysconfig.get_path("platstdlib", vars=vars)
+        return _sysconfig.get_path("stdlib", vars=vars)
     else:
-        raise DistutilsPlatformError(
-            "I don't know where Python installs its library "
-            "on platform '%s'" % os.name)
-
+        if plat_specific:
+            return _sysconfig.get_path("platlib", vars=vars)
+        return _sysconfig.get_path("purelib", vars=vars)
 
 
 def customize_compiler(compiler):
