@@ -212,7 +212,6 @@ distutils/log.py
 distutils/msvc9compiler.py
 distutils/msvccompiler.py
 distutils/spawn.py
-distutils/sysconfig.py
 distutils/tests/Setup.sample
 distutils/tests/__init__.py
 distutils/tests/includetest.rst
@@ -818,7 +817,6 @@ subprocess.py
 sunau.py
 symbol.py
 symtable.py
-sysconfig.py
 tabnanny.py
 tarfile.py
 telnetlib.py

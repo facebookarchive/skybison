@@ -40,6 +40,7 @@ coroutine_test.py
 ctypes_test.py
 dataclasses.py
 dataclasses_test.py
+distutils/sysconfig.py
 distutils_test.py
 doctest.py
 doctest_test.py
@@ -89,6 +90,7 @@ structseq_test.py
 subprocess_test.py
 sys.py
 sys_test.py
+sysconfig.py
 termios_test.py
 test/__init__.py
 test/mapping_tests.py
