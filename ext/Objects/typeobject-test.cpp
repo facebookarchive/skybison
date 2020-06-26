@@ -1219,6 +1219,25 @@ static void createTypeWithSlot(const char* type_name, int slot, T pfunc) {
   createTypeWithSlotAndBase(type_name, slot, pfunc, nullptr);
 }
 
+TEST_F(TypeExtensionApiTest, CallReverseBinarySlotSwapsArguments) {
+  binaryfunc add_func = [](PyObject* a, PyObject* b) {
+    return PyTuple_Pack(2, a, b);
+  };
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_nb_add, add_func));
+
+  ASSERT_EQ(PyRun_SimpleString(R"(
+instance = Bar()
+left, right = instance.__radd__(12)
+)"),
+            0);
+
+  PyObjectPtr instance(mainModuleGet("instance"));
+  PyObjectPtr left(mainModuleGet("left"));
+  PyObjectPtr right(mainModuleGet("right"));
+  EXPECT_TRUE(isLongEqualsLong(left, 12));
+  EXPECT_EQ(right, instance);
+}
+
 TEST_F(TypeExtensionApiTest, CallBinarySlotFromManagedCode) {
   binaryfunc add_func = [](PyObject* a, PyObject* b) {
     PyObjectPtr num(PyLong_FromLong(24));

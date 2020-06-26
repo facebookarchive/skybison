@@ -125,23 +125,22 @@ RawObject wrapInquirypred(Thread* thread, Frame* frame, word nargs) {
       thread, frame, nargs, [](int result) { return Bool::fromBool(result); });
 }
 
-RawObject wrapBinaryfuncImpl(Thread* thread, Frame* frame, word nargs,
-                             bool swap) {
+RawObject wrapBinaryfunc(Thread* thread, Frame* frame, word nargs) {
   auto func = getNativeFunc<binaryfunc>(thread, frame);
-
   Arguments args(frame, nargs);
-  PyObject* o1 = ApiHandle::borrowedReference(thread, args.get(swap ? 1 : 0));
-  PyObject* o2 = ApiHandle::borrowedReference(thread, args.get(swap ? 0 : 1));
+  PyObject* o1 = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* o2 = ApiHandle::borrowedReference(thread, args.get(1));
   PyObject* result = (*func)(o1, o2);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-RawObject wrapBinaryfunc(Thread* thread, Frame* frame, word nargs) {
-  return wrapBinaryfuncImpl(thread, frame, nargs, false);
-}
-
 RawObject wrapBinaryfuncSwapped(Thread* thread, Frame* frame, word nargs) {
-  return wrapBinaryfuncImpl(thread, frame, nargs, false);
+  auto func = getNativeFunc<binaryfunc>(thread, frame);
+  Arguments args(frame, nargs);
+  PyObject* o1 = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* o2 = ApiHandle::borrowedReference(thread, args.get(1));
+  PyObject* result = (*func)(o2, o1);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapTernaryfuncImpl(Thread* thread, Frame* frame, word nargs,
