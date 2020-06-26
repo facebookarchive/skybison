@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(python LANGUAGES C CXX)
+project(python LANGUAGES C CXX VERSION 3.7.4)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -50,6 +50,9 @@ add_subdirectory(third-party/benchmark-1.5.1)
 add_subdirectory(third-party/googletest-1.8.1)
 add_subdirectory(third-party/siphash-20170224)
 add_subdirectory(third-party/valgrind-3.15.0)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
   set(WARN_MISSING_DECLARATIONS -Wmissing-prototypes)
@@ -278,7 +281,22 @@ target_include_directories(
   INTERFACE
   capi)
 
-set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/Include")
+file(READ capi/cpython-data.h cpython_data)
+if (NOT cpython_data MATCHES
+    ".*#define PY_MAJOR_VERSION ${PROJECT_VERSION_MAJOR}\n.*" OR
+    NOT cpython_data MATCHES
+    ".*#define PY_MINOR_VERSION ${PROJECT_VERSION_MINOR}\n.*" OR
+    NOT cpython_data MATCHES
+    ".*#define PY_MICRO_VERSION ${PROJECT_VERSION_PATCH}\n.*")
+  message(SEND_ERROR  "
+PY_MAJOR_VERSION, PY_MINOR_VERSION, PY_MICRO_VERSION defines in
+`capi/cpython-data.h` do not match version from `CMakeLists.txt`: \
+${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
+")
+endif()
+set(IMPLEMENTATION_DIR pyro${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include/${IMPLEMENTATION_DIR}")
 string(
   REGEX
   REPLACE "(${CMAKE_SOURCE_DIR}\/capi\/)" "${BUILD_INCLUDE_DIR}/"
@@ -565,10 +583,6 @@ target_link_libraries(
 target_compile_definitions(runtime PRIVATE PYRO_BASEDIR="${CMAKE_SOURCE_DIR}")
 target_include_directories(runtime PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}
   ${CMAKE_SOURCE_DIR}/runtime)
-
-# Prepare build dir with CPython's directories
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Modules")
-file(WRITE "${CMAKE_BINARY_DIR}/Modules/Setup.local" "Pretend Setup exists")
 
 add_library(
   expat
@@ -875,7 +889,7 @@ string(REPLACE "\n" ";" library_files "${library_files}")
 list(FILTER library_files EXCLUDE REGEX "^[ \t\r\n]*#")
 list(REMOVE_ITEM library_files ${FROZEN_MODULE_INPUT})
 
-set(BINARY_LIB_DIR ${CMAKE_BINARY_DIR}/Lib)
+set(BINARY_LIB_DIR ${CMAKE_BINARY_DIR}/lib/${IMPLEMENTATION_DIR})
 set(LIBRARY_FILES)
 foreach(file ${cpython_library_files})
   set(src_file ${CPYTHON_DIR}/Lib/${file})

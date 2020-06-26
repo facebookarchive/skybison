@@ -4,6 +4,7 @@
 from builtins import SimpleNamespace as _SimpleNamespace, _structseq_new_type
 
 from _builtins import _builtin, _int_check, _os_write, _Unbound
+from _path import dirname as _dirname, join as _join
 
 
 # These values are all injected by our boot process. flake8 has no knowledge
@@ -122,6 +123,20 @@ def __displayhook__(value):
 _framework = ""
 
 
+_prefix = _join(_dirname(executable), "..")
+
+
+_version = _VersionInfo(
+    (
+        (hexversion >> 24) & 0xFF,  # major
+        (hexversion >> 16) & 0xFF,  # minor
+        (hexversion >> 8) & 0xFF,  # micro
+        _version_releaselevel,  # releaselevel
+        hexversion & 0x0F,  # serial
+    )
+)
+
+
 def _getframe(depth=0):
     _builtin()
 
@@ -129,12 +144,10 @@ def _getframe(depth=0):
 abiflags = ""
 
 
-# TODO(cshapiro): assign a meaningful value in the runtime
-base_exec_prefix = ""
+base_exec_prefix = _prefix
 
 
-# TODO(cshapiro): assign a meaningful value in the runtime
-base_prefix = ""
+base_prefix = _prefix
 
 
 copyright = ""
@@ -154,8 +167,7 @@ def excepthook(exc, value, tb):
     _builtin()
 
 
-# TODO(cshapiro): assign a meaningful value in the runtime
-exec_prefix = ""
+exec_prefix = base_exec_prefix
 
 
 def exit(code=_Unbound):
@@ -219,17 +231,7 @@ def getsizeof(object, default=_Unbound):
 
 
 implementation = _SimpleNamespace(
-    cache_tag="pyro-37",
-    name="pyro",
-    version=_VersionInfo(
-        (
-            (hexversion >> 24) & 0xFF,  # major
-            (hexversion >> 16) & 0xFF,  # minor
-            (hexversion >> 8) & 0xFF,  # micro
-            _version_releaselevel,  # releaselevel
-            hexversion & 0x0F,  # serial
-        )
-    ),
+    cache_tag=f"pyro-{_version.major}{_version.minor}", name="pyro", version=_version
 )
 
 
@@ -244,8 +246,10 @@ def is_finalizing():
 meta_path = []
 
 
-# TODO(T42692043) Put the standard library into the python binary instead.
-path = [*_python_path, _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
+path = [
+    *_python_path,
+    _join(_prefix, f"lib/{implementation.name}{_version.major}.{_version.minor}"),
+]
 
 
 path_hooks = []
@@ -257,7 +261,7 @@ path_importer_cache = {}
 platlibdir = "lib"
 
 
-prefix = ""
+prefix = base_prefix
 
 
 ps1 = ">>> "
@@ -280,7 +284,7 @@ stdin = _IOStream(_stdin_fd)
 stdout = _IOStream(_stdout_fd)
 
 
-version_info = implementation.version
+version_info = _version
 
 
 warnoptions = []

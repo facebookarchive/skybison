@@ -4,7 +4,7 @@ if [[ -z $PYRO_BUILD_DIR ]]; then
   PYRO_BUILD_DIR="$(dirname "$0")/../build"
 fi
 
-CPYTHON_TESTS=$PYRO_BUILD_DIR/cpython-tests
+CPYTHON_TESTS=$PYRO_BUILD_DIR/bin/cpython-tests
 if [[ ! -x $CPYTHON_TESTS ]]; then
   cat 1>&2 <<EOF
 $CPYTHON_TESTS does not exist or isn't executable. If you're seeing this on

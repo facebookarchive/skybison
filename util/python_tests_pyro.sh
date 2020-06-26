@@ -12,7 +12,7 @@ if [[ -z $PYRO_BUILD_DIR ]]; then
 fi
 
 if [[ -z $PYTHON_BIN ]]; then
-  PYTHON_BIN="$PYRO_BUILD_DIR/python"
+  PYTHON_BIN="$PYRO_BUILD_DIR/bin/python"
 fi
 
 PYRO_BUILD_DIR="$(realpath "$PYRO_BUILD_DIR")"
