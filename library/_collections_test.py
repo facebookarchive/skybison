@@ -62,6 +62,18 @@ class DequeTests(unittest.TestCase):
         result.pop()
         self.assertEqual(len(result), 2)
 
+    def test_popleft_from_empty_deque_raises_index_error(self):
+        result = deque()
+        self.assertRaises(IndexError, result.popleft)
+
+    def test_popleft_removes_element_from_left(self):
+        result = deque()
+        result.append(1)
+        result.append(2)
+        result.append(3)
+        result.popleft()
+        self.assertEqual(len(result), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

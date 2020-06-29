@@ -225,7 +225,7 @@ class deque(bootstrap=True):
         _builtin()
 
     def popleft(self):
-        _unimplemented()
+        _builtin()
 
     def remove(self, value):
         _deque_guard(self)
