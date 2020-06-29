@@ -222,7 +222,7 @@ class deque(bootstrap=True):
         _unimplemented()
 
     def pop(self):
-        _unimplemented()
+        _builtin()
 
     def popleft(self):
         _unimplemented()

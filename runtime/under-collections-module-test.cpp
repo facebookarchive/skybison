@@ -56,6 +56,22 @@ TEST_F(UnderCollectionsModuleTest, DequeAppendleftInsertsElementToFront) {
   EXPECT_TRUE(isIntEqualsWord(self.at(self.capacity() - 1), 2));
 }
 
+TEST_F(UnderCollectionsModuleTest, DequePopRemovesItemFromRight) {
+  HandleScope scope(thread_);
+  Deque deque(&scope, runtime_->newDeque());
+  for (int i = 0; i < 3; i++) {
+    Object value(&scope, SmallInt::fromWord(i));
+    runBuiltin(METH(deque, append), deque, value);
+  }
+  ASSERT_EQ(deque.numItems(), 3);
+
+  // Pop from the end
+  RawObject result = runBuiltin(METH(deque, pop), deque);
+  ASSERT_EQ(deque.numItems(), 2);
+  EXPECT_TRUE(isIntEqualsWord(deque.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(result, 2));
+}
+
 TEST_F(UnderCollectionsModuleTest, EmptyDequeInvariants) {
   HandleScope scope(thread_);
   Deque deque(&scope, runtime_->newDeque());

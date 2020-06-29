@@ -130,6 +130,17 @@ static void dequeAppendLeft(Thread* thread, const Deque& deque,
   deque.setLeft(new_left);
 }
 
+static RawObject dequePop(Thread* thread, const Deque& deque) {
+  HandleScope scope(thread);
+  word length = deque.numItems();
+  DCHECK(length != 0, "cannot pop from empty deque");
+  word tail = (deque.left() + length - 1) % deque.capacity();
+  Object popped(&scope, deque.at(tail));
+  deque.atPut(tail, NoneType::object());
+  deque.setNumItems(length - 1);
+  return *popped;
+}
+
 RawObject METH(deque, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -186,6 +197,21 @@ RawObject METH(deque, appendleft)(Thread* thread, Frame* frame, word nargs) {
   Object value(&scope, args.get(1));
   dequeAppendLeft(thread, deque, value);
   return NoneType::object();
+}
+
+RawObject METH(deque, pop)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfDeque(*self)) {
+    return thread->raiseRequiresType(self, ID(deque));
+  }
+  Deque deque(&scope, *self);
+  word length = deque.numItems();
+  if (length == 0) {
+    return thread->raiseWithFmt(LayoutId::kIndexError, "pop from empty deque");
+  }
+  return dequePop(thread, deque);
 }
 
 }  // namespace py
