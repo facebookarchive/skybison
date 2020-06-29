@@ -2631,15 +2631,37 @@ class RawStrArray : public RawInstance {
 //
 // RawLayout:
 //   [Header  ]
+//   [Items   ] - data
+//   [Left    ] - head element
+//   [NumItems] - number of elements
 //   [Maxlen  ] - maximum capacity
 class RawDeque : public RawInstance {
  public:
+  RawObject at(word index) const;
+  void atPut(word index, RawObject value) const;
+
+  // Returns the total number of elements that may be held without growing
+  // the underlying MutableTuple
+  word capacity() const;
+
   // Getters and Setters
+  RawObject items() const;
+  void setItems(RawObject new_items) const;
+
+  word left() const;
+  void setLeft(word left) const;
+
+  word numItems() const;
+  void setNumItems(word num_items) const;
+
   RawObject maxlen() const;
   void setMaxlen(RawObject maxlen) const;
 
   // Layout.
-  static const int kMaxlenOffset = RawHeapObject::kSize;
+  static const int kItemsOffset = RawHeapObject::kSize;
+  static const int kLeftOffset = kItemsOffset + kPointerSize;
+  static const int kNumItemsOffset = kLeftOffset + kPointerSize;
+  static const int kMaxlenOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kMaxlenOffset + kPointerSize;
   RAW_OBJECT_COMMON(Deque);
 };
@@ -5987,6 +6009,46 @@ inline word RawStrArray::capacity() const {
 }
 
 // RawDeque
+
+inline RawObject RawDeque::at(word index) const {
+  DCHECK_INDEX(index, capacity());
+  return RawTuple::cast(items()).at(index);
+}
+
+inline void RawDeque::atPut(word index, RawObject value) const {
+  DCHECK_INDEX(index, capacity());
+  RawTuple::cast(items()).atPut(index, value);
+}
+
+inline word RawDeque::capacity() const {
+  RawObject raw_items = items();
+  if (raw_items == RawSmallInt::fromWord(0)) return 0;
+  return RawTuple::cast(raw_items).length();
+}
+
+inline RawObject RawDeque::items() const {
+  return instanceVariableAt(kItemsOffset);
+}
+
+inline void RawDeque::setItems(RawObject new_items) const {
+  instanceVariableAtPut(kItemsOffset, new_items);
+}
+
+inline word RawDeque::left() const {
+  return RawSmallInt::cast(instanceVariableAt(kLeftOffset)).value();
+}
+
+inline void RawDeque::setLeft(word left) const {
+  instanceVariableAtPut(kLeftOffset, RawSmallInt::fromWord(left));
+}
+
+inline word RawDeque::numItems() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
+}
+
+inline void RawDeque::setNumItems(word num_items) const {
+  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
+}
 
 inline RawObject RawDeque::maxlen() const {
   return instanceVariableAt(kMaxlenOffset);

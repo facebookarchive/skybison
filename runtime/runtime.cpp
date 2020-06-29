@@ -900,6 +900,15 @@ RawObject Runtime::newQualname(Thread* thread, const Type& type,
   return newStrFromFmt("%S.%Y", &type_name, name);
 }
 
+RawObject Runtime::newDeque() {
+  HandleScope scope;
+  Deque deque(&scope, heap()->create<RawDeque>());
+  deque.setItems(SmallInt::fromWord(0));
+  deque.setLeft(0);
+  deque.setNumItems(0);
+  return *deque;
+}
+
 RawObject Runtime::newList() {
   HandleScope scope;
   List result(&scope, heap()->create<RawList>());

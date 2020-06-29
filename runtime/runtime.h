@@ -98,6 +98,8 @@ class Runtime {
 
   RawObject newCoroutine();
 
+  RawObject newDeque();
+
   RawObject newDict();
   RawObject newDictWithSize(word initial_size);
 

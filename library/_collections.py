@@ -127,8 +127,7 @@ class deque(bootstrap=True):
             return NotImplemented
 
     def __len__(self):
-        _deque_guard(self)
-        return self.length
+        _builtin()
 
     def __lt__(self, other):
         _deque_guard(self)
@@ -160,8 +159,8 @@ class deque(bootstrap=True):
         _deque_guard(self)
         if _repr_enter(self):
             return "[...]"
-        if self._maxlen is not None:
-            result = f"deque({list(self)!r}, maxlen={self._maxlen})"
+        if self.maxlen is not None:
+            result = f"deque({list(self)!r}, maxlen={self.maxlen})"
         else:
             result = f"deque({list(self)!r})"
         _repr_leave(self)
@@ -186,7 +185,7 @@ class deque(bootstrap=True):
         _unimplemented()
 
     def append(self, x):
-        _unimplemented()
+        _builtin()
 
     def appendleft(self, x):
         _unimplemented()

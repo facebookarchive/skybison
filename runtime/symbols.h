@@ -303,6 +303,9 @@ class Runtime;
   V(_decoded_chars)                                                            \
   V(_decoded_chars_used)                                                       \
   V(_decoder)                                                                  \
+  V(_deque__items)                                                             \
+  V(_deque__left)                                                              \
+  V(_deque__num_items)                                                         \
   V(_deque_guard)                                                              \
   V(_descrclassmethod)                                                         \
   V(_dict__data)                                                               \

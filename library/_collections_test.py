@@ -34,6 +34,14 @@ class DequeTests(unittest.TestCase):
         self.assertTrue(isinstance(result, deque))
         self.assertEqual(result.maxlen, None)
 
+    def test_append_adds_elements(self):
+        result = deque()
+        self.assertEqual(len(result), 0)
+        result.append(1)
+        result.append(2)
+        result.append(3)
+        self.assertEqual(len(result), 3)
+
 
 if __name__ == "__main__":
     unittest.main()
