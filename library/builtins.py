@@ -4867,6 +4867,9 @@ class method(bootstrap=True):
     def __call__(self, *args, **kwargs):
         return self.__func__(self.__self__, *args, **kwargs)
 
+    def __eq__(self, other):
+        _builtin()
+
     def __getattr__(self, name):
         return getattr(self.__func__, name)
 

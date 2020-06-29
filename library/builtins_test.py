@@ -344,6 +344,104 @@ class BoundMethodTests(unittest.TestCase):
         bound = c.meth
         self.assertEqual(bound.attr, 42)
 
+    def test_bound_method_dunder_eq_with_invalid_self_raises_type_error(self):
+        class C:
+            def meth(self):
+                pass
+
+        with self.assertRaises(TypeError):
+            type(C().meth).__eq__(None, None)
+
+    def test_bound_method_is_not_same_with_same_method_on_same_instance(self):
+        class C:
+            def meth(self):
+                pass
+
+        c = C()
+        bound_meth1 = c.meth
+        bound_meth2 = c.meth
+        self.assertFalse(bound_meth1 is bound_meth2)
+
+    def test_bound_method_equal_with_same_method_on_same_instance(self):
+        class C:
+            def meth(self):
+                pass
+
+        c = C()
+        bound_meth1 = c.meth
+        bound_meth2 = c.meth
+        self.assertTrue(bound_meth1.__eq__(bound_meth2))
+
+    def test_bound_method_not_equal_with_same_method_on_different_instances(self):
+        class C:
+            def meth(self):
+                pass
+
+        bound_meth1 = C().meth
+        bound_meth2 = C().meth
+        self.assertFalse(bound_meth1.__eq__(bound_meth2))
+
+    def test_bound_method_not_equal_with_different_method_on_same_instances(self):
+        class C:
+            def meth1(self):
+                pass
+
+            def meth2(self):
+                pass
+
+        c = C()
+        bound_meth1 = c.meth1
+        bound_meth2 = c.meth2
+        self.assertFalse(bound_meth1.__eq__(bound_meth2))
+
+    def test_bound_method_compared_to_non_bound_method_returns_not_implemented(self):
+        class C:
+            def meth(self):
+                pass
+
+        self.assertEqual(C().meth.__eq__(None), NotImplemented)
+
+    def test_bound_method_dunder_eq_respects_overriden_self_equality_for_non_identical_methods(
+        self,
+    ):
+        class C:
+            def meth(self):
+                pass
+
+            def __eq__(self, other):
+                return True
+
+        m0 = C().meth
+        m1 = C().meth
+        self.assertTrue(m0.__eq__(m1))
+
+    def test_bound_method_dunder_eq_ignores_overriden_self_equality_for_identical_methods(
+        self,
+    ):
+        class C:
+            def meth(self):
+                pass
+
+            def __eq__(self, other):
+                return False
+
+        m = C().meth
+        self.assertTrue(m.__eq__(m))
+
+    def test_bound_method_dunder_eq_checks_func_before_self(self):
+        class C:
+            def meth1(self):
+                pass
+
+            def meth2(self):
+                pass
+
+            def __eq__(self, other):
+                raise ValueError
+
+        # This would raise ValueError if self were checked before func
+        self.assertFalse(C().meth1.__eq__(C().meth2))
+
 
 class ByteArrayTests(unittest.TestCase):
     def test_dunder_contains_with_non_bytearray_raises_type_error(self):

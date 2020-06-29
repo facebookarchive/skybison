@@ -658,4 +658,30 @@ RawObject FUNC(builtins, setattr)(Thread* thread, Frame* frame, word nargs) {
   return setAttribute(thread, self, name, value);
 }
 
+RawObject METH(method, __eq__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isBoundMethod()) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "'__eq__' requires a 'method' object but received a '%T'", &self_obj);
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!other_obj.isBoundMethod()) {
+    return NotImplementedType::object();
+  }
+  BoundMethod self(&scope, *self_obj);
+  BoundMethod other(&scope, *other_obj);
+  Bool func_eq(
+      &scope, Runtime::objectEquals(thread, self.function(), other.function()));
+  if (func_eq.isError()) return *func_eq;
+  if (*func_eq == Bool::falseObj()) return Bool::falseObj();
+  Bool self_eq(&scope,
+               Runtime::objectEquals(thread, self.self(), other.self()));
+  if (self_eq.isError()) return *self_eq;
+  if (*self_eq == Bool::falseObj()) return Bool::falseObj();
+  return Bool::trueObj();
+}
+
 }  // namespace py
