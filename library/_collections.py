@@ -188,7 +188,7 @@ class deque(bootstrap=True):
         _builtin()
 
     def appendleft(self, x):
-        _unimplemented()
+        _builtin()
 
     def clear(self):
         _unimplemented()

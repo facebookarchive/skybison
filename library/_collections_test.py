@@ -42,6 +42,14 @@ class DequeTests(unittest.TestCase):
         result.append(3)
         self.assertEqual(len(result), 3)
 
+    def test_appendleft_adds_elements_to_left(self):
+        result = deque()
+        self.assertEqual(len(result), 0)
+        result.appendleft(1)
+        result.appendleft(2)
+        result.appendleft(3)
+        self.assertEqual(len(result), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

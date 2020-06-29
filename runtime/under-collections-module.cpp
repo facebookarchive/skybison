@@ -111,6 +111,25 @@ static void dequeAppend(Thread* thread, const Deque& deque,
   deque.atPut(right, *value);
 }
 
+static void dequeAppendLeft(Thread* thread, const Deque& deque,
+                            const Object& value) {
+  word num_items = deque.numItems();
+  dequeEnsureCapacity(thread, deque, num_items + 1);
+
+  // TODO(T67099800): appendleft over maxlen should call pop right
+  word new_left = deque.left();
+  if (num_items > 0) {
+    new_left -= 1;
+  }
+  if (new_left < 0) {
+    new_left += deque.capacity();
+  }
+  word length = num_items;
+  deque.setNumItems(length + 1);
+  deque.atPut(new_left, *value);
+  deque.setLeft(new_left);
+}
+
 RawObject METH(deque, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -146,12 +165,26 @@ RawObject METH(deque, append)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfDeque(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDeque(*self)) {
     return thread->raiseRequiresType(self, ID(deque));
   }
   Deque deque(&scope, *self);
   Object value(&scope, args.get(1));
   dequeAppend(thread, deque, value);
+  return NoneType::object();
+}
+
+RawObject METH(deque, appendleft)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfDeque(*self)) {
+    return thread->raiseRequiresType(self, ID(deque));
+  }
+  Deque deque(&scope, *self);
+  Object value(&scope, args.get(1));
+  dequeAppendLeft(thread, deque, value);
   return NoneType::object();
 }
 
