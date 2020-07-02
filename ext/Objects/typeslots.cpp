@@ -83,4 +83,8 @@ void typeSlotUWordAtPut(Thread* thread, const Type& type, int slot_id,
       .atPut(slot_id, thread->runtime()->newIntFromUnsigned(value));
 }
 
+uword typeGetBasicSize(const Type& type) {
+  return typeSlotUWordAt(type, kSlotBasicSize);
+}
+
 }  // namespace py

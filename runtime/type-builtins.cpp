@@ -1069,6 +1069,19 @@ RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
   return *best_base;
 }
 
+RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Type self(&scope, args.get(0));
+  if (!self.isExtensionType()) {
+    Str name(&scope, strUnderlying(self.name()));
+    UNIMPLEMENTED("'__basicsize__' for type '%s'", name.toCStr());
+  }
+  uword basicsize = typeGetBasicSize(self);
+  return runtime->newIntFromUnsigned(basicsize);
+}
+
 RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);

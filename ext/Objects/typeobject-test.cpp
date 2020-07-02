@@ -339,6 +339,22 @@ TEST_F(TypeExtensionApiTest, GetSlotFromExtensionType) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(TypeExtensionApiTest, DunderBasicsizeWithExtensionTypeReturnsBasicsize) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  int size = sizeof(PyObject) + 13;
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", size, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  PyObjectPtr basicsize(PyObject_GetAttrString(type, "__basicsize__"));
+  ASSERT_NE(basicsize, nullptr);
+  EXPECT_TRUE(isLongEqualsLong(basicsize, size));
+}
+
 // METH_NOARGS and CALL_FUNCTION
 
 TEST_F(TypeExtensionApiTest, MethodsMethNoargsPosCall) {

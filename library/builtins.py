@@ -422,6 +422,10 @@ class type(bootstrap=True):
     __bases__ = _property(_type_bases_get, _type_bases_set, _type_bases_del)
 
     @_property
+    def __basicsize__(self):
+        _builtin()
+
+    @_property
     def __dict__(self):
         return mappingproxy(_type_proxy(self))
 

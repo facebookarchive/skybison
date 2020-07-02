@@ -61,6 +61,10 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
 RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
                                       const Object& name, Object* location_out);
 
+// Defined in ext/Objects/typeslots.cpp
+// Return the type's tp_basicsize. Use only with extension types.
+uword typeGetBasicSize(const Type& type);
+
 // Returns true if the type defines a __set__ method.
 bool typeIsDataDescriptor(Thread* thread, const Type& type);
 
