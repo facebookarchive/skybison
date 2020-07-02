@@ -126,6 +126,8 @@ PY_EXPORT PyCodeObject* PyAST_CompileObject(_mod* mod, PyObject* pyfilename,
       UNREACHABLE("Unknown module kind");
   }
   word flags = flags_ptr ? flags_ptr->cf_flags : 0;
+  // PyCF_SOURCE_IS_UTF8 is not a valid flag to pass through managed code.
+  flags &= ~PyCF_SOURCE_IS_UTF8;
   Object result(&scope,
                 compile(thread, ast, filename, mode_id, flags, optimize));
   if (result.isErrorException()) return nullptr;

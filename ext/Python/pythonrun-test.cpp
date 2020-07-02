@@ -229,6 +229,18 @@ TEST_F(PythonrunExtensionApiTest, PyRunStringFlagsReturnsResult) {
                        3));
 }
 
+TEST_F(PythonrunExtensionApiTest,
+       PyRunStringFlagsWithSourceIsUtf8FlagReturnsResult) {
+  PyObject* module = PyImport_AddModule("__main__");
+  ASSERT_NE(module, nullptr);
+  PyObject* module_proxy = PyModule_GetDict(module);
+  PyCompilerFlags flags;
+  flags.cf_flags = PyCF_SOURCE_IS_UTF8;
+  EXPECT_TRUE(
+      isLongEqualsLong(PyRun_StringFlags("1 + 2", Py_eval_input, module_proxy,
+                                         module_proxy, &flags),
+                       3));
+}
 TEST_F(PythonrunExtensionApiTest, PyErrDisplayPrintsException) {
   PyErr_SetString(PyExc_RuntimeError, "oopsie");
   PyObject *exc, *value, *tb;

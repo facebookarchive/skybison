@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import ast
 import builtins
 import contextlib
 import sys
@@ -3269,6 +3270,17 @@ class ContextManagerTests(unittest.TestCase):
 
 
 class CompileTests(unittest.TestCase):
+    def test_compile_with_iterable_coroutine_flag_raises_value_error(self):
+        self.assertRaises(ValueError, compile, "result = 42", "", "exec", 0x100)
+
+    def test_compile_with_only_ast_flag_returns_ast(self):
+        result = compile("result = 42", "", "exec", ast.PyCF_ONLY_AST)
+        self.assertIsInstance(result, ast.AST)
+
+    def test_compile_with_dont_inherit_and_only_ast_flag_returns_ast(self):
+        result = compile("result = 42", "", "exec", ast.PyCF_ONLY_AST, True)
+        self.assertIsInstance(result, ast.AST)
+
     def test_exec_mode_returns_code(self):
         from types import ModuleType
         from types import CodeType
