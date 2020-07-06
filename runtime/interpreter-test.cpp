@@ -2516,6 +2516,34 @@ c()
                             "'int' object is not callable"));
 }
 
+TEST_F(InterpreterTest,
+       CallingBoundMethodWithNonFunctionDunderFuncCallsDunderFunc) {
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+# from types import MethodType
+MethodType = method
+
+class C:
+  def __call__(self, arg):
+    return self, arg
+
+func = C()
+instance = object()
+bound_method = MethodType(func, instance)
+result = bound_method()
+  )")
+                   .isError());
+  CHECK(!thread_->hasPendingException(), "no errors pls");
+  HandleScope scope(thread_);
+  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  Object func(&scope, mainModuleAt(runtime_, "func"));
+  EXPECT_EQ(result.at(0), *func);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  EXPECT_EQ(result.at(1), *instance);
+}
+
 TEST_F(InterpreterTest, CallingNonDescriptorDunderCallRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class D: pass

@@ -53,9 +53,14 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
   for (;;) {
     if (callable->isBoundMethod()) {
       BoundMethod method(&scope, **callable);
-      *callable = method.function();
-      *self = method.self();
-      return Bool::trueObj();
+      Object maybe_function(&scope, method.function());
+      if (maybe_function.isFunction()) {
+        // If we have an exact function, unwrap as a fast-path. Otherwise, fall
+        // back to __call__.
+        *callable = *maybe_function;
+        *self = method.self();
+        return Bool::trueObj();
+      }
     }
 
     if (callable->isType()) {
@@ -113,9 +118,11 @@ Interpreter::prepareCallableCall(Thread* thread, Frame* frame, word nargs,
   if (callable.isBoundMethod()) {
     RawBoundMethod method = BoundMethod::cast(callable);
     RawObject method_function = method.function();
-    frame->setValueAt(method_function, callable_idx);
-    frame->insertValueAt(method.self(), callable_idx);
-    return {method_function, nargs + 1};
+    if (method_function.isFunction()) {
+      frame->setValueAt(method_function, callable_idx);
+      frame->insertValueAt(method.self(), callable_idx);
+      return {method_function, nargs + 1};
+    }
   }
   return prepareCallableCallDunderCall(thread, frame, nargs, callable_idx);
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import unittest
-from types import ModuleType, SimpleNamespace
+from types import MethodType, ModuleType, SimpleNamespace
 from unittest import skipIf
 from unittest.mock import Mock
 
@@ -531,6 +531,16 @@ class InlineCacheTests(unittest.TestCase):
         self.assertEqual(exc.errno, 2)
         self.assertEqual(exc.strerror, "No such file or directory")
         # TODO(T67323177): Check filename.
+
+    def test_call_with_bound_method_storing_arbitrary_callable_resolves_callable(self):
+        class C:
+            def __call__(self, arg):
+                return self, arg
+
+        func = C()
+        instance = object()
+        method = MethodType(func, instance)
+        self.assertEqual((func, instance), method())
 
 
 class ImportNameTests(unittest.TestCase):

@@ -914,7 +914,24 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   __ movq(r_callable, Address(r_saved_callable,
                               heapObjectDisp(RawBoundMethod::kFunctionOffset)));
   __ movq(Address(RSP, kOpargReg, TIMES_8, 0), r_callable);
-  __ jmp(prepared, Assembler::kFarJump);
+  // Check whether bound_method.function() is a heap object.
+  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
+  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
+  __ leal(r_scratch, Address(r_callable, (-Object::kHeapObjectTag) &
+                                             Object::kPrimaryTagMask));
+  __ testl(r_scratch, Immediate(Object::kPrimaryTagMask));
+  // If it is an immediate, jump to the slow path, which raises an exception.
+  __ jcc(NOT_ZERO, prepare_callable_immediate, Assembler::kFarJump);
+  // Check whether bound_method.function() is a function.
+  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
+  __ movl(r_scratch,
+          Address(r_callable, heapObjectDisp(RawHeapObject::kHeaderOffset)));
+  __ andl(r_scratch,
+          Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
+  __ cmpl(r_scratch, Immediate(static_cast<word>(LayoutId::kFunction)
+                               << RawHeader::kLayoutIdOffset));
+  // If it is a function, jump to the fast path.
+  __ jcc(EQUAL, prepared, Assembler::kFarJump);
 
   // res = Interpreter::prepareCallableDunderCall(thread, frame, nargs, nargs)
   // callable = res.function
