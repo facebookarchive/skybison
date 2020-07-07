@@ -41,13 +41,13 @@ char* OS::executablePath() {
   uint32_t buf_len = 0;
   int res = _NSGetExecutablePath(nullptr, &buf_len);
   CHECK(res == -1, "expected buffer too small");
-  char* path = reinterpret_cast<char*>(std::malloc(buf_len));
+  unique_c_ptr<char> path(reinterpret_cast<char*>(std::malloc(buf_len)));
   CHECK(path != nullptr, "out of memory");
-  res = _NSGetExecutablePath(path, &buf_len);
+  res = _NSGetExecutablePath(path.get(), &buf_len);
   CHECK(res == 0, "failed to determine executable path");
-  // TODO(matthiasb): The executable or parts of its path may be a symlink
-  // that should be resolved.
-  return path;
+  char* real_path = ::realpath(path.get(), nullptr);
+  CHECK(real_path != nullptr, "failed to determine executable path");
+  return real_path;
 }
 
 void* OS::openSharedObject(const char* filename, int mode,
