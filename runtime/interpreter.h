@@ -535,6 +535,10 @@ class Interpreter {
                                                              word nargs,
                                                              word callable_idx);
 
+  // If the given GeneratorBase is suspended at a YIELD_FROM instruction, return
+  // its subiterator. Otherwise, return None.
+  static RawObject findYieldFrom(RawGeneratorBase gen);
+
  private:
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations

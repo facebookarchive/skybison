@@ -26,20 +26,6 @@ static RawObject sendImpl(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::resumeGenerator(thread, gen, value);
 }
 
-// If the given GeneratorBase is suspended at a YIELD_FROM instruction, return
-// its subiterator. Otherwise, return None.
-static RawObject findYieldFrom(Thread* thread, const GeneratorBase& gen) {
-  HandleScope scope(thread);
-  if (gen.running() == Bool::trueObj()) return NoneType::object();
-  GeneratorFrame gf(&scope, gen.generatorFrame());
-  word pc = gf.virtualPC();
-  if (pc == Frame::kFinishedGeneratorPC) return NoneType::object();
-  Function function(&scope, gf.function());
-  MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  if (bytecode.byteAt(pc) != Bytecode::YIELD_FROM) return NoneType::object();
-  return gf.valueStackTop()[0];
-}
-
 // Validate the given exception and send it to gen.
 static RawObject throwDoRaise(Thread* thread, const GeneratorBase& gen,
                               const Object& exc_in, const Object& value_in,
@@ -154,7 +140,7 @@ static RawObject throwImpl(Thread* thread, const GeneratorBase& gen,
                            const Object& exc, const Object& value,
                            const Object& tb) {
   HandleScope scope(thread);
-  Object yf(&scope, findYieldFrom(thread, gen));
+  Object yf(&scope, Interpreter::findYieldFrom(*gen));
   if (!yf.isNoneType()) {
     return throwYieldFrom(thread, gen, yf, exc, value, tb);
   }

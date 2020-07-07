@@ -2036,14 +2036,14 @@ RawObject Interpreter::awaitableIter(Thread* thread,
   Frame* frame = thread->currentFrame();
   Object obj(&scope, frame->topValue());
   if (obj.isCoroutine() || obj.isAsyncGenerator()) {
-    return NoneType::object();
+    return *obj;
   }
   if (obj.isGenerator()) {
     Generator generator(&scope, *obj);
     GeneratorFrame generator_frame(&scope, generator.generatorFrame());
     Function func(&scope, generator_frame.function());
     if (func.isIterableCoroutine()) {
-      return NoneType::object();
+      return *obj;
     }
     return thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
   }
@@ -2081,15 +2081,22 @@ RawObject Interpreter::awaitableIter(Thread* thread,
         &result);
   }
   frame->pushValue(*result);
-  return NoneType::object();
+  return *obj;
 }
 
 HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
   // TODO(T67736679) Add inline caching for the lookupMethod() in awaitableIter.
-  RawObject result =
+  RawObject iter =
       awaitableIter(thread, "object can't be used in 'await' expression");
-  if (result.isError()) {
+  if (iter.isError()) {
     return Continue::UNWIND;
+  }
+  if (iter.isCoroutine()) {
+    if (!findYieldFrom(GeneratorBase::cast(iter)).isNoneType()) {
+      thread->raiseWithFmt(LayoutId::kRuntimeError,
+                           "coroutine is being awaited already");
+      return Continue::UNWIND;
+    }
   }
   return Continue::NEXT;
 }
@@ -5717,6 +5724,19 @@ RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return resumeGeneratorImpl(thread, generator, generator_frame, exc_state);
+}
+
+// TODO(T69575746): Reduce the number of lookups by storing current generator
+// state as it changes.
+RawObject Interpreter::findYieldFrom(RawGeneratorBase gen) {
+  if (gen.running() == Bool::trueObj()) return NoneType::object();
+  RawGeneratorFrame gf = GeneratorFrame::cast(gen.generatorFrame());
+  word pc = gf.virtualPC();
+  if (pc == Frame::kFinishedGeneratorPC) return NoneType::object();
+  RawFunction function = Function::cast(gf.function());
+  RawMutableBytes bytecode = MutableBytes::cast(function.rewrittenBytecode());
+  if (bytecode.byteAt(pc) != Bytecode::YIELD_FROM) return NoneType::object();
+  return gf.valueStackTop()[0];
 }
 
 namespace {

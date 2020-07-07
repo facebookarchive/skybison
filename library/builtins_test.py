@@ -4038,6 +4038,28 @@ class CoroutineTests(unittest.TestCase):
             with self.assertRaises(TypeError):
                 f(coro_inst).send(None)
 
+    def test_awaiting_already_awaited_coroutine_raises_runtime_error(self):
+        class Awaitable:
+            def __await__(self):
+                return self
+
+            def __next__(self):
+                return None
+
+        async def f():
+            await Awaitable()
+
+        coro = f()
+
+        async def g():
+            nonlocal coro
+            await coro
+
+        coro.send(None)
+
+        with self.assertRaisesRegex(RuntimeError, "coroutine is being awaited already"):
+            g().send(None)
+
 
 class CoroutineWrapperTests(unittest.TestCase):
     def test_dunder_iter_with_invalid_self_raises_type_error(self):
