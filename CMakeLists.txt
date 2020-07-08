@@ -940,26 +940,35 @@ target_link_libraries(
   PRIVATE
   extension-modules)
 
+set(EXECUTABLE python${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+set(EXECUTABLE_SYMLINKS
+  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python${PROJECT_VERSION_MAJOR}
+  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python)
 add_executable(
-  python
+  ${EXECUTABLE}
   main.cpp
   $<TARGET_OBJECTS:extension>)
+foreach(file ${EXECUTABLE_SYMLINKS})
+  add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE} ${file}
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endforeach()
 target_compile_options(
-  python
+  ${EXECUTABLE}
   PRIVATE
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
-  python
+  ${EXECUTABLE}
   PRIVATE
   runtime)
 target_link_libraries(
-  python
+  ${EXECUTABLE}
   PRIVATE
   capi-headers
   runtime
   modules)
 set_target_properties(
-  python
+  ${EXECUTABLE}
   PROPERTIES
   ENABLE_EXPORTS 1
   PUBLIC_HEADER "${C_API_HEADERS}")
@@ -1196,10 +1205,11 @@ if (ENABLE_CPYTHON_TESTS)
 endif()
 
 set(CMAKE_INSTALL_MESSAGE NEVER)
-install(TARGETS python
+install(TARGETS ${EXECUTABLE}
   RUNTIME DESTINATION bin
   PUBLIC_HEADER DESTINATION include/${IMPLEMENTATION_DIR}
 )
+install(FILES ${EXECUTABLE_SYMLINKS} DESTINATION bin)
 foreach(file ${cpython_library_files})
   set(src_file ${CPYTHON_DIR}/Lib/${file})
   get_filename_component(dest_dir lib/${IMPLEMENTATION_DIR}/${file} DIRECTORY)
