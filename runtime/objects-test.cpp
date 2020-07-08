@@ -14,6 +14,7 @@ using LargeBytesTest = RuntimeFixture;
 using SmallBytesTest = RuntimeFixture;
 using CodeTest = RuntimeFixture;
 using ComplexTest = RuntimeFixture;
+using DequeTest = RuntimeFixture;
 using DoubleTest = RuntimeFixture;
 using IntTest = RuntimeFixture;
 using LargeStrTest = RuntimeFixture;
@@ -40,6 +41,23 @@ TEST_F(BytearrayTest, DownsizeMaintainsCapacity) {
   array.downsize(5);
   EXPECT_EQ(array.numItems(), 5);
   EXPECT_EQ(array.capacity(), capacity);
+}
+
+TEST_F(DequeTest, DequeClearRemovesElements) {
+  HandleScope scope(thread_);
+  Deque self(&scope, runtime_->newDeque());
+  MutableTuple underlying_tuple(&scope, runtime_->newMutableTuple(5));
+  underlying_tuple.atPut(0, SmallInt::fromWord(0));
+  underlying_tuple.atPut(1, SmallInt::fromWord(1));
+  underlying_tuple.atPut(2, SmallInt::fromWord(2));
+
+  self.setItems(*underlying_tuple);
+  self.clear();
+  ASSERT_EQ(self.numItems(), 0);
+  ASSERT_EQ(self.left(), 0);
+  EXPECT_EQ(self.at(0), NoneType::object());
+  EXPECT_EQ(self.at(1), NoneType::object());
+  EXPECT_EQ(self.at(2), NoneType::object());
 }
 
 TEST_F(SmallBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {

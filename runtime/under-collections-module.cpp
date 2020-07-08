@@ -211,6 +211,18 @@ RawObject METH(deque, appendleft)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
+RawObject METH(deque, clear)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfDeque(*self)) {
+    return thread->raiseRequiresType(self, ID(deque));
+  }
+  Deque deque(&scope, *self);
+  deque.clear();
+  return NoneType::object();
+}
+
 RawObject METH(deque, pop)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

@@ -191,7 +191,7 @@ class deque(bootstrap=True):
         _builtin()
 
     def clear(self):
-        _unimplemented()
+        _builtin()
 
     def count(self, value):
         _deque_guard(self)

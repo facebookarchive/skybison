@@ -2644,6 +2644,8 @@ class RawDeque : public RawInstance {
   // the underlying MutableTuple
   word capacity() const;
 
+  void clear() const;
+
   // Getters and Setters
   RawObject items() const;
   void setItems(RawObject new_items) const;
@@ -6024,6 +6026,12 @@ inline word RawDeque::capacity() const {
   RawObject raw_items = items();
   if (raw_items == RawSmallInt::fromWord(0)) return 0;
   return RawTuple::cast(raw_items).length();
+}
+
+inline void RawDeque::clear() const {
+  RawMutableTuple::cast(items()).fill(RawNoneType::object());
+  setLeft(0);
+  setNumItems(0);
 }
 
 inline RawObject RawDeque::items() const {
