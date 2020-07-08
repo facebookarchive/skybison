@@ -10,9 +10,6 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     _builtin()  # noqa: F821
 
 
-# TODO(T61007763): We currently have to split the `from import` statement into
-# multiple chunks or the peephole optimizer bails out because
-# "the lnotab table is too complex".
 from _builtins import (
     _address,
     _anyset_check,
@@ -63,8 +60,6 @@ from _builtins import (
     _byteslike_rfind_byteslike,
     _byteslike_rfind_int,
     _byteslike_startswith,
-)
-from _builtins import (
     _caller_function,
     _caller_locals,
     _char_guard,
@@ -90,8 +85,6 @@ from _builtins import (
     _dict_update,
     _divmod,
     _exec,
-)
-from _builtins import (
     _float_check,
     _float_check_exact,
     _float_divmod,
@@ -125,8 +118,6 @@ from _builtins import (
     _get_member_uint,
     _get_member_ulong,
     _get_member_ushort,
-)
-from _builtins import (
     _instance_delattr,
     _instance_getattr,
     _instance_guard,
@@ -183,8 +174,6 @@ from _builtins import (
     _property,
     _property_isabstract,
     _pyobject_offset,
-)
-from _builtins import (
     _range_check,
     _range_guard,
     _range_len,
@@ -237,8 +226,6 @@ from _builtins import (
     _str_splitlines,
     _str_startswith,
     _str_translate,
-)
-from _builtins import (
     _structseq_getitem,
     _structseq_new_type,
     _structseq_setitem,
