@@ -16,7 +16,7 @@ Please specify CMAKE_TOOLCHAIN_FILE. Example:
 
   $ mkdir build
   $ cd build
-  $ cmake -GNinja -D CMAKE_TOOLCHAIN_FILE=../util/platform007-clang.cmake ..
+  $ cmake -GNinja -D CMAKE_TOOLCHAIN_FILE=../util/platform009-clang.cmake ..
 
 Available toolchain files:
 
@@ -28,8 +28,8 @@ endif()
 # Note that setting CMAKE_C_FLAGS directly in util/*.cmake is problematic
 # because using `-DCMAKE_C_FLAGS=` would unintentionally override the platform
 # flags.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread ${PLATFORM_COMPILER_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ${PLATFORM_COMPILER_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PLATFORM_COMPILER_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PLATFORM_COMPILER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
@@ -141,12 +141,11 @@ list(FILTER CPYTHON_FILES EXCLUDE REGEX "/#.*#$")
 list(FILTER CPYTHON_FILES EXCLUDE REGEX "/__pycache__/")
 
 set(CPYTHON_CONFIGURE_FLAGS)
-set(CPYTHON_CFLAGS_NODIST ${CMAKE_C_FLAGS})
+set(CPYTHON_CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILDTYPE}}")
 set(CPYTHON_CPPFLAGS)
 set(CPYTHON_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
   set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-assertions")
-  set(CPYTHON_CFLAGS_NODIST "${CPYTHON_CFLAGS_NODIST} -O0")
 endif()
 foreach(dir
     ${BZIP2_INCLUDE_DIRS}
@@ -172,10 +171,9 @@ file(GENERATE OUTPUT ${CPYTHON_BUILD_DIR}/build.sh CONTENT "
 set -eu
 export CC=\"${CMAKE_C_COMPILER}\"
 export CXX=\"${CMAKE_CXX_COMPILER}\"
-export CFLAGS_NODIST=\"${CPYTHON_CFLAGS_NODIST}\"
+export CFLAGS=\"${CPYTHON_CFLAGS}\"
 export CPPFLAGS=\"${CPYTHON_CPPFLAGS}\"
 export LDFLAGS=\"${CPYTHON_LDFLAGS}\"
-unset CFLAGS
 rm -f ${CPYTHON_BUILD_DIR}/Modules/Setup
 ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
 make -j
@@ -576,8 +574,9 @@ target_link_libraries(
   runtime
   PUBLIC
   capi-headers
-  PRIVATE
+  -pthread
   dl
+  PRIVATE
   modules
   siphash
   valgrind
