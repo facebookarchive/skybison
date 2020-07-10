@@ -306,6 +306,7 @@ class Runtime;
   V(_deque__items)                                                             \
   V(_deque__left)                                                              \
   V(_deque__num_items)                                                         \
+  V(_deque_getitem)                                                            \
   V(_deque_guard)                                                              \
   V(_descrclassmethod)                                                         \
   V(_dict__data)                                                               \

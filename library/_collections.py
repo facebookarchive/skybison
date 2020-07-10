@@ -8,11 +8,15 @@ from _builtins import (
     _deque_guard,
     _int_check,
     _int_guard,
+    _object_type_hasattr,
     _repr_enter,
     _repr_leave,
     _type,
     _unimplemented,
 )
+
+
+_Unbound = _Unbound  # noqa: F821
 
 
 class _deque_iterator:
@@ -32,6 +36,10 @@ class _deque_iterator:
 
     def __iter__(self):
         return self
+
+
+def _deque_getitem(self, index):
+    _builtin()
 
 
 def _deque_set_maxlen(self, maxlen):
@@ -93,7 +101,14 @@ class deque(bootstrap=True):
             return NotImplemented
 
     def __getitem__(self, index):
-        _unimplemented()
+        result = _deque_getitem(self, index)
+        if result is not _Unbound:
+            return result
+        if _object_type_hasattr(index, "__index__"):
+            return _deque_getitem(self, _index(index))
+        raise TypeError(
+            f"sequence index must be integer, not '{_type(index).__name__}'"
+        )
 
     def __gt__(self, other):
         _deque_guard(self)

@@ -35,6 +35,35 @@ void FUNC(_collections, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 }
 
+RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDeque(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(deque));
+  }
+  Object key(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*key)) {
+    return Unbound::object();
+  }
+
+  word index = intUnderlying(*key).asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key);
+  }
+  Deque deque(&scope, *self_obj);
+  word deque_index = dequeIndex(deque, index);
+  if (deque_index == -1) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "deque index out of range");
+  }
+  return deque.at(deque_index);
+}
+
 RawObject FUNC(_collections, _deque_set_maxlen)(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
@@ -128,6 +157,22 @@ static void dequeAppendLeft(Thread* thread, const Deque& deque,
   deque.setNumItems(length + 1);
   deque.atPut(new_left, *value);
   deque.setLeft(new_left);
+}
+
+word dequeIndex(const Deque& deque, word index) {
+  word num_items = deque.numItems();
+  if (index >= num_items || index < -num_items) {
+    return -1;
+  }
+  if (index < 0) {
+    index += num_items;
+  }
+  word deque_index = deque.left() + index;
+  word capacity = deque.capacity();
+  if (deque_index >= capacity) {
+    deque_index -= capacity;
+  }
+  return deque_index;
 }
 
 static RawObject dequePop(Thread* thread, const Deque& deque) {

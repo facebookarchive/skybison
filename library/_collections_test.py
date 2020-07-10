@@ -5,6 +5,52 @@ from _collections import deque
 
 
 class DequeTests(unittest.TestCase):
+    def test_dunder_getitem_returns_item_at_index(self):
+        result = deque()
+        result.append(1)
+        result.appendleft(0)
+        result.append(2)
+        result.appendleft(-1)
+        self.assertEqual(result.__getitem__(0), -1)
+        self.assertEqual(result.__getitem__(1), 0)
+        self.assertEqual(result.__getitem__(2), 1)
+        self.assertEqual(result.__getitem__(3), 2)
+
+    def test_dunder_getitem_with_index_too_small_raises_index_error(self):
+        result = deque()
+        with self.assertRaises(IndexError) as context:
+            result.__getitem__(-1)
+        self.assertEqual(str(context.exception), "deque index out of range")
+
+    def test_dunder_getitem_with_index_too_large_raises_index_error(self):
+        result = deque()
+        result.append(1)
+        result.append(2)
+        result.append(3)
+        with self.assertRaises(IndexError) as context:
+            result.__getitem__(3)
+        self.assertEqual(str(context.exception), "deque index out of range")
+
+    def test_dunder_getitem_with_negative_index_indexes_from_end(self):
+        result = deque()
+        result.append(1)
+        result.appendleft(0)
+        result.append(2)
+        result.appendleft(-1)
+        self.assertEqual(result.__getitem__(-1), 2)
+
+    def test_dunder_getitem_with_non_int_raises_type_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(TypeError):
+            result.__getitem__("3")
+
+    def test_dunder_getitem_with_slice_raises_type_error(self):
+        result = deque()
+        result.append(1)
+        result.append(2)
+        result.append(3)
+        self.assertRaises(TypeError, result.__getitem__, slice(0, 2))
+
     def test_dunder_init_with_large_int_raises_overflow_error(self):
         with self.assertRaises(OverflowError):
             deque(maxlen=2 ** 63 + 1)
