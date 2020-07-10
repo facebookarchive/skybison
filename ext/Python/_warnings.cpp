@@ -30,8 +30,13 @@ static int callWarn(PyObject* category, PyObject* message,
   Object category_obj(&scope, ApiHandle::fromPyObject(category)->asObject());
   DCHECK(message != nullptr, "message cannot be null");
   Object message_obj(&scope, ApiHandle::fromPyObject(message)->asObject());
-  Int stack_level_obj(&scope, thread->runtime()->newInt(stack_level));
+  Runtime* runtime = thread->runtime();
+  Int stack_level_obj(&scope, runtime->newInt(stack_level));
   Object source_obj(&scope, ApiHandle::fromPyObject(source)->asObject());
+  // Like CPython, bail out if we are finalizing the runtime
+  if (runtime->isFinalizing()) {
+    return 0;
+  }
   if (ensureBuiltinModuleById(thread, ID(warnings)).isErrorException()) {
     return -1;
   }
@@ -109,13 +114,18 @@ PY_EXPORT int PyErr_WarnExplicitObject(PyObject* category, PyObject* message,
   Object message_obj(&scope, ApiHandle::fromPyObject(message)->asObject());
   DCHECK(filename != nullptr, "filename cannot be null");
   Object filename_obj(&scope, ApiHandle::fromPyObject(filename)->asObject());
-  Int lineno_obj(&scope, thread->runtime()->newInt(lineno));
+  Runtime* runtime = thread->runtime();
+  Int lineno_obj(&scope, runtime->newInt(lineno));
   DCHECK(module != nullptr, "module cannot be null");
   Object module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   Object registry_obj(&scope,
                       registry == nullptr
                           ? NoneType::object()
                           : ApiHandle::fromPyObject(registry)->asObject());
+  // Like CPython, bail out if we are finalizing the runtime
+  if (runtime->isFinalizing()) {
+    return 0;
+  }
   if (ensureBuiltinModuleById(thread, ID(warnings)).isErrorException()) {
     return -1;
   }
