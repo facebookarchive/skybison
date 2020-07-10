@@ -6029,6 +6029,7 @@ inline word RawDeque::capacity() const {
 }
 
 inline void RawDeque::clear() const {
+  if (numItems() == 0) return;
   RawMutableTuple::cast(items()).fill(RawNoneType::object());
   setLeft(0);
   setNumItems(0);

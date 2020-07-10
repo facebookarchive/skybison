@@ -52,6 +52,7 @@ TEST_F(DequeTest, DequeClearRemovesElements) {
   underlying_tuple.atPut(2, SmallInt::fromWord(2));
 
   self.setItems(*underlying_tuple);
+  self.setNumItems(3);
   self.clear();
   ASSERT_EQ(self.numItems(), 0);
   ASSERT_EQ(self.left(), 0);
