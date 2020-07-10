@@ -3668,7 +3668,10 @@ class frozenset(bootstrap=True):
         _unimplemented()
 
     def __sub__(self, other):
-        _unimplemented()
+        _frozenset_guard(self)
+        if not _anyset_check(other):
+            return NotImplemented
+        return frozenset.difference(self, other)
 
     def __xor__(self, other):
         _unimplemented()

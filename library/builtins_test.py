@@ -6741,6 +6741,24 @@ class FrozensetTests(unittest.TestCase):
 
         self.assertEqual(C().__repr__(), "frozenset({frozenset(...)})")
 
+    def test_dunder_sub_with_non_frozenset_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.__sub__(set(), frozenset())
+
+    def test_dunder_sub_same_frozensets_returns_empty_frozenset(self):
+        a_frozenset = frozenset({1, 2, 3})
+        self.assertFalse(frozenset.__sub__(a_frozenset, a_frozenset))
+
+    def test_dunder_sub_two_frozensets_returns_difference(self):
+        frozenset1 = frozenset({1, 2, 3, 4, 5, 6, 7})
+        frozenset2 = frozenset({1, 3, 5, 7})
+        self.assertEqual(frozenset.__sub__(frozenset1, frozenset2), {2, 4, 6})
+
+    def test_dunder_sub_set_from_frozenset_returns_difference(self):
+        frozenset1 = frozenset({1, 2, 3, 4, 5, 6, 7})
+        set2 = set({1, 3, 5, 7})
+        self.assertEqual(frozenset.__sub__(frozenset1, set2), {2, 4, 6})
+
     def test_difference_with_non_frozenset_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.difference(set(), frozenset())
