@@ -327,7 +327,7 @@ class UCTNode:
         self.pos = -1
         self.wins = 0
         self.losses = 0
-        self.pos_child = collections.deque([None for x in range(SIZE * SIZE)])
+        self.pos_child = [None for x in range(SIZE * SIZE)]
         self.parent = None
 
     def play(self, board):
