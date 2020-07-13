@@ -948,6 +948,7 @@ add_executable(
   ${EXECUTABLE}
   main.cpp
   $<TARGET_OBJECTS:extension>)
+add_custom_target(python DEPENDS ${EXECUTABLE})
 foreach(file ${EXECUTABLE_SYMLINKS})
   add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE} ${file}
