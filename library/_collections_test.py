@@ -51,11 +51,25 @@ class DequeTests(unittest.TestCase):
         result.append(3)
         self.assertRaises(TypeError, result.__getitem__, slice(0, 2))
 
+    def test_dunder_init_adds_elements_from_iterable(self):
+        result = deque([1, 2, 3])
+        self.assertEqual(len(result), 3)
+        self.assertEqual(1, result[0])
+        self.assertEqual(2, result[1])
+        self.assertEqual(3, result[2])
+
+    def test_dunder_init_clears_existing_deque(self):
+        d = deque([1, 2, 3])
+        self.assertEqual(len(d), 3)
+
+        d.__init__(d)
+        self.assertEqual(len(d), 0)
+
     def test_dunder_init_with_large_int_raises_overflow_error(self):
         with self.assertRaises(OverflowError):
             deque(maxlen=2 ** 63 + 1)
 
-    def test_dunder_int_with_large_negative_int_raises_overflow_error(self):
+    def test_dunder_init_with_large_negative_int_raises_overflow_error(self):
         with self.assertRaises(OverflowError):
             deque(maxlen=-(2 ** 63) - 1)
 

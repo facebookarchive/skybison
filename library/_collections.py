@@ -126,13 +126,13 @@ class deque(bootstrap=True):
 
     def __init__(self, iterable=(), maxlen=None):
         _deque_guard(self)
-        # TODO(T67100024): call clear here after its implemented
+        deque.clear(self)
         _deque_set_maxlen(self, maxlen)
-        # TODO(T67099753): handle iterable
+        self.extend(iterable)
 
-    def __iter__(self):
-        _deque_guard(self)
-        return _deque_iterator(self, self._iter_impl)
+    # def __iter__(self):
+    #     _deque_guard(self)
+    #     return _deque_iterator(self, self._iter_impl)
 
     def __le__(self, other):
         _deque_guard(self)
