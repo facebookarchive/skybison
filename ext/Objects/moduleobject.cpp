@@ -264,12 +264,13 @@ static RawObject initializeModule(Thread* thread, ModuleInitFunc init,
   }
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Module module(&scope, ApiHandle::fromPyObject(module_or_def)->asObject());
-  if (!runtime->isInstanceOfModule(*module)) {
+  Object module_obj(&scope, ApiHandle::fromPyObject(module_or_def)->asObject());
+  if (!runtime->isInstanceOfModule(*module_obj)) {
     // TODO(T39542987): Enable multi-phase module initialization
     UNIMPLEMENTED("Multi-phase module initialization");
   }
 
+  Module module(&scope, *module_obj);
   PyModuleDef* def =
       static_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
   if (_PyState_AddModule(module_or_def, def) < 0) {
