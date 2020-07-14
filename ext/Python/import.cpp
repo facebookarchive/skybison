@@ -180,6 +180,23 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
                             ID(builtins), ID(__import__), name_obj, globals_obj,
                             globals_obj, fromlist_obj, level_obj));
   if (result.isError()) return nullptr;
+  // PyImport_GetModule, inlined
+  Object modules(&scope, thread->runtime()->modules());
+  if (modules.isDict()) {
+    Dict modules_dict(&scope, *modules);
+    Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
+    if (hash_obj.isErrorException()) return nullptr;
+    word hash = SmallInt::cast(*hash_obj).value();
+    result = dictAt(thread, modules_dict, name_obj, hash);
+    // dictAt can return Error::notFound, and we should not raise an exception
+    // in that case
+    if (result.isError()) return nullptr;
+    return ApiHandle::newReference(thread, *result);
+  }
+  result = objectGetItem(thread, modules, name_obj);
+  // Don't filter out KeyError; PyImport_GetModule clears them, but
+  // PyImport_Import re-raises
+  if (result.isErrorException()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 

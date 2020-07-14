@@ -133,6 +133,17 @@ TEST_F(ImportExtensionApiTest, ImportModuleReturnsModule) {
   Py_DECREF(module);
 }
 
+TEST_F(ImportExtensionApiTest,
+       ImportModuleWithSubmoduleReturnsLowestLevelModule) {
+  PyObjectPtr module(PyImport_ImportModule("collections.abc"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+  PyObjectPtr name(PyModule_GetNameObject(module));
+  ASSERT_NE(name, nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, "collections.abc"));
+}
+
 TEST_F(ImportExtensionApiTest, ImportModuleNoBlockReturnsModule) {
   PyObject* module = PyImport_ImportModuleNoBlock("operator");
   ASSERT_NE(module, nullptr);
