@@ -452,6 +452,11 @@ class DequeTests(unittest.TestCase):
         result.append("foo")
         self.assertEqual(list(result), [2, 3, 4, 5, "foo"])
 
+    def test_append_over_zero_maxlen_does_nothing(self):
+        result = deque(maxlen=0)
+        result.append(1)
+        self.assertEqual(len(result), 0)
+
     def test_appendleft_adds_elements_to_left(self):
         result = deque()
         self.assertEqual(len(result), 0)
@@ -465,6 +470,11 @@ class DequeTests(unittest.TestCase):
         result = deque([1, 2, 3], maxlen=3)
         result.appendleft("foo")
         self.assertEqual(list(result), ["foo", 1, 2])
+
+    def test_appendleft_over_zero_maxlen_does_nothing(self):
+        result = deque(maxlen=0)
+        result.appendleft(1)
+        self.assertEqual(len(result), 0)
 
     def test_clear_removes_elements(self):
         result = deque(iterable=[1, 2, 3])

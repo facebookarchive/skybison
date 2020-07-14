@@ -102,6 +102,22 @@ class DequeTests(unittest.TestCase):
         result.append(3)
         self.assertEqual(len(result), 3)
 
+    def test_append_over_maxlen_removes_element_from_left(self):
+        result = deque(maxlen=3)
+        result.append(1)
+        result.append(2)
+        result.append(3)
+        result.append("foo")
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0], 2)
+        self.assertEqual(result[1], 3)
+        self.assertEqual(result[2], "foo")
+
+    def test_append_over_zero_maxlen_does_nothing(self):
+        result = deque(maxlen=0)
+        result.append(1)
+        self.assertEqual(len(result), 0)
+
     def test_appendleft_adds_elements_to_left(self):
         result = deque()
         self.assertEqual(len(result), 0)
@@ -109,6 +125,22 @@ class DequeTests(unittest.TestCase):
         result.appendleft(2)
         result.appendleft(3)
         self.assertEqual(len(result), 3)
+
+    def test_appendleft_over_maxlen_removes_element_from_right(self):
+        result = deque(maxlen=3)
+        result.appendleft(1)
+        result.appendleft(2)
+        result.appendleft(3)
+        result.appendleft("foo")
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0], "foo")
+        self.assertEqual(result[1], 3)
+        self.assertEqual(result[2], 2)
+
+    def test_appendleft_over_zero_maxlen_does_nothing(self):
+        result = deque(maxlen=0)
+        result.appendleft(1)
+        self.assertEqual(len(result), 0)
 
     def test_clear_removes_elements(self):
         result = deque()

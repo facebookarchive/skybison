@@ -104,17 +104,20 @@ static void dequeEnsureCapacity(Thread* thread, const Deque& deque,
   HandleScope scope(thread);
   MutableTuple new_array(&scope,
                          thread->runtime()->newMutableTuple(new_capacity));
-  word length = deque.numItems();
-  if (length > 0) {
+  word num_items = deque.numItems();
+  if (num_items > 0) {
     Tuple old_array(&scope, deque.items());
     word left = deque.left();
-    word right = (left + length) % curr_capacity;
+    word right = left + num_items;
+    if (right >= curr_capacity) {
+      right -= curr_capacity;
+    }
     if (right < left) {
       word count = curr_capacity - left;
       new_array.replaceFromWithStartAt(0, *old_array, count, left);
       new_array.replaceFromWithStartAt(count, *old_array, right, 0);
     } else {
-      new_array.replaceFromWithStartAt(0, *old_array, length, left);
+      new_array.replaceFromWithStartAt(0, *old_array, num_items, left);
     }
   }
 
@@ -124,37 +127,52 @@ static void dequeEnsureCapacity(Thread* thread, const Deque& deque,
 
 static void dequeAppend(Thread* thread, const Deque& deque,
                         const Object& value) {
-  dequeEnsureCapacity(thread, deque, deque.numItems() + 1);
-
-  // TODO(T67099800): make append over maxlen call popleft before adding new
-  // element
-
+  word num_items = deque.numItems();
+  if (deque.maxlen() == SmallInt::fromWord(num_items)) {
+    if (num_items == 0) return;
+    word left = deque.left();
+    word new_left = left + 1;
+    word capacity = deque.capacity();
+    if (new_left == capacity) {
+      new_left = 0;
+    }
+    deque.atPut(left, *value);
+    deque.setLeft(new_left);
+    return;
+  }
+  dequeEnsureCapacity(thread, deque, num_items + 1);
   word left = deque.left();
-  word length = deque.numItems();
   word capacity = deque.capacity();
-  DCHECK(length < capacity, "deque should not be full");
-
+  DCHECK(num_items < capacity, "deque should not be full");
   // wrap right around to beginning of tuple if end reached
-  word right = (left + length) % capacity;
-  deque.setNumItems(length + 1);
+  word right = left + num_items;
+  if (right >= capacity) {
+    right -= capacity;
+  }
+  deque.setNumItems(num_items + 1);
   deque.atPut(right, *value);
 }
 
 static void dequeAppendLeft(Thread* thread, const Deque& deque,
                             const Object& value) {
   word num_items = deque.numItems();
-  dequeEnsureCapacity(thread, deque, num_items + 1);
-
-  // TODO(T67099800): appendleft over maxlen should call pop right
-  word new_left = deque.left();
-  if (num_items > 0) {
-    new_left -= 1;
+  if (deque.maxlen() == SmallInt::fromWord(num_items)) {
+    if (num_items == 0) return;
+    word new_left = deque.left() - 1;
+    if (new_left < 0) {
+      new_left += deque.capacity();
+    }
+    deque.atPut(new_left, *value);
+    deque.setLeft(new_left);
+    return;
   }
+  dequeEnsureCapacity(thread, deque, num_items + 1);
+  word new_left = deque.left();
+  new_left -= 1;
   if (new_left < 0) {
     new_left += deque.capacity();
   }
-  word length = num_items;
-  deque.setNumItems(length + 1);
+  deque.setNumItems(num_items + 1);
   deque.atPut(new_left, *value);
   deque.setLeft(new_left);
 }
@@ -177,25 +195,25 @@ word dequeIndex(const Deque& deque, word index) {
 
 static RawObject dequePop(Thread* thread, const Deque& deque) {
   HandleScope scope(thread);
-  word length = deque.numItems();
-  DCHECK(length != 0, "cannot pop from empty deque");
-  word tail = (deque.left() + length - 1) % deque.capacity();
-  Object popped(&scope, deque.at(tail));
+  word num_items = deque.numItems();
+  DCHECK(num_items != 0, "cannot pop from empty deque");
+  word tail = (deque.left() + num_items - 1) % deque.capacity();
+  Object result(&scope, deque.at(tail));
   deque.atPut(tail, NoneType::object());
-  deque.setNumItems(length - 1);
-  return *popped;
+  deque.setNumItems(num_items - 1);
+  return *result;
 }
 
 static RawObject dequePopLeft(Thread* thread, const Deque& deque) {
   HandleScope scope(thread);
-  word length = deque.numItems();
-  DCHECK(length != 0, "cannot pop from empty deque");
+  word num_items = deque.numItems();
+  DCHECK(num_items != 0, "cannot pop from empty deque");
   word head = deque.left();
-  Object popped(&scope, deque.at(head));
+  Object result(&scope, deque.at(head));
   deque.atPut(head, NoneType::object());
   deque.setNumItems(deque.numItems() - 1);
   deque.setLeft(head + 1);
-  return *popped;
+  return *result;
 }
 
 RawObject METH(deque, __len__)(Thread* thread, Frame* frame, word nargs) {
@@ -276,8 +294,7 @@ RawObject METH(deque, pop)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, ID(deque));
   }
   Deque deque(&scope, *self);
-  word length = deque.numItems();
-  if (length == 0) {
+  if (deque.numItems() == 0) {
     return thread->raiseWithFmt(LayoutId::kIndexError, "pop from empty deque");
   }
   return dequePop(thread, deque);
@@ -291,8 +308,7 @@ RawObject METH(deque, popleft)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, ID(deque));
   }
   Deque deque(&scope, *self);
-  word length = deque.numItems();
-  if (length == 0) {
+  if (deque.numItems() == 0) {
     return thread->raiseWithFmt(LayoutId::kIndexError, "pop from empty deque");
   }
   return dequePopLeft(thread, deque);

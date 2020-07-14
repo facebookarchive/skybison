@@ -52,8 +52,8 @@ TEST_F(UnderCollectionsModuleTest, DequeAppendleftInsertsElementToFront) {
   EXPECT_EQ(*result, NoneType::object());
 
   EXPECT_EQ(self.numItems(), 2);
-  EXPECT_TRUE(isIntEqualsWord(self.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(self.at(self.capacity() - 1), 2));
+  EXPECT_TRUE(isIntEqualsWord(self.at(self.capacity() - 1), 1));
+  EXPECT_TRUE(isIntEqualsWord(self.at(self.capacity() - 2), 2));
 }
 
 TEST_F(UnderCollectionsModuleTest, DequeClearRemovesElements) {
@@ -112,7 +112,7 @@ TEST_F(UnderCollectionsModuleTest, DequeIndexWithPositiveIndexReturnsIndex) {
   runBuiltin(METH(deque, appendleft), self, value2);
   word index = 0;
   word deque_index = dequeIndex(self, index);
-  ASSERT_EQ(deque_index, 14);
+  ASSERT_EQ(deque_index, 13);
 }
 
 TEST_F(UnderCollectionsModuleTest, DequePopRemovesItemFromRight) {
