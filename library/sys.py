@@ -9,7 +9,6 @@ from _path import dirname as _dirname, join as _join
 
 # These values are all injected by our boot process. flake8 has no knowledge
 # about their definitions and will complain without these lines.
-_base_dir = _base_dir  # noqa: F821
 _python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdin_fd = _stdin_fd  # noqa: F821

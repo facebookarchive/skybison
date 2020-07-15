@@ -47,11 +47,6 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
   moduleAtPutById(thread, module, ID(_stdout_fd), stdout_fd_val);
 
-  // TODO(T42692043): This awkwardness should go away once we freeze the
-  // standard library into the binary and/or support PYTHONPATH.
-  Object base_dir(&scope, runtime->newStrFromCStr(PYRO_BASEDIR));
-  moduleAtPutById(thread, module, ID(_base_dir), base_dir);
-
   // TODO(T58291784): Make getenv system agnostic
   const char* python_path_cstr = std::getenv("PYTHONPATH");
   Object python_path(&scope, NoneType::object());
