@@ -52,7 +52,7 @@ class deque(bootstrap=True):
 
     def __bool__(self):
         _deque_guard(self)
-        return self.length > 0
+        return len(self) > 0
 
     def __contains__(self, value):
         _deque_guard(self)
@@ -63,7 +63,7 @@ class deque(bootstrap=True):
 
     def __copy__(self):
         _deque_guard(self)
-        return self.__class__(self, self._maxlen)
+        return self.__class__(self, self.maxlen)
 
     def __delitem__(self, index):
         _deque_guard(self)
@@ -188,10 +188,9 @@ class deque(bootstrap=True):
     def __rmul__(self, n):
         _unimplemented()
 
+    # TODO(T69992771): Implement deque.__setitem__
     def __setitem__(self, index, value):
-        _deque_guard(self)
-        block, index = deque.__getref(self, index)
-        block[index] = value
+        _unimplemented()
 
     def _iter_impl(self, original_state, giveup):
         _unimplemented()
