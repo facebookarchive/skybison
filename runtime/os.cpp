@@ -150,34 +150,6 @@ char* OS::readFile(FILE* fp, word* len_out) {
   return buffer.release();
 }
 
-char* OS::temporaryDirectory(const char* prefix) {
-  const char* tmpdir = std::getenv("TMPDIR");
-  if (tmpdir == nullptr) {
-    tmpdir = "/tmp";
-  }
-  const char format[] = "%s/%s.XXXXXXXX";
-  word length = std::snprintf(nullptr, 0, format, tmpdir, prefix);
-  char* buffer = new char[length];
-  std::snprintf(buffer, length, format, tmpdir, prefix);
-  char* result = ::mkdtemp(buffer);
-  CHECK(result != nullptr, "mkdtemp failure");
-  return result;
-}
-
-char* OS::temporaryFile(const char* prefix, int* fd) {
-  const char* tmpdir = std::getenv("TMPDIR");
-  if (tmpdir == nullptr) {
-    tmpdir = "/tmp";
-  }
-  const char format[] = "%s/%s.XXXXXXXX";
-  word length = std::snprintf(nullptr, 0, format, tmpdir, prefix) + 1;
-  char* buffer = new char[length];
-  std::snprintf(buffer, length, format, tmpdir, prefix);
-  *fd = mkstemp(buffer);
-  DCHECK(*fd != -1, "Temporary file could not be created");
-  return buffer;
-}
-
 bool OS::dirExists(const char* dir) {
   struct stat st;
   int err = ::stat(dir, &st);

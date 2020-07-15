@@ -757,8 +757,17 @@ RawObject layoutCreateEmpty(Thread* thread) {
 }
 
 TemporaryDirectory::TemporaryDirectory() {
-  std::unique_ptr<char[]> tempdir(OS::temporaryDirectory("PyroTest"));
-  path = tempdir.get();
+  const char* tmpdir = std::getenv("TMPDIR");
+  if (tmpdir == nullptr) {
+    tmpdir = "/tmp";
+  }
+  const char format[] = "%s/PyroTest.XXXXXXXX";
+  word length = std::snprintf(nullptr, 0, format, tmpdir) + 1;
+  std::unique_ptr<char[]> buffer(new char[length]);
+  std::snprintf(buffer.get(), length, format, tmpdir);
+  char* result = ::mkdtemp(buffer.get());
+  CHECK(result != nullptr, "failed to create temporary directory");
+  path = buffer.get();
   CHECK(!path.empty(), "must not be empty");
   if (path.back() != '/') path += "/";
 }

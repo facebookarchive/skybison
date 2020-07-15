@@ -55,10 +55,6 @@ class OS {
 
   static char* readFile(FILE* fp, word* len_out);
 
-  static char* temporaryDirectory(const char* prefix);
-
-  static char* temporaryFile(const char* prefix, int* fd);
-
   static uint64_t threadID();
 
   static const char* name();
