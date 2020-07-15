@@ -310,4 +310,30 @@ RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject FUNC(sys, set_asyncgen_hooks)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object finalizer(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  Object first_iter(&scope, args.get(0));
+  if (!first_iter.isUnbound()) {
+    if (!first_iter.isNoneType() && !runtime->isCallable(thread, first_iter)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "callable firstiter expected, got %T",
+                                  &first_iter);
+    }
+    thread->setAsyncgenHooksFirstIter(*first_iter);
+  }
+  if (!finalizer.isUnbound()) {
+    if (!finalizer.isNoneType() && !runtime->isCallable(thread, finalizer)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "callable finalizer expected, got %T",
+                                  &finalizer);
+    }
+    thread->setAsyncgenHooksFinalizer(*finalizer);
+  }
+  return NoneType::object();
+}
+
 }  // namespace py

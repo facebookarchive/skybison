@@ -45,6 +45,8 @@ Thread::Thread(word size)
       pending_exc_traceback_(NoneType::object()),
       caught_exc_stack_(NoneType::object()),
       api_repr_list_(NoneType::object()),
+      asyncgen_hooks_first_iter_(NoneType::object()),
+      asyncgen_hooks_finalizer_(NoneType::object()),
       contextvars_context_(NoneType::object()) {
   start_ = new byte[size_ + SIGSTKSZ]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
@@ -69,6 +71,8 @@ void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);
   visitor->visitPointer(&api_repr_list_, PointerKind::kThread);
+  visitor->visitPointer(&asyncgen_hooks_first_iter_, PointerKind::kThread);
+  visitor->visitPointer(&asyncgen_hooks_finalizer_, PointerKind::kThread);
   visitor->visitPointer(&pending_exc_type_, PointerKind::kThread);
   visitor->visitPointer(&pending_exc_value_, PointerKind::kThread);
   visitor->visitPointer(&pending_exc_traceback_, PointerKind::kThread);

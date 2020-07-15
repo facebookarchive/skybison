@@ -444,6 +444,10 @@ def _gc():
     _builtin()
 
 
+def _get_asyncgen_hooks():
+    _builtin()
+
+
 def _get_member_byte(addr):
     _builtin()
 

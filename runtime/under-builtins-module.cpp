@@ -2406,6 +2406,13 @@ RawObject FUNC(_builtins, _gc)(Thread* thread, Frame* /* frame */,
   return NoneType::object();
 }
 
+RawObject FUNC(_builtins, _get_asyncgen_hooks)(Thread* thread, Frame*, word) {
+  HandleScope scope(thread);
+  Object firstiter(&scope, thread->asyncgenHooksFirstIter());
+  Object finalizer(&scope, thread->asyncgenHooksFinalizer());
+  return thread->runtime()->newTupleWith2(firstiter, finalizer);
+}
+
 RawObject FUNC(_builtins, _get_member_byte)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);

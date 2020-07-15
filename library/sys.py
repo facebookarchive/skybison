@@ -3,7 +3,7 @@
 
 from builtins import SimpleNamespace as _SimpleNamespace, _structseq_new_type
 
-from _builtins import _builtin, _int_check, _os_write, _Unbound
+from _builtins import _builtin, _get_asyncgen_hooks, _int_check, _os_write, _Unbound
 from _path import dirname as _dirname, join as _join
 
 
@@ -72,6 +72,8 @@ _HashInfo = _structseq_new_type(
         "cutoff",
     ),
 )
+
+_AsyncGenHooks = _structseq_new_type("sys.asyncgen_hooks", ("firstiter", "finalizer"))
 
 
 class _IOStream:
@@ -300,11 +302,9 @@ def _calculate_path():
     return "/usr/local", "/usr/local", ""
 
 
-# TODO(T67866692) Implement these two functions as part of asynchronous generators.
-# They are stubbed here for now so asyncio can start-up.
-def set_asyncgen_hooks(firstiter=None, finalizer=None):
-    pass
-
-
 def get_asyncgen_hooks():
-    return None, None
+    return _AsyncGenHooks(_get_asyncgen_hooks())
+
+
+def set_asyncgen_hooks(firstiter=_Unbound, finalizer=_Unbound):
+    _builtin()

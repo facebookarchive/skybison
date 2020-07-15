@@ -294,6 +294,17 @@ class Thread {
   RawObject reprEnter(const Object& obj);
   void reprLeave(const Object& obj);
 
+  // Get/set the thread-global callbacks for asynchronous generators.
+  RawObject asyncgenHooksFirstIter() { return asyncgen_hooks_first_iter_; }
+  RawObject asyncgenHooksFinalizer() { return asyncgen_hooks_finalizer_; }
+
+  void setAsyncgenHooksFirstIter(RawObject first_iter) {
+    asyncgen_hooks_first_iter_ = first_iter;
+  }
+  void setAsyncgenHooksFinalizer(RawObject finalizer) {
+    asyncgen_hooks_finalizer_ = finalizer;
+  }
+
   // Get/set the current thread-global _contextvars.Context
   RawObject contextvarsContext() { return contextvars_context_; }
   void setContextvarsContext(RawObject context) {
@@ -340,6 +351,8 @@ class Thread {
 
   RawObject api_repr_list_;
 
+  RawObject asyncgen_hooks_first_iter_;
+  RawObject asyncgen_hooks_finalizer_;
   RawObject contextvars_context_;
 
   // C-API current recursion depth used via _PyThreadState_GetRecursionDepth

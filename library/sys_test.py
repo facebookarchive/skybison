@@ -316,6 +316,99 @@ class SysTests(unittest.TestCase):
         exec("import sys\n\nresult = sys._getframe().f_lineno", d)
         self.assertIs(d["result"], 3)
 
+    def test_set_asyncgen_hooks_raises_type_error_on_non_none_non_callable_finalizer(
+        self,
+    ):
+        with self.assertRaises(TypeError):
+            sys.set_asyncgen_hooks(finalizer=1)
+
+    def test_set_asyncgen_hooks_raises_type_error_on_non_none_non_callable_firstiter(
+        self,
+    ):
+        with self.assertRaises(TypeError):
+            sys.set_asyncgen_hooks(firstiter=1)
+
+    def test_set_asyncgen_hooks_with_none_values(self):
+        sys.set_asyncgen_hooks(None, None)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertIsNone(hooks[0], None)
+        self.assertIsNone(hooks[1], None)
+
+    def test_set_asyncgen_hooks_with_callables(self):
+        def f1():
+            pass
+
+        def f2():
+            pass
+
+        sys.set_asyncgen_hooks(f1, f2)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertEqual(hooks[0], f1)
+        self.assertEqual(hooks[1], f2)
+
+    def test_set_asyncgen_hooks_with_only_named_firstiter(self):
+        def f():
+            pass
+
+        # Clear any existing values
+        sys.set_asyncgen_hooks(None, None)
+
+        sys.set_asyncgen_hooks(firstiter=f)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertEqual(hooks[0], f)
+        self.assertEqual(hooks[1], None)
+
+    def test_set_asyncgen_hooks_with_only_positional_firstiter(self):
+        def f():
+            pass
+
+        # Clear any existing values
+        sys.set_asyncgen_hooks(None, None)
+
+        sys.set_asyncgen_hooks(f)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertEqual(hooks[0], f)
+        self.assertEqual(hooks[1], None)
+
+    def test_set_asyncgen_hooks_with_only_named_finalizer(self):
+        def f():
+            pass
+
+        # Clear any existing values
+        sys.set_asyncgen_hooks(None, None)
+
+        sys.set_asyncgen_hooks(finalizer=f)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertEqual(hooks[0], None)
+        self.assertEqual(hooks[1], f)
+
+    def test_set_asyncgen_hooks_with_no_args(self):
+        def f1():
+            pass
+
+        def f2():
+            pass
+
+        # Set initial values which shouldn't be affected
+        sys.set_asyncgen_hooks(f1, f2)
+
+        sys.set_asyncgen_hooks()
+        hooks = sys.get_asyncgen_hooks()
+        self.assertEqual(hooks[0], f1)
+        self.assertEqual(hooks[1], f2)
+
+    def test_asyncgen_hooks_attributes(self):
+        def f1():
+            pass
+
+        def f2():
+            pass
+
+        sys.set_asyncgen_hooks(f1, f2)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertEqual(hooks.firstiter, f1)
+        self.assertEqual(hooks.finalizer, f2)
+
 
 if __name__ == "__main__":
     unittest.main()
