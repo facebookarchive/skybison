@@ -1195,66 +1195,14 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocale(const char* str,
   return PyUnicode_DecodeLocaleAndSize(str, std::strlen(str), errors);
 }
 
-static word mbstowcsErrorpos(const char* str, size_t len) {
-  const char* start = str;
-  mbstate_t mbs;
-  std::memset(&mbs, 0, sizeof(mbs));
-  while (len != 0) {
-    wchar_t ch;
-    size_t converted = std::mbrtowc(&ch, str, len, &mbs);
-    if (converted == 0) {
-      // Reached end of string
-      break;
-    }
-    if (converted == static_cast<size_t>(-1) ||
-        converted == static_cast<size_t>(-2)) {
-      // Conversion error or incomplete character
-      return str - start;
-    }
-    str += converted;
-    len -= converted;
-  }
-  // failed to find the undecodable byte sequence
-  return 0;
-}
-
 PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
-                                                  Py_ssize_t size,
+                                                  Py_ssize_t len,
                                                   const char* errors) {
-  if (str[size] != '\0' || static_cast<size_t>(size) != std::strlen(str)) {
-    PyErr_SetString(PyExc_ValueError, "embedded null byte");
-    return nullptr;
-  }
-  PyObject* result = nullptr;
-  // TODO(T42479157): Make more efficient by following CPython's implementation
+  int surrogateescape;
   if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
-    wchar_t* wstr = PyMem_New(wchar_t, size + 1);
-    if (wstr == nullptr) {
-      PyErr_NoMemory();
-      return nullptr;
-    }
-
-    size_t wlen = std::mbstowcs(wstr, str, size + 1);
-    if (wlen != static_cast<size_t>(-1)) {
-      result = PyUnicode_FromWideChar(wstr, wlen);
-    }
-    PyMem_Free(wstr);
+    surrogateescape = 0;
   } else if (std::strcmp(errors, "surrogateescape") == 0) {
-    size_t wlen;
-    const char* reason;
-    wchar_t* wstr;
-    int res = _Py_DecodeLocaleEx(str, &wstr, &wlen, &reason,
-                                 /*current_locale=*/1, /*surrogateescape=*/1);
-    if (res != 0) {
-      if (res == -1) {
-        PyErr_NoMemory();
-      } else {
-        PyErr_SetFromErrno(PyExc_OSError);
-      }
-      return nullptr;
-    }
-    result = PyUnicode_FromWideChar(wstr, wlen);
-    PyMem_RawFree(wstr);
+    surrogateescape = 1;
   } else {
     PyErr_Format(PyExc_ValueError,
                  "only 'strict' and 'surrogateescape' error handlers "
@@ -1262,28 +1210,34 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
                  errors);
     return nullptr;
   }
-  if (result != nullptr) {
-    return result;
-  }
 
-  word error_pos = mbstowcsErrorpos(str, size);
-  // TODO(T42609513): Use Py_DecodeLocale and std::strerror to create a better
-  // error message
-  PyObject* reason = PyUnicode_FromString(
-      "mbstowcs() encountered an invalid multibyte sequence");
-  if (reason == nullptr) {
+  if (str[len] != '\0' || static_cast<size_t>(len) != std::strlen(str)) {
+    PyErr_SetString(PyExc_ValueError, "embedded null byte");
     return nullptr;
   }
 
-  PyObject* exc =
-      PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nnO", "locale", str,
-                            size, error_pos, error_pos + 1, reason);
-  Py_DECREF(reason);
-  if (exc != nullptr) {
-    PyCodec_StrictErrors(exc);
-    Py_XDECREF(exc);
+  wchar_t* wstr;
+  size_t wlen;
+  const char* reason;
+  int res = _Py_DecodeLocaleEx(str, &wstr, &wlen, &reason, 1, surrogateescape);
+  if (res != 0) {
+    if (res == -2) {
+      PyObject* exc =
+          PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nns", "locale",
+                                str, len, wlen, wlen + 1, reason);
+      if (exc != nullptr) {
+        PyCodec_StrictErrors(exc);
+        Py_DECREF(exc);
+      }
+    } else {
+      PyErr_NoMemory();
+    }
+    return nullptr;
   }
-  return nullptr;
+
+  PyObject* unicode = PyUnicode_FromWideChar(wstr, wlen);
+  PyMem_RawFree(wstr);
+  return unicode;
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeMBCS(const char* /* s */,
