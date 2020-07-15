@@ -2216,6 +2216,34 @@ class TextIOWrapperTests(unittest.TestCase):
             with _io.TextIOWrapper(bytes_io) as text_io:
                 self.assertIs(text_io.buffer, bytes_io)
 
+    def test_close_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.close(5)
+
+    def test_close_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.close
+        )
+
+    def test_closed_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaisesRegex(ValueError, "underlying buffer has been detached"):
+            text_io.closed
+
+    def test_detach_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.detach(5)
+
+    def test_detach_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.detach
+        )
+
     def test_encoding_returns_encoding(self):
         with self._sample() as text_io:
             self.assertEqual(text_io.encoding, "ascii")
@@ -2242,6 +2270,12 @@ class TextIOWrapperTests(unittest.TestCase):
             with self.assertRaisesRegex(AttributeError, "name"):
                 text_io.name
 
+    def test_name_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaisesRegex(ValueError, "underlying buffer has been detached"):
+            text_io.name
+
     def test_name_returns_buffer_name(self):
         class C(_io.BytesIO):
             name = "foobar"
@@ -2249,10 +2283,21 @@ class TextIOWrapperTests(unittest.TestCase):
         with _io.TextIOWrapper(C(b"hello")) as text_io:
             self.assertEqual(text_io.name, "foobar")
 
+    def test_fileno_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.fileno(5)
+
     def test_fileno_with_bytes_io_raises_unsupported_operation(self):
         with self._sample() as text_io:
             with self.assertRaisesRegex(_io.UnsupportedOperation, "fileno"):
                 text_io.fileno()
+
+    def test_fileno_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.fileno
+        )
 
     def test_fileno_returns_buffer_fileno(self):
         class C(_io.BytesIO):
@@ -2262,9 +2307,20 @@ class TextIOWrapperTests(unittest.TestCase):
         with _io.TextIOWrapper(C(b"hello")) as text_io:
             self.assertEqual(text_io.fileno(), 5)
 
+    def test_isatty_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.isatty(5)
+
     def test_isatty_with_bytes_io_returns_false(self):
         with self._sample() as text_io:
             self.assertFalse(text_io.isatty())
+
+    def test_isatty_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.isatty
+        )
 
     def test_isatty_returns_buffer_isatty(self):
         class C(_io.BytesIO):
@@ -2274,15 +2330,59 @@ class TextIOWrapperTests(unittest.TestCase):
         with _io.TextIOWrapper(C(b"hello")) as text_io:
             self.assertTrue(text_io.isatty())
 
+    def test_newlines_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaisesRegex(ValueError, "underlying buffer has been detached"):
+            text_io.newlines
+
     def test_newlines_returns_newlines(self):
         with _io.TextIOWrapper(_io.BytesIO(b"\rhello\n")) as text_io:
             text_io.read()
             self.assertEqual(text_io.newlines, ("\r", "\n"))
 
+    def test_seek_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.seek(5, 5)
+
+    def test_seek_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaisesRegex(ValueError, "underlying buffer has been detached"):
+            text_io.seek(0)
+
+    def test_seek_with_detached_buffer_and_non_int_whence_raises_type_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaises(TypeError):
+            text_io.seek(5, 5.5)
+
+    def test_seekable_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.seekable(5)
+
+    def test_seekable_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.seekable
+        )
+
     def test_seekable_with_closed_io_raises_value_error(self):
         text_io = self._sample()
         text_io.close()
         self.assertRaises(ValueError, text_io.seekable)
+
+    def test_readable_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.readable(5)
+
+    def test_readable_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.readable
+        )
 
     def test_readable_calls_buffer_readable(self):
         class C(_io.BytesIO):
@@ -2294,6 +2394,17 @@ class TextIOWrapperTests(unittest.TestCase):
                 text_io.readable()
                 self.assertEqual(bytes_io.readable.call_count, 2)
 
+    def test_writable_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.writable(5)
+
+    def test_writable_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.writable
+        )
+
     def test_writable_calls_buffer_writable(self):
         class C(_io.BytesIO):
             writable = Mock(name="writable")
@@ -2304,6 +2415,10 @@ class TextIOWrapperTests(unittest.TestCase):
                 text_io.writable()
                 self.assertEqual(bytes_io.writable.call_count, 2)
 
+    def test_flush_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.flush(5)
+
     def test_flush_with_closed_buffer_raises_value_error(self):
         text_io = self._sample()
         text_io.close()
@@ -2312,7 +2427,9 @@ class TextIOWrapperTests(unittest.TestCase):
     def test_flush_with_detached_buffer_raises_value_error(self):
         text_io = self._sample()
         text_io.detach()
-        self.assertRaisesRegex(ValueError, "detached", text_io.flush)
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.flush
+        )
 
     def test_flush_calls_buffer_flush(self):
         class C(_io.BytesIO):
@@ -2324,16 +2441,44 @@ class TextIOWrapperTests(unittest.TestCase):
                 self.assertIsNone(text_io.flush())
                 bytes_io.flush.assert_called_once()
 
+    def test_read_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.read(5)
+
+    def test_read_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.read
+        )
+
+    def test_read_with_detached_buffer_and_non_int_size_raises_type_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaises(TypeError):
+            text_io.read(5.5)
+
     def test_read_reads_chars(self):
         with _io.TextIOWrapper(_io.BytesIO(b"foo bar")) as text_io:
             result = text_io.read(3)
             self.assertEqual(result, "foo")
             self.assertEqual(text_io.read(), " bar")
 
+    def test_readline_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.readline(5)
+
     def test_readline_with_closed_file_raises_value_error(self):
         text_io = self._sample()
         text_io.close()
         self.assertRaisesRegex(ValueError, "closed file", text_io.readline)
+
+    def test_readline_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.readline
+        )
 
     def test_readline_with_non_int_size_raises_type_error(self):
         with self._sample() as text_io:
@@ -2367,6 +2512,21 @@ class TextIOWrapperTests(unittest.TestCase):
             self.assertEqual(text_io.readline(), "\n")
             self.assertEqual(text_io.readline(), "")
 
+    def test_tell_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.tell(5)
+
+    def test_tell_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.tell
+        )
+
+    def test_truncate_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.truncate(5, 5)
+
     def test_truncate_with_closed_buffer_raises_value_error(self):
         text_io = self._sample()
         text_io.close()
@@ -2375,7 +2535,9 @@ class TextIOWrapperTests(unittest.TestCase):
     def test_truncate_with_detached_buffer_raises_value_error(self):
         text_io = self._sample()
         text_io.detach()
-        self.assertRaisesRegex(ValueError, "detached", text_io.truncate)
+        self.assertRaisesRegex(
+            ValueError, "underlying buffer has been detached", text_io.truncate
+        )
 
     def test_truncate_calls_buffer_flush(self):
         class C(_io.BytesIO):
@@ -2396,6 +2558,22 @@ class TextIOWrapperTests(unittest.TestCase):
                 bytes_io.truncate.assert_not_called()
                 text_io.truncate()
                 bytes_io.truncate.assert_called_once()
+
+    def test_write_with_non_TextIOWrapper_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.TextIOWrapper.write(5, "foo")
+
+    def test_write_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaisesRegex(ValueError, "underlying buffer has been detached"):
+            text_io.write("foo")
+
+    def test_write_with_detach_buffer_and_non_str_text_raises_type_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        with self.assertRaises(TypeError):
+            text_io.write(5.5)
 
     def test_write_writes_chars(self):
         with _io.TextIOWrapper(_io.BytesIO()) as text_io:

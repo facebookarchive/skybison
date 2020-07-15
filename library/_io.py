@@ -83,6 +83,10 @@ def _StringIO_seek(self, offset, whence):
     _builtin()
 
 
+def _TextIOWrapper_attached_guard(obj):
+    _builtin()
+
+
 def _buffered_reader_clear_buffer(self):
     _builtin()
 
@@ -1512,7 +1516,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
                 self._encoder.setstate(0)
 
     def __next__(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self._telling = False
         line = self.readline()
         if not _str_check(line):
@@ -1548,12 +1552,6 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             f"<_io.TextIOWrapper{name_component}"
             f"{mode_component} encoding={self._encoding!r}>"
         )
-
-    def _checkAttached(self, msg=None):
-        if self._buffer is None:
-            raise ValueError(
-                "underlying buffer has been detached" if msg is None else msg
-            )
 
     def _get_decoded_chars(self, n=None):
         offset = self._decoded_chars_used
@@ -1658,7 +1656,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return self._buffer
 
     def close(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         if not self.closed:
             try:
                 self.flush()
@@ -1667,11 +1665,11 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
 
     @property
     def closed(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self._buffer.closed
 
     def detach(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self.flush()
         buffer = self._buffer
         self._buffer = None
@@ -1686,17 +1684,17 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return self._errors
 
     def fileno(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self._buffer.fileno()
 
     def flush(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self._checkClosed()
         self.buffer.flush()
         self._telling = self._seekable
 
     def isatty(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self.buffer.isatty()
 
     @property
@@ -1705,12 +1703,12 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
 
     @property
     def name(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self._buffer.name
 
     @property
     def newlines(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         if self._decoder is None:
             return None
         try:
@@ -1723,9 +1721,11 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             size = -1
         elif not _int_check(size):
             raise TypeError(f"integer argument expected, got '{_type(size).__name__}'")
-        self._checkAttached()
+
+        _TextIOWrapper_attached_guard(self)
         self._checkClosed()
         self._checkReadable("not readable")
+
         decoder = self._decoder
         try:
             size.__index__
@@ -1749,17 +1749,17 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             return result
 
     def readable(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self._buffer.readable()
 
     def readline(self, size=None):  # noqa: C901
+        _TextIOWrapper_attached_guard(self)
+        self._checkClosed()
+
         if size is None:
             size = -1
         elif not _int_check(size):
             size = _index(size)
-
-        self._checkAttached()
-        self._checkClosed()
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
@@ -1848,7 +1848,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             raise TypeError(
                 f"an integer is required (got type {_type(whence).__name__})"
             )
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self._checkClosed()
         self._checkSeekable("underlying stream is not seekable")
 
@@ -1908,11 +1908,11 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return cookie
 
     def seekable(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self._buffer.seekable()
 
     def tell(self):  # noqa: C901
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self._checkClosed()
         self._checkSeekable("underlying stream is not seekable")
         if not self._telling:
@@ -2013,18 +2013,18 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             decoder.setstate(saved_state)
 
     def truncate(self, pos=None):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self.flush()
         return self.buffer.truncate(pos)
 
     def writable(self):
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         return self.buffer.writable()
 
     def write(self, text):
         if not _str_check(text):
             raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
-        self._checkAttached()
+        _TextIOWrapper_attached_guard(self)
         self._checkClosed()
         length = _str_len(text)
         haslf = (self._writetranslate or self._line_buffering) and "\n" in text

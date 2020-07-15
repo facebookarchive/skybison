@@ -121,6 +121,23 @@ RawObject FUNC(_io, _StringIO_seek)(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
+RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfTextIOWrapper(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(TextIOWrapper));
+  }
+  TextIOWrapper self(&scope, *self_obj);
+  if (self.detached()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "underlying buffer has been detached");
+  }
+  return NoneType::object();
+}
+
 static RawObject initReadBuf(Thread* thread,
                              const BufferedReader& buffered_reader) {
   HandleScope scope(thread);

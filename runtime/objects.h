@@ -3617,6 +3617,7 @@ class RawTextIOWrapper : public RawUnderTextIOBase {
   // Getters and setters
   RawObject buffer() const;
   void setBuffer(RawObject buffer) const;
+  bool detached() const;
   RawObject lineBuffering() const;
   void setLineBuffering(RawObject line_buffering) const;
   RawObject encoding() const;
@@ -7608,6 +7609,8 @@ inline RawObject RawTextIOWrapper::buffer() const {
 inline void RawTextIOWrapper::setBuffer(RawObject buffer) const {
   instanceVariableAtPut(kBufferOffset, buffer);
 }
+
+inline bool RawTextIOWrapper::detached() const { return buffer().isNoneType(); }
 
 inline RawObject RawTextIOWrapper::lineBuffering() const {
   return instanceVariableAt(kLineBufferingOffset);
