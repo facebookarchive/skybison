@@ -3618,19 +3618,19 @@ class RawTextIOWrapper : public RawUnderTextIOBase {
   RawObject buffer() const;
   void setBuffer(RawObject buffer) const;
   bool detached() const;
-  RawObject lineBuffering() const;
+  bool lineBuffering() const;
   void setLineBuffering(RawObject line_buffering) const;
   RawObject encoding() const;
   void setEncoding(RawObject encoding) const;
   RawObject errors() const;
   void setErrors(RawObject errors) const;
-  RawObject readuniversal() const;
+  bool readuniversal() const;
   void setReaduniversal(RawObject readuniversal) const;
-  RawObject readtranslate() const;
+  bool readtranslate() const;
   void setReadtranslate(RawObject readtranslate) const;
   RawObject readnl() const;
   void setReadnl(RawObject readnl) const;
-  RawObject writetranslate() const;
+  bool writetranslate() const;
   void setWritetranslate(RawObject writetranslate) const;
   RawObject writenl() const;
   void setWritenl(RawObject writenl) const;
@@ -7612,8 +7612,8 @@ inline void RawTextIOWrapper::setBuffer(RawObject buffer) const {
 
 inline bool RawTextIOWrapper::detached() const { return buffer().isNoneType(); }
 
-inline RawObject RawTextIOWrapper::lineBuffering() const {
-  return instanceVariableAt(kLineBufferingOffset);
+inline bool RawTextIOWrapper::lineBuffering() const {
+  return RawBool::cast(instanceVariableAt(kLineBufferingOffset)).value();
 }
 
 inline void RawTextIOWrapper::setLineBuffering(RawObject line_buffering) const {
@@ -7636,16 +7636,16 @@ inline void RawTextIOWrapper::setErrors(RawObject errors) const {
   instanceVariableAtPut(kErrorsOffset, errors);
 }
 
-inline RawObject RawTextIOWrapper::readuniversal() const {
-  return instanceVariableAt(kReaduniversalOffset);
+inline bool RawTextIOWrapper::readuniversal() const {
+  return RawBool::cast(instanceVariableAt(kReaduniversalOffset)).value();
 }
 
 inline void RawTextIOWrapper::setReaduniversal(RawObject readuniversal) const {
   instanceVariableAtPut(kReaduniversalOffset, readuniversal);
 }
 
-inline RawObject RawTextIOWrapper::readtranslate() const {
-  return instanceVariableAt(kReadtranslateOffset);
+inline bool RawTextIOWrapper::readtranslate() const {
+  return RawBool::cast(instanceVariableAt(kReadtranslateOffset)).value();
 }
 
 inline void RawTextIOWrapper::setReadtranslate(RawObject readtranslate) const {
@@ -7660,8 +7660,8 @@ inline void RawTextIOWrapper::setReadnl(RawObject readnl) const {
   instanceVariableAtPut(kReadnlOffset, readnl);
 }
 
-inline RawObject RawTextIOWrapper::writetranslate() const {
-  return instanceVariableAt(kWritetranslateOffset);
+inline bool RawTextIOWrapper::writetranslate() const {
+  return RawBool::cast(instanceVariableAt(kWritetranslateOffset)).value();
 }
 
 inline void RawTextIOWrapper::setWritetranslate(
