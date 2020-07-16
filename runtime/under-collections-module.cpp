@@ -197,10 +197,15 @@ static RawObject dequePop(Thread* thread, const Deque& deque) {
   HandleScope scope(thread);
   word num_items = deque.numItems();
   DCHECK(num_items != 0, "cannot pop from empty deque");
-  word tail = (deque.left() + num_items - 1) % deque.capacity();
+  word new_length = num_items - 1;
+  word tail = deque.left() + new_length;
+  word capacity = deque.capacity();
+  if (tail >= capacity) {
+    tail -= capacity;
+  }
   Object result(&scope, deque.at(tail));
   deque.atPut(tail, NoneType::object());
-  deque.setNumItems(num_items - 1);
+  deque.setNumItems(new_length);
   return *result;
 }
 
@@ -209,10 +214,15 @@ static RawObject dequePopLeft(Thread* thread, const Deque& deque) {
   word num_items = deque.numItems();
   DCHECK(num_items != 0, "cannot pop from empty deque");
   word head = deque.left();
+  word new_head = head + 1;
+  word capacity = deque.capacity();
+  if (new_head >= capacity) {
+    new_head -= capacity;
+  }
   Object result(&scope, deque.at(head));
   deque.atPut(head, NoneType::object());
-  deque.setNumItems(deque.numItems() - 1);
-  deque.setLeft(head + 1);
+  deque.setNumItems(num_items - 1);
+  deque.setLeft(new_head);
   return *result;
 }
 
