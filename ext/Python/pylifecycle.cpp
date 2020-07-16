@@ -94,9 +94,141 @@ PY_EXPORT int Py_FdIsInteractive(FILE* fp, const char* filename) {
 
 PY_EXPORT void Py_Finalize() { Py_FinalizeEx(); }
 
+// TODO(T70098990): Implement and add PyEnum_Type
+
+#define FOREACH_STATICTYPE(V)                                                  \
+  V(PyAsyncGen_Type)                                                           \
+  V(PyBaseObject_Type)                                                         \
+  V(PyBool_Type)                                                               \
+  V(PyByteArrayIter_Type)                                                      \
+  V(PyByteArray_Type)                                                          \
+  V(PyBytesIter_Type)                                                          \
+  V(PyBytes_Type)                                                              \
+  V(PyClassMethod_Type)                                                        \
+  V(PyCode_Type)                                                               \
+  V(PyComplex_Type)                                                            \
+  V(PyCoro_Type)                                                               \
+  V(PyDictItems_Type)                                                          \
+  V(PyDictIterItem_Type)                                                       \
+  V(PyDictIterKey_Type)                                                        \
+  V(PyDictIterValue_Type)                                                      \
+  V(PyDictKeys_Type)                                                           \
+  V(PyDictProxy_Type)                                                          \
+  V(PyDictValues_Type)                                                         \
+  V(PyDict_Type)                                                               \
+  V(PyEllipsis_Type)                                                           \
+  V(PyFloat_Type)                                                              \
+  V(PyFrozenSet_Type)                                                          \
+  V(PyFunction_Type)                                                           \
+  V(PyGen_Type)                                                                \
+  V(PyListIter_Type)                                                           \
+  V(PyList_Type)                                                               \
+  V(PyLongRangeIter_Type)                                                      \
+  V(PyLong_Type)                                                               \
+  V(PyMemoryView_Type)                                                         \
+  V(PyMethod_Type)                                                             \
+  V(PyModule_Type)                                                             \
+  V(PyProperty_Type)                                                           \
+  V(PyRangeIter_Type)                                                          \
+  V(PyRange_Type)                                                              \
+  V(PySeqIter_Type)                                                            \
+  V(PySetIter_Type)                                                            \
+  V(PySet_Type)                                                                \
+  V(PySlice_Type)                                                              \
+  V(PyStaticMethod_Type)                                                       \
+  V(PySuper_Type)                                                              \
+  V(PyTupleIter_Type)                                                          \
+  V(PyTuple_Type)                                                              \
+  V(PyType_Type)                                                               \
+  V(PyUnicodeIter_Type)                                                        \
+  V(PyUnicode_Type)                                                            \
+  V(_PyNone_Type)                                                              \
+  V(_PyNotImplemented_Type)
+
+#define FOREACH_POINTER(V)                                                     \
+  V(PyExc_ArithmeticError)                                                     \
+  V(PyExc_AssertionError)                                                      \
+  V(PyExc_AttributeError)                                                      \
+  V(PyExc_BaseException)                                                       \
+  V(PyExc_BlockingIOError)                                                     \
+  V(PyExc_BrokenPipeError)                                                     \
+  V(PyExc_BufferError)                                                         \
+  V(PyExc_BytesWarning)                                                        \
+  V(PyExc_ChildProcessError)                                                   \
+  V(PyExc_ConnectionAbortedError)                                              \
+  V(PyExc_ConnectionError)                                                     \
+  V(PyExc_ConnectionRefusedError)                                              \
+  V(PyExc_ConnectionResetError)                                                \
+  V(PyExc_DeprecationWarning)                                                  \
+  V(PyExc_EOFError)                                                            \
+  V(PyExc_EnvironmentError)                                                    \
+  V(PyExc_Exception)                                                           \
+  V(PyExc_FileExistsError)                                                     \
+  V(PyExc_FileNotFoundError)                                                   \
+  V(PyExc_FloatingPointError)                                                  \
+  V(PyExc_FutureWarning)                                                       \
+  V(PyExc_GeneratorExit)                                                       \
+  V(PyExc_IOError)                                                             \
+  V(PyExc_ImportError)                                                         \
+  V(PyExc_ImportWarning)                                                       \
+  V(PyExc_IndentationError)                                                    \
+  V(PyExc_IndexError)                                                          \
+  V(PyExc_InterruptedError)                                                    \
+  V(PyExc_IsADirectoryError)                                                   \
+  V(PyExc_KeyError)                                                            \
+  V(PyExc_KeyboardInterrupt)                                                   \
+  V(PyExc_LookupError)                                                         \
+  V(PyExc_MemoryError)                                                         \
+  V(PyExc_ModuleNotFoundError)                                                 \
+  V(PyExc_NameError)                                                           \
+  V(PyExc_NotADirectoryError)                                                  \
+  V(PyExc_NotImplementedError)                                                 \
+  V(PyExc_OSError)                                                             \
+  V(PyExc_OverflowError)                                                       \
+  V(PyExc_PendingDeprecationWarning)                                           \
+  V(PyExc_PermissionError)                                                     \
+  V(PyExc_ProcessLookupError)                                                  \
+  V(PyExc_RecursionError)                                                      \
+  V(PyExc_ReferenceError)                                                      \
+  V(PyExc_ResourceWarning)                                                     \
+  V(PyExc_RuntimeError)                                                        \
+  V(PyExc_RuntimeWarning)                                                      \
+  V(PyExc_StopAsyncIteration)                                                  \
+  V(PyExc_StopIteration)                                                       \
+  V(PyExc_SyntaxError)                                                         \
+  V(PyExc_SyntaxWarning)                                                       \
+  V(PyExc_SystemError)                                                         \
+  V(PyExc_SystemExit)                                                          \
+  V(PyExc_TabError)                                                            \
+  V(PyExc_TimeoutError)                                                        \
+  V(PyExc_TypeError)                                                           \
+  V(PyExc_UnboundLocalError)                                                   \
+  V(PyExc_UnicodeDecodeError)                                                  \
+  V(PyExc_UnicodeEncodeError)                                                  \
+  V(PyExc_UnicodeError)                                                        \
+  V(PyExc_UnicodeTranslateError)                                               \
+  V(PyExc_UnicodeWarning)                                                      \
+  V(PyExc_UserWarning)                                                         \
+  V(PyExc_ValueError)                                                          \
+  V(PyExc_Warning)                                                             \
+  V(PyExc_ZeroDivisionError)                                                   \
+  V(Py_Ellipsis)                                                               \
+  V(Py_False)                                                                  \
+  V(Py_None)                                                                   \
+  V(Py_NotImplemented)                                                         \
+  V(Py_True)                                                                   \
+  V(_PyLong_One)                                                               \
+  V(_PyLong_Zero)
+
 PY_EXPORT int Py_FinalizeEx() {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
+#define DECREF(ptr) Py_DECREF(&ptr);
+  FOREACH_STATICTYPE(DECREF);
+#undef DECREF
+#define DECREF(ptr) Py_DECREF(ptr);
+  FOREACH_POINTER(DECREF)
+#undef DECREF
   delete runtime;
   return 0;
 }
@@ -110,6 +242,17 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
 
   CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
   CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");
+  // Even though our runtime keeps objects like the `dict` type alive, the
+  // handle (`PyDict_Type`) may not live as long. This is because we are using
+  // a borrowedReference to simulate CPython's reference to a static type. To
+  // mitigate this, incref each well-known handle name once in initialization
+  // and decref it again in finalization.
+#define INCREF(ptr) Py_INCREF(&ptr);
+  FOREACH_STATICTYPE(INCREF);
+#undef INCREF
+#define INCREF(ptr) Py_INCREF(ptr);
+  FOREACH_POINTER(INCREF)
+#undef INCREF
   // TODO(T43142858) We should rather have the site importing in the runtime
   // constructor. Though for that we need a way to communicate the value of
   // Py_NoSiteFlag.
