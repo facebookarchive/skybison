@@ -710,13 +710,66 @@ class BytesIOTests(unittest.TestCase):
             "not_bytes",
         )
 
-    def test_init_returns_bytesio_instance(self):
+    def test_dunder_init_with_bytes_returns_bytesio_instance(self):
         f = _io.BytesIO(b"foo")
         self.assertIsInstance(f, _io.BytesIO)
         self.assertEqual(f.getvalue(), b"foo")
         f.close()
 
-    def test_close_with_non_BytesIO_raises_type_error(self):
+    def test_dunder_init_with_bytes_subclass_returns_bytesio_instance(self):
+        class C(bytes):
+            pass
+
+        instance = C(b"hello")
+        f = _io.BytesIO(instance)
+        self.assertIsInstance(f, _io.BytesIO)
+        self.assertEqual(f.getvalue(), b"hello")
+
+    def test_dunder_init_with_bytearray_subclass_returns_bytesio_instance(self):
+        class C(bytearray):
+            pass
+
+        instance = C(bytearray(b"hello"))
+        f = _io.BytesIO(instance)
+        self.assertIsInstance(f, _io.BytesIO)
+        self.assertEqual(f.getvalue(), b"hello")
+
+    def test_dunder_init_with_bytearray_returns_bytesio_instance(self):
+        bytes_array = bytearray(b"hello")
+        f = _io.BytesIO(bytes_array)
+        self.assertIsInstance(f, _io.BytesIO)
+        self.assertEqual(f.getvalue(), b"hello")
+
+    def test_dunder_init_with_memoryview_of_bytes_returns_bytesio_instance(self):
+        mem = memoryview(b"hello")
+        f = _io.BytesIO(mem)
+        self.assertIsInstance(f, _io.BytesIO)
+        self.assertEqual(f.getvalue(), b"hello")
+
+    def test_dunder_init_with_memoryview_of_bytearray_returns_bytesio_instance(self):
+        bytes_array = bytearray(b"hello")
+        mem = memoryview(bytes_array)
+        f = _io.BytesIO(mem)
+        self.assertIsInstance(f, _io.BytesIO)
+        self.assertEqual(f.getvalue(), b"hello")
+
+    def test_dunder_init_with_none_returns_empty_bytesio_instance(self):
+        f = _io.BytesIO(None)
+        self.assertEqual(f.getvalue(), b"")
+
+    def test_dunder_init_with_bytes_sets_closed_false(self):
+        f = _io.BytesIO(b"hello")
+        self.assertFalse(f.closed)
+        self.assertTrue(f.readable())
+        self.assertTrue(f.writable())
+        self.assertTrue(f.seekable())
+
+    def test_dunder_init_with_float_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            f = _io.BytesIO(0.5)
+            f.close()
+
+    def test_close_with_non_BytesIO_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             _io.BytesIO.close(5)
 
@@ -740,18 +793,78 @@ class BytesIOTests(unittest.TestCase):
         f = C(b"")
         self.assertEqual(f.closed, 2)
 
-    def test_getvalue_returns_bytes_of_buffer(self):
+    def test_getbuffer_with_non_BytesIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.getbuffer()
+
+    def test_getbuffer_with_closed_raises_value_error(self):
+        f = _io.BytesIO(b"foo")
+        f.close()
+        with self.assertRaises(ValueError):
+            f.getbuffer()
+
+    def test_getvalue_with_non_BytesIO_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.getvalue(5)
+
+    def test_getvalue_with_bytes_returns_bytes_of_buffer(self):
         f = _io.BytesIO(b"foo")
         result = f.getvalue()
         self.assertIsInstance(result, bytes)
         self.assertEqual(result, b"foo")
 
-    def test_getbuffer_returns_bytes_of_buffer(self):
+    def test_getvalue_with_bytearray_returns_bytes_of_buffer(self):
+        barr = bytearray(b"foo")
+        f = _io.BytesIO(barr)
+        result = f.getvalue()
+        self.assertIsInstance(result, bytes)
+        self.assertEqual(result, b"foo")
+
+    def test_getvalue_with_memoryview_of_bytes_returns_bytes_of_buffer(self):
+        view = memoryview(b"foo")
+        f = _io.BytesIO(view)
+        result = f.getvalue()
+        self.assertIsInstance(result, bytes)
+        self.assertEqual(result, b"foo")
+
+    def test_getvalue_with_memoryview_of_pointer_returns_bytes_of_buffer(self):
+        mm = mmap.mmap(-1, 4)
+        view = memoryview(mm)
+        f = _io.BytesIO(view)
+        result = f.getvalue()
+        self.assertIsInstance(result, bytes)
+        self.assertEqual(result, b"\x00\x00\x00\x00")
+
+    def test_getvalue_with_modification_on_returned_bytes_returns_same_result(self):
+        f = _io.BytesIO(b"foo")
+        result = f.getvalue()
+        self.assertEqual(result, b"foo")
+        result += b"o"
+        self.assertEqual(result, b"fooo")
+        self.assertEqual(f.getvalue(), b"foo")
+
+    def test_getvalue_with_open_returns_copy_of_value(self):
+        f = _io.BytesIO(b"foobarbaz")
+        first_value = f.getvalue()
+        f.write(b"temp")
+        second_value = f.getvalue()
+        self.assertEqual(first_value, b"foobarbaz")
+        self.assertEqual(second_value, b"temparbaz")
+
+    def test_getvalue_with_closed_raises_value_error(self):
+        f = _io.BytesIO(b"hello")
+        f.close()
+        with self.assertRaises(ValueError):
+            f.getvalue()
+
+    def test_getbuffer_with_bytes_returns_bytes_of_buffer(self):
         f = _io.BytesIO(b"foo")
         result = f.getbuffer()
         self.assertIsInstance(result, memoryview)
-        # TODO(T47881505): Write memoryview.__eq__ so we can check the buffer
-        # with self.assertEqual(result, b"foo")
+
+    def test_read_with_non_BytesIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.read(5)
 
     def test_read_one_byte_reads_bytes(self):
         f = _io.BytesIO(b"foo")
@@ -761,7 +874,7 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.read(1), b"")
         f.close()
 
-    def test_read_reads_bytes(self):
+    def test_read_with_bytes_reads_bytes(self):
         f = _io.BytesIO(b"foo")
         self.assertEqual(f.read(), b"foo")
         self.assertEqual(f.read(), b"")
@@ -772,7 +885,39 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.read(1), b"f")
         self.assertEqual(f.read(None), b"oo")
 
-    def test_read1_reads_bytes(self):
+    def test_read_with_closed_raises_value_error(self):
+        f = _io.BytesIO(b"hello")
+        f.close()
+        with self.assertRaises(ValueError):
+            f.read()
+
+    def test_read_with_int_subclass_reads(self):
+        class C(int):
+            pass
+
+        f = _io.BytesIO(b"hello")
+        c = C(3)
+        self.assertEqual(f.read(c), b"hel")
+
+    def test_read_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise UserWarning("foo")
+
+        f = _io.BytesIO(b"hello")
+        c = C()
+        f.read(c)
+
+    def test_read_with_non_int_raises_type_error(self):
+        f = _io.BytesIO(b"hello")
+        with self.assertRaises(TypeError):
+            f.read(2.5)
+
+    def test_read1_with_non_BytesIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.read1(5)
+
+    def test_read1_wtih_bytes_reads_bytes(self):
         f = _io.BytesIO(b"foo")
         self.assertEqual(f.read1(3), b"foo")
         self.assertEqual(f.read1(3), b"")
@@ -806,6 +951,10 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.readlines(), [b"hello\n", b"world\n", b"foo\n", b"bar"])
         self.assertEqual(f.read(), b"")
         f.close()
+
+    def test_seek_with_non_BytesIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.seek(5, 5)
 
     def test_seek_with_closed_raises_value_error(self):
         f = _io.BytesIO(b"hello")
@@ -924,6 +1073,10 @@ class BytesIOTests(unittest.TestCase):
         with self.assertRaises(OverflowError):
             f.seek(1, 2 ** 65)
 
+    def test_tell_with_non_BytesIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.tell(5)
+
     def test_tell_with_closed_file_raises_value_error(self):
         f = _io.BytesIO(b"")
         f.close()
@@ -935,6 +1088,20 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.tell(), 0)
         f.read(1)
         self.assertEqual(f.tell(), 1)
+
+    def test_truncate_with_non_BytesIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.truncate(5, 5)
+
+    def test_truncate_with_pos_larger_than_length_returns_pos(self):
+        f = _io.BytesIO(b"hello")
+        self.assertEqual(f.truncate(6), 6)
+        self.assertEqual(f.getvalue(), b"hello")
+
+    def test_truncate_with_pos_smaller_than_length_truncates(self):
+        f = _io.BytesIO(b"hello")
+        self.assertEqual(f.truncate(3), 3)
+        self.assertEqual(f.getvalue(), b"hel")
 
     def test_truncate_with_int_subclass_does_not_call_dunder_int(self):
         class C(int):

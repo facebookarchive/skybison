@@ -113,7 +113,7 @@ RawObject FUNC(_io, _BytesIO_seek)(Thread* thread, Frame* frame, word nargs) {
       return SmallInt::fromWord(result);
     case 2:
       result = Utils::maximum(
-          word{0}, Bytearray::cast(self.buffer()).numItems() + offset);
+          word{0}, MutableBytes::cast(self.buffer()).length() + offset);
       self.setPos(result);
       return SmallInt::fromWord(result);
     default:
@@ -160,9 +160,11 @@ RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Frame* frame,
                                   "negative size value %d", size);
     }
   }
-  Bytearray buffer(&scope, bytes_io.buffer());
-  if (size < buffer.numItems()) {
-    buffer.downsize(size);
+  MutableBytes buffer(&scope, bytes_io.buffer());
+  if (size < buffer.length()) {
+    MutableBytes new_buffer(
+        &scope, runtime->mutableBytesCopyWithLength(thread, buffer, size));
+    bytes_io.setBuffer(*new_buffer);
     bytes_io.setPos(size);
   }
   return runtime->newInt(size);
@@ -885,22 +887,68 @@ static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
 
   word pos = bytes_io.pos();
   word new_pos = pos + val_len;
-  Bytearray buffer(&scope, bytes_io.buffer());
-  if (new_pos > buffer.capacity()) {
-    // TODO(T66835625): change buffer to mutable bytes, avoid setItems() and
-    // the extra creation of MutableBytes object
-    MutableBytes buffer_items(&scope, buffer.items());
-    MutableBytes new_buffer_items(&scope, runtime->mutableBytesCopyWithLength(
-                                              thread, buffer_items, new_pos));
-    buffer.setItems(*new_buffer_items);
-    buffer.setNumItems(new_pos);
-  } else if (buffer.numItems() < new_pos) {
-    buffer.setNumItems(new_pos);
+  MutableBytes buffer(&scope, bytes_io.buffer());
+  if (new_pos <= buffer.length()) {
+    runtime->mutableBytesReplaceFromByteslike(thread, buffer, pos, value,
+                                              val_len);
+  } else {
+    MutableBytes new_buffer(
+        &scope, runtime->mutableBytesCopyWithLength(thread, buffer, new_pos));
+    runtime->mutableBytesReplaceFromByteslike(thread, new_buffer, pos, value,
+                                              val_len);
+    bytes_io.setBuffer(*new_buffer);
   }
-
-  MutableBytes::cast(buffer.items()).replaceFromWith(pos, *memory, val_len);
   bytes_io.setPos(new_pos);
   return runtime->newInt(val_len);
+}
+
+RawObject METH(BytesIO, __init__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytesIO(*self)) {
+    return thread->raiseRequiresType(self, ID(BytesIO));
+  }
+  BytesIO bytes_io(&scope, *self);
+  Object initial_bytes(&scope, args.get(1));
+  if (initial_bytes.isNoneType() || initial_bytes == Bytes::empty()) {
+    bytes_io.setBuffer(runtime->emptyMutableBytes());
+    bytes_io.setPos(0);
+    bytes_io.setClosed(false);
+    return NoneType::object();
+  }
+
+  if (!runtime->isByteslike(*initial_bytes)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &initial_bytes);
+  }
+  word bytes_len = runtime->byteslikeLength(thread, initial_bytes);
+  MutableBytes buffer(&scope, runtime->newMutableBytesUninitialized(bytes_len));
+  runtime->mutableBytesReplaceFromByteslike(thread, buffer, 0, initial_bytes,
+                                            bytes_len);
+  bytes_io.setBuffer(*buffer);
+  bytes_io.setClosed(false);
+  bytes_io.setPos(0);
+  return NoneType::object();
+}
+
+RawObject METH(BytesIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytesIO(*self)) {
+    return thread->raiseRequiresType(self, ID(BytesIO));
+  }
+  BytesIO bytes_io(&scope, *self);
+  if (bytes_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Bytes buffer(&scope, bytes_io.buffer());
+  return runtime->bytesCopy(thread, buffer);
 }
 
 RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
@@ -918,34 +966,35 @@ RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object size_obj(&scope, args.get(1));
-  Bytearray buffer(&scope, bytes_io.buffer());
+  MutableBytes buffer(&scope, bytes_io.buffer());
+
   word size;
+  word buffer_len = buffer.length();
+  word pos = bytes_io.pos();
   if (size_obj.isNoneType()) {
-    size = buffer.numItems();
+    size = buffer_len;
   } else {
     size_obj = intFromIndex(thread, size_obj);
     if (size_obj.isError()) return *size_obj;
-    if (!size_obj.isSmallInt() && !size_obj.isBool()) {
-      return thread->raiseWithFmt(
-          LayoutId::kOverflowError,
-          "cannot fit value into an index-sized integer");
-    }
+    // Allow SmallInt, Bool, and subclasses of Int containing SmallInt or Bool
     Int size_int(&scope, intUnderlying(*size_obj));
-    if (size_int.isNegative()) {
-      size = buffer.numItems();
+    if (size_obj.isLargeInt()) {
+      return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &size_int);
+    }
+    if (size_int.asWord() < 0) {
+      size = buffer_len;
     } else {
       size = size_int.asWord();
     }
   }
-  word buffer_len = buffer.numItems();
-  word pos = bytes_io.pos();
   if (buffer_len <= pos) {
     return Bytes::empty();
   }
   word new_pos = Utils::minimum(buffer_len, pos + size);
   bytes_io.setPos(new_pos);
-  // TODO(T66835625): Change buffer to MutableBytes and optimize this process
-  Bytes result(&scope, buffer.items());
+  Bytes result(&scope, *buffer);
   return bytesSubseq(thread, result, pos, new_pos - pos);
 }
 

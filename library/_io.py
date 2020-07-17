@@ -1067,13 +1067,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
     def __init__(self, initial_bytes=None):
-        if initial_bytes is None:
-            self._buffer = bytearray()
-        else:
-            _byteslike_guard(initial_bytes)
-            self._buffer = bytearray(initial_bytes)
-        self._closed = False
-        self._pos = 0
+        _builtin()
 
     def __getstate__(self):
         _unimplemented("BytesIO.__getstate__")
@@ -1084,8 +1078,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
         """
-        _BytesIO_closed_guard(self)
-        return bytes(self._buffer)
+        _builtin()
 
     def getbuffer(self):
         """Return a readable and writable view of the buffer.
@@ -1095,16 +1088,13 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
 
     def close(self):
         _BytesIO_guard(self)
-        self._buffer.clear()
-        _BufferedIOBase.close(self)
+        self._closed = True
+        self._buffer = None
 
     def read(self, size=-1):
         _builtin()
 
-    def read1(self, size=-1):
-        """This is the same as read.
-        """
-        return self.read(size)
+    read1 = read
 
     def write(self, b):
         _builtin()
@@ -1135,6 +1125,10 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
     def seekable(self):
         _BytesIO_closed_guard(self)
         return True
+
+    @property
+    def closed(self):
+        return self._closed
 
 
 class FileIO(_RawIOBase, bootstrap=True):
