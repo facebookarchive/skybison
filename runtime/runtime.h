@@ -441,6 +441,22 @@ class Runtime {
   // Always grows the sequence.
   static word newCapacity(word curr_capacity, word min_capacity);
 
+  // Copies the prefix of specified length of a bytes-like object to a
+  // certain position of a MutableBytes Object
+  void mutableBytesReplaceFromByteslike(Thread* thread, const MutableBytes& dst,
+                                        word dst_start, const Object& src,
+                                        word count);
+
+  // Copies a specified segment of a bytes-like object to a certain position of
+  // a MutableBytes Object
+  void mutableBytesReplaceFromByteslikeStartAt(Thread* thread,
+                                               const MutableBytes& dst,
+                                               word dst_start,
+                                               const Object& src, word count,
+                                               word src_start);
+
+  word byteslikeLength(Thread* thread, const Object& src);
+
   // Ensures that the byte array has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
   void bytearrayEnsureCapacity(Thread* thread, const Bytearray& array,
@@ -712,7 +728,7 @@ class Runtime {
   inline bool isByteslike(RawObject obj) {
     // TODO(T38246066): support bytes-like objects other than bytes, bytearray
     return isInstanceOfBytes(obj) || isInstanceOfBytearray(obj) ||
-           obj.isMemoryView();
+           obj.isMemoryView() || obj.isArray();
   }
 
   // Clear the allocated memory from all extension related objects

@@ -11,6 +11,7 @@
 #include "frame.h"
 #include "int-builtins.h"
 #include "layout.h"
+#include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "set-builtins.h"
@@ -26,6 +27,7 @@ namespace testing {
 using RuntimeAttributeTest = RuntimeFixture;
 using RuntimeBytearrayTest = RuntimeFixture;
 using RuntimeBytesTest = RuntimeFixture;
+using RuntimeByteslikeTest = RuntimeFixture;
 using RuntimeClassAttrTest = RuntimeFixture;
 using RuntimeFunctionAttrTest = RuntimeFixture;
 using RuntimeInstanceAttrTest = RuntimeFixture;
@@ -277,6 +279,311 @@ TEST_F(RuntimeTest, ConcreteStrTypeBaseIsUserType) {
             runtime_->layoutAt(LayoutId::kLargeStr));
   EXPECT_EQ(smallstr_type.builtinBase(), LayoutId::kStr);
   EXPECT_EQ(largestr_type.builtinBase(), LayoutId::kStr);
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeWithBytesCopiesToDst) {
+  HandleScope scope(thread_);
+
+  byte src[] = {'h', 'e', 'l', 'l', 'o'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, bytes, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hel11"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, bytes, 5);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hello"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 2, bytes, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hehel"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeWithBytearrayCopiesToDst) {
+  HandleScope scope(thread_);
+
+  Bytearray array(&scope, runtime_->newBytearray());
+  View<byte> hello(reinterpret_cast<const byte*>("hello"), 5);
+  runtime_->bytearrayExtend(thread_, array, hello);
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, array, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hel11"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, array, 5);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hello"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 2, array, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hehel"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeWithMemoryViewOfBytesCopiesToDst) {
+  HandleScope scope(thread_);
+
+  const byte src[] = {'h', 'e', 'l', 'l', 'o'};
+  MemoryView view(&scope, newMemoryView(src, "b", ReadOnly::ReadWrite));
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, view, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hel11"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, view, 5);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hello"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 2, view, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hehel"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeWithMemoryViewOfPointerCopiesToDst) {
+  HandleScope scope(thread_);
+
+  const word length = 5;
+  byte memory[] = {'h', 'e', 'l', 'l', 'o'};
+  Object none(&scope, NoneType::object());
+  MemoryView view(&scope,
+                  runtime_->newMemoryViewFromCPtr(thread_, none, memory, length,
+                                                  ReadOnly::ReadWrite));
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, view, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hel11"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, view, 5);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hello"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 2, view, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "hehel"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeWithArrayCopiesToDst) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import array
+arr = array.array('b', [1, 2, 3, 4, 5])
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object array(&scope, mainModuleAt(runtime_, "arr"));
+  ASSERT_TRUE(array.isArray());
+
+  byte dst_byte[] = {'\x01', '\x01', '\x01', '\x01', '\x01'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, array, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "\x01\x02\x03\x01\x01"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 0, array, 5);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "\x01\x02\x03\x04\x05"));
+
+  runtime_->mutableBytesReplaceFromByteslike(thread_, dst, 2, array, 3);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "\x01\x02\x01\x02\x03"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeStartAtWithBytesCopiesToDst) {
+  HandleScope scope(thread_);
+
+  byte src[] = {'h', 'e', 'l', 'l', 'o'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, bytes, 3,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ell11"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, bytes, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ello1"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 1, bytes, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "eello"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeStartAtWithBytearrayCopiesToDst) {
+  HandleScope scope(thread_);
+
+  Bytearray array(&scope, runtime_->newBytearray());
+  View<byte> hello(reinterpret_cast<const byte*>("hello"), 5);
+  runtime_->bytearrayExtend(thread_, array, hello);
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, array, 3,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ell11"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, array, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ello1"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 1, array, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "eello"));
+}
+
+TEST_F(
+    RuntimeByteslikeTest,
+    MutableBytesReplaceFromByteslikeStartAtWithMemoryViewOfBytesCopiesToDst) {
+  HandleScope scope(thread_);
+
+  const byte src[] = {'h', 'e', 'l', 'l', 'o'};
+  MemoryView view(&scope, newMemoryView(src, "b", ReadOnly::ReadWrite));
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, view, 3,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ell11"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, view, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ello1"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 1, view, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "eello"));
+}
+
+TEST_F(
+    RuntimeByteslikeTest,
+    MutableBytesReplaceFromByteslikeStartAtWithMemoryViewOfPointerCopiesToDst) {
+  HandleScope scope(thread_);
+
+  const word length = 5;
+  byte memory[] = {'h', 'e', 'l', 'l', 'o'};
+  Object none(&scope, NoneType::object());
+  MemoryView view(&scope,
+                  runtime_->newMemoryViewFromCPtr(thread_, none, memory, length,
+                                                  ReadOnly::ReadWrite));
+
+  byte dst_byte[] = {'1', '1', '1', '1', '1'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, view, 3,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ell11"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, view, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "ello1"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 1, view, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "eello"));
+}
+
+TEST_F(RuntimeByteslikeTest,
+       MutableBytesReplaceFromByteslikeStartAtWithArrayCopiesToDst) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import array
+arr = array.array('b', [1, 2, 3, 4, 5])
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object array(&scope, mainModuleAt(runtime_, "arr"));
+  ASSERT_TRUE(array.isArray());
+
+  byte dst_byte[] = {'\x01', '\x01', '\x01', '\x01', '\x01'};
+  Bytes dst_bytes(&scope, runtime_->newBytesWithAll(dst_byte));
+  MutableBytes dst(&scope, runtime_->mutableBytesFromBytes(thread_, dst_bytes));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, array, 3,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "\x02\x03\x04\x01\x01"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 0, array, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "\x02\x03\x04\x05\x01"));
+
+  runtime_->mutableBytesReplaceFromByteslikeStartAt(thread_, dst, 1, array, 4,
+                                                    1);
+  EXPECT_TRUE(isBytesEqualsCStr(dst, "\x02\x02\x03\x04\x05"));
+}
+
+TEST_F(RuntimeByteslikeTest, ByteslikeLengthWithBytesReturnsFullLength) {
+  HandleScope scope(thread_);
+
+  byte src[] = {'h', 'e', 'l', 'l', 'o'};
+  Bytes bytes(&scope, runtime_->newBytesWithAll(src));
+
+  word expected_len = 5;
+  EXPECT_EQ(runtime_->byteslikeLength(thread_, bytes), expected_len);
+}
+
+TEST_F(RuntimeByteslikeTest, ByteslikeLengthWithBytearrayReturnsFullLength) {
+  HandleScope scope(thread_);
+
+  Bytearray array(&scope, runtime_->newBytearray());
+  View<byte> hello(reinterpret_cast<const byte*>("hello"), 5);
+  runtime_->bytearrayExtend(thread_, array, hello);
+
+  word expected_len = 5;
+  EXPECT_EQ(runtime_->byteslikeLength(thread_, array), expected_len);
+}
+
+TEST_F(RuntimeByteslikeTest,
+       ByteslikeLengthWithMemoryViewOfBytesReturnsFullLength) {
+  HandleScope scope(thread_);
+
+  const byte src[] = {'h', 'e', 'l', 'l', 'o'};
+  MemoryView view(&scope, newMemoryView(src, "b", ReadOnly::ReadWrite));
+
+  word expected_len = 5;
+  EXPECT_EQ(runtime_->byteslikeLength(thread_, view), expected_len);
+}
+
+TEST_F(RuntimeByteslikeTest,
+       ByteslikeLengthWithMemoryViewOfPointerReturnsFullLength) {
+  HandleScope scope(thread_);
+
+  const word length = 5;
+  byte memory[] = {'h', 'e', 'l', 'l', 'o'};
+  Object none(&scope, NoneType::object());
+  MemoryView view(&scope,
+                  runtime_->newMemoryViewFromCPtr(thread_, none, memory, length,
+                                                  ReadOnly::ReadWrite));
+
+  word expected_len = 5;
+  EXPECT_EQ(runtime_->byteslikeLength(thread_, view), expected_len);
+}
+
+TEST_F(RuntimeByteslikeTest, ByteslikeLengthWithArrayReturnsFullLength) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import array
+arr = array.array('b', [1, 2, 3, 4, 5])
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object array(&scope, mainModuleAt(runtime_, "arr"));
+  ASSERT_TRUE(array.isArray());
+
+  word expected_len = 5;
+  EXPECT_EQ(runtime_->byteslikeLength(thread_, array), expected_len);
 }
 
 TEST_F(RuntimeBytearrayTest, EnsureCapacity) {
