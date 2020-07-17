@@ -75,11 +75,23 @@ from _thread import LockType as _thread_Lock
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
+def _BytesIO_closed_guard(obj):
+    _builtin()
+
+
+def _BytesIO_guard(obj):
+    _builtin()
+
+
 def _BytesIO_seek(self, pos, whence):
     _builtin()
 
 
 def _BytesIO_truncate(self, pos):
+    _builtin()
+
+
+def _BytesIO_seek(self, offset, whence):
     _builtin()
 
 
@@ -1072,18 +1084,17 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
         """
-        if self.closed:
-            raise ValueError("getvalue on closed file")
+        _BytesIO_closed_guard(self)
         return bytes(self._buffer)
 
     def getbuffer(self):
         """Return a readable and writable view of the buffer.
         """
-        if self.closed:
-            raise ValueError("getbuffer on closed file")
+        _BytesIO_closed_guard(self)
         return memoryview(self._buffer)
 
     def close(self):
+        _BytesIO_guard(self)
         self._buffer.clear()
         _BufferedIOBase.close(self)
 
@@ -1105,8 +1116,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         return _BytesIO_seek(self, _index(pos), _int(whence))
 
     def tell(self):
-        if self.closed:
-            raise ValueError("tell on closed file")
+        _BytesIO_closed_guard(self)
         return self._pos
 
     def truncate(self, pos=None):
@@ -1115,18 +1125,15 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         return _BytesIO_truncate(self, _index(pos))
 
     def readable(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file.")
+        _BytesIO_closed_guard(self)
         return True
 
     def writable(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file.")
+        _BytesIO_closed_guard(self)
         return True
 
     def seekable(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file.")
+        _BytesIO_closed_guard(self)
         return True
 
 

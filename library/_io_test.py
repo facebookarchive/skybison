@@ -716,6 +716,10 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.getvalue(), b"foo")
         f.close()
 
+    def test_close_with_non_BytesIO_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.close(5)
+
     def test_close_clears_buffer(self):
         f = _io.BytesIO(b"foo")
         f.close()
@@ -726,6 +730,15 @@ class BytesIOTests(unittest.TestCase):
         f = _io.BytesIO(b"foo")
         f.close()
         f.close()
+
+    def test_close_with_subclass_overwrite_uses_subclass_property(self):
+        class C(_io.BytesIO):
+            @property
+            def closed(self):
+                return 2
+
+        f = C(b"")
+        self.assertEqual(f.closed, 2)
 
     def test_getvalue_returns_bytes_of_buffer(self):
         f = _io.BytesIO(b"foo")

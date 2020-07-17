@@ -38,6 +38,32 @@ void FUNC(_io, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 }
 
+RawObject FUNC(_io, _BytesIO_guard)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytesIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(BytesIO));
+  }
+  return NoneType::object();
+}
+
+RawObject FUNC(_io, _BytesIO_closed_guard)(Thread* thread, Frame* frame,
+                                           word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytesIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(BytesIO));
+  }
+  BytesIO self(&scope, *self_obj);
+  if (self.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  return NoneType::object();
+}
+
 RawObject FUNC(_io, _BytesIO_seek)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
