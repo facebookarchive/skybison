@@ -794,7 +794,23 @@ class BytesIOTests(unittest.TestCase):
         self.assertEqual(f.read(), b"")
         f.close()
 
-    def test_seek_with_int_subclass_does_not_call_dunder_index(self):
+    def test_seek_with_closed_raises_value_error(self):
+        f = _io.BytesIO(b"hello")
+        f.close()
+        with self.assertRaises(ValueError):
+            f.seek(3)
+
+    def test_seek_with_none_offset_raises_type_error(self):
+        f = _io.BytesIO(b"hello")
+        with self.assertRaises(TypeError):
+            f.seek(None, 0)
+
+    def test_seek_with_none_whence_raises_type_error(self):
+        f = _io.BytesIO(b"hello")
+        with self.assertRaises(TypeError):
+            f.seek(1, None)
+
+    def test_seek_with_int_subclass_offset_does_not_call_dunder_index(self):
         class C(int):
             def __index__(self):
                 raise UserWarning("foo")
@@ -803,7 +819,7 @@ class BytesIOTests(unittest.TestCase):
         pos = C()
         f.seek(pos)
 
-    def test_seek_calls_dunder_index(self):
+    def test_seek_with_class_offset_calls_dunder_index(self):
         class C:
             def __index__(self):
                 raise UserWarning("foo")
@@ -812,6 +828,16 @@ class BytesIOTests(unittest.TestCase):
         pos = C()
         with self.assertRaises(UserWarning):
             f.seek(pos)
+
+    def test_seek_with_class_whence_raises_type_error(self):
+        class C:
+            def __index__(self):
+                raise UserWarning("foo")
+
+        f = _io.BytesIO(b"")
+        whence = C()
+        with self.assertRaises(TypeError):
+            f.seek(0, whence)
 
     def test_seek_with_raising_dunder_int_raises_type_error(self):
         class C:
@@ -823,11 +849,67 @@ class BytesIOTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             f.seek(pos)
 
-    def test_seek_with_float_raises_type_error(self):
+    def test_seek_with_float_offset_raises_type_error(self):
         f = _io.BytesIO(b"")
         pos = 3.4
         with self.assertRaises(TypeError):
             f.seek(pos)
+
+    def test_seek_with_float_whence_raises_type_error(self):
+        f = _io.BytesIO(b"hello")
+        with self.assertRaises(TypeError):
+            f.seek(0.5)
+
+    def test_seek_with_int_subclass_whence_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise UserWarning("foo")
+
+        f = _io.BytesIO(b"")
+        whence = C()
+        f.seek(5, whence)
+
+    def test_seek_with_whence_0_returns_new_pos(self):
+        f = _io.BytesIO(b"")
+        pos = 3
+        self.assertEqual(f.seek(pos), 3)
+        self.assertEqual(f.tell(), 3)
+
+    def test_seek_with_whence_1_returns_new_pos(self):
+        f = _io.BytesIO(b"")
+        f.seek(3)
+        offset = 3
+        self.assertEqual(f.seek(offset, 1), 6)
+        self.assertEqual(f.tell(), 6)
+
+    def test_seek_with_whence_1_negative_new_pos_retuns_zero(self):
+        f = _io.BytesIO(b"")
+        f.seek(3)
+        offset = -5
+        self.assertEqual(f.seek(offset, 1), 0)
+        self.assertEqual(f.tell(), 0)
+
+    def test_seek_with_whence_2_returns_new_pos(self):
+        f = _io.BytesIO(b"hello")
+        offset = 3
+        self.assertEqual(f.seek(offset, 2), 8)
+        self.assertEqual(f.tell(), 8)
+
+    def test_seek_with_whence_2_negative_new_pos_retuns_zero(self):
+        f = _io.BytesIO(b"hello")
+        offset = -7
+        self.assertEqual(f.seek(offset, 2), 0)
+        self.assertEqual(f.tell(), 0)
+
+    def test_seek_with_whence_3_raises_value_error(self):
+        f = _io.BytesIO(b"hello")
+        with self.assertRaises(ValueError):
+            f.seek(3, 3)
+
+    def test_seek_with_large_whence_raises_overflow_error(self):
+        f = _io.BytesIO(b"hello")
+        with self.assertRaises(OverflowError):
+            f.seek(1, 2 ** 65)
 
     def test_tell_with_closed_file_raises_value_error(self):
         f = _io.BytesIO(b"")

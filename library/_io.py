@@ -75,6 +75,10 @@ from _thread import LockType as _thread_Lock
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
+def _BytesIO_seek(self, pos, whence):
+    _builtin()
+
+
 def _BytesIO_truncate(self, pos):
     _builtin()
 
@@ -1095,26 +1099,10 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         _builtin()
 
     def seek(self, pos, whence=0):
-        if self.closed:
-            raise ValueError("seek on closed file")
-        # TODO(emacs):
-        try:
-            pos = _index(pos)
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
-        if whence == 0:
-            if pos < 0:
-                raise ValueError(f"negative seek position {pos!r}")
-            self._pos = pos
-        elif whence == 1:
-            # TODO(T47866758): Use less generic code to do this computation
-            # since all of the types are known ahead of time.
-            self._pos = max(0, self._pos + pos)
-        elif whence == 2:
-            self._pos = max(0, len(self._buffer) + pos)
-        else:
-            raise ValueError("unsupported whence value")
-        return self._pos
+        result = _BytesIO_seek(self, pos, whence)
+        if result is not _Unbound:
+            return result
+        return _BytesIO_seek(self, _index(pos), _int(whence))
 
     def tell(self):
         if self.closed:

@@ -38,6 +38,69 @@ void FUNC(_io, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 }
 
+RawObject FUNC(_io, _BytesIO_seek)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+
+  Runtime* runtime = thread->runtime();
+  Object offset_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*offset_obj)) {
+    return Unbound::object();
+  }
+
+  Object whence_obj(&scope, args.get(2));
+  if (!runtime->isInstanceOfInt(*whence_obj)) {
+    return Unbound::object();
+  }
+
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytesIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(BytesIO));
+  }
+  BytesIO self(&scope, *self_obj);
+  if (self.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+
+  Int offset_int(&scope, intUnderlying(*offset_obj));
+  word offset = offset_int.asWordSaturated();
+  if (!SmallInt::isValid(offset)) {
+    return thread->raiseWithFmt(
+        LayoutId::kOverflowError,
+        "cannot fit offset into an index-sized integer");
+  }
+  Int whence_int(&scope, intUnderlying(*whence_obj));
+  word whence = whence_int.asWordSaturated();
+  word result;
+  switch (whence) {
+    case 0:
+      if (offset < 0) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "Negative seek value %d", offset);
+      }
+      self.setPos(offset);
+      return SmallInt::fromWord(offset);
+    case 1:
+      result = Utils::maximum(word{0}, self.pos() + offset);
+      self.setPos(result);
+      return SmallInt::fromWord(result);
+    case 2:
+      result = Utils::maximum(
+          word{0}, Bytearray::cast(self.buffer()).numItems() + offset);
+      self.setPos(result);
+      return SmallInt::fromWord(result);
+    default:
+      if (SmallInt::isValid(whence)) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "Invalid whence (%w, should be 0, 1 or 2)",
+                                    whence);
+      }
+      return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                  "Python int too large to convert to C long");
+  }
+}
+
 RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
