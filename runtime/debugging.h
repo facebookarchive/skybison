@@ -48,10 +48,12 @@ std::ostream& operator<<(std::ostream& os, const Handle<T>& value) {
 }
 
 std::ostream& operator<<(std::ostream& os, Frame* frame);
+std::ostream& operator<<(std::ostream& os, Thread* thread);
 
 void dump(RawObject object);
 void dump(const Object& object);
 void dump(Frame* frame);
+void dumpPendingException(Thread* thread);
 void dumpSingleFrame(Frame* frame);
 
 void initializeDebugging();

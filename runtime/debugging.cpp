@@ -692,11 +692,24 @@ static bool dumpSimple(std::ostream& os, RawObject value) {
   }
 }
 
+std::ostream& operator<<(std::ostream& os, Thread* thread) {
+  HandleScope scope(thread);
+  Object type(&scope, thread->pendingExceptionType());
+  os << "pending exception type: " << *type << "\n";
+  Object value(&scope, thread->pendingExceptionValue());
+  os << "pending exception value: " << *value << "\n";
+  Object traceback(&scope, thread->pendingExceptionTraceback());
+  os << "pending exception traceback: " << *traceback << "\n";
+  return os;
+}
+
 USED void dump(RawObject object) { dumpExtended(std::cerr, object); }
 
 USED void dump(const Object& object) { dumpExtended(std::cerr, *object); }
 
 USED void dump(Frame* frame) { std::cerr << frame; }
+
+USED void dumpPendingException(Thread* thread) { std::cerr << thread; }
 
 USED void dumpSingleFrame(Frame* frame) {
   dumpSingleFrame(Thread::current(), std::cerr, frame);

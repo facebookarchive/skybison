@@ -797,5 +797,15 @@ TEST_F(DebuggingTests, FormatValueCellPlaceHolder) {
   EXPECT_EQ(ss.str(), "<value_cell placeholder>");
 }
 
+TEST_F(DebuggingTests, FormatThreadDumpsPendingException) {
+  thread_->raiseWithFmt(LayoutId::kValueError, "foo");
+  std::stringstream ss;
+  ss << thread_;
+  EXPECT_EQ(ss.str(), R"(pending exception type: <type "ValueError">
+pending exception value: "foo"
+pending exception traceback: None
+)");
+}
+
 }  // namespace testing
 }  // namespace py
