@@ -801,6 +801,37 @@ d = C(5)
   ASSERT_EQ(PyDict_Size(dict), 2);
 }
 
+TEST_F(DictExtensionApiTest, SetItemStringInternsKeys) {
+  PyObjectPtr one(PyLong_FromLong(1));
+  const char* key = "unique-never-before-seen-test-key";
+  PyObjectPtr pydict(PyDict_New());
+
+  // Calling PyDict_SetItemString should create an interned string for the key
+  PyDict_SetItemString(pydict, key, one);
+  PyObjectPtr result(PyDict_Keys(pydict));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  EXPECT_EQ(PyList_Size(result), 1);
+  PyObjectPtr interned_str(PyList_GetItem(result, 0));
+  // Call Py_INCREF because PyList_GetItem returns a borrowed reference
+  Py_INCREF(interned_str);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  // Use a PyObject* directly because InternInPlace requires a reference to a
+  // PyObject*
+  PyObject* str = PyUnicode_FromString(key);
+  // Prior to interning str it should be a different object than
+  // the dictionary key
+  ASSERT_NE(str, interned_str);
+  // InternInPlace will update the object str points to to be the same as
+  // the dictionary key.
+  PyUnicode_InternInPlace(&str);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(str, interned_str);
+  Py_DECREF(str);
+}
+
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {
   PyObject* list = PyList_New(0);
   EXPECT_EQ(PyDict_Size(list), -1);

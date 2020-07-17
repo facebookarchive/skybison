@@ -114,7 +114,7 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
     return -1;
   }
   Dict dict(&scope, *dict_obj);
-  Str key_obj(&scope, runtime->newStrFromCStr(key));
+  Str key_obj(&scope, Runtime::internStrFromCStr(thread, key));
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   word hash = strHash(thread, *key_obj);
   if (dictAtPut(thread, dict, key_obj, hash, value_obj).isErrorException()) {
