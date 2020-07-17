@@ -75,6 +75,10 @@ from _thread import LockType as _thread_Lock
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
+def _BytesIO_truncate(self, pos):
+    _builtin()
+
+
 def _StringIO_closed_guard(obj):
     _builtin()
 
@@ -1118,16 +1122,9 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         return self._pos
 
     def truncate(self, pos=None):
-        if self.closed:
-            raise ValueError("truncate on closed file")
         if pos is None:
-            pos = self._pos
-        elif not _int_check(pos):
-            raise TypeError(f"integer argument expected, got '{_type(pos).__name__}'")
-        if pos < 0:
-            raise ValueError(f"negative truncate position {pos!r}")
-        del self._buffer[pos:]
-        return pos
+            return _BytesIO_truncate(self, pos)
+        return _BytesIO_truncate(self, _index(pos))
 
     def readable(self):
         if self.closed:

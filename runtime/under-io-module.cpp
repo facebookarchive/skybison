@@ -38,6 +38,47 @@ void FUNC(_io, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 }
 
+RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytesIO(*self)) {
+    return thread->raiseRequiresType(self, ID(BytesIO));
+  }
+  BytesIO bytes_io(&scope, *self);
+  if (bytes_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object size_obj(&scope, args.get(1));
+  word size;
+  if (size_obj.isNoneType()) {
+    size = bytes_io.pos();
+  } else {
+    if (size_obj.isError()) return *size_obj;
+    Int size_int(&scope, intUnderlying(*size_obj));
+    // Allow SmallInt, Bool, and subclasses of Int containing SmallInt or Bool
+    if (!size_int.isSmallInt() && !size_int.isBool()) {
+      return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &size_int);
+    }
+    size = size_int.asWord();
+    if (size < 0) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "negative size value %d", size);
+    }
+  }
+  Bytearray buffer(&scope, bytes_io.buffer());
+  if (size < buffer.numItems()) {
+    buffer.downsize(size);
+    bytes_io.setPos(size);
+  }
+  return runtime->newInt(size);
+}
+
 RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
