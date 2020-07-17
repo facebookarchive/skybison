@@ -343,6 +343,145 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_TRUE(isBytearrayEqualsCStr(self, "AbBde"));
 }
 
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearraySetsliceWithStepEqualsOneAndSelfAsSourceSetsSliceAndGrows) {
+  HandleScope scope(thread_);
+  Bytearray self(&scope, runtime_->newBytearray());
+  bytearrayAdd(thread_, runtime_, self, 'a');
+  bytearrayAdd(thread_, runtime_, self, 'b');
+  bytearrayAdd(thread_, runtime_, self, 'c');
+  bytearrayAdd(thread_, runtime_, self, 'd');
+  bytearrayAdd(thread_, runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(4));
+  Int step(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, self)
+                  .isNoneType());
+  EXPECT_TRUE(isBytearrayEqualsCStr(self, "abcdee"));
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearraySetsliceWithStepEqualsOneAndSelfAsSourceStartsAtOneSetsSliceAndGrowsLHS) {
+  HandleScope scope(thread_);
+  Bytearray self(&scope, runtime_->newBytearray());
+  bytearrayAdd(thread_, runtime_, self, 'a');
+  bytearrayAdd(thread_, runtime_, self, 'b');
+  bytearrayAdd(thread_, runtime_, self, 'c');
+  bytearrayAdd(thread_, runtime_, self, 'd');
+  bytearrayAdd(thread_, runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(4));
+  Int step(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, self)
+                  .isNoneType());
+  EXPECT_TRUE(isBytearrayEqualsCStr(self, "aabcdee"));
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearraySetsliceWithStepEqualsOneAndBytesAsSourceSetsSliceAndGrowsLHS) {
+  HandleScope scope(thread_);
+  Bytearray self(&scope, runtime_->newBytearray());
+  bytearrayAdd(thread_, runtime_, self, 'a');
+  bytearrayAdd(thread_, runtime_, self, 'b');
+  bytearrayAdd(thread_, runtime_, self, 'c');
+  bytearrayAdd(thread_, runtime_, self, 'd');
+  bytearrayAdd(thread_, runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(4));
+  Int step(&scope, SmallInt::fromWord(1));
+
+  byte src[] = {'o', 'o', 'o', 'o'};
+  Bytes value(&scope, runtime_->newBytesWithAll(src));
+
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, value)
+                  .isNoneType());
+  EXPECT_TRUE(isBytearrayEqualsCStr(self, "aooooe"));
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearraySetsliceWithStepEqualsOneAndMemoryViewOfBytesAsSourceSetsSliceAndGrowsLHS) {
+  HandleScope scope(thread_);
+  Bytearray self(&scope, runtime_->newBytearray());
+  bytearrayAdd(thread_, runtime_, self, 'a');
+  bytearrayAdd(thread_, runtime_, self, 'b');
+  bytearrayAdd(thread_, runtime_, self, 'c');
+  bytearrayAdd(thread_, runtime_, self, 'd');
+  bytearrayAdd(thread_, runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(4));
+  Int step(&scope, SmallInt::fromWord(1));
+
+  const byte src[] = {'o', 'o', 'o', 'o'};
+  MemoryView value(&scope, newMemoryView(src, "b", ReadOnly::ReadWrite));
+
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, value)
+                  .isNoneType());
+  EXPECT_TRUE(isBytearrayEqualsCStr(self, "aooooe"));
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearraySetsliceWithStepEqualsOneAndMemoryViewOfPointerAsSourceSetsSliceAndGrowsLHS) {
+  HandleScope scope(thread_);
+  Bytearray self(&scope, runtime_->newBytearray());
+  bytearrayAdd(thread_, runtime_, self, 'a');
+  bytearrayAdd(thread_, runtime_, self, 'b');
+  bytearrayAdd(thread_, runtime_, self, 'c');
+  bytearrayAdd(thread_, runtime_, self, 'd');
+  bytearrayAdd(thread_, runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(4));
+  Int step(&scope, SmallInt::fromWord(1));
+
+  const word length = 4;
+  byte memory[] = {'o', 'o', 'o', 'o'};
+  Object none(&scope, NoneType::object());
+  MemoryView value(
+      &scope, runtime_->newMemoryViewFromCPtr(thread_, none, memory, length,
+                                              ReadOnly::ReadWrite));
+
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, value)
+                  .isNoneType());
+  EXPECT_TRUE(isBytearrayEqualsCStr(self, "aooooe"));
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearraySetsliceWithStepEqualsOneAndArrayAsSourceSetsSliceAndGrowsLHS) {
+  HandleScope scope(thread_);
+  Bytearray self(&scope, runtime_->newBytearray());
+  bytearrayAdd(thread_, runtime_, self, 'a');
+  bytearrayAdd(thread_, runtime_, self, 'b');
+  bytearrayAdd(thread_, runtime_, self, 'c');
+  bytearrayAdd(thread_, runtime_, self, 'd');
+  bytearrayAdd(thread_, runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(5));
+  Int step(&scope, SmallInt::fromWord(1));
+
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import array
+arr = array.array('b', [1, 2, 3, 4, 5])
+)")
+                   .isError());
+  Object value(&scope, mainModuleAt(runtime_, "arr"));
+  ASSERT_TRUE(value.isArray());
+
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, value)
+                  .isNoneType());
+  EXPECT_TRUE(isBytearrayEqualsCStr(self, "a\x01\x02\x03\x04\x05"));
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderBytesContainsWithIntBiggerThanCharRaisesValueError) {
   HandleScope scope(thread_);

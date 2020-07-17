@@ -624,22 +624,7 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
   word stop = SmallInt::cast(args.get(2)).value();
   word step = SmallInt::cast(args.get(3)).value();
   Object src_obj(&scope, args.get(4));
-  Bytes src_bytes(&scope, Bytes::empty());
-  word src_length;
 
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfBytes(*src_obj)) {
-    Bytes src(&scope, bytesUnderlying(*src_obj));
-    src_bytes = *src;
-    src_length = src.length();
-  } else if (runtime->isInstanceOfBytearray(*src_obj)) {
-    Bytearray src(&scope, *src_obj);
-    src_bytes = src.items();
-    src_length = src.numItems();
-  } else {
-    // TODO(T38246066): support buffer protocol
-    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
-  }
   // Make sure that the degenerate case of a slice assignment where start is
   // greater than stop inserts before the start and not the stop. For example,
   // b[5:2] = ... should inserts before 5, not before 2.
@@ -647,22 +632,35 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
     stop = start;
   }
 
+  Runtime* runtime = thread->runtime();
+  word src_length = runtime->byteslikeLength(thread, src_obj);
+
   if (step == 1) {
-    if (self == src_obj) {
-      // This copy avoids complicated indexing logic in a rare case of
-      // replacing lhs with elements of rhs when lhs == rhs. It can likely be
-      // re-written to avoid allocation if necessary.
-      src_bytes = bytesSubseq(thread, src_bytes, 0, src_length);
-    }
     word growth = src_length - (stop - start);
     word new_length = self.numItems() + growth;
+    if (self == src_obj) {
+      // Rare case when replacing lhs with elements of rhs when lhs == rhs.
+      // Will always have growth >= 0.
+      if (growth == 0) {
+        return NoneType::object();
+      }
+      runtime->bytearrayEnsureCapacity(thread, self, new_length);
+      self.setNumItems(new_length);
+      MutableBytes dst_bytes(&scope, self.items());
+      runtime->mutableBytesReplaceFromByteslike(thread, dst_bytes, start,
+                                                src_obj, src_length);
+      runtime->mutableBytesReplaceFromByteslikeStartAt(
+          thread, dst_bytes, start + src_length, src_obj, src_length - stop,
+          start + stop);
+      return NoneType::object();
+    }
     if (growth == 0) {
       // Assignment does not change the length of the bytearray. Do nothing.
     } else if (growth > 0) {
       // Assignment grows the length of the bytearray. Ensure there is enough
       // free space in the underlying tuple for the new bytes and move stuff
       // out of the way.
-      thread->runtime()->bytearrayEnsureCapacity(thread, self, new_length);
+      runtime->bytearrayEnsureCapacity(thread, self, new_length);
       // Make the free space part of the bytearray. Must happen before shifting
       // so we can index into the free space.
       self.setNumItems(new_length);
@@ -678,11 +676,19 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
       // after shifting and clearing so we can index into the free space.
       self.setNumItems(new_length);
     }
+    MutableBytes dst_bytes(&scope, self.items());
     // Copy new elements into the middle
-    MutableBytes::cast(self.items())
-        .replaceFromWithBytes(start, *src_bytes, src_length);
+    runtime->mutableBytesReplaceFromByteslike(thread, dst_bytes, start, src_obj,
+                                              src_length);
     return NoneType::object();
   }
+
+  // Copy the underlying bytes of src_obj to src_bytes
+  MutableBytes src_bytes(&scope,
+                         runtime->newMutableBytesUninitialized(src_length));
+  runtime->mutableBytesReplaceFromByteslike(thread, src_bytes, 0, src_obj,
+                                            src_length);
+  src_bytes.becomeImmutable();
 
   word slice_length = Slice::length(start, stop, step);
   if (slice_length != src_length) {
