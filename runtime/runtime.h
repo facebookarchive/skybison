@@ -726,7 +726,6 @@ class Runtime {
   }
 
   inline bool isByteslike(RawObject obj) {
-    // TODO(T38246066): support bytes-like objects other than bytes, bytearray
     return isInstanceOfBytes(obj) || isInstanceOfBytearray(obj) ||
            obj.isMemoryView() || obj.isArray();
   }

@@ -1088,27 +1088,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         return self.read(size)
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
-        if isinstance(b, str):
-            raise TypeError("can't write str to binary stream")
-        # TODO(T53866215): memoryview.__enter__ and __exit__
-        num_written = memoryview(b).nbytes  # Size of any bytes-like object
-        if num_written == 0:
-            return 0
-        pos = self._pos
-        if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file and the
-            # new write position.
-            # TODO(T47866758): Use less generic code to pad a bytearray buffer
-            # with NUL bytes.
-            padding = b"\x00" * (pos - len(self._buffer))
-            self._buffer += padding
-        # TODO(T41628357): Implement bytearray.__setitem__ and
-        # _bytearray_setslice so we can use that here
-        self._buffer[pos : pos + num_written] = b
-        self._pos += num_written
-        return num_written
+        _builtin()
 
     def seek(self, pos, whence=0):
         if self.closed:

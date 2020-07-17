@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import array
+import mmap
 import os
 import sys
 import tempfile
@@ -878,6 +880,107 @@ class BytesIOTests(unittest.TestCase):
         pos = 3.4
         with self.assertRaises(TypeError):
             f.truncate(pos)
+
+    def test_write_with_non_BytesIO_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.BytesIO.write(5, b"foo")
+
+    def test_write_with_array_returns_length(self):
+        bytes_io = _io.BytesIO(b"")
+        arr = array.array("b", [1, 2, 3])
+        self.assertEqual(bytes_io.write(arr), 3)
+        self.assertEqual(bytes_io.getvalue(), b"\x01\x02\x03")
+
+    def test_write_with_bytearray_returns_length(self):
+        bytes_io = _io.BytesIO(b"hello")
+        bytes_array = bytearray(b"bArr")
+        self.assertEqual(bytes_io.write(bytes_array), 4)
+        self.assertEqual(bytes_io.getvalue(), b"bArro")
+
+    def test_write_with_bytearray_subclass_returns_length(self):
+        class C(bytearray):
+            pass
+
+        bytes_io = _io.BytesIO(b"hello")
+        instance = C(b"bArr")
+        self.assertEqual(bytes_io.write(instance), 4)
+        self.assertEqual(bytes_io.getvalue(), b"bArro")
+
+    def test_write_with_bytes_returns_length(self):
+        bytes_io = _io.BytesIO(b"hello")
+        self.assertEqual(bytes_io.write(b"bytes"), 5)
+        self.assertEqual(bytes_io.getvalue(), b"bytes")
+
+    def test_write_with_bytes_subclass_returns_length(self):
+        class C(bytes):
+            pass
+
+        bytes_io = _io.BytesIO(b"hello")
+        instance = C(b"bytes")
+        self.assertEqual(bytes_io.write(instance), 5)
+        self.assertEqual(bytes_io.getvalue(), b"bytes")
+
+    def test_write_with_memoryview_of_bytearray_returns_length(self):
+        bytes_io = _io.BytesIO(b"hello")
+        bytes_array = bytearray(b"bArr")
+        view = memoryview(bytes_array)
+        self.assertEqual(bytes_io.write(view), 4)
+        self.assertEqual(bytes_io.getvalue(), b"bArro")
+
+    def test_write_with_memoryview_of_bytes_returns_length(self):
+        bytes_io = _io.BytesIO(b"hello")
+        view = memoryview(b"view")
+        self.assertEqual(bytes_io.write(view), 4)
+        self.assertEqual(bytes_io.getvalue(), b"viewo")
+
+    def test_write_with_memoryview_of_pointer_returns_length(self):
+        bytes_io = _io.BytesIO(b"")
+        mm = mmap.mmap(-1, 4)
+        view = memoryview(mm)
+        self.assertEqual(bytes_io.write(view), 4)
+        self.assertEqual(bytes_io.getvalue(), b"\x00\x00\x00\x00")
+
+    def test_write_with_non_bytes_like_raises_type_error(self):
+        bytes_io = _io.BytesIO(b"hello")
+        with self.assertRaises(TypeError) as context:
+            bytes_io.write(123)
+        self.assertRegex(
+            str(context.exception), "a bytes-like object is required, not 'int'"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes_io.write("str")
+        self.assertRegex(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_write_with_seek_writes_from_current_position(self):
+        bytes_io = _io.BytesIO(b"hello")
+        self.assertEqual(bytes_io.seek(1), 1)
+        self.assertEqual(bytes_io.write(b"1"), 1)
+        self.assertEqual(bytes_io.getvalue(), b"h1llo")
+
+    def test_write_with_seek_past_end_pads_with_zero(self):
+        bytes_io = _io.BytesIO(b"hello")
+        self.assertEqual(bytes_io.seek(7), 7)
+        self.assertEqual(bytes_io.write(b"world"), 5)
+        self.assertEqual(bytes_io.getvalue(), b"hello\x00\x00world")
+
+    def test_write_with_closed_raises_value_error(self):
+        bytes_io = _io.BytesIO(b"hello")
+        bytes_io.close()
+        with self.assertRaises(ValueError) as context:
+            bytes_io.write("close")
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_write_with_empty_does_nothing(self):
+        bytes_io = _io.BytesIO(b"hello")
+        self.assertEqual(bytes_io.write(b""), 0)
+        self.assertEqual(bytes_io.getvalue(), b"hello")
+
+    def test_write_with_larger_bytes_extends_buffer(self):
+        bytes_io = _io.BytesIO(b"hello")
+        self.assertEqual(bytes_io.write(b"new world"), 9)
+        self.assertEqual(bytes_io.getvalue(), b"new world")
 
 
 class FileIOTests(unittest.TestCase):

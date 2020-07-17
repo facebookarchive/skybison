@@ -744,6 +744,35 @@ static const BuiltinAttribute kBytesIOAttributes[] = {
     {ID(_pos), RawBytesIO::kPosOffset},
 };
 
+static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
+                              const Object& value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  word val_len = runtime->byteslikeLength(thread, value);
+  MutableBytes memory(&scope, runtime->newMutableBytesUninitialized(val_len));
+  runtime->mutableBytesReplaceFromByteslike(thread, memory, 0, value, val_len);
+
+  word pos = bytes_io.pos();
+  word new_pos = pos + val_len;
+  Bytearray buffer(&scope, bytes_io.buffer());
+  if (new_pos > buffer.capacity()) {
+    // TODO(T66835625): change buffer to mutable bytes, avoid setItems() and
+    // the extra creation of MutableBytes object
+    MutableBytes buffer_items(&scope, buffer.items());
+    MutableBytes new_buffer_items(&scope, runtime->mutableBytesCopyWithLength(
+                                              thread, buffer_items, new_pos));
+    buffer.setItems(*new_buffer_items);
+    buffer.setNumItems(new_pos);
+  } else if (buffer.numItems() < new_pos) {
+    buffer.setNumItems(new_pos);
+  }
+
+  MutableBytes::cast(buffer.items()).replaceFromWith(pos, *memory, val_len);
+  bytes_io.setPos(new_pos);
+  return runtime->newInt(val_len);
+}
+
 RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -788,6 +817,30 @@ RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
   // TODO(T66835625): Change buffer to MutableBytes and optimize this process
   Bytes result(&scope, buffer.items());
   return bytesSubseq(thread, result, pos, new_pos - pos);
+}
+
+RawObject METH(BytesIO, write)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytesIO(*self)) {
+    return thread->raiseRequiresType(self, ID(BytesIO));
+  }
+  BytesIO bytes_io(&scope, *self);
+  if (bytes_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+
+  Object value(&scope, args.get(1));
+  if (!runtime->isByteslike(*value)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &value);
+  }
+
+  return bytesIOWrite(thread, bytes_io, value);
 }
 
 static const BuiltinAttribute kFileIOAttributes[] = {
