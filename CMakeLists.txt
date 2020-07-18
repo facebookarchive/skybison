@@ -48,7 +48,7 @@ set(BENCHMARK_ENABLE_EXCEPTIONS CACHE BOOL OFF FORCE)
 set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF FORCE)
 add_subdirectory(third-party/benchmark-1.5.1)
 set(INSTALL_GTEST CACHE BOOL OFF FORCE)
-add_subdirectory(third-party/googletest-1.8.1)
+add_subdirectory(third-party/googletest)
 add_subdirectory(third-party/siphash-20170224)
 add_subdirectory(third-party/valgrind-3.15.0)
 

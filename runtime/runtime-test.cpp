@@ -234,8 +234,8 @@ static const LayoutId kBuiltinHeapTypeIds[] = {
 #undef ENUM
 };
 
-INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
-                        ::testing::ValuesIn(kBuiltinHeapTypeIds), );
+INSTANTIATE_TEST_SUITE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
+                         ::testing::ValuesIn(kBuiltinHeapTypeIds));
 
 TEST_F(RuntimeTest, ConcreteIntTypeBaseIsUserType) {
   HandleScope scope(thread_);
