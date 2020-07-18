@@ -30,6 +30,10 @@ PY_EXPORT wchar_t* Py_GetProgramFullPath() {
   UNIMPLEMENTED("Py_GetProgramFullPath");
 }
 
+PY_EXPORT wchar_t* Py_GetProgramName() { return Runtime::programName(); }
+
+PY_EXPORT wchar_t* Py_GetPythonHome() { UNIMPLEMENTED("Py_GetPythonHome"); }
+
 PY_EXPORT void Py_SetPath(const wchar_t* path) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -41,6 +45,16 @@ PY_EXPORT void Py_SetPath(const wchar_t* path) {
   } else {
     Runtime::setModuleSearchPathFromWCstr(path);
   }
+}
+
+PY_EXPORT void Py_SetProgramName(const wchar_t* name) {
+  if (name != nullptr && name[0] != L'\0') {
+    Runtime::setProgramName(name);
+  }
+}
+
+PY_EXPORT void Py_SetPythonHome(const wchar_t* /* home */) {
+  UNIMPLEMENTED("Py_SetPythonHome");
 }
 
 }  // namespace py

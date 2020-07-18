@@ -1043,8 +1043,8 @@ PyAPI_FUNC(PyThreadState*) Py_NewInterpreter(void);
 PyAPI_FUNC(int) Py_ReprEnter(PyObject*);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject*);
 PyAPI_FUNC(void) Py_SetPath(const wchar_t*);
-PyAPI_FUNC(void) Py_SetProgramName(wchar_t*);
-PyAPI_FUNC(void) Py_SetPythonHome(wchar_t*);
+PyAPI_FUNC(void) Py_SetProgramName(const wchar_t*);
+PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t*);
 PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(struct symtable*) Py_SymtableString(const char*, const char*, int);
 PyAPI_FUNC(struct symtable*)

@@ -198,7 +198,6 @@ PyAPI_DATA(int) Py_OptimizeFlag;
 PyAPI_DATA(int) Py_QuietFlag;
 PyAPI_DATA(int) Py_UTF8Mode;
 PyAPI_DATA(int) Py_UnbufferedStdioFlag;
-PyAPI_DATA(int) Py_UseClassExceptionsFlag;
 PyAPI_DATA(int) Py_VerboseFlag;
 
 #define PY_CTF_LOWER 0x01

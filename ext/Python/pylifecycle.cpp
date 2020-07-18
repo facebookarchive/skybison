@@ -33,7 +33,6 @@ int Py_OptimizeFlag = 0;
 int Py_QuietFlag = 0;
 int Py_UTF8Mode = 1;
 int Py_UnbufferedStdioFlag = 0;
-int Py_UseClassExceptionsFlag = 1;
 int Py_VerboseFlag = 0;
 
 namespace py {
@@ -269,20 +268,6 @@ PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }
 
 PY_EXPORT PyThreadState* Py_NewInterpreter() {
   UNIMPLEMENTED("Py_NewInterpreter");
-}
-
-PY_EXPORT wchar_t* Py_GetProgramName() { return Runtime::programName(); }
-
-PY_EXPORT wchar_t* Py_GetPythonHome() { UNIMPLEMENTED("Py_GetPythonHome"); }
-
-PY_EXPORT void Py_SetProgramName(wchar_t* name) {
-  if (name != nullptr && name[0] != L'\0') {
-    Runtime::setProgramName(name);
-  }
-}
-
-PY_EXPORT void Py_SetPythonHome(wchar_t* /* home */) {
-  UNIMPLEMENTED("Py_SetPythonHome");
 }
 
 struct AtExitContext {
