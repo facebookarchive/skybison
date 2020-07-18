@@ -111,52 +111,32 @@ wchar_t Runtime::program_name_[NAME_MAX + 1] = L"python3";
 
 wchar_t* Runtime::programName() { return program_name_; }
 
-void Runtime::setExecPrefix(Thread* thread, const Object& exec_prefix) {
-  HandleScope scope(thread);
-  CHECK(exec_prefix.isStr(), "sys.exec_prefix must be str");
-  Str exec_prefix_str(&scope, *exec_prefix);
-  CHECK(exec_prefix_str.codePointLength() <= PATH_MAX,
-        "exec_prefix length must not exceed PATH_MAX");
-
-  wchar_t buf[PATH_MAX + 1];
-  strCopyToWCStr(buf, ARRAYSIZE(buf), exec_prefix_str);
-  std::wcscpy(exec_prefix_, buf);
+void Runtime::setExecPrefix(const wchar_t* exec_prefix) {
+  DCHECK(wcslen(exec_prefix) < ARRAYSIZE(exec_prefix_),
+         "exec_prefix is too long");
+  std::wcsncpy(exec_prefix_, exec_prefix, ARRAYSIZE(exec_prefix_));
+  exec_prefix_[ARRAYSIZE(exec_prefix_) - 1] = L'\0';
 }
 
-void Runtime::setModuleSearchPath(Thread* thread, const Object& search_path) {
-  HandleScope scope(thread);
-  CHECK(search_path.isStr(), "module_search_path must be str");
-  Str search_path_str(&scope, *search_path);
-  CHECK(search_path_str.codePointLength() <= PATH_MAX,
-        "module_search_path length must not exceed PATH_MAX");
-
-  wchar_t buf[PATH_MAX + 1];
-  strCopyToWCStr(buf, ARRAYSIZE(buf), search_path_str);
-  std::wcscpy(module_search_path_, buf);
+void Runtime::setModuleSearchPath(const wchar_t* module_search_path) {
+  DCHECK(wcslen(module_search_path) < ARRAYSIZE(module_search_path_),
+         "module_search_path is too long");
+  std::wcsncpy(module_search_path_, module_search_path,
+               ARRAYSIZE(module_search_path_));
+  module_search_path_[ARRAYSIZE(module_search_path_) - 1] = L'\0';
 }
 
-void Runtime::setModuleSearchPathFromWCstr(const wchar_t* module_search_path) {
-  CHECK(std::wcslen(module_search_path) <= PATH_MAX,
-        "module_search_path length must not exceed PATH_MAX");
-  std::wcscpy(module_search_path_, module_search_path);
-}
-
-void Runtime::setPrefix(Thread* thread, const Object& prefix) {
-  HandleScope scope(thread);
-  CHECK(prefix.isStr(), "sys.prefix must be str");
-  Str prefix_str(&scope, *prefix);
-  CHECK(prefix_str.codePointLength() <= PATH_MAX,
-        "prefix length must not exceed PATH_MAX");
-
-  wchar_t buf[PATH_MAX + 1];
-  strCopyToWCStr(buf, ARRAYSIZE(buf), prefix_str);
-  std::wcscpy(prefix_, buf);
+void Runtime::setPrefix(const wchar_t* prefix) {
+  DCHECK(wcslen(prefix) < ARRAYSIZE(module_search_path_), "prefix is too long");
+  std::wcsncpy(prefix_, prefix, ARRAYSIZE(prefix_));
+  prefix_[ARRAYSIZE(prefix_) - 1] = L'\0';
 }
 
 void Runtime::setProgramName(const wchar_t* program_name) {
-  CHECK(std::wcslen(program_name) <= NAME_MAX,
-        "program_name length must not exceed NAME_MAX");
-  std::wcscpy(program_name_, program_name);
+  DCHECK(wcslen(program_name) < ARRAYSIZE(program_name_),
+         "program_name is too long");
+  std::wcsncpy(program_name_, program_name, ARRAYSIZE(program_name_));
+  prefix_[ARRAYSIZE(program_name_) - 1] = L'\0';
 }
 
 Runtime::Runtime(word heap_size) : heap_(heap_size) {

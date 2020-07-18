@@ -144,12 +144,27 @@ void initializeRuntimePaths(Thread* thread) {
   CHECK(result.isTuple(), "sys._calculate_path must return tuple");
   Tuple paths(&scope, *result);
 
-  Object prefix(&scope, paths.at(0));
-  Runtime::setPrefix(thread, prefix);
-  Object exec_prefix(&scope, paths.at(1));
-  Runtime::setExecPrefix(thread, exec_prefix);
-  Object search_path(&scope, paths.at(2));
-  Runtime::setModuleSearchPath(thread, search_path);
+  Str prefix(&scope, paths.at(0));
+  word prefix_codepoints = prefix.codePointLength();
+  std::unique_ptr<wchar_t[]> prefix_wstr(new wchar_t[prefix_codepoints + 1]);
+  strCopyToWCStr(prefix_wstr.get(), prefix_codepoints + 1, prefix);
+  Runtime::setPrefix(prefix_wstr.get());
+
+  Str exec_prefix(&scope, paths.at(1));
+  word exec_prefix_codepoints = exec_prefix.codePointLength();
+  std::unique_ptr<wchar_t[]> exec_prefix_wstr(
+      new wchar_t[exec_prefix_codepoints + 1]);
+  strCopyToWCStr(exec_prefix_wstr.get(), exec_prefix_codepoints + 1,
+                 exec_prefix);
+  Runtime::setExecPrefix(exec_prefix_wstr.get());
+
+  Str module_search_path(&scope, paths.at(2));
+  word module_search_path_codepoints = module_search_path.codePointLength();
+  std::unique_ptr<wchar_t[]> module_search_path_wstr(
+      new wchar_t[module_search_path_codepoints + 1]);
+  strCopyToWCStr(module_search_path_wstr.get(),
+                 module_search_path_codepoints + 1, module_search_path);
+  Runtime::setModuleSearchPath(module_search_path_wstr.get());
 }
 
 static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,

@@ -861,17 +861,16 @@ class Runtime {
   // The exec_prefix is a directory prefix where platform-dependent Python files
   // are installed (e.g. compiled .so files)
   static wchar_t* execPrefix() { return exec_prefix_; }
-  static void setExecPrefix(Thread* thread, const Object& exec_prefix);
+  static void setExecPrefix(const wchar_t* exec_prefix);
 
   // Getter/setter for the module search path.
   static wchar_t* moduleSearchPath() { return module_search_path_; }
-  static void setModuleSearchPath(Thread* thread, const Object& search_path);
-  static void setModuleSearchPathFromWCstr(const wchar_t* module_search_path);
+  static void setModuleSearchPath(const wchar_t* module_search_path);
 
   // The prefix is a directory prefix where platform-independent Python files
   // are installed (e.g. .py library files)
   static wchar_t* prefix() { return prefix_; }
-  static void setPrefix(Thread* thread, const Object& prefix);
+  static void setPrefix(const wchar_t* prefix);
 
   static wchar_t* programName();
   static void setProgramName(const wchar_t* program_name);

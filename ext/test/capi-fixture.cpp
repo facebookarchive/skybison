@@ -27,6 +27,7 @@ void resetPythonEnv() {
   Py_UTF8Mode = 1;
   Py_UnbufferedStdioFlag = 0;
   Py_VerboseFlag = 0;
+  Py_SetPath(nullptr);
   std::setlocale(LC_CTYPE, "");
   wchar_t* argv0_w = Py_DecodeLocale(argv0, nullptr);
   Py_SetProgramName(argv0_w);

@@ -35,16 +35,9 @@ PY_EXPORT wchar_t* Py_GetProgramName() { return Runtime::programName(); }
 PY_EXPORT wchar_t* Py_GetPythonHome() { UNIMPLEMENTED("Py_GetPythonHome"); }
 
 PY_EXPORT void Py_SetPath(const wchar_t* path) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object empty_str(&scope, Str::empty());
-  Runtime::setPrefix(thread, empty_str);
-  Runtime::setExecPrefix(thread, empty_str);
-  if (path == nullptr) {
-    Runtime::setModuleSearchPathFromWCstr(L"");
-  } else {
-    Runtime::setModuleSearchPathFromWCstr(path);
-  }
+  Runtime::setPrefix(L"");
+  Runtime::setExecPrefix(L"");
+  Runtime::setModuleSearchPath(path != nullptr ? path : L"");
 }
 
 PY_EXPORT void Py_SetProgramName(const wchar_t* name) {
