@@ -3,7 +3,7 @@ project(python LANGUAGES C CXX VERSION 3.7.4)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(NOT CMAKE_TOOLCHAIN_FILE AND NOT SKIP_TOOLCHAIN_CHECK)
+if(NOT CMAKE_TOOLCHAIN_FILE)
   message(SEND_ERROR "
 ")
   file(GLOB TOOLCHAIN_FILES RELATIVE ${CMAKE_SOURCE_DIR} util/*.cmake)
@@ -165,6 +165,9 @@ foreach(dir
     ${ZLIB_LIBRARY_DIRS})
   set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")
 endforeach()
+if (CMAKE_OSX_SYSROOT)
+  set(CPYTHON_CFLAGS "${CPYTHON_CFLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
+endif()
 
 # Write commands into a script to avoid quoting problems.
 file(GENERATE OUTPUT ${CPYTHON_BUILD_DIR}/build.sh CONTENT "
