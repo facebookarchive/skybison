@@ -128,6 +128,8 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   const char* command = nullptr;
   const char* module = nullptr;
 
+  optind = 1;
+
   int option;
   while ((option = getopt_long(argc, argv, kSupportedOpts, kSupportedLongOpts,
                                nullptr)) != -1) {

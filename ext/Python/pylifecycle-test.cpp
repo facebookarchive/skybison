@@ -1,5 +1,7 @@
 #include <signal.h>
 
+#include <cwchar>
+
 #include "Python.h"
 #include "gtest/gtest.h"
 
@@ -71,8 +73,10 @@ TEST_F(PylifecycleExtensionApiTest, RestoreSignalRestoresToDefault) {
   EXPECT_EQ(PyOS_getsig(SIGXFSZ), SIG_DFL);
 }
 
-TEST_F(PylifecycleExtensionApiTest, GetProgramNameGetsDefaultName) {
-  EXPECT_STREQ(Py_GetProgramName(), L"python3");
+TEST_F(PylifecycleExtensionApiTest, GetProgramNameReturnsString) {
+  const wchar_t* program_name = Py_GetProgramName();
+  EXPECT_TRUE(std::wcsstr(program_name, L"python-tests") != nullptr ||
+              std::wcsstr(program_name, L"cpython-tests") != nullptr);
 }
 
 TEST_F(PylifecycleExtensionApiTest, SetProgramNameSetsName) {

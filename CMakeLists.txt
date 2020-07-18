@@ -1134,6 +1134,7 @@ set(
   ext/Python/sysmodule-test.cpp
   ext/Python/thread-test.cpp
   ext/Python/_warnings-test.cpp
+  ext/test/capi-fixture.cpp
   ext/test/capi-fixture.h
   ext/test/capi-testing-test.cpp
   ext/test/capi-testing.cpp

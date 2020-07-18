@@ -3,6 +3,12 @@
 
 extern std::string FLAGS_benchmark_filter;
 
+namespace py {
+namespace testing {
+extern const char* argv0;
+}  // namespace testing
+}  // namespace py
+
 namespace {
 
 using testing::EmptyTestEventListener;
@@ -70,6 +76,7 @@ void FailurePrinter::OnTestIterationEnd(const UnitTest& test, int iteration) {
 }  // namespace
 
 int main(int argc, char* argv[]) {
+  py::testing::argv0 = argv[0];
   testing::InitGoogleTest(&argc, argv);
 
   bool hide_success = false;

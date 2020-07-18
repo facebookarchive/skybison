@@ -5,6 +5,7 @@
 #include "capi-testing.h"
 
 namespace py {
+namespace testing {
 
 using ModSupportExtensionApiTest = ExtensionApi;
 
@@ -154,4 +155,5 @@ TEST_F(ModSupportExtensionApiTest, BuildValueTupleOfInt) {
   ASSERT_EQ(PyLong_AsLong(item3), 444);
 }
 
+}  // namespace testing
 }  // namespace py

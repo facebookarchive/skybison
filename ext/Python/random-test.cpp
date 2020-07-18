@@ -4,6 +4,7 @@
 #include "capi-fixture.h"
 
 namespace py {
+namespace testing {
 
 using RandomExtensionApiTest = ExtensionApi;
 
@@ -33,4 +34,5 @@ TEST_F(RandomExtensionApiTest, URandomNonblockNegativeSizeRaisesValueError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+}  // namespace testing
 }  // namespace py
