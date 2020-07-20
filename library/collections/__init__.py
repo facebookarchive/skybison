@@ -76,38 +76,6 @@ class defaultdict(dict):
     def copy(self):
         _unimplemented()
 
-
-class deque_iterator:
-    def __init__(self, deq, itergen):
-        self.counter = len(deq)
-        def giveup():
-            self.counter = 0
-            raise RuntimeError("deque mutated during iteration")
-        self._gen = itergen(deq.state, giveup)
-
-    def __next__(self):
-        res = next(self._gen)
-        self.counter -= 1
-        return res
-
-    def __iter__(self):
-        return self
-
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated, "
-                      "and in 3.8 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
 ################################################################################
 ### OrderedDict
 ################################################################################
