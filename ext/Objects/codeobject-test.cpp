@@ -10,13 +10,14 @@ namespace testing {
 using CodeExtensionApiTest = ExtensionApi;
 
 TEST_F(CodeExtensionApiTest, ConstantKeyWithNoneReturnsTwoTuple) {
-  PyObjectPtr result(_PyCode_ConstantKey(Py_None));
+  PyObjectPtr none(borrow(Py_None));
+  PyObjectPtr result(_PyCode_ConstantKey(none));
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyTuple_Check(result));
   ASSERT_EQ(PyTuple_Size(result), 2);
   EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(Py_None)));
-  EXPECT_EQ(PyTuple_GetItem(result, 1), Py_None);
+            reinterpret_cast<PyObject*>(Py_TYPE(none)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), none);
 }
 
 TEST_F(CodeExtensionApiTest, ConstantKeyWithEllipsisReturnsTwoTuple) {
@@ -189,7 +190,7 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
   ASSERT_TRUE(PyTuple_Check(result));
   ASSERT_EQ(PyTuple_Size(result), 2);
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
-  PyObject* new_tuple = PyTuple_GetItem(result, 0);
+  PyObjectPtr new_tuple(borrow(PyTuple_GetItem(result, 0)));
   EXPECT_EQ(PyTuple_Size(new_tuple), PyTuple_Size(obj));
   EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 0)));
   EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 1)));
@@ -207,7 +208,7 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithFrozenSetReturnsTwoTuple) {
   ASSERT_TRUE(PyTuple_Check(result));
   ASSERT_EQ(PyTuple_Size(result), 2);
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
-  PyObject* new_frozenset = PyTuple_GetItem(result, 0);
+  PyObjectPtr new_frozenset(borrow(PyTuple_GetItem(result, 0)));
   ASSERT_TRUE(PyFrozenSet_Check(new_frozenset));
   EXPECT_EQ(PySet_Size(new_frozenset), PySet_Size(obj));
 }
@@ -218,7 +219,7 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithOtherObjectReturnsTwoTupleWithId) {
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyTuple_Check(result));
   ASSERT_EQ(PyTuple_Size(result), 2);
-  PyObject* obj_id = PyTuple_GetItem(result, 0);
+  PyObjectPtr obj_id(borrow(PyTuple_GetItem(result, 0)));
   ASSERT_TRUE(PyLong_Check(obj_id));
   EXPECT_EQ(PyLong_AsVoidPtr(obj_id), obj.get());
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);

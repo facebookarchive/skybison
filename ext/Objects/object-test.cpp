@@ -162,18 +162,15 @@ obj.b = 13
 }
 
 TEST_F(ObjectExtensionApiTest, DelAttrRaisesAttributeError) {
-  Py_INCREF(Py_None);
-  PyObjectPtr obj(Py_None);
+  PyObjectPtr obj(borrow(Py_None));
   EXPECT_EQ(PyObject_DelAttrString(obj, "does_not_exist"), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
 }
 
 TEST_F(ObjectExtensionApiTest, LookupAttrWithNonStrNameRaisesTypeError) {
-  Py_INCREF(Py_None);
-  PyObjectPtr obj(Py_None);
-  Py_INCREF(Py_None);
-  PyObjectPtr name(Py_None);
+  PyObjectPtr obj(borrow(Py_None));
+  PyObjectPtr name(borrow(Py_None));
   PyObject* result = name.get();  // some non-NULL value
   EXPECT_EQ(_PyObject_LookupAttr(obj, name, &result), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -200,8 +197,7 @@ obj.a = 42
 }
 
 TEST_F(ObjectExtensionApiTest, LookupAttrWithNonexistentAttrReturnsZero) {
-  Py_INCREF(Py_None);
-  PyObjectPtr obj(Py_None);
+  PyObjectPtr obj(borrow(Py_None));
   PyObjectPtr name(PyUnicode_FromString("a"));
   ASSERT_FALSE(PyObject_HasAttr(obj, name));
   PyObject* result = name.get();  // some non-NULL value

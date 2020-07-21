@@ -764,7 +764,7 @@ d = C()
   ASSERT_TRUE(PyList_CheckExact(result));
   EXPECT_EQ(PyList_Size(result), 1);
 
-  PyObject* kv = PyList_GetItem(result, 0);
+  PyObjectPtr kv(borrow(PyList_GetItem(result, 0)));
   ASSERT_TRUE(PyTuple_CheckExact(kv));
   ASSERT_EQ(PyTuple_Size(kv), 2);
   EXPECT_EQ(PyTuple_GetItem(kv, 0), c);
@@ -813,9 +813,7 @@ TEST_F(DictExtensionApiTest, SetItemStringInternsKeys) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyList_Check(result));
   EXPECT_EQ(PyList_Size(result), 1);
-  PyObjectPtr interned_str(PyList_GetItem(result, 0));
-  // Call Py_INCREF because PyList_GetItem returns a borrowed reference
-  Py_INCREF(interned_str);
+  PyObjectPtr interned_str(borrow(PyList_GetItem(result, 0)));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
   // Use a PyObject* directly because InternInPlace requires a reference to a

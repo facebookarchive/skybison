@@ -6,15 +6,34 @@
 namespace py {
 namespace testing {
 
+// Holder for a borrowed reference to a PyObject. The intended use is in the
+// constructor for a PyObjectPtr, to indicate that PyObjectPtr should increment
+// the reference count:
+//   PyObjectPtr foo(borrow(Py_None));
+class __attribute__((warn_unused)) Borrowed {
+ public:
+  explicit Borrowed(PyObject* obj) : obj_(obj) {}
+  PyObject* get() const { return obj_; }
+
+  // disable assignment
+  void operator=(const Borrowed&) = delete;
+
+ private:
+  PyObject* obj_ = nullptr;
+};
+
+Borrowed borrow(PyObject* obj);
+
 // Holder for a reference to PyObject - reference count is decremented when
 // the object goes out of scope or is assigned another pointer. PyObjectPtr
-// always takes the ownership of the reference, so do not use this for
-// borrowed references. This never increments the reference count.
+// always takes the ownership of the reference, so use with Borrowed (via the
+// `borrow` function) to deal with borrowed references.
 class __attribute__((warn_unused)) PyObjectPtr {
  public:
   // PyObjectPtr can only hold a reference for opaque types that are upcastable
   // to PyObject. Do not use with fully defined types (i.e. PyLong_Type).
   explicit PyObjectPtr(PyObject* obj) : obj_(obj) {}
+  explicit PyObjectPtr(Borrowed obj) : obj_(obj.get()) { Py_INCREF(obj_); }
   explicit PyObjectPtr(PyTypeObject* obj)
       : obj_(reinterpret_cast<PyObject*>(obj)) {}
 

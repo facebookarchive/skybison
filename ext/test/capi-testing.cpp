@@ -9,6 +9,8 @@
 namespace py {
 namespace testing {
 
+Borrowed borrow(PyObject* obj) { return Borrowed(obj); }
+
 void collectGarbage() {
   PyRun_SimpleString(R"(
 try:
