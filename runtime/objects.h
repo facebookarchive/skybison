@@ -3486,7 +3486,7 @@ class RawBufferedReader : public RawUnderBufferedIOMixin {
 class RawBufferedWriter : public RawUnderBufferedIOMixin {
  public:
   // Getters and setters
-  RawObject bufferSize() const;
+  word bufferSize() const;
   void setBufferSize(RawObject buffer_size) const;
   RawObject closed() const;
   void setClosed(RawObject closed) const;
@@ -7383,8 +7383,8 @@ inline void RawBufferedReader::setBufferNumBytes(word buffer_num_bytes) const {
 
 // RawBufferedWriter
 
-inline RawObject RawBufferedWriter::bufferSize() const {
-  return instanceVariableAt(kBufferSizeOffset);
+inline word RawBufferedWriter::bufferSize() const {
+  return RawSmallInt::cast(instanceVariableAt(kBufferSizeOffset)).value();
 }
 
 inline void RawBufferedWriter::setBufferSize(RawObject buffer_size) const {
