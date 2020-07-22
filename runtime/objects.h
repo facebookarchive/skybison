@@ -7742,4 +7742,12 @@ inline void RawTextIOWrapper::setB2cratio(RawObject b2cratio) const {
   instanceVariableAtPut(kB2cratioOffset, b2cratio);
 }
 
+inline RawObject RawTextIOWrapper::telling() const {
+  return instanceVariableAt(kTellingOffset);
+}
+
+inline void RawTextIOWrapper::setTelling(RawObject telling) const {
+  instanceVariableAtPut(kTellingOffset, telling);
+}
+
 }  // namespace py
