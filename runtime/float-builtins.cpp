@@ -6,6 +6,7 @@
 
 #include "builtins.h"
 #include "float-conversion.h"
+#include "formatter.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -565,6 +566,19 @@ RawObject METH(float, __pow__)(Thread* thread, Frame* frame, word nargs) {
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   return runtime->newFloat(std::pow(left, right));
+}
+
+RawObject METH(float, hex)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseRequiresType(self, ID(float));
+  }
+
+  double double_value = floatUnderlying(*self).value();
+  return formatDoubleHexadecimalSimple(runtime, double_value);
 }
 
 }  // namespace py

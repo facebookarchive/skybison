@@ -1,5 +1,6 @@
 #include "formatter.h"
 
+#include "float-builtins.h"
 #include "runtime.h"
 
 namespace py {
@@ -860,6 +861,62 @@ RawObject formatIntHexadecimalUpperCase(Thread* thread, const Int& value,
 RawObject formatIntOctal(Thread* thread, const Int& value, FormatSpec* format) {
   return formatIntImpl(thread, value, format, 'o', numOctalDigits,
                        putOctalDigits);
+}
+
+RawObject formatDoubleHexadecimalSimple(Runtime* runtime, double value) {
+  const int mantissa_hex_digits = (kDoubleMantissaBits / 4) + 1;
+  const int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  const int max_exp = 1 << (exp_bits - 1);
+  const int min_exp = -(1 << (exp_bits - 1)) + 1;
+
+  bool is_negative;
+  int exponent;
+  int64_t mantissa;
+
+  decodeDouble(value, &is_negative, &exponent, &mantissa);
+  if (exponent == max_exp) {
+    if (mantissa == 0) {
+      return is_negative ? runtime->newStrFromCStr("-inf")
+                         : runtime->newStrFromCStr("inf");
+    }
+    return runtime->newStrFromCStr("nan");
+  }
+
+  if (exponent == min_exp && mantissa == 0) {
+    return is_negative ? runtime->newStrFromCStr("-0x0.0p+0")
+                       : runtime->newStrFromCStr("0x0.0p+0");
+  }
+
+  int exponent_sign;
+  if (exponent < 0) {
+    exponent_sign = '-';
+    exponent = -exponent;
+  } else {
+    exponent_sign = '+';
+  }
+
+  // Output buffer_size mantissaHexDigits + 1 char for '-', 2 chars for '0x', 2
+  // chars for '1.', 1 char for 'p', 1 char for exponent sign '+' or '-', and 4
+  // chars for the exponent.
+  const int buffer_size = mantissa_hex_digits + 11;
+  char output[buffer_size];
+  byte* end = reinterpret_cast<byte*>(output) + buffer_size;
+  byte* poutput = uwordToDecimal(exponent, end);
+
+  *--poutput = exponent_sign;
+  *--poutput = 'p';
+  for (int k = 0; k < kDoubleMantissaBits; k += 4) {
+    *--poutput = Utils::kHexDigits[(mantissa >> k) & 0xf];
+  }
+
+  *--poutput = '.';
+  *--poutput = '1';
+  *--poutput = 'x';
+  *--poutput = '0';
+  if (is_negative) {
+    *--poutput = '-';
+  }
+  return runtime->newStrWithAll(View<byte>(poutput, end - poutput));
 }
 
 }  // namespace py

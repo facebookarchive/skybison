@@ -3573,7 +3573,7 @@ class float(bootstrap=True):
         _unimplemented()
 
     def hex(self):
-        _unimplemented()
+        _builtin()
 
     def imag(self):
         _unimplemented()

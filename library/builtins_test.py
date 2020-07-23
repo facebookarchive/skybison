@@ -6621,6 +6621,31 @@ class FloatTests(unittest.TestCase):
             str(context.exception), "cannot convert float infinity to integer"
         )
 
+    def test_hex_with_positive_zero_returns_positive_zero(self):
+        self.assertEqual(float(0).hex(), "0x0.0p+0")
+
+    def test_hex_with_negative_zero_returns_negative_zero(self):
+        self.assertEqual(float(-0.0).hex(), "-0x0.0p+0")
+
+    def test_hex_with_positive_infinite_returns_inf(self):
+        self.assertEqual(float("inf").hex(), "inf")
+
+    def test_hex_with_negative_infinite_returns_minus_inf(self):
+        self.assertEqual(float("-inf").hex(), "-inf")
+
+    def test_hex_with_nan_returns_nan(self):
+        self.assertEqual(float("nan").hex(), "nan")
+
+    def test_hex_with_positive_decimal_returns_hex_string(self):
+        self.assertEqual(float(3.14159).hex(), "0x1.921f9f01b866ep+1")
+
+    def test_hex_with_negative_decimal_returns_hex_string(self):
+        self.assertEqual(float(-0.1).hex(), "-0x1.999999999999ap-4")
+
+    def test_hex_with_string_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.hex("")
+
 
 class FrozensetTests(unittest.TestCase):
     def test_dunder_and_with_non_frozenset_raises_type_error(self):

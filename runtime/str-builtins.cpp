@@ -16,6 +16,7 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "unicode.h"
+#include "utils.h"
 
 namespace py {
 
@@ -1156,12 +1157,10 @@ RawObject METH(str, __iter__)(Thread* thread, Frame* frame, word nargs) {
 // Convert a byte to its hex digits, and write them out to buf.
 // Increments buf to point after the written characters.
 static void byteToHex(const MutableBytes& buf, word index, byte convert) {
-  static byte hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                             '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
   // Since convert is unsigned, the right shift will not propagate the sign
   // bit, and the upper bits will be zero.
-  buf.byteAtPut(index, hexdigits[convert >> 4]);
-  buf.byteAtPut(index + 1, hexdigits[convert & 0x0f]);
+  buf.byteAtPut(index, Utils::kHexDigits[convert >> 4]);
+  buf.byteAtPut(index + 1, Utils::kHexDigits[convert & 0x0f]);
 }
 
 RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs) {

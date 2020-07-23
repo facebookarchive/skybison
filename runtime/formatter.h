@@ -50,6 +50,9 @@ RawObject formatIntOctal(Thread* thread, const Int& value, FormatSpec* format);
 // Format int as octal number with `0o` prefix. Returns a `str`.
 RawObject formatIntOctalSimple(Thread* thread, const Int& value);
 
+// Format double as hexadecimal number with `0x` prefix. Returns a `str`.
+RawObject formatDoubleHexadecimalSimple(Runtime* runtime, double value);
+
 RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format);
 
 RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
