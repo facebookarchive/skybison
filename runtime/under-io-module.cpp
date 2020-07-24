@@ -1234,6 +1234,80 @@ RawObject METH(FileIO, readall)(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
+static RawObject readintoBytesAddress(Thread* thread, const int fd, byte* dst,
+                                      const word dst_len) {
+  if (dst_len == 0) {
+    return SmallInt::fromWord(0);
+  }
+  word result = File::read(fd, dst, dst_len);
+  if (result < 0) return thread->raiseOSErrorFromErrno(-result);
+  return SmallInt::fromWord(result);
+}
+
+RawObject METH(FileIO, readinto)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFileIO(*self)) {
+    return thread->raiseRequiresType(self, ID(FileIO));
+  }
+  FileIO file_io(&scope, *self);
+  if (file_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object dst_obj(&scope, args.get(1));
+  if (!runtime->isByteslike(*dst_obj) && !runtime->isInstanceOfMmap(*dst_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Expected bytes-like object, not %T", &dst_obj);
+  }
+
+  int fd = SmallInt::cast(file_io.fd()).value();
+  if (runtime->isInstanceOfBytearray(*dst_obj)) {
+    Bytearray dst_array(&scope, *dst_obj);
+    return readintoBytesAddress(
+        thread, fd,
+        reinterpret_cast<byte*>(
+            MutableBytes::cast(dst_array.items()).address()),
+        dst_array.numItems());
+  }
+  if (dst_obj.isArray()) {
+    Array array(&scope, *dst_obj);
+    return readintoBytesAddress(
+        thread, fd,
+        reinterpret_cast<byte*>(MutableBytes::cast(array.buffer()).address()),
+        array.length());
+  }
+  if (dst_obj.isMemoryView()) {
+    MemoryView dst_memoryview(&scope, *dst_obj);
+    dst_obj = dst_memoryview.buffer();
+    if (runtime->isInstanceOfBytes(*dst_obj)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError, "Expected read-write bytes-like object, not %T",
+          &dst_memoryview);
+    }
+    Pointer dst_ptr(&scope, *dst_obj);
+    return readintoBytesAddress(
+        thread, fd, reinterpret_cast<byte*>(dst_ptr.cptr()), dst_ptr.length());
+  }
+  if (dst_obj.isMmap()) {
+    Mmap dst_mmap(&scope, *dst_obj);
+    if (!dst_mmap.isWritable()) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError, "Expected read-write bytes-like object, not %T",
+          &dst_mmap);
+    }
+    Pointer dst_ptr(&scope, dst_mmap.data());
+    return readintoBytesAddress(
+        thread, fd, reinterpret_cast<byte*>(dst_ptr.cptr()), dst_ptr.length());
+  }
+  // Bytes, not valid arguments for readinto
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "Expected read-write bytes-like object, not %T",
+                              &dst_obj);
+}
+
 static const BuiltinAttribute kStringIOAttributes[] = {
     {ID(_buffer), RawStringIO::kBufferOffset},
     {ID(_pos), RawStringIO::kPosOffset},

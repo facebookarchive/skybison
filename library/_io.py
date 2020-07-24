@@ -1269,12 +1269,7 @@ class FileIO(_RawIOBase, bootstrap=True):
         _builtin()
 
     def readinto(self, byteslike):
-        # TODO(T47880928): Support memoryview.__setitem__
-        view = memoryview(byteslike).cast("B")
-        data = self.read(len(view))
-        num_bytes = len(data)
-        view[:num_bytes] = data
-        return num_bytes
+        _builtin()
 
     def write(self, byteslike):
         self._checkClosed()

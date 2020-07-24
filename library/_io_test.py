@@ -1529,6 +1529,104 @@ class FileIOTests(unittest.TestCase):
         self.assertEqual(result, b"foo" * 1000)
 
     # TODO(T53182806): Test FileIO.readinto once memoryview.__setitem__ is done
+    def test_readinto_with_non_FileIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.FileIO.readinto(5, bytearray(b"hello"))
+
+    def test_readinto_with_bad_file_descriptor_raises_os_error(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        barr = bytearray(b"ab")
+        r = os.fdopen(r, "r")
+        r.close()
+        with self.assertRaises(OSError):
+            f.readinto(barr)
+
+    def test_readinto_with_array_reads_bytes_into_array(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        arr = array.array("b", [1, 2, 3])
+        self.assertEqual(f.readinto(arr), 3)
+        self.assertEqual(bytes(arr), b"hel")
+
+    def test_readinto_with_bytearray_reads_bytes_into_bytearray(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        barr = bytearray(b"abc")
+        self.assertEqual(f.readinto(barr), 3)
+        self.assertEqual(barr, b"hel")
+
+    def test_readinto_with_bytes_raises_type_error(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        b = b"abc"
+        with self.assertRaises(TypeError):
+            f.readinto(b)
+
+    def test_readinto_with_memoryview_of_bytes_raises_type_error(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        view = memoryview(b"abc")
+        with self.assertRaises(TypeError):
+            f.readinto(view)
+
+    def test_readinto_with_memoryview_of_mmap_reads_bytes_to_pointer(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        mm = mmap.mmap(-1, 2)
+        view = memoryview(mm)
+        self.assertEqual(f.readinto(view), 2)
+        self.assertEqual(bytes(view), b"he")
+
+    def test_readinto_with_mmap_reads_bytes_to_memory(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        mm = mmap.mmap(-1, 2)
+        self.assertEqual(f.readinto(mm), 2)
+        view = memoryview(mm)
+        self.assertEqual(bytes(view), b"he")
+
+    def test_readinto_with_closed_file_raises_value_error(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        barr = bytearray(b"abc")
+        f.close()
+        with self.assertRaises(ValueError):
+            f.readinto(barr)
+
+    def test_readinto_with_empty_bytearray_returns_zero(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        barr = bytearray(b"")
+        self.assertEqual(f.readinto(barr), 0)
+        self.assertEqual(barr, b"")
 
     def test_seek_with_float_raises_type_error(self):
         with _io.FileIO(_getfd(), mode="r") as f:
