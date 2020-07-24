@@ -16,6 +16,14 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
 bool setIncludes(Thread* thread, const SetBase& set, const Object& key,
                  word hash);
 
+// Return true if an item is found at `*index` or after and sets index to the
+// next index to probe, hash_out to the hash and value_out to the found
+// value. Returns false otherwise.
+bool setNextItem(const SetBase& set, word* index, RawObject* value_out);
+
+bool setNextItemHash(const SetBase& set, word* index, RawObject* value_out,
+                     word* hash_out);
+
 // Compute the set intersection between a set and an iterator
 // Returns either a new set with the intersection or an Error object.
 NODISCARD RawObject setIntersection(Thread* thread, const SetBase& set,

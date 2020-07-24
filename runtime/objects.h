@@ -2810,27 +2810,14 @@ class RawSetBase::Bucket {
     data.atPut(index + kKeyOffset, RawNoneType::object());
   }
 
-  static bool nextItem(RawTuple data, word* idx) {
-    // Calling next on an invalid index should not advance that index.
-    if (*idx >= data.length()) {
-      return false;
-    }
-    do {
-      *idx += kNumPointers;
-    } while (*idx < data.length() && isEmptyOrTombstone(data, *idx));
-    return *idx < data.length();
+  static bool isFull(RawTuple data, word index) {
+    return data.at(index + kHashOffset).isSmallInt();
   }
 
   // Layout.
   static const word kHashOffset = 0;
   static const word kKeyOffset = kHashOffset + 1;
   static const word kNumPointers = kKeyOffset + 1;
-  static const word kFirst = -kNumPointers;
-
- private:
-  static bool isEmptyOrTombstone(RawTuple data, word index) {
-    return isEmpty(data, index) || isTombstone(data, index);
-  }
 
   DISALLOW_HEAP_ALLOCATION();
 };

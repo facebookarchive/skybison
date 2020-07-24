@@ -11,6 +11,39 @@
 
 namespace py {
 
+static word nextItemIndex(RawTuple data, word* index) {
+  for (word i = *index; i < data.length(); i += SetBase::Bucket::kNumPointers) {
+    if (!SetBase::Bucket::isFull(data, i)) continue;
+    *index = i + SetBase::Bucket::kNumPointers;
+    return i;
+  }
+  return -1;
+}
+
+bool setNextItem(const SetBase& set, word* index, RawObject* value_out) {
+  RawTuple data = RawTuple::cast(set.data());
+  word next_item_index = nextItemIndex(data, index);
+  if (next_item_index < 0) {
+    return false;
+  }
+  *value_out = SetBase::Bucket::value(data, next_item_index);
+  return true;
+}
+
+bool setNextItemHash(const SetBase& set, word* index, RawObject* value_out,
+                     word* hash_out) {
+  DCHECK(hash_out != nullptr, "hash_out must not be null");
+  RawTuple data = RawTuple::cast(set.data());
+  word next_item_index = nextItemIndex(data, index);
+  if (next_item_index < 0) {
+    return false;
+  }
+  *value_out = SetBase::Bucket::value(data, next_item_index);
+  *hash_out = SetBase::Bucket::hash(data, next_item_index);
+
+  return true;
+}
+
 enum class SetLookupType { Lookup, Insertion };
 
 template <SetLookupType type>
@@ -67,8 +100,9 @@ static word setLookupForInsertion(Thread* thread, const Tuple& data,
   return setLookupImpl<SetLookupType::Insertion>(thread, data, key, hash);
 }
 
-static RawTuple setGrow(Thread* thread, const Tuple& data) {
+static RawTuple setGrow(Thread* thread, const SetBase& set) {
   HandleScope scope(thread);
+  Tuple data(&scope, set.data());
   word new_length = data.length() * Runtime::kSetGrowthFactor;
   if (new_length == 0) {
     new_length = Runtime::kInitialSetCapacity * SetBase::Bucket::kNumPointers;
@@ -76,10 +110,7 @@ static RawTuple setGrow(Thread* thread, const Tuple& data) {
   MutableTuple new_data(&scope, thread->runtime()->newMutableTuple(new_length));
   // Re-insert items
   Object value(&scope, NoneType::object());
-  for (word i = SetBase::Bucket::kFirst;
-       SetBase::Bucket::nextItem(*data, &i);) {
-    value = SetBase::Bucket::value(*data, i);
-    word hash = SetBase::Bucket::hash(*data, i);
+  for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
     word index = setLookupForInsertion(thread, new_data, value, hash);
     DCHECK(index != -1, "unexpected index %ld", index);
     SetBase::Bucket::set(*new_data, index, hash, *value);
@@ -97,7 +128,7 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
   }
   Tuple new_data(&scope, *data);
   if (data.length() == 0 || set.numItems() >= data.length() / 2) {
-    new_data = setGrow(thread, data);
+    new_data = setGrow(thread, set);
   }
   index = setLookupForInsertion(thread, new_data, value, hash);
   DCHECK(index != -1, "unexpected index %ld", index);
@@ -133,12 +164,8 @@ RawObject setIntersection(Thread* thread, const SetBase& set,
       self = *iterable;
       other = *set;
     }
-    Tuple data(&scope, self.data());
     Tuple other_data(&scope, other.data());
-    for (word i = SetBase::Bucket::kFirst;
-         SetBase::Bucket::nextItem(*data, &i);) {
-      value = SetBase::Bucket::value(*data, i);
-      word hash = SetBase::Bucket::hash(*data, i);
+    for (word i = 0, hash; setNextItemHash(self, &i, &value, &hash);) {
       if (setLookup(thread, other_data, value, hash) != -1) {
         setAdd(thread, dst, value, hash);
       }
@@ -245,13 +272,9 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
   // Special case for built-in set types
   if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
     SetBase src(&scope, *iterable);
-    Tuple data(&scope, src.data());
     if (src.numItems() > 0) {
-      for (word i = SetBase::Bucket::kFirst;
-           SetBase::Bucket::nextItem(*data, &i);) {
-        elt = SetBase::Bucket::value(*data, i);
+      for (word i = 0, hash; setNextItemHash(src, &i, &elt, &hash);) {
         // take hash from data to avoid recomputing it.
-        word hash = SetBase::Bucket::hash(*data, i);
         setAdd(thread, dst, elt, hash);
       }
     }
@@ -260,8 +283,7 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
   // Special case for dicts
   if (iterable.isDict()) {
     Dict dict(&scope, *iterable);
-    word hash;
-    for (word i = 0; dictNextKeyHash(dict, &i, &elt, &hash);) {
+    for (word i = 0, hash; dictNextKeyHash(dict, &i, &elt, &hash);) {
       setAdd(thread, dst, elt, hash);
     }
     return *dst;
@@ -306,12 +328,9 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
 RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
   HandleScope scope(thread);
   FrozenSet set(&scope, *frozenset);
-  Tuple data(&scope, set.data());
-
   uword result = 0;
-  for (word i = SetBase::Bucket::kFirst;
-       SetBase::Bucket::nextItem(*data, &i);) {
-    word value_hash = SetBase::Bucket::hash(*data, i);
+  Object value(&scope, NoneType::object());
+  for (word i = 0, value_hash; setNextItemHash(set, &i, &value, &value_hash);) {
     uword h = static_cast<uword>(value_hash);
     result ^= ((h ^ uword{89869747}) ^ (h << 16)) * uword{3644798167};
   }
@@ -392,11 +411,7 @@ static RawObject isdisjointImpl(Thread* thread, Frame* frame, word nargs,
       a = *other;
       b = *self;
     }
-    Tuple data(&scope, a.data());
-    for (word i = SetBase::Bucket::kFirst;
-         SetBase::Bucket::nextItem(*data, &i);) {
-      value = SetBase::Bucket::value(*data, i);
-      word hash = SetBase::Bucket::hash(*data, i);
+    for (word i = 0, hash; setNextItemHash(a, &i, &value, &hash);) {
       if (setIncludes(thread, b, value, hash)) {
         return Bool::falseObj();
       }
@@ -784,11 +799,9 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
   Tuple data(&scope, set.data());
   MutableTuple new_data(&scope, runtime->newMutableTuple(data.length()));
   Object value(&scope, NoneType::object());
-  for (word i = SetBase::Bucket::kFirst;
-       SetBase::Bucket::nextItem(*data, &i);) {
-    value = SetBase::Bucket::value(*data, i);
-    word hash = SetBase::Bucket::hash(*data, i);
-    SetBase::Bucket::set(*new_data, i, hash, *value);
+  for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
+    word dst_index = i - SetBase::Bucket::kNumPointers;
+    SetBase::Bucket::set(*new_data, dst_index, hash, *value);
   }
   new_set.setData(*new_data);
   new_set.setNumItems(set.numItems());
@@ -797,12 +810,8 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
 
 bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   HandleScope scope(thread);
-  Tuple data(&scope, set.data());
   Object value(&scope, NoneType::object());
-  for (word i = SetBase::Bucket::kFirst;
-       SetBase::Bucket::nextItem(*data, &i);) {
-    value = RawSetBase::Bucket::value(*data, i);
-    word hash = RawSetBase::Bucket::hash(*data, i);
+  for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
     if (!setIncludes(thread, other, value, hash)) {
       return false;
     }
@@ -833,10 +842,9 @@ RawObject setPop(Thread* thread, const Set& set) {
   Tuple data(&scope, set.data());
   word num_items = set.numItems();
   if (num_items != 0) {
-    for (word i = SetBase::Bucket::kFirst;
-         SetBase::Bucket::nextItem(*data, &i);) {
-      Object value(&scope, Set::Bucket::value(*data, i));
-      Set::Bucket::setTombstone(*data, i);
+    Object value(&scope, NoneType::object());
+    for (word i = 0; setNextItem(set, &i, &value);) {
+      Set::Bucket::setTombstone(*data, i - SetBase::Bucket::kNumPointers);
       set.setNumItems(num_items - 1);
       return *value;
     }
@@ -849,14 +857,14 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   word idx = iter.index();
   HandleScope scope(thread);
   SetBase underlying(&scope, iter.iterable());
-  Tuple data(&scope, underlying.data());
+  Object value(&scope, NoneType::object());
   // Find the next non empty bucket
-  if (!SetBase::Bucket::nextItem(*data, &idx)) {
+  if (!setNextItem(underlying, &idx, &value)) {
     return Error::noMoreItems();
   }
   iter.setConsumedCount(iter.consumedCount() + 1);
   iter.setIndex(idx);
-  return RawSet::Bucket::value(*data, idx);
+  return *value;
 }
 
 static const BuiltinAttribute kSetAttributes[] = {

@@ -85,15 +85,13 @@ PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
     return -1;
   }
   SetBase set(&scope, *set_obj);
-  Tuple set_data(&scope, set.data());
-  if (!SetBase::Bucket::nextItem(*set_data, ppos)) {
+  Object value(&scope, NoneType::object());
+  DCHECK(phash != nullptr, "phash must not be null");
+  DCHECK(pkey != nullptr, "pkey must not be null");
+  if (!setNextItemHash(set, ppos, &value, phash)) {
     return false;
   }
-  DCHECK(pkey != nullptr, "pkey must not be null");
-  DCHECK(phash != nullptr, "phash must not be null");
-  *pkey = ApiHandle::borrowedReference(
-      thread, SetBase::Bucket::value(*set_data, *ppos));
-  *phash = SetBase::Bucket::hash(*set_data, *ppos);
+  *pkey = ApiHandle::borrowedReference(thread, *value);
   return true;
 }
 

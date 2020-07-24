@@ -1180,7 +1180,7 @@ RawObject Runtime::newSetIterator(const Object& set) {
   HandleScope scope;
   SetIterator result(&scope, heap()->create<RawSetIterator>());
   result.setIterable(*set);
-  result.setIndex(SetBase::Bucket::kFirst);
+  result.setIndex(0);
   result.setConsumedCount(0);
   return *result;
 }

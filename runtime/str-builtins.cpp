@@ -673,11 +673,10 @@ bool strInternConstants(Thread* thread, const Object& items) {
       strInternConstants(thread, obj);
     } else if (obj.isFrozenSet()) {
       FrozenSet set(&scope, *obj);
-      Tuple data(&scope, set.data());
       Tuple seq(&scope, runtime->newTuple(set.numItems()));
-      for (word j = 0, idx = Set::Bucket::kFirst;
-           Set::Bucket::nextItem(*data, &idx); j++) {
-        seq.atPut(j, Set::Bucket::value(*data, idx));
+      Object value(&scope, NoneType::object());
+      for (word j = 0, idx = 0; setNextItem(set, &idx, &value); j++) {
+        seq.atPut(j, *value);
       }
       if (strInternConstants(thread, seq)) {
         obj = setUpdate(thread, set, seq);

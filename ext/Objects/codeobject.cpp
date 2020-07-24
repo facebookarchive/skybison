@@ -224,13 +224,10 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
   }
   if (obj.isFrozenSet()) {
     FrozenSet set(&scope, *obj);
-    Tuple data(&scope, set.data());
     Tuple seq(&scope, runtime->newTuple(set.numItems()));
     Object item(&scope, NoneType::object());
     Object item_key(&scope, NoneType::object());
-    for (word j = 0, idx = Set::Bucket::kFirst;
-         Set::Bucket::nextItem(*data, &idx); j++) {
-      item = Set::Bucket::value(*data, idx);
+    for (word j = 0, idx = 0; setNextItem(set, &idx, &item); j++) {
       item_key = constantKey(thread, item);
       if (item_key.isError()) return *item_key;
       seq.atPut(j, *item_key);

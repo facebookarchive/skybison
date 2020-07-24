@@ -1201,11 +1201,10 @@ TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
   Object obj(&scope, runtime_->newTuple(5));
   setHashAndAdd(thread, set, obj);
   Set set2(&scope, runBuiltin(METH(set, copy), set));
-  MutableTuple data(&scope, set2.data());
   bool has_object = false;
-  for (word i = SetBase::Bucket::kFirst;
-       SetBase::Bucket::nextItem(*data, &i);) {
-    if (SetBase::Bucket::value(*data, i) == *obj) {
+  Object value(&scope, NoneType::object());
+  for (word i = 0; setNextItem(set2, &i, &value);) {
+    if (value == *obj) {
       has_object = true;
       break;
     }
@@ -1264,11 +1263,10 @@ TEST_F(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   Object obj(&scope, runtime_->newTuple(5));
   setHashAndAdd(thread, set, obj);
   FrozenSet set2(&scope, runBuiltin(METH(frozenset, copy), set));
-  MutableTuple data(&scope, set2.data());
   bool has_object = false;
-  for (word i = SetBase::Bucket::kFirst;
-       SetBase::Bucket::nextItem(*data, &i);) {
-    if (SetBase::Bucket::value(*data, i) == *obj) {
+  Object value(&scope, NoneType::object());
+  for (word i = 0; setNextItem(set2, &i, &value);) {
+    if (value == *obj) {
       has_object = true;
       break;
     }

@@ -6,6 +6,7 @@
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "test-utils.h"
 
 namespace py {
@@ -565,11 +566,11 @@ TEST_F(StrBuiltinsTest,
   setHashAndAdd(thread_, inner, str2);
   strInternConstants(thread_, outer);
   inner = outer.at(2);
-  MutableTuple data(&scope, inner.data());
   bool all_interned = true;
   bool some_interned = false;
-  for (word idx = Set::Bucket::kFirst; Set::Bucket::nextItem(*data, &idx);) {
-    Str obj(&scope, Set::Bucket::value(*data, idx));
+  Object value(&scope, NoneType::object());
+  for (word idx = 0; setNextItem(inner, &idx, &value);) {
+    Str obj(&scope, *value);
     bool interned = Runtime::isInternedStr(thread_, obj);
     all_interned &= interned;
     some_interned |= interned;
