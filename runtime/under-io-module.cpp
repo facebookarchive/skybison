@@ -1014,8 +1014,6 @@ static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
   Runtime* runtime = thread->runtime();
 
   word val_len = runtime->byteslikeLength(thread, value);
-  MutableBytes memory(&scope, runtime->newMutableBytesUninitialized(val_len));
-  runtime->mutableBytesReplaceFromByteslike(thread, memory, 0, value, val_len);
 
   word pos = bytes_io.pos();
   word new_pos = pos + val_len;
