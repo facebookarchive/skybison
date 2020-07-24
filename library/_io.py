@@ -1160,6 +1160,7 @@ class FileIO(_RawIOBase, bootstrap=True):
 
         appending = False
         created = False
+        closed = False
         readable = False
         seekable = None
         writable = False
@@ -1213,6 +1214,7 @@ class FileIO(_RawIOBase, bootstrap=True):
             raise
 
         self._fd = fd
+        self._closed = closed
         self._closefd = closefd
         self._appending = appending
         self._created = created
@@ -1264,37 +1266,7 @@ class FileIO(_RawIOBase, bootstrap=True):
             return None
 
     def readall(self):
-        self._checkClosed()
-        if not self._readable:
-            return b""
-        bufsize = DEFAULT_BUFFER_SIZE
-        try:
-            pos = _os_lseek(self._fd, 0, 1)
-            end = _os_fstat_size(self._fd)
-            if end >= pos:
-                bufsize = end - pos + 1
-        except OSError:
-            pass
-
-        result = bytearray()
-        result_len = 0
-        while True:
-            if result_len >= bufsize:
-                bufsize = result_len
-                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
-            num_bytes = bufsize - result_len
-            try:
-                chunk = _os_read(self._fd, num_bytes)
-            except BlockingIOError:
-                if result:
-                    break
-                return None
-            if not chunk:  # reached the end of the file
-                break
-            result += chunk
-            result_len = len(result)
-
-        return bytes(result)
+        _builtin()
 
     def readinto(self, byteslike):
         # TODO(T47880928): Support memoryview.__setitem__

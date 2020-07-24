@@ -1485,18 +1485,48 @@ class FileIOTests(unittest.TestCase):
         with _io.FileIO(_getfd(), mode="w") as f:
             self.assertFalse(f.readable())
 
+    def test_readall_with_non_FileIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.FileIO.readall(5)
+
     def test_readall_on_closed_file_raises_value_error(self):
         f = _io.FileIO(_getfd(), mode="r")
         f.close()
         self.assertRaises(ValueError, f.readall)
 
-    def test_readall_on_non_readable_file_returns_empty_bytes(self):
-        with _io.FileIO(_getfd(), mode="w") as f:
-            self.assertEqual(f.readall(), b"")
+    # TODO(T70611902): Modify the readall and test after CPython fixed this behavior
+    def test_readall_on_non_readable_file_returns_full_bytes(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="w")
+        self.assertFalse(f.readable())
+        self.assertEqual(f.readall(), b"hello")
 
     def test_readall_returns_bytes(self):
         with _io.FileIO(_getfd(), mode="r") as f:
             self.assertIsInstance(f.readall(), bytes)
+
+    def test_readall_returns_all_bytes(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("hello")
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        result = f.readall()
+        self.assertIsInstance(result, bytes)
+        self.assertEqual(result, b"hello")
+
+    def test_readall_with_more_than_default_buffer_size_returns_all_bytes(self):
+        r, w = os.pipe()
+        w = os.fdopen(w, "w")
+        w.write("foo" * 1000)
+        w.close()
+        f = _io.FileIO(r, mode="r")
+        result = f.readall()
+        self.assertIsInstance(result, bytes)
+        self.assertEqual(result, b"foo" * 1000)
 
     # TODO(T53182806): Test FileIO.readinto once memoryview.__setitem__ is done
 

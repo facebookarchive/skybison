@@ -2,6 +2,7 @@
 
 #include "builtins.h"
 #include "bytes-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -1162,6 +1163,76 @@ static const BuiltinAttribute kFileIOAttributes[] = {
     {ID(_seekable), RawFileIO::kSeekableOffset},
     {ID(_closefd), RawFileIO::kCloseFdOffset},
 };
+
+static const word kDefaultBufferSize = 1 * kKiB;  // bytes
+
+RawObject METH(FileIO, readall)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfFileIO(*self)) {
+    return thread->raiseRequiresType(self, ID(FileIO));
+  }
+  FileIO file_io(&scope, *self);
+  if (file_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object fd_obj(&scope, file_io.fd());
+  DCHECK(fd_obj.isSmallInt(), "fd must be small int");
+  int fd = SmallInt::cast(*fd_obj).value();
+  // If there is OSError from File::seek or File::size, error will not be
+  // thrown. This case is handled by the for loop below.
+  word pos = File::seek(fd, 0, 1);
+  word end = File::size(fd);
+  word buffer_size = kDefaultBufferSize;
+
+  if (pos >= 0 && end >= pos) {
+    buffer_size = end - pos + 1;
+    std::unique_ptr<byte[]> buffer(new byte[buffer_size]{0});
+    word result = File::read(fd, buffer.get(), buffer_size);
+    if (result < 0) {  // OSError from File::read
+      return thread->raiseOSErrorFromErrno(-result);
+    }
+    return runtime->newBytesWithAll(View<byte>(buffer.get(), result));
+  }
+  // OSError from getting File::seek or File::size, or end < pos
+  // read buffer by buffer
+  Bytearray result_array(&scope, runtime->newBytearray());
+  word read_size;
+  word total_len = 0;
+  for (;;) {
+    read_size = buffer_size;
+    runtime->bytearrayEnsureCapacity(thread, result_array,
+                                     total_len + buffer_size);
+    byte* dst = reinterpret_cast<byte*>(
+        MutableBytes::cast(result_array.items()).address());
+    word result_len = File::read(fd, dst + total_len, read_size);
+    if (result_len < 0) {
+      return thread->raiseOSErrorFromErrno(-result_len);
+    }
+    total_len += result_len;
+    // Here if result_len < read_len, it is EOF for our case, as pyro and
+    // cpython do not support non-blocking FileIO
+    if (result_len < read_size) {  // OSError or EOF
+      if (total_len == 0) {
+        return Bytes::empty();
+      }
+      // TODO(T70612758): Find a way to shorten the MutableBytes object without
+      // extra allocation
+      Bytes result_bytes(
+          &scope, MutableBytes::cast(result_array.items()).becomeImmutable());
+      MutableBytes result(&scope,
+                          runtime->newMutableBytesUninitialized(total_len));
+      dst = reinterpret_cast<byte*>(result.address());
+      result_bytes.copyTo(dst, total_len);
+      return result.becomeImmutable();
+    }
+    result_array.setNumItems(total_len);
+    buffer_size *= 2;
+  }
+}
 
 static const BuiltinAttribute kStringIOAttributes[] = {
     {ID(_buffer), RawStringIO::kBufferOffset},

@@ -38,7 +38,6 @@ class Handle;
   V(Error)                                                                     \
   V(Exception)                                                                 \
   V(ExceptionState)                                                            \
-  V(FileIO)                                                                    \
   V(Float)                                                                     \
   V(FrameProxy)                                                                \
   V(Function)                                                                  \
@@ -107,6 +106,7 @@ class Handle;
   V(BytesIO)                                                                   \
   V(Deque)                                                                     \
   V(Dict)                                                                      \
+  V(FileIO)                                                                    \
   V(FrozenSet)                                                                 \
   V(ImportError)                                                               \
   V(List)                                                                      \
