@@ -90,11 +90,8 @@ bool setNextItemHash(const SetBase& set, word* index, RawObject* value_out,
   return true;
 }
 
-enum class SetLookupType { Lookup, Insertion };
-
-template <SetLookupType type>
-static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
-                          word hash) {
+static word setLookup(Thread* thread, const Tuple& data, const Object& key,
+                      word hash) {
   word start = getIndex(*data, hash);
   word current = start;
   word next_free_index = -1;
@@ -117,9 +114,6 @@ static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
       }
     }
     if (next_free_index == -1 && isTombstone(*data, current)) {
-      if (type == SetLookupType::Insertion) {
-        return current;
-      }
       next_free_index = current;
     } else if (isEmpty(*data, current)) {
       if (next_free_index == -1) {
@@ -129,21 +123,44 @@ static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
     }
     current = (current + kNumPointers) & (length - 1);
   } while (current != start);
-
-  if (type == SetLookupType::Insertion) {
-    return next_free_index;
-  }
   return -1;
-}
-
-static word setLookup(Thread* thread, const Tuple& data, const Object& key,
-                      word hash) {
-  return setLookupImpl<SetLookupType::Lookup>(thread, data, key, hash);
 }
 
 static word setLookupForInsertion(Thread* thread, const Tuple& data,
                                   const Object& key, word hash) {
-  return setLookupImpl<SetLookupType::Insertion>(thread, data, key, hash);
+  word start = getIndex(*data, hash);
+  word current = start;
+  word next_free_index = -1;
+
+  word length = data.length();
+  if (length == 0) {
+    return -1;
+  }
+
+  do {
+    if (hasValue(*data, current)) {
+      RawObject eq =
+          Runtime::objectEquals(thread, itemValue(*data, current), *key);
+      if (eq == Bool::trueObj()) {
+        return current;
+      }
+      if (eq.isErrorException()) {
+        UNIMPLEMENTED("exception in value comparison");
+      }
+    }
+    if (next_free_index == -1 && isTombstone(*data, current)) {
+      return current;
+    }
+    if (isEmpty(*data, current)) {
+      if (next_free_index == -1) {
+        next_free_index = current;
+      }
+      break;
+    }
+    current = (current + kNumPointers) & (length - 1);
+  } while (current != start);
+
+  return next_free_index;
 }
 
 static RawTuple setGrow(Thread* thread, const SetBase& set) {
