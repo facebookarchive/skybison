@@ -648,6 +648,7 @@ class Runtime {
   }
   DEFINE_IS_INSTANCE(Array)
   DEFINE_IS_INSTANCE(BufferedReader)
+  DEFINE_IS_INSTANCE(BufferedWriter)
   DEFINE_IS_INSTANCE(Bytearray)
   DEFINE_IS_INSTANCE(Bytes)
   DEFINE_IS_INSTANCE(BytesIO)

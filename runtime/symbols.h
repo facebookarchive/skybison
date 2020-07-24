@@ -732,6 +732,7 @@ class Runtime;
   V(reason)                                                                    \
   V(replace)                                                                   \
   V(repr)                                                                      \
+  V(reset)                                                                     \
   V(rpartition)                                                                \
   V(rshift)                                                                    \
   V(rsplit)                                                                    \

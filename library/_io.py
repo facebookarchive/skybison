@@ -107,6 +107,10 @@ def _TextIOWrapper_attached_guard(obj):
     _builtin()
 
 
+def _TextIOWrapper_write_UTF8(self, text):
+    _builtin()
+
+
 def _buffered_reader_clear_buffer(self):
     _builtin()
 
@@ -1988,6 +1992,10 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return self.buffer.writable()
 
     def write(self, text):
+        result = _TextIOWrapper_write_UTF8(self, text)
+        if result is not _Unbound:
+            return result
+
         if not _str_check(text):
             raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
         _TextIOWrapper_attached_guard(self)

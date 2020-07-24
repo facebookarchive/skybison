@@ -2494,7 +2494,22 @@ class BufferedReaderTests(unittest.TestCase):
 
 class TextIOWrapperTests(unittest.TestCase):
     def _sample(self):
-        return _io.TextIOWrapper(_io.BytesIO(b"hello"), encoding="ascii")
+        return _io.TextIOWrapper(_io.BytesIO(b"hello++"), encoding="ascii")
+
+    def _sample_utf8(self):
+        return _io.TextIOWrapper(_io.BytesIO(b"hello++"), encoding="UTF-8")
+
+    def _sample_utf16(self):
+        return _io.TextIOWrapper(_io.BytesIO(b"hello++"), encoding="UTF-16")
+
+    def _sample_latin1(self):
+        return _io.TextIOWrapper(_io.BytesIO(b"hello++"), encoding="Latin-1")
+
+    def _sample_buffered_writer(self):
+        return _io.BufferedWriter(_io.BytesIO(b"hello++"), buffer_size=3)
+
+    def _sample_buffered_reader(self):
+        return _io.BufferedReader(_io.BytesIO(b"hello++"), buffer_size=3)
 
     def test_dunder_init_with_none_buffer_raises_attribute_error(self):
         with self.assertRaises(AttributeError) as context:
@@ -2940,11 +2955,145 @@ class TextIOWrapperTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             text_io.write(5.5)
 
-    def test_write_writes_chars(self):
-        with _io.TextIOWrapper(_io.BytesIO()) as text_io:
+    def test_write_with_ascii_encoding_and_letters_writes_chars(self):
+        with self._sample() as text_io:
             self.assertEqual(text_io.write("foo"), 3)
             text_io.seek(0)
-            self.assertEqual(text_io.read(), "foo")
+            self.assertEqual(text_io.read(), "foolo++")
+
+    def test_write_with_ascii_encoding_and_special_characters_writes_chars(self):
+        with self._sample() as text_io:
+            self.assertEqual(text_io.write("!?+-()"), 6)
+            text_io.seek(0)
+            self.assertEqual(text_io.read(), "!?+-()+")
+
+    def test_write_with_utf8_encoding_and_letters_writes_chars(self):
+        with self._sample_utf8() as text_io:
+            self.assertEqual(text_io.write("foo"), 3)
+            text_io.seek(0)
+            self.assertEqual(text_io.read(), "foolo++")
+
+    def test_write_with_utf8_encoding_and_special_characters_writes_chars(self):
+        with self._sample_utf8() as text_io:
+            self.assertEqual(text_io.write("(("), 2)
+            text_io.seek(0)
+            self.assertEqual(text_io.read(), "((llo++")
+
+    def test_write_with_utf8_encoding_and_strict_errors_and_surrogate_raises_unicodeencode_error(
+        self,
+    ):
+        text_io = _io.TextIOWrapper(
+            _io.BytesIO(b"hello"), encoding="UTF-8", errors="strict"
+        )
+        with self.assertRaises(ValueError):
+            text_io.write("ab\uD800++")
+
+    def test_write_with_utf8_encoding_and_ignore_errors_removes_surrogates(self):
+        text_io = _io.TextIOWrapper(
+            _io.BytesIO(b"hello++"), encoding="UTF-8", errors="ignore"
+        )
+        self.assertEqual(text_io.write("ab\uD800a"), 4)
+        text_io.seek(0)
+        self.assertEqual(text_io.read(), "abalo++")
+
+    def test_write_with_utf8_encoding_and_replace_errors_replaces_surrogates_with_question_mark(
+        self,
+    ):
+        text_io = _io.TextIOWrapper(
+            _io.BytesIO(b"hello++"), encoding="UTF-8", errors="replace"
+        )
+        self.assertEqual(text_io.write("ab\uD800"), 3)
+        text_io.seek(0)
+        self.assertEqual(text_io.read(), "ab?lo++")
+
+    # TODO(T61927696): Test write with "surrogatepass" errors when "surrogatepass" is supported by decode
+
+    def test_write_with_latin1_encoding_and_letters_writes_chars(self):
+        with self._sample_latin1() as text_io:
+            self.assertEqual(text_io.write("foo"), 3)
+            text_io.seek(0)
+            self.assertEqual(text_io.read(), "foolo++")
+
+    def test_write_with_latin1_encoding_and_special_characters_writes_chars(self):
+        with self._sample_latin1() as text_io:
+            self.assertEqual(text_io.write("(("), 2)
+            text_io.seek(0)
+            self.assertEqual(text_io.read(), "((llo++")
+
+    def test_write_with_bufferedwriter_ascii_encoding_and_letters_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="ascii"
+        ) as text_io:
+            self.assertEqual(text_io.write("foo"), 3)
+
+    def test_write_with_bufferedwriter_ascii_encoding_and_special_characters_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="ascii"
+        ) as text_io:
+            self.assertEqual(text_io.write("!?+-()"), 6)
+
+    def test_write_with_bufferedwriter_utf8_encoding_and_letters_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="UTF-8"
+        ) as text_io:
+            self.assertEqual(text_io.write("foo"), 3)
+
+    def test_write_with_bufferedwriter_utf8_encoding_and_special_characters_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="UTF-8"
+        ) as text_io:
+            self.assertEqual(text_io.write("(("), 2)
+
+    def test_write_with_bufferedwriter_utf8_encoding_and_strict_errors_and_surrogate_raises_unicodeencode_error(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="UTF-8", errors="strict"
+        ) as text_io:
+            with self.assertRaises(ValueError):
+                text_io.write("ab\uD800++")
+
+    def test_write_with_bufferedwriter_utf8_encoding_and_ignore_errors_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="UTF-8", errors="ignore"
+        ) as text_io:
+            self.assertEqual(text_io.write("ab\uD800a"), 4)
+
+    def test_write_with_bufferedwriter_with_utf8_encoding_and_replace_errors_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="UTF-8", errors="replace"
+        ) as text_io:
+            self.assertEqual(text_io.write("ab\uD800"), 3)
+
+    # TODO(T61927696): Test write with "surrogatepass" errors when "surrogatepass" is supported by decode
+
+    def test_write_with_bufferedwriter_latin1_encoding_and_letters_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="Latin-1"
+        ) as text_io:
+            self.assertEqual(text_io.write("foo"), 3)
+
+    def test_write_with_bufferedwriter_latin1_encoding_and_special_characters_returns_length_written(
+        self,
+    ):
+        with _io.TextIOWrapper(
+            self._sample_buffered_writer(), encoding="Latin-1"
+        ) as text_io:
+            self.assertEqual(text_io.write("(("), 2)
 
 
 class StringIOTests(unittest.TestCase):

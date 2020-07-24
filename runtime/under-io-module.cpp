@@ -253,23 +253,6 @@ RawObject FUNC(_io, _StringIO_seek)(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
-RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
-                                                   word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfTextIOWrapper(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, ID(TextIOWrapper));
-  }
-  TextIOWrapper self(&scope, *self_obj);
-  if (self.detached()) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "underlying buffer has been detached");
-  }
-  return NoneType::object();
-}
-
 static RawObject initReadBuf(Thread* thread,
                              const BufferedReader& buffered_reader) {
   HandleScope scope(thread);
@@ -755,8 +738,8 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
   Object fill_result(&scope, NoneType::object());
   Object chunks(&scope, NoneType::object());
   word line_end = -1;
-  // Outer loop in case for case where a line is longer than a single buffer.
-  // In that case we will collect the pieces in the `chunks` list.
+  // Outer loop in case for case where a line is longer than a single buffer. In
+  // that case we will collect the pieces in the `chunks` list.
   for (;;) {
     // Fill buffer until we find a newline character or filled up the whole
     // buffer.
@@ -826,6 +809,155 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
   self.setReadPos(line_end);
   self.setBufferNumBytes(buffer_num_bytes);
   return result.becomeImmutable();
+}
+
+RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfTextIOWrapper(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(TextIOWrapper));
+  }
+  TextIOWrapper self(&scope, *self_obj);
+  if (self.detached()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "underlying buffer has been detached");
+  }
+  return NoneType::object();
+}
+
+// Function from under-codecs-module.cpp
+static bool isSurrogate(int32_t codepoint) {
+  return 0xD800 <= codepoint && codepoint <= 0xDFFF;
+}
+
+// Copy the bytes of a UTF-8 encoded string with no surrogates to the write
+// buffer (a Bytearray) of underlying Bufferedwriter of TextIOWrapper
+// If the length of write buffer will be larger than
+// BufferedWriter.bufferSize(), return Unbound to escape to managed code and
+// call BufferedWriter.write()
+// If the newline is "\r\n", return Unbound to use managed code
+// If text_io.lineBuffering() or haslf or "\r" in text, return Unbound to
+// managed code to use flush()
+// TODO(T61927696): Implement native version of BufferedWriter._flush_unlocked()
+// with FileIO as BufferedWriter.raw. With that function, we can do flush in
+// here.
+RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+
+  Object text_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*text_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "write() argument must be str, not %T",
+                                &text_obj);
+  }
+
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfTextIOWrapper(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(TextIOWrapper));
+  }
+  TextIOWrapper text_io(&scope, *self_obj);
+  if (text_io.detached()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "underlying buffer has been detached");
+  }
+
+  Object buffer_obj(&scope, text_io.buffer());
+  if (!buffer_obj.isBufferedWriter()) {
+    return Unbound::object();
+  }
+  BufferedWriter buffer(&scope, text_io.buffer());
+  Object buffer_closed(&scope, buffer.closed());
+  if (!buffer_closed.isNoneType() && buffer_closed == Bool::trueObj()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "I/O operation on closed file.");
+  }
+
+  if (Str::cast(text_io.encoding()) != SmallStr::fromCStr("UTF-8")) {
+    return Unbound::object();
+  }
+  Str writenl(&scope, text_io.writenl());
+
+  // Only allow writenl to be cr or lf in this short cut
+  if (!text_io.writetranslate() || writenl == SmallStr::fromCStr("\r\n")) {
+    return Unbound::object();
+  }
+
+  Str text(&scope, strUnderlying(*text_obj));
+  word text_len = text.length();
+
+  Bytearray write_buffer(&scope, buffer.writeBuf());
+  word old_len = write_buffer.numItems();
+  word new_len = old_len + text_len;
+  runtime->bytearrayEnsureCapacity(thread, write_buffer, new_len);
+  MutableBytes write_buffer_bytes(&scope, write_buffer.items());
+  write_buffer_bytes.replaceFromWithStr(old_len, *text, text_len);
+  write_buffer.setNumItems(new_len);
+
+  int32_t codepoint;
+  word num_bytes;
+  bool hasnl;
+
+  if (writenl == SmallStr::fromCStr("\n")) {
+    for (word offset = 0; offset < text_len;) {
+      codepoint = text.codePointAt(offset, &num_bytes);
+      if (isSurrogate(codepoint)) {
+        write_buffer.downsize(old_len);
+        return Unbound::object();
+      }
+      if (num_bytes == 1) {
+        if (text.byteAt(offset) == '\n' || text.byteAt(offset) == '\r') {
+          hasnl = true;
+        }
+      }
+      offset += num_bytes;
+    }
+  } else {
+    for (word offset = 0; offset < text_len;) {
+      codepoint = text.codePointAt(offset, &num_bytes);
+      if (isSurrogate(codepoint)) {
+        write_buffer.downsize(old_len);
+        return Unbound::object();
+      }
+      if (num_bytes == 1) {
+        if (text.byteAt(offset) == '\n') {
+          hasnl = true;
+          write_buffer_bytes.byteAtPut(offset + old_len, byte{'\r'});
+          offset += num_bytes;
+          continue;
+        }
+        if (text.byteAt(offset) == '\r') {
+          hasnl = true;
+          offset += num_bytes;
+          continue;
+        }
+      }
+      offset += num_bytes;
+    }
+  }
+
+  if (text_io.lineBuffering() && hasnl) {
+    // TODO(T61927696): Implement native support for
+    // BufferedWriter._flush_unlocked to do flush here
+    Object flush_result(&scope, thread->invokeMethod1(buffer, ID(flush)));
+    if (flush_result.isErrorException()) return *flush_result;
+    text_io.setTelling(text_io.seekable());
+  }
+
+  text_io.setDecodedChars(Str::empty());
+  text_io.setSnapshot(NoneType::object());
+  Object decoder_obj(&scope, text_io.decoder());
+  if (!decoder_obj.isNoneType()) {
+    Object reset_result(&scope, thread->invokeMethod1(decoder_obj, ID(reset)));
+    if (reset_result.isErrorException()) return *reset_result;
+  }
+
+  return SmallInt::fromWord(text_len);
 }
 
 static const BuiltinAttribute kUnderIOBaseAttributes[] = {

@@ -785,6 +785,7 @@ def _call_encode_errorhandler(
     return unicode, pos
 
 
+# TODO(T61927696): Support surrogatepass errors for utf-8 decode
 _codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
 
 
