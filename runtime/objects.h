@@ -2739,8 +2739,6 @@ class RawDictValues : public RawDictViewBase {
 // A simple set implementation. Used by set and frozenset.
 class RawSetBase : public RawInstance {
  public:
-  class Bucket;
-
   // Getters and setters.
   // The RawTuple backing the set
   RawObject data() const;
@@ -2766,60 +2764,6 @@ class RawSet : public RawSetBase {
 class RawFrozenSet : public RawSetBase {
  public:
   RAW_OBJECT_COMMON(FrozenSet);
-};
-
-// Helper class for manipulating buckets in the RawTuple that backs the
-// set
-class RawSetBase::Bucket {
- public:
-  // none of these operations do bounds checking on the backing array
-  static word getIndex(RawTuple data, word hash) {
-    DCHECK(RawSmallInt::isValid(hash), "hash out of range");
-    word nbuckets = data.length() / kNumPointers;
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
-    return (hash & (nbuckets - 1)) * kNumPointers;
-  }
-
-  static bool hasValue(RawTuple data, word index) {
-    return !data.at(index).isNoneType();
-  }
-
-  static word hash(RawTuple data, word index) {
-    return RawSmallInt::cast(data.at(index + kHashOffset)).value();
-  }
-
-  static bool isEmpty(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isNoneType();
-  }
-
-  static bool isTombstone(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isUnbound();
-  }
-
-  static RawObject value(RawTuple data, word index) {
-    return data.at(index + kKeyOffset);
-  }
-
-  static void set(RawTuple data, word index, word hash, RawObject value) {
-    data.atPut(index + kHashOffset, RawSmallInt::fromWordTruncated(hash));
-    data.atPut(index + kKeyOffset, value);
-  }
-
-  static void setTombstone(RawTuple data, word index) {
-    data.atPut(index + kHashOffset, RawUnbound::object());
-    data.atPut(index + kKeyOffset, RawNoneType::object());
-  }
-
-  static bool isFull(RawTuple data, word index) {
-    return data.at(index + kHashOffset).isSmallInt();
-  }
-
-  // Layout.
-  static const word kHashOffset = 0;
-  static const word kKeyOffset = kHashOffset + 1;
-  static const word kNumPointers = kKeyOffset + 1;
-
-  DISALLOW_HEAP_ALLOCATION();
 };
 
 // A growable array

@@ -11,10 +11,56 @@
 
 namespace py {
 
+// Data tuple layout
+static const word kHashOffset = 0;
+static const word kValueOffset = kHashOffset + 1;
+static const word kNumPointers = kValueOffset + 1;
+
+static word getIndex(RawTuple data, word hash) {
+  DCHECK(SmallInt::isValid(hash), "hash out of range");
+  word nitems = data.length() / kNumPointers;
+  DCHECK(Utils::isPowerOfTwo(nitems), "%ld not a power of 2", nitems);
+  return (hash & (nitems - 1)) * kNumPointers;
+}
+
+static bool hasValue(RawTuple data, word index) {
+  return !data.at(index).isNoneType();
+}
+
+static bool isEmpty(RawTuple data, word index) {
+  return data.at(index + kHashOffset).isNoneType();
+}
+
+static bool isFull(RawTuple data, word index) {
+  return data.at(index + kHashOffset).isSmallInt();
+}
+
+static bool isTombstone(RawTuple data, word index) {
+  return data.at(index + kHashOffset).isUnbound();
+}
+
+static word itemHash(RawTuple data, word index) {
+  return SmallInt::cast(data.at(index + kHashOffset)).value();
+}
+
+static RawObject itemValue(RawTuple data, word index) {
+  return data.at(index + kValueOffset);
+}
+
+static void itemAtPut(RawTuple data, word index, word hash, RawObject value) {
+  data.atPut(index + kHashOffset, SmallInt::fromWordTruncated(hash));
+  data.atPut(index + kValueOffset, value);
+}
+
+static void itemAtPutTombstone(RawTuple data, word index) {
+  data.atPut(index + kHashOffset, Unbound::object());
+  data.atPut(index + kValueOffset, NoneType::object());
+}
+
 static word nextItemIndex(RawTuple data, word* index) {
-  for (word i = *index; i < data.length(); i += SetBase::Bucket::kNumPointers) {
-    if (!SetBase::Bucket::isFull(data, i)) continue;
-    *index = i + SetBase::Bucket::kNumPointers;
+  for (word i = *index; i < data.length(); i += kNumPointers) {
+    if (!isFull(data, i)) continue;
+    *index = i + kNumPointers;
     return i;
   }
   return -1;
@@ -26,7 +72,7 @@ bool setNextItem(const SetBase& set, word* index, RawObject* value_out) {
   if (next_item_index < 0) {
     return false;
   }
-  *value_out = SetBase::Bucket::value(data, next_item_index);
+  *value_out = itemValue(data, next_item_index);
   return true;
 }
 
@@ -38,8 +84,8 @@ bool setNextItemHash(const SetBase& set, word* index, RawObject* value_out,
   if (next_item_index < 0) {
     return false;
   }
-  *value_out = SetBase::Bucket::value(data, next_item_index);
-  *hash_out = SetBase::Bucket::hash(data, next_item_index);
+  *value_out = itemValue(data, next_item_index);
+  *hash_out = itemHash(data, next_item_index);
 
   return true;
 }
@@ -49,7 +95,7 @@ enum class SetLookupType { Lookup, Insertion };
 template <SetLookupType type>
 static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
                           word hash) {
-  word start = SetBase::Bucket::getIndex(*data, hash);
+  word start = getIndex(*data, hash);
   word current = start;
   word next_free_index = -1;
 
@@ -60,9 +106,9 @@ static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
   }
 
   do {
-    if (SetBase::Bucket::hasValue(*data, current)) {
-      RawObject eq = Runtime::objectEquals(
-          thread, SetBase::Bucket::value(*data, current), *key);
+    if (hasValue(*data, current)) {
+      RawObject eq =
+          Runtime::objectEquals(thread, itemValue(*data, current), *key);
       if (eq == Bool::trueObj()) {
         return current;
       }
@@ -70,18 +116,18 @@ static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
         UNIMPLEMENTED("exception in value comparison");
       }
     }
-    if (next_free_index == -1 && SetBase::Bucket::isTombstone(*data, current)) {
+    if (next_free_index == -1 && isTombstone(*data, current)) {
       if (type == SetLookupType::Insertion) {
         return current;
       }
       next_free_index = current;
-    } else if (SetBase::Bucket::isEmpty(*data, current)) {
+    } else if (isEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + SetBase::Bucket::kNumPointers) & (length - 1);
+    current = (current + kNumPointers) & (length - 1);
   } while (current != start);
 
   if (type == SetLookupType::Insertion) {
@@ -105,7 +151,7 @@ static RawTuple setGrow(Thread* thread, const SetBase& set) {
   Tuple data(&scope, set.data());
   word new_length = data.length() * Runtime::kSetGrowthFactor;
   if (new_length == 0) {
-    new_length = Runtime::kInitialSetCapacity * SetBase::Bucket::kNumPointers;
+    new_length = Runtime::kInitialSetCapacity * kNumPointers;
   }
   MutableTuple new_data(&scope, thread->runtime()->newMutableTuple(new_length));
   // Re-insert items
@@ -113,7 +159,7 @@ static RawTuple setGrow(Thread* thread, const SetBase& set) {
   for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
     word index = setLookupForInsertion(thread, new_data, value, hash);
     DCHECK(index != -1, "unexpected index %ld", index);
-    SetBase::Bucket::set(*new_data, index, hash, *value);
+    itemAtPut(*new_data, index, hash, *value);
   }
   return *new_data;
 }
@@ -124,7 +170,7 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
   Tuple data(&scope, set.data());
   word index = setLookup(thread, data, value, hash);
   if (index != -1) {
-    return SetBase::Bucket::value(*data, index);
+    return itemValue(*data, index);
   }
   Tuple new_data(&scope, *data);
   if (data.length() == 0 || set.numItems() >= data.length() / 2) {
@@ -133,7 +179,7 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
   index = setLookupForInsertion(thread, new_data, value, hash);
   DCHECK(index != -1, "unexpected index %ld", index);
   set.setData(*new_data);
-  SetBase::Bucket::set(*new_data, index, hash, *value);
+  itemAtPut(*new_data, index, hash, *value);
   set.setNumItems(set.numItems() + 1);
   return *value;
 }
@@ -219,7 +265,7 @@ bool setRemove(Thread* thread, const Set& set, const Object& key, word hash) {
   Tuple data(&scope, set.data());
   word index = setLookup(thread, data, key, hash);
   if (index != -1) {
-    SetBase::Bucket::setTombstone(*data, index);
+    itemAtPutTombstone(*data, index);
     set.setNumItems(set.numItems() - 1);
     return true;
   }
@@ -800,8 +846,8 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
   MutableTuple new_data(&scope, runtime->newMutableTuple(data.length()));
   Object value(&scope, NoneType::object());
   for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
-    word dst_index = i - SetBase::Bucket::kNumPointers;
-    SetBase::Bucket::set(*new_data, dst_index, hash, *value);
+    word dst_index = i - kNumPointers;
+    itemAtPut(*new_data, dst_index, hash, *value);
   }
   new_set.setData(*new_data);
   new_set.setNumItems(set.numItems());
@@ -844,12 +890,12 @@ RawObject setPop(Thread* thread, const Set& set) {
   if (num_items != 0) {
     Object value(&scope, NoneType::object());
     for (word i = 0; setNextItem(set, &i, &value);) {
-      Set::Bucket::setTombstone(*data, i - SetBase::Bucket::kNumPointers);
+      itemAtPutTombstone(*data, i - kNumPointers);
       set.setNumItems(num_items - 1);
       return *value;
     }
   }
-  // num_items == 0 or all buckets were found empty
+  // num_items == 0 or all items were found empty
   return thread->raiseWithFmt(LayoutId::kKeyError, "pop from an empty set");
 }
 
@@ -858,7 +904,7 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   HandleScope scope(thread);
   SetBase underlying(&scope, iter.iterable());
   Object value(&scope, NoneType::object());
-  // Find the next non empty bucket
+  // Find the next non empty item
   if (!setNextItem(underlying, &idx, &value)) {
     return Error::noMoreItems();
   }
