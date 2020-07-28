@@ -2017,7 +2017,7 @@ class StringIO(_TextIOBase, bootstrap=True):
         return True
 
     def close(self):
-        self._closed = True
+        _builtin()
 
     @property
     def closed(self):

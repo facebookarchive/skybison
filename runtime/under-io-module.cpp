@@ -1547,6 +1547,18 @@ RawObject METH(StringIO, __next__)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
+RawObject METH(StringIO, close)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(StringIO));
+  }
+  StringIO self(&scope, *self_obj);
+  self.setClosed(true);
+  return NoneType::object();
+}
+
 RawObject METH(StringIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

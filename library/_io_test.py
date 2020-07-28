@@ -3251,6 +3251,20 @@ class StringIOTests(unittest.TestCase):
         with _io.StringIO(initial_value="foo") as string_io:
             self.assertRegex(string_io.__repr__(), r"<_io.StringIO object at 0x\w+>")
 
+    def test_close_with_non_StringIO_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _io.StringIO.close(0.5)
+
+    def test_close_with_StringIO_subclass_sets_closed_true(self):
+        class C(_io.StringIO):
+            pass
+
+        sio = C("foo")
+
+        self.assertFalse(sio.closed)
+        sio.close()
+        self.assertTrue(sio.closed)
+
     def test_detach_raises_unsupported_operation(self):
         with _io.StringIO() as string_io:
             self.assertRaisesRegex(_io.UnsupportedOperation, "detach", string_io.detach)
