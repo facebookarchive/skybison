@@ -4730,7 +4730,10 @@ class map:
         if len(iterables) < 1:
             raise TypeError("map() must have at least two arguments.")
         self.func = func
-        self.iters = tuple(iter(iterable) for iterable in iterables)
+        iters = []
+        for iterable in iterables:
+            iters.append(iter(iterable))
+        self.iters = (*iters,)
         self.len_iters = len(self.iters)
 
     def __iter__(self):
@@ -4740,7 +4743,10 @@ class map:
         func = self.func
         if self.len_iters == 1:
             return func(next(self.iters[0]))
-        return func(*[next(iter) for iter in self.iters])
+        result = []
+        for iter in self.iters:
+            result.append(next(iter))
+        return func(*result)
 
     def __reduce__(self):
         _unimplemented()
@@ -6576,7 +6582,9 @@ class zip:
         if not iterables:
             iterators = [iter(())]
         else:
-            iterators = [iter(it) for it in iterables]
+            iterators = []
+            for it in iterables:
+                iterators.append(iter(it))
         self._iterators = iterators
 
     def __iter__(self):
