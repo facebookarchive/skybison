@@ -562,6 +562,13 @@ class ImportNameTests(unittest.TestCase):
         with self.assertRaisesRegex(ImportError, "__import__ not found"):
             exec("import foo", my_globals)
 
+    def test_import_from_module_with_raising_dunder_getattr_propagates_exception(self):
+        import collections
+
+        self.assertIn("__getattr__", collections.__dict__)
+        with self.assertRaises(ImportError):
+            from collections import definitely_does_not_exist
+
 
 class ImportStarTests(unittest.TestCase):
     def test_import_star_imports_symbols(self):

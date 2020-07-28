@@ -3856,13 +3856,14 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   } else {
     // Do a generic attribute lookup.
     value = thread->runtime()->attributeAt(thread, from, name);
-    if (value.isErrorException()) {
-      if (!thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
-        return Continue::UNWIND;
-      }
-      thread->clearPendingException();
-      value = Error::notFound();
+  }
+
+  if (value.isErrorException()) {
+    if (!thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
+      return Continue::UNWIND;
     }
+    thread->clearPendingException();
+    value = Error::notFound();
   }
 
   if (value.isErrorNotFound()) {
