@@ -10,7 +10,6 @@
 #include "type-builtins.h"
 
 namespace py {
-
 // Data tuple layout
 static const word kHashOffset = 0;
 static const word kValueOffset = kHashOffset + 1;
@@ -21,10 +20,6 @@ static word getIndex(RawTuple data, word hash) {
   word nitems = data.length() / kNumPointers;
   DCHECK(Utils::isPowerOfTwo(nitems), "%ld not a power of 2", nitems);
   return (hash & (nitems - 1)) * kNumPointers;
-}
-
-static bool hasValue(RawTuple data, word index) {
-  return !data.at(index).isNoneType();
 }
 
 static bool isEmpty(RawTuple data, word index) {
@@ -90,77 +85,118 @@ bool setNextItemHash(const SetBase& set, word* index, RawObject* value_out,
   return true;
 }
 
-static word setLookup(Thread* thread, const Tuple& data, const Object& key,
-                      word hash) {
-  word start = getIndex(*data, hash);
-  word current = start;
-  word next_free_index = -1;
-
-  // TODO(mpage) - Quadratic probing?
-  word length = data.length();
-  if (length == 0) {
+static word entryMatches(Thread* thread, RawTuple data, word entry,
+                         word hash_value, const Object& key) {
+  DCHECK(isFull(data, entry), "entry cannot be a tombstone");
+  if (itemHash(data, entry) == hash_value) {
+    RawObject start_key = itemValue(data, entry);
+    RawObject eq = Runtime::objectEquals(thread, start_key, *key);
+    if (eq == Bool::trueObj()) {
+      return entry;
+    }
+    if (eq.isErrorException()) {
+      UNIMPLEMENTED("exception in value comparison");
+    }
     return -1;
   }
-
-  do {
-    if (hasValue(*data, current)) {
-      RawObject eq =
-          Runtime::objectEquals(thread, itemValue(*data, current), *key);
-      if (eq == Bool::trueObj()) {
-        return current;
-      }
-      if (eq.isErrorException()) {
-        UNIMPLEMENTED("exception in value comparison");
-      }
-    }
-    if (next_free_index == -1 && isTombstone(*data, current)) {
-      next_free_index = current;
-    } else if (isEmpty(*data, current)) {
-      if (next_free_index == -1) {
-        next_free_index = current;
-      }
-      break;
-    }
-    current = (current + kNumPointers) & (length - 1);
-  } while (current != start);
   return -1;
 }
 
-static word setLookupForInsertion(Thread* thread, const Tuple& data,
-                                  const Object& key, word hash) {
-  word start = getIndex(*data, hash);
-  word current = start;
-  word next_free_index = -1;
+static const word kNumLinearProbes = 9;
+static const word kPerturbShift = 5;
 
+static word setLookup(Thread* thread, const Tuple& data, const Object& key,
+                      word hash_value) {
   word length = data.length();
   if (length == 0) {
     return -1;
   }
+  uword perturb = static_cast<uword>(hash_value);
+  word mask = length - 1;
+  word i = hash_value & mask;
+  word entry = getIndex(*data, i);
 
-  do {
-    if (hasValue(*data, current)) {
-      RawObject eq =
-          Runtime::objectEquals(thread, itemValue(*data, current), *key);
-      if (eq == Bool::trueObj()) {
-        return current;
-      }
-      if (eq.isErrorException()) {
-        UNIMPLEMENTED("exception in value comparison");
-      }
-    }
-    if (next_free_index == -1 && isTombstone(*data, current)) {
-      return current;
-    }
-    if (isEmpty(*data, current)) {
-      if (next_free_index == -1) {
-        next_free_index = current;
-      }
-      break;
-    }
-    current = (current + kNumPointers) & (length - 1);
-  } while (current != start);
+  if (isEmpty(*data, entry)) {
+    return -1;
+  }
 
-  return next_free_index;
+  for (;;) {
+    if (isFull(*data, entry)) {
+      word match = entryMatches(thread, *data, entry, hash_value, key);
+      if (match != -1) {
+        return match;
+      }
+    }
+    if (entry + kNumLinearProbes * kNumPointers <= mask) {
+      for (int j = 1; j <= kNumLinearProbes; j++) {
+        entry += kNumPointers;
+        if (isEmpty(*data, entry)) {
+          return -1;
+        }
+        if (!isTombstone(*data, entry)) {
+          word match = entryMatches(thread, *data, entry, hash_value, key);
+          if (match != -1) {
+            return match;
+          }
+        }
+      }
+    }
+    perturb >>= kPerturbShift;
+    i = (i * 5 + 1 + perturb) & mask;
+    entry = getIndex(*data, i);
+    if (isEmpty(*data, entry)) {
+      return -1;
+    }
+  }
+}
+
+static word setLookupForInsertion(Thread* thread, const Tuple& data,
+                                  const Object& key, word hash_value) {
+  word length = data.length();
+  if (length == 0) {
+    return -1;
+  }
+  uword perturb = static_cast<uword>(hash_value);
+  word mask = length - 1;
+  word i = hash_value & mask;
+  word entry = getIndex(*data, i);
+
+  if (isEmpty(*data, entry)) {
+    return entry;
+  }
+
+  for (word freeslot = -1;;) {
+    if (isFull(*data, entry)) {
+      word match = entryMatches(thread, *data, entry, hash_value, key);
+      if (match != -1) {
+        return match;
+      }
+    } else if (isTombstone(*data, entry)) {
+      freeslot = entry;
+    }
+    if (entry + kNumLinearProbes * kNumPointers <= mask) {
+      for (int j = 1; j <= kNumLinearProbes; j++) {
+        entry += kNumPointers;
+        if (isEmpty(*data, entry)) {
+          return entry;
+        }
+        if (!isTombstone(*data, entry)) {
+          word match = entryMatches(thread, *data, entry, hash_value, key);
+          if (match != -1) {
+            return match;
+          }
+        } else if (isTombstone(*data, entry)) {
+          freeslot = entry;
+        }
+      }
+    }
+    perturb >>= kPerturbShift;
+    i = (i * 5 + 1 + perturb) & mask;
+    entry = getIndex(*data, i);
+    if (isEmpty(*data, entry)) {
+      return (freeslot == -1) ? entry : freeslot;
+    }
+  }
 }
 
 static RawTuple setGrow(Thread* thread, const SetBase& set) {
@@ -189,8 +225,9 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
   if (index != -1) {
     return itemValue(*data, index);
   }
+
   Tuple new_data(&scope, *data);
-  if (data.length() == 0 || set.numItems() >= data.length() / 2) {
+  if (data.length() == 0 || 5 * set.numItems() >= (data.length() - 1) * 2) {
     new_data = setGrow(thread, set);
   }
   index = setLookupForInsertion(thread, new_data, value, hash);
