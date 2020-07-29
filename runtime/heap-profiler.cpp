@@ -492,7 +492,8 @@ void HeapProfiler::writeThreadRoot(Thread* thread) {
   // object ID
   sub.writeObjectId(reinterpret_cast<uword>(thread));
   // thread serial number
-  sub.write32(0);
+  int32_t id = threads_.serialFromWord(thread->id());
+  sub.write32(id);
   // stack trace serial number
   sub.write32(0);
 }
@@ -540,8 +541,7 @@ void HeapProfiler::writeHandleRoot(RawObject obj) {
   sub.writeObjectId(objectId(obj));
   // thread serial number
   // TODO(emacs): Write an ID from the thread the handle belongs to
-  uint64_t id = thread_->id();
-  DCHECK(id <= kMaxUint32, "thread id out of bounds");
+  int32_t id = threads_.serialFromWord(thread_->id());
   sub.write32(id);
 }
 

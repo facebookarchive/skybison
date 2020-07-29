@@ -40,6 +40,25 @@ using HeapProfilerWriteCallback = void (*)(const void* data, word length,
 
 RawObject heapDump(Thread* thread, const char* filename);
 
+// TODO(T70833159): Give Thread a serial() and use that instead of this. Nuke
+// this class from orbit.
+class Serial {
+ public:
+  // If id is in the set, return its index. If it is not, add it
+  // and return its index. Indices are fixed for the lifetime of
+  // the container.
+  int32_t serialFromWord(uword id) {
+    for (int32_t i = 0; i < set_.size(); i++) {
+      if (set_[i] == id) return i;
+    }
+    set_.push_back(id);
+    return set_.size() - 1;
+  }
+
+ private:
+  Vector<uword> set_;
+};
+
 // A HeapProfiler writes a snapshot of the heap for off-line analysis. The heap
 // is written in binary HPROF format, which is a sequence of self describing
 // records. A description of the HPROF format can be found at
@@ -349,6 +368,7 @@ class HeapProfiler {
   WordSet immediate_table_;
   WordSet layout_table_;
   WordSet string_table_;
+  Serial threads_;
 
   Record* current_record_ = nullptr;
   Thread* thread_ = nullptr;

@@ -12,6 +12,19 @@ namespace testing {
 using HeapProfilerTest = RuntimeFixture;
 using HeapProfilerDeathTest = RuntimeFixture;
 
+TEST_F(HeapProfilerTest, SerialStartsFromZero) {
+  Serial set;
+  EXPECT_EQ(0, set.serialFromWord(100));
+}
+
+TEST_F(HeapProfilerTest, SerialReturnsSameId) {
+  Serial set;
+  EXPECT_EQ(0, set.serialFromWord(100));
+  EXPECT_EQ(1, set.serialFromWord(300));
+  EXPECT_EQ(0, set.serialFromWord(100));
+  EXPECT_EQ(1, set.serialFromWord(300));
+}
+
 TEST_F(HeapProfilerTest, ConstructorCreatesEmptyBuffer) {
   HeapProfiler::Buffer buffer;
   EXPECT_EQ(buffer.size(), 0);
@@ -328,6 +341,33 @@ static ::testing::AssertionResult readClassDumpPrelude(
   EXPECT_EQ(read64(result, pos), 0);  // reserved
   EXPECT_EQ(read64(result, pos), 0);  // reserved
   return ::testing::AssertionSuccess();
+}
+
+TEST_F(HeapProfilerTest, WriteThreadRootWritesRootThreadSubRecord) {
+  Vector<byte> result;
+  HeapProfiler profiler(thread_, testWriter, &result);
+  {
+    HeapProfiler::Record record(HeapProfiler::kHeapDumpSegment, &profiler);
+    profiler.setRecord(&record);
+    profiler.writeThreadRoot(thread_);
+    profiler.clearRecord();
+  }
+  word pos = 0;
+
+  // Heap dump segment
+  EXPECT_TRUE(readTag(result, &pos, HeapProfiler::kHeapDumpSegment));
+  EXPECT_EQ(read32(result, &pos), 0);   // time
+  EXPECT_EQ(read32(result, &pos), 17);  // length
+
+  EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::kRootThreadObject));
+  EXPECT_EQ(readu64(result, &pos),
+            reinterpret_cast<uint64_t>(thread_));  // object id
+  // Thread serial numbers should start from 0. JHAT and probably other tools
+  // expect it.
+  EXPECT_EQ(read32(result, &pos), 0);  // thread serial number
+  EXPECT_EQ(read32(result, &pos), 0);  // stack trace serial number
+
+  EXPECT_EQ(pos, result.size());
 }
 
 TEST_F(HeapProfilerTest, WriteClassDumpWritesClassDumpSubRecord) {
