@@ -14,6 +14,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 #include "type-builtins.h"
+#include "unicode.h"
 
 namespace py {
 
@@ -829,11 +830,6 @@ RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-// Function from under-codecs-module.cpp
-static bool isSurrogate(int32_t codepoint) {
-  return 0xD800 <= codepoint && codepoint <= 0xDFFF;
-}
-
 // Copy the bytes of a UTF-8 encoded string with no surrogates to the write
 // buffer (a Bytearray) of underlying Bufferedwriter of TextIOWrapper
 // If the length of write buffer will be larger than
@@ -907,7 +903,7 @@ RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Frame* frame,
   if (writenl == SmallStr::fromCStr("\n")) {
     for (word offset = 0; offset < text_len;) {
       codepoint = text.codePointAt(offset, &num_bytes);
-      if (isSurrogate(codepoint)) {
+      if (Unicode::isSurrogate(codepoint)) {
         write_buffer.downsize(old_len);
         return Unbound::object();
       }
@@ -921,7 +917,7 @@ RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Frame* frame,
   } else {
     for (word offset = 0; offset < text_len;) {
       codepoint = text.codePointAt(offset, &num_bytes);
-      if (isSurrogate(codepoint)) {
+      if (Unicode::isSurrogate(codepoint)) {
         write_buffer.downsize(old_len);
         return Unbound::object();
       }

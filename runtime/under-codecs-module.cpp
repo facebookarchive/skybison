@@ -114,10 +114,6 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
   return runtime->newTupleWith2(dst_obj, length_obj);
 }
 
-static bool isSurrogate(int32_t codepoint) {
-  return kHighSurrogateStart <= codepoint && codepoint <= 0xDFFF;
-}
-
 // CPython encodes latin1 codepoints into the low-surrogate range, and is able
 // to recover the original codepoints from those decodable surrogate points.
 static bool isEscapedLatin1Surrogate(int32_t codepoint) {
@@ -917,7 +913,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
-    if (!isSurrogate(codepoint)) {
+    if (!Unicode::isSurrogate(codepoint)) {
       for (word j = byte_offset - num_bytes; j < byte_offset; j++) {
         bytearrayAdd(thread, runtime, output, data.byteAt(j));
       }
@@ -936,7 +932,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
           }
           break;
         case ID(surrogatepass):
-          if (isSurrogate(codepoint)) {
+          if (Unicode::isSurrogate(codepoint)) {
             bytearrayAdd(thread, runtime, output, data.byteAt(byte_offset - 3));
             bytearrayAdd(thread, runtime, output, data.byteAt(byte_offset - 2));
             bytearrayAdd(thread, runtime, output, data.byteAt(byte_offset - 1));
@@ -948,7 +944,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
       }
       Object outpos1(&scope, runtime->newInt(index));
       while (byte_offset < data.length() &&
-             isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
+             Unicode::isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
       }
@@ -1006,7 +1002,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
-    if (!isSurrogate(codepoint)) {
+    if (!Unicode::isSurrogate(codepoint)) {
       if (codepoint < kHighSurrogateStart) {
         appendUtf16ToBytearray(thread, runtime, output, codepoint, endianness);
       } else {
@@ -1035,7 +1031,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
       }
       Object outpos1(&scope, runtime->newInt(index));
       while (byte_offset < data.length() &&
-             isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
+             Unicode::isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
       }
@@ -1089,7 +1085,7 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
-    if (!isSurrogate(codepoint)) {
+    if (!Unicode::isSurrogate(codepoint)) {
       appendUtf32ToBytearray(thread, runtime, output, codepoint, endianness);
     } else {
       switch (error_id) {
@@ -1111,7 +1107,7 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
       }
       Object outpos1(&scope, runtime->newInt(index));
       while (byte_offset < data.length() &&
-             isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
+             Unicode::isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         index++;
       }

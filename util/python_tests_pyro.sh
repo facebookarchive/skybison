@@ -71,6 +71,7 @@ CPYTHON_TESTS=(
   test_stat.py
   test_strftime.py
   test_stringprep.py
+  test_syslog.py
   test_textwrap.py
   test_typechecks.py
   test_unicode_file.py

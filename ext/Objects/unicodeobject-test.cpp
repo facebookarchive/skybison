@@ -173,6 +173,26 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
   EXPECT_EQ(cstring2, cstring);
 }
 
+TEST_F(UnicodeExtensionApiTest, AsUTF8WithSurrogatesRaisesUnicodeEncodeError) {
+  PyObjectPtr str(PyUnicode_DecodeLocale("hello\x80world", "surrogateescape"));
+
+  EXPECT_EQ(PyUnicode_AsUTF8(str), nullptr);
+  PyObject *exc, *value, *tb;
+  PyErr_Fetch(&exc, &value, &tb);
+  ASSERT_NE(exc, nullptr);
+  ASSERT_TRUE(PyErr_GivenExceptionMatches(exc, PyExc_UnicodeEncodeError));
+  Py_ssize_t temp;
+  PyObjectPtr msg(PyUnicodeEncodeError_GetReason(value));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(msg, "surrogates not allowed"));
+  PyUnicodeEncodeError_GetStart(value, &temp);
+  EXPECT_EQ(temp, 5);
+  PyUnicodeEncodeError_GetEnd(value, &temp);
+  EXPECT_EQ(temp, 6);
+  Py_DECREF(exc);
+  Py_DECREF(value);
+  Py_XDECREF(tb);
+}
+
 TEST_F(UnicodeExtensionApiTest, AsUTF8StringWithNonStringReturnsNull) {
   PyObjectPtr bytes(_PyUnicode_AsUTF8String(Py_None, nullptr));
   ASSERT_EQ(bytes, nullptr);

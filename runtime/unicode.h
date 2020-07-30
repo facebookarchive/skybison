@@ -60,10 +60,12 @@ class Unicode {
  public:
   // Constants
   static const int32_t kAliasStart = 0xf0000;
+  static const int32_t kHighSurrogateStart = 0xD800;
   static const int32_t kHangulSyllableStart = 0xac00;
   static const int32_t kHangulLeadStart = 0x1100;
   static const int32_t kHangulVowelStart = 0x1161;
   static const int32_t kHangulTrailStart = 0x11a7;
+  static const int32_t kLowSurrogateEnd = 0xDFFF;
   static const int32_t kNamedSequenceStart = 0xf0200;
 
   static const int kAliasCount = 468;
@@ -88,6 +90,7 @@ class Unicode {
   static bool isNamedSequence(int32_t code_point);
   static bool isPrintable(int32_t code_point);
   static bool isSpace(int32_t code_point);
+  static bool isSurrogate(int32_t code_point);
   static bool isTitle(int32_t code_point);
   static bool isUnfolded(int32_t code_point);
   static bool isUpper(int32_t code_point);
@@ -280,6 +283,10 @@ inline bool Unicode::isSpace(int32_t code_point) {
     return ASCII::isSpace(code_point);
   }
   return isSpaceDB(code_point);
+}
+
+inline bool Unicode::isSurrogate(int32_t code_point) {
+  return kHighSurrogateStart <= code_point && code_point <= kLowSurrogateEnd;
 }
 
 inline bool Unicode::isTitle(int32_t code_point) {

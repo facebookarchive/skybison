@@ -15,6 +15,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "unicode.h"
 #include "utils.h"
 
 const char* Py_FileSystemDefaultEncoding = "utf-8";
@@ -605,28 +606,58 @@ PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
   return ApiHandle::newReference(thread, *value);
 }
 
+// Look for a surrogate codepoint in str[start:]. Note that start is a byte
+// offset. Return the first index found in that range, or -1 if not found.
+static word strFindSurrogateCodepoint(const Str& str, word start) {
+  word length = str.length();
+  word byte_index = start;
+  while (byte_index < length) {
+    word num_bytes;
+    int32_t codepoint = str.codePointAt(byte_index, &num_bytes);
+    if (Unicode::isSurrogate(codepoint)) {
+      return byte_index;
+    }
+    byte_index += num_bytes;
+  }
+  return -1;
+}
+
 PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
                                               Py_ssize_t* size) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
   if (pyunicode == nullptr) {
     thread->raiseBadArgument();
     return nullptr;
   }
 
-  auto handle = ApiHandle::fromPyObject(pyunicode);
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pyunicode);
   Object obj(&scope, handle->asObject());
-  if (!thread->runtime()->isInstanceOfStr(*obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
 
   Str str(&scope, strUnderlying(*obj));
   word length = str.length();
-  if (size) *size = length;
+  if (size != nullptr) *size = length;
   if (void* cache = handle->cache()) return static_cast<char*>(cache);
-  auto result = static_cast<byte*>(std::malloc(length + 1));
+
+  word surr_index = strFindSurrogateCodepoint(str, 0);
+  if (surr_index != -1) {
+    Object encoding(&scope, SmallStr::fromCStr("utf-8"));
+    Object start(&scope, SmallInt::fromWord(surr_index));
+    Object end(&scope, SmallInt::fromWord(surr_index + 1));
+    Object reason(&scope, runtime->newStrFromCStr("surrogates not allowed"));
+    Object exc(&scope,
+               thread->invokeFunction5(ID(builtins), ID(UnicodeEncodeError),
+                                       encoding, str, start, end, reason));
+    thread->invokeFunction1(ID(_codecs), ID(strict_errors), exc);
+    return nullptr;
+  }
+
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
   str.copyTo(result, length);
   result[length] = '\0';
   handle->setCache(result);
