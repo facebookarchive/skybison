@@ -612,6 +612,10 @@ RawObject Thread::raiseStopAsyncIteration() {
   return raise(LayoutId::kStopAsyncIteration, NoneType::object());
 }
 
+RawObject Thread::raiseStopIteration() {
+  return raise(LayoutId::kStopIteration, NoneType::object());
+}
+
 RawObject Thread::raiseStopIterationWithValue(const Object& value) {
   if (runtime()->isInstanceOfTuple(*value) ||
       runtime()->isInstanceOfStopIteration(*value)) {

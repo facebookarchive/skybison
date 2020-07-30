@@ -29,6 +29,14 @@ def _anyset_check(obj):
     _builtin()
 
 
+def _async_generator_guard(obj):
+    _builtin()
+
+
+def _async_generator_asend_get_state(obj):
+    _builtin()
+
+
 def _bool_check(self):
     _builtin()
 

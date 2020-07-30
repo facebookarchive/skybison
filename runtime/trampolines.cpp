@@ -504,24 +504,28 @@ RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
   return *function;
 }
 
-static RawObject createGeneratorObject(Runtime* runtime,
+static RawObject createGeneratorObject(Thread* thread,
                                        const Function& function) {
+  Runtime* runtime = thread->runtime();
   if (function.isGenerator()) return runtime->newGenerator();
   if (function.isCoroutine()) return runtime->newCoroutine();
   DCHECK(function.isAsyncGenerator(), "unexpected type");
-  return runtime->newAsyncGenerator();
+  HandleScope scope(thread);
+  Layout async_gen_layout(&scope, runtime->layoutAt(LayoutId::kAsyncGenerator));
+  AsyncGenerator async_gen(&scope, runtime->newInstance(async_gen_layout));
+  return *async_gen;
 }
 
-static RawObject createGenerator(Thread* thread, const Function& function,
-                                 const Str& qualname) {
+static RawObject createGenerator(Thread* thread, const Function& function) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   GeneratorFrame generator_frame(&scope, runtime->newGeneratorFrame(function));
   thread->popFrameToGeneratorFrame(generator_frame);
-  GeneratorBase gen_base(&scope, createGeneratorObject(runtime, function));
+  GeneratorBase gen_base(&scope, createGeneratorObject(thread, function));
   gen_base.setGeneratorFrame(*generator_frame);
   gen_base.setExceptionState(runtime->newExceptionState());
-  gen_base.setQualname(*qualname);
+  gen_base.setQualname(function.qualname());
+  gen_base.setName(function.name());
   return *gen_base;
 }
 
@@ -535,8 +539,7 @@ RawObject generatorTrampoline(Thread* thread, Frame* frame, word nargs) {
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
     return Error::exception();
   }
-  Str qualname(&scope, function.qualname());
-  return createGenerator(thread, function, qualname);
+  return createGenerator(thread, function);
 }
 
 RawObject generatorTrampolineKw(Thread* thread, Frame* frame, word nargs) {
@@ -551,8 +554,7 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* frame, word nargs) {
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
     return Error::exception();
   }
-  Str qualname(&scope, function.qualname());
-  return createGenerator(thread, function, qualname);
+  return createGenerator(thread, function);
 }
 
 RawObject generatorTrampolineEx(Thread* thread, Frame* frame, word flags) {
@@ -568,8 +570,7 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* frame, word flags) {
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
     return Error::exception();
   }
-  Str qualname(&scope, function.qualname());
-  return createGenerator(thread, function, qualname);
+  return createGenerator(thread, function);
 }
 
 RawObject generatorClosureTrampoline(Thread* thread, Frame* frame, word nargs) {
@@ -584,8 +585,7 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* frame, word nargs) {
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
-  Str qualname(&scope, function.qualname());
-  return createGenerator(thread, function, qualname);
+  return createGenerator(thread, function);
 }
 
 RawObject generatorClosureTrampolineKw(Thread* thread, Frame* frame,
@@ -603,8 +603,7 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* frame,
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
-  Str qualname(&scope, function.qualname());
-  return createGenerator(thread, function, qualname);
+  return createGenerator(thread, function);
 }
 
 RawObject generatorClosureTrampolineEx(Thread* thread, Frame* frame,
@@ -623,8 +622,7 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* frame,
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
-  Str qualname(&scope, function.qualname());
-  return createGenerator(thread, function, qualname);
+  return createGenerator(thread, function);
 }
 
 RawObject interpreterTrampoline(Thread* thread, Frame* frame, word nargs) {

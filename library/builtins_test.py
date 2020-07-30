@@ -13,7 +13,7 @@ from test_support import pyro_only
 
 try:
     from builtins import _number_check, instance_proxy
-    from _builtins import _gc
+    from _builtins import _async_generator_asend_get_state, _gc
 except ImportError:
     pass
 
@@ -33,6 +33,449 @@ class AbsTests(unittest.TestCase):
         instance = C()
         with self.assertRaisesRegex(TypeError, "'NoneType' object is not callable"):
             abs(instance)
+
+
+class AsyncGeneratorTests(unittest.TestCase):
+    def test_dunder_aiter_with_non_async_generator_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func()).__aiter__(None)
+
+    def test_dunder_anext_with_non_async_generator_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func()).__anext__(None)
+
+    def test_dunder_repr_with_non_async_generator_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func()).__repr__(None)
+
+    def test_asend_with_non_async_generator_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func()).asend(None, None)
+
+    def test_dunder_aiter_returns_self(self):
+        async def async_gen_func():
+            yield
+
+        async_gen = async_gen_func()
+
+        self.assertIs(async_gen.__aiter__(), async_gen)
+
+    def test_dunder_anext_returns_iterable_over_states_of_trivial_async_gen_func(self):
+        async def async_gen_func():
+            yield 1
+
+        with self.assertRaises(StopIteration) as exc:
+            next(iter(async_gen_func().__anext__()))
+        self.assertEqual(exc.exception.value, 1)
+
+    def test_dunder_repr(self):
+        async def async_gen_func():
+            yield
+
+        async_gen_obj = async_gen_func()
+
+        self.assertTrue(
+            async_gen_obj.__repr__().startswith(
+                "<async_generator object AsyncGeneratorTests.test_dunder_repr."
+                "<locals>.async_gen_func at "
+            )
+        )
+
+    def test_asend_returns_iterable_over_states_of_no_op_async_gen_func(self):
+        async def async_gen_func():
+            if False:
+                yield
+
+        async_gen_obj = async_gen_func()
+
+        # Call next() on no-op function advances us to the final state.
+        # StopAsyncIteration indicates there are no further results.
+        with self.assertRaises(StopAsyncIteration):
+            next(iter(async_gen_obj.asend(None)))
+
+    def test_asend_returns_iterables_over_states_of_yielding_async_gen_func(self):
+        async def async_gen_func():
+            yield 1
+
+        async_gen_obj = async_gen_func()
+
+        # Calling next advances us to the first state: yielding 1.
+        with self.assertRaises(StopIteration) as exc:
+            next(iter(async_gen_obj.asend(None)))
+        self.assertEqual(exc.exception.value, 1)
+
+        # Calling next now advances us to the final state.
+        # StopAsyncIteration indicates there are no further results.
+        with self.assertRaises(StopAsyncIteration):
+            next(iter(async_gen_obj.asend(None)))
+
+    def test_using_asend_to_inject_a_value_into_generator(self):
+        async def async_gen_func():
+            yield (yield)
+
+        async_gen_obj = async_gen_func()
+
+        # First next() call runs generator until the first yield.
+        with self.assertRaises(StopIteration) as exc:
+            next(async_gen_obj.asend(None))
+        self.assertIsNone(exc.exception.value)
+
+        # Send value into generator with a value to advance to the next
+        # stopping state which will yield the value we sent in.
+        with self.assertRaises(StopIteration) as exc:
+            next(async_gen_obj.asend(1))
+        self.assertEqual(exc.exception.value, 1)
+
+    def test_async_generator_is_an_asynchronous_iterable(self):
+        # Inline coments from PEP-492 definition of "asynchronous
+        # iterable":
+        # https://www.python.org/dev/peps/pep-0492/#asynchronous-iterators-and-async-for
+
+        async def async_gen_func():
+            yield
+
+        # 1. [An asynchronous iterable] must implement an __aiter__ method ...
+        async_gen_obj = async_gen_func()
+        self.assertTrue(hasattr(async_gen_obj, "__aiter__"))
+
+        # ... returning an asynchronous iterator object.
+        # 2. An asynchronous iterator object must implement an __anext__
+        # method ...
+        async_it_obj = async_gen_obj.__aiter__()
+        self.assertTrue(hasattr(async_it_obj, "__anext__"))
+
+        # ... returning an awaitable.
+        awaitable_obj = async_it_obj.__anext__()
+        self.assertTrue(hasattr(awaitable_obj, "__await__"))
+
+        # 3. To stop iteration __anext__ must raise a StopAsyncIteration
+        # exception.
+        iterable_obj = awaitable_obj.__await__()
+        with self.assertRaises(StopIteration) as exc:
+            next(iter(iterable_obj))
+        self.assertIsNone(exc.exception.value)
+        with self.assertRaises(StopAsyncIteration):
+            next(iter(async_gen_obj.__aiter__().__anext__().__await__()))
+
+    def test_async_generator_explicitly_throws_stop_async_iteration_raise_runtime_error(
+        self,
+    ):
+        async def f():
+            raise StopIteration
+            yield
+
+        with self.assertRaises(RuntimeError):
+            f().asend(None).send(None)
+
+
+class AsyncGeneratorAsendTests(unittest.TestCase):
+    _STATE_MAP = {"_STATE_INIT": 0, "_STATE_ITER": 1, "_STATE_CLOSED": 2}
+
+    def _assertOpIterState(self, op_iter, state_str):
+        if sys.implementation.name == "pyro":
+            state = _async_generator_asend_get_state(op_iter)
+            self.assertEqual(state, AsyncGeneratorAsendTests._STATE_MAP[state_str])
+
+    def test_dunder_await_with_non_async_generator_asend_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().asend(None)).__await__(None)
+
+    def test_dunder_iter_with_non_async_generator_asend_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().asend(None)).__iter__(None)
+
+    def test_dunder_next_with_non_async_generator_asend_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().asend(None)).__next__(None)
+
+    def test_send_with_non_async_generator_asend_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().asend(None)).send(None, None)
+
+    def test_dunder_await_returns_self(self):
+        async def f():
+            yield 1
+
+        op_iter = f().asend(None)
+
+        self.assertIs(op_iter.__await__(), op_iter)
+
+    def test_dunder_iter_returns_self(self):
+        async def f():
+            yield 1
+
+        op_iter = f().asend(None)
+
+        self.assertIs(op_iter.__iter__(), op_iter)
+
+    def test_is_awaitable(self):
+        async def f():
+            yield 1
+
+        op_iter = f().asend(None)
+
+        async def awaiter(awaitable):
+            return await awaitable
+
+        try:
+            # This would raise TypeError if op_iter were not awaitable.
+            awaiter(op_iter).send(None)
+        except StopIteration:
+            pass
+
+    def test_is_iterable(self):
+        async def f():
+            yield 1
+
+        op_iter = f().asend(None)
+
+        with self.assertRaises(StopIteration) as exc:
+            next(iter(op_iter))
+        self.assertEqual(exc.exception.value, 1)
+
+    @pyro_only
+    def test_new_instance_starts_in_init_state(self):
+        async def f():
+            yield 1
+
+        op_iter = f().asend(None)
+
+        self._assertOpIterState(op_iter, "_STATE_INIT")
+
+    def test_send_state_init_arg_is_none_sends_primed_value_into_generator(self):
+        sent_value = 1
+
+        async def f():
+            nonlocal sent_value
+            sent_value = yield 2
+
+        async_gen = f()
+
+        # Advance generator through 'yield 2' to waiting to receive a value.
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        try:
+            # Setup an asend op iter with a "primed" value of 3
+            async_gen.asend(3).send(None)
+        except StopAsyncIteration:
+            pass
+        self.assertEqual(sent_value, 3)
+
+    def test_send_state_init_arg_is_set_sends_arg_into_generator(self):
+        sent_value = 1
+
+        async def f():
+            nonlocal sent_value
+            sent_value = yield 2
+
+        async_gen = f()
+
+        # Advance generator through 'yield 2' to waiting to receive a value.
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        try:
+            # Setup an asend op iter with a "primed" value of 3 but override
+            # it with an initial send value of 4.
+            async_gen.asend(3).send(4)
+        except StopAsyncIteration:
+            pass
+        self.assertEqual(sent_value, 4)
+
+    def test_send_state_init_generator_raises_propagates_state_closed(self):
+        async def f():
+            raise ValueError
+            yield
+
+        op_iter = f().asend(None)
+
+        with self.assertRaises(ValueError):
+            op_iter.send(None)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_init_generator_yields_raises_stop_iteration_with_value_state_closed(  # noqa: B950
+        self,
+    ):
+        async def f():
+            yield 1
+
+        op_iter = f().asend(None)
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertEqual(exc.exception.value, 1)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_init_generator_awaits_returns_value_yielded_from_awaitable_state_iter(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            await Awaitable()
+            yield 2
+
+        op_iter = f().asend(None)
+
+        self.assertEqual(op_iter.send(None), 1)
+
+        self._assertOpIterState(op_iter, "_STATE_ITER")
+
+    def test_send_state_iter_arg_is_none_sends_none_into_generator(self):
+        sent_value = 1
+
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    nonlocal sent_value
+                    sent_value = yield 2
+
+            await Awaitable()
+            yield 3
+
+        op_iter = f().asend(None)
+
+        # Advance generator to the 'yield 2' inside the Awaitable.
+        # The op_iter is now in the ITER state.
+        op_iter.send(None)
+
+        # Send None into generator to be received by 'sent_value'
+        try:
+            op_iter.send(None)
+        except StopIteration:
+            pass
+
+        self.assertEqual(sent_value, None)
+
+    def test_send_state_iter_arg_is_set_sends_arg_into_generator(self):
+        sent_value = 1
+
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    nonlocal sent_value
+                    sent_value = yield 2
+
+            await Awaitable()
+            yield 3
+
+        op_iter = f().asend(None)
+
+        # Advance generator to the 'yield 2' inside the Awaitable.
+        # The op_iter is now in the ITER state.
+        op_iter.send(None)
+
+        # Send 4 into generator to be received by 'sent_value'
+        try:
+            op_iter.send(4)
+        except StopIteration:
+            pass
+
+        self.assertEqual(sent_value, 4)
+
+    def test_send_state_init_generator_raises_propagates_state_closed(self):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+                    raise ValueError
+
+            await Awaitable()
+            yield 2
+
+        op_iter = f().asend(None)
+
+        # Advance generator to the 'yield 1' inside the Awaitable.
+        # The op_iter is now in the ITER state.
+        op_iter.send(None)
+
+        with self.assertRaises(ValueError):
+            op_iter.send(None)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_iter_generator_yields_raises_stop_iteration_with_value_state_closed(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            await Awaitable()
+            yield 2
+
+        # Make asend op_iter
+        op_iter = f().asend(None)
+
+        # Advance generator to the 'yield 1' inside the Awaitable.
+        # The op_iter is now in the ITER state.
+        op_iter.send(None)
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertEqual(exc.exception.value, 2)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_init_generator_awaits_returns_value_yielded_from_awaitable_state_iter(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __init__(self, yield_value):
+                    self._yield_value = yield_value
+
+                def __await__(self):
+                    yield self._yield_value
+
+            await Awaitable(1)
+            await Awaitable(2)
+            yield 3
+
+        # Make asend op_iter
+        op_iter = f().asend(None)
+
+        # Advance generator to the point it runs 'yield 1' inside the Awaitable.
+        # The op_iter is now in the ITER state.
+        op_iter.send(None)
+
+        self.assertEqual(op_iter.send(None), 2)
+
+        self._assertOpIterState(op_iter, "_STATE_ITER")
 
 
 class AwaitablesTest(unittest.TestCase):

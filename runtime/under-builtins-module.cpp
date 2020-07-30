@@ -189,6 +189,15 @@ RawObject FUNC(_builtins, _anyset_check)(Thread* thread, Frame* frame,
                         runtime->isInstanceOfFrozenSet(arg));
 }
 
+RawObject FUNC(_builtins, _async_generator_guard)(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isAsyncGenerator()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(async_generator));
+}
+
 RawObject FUNC(_builtins, _bool_check)(Thread* /* t */, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);

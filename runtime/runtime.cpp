@@ -826,10 +826,6 @@ RawObject Runtime::newExceptionState() {
   return heap()->create<RawExceptionState>();
 }
 
-RawObject Runtime::newAsyncGenerator() {
-  return heap()->create<RawAsyncGenerator>();
-}
-
 RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 
 RawObject Runtime::newFrameProxy(Thread* thread, Frame* frame) {

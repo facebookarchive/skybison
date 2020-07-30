@@ -2259,7 +2259,22 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doYieldValue(Thread*, word) {
+HANDLER_INLINE Continue Interpreter::doYieldValue(Thread* thread, word) {
+  Frame* frame = thread->currentFrame();
+  // Wrap values directly yielded from asynchronous generator. This
+  // distinguishes generator-like yields from async-like yields which propagate
+  // from awaitables via `YIELD_FROM`.
+  if (Code::cast(frame->code()).isAsyncGenerator()) {
+    HandleScope scope(thread);
+    Object value(&scope, frame->popValue());
+    Runtime* runtime = thread->runtime();
+    Layout async_gen_wrapped_value_layout(
+        &scope, runtime->layoutAt(LayoutId::kAsyncGeneratorWrappedValue));
+    AsyncGeneratorWrappedValue wrapped_value(
+        &scope, runtime->newInstance(async_gen_wrapped_value_layout));
+    wrapped_value.setValue(*value);
+    frame->pushValue(*wrapped_value);
+  }
   return Continue::YIELD;
 }
 
@@ -5640,8 +5655,13 @@ static RawObject resumeGeneratorImpl(Thread* thread,
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "coroutine raised StopIteration");
     }
-    // TODO(T67596941): Equivalent check above for StopAsyncIteration in
-    // asynchronous generators.
+    if (generator.isAsyncGenerator() &&
+        thread->pendingExceptionMatches(LayoutId::kStopAsyncIteration)) {
+      thread->clearPendingException();
+      return thread->raiseWithFmt(
+          LayoutId::kRuntimeError,
+          "asynchronous generator raised StopAsyncIteration");
+    }
     return *result;
   }
   // Process generator return value.
@@ -5665,7 +5685,10 @@ RawObject Interpreter::resumeGenerator(Thread* thread,
   GeneratorFrame generator_frame(&scope, generator.generatorFrame());
   word pc = generator_frame.virtualPC();
   if (pc == Frame::kFinishedGeneratorPC) {
-    return thread->raise(LayoutId::kStopIteration, NoneType::object());
+    return thread->raise(generator.isAsyncGenerator()
+                             ? LayoutId::kStopAsyncIteration
+                             : LayoutId::kStopIteration,
+                         NoneType::object());
   }
   Frame* frame = thread->pushGeneratorFrame(generator_frame);
   if (frame == nullptr) {

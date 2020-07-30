@@ -256,12 +256,15 @@ class Runtime;
   V(_appending)                                                                \
   V(_array__buffer)                                                            \
   V(_array__length)                                                            \
-  V(_async_generator__closed)                                                  \
   V(_async_generator__exception_state)                                         \
-  V(_async_generator__finalizer)                                               \
   V(_async_generator__frame)                                                   \
   V(_async_generator__hooks_inited)                                            \
   V(_async_generator__running)                                                 \
+  V(_async_generator__state_flags)                                             \
+  V(_async_generator_asend__generator)                                         \
+  V(_async_generator_asend__state)                                             \
+  V(_async_generator_asend__value)                                             \
+  V(_async_generator_wrapped_value__value)                                     \
   V(_b2cratio)                                                                 \
   V(_base_dir)                                                                 \
   V(_bool_check)                                                               \
@@ -560,6 +563,8 @@ class Runtime;
   V(ascii_decode)                                                              \
   V(ascii_encode)                                                              \
   V(async_generator)                                                           \
+  V(async_generator_asend)                                                     \
+  V(async_generator_wrapped_value)                                             \
   V(big)                                                                       \
   V(bool)                                                                      \
   V(buffer_size)                                                               \

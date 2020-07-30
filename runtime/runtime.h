@@ -59,8 +59,6 @@ class Runtime {
   Runtime(word heap_size);
   ~Runtime();
 
-  RawObject newAsyncGenerator();
-
   RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newBytearray();

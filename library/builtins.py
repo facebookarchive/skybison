@@ -13,6 +13,7 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
 from _builtins import (
     _address,
     _anyset_check,
+    _async_generator_guard,
     _bool_check,
     _bool_guard,
     _bound_method,
@@ -1650,8 +1651,52 @@ def ascii(obj):
     return _str_escape_non_ascii(repr(obj))
 
 
+# TODO(T65633778): Investigate if it's possible to eliminate object allocation
+# in methods like __anext__().
 class async_generator(bootstrap=True):
-    pass
+    def __aiter__(self):
+        _builtin()
+
+    def __anext__(self):
+        _builtin()
+
+    def __repr__(self):
+        _async_generator_guard(self)
+        return f"<async_generator object {self.__qualname__} at {_address(self):#x}>"
+
+    ag_await = _property(lambda _: _unimplemented())
+    ag_code = _property(lambda _: _unimplemented())
+    ag_frame = _property(lambda _: _unimplemented())
+    ag_running = _property(lambda _: _unimplemented())
+
+    def aclose(self):
+        _unimplemented()
+
+    def asend(self, val):
+        _builtin()
+
+    def athrow(self, type, value=_Unbound, traceback=_Unbound):
+        _unimplemented()
+
+
+class async_generator_asend(bootstrap=True):
+    def __await__(self):
+        _builtin()
+
+    def __iter__(self):
+        _builtin()
+
+    def __next__(self):
+        _builtin()
+
+    def close(self):
+        _unimplemented()
+
+    def send(self, arg):
+        _builtin()
+
+    def throw(self, type, value=_Unbound, traceback=_Unbound):
+        _unimplemented()
 
 
 def bin(number) -> str:

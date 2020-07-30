@@ -174,6 +174,11 @@ class Thread {
   // generators cannot have non-None return values.
   RawObject raiseStopAsyncIteration();
 
+  // Raise a StopIteration exception with no value attribute set. This can
+  // indicate a a return value from a generator with value None, but can also
+  // mean the generator did not run, e.g. it is exhausted.
+  RawObject raiseStopIteration();
+
   // Raise a StopIteration exception with the value attribute set. This is
   // typically used to transport a return value from a generator or coroutine.
   RawObject raiseStopIterationWithValue(const Object& value);
