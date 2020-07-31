@@ -1157,7 +1157,7 @@ target_include_directories(
 
 add_executable(
   python-tests
-  runtime/python-test.cpp
+  python-tests.cpp
   $<TARGET_OBJECTS:extension>
   $<TARGET_OBJECTS:runtime-tests>
   $<TARGET_OBJECTS:extension-tests>)
@@ -1177,7 +1177,7 @@ if (ENABLE_CPYTHON_TESTS)
     cpython-tests
     EXCLUDE_FROM_ALL
     ${EXTENSION_TESTS}
-    runtime/python-test.cpp)
+    cpython-tests.cpp)
   target_compile_options(
     cpython-tests
     PUBLIC
@@ -1202,11 +1202,15 @@ if (ENABLE_CPYTHON_TESTS)
     cpython-tests
     PROPERTIES
     ENABLE_EXPORTS 1)
-  # Lib/ is needed for cpython-test, copy it into the build directory
-  add_custom_command(
-    TARGET cpython-tests
-    POST_BUILD
-    COMMAND cp -a ${CPYTHON_DIR}/Lib/. ${CPYTHON_BUILD_DIR}/Lib/)
+  # Place the actual executable into ${CPYTHON_BUILD_DIR} so it can find the
+  # cpython standard library. Then create a convenience symlink into build/bin.
+  set_target_properties(cpython-tests
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CPYTHON_BUILD_DIR})
+  add_custom_command(TARGET cpython-tests POST_BUILD
+    COMMAND
+      ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE:cpython-tests>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cpython-tests)
 endif()
 
 set(CMAKE_INSTALL_MESSAGE NEVER)
