@@ -750,18 +750,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
   type.setFlags(static_cast<Type::Flag>(flags));
 
-  // Add NativeProxy's attributes only if fixed_attr_base is not added with
-  // NativeProxy's attributes.
-  bool should_add_native_proxy_attributes = false;
   if (flags & Type::Flag::kIsNativeProxy) {
     if (inherit_slots) {
       result = typeInheritSlots(thread, type);
       if (result.isErrorException()) return *result;
-    }
-    if (!fixed_attr_base_type.hasFlag(Type::Flag::kIsNativeProxy)) {
-      should_add_native_proxy_attributes = true;
-      DCHECK(fixed_attr_base == LayoutId::kObject,
-             "A NativeProxy is not compatible with builtin type layouts");
     }
   }
   // TODO(T53800222): We may need a better signal than is/is not a builtin
@@ -773,9 +765,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   bool has_non_empty_dunder_slots = false;
   if (dunder_slots_obj.isErrorNotFound()) {
     layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
-    if (should_add_native_proxy_attributes) {
-      layout = runtime->createNativeProxyLayout(thread, layout);
-    }
   } else {
     // NOTE: CPython raises an exception when slots are given to a subtype of a
     // type with type.tp_itemsize != 0, which means having a variable length.
@@ -804,19 +793,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
     List slots(&scope, *sorted_dunder_slots_obj);
     if (slots.numItems() > 0) {
-      if (should_add_native_proxy_attributes) {
-        // If NativeProxy is used with __slots__, we should start the layout
-        // with NativeProxy first.
-        Layout initial_fixed_attr_based_on_object(
-            &scope,
-            runtime->computeInitialLayout(thread, type, LayoutId::kObject));
-        Layout native_proxy_layout(
-            &scope, runtime->createNativeProxyLayout(
-                        thread, initial_fixed_attr_based_on_object));
-        // This layout contains NativeProxy's attributes at the beginning, so
-        // that we can add __slots__ attributes after them.
-        fixed_attr_base = native_proxy_layout.id();
-      }
       // Create a new layout with in-object attributes for __slots__ based off
       // fixed_attr_base.
       layout = runtime->computeInitialLayoutWithSlotAttributes(
@@ -838,9 +814,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       }
     } else {
       layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
-      if (should_add_native_proxy_attributes) {
-        layout = runtime->createNativeProxyLayout(thread, layout);
-      }
     }
     if (!should_add_dunder_dict && !(flags & Type::Flag::kHasDunderDict)) {
       // Seal the type when bases do not have __dict__, and __dict_ does not

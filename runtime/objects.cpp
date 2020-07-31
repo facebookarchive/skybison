@@ -934,41 +934,49 @@ void RawStrArray::rotateCodePoint(word first, word last) const {
 // Linked list helpers
 
 static void enqueueReference(RawObject reference, RawObject* tail,
-                             word link_offset) {
-  DCHECK(Instance::cast(reference).instanceVariableAt(link_offset).isNoneType(),
+                             word reference_link_offset,
+                             word tail_link_offset) {
+  DCHECK(Instance::cast(reference)
+             .instanceVariableAt(reference_link_offset)
+             .isNoneType(),
          "Attempting to enqueue object that's already in queue");
   if (*tail == RawNoneType::object()) {
-    Instance::cast(reference).instanceVariableAtPut(link_offset, reference);
+    Instance::cast(reference).instanceVariableAtPut(reference_link_offset,
+                                                    reference);
   } else {
-    RawObject head = Instance::cast(*tail).instanceVariableAt(link_offset);
-    Instance::cast(*tail).instanceVariableAtPut(link_offset, reference);
-    Instance::cast(reference).instanceVariableAtPut(link_offset, head);
+    RawObject head = Instance::cast(*tail).instanceVariableAt(tail_link_offset);
+    Instance::cast(*tail).instanceVariableAtPut(tail_link_offset, reference);
+    Instance::cast(reference).instanceVariableAtPut(reference_link_offset,
+                                                    head);
   }
   *tail = reference;
 }
 
-static RawObject dequeueReference(RawObject* tail, word link_offset) {
-  DCHECK(*tail != RawNoneType::object(), "empty queue");
-  RawObject head = Instance::cast(*tail).instanceVariableAt(link_offset);
+static void dequeueReference(RawObject head, RawObject* tail,
+                             word head_link_offset, word tail_link_offset) {
   if (head == *tail) {
     *tail = RawNoneType::object();
   } else {
-    RawObject next = Instance::cast(head).instanceVariableAt(link_offset);
-    Instance::cast(*tail).instanceVariableAtPut(link_offset, next);
+    RawObject next = Instance::cast(head).instanceVariableAt(head_link_offset);
+    Instance::cast(*tail).instanceVariableAtPut(tail_link_offset, next);
   }
-  Instance::cast(head).instanceVariableAtPut(link_offset,
+  Instance::cast(head).instanceVariableAtPut(head_link_offset,
                                              RawNoneType::object());
-  return head;
 }
 
 // RawWeakRef
 
 void RawWeakRef::enqueue(RawObject reference, RawObject* tail) {
-  enqueueReference(reference, tail, RawWeakRef::kLinkOffset);
+  enqueueReference(reference, tail, RawWeakRef::kLinkOffset,
+                   RawWeakRef::kLinkOffset);
 }
 
 RawObject RawWeakRef::dequeue(RawObject* tail) {
-  return dequeueReference(tail, RawWeakRef::kLinkOffset);
+  RawObject head =
+      Instance::cast(*tail).instanceVariableAt(RawWeakRef::kLinkOffset);
+  dequeueReference(head, tail, RawWeakRef::kLinkOffset,
+                   RawWeakRef::kLinkOffset);
+  return head;
 }
 
 // Append tail2 to tail1 and return the new tail.
@@ -992,16 +1000,67 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
 
 // RawNativeProxy
 
+static word nativeProxyAttributeOffset(const RawObject* object,
+                                       int offset_from_end) {
+  DCHECK(offset_from_end < 0, "negative offset is expected");
+  return RawHeapObject::cast(*object).headerCountOrOverflow() * kPointerSize +
+         offset_from_end;
+}
+
+RawObject RawNativeProxy::native() const {
+  return instanceVariableAt(
+      nativeProxyAttributeOffset(this, kNativeOffsetFromEnd));
+}
+
+void RawNativeProxy::setNative(RawObject native_ptr) const {
+  instanceVariableAtPut(nativeProxyAttributeOffset(this, kNativeOffsetFromEnd),
+                        native_ptr);
+}
+
+RawObject RawNativeProxy::dict() const {
+  return instanceVariableAt(
+      nativeProxyAttributeOffset(this, kDictOffsetFromEnd));
+}
+
+void RawNativeProxy::setDict(RawObject dict) const {
+  instanceVariableAtPut(nativeProxyAttributeOffset(this, kDictOffsetFromEnd),
+                        dict);
+}
+
+RawObject RawNativeProxy::link() const {
+  return instanceVariableAt(
+      nativeProxyAttributeOffset(this, kLinkOffsetFromEnd));
+}
+
+void RawNativeProxy::setLink(RawObject reference) const {
+  instanceVariableAtPut(nativeProxyAttributeOffset(this, kLinkOffsetFromEnd),
+                        reference);
+}
+
 void RawNativeProxy::enqueue(RawObject reference, RawObject* tail) {
   DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(reference),
-         "expected native proxy");
-  enqueueReference(reference, tail, RawNativeProxy::kLinkOffset);
+         "reference is expected to be native proxy");
+  DCHECK(*tail == RawNoneType::object() ||
+             Thread::current()->runtime()->isInstanceOfNativeProxy(*tail),
+         "tail is expected to be none of native proxy");
+  int reference_link_offset =
+      nativeProxyAttributeOffset(&reference, kLinkOffsetFromEnd);
+  int tail_link_offset = -1;
+  if (*tail != RawNoneType::object()) {
+    tail_link_offset = nativeProxyAttributeOffset(tail, kLinkOffsetFromEnd);
+  }
+  enqueueReference(reference, tail, reference_link_offset, tail_link_offset);
 }
 
 RawObject RawNativeProxy::dequeue(RawObject* tail) {
   DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(*tail),
          "expected native proxy");
-  return dequeueReference(tail, RawNativeProxy::kLinkOffset);
+  DCHECK(*tail != RawNoneType::object(), "empty queue");
+  int tail_link_offset = nativeProxyAttributeOffset(tail, kLinkOffsetFromEnd);
+  RawObject head = Instance::cast(*tail).instanceVariableAt(tail_link_offset);
+  int head_link_offset = nativeProxyAttributeOffset(&head, kLinkOffsetFromEnd);
+  dequeueReference(head, tail, head_link_offset, tail_link_offset);
+  return head;
 }
 
 // RawGeneratorFrame

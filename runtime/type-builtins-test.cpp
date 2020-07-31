@@ -837,7 +837,7 @@ static RawObject newExtensionType(PyObject* extension_type) {
 }
 
 TEST_F(TypeBuiltinsTest,
-       DunderSlotsWithExtensionTypeAsBaseAddsInObjectAttributes) {
+       DunderSlotsWithExtensionTypeAsBaseAllocatesExtraSpace) {
   // Create a main module.
   ASSERT_FALSE(runFromCStr(runtime_, "").isError());
   HandleScope scope(thread_);
@@ -859,20 +859,23 @@ class C(ExtType):
 
   Layout layout(&scope, c.instanceLayout());
   Tuple attributes(&scope, layout.inObjectAttributes());
-  // 3 for NativeProxy, and 2 for "x", y".
-  ASSERT_EQ(attributes.length(), 3 + 2);
+  // "x" and "y" are added as a regular attribute.
+  ASSERT_EQ(attributes.length(), 2);
+  // However, more speace was allocated to be a native proxy.
+  EXPECT_EQ(layout.instanceSize(),
+            2 * kPointerSize + NativeProxy::kSizeFromEnd);
 
-  Tuple elt3(&scope, attributes.at(3));
-  EXPECT_TRUE(isStrEqualsCStr(elt3.at(0), "x"));
-  AttributeInfo info3(elt3.at(1));
-  EXPECT_TRUE(info3.isInObject());
-  EXPECT_TRUE(info3.isFixedOffset());
+  Tuple elt0(&scope, attributes.at(0));
+  EXPECT_TRUE(isStrEqualsCStr(elt0.at(0), "x"));
+  AttributeInfo info0(elt0.at(1));
+  EXPECT_TRUE(info0.isInObject());
+  EXPECT_TRUE(info0.isFixedOffset());
 
-  Tuple elt4(&scope, attributes.at(4));
-  EXPECT_TRUE(isStrEqualsCStr(elt4.at(0), "y"));
-  AttributeInfo info4(elt4.at(1));
-  EXPECT_TRUE(info4.isInObject());
-  EXPECT_TRUE(info4.isFixedOffset());
+  Tuple elt1(&scope, attributes.at(1));
+  EXPECT_TRUE(isStrEqualsCStr(elt1.at(0), "y"));
+  AttributeInfo info1(elt1.at(1));
+  EXPECT_TRUE(info1.isInObject());
+  EXPECT_TRUE(info1.isFixedOffset());
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderMroAttribute) {

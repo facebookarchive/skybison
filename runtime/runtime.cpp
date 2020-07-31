@@ -3642,24 +3642,6 @@ RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
   return new_entries.becomeImmutable();
 }
 
-RawObject Runtime::createNativeProxyLayout(Thread* thread,
-                                           const Layout& base_layout) {
-  HandleScope scope(thread);
-  base_layout.setNumInObjectAttributes(base_layout.numInObjectAttributes() + 3);
-  CHECK(Tuple::cast(base_layout.inObjectAttributes()).length() == 0,
-        "base must not have any attributes");
-  Object none(&scope, NoneType::object());
-  Layout layout(&scope, layoutCreateChild(thread, base_layout));
-  for (word i = 0; i < RawNativeProxy::kSize; i += kPointerSize) {
-    AttributeInfo info(
-        i, AttributeFlags::kInObject | AttributeFlags::kFixedOffset);
-    Tuple entries(&scope, layout.inObjectAttributes());
-    layout.setInObjectAttributes(
-        layoutAddAttributeEntry(thread, entries, none, info));
-  }
-  return *layout;
-}
-
 static RawUnbound kDictOverflowLayoutTransitionEdgeName = Unbound::object();
 
 RawObject Runtime::typeDictOnlyLayout(Thread* thread, const Type& type,

@@ -2809,6 +2809,30 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSetsBaseSlots) {
             base_type.get());
 }
 
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesWithBuiltinBase) {
+  static PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, &PyType_Type));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type.get()));
+  EXPECT_TRUE(PyObject_IsInstance(reinterpret_cast<PyObject*>(type.get()),
+                                  reinterpret_cast<PyObject*>(&PyType_Type)));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  PyObject* tp_bases = static_cast<PyObject*>(PyType_GetSlot(tp, Py_tp_bases));
+  ASSERT_NE(tp_bases, nullptr);
+  EXPECT_EQ(PyTuple_Check(tp_bases), 1);
+  EXPECT_EQ(PyTuple_Size(tp_bases), 1);
+  EXPECT_EQ(static_cast<PyTypeObject*>(PyType_GetSlot(tp, Py_tp_base)),
+            &PyType_Type);
+}
+
 TEST_F(TypeExtensionApiTest,
        FromSpecWithBasesWithoutBaseTypeFlagsRaisesTypeError) {
   static PyType_Slot base_slots[1];

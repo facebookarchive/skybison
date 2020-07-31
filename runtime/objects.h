@@ -1774,13 +1774,18 @@ class RawNativeProxy : public RawInstance {
   static void enqueue(RawObject reference, RawObject* tail);
   static RawObject dequeue(RawObject* tail);
 
-  // Layout.
-  static const int kNativeOffset = RawHeapObject::kSize;
-  static const int kDictOffset = kNativeOffset + kPointerSize;
-  static const int kLinkOffset = kDictOffset + kPointerSize;
-  static const int kSize = kLinkOffset + kPointerSize;
+  // Layout.NativeProxy appends its in-object attributes at the end of the given
+  // base object.
+  static const int kNativeOffsetFromEnd = -kPointerSize;
+  static const int kDictOffsetFromEnd = kNativeOffsetFromEnd - kPointerSize;
+  static const int kLinkOffsetFromEnd = kDictOffsetFromEnd - kPointerSize;
+  static const int kSizeFromEnd = -kLinkOffsetFromEnd;
 
   RAW_OBJECT_COMMON_NO_CAST(NativeProxy);
+
+ private:
+  // Added here to prevent this field to be inherited from RawInstance.
+  static const int kSize = -1;
 };
 
 class RawPointer : public RawHeapObject {
@@ -3117,6 +3122,9 @@ class RawLayout : public RawInstance {
 
   // Returns true if the layout has sealed attributes.
   bool isSealed() const;
+
+  // Returns true if the layout is for a NativeProxy type.
+  bool isNativeProxyLayout() const;
 
   // Returns true if the layout stores its overflow attributes in a dictionary.
   bool hasDictOverflow() const;
@@ -5785,32 +5793,6 @@ inline void RawRange::setStep(RawObject value) const {
   instanceVariableAtPut(kStepOffset, value);
 }
 
-// RawNativeProxy
-
-inline RawObject RawNativeProxy::native() const {
-  return instanceVariableAt(kNativeOffset);
-}
-
-inline void RawNativeProxy::setNative(RawObject native_ptr) const {
-  instanceVariableAtPut(kNativeOffset, native_ptr);
-}
-
-inline RawObject RawNativeProxy::dict() const {
-  return instanceVariableAt(kDictOffset);
-}
-
-inline void RawNativeProxy::setDict(RawObject dict) const {
-  instanceVariableAtPut(kDictOffset, dict);
-}
-
-inline RawObject RawNativeProxy::link() const {
-  return instanceVariableAt(kLinkOffset);
-}
-
-inline void RawNativeProxy::setLink(RawObject reference) const {
-  instanceVariableAtPut(kLinkOffset, reference);
-}
-
 // RawPointer
 
 inline void* RawPointer::cptr() const {
@@ -6990,7 +6972,12 @@ inline word RawLayout::dictOverflowOffset() const {
 
 inline word RawLayout::instanceSize() const {
   word instance_size_in_words = numInObjectAttributes();
-  instance_size_in_words += (isSealed() ? 0 : 1);
+  if (!isSealed()) {
+    instance_size_in_words += 1;
+  }
+  if (isNativeProxyLayout()) {
+    instance_size_in_words += RawNativeProxy::kSizeFromEnd / kPointerSize;
+  }
   return instance_size_in_words * kPointerSize;
 }
 
@@ -7044,6 +7031,14 @@ inline void RawLayout::seal() const {
 
 inline bool RawLayout::isSealed() const {
   return overflowAttributes().isNoneType();
+}
+
+inline bool RawLayout::isNativeProxyLayout() const {
+  RawObject described_type = describedType();
+  if (described_type.isNoneType()) {
+    return false;
+  }
+  return described_type.rawCast<RawType>().isExtensionType();
 }
 
 // RawSetIterator
