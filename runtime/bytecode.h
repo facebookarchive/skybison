@@ -202,7 +202,7 @@ namespace py {
   V(UNUSED_BYTECODE_183, 183, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_184, 184, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_185, 185, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_186, 186, doInvalidBytecode)                               \
+  V(BINARY_SUBSCR_LIST, 186, doBinarySubscrList)                               \
   V(LOAD_ATTR_INSTANCE_SLOT_DESCR, 187, doLoadAttrInstanceSlotDescr)           \
   V(COMPARE_IN_LIST, 188, doCompareInList)                                     \
   V(COMPARE_IN_DICT, 189, doCompareInDict)                                     \

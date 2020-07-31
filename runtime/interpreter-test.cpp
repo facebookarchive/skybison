@@ -774,6 +774,35 @@ def foo(a, b):
   EXPECT_EQ(rewritten.byteAt(4), BINARY_OR_SMALLINT);
 }
 
+TEST_F(InterpreterTest, BinarySubscrWithList) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+l = [1,2,3]
+d = {1: -1}
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  List l(&scope, mainModuleAt(runtime_, "l"));
+  SmallInt key(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), foo, l, key),
+      2));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+
+  // Revert back to caching __getitem__ when a non-list is observed.
+  Dict d(&scope, mainModuleAt(runtime_, "d"));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), foo, d, key),
+      -1));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+}
+
 TEST_F(InterpreterTest, BinaryOpWithSmallIntsRevertsBackToBinaryOp) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

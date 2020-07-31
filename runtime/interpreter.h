@@ -347,6 +347,7 @@ class Interpreter {
   static Continue doBinaryPower(Thread* thread, word arg);
   static Continue doBinaryRshift(Thread* thread, word arg);
   static Continue doBinarySubscr(Thread* thread, word arg);
+  static Continue doBinarySubscrList(Thread* thread, word arg);
   static Continue doBinarySubscrMonomorphic(Thread* thread, word arg);
   static Continue doBinarySubscrPolymorphic(Thread* thread, word arg);
   static Continue doBinarySubscrAnamorphic(Thread* thread, word arg);

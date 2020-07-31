@@ -1146,10 +1146,14 @@ result = [x for x in container]
 
 TEST_F(IcTest, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
+class Container:
+  def __getitem__(self, index):
+    return index + 1
+
 def f(c, k):
   return c[k]
 
-container = [1, 2, 3]
+container = Container()
 getitem = type(container).__getitem__
 result = f(container, 0)
 )")
@@ -1168,14 +1172,14 @@ result = f(container, 0)
   EXPECT_EQ(icLookupAttr(*caches, 0, container.layoutId()), *getitem);
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
-container2 = [4, 5, 6]
+container2 = Container()
 result2 = f(container2, 1)
 )")
                    .isError());
   Object container2(&scope, mainModuleAt(runtime_, "container2"));
   Object result2(&scope, mainModuleAt(runtime_, "result2"));
   EXPECT_EQ(container2.layoutId(), container.layoutId());
-  EXPECT_TRUE(isIntEqualsWord(*result2, 5));
+  EXPECT_TRUE(isIntEqualsWord(*result2, 2));
 }
 
 TEST_F(IcTest, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {

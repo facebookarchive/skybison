@@ -1526,6 +1526,24 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
   return binarySubscrUpdateCache(thread, -1);
 }
 
+HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
+                                                        word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(1);
+  RawObject key = frame->peek(0);
+  if (container.isList() && key.isSmallInt()) {
+    word index = SmallInt::cast(key).value();
+    RawList list = List::cast(container);
+    word length = list.numItems();
+    if (0 <= index && index < length) {
+      frame->popValue();
+      frame->setTopValue(list.at(index));
+      return Continue::NEXT;
+    }
+  }
+  return binarySubscrUpdateCache(thread, arg);
+}
+
 HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
                                                                word arg) {
   Frame* frame = thread->currentFrame();
@@ -1557,6 +1575,19 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
                                                               word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(1);
+  RawObject key = frame->peek(0);
+  switch (container.layoutId()) {
+    case LayoutId::kList:
+      if (key.isSmallInt()) {
+        rewriteCurrentBytecode(frame, BINARY_SUBSCR_LIST);
+        return doBinarySubscrList(thread, arg);
+      }
+      break;
+    default:
+      break;
+  }
   return binarySubscrUpdateCache(thread, arg);
 }
 
