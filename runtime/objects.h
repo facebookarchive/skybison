@@ -1243,7 +1243,7 @@ class RawType : public RawInstance {
   static const int kFlagsOffset = kDocOffset + kPointerSize;
   static const int kAttributesOffset = kFlagsOffset + kPointerSize;
   static const int kAttributesRemainingOffset =
-      kFlagsOffset + kAttributesOffset;
+      kAttributesOffset + kPointerSize;
   static const int kSlotsOffset = kAttributesRemainingOffset + kPointerSize;
   static const int kAbstractMethodsOffset = kSlotsOffset + kPointerSize;
   static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;

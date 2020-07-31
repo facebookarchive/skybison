@@ -527,6 +527,7 @@ class Runtime;
   V(_type__attributes)                                                         \
   V(_type__attributes_remaining)                                               \
   V(_type__bases)                                                              \
+  V(_type__ctor)                                                               \
   V(_type__flags)                                                              \
   V(_type__instance_layout)                                                    \
   V(_type__proxy)                                                              \

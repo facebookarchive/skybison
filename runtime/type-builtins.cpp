@@ -1001,23 +1001,24 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
 }
 
 static const BuiltinAttribute kTypeAttributes[] = {
+    {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
+    {ID(_type__bases), RawType::kBasesOffset, AttributeFlags::kHidden},
+    {ID(_type__instance_layout), RawType::kInstanceLayoutOffset,
+     AttributeFlags::kHidden},
+    {ID(__name__), RawType::kNameOffset},
     {ID(__doc__), RawType::kDocOffset},
     {ID(_type__flags), RawType::kFlagsOffset, AttributeFlags::kHidden},
-    {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
-    {ID(__name__), RawType::kNameOffset},
-    {ID(_type__abstract_methods), RawType::kAbstractMethodsOffset,
-     AttributeFlags::kHidden},
     {ID(_type__attributes), RawType::kAttributesOffset,
      AttributeFlags::kHidden},
     {ID(_type__attributes_remaining), RawType::kAttributesRemainingOffset,
      AttributeFlags::kHidden},
-    {ID(_type__bases), RawType::kBasesOffset, AttributeFlags::kHidden},
-    {ID(_type__instance_layout), RawType::kInstanceLayoutOffset,
-     AttributeFlags::kHidden},
-    {ID(_type__proxy), RawType::kProxyOffset, AttributeFlags::kHidden},
     {ID(_type__slots), RawType::kSlotsOffset, AttributeFlags::kHidden},
+    {ID(_type__abstract_methods), RawType::kAbstractMethodsOffset,
+     AttributeFlags::kHidden},
     {ID(_type__subclasses), RawType::kSubclassesOffset,
      AttributeFlags::kHidden},
+    {ID(_type__proxy), RawType::kProxyOffset, AttributeFlags::kHidden},
+    {ID(_type__ctor), RawType::kCtorOffset, AttributeFlags::kHidden},
 };
 
 void initializeTypeTypes(Thread* thread) {
