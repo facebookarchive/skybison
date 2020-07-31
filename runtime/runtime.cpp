@@ -1868,7 +1868,7 @@ void Runtime::initializeTypes(Thread* thread) {
 
 void Runtime::collectGarbage() {
   bool run_callback = callbacks_ == NoneType::object();
-  RawObject cb = Scavenger(this).scavenge();
+  RawObject cb = scavenge(this);
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();

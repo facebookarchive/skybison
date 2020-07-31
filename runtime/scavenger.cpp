@@ -3,20 +3,47 @@
 #include <cstring>
 
 #include "capi-handles.h"
-#include "frame.h"
-#include "interpreter.h"
 #include "runtime.h"
-#include "thread.h"
 
 namespace py {
 
-void ScavengeVisitor::visitPointer(RawObject* pointer, PointerKind) {
-  scavenger_->scavengePointer(pointer);
-}
+class Scavenger : public PointerVisitor {
+ public:
+  explicit Scavenger(Runtime* runtime);
+
+  RawObject scavenge();
+
+  void visitPointer(RawObject* pointer, PointerKind kind) override;
+
+ private:
+  void scavengePointer(RawObject* pointer);
+
+  RawObject transport(RawObject old_object);
+
+  bool hasWhiteReferent(RawObject reference);
+
+  void processDelayedReferences();
+
+  void processFinalizableReferences();
+
+  void processGrayObjects();
+
+  void processRoots();
+
+  void processLayouts();
+
+  Runtime* runtime_;
+  Space* from_;
+  Space* to_;
+  uword scan_;
+  RawMutableTuple layouts_;
+  RawMutableTuple layout_type_transitions_;
+  RawObject delayed_references_;
+  RawObject delayed_callbacks_;
+};
 
 Scavenger::Scavenger(Runtime* runtime)
-    : visitor_(this),
-      runtime_(runtime),
+    : runtime_(runtime),
       from_(runtime->heap()->space()),
       to_(nullptr),
       layouts_(MutableTuple::cast(runtime->layouts())),
@@ -24,8 +51,6 @@ Scavenger::Scavenger(Runtime* runtime)
           MutableTuple::cast(runtime->layoutTypeTransitions())),
       delayed_references_(NoneType::object()),
       delayed_callbacks_(NoneType::object()) {}
-
-Scavenger::~Scavenger() {}
 
 RawObject Scavenger::scavenge() {
   DCHECK(runtime_->heap()->verify(), "Heap failed to verify before GC");
@@ -47,6 +72,10 @@ RawObject Scavenger::scavenge() {
   return delayed_callbacks_;
 }
 
+void Scavenger::visitPointer(RawObject* pointer, PointerKind) {
+  scavengePointer(pointer);
+}
+
 void Scavenger::scavengePointer(RawObject* pointer) {
   if (!(*pointer).isHeapObject()) {
     return;
@@ -65,7 +94,7 @@ void Scavenger::scavengePointer(RawObject* pointer) {
   }
 }
 
-void Scavenger::processRoots() { runtime_->visitRoots(visitor()); }
+void Scavenger::processRoots() { runtime_->visitRoots(this); }
 
 bool Scavenger::hasWhiteReferent(RawObject reference) {
   RawWeakRef weak = WeakRef::cast(reference);
@@ -242,5 +271,7 @@ RawObject Scavenger::transport(RawObject old_object) {
 
   return to_object;
 }
+
+RawObject scavenge(Runtime* runtime) { return Scavenger(runtime).scavenge(); }
 
 }  // namespace py
