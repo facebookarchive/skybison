@@ -9,7 +9,7 @@
 namespace py {
 
 // Allocate dict.indices() of size `num_indices` and dict.data() accordingly.
-void dictAllocateArrays(Thread* thread, const Dict& dict, word indices_len);
+void dictAllocateArrays(Thread* thread, const Dict& dict, word num_indices);
 
 // Return true if an item is found at `*index` or after and sets index to the
 // next index to probe, key_out to the found key and value_out to the found

@@ -1385,6 +1385,10 @@ class RawMutableBytes : public RawLargeBytes {
  public:
   void byteAtPut(word index, byte value) const;
 
+  void uint16AtPut(word index, uint16_t value) const;
+
+  void uint32AtPut(word index, uint32_t value) const;
+
   // Find the first occurrence from a specified start of any byte in the given
   // byte sequence, return the number of bytes read before the occurrence
   word indexOfAny(View<byte> needle, word start) const;
@@ -2707,8 +2711,8 @@ class RawDict : public RawInstance {
   word firstEmptyItemIndex() const;
   void setFirstEmptyItemIndex(word first_empty_item_index) const;
 
-  // Length of indicies tuple.
-  word indicesLength() const;
+  // Number of indices.
+  word numIndices() const;
 
   // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
@@ -5218,6 +5222,18 @@ inline void RawMutableBytes::byteAtPut(word index, byte value) const {
   *reinterpret_cast<byte*>(address() + index) = value;
 }
 
+inline void RawMutableBytes::uint16AtPut(word index, uint16_t value) const {
+  DCHECK_INDEX(index, length() - static_cast<word>(sizeof(value) - 1));
+  std::memcpy(reinterpret_cast<char*>(address() + index), &value,
+              sizeof(value));
+}
+
+inline void RawMutableBytes::uint32AtPut(word index, uint32_t value) const {
+  DCHECK_INDEX(index, length() - static_cast<word>(sizeof(value) - 1));
+  std::memcpy(reinterpret_cast<char*>(address() + index), &value,
+              sizeof(value));
+}
+
 inline void RawMutableBytes::putHex(word index, byte value) const {
   DCHECK_INDEX(index, length());
   DCHECK_INDEX(index + 1, length());
@@ -6065,10 +6081,10 @@ inline void RawDict::setFirstEmptyItemIndex(word first_empty_item_index) const {
                         RawSmallInt::fromWord(first_empty_item_index));
 }
 
-inline word RawDict::indicesLength() const {
+inline word RawDict::numIndices() const {
   RawObject indices_obj = indices();
   if (indices_obj == RawSmallInt::fromWord(0)) return 0;
-  return RawMutableTuple::cast(indices_obj).length();
+  return RawMutableBytes::cast(indices_obj).length() >> 2;
 }
 
 // RawDictIteratorBase

@@ -166,7 +166,7 @@ static const word kItemNumPointers = 3;
 TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_->newDict());
-  EXPECT_EQ(dict.indicesLength(), 0);
+  EXPECT_EQ(dict.numIndices(), 0);
 
   Object first_key(&scope, SmallInt::fromWord(0));
   word hash = intHash(*first_key);
@@ -176,7 +176,7 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenDictIsEmpty) {
 
   word initial_capacity = kInitialDictIndicesLength;
   EXPECT_EQ(dict.numItems(), 1);
-  EXPECT_EQ(dict.indicesLength(), initial_capacity);
+  EXPECT_EQ(dict.numIndices(), initial_capacity);
 }
 
 TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
@@ -195,7 +195,7 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   EXPECT_EQ(dict.numItems(), threshold);
   EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, threshold);
   word initial_capacity = kInitialDictIndicesLength;
-  EXPECT_EQ(dict.indicesLength(), initial_capacity);
+  EXPECT_EQ(dict.numIndices(), initial_capacity);
 
   // Add another key which should force us to double the capacity
   Object last_key(&scope, SmallInt::fromWord(threshold));
@@ -205,7 +205,7 @@ TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
                   .isNoneType());
   EXPECT_EQ(dict.numItems(), threshold + 1);
   // 2 == kDictGrowthFactor.
-  EXPECT_EQ(dict.indicesLength(), initial_capacity * 2);
+  EXPECT_EQ(dict.numIndices(), initial_capacity * 2);
   EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, threshold + 1);
 
   // Make sure we can still read all the stored keys/values.
@@ -317,14 +317,14 @@ TEST_F(DictBuiltinsTest, CanCreateDictItems) {
 TEST_F(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_->newDict());
-  EXPECT_EQ(dict.indicesLength(), 0);
+  EXPECT_EQ(dict.numIndices(), 0);
 
   Object key(&scope, runtime_->newInt(123));
   word hash = intHash(*key);
   Object value(&scope, runtime_->newInt(456));
   ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, value).isNoneType());
   int expected = kInitialDictIndicesLength;
-  EXPECT_EQ(dict.indicesLength(), expected);
+  EXPECT_EQ(dict.numIndices(), expected);
 }
 
 TEST_F(DictBuiltinsTest, ClearWithEmptyDictIsNoop) {
@@ -977,6 +977,23 @@ result = d.pop("hello", "world")
   EXPECT_EQ(dict.numItems(), 0);
   EXPECT_EQ(dict.firstEmptyItemIndex() / kItemNumPointers, 0);
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "world"));
+}
+
+TEST_F(DictBuiltinsTest, PopitemAfterInsert) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_->newDict());
+
+  Object key(&scope, SmallInt::fromWord(0));
+  Object key1(&scope, SmallInt::fromWord(1));
+  word hash = intHash(*key);
+  word hash1 = intHash(*key1);
+  ASSERT_TRUE(dictAtPut(thread_, dict, key, hash, key).isNoneType());
+  ASSERT_TRUE(dictAtPut(thread_, dict, key1, hash1, key1).isNoneType());
+
+  for (int i = 0; i < 2; i++) {
+    runBuiltin(METH(dict, popitem), dict);
+  }
+  ASSERT_EQ(dict.numItems(), 0);
 }
 
 TEST_F(DictBuiltinsTest, PopWithMisingKeyRaisesKeyError) {
