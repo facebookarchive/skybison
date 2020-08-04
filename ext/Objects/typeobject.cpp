@@ -1504,6 +1504,24 @@ static const int kInheritableSlots[] = {
 };
 // clang-format on
 
+static int type_setattro(PyTypeObject* type, PyObject* name, PyObject* value) {
+  DCHECK(PyType_GetFlags(type) & Py_TPFLAGS_HEAPTYPE,
+         "type_setattro requires an instance from a heap allocated C "
+         "extension type");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type_obj(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  if (thread
+          ->invokeMethodStatic3(LayoutId::kType, ID(__setattr__), type_obj,
+                                name_obj, value_obj)
+          .isError()) {
+    return -1;
+  }
+  return 0;
+}
+
 static void inheritSlots(Thread* thread, const Type& type, const Type& base) {
   // Heap allocated types are guaranteed to have slot space, no check is needed
   // i.e. CPython does: `if (type->tp_as_number != NULL)`
@@ -1539,7 +1557,8 @@ static int objectInit(PyObject*, PyObject*, PyObject*) {
   UNIMPLEMENTED("should not directly call tp_init");
 }
 
-static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
+static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
+                                             const Type& base) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Str type_name(&scope, type.name());
@@ -1621,6 +1640,16 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
     typeSlotAtPut(thread, type, Py_tp_free, reinterpret_cast<void*>(func));
   }
 
+  // tp_setattro
+  if (typeSlotAt(type, Py_tp_setattr) == nullptr &&
+      typeSlotAt(type, Py_tp_setattro) == nullptr) {
+    Type type_type(&scope, runtime->typeAt(LayoutId::kType));
+    if (typeIsSubclass(base, type_type)) {
+      typeSlotAtPut(thread, type, Py_tp_setattro,
+                    reinterpret_cast<void*>(type_setattro));
+    }
+  }
+
   return NoneType::object();
 }
 
@@ -1665,7 +1694,7 @@ RawObject typeInheritSlots(Thread* thread, const Type& type) {
 
   // Inherit all the default slots that would have been inherited
   // through the base object type in CPython
-  Object result(&scope, addDefaultsForRequiredSlots(thread, type));
+  Object result(&scope, addDefaultsForRequiredSlots(thread, type, base_type));
   if (result.isError()) return *result;
 
   return NoneType::object();

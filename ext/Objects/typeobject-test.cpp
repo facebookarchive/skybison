@@ -2834,6 +2834,40 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesWithBuiltinBase) {
 }
 
 TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesWithTypeObjectAsBaseInheritsTpSetAttro) {
+  static PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, &PyType_Type));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type.get()));
+  EXPECT_TRUE(PyObject_IsInstance(reinterpret_cast<PyObject*>(type.get()),
+                                  reinterpret_cast<PyObject*>(&PyType_Type)));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_setattro), nullptr);
+  setattrofunc set_attrofunc =
+      reinterpret_cast<setattrofunc>(PyType_GetSlot(tp, Py_tp_setattro));
+  PyObjectPtr name(PyUnicode_FromString("foo"));
+  PyObjectPtr value(PyUnicode_FromString("foo_value"));
+  EXPECT_EQ(set_attrofunc(type.get(), name.get(), value.get()), 0);
+
+  PyObjectPtr foo_value(PyObject_GetAttrString(type.get(), "foo"));
+  EXPECT_EQ(value.get(), foo_value.get());
+
+  PyObjectPtr non_str_name(PyLong_FromLong(10));
+  EXPECT_NE(set_attrofunc(type.get(), non_str_name.get(), value.get()), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+  PyErr_Clear();
+}
+
+TEST_F(TypeExtensionApiTest,
        FromSpecWithBasesWithoutBaseTypeFlagsRaisesTypeError) {
   static PyType_Slot base_slots[1];
   base_slots[0] = {0, nullptr};
