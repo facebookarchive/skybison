@@ -508,6 +508,29 @@ RawObject METH(async_generator_aclose, __next__)(Thread* thread, Frame* frame,
   return asyncGenAcloseSend(thread, args.get(0), NoneType::object());
 }
 
+static RawObject closeAsyncGenOpIter(Thread* thread, RawObject raw_self_obj,
+                                     LayoutId op_layout, SymbolId op_type) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, raw_self_obj);
+  if (!self_obj.isHeapObjectWithLayout(op_layout)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "close() must be called with an %Y instance as "
+                                "the first argument, not %T",
+                                op_type, &self_obj);
+  }
+  AsyncGeneratorOpIterBase self(&scope, *self_obj);
+  self.setState(AsyncGeneratorOpIterBase::State::Closed);
+  return NoneType::object();
+}
+
+RawObject METH(async_generator_aclose, close)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  return closeAsyncGenOpIter(thread, args.get(0),
+                             LayoutId::kAsyncGeneratorAclose,
+                             ID(async_generator_aclose));
+}
+
 RawObject METH(async_generator_aclose, send)(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
@@ -580,6 +603,14 @@ RawObject METH(async_generator_asend, __next__)(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
   return asyncGenAsendSend(thread, args.get(0), NoneType::object());
+}
+
+RawObject METH(async_generator_asend, close)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  return closeAsyncGenOpIter(thread, args.get(0),
+                             LayoutId::kAsyncGeneratorAsend,
+                             ID(async_generator_asend));
 }
 
 RawObject METH(async_generator_asend, send)(Thread* thread, Frame* frame,
@@ -680,6 +711,14 @@ RawObject METH(async_generator_athrow, __next__)(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
   return asyncGenAthrowSend(thread, args.get(0), NoneType::object());
+}
+
+RawObject METH(async_generator_athrow, close)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  return closeAsyncGenOpIter(thread, args.get(0),
+                             LayoutId::kAsyncGeneratorAthrow,
+                             ID(async_generator_athrow));
 }
 
 RawObject METH(async_generator_athrow, send)(Thread* thread, Frame* frame,

@@ -443,6 +443,13 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type(async_gen_func().aclose()).__next__(None)
 
+    def test_close_with_non_async_generator_aclose_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().aclose()).close(None)
+
     def test_send_with_non_async_generator_aclose_raises_type_error(self):
         async def async_gen_func():
             yield
@@ -499,6 +506,31 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
         op_iter = f().aclose()
 
         self._assertOpIterState(op_iter, "_STATE_INIT")
+
+    @pyro_only
+    def test_close_moves_into_closed_state(self):
+        async def f():
+            yield 1
+
+        # Make aclose op_iter
+        op_iter = f().aclose()
+
+        op_iter.close()
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_closed_raises_stop_iteration_state_closed(self):
+        async def f():
+            yield 1
+
+        # Make aclose op_iter in closed state
+        op_iter = f().aclose()
+        op_iter.close()
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
     def test_send_state_init_arg_is_not_none_raises_runtime_error_state_init(self):
         async def f():
@@ -823,6 +855,13 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type(async_gen_func().asend(None)).__next__(None)
 
+    def test_close_with_non_async_generator_asend_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().asend(None)).close(None)
+
     def test_send_with_non_async_generator_asend_raises_type_error(self):
         async def async_gen_func():
             yield
@@ -879,6 +918,31 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
         op_iter = f().asend(None)
 
         self._assertOpIterState(op_iter, "_STATE_INIT")
+
+    @pyro_only
+    def test_close_moves_into_closed_state(self):
+        async def f():
+            yield 1
+
+        # Make asend op_iter
+        op_iter = f().asend(None)
+
+        op_iter.close()
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_closed_raises_stop_iteration_state_closed(self):
+        async def f():
+            yield 1
+
+        # Make asend op_iter in closed state
+        op_iter = f().asend(None)
+        op_iter.close()
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
     def test_send_state_init_arg_is_none_sends_primed_value_into_generator(self):
         sent_value = 1
@@ -1121,6 +1185,13 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type(async_gen_func().athrow(None)).__next__(None)
 
+    def test_close_with_non_async_generator_athrow_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().athrow(None)).close(None)
+
     def test_send_with_non_async_generator_athrow_raises_type_error(self):
         async def async_gen_func():
             yield
@@ -1182,6 +1253,31 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
         op_iter = f().athrow(ValueError, 1)
 
         self._assertOpIterState(op_iter, "_STATE_INIT")
+
+    @pyro_only
+    def test_close_moves_into_closed_state(self):
+        async def f():
+            yield 1
+
+        # Make athrow op_iter
+        op_iter = f().athrow(ValueError, 1)
+
+        op_iter.close()
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_closed_raises_stop_iteration_state_closed(self):
+        async def f():
+            yield 1
+
+        # Make athrow op_iter in closed state
+        op_iter = f().athrow(ValueError, 1)
+        op_iter.close()
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
     def test_send_state_init_arg_is_not_none_raises_runtime_error_state_init(self):
         async def f():

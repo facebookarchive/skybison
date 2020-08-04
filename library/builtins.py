@@ -1700,7 +1700,7 @@ class async_generator_aclose(bootstrap=True):
         _builtin()
 
     def close(self):
-        _unimplemented()
+        _builtin()
 
     def send(self, arg):
         _builtin()
@@ -1720,7 +1720,7 @@ class async_generator_asend(bootstrap=True):
         _builtin()
 
     def close(self):
-        _unimplemented()
+        _builtin()
 
     def send(self, arg):
         _builtin()
@@ -1740,7 +1740,7 @@ class async_generator_athrow(bootstrap=True):
         _builtin()
 
     def close(self):
-        _unimplemented()
+        _builtin()
 
     def send(self, arg):
         _builtin()
