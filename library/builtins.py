@@ -1680,12 +1680,32 @@ class async_generator(bootstrap=True):
     ag_running = _property(lambda _: _unimplemented())
 
     def aclose(self):
-        _unimplemented()
+        _builtin()
 
     def asend(self, val):
         _builtin()
 
     def athrow(self, type, value=_Unbound, traceback=_Unbound):
+        _unimplemented()
+
+
+class async_generator_aclose(bootstrap=True):
+    def __await__(self):
+        _builtin()
+
+    def __iter__(self):
+        _builtin()
+
+    def __next__(self):
+        _builtin()
+
+    def close(self):
+        _unimplemented()
+
+    def send(self, arg):
+        _builtin()
+
+    def throw(self, type, value=_Unbound, traceback=_Unbound):
         _unimplemented()
 
 

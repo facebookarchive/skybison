@@ -140,6 +140,7 @@ static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(_str_array), LayoutId::kStrArray},
     {ID(_traceback), LayoutId::kTraceback},
     {ID(async_generator), LayoutId::kAsyncGenerator},
+    {ID(async_generator_aclose), LayoutId::kAsyncGeneratorAclose},
     {ID(async_generator_asend), LayoutId::kAsyncGeneratorAsend},
     {ID(bool), LayoutId::kBool},
     {ID(bytearray), LayoutId::kBytearray},

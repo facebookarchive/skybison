@@ -262,6 +262,9 @@ class Runtime;
   V(_async_generator__hooks_inited)                                            \
   V(_async_generator__running)                                                 \
   V(_async_generator__state_flags)                                             \
+  V(_async_generator_aclose__generator)                                        \
+  V(_async_generator_aclose__state)                                            \
+  V(_async_generator_aclose__value)                                            \
   V(_async_generator_asend__generator)                                         \
   V(_async_generator_asend__state)                                             \
   V(_async_generator_asend__value)                                             \
@@ -565,6 +568,7 @@ class Runtime;
   V(ascii_decode)                                                              \
   V(ascii_encode)                                                              \
   V(async_generator)                                                           \
+  V(async_generator_aclose)                                                    \
   V(async_generator_asend)                                                     \
   V(async_generator_wrapped_value)                                             \
   V(big)                                                                       \

@@ -42,7 +42,9 @@ class Handle;
 #define INSTANCE_CLASS_NAMES(V)                                                \
   V(Array)                                                                     \
   V(AsyncGenerator)                                                            \
+  V(AsyncGeneratorAclose)                                                      \
   V(AsyncGeneratorAsend)                                                       \
+  V(AsyncGeneratorOpIterBase)                                                  \
   V(AsyncGeneratorWrappedValue)                                                \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \
@@ -301,7 +303,9 @@ class RawObject {
   // Heap objects
   bool isArray() const;
   bool isAsyncGenerator() const;
+  bool isAsyncGeneratorAclose() const;
   bool isAsyncGeneratorAsend() const;
+  bool isAsyncGeneratorOpIterBase() const;
   bool isAsyncGeneratorWrappedValue() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
@@ -3343,23 +3347,39 @@ class RawAsyncGenerator : public RawGeneratorBase {
   RAW_OBJECT_COMMON(AsyncGenerator);
 };
 
-class RawAsyncGeneratorAsend : public RawInstance {
+class RawAsyncGeneratorOpIterBase : public RawInstance {
  public:
   enum class State : word { Init = 0, Iter = 1, Closed = 2 };
 
-  RawObject generator();
-  void setGenerator(RawObject generator);
+  RawObject generator() const;
+  void setGenerator(RawObject generator) const;
 
-  State state();
-  void setState(State state);
-
-  RawObject value();
-  void setValue(RawObject value);
+  State state() const;
+  void setState(State state) const;
 
   // Layout.
   static const int kGeneratorOffset = RawHeapObject::kSize;
   static const int kStateOffset = kGeneratorOffset + kPointerSize;
-  static const int kValueOffset = kStateOffset + kPointerSize;
+  static const int kSize = kStateOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(AsyncGeneratorOpIterBase);
+};
+
+class RawAsyncGeneratorAclose : public RawAsyncGeneratorOpIterBase {
+ public:
+  // Layout.
+  static const int kSize = RawAsyncGeneratorOpIterBase::kSize;
+
+  RAW_OBJECT_COMMON(AsyncGeneratorAclose);
+};
+
+class RawAsyncGeneratorAsend : public RawAsyncGeneratorOpIterBase {
+ public:
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // Layout.
+  static const int kValueOffset = RawAsyncGeneratorOpIterBase::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(AsyncGeneratorAsend);
@@ -3836,6 +3856,14 @@ inline bool RawObject::isArray() const {
 
 inline bool RawObject::isAsyncGenerator() const {
   return isHeapObjectWithLayout(LayoutId::kAsyncGenerator);
+}
+
+inline bool RawObject::isAsyncGeneratorOpIterBase() const {
+  return isAsyncGeneratorAclose() || isAsyncGeneratorAsend();
+}
+
+inline bool RawObject::isAsyncGeneratorAclose() const {
+  return isHeapObjectWithLayout(LayoutId::kAsyncGeneratorAclose);
 }
 
 inline bool RawObject::isAsyncGeneratorAsend() const {
@@ -7778,31 +7806,35 @@ inline void RawAsyncGenerator::setHooksInited(bool hooks_inited) const {
   instanceVariableAtPut(kHooksInitedOffset, RawBool::fromBool(hooks_inited));
 }
 
-// RawAsyncGeneratorAsend
+// RawAsyncGeneratorOpIterBase
 
-inline RawObject RawAsyncGeneratorAsend::generator() {
+inline RawObject RawAsyncGeneratorOpIterBase::generator() const {
   return instanceVariableAt(kGeneratorOffset);
 }
 
-inline void RawAsyncGeneratorAsend::setGenerator(RawObject generator) {
+inline void RawAsyncGeneratorOpIterBase::setGenerator(
+    RawObject generator) const {
   instanceVariableAtPut(kGeneratorOffset, generator);
 }
 
-inline RawAsyncGeneratorAsend::State RawAsyncGeneratorAsend::state() {
+inline RawAsyncGeneratorOpIterBase::State RawAsyncGeneratorOpIterBase::state()
+    const {
   return static_cast<State>(
       RawSmallInt::cast(instanceVariableAt(kStateOffset)).value());
 }
 
-inline void RawAsyncGeneratorAsend::setState(State state) {
+inline void RawAsyncGeneratorOpIterBase::setState(State state) const {
   instanceVariableAtPut(kStateOffset,
                         RawSmallInt::fromWord(static_cast<word>(state)));
 }
 
-inline RawObject RawAsyncGeneratorAsend::value() {
+// RawAsyncGeneratorAsend
+
+inline RawObject RawAsyncGeneratorAsend::value() const {
   return instanceVariableAt(kValueOffset);
 }
 
-inline void RawAsyncGeneratorAsend::setValue(RawObject value) {
+inline void RawAsyncGeneratorAsend::setValue(RawObject value) const {
   instanceVariableAtPut(kValueOffset, value);
 }
 

@@ -37,7 +37,7 @@ def _async_generator_guard(obj):
     _builtin()
 
 
-def _async_generator_asend_get_state(obj):
+def _async_generator_op_iter_get_state(obj):
     _builtin()
 
 

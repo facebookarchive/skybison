@@ -13,7 +13,7 @@ from test_support import pyro_only
 
 try:
     from builtins import _number_check, instance_proxy
-    from _builtins import _async_generator_asend_get_state, _gc
+    from _builtins import _async_generator_op_iter_get_state, _gc
 except ImportError:
     pass
 
@@ -63,6 +63,13 @@ class AsyncGeneratorTests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             type(async_gen_func()).__repr__(None)
+
+    def test_aclose_with_non_async_generator_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func()).aclose(None)
 
     def test_asend_with_non_async_generator_raises_type_error(self):
         async def async_gen_func():
@@ -136,6 +143,84 @@ class AsyncGeneratorTests(unittest.TestCase):
                 "<locals>.async_gen_func at "
             )
         )
+
+    def test_aclose_runs_firstiter_hook(self):
+        firstiter_ran = None
+
+        def firstiter_hook(async_gen_inst):
+            nonlocal firstiter_ran
+            firstiter_ran = async_gen_inst
+
+        sys.set_asyncgen_hooks(firstiter=firstiter_hook)
+
+        async def async_gen_func():
+            yield
+
+        async_gen = async_gen_func()
+        async_gen.aclose()
+        self.assertIs(firstiter_ran, async_gen)
+
+    def test_aclose_sets_finalizer(self):
+        finalizer_ran = None
+
+        def finalizer_hook(async_gen_inst):
+            nonlocal finalizer_ran
+            finalizer_ran = async_gen_inst
+
+        sys.set_asyncgen_hooks(finalizer=finalizer_hook)
+
+        async def async_gen_func():
+            yield
+
+        async_gen = async_gen_func()
+        async_gen.aclose()
+        async_gen.__del__()
+        self.assertIs(finalizer_ran, async_gen)
+
+    def test_aclose_raises_generator_exit_inside_generator(self):
+        saw_generator_exit = False
+
+        async def f():
+            nonlocal saw_generator_exit
+            try:
+                yield 1
+            except GeneratorExit:
+                saw_generator_exit = True
+
+        # Create async_generator for f()
+        async_gen = f()
+
+        # Advance generator to 'yield 1' to put us inside a try-except
+        # block from which we can catch aclose's GeneratorExit.
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        try:
+            async_gen.aclose().send(None)
+        except StopIteration:
+            pass
+
+        self.assertTrue(saw_generator_exit)
+
+    def test_aclose_prevents_further_iteration(self):
+        async def f():
+            yield 1
+
+        # Create async_generator for f()
+        async_gen = f()
+
+        # Perform the aclose operation
+        with self.assertRaises(StopIteration) as exc:
+            async_gen.aclose().send(None)
+        # Note '1' is not yielded because we closed before execution begun
+        self.assertIsNone(exc.exception.value)
+
+        # Further attempts to send into the generator result in 'StopAsyncIteration'
+        # which means the iterator has no more results. Again '1' is never yielded.
+        with self.assertRaises(StopAsyncIteration):
+            async_gen.asend(None).send(None)
 
     def test_asend_runs_firstiter_hook_exactly_once(self):
         firstiter_ran = None
@@ -262,12 +347,392 @@ class AsyncGeneratorTests(unittest.TestCase):
             f().asend(None).send(None)
 
 
+class AsyncGeneratorAcloseTests(unittest.TestCase):
+    _STATE_MAP = {"_STATE_INIT": 0, "_STATE_ITER": 1, "_STATE_CLOSED": 2}
+
+    def _assertOpIterState(self, op_iter, state_str):
+        if sys.implementation.name == "pyro":
+            state = _async_generator_op_iter_get_state(op_iter)
+            self.assertEqual(state, AsyncGeneratorAcloseTests._STATE_MAP[state_str])
+
+    def test_dunder_await_with_non_async_generator_aclose_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().aclose()).__await__(None)
+
+    def test_dunder_iter_with_non_async_generator_aclose_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().aclose()).__iter__(None)
+
+    def test_dunder_next_with_non_async_generator_aclose_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().aclose()).__next__(None)
+
+    def test_send_with_non_async_generator_aclose_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func().aclose()).send(None, None)
+
+    def test_dunder_await_returns_self(self):
+        async def f():
+            yield 1
+
+        op_iter = f().aclose()
+
+        self.assertIs(op_iter.__await__(), op_iter)
+
+    def test_dunder_iter_returns_self(self):
+        async def f():
+            yield
+
+        op_iter = f().aclose()
+
+        self.assertIs(op_iter.__iter__(), op_iter)
+
+    def test_is_awaitable(self):
+        async def f():
+            yield 1
+
+        op_iter = f().aclose()
+
+        async def awaiter(awaitable):
+            return await awaitable
+
+        try:
+            # This would raise TypeError if op_iter were not awaitable.
+            awaiter(op_iter).send(None)
+        except StopIteration:
+            pass
+
+    def test_is_iterable(self):
+        async def f():
+            yield 1
+
+        op_iter = f().aclose()
+
+        with self.assertRaises(StopIteration) as exc:
+            next(iter(op_iter))
+        self.assertIsNone(exc.exception.value)
+
+    @pyro_only
+    def test_new_instance_starts_in_init_state(self):
+        async def f():
+            yield 1
+
+        op_iter = f().aclose()
+
+        self._assertOpIterState(op_iter, "_STATE_INIT")
+
+    def test_send_state_init_arg_is_not_none_raises_runtime_error_state_init(self):
+        async def f():
+            yield 1
+
+        # Make aclose op_iter
+        op_iter = f().aclose()
+
+        with self.assertRaises(RuntimeError):
+            op_iter.send(1)
+
+        self._assertOpIterState(op_iter, "_STATE_INIT")
+
+    def test_send_state_init_arg_is_none_generator_raises_stop_async_iteration_raises_stop_iteration_state_closed(  # noqa: B950
+        self,
+    ):
+        async def f():
+            try:
+                yield 1
+            except GeneratorExit:
+                # Returning causes StopAsyncIteration to be raised
+                return
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 1'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_init_arg_is_none_generator_raises_generator_exit_raises_stop_iteration_state_closed(  # noqa: B950
+        self,
+    ):
+        async def f():
+            yield 1
+
+        # Make aclose op_iter
+        op_iter = f().aclose()
+
+        with self.assertRaises(StopIteration) as exc:
+            # The aclose operation implicitly raises GeneratorExit in the generator
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_init_arg_is_none_generator_yields_raises_runtime_error_state_iter(  # noqa: B950
+        self,
+    ):
+        async def f():
+            try:
+                yield 1
+            except GeneratorExit:
+                yield 2
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 1'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        with self.assertRaises(RuntimeError):
+            op_iter.send(None)
+
+        self._assertOpIterState(op_iter, "_STATE_ITER")
+
+    def test_send_state_init_arg_is_none_generator_awaits_returns_awaitable_yielded_value_state_iter(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            try:
+                yield 2
+            except GeneratorExit:
+                await Awaitable()
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 2'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        self.assertEqual(op_iter.send(None), 1)
+
+        self._assertOpIterState(op_iter, "_STATE_ITER")
+
+    def test_send_state_iter_arg_is_not_none_arg_sent_into_generator(self):
+        sent_value = None
+
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    nonlocal sent_value
+                    sent_value = yield 1
+
+            try:
+                yield 2
+            except GeneratorExit:
+                await Awaitable()
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 2'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        # Executing the aclose operation which should take us to the ITER state
+        # as we run 'await Awaitable()'
+        op_iter.send(None)
+
+        # Send the value 3 in which will appear at the yield in the awaitable
+        # and then finish the generator with a StopIteration.
+        try:
+            op_iter.send(3)
+        except StopIteration:
+            pass
+        self.assertEqual(sent_value, 3)
+
+    def test_send_state_iter_arg_is_none_generator_raises_generator_exit_raises_stop_iteration_state_closed(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+                    raise GeneratorExit
+
+            try:
+                yield 2
+            except GeneratorExit:
+                await Awaitable()
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 2'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        # Executing the aclose operation which should take us to the ITER state
+        # as we run 'await Awaitable()'
+        op_iter.send(None)
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_iter_arg_is_none_generator_raises_stop_async_iteration_raises_stop_iteration_state_closed(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            try:
+                yield 2
+            except GeneratorExit:
+                await Awaitable()
+            # Terminating here raises StopAsyncIteration
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 2'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        # Executing the aclose operation which should take us to the ITER state
+        # as we run 'await Awaitable()'
+        op_iter.send(None)
+
+        with self.assertRaises(StopIteration) as exc:
+            op_iter.send(None)
+        self.assertIsNone(exc.exception.value)
+
+        self._assertOpIterState(op_iter, "_STATE_CLOSED")
+
+    def test_send_state_iter_arg_is_none_generator_yields_raises_runtime_error_state_iter(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __await__(self):
+                    yield 1
+
+            try:
+                yield 2
+            except GeneratorExit:
+                await Awaitable()
+                yield 3
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 2'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        # Executing the aclose operation which should take us to the ITER state
+        # as we run 'await Awaitable()'
+        op_iter.send(None)
+
+        with self.assertRaises(RuntimeError):
+            op_iter.send(None)
+
+        self._assertOpIterState(op_iter, "_STATE_ITER")
+
+    def test_send_state_iter_arg_is_none_generator_awaits_returns_awaitable_yielded_value_state_iter(  # noqa: B950
+        self,
+    ):
+        async def f():
+            class Awaitable:
+                def __init__(self, yield_value):
+                    self._yield_value = yield_value
+
+                def __await__(self):
+                    yield self._yield_value
+
+            try:
+                yield 1
+            except GeneratorExit:
+                await Awaitable(2)
+                await Awaitable(3)
+
+        # Make an async_generator for f
+        async_gen = f()
+
+        # Advance generator into try-except block, pausing after 'yield 1'
+        try:
+            async_gen.asend(None).send(None)
+        except StopIteration:
+            pass
+
+        # Make aclose op_iter which is primted to run inside try-except block
+        op_iter = async_gen.aclose()
+
+        # Executing the aclose operation which should take us to the ITER state
+        # as we run 'await Awaitable()'
+        op_iter.send(None)
+
+        self.assertEqual(op_iter.send(None), 3)
+
+        self._assertOpIterState(op_iter, "_STATE_ITER")
+
+
 class AsyncGeneratorAsendTests(unittest.TestCase):
     _STATE_MAP = {"_STATE_INIT": 0, "_STATE_ITER": 1, "_STATE_CLOSED": 2}
 
     def _assertOpIterState(self, op_iter, state_str):
         if sys.implementation.name == "pyro":
-            state = _async_generator_asend_get_state(op_iter)
+            state = _async_generator_op_iter_get_state(op_iter)
             self.assertEqual(state, AsyncGeneratorAsendTests._STATE_MAP[state_str])
 
     def test_dunder_await_with_non_async_generator_asend_raises_type_error(self):

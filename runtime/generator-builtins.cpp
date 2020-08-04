@@ -230,6 +230,13 @@ static const BuiltinAttribute kAsyncGeneratorAttributes[] = {
      AttributeFlags::kHidden},
 };
 
+static const BuiltinAttribute kAsyncGeneratorAcloseAttributes[] = {
+    {ID(_async_generator_aclose__generator),
+     RawAsyncGeneratorAclose::kGeneratorOffset, AttributeFlags::kHidden},
+    {ID(_async_generator_aclose__state), RawAsyncGeneratorAclose::kStateOffset,
+     AttributeFlags::kHidden},
+};
+
 static const BuiltinAttribute kAsyncGeneratorAsendAttributes[] = {
     {ID(_async_generator_asend__generator),
      RawAsyncGeneratorAsend::kGeneratorOffset},
@@ -256,6 +263,10 @@ void initializeGeneratorTypes(Thread* thread) {
   addBuiltinType(thread, ID(async_generator), LayoutId::kAsyncGenerator,
                  /*superclass_id=*/LayoutId::kObject,
                  kAsyncGeneratorAttributes);
+
+  addBuiltinType(
+      thread, ID(async_generator_aclose), LayoutId::kAsyncGeneratorAclose,
+      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAcloseAttributes);
 
   addBuiltinType(
       thread, ID(async_generator_asend), LayoutId::kAsyncGeneratorAsend,
@@ -302,11 +313,10 @@ static RawObject initAsyncGenHooksOnInstance(Thread* thread,
   return NoneType::object();
 }
 
-static RawObject setupAsyncGenASend(Thread* thread, Frame* frame, word nargs,
-                                    RawObject initial_send_value) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
+static RawObject setupAsyncGenOpIter(HandleScope& scope, Thread* thread,
+                                     RawObject raw_self_obj,
+                                     LayoutId op_layout) {
+  Object self_obj(&scope, raw_self_obj);
   if (!self_obj.isAsyncGenerator()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Must be called with an async_generator "
@@ -319,62 +329,176 @@ static RawObject setupAsyncGenASend(Thread* thread, Frame* frame, word nargs,
     return *init_res;
   }
   Runtime* runtime = thread->runtime();
-  Layout asend_layout(&scope,
-                      runtime->layoutAt(LayoutId::kAsyncGeneratorAsend));
-  AsyncGeneratorAsend asend(&scope, runtime->newInstance(asend_layout));
-  if (asend.isError()) return *asend;
+  Layout layout(&scope, runtime->layoutAt(op_layout));
+  Object op_iter_obj(&scope, runtime->newInstance(layout));
+  AsyncGeneratorOpIterBase op_iter(&scope, *op_iter_obj);
+  op_iter.setGenerator(*self);
+  op_iter.setState(AsyncGeneratorOpIterBase::State::Init);
+  return *op_iter;
+}
+
+static RawObject setupAsyncGenASend(Thread* thread, RawObject raw_self_obj,
+                                    RawObject initial_send_value) {
+  HandleScope scope(thread);
+  Object asend_obj(&scope, setupAsyncGenOpIter(scope, thread, raw_self_obj,
+                                               LayoutId::kAsyncGeneratorAsend));
+  if (asend_obj.isErrorException()) return *asend_obj;
+  AsyncGeneratorAsend asend(&scope, *asend_obj);
   asend.setValue(initial_send_value);
-  asend.setGenerator(*self);
-  asend.setState(AsyncGeneratorAsend::State::Init);
   return *asend;
 }
 
 RawObject METH(async_generator, __anext__)(Thread* thread, Frame* frame,
                                            word nargs) {
-  return setupAsyncGenASend(thread, frame, nargs, NoneType::object());
+  Arguments args(frame, nargs);
+  return setupAsyncGenASend(thread, args.get(0), NoneType::object());
+}
+
+RawObject METH(async_generator, aclose)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  return setupAsyncGenOpIter(scope, thread, args.get(0),
+                             LayoutId::kAsyncGeneratorAclose);
 }
 
 RawObject METH(async_generator, asend)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
-  return setupAsyncGenASend(thread, frame, nargs, args.get(1));
+  return setupAsyncGenASend(thread, args.get(0), args.get(1));
+}
+
+static RawObject asyncOpIterReturnSelf(Thread* thread, RawObject raw_self_obj,
+                                       LayoutId op_layout, SymbolId method,
+                                       SymbolId op_type) {
+  HandleScope scope(thread);
+  Object self(&scope, raw_self_obj);
+  if (!self.isHeapObjectWithLayout(op_layout)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "%Y be called with an %Y instance as the first argument, not %T",
+        method, op_type, &self);
+  }
+  return *self;
+}
+
+RawObject METH(async_generator_aclose, __await__)(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  return asyncOpIterReturnSelf(thread, args.get(0),
+                               LayoutId::kAsyncGeneratorAclose, ID(__await__),
+                               ID(async_generator_aclose));
+}
+
+RawObject METH(async_generator_aclose, __iter__)(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  return asyncOpIterReturnSelf(thread, args.get(0),
+                               LayoutId::kAsyncGeneratorAclose, ID(__iter__),
+                               ID(async_generator_aclose));
+}
+
+static RawObject asyncGenAcloseSend(Thread* thread, RawObject raw_self_obj,
+                                    RawObject send_value_raw) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, raw_self_obj);
+  if (!self_obj.isAsyncGeneratorAclose()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Must be called with an async_generator_aclose "
+                                "instance as the first argument, not %T",
+                                &self_obj);
+  }
+  AsyncGeneratorAclose self(&scope, *self_obj);
+
+  AsyncGeneratorOpIterBase::State state = self.state();
+  if (state == AsyncGeneratorOpIterBase::State::Closed) {
+    return thread->raiseStopIteration();
+  }
+
+  // Depending on whether the close operation has been applied yet either
+  // throw GeneratorExit into the generator, or just send into the iterator
+  // to make progress through async-like yields.
+  Object res(&scope, NoneType::object());
+  AsyncGenerator generator(&scope, self.generator());
+  Object send_value(&scope, send_value_raw);
+  if (state == AsyncGeneratorOpIterBase::State::Init) {
+    if (!send_value.isNoneType()) {
+      return thread->raiseWithFmt(
+          LayoutId::kRuntimeError,
+          "Cannot send non-None value to async generator aclose iterator on "
+          "first iteration");
+    }
+    self.setState(AsyncGeneratorOpIterBase::State::Iter);
+    Object exception_type(&scope,
+                          thread->runtime()->typeAt(LayoutId::kGeneratorExit));
+    Object none(&scope, NoneType::object());
+    res = throwImpl(thread, generator, exception_type, none, none);
+  } else {
+    DCHECK(state == AsyncGeneratorOpIterBase::State::Iter, "Unexpected state");
+    res = Interpreter::resumeGenerator(thread, generator, send_value);
+  }
+
+  if (res.isErrorException()) {
+    // If the exceptions are GeneratorExit or StopAsyncIteration, these are
+    // correct and expected ways for the overall async generator to stop. So
+    // clear the pending exceptions, mark this iterator as closed, and
+    // propagate a StopIteration indicating a clean shutdown. As this is a
+    // "close" operation the StopIteration value is always None.
+    if (thread->pendingExceptionMatches(LayoutId::kGeneratorExit) ||
+        thread->pendingExceptionMatches(LayoutId::kStopAsyncIteration)) {
+      self.setState(AsyncGeneratorOpIterBase::State::Closed);
+      thread->clearPendingException();
+      return thread->raiseStopIteration();
+    }
+
+    // Propagate all other exceptions/errors.
+    return *res;
+  }
+
+  // Producing a generator-like yield indcates the generator has ignored the
+  // close request.
+  if (res.isAsyncGeneratorWrappedValue()) {
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "async generator ignored GeneratorExit");
+  }
+
+  // Pass along async-like yield to caller for propagation  up to the event
+  // loop.
+  return *res;
+}
+
+RawObject METH(async_generator_aclose, __next__)(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  return asyncGenAcloseSend(thread, args.get(0), NoneType::object());
+}
+
+RawObject METH(async_generator_aclose, send)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  return asyncGenAcloseSend(thread, args.get(0), args.get(1));
 }
 
 RawObject METH(async_generator_asend, __await__)(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self.isAsyncGeneratorAsend()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__await__() must be called with an "
-                                "async_generator_asend instance as the first "
-                                "argument, not %T",
-                                &self);
-  }
-  return *self;
+  return asyncOpIterReturnSelf(thread, args.get(0),
+                               LayoutId::kAsyncGeneratorAsend, ID(__await__),
+                               ID(async_generator_asend));
 }
 
 RawObject METH(async_generator_asend, __iter__)(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self.isAsyncGeneratorAsend()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() must be called with an "
-                                "async_generator_asend instance as the first "
-                                "argument, not %T",
-                                &self);
-  }
-  return *self;
+  return asyncOpIterReturnSelf(thread, args.get(0),
+                               LayoutId::kAsyncGeneratorAsend, ID(__iter__),
+                               ID(async_generator_asend));
 }
 
-static RawObject asyncGenSend(Thread* thread, Frame* frame, word nargs,
-                              RawObject send_value_raw) {
-  Arguments args(frame, nargs);
+static RawObject asyncGenAsendSend(Thread* thread, RawObject raw_self_obj,
+                                   RawObject send_value_raw) {
   HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
+  Object self_obj(&scope, raw_self_obj);
   if (!self_obj.isAsyncGeneratorAsend()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Must be called with an async_generator_asend "
@@ -382,14 +506,14 @@ static RawObject asyncGenSend(Thread* thread, Frame* frame, word nargs,
                                 &self_obj);
   }
   AsyncGeneratorAsend self(&scope, *self_obj);
-  AsyncGeneratorAsend::State state = self.state();
-  if (state == AsyncGeneratorAsend::State::Closed) {
+  AsyncGeneratorOpIterBase::State state = self.state();
+  if (state == AsyncGeneratorOpIterBase::State::Closed) {
     return thread->raiseStopIteration();
   }
   // Only use primed value for initial send, and only if no other specific value
   // is provided.
   Object send_value(&scope, send_value_raw);
-  if (state == AsyncGeneratorAsend::State::Init) {
+  if (state == AsyncGeneratorOpIterBase::State::Init) {
     if (send_value.isNoneType()) {
       send_value = self.value();
     }
@@ -400,32 +524,33 @@ static RawObject asyncGenSend(Thread* thread, Frame* frame, word nargs,
                   Interpreter::resumeGenerator(thread, generator, send_value));
   // Send raises: mark this ASend operation as closed and propagate.
   if (send_res.isError()) {
-    self.setState(AsyncGeneratorAsend::State::Closed);
+    self.setState(AsyncGeneratorOpIterBase::State::Closed);
     return *send_res;
   }
   // Send produces a generator-like yield: mark this ASend operation as closed
   // and return the value via a StopIteration raise.
   if (send_res.isAsyncGeneratorWrappedValue()) {
-    self.setState(AsyncGeneratorAsend::State::Closed);
+    self.setState(AsyncGeneratorOpIterBase::State::Closed);
     AsyncGeneratorWrappedValue res_wrapped(&scope, *send_res);
     Object res_value(&scope, res_wrapped.value());
     return thread->raiseStopIterationWithValue(res_value);
   }
   // Send produces an async-like yield: pass this along to caller to propagate
   // up to the event loop.
-  self.setState(AsyncGeneratorAsend::State::Iter);
+  self.setState(AsyncGeneratorOpIterBase::State::Iter);
   return *send_res;
 }
 
 RawObject METH(async_generator_asend, __next__)(Thread* thread, Frame* frame,
                                                 word nargs) {
-  return asyncGenSend(thread, frame, nargs, NoneType::object());
+  Arguments args(frame, nargs);
+  return asyncGenAsendSend(thread, args.get(0), NoneType::object());
 }
 
 RawObject METH(async_generator_asend, send)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
-  return asyncGenSend(thread, frame, nargs, args.get(1));
+  return asyncGenAsendSend(thread, args.get(0), args.get(1));
 }
 
 RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs) {
@@ -593,20 +718,20 @@ RawObject FUNC(_builtins, _async_generator_finalizer)(Thread* thread,
 }
 
 // Intended for tests only
-RawObject FUNC(_builtins, _async_generator_asend_get_state)(Thread* thread,
-                                                            Frame* frame,
-                                                            word nargs) {
+RawObject FUNC(_builtins, _async_generator_op_iter_get_state)(Thread* thread,
+                                                              Frame* frame,
+                                                              word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isAsyncGeneratorAsend()) {
+  if (!self_obj.isAsyncGeneratorOpIterBase()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
-        "_async_generator_asend_get_state() must be called with an "
-        "async_generator_asend instance as the first argument, not %T",
+        "_async_generator_op_iter_get_state() must be called with an "
+        "async_generator_op_iter_base instance as the first argument, not %T",
         &self_obj);
   }
-  AsyncGeneratorAsend self(&scope, *self_obj);
+  AsyncGeneratorOpIterBase self(&scope, *self_obj);
   return RawSmallInt::fromWord(static_cast<word>(self.state()));
 }
 
