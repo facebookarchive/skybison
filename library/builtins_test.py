@@ -50,6 +50,13 @@ class AsyncGeneratorTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type(async_gen_func()).__anext__(None)
 
+    def test_dunder_del_with_non_async_generator_raises_type_error(self):
+        async def async_gen_func():
+            yield
+
+        with self.assertRaises(TypeError):
+            type(async_gen_func()).__del__(None)
+
     def test_dunder_repr_with_non_async_generator_raises_type_error(self):
         async def async_gen_func():
             yield
@@ -80,6 +87,43 @@ class AsyncGeneratorTests(unittest.TestCase):
             next(iter(async_gen_func().__anext__()))
         self.assertEqual(exc.exception.value, 1)
 
+    def test_dunder_anext_runs_firstiter_hook_exactly_once(self):
+        firstiter_ran = None
+
+        def firstiter_hook(async_gen_inst):
+            nonlocal firstiter_ran
+            firstiter_ran = async_gen_inst
+
+        sys.set_asyncgen_hooks(firstiter=firstiter_hook)
+
+        async def async_gen_func():
+            yield
+
+        async_gen = async_gen_func()
+        async_gen.__anext__()
+        self.assertIs(firstiter_ran, async_gen)
+
+        firstiter_ran = None
+        async_gen.__anext__()
+        self.assertIsNone(firstiter_ran)
+
+    def test_dunder_anext_sets_finalizer(self):
+        finalizer_ran = None
+
+        def finalizer_hook(async_gen_inst):
+            nonlocal finalizer_ran
+            finalizer_ran = async_gen_inst
+
+        sys.set_asyncgen_hooks(finalizer=finalizer_hook)
+
+        async def async_gen_func():
+            yield
+
+        async_gen = async_gen_func()
+        async_gen.__anext__()
+        async_gen.__del__()
+        self.assertIs(finalizer_ran, async_gen)
+
     def test_dunder_repr(self):
         async def async_gen_func():
             yield
@@ -92,6 +136,44 @@ class AsyncGeneratorTests(unittest.TestCase):
                 "<locals>.async_gen_func at "
             )
         )
+
+    def test_asend_runs_firstiter_hook_exactly_once(self):
+        firstiter_ran = None
+
+        def firstiter_hook(async_gen_inst):
+            nonlocal firstiter_ran
+            firstiter_ran = async_gen_inst
+
+        sys.set_asyncgen_hooks(firstiter=firstiter_hook)
+
+        async def async_gen_func():
+            yield
+            yield
+
+        async_gen = async_gen_func()
+        async_gen.asend(None)
+        self.assertIs(firstiter_ran, async_gen)
+
+        firstiter_ran = None
+        async_gen.asend(None)
+        self.assertIs(firstiter_ran, None)
+
+    def test_asend_sets_finalizer(self):
+        finalizer_ran = None
+
+        def finalizer_hook(async_gen_inst):
+            nonlocal finalizer_ran
+            finalizer_ran = async_gen_inst
+
+        sys.set_asyncgen_hooks(finalizer=finalizer_hook)
+
+        async def async_gen_func():
+            yield
+
+        async_gen = async_gen_func()
+        async_gen.asend(None)
+        async_gen.__del__()
+        self.assertIs(finalizer_ran, async_gen)
 
     def test_asend_returns_iterable_over_states_of_no_op_async_gen_func(self):
         async def async_gen_func():

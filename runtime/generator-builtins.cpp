@@ -224,6 +224,10 @@ static const BuiltinAttribute kAsyncGeneratorAttributes[] = {
      AttributeFlags::kReadOnly},
     {ID(_async_generator__running), RawAsyncGenerator::kRunningOffset,
      AttributeFlags::kHidden},
+    {ID(_async_generator__finalizer), RawAsyncGenerator::kFinalizerOffset,
+     AttributeFlags::kHidden},
+    {ID(_async_generator__hooks_inited), RawAsyncGenerator::kHooksInitedOffset,
+     AttributeFlags::kHidden},
 };
 
 static const BuiltinAttribute kAsyncGeneratorAsendAttributes[] = {
@@ -278,6 +282,26 @@ RawObject METH(async_generator, __aiter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
+static RawObject initAsyncGenHooksOnInstance(Thread* thread,
+                                             const AsyncGenerator& gen) {
+  if (gen.hooksInited()) {
+    return NoneType::object();
+  }
+  HandleScope scope(thread);
+  gen.setHooksInited(true);
+  gen.setFinalizer(thread->asyncgenHooksFinalizer());
+  Object first_iter(&scope, thread->asyncgenHooksFirstIter());
+  if (!first_iter.isNoneType()) {
+    Object first_iter_res(
+        &scope, Interpreter::callFunction1(thread, thread->currentFrame(),
+                                           first_iter, gen));
+    if (first_iter_res.isErrorException()) {
+      return *first_iter_res;
+    }
+  }
+  return NoneType::object();
+}
+
 static RawObject setupAsyncGenASend(Thread* thread, Frame* frame, word nargs,
                                     RawObject initial_send_value) {
   Arguments args(frame, nargs);
@@ -290,6 +314,10 @@ static RawObject setupAsyncGenASend(Thread* thread, Frame* frame, word nargs,
                                 &self_obj);
   }
   AsyncGenerator self(&scope, *self_obj);
+  Object init_res(&scope, initAsyncGenHooksOnInstance(thread, self));
+  if (init_res.isErrorException()) {
+    return *init_res;
+  }
   Runtime* runtime = thread->runtime();
   Layout asend_layout(&scope,
                       runtime->layoutAt(LayoutId::kAsyncGeneratorAsend));
@@ -544,6 +572,24 @@ RawObject METH(coroutine_wrapper, throw)(Thread* thread, Frame* frame,
   Object value(&scope, args.get(2));
   Object tb(&scope, args.get(3));
   return throwImpl(thread, gen, exc, value, tb);
+}
+
+// Intended for tests only
+RawObject FUNC(_builtins, _async_generator_finalizer)(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isAsyncGenerator()) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "_async_generator_finalizer() must be called with an "
+        "async_generator instance as the first argument, not %T",
+        &self_obj);
+  }
+  AsyncGenerator self(&scope, *self_obj);
+  return self.finalizer();
 }
 
 // Intended for tests only

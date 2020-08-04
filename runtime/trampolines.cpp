@@ -513,6 +513,8 @@ static RawObject createGeneratorObject(Thread* thread,
   HandleScope scope(thread);
   Layout async_gen_layout(&scope, runtime->layoutAt(LayoutId::kAsyncGenerator));
   AsyncGenerator async_gen(&scope, runtime->newInstance(async_gen_layout));
+  async_gen.setFinalizer(NoneType::object());
+  async_gen.setHooksInited(false);
   return *async_gen;
 }
 

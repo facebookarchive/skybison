@@ -3329,6 +3329,17 @@ class RawCoroutineWrapper : public RawInstance {
 
 class RawAsyncGenerator : public RawGeneratorBase {
  public:
+  RawObject finalizer() const;
+  void setFinalizer(RawObject finalizer) const;
+
+  bool hooksInited() const;
+  void setHooksInited(bool hooks_inited) const;
+
+  // Layout.
+  static const int kFinalizerOffset = RawGeneratorBase::kSize;
+  static const int kHooksInitedOffset = kFinalizerOffset + kPointerSize;
+  static const int kSize = kHooksInitedOffset + kPointerSize;
+
   RAW_OBJECT_COMMON(AsyncGenerator);
 };
 
@@ -7747,6 +7758,24 @@ inline RawObject RawTextIOWrapper::telling() const {
 
 inline void RawTextIOWrapper::setTelling(RawObject telling) const {
   instanceVariableAtPut(kTellingOffset, telling);
+}
+
+// RawAsyncGenerator
+
+inline RawObject RawAsyncGenerator::finalizer() const {
+  return instanceVariableAt(kFinalizerOffset);
+}
+
+inline void RawAsyncGenerator::setFinalizer(RawObject finalizer) const {
+  instanceVariableAtPut(kFinalizerOffset, finalizer);
+}
+
+inline bool RawAsyncGenerator::hooksInited() const {
+  return RawBool::cast(instanceVariableAt(kHooksInitedOffset)).value();
+}
+
+inline void RawAsyncGenerator::setHooksInited(bool hooks_inited) const {
+  instanceVariableAtPut(kHooksInitedOffset, RawBool::fromBool(hooks_inited));
 }
 
 // RawAsyncGeneratorAsend

@@ -13,6 +13,7 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
 from _builtins import (
     _address,
     _anyset_check,
+    _async_generator_finalizer,
     _async_generator_guard,
     _bool_check,
     _bool_guard,
@@ -1659,6 +1660,15 @@ class async_generator(bootstrap=True):
 
     def __anext__(self):
         _builtin()
+
+    # TODO(T70149908): This implementation of __del__() is only here for
+    # illustration purposes and tests. As per the task we need to replace
+    # this with a safe implementation of finalization.
+    def __del__(self):
+        _async_generator_guard(self)
+        finalizer = _async_generator_finalizer(self)
+        if finalizer is not None:
+            finalizer(self)
 
     def __repr__(self):
         _async_generator_guard(self)

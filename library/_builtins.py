@@ -29,6 +29,10 @@ def _anyset_check(obj):
     _builtin()
 
 
+def _async_generator_finalizer(obj):
+    _builtin()
+
+
 def _async_generator_guard(obj):
     _builtin()
 

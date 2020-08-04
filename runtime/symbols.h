@@ -257,6 +257,7 @@ class Runtime;
   V(_array__buffer)                                                            \
   V(_array__length)                                                            \
   V(_async_generator__exception_state)                                         \
+  V(_async_generator__finalizer)                                               \
   V(_async_generator__frame)                                                   \
   V(_async_generator__hooks_inited)                                            \
   V(_async_generator__running)                                                 \
