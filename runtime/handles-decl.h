@@ -13,6 +13,7 @@ class Handle;
   V(AsyncGenerator)                                                            \
   V(AsyncGeneratorAclose)                                                      \
   V(AsyncGeneratorAsend)                                                       \
+  V(AsyncGeneratorAthrow)                                                      \
   V(AsyncGeneratorOpIterBase)                                                  \
   V(AsyncGeneratorWrappedValue)                                                \
   V(Bool)                                                                      \

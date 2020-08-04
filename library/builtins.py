@@ -1685,8 +1685,8 @@ class async_generator(bootstrap=True):
     def asend(self, val):
         _builtin()
 
-    def athrow(self, type, value=_Unbound, traceback=_Unbound):
-        _unimplemented()
+    def athrow(self, typ, val=_Unbound, tb=_Unbound):
+        _builtin()
 
 
 class async_generator_aclose(bootstrap=True):
@@ -1710,6 +1710,26 @@ class async_generator_aclose(bootstrap=True):
 
 
 class async_generator_asend(bootstrap=True):
+    def __await__(self):
+        _builtin()
+
+    def __iter__(self):
+        _builtin()
+
+    def __next__(self):
+        _builtin()
+
+    def close(self):
+        _unimplemented()
+
+    def send(self, arg):
+        _builtin()
+
+    def throw(self, type, value=_Unbound, traceback=_Unbound):
+        _unimplemented()
+
+
+class async_generator_athrow(bootstrap=True):
     def __await__(self):
         _builtin()
 

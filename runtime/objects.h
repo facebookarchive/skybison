@@ -44,6 +44,7 @@ class Handle;
   V(AsyncGenerator)                                                            \
   V(AsyncGeneratorAclose)                                                      \
   V(AsyncGeneratorAsend)                                                       \
+  V(AsyncGeneratorAthrow)                                                      \
   V(AsyncGeneratorOpIterBase)                                                  \
   V(AsyncGeneratorWrappedValue)                                                \
   V(BoundMethod)                                                               \
@@ -305,6 +306,7 @@ class RawObject {
   bool isAsyncGenerator() const;
   bool isAsyncGeneratorAclose() const;
   bool isAsyncGeneratorAsend() const;
+  bool isAsyncGeneratorAthrow() const;
   bool isAsyncGeneratorOpIterBase() const;
   bool isAsyncGeneratorWrappedValue() const;
   bool isBaseException() const;
@@ -3385,6 +3387,28 @@ class RawAsyncGeneratorAsend : public RawAsyncGeneratorOpIterBase {
   RAW_OBJECT_COMMON(AsyncGeneratorAsend);
 };
 
+class RawAsyncGeneratorAthrow : public RawAsyncGeneratorOpIterBase {
+ public:
+  RawObject exceptionTraceback() const;
+  void setExceptionTraceback(RawObject traceback) const;
+
+  RawObject exceptionType() const;
+  void setExceptionType(RawObject exception_type) const;
+
+  RawObject exceptionValue() const;
+  void setExceptionValue(RawObject exception_value) const;
+
+  // Layout.
+  static const int kExceptionTracebackOffset =
+      RawAsyncGeneratorOpIterBase::kSize;
+  static const int kExceptionTypeOffset =
+      kExceptionTracebackOffset + kPointerSize;
+  static const int kExceptionValueOffset = kExceptionTypeOffset + kPointerSize;
+  static const int kSize = kExceptionValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(AsyncGeneratorAthrow);
+};
+
 class RawAsyncGeneratorWrappedValue : public RawInstance {
  public:
   RawObject value() const;
@@ -3859,7 +3883,8 @@ inline bool RawObject::isAsyncGenerator() const {
 }
 
 inline bool RawObject::isAsyncGeneratorOpIterBase() const {
-  return isAsyncGeneratorAclose() || isAsyncGeneratorAsend();
+  return isAsyncGeneratorAclose() || isAsyncGeneratorAsend() ||
+         isAsyncGeneratorAthrow();
 }
 
 inline bool RawObject::isAsyncGeneratorAclose() const {
@@ -3868,6 +3893,10 @@ inline bool RawObject::isAsyncGeneratorAclose() const {
 
 inline bool RawObject::isAsyncGeneratorAsend() const {
   return isHeapObjectWithLayout(LayoutId::kAsyncGeneratorAsend);
+}
+
+inline bool RawObject::isAsyncGeneratorAthrow() const {
+  return isHeapObjectWithLayout(LayoutId::kAsyncGeneratorAthrow);
 }
 
 inline bool RawObject::isAsyncGeneratorWrappedValue() const {
@@ -7836,6 +7865,35 @@ inline RawObject RawAsyncGeneratorAsend::value() const {
 
 inline void RawAsyncGeneratorAsend::setValue(RawObject value) const {
   instanceVariableAtPut(kValueOffset, value);
+}
+
+// RawAsyncGeneratorAthrow
+
+inline RawObject RawAsyncGeneratorAthrow::exceptionTraceback() const {
+  return instanceVariableAt(kExceptionTracebackOffset);
+}
+
+inline void RawAsyncGeneratorAthrow::setExceptionTraceback(
+    RawObject exception_traceback) const {
+  instanceVariableAtPut(kExceptionTracebackOffset, exception_traceback);
+}
+
+inline RawObject RawAsyncGeneratorAthrow::exceptionType() const {
+  return instanceVariableAt(kExceptionTypeOffset);
+}
+
+inline void RawAsyncGeneratorAthrow::setExceptionType(
+    RawObject exception_type) const {
+  instanceVariableAtPut(kExceptionTypeOffset, exception_type);
+}
+
+inline RawObject RawAsyncGeneratorAthrow::exceptionValue() const {
+  return instanceVariableAt(kExceptionValueOffset);
+}
+
+inline void RawAsyncGeneratorAthrow::setExceptionValue(
+    RawObject exception_value) const {
+  instanceVariableAtPut(kExceptionValueOffset, exception_value);
 }
 
 // RawAsyncGeneratorWrappedValue

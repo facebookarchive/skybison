@@ -268,6 +268,12 @@ class Runtime;
   V(_async_generator_asend__generator)                                         \
   V(_async_generator_asend__state)                                             \
   V(_async_generator_asend__value)                                             \
+  V(_async_generator_athrow__exception_traceback)                              \
+  V(_async_generator_athrow__exception_type)                                   \
+  V(_async_generator_athrow__exception_value)                                  \
+  V(_async_generator_athrow__generator)                                        \
+  V(_async_generator_athrow__state)                                            \
+  V(_async_generator_athrow__value)                                            \
   V(_async_generator_wrapped_value__value)                                     \
   V(_b2cratio)                                                                 \
   V(_base_dir)                                                                 \
@@ -570,6 +576,7 @@ class Runtime;
   V(async_generator)                                                           \
   V(async_generator_aclose)                                                    \
   V(async_generator_asend)                                                     \
+  V(async_generator_athrow)                                                    \
   V(async_generator_wrapped_value)                                             \
   V(big)                                                                       \
   V(bool)                                                                      \
