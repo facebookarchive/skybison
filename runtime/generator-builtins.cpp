@@ -239,9 +239,11 @@ static const BuiltinAttribute kAsyncGeneratorAcloseAttributes[] = {
 
 static const BuiltinAttribute kAsyncGeneratorAsendAttributes[] = {
     {ID(_async_generator_asend__generator),
-     RawAsyncGeneratorAsend::kGeneratorOffset},
-    {ID(_async_generator_asend__state), RawAsyncGeneratorAsend::kStateOffset},
-    {ID(_async_generator_asend__value), RawAsyncGeneratorAsend::kValueOffset},
+     RawAsyncGeneratorAsend::kGeneratorOffset, AttributeFlags::kHidden},
+    {ID(_async_generator_asend__state), RawAsyncGeneratorAsend::kStateOffset,
+     AttributeFlags::kHidden},
+    {ID(_async_generator_asend__value), RawAsyncGeneratorAsend::kValueOffset,
+     AttributeFlags::kHidden},
 };
 
 static const BuiltinAttribute kAsyncGeneratorAthrowAttributes[] = {
