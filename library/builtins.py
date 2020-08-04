@@ -1706,7 +1706,7 @@ class async_generator_aclose(bootstrap=True):
         _builtin()
 
     def throw(self, type, value=_Unbound, traceback=_Unbound):
-        _unimplemented()
+        _builtin()
 
 
 class async_generator_asend(bootstrap=True):
@@ -1725,8 +1725,8 @@ class async_generator_asend(bootstrap=True):
     def send(self, arg):
         _builtin()
 
-    def throw(self, type, value=_Unbound, traceback=_Unbound):
-        _unimplemented()
+    def throw(self, typ, val=_Unbound, tb=_Unbound):
+        _builtin()
 
 
 class async_generator_athrow(bootstrap=True):
@@ -1746,7 +1746,7 @@ class async_generator_athrow(bootstrap=True):
         _builtin()
 
     def throw(self, type, value=_Unbound, traceback=_Unbound):
-        _unimplemented()
+        _builtin()
 
 
 def bin(number) -> str:

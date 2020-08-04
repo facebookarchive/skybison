@@ -537,6 +537,48 @@ RawObject METH(async_generator_aclose, send)(Thread* thread, Frame* frame,
   return asyncGenAcloseSend(thread, args.get(0), args.get(1));
 }
 
+RawObject METH(async_generator_aclose, throw)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isAsyncGeneratorAclose()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Must be called with an async_generator_aclose "
+                                "instance as the first argument, not %T",
+                                &self_obj);
+  }
+  AsyncGeneratorAclose self(&scope, *self_obj);
+
+  AsyncGeneratorOpIterBase::State state = self.state();
+  if (state == AsyncGeneratorOpIterBase::State::Closed) {
+    return thread->raiseStopIteration();
+  }
+  if (state == AsyncGeneratorOpIterBase::State::Init) {
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot throw into async generator via aclose iterator before send");
+  }
+
+  // Throw into generator
+  AsyncGenerator generator(&scope, self.generator());
+  Object exception_type(&scope, args.get(1));
+  Object exception_value(&scope, args.get(2));
+  Object exception_traceback(&scope, args.get(3));
+  Object res(&scope, throwImpl(thread, generator, exception_type,
+                               exception_value, exception_traceback));
+
+  // Getting a generator-like yield means the generator ignored the close
+  // operation.
+  if (res.isAsyncGeneratorWrappedValue()) {
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "async generator ignored GeneratorExit");
+  }
+
+  // Propagate async-like yield.
+  return *res;
+}
+
 RawObject METH(async_generator_asend, __await__)(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
@@ -617,6 +659,53 @@ RawObject METH(async_generator_asend, send)(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
   return asyncGenAsendSend(thread, args.get(0), args.get(1));
+}
+
+RawObject METH(async_generator_asend, throw)(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isAsyncGeneratorAsend()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Must be called with an async_generator_asend "
+                                "instance as the first argument, not %T",
+                                &self_obj);
+  }
+  AsyncGeneratorAsend self(&scope, *self_obj);
+
+  AsyncGeneratorOpIterBase::State state = self.state();
+  if (state == AsyncGeneratorOpIterBase::State::Closed) {
+    return thread->raiseStopIteration();
+  }
+
+  // Throw into generator
+  AsyncGenerator generator(&scope, self.generator());
+  Object exception_type(&scope, args.get(1));
+  Object exception_value(&scope, args.get(2));
+  Object exception_traceback(&scope, args.get(3));
+  Object res(&scope, throwImpl(thread, generator, exception_type,
+                               exception_value, exception_traceback));
+
+  // Propagate any uncaught exceptions and mark this send operation as closed.
+  if (res.isError()) {
+    self.setState(AsyncGeneratorOpIterBase::State::Closed);
+    return *res;
+  }
+
+  // Generator-like yield: raise this in a StopIteration and mark this iterator
+  // as closed.
+  if (res.isAsyncGeneratorWrappedValue()) {
+    self.setState(AsyncGeneratorOpIterBase::State::Closed);
+    AsyncGeneratorWrappedValue wrapped_value(&scope, *res);
+    Object value(&scope, wrapped_value.value());
+    return thread->raiseStopIterationWithValue(value);
+  }
+
+  // Async-like yield: mark this iterator as being in the iteration state and
+  // pass the result to the caller for propagation to the event-loop.
+  self.setState(AsyncGeneratorOpIterBase::State::Iter);
+  return *res;
 }
 
 RawObject METH(async_generator_athrow, __await__)(Thread* thread, Frame* frame,
@@ -725,6 +814,53 @@ RawObject METH(async_generator_athrow, send)(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
   return asyncGenAthrowSend(thread, args.get(0), args.get(1));
+}
+
+RawObject METH(async_generator_athrow, throw)(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isAsyncGeneratorAthrow()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Must be called with an async_generator_athrow "
+                                "instance as the first argument, not %T",
+                                &self_obj);
+  }
+  AsyncGeneratorAthrow self(&scope, *self_obj);
+
+  AsyncGeneratorOpIterBase::State state = self.state();
+  if (state == AsyncGeneratorOpIterBase::State::Closed) {
+    return thread->raiseStopIteration();
+  }
+
+  if (state == AsyncGeneratorOpIterBase::State::Init) {
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot throw into async generator via athrow iterator before send");
+  }
+
+  // Throw into generator
+  AsyncGenerator generator(&scope, self.generator());
+  Object exception_type(&scope, args.get(1));
+  Object exception_value(&scope, args.get(2));
+  Object exception_traceback(&scope, args.get(3));
+  Object res(&scope, throwImpl(thread, generator, exception_type,
+                               exception_value, exception_traceback));
+
+  // Propagate any uncaught exceptions.
+  if (res.isError()) return *res;
+
+  // Generator-like yield: raise this in a StopIteration
+  if (res.isAsyncGeneratorWrappedValue()) {
+    AsyncGeneratorWrappedValue wrapped_value(&scope, *res);
+    Object value(&scope, wrapped_value.value());
+    return thread->raiseStopIterationWithValue(value);
+  }
+
+  // Async-like yield: pass result to the caller for propagation to the
+  // event-loop.
+  return *res;
 }
 
 RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs) {
