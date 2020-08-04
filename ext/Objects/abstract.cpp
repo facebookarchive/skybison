@@ -652,8 +652,8 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
   return makeInterpreterCall(thread, frame, nargs);
 }
 
-PY_EXPORT PyObject* PyObject_CallFunction(PyObject* callable,
-                                          const char* format, ...) {
+static PyObject* callFunction(PyObject* callable, const char* format,
+                              std::va_list* va) {
   Thread* thread = Thread::current();
   if (callable == nullptr) {
     return nullError(thread);
@@ -661,9 +661,24 @@ PY_EXPORT PyObject* PyObject_CallFunction(PyObject* callable,
 
   HandleScope scope(thread);
   Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
+  PyObject* result = callWithVarArgs(thread, callable_obj, format, va, 0);
+  return result;
+}
+
+PY_EXPORT PyObject* PyObject_CallFunction(PyObject* callable,
+                                          const char* format, ...) {
   va_list va;
   va_start(va, format);
-  PyObject* result = callWithVarArgs(thread, callable_obj, format, &va, 0);
+  PyObject* result = callFunction(callable, format, &va);
+  va_end(va);
+  return result;
+}
+
+PY_EXPORT PyObject* PyEval_CallFunction(PyObject* callable, const char* format,
+                                        ...) {
+  va_list va;
+  va_start(va, format);
+  PyObject* result = callFunction(callable, format, &va);
   va_end(va);
   return result;
 }
@@ -719,8 +734,8 @@ PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* callable,
   return result;
 }
 
-PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
-                                        const char* format, ...) {
+static PyObject* callMethod(PyObject* pyobj, const char* name,
+                            const char* format, std::va_list* va) {
   Thread* thread = Thread::current();
   if (pyobj == nullptr) {
     return nullError(thread);
@@ -732,9 +747,24 @@ PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
   Object callable(&scope, runtime->attributeAtByCStr(thread, obj, name));
   if (callable.isError()) return nullptr;
 
+  PyObject* result = callWithVarArgs(thread, callable, format, va, 0);
+  return result;
+}
+
+PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
+                                        const char* format, ...) {
   va_list va;
   va_start(va, format);
-  PyObject* result = callWithVarArgs(thread, callable, format, &va, 0);
+  PyObject* result = callMethod(pyobj, name, format, &va);
+  va_end(va);
+  return result;
+}
+
+PY_EXPORT PyObject* PyEval_CallMethod(PyObject* pyobj, const char* name,
+                                      const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  PyObject* result = callMethod(pyobj, name, format, &va);
   va_end(va);
   return result;
 }

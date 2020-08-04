@@ -473,14 +473,4 @@ PY_EXPORT PyObject* _Py_BuildValue_SizeT(const char* format, ...) {
   return retval;
 }
 
-PY_EXPORT PyObject* PyEval_CallFunction(PyObject* /* e */, const char* /* t */,
-                                        ...) {
-  UNIMPLEMENTED("PyEval_CallFunction");
-}
-
-PY_EXPORT PyObject* PyEval_CallMethod(PyObject* /* j */, const char* /* e */,
-                                      const char* /* t */, ...) {
-  UNIMPLEMENTED("PyEval_CallMethod");
-}
-
 }  // namespace py

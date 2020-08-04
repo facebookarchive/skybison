@@ -150,6 +150,29 @@ TEST_F(AbstractExtensionApiTest, PyBufferIsContiguousWithColumnMajorBuffer) {
   EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'A'));
 }
 
+TEST_F(AbstractExtensionApiTest, PyEvalCallFunctionCalls) {
+  PyRun_SimpleString(R"(
+def func(*args):
+  return f"{args!r}"
+)");
+  PyObjectPtr func(mainModuleGet("func"));
+  PyObjectPtr result(PyEval_CallFunction(func, "(iI)s#i", 3, 7, "aaaa", 3, 99));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "((3, 7), 'aaa', 99)"));
+}
+
+TEST_F(AbstractExtensionApiTest, PyEvalCallMethodCalls) {
+  PyRun_SimpleString(R"(
+class C:
+  x = 42
+  def func(self, *args):
+    return f"{self.x}{args!r}"
+c = C()
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr result(PyEval_CallMethod(c, "func", "s#(i)", "ccc", 1, 7));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "42('c', (7,))"));
+}
+
 // PyIndex_Check
 
 TEST_F(AbstractExtensionApiTest, PyIndexCheckWithIntReturnsTrue) {
