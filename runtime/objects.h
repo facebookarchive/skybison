@@ -510,6 +510,10 @@ class RawBytes : public RawObject {
   // including end), or -1 if not found.
   word findByte(byte value, word start, word length) const;
 
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCStr() const;
+
   RAW_OBJECT_COMMON(Bytes);
 };
 
@@ -734,6 +738,10 @@ class RawSmallBytes : public RawObject {
   // Returns the index at which value is found in this[start:start+length] (not
   // including end), or -1 if not found.
   word findByte(byte value, word start, word length) const;
+
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCStr() const;
 
   word hash() const;
 
@@ -4375,6 +4383,13 @@ inline bool RawBytes::isASCII() const {
     return RawSmallBytes::cast(*this).isASCII();
   }
   return RawLargeBytes::cast(*this).isASCII();
+}
+
+inline char* RawBytes::toCStr() const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallBytes::cast(*this).toCStr();
+  }
+  return RawLargeBytes::cast(*this).toCStr();
 }
 
 inline uint16_t RawBytes::uint16At(word index) const {

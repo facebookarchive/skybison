@@ -42,6 +42,15 @@ bool RawSmallBytes::isASCII() const {
   return (block & non_ascii_mask) == 0;
 }
 
+char* RawSmallBytes::toCStr() const {
+  word length = this->length();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  CHECK(result != nullptr, "out of memory");
+  copyTo(result, length);
+  result[length] = '\0';
+  return reinterpret_cast<char*>(result);
+}
+
 // RawSmallStr
 
 RawObject RawSmallStr::becomeBytes() const {

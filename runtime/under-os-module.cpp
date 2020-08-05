@@ -85,11 +85,6 @@ RawObject FUNC(_os, lseek)(Thread* thread, Frame* frame, word nargs) {
 RawObject FUNC(_os, open)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object path_obj(&scope, args.get(0));
-  if (!path_obj.isStr()) {
-    UNIMPLEMENTED("_os_open with non-str path");
-  }
-  Str path(&scope, *path_obj);
   Object flags_obj(&scope, args.get(1));
   CHECK(flags_obj.isSmallInt(), "flags must be small int");
   word flags = SmallInt::cast(*flags_obj).value();
@@ -100,8 +95,17 @@ RawObject FUNC(_os, open)(Thread* thread, Frame* frame, word nargs) {
   if (!dir_fd_obj.isNoneType()) {
     UNIMPLEMENTED("_os_open with dir_fd");
   }
-  unique_c_ptr<char> path_cstr(path.toCStr());
-  int result = File::open(path_cstr.get(), flags, mode);
+  Object path_obj(&scope, args.get(0));
+  int result;
+  if (path_obj.isStr()) {
+    unique_c_ptr<char> path_cstr(Str::cast(*path_obj).toCStr());
+    result = File::open(path_cstr.get(), flags, mode);
+  } else if (path_obj.isBytes()) {
+    unique_c_ptr<char> path_cstr(Bytes::cast(*path_obj).toCStr());
+    result = File::open(path_cstr.get(), flags, mode);
+  } else {
+    UNIMPLEMENTED("_os_open with non-str/bytes path");
+  }
   if (result < 0) return thread->raiseOSErrorFromErrno(-result);
   return SmallInt::fromWord(result);
 }

@@ -320,6 +320,41 @@ TEST_F(UnderOsModuleTest, OpenReturnsInt) {
   ::close(fd);
 }
 
+TEST_F(UnderOsModuleTest, OpenWithBytesPathReturnsInt) {
+  HandleScope scope(thread_);
+  TemporaryDirectory directory;
+  std::string path = directory.path + "test.txt";
+  Bytes path_obj(&scope, runtime_->newBytesWithAll(
+                             {reinterpret_cast<const byte*>(path.c_str()),
+                              static_cast<long>(path.length())}));
+  Object flags_obj(&scope, SmallInt::fromWord(O_RDWR | O_CREAT));
+  Object mode_obj(&scope, SmallInt::fromWord(0755));
+  Object dir_fd(&scope, NoneType::object());
+  Object result_obj(&scope, runBuiltin(FUNC(_os, open), path_obj, flags_obj,
+                                       mode_obj, dir_fd));
+  ASSERT_TRUE(result_obj.isSmallInt());
+  word fd = SmallInt::cast(*result_obj).value();
+  ASSERT_GE(fd, 0);
+
+  // It set the right flags
+  int flags = ::fcntl(fd, F_GETFL);
+  ASSERT_NE(flags, -1);
+  EXPECT_EQ(flags & O_ACCMODE, O_RDWR);
+
+  // It set the right mode
+  struct stat statbuf;
+  int result = ::fstat(fd, &statbuf);
+  ASSERT_EQ(result, 0);
+  EXPECT_EQ(statbuf.st_mode & 0777, mode_t{0755});
+
+  // It set no inheritable
+  flags = ::fcntl(fd, F_GETFD);
+  ASSERT_NE(flags, -1);
+  EXPECT_TRUE(flags & FD_CLOEXEC);
+
+  ::close(fd);
+}
+
 TEST_F(UnderOsModuleTest, ParseModeWithXSetsExclAndCreat) {
   HandleScope scope(thread_);
   Object mode(&scope, runtime_->newStrFromCStr("x"));
