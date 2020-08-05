@@ -27,25 +27,52 @@
 
 #define PYSQLITE_VERSION "2.6.0"
 
-extern PyObject* pysqlite_Error;
-extern PyObject* pysqlite_Warning;
-extern PyObject* pysqlite_InterfaceError;
-extern PyObject* pysqlite_DatabaseError;
-extern PyObject* pysqlite_InternalError;
-extern PyObject* pysqlite_OperationalError;
-extern PyObject* pysqlite_ProgrammingError;
-extern PyObject* pysqlite_IntegrityError;
-extern PyObject* pysqlite_DataError;
-extern PyObject* pysqlite_NotSupportedError;
+typedef struct {
+    /* SQLite types */
+    PyTypeObject* CacheType;
+    PyTypeObject* ConnectionType;
+    PyTypeObject* CursorType;
+    PyTypeObject* NodeType;
+    PyTypeObject* PrepareProtocolType;
+    PyTypeObject* RowType;
+    PyTypeObject* StatementType;
 
-/* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
- * functions, that convert the SQL value to the appropriate Python value.
- * The key is uppercase.
- */
-extern PyObject* _pysqlite_converters;
+    /* error types */
+    PyObject* Error;
+    PyObject* Warning;
+    PyObject* InterfaceError;
+    PyObject* DatabaseError;
+    PyObject* InternalError;
+    PyObject* OperationalError;
+    PyObject* ProgrammingError;
+    PyObject* IntegrityError;
+    PyObject* DataError;
+    PyObject* NotSupportedError;
 
-extern int _pysqlite_enable_callback_tracebacks;
-extern int pysqlite_BaseTypeAdapted;
+    /* identifiers */
+    PyObject* adapt;
+    PyObject* conform;
+    PyObject* cursor;
+    PyObject* finalize;
+    PyObject* upper;
+
+    /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
+    * functions, that convert the SQL value to the appropriate Python value.
+    * The key is uppercase.
+    */
+    PyObject* converters;
+
+    /* the adapters registry */
+    PyObject* psyco_adapters;
+
+    int enable_callback_tracebacks;
+    int BaseTypeAdapted;
+} pysqlite_state;
+
+extern struct PyModuleDef _sqlite3module;
+
+#define pysqlite_state(o) ((pysqlite_state*)PyModule_GetState(o))
+#define pysqlite_global(x) (pysqlite_state(PyState_FindModule(&_sqlite3module))->x)
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

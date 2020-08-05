@@ -30,54 +30,28 @@ int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* arg
 
 void pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol* self)
 {
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyTypeObject* tp = Py_TYPE(self);
+    freefunc func = PyType_GetSlot(tp, Py_tp_free);
+    Py_DECREF(tp);
+    func(self);
 }
 
-PyTypeObject pysqlite_PrepareProtocolType= {
-        PyVarObject_HEAD_INIT(NULL, 0)
-        MODULE_NAME ".PrepareProtocol",                 /* tp_name */
-        sizeof(pysqlite_PrepareProtocol),               /* tp_basicsize */
-        0,                                              /* tp_itemsize */
-        (destructor)pysqlite_prepare_protocol_dealloc,  /* tp_dealloc */
-        0,                                              /* tp_print */
-        0,                                              /* tp_getattr */
-        0,                                              /* tp_setattr */
-        0,                                              /* tp_reserved */
-        0,                                              /* tp_repr */
-        0,                                              /* tp_as_number */
-        0,                                              /* tp_as_sequence */
-        0,                                              /* tp_as_mapping */
-        0,                                              /* tp_hash */
-        0,                                              /* tp_call */
-        0,                                              /* tp_str */
-        0,                                              /* tp_getattro */
-        0,                                              /* tp_setattro */
-        0,                                              /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT,                             /* tp_flags */
-        0,                                              /* tp_doc */
-        0,                                              /* tp_traverse */
-        0,                                              /* tp_clear */
-        0,                                              /* tp_richcompare */
-        0,                                              /* tp_weaklistoffset */
-        0,                                              /* tp_iter */
-        0,                                              /* tp_iternext */
-        0,                                              /* tp_methods */
-        0,                                              /* tp_members */
-        0,                                              /* tp_getset */
-        0,                                              /* tp_base */
-        0,                                              /* tp_dict */
-        0,                                              /* tp_descr_get */
-        0,                                              /* tp_descr_set */
-        0,                                              /* tp_dictoffset */
-        (initproc)pysqlite_prepare_protocol_init,       /* tp_init */
-        0,                                              /* tp_alloc */
-        0,                                              /* tp_new */
-        0                                               /* tp_free */
+static PyType_Slot pysqlite_PrepareProtocolType_slots[] = {
+    {Py_tp_dealloc, pysqlite_prepare_protocol_dealloc},
+    {Py_tp_init, pysqlite_prepare_protocol_init},
+    {Py_tp_new, PyType_GenericNew},
+    {0, 0},
 };
 
-extern int pysqlite_prepare_protocol_setup_types(void)
+static PyType_Spec pysqlite_PrepareProtocolType_spec = {
+        MODULE_NAME ".PrepareProtocol",
+        sizeof(pysqlite_PrepareProtocol),
+        0,
+        Py_TPFLAGS_DEFAULT,
+        pysqlite_PrepareProtocolType_slots,
+};
+
+extern PyObject* pysqlite_setup_PrepareProtocolType(void)
 {
-    pysqlite_PrepareProtocolType.tp_new = PyType_GenericNew;
-    Py_TYPE(&pysqlite_PrepareProtocolType)= &PyType_Type;
-    return PyType_Ready(&pysqlite_PrepareProtocolType);
+    return PyType_FromSpec(&pysqlite_PrepareProtocolType_spec);
 }

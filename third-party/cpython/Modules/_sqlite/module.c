@@ -33,23 +33,6 @@
 #define HAVE_SHARED_CACHE
 #endif
 
-/* static objects at module-level */
-
-PyObject *pysqlite_Error = NULL;
-PyObject *pysqlite_Warning = NULL;
-PyObject *pysqlite_InterfaceError = NULL;
-PyObject *pysqlite_DatabaseError = NULL;
-PyObject *pysqlite_InternalError = NULL;
-PyObject *pysqlite_OperationalError = NULL;
-PyObject *pysqlite_ProgrammingError = NULL;
-PyObject *pysqlite_IntegrityError = NULL;
-PyObject *pysqlite_DataError = NULL;
-PyObject *pysqlite_NotSupportedError = NULL;
-
-PyObject* _pysqlite_converters = NULL;
-int _pysqlite_enable_callback_tracebacks = 0;
-int pysqlite_BaseTypeAdapted = 0;
-
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
@@ -82,7 +65,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     }
 
     if (factory == NULL) {
-        factory = (PyObject*)&pysqlite_ConnectionType;
+        factory = (PyObject*)pysqlite_global(ConnectionType);
     }
 
     result = PyObject_Call(factory, args, kwargs);
@@ -143,7 +126,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
     rc = sqlite3_enable_shared_cache(do_enable);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
+        PyErr_SetString(pysqlite_global(OperationalError), "Changing the shared_cache flag failed");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -171,10 +154,10 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
             || type == &PyUnicode_Type || type == &PyByteArray_Type) {
-        pysqlite_BaseTypeAdapted = 1;
+        pysqlite_global(BaseTypeAdapted) = 1;
     }
 
-    rc = pysqlite_microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
+    rc = pysqlite_microprotocols_add(type, (PyObject*)pysqlite_global(PrepareProtocolType), caster);
     if (rc == -1)
         return NULL;
 
@@ -192,19 +175,18 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     PyObject* name = NULL;
     PyObject* callable;
     PyObject* retval = NULL;
-    _Py_IDENTIFIER(upper);
 
     if (!PyArg_ParseTuple(args, "UO", &orig_name, &callable)) {
         return NULL;
     }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
+    name = PyObject_CallMethodObjArgs(orig_name, pysqlite_global(upper), NULL);
     if (!name) {
         goto error;
     }
 
-    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
+    if (PyDict_SetItem(pysqlite_global(converters), name, callable) != 0) {
         goto error;
     }
 
@@ -222,7 +204,7 @@ Registers a converter with pysqlite. Non-standard.");
 
 static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
 {
-    if (!PyArg_ParseTuple(args, "i", &_pysqlite_enable_callback_tracebacks)) {
+    if (!PyArg_ParseTuple(args, "i", &pysqlite_global(enable_callback_tracebacks))) {
         return NULL;
     }
 
@@ -234,14 +216,16 @@ PyDoc_STRVAR(enable_callback_tracebacks_doc,
 \n\
 Enable or disable callback functions throwing errors to stderr.");
 
-static void converters_init(PyObject* dict)
+static void converters_init(PyObject* module)
 {
-    _pysqlite_converters = PyDict_New();
-    if (!_pysqlite_converters) {
+    PyObject* converters = PyDict_New();
+    if (!converters) {
         return;
     }
 
-    PyDict_SetItemString(dict, "converters", _pysqlite_converters);
+    pysqlite_state(module)->converters = converters;
+    Py_INCREF(converters);
+    PyModule_AddObject(module, "converters", converters);
 }
 
 static PyMethodDef module_methods[] = {
@@ -329,111 +313,246 @@ static const IntConstantPair _int_constants[] = {
     {(char*)NULL, 0}
 };
 
+static int _sqlite3module_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    pysqlite_state* state = pysqlite_state(m);
+    Py_VISIT(state->CacheType);
+    Py_VISIT(state->ConnectionType);
+    Py_VISIT(state->CursorType);
+    Py_VISIT(state->NodeType);
+    Py_VISIT(state->PrepareProtocolType);
+    Py_VISIT(state->RowType);
+    Py_VISIT(state->StatementType);
+    Py_VISIT(state->Error);
+    Py_VISIT(state->Warning);
+    Py_VISIT(state->InterfaceError);
+    Py_VISIT(state->DatabaseError);
+    Py_VISIT(state->InternalError);
+    Py_VISIT(state->OperationalError);
+    Py_VISIT(state->ProgrammingError);
+    Py_VISIT(state->IntegrityError);
+    Py_VISIT(state->DataError);
+    Py_VISIT(state->NotSupportedError);
+    Py_VISIT(state->adapt);
+    Py_VISIT(state->conform);
+    Py_VISIT(state->cursor);
+    Py_VISIT(state->finalize);
+    Py_VISIT(state->upper);
+    Py_VISIT(state->converters);
+    Py_VISIT(state->psyco_adapters);
+    return 0;
+}
 
-static struct PyModuleDef _sqlite3module = {
+static int _sqlite3module_clear(PyObject *m)
+{
+    pysqlite_state* state = pysqlite_state(m);
+    Py_CLEAR(state->CacheType);
+    Py_CLEAR(state->ConnectionType);
+    Py_CLEAR(state->CursorType);
+    Py_CLEAR(state->NodeType);
+    Py_CLEAR(state->PrepareProtocolType);
+    Py_CLEAR(state->RowType);
+    Py_CLEAR(state->StatementType);
+    Py_CLEAR(state->Error);
+    Py_CLEAR(state->Warning);
+    Py_CLEAR(state->InterfaceError);
+    Py_CLEAR(state->DatabaseError);
+    Py_CLEAR(state->InternalError);
+    Py_CLEAR(state->OperationalError);
+    Py_CLEAR(state->ProgrammingError);
+    Py_CLEAR(state->IntegrityError);
+    Py_CLEAR(state->DataError);
+    Py_CLEAR(state->NotSupportedError);
+    Py_CLEAR(state->adapt);
+    Py_CLEAR(state->conform);
+    Py_CLEAR(state->cursor);
+    Py_CLEAR(state->finalize);
+    Py_CLEAR(state->upper);
+    Py_CLEAR(state->converters);
+    Py_CLEAR(state->psyco_adapters);
+    return 0;
+}
+
+static void _sqlite3module_free(void *m)
+{
+    _sqlite3module_clear((PyObject *)m);
+}
+
+struct PyModuleDef _sqlite3module = {
         PyModuleDef_HEAD_INIT,
         "_sqlite3",
         NULL,
-        -1,
+        sizeof(pysqlite_state),
         module_methods,
         NULL,
-        NULL,
-        NULL,
-        NULL
+        _sqlite3module_traverse,
+        _sqlite3module_clear,
+        _sqlite3module_free,
 };
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
-    PyObject *module, *dict;
+    PyObject *module;
+    pysqlite_state *state;
+    PyObject *cache_type;
+    PyObject *connection_type;
+    PyObject *cursor_type;
+    PyObject *node_type;
+    PyObject *prepare_protocol_type;
+    PyObject *row_type;
+    PyObject *statement_type;
+    PyObject *error_type;
+    PyObject *warning_type;
+    PyObject *interface_error_type;
+    PyObject *database_error_type;
+    PyObject *internal_error_type;
+    PyObject *operational_error_type;
+    PyObject *programming_error_type;
+    PyObject *integrity_error_type;
+    PyObject *data_error_type;
+    PyObject *not_supported_error_type;
     PyObject *tmp_obj;
     int i;
 
+    module = PyState_FindModule(&_sqlite3module);
+    if (module != NULL) {
+        Py_INCREF(module);
+        return module;
+    }
+
     module = PyModule_Create(&_sqlite3module);
 
-    if (!module ||
-        (pysqlite_row_setup_types() < 0) ||
-        (pysqlite_cursor_setup_types() < 0) ||
-        (pysqlite_connection_setup_types() < 0) ||
-        (pysqlite_cache_setup_types() < 0) ||
-        (pysqlite_statement_setup_types() < 0) ||
-        (pysqlite_prepare_protocol_setup_types() < 0)
-       ) {
-        Py_XDECREF(module);
+    if (module == NULL) {
         return NULL;
     }
 
-    Py_INCREF(&pysqlite_ConnectionType);
-    PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
-    Py_INCREF(&pysqlite_CursorType);
-    PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_CacheType);
-    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementType);
-    Py_INCREF(&pysqlite_StatementType);
-    PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheType);
-    Py_INCREF(&pysqlite_PrepareProtocolType);
-    PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
-    Py_INCREF(&pysqlite_RowType);
-    PyModule_AddObject(module, "Row", (PyObject*) &pysqlite_RowType);
+    state = pysqlite_state(module);
 
-    if (!(dict = PyModule_GetDict(module))) {
+    cache_type = pysqlite_setup_CacheType();
+    if (cache_type == NULL) goto error;
+    state->CacheType = (PyTypeObject*)cache_type;
+    Py_INCREF(cache_type);
+    PyModule_AddObject(module, "Cache", cache_type);
+
+    connection_type = pysqlite_setup_ConnectionType();
+    if (connection_type == NULL) goto error;
+    state->ConnectionType = (PyTypeObject*)connection_type;
+    Py_INCREF(connection_type);
+    PyModule_AddObject(module, "Connection", connection_type);
+
+    cursor_type = pysqlite_setup_CursorType();
+    if (cursor_type == NULL) goto error;
+    state->CursorType = (PyTypeObject*)cursor_type;
+    Py_INCREF(cursor_type);
+    PyModule_AddObject(module, "Cursor", cursor_type);
+
+    node_type = pysqlite_setup_NodeType();
+    if (node_type == NULL) goto error;
+    state->NodeType = (PyTypeObject*)node_type;
+
+    prepare_protocol_type = pysqlite_setup_PrepareProtocolType();
+    if (prepare_protocol_type == NULL) goto error;
+    state->PrepareProtocolType = (PyTypeObject*)prepare_protocol_type;
+    Py_INCREF(prepare_protocol_type);
+    PyModule_AddObject(module, "PrepareProtocol", prepare_protocol_type);
+
+    row_type = pysqlite_setup_RowType();
+    if (row_type == NULL) goto error;
+    state->RowType = (PyTypeObject*)row_type;
+    Py_INCREF(row_type);
+    PyModule_AddObject(module, "Row", row_type);
+
+    statement_type = pysqlite_setup_StatementType();
+    if (statement_type == NULL) goto error;
+    state->StatementType = (PyTypeObject*)statement_type;
+    Py_INCREF(statement_type);
+    PyModule_AddObject(module, "Statement", statement_type);
+
+    /* Create DB-API Exception hierarchy */
+
+    error_type = PyErr_NewException(MODULE_NAME ".Error", PyExc_Exception, NULL);
+    if (error_type == NULL) {
         goto error;
     }
+    state->Error = error_type;
+    Py_INCREF(error_type);
+    PyModule_AddObject(module, "Error", error_type);
 
-    /*** Create DB-API Exception hierarchy */
-
-    if (!(pysqlite_Error = PyErr_NewException(MODULE_NAME ".Error", PyExc_Exception, NULL))) {
+    warning_type = PyErr_NewException(MODULE_NAME ".Warning", PyExc_Exception, NULL);
+    if (warning_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "Error", pysqlite_Error);
-
-    if (!(pysqlite_Warning = PyErr_NewException(MODULE_NAME ".Warning", PyExc_Exception, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "Warning", pysqlite_Warning);
+    state->Warning = warning_type;
+    Py_INCREF(warning_type);
+    PyModule_AddObject(module, "Warning", warning_type);
 
     /* Error subclasses */
 
-    if (!(pysqlite_InterfaceError = PyErr_NewException(MODULE_NAME ".InterfaceError", pysqlite_Error, NULL))) {
+    interface_error_type = PyErr_NewException(MODULE_NAME ".InterfaceError", error_type, NULL);
+    if (interface_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "InterfaceError", pysqlite_InterfaceError);
+    state->InterfaceError = interface_error_type;
+    Py_INCREF(interface_error_type);
+    PyModule_AddObject(module, "InterfaceError", interface_error_type);
 
-    if (!(pysqlite_DatabaseError = PyErr_NewException(MODULE_NAME ".DatabaseError", pysqlite_Error, NULL))) {
+    database_error_type = PyErr_NewException(MODULE_NAME ".DatabaseError", error_type, NULL);
+    if (database_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "DatabaseError", pysqlite_DatabaseError);
+    state->DatabaseError = database_error_type;
+    Py_INCREF(database_error_type);
+    PyModule_AddObject(module, "DatabaseError", database_error_type);
 
-    /* pysqlite_DatabaseError subclasses */
+    /* DatabaseError subclasses */
 
-    if (!(pysqlite_InternalError = PyErr_NewException(MODULE_NAME ".InternalError", pysqlite_DatabaseError, NULL))) {
+    internal_error_type = PyErr_NewException(MODULE_NAME ".InternalError", database_error_type, NULL);
+    if (internal_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "InternalError", pysqlite_InternalError);
+    state->InternalError = internal_error_type;
+    Py_INCREF(internal_error_type);
+    PyModule_AddObject(module, "InternalError", internal_error_type);
 
-    if (!(pysqlite_OperationalError = PyErr_NewException(MODULE_NAME ".OperationalError", pysqlite_DatabaseError, NULL))) {
+    operational_error_type = PyErr_NewException(MODULE_NAME ".OperationalError", database_error_type, NULL);
+    if (operational_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "OperationalError", pysqlite_OperationalError);
+    state->OperationalError = operational_error_type;
+    Py_INCREF(operational_error_type);
+    PyModule_AddObject(module, "OperationalError", operational_error_type);
 
-    if (!(pysqlite_ProgrammingError = PyErr_NewException(MODULE_NAME ".ProgrammingError", pysqlite_DatabaseError, NULL))) {
+    programming_error_type = PyErr_NewException(MODULE_NAME ".ProgrammingError", database_error_type, NULL);
+    if (programming_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "ProgrammingError", pysqlite_ProgrammingError);
+    state->ProgrammingError = programming_error_type;
+    Py_INCREF(programming_error_type);
+    PyModule_AddObject(module, "ProgrammingError", programming_error_type);
 
-    if (!(pysqlite_IntegrityError = PyErr_NewException(MODULE_NAME ".IntegrityError", pysqlite_DatabaseError,NULL))) {
+    integrity_error_type = PyErr_NewException(MODULE_NAME ".IntegrityError", database_error_type, NULL);
+    if (integrity_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "IntegrityError", pysqlite_IntegrityError);
+    state->IntegrityError = integrity_error_type;
+    Py_INCREF(integrity_error_type);
+    PyModule_AddObject(module, "IntegrityError", integrity_error_type);
 
-    if (!(pysqlite_DataError = PyErr_NewException(MODULE_NAME ".DataError", pysqlite_DatabaseError, NULL))) {
+    data_error_type = PyErr_NewException(MODULE_NAME ".DataError", database_error_type, NULL);
+    if (data_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "DataError", pysqlite_DataError);
+    state->DataError = data_error_type;
+    Py_INCREF(data_error_type);
+    PyModule_AddObject(module, "DataError", data_error_type);
 
-    if (!(pysqlite_NotSupportedError = PyErr_NewException(MODULE_NAME ".NotSupportedError", pysqlite_DatabaseError, NULL))) {
+    not_supported_error_type = PyErr_NewException(MODULE_NAME ".NotSupportedError", database_error_type, NULL);
+    if (not_supported_error_type == NULL) {
         goto error;
     }
-    PyDict_SetItemString(dict, "NotSupportedError", pysqlite_NotSupportedError);
+    state->NotSupportedError = not_supported_error_type;
+    Py_INCREF(not_supported_error_type);
+    PyModule_AddObject(module, "NotSupportedError", not_supported_error_type);
 
     /* In Python 2.x, setting Connection.text_factory to
        OptimizedUnicode caused Unicode objects to be returned for
@@ -441,7 +560,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
        Now OptimizedUnicode is an alias for str, so it has no
        effect. */
     Py_INCREF((PyObject*)&PyUnicode_Type);
-    PyDict_SetItemString(dict, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
+    PyModule_AddObject(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
 
     /* Set integer constants */
     for (i = 0; _int_constants[i].constant_name != NULL; i++) {
@@ -449,34 +568,37 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         if (!tmp_obj) {
             goto error;
         }
-        PyDict_SetItemString(dict, _int_constants[i].constant_name, tmp_obj);
-        Py_DECREF(tmp_obj);
+        PyModule_AddObject(module, _int_constants[i].constant_name, tmp_obj);
     }
 
     if (!(tmp_obj = PyUnicode_FromString(PYSQLITE_VERSION))) {
         goto error;
     }
-    PyDict_SetItemString(dict, "version", tmp_obj);
-    Py_DECREF(tmp_obj);
+    PyModule_AddObject(module, "version", tmp_obj);
 
     if (!(tmp_obj = PyUnicode_FromString(sqlite3_libversion()))) {
         goto error;
     }
-    PyDict_SetItemString(dict, "sqlite_version", tmp_obj);
-    Py_DECREF(tmp_obj);
+    PyModule_AddObject(module, "sqlite_version", tmp_obj);
 
     /* initialize microprotocols layer */
-    pysqlite_microprotocols_init(dict);
+    pysqlite_microprotocols_init(module);
 
     /* initialize the default converters */
-    converters_init(dict);
+    converters_init(module);
+
+    state->adapt = PyUnicode_InternFromString("__adapt__");
+    state->conform = PyUnicode_InternFromString("__conform__");
+    state->cursor = PyUnicode_InternFromString("cursor");
+    state->finalize = PyUnicode_InternFromString("finalize");
+    state->upper = PyUnicode_InternFromString("upper");
 
 error:
     if (PyErr_Occurred())
     {
         PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
-        Py_DECREF(module);
-        module = NULL;
+        _sqlite3module_clear(module);
+        Py_CLEAR(module);
     }
     return module;
 }
