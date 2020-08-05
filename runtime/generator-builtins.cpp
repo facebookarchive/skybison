@@ -17,13 +17,13 @@ RawGeneratorBase generatorFromStackFrame(Frame* frame) {
 }
 
 template <SymbolId name, LayoutId type>
-static RawObject sendImpl(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+static RawObject sendImpl(Thread* thread, RawObject raw_self,
+                          RawObject raw_value) {
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
+  Object self(&scope, raw_self);
+  Object value(&scope, raw_value);
   if (self.layoutId() != type) return thread->raiseRequiresType(self, name);
   GeneratorBase gen(&scope, *self);
-  Object value(&scope, args.get(1));
   return Interpreter::resumeGenerator(thread, gen, value);
 }
 
@@ -149,15 +149,16 @@ static RawObject throwImpl(Thread* thread, const GeneratorBase& gen,
 }
 
 template <SymbolId name, LayoutId type>
-static RawObject throwImpl(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+static RawObject throwImpl(Thread* thread, RawObject raw_self,
+                           RawObject raw_exc, RawObject raw_value,
+                           RawObject raw_tb) {
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
+  Object self(&scope, raw_self);
+  Object exc(&scope, raw_exc);
+  Object value(&scope, raw_value);
+  Object tb(&scope, raw_tb);
   if (self.layoutId() != type) return thread->raiseRequiresType(self, name);
   GeneratorBase gen(&scope, *self);
-  Object exc(&scope, args.get(1));
-  Object value(&scope, args.get(2));
-  Object tb(&scope, args.get(3));
 
   return throwImpl(thread, gen, exc, value, tb);
 }
@@ -900,11 +901,15 @@ RawObject METH(generator, close)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs) {
-  return sendImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
+  Arguments args(frame, nargs);
+  return sendImpl<ID(generator), LayoutId::kGenerator>(thread, args.get(0),
+                                                       args.get(1));
 }
 
 RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
-  return throwImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
+  Arguments args(frame, nargs);
+  return throwImpl<ID(generator), LayoutId::kGenerator>(
+      thread, args.get(0), args.get(1), args.get(2), args.get(3));
 }
 
 RawObject METH(coroutine, __await__)(Thread* thread, Frame* frame, word nargs) {
@@ -935,11 +940,15 @@ RawObject METH(coroutine, close)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
-  return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
+  Arguments args(frame, nargs);
+  return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, args.get(0),
+                                                       args.get(1));
 }
 
 RawObject METH(coroutine, throw)(Thread* thread, Frame* frame, word nargs) {
-  return throwImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
+  Arguments args(frame, nargs);
+  return throwImpl<ID(coroutine), LayoutId::kCoroutine>(
+      thread, args.get(0), args.get(1), args.get(2), args.get(3));
 }
 
 RawObject METH(coroutine_wrapper, __iter__)(Thread* thread, Frame* frame,
