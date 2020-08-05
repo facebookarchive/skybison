@@ -484,6 +484,7 @@ class Runtime;
   V(_seq_set_iterable)                                                         \
   V(_set__data)                                                                \
   V(_set__num_items)                                                           \
+  V(_set__num_filled)                                                          \
   V(_set_check)                                                                \
   V(_set_guard)                                                                \
   V(_set_iterator__index)                                                      \

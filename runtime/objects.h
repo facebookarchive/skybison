@@ -2768,10 +2768,15 @@ class RawSetBase : public RawInstance {
   word numItems() const;
   void setNumItems(word num_items) const;
 
+  // Number of active and tombstone items in the set
+  word numFilled() const;
+  void setNumFilled(word num_filled) const;
+
   // Layout.
-  static const int kNumItemsOffset = RawHeapObject::kSize;
-  static const int kDataOffset = kNumItemsOffset + kPointerSize;
-  static const int kSize = kDataOffset + kPointerSize;
+  static const int kDataOffset = RawHeapObject::kSize;
+  static const int kNumItemsOffset = kDataOffset + kPointerSize;
+  static const int kNumFilledOffset = kNumItemsOffset + kPointerSize;
+  static const int kSize = kNumFilledOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(SetBase);
 };
@@ -6862,6 +6867,14 @@ inline word RawSetBase::numItems() const {
 
 inline void RawSetBase::setNumItems(word num_items) const {
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
+}
+
+inline word RawSetBase::numFilled() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumFilledOffset)).value();
+}
+
+inline void RawSetBase::setNumFilled(word num_filled) const {
+  instanceVariableAtPut(kNumFilledOffset, RawSmallInt::fromWord(num_filled));
 }
 
 inline RawObject RawSetBase::data() const {

@@ -214,6 +214,7 @@ static RawTuple setGrow(Thread* thread, const SetBase& set) {
     DCHECK(index != -1, "unexpected index %ld", index);
     itemAtPut(*new_data, index, hash, *value);
   }
+  set.setNumFilled(set.numItems());
   return *new_data;
 }
 
@@ -227,7 +228,7 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
   }
 
   Tuple new_data(&scope, *data);
-  if (data.length() == 0 || 5 * set.numItems() >= (data.length() - 1) * 2) {
+  if (data.length() == 0 || 10 * set.numFilled() >= 3 * data.length()) {
     new_data = setGrow(thread, set);
   }
   index = setLookupForInsertion(thread, new_data, value, hash);
@@ -235,6 +236,7 @@ RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
   set.setData(*new_data);
   itemAtPut(*new_data, index, hash, *value);
   set.setNumItems(set.numItems() + 1);
+  set.setNumFilled(set.numFilled() + 1);
   return *value;
 }
 
@@ -796,6 +798,7 @@ RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
     Layout layout(&scope, type.instanceLayout());
     FrozenSet result(&scope, runtime->newInstance(layout));
     result.setNumItems(0);
+    result.setNumFilled(0);
     result.setData(runtime->emptyTuple());
     return *result;
   }
@@ -828,6 +831,7 @@ RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   FrozenSet result(&scope, runtime->newInstance(layout));
   result.setNumItems(0);
+  result.setNumFilled(0);
   result.setData(runtime->emptyTuple());
   return setUpdate(thread, result, iterable);
 }
@@ -851,6 +855,7 @@ RawObject METH(frozenset, __or__)(Thread* thread, Frame* frame, word nargs) {
     FrozenSet result(&scope, runtime->newFrozenSet());
     result.setData(self.data());
     result.setNumItems(self.numItems());
+    result.setNumFilled(self.numFilled());
     return *result;
   }
   FrozenSet result(&scope, runtime->newFrozenSet());
@@ -905,6 +910,7 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
   }
   new_set.setData(*new_data);
   new_set.setNumItems(set.numItems());
+  new_set.setNumFilled(set.numItems());
   return *new_set;
 }
 
@@ -970,6 +976,7 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
 static const BuiltinAttribute kSetAttributes[] = {
     {ID(_set__data), RawSet::kDataOffset, AttributeFlags::kHidden},
     {ID(_set__num_items), RawSet::kNumItemsOffset, AttributeFlags::kHidden},
+    {ID(_set__num_filled), RawSet::kNumFilledOffset, AttributeFlags::kHidden},
 };
 
 RawObject METH(set, __and__)(Thread* thread, Frame* frame, word nargs) {
@@ -1025,6 +1032,7 @@ RawObject METH(set, __iand__)(Thread* thread, Frame* frame, word nargs) {
   RawSet intersection_set = Set::cast(*intersection);
   set.setData(intersection_set.data());
   set.setNumItems(intersection_set.numItems());
+  set.setNumFilled(intersection_set.numFilled());
   return *set;
 }
 
@@ -1080,6 +1088,7 @@ RawObject METH(set, __new__)(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   Set result(&scope, runtime->newInstance(layout));
   result.setNumItems(0);
+  result.setNumFilled(0);
   result.setData(runtime->emptyTuple());
   return *result;
 }
@@ -1115,6 +1124,7 @@ RawObject METH(set, clear)(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   set.setNumItems(0);
+  set.setNumFilled(0);
   MutableTuple data(&scope, set.data());
   data.fill(NoneType::object());
   return NoneType::object();

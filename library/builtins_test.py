@@ -14702,6 +14702,16 @@ class SeqTests(unittest.TestCase):
 
 
 class SetTests(unittest.TestCase):
+    def test_set_add_then_remove_adds_then_add_adds_elements(self):
+        s = set()
+        for x in range(100):
+            s.add(x)
+        for x in range(100):
+            s.remove(x)
+        for x in range(100):
+            s.add(x)
+        self.assertEqual(s, set(range(100)))
+
     def test_set_difference_update_with_non_iterable_raises_type_error(self):
         a = {1, 2, 3}
         with self.assertRaises(TypeError):

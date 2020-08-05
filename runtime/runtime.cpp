@@ -3051,6 +3051,7 @@ RawObject Runtime::newSet() {
   HandleScope scope;
   Set result(&scope, heap()->create<RawSet>());
   result.setNumItems(0);
+  result.setNumFilled(0);
   result.setData(empty_tuple_);
   return *result;
 }
@@ -3059,6 +3060,7 @@ RawObject Runtime::newFrozenSet() {
   HandleScope scope;
   FrozenSet result(&scope, heap()->create<RawFrozenSet>());
   result.setNumItems(0);
+  result.setNumFilled(0);
   result.setData(empty_tuple_);
   return *result;
 }
