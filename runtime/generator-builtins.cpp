@@ -623,7 +623,7 @@ static RawObject asyncGenAsendSend(Thread* thread, RawObject raw_self_obj,
   Object send_res(&scope,
                   Interpreter::resumeGenerator(thread, generator, send_value));
   // Send raises: mark this ASend operation as closed and propagate.
-  if (send_res.isError()) {
+  if (send_res.isErrorException()) {
     self.setState(AsyncGeneratorOpIterBase::State::Closed);
     return *send_res;
   }
