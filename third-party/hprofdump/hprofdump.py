@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (C) 2018 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,15 +87,15 @@ def showclassobj(id):
   return "@%x" % id
 # [u1]* An initial NULL terminate series of bytes representing the format name
 # and version.
-version = ""
+version = b""
 c = hprof.read(1)
-while (c != '\0'):
+while (c != b'\0'):
   version += c
   c = hprof.read(1)
-print "Version: %s" % version
+print("Version: %s" % version)
 # [u4] size of identifiers.
 idsize = readu4(hprof)
-print "ID Size: %d bytes" % idsize
+print("ID Size: %d bytes" % idsize)
 def readID(hprof):
   return readN(idsize, hprof)
 def valsize(ty):
@@ -123,7 +124,7 @@ def readval(ty, hprof):
 # [u4] low word of number of ms since 0:00 GMT, 1/1/70
 timestamp = (readu4(hprof) << 32) | readu4(hprof)
 s, ms = divmod(timestamp, 1000)
-print "Date: %s.%03d" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(s)), ms)
+print("Date: %s.%03d" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(s)), ms))
 while hprof.read(1):
   hprof.seek(-1,1)
   pos = hprof.tell()
@@ -133,7 +134,7 @@ while hprof.read(1):
   if tag == 0x01:
     id = readID(hprof)
     string = hprof.read(length - idsize)
-    print "%d: STRING %x %s" % (pos, id, repr(string))
+    print("%d: STRING %x %s" % (pos, id, repr(string)))
     strs[id] = string
   elif tag == 0x02:
     serial = readu4(hprof)
@@ -142,7 +143,7 @@ while hprof.read(1):
     classname = readID(hprof)
     loaded[serial] = classname
     classobjs[classobj] = classname
-    print "LOAD CLASS #%d %s @%x stack=@%x" % (serial, showstr(classname), classobj, stack)
+    print("LOAD CLASS #%d %s @%x stack=@%x" % (serial, showstr(classname), classobj, stack))
   elif tag == 0x04:
     id = readID(hprof)
     method = readID(hprof)
@@ -150,15 +151,15 @@ while hprof.read(1):
     file = readID(hprof)
     serial = readu4(hprof)
     line = readu4(hprof);
-    print "STACK FRAME %d '%s' '%s' '%s' line=%d classserial=%d" % (id, showstr(method), showstr(sig), showstr(file), line, serial)
+    print("STACK FRAME %d '%s' '%s' '%s' line=%d classserial=%d" % (id, showstr(method), showstr(sig), showstr(file), line, serial))
   elif tag == 0x05:
     serial = readu4(hprof)
-    print "STACK TRACE %d" % serial
+    print("STACK TRACE %d" % serial)
     thread = readu4(hprof)
     frames = readu4(hprof)
     hprof.read(idsize * frames)
   elif tag == 0x06:
-    print "ALLOC SITES"
+    print("ALLOC SITES")
     flags = readu2(hprof)
     cutoff_ratio = readu4(hprof)
     live_bytes = readu4(hprof)
@@ -182,131 +183,131 @@ while hprof.read(1):
     name = readID(hprof)
     group_name = readID(hprof)
     pgroup_name = readID(hprof)
-    print "START THREAD serial=%d" % thread
+    print("START THREAD serial=%d" % thread)
   elif tag == 0x0B:
     thread = readu4(hprof)
-    print "END THREAD"
+    print("END THREAD")
   elif tag == 0x0C or tag == 0x1C:
     if tag == 0x0C:
-      print "HEAP DUMP"
+      print("HEAP DUMP")
     else:
-      print "HEAP DUMP SEGMENT"
+      print("HEAP DUMP SEGMENT")
     while (length > 0):
       subtag = readu1(hprof) ; length -= 1
       if subtag == 0xFF:
-        print " ROOT UNKNOWN"
+        print(" ROOT UNKNOWN")
         objid = readID(hprof) ; length -= idsize
       elif subtag == 0x01:
-        print " ROOT JNI GLOBAL"
+        print(" ROOT JNI GLOBAL")
         objid = readID(hprof) ; length -= idsize
         ref = readID(hprof) ; length -= idsize
       elif subtag == 0x02:
-        print " ROOT JNI LOCAL"
+        print(" ROOT JNI LOCAL")
         objid = readID(hprof) ; length -= idsize
         thread = readu4(hprof) ; length -= 4
         frame = readu4(hprof) ; length -= 4
       elif subtag == 0x03:
-        print " ROOT JAVA FRAME"
+        print(" ROOT JAVA FRAME")
         objid = readID(hprof) ; length -= idsize
         serial = readu4(hprof) ; length -= 4
         frame = readu4(hprof) ; length -= 4
       elif subtag == 0x04:
         objid = readID(hprof) ; length -= idsize
         serial = readu4(hprof) ; length -= 4
-        print " ROOT NATIVE STACK serial=%d" % serial
+        print(" ROOT NATIVE STACK serial=%d" % serial)
       elif subtag == 0x05:
-        print " ROOT STICKY CLASS"
+        print(" ROOT STICKY CLASS")
         objid = readID(hprof) ; length -= idsize
       elif subtag == 0x06:
-        print " ROOT THREAD BLOCK"
+        print(" ROOT THREAD BLOCK")
         objid = readID(hprof) ; length -= idsize
         thread = readu4(hprof) ; length -= 4
       elif subtag == 0x07:
-        print " ROOT MONITOR USED"
+        print(" ROOT MONITOR USED")
         objid = readID(hprof) ; length -= idsize
       elif subtag == 0x08:
         threadid = readID(hprof) ; length -= idsize
         serial = readu4(hprof) ; length -= 4
         stack = readu4(hprof) ; length -= 4
-        print " ROOT THREAD OBJECT threadid=@%x serial=%d" % (threadid, serial)
+        print(" ROOT THREAD OBJECT threadid=@%x serial=%d" % (threadid, serial))
       elif subtag == 0x20:
-        print " CLASS DUMP"
-        print "  class class object ID: %s" % showclassobj(readID(hprof)) ; length -= idsize
-        print "  stack trace serial number: #%d" % readu4(hprof) ; length -= 4
-        print "  super class object ID: @%x" % readID(hprof) ; length -= idsize
-        print "  class loader object ID: @%x" % readID(hprof) ; length -= idsize
-        print "  signers object ID: @%x" % readID(hprof) ; length -= idsize
-        print "  protection domain object ID: @%x" % readID(hprof) ; length -= idsize
-        print "  reserved: @%x" % readID(hprof) ; length -= idsize
-        print "  reserved: @%x" % readID(hprof) ; length -= idsize
-        print "  instance size (in bytes): %d" % readu4(hprof) ; length -= 4
-        print "  constant pool:"
+        print(" CLASS DUMP")
+        print("  class class object ID: %s" % showclassobj(readID(hprof))); length -= idsize
+        print("  stack trace serial number: #%d" % readu4(hprof)); length -= 4
+        print("  super class object ID: @%x" % readID(hprof)); length -= idsize
+        print("  class loader object ID: @%x" % readID(hprof)); length -= idsize
+        print("  signers object ID: @%x" % readID(hprof)); length -= idsize
+        print("  protection domain object ID: @%x" % readID(hprof)); length -= idsize
+        print("  reserved: @%x" % readID(hprof)); length -= idsize
+        print("  reserved: @%x" % readID(hprof)); length -= idsize
+        print("  instance size (in bytes): %d" % readu4(hprof)); length -= 4
+        print("  constant pool:")
         poolsize = readu2(hprof) ; length -= 2
         while poolsize > 0:
           poolsize -= 1
           idx = readu2(hprof) ; length -= 2
           ty = readu1(hprof) ; length -= 1
           val = readval(ty, hprof) ; length -= valsize(ty)
-          print "   %d %s 0x%x" % (idx, showty(ty), val)
+          print("   %d %s 0x%x" % (idx, showty(ty), val))
         numstatic = readu2(hprof) ; length -= 2
-        print "  static fields:"
+        print("  static fields:")
         while numstatic > 0:
           numstatic -= 1
           nameid = readID(hprof) ; length -= idsize
           ty = readu1(hprof) ; length -= 1
           val = readval(ty, hprof) ; length -= valsize(ty)
-          print "   %s %s 0x%x" % (showstr(nameid), showty(ty), val)
+          print("   %s %s 0x%x" % (showstr(nameid), showty(ty), val))
         numinst = readu2(hprof) ; length -= 2
-        print "  instance fields:"
+        print("  instance fields:")
         while numinst > 0:
           numinst -= 1
           nameid = readID(hprof) ; length -= idsize
           ty = readu1(hprof) ; length -= 1
-          print "   %s %s" % (showstr(nameid), showty(ty))
+          print("   %s %s" % (showstr(nameid), showty(ty)))
       elif subtag == 0x21:
-        print " INSTANCE DUMP:"
-        print "  object ID: @%x" % readID(hprof) ; length -= idsize
+        print(" INSTANCE DUMP:")
+        print("  object ID: @%x" % readID(hprof)) ; length -= idsize
         stack = readu4(hprof) ; length -= 4
-        print "  stack: %s" % stack
-        print "  class object ID: %s" % showclassobj(readID(hprof)) ; length -= idsize
+        print("  stack: %s" % stack)
+        print("  class object ID: %s" % showclassobj(readID(hprof))) ; length -= idsize
         datalen = readu4(hprof) ; length -= 4
-        print "  %d bytes of instance data" % datalen
+        print("  %d bytes of instance data" % datalen)
         data = hprof.read(datalen) ; length -= datalen
       elif subtag == 0x22:
-        print " OBJECT ARRAY DUMP:"
-        print "  array object ID: @%x" % readID(hprof) ; length -= idsize
+        print(" OBJECT ARRAY DUMP:")
+        print("  array object ID: @%x" % readID(hprof)) ; length -= idsize
         stack = readu4(hprof) ; length -= 4
-        print "  stack: %s" % stack
+        print("  stack: %s" % stack)
         count = readu4(hprof) ; length -= 4
-        print "  array class object ID: %s" % showclassobj(readID(hprof)) ; length -= idsize
+        print("  array class object ID: %s" % showclassobj(readID(hprof))); length -= idsize
         hprof.read(idsize * count) ; length -= (idsize * count)
       elif subtag == 0x23:
-        print " PRIMITIVE ARRAY DUMP:"
-        print "  array object ID: @%x" % readID(hprof) ; length -= idsize
+        print(" PRIMITIVE ARRAY DUMP:")
+        print("  array object ID: @%x" % readID(hprof)); length -= idsize
         stack = readu4(hprof) ; length -= 4
         count = readu4(hprof) ; length -= 4
         ty = readu1(hprof) ; length -= 1
         hprof.read(valsize(ty)*count) ; length -= (valsize(ty)*count)
       elif subtag == 0x89:
-        print " HPROF_ROOT_INTERNED_STRING"
+        print(" HPROF_ROOT_INTERNED_STRING")
         objid = readID(hprof) ; length -= idsize
       elif subtag == 0x8b:
         objid = readID(hprof) ; length -= idsize
-        print " HPROF ROOT DEBUGGER @%x (at offset %d)" % (objid, hprof.tell() - (idsize + 1))
+        print(" HPROF ROOT DEBUGGER @%x (at offset %d)" % (objid, hprof.tell() - (idsize + 1)))
       elif subtag == 0x8d:
         objid = readID(hprof) ; length -= idsize
-        print " HPROF ROOT VM INTERNAL @%x" % objid
+        print(" HPROF ROOT VM INTERNAL @%x" % objid)
       elif subtag == 0xfe:
         hty = readu4(hprof) ; length -= 4
         hnameid = readID(hprof) ; length -= idsize
-        print " HPROF_HEAP_DUMP_INFO %s" % showstr(hnameid)
+        print(" HPROF_HEAP_DUMP_INFO %s" % showstr(hnameid))
       else:
         raise Exception("TODO: subtag %x" % subtag)
   elif tag == 0x0E:
     flags = readu4(hprof)
     depth = readu2(hprof)
-    print "CONTROL SETTINGS %x %d" % (flags, depth)
+    print("CONTROL SETTINGS %x %d" % (flags, depth))
   elif tag == 0x2C:
-    print "HEAP DUMP END"
+    print("HEAP DUMP END")
   else:
     raise Exception("TODO: TAG %x" % tag)
