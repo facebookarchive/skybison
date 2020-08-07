@@ -5995,6 +5995,21 @@ class CoroutineTests(unittest.TestCase):
             g.send(None)
         self.assertIsNone(g.close())
 
+    def test_exception_context_captured_across_further_awaits(self):
+        async def raises():
+            raise ValueError
+
+        async def double_raises():
+            try:
+                raise RuntimeError
+            except RuntimeError:
+                await raises()
+
+        with self.assertRaises(ValueError) as exc:
+            double_raises().send(None)
+
+        self.assertIsInstance(exc.exception.__context__, RuntimeError)
+
 
 class CoroutineWrapperTests(unittest.TestCase):
     def test_dunder_iter_with_invalid_self_raises_type_error(self):
@@ -9443,6 +9458,22 @@ class GeneratorTests(unittest.TestCase):
                 "<generator object GeneratorTests.test_dunder_repr.<locals>.foo at "
             )
         )
+
+    def test_exception_context_captured_across_further_yield_from(self):
+        def raises():
+            raise ValueError
+            yield None
+
+        def double_raises():
+            try:
+                raise RuntimeError
+            except RuntimeError:
+                yield from raises()
+
+        with self.assertRaises(ValueError) as exc:
+            double_raises().send(None)
+
+        self.assertIsInstance(exc.exception.__context__, RuntimeError)
 
 
 class GlobalsTests(unittest.TestCase):

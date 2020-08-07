@@ -135,14 +135,17 @@ PY_EXPORT PyObject* PyErr_FormatV(PyObject* exception, const char* format,
 PY_EXPORT void PyErr_GetExcInfo(PyObject** p_type, PyObject** p_value,
                                 PyObject** p_traceback) {
   Thread* thread = Thread::current();
-  if (!thread->hasCaughtException()) {
+  HandleScope scope(thread);
+  Object caught_exc_state_obj(&scope, thread->topmostCaughtExceptionState());
+  if (caught_exc_state_obj.isNoneType()) {
     *p_type = nullptr;
     *p_value = nullptr;
     *p_traceback = nullptr;
     return;
   }
-  *p_type = ApiHandle::newReference(thread, thread->caughtExceptionType());
-  *p_value = ApiHandle::newReference(thread, thread->caughtExceptionValue());
+  ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
+  *p_type = ApiHandle::newReference(thread, caught_exc_state.type());
+  *p_value = ApiHandle::newReference(thread, caught_exc_state.value());
   // TODO(T42241510): Pass caughtExeptionTraceback() when it becomes available.
   *p_traceback = nullptr;
 }

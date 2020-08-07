@@ -251,23 +251,19 @@ class Thread {
     pending_exc_traceback_ = traceback;
   }
 
-  // Returns true if there is a caught exception.
-  bool hasCaughtException();
-
-  // Gets the type, value or traceback of the caught exception. No caught
-  // exception is indicated with a type of None.
-  RawObject caughtExceptionType();
-  RawObject caughtExceptionValue();
-  RawObject caughtExceptionTraceback();
-
   // Sets the type, value, or traceback of the caught exception.
   void setCaughtExceptionType(RawObject type);
   void setCaughtExceptionValue(RawObject value);
   void setCaughtExceptionTraceback(RawObject traceback);
 
-  // Gets or sets the current caught ExceptionState.
+  // Gets or sets the current caught ExceptionState. See also
+  // topmostCaughtExceptionState().
   RawObject caughtExceptionState();
   void setCaughtExceptionState(RawObject state);
+
+  // Searches up the stack for the nearest caught exception. Returns None if
+  // there are no caught exceptions being handled, or an ExceptionState.
+  RawObject topmostCaughtExceptionState();
 
   // If there is a current caught exception, attach it to the given exception's
   // __context__ attribute.

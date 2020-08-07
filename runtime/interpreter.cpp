@@ -1333,9 +1333,18 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
       // Push a handler block and save the current caught exception, if any.
       stack->push(
           TryBlock{TryBlock::kExceptHandler, 0, frame->valueStackSize()});
-      frame->pushValue(thread->caughtExceptionTraceback());
-      frame->pushValue(thread->caughtExceptionValue());
-      frame->pushValue(thread->caughtExceptionType());
+      Object caught_exc_state_obj(&scope,
+                                  thread->topmostCaughtExceptionState());
+      if (caught_exc_state_obj.isNoneType()) {
+        frame->pushValue(NoneType::object());
+        frame->pushValue(NoneType::object());
+        frame->pushValue(NoneType::object());
+      } else {
+        ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
+        frame->pushValue(caught_exc_state.traceback());
+        frame->pushValue(caught_exc_state.value());
+        frame->pushValue(caught_exc_state.type());
+      }
 
       // Load and normalize the pending exception.
       Object type(&scope, thread->pendingExceptionType());
@@ -4188,13 +4197,16 @@ HANDLER_INLINE Continue Interpreter::doRaiseVarargs(Thread* thread, word arg) {
 
   if (arg == 0) {
     // Re-raise the caught exception.
-    if (thread->hasCaughtException()) {
-      thread->setPendingExceptionType(thread->caughtExceptionType());
-      thread->setPendingExceptionValue(thread->caughtExceptionValue());
-      thread->setPendingExceptionTraceback(thread->caughtExceptionTraceback());
-    } else {
+    HandleScope scope(thread);
+    Object caught_exc_state_obj(&scope, thread->topmostCaughtExceptionState());
+    if (caught_exc_state_obj.isNoneType()) {
       thread->raiseWithFmt(LayoutId::kRuntimeError,
                            "No active exception to reraise");
+    } else {
+      ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
+      thread->setPendingExceptionType(caught_exc_state.type());
+      thread->setPendingExceptionValue(caught_exc_state.value());
+      thread->setPendingExceptionTraceback(caught_exc_state.traceback());
     }
   } else {
     Frame* frame = thread->currentFrame();

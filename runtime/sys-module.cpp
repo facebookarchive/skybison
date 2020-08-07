@@ -271,15 +271,17 @@ RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
 RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
                               word /* nargs */) {
   HandleScope scope(thread);
-  if (thread->hasCaughtException()) {
-    Object type(&scope, thread->caughtExceptionType());
-    Object value(&scope, thread->caughtExceptionValue());
-    Object traceback(&scope, thread->caughtExceptionTraceback());
+  Object caught_exc_state_obj(&scope, thread->topmostCaughtExceptionState());
+  if (caught_exc_state_obj.isNoneType()) {
+    Object type(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    Object traceback(&scope, NoneType::object());
     return thread->runtime()->newTupleWith3(type, value, traceback);
   }
-  Object type(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  Object traceback(&scope, NoneType::object());
+  ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
+  Object type(&scope, caught_exc_state.type());
+  Object value(&scope, caught_exc_state.value());
+  Object traceback(&scope, caught_exc_state.traceback());
   return thread->runtime()->newTupleWith3(type, value, traceback);
 }
 

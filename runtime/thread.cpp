@@ -528,12 +528,13 @@ RawObject Thread::raiseWithType(RawObject type, RawObject value) {
 }
 
 RawObject Thread::chainExceptionContext(const Type& type, const Object& value) {
-  if (caughtExceptionType().isNoneType() ||
-      caughtExceptionValue().isNoneType()) {
+  HandleScope scope(this);
+  Object caught_exc_state_obj(&scope, topmostCaughtExceptionState());
+  if (caught_exc_state_obj.isNoneType()) {
     return *value;
   }
+  ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
 
-  HandleScope scope(this);
   Object fixed_value(&scope, *value);
   if (!runtime()->isInstanceOfBaseException(*value)) {
     // Perform partial normalization before attempting to set __context__.
@@ -543,7 +544,7 @@ RawObject Thread::chainExceptionContext(const Type& type, const Object& value) {
 
   // Avoid creating cycles by breaking any link from caught_value to value
   // before setting value's __context__.
-  BaseException caught_value(&scope, caughtExceptionValue());
+  BaseException caught_value(&scope, caught_exc_state.value());
   if (*fixed_value == *caught_value) return *fixed_value;
   BaseException exc(&scope, *caught_value);
   Object context(&scope, NoneType::object());
@@ -735,22 +736,6 @@ bool Thread::pendingExceptionMatches(LayoutId type) {
   return typeIsSubclass(exc, parent);
 }
 
-bool Thread::hasCaughtException() {
-  return !caughtExceptionType().isNoneType();
-}
-
-RawObject Thread::caughtExceptionType() {
-  return ExceptionState::cast(caught_exc_stack_).type();
-}
-
-RawObject Thread::caughtExceptionValue() {
-  return ExceptionState::cast(caught_exc_stack_).value();
-}
-
-RawObject Thread::caughtExceptionTraceback() {
-  return ExceptionState::cast(caught_exc_stack_).traceback();
-}
-
 void Thread::setCaughtExceptionType(RawObject type) {
   ExceptionState::cast(caught_exc_stack_).setType(type);
 }
@@ -767,6 +752,16 @@ RawObject Thread::caughtExceptionState() { return caught_exc_stack_; }
 
 void Thread::setCaughtExceptionState(RawObject state) {
   caught_exc_stack_ = state;
+}
+
+RawObject Thread::topmostCaughtExceptionState() {
+  HandleScope scope(this);
+  Object exc_state(&scope, caught_exc_stack_);
+  while (!exc_state.isNoneType() &&
+         ExceptionState::cast(*exc_state).type().isNoneType()) {
+    exc_state = ExceptionState::cast(*exc_state).previous();
+  }
+  return *exc_state;
 }
 
 bool Thread::isErrorValueOk(RawObject obj) {
