@@ -644,7 +644,7 @@ RawObject Thread::raiseStopIteration() {
 
 RawObject Thread::raiseStopIterationWithValue(const Object& value) {
   if (runtime()->isInstanceOfTuple(*value) ||
-      runtime()->isInstanceOfStopIteration(*value)) {
+      runtime()->isInstanceOfBaseException(*value)) {
     // TODO(T67598788): Remove this special case. For now this works around
     // the behavior of normalizeException() when it's called in
     // Interpreter::unwind() as part of returning values from generators. Our

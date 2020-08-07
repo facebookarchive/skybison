@@ -6072,6 +6072,25 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(exc.exception.value, v)
         self.assertEqual(exc.exception.args, (v,))
 
+    def test_coroutine_returning_arbitrary_exception_does_not_get_context_updated(self):
+        value_error = ValueError()
+
+        async def f():
+            nonlocal value_error
+            return value_error
+
+        async def g():
+            try:
+                raise KeyError
+            except KeyError:
+                return await f()
+
+        self.assertIsNone(value_error.__context__)
+        with self.assertRaises(StopIteration) as exc:
+            g().send(None)
+        self.assertIs(exc.exception.value, value_error)
+        self.assertIsNone(exc.exception.value.__context__)
+
 
 class CoroutineWrapperTests(unittest.TestCase):
     def test_dunder_iter_with_invalid_self_raises_type_error(self):
