@@ -5716,6 +5716,10 @@ RawObject Interpreter::resumeGenerator(Thread* thread,
   GeneratorFrame generator_frame(&scope, generator.generatorFrame());
   word pc = generator_frame.virtualPC();
   if (pc == Frame::kFinishedGeneratorPC) {
+    if (generator.isCoroutine()) {
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "cannot reuse already awaited coroutine");
+    }
     return thread->raise(generator.isAsyncGenerator()
                              ? LayoutId::kStopAsyncIteration
                              : LayoutId::kStopIteration,
@@ -5756,6 +5760,12 @@ RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
   Frame* frame = thread->pushGeneratorFrame(generator_frame);
   if (frame == nullptr) {
     return Error::exception();
+  }
+  if (generator.isCoroutine() &&
+      frame->virtualPC() == Frame::kFinishedGeneratorPC) {
+    thread->popFrame();
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "cannot reuse already awaited coroutine");
   }
 
   // TODO(T38009294): Improve the compiler to avoid this exception state

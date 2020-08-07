@@ -165,6 +165,10 @@ static RawObject throwImpl(Thread* thread, RawObject raw_self,
 
 static RawObject closeImpl(Thread* thread, const GeneratorBase& gen) {
   HandleScope scope(thread);
+  GeneratorFrame generator_frame(&scope, gen.generatorFrame());
+  if (generator_frame.virtualPC() == Frame::kFinishedGeneratorPC) {
+    return NoneType::object();
+  }
   Runtime* runtime = thread->runtime();
   Object gen_exit_exc(&scope, runtime->typeAt(LayoutId::kGeneratorExit));
   Object none(&scope, NoneType::object());

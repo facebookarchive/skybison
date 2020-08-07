@@ -5935,6 +5935,32 @@ class CoroutineTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "coroutine is being awaited already"):
             g().send(None)
 
+    def test_send_into_finished_coro_raises_runtime_error(self):
+        g = self.simple_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(g.send(None), 2)
+        with self.assertRaises(StopIteration):
+            g.send(None)
+        with self.assertRaises(RuntimeError):
+            g.send(None)
+
+    def test_throw_into_finshed_coro_raises_runtime_error(self):
+        g = self.simple_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(g.send(None), 2)
+        with self.assertRaises(StopIteration):
+            g.send(None)
+        with self.assertRaises(RuntimeError):
+            g.throw(CoroutineTests.MyError())
+
+    def test_close_finshed_coro_raises_is_no_op(self):
+        g = self.simple_coro()
+        self.assertEqual(g.send(None), 1)
+        self.assertEqual(g.send(None), 2)
+        with self.assertRaises(StopIteration):
+            g.send(None)
+        self.assertIsNone(g.close())
+
 
 class CoroutineWrapperTests(unittest.TestCase):
     def test_dunder_iter_with_invalid_self_raises_type_error(self):
