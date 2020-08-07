@@ -830,6 +830,98 @@ RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject FUNC(_io, _TextIOWrapper_attached_closed_guard)(Thread* thread,
+                                                          Frame* frame,
+                                                          word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTextIOWrapper(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(TextIOWrapper));
+  }
+  TextIOWrapper self(&scope, *self_obj);
+  if (self.detached()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "underlying buffer has been detached");
+  }
+  Object buffer_obj(&scope, self.buffer());
+  if (runtime->isInstanceOfBufferedReader(*buffer_obj)) {
+    BufferedReader buffer(&scope, *buffer_obj);
+    if (buffer.closed()) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "I/O operation on closed file.");
+    }
+    return NoneType::object();
+  }
+
+  if (runtime->isInstanceOfBufferedWriter(*buffer_obj)) {
+    BufferedWriter buffer(&scope, *buffer_obj);
+    // TODO(T61927696): changed this when BufferedWriter.closed() returns bool
+    Object closed_obj(&scope, buffer.closed());
+    if (closed_obj.isNoneType() || closed_obj == Bool::falseObj()) {
+      return NoneType::object();
+    }
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  // TODO(T61927696): Add closed check support for other types of buffer
+  return Unbound::object();
+}
+
+RawObject FUNC(_io,
+               _TextIOWrapper_attached_closed_seekable_guard)(Thread* thread,
+                                                              Frame* frame,
+                                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTextIOWrapper(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(TextIOWrapper));
+  }
+  TextIOWrapper self(&scope, *self_obj);
+  if (self.detached()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "underlying buffer has been detached");
+  }
+  Object buffer_obj(&scope, self.buffer());
+  if (runtime->isInstanceOfBufferedReader(*buffer_obj)) {
+    BufferedReader buffer(&scope, *buffer_obj);
+    if (buffer.closed()) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "I/O operation on closed file.");
+    }
+    // TODO(T61927696): change this when TextIOWrapper.seekable() returns bool
+    Object seekable_obj(&scope, self.seekable());
+    if (seekable_obj.isNoneType() || seekable_obj == Bool::falseObj()) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "underlying stream is not seekable");
+    }
+    return NoneType::object();
+  }
+
+  if (runtime->isInstanceOfBufferedWriter(*buffer_obj)) {
+    BufferedWriter buffer(&scope, *buffer_obj);
+    // TODO(T61927696): change this when BufferedWriter.closed() returns bool
+    Object closed_obj(&scope, buffer.closed());
+    if (closed_obj.isNoneType() || closed_obj == Bool::falseObj()) {
+      // TODO(T61927696): change this when TextIOWrapper.seekable() returns bool
+      Object seekable_obj(&scope, self.seekable());
+      if (seekable_obj.isNoneType() || seekable_obj == Bool::falseObj()) {
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "underlying stream is not seekable");
+      }
+      return NoneType::object();
+    }
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+
+  // TODO(T61927696): Add closed check support for other types of buffer
+  return Unbound::object();
+}
+
 // Copy the bytes of a UTF-8 encoded string with no surrogates to the write
 // buffer (a Bytearray) of underlying Bufferedwriter of TextIOWrapper
 // If the length of write buffer will be larger than

@@ -7382,7 +7382,8 @@ inline void RawCoroutineWrapper::setCoroutine(RawObject coroutine) const {
 // RawUnderIOBase
 
 inline bool RawUnderIOBase::closed() const {
-  return RawBool::cast(instanceVariableAt(kClosedOffset)).value();
+  RawObject closed = instanceVariableAt(kClosedOffset);
+  return closed.isBool() && RawBool::cast(closed).value();
 }
 
 inline void RawUnderIOBase::setClosed(bool closed) const {

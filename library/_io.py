@@ -107,6 +107,14 @@ def _TextIOWrapper_attached_guard(obj):
     _builtin()
 
 
+def _TextIOWrapper_attached_closed_guard(obj):
+    _builtin()
+
+
+def _TextIOWrapper_attached_closed_seekable_guard(obj):
+    _builtin()
+
+
 def _TextIOWrapper_write_UTF8(self, text):
     _builtin()
 
@@ -1625,8 +1633,9 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return self._buffer.fileno()
 
     def flush(self):
-        _TextIOWrapper_attached_guard(self)
-        self._checkClosed()
+        result = _TextIOWrapper_attached_closed_guard(self)
+        if result is _Unbound:
+            self._checkClosed()
         self.buffer.flush()
         self._telling = self._seekable
 
@@ -1659,8 +1668,9 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         elif not _int_check(size):
             raise TypeError(f"integer argument expected, got '{_type(size).__name__}'")
 
-        _TextIOWrapper_attached_guard(self)
-        self._checkClosed()
+        result = _TextIOWrapper_attached_closed_guard(self)
+        if result is _Unbound:
+            self._checkClosed()
         self._checkReadable("not readable")
 
         decoder = self._decoder
@@ -1690,8 +1700,9 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return self._buffer.readable()
 
     def readline(self, size=None):  # noqa: C901
-        _TextIOWrapper_attached_guard(self)
-        self._checkClosed()
+        result = _TextIOWrapper_attached_closed_guard(self)
+        if result is _Unbound:
+            self._checkClosed()
 
         if size is None:
             size = -1
@@ -1785,9 +1796,10 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             raise TypeError(
                 f"an integer is required (got type {_type(whence).__name__})"
             )
-        _TextIOWrapper_attached_guard(self)
-        self._checkClosed()
-        self._checkSeekable("underlying stream is not seekable")
+        result = _TextIOWrapper_attached_closed_seekable_guard(self)
+        if result is _Unbound:
+            self._checkClosed()
+            self._checkSeekable("underlying stream is not seekable")
 
         if whence == 1:  # seek relative to current position
             if cookie != 0:
@@ -1849,9 +1861,10 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return self._buffer.seekable()
 
     def tell(self):  # noqa: C901
-        _TextIOWrapper_attached_guard(self)
-        self._checkClosed()
-        self._checkSeekable("underlying stream is not seekable")
+        result = _TextIOWrapper_attached_closed_seekable_guard(self)
+        if result is _Unbound:
+            self._checkClosed()
+            self._checkSeekable("underlying stream is not seekable")
         if not self._telling:
             raise OSError("telling position disabled by next() call")
         self.flush()
@@ -1965,8 +1978,9 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
 
         if not _str_check(text):
             raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
-        _TextIOWrapper_attached_guard(self)
-        self._checkClosed()
+        result = _TextIOWrapper_attached_closed_guard(self)
+        if result is _Unbound:
+            self._checkClosed()
         length = _str_len(text)
         haslf = (self._writetranslate or self._line_buffering) and "\n" in text
         if haslf and self._writetranslate and self._writenl != "\n":
