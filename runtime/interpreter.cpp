@@ -1656,10 +1656,9 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
       awaitableIter(thread,
                     "'async for' received an invalid object from __anext__"));
   if (!result.isError()) return Continue::NEXT;
-  thread->clearPendingException();
-  // TODO(T67750587) Chain the original exception as the "cause" of TypeError.
-  thread->raiseWithFmt(LayoutId::kTypeError,
-                       "'async for' received an invalid object from __anext__");
+  thread->raiseWithFmtChainingPendingAsCause(
+      LayoutId::kTypeError,
+      "'async for' received an invalid object from __anext__");
   return Continue::UNWIND;
 }
 

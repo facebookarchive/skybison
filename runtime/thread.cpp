@@ -568,6 +568,31 @@ RawObject Thread::raiseWithFmt(LayoutId type, const char* fmt, ...) {
   return raise(type, *message);
 }
 
+RawObject Thread::raiseWithFmtChainingPendingAsCause(LayoutId type,
+                                                     const char* fmt, ...) {
+  HandleScope scope(this);
+
+  va_list args;
+  va_start(args, fmt);
+  Object message(&scope, runtime()->newStrFromFmtV(this, fmt, args));
+  va_end(args);
+
+  Object pending_type(&scope, pendingExceptionType());
+  Object pending_value(&scope, pendingExceptionValue());
+  Object pending_traceback(&scope, pendingExceptionTraceback());
+  clearPendingException();
+  normalizeException(this, &pending_type, &pending_value, &pending_traceback);
+
+  Type new_exc_type(&scope, runtime()->typeAt(type));
+  BaseException new_exc(&scope, createException(this, new_exc_type, message));
+  new_exc.setCause(*pending_value);
+  new_exc.setContext(*pending_value);
+  setPendingExceptionType(*new_exc_type);
+  setPendingExceptionValue(*new_exc);
+  setPendingExceptionTraceback(NoneType::object());
+  return Error::exception();
+}
+
 // Convenience method for throwing a binary-operation-specific TypeError
 // exception with an error message.
 RawObject Thread::raiseUnsupportedBinaryOperation(

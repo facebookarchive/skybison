@@ -1966,7 +1966,9 @@ class AwaitablesTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "__await__.* returned a coroutine"):
             g().send(None)
 
-    def test_async_for_over_awaitable_raising_on_await_raises_type_error(self):
+    def test_async_for_over_awaitable_raising_on_await_raises_type_error_with_cause_and_context(
+        self,
+    ):
         class AsyncIterator:
             def __aiter__(self):
                 return self
@@ -1981,8 +1983,40 @@ class AwaitablesTest(unittest.TestCase):
             async for _ in AsyncIterator():
                 pass
 
-        with self.assertRaisesRegex(TypeError, "an invalid object from __anext__"):
+        with self.assertRaisesRegex(
+            TypeError, "an invalid object from __anext__"
+        ) as exc:
             f().send(None)
+
+        self.assertIsInstance(exc.exception.__cause__, ValueError)
+        self.assertIsInstance(exc.exception.__context__, ValueError)
+
+    def test_async_for_over_awaitable_raising_exact_exception_on_await_raises_type_error_with_ause_and_context(
+        self,
+    ):
+        class AsyncIterator:
+            value_error = ValueError()
+
+            def __aiter__(self):
+                return self
+
+            def __anext__(self):
+                return self
+
+            def __await__(self):
+                raise AsyncIterator.value_error
+
+        async def f():
+            async for _ in AsyncIterator():
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError, "an invalid object from __anext__"
+        ) as exc:
+            f().send(None)
+
+        self.assertIs(exc.exception.__cause__, AsyncIterator.value_error)
+        self.assertIs(exc.exception.__context__, AsyncIterator.value_error)
 
 
 class BinTests(unittest.TestCase):

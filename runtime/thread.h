@@ -151,6 +151,11 @@ class Thread {
   RawObject raiseWithType(RawObject type, RawObject value);
   RawObject raiseWithFmt(LayoutId type, const char* fmt, ...);
 
+  // Raises a new exception, attaching the pending exception (if any) to the
+  // new exception's __cause__ and __context__ attributes.
+  RawObject raiseWithFmtChainingPendingAsCause(LayoutId type, const char* fmt,
+                                               ...);
+
   // Raises a TypeError exception for PyErr_BadArgument.
   void raiseBadArgument();
 
