@@ -220,7 +220,7 @@ std::ostream& dumpExtendedType(std::ostream& os, RawType value) {
   os << "  flags:";
   if (type.hasFlag(Type::kIsAbstract)) os << " abstract";
   if (type.hasFlag(Type::kHasDunderDict)) os << " has_dunder_dict";
-  if (type.hasFlag(Type::kIsNativeProxy)) os << " is_native_proxy";
+  if (type.hasFlag(Type::kHasNativeData)) os << " has_native_data";
   os << '\n';
   Object builtin_base_layout(
       &scope, thread->runtime()->layoutAtSafe(type.builtinBase()));

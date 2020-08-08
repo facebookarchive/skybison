@@ -695,7 +695,7 @@ class Runtime {
     // name is required for `Hanlde<>` to work. It is misleading in that we
     // consider native proxy to be more of a property of the type than is
     // orthogonal to the subtyping relationships.
-    return typeOf(obj).rawCast<RawType>().isExtensionType();
+    return typeOf(obj).rawCast<RawType>().hasNativeData();
   }
 
   // BaseException must be handled specially because it has builtin subclasses

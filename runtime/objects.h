@@ -1160,8 +1160,9 @@ class RawType : public RawInstance {
     // Has an instance __dict__
     kHasDunderDict = 1 << 9,
 
-    // Instances have a native proxy layout
-    kIsNativeProxy = 1 << 10,
+    // Instances have a block of of memory in the unmanaged C heap attached to
+    // them. Instances are `RawNativeProxy`s.
+    kHasNativeData = 1 << 10,
 
     // Has the extension flag Py_TPFLAGS_HAVE_GC
     kHasCycleGC = 1 << 11,
@@ -1218,7 +1219,7 @@ class RawType : public RawInstance {
 
   bool isBuiltin() const;
 
-  bool isExtensionType() const;
+  bool hasNativeData() const;
 
   RawObject slots() const;
   void setSlots(RawObject slots) const;
@@ -5123,8 +5124,8 @@ inline void RawType::setAttributesRemaining(word free) const {
                         RawSmallInt::fromWord(free));
 }
 
-inline bool RawType::isExtensionType() const {
-  return hasFlag(RawType::Flag::kIsNativeProxy);
+inline bool RawType::hasNativeData() const {
+  return hasFlag(RawType::Flag::kHasNativeData);
 }
 
 inline RawObject RawType::slots() const {
@@ -7150,7 +7151,7 @@ inline bool RawLayout::isNativeProxyLayout() const {
   if (described_type.isNoneType()) {
     return false;
   }
-  return described_type.rawCast<RawType>().isExtensionType();
+  return described_type.rawCast<RawType>().hasNativeData();
 }
 
 // RawSetIterator

@@ -99,6 +99,68 @@ TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotRaisesError) {
   // TODO(eelizondo): Check that error matches with "invalid slot offset"
 }
 
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithZeroBasicSizeAndItemSetsTpNewOfManagedTypePyro) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr ext_type(PyType_FromSpec(&spec));
+  ASSERT_NE(ext_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(ext_type));
+
+  PyRun_SimpleString(R"(class D: pass)");
+  PyObjectPtr managed_type(mainModuleGet("D"));
+  ASSERT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new), nullptr);
+  EXPECT_EQ(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new),
+            PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+
+  // Instances of `ext_type` does not cause any memory leak.
+  auto new_slot = reinterpret_cast<newfunc>(
+      PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr result(new_slot(ext_type.asTypeObject(), args, kwargs));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyObject_IsInstance(result, ext_type), 1);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithNonZeroBasicSizeAndItemSetsCustomTpNewPyro) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  struct BarState {
+    PyObject_HEAD
+    int foo;
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", sizeof(BarState), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr ext_type(PyType_FromSpec(&spec));
+  ASSERT_NE(ext_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(ext_type));
+
+  PyRun_SimpleString(R"(class D: pass)");
+  PyObjectPtr managed_type(mainModuleGet("D"));
+  ASSERT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new), nullptr);
+  EXPECT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new),
+            PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+
+  // Instances of `ext_type` does not cause any memory leak.
+  auto new_slot = reinterpret_cast<newfunc>(
+      PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr result(new_slot(ext_type.asTypeObject(), args, kwargs));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyObject_IsInstance(result, ext_type), 1);
+}
+
 TEST_F(TypeExtensionApiTest, CallExtensionTypeReturnsExtensionInstancePyro) {
   struct BarObject {
     PyObject_HEAD
@@ -353,6 +415,21 @@ TEST_F(TypeExtensionApiTest, DunderBasicsizeWithExtensionTypeReturnsBasicsize) {
   PyObjectPtr basicsize(PyObject_GetAttrString(type, "__basicsize__"));
   ASSERT_NE(basicsize, nullptr);
   EXPECT_TRUE(isLongEqualsLong(basicsize, size));
+}
+
+TEST_F(TypeExtensionApiDeathTest,
+       DunderBasicsizeExtensionTypeWithZeroSizeReturnsBasicsizePyro) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  EXPECT_DEATH(PyObject_GetAttrString(type, "__basicsize__"),
+               "'__basicsize__' for type 'Bar'");
 }
 
 // METH_NOARGS and CALL_FUNCTION
@@ -2865,6 +2942,68 @@ TEST_F(TypeExtensionApiTest,
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   PyErr_Clear();
+}
+
+TEST_F(
+    TypeExtensionApiTest,
+    FromSpecWithBasesWithBuiltinTypeAndZeroBasicSizeAndItemSetsTpNewOfManagedTypePyro) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, &PyType_Type));
+  PyObjectPtr ext_type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(ext_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(ext_type));
+
+  PyRun_SimpleString(R"(class D: pass)");
+  PyObjectPtr managed_type(mainModuleGet("D"));
+  ASSERT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new), nullptr);
+  EXPECT_EQ(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new),
+            PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+}
+
+TEST_F(
+    TypeExtensionApiTest,
+    FromSpecWithBasesWithNonZeroSizeBaseAndZeroBasicSizeAndItemSetsCustomTpNewPyro) {
+  PyType_Slot base_slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec base_spec;
+  base_spec = {
+      "foo.Foo", 16, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr ext_type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(ext_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(ext_type));
+
+  PyRun_SimpleString(R"(class D: pass)");
+  PyObjectPtr managed_type(mainModuleGet("D"));
+  ASSERT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new), nullptr);
+  EXPECT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new),
+            PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+
+  // Instances of `ext_type` does not cause any memory leak.
+  auto new_slot = reinterpret_cast<newfunc>(
+      PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr result(new_slot(ext_type.asTypeObject(), args, kwargs));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyObject_IsInstance(result, ext_type), 1);
 }
 
 TEST_F(TypeExtensionApiTest,

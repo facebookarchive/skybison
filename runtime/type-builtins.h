@@ -85,6 +85,10 @@ void typeInitAttributes(Thread* thread, const Type& type);
 // Inherit slots defined by a C Extension
 RawObject typeInheritSlots(Thread* thread, const Type& type);
 
+// Type has a list of type slots attached to it. The type slots are used by the
+// C-API emulation layer for C extension types.
+bool typeHasSlots(const Type& type);
+
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& name);

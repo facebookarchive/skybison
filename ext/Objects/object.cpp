@@ -674,7 +674,7 @@ void finalizeExtensionObject(Thread* thread, RawObject object) {
   Runtime* runtime = thread->runtime();
   NativeProxy proxy(&scope, object);
   Type type(&scope, runtime->typeOf(*proxy));
-  DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
+  DCHECK(type.hasNativeData(),
          "A native instance must come from an extension type");
   destructor tp_dealloc =
       reinterpret_cast<destructor>(typeSlotAt(type, Py_tp_dealloc));

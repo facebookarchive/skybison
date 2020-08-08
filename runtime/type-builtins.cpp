@@ -17,6 +17,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "typeslots.h"
 
 namespace py {
 
@@ -741,16 +742,18 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // Analyze bases: Merge flags; add to subclasses list.
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
+  bool bases_have_type_slots = false;
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     flags |= base_type.flags();
     addSubclass(thread, base_type, type);
+    bases_have_type_slots |= typeHasSlots(base_type);
   }
   flags &= ~Type::Flag::kIsAbstract;
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
   type.setFlags(static_cast<Type::Flag>(flags));
 
-  if (flags & Type::Flag::kIsNativeProxy) {
+  if (bases_have_type_slots) {
     if (inherit_slots) {
       result = typeInheritSlots(thread, type);
       if (result.isErrorException()) return *result;
@@ -758,7 +761,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   }
   // TODO(T53800222): We may need a better signal than is/is not a builtin
   // class.
-  bool should_add_dunder_dict = !(flags & Type::Flag::kIsNativeProxy);
+  bool should_add_dunder_dict = !(flags & Type::Flag::kHasNativeData);
 
   Layout layout(&scope, runtime->layoutAt(LayoutId::kNoneType));
   Object dunder_slots_obj(&scope, typeAtById(thread, type, ID(__slots__)));
@@ -1048,7 +1051,7 @@ RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Type self(&scope, args.get(0));
-  if (!self.isExtensionType()) {
+  if (!self.hasNativeData()) {
     Str name(&scope, strUnderlying(self.name()));
     UNIMPLEMENTED("'__basicsize__' for type '%s'", name.toCStr());
   }

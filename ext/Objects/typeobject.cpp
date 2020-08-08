@@ -1313,7 +1313,7 @@ static void subtypeDealloc(PyObject* self) {
     base_type =
         reinterpret_cast<PyTypeObject*>(PyType_GetSlot(base_type, Py_tp_base));
     if (Type::cast(ApiHandle::fromPyTypeObject(base_type)->asObject())
-            .isExtensionType()) {
+            .hasNativeData()) {
       base_dealloc = reinterpret_cast<destructor>(
           PyType_GetSlot(base_type, Py_tp_dealloc));
     } else {
@@ -1504,9 +1504,9 @@ static const int kInheritableSlots[] = {
 };
 // clang-format on
 
-static int type_setattro(PyTypeObject* type, PyObject* name, PyObject* value) {
+static int typeSetattro(PyTypeObject* type, PyObject* name, PyObject* value) {
   DCHECK(PyType_GetFlags(type) & Py_TPFLAGS_HEAPTYPE,
-         "type_setattro requires an instance from a heap allocated C "
+         "typeSetattro requires an instance from a heap allocated C "
          "extension type");
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -1611,25 +1611,32 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
 
   // tp_new -> PyType_GenericNew
   if (typeSlotAt(type, Py_tp_new) == nullptr) {
-    typeSlotAtPut(thread, type, Py_tp_new,
-                  reinterpret_cast<void*>(&PyType_GenericNew));
+    if (!type.hasNativeData()) {
+      // Delegate object allocation to `__new__` via `defaultSlot()` if type
+      // doesn't have any native data.
+      typeSlotAtPut(thread, type, Py_tp_new,
+                    reinterpret_cast<void*>(&slotTpNew));
+    } else {
+      typeSlotAtPut(thread, type, Py_tp_new,
+                    reinterpret_cast<void*>(&PyType_GenericNew));
 
-    Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
-    Str qualname(&scope,
-                 runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
-    Code code(&scope,
-              newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
-                         ARRAYSIZE(kParamsTypeArgsKwargs),
-                         Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
-                         reinterpret_cast<void*>(&wrapVarkwTernaryfunc),
-                         reinterpret_cast<void*>(&PyType_GenericNew)));
-    Object globals(&scope, NoneType::object());
-    Function func(
-        &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
-    Object func_obj(
-        &scope, thread->invokeFunction1(ID(builtins), ID(staticmethod), func));
-    if (func_obj.isError()) return *func;
-    typeAtPutById(thread, type, ID(__new__), func_obj);
+      Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
+      Str qualname(&scope, runtime->newStrFromFmt("%S.%S", &type_name,
+                                                  &dunder_new_name));
+      Code code(&scope,
+                newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
+                           ARRAYSIZE(kParamsTypeArgsKwargs),
+                           Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
+                           reinterpret_cast<void*>(&wrapVarkwTernaryfunc),
+                           reinterpret_cast<void*>(&PyType_GenericNew)));
+      Object globals(&scope, NoneType::object());
+      Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
+                                                         globals));
+      Object func_obj(&scope, thread->invokeFunction1(ID(builtins),
+                                                      ID(staticmethod), func));
+      if (func_obj.isError()) return *func;
+      typeAtPutById(thread, type, ID(__new__), func_obj);
+    }
   }
 
   // tp_free.
@@ -1646,7 +1653,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
     Type type_type(&scope, runtime->typeAt(LayoutId::kType));
     if (typeIsSubclass(base, type_type)) {
       typeSlotAtPut(thread, type, Py_tp_setattro,
-                    reinterpret_cast<void*>(type_setattro));
+                    reinterpret_cast<void*>(typeSetattro));
     }
   }
 
@@ -1730,7 +1737,29 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     dictAtPutById(thread, dict, ID(__module__), module_name);
   }
   dictAtPutById(thread, dict, ID(__qualname__), type_name);
-  word flags = Type::Flag::kIsNativeProxy;
+
+  bool has_default_dealloc = true;
+  for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
+    int slot_id = slot->slot;
+    if (!isValidSlotId(slot_id)) {
+      thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
+      return nullptr;
+    }
+    switch (slot_id) {
+      case Py_tp_dealloc:
+      case Py_tp_del:
+      case Py_tp_finalize:
+        has_default_dealloc = false;
+    }
+  }
+
+  word flags = 0;
+  // We allocate a heap object in the C heap space only when 1) we need to
+  // execute a custom finalizer with it or 2) the type explicitly uses non-zero
+  // sizes to store a user-specified structure.
+  if (!has_default_dealloc || spec->basicsize > 0 || spec->itemsize > 0) {
+    flags = Type::Flag::kHasNativeData;
+  }
   if (spec->flags & Py_TPFLAGS_HAVE_GC) {
     flags |= Type::Flag::kHasCycleGC;
   }
@@ -1751,20 +1780,8 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   typeSlotUWordAtPut(thread, type, kSlotItemSize, spec->itemsize);
 
   // Set the type slots
-  bool has_default_dealloc = true;
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
-    int slot_id = slot->slot;
-    if (!isValidSlotId(slot_id)) {
-      thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
-      return nullptr;
-    }
-    switch (slot_id) {
-      case Py_tp_dealloc:
-      case Py_tp_del:
-      case Py_tp_finalize:
-        has_default_dealloc = false;
-    }
-    typeSlotAtPut(thread, type, slot_id, slot->pfunc);
+    typeSlotAtPut(thread, type, slot->slot, slot->pfunc);
   }
   if (has_default_dealloc) {
     type.setFlags(

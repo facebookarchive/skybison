@@ -830,7 +830,7 @@ static RawObject newExtensionType(PyObject* extension_type) {
   layout.setNumInObjectAttributes(3);
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
-  type.setFlagsAndBuiltinBase(RawType::Flag::kIsNativeProxy, LayoutId::kObject);
+  type.setFlagsAndBuiltinBase(RawType::Flag::kHasNativeData, LayoutId::kObject);
 
   extension_type->reference_ = type.raw();
   return *type;
@@ -843,7 +843,7 @@ TEST_F(TypeBuiltinsTest,
   HandleScope scope(thread_);
   PyObject extension_type;
   Type type(&scope, newExtensionType(&extension_type));
-  ASSERT_TRUE(type.hasFlag(Type::Flag::kIsNativeProxy));
+  ASSERT_TRUE(type.hasFlag(Type::Flag::kHasNativeData));
 
   Module main_module(&scope, findMainModule(runtime_));
   Str type_name(&scope, runtime_->newStrFromCStr("ExtType"));
@@ -855,7 +855,7 @@ class C(ExtType):
 )")
                    .isError());
   Type c(&scope, mainModuleAt(runtime_, "C"));
-  ASSERT_TRUE(c.hasFlag(Type::Flag::kIsNativeProxy));
+  ASSERT_TRUE(c.hasFlag(Type::Flag::kHasNativeData));
 
   Layout layout(&scope, c.instanceLayout());
   Tuple attributes(&scope, layout.inObjectAttributes());

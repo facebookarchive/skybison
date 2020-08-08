@@ -3664,12 +3664,12 @@ RawObject FUNC(_builtins, _object_class_set)(Thread* thread, Frame* frame,
   }
 
   // Handle C Extension types
-  if (instance_type.hasFlag(RawType::Flag::kIsNativeProxy) &&
-      new_type.hasFlag(RawType::Flag::kIsNativeProxy)) {
+  if (instance_type.hasFlag(RawType::Flag::kHasNativeData) &&
+      new_type.hasFlag(RawType::Flag::kHasNativeData)) {
     // TODO(T60752528): Handle __class__ setter for C Extension Types
     UNIMPLEMENTED("Check if native memory is compatible");
-  } else if (instance_type.hasFlag(RawType::Flag::kIsNativeProxy) !=
-             new_type.hasFlag(RawType::Flag::kIsNativeProxy)) {
+  } else if (instance_type.hasFlag(RawType::Flag::kHasNativeData) !=
+             new_type.hasFlag(RawType::Flag::kHasNativeData)) {
     Str type_name(&scope, new_type.name());
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
