@@ -241,10 +241,6 @@ def _caller_locals():
     _builtin()
 
 
-def _char_guard(obj):
-    _builtin()
-
-
 def _classmethod(function):
     _builtin()
 
@@ -896,6 +892,10 @@ def _str_array_iadd(self, other):
     _builtin()
 
 
+def _str_center(self, width, fillchar):
+    _builtin()
+
+
 def _str_check(obj):
     _builtin()
 
@@ -977,6 +977,10 @@ def _str_replace(self, old, newstr, count):
 
 
 def _str_rfind(self, sub, start, end):
+    _builtin()
+
+
+def _str_rjust(self, width, fillchar):
     _builtin()
 
 

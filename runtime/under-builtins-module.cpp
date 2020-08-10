@@ -1655,34 +1655,6 @@ RawObject FUNC(_builtins, _caller_locals)(Thread* thread, Frame*, word) {
                      thread->currentFrame()->previousFrame()->previousFrame());
 }
 
-RawObject FUNC(_builtins, _char_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object obj(&scope, args.get(0));
-
-  if (!thread->runtime()->isInstanceOfStr(*obj)) {
-    Function function(&scope, frame->previousFrame()->function());
-    Str function_name(&scope, function.name());
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "%S() argument must be a unicode character, not %T", &function_name,
-        &obj);
-  }
-
-  Str str(&scope, strUnderlying(*obj));
-  if (!str.isSmallStr() || str.codePointLength() != 1) {
-    Function function(&scope, frame->previousFrame()->function());
-    Str function_name(&scope, function.name());
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "%S() argument must be a unicode character, not unicode of length %d",
-        &function_name, str.codePointLength());
-  }
-
-  return NoneType::object();
-}
-
 RawObject FUNC(_builtins, _classmethod)(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -4339,6 +4311,113 @@ RawObject FUNC(_builtins, _structseq_setitem)(Thread* thread, Frame* frame,
   return structseqSetItem(thread, self, index, value);
 }
 
+static RawObject padString(Thread* thread, const Str& str,
+                           const SmallStr& fillchar, word str_length,
+                           word left_padding, word fill_char_length,
+                           word result_length) {
+  // Optimize to use SmallStr for results less than the small string max length
+  if (result_length <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    for (word i = 0; i < left_padding; i += fill_char_length) {
+      fillchar.copyTo(&buffer[i], fill_char_length);
+    }
+    str.copyTo(&buffer[left_padding], str_length);
+    for (word i = left_padding + str_length; i < result_length;
+         i += fill_char_length) {
+      fillchar.copyTo(&buffer[i], fill_char_length);
+    }
+
+    return SmallStr::fromBytes({buffer, result_length});
+  }
+
+  HandleScope scope(thread);
+
+  MutableBytes buffer(
+      &scope, thread->runtime()->newMutableBytesUninitialized(result_length));
+
+  {
+    // In order to improve performance for string operations we write directly
+    // to the memory address of the buffer. This operation requires NO calls
+    // which could potentially trigger allocations in order to ensure memory
+    // consistency.
+    byte* dst = reinterpret_cast<byte*>(buffer.address());
+
+    for (word i = 0; i < left_padding; i += fill_char_length) {
+      fillchar.copyTo(&dst[i], fill_char_length);
+    }
+    str.copyTo(&dst[left_padding], str_length);
+    for (word i = left_padding + str_length; i < result_length;
+         i += fill_char_length) {
+      fillchar.copyTo(&dst[i], fill_char_length);
+    }
+  }
+
+  return buffer.becomeStr();
+}
+RawObject FUNC(_builtins, _str_center)(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(str));
+  }
+
+  Object width_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*width_obj)) {
+    return Unbound::object();
+  }
+  Int width_int(&scope, intUnderlying(*width_obj));
+  if (width_int.isLargeInt()) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "int too large to convert to an index");
+  }
+  word width = width_int.asWord();
+
+  Object fillchar_obj(&scope, args.get(2));
+  if (!runtime->isInstanceOfStr(*fillchar_obj)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "The fill character must be a unicode character, not a '%T'",
+        &fillchar_obj);
+  }
+
+  Str fillchar_str(&scope, strUnderlying(*fillchar_obj));
+  if (!fillchar_str.isSmallStr() || fillchar_str.codePointLength() != 1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "The fill character must be exactly one character long");
+  }
+
+  SmallStr fillchar(&scope, *fillchar_str);
+
+  Str self(&scope, strUnderlying(*self_obj));
+
+  word self_codepoints = self.codePointLength();
+  if (self_codepoints >= width) {
+    return *self;
+  }
+
+  word self_length = self.length();
+  word fill_char_length = fillchar.length();
+  word fill_char_count = width - self_codepoints;
+  word fill_length = fill_char_length * fill_char_count;
+  word result_length = self_length + fill_length;
+
+  word left_padding = fill_char_count / 2;
+
+  // When fill characters cannot be evenly distributed place the extra on the
+  // left.
+  if (fill_char_count % 2 != 0 && width % 2 != 0) {
+    left_padding += 1;
+  }
+  left_padding *= fill_char_length;
+
+  return padString(thread, self, fillchar, self_length, left_padding,
+                   fill_char_length, result_length);
+}
+
 RawObject FUNC(_builtins, _str_check)(Thread* thread, Frame* frame,
                                       word nargs) {
   Arguments args(frame, nargs);
@@ -4648,13 +4727,14 @@ RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
 
   Object width_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*width_obj)) {
     return Unbound::object();
   }
+
   Int width_int(&scope, intUnderlying(*width_obj));
   if (width_int.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -4664,13 +4744,20 @@ RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Frame* frame,
 
   Object fillchar_obj(&scope, args.get(2));
   if (!runtime->isInstanceOfStr(*fillchar_obj)) {
-    return Unbound::object();
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "The fill character must be a unicode character, not a '%T'",
+        &fillchar_obj);
   }
 
-  Str fillchar(&scope, strUnderlying(*fillchar_obj));
-  if (!fillchar.isSmallStr() || fillchar.codePointLength() != 1) {
-    return Unbound::object();
+  Str fillchar_str(&scope, strUnderlying(*fillchar_obj));
+  if (!fillchar_str.isSmallStr() || fillchar_str.codePointLength() != 1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "The fill character must be exactly one character long");
   }
+
+  SmallStr fillchar(&scope, *fillchar_str);
 
   Str self(&scope, strUnderlying(*self_obj));
 
@@ -4680,30 +4767,15 @@ RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Frame* frame,
   }
 
   word self_length = self.length();
-  word fill_length = fillchar.length();
-  word result_length = self_length + fill_length * (width - self_codepoints);
+  word fill_char_length = fillchar.length();
+  word fill_char_count = width - self_codepoints;
+  word fill_length = fill_char_length * fill_char_count;
+  word result_length = self_length + fill_length;
 
-  if (result_length <= SmallStr::kMaxLength) {
-    byte buffer[SmallStr::kMaxLength];
-
-    self.copyTo(buffer, self_length);
-    for (word i = self_length; i < result_length; i += fill_length) {
-      fillchar.copyTo(&buffer[i], fill_length);
-    }
-
-    return SmallStr::fromBytes({buffer, result_length});
-  }
-
-  MutableBytes buffer(&scope,
-                      runtime->newMutableBytesUninitialized(result_length));
-  buffer.replaceFromWithStr(0, *self, self_length);
-  for (word i = self_length; i < result_length; i += fill_length) {
-    buffer.replaceFromWithStr(i, *fillchar, fill_length);
-  }
-
-  return buffer.becomeStr();
+  word left_padding = 0;
+  return padString(thread, self, fillchar, self_length, left_padding,
+                   fill_char_length, result_length);
 }
-
 RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
@@ -4870,6 +4942,62 @@ RawObject FUNC(_builtins, _str_rfind)(Thread* thread, Frame* frame,
   Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   word result = strRFind(haystack, needle, start, end);
   return SmallInt::fromWord(result);
+}
+
+RawObject FUNC(_builtins, _str_rjust)(Thread* thread, Frame* frame,
+                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(str));
+  }
+
+  Object width_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*width_obj)) {
+    return Unbound::object();
+  }
+  Int width_int(&scope, intUnderlying(*width_obj));
+  if (width_int.isLargeInt()) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "int too large to convert to an index");
+  }
+  word width = width_int.asWord();
+
+  Object fillchar_obj(&scope, args.get(2));
+  if (!runtime->isInstanceOfStr(*fillchar_obj)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "The fill character must be a unicode character, not a '%T'",
+        &fillchar_obj);
+  }
+
+  Str fillchar_str(&scope, strUnderlying(*fillchar_obj));
+  if (!fillchar_str.isSmallStr() || fillchar_str.codePointLength() != 1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "The fill character must be exactly one character long");
+  }
+
+  SmallStr fillchar(&scope, *fillchar_str);
+
+  Str self(&scope, strUnderlying(*self_obj));
+
+  word self_codepoints = self.codePointLength();
+  if (self_codepoints >= width) {
+    return *self;
+  }
+
+  word self_length = self.length();
+  word fill_char_length = fillchar.length();
+  word fill_char_count = width - self_codepoints;
+  word fill_length = fill_char_length * fill_char_count;
+  word result_length = self_length + fill_length;
+
+  word left_padding = fill_length;
+  return padString(thread, self, fillchar, self_length, left_padding,
+                   fill_char_length, result_length);
 }
 
 // Look for needle in haystack, starting from the right. Return a tuple

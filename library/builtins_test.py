@@ -15801,6 +15801,13 @@ class StrTests(unittest.TestCase):
         self.assertIs(type(s), str)
         self.assertEqual(s, "der fluss")
 
+    def test_center_with_non_int_index_width_calls_dunder_index(self):
+        class W:
+            def __index__(self):
+                return 5
+
+        self.assertEqual(str.center("abc", W()), " abc ")
+
     def test_center_returns_justified_string(self):
         self.assertEqual(str.center("abc", -1), "abc")
         self.assertEqual(str.center("abc", 0), "abc")
@@ -16380,6 +16387,13 @@ class StrTests(unittest.TestCase):
         self.assertIs(str.ljust(s, 5), s)
         self.assertIs(str.ljust(s, len(s)), s)
 
+    def test_ljust_with_non_int_index_width_calls_dunder_index(self):
+        class W:
+            def __index__(self):
+                return 5
+
+        self.assertEqual(str.ljust("abc", W()), "abc  ")
+
     def test_ljust_with_fillchar_not_char_raises_type_error(self):
         self.assertRaises(TypeError, str.ljust, "", 2, "")
         self.assertRaises(TypeError, str.ljust, "", 2, ",,")
@@ -16448,6 +16462,13 @@ class StrTests(unittest.TestCase):
         self.assertIs(str.rjust(s, -1), s)
         self.assertIs(str.rjust(s, 5), s)
         self.assertIs(str.rjust(s, len(s)), s)
+
+    def test_rjust_with_non_int_index_width_calls_dunder_index(self):
+        class W:
+            def __index__(self):
+                return 5
+
+        self.assertEqual(str.rjust("abc", W()), "  abc")
 
     def test_rjust_with_fillchar_not_char_raises_type_error(self):
         with self.assertRaisesRegex(

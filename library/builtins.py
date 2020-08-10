@@ -64,7 +64,6 @@ from _builtins import (
     _byteslike_startswith,
     _caller_function,
     _caller_locals,
-    _char_guard,
     _classmethod,
     _classmethod_isabstract,
     _code_check,
@@ -204,6 +203,7 @@ from _builtins import (
     _slice_stop_long,
     _staticmethod_isabstract,
     _str_array_iadd,
+    _str_center,
     _str_check,
     _str_check_exact,
     _str_count,
@@ -223,6 +223,7 @@ from _builtins import (
     _str_partition,
     _str_replace,
     _str_rfind,
+    _str_rjust,
     _str_rpartition,
     _str_split,
     _str_splitlines,
@@ -5979,20 +5980,10 @@ class str(bootstrap=True):
         _builtin()
 
     def center(self, width: int, fillchar: str = " ") -> str:
-        _str_guard(self)
-        width = _index(width)
-        if not _str_check(fillchar):
-            raise TypeError(
-                f"center() argument 2 must be str, not {_type(fillchar).__name__}"
-            )
-        if _str_len(fillchar) != 1:
-            raise TypeError("The fill character must be exactly one character long")
-
-        pad = width - _str_len(self)
-        if pad <= 0:
-            return self
-        left_pad = (pad >> 1) + (pad & width & 1)
-        return fillchar * left_pad + self + fillchar * (pad - left_pad)
+        result = _str_center(self, width, fillchar)
+        if result is not _Unbound:
+            return result
+        return _str_center(self, _index(width), fillchar)
 
     def count(self, sub, start=None, end=None):
         _str_guard(self)
@@ -6137,10 +6128,7 @@ class str(bootstrap=True):
         result = _str_ljust(self, width, fillchar)
         if result is not _Unbound:
             return result
-
-        _char_guard(fillchar)
-        width = _index(width)
-        return _str_ljust(self, width, fillchar)
+        return _str_ljust(self, _index(width), fillchar)
 
     def lower(self):
         _builtin()
@@ -6222,16 +6210,10 @@ class str(bootstrap=True):
         _unimplemented()
 
     def rjust(self, width: int, fillchar: str = " ") -> str:
-        _str_guard(self)
-        width = _index(width)
-        if not _str_check(fillchar):
-            raise TypeError(
-                f"rjust() argument 2 must be str, not {_type(fillchar).__name__}"
-            )
-        if _str_len(fillchar) != 1:
-            raise TypeError("The fill character must be exactly one character long")
-        padding = width - _str_len(self)
-        return fillchar * padding + self if padding > 0 else self
+        result = _str_rjust(self, width, fillchar)
+        if result is not _Unbound:
+            return result
+        return _str_rjust(self, _index(width), fillchar)
 
     def rpartition(self, sep):
         _str_guard(self)
