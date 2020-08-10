@@ -1,15 +1,13 @@
 #include "builtins.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "capi.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "modules.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "unicode-db.h"
-
-extern "C" unsigned char _PyLong_DigitValue[];  // from Include/longobject.h
-extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
 
 namespace py {
 

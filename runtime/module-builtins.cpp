@@ -2,6 +2,7 @@
 
 #include "builtins.h"
 #include "capi-handles.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"

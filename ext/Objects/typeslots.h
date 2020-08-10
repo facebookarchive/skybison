@@ -15,8 +15,6 @@ bool isObjectSlotId(int slot_id);
 
 void typeSlotsAllocate(Thread* thread, const Type& type);
 
-bool typeHasSlots(const Type& type);
-
 void* typeSlotAt(const Type& type, int slot_id);
 RawObject typeSlotObjectAt(const Type& type, int slot_id);
 uword typeSlotUWordAt(const Type& type, int slot_id);

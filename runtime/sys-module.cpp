@@ -9,6 +9,7 @@
 #include "builtins-module.h"
 #include "builtins.h"
 #include "bytes-builtins.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
@@ -26,8 +27,6 @@
 #include "version.h"
 
 namespace py {
-
-extern struct _inittab _PyImport_Inittab[];
 
 void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
                                 View<byte> bytecode) {

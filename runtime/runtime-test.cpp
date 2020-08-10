@@ -7,6 +7,7 @@
 
 #include "bytecode.h"
 #include "bytes-builtins.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
@@ -3084,8 +3085,6 @@ def gen():
   GeneratorFrame generator_frame(&scope, *frame_obj);
   EXPECT_EQ(generator_frame.maxStackSize(), gen.stacksize());
 }
-
-extern "C" struct _inittab _PyImport_Inittab[];
 
 TEST_F(RuntimeModuleTest, ImportModuleFromInitTab) {
   ASSERT_FALSE(runFromCStr(runtime_, "import _empty").isError());

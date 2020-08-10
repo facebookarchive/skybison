@@ -7,6 +7,7 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "float-builtins.h"
@@ -3842,10 +3843,6 @@ RawObject FUNC(_builtins, _range_len)(Thread* thread, Frame* frame,
   Object step(&scope, self.step());
   return rangeLen(thread, start, stop, step);
 }
-
-// TODO(T67311848): Remove this. This is a temporary workaround until we fork
-// the readline module into the runtime.
-extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
 
 RawObject FUNC(_builtins, _readline)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);

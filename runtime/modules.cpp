@@ -1,6 +1,7 @@
 #include "modules.h"
 
 #include "builtins.h"
+#include "capi.h"
 #include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"

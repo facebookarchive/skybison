@@ -9,6 +9,7 @@
 
 #include "builtins-module.h"
 #include "capi-handles.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "function-builtins.h"
 #include "function-utils.h"

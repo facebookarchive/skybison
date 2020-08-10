@@ -44,13 +44,6 @@ NODISCARD RawObject executeModule(Thread* thread, const Code& code,
 NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
                                           const Object& name);
 
-// Initialize built-in extension module `name` if it exists, otherwise
-// return `nullptr`.
-RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name);
-
-// Returns `true` if there is a built-in extension module with name `name`.
-bool isBuiltinExtensionModule(const Str& name);
-
 // Returns `true` if there is a frozen module with name `name`.
 bool isFrozenModule(const Str& name);
 

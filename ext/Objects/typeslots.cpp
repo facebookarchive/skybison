@@ -2,6 +2,7 @@
 
 #include "cpython-data.h"
 
+#include "capi.h"
 #include "handles.h"
 #include "runtime.h"
 #include "thread.h"
