@@ -6288,7 +6288,17 @@ class str(bootstrap=True):
         _builtin()
 
     def swapcase(self):
-        _unimplemented()
+        _str_guard(self)
+        result = _str_array()
+        for ch in self:
+            if ch.isupper():
+                # TODO(T71506198): Implement special case for final sigma conversion
+                if ch == "\u03a3":
+                    _unimplemented()
+                _str_array_iadd(result, ch.lower())
+            else:
+                _str_array_iadd(result, ch.upper())
+        return str(result)
 
     def title(self):
         _builtin()

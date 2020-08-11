@@ -16679,6 +16679,33 @@ class StrTests(unittest.TestCase):
 
         self.assertEqual(str(A()), "test")
 
+    def test_swapcase_with_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.swapcase(4)
+        self.assertIn(
+            "'swapcase' requires a 'str' object but received a 'int'",
+            str(context.exception),
+        )
+
+    def test_swapcase_returns_inverted_string(self):
+        self.assertEqual("hEllO CoMPuTErS".swapcase(), "HeLLo cOmpUteRs")
+        self.assertEqual("TTT".swapcase(), "ttt")
+        self.assertEqual("ttt".swapcase(), "TTT")
+        self.assertEqual("T".swapcase(), "t")
+        self.assertEqual(" ".swapcase(), " ")
+        self.assertEqual("".swapcase(), "")
+
+    def test_swapcase_with_unicode_returns_inverted_string(self):
+        self.assertEqual("\U0001044F".swapcase(), "\U00010427")
+        self.assertEqual("\U00010427".swapcase(), "\U0001044F")
+        self.assertEqual("\U0001044F\U0001044F".swapcase(), "\U00010427\U00010427")
+        self.assertEqual("\U00010427\U0001044F".swapcase(), "\U0001044F\U00010427")
+        self.assertEqual("\U0001044F\U00010427".swapcase(), "\U00010427\U0001044F")
+        self.assertEqual("X\U00010427x\U0001044F".swapcase(), "x\U0001044FX\U00010427")
+        self.assertEqual("ﬁ".swapcase(), "FI")
+        self.assertEqual("\u0130".swapcase(), "\u0069\u0307")
+        self.assertEqual("\u00e9TuDe".swapcase(), "\u00c9tUdE")
+
     def test_title_with_returns_titlecased_string(self):
         self.assertEqual("".title(), "")
         self.assertEqual("1234!@#$".title(), "1234!@#$")
