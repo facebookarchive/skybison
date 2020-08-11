@@ -40,8 +40,12 @@ TEST_F(PylifecycleExtensionApiTest, GetsigGetsCurrentSignalHandler) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
+  Py_DontWriteBytecodeFlag = 1;
   Py_IgnoreEnvironmentFlag = 0;
+  Py_IsolatedFlag = 0;
   Py_NoSiteFlag = 1;
+  Py_NoUserSiteDirectory = 0;
+  Py_QuietFlag = 0;
   Py_VerboseFlag = 13;
   Py_Initialize();
 
@@ -49,8 +53,14 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
     PyObjectPtr flags(moduleGet("sys", "flags"));
     ASSERT_NE(flags.get(), nullptr);
     EXPECT_TRUE(isLongEqualsLong(
+        PyObject_GetAttrString(flags, "dont_write_bytecode"), 1));
+    EXPECT_TRUE(isLongEqualsLong(
         PyObject_GetAttrString(flags, "ignore_environment"), 0));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "isolated"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 1));
+    EXPECT_TRUE(
+        isLongEqualsLong(PyObject_GetAttrString(flags, "no_user_site"), 0));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "quiet"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "verbose"), 13));
   }
 
@@ -58,8 +68,12 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
+  Py_DontWriteBytecodeFlag = 0;
   Py_IgnoreEnvironmentFlag = 1;
+  Py_IsolatedFlag = 1;
   Py_NoSiteFlag = 0;
+  Py_NoUserSiteDirectory = 1;
+  Py_QuietFlag = 1;
   Py_VerboseFlag = 0;
   Py_Initialize();
 
@@ -67,8 +81,14 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
     PyObjectPtr flags(moduleGet("sys", "flags"));
     ASSERT_NE(flags.get(), nullptr);
     EXPECT_TRUE(isLongEqualsLong(
+        PyObject_GetAttrString(flags, "dont_write_bytecode"), 0));
+    EXPECT_TRUE(isLongEqualsLong(
         PyObject_GetAttrString(flags, "ignore_environment"), 1));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "isolated"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 0));
+    EXPECT_TRUE(
+        isLongEqualsLong(PyObject_GetAttrString(flags, "no_user_site"), 1));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "quiet"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "verbose"), 0));
   }
 

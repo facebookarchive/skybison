@@ -162,7 +162,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         Py_IsolatedFlag++;
         Py_NoUserSiteDirectory++;
         Py_IgnoreEnvironmentFlag++;
-        UNIMPLEMENTED("Isolate Flag");
         break;
       case 'O':
         Py_OptimizeFlag++;
@@ -170,11 +169,9 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'B':
         Py_DontWriteBytecodeFlag++;
-        UNIMPLEMENTED("Don't Write Bytecode Flag");
         break;
       case 's':
         Py_NoUserSiteDirectory++;
-        UNIMPLEMENTED("No User Site Directory");
         break;
       case 'S':
         Py_NoSiteFlag++;
@@ -193,10 +190,8 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         UNIMPLEMENTED("skip first line");
         break;
       case 'h':
-        print_help = true;
-        break;
       case '?':
-        UNIMPLEMENTED("Help for invalid option");
+        print_help = true;
         break;
       case 'V':
         print_version++;
@@ -212,7 +207,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'q':
         Py_QuietFlag++;
-        UNIMPLEMENTED("Quiet Flag");
         break;
       default:
         UNREACHABLE("Unexpected value returned from getopt_long()");

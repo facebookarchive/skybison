@@ -292,8 +292,9 @@ static void initializeSysFromGlobals(Thread* thread) {
   data.atPut(static_cast<word>(SysFlag::kInteractive), SmallInt::fromWord(0));
   data.atPut(static_cast<word>(SysFlag::kOptimize), SmallInt::fromWord(0));
   data.atPut(static_cast<word>(SysFlag::kDontWriteBytecode),
-             SmallInt::fromWord(0));
-  data.atPut(static_cast<word>(SysFlag::kNoUserSite), SmallInt::fromWord(0));
+             SmallInt::fromWord(Py_DontWriteBytecodeFlag));
+  data.atPut(static_cast<word>(SysFlag::kNoUserSite),
+             SmallInt::fromWord(Py_NoUserSiteDirectory));
   data.atPut(static_cast<word>(SysFlag::kNoSite),
              SmallInt::fromWord(Py_NoSiteFlag));
   data.atPut(static_cast<word>(SysFlag::kIgnoreEnvironment),
@@ -301,10 +302,12 @@ static void initializeSysFromGlobals(Thread* thread) {
   data.atPut(static_cast<word>(SysFlag::kVerbose),
              SmallInt::fromWord(Py_VerboseFlag));
   data.atPut(static_cast<word>(SysFlag::kBytesWarning), SmallInt::fromWord(0));
-  data.atPut(static_cast<word>(SysFlag::kQuiet), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kQuiet),
+             SmallInt::fromWord(Py_QuietFlag));
   data.atPut(static_cast<word>(SysFlag::kHashRandomization),
              SmallInt::fromWord(1));
-  data.atPut(static_cast<word>(SysFlag::kIsolated), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kIsolated),
+             SmallInt::fromWord(Py_IsolatedFlag));
   data.atPut(static_cast<word>(SysFlag::kDevMode), Bool::falseObj());
   data.atPut(static_cast<word>(SysFlag::kUTF8Mode), SmallInt::fromWord(1));
   static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
