@@ -86,6 +86,18 @@ class OptionsTest(unittest.TestCase):
             )
             self.assertIn(f"sys.path: ['', '{path0}', '{path1}'", result.stdout)
 
+    def test_PYTHONWARNINGS_adds_warnoptions(self):
+        env = dict(os.environ)
+        env["PYTHONWARNINGS"] = "foo,bar"
+        code = "import sys;print('warnoptions: ' + str(sys.warnoptions))"
+        result = subprocess.run(
+            [sys.executable, "-W", "baz", "-W", "bam", "-c", code],
+            check=True,
+            capture_output=True,
+            env=env,
+        )
+        self.assertIn(b"warnoptions: ['foo', 'bar', 'baz', 'bam']", result.stdout)
+
     def test_S_option_sets_no_site_flag(self):
         result = subprocess.run(
             [sys.executable, "-S", "-c", "import sys;print(sys.flags)"],
@@ -110,6 +122,17 @@ class OptionsTest(unittest.TestCase):
         self.assertIn(
             f"Python {version.major}.{version.minor}.{version.micro}", result.stdout
         )
+
+    def test_W_option_adds_warnoptions(self):
+        env = dict(os.environ)
+        code = "import sys;print('warnoptions: ' + str(sys.warnoptions))"
+        result = subprocess.run(
+            [sys.executable, "-W", "foo", "-W", "ba,r", "-c", code],
+            check=True,
+            capture_output=True,
+            env=env,
+        )
+        self.assertIn(b"warnoptions: ['foo', 'ba,r']", result.stdout)
 
     def test_c_option_runs_python_code(self):
         result = subprocess.run(

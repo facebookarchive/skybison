@@ -151,9 +151,10 @@ void initializeRuntimePaths(Thread* thread) {
 }
 
 RawObject initializeSys(Thread* thread, const Str& executable,
-                        const List& python_path, const Tuple& flags_data) {
-  return thread->invokeFunction3(ID(sys), ID(_init), executable, python_path,
-                                 flags_data);
+                        const List& python_path, const Tuple& flags_data,
+                        const List& warnoptions) {
+  return thread->invokeFunction4(ID(sys), ID(_init), executable, python_path,
+                                 flags_data, warnoptions);
 }
 
 static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,

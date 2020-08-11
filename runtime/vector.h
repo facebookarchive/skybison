@@ -118,15 +118,15 @@ class Vector {
     end_--;
   }
 
- private:
-  static constexpr int kGrowthFactor = 2;
-
   void release() {
     std::free(begin_);
     begin_ = nullptr;
     end_ = nullptr;
     end_storage_ = nullptr;
   }
+
+ private:
+  static constexpr int kGrowthFactor = 2;
 
   void grow(size_type new_cap) {
     auto const old_cap = capacity();

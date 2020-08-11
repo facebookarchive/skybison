@@ -15,10 +15,13 @@
 #include "os.h"
 #include "runtime.h"
 #include "thread.h"
+#include "vector.h"
 #include "version.h"
 #include "view.h"
 
 namespace py {
+
+extern Vector<const char*> warn_options;
 
 static const char* const kInteractiveHelp =
     R"(Type "help", "copyright", "credits" or "license" for more information.)";
@@ -130,6 +133,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
 
   optind = 1;
 
+  DCHECK(warn_options.empty(), "warn options should be empty");
   int option;
   while ((option = getopt_long(argc, argv, kSupportedOpts, kSupportedLongOpts,
                                nullptr)) != -1) {
@@ -193,7 +197,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         print_version++;
         break;
       case 'W':
-        UNIMPLEMENTED("Warning options");
+        warn_options.push_back(optarg);
         break;
       case 'X':
         woptarg = Py_DecodeLocale(optarg, nullptr);

@@ -32,7 +32,8 @@ void initializeRuntimePaths(Thread* thread);
 // Initializes sys module with data that can vary between startups.  This must
 // be called after the runtime constructor and before Runtime::initialize().
 RawObject initializeSys(Thread* thread, const Str& executable,
-                        const List& python_path, const Tuple& flags_data);
+                        const List& python_path, const Tuple& flags_data,
+                        const List& warnoptions);
 
 // Internal equivalents to PySys_Write(Stdout|Stderr): Write a formatted string
 // to sys.stdout or sys.stderr, or stdout or stderr if writing to the Python

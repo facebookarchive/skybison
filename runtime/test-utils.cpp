@@ -62,7 +62,9 @@ static RawObject initializeSysWithDefaults(Thread* thread) {
   static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
                 "unexpected flag count");
   Tuple flags_data(&scope, data.becomeImmutable());
-  return initializeSys(thread, executable, python_path, flags_data);
+  List warnoptions(&scope, runtime->newList());
+  return initializeSys(thread, executable, python_path, flags_data,
+                       warnoptions);
 }
 
 Runtime* createTestRuntime() {

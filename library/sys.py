@@ -98,7 +98,7 @@ _VersionInfo = _structseq_new_type(
 )
 
 
-def _init(_executable, _python_path, _flags_data):
+def _init(_executable, _python_path, _flags_data, _warnoptions):
     global executable
     executable = _executable
 
@@ -120,6 +120,9 @@ def _init(_executable, _python_path, _flags_data):
 
     global flags
     flags = _Flags(_flags_data)
+
+    global warnoptions
+    warnoptions = _warnoptions
 
 
 def __displayhook__(value):
@@ -307,7 +310,7 @@ stdout = _IOStream(_stdout_fd)
 version_info = _version
 
 
-warnoptions = []
+warnoptions = None  # will be set by _init
 
 
 def _program_name():

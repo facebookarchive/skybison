@@ -17,6 +17,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "sys-module.h"
+#include "vector.h"
 
 extern "C" int _PyCapsule_Init(void);
 extern "C" int _PySTEntry_Init(void);
@@ -39,6 +40,10 @@ int Py_UnbufferedStdioFlag = 0;
 int Py_VerboseFlag = 0;
 
 namespace py {
+
+// Used by Py_BytesMain to store `-W` options. `Py_Initialize` will read
+// them and clear the vector.
+Vector<const char*> warn_options;
 
 PY_EXPORT PyOS_sighandler_t PyOS_getsig(int signum) {
   return OS::signalHandler(signum);
@@ -284,6 +289,24 @@ static void initializeSysFromGlobals(Thread* thread) {
     python_path_obj = runtime->newList();
   }
   List python_path(&scope, *python_path_obj);
+  const char* warnoptions_cstr =
+      Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONWARNINGS");
+  Object warnoptions_obj(&scope, NoneType::object());
+  if (warnoptions_cstr != nullptr) {
+    Str warnoptions_str(&scope, runtime->newStrFromCStr(warnoptions_cstr));
+    Str sep(&scope, SmallStr::fromCStr(","));
+    warnoptions_obj = strSplit(thread, warnoptions_str, sep, kMaxWord);
+  } else {
+    warnoptions_obj = runtime->newList();
+  }
+  List warnoptions(&scope, *warnoptions_obj);
+  Object option(&scope, NoneType::object());
+  for (word i = 0, size = warn_options.size(); i < size; i++) {
+    option = runtime->newStrFromCStr(warn_options[i]);
+    runtime->listAdd(thread, warnoptions, option);
+  }
+  warn_options.release();
+
   MutableTuple data(
       &scope, runtime->newMutableTuple(static_cast<word>(SysFlag::kNumFlags)));
   data.atPut(static_cast<word>(SysFlag::kDebug),
@@ -318,7 +341,8 @@ static void initializeSysFromGlobals(Thread* thread) {
   static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
                 "unexpected flag count");
   Tuple flags_data(&scope, data.becomeImmutable());
-  CHECK(initializeSys(thread, executable, python_path, flags_data).isNoneType(),
+  CHECK(initializeSys(thread, executable, python_path, flags_data, warnoptions)
+            .isNoneType(),
         "initializeSys() failed");
 }
 

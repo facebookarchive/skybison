@@ -811,6 +811,7 @@ class Runtime;
   V(warn)                                                                      \
   V(warn_explicit)                                                             \
   V(warnings)                                                                  \
+  V(warnoptions)                                                               \
   V(weakref)                                                                   \
   V(write)                                                                     \
   V(xor)
