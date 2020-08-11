@@ -298,7 +298,8 @@ static void initializeSysFromGlobals(Thread* thread) {
              SmallInt::fromWord(Py_NoSiteFlag));
   data.atPut(static_cast<word>(SysFlag::kIgnoreEnvironment),
              SmallInt::fromWord(0));
-  data.atPut(static_cast<word>(SysFlag::kVerbose), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kVerbose),
+             SmallInt::fromWord(Py_VerboseFlag));
   data.atPut(static_cast<word>(SysFlag::kBytesWarning), SmallInt::fromWord(0));
   data.atPut(static_cast<word>(SysFlag::kQuiet), SmallInt::fromWord(0));
   data.atPut(static_cast<word>(SysFlag::kHashRandomization),

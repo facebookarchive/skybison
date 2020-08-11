@@ -189,7 +189,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'v':
         Py_VerboseFlag++;
-        UNIMPLEMENTED("Verbose flag");
         break;
       case 'x':
         UNIMPLEMENTED("skip first line");
