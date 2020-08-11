@@ -10,6 +10,7 @@
 #include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "float-builtins.h"
 #include "float-conversion.h"
 #include "heap-profiler.h"
@@ -3757,16 +3758,10 @@ RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
   }
   std::unique_ptr<byte[]> buffer(new byte[count]);
   bytes_buf.copyTo(buffer.get(), count);
-  ssize_t result;
-  {
-    int fd = SmallInt::cast(*fd_obj).value();
-    do {
-      result = ::write(fd, buffer.get(), count);
-    } while (result == -1 && errno == EINTR);
-  }
-  if (result == -1) {
-    DCHECK(errno != EINTR, "this should have been handled in the loop");
-    return thread->raiseOSErrorFromErrno(errno);
+  int fd = SmallInt::cast(*fd_obj).value();
+  ssize_t result = File::write(fd, buffer.get(), count);
+  if (result < 0) {
+    return thread->raiseOSErrorFromErrno(-result);
   }
   return SmallInt::fromWord(result);
 }

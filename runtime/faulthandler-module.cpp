@@ -45,7 +45,7 @@ static void disableFatalHandler(FaultHandler* handler) {
 static RawObject getFileno(Thread* thread, const Object& file) {
   Runtime* runtime = thread->runtime();
   if (file.isNoneType()) {
-    return SmallInt::fromWord(kStderrFd);
+    return SmallInt::fromWord(File::kStderr);
   }
   if (runtime->isInstanceOfInt(*file)) {
     RawInt fd = intUnderlying(*file);

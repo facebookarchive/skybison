@@ -12,6 +12,7 @@
 #include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -39,11 +40,11 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   Object platform(&scope, runtime->newStrFromCStr(OS::name()));
   moduleAtPutById(thread, module, ID(platform), platform);
 
-  Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
+  Object stderr_fd_val(&scope, SmallInt::fromWord(File::kStderr));
   moduleAtPutById(thread, module, ID(_stderr_fd), stderr_fd_val);
-  Object stdin_fd_val(&scope, SmallInt::fromWord(kStdinFd));
+  Object stdin_fd_val(&scope, SmallInt::fromWord(File::kStdin));
   moduleAtPutById(thread, module, ID(_stdin_fd), stdin_fd_val);
-  Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
+  Object stdout_fd_val(&scope, SmallInt::fromWord(File::kStdout));
   moduleAtPutById(thread, module, ID(_stdout_fd), stdout_fd_val);
 
   // TODO(T58291784): Make getenv system agnostic

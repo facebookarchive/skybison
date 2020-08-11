@@ -64,14 +64,17 @@ int File::truncate(int fd, int64_t size) {
   return result < 0 ? -errno : 0;
 }
 
-int File::write(int fd, const void* buffer, size_t size) {
-  int result = TEMP_FAILURE_RETRY(::write(fd, buffer, size));
+ssize_t File::write(int fd, const void* buffer, size_t size) {
+  ssize_t result = TEMP_FAILURE_RETRY(::write(fd, buffer, size));
   return result < 0 ? -errno : result;
 }
 
 const word File::kBinaryFlag = 0;
 const word File::kCreate = O_CREAT;
 const word File::kNoInheritFlag = O_CLOEXEC;
+const word File::kStderr = STDERR_FILENO;
+const word File::kStdin = STDIN_FILENO;
+const word File::kStdout = STDOUT_FILENO;
 const word File::kTruncate = O_TRUNC;
 const word File::kWriteOnly = O_WRONLY;
 

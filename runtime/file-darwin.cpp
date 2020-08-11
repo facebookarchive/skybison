@@ -34,21 +34,17 @@ int File::isInheritable(int fd) {
 int File::open(const char* path, int flags, int mode) {
   int result;
   do {
-    errno = 0;
     // Set non-inheritable by default
     result = ::open(path, flags | O_CLOEXEC, mode);
   } while (result == -1 && errno == EINTR);
-  DCHECK(errno != EINTR, "this should have been handled in the loop");
   return result < 0 ? -errno : result;
 }
 
 ssize_t File::read(int fd, void* buffer, size_t count) {
   int result;
   do {
-    errno = 0;
     result = ::read(fd, buffer, count);
   } while (result == -1 && errno == EINTR);
-  DCHECK(errno != EINTR, "this should have been handled in the loop");
   return result < 0 ? -errno : result;
 }
 
@@ -73,18 +69,20 @@ int File::truncate(int fd, int64_t size) {
   return result < 0 ? -errno : 0;
 }
 
-int File::write(int fd, const void* buffer, size_t size) {
-  int result;
+ssize_t File::write(int fd, const void* buffer, size_t size) {
+  ssize_t result;
   do {
     result = ::write(fd, buffer, size);
   } while (result == -1 && errno == EINTR);
-  DCHECK(errno != EINTR, "this should have been handled in the loop");
   return result < 0 ? -errno : result;
 }
 
 const word File::kBinaryFlag = 0;
 const word File::kCreate = O_CREAT;
 const word File::kNoInheritFlag = O_CLOEXEC;
+const word File::kStderr = STDERR_FILENO;
+const word File::kStdin = STDIN_FILENO;
+const word File::kStdout = STDOUT_FILENO;
 const word File::kTruncate = O_TRUNC;
 const word File::kWriteOnly = O_WRONLY;
 

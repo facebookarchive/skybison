@@ -42,7 +42,7 @@ class File {
   static int truncate(int fd, int64_t size);
 
   // Return number of bytes written. Return -errno on error.
-  static int write(int fd, const void* buffer, size_t size);
+  static ssize_t write(int fd, const void* buffer, size_t size);
 
   // TODO(T61930691): Remove these flags in favor of a simpler interface like a
   // mode string
@@ -58,6 +58,10 @@ class File {
   static const word kTruncate;
 
   static const word kWriteOnly;
+
+  static const word kStderr;
+  static const word kStdin;
+  static const word kStdout;
 };
 
 }  // namespace py
