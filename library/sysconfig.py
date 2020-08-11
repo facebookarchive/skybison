@@ -549,6 +549,14 @@ def get_config_vars(*args):
             _init_non_posix(_CONFIG_VARS)
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
+        # Set some variables based on install scheme if missing.
+        if not "BINLIBDEST" in _CONFIG_VARS:
+            _CONFIG_VARS['BINLIBDEST'] = get_path('platstdlib')
+        if not "INCLUDEPY" in _CONFIG_VARS:
+            _CONFIG_VARS['INCLUDEPY'] = get_path('include')
+        if not "LIBDEST" in _CONFIG_VARS:
+            _CONFIG_VARS['LIBDEST'] = get_path('stdlib')
+
         # For backward compatibility, see issue19555
         SO = _CONFIG_VARS.get('EXT_SUFFIX')
         if SO is not None:
