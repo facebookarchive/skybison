@@ -1290,27 +1290,19 @@ HANDLER_INLINE void Interpreter::handleLoopExit(Thread* thread,
   }
 }
 
-// TODO(T39919701): This is a temporary, off-by-default (in Release builds) hack
-// until we have proper traceback support. It has no mapping to actual
-// tracebacks as understood by Python code; see its usage in
-// Interpreter::unwind() below for details.
-#ifdef NDEBUG
-const bool kRecordTracebacks = std::getenv("PYRO_RECORD_TRACEBACKS") != nullptr;
-#else
-const bool kRecordTracebacks = true;
-#endif
-
 bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   DCHECK(thread->hasPendingException(),
          "unwind() called without a pending exception");
   HandleScope scope(thread);
 
-  if (UNLIKELY(kRecordTracebacks) &&
+  Runtime* runtime = thread->runtime();
+  // TODO(T39919701) Always enable tracebacks.
+  if (runtime->recordTracebacks() &&
       thread->pendingExceptionTraceback().isNoneType()) {
     std::ostringstream tb;
     Utils::printTraceback(&tb);
     thread->setPendingExceptionTraceback(
-        thread->runtime()->newStrFromCStr(tb.str().c_str()));
+        runtime->newStrFromCStr(tb.str().c_str()));
   }
 
   Frame* frame = thread->currentFrame();

@@ -297,7 +297,7 @@ static void initializeSysFromGlobals(Thread* thread) {
   data.atPut(static_cast<word>(SysFlag::kNoSite),
              SmallInt::fromWord(Py_NoSiteFlag));
   data.atPut(static_cast<word>(SysFlag::kIgnoreEnvironment),
-             SmallInt::fromWord(0));
+             SmallInt::fromWord(Py_IgnoreEnvironmentFlag));
   data.atPut(static_cast<word>(SysFlag::kVerbose),
              SmallInt::fromWord(Py_VerboseFlag));
   data.atPut(static_cast<word>(SysFlag::kBytesWarning), SmallInt::fromWord(0));
@@ -338,6 +338,8 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
                                  ? createCppInterpreter()
                                  : createAsmInterpreter();
   Runtime* runtime = new Runtime(heap_size, interpreter, random_seed);
+  runtime->setRecordTracebacks(
+      boolFromEnv("PYRO_RECORD_TRACEBACKS", DCHECK_IS_ON()));
   Thread* thread = Thread::current();
   initializeSysFromGlobals(thread);
   CHECK(runtime->initialize(thread).isNoneType(),

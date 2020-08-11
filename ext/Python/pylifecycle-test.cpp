@@ -40,6 +40,7 @@ TEST_F(PylifecycleExtensionApiTest, GetsigGetsCurrentSignalHandler) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
+  Py_IgnoreEnvironmentFlag = 0;
   Py_NoSiteFlag = 1;
   Py_VerboseFlag = 13;
   Py_Initialize();
@@ -47,6 +48,8 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
   {
     PyObjectPtr flags(moduleGet("sys", "flags"));
     ASSERT_NE(flags.get(), nullptr);
+    EXPECT_TRUE(isLongEqualsLong(
+        PyObject_GetAttrString(flags, "ignore_environment"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "verbose"), 13));
   }
@@ -55,6 +58,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
+  Py_IgnoreEnvironmentFlag = 1;
   Py_NoSiteFlag = 0;
   Py_VerboseFlag = 0;
   Py_Initialize();
@@ -62,6 +66,8 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
   {
     PyObjectPtr flags(moduleGet("sys", "flags"));
     ASSERT_NE(flags.get(), nullptr);
+    EXPECT_TRUE(isLongEqualsLong(
+        PyObject_GetAttrString(flags, "ignore_environment"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "verbose"), 0));
   }

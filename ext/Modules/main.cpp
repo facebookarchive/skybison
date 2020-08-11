@@ -181,7 +181,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'E':
         Py_IgnoreEnvironmentFlag++;
-        UNIMPLEMENTED("Ignore PYTHON* environment variables");
         break;
       case 'u':
         Py_UnbufferedStdioFlag = 1;
