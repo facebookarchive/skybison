@@ -2081,29 +2081,31 @@ void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
   CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
 }
 
-void Runtime::cacheBuiltinsInstances(Thread* thread) {
-  // TODO(T39575976): Create a consistent way to hide internal names
-  // such as "module" or "function"
-
-  HandleScope scope(thread);
-  Type object_type(&scope, typeAt(LayoutId::kObject));
-  object_dunder_getattribute_ =
-      typeAtById(thread, object_type, ID(__getattribute__));
-  object_dunder_init_ = typeAtById(thread, object_type, ID(__init__));
-  object_dunder_new_ = typeAtById(thread, object_type, ID(__new__));
-  object_dunder_setattr_ = typeAtById(thread, object_type, ID(__setattr__));
-
-  Type module_type(&scope, typeAt(LayoutId::kModule));
-  module_dunder_getattribute_ =
-      typeAtById(thread, module_type, ID(__getattribute__));
-
-  Type str_type(&scope, typeAt(LayoutId::kStr));
-  str_dunder_eq_ = typeAtById(thread, str_type, ID(__eq__));
-  str_dunder_hash_ = typeAtById(thread, str_type, ID(__hash__));
-
-  Type type_type(&scope, typeAt(LayoutId::kType));
-  type_dunder_getattribute_ =
-      typeAtById(thread, type_type, ID(__getattribute__));
+void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
+  LayoutId layout_id = Layout::cast(type.instanceLayout()).id();
+  switch (layout_id) {
+    case LayoutId::kObject:
+      object_dunder_getattribute_ =
+          typeAtById(thread, type, ID(__getattribute__));
+      object_dunder_init_ = typeAtById(thread, type, ID(__init__));
+      object_dunder_new_ = typeAtById(thread, type, ID(__new__));
+      object_dunder_setattr_ = typeAtById(thread, type, ID(__setattr__));
+      break;
+    case LayoutId::kModule:
+      module_dunder_getattribute_ =
+          typeAtById(thread, type, ID(__getattribute__));
+      break;
+    case LayoutId::kStr:
+      str_dunder_eq_ = typeAtById(thread, type, ID(__eq__));
+      str_dunder_hash_ = typeAtById(thread, type, ID(__hash__));
+      break;
+    case LayoutId::kType:
+      type_dunder_getattribute_ =
+          typeAtById(thread, type, ID(__getattribute__));
+      break;
+    default:
+      break;
+  }
 }
 
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
@@ -2255,10 +2257,6 @@ void Runtime::initializeModules(Thread* thread) {
           "failed to initialize built-in module %s",
           Symbols::predefinedSymbolAt(id));
   }
-
-  HandleScope scope(thread);
-  Module builtins_module(&scope, findModuleById(ID(builtins)));
-  builtins_module_id_ = builtins_module.id();
 
   CHECK(!thread->invokeFunction0(ID(builtins), ID(_early_init))
              .isErrorException(),

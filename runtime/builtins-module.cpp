@@ -211,6 +211,7 @@ void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
   moduleAddBuiltinTypes(thread, module, kBuiltinsBuiltinTypes);
 
   Runtime* runtime = thread->runtime();
+  runtime->setBuiltinsModuleId(module.id());
   runtime->cacheBuildClass(thread, module);
   HandleScope scope(thread);
 
@@ -233,22 +234,6 @@ void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
   }
 
   executeFrozenModule(thread, module, bytecode);
-  runtime->cacheBuiltinsInstances(thread);
-
-  // Populate some builtin types with shortcut constructors.
-  {
-    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
-    Type stop_iteration_type(&scope, runtime->typeAt(LayoutId::kStopIteration));
-    Object ctor(&scope,
-                moduleAtById(thread, under_builtins, ID(_stop_iteration_ctor)));
-    CHECK(ctor.isFunction(), "_stop_iteration_ctor should be a function");
-    stop_iteration_type.setCtor(*ctor);
-
-    Type str_array_type(&scope, runtime->typeAt(LayoutId::kStrArray));
-    ctor = moduleAtById(thread, under_builtins, ID(_str_array_ctor));
-    CHECK(ctor.isFunction(), "_str_array_ctor should be a function");
-    str_array_type.setCtor(*ctor);
-  }
 
   // Mark functions that have an intrinsic implementation.
   for (SymbolId intrinsic_id : kBuiltinsIntrinsicIds) {
@@ -336,6 +321,32 @@ static RawObject replaceNonTypeBases(Thread* thread, const Tuple& bases) {
   return runtime->tupleSubseq(thread, new_bases_items, 0, new_bases.numItems());
 }
 
+static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Object ctor(&scope, NoneType::object());
+  LayoutId layout_id = Layout::cast(type.instanceLayout()).id();
+  Runtime* runtime = thread->runtime();
+  if (layout_id == LayoutId::kStopIteration) {
+    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+    ctor = moduleAtById(thread, under_builtins, ID(_stop_iteration_ctor));
+  } else if (layout_id == LayoutId::kStrArray) {
+    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+    ctor = moduleAtById(thread, under_builtins, ID(_str_array_ctor));
+  } else if (typeAtById(thread, type, ID(__init__)).isErrorNotFound()) {
+    // Use __new__ as _ctor if __init__ is undefined.
+    Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
+    if (!dunder_new.isErrorNotFound()) {
+      ctor = *dunder_new;
+    }
+  }
+  if (ctor.isNoneType()) {
+    ctor = runtime->lookupNameInModule(thread, ID(_builtins),
+                                       ID(_type_dunder_call));
+  }
+  CHECK(ctor.isFunction(), "ctor is expected to be a function");
+  type.setCtor(*ctor);
+}
+
 RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
                                           word nargs) {
   Runtime* runtime = thread->runtime();
@@ -391,23 +402,9 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
           "error while assigning bootstrap type dict");
     // TODO(T53997177): Centralize type initialization
     typeAddDocstring(thread, type);
-    // A bootstrap type initialization is complete at this point.
+    pickBuiltinTypeCtorFunction(thread, type);
 
-    Object ctor(&scope, NoneType::object());
-    // Use __new__ as _ctor if __init__ is undefined.
-    if (type.isBuiltin() &&
-        typeAtById(thread, type, ID(__init__)).isErrorNotFound()) {
-      Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
-      if (!dunder_new.isErrorNotFound()) {
-        ctor = *dunder_new;
-      }
-    }
-    if (ctor.isNoneType()) {
-      ctor = runtime->lookupNameInModule(thread, ID(_builtins),
-                                         ID(_type_dunder_call));
-    }
-    CHECK(ctor.isFunction(), "ctor is expected to be a function");
-    type.setCtor(*ctor);
+    runtime->builtinTypeCreated(thread, type);
     return *type;
   }
 

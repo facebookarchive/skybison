@@ -412,6 +412,17 @@ class staticmethod(bootstrap=True):
         _builtin()
 
 
+class super(bootstrap=True):
+    def __init__(self, type=_Unbound, type_or_obj=_Unbound):
+        _builtin()
+
+    def __getattribute__(self, name):
+        _builtin()
+
+    def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
+        _builtin()
+
+
 class _traceback(bootstrap=True):
     pass
 
@@ -6376,17 +6387,6 @@ def sum(iterable, start=0):
     for item in iterable:
         result = result + item
     return result
-
-
-class super(bootstrap=True):
-    def __init__(self, type=_Unbound, type_or_obj=_Unbound):
-        _builtin()
-
-    def __getattribute__(self, name):
-        _builtin()
-
-    def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
-        _builtin()
 
 
 class tuple(bootstrap=True):

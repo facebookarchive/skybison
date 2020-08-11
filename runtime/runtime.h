@@ -285,6 +285,9 @@ class Runtime {
   RawObject ellipsis() { return ellipsis_; }
 
   word builtinsModuleId() { return builtins_module_id_; }
+  void setBuiltinsModuleId(word builtins_module_id) {
+    builtins_module_id_ = builtins_module_id;
+  }
 
   RawObject moduleDunderGetattribute() { return module_dunder_getattribute_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
@@ -298,8 +301,9 @@ class Runtime {
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
+  void builtinTypeCreated(Thread* thread, const Type& type);
+
   void cacheBuildClass(Thread* thread, const Module& builtins);
-  void cacheBuiltinsInstances(Thread* thread);
   void cacheSysInstances(Thread* thread, const Module& sys);
 
   static RawObject internStr(Thread* thread, const Object& str);
