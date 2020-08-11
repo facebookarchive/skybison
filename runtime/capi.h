@@ -25,8 +25,12 @@ namespace py {
 
 extern struct _inittab _PyImport_Inittab[];
 
+void finalizeCAPI();
+
 // Returns `true` if there is a built-in extension module with name `name`.
 bool isBuiltinExtensionModule(const Str& name);
+
+void initializeCAPI();
 
 // Initialize built-in extension module `name` if it exists, otherwise
 // return `nullptr`.

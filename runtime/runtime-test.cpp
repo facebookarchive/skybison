@@ -3322,11 +3322,12 @@ TEST_F(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
 TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
 
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
   };
-  LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope, addBuiltinType(thread_, ID(version), layout_id,
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
                                    LayoutId::kObject, attrs));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
@@ -3337,7 +3338,8 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   EXPECT_TRUE(
       raisedWithStr(instanceSetAttr(thread_, instance, attribute_name, value),
                     LayoutId::kAttributeError,
-                    "'version.__globals__' attribute is read-only"));
+                    "'UserWarning.__globals__' attribute is read-only"));
+  runtime_->layoutAtPut(layout_id, *previous_layout);
 }
 
 // Exception attributes can be set on the fly.
@@ -3763,23 +3765,27 @@ TEST_F(RuntimeStrTest, StrSliceUnicodeWithStepOne) {
 TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   HandleScope scope(thread_);
 
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
   };
-  LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope, addBuiltinType(thread_, ID(version), layout_id,
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
                                    LayoutId::kObject, attrs));
   EXPECT_EQ(type.builtinBase(), layout_id);
+  runtime_->layoutAtPut(layout_id, *previous_layout);
 }
 
 TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   HandleScope scope(thread_);
 
-  LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope,
-            addBuiltinType(thread_, ID(version), layout_id, LayoutId::kObject,
-                           View<BuiltinAttribute>(nullptr, 0)));
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
+                                   LayoutId::kObject,
+                                   View<BuiltinAttribute>(nullptr, 0)));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
+  runtime_->layoutAtPut(layout_id, *previous_layout);
 }
 
 TEST_F(RuntimeTest, NonModuleInModulesDoesNotCrash) {

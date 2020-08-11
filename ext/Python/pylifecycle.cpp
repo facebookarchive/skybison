@@ -10,6 +10,7 @@
 #include "cpython-func.h"
 
 #include "capi-handles.h"
+#include "capi.h"
 #include "exception-builtins.h"
 #include "modules.h"
 #include "os.h"
@@ -220,15 +221,34 @@ PY_EXPORT void Py_Finalize() { Py_FinalizeEx(); }
   V(_PyLong_One)                                                               \
   V(_PyLong_Zero)
 
-PY_EXPORT int Py_FinalizeEx() {
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
+void finalizeCAPI() {
 #define DECREF(ptr) Py_DECREF(&ptr);
   FOREACH_STATICTYPE(DECREF);
 #undef DECREF
 #define DECREF(ptr) Py_DECREF(ptr);
   FOREACH_POINTER(DECREF)
 #undef DECREF
+}
+
+void initializeCAPI() {
+  CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
+  CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");
+  // Even though our runtime keeps objects like the `dict` type alive, the
+  // handle (`PyDict_Type`) may not live as long. This is because we are using
+  // a borrowedReference to simulate CPython's reference to a static type. To
+  // mitigate this, incref each well-known handle name once in initialization
+  // and decref it again in finalization.
+#define INCREF(ptr) Py_INCREF(&ptr);
+  FOREACH_STATICTYPE(INCREF);
+#undef INCREF
+#define INCREF(ptr) Py_INCREF(ptr);
+  FOREACH_POINTER(INCREF)
+#undef INCREF
+}
+
+PY_EXPORT int Py_FinalizeEx() {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   delete runtime;
   return 0;
 }
@@ -271,19 +291,6 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
                                  : createAsmInterpreter();
   new Runtime(heap_size, interpreter, random_seed);
 
-  CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
-  CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");
-  // Even though our runtime keeps objects like the `dict` type alive, the
-  // handle (`PyDict_Type`) may not live as long. This is because we are using
-  // a borrowedReference to simulate CPython's reference to a static type. To
-  // mitigate this, incref each well-known handle name once in initialization
-  // and decref it again in finalization.
-#define INCREF(ptr) Py_INCREF(&ptr);
-  FOREACH_STATICTYPE(INCREF);
-#undef INCREF
-#define INCREF(ptr) Py_INCREF(ptr);
-  FOREACH_POINTER(INCREF)
-#undef INCREF
   // TODO(T43142858) We should rather have the site importing in the runtime
   // constructor. Though for that we need a way to communicate the value of
   // Py_NoSiteFlag.

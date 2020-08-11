@@ -19,6 +19,7 @@
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
+#include "capi.h"
 #include "code-builtins.h"
 #include "complex-builtins.h"
 #include "descriptor-builtins.h"
@@ -178,6 +179,7 @@ Runtime::Runtime(word heap_size, Interpreter* interpreter,
   initializeTypes(thread);
   initializeApiData();
   initializeModules(thread);
+  initializeCAPI();
 
   // This creates a reference that prevents the linker from garbage collecting
   // all of the symbols in debugging.cpp.  This is a temporary workaround until
@@ -196,6 +198,7 @@ Runtime::~Runtime() {
   }
   callAtExit();
   clearHandleScopes();
+  finalizeCAPI();
   freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::current()) {

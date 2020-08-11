@@ -413,11 +413,12 @@ instance.z = 3
 TEST_F(ObjectBuiltinsTest,
        InstanceDelAttrWithReadonlyAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
   };
-  LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope, addBuiltinType(thread_, ID(version), layout_id,
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
                                    LayoutId::kObject, attrs));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
@@ -428,6 +429,7 @@ TEST_F(ObjectBuiltinsTest,
                             LayoutId::kAttributeError,
                             "'__globals__' attribute is read-only"));
   EXPECT_EQ(instance.layoutId(), layout.id());
+  runtime_->layoutAtPut(layout_id, *previous_layout);
 }
 
 TEST_F(ObjectBuiltinsTest,
