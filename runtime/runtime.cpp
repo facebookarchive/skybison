@@ -1945,7 +1945,9 @@ RawObject Runtime::findOrCreateMainModule() {
 
   Object name(&scope, symbols()->at(ID(__main__)));
   Module main(&scope, newModule(name));
-  addModule(thread, main);
+  Object modules(&scope, this->modules());
+  Object result(&scope, objectSetItem(thread, modules, name, main));
+  if (result.isErrorException()) return *result;
   // TODO(T67704743) Fill in __main__...
   return *main;
 }
@@ -2187,15 +2189,6 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
   for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
     thread->visitRoots(visitor);
   }
-}
-
-void Runtime::addModule(Thread* thread, const Module& module) {
-  HandleScope scope(thread);
-  Dict dict(&scope, modules());
-  // TODO(T53728922) module.name() may be `None`.
-  Str name(&scope, module.name());
-  Object value(&scope, *module);
-  dictAtPutByStr(thread, dict, name, value);
 }
 
 bool Runtime::moduleListAtPut(Thread* thread, const Module& module,

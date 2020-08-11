@@ -5,6 +5,7 @@
 #include "builtins.h"
 #include "dict-builtins.h"
 #include "ic.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -109,7 +110,9 @@ static RawModule createTestingModule(Thread* thread) {
   // Create a builtins module.
   Object name(&scope, runtime->symbols()->at(ID(builtins)));
   Module builtins_module(&scope, runtime->newModule(name));
-  runtime->addModule(thread, builtins_module);
+  Object modules(&scope, runtime->modules());
+  EXPECT_FALSE(
+      objectSetItem(thread, modules, name, builtins_module).isErrorException());
   Dict builtins_dict(&scope, runtime->newDict());
   builtins_module.setDict(*builtins_dict);
 

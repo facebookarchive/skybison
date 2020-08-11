@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "marshal.h"
 #include "module-builtins.h"
+#include "object-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
 #include "type-builtins.h"
@@ -52,7 +53,9 @@ static RawObject createBuiltinModule(Thread* thread, const Str& name) {
   if (builtin_index >= 0) {
     const FrozenModule* frozen_module = &kFrozenModules[builtin_index];
     Module module(&scope, runtime->newModule(name));
-    runtime->addModule(thread, module);
+    Object modules(&scope, runtime->modules());
+    Object result(&scope, objectSetItem(thread, modules, name, module));
+    if (result.isErrorException()) return *result;
     ModuleInitFunc init = frozen_module->init;
     if (init == nullptr) {
       init = executeFrozenModule;
@@ -63,7 +66,12 @@ static RawObject createBuiltinModule(Thread* thread, const Str& name) {
     return *module;
   }
 
-  return moduleInitBuiltinExtension(thread, name);
+  Object module(&scope, moduleInitBuiltinExtension(thread, name));
+  if (module.isErrorException()) return *module;
+  Object modules(&scope, runtime->modules());
+  Object result(&scope, objectSetItem(thread, modules, name, module));
+  if (result.isErrorException()) return *result;
+  return *module;
 }
 
 RawObject ensureBuiltinModule(Thread* thread, const Str& name) {
@@ -114,8 +122,10 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module module(&scope, runtime->newModule(name));
-  runtime->addModule(thread, module);
-  Object result(&scope, executeModule(thread, code, module));
+  Object modules(&scope, runtime->modules());
+  Object result(&scope, objectSetItem(thread, modules, name, module));
+  if (result.isErrorException()) return *result;
+  result = executeModule(thread, code, module);
   if (result.isError()) return *result;
   return *module;
 }

@@ -409,6 +409,15 @@ RawObject objectGetItem(Thread* thread, const Object& object,
 RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
                         const Object& value) {
   HandleScope scope(thread);
+  // Short-cut for the common case of dict. This also helps during bootstrapping
+  // as it allows us to use `objectSetItem` before `dict.__setitem__` is added.
+  if (object.isDict()) {
+    Dict object_dict(&scope, *object);
+    RawObject hash = Interpreter::hash(thread, key);
+    if (hash.isErrorException()) return hash;
+    dictAtPut(thread, object_dict, key, SmallInt::cast(hash).value(), value);
+    return NoneType::object();
+  }
   Object result(&scope,
                 thread->invokeMethod3(object, ID(__setitem__), key, value));
   if (result.isErrorNotFound()) {

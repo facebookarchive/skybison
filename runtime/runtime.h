@@ -342,7 +342,6 @@ class Runtime {
 
   void visitRoots(PointerVisitor* visitor);
 
-  void addModule(Thread* thread, const Module& module);
   bool moduleListAtPut(Thread* thread, const Module& module, word index);
 
   RawObject findModule(const Object& name);
@@ -423,6 +422,7 @@ class Runtime {
 
   RawObject displayHook() { return display_hook_; }
 
+  // Returns modules mapping (aka `sys.modules`).
   RawObject modules() { return modules_; }
 
   IdentityDict* apiHandles() { return &api_handles_; }

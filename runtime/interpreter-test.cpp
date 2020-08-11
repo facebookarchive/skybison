@@ -14,6 +14,7 @@
 #include "list-builtins.h"
 #include "module-builtins.h"
 #include "modules.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -887,7 +888,9 @@ TEST_F(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {
   HandleScope scope(thread_);
   Str name(&scope, runtime_->newStrFromCStr("foo"));
   Module module(&scope, runtime_->newModule(name));
-  runtime_->addModule(thread_, module);
+  Object modules(&scope, runtime_->modules());
+  ASSERT_FALSE(
+      objectSetItem(thread_, modules, name, module).isErrorException());
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "from foo import bar"),
                             LayoutId::kImportError,
                             "cannot import name 'bar' from 'foo'"));
