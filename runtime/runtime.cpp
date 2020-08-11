@@ -74,8 +74,8 @@
 namespace py {
 
 static const SymbolId kRequiredModules[] = {
-    ID(_builtins), ID(builtins), ID(operator), ID(_codecs), ID(_signal),
-};
+    ID(_builtins), ID(builtins), ID(operator),
+    ID(_codecs),   ID(_signal),  ID(_frozen_importlib_external)};
 
 static const SymbolId kBinaryOperationSelector[] = {
     ID(__add__),     ID(__sub__),      ID(__mul__),    ID(__matmul__),
@@ -2257,14 +2257,6 @@ void Runtime::initializeModules(Thread* thread) {
           "failed to initialize built-in module %s",
           Symbols::predefinedSymbolAt(id));
   }
-
-  CHECK(!thread->invokeFunction0(ID(builtins), ID(_early_init))
-             .isErrorException(),
-        "Failed to run builtins._early_init");
-
-  CHECK(!ensureBuiltinModuleById(thread, ID(_frozen_importlib_external))
-             .isErrorException(),
-        "failed to initialize built-in module _frozen_importlib_external");
 }
 
 RawObject Runtime::initialize(Thread* thread) {

@@ -271,20 +271,6 @@ from _builtins import (
 # Begin: Early definitions that are necessary to process the rest of the file:
 
 
-def _early_init():
-    """This function is called early in the bootstrap process after enough
-    runtime caches are initialized so we can successfully execute the module
-    bodies of some more modules and import them."""
-    global _codecs
-    import _codecs
-
-    global _str_mod_format
-    from _str_mod import format as _str_mod_format
-
-    global _sys
-    import sys as _sys
-
-
 def _init():
     """This function completes initialization of the runtime."""
     import _frozen_importlib
@@ -2010,7 +1996,7 @@ class bytearray(bootstrap=True):
         return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors=_Unbound):
-        return _codecs.decode(self, encoding, errors)
+        return _decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
         _bytearray_guard(self)
@@ -2394,7 +2380,7 @@ class bytes(bootstrap=True):
         result = _bytes_decode(self, encoding)
         if result is not _Unbound:
             return result
-        return _codecs.decode(self, encoding, errors)
+        return _decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
         _bytes_guard(self)
@@ -5962,10 +5948,10 @@ class str(bootstrap=True):
                 return result
             return _str_from_str(cls, result)
         if errors is _Unbound:
-            return _str_from_str(cls, _codecs.decode(obj, encoding))
+            return _str_from_str(cls, _decode(obj, encoding))
         if encoding is _Unbound:
-            return _str_from_str(cls, _codecs.decode(obj, errors=errors))
-        return _str_from_str(cls, _codecs.decode(obj, encoding, errors))
+            return _str_from_str(cls, _decode(obj, errors=errors))
+        return _str_from_str(cls, _decode(obj, encoding, errors))
 
     def __repr__(self):
         _builtin()
@@ -6030,7 +6016,7 @@ class str(bootstrap=True):
         result = _str_encode(self, encoding)
         if result is not _Unbound:
             return result
-        return _codecs.encode(self, encoding, errors)
+        return _encode(self, encoding, errors)
 
     def endswith(self, suffix, start=None, end=None):
         _str_guard(self)
@@ -6699,3 +6685,8 @@ class zip:
 
     def __reduce__(self):
         _unimplemented()
+
+
+from _codecs import decode as _decode, encode as _encode
+from _str_mod import format as _str_mod_format
+import sys as _sys
