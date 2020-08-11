@@ -6223,8 +6223,11 @@ class str(bootstrap=True):
             end = _index(end)
         return _str_rfind(self, sub, start, end)
 
-    def rindex(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def rindex(self, sub, start=None, end=None):
+        res = self.rfind(sub, start, end)
+        if res < 0:
+            raise ValueError("substring not found")
+        return res
 
     def rjust(self, width: int, fillchar: str = " ") -> str:
         result = _str_rjust(self, width, fillchar)

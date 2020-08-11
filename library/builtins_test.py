@@ -16450,6 +16450,29 @@ class StrTests(unittest.TestCase):
         test = "a b"
         self.assertRaises(TypeError, test.replace, 32, "")
 
+    def test_rindex_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.rindex(b"", "")
+
+    def test_rindex_with_subsequence_returns_last_in_range(self):
+        haystack = "-a-a--a--"
+        needle = "a"
+        self.assertEqual(haystack.rindex(needle, 1, 6), 3)
+
+    def test_rindex_with_missing_raises_value_error(self):
+        haystack = "abc"
+        needle = "d"
+        with self.assertRaises(ValueError) as context:
+            haystack.rindex(needle)
+        self.assertEqual(str(context.exception), "substring not found")
+
+    def test_rindex_outside_of_bounds_raises_value_error(self):
+        haystack = "abc"
+        needle = "c"
+        with self.assertRaises(ValueError) as context:
+            haystack.rindex(needle, 0, 2)
+        self.assertEqual(str(context.exception), "substring not found")
+
     def test_rjust_returns_justified_string(self):
         self.assertEqual(str.rjust("abc", -1), "abc")
         self.assertEqual(str.rjust("abc", 0), "abc")
