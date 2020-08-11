@@ -61,31 +61,27 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   Object maxunicode(&scope, SmallInt::fromWord(kMaxUnicode));
   moduleAtPutById(thread, module, ID(maxunicode), maxunicode);
 
-  // Count the number of modules and create a tuple
-  uword num_external_modules = 0;
-  while (_PyImport_Inittab[num_external_modules].name != nullptr) {
-    num_external_modules++;
+  // Count the number of builtin modules and create a tuple
+  uword num_extension_modules = 0;
+  while (_PyImport_Inittab[num_extension_modules].name != nullptr) {
+    num_extension_modules++;
   }
-
-  word num_modules = kNumFrozenModules + num_external_modules;
-  MutableTuple builtins_tuple(&scope, runtime->newMutableTuple(num_modules));
-
-  // Add all the available builtin modules
+  word num_builtin_modules = kNumFrozenModules + num_extension_modules;
+  MutableTuple builtin_module_names(
+      &scope, runtime->newMutableTuple(num_builtin_modules));
   for (word i = 0; i < kNumFrozenModules; i++) {
-    builtins_tuple.atPut(
+    builtin_module_names.atPut(
         i, Runtime::internStrFromCStr(thread, kFrozenModules[i].name));
   }
-
-  // Add all the available extension builtin modules
   for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    builtins_tuple.atPut(
+    builtin_module_names.atPut(
         kNumFrozenModules + i,
         Runtime::internStrFromCStr(thread, _PyImport_Inittab[i].name));
   }
-
-  // Create builtin_module_names tuple
-  Object builtins(&scope, builtins_tuple.becomeImmutable());
-  moduleAtPutById(thread, module, ID(builtin_module_names), builtins);
+  Tuple builtin_module_names_tuple(&scope,
+                                   builtin_module_names.becomeImmutable());
+  moduleAtPutById(thread, module, ID(builtin_module_names),
+                  builtin_module_names_tuple);
 
   // Fill in version-related fields.
   Int hexversion(&scope, SmallInt::fromWord(kVersionHex));
