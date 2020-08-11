@@ -152,7 +152,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'd':
         Py_DebugFlag++;
-        UNIMPLEMENTED("Parser Debug Flag");
         break;
       case 'i':
         Py_InspectFlag++;
@@ -165,7 +164,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'O':
         Py_OptimizeFlag++;
-        UNIMPLEMENTED("Optimize Flag");
         break;
       case 'B':
         Py_DontWriteBytecodeFlag++;

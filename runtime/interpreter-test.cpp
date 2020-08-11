@@ -3449,7 +3449,8 @@ def public_symbol2():
 
   // Preload the module
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
-  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec),
+                            /*flags=*/0, /*optimize=*/0));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
@@ -3477,7 +3478,8 @@ def _private_symbol():
 
   // Preload the module
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
-  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec),
+                            /*flags=*/0, /*optimize=*/0));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
   const char* main_src = R"(
@@ -3503,8 +3505,8 @@ def baz():
 
   // Preload the module
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
-  Code module_code(&scope,
-                   compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code module_code(&scope, compile(thread_, module_src, filename, ID(exec),
+                                   /*flags=*/0, /*optimize=*/0));
   ASSERT_FALSE(executeModuleFromCode(thread_, module_code, name).isError());
 
   const char* main_src = R"(
@@ -3514,7 +3516,8 @@ b = baz()
 )";
 
   Object str(&scope, runtime_->newStrFromCStr(main_src));
-  Code main_code(&scope, compile(thread_, str, filename, ID(exec), 0, -1));
+  Code main_code(&scope, compile(thread_, str, filename, ID(exec),
+                                 /*flags=*/0, /*optimize=*/0));
   Module main_module(&scope, runtime_->findOrCreateMainModule());
   Dict implicit_globals(&scope, runtime_->newDict());
   Object result(&scope,
@@ -3535,8 +3538,8 @@ def baz():
 
   // Preload the module
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
-  Code module_code(&scope,
-                   compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code module_code(&scope, compile(thread_, module_src, filename, ID(exec),
+                                   /*flags=*/0, /*optimize=*/0));
   ASSERT_FALSE(executeModuleFromCode(thread_, module_code, name).isError());
 
   EXPECT_FALSE(runFromCStr(runtime_, R"(
@@ -3557,7 +3560,8 @@ b = baz()
 )";
 
   Object str(&scope, runtime_->newStrFromCStr(main_src));
-  Code main_code(&scope, compile(thread_, str, filename, ID(exec), 0, -1));
+  Code main_code(&scope, compile(thread_, str, filename, ID(exec),
+                                 /*flags=*/0, /*optimize=*/0));
   Module main_module(&scope, runtime_->findOrCreateMainModule());
   Type implicit_globals_type(&scope, mainModuleAt(runtime_, "C"));
   Object implicit_globals(
@@ -4309,7 +4313,8 @@ TEST_F(InterpreterTest, MakeFunctionSetsDunderModule) {
 def bar(): pass
 )"));
   Object filename(&scope, runtime_->newStrFromCStr("<test string>"));
-  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec),
+                            /*flags=*/0, /*optimize=*/0));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, module_name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 import foo

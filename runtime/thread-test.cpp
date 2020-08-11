@@ -1305,7 +1305,8 @@ result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec),
+                            /*flags=*/0, /*optimize=*/0));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, main_src).isError());
@@ -1336,7 +1337,8 @@ hello.foo()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec),
+                            /*flags=*/0, /*optimize=*/0));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
@@ -1361,7 +1363,8 @@ result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec),
+                            /*flags=*/0, /*optimize=*/0));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, main_src).isError());

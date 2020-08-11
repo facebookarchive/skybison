@@ -2714,6 +2714,10 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
             flags |= code.co_flags & _compile_flags_mask
         except ValueError:
             pass  # May have been called on a fresh stackframe.
+    if optimize == -1:
+        optimize = _sys.flags.optimize
+    elif optimize < 0 or optimize > 2:
+        raise ValueError("compile(): invalid optimize value")
 
     return compile(source, filename, mode, flags, optimize)
 
@@ -3389,7 +3393,7 @@ def eval(source, globals=None, locals=None):
 
         if _str_check(source) or _byteslike_check(source):
             source = source.lstrip()
-        code = compile(source, "<string>", "eval", flags, -1)
+        code = compile(source, "<string>", "eval", flags, _sys.flags.optimize)
     if code.co_freevars:
         raise TypeError("'eval' code may not contain free variables")
     res = _exec(code, mod, locals)
@@ -3432,7 +3436,7 @@ def exec(source, globals=None, locals=None):
             flags = 0  # May have been called on a fresh stackframe.
         from _compile import compile
 
-        code = compile(source, "<string>", "exec", flags, -1)
+        code = compile(source, "<string>", "exec", flags, _sys.flags.optimize)
     if code.co_freevars:
         raise TypeError("'exec' code may not contain free variables")
     _exec(code, mod, locals)

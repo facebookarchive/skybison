@@ -430,7 +430,8 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
         "mode must be 'Py_single_input', 'Py_file_input' or 'Py_eval_input'");
     return nullptr;
   }
-  RawObject code = compile(thread, source, filename, mode_id, iflags, -1);
+  RawObject code =
+      compile(thread, source, filename, mode_id, iflags, Py_OptimizeFlag);
   if (code.isError()) {
     return nullptr;
   }

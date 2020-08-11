@@ -303,6 +303,7 @@ class Runtime;
   V(_closed)                                                                   \
   V(_closefd)                                                                  \
   V(_codecs)                                                                   \
+  V(_compile)                                                                  \
   V(_compile_flags_mask)                                                       \
   V(_complex_check)                                                            \
   V(_coroutine__await)                                                         \

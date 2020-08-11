@@ -522,11 +522,11 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
   Runtime* runtime = thread->runtime();
   Object mode_str(&scope, runtime->symbols()->at(mode));
   Object flags_int(&scope, runtime->newInt(flags));
-  Object dont_inherit(&scope, Bool::trueObj());
   Object optimize_int(&scope, SmallInt::fromWord(optimize));
-  return thread->invokeFunction6(ID(builtins), ID(compile), source, filename,
-                                 mode_str, flags_int, dont_inherit,
-                                 optimize_int);
+  Object import_result(&scope, ensureBuiltinModuleById(thread, ID(_compile)));
+  if (import_result.isErrorException()) return *import_result;
+  return thread->invokeFunction5(ID(_compile), ID(compile), source, filename,
+                                 mode_str, flags_int, optimize_int);
 }
 
 RawObject FUNC(builtins, id)(Thread* thread, Frame* frame, word nargs) {

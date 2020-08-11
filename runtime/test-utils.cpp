@@ -442,7 +442,7 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Object str(&scope, runtime->newStrFromCStr(c_str));
   Object filename(&scope, runtime->newStrFromCStr("<test string>"));
   Code code(&scope, compile(thread, str, filename, ID(exec), /*flags=*/0,
-                            /*optimize=*/-1));
+                            /*optimize=*/0));
   Module main_module(&scope, runtime->findOrCreateMainModule());
   Object result(&scope, executeModule(thread, code, main_module));
 

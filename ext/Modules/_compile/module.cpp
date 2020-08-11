@@ -85,7 +85,7 @@ static PyObject* _compile_compile_impl(PyObject*, PyObject* source,
   }
   /* XXX Warn if (supplied_flags & PyCF_MASK_OBSOLETE) != 0? */
 
-  if (optimize < -1 || optimize > 2) {
+  if (optimize < 0) {
     PyErr_SetString(PyExc_ValueError, "compile(): invalid optimize value");
     Py_DECREF(filename);
     return nullptr;
@@ -163,7 +163,7 @@ static PyObject* _compile_compile(PyObject* module, PyObject** args,
   PyObject* filename;
   const char* mode;
   int flags = 0;
-  int optimize = -1;
+  int optimize = 0;
   if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &source,
                                     PyUnicode_FSDecoder, &filename, &mode,
                                     &flags, &optimize)) {

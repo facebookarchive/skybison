@@ -287,10 +287,12 @@ static void initializeSysFromGlobals(Thread* thread) {
   List python_path(&scope, *python_path_obj);
   MutableTuple data(
       &scope, runtime->newMutableTuple(static_cast<word>(SysFlag::kNumFlags)));
-  data.atPut(static_cast<word>(SysFlag::kDebug), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kDebug),
+             SmallInt::fromWord(Py_DebugFlag));
   data.atPut(static_cast<word>(SysFlag::kInspect), SmallInt::fromWord(0));
   data.atPut(static_cast<word>(SysFlag::kInteractive), SmallInt::fromWord(0));
-  data.atPut(static_cast<word>(SysFlag::kOptimize), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kOptimize),
+             SmallInt::fromWord(Py_OptimizeFlag));
   data.atPut(static_cast<word>(SysFlag::kDontWriteBytecode),
              SmallInt::fromWord(Py_DontWriteBytecodeFlag));
   data.atPut(static_cast<word>(SysFlag::kNoUserSite),
@@ -318,6 +320,7 @@ static void initializeSysFromGlobals(Thread* thread) {
 }
 
 PY_EXPORT void Py_InitializeEx(int initsigs) {
+  CHECK(Py_DebugFlag == 0, "parser debug mode not supported");
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
   word heap_size = 1 * kGiB;

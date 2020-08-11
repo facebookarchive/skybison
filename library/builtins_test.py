@@ -5190,6 +5190,18 @@ class CompileTests(unittest.TestCase):
         result = compile("result = 42", "", "exec", ast.PyCF_ONLY_AST, True)
         self.assertIsInstance(result, ast.AST)
 
+    def test_compile_with_negative_optimize_raises_value_error(self):
+        with self.assertRaisesRegex(ValueError, r"compile\(\): invalid optimize value"):
+            compile("True", "", "exec", 0, True, -2)
+
+    def test_compile_with_too_high_optimize_raises_value_error(self):
+        with self.assertRaisesRegex(ValueError, r"compile\(\): invalid optimize value"):
+            compile("True", "", "exec", 0, True, 3)
+
+    def test_compile_with_optimize_disables_asserts(self):
+        code = compile("assert False", "", "exec", 0, True, 1)
+        exec(code)  # should not raise
+
     def test_exec_mode_returns_code(self):
         from types import ModuleType
         from types import CodeType

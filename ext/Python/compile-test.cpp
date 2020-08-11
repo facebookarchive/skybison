@@ -106,7 +106,28 @@ TEST_F(CompileExtensionApiTest, PyAstCompileObjectReturnsCodeObject) {
                                      Py_file_input, &flags, arena);
   ASSERT_NE(mod, nullptr);
   PyObjectPtr filename(PyUnicode_FromString("<test string>"));
-  PyCodeObject* code = PyAST_CompileObject(mod, filename, &flags, -1, arena);
+  PyCodeObject* code =
+      PyAST_CompileObject(mod, filename, &flags, /*optimize=*/-1, arena);
+  ASSERT_NE(code, nullptr);
+  EXPECT_FALSE(PyErr_Occurred());
+  EXPECT_TRUE(PyCode_Check(code));
+  Py_XDECREF(code);
+  PyArena_Free(arena);
+}
+
+TEST_F(CompileExtensionApiTest,
+       PyAstCompileObjectAcceptsOptimizationLevelGreaterThanTwo) {
+  PyArena* arena = PyArena_New();
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  _mod* mod = PyParser_ASTFromString("def foo(): pass", "<test string>",
+                                     Py_file_input, &flags, arena);
+  ASSERT_NE(mod, nullptr);
+  PyObjectPtr filename(PyUnicode_FromString("<test string>"));
+  PyCodeObject* code =
+      PyAST_CompileObject(mod, filename, &flags, /*optimize=*/123, arena);
+  ASSERT_NE(code, nullptr);
+  EXPECT_FALSE(PyErr_Occurred());
   EXPECT_TRUE(PyCode_Check(code));
   Py_XDECREF(code);
   PyArena_Free(arena);

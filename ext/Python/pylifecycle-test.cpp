@@ -45,6 +45,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
   Py_IsolatedFlag = 0;
   Py_NoSiteFlag = 1;
   Py_NoUserSiteDirectory = 0;
+  Py_OptimizeFlag = 2;
   Py_QuietFlag = 0;
   Py_VerboseFlag = 13;
   Py_Initialize();
@@ -60,6 +61,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 1));
     EXPECT_TRUE(
         isLongEqualsLong(PyObject_GetAttrString(flags, "no_user_site"), 0));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "optimize"), 2));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "quiet"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "verbose"), 13));
   }
@@ -73,6 +75,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
   Py_IsolatedFlag = 1;
   Py_NoSiteFlag = 0;
   Py_NoUserSiteDirectory = 1;
+  Py_OptimizeFlag = 0;
   Py_QuietFlag = 1;
   Py_VerboseFlag = 0;
   Py_Initialize();
@@ -88,6 +91,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 0));
     EXPECT_TRUE(
         isLongEqualsLong(PyObject_GetAttrString(flags, "no_user_site"), 1));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "optimize"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "quiet"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "verbose"), 0));
   }
