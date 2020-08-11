@@ -139,9 +139,34 @@ void Runtime::setProgramName(const wchar_t* program_name) {
   prefix_[ARRAYSIZE(program_name_) - 1] = L'\0';
 }
 
-Runtime::Runtime(word heap_size) : heap_(heap_size) {
-  initializeRandom();
-  initializeInterpreter();
+RandomState randomState() {
+  RandomState result;
+  OS::secureRandom(reinterpret_cast<byte*>(&result), sizeof(result));
+  return result;
+}
+
+RandomState randomStateFromSeed(uint64_t seed) {
+  // Splitmix64 as suggested by http://xoshiro.di.unimi.it.
+  auto next = [&seed]() {
+    uint64_t z = (seed += 0x9e3779b97f4a7c15);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
+    return z ^ (z >> 31);
+  };
+  RandomState result;
+  for (size_t i = 0; i < ARRAYSIZE(result.state); i++) {
+    result.state[i] = next();
+  }
+  result.siphash24_secret = next();
+  for (size_t i = 0; i < ARRAYSIZE(result.extra_secret); i++) {
+    result.extra_secret[i] = next();
+  }
+  return result;
+}
+
+Runtime::Runtime(word heap_size, Interpreter* interpreter,
+                 RandomState random_seed)
+    : heap_(heap_size), interpreter_(interpreter), random_state_(random_seed) {
   initializeThreads();
   Thread* thread = Thread::current();
   // This must be called before initializeTypes is called. Methods in
@@ -160,8 +185,6 @@ Runtime::Runtime(word heap_size) : heap_(heap_size) {
   extern void initializeDebugging();
   initializeDebugging();
 }
-
-Runtime::Runtime() : Runtime(128 * kMiB) {}
 
 Runtime::~Runtime() {
   is_finalizing_ = true;
@@ -495,15 +518,6 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   }
 
   return NoneType::object();
-}
-
-void Runtime::seedRandom(const uword random_state[2],
-                         const uword hash_secret[kHashSecretSize]) {
-  random_state_[0] = random_state[0];
-  random_state_[1] = random_state[1];
-  for (int i = 0; i < kHashSecretSize; i++) {
-    hash_secret_[i] = hash_secret[i];
-  }
 }
 
 bool Runtime::isCallable(Thread* thread, const Object& obj) {
@@ -1608,12 +1622,12 @@ word Runtime::immediateHash(RawObject object) {
 // Xoroshiro128+
 // http://xoroshiro.di.unimi.it/
 uword Runtime::random() {
-  const uint64_t s0 = random_state_[0];
-  uint64_t s1 = random_state_[1];
+  const uint64_t s0 = random_state_.state[0];
+  uint64_t s1 = random_state_.state[1];
   const uint64_t result = s0 + s1;
   s1 ^= s0;
-  random_state_[0] = Utils::rotateLeft(s0, 55) ^ s1 ^ (s1 << 14);
-  random_state_[1] = Utils::rotateLeft(s1, 36);
+  random_state_.state[0] = Utils::rotateLeft(s0, 55) ^ s1 ^ (s1 << 14);
+  random_state_.state[1] = Utils::rotateLeft(s1, 36);
   return result;
 }
 
@@ -1679,9 +1693,10 @@ word Runtime::identityHash(RawObject object) {
 
 word Runtime::siphash24(View<byte> array) {
   word result = 0;
-  ::halfsiphash(array.data(), array.length(),
-                reinterpret_cast<const uint8_t*>(hash_secret_),
-                reinterpret_cast<uint8_t*>(&result), sizeof(result));
+  ::halfsiphash(
+      array.data(), array.length(),
+      reinterpret_cast<const uint8_t*>(&random_state_.siphash24_secret),
+      reinterpret_cast<uint8_t*>(&result), sizeof(result));
   return result;
 }
 
@@ -1720,7 +1735,11 @@ word Runtime::valueHash(RawObject object) {
   return code;
 }
 
-const uword* Runtime::hashSecret() { return hash_secret_; }
+const byte* Runtime::hashSecret(size_t size) {
+  CHECK(size <= sizeof(random_state_.extra_secret),
+        "hash secret request too big");
+  return reinterpret_cast<const byte*>(&random_state_.extra_secret);
+}
 
 RawObject Runtime::handlePendingSignals(Thread* thread) {
   if (!is_signal_pending_ || !thread->isMainThread()) {
@@ -2015,15 +2034,6 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
   return NoneType::object();
 }
 
-void Runtime::initializeInterpreter() {
-  const char* pyro_cpp_interpreter = std::getenv("PYRO_CPP_INTERPRETER");
-  if (pyro_cpp_interpreter == nullptr || pyro_cpp_interpreter[0] == '\0') {
-    interpreter_.reset(createAsmInterpreter());
-  } else {
-    interpreter_.reset(createCppInterpreter());
-  }
-}
-
 void Runtime::initializeThreads() {
   main_thread_ = new Thread(Thread::kDefaultStackSize);
   main_thread_->setCaughtExceptionState(heap()->create<RawExceptionState>());
@@ -2051,43 +2061,6 @@ void Runtime::initializeInterned(Thread* thread) {
   interned_ = emptyTuple();
   interned_remaining_ = 0;
   growInternSet(thread);
-}
-
-void Runtime::initializeRandom() {
-  uword random_state[2];
-  uword hash_secret[kHashSecretSize];
-  // TODO(T43142858) Replace getenv with a configuration system.
-  const char* hashseed = std::getenv("PYTHONHASHSEED");
-  if (hashseed == nullptr || std::strcmp(hashseed, "random") == 0) {
-    OS::secureRandom(reinterpret_cast<byte*>(&random_state),
-                     sizeof(random_state));
-    OS::secureRandom(reinterpret_cast<byte*>(&hash_secret),
-                     sizeof(hash_secret));
-  } else {
-    char* endptr;
-    unsigned long seed = std::strtoul(hashseed, &endptr, 10);
-    if (*endptr != '\0' || seed > 4294967295 ||
-        (seed == ULONG_MAX && errno == ERANGE)) {
-      std::fprintf(stderr,
-                   "Fatal Python error: PYTHONHASHSEED must be "
-                   "\"random\" or an integer in range [0; 4294967295]");
-      std::exit(EXIT_FAILURE);
-    }
-    // Splitmix64 as suggested by http://http://xoshiro.di.unimi.it.
-    uword state = static_cast<uword>(seed);
-    auto next = [&state]() {
-      uword z = (state += 0x9e3779b97f4a7c15);
-      z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
-      z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
-      return z ^ (z >> 31);
-    };
-    random_state[0] = next();
-    random_state[1] = next();
-    for (int i = 0; i < kHashSecretSize; i++) {
-      hash_secret[i] = next();
-    }
-  }
-  seedRandom(random_state, hash_secret);
 }
 
 void Runtime::initializeSymbols(Thread* thread) {

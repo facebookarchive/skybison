@@ -231,7 +231,12 @@ TEST_F(HandlesTest, NestedScopes) {
 // Benchmarks
 class HandleBenchmark : public benchmark::Fixture {
  public:
-  void SetUp(benchmark::State&) { runtime_ = new Runtime; }
+  void SetUp(benchmark::State&) {
+    word heap_size = 32 * kMiB;
+    Interpreter* interpreter = createCppInterpreter();
+    RandomState random_state = randomStateFromSeed(0);
+    runtime_ = new Runtime(heap_size, interpreter, random_state);
+  }
 
   void TearDown(benchmark::State&) { delete runtime_; }
 

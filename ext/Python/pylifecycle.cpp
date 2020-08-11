@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <clocale>
 #include <cstdio>
 #include <cstdlib>
@@ -232,12 +233,43 @@ PY_EXPORT int Py_FinalizeEx() {
   return 0;
 }
 
+static bool boolFromEnv(const char* name, bool default_value) {
+  if (Py_IgnoreEnvironmentFlag) return default_value;
+  const char* value = std::getenv(name);
+  if (value == nullptr) return default_value;
+  if (std::strcmp(value, "0") == 0) return false;
+  if (std::strcmp(value, "1") == 0) return true;
+  fprintf(stderr, "Error: Environment variable '%s' must be '0' or '1'\n",
+          name);
+  return default_value;
+}
+
 PY_EXPORT void Py_Initialize() { Py_InitializeEx(1); }
 
 PY_EXPORT void Py_InitializeEx(int initsigs) {
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
-  new Runtime(1 * kGiB);
+  word heap_size = 1 * kGiB;
+  RandomState random_seed;
+  const char* hashseed =
+      Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONHASHSEED");
+  if (hashseed != nullptr && std::strcmp(hashseed, "random") != 0) {
+    char* endptr;
+    unsigned long seed = std::strtoul(hashseed, &endptr, 10);
+    if (*endptr != '\0' || seed > 4294967295 ||
+        (seed == ULONG_MAX && errno == ERANGE)) {
+      Py_FatalError(
+          "PYTHONHASHSEED must be \"random\" or an integer in range [0; "
+          "4294967295]");
+    }
+    random_seed = randomStateFromSeed(static_cast<uint64_t>(seed));
+  } else {
+    random_seed = randomState();
+  }
+  Interpreter* interpreter = boolFromEnv("PYRO_CPP_INTERPRETER", false)
+                                 ? createCppInterpreter()
+                                 : createAsmInterpreter();
+  new Runtime(heap_size, interpreter, random_seed);
 
   CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
   CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");

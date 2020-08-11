@@ -53,10 +53,17 @@ enum class ReadOnly : bool {
   ReadOnly,
 };
 
+struct RandomState {
+  uint64_t state[2];
+  uint64_t siphash24_secret;
+  uint64_t extra_secret[3];
+};
+RandomState randomState();
+RandomState randomStateFromSeed(uint64_t seed);
+
 class Runtime {
  public:
-  Runtime();
-  Runtime(word heap_size);
+  Runtime(word heap_size, Interpreter* interpreter, RandomState random_seed);
   ~Runtime();
 
   RawObject newBoundMethod(const Object& function, const Object& self);
@@ -740,11 +747,9 @@ class Runtime {
   static const word kInitialApiHandlesCapacity = 256;
   static const word kInitialApiCachesCapacity = 128;
 
-  static const int kHashSecretSize = 3;
-
-  // Explicitly seed the random number generator
-  void seedRandom(const uword random_state[2],
-                  const uword hash_secret[kHashSecretSize]);
+  void setRandomState(RandomState random_state) {
+    random_state_ = random_state;
+  }
 
   // Returns whether object's class provides a __call__ method
   //
@@ -871,7 +876,7 @@ class Runtime {
   static wchar_t* programName();
   static void setProgramName(const wchar_t* program_name);
 
-  const uword* hashSecret();
+  const byte* hashSecret(size_t size);
 
   // Sets up the signal handlers.
   void initializeSignals(Thread* thread, const Module& under_signal);
@@ -887,14 +892,14 @@ class Runtime {
   Thread* mainThread() { return main_thread_; }
 
  private:
+  Runtime(word heap_size);
+
   void initializeApiData();
   void initializeHeapTypes(Thread* thread);
   void initializeInterned(Thread* thread);
-  void initializeInterpreter();
   void initializeLayouts();
   void initializeModules(Thread* thread);
   void initializePrimitiveInstances();
-  void initializeRandom();
   void initializeSymbols(Thread* thread);
   void initializeThreads();
   void initializeTypes(Thread* thread);
@@ -1068,8 +1073,7 @@ class Runtime {
   Thread* main_thread_;
   Thread* threads_;
 
-  uword random_state_[2];
-  uword hash_secret_[kHashSecretSize];
+  RandomState random_state_;
 
   Symbols* symbols_;
 

@@ -92,12 +92,15 @@ TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
   const word allocation_size = Utils::roundUp(
       array_length + HeapObject::headerSize(array_length), kPointerSize);
   const word total_allocation_size = heap_size * 10;
-  Runtime runtime(heap_size);
-  ASSERT_TRUE(runtime.heap()->verify());
+  RandomState random_seed = randomStateFromSeed(0);
+  std::unique_ptr<Runtime> runtime(
+      new Runtime(heap_size, createCppInterpreter(), random_seed));
+
+  ASSERT_TRUE(runtime->heap()->verify());
   for (word i = 0; i < total_allocation_size; i += allocation_size) {
-    runtime.newBytes(array_length, 0);
+    runtime->newBytes(array_length, 0);
   }
-  ASSERT_TRUE(runtime.heap()->verify());
+  ASSERT_TRUE(runtime->heap()->verify());
 }
 
 TEST_F(RuntimeTest, AttributeAtCallsDunderGetattribute) {
@@ -216,13 +219,13 @@ class BuiltinTypeIdsTest : public ::testing::TestWithParam<LayoutId> {};
 // Make sure that each built-in class has a class object.  Check that its class
 // object points to a layout with the same layout ID as the built-in class.
 TEST_P(BuiltinTypeIdsTest, HasTypeObject) {
-  Runtime runtime;
+  std::unique_ptr<Runtime> runtime(createTestRuntime());
   HandleScope scope;
 
   LayoutId id = GetParam();
-  ASSERT_EQ(runtime.layoutAt(id).layoutId(), LayoutId::kLayout)
+  ASSERT_EQ(runtime->layoutAt(id).layoutId(), LayoutId::kLayout)
       << "Bad RawLayout for " << layoutIdName(id);
-  Object elt(&scope, runtime.concreteTypeAt(id));
+  Object elt(&scope, runtime->concreteTypeAt(id));
   ASSERT_TRUE(elt.isType());
   Type cls(&scope, *elt);
   Layout layout(&scope, cls.instanceLayout());
@@ -1368,39 +1371,35 @@ TEST_F(RuntimeTest, HashStr) {
 }
 
 TEST(RuntimeTestNoFixture, InitializeRandomSetsRandomRandomRNGSeed) {
-  ::unsetenv("PYTHONHASHSEED");
-  Runtime runtime0;
-  uword r0 = runtime0.random();
-  Runtime runtime1;
-  uword r1 = runtime1.random();
-  Runtime runtime2;
-  uword r2 = runtime2.random();
+  word heap_size = 32 * kMiB;
+  std::unique_ptr<Runtime> runtime0(
+      new Runtime(heap_size, createCppInterpreter(), randomState()));
+  uword r0 = runtime0->random();
+  std::unique_ptr<Runtime> runtime1(
+      new Runtime(heap_size, createCppInterpreter(), randomState()));
+  uword r1 = runtime1->random();
+  std::unique_ptr<Runtime> runtime2(
+      new Runtime(heap_size, createCppInterpreter(), randomState()));
+  uword r2 = runtime2->random();
   // Having 3 random numbers be the same will practically never happen.
   EXPECT_TRUE(r0 != r1 || r0 != r2);
 }
 
 TEST(RuntimeTestNoFixture,
      InitializeRandomWithPyroHashSeedEnvVarSetsDeterministicRNGSeed) {
-  ::setenv("PYTHONHASHSEED", "0", 1);
-  Runtime runtime0;
-  uword r0_a = runtime0.random();
-  uword r0_b = runtime0.random();
-  Runtime runtime1;
-  uword r1_a = runtime1.random();
-  uword r1_b = runtime1.random();
+  word heap_size = 32 * kMiB;
+  RandomState seed = randomStateFromSeed(42);
+  std::unique_ptr<Runtime> runtime0(
+      new Runtime(heap_size, createCppInterpreter(), seed));
+  uword r0_a = runtime0->random();
+  uword r0_b = runtime0->random();
+  EXPECT_NE(r0_a, r0_b);
+  std::unique_ptr<Runtime> runtime1(
+      new Runtime(heap_size, createCppInterpreter(), seed));
+  uword r1_a = runtime1->random();
+  uword r1_b = runtime1->random();
   EXPECT_EQ(r0_a, r1_a);
   EXPECT_EQ(r0_b, r1_b);
-  ::unsetenv("PYTHONHASHSEED");
-}
-
-TEST_F(RuntimeTest, Random) {
-  uword r1 = runtime_->random();
-  uword r2 = runtime_->random();
-  EXPECT_NE(r1, r2);
-  uword r3 = runtime_->random();
-  EXPECT_NE(r2, r3);
-  uword r4 = runtime_->random();
-  EXPECT_NE(r3, r4);
 }
 
 TEST_F(RuntimeTest, TrackNativeObjectAndUntrackNativeObject) {
@@ -1485,24 +1484,27 @@ class C:
 }
 
 TEST_F(RuntimeTest, HashCodeSizeCheck) {
-  RawObject code = newEmptyCode();
-  ASSERT_TRUE(code.isHeapObject());
-  EXPECT_EQ(HeapObject::cast(code).header().hashCode(), 0);
-  // Verify that large-magnitude random numbers are properly
-  // truncated to somethat which fits in a SmallInt
-
   // Conspire based on knowledge of the random number generated to
   // create a high-magnitude result from Runtime::random
   // which is truncated to 0 for storage in the header and
   // replaced with "1" so no hash code has value 0.
-  uword high = uword{1} << (8 * sizeof(uword) - 1);
-  uword state[2] = {0, high};
-  uword secret[Runtime::kHashSecretSize] = {0, 0, 0};
-  runtime_->seedRandom(state, secret);
-  uword first = runtime_->random();
-  EXPECT_EQ(first, high);
-  runtime_->seedRandom(state, secret);
-  EXPECT_EQ(runtime_->hash(code), 1);
+  RandomState seed = randomStateFromSeed(0);
+  uint64_t high = uword{1} << (8 * sizeof(uword) - 1);
+  seed.state[0] = 0;
+  seed.state[1] = high;
+
+  // Verify that our crafted random seed does indeed produce the number
+  // we expect.
+  runtime_->setRandomState(seed);
+  EXPECT_EQ(runtime_->random(), high);
+
+  // Verify that large-magnitude random numbers are properly
+  // truncated to something which fits in a SmallInt
+  runtime_->setRandomState(seed);
+  HandleScope scope;
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kObject));
+  Object object(&scope, runtime_->newInstance(layout));
+  EXPECT_EQ(runtime_->hash(*object), 1);
 }
 
 TEST_F(RuntimeTest, NewCapacity) {

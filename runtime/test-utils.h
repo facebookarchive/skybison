@@ -30,11 +30,13 @@ namespace py {
 
 namespace testing {
 
+Runtime* createTestRuntime();
+
 class RuntimeFixture : public ::testing::Test {
  protected:
   void SetUp() override {
-    runtime_ = new Runtime;
-    thread_ = Thread::current();
+    runtime_ = createTestRuntime();
+    thread_ = runtime_->mainThread();
   }
 
   void TearDown() override { delete runtime_; }

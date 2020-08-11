@@ -33,6 +33,17 @@ namespace py {
 
 namespace testing {
 
+Runtime* createTestRuntime() {
+  const char* pyro_cpp_interpreter = std::getenv("PYRO_CPP_INTERPRETER");
+  bool use_cpp_interpreter = pyro_cpp_interpreter != nullptr &&
+                             ::strcmp(pyro_cpp_interpreter, "1") == 0;
+  word heap_size = 128 * kMiB;
+  Interpreter* interpreter =
+      use_cpp_interpreter ? createCppInterpreter() : createAsmInterpreter();
+  RandomState random_state = randomState();
+  return new Runtime(heap_size, interpreter, random_state);
+}
+
 Value::Type Value::type() const { return type_; }
 
 bool Value::boolVal() const {
