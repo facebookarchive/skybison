@@ -42,6 +42,8 @@ TEST_F(PylifecycleExtensionApiTest, GetsigGetsCurrentSignalHandler) {
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
   Py_DontWriteBytecodeFlag = 1;
   Py_IgnoreEnvironmentFlag = 0;
+  Py_InspectFlag = 13;
+  Py_InteractiveFlag = 0;
   Py_IsolatedFlag = 0;
   Py_NoSiteFlag = 1;
   Py_NoUserSiteDirectory = 0;
@@ -57,6 +59,9 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
         PyObject_GetAttrString(flags, "dont_write_bytecode"), 1));
     EXPECT_TRUE(isLongEqualsLong(
         PyObject_GetAttrString(flags, "ignore_environment"), 0));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "inspect"), 13));
+    EXPECT_TRUE(
+        isLongEqualsLong(PyObject_GetAttrString(flags, "interactive"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "isolated"), 0));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 1));
     EXPECT_TRUE(
@@ -72,6 +77,8 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
   Py_DontWriteBytecodeFlag = 0;
   Py_IgnoreEnvironmentFlag = 1;
+  Py_InspectFlag = 0;
+  Py_InteractiveFlag = 1;
   Py_IsolatedFlag = 1;
   Py_NoSiteFlag = 0;
   Py_NoUserSiteDirectory = 1;
@@ -87,6 +94,9 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
         PyObject_GetAttrString(flags, "dont_write_bytecode"), 0));
     EXPECT_TRUE(isLongEqualsLong(
         PyObject_GetAttrString(flags, "ignore_environment"), 1));
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "inspect"), 0));
+    EXPECT_TRUE(
+        isLongEqualsLong(PyObject_GetAttrString(flags, "interactive"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "isolated"), 1));
     EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 0));
     EXPECT_TRUE(

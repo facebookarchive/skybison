@@ -148,7 +148,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
     switch (option) {
       case 'b':
         Py_BytesWarningFlag++;
-        UNIMPLEMENTED("Bytes Warning Flag");
         break;
       case 'd':
         Py_DebugFlag++;
@@ -179,7 +178,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'u':
         Py_UnbufferedStdioFlag = 1;
-        UNIMPLEMENTED("Unbuffered stdio flag");
         break;
       case 'v':
         Py_VerboseFlag++;

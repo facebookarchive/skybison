@@ -21,7 +21,6 @@
 extern "C" int _PyCapsule_Init(void);
 extern "C" int _PySTEntry_Init(void);
 
-// TODO(T57880525): Reconcile these flags with sys.py
 int Py_BytesWarningFlag = 0;
 int Py_DebugFlag = 0;
 int Py_DontWriteBytecodeFlag = 0;
@@ -289,8 +288,10 @@ static void initializeSysFromGlobals(Thread* thread) {
       &scope, runtime->newMutableTuple(static_cast<word>(SysFlag::kNumFlags)));
   data.atPut(static_cast<word>(SysFlag::kDebug),
              SmallInt::fromWord(Py_DebugFlag));
-  data.atPut(static_cast<word>(SysFlag::kInspect), SmallInt::fromWord(0));
-  data.atPut(static_cast<word>(SysFlag::kInteractive), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kInspect),
+             SmallInt::fromWord(Py_InspectFlag));
+  data.atPut(static_cast<word>(SysFlag::kInteractive),
+             SmallInt::fromWord(Py_InteractiveFlag));
   data.atPut(static_cast<word>(SysFlag::kOptimize),
              SmallInt::fromWord(Py_OptimizeFlag));
   data.atPut(static_cast<word>(SysFlag::kDontWriteBytecode),
@@ -303,15 +304,17 @@ static void initializeSysFromGlobals(Thread* thread) {
              SmallInt::fromWord(Py_IgnoreEnvironmentFlag));
   data.atPut(static_cast<word>(SysFlag::kVerbose),
              SmallInt::fromWord(Py_VerboseFlag));
-  data.atPut(static_cast<word>(SysFlag::kBytesWarning), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kBytesWarning),
+             SmallInt::fromWord(Py_BytesWarningFlag));
   data.atPut(static_cast<word>(SysFlag::kQuiet),
              SmallInt::fromWord(Py_QuietFlag));
   data.atPut(static_cast<word>(SysFlag::kHashRandomization),
-             SmallInt::fromWord(1));
+             SmallInt::fromWord(Py_HashRandomizationFlag));
   data.atPut(static_cast<word>(SysFlag::kIsolated),
              SmallInt::fromWord(Py_IsolatedFlag));
   data.atPut(static_cast<word>(SysFlag::kDevMode), Bool::falseObj());
-  data.atPut(static_cast<word>(SysFlag::kUTF8Mode), SmallInt::fromWord(1));
+  data.atPut(static_cast<word>(SysFlag::kUTF8Mode),
+             SmallInt::fromWord(Py_UTF8Mode));
   static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
                 "unexpected flag count");
   Tuple flags_data(&scope, data.becomeImmutable());
@@ -320,14 +323,18 @@ static void initializeSysFromGlobals(Thread* thread) {
 }
 
 PY_EXPORT void Py_InitializeEx(int initsigs) {
+  CHECK(Py_BytesWarningFlag == 0, "Py_BytesWarningFlag != 0 not supported");
   CHECK(Py_DebugFlag == 0, "parser debug mode not supported");
+  CHECK(Py_UTF8Mode == 1, "UTF8Mode != 1 not supported");
+  CHECK(Py_UnbufferedStdioFlag == 0, "Unbuffered stdio not supported");
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
   word heap_size = 1 * kGiB;
   RandomState random_seed;
   const char* hashseed =
       Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONHASHSEED");
-  if (hashseed != nullptr && std::strcmp(hashseed, "random") != 0) {
+  if (hashseed != nullptr && hashseed[0] != '\0' &&
+      std::strcmp(hashseed, "random") != 0) {
     char* endptr;
     unsigned long seed = std::strtoul(hashseed, &endptr, 10);
     if (*endptr != '\0' || seed > 4294967295 ||
@@ -337,8 +344,10 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
           "4294967295]");
     }
     random_seed = randomStateFromSeed(static_cast<uint64_t>(seed));
+    Py_HashRandomizationFlag = (seed != 0);
   } else {
     random_seed = randomState();
+    Py_HashRandomizationFlag = 1;
   }
   Interpreter* interpreter = boolFromEnv("PYRO_CPP_INTERPRETER", false)
                                  ? createCppInterpreter()
