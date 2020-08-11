@@ -15,6 +15,8 @@
 #include "modules.h"
 #include "os.h"
 #include "runtime.h"
+#include "str-builtins.h"
+#include "sys-module.h"
 
 extern "C" int _PyCapsule_Init(void);
 extern "C" int _PySTEntry_Init(void);
@@ -266,6 +268,51 @@ static bool boolFromEnv(const char* name, bool default_value) {
 
 PY_EXPORT void Py_Initialize() { Py_InitializeEx(1); }
 
+static void initializeSysFromGlobals(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  unique_c_ptr<char> path(OS::executablePath());
+  Str executable(&scope, runtime->newStrFromCStr(path.get()));
+  const char* python_path_cstr =
+      Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONPATH");
+  Object python_path_obj(&scope, NoneType::object());
+  if (python_path_cstr != nullptr) {
+    Str python_path_str(&scope, runtime->newStrFromCStr(python_path_cstr));
+    Str sep(&scope, SmallStr::fromCStr(":"));
+    python_path_obj = strSplit(thread, python_path_str, sep, kMaxWord);
+    CHECK(!python_path_obj.isError(), "Failed to calculate PYTHONPATH");
+  } else {
+    python_path_obj = runtime->newList();
+  }
+  List python_path(&scope, *python_path_obj);
+  MutableTuple data(
+      &scope, runtime->newMutableTuple(static_cast<word>(SysFlag::kNumFlags)));
+  data.atPut(static_cast<word>(SysFlag::kDebug), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kInspect), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kInteractive), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kOptimize), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kDontWriteBytecode),
+             SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kNoUserSite), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kNoSite),
+             SmallInt::fromWord(Py_NoSiteFlag));
+  data.atPut(static_cast<word>(SysFlag::kIgnoreEnvironment),
+             SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kVerbose), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kBytesWarning), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kQuiet), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kHashRandomization),
+             SmallInt::fromWord(1));
+  data.atPut(static_cast<word>(SysFlag::kIsolated), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kDevMode), Bool::falseObj());
+  data.atPut(static_cast<word>(SysFlag::kUTF8Mode), SmallInt::fromWord(1));
+  static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
+                "unexpected flag count");
+  Tuple flags_data(&scope, data.becomeImmutable());
+  CHECK(initializeSys(thread, executable, python_path, flags_data).isNoneType(),
+        "initializeSys() failed");
+}
+
 PY_EXPORT void Py_InitializeEx(int initsigs) {
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
@@ -289,18 +336,11 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
   Interpreter* interpreter = boolFromEnv("PYRO_CPP_INTERPRETER", false)
                                  ? createCppInterpreter()
                                  : createAsmInterpreter();
-  new Runtime(heap_size, interpreter, random_seed);
-
-  // TODO(T43142858) We should rather have the site importing in the runtime
-  // constructor. Though for that we need a way to communicate the value of
-  // Py_NoSiteFlag.
-  if (!Py_NoSiteFlag) {
-    PyObject* module = PyImport_ImportModule("site");
-    if (module == nullptr) {
-      py::Utils::printDebugInfoAndAbort();
-    }
-    Py_DECREF(module);
-  }
+  Runtime* runtime = new Runtime(heap_size, interpreter, random_seed);
+  Thread* thread = Thread::current();
+  initializeSysFromGlobals(thread);
+  CHECK(runtime->initialize(thread).isNoneType(),
+        "Failed to initialize runtime");
 }
 
 PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }

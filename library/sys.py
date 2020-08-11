@@ -9,12 +9,10 @@ from _path import dirname as _dirname, join as _join
 
 # These values are all injected by our boot process. flake8 has no knowledge
 # about their definitions and will complain without these lines.
-_python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdin_fd = _stdin_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
 _version_releaselevel = _version_releaselevel  # noqa: F821
-executable = executable  # noqa: F821
 hexversion = hexversion  # noqa: F821
 
 
@@ -100,6 +98,30 @@ _VersionInfo = _structseq_new_type(
 )
 
 
+def _init(_executable, _python_path, _flags_data):
+    global executable
+    executable = _executable
+
+    global prefix
+    prefix = _join(_dirname(executable), "..")
+    global base_exec_prefix
+    base_exec_prefix = prefix
+    global base_prefix
+    base_prefix = prefix
+    global exec_prefix
+    exec_prefix = prefix
+
+    global path
+    path = _python_path
+    stdlib_dir = _join(
+        prefix, "lib", f"{implementation.name}{_version.major}.{_version.minor}"
+    )
+    path.append(stdlib_dir)
+
+    global flags
+    flags = _Flags(_flags_data)
+
+
 def __displayhook__(value):
     if value is None:
         return
@@ -124,9 +146,6 @@ def __displayhook__(value):
 _framework = ""
 
 
-_prefix = _join(_dirname(executable), "..")
-
-
 _version = _VersionInfo(
     (
         (hexversion >> 24) & 0xFF,  # major
@@ -145,10 +164,10 @@ def _getframe(depth=0):
 abiflags = ""
 
 
-base_exec_prefix = _prefix
+base_exec_prefix = None  # will be set by _init
 
 
-base_prefix = _prefix
+base_prefix = None  # will be set by _init
 
 
 copyright = ""
@@ -168,7 +187,10 @@ def excepthook(exc, value, tb):
     _builtin()
 
 
-exec_prefix = base_exec_prefix
+exec_prefix = None  # will be set by _init
+
+
+executable = None  # will be set by _init
 
 
 def exit(code=_Unbound):
@@ -177,7 +199,7 @@ def exit(code=_Unbound):
     raise SystemExit(code)
 
 
-flags = _Flags((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, False, 1))
+flags = None  # will be set by _init
 
 
 float_info = _FloatInfo(
@@ -247,10 +269,7 @@ def is_finalizing():
 meta_path = []
 
 
-path = [
-    *_python_path,
-    _join(_prefix, f"lib/{implementation.name}{_version.major}.{_version.minor}"),
-]
+path = None  # will be set by _init
 
 
 path_hooks = []
@@ -262,7 +281,7 @@ path_importer_cache = {}
 platlibdir = "lib"
 
 
-prefix = base_prefix
+prefix = None  # will be set by _init
 
 
 ps1 = ">>> "

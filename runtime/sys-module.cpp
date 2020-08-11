@@ -47,27 +47,10 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   Object stdout_fd_val(&scope, SmallInt::fromWord(File::kStdout));
   moduleAtPutById(thread, module, ID(_stdout_fd), stdout_fd_val);
 
-  // TODO(T58291784): Make getenv system agnostic
-  const char* python_path_cstr = std::getenv("PYTHONPATH");
-  Object python_path(&scope, NoneType::object());
-  if (python_path_cstr != nullptr) {
-    Str python_path_str(&scope, runtime->newStrFromCStr(python_path_cstr));
-    Str sep(&scope, SmallStr::fromCStr(":"));
-    python_path = strSplit(thread, python_path_str, sep, kMaxWord);
-    CHECK(!python_path.isError(), "Failed to calculate PYTHONPATH");
-  } else {
-    python_path = runtime->newList();
-  }
-  moduleAtPutById(thread, module, ID(_python_path), python_path);
-
   Object byteorder(
       &scope,
       SmallStr::fromCStr(endian::native == endian::little ? "little" : "big"));
   moduleAtPutById(thread, module, ID(byteorder), byteorder);
-
-  unique_c_ptr<char> executable_path(OS::executablePath());
-  Object executable(&scope, runtime->newStrFromCStr(executable_path.get()));
-  moduleAtPutById(thread, module, ID(executable), executable);
 
   // maxsize is defined as the largest supported length of containers which
   // would be `SmallInt::kMaxValue`. However in practice it is used to
@@ -165,6 +148,12 @@ void initializeRuntimePaths(Thread* thread) {
   strCopyToWCStr(module_search_path_wstr.get(),
                  module_search_path_codepoints + 1, module_search_path);
   Runtime::setModuleSearchPath(module_search_path_wstr.get());
+}
+
+RawObject initializeSys(Thread* thread, const Str& executable,
+                        const List& python_path, const Tuple& flags_data) {
+  return thread->invokeFunction3(ID(sys), ID(_init), executable, python_path,
+                                 flags_data);
 }
 
 static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,

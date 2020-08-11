@@ -1549,17 +1549,10 @@ def _get_supported_file_loaders():
     return [extensions, source, bytecode]
 
 
-def _setup():
-    supported_loaders = _get_supported_file_loaders()
-    sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
-    sys.meta_path.append(PathFinder)
-
-    _bootstrap._verbose_message("installing zipimport hook")
-    import zipimport
-
-    sys.path_hooks.insert(0, zipimport.zipimporter)
-
-
-_bootstrap._bootstrap_external = sys.modules[__name__]
 _relax_case = _make_relax_case()
-_setup()
+
+
+def _init():
+    _bootstrap._bootstrap_external = sys.modules[__name__]
+    sys.path_hooks.extend([FileFinder.path_hook(*_get_supported_file_loaders())])
+    sys.meta_path.append(PathFinder)

@@ -270,9 +270,11 @@ from _builtins import (
 
 # Begin: Early definitions that are necessary to process the rest of the file:
 
-# This function is called after all builtins modules are initialized to enable
-# __import__ to work correctly.
-def _init():
+
+def _early_init():
+    """This function is called early in the bootstrap process after enough
+    runtime caches are initialized so we can successfully execute the module
+    bodies of some more modules and import them."""
     global _codecs
     import _codecs
 
@@ -281,6 +283,20 @@ def _init():
 
     global _sys
     import sys as _sys
+
+
+def _init():
+    """This function completes initialization of the runtime."""
+    import _frozen_importlib
+    import _frozen_importlib_external
+    import zipimport
+
+    _frozen_importlib._init()
+    _frozen_importlib_external._init()
+    _sys.path_hooks.insert(0, zipimport.zipimporter)
+
+    if not _sys.flags.no_site:
+        import site  # noqa: F401
 
 
 # TODO(T59042197): Remove in favor of Python 3.8 parameter syntax

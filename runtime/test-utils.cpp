@@ -33,6 +33,38 @@ namespace py {
 
 namespace testing {
 
+static RawObject initializeSysWithDefaults(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  unique_c_ptr<char> path(OS::executablePath());
+  Str executable(&scope, runtime->newStrFromCStr(path.get()));
+  List python_path(&scope, runtime->newList());
+  MutableTuple data(
+      &scope, runtime->newMutableTuple(static_cast<word>(SysFlag::kNumFlags)));
+  data.atPut(static_cast<word>(SysFlag::kDebug), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kInspect), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kInteractive), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kOptimize), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kDontWriteBytecode),
+             SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kNoUserSite), SmallInt::fromWord(1));
+  data.atPut(static_cast<word>(SysFlag::kNoSite), SmallInt::fromWord(1));
+  data.atPut(static_cast<word>(SysFlag::kIgnoreEnvironment),
+             SmallInt::fromWord(1));
+  data.atPut(static_cast<word>(SysFlag::kVerbose), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kBytesWarning), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kQuiet), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kHashRandomization),
+             SmallInt::fromWord(1));
+  data.atPut(static_cast<word>(SysFlag::kIsolated), SmallInt::fromWord(0));
+  data.atPut(static_cast<word>(SysFlag::kDevMode), Bool::falseObj());
+  data.atPut(static_cast<word>(SysFlag::kUTF8Mode), SmallInt::fromWord(1));
+  static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
+                "unexpected flag count");
+  Tuple flags_data(&scope, data.becomeImmutable());
+  return initializeSys(thread, executable, python_path, flags_data);
+}
+
 Runtime* createTestRuntime() {
   const char* pyro_cpp_interpreter = std::getenv("PYRO_CPP_INTERPRETER");
   bool use_cpp_interpreter = pyro_cpp_interpreter != nullptr &&
@@ -41,7 +73,13 @@ Runtime* createTestRuntime() {
   Interpreter* interpreter =
       use_cpp_interpreter ? createCppInterpreter() : createAsmInterpreter();
   RandomState random_state = randomState();
-  return new Runtime(heap_size, interpreter, random_state);
+  Runtime* runtime = new Runtime(heap_size, interpreter, random_state);
+  Thread* thread = Thread::current();
+  CHECK(initializeSysWithDefaults(thread).isNoneType(),
+        "initializeSys() failed");
+  CHECK(runtime->initialize(thread).isNoneType(),
+        "Runtime::initialize() failed");
+  return runtime;
 }
 
 Value::Type Value::type() const { return type_; }

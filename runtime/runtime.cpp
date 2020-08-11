@@ -74,12 +74,7 @@
 namespace py {
 
 static const SymbolId kRequiredModules[] = {
-    ID(_builtins),
-    ID(builtins),
-    ID(operator),
-    ID(_codecs),
-    ID(_frozen_importlib_external),
-    ID(_signal),
+    ID(_builtins), ID(builtins), ID(operator), ID(_codecs), ID(_signal),
 };
 
 static const SymbolId kBinaryOperationSelector[] = {
@@ -2255,6 +2250,11 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
 }
 
 void Runtime::initializeModules(Thread* thread) {
+  // This function initializes module data that is fixed at compile time of the
+  // runtime (code, most functions, types, platform name, ...).
+  // Variable data should NOT be initialize here (runtime executable path,
+  // PYTHONPATH, sys.flags, ...)
+
   modules_ = newDict();
   modules_by_index_ = newList();
   for (SymbolId id : kRequiredModules) {
@@ -2267,9 +2267,17 @@ void Runtime::initializeModules(Thread* thread) {
   Module builtins_module(&scope, findModuleById(ID(builtins)));
   builtins_module_id_ = builtins_module.id();
 
-  // Run builtins._init to import modules required in builtins.
-  CHECK(!thread->invokeFunction0(ID(builtins), ID(_init)).isError(),
-        "Failed to run builtins._init");
+  CHECK(!thread->invokeFunction0(ID(builtins), ID(_early_init))
+             .isErrorException(),
+        "Failed to run builtins._early_init");
+
+  CHECK(!ensureBuiltinModuleById(thread, ID(_frozen_importlib_external))
+             .isErrorException(),
+        "failed to initialize built-in module _frozen_importlib_external");
+}
+
+RawObject Runtime::initialize(Thread* thread) {
+  return thread->invokeFunction0(ID(builtins), ID(_init));
 }
 
 void Runtime::initializeApiData() {

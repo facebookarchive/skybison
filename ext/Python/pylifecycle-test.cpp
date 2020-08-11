@@ -39,6 +39,32 @@ TEST_F(PylifecycleExtensionApiTest, GetsigGetsCurrentSignalHandler) {
   PyOS_setsig(SIGABRT, saved);
 }
 
+TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
+  Py_NoSiteFlag = 1;
+  Py_Initialize();
+
+  {
+    PyObjectPtr flags(moduleGet("sys", "flags"));
+    ASSERT_NE(flags.get(), nullptr);
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 1));
+  }
+
+  Py_FinalizeEx();
+}
+
+TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
+  Py_NoSiteFlag = 0;
+  Py_Initialize();
+
+  {
+    PyObjectPtr flags(moduleGet("sys", "flags"));
+    ASSERT_NE(flags.get(), nullptr);
+    EXPECT_TRUE(isLongEqualsLong(PyObject_GetAttrString(flags, "no_site"), 0));
+  }
+
+  Py_FinalizeEx();
+}
+
 TEST_F(PylifecycleExtensionApiTest, SetsigSetsSignalHandler) {
   PyOS_sighandler_t saved = PyOS_getsig(SIGUSR1);
   PyOS_sighandler_t handler = [](int) { PyRun_SimpleString("handled = True"); };

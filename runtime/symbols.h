@@ -339,6 +339,7 @@ class Runtime;
   V(_dict_value_iterator__index)                                               \
   V(_dict_value_iterator__iterable)                                            \
   V(_dict_values__dict)                                                        \
+  V(_early_init)                                                               \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
   V(_err_program_text)                                                         \
@@ -459,7 +460,6 @@ class Runtime;
   V(_pendingcr)                                                                \
   V(_pointer)                                                                  \
   V(_pos)                                                                      \
-  V(_python_path)                                                              \
   V(_range_check)                                                              \
   V(_range_guard)                                                              \
   V(_range_iterator__length)                                                   \
@@ -637,7 +637,6 @@ class Runtime;
   V(eval)                                                                      \
   V(excepthook)                                                                \
   V(exec)                                                                      \
-  V(executable)                                                                \
   V(extend)                                                                    \
   V(f_back)                                                                    \
   V(f_lasti)                                                                   \
@@ -813,8 +812,7 @@ class Runtime;
   V(warnings)                                                                  \
   V(weakref)                                                                   \
   V(write)                                                                     \
-  V(xor)                                                                       \
-  V(zipimport)
+  V(xor)
 
 // clang-format off
 enum class SymbolId {

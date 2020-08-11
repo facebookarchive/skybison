@@ -1140,7 +1140,7 @@ def _builtin_from_name(name):
     return _load_unlocked(spec)
 
 
-def _setup():
+def _init():
     # Set up the spec for existing builtin/frozen modules.
     module_type = type(sys)
     for name, module in sys.modules.items():
@@ -1154,10 +1154,7 @@ def _setup():
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
 
-
-_setup()
-sys.meta_path.append(BuiltinImporter)
-sys.meta_path.append(FrozenImporter)
-
-__builtins__.__import__ = __import__
-__builtins__._module_repr = _module_repr
+    sys.meta_path.append(BuiltinImporter)
+    sys.meta_path.append(FrozenImporter)
+    __builtins__.__import__ = __import__
+    __builtins__._module_repr = _module_repr

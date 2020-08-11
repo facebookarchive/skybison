@@ -66,6 +66,10 @@ class Runtime {
   Runtime(word heap_size, Interpreter* interpreter, RandomState random_seed);
   ~Runtime();
 
+  // Completes the runtime initialization. Should be called after
+  // `initializeSys`.
+  RawObject initialize(Thread* thread);
+
   RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newBytearray();
