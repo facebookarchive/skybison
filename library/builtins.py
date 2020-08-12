@@ -2821,7 +2821,7 @@ def _complex_str_parts(s):  # noqa: C901
 
 class complex(bootstrap=True):
     def __abs__(self):
-        _unimplemented()
+        _builtin()
 
     def __add__(self, other):
         _builtin()

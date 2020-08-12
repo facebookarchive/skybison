@@ -1,5 +1,7 @@
 #include "complex-builtins.h"
 
+#include <cmath>
+
 #include "builtins.h"
 #include "float-builtins.h"
 #include "frame.h"
@@ -51,6 +53,21 @@ void initializeComplexType(Thread* thread) {
             addBuiltinType(thread, ID(complex), LayoutId::kComplex,
                            /*superclass_id=*/LayoutId::kObject, {nullptr, 0}));
   type.setBuiltinBase(LayoutId::kComplex);
+}
+
+RawObject METH(complex, __abs__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfComplex(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(complex));
+  }
+  Complex self(&scope, complexUnderlying(*self_obj));
+  double real = self.real();
+  double imag = self.imag();
+  double magnitude = std::sqrt(real * real + imag * imag);
+  return runtime->newFloat(magnitude);
 }
 
 RawObject METH(complex, __add__)(Thread* thread, Frame* frame, word nargs) {

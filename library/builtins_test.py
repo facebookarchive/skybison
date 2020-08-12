@@ -5294,6 +5294,15 @@ class CompileTests(unittest.TestCase):
 
 
 class ComplexTests(unittest.TestCase):
+    def test_dunder_abs_with_non_complex_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__abs__(1)
+
+    def test_dunder_abs_calculates_magnitude_returns_float(self):
+        nums = [complex(x / 3.0, y / 7.0) for x in range(-9, 9) for y in range(-9, 9)]
+        for num in nums:
+            self.assertAlmostEqual((num.real ** 2 + num.imag ** 2) ** 0.5, abs(num), 5)
+
     def test_dunder_add_with_non_complex_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             complex.__add__(1, 2)
