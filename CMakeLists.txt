@@ -381,12 +381,18 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     runtime/file-darwin.cpp
     runtime/os-darwin.cpp
     runtime/mutex-darwin.cpp)
+  set(
+    EXTENSION_OS_SOURCES
+    ext/Python/pystrcmp-posix.cpp)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(
     RUNTIME_OS_SOURCES
     runtime/file-linux.cpp
     runtime/os-linux.cpp
     runtime/mutex-linux.cpp)
+  set(
+    EXTENSION_OS_SOURCES
+    ext/Python/pystrcmp-posix.cpp)
 endif()
 
 if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
@@ -872,7 +878,8 @@ add_library(
   ext/Python/random.cpp
   ext/Python/sysmodule.cpp
   ext/Python/thread.cpp
-  ext/Python/traceback.cpp)
+  ext/Python/traceback.cpp
+  ${EXTENSION_OS_SOURCES})
 target_compile_options(
   extension
   PRIVATE
@@ -1130,6 +1137,7 @@ set(
   ext/Python/pyhash-test.cpp
   ext/Python/pylifecycle-test.cpp
   ext/Python/pystate-test.cpp
+  ext/Python/pystrcmp-test.cpp
   ext/Python/pythonrun-test.cpp
   ext/Python/random-test.cpp
   ext/Python/sysmodule-test.cpp
