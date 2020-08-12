@@ -21,6 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "module.h"  /* TODO(T71639364): remove once MODULE_NAME exists in environment */
 #include "prepare_protocol.h"
 
 int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* args, PyObject* kwargs)

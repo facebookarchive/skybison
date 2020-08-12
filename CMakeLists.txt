@@ -154,6 +154,7 @@ foreach(dir
     ${FFI_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
     ${READLINE_INCLUDE_DIRS}
+    ${SQLITE_INCLUDE_DIRS}
     ${XZ_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS})
   set(CPYTHON_CPPFLAGS "${CPYTHON_CPPFLAGS} -I${dir}")
@@ -163,6 +164,7 @@ foreach(dir
     ${FFI_LIBRARY_DIRS}
     ${OPENSSL_LIBRARY_DIRS}
     ${READLINE_LIBRARY_DIRS}
+    ${SQLITE_LIBRARY_DIRS}
     ${XZ_LIBRARY_DIRS}
     ${ZLIB_LIBRARY_DIRS})
   set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -L${dir}")
@@ -654,6 +656,24 @@ add_library(
   ${CPYTHON_DIR}/Modules/_posixsubprocess.c
   ${CPYTHON_DIR}/Modules/_randommodule.c
   ${CPYTHON_DIR}/Modules/_sha3/sha3module.c
+  ${CPYTHON_DIR}/Modules/_sqlite/cache.c
+  ${CPYTHON_DIR}/Modules/_sqlite/cache.h
+  ${CPYTHON_DIR}/Modules/_sqlite/connection.c
+  ${CPYTHON_DIR}/Modules/_sqlite/connection.h
+  ${CPYTHON_DIR}/Modules/_sqlite/cursor.c
+  ${CPYTHON_DIR}/Modules/_sqlite/cursor.h
+  ${CPYTHON_DIR}/Modules/_sqlite/microprotocols.c
+  ${CPYTHON_DIR}/Modules/_sqlite/microprotocols.h
+  ${CPYTHON_DIR}/Modules/_sqlite/module.c
+  ${CPYTHON_DIR}/Modules/_sqlite/module.h
+  ${CPYTHON_DIR}/Modules/_sqlite/prepare_protocol.c
+  ${CPYTHON_DIR}/Modules/_sqlite/prepare_protocol.h
+  ${CPYTHON_DIR}/Modules/_sqlite/row.c
+  ${CPYTHON_DIR}/Modules/_sqlite/row.h
+  ${CPYTHON_DIR}/Modules/_sqlite/statement.c
+  ${CPYTHON_DIR}/Modules/_sqlite/statement.h
+  ${CPYTHON_DIR}/Modules/_sqlite/util.c
+  ${CPYTHON_DIR}/Modules/_sqlite/util.h
   ${CPYTHON_DIR}/Modules/_ssl.c
   ${CPYTHON_DIR}/Modules/_ssl_data.h
   ${CPYTHON_DIR}/Modules/_stat.c
@@ -766,6 +786,7 @@ target_include_directories(
   ${BZIP2_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIRS}
   ${READLINE_INCLUDE_DIRS}
+  ${SQLITE_INCLUDE_DIRS}
   ${XZ_INCLUDE_DIRS}
   ${ZLIB_INCLUDE_DIRS})
 target_compile_definitions(extension-modules PRIVATE _GNU_SOURCE)
@@ -796,6 +817,7 @@ target_link_libraries(
   ${BZIP2_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${READLINE_LIBRARIES}
+  ${SQLITE_LIBRARIES}
   ${XZ_LIBRARIES}
   ${ZLIB_LIBRARIES})
 

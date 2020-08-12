@@ -109,6 +109,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderSha3ReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderSqlite3ReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_sqlite3"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderSreReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_sre"));
   ASSERT_NE(module, nullptr);

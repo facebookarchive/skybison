@@ -27,6 +27,11 @@
 
 #define PYSQLITE_VERSION "2.6.0"
 
+/* TODO(T71639364): fix this upstream or set variable in build */
+#ifndef MODULE_NAME
+#define MODULE_NAME "sqlite3"
+#endif
+
 typedef struct {
     /* SQLite types */
     PyTypeObject* CacheType;
