@@ -125,25 +125,13 @@ def _init(_executable, _python_path, _flags_data, _warnoptions):
     warnoptions = _warnoptions
 
 
-def __displayhook__(value):
-    if value is None:
-        return
-    # Set '_' to None to avoid recursion
-    import builtins
+__stderr__ = _IOStream(_stderr_fd)
 
-    builtins._ = None
-    text = repr(value)
-    try:
-        stdout.write(text)
-    except UnicodeEncodeError:
-        bytes = text.encode(stdout.encoding, "backslashreplace")
-        if hasattr(stdout, "buffer"):
-            stdout.buffer.write(bytes)
-        else:
-            text = bytes.decode(stdout.encoding, "strict")
-            stdout.write(text)
-    stdout.write("\n")
-    builtins._ = value
+
+__stdin__ = _IOStream(_stdin_fd)
+
+
+__stdout__ = _IOStream(_stdout_fd)
 
 
 _framework = ""
@@ -176,7 +164,28 @@ base_prefix = None  # will be set by _init
 copyright = ""
 
 
-displayhook = __displayhook__
+def displayhook(value):
+    if value is None:
+        return
+    # Set '_' to None to avoid recursion
+    import builtins
+
+    builtins._ = None
+    text = repr(value)
+    try:
+        stdout.write(text)
+    except UnicodeEncodeError:
+        bytes = text.encode(stdout.encoding, "backslashreplace")
+        if hasattr(stdout, "buffer"):
+            stdout.buffer.write(bytes)
+        else:
+            text = bytes.decode(stdout.encoding, "strict")
+            stdout.write(text)
+    stdout.write("\n")
+    builtins._ = value
+
+
+__displayhook__ = displayhook
 
 
 dont_write_bytecode = False
@@ -188,6 +197,9 @@ def exc_info():
 
 def excepthook(exc, value, tb):
     _builtin()
+
+
+__excepthook__ = excepthook
 
 
 exec_prefix = None  # will be set by _init
@@ -298,13 +310,13 @@ def setrecursionlimit(limit):
     _builtin()
 
 
-stderr = _IOStream(_stderr_fd)
+stderr = __stderr__
 
 
-stdin = _IOStream(_stdin_fd)
+stdin = __stdin__
 
 
-stdout = _IOStream(_stdout_fd)
+stdout = __stdout__
 
 
 version_info = _version

@@ -35,6 +35,9 @@ class DisplayhookTest(unittest.TestCase):
     def test_has_displayhook(self):
         self.assertTrue(hasattr(sys, "displayhook"))
 
+    def test_displayhook_initial_value(self):
+        self.assertIs(sys.displayhook, sys.__displayhook__)
+
 
 class SysTests(unittest.TestCase):
     class Mgr:
@@ -43,6 +46,9 @@ class SysTests(unittest.TestCase):
 
         def __exit__(self, type, value, tb):
             return True
+
+    def test_excepthook_initial_value(self):
+        self.assertIs(sys.excepthook, sys.__excepthook__)
 
     def test_exit_raises_system_exit(self):
         with self.assertRaises(SystemExit) as ctx:
@@ -222,6 +228,11 @@ class SysTests(unittest.TestCase):
 
     def test_is_finalizing_before_shutdown_returns_false(self):
         self.assertEqual(sys.is_finalizing(), False)
+
+    def test_stdio_initial_values(self):
+        self.assertIs(sys.stderr, sys.__stderr__)
+        self.assertIs(sys.stdin, sys.__stdin__)
+        self.assertIs(sys.stdout, sys.__stdout__)
 
     def test_under_getframe_returns_frame(self):
         frame = sys._getframe(0)
