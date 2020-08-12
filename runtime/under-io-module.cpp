@@ -162,11 +162,8 @@ RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Frame* frame,
                                   "negative size value %d", size);
     }
   }
-  MutableBytes buffer(&scope, bytes_io.buffer());
-  if (size < buffer.length()) {
-    MutableBytes new_buffer(
-        &scope, runtime->mutableBytesCopyWithLength(thread, buffer, size));
-    bytes_io.setBuffer(*new_buffer);
+  if (size < bytes_io.numItems()) {
+    bytes_io.setNumItems(size);
     bytes_io.setPos(size);
   }
   return runtime->newInt(size);
@@ -1092,9 +1089,11 @@ static const BuiltinAttribute kBufferedWriterAttributes[] = {
 };
 
 static const BuiltinAttribute kBytesIOAttributes[] = {
-    {ID(__dict__), RawBytesIO::kDictOffset},
     {ID(_buffer), RawBytesIO::kBufferOffset},
+    {ID(_BytesIO__num_items), RawBytesIO::kNumItemsOffset,
+     AttributeFlags::kReadOnly},
     {ID(_pos), RawBytesIO::kPosOffset},
+    {ID(__dict__), RawBytesIO::kDictOffset},
 };
 
 static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
@@ -1107,15 +1106,20 @@ static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
   word pos = bytes_io.pos();
   word new_pos = pos + val_len;
   MutableBytes buffer(&scope, bytes_io.buffer());
-  if (new_pos <= buffer.length()) {
-    runtime->mutableBytesReplaceFromByteslike(thread, buffer, pos, value,
-                                              val_len);
-  } else {
+  word capacity = buffer.length();
+  if (new_pos > capacity) {
+    // Resize first
+    word new_size =
+        Runtime::newCapacity(capacity, bytes_io.numItems() + val_len);
     MutableBytes new_buffer(
-        &scope, runtime->mutableBytesCopyWithLength(thread, buffer, new_pos));
-    runtime->mutableBytesReplaceFromByteslike(thread, new_buffer, pos, value,
-                                              val_len);
+        &scope, runtime->mutableBytesCopyWithLength(thread, buffer, new_size));
     bytes_io.setBuffer(*new_buffer);
+    buffer = *new_buffer;
+  }
+  runtime->mutableBytesReplaceFromByteslike(thread, buffer, pos, value,
+                                            val_len);
+  if (new_pos > bytes_io.numItems()) {
+    bytes_io.setNumItems(new_pos);
   }
   bytes_io.setPos(new_pos);
   return runtime->newInt(val_len);
@@ -1133,6 +1137,7 @@ RawObject METH(BytesIO, __init__)(Thread* thread, Frame* frame, word nargs) {
   Object initial_bytes(&scope, args.get(1));
   if (initial_bytes.isNoneType() || initial_bytes == Bytes::empty()) {
     bytes_io.setBuffer(runtime->emptyMutableBytes());
+    bytes_io.setNumItems(0);
     bytes_io.setPos(0);
     bytes_io.setClosed(false);
     return NoneType::object();
@@ -1149,6 +1154,7 @@ RawObject METH(BytesIO, __init__)(Thread* thread, Frame* frame, word nargs) {
                                             bytes_len);
   bytes_io.setBuffer(*buffer);
   bytes_io.setClosed(false);
+  bytes_io.setNumItems(bytes_len);
   bytes_io.setPos(0);
   return NoneType::object();
 }
@@ -1167,7 +1173,9 @@ RawObject METH(BytesIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
                                 "I/O operation on closed file.");
   }
   Bytes buffer(&scope, bytes_io.buffer());
-  return runtime->bytesCopy(thread, buffer);
+  word num_items = bytes_io.numItems();
+  if (num_items == 0) return Bytes::empty();
+  return runtime->bytesCopyWithSize(thread, buffer, num_items);
 }
 
 RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
@@ -1188,7 +1196,7 @@ RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
   MutableBytes buffer(&scope, bytes_io.buffer());
 
   word size;
-  word buffer_len = buffer.length();
+  word buffer_len = bytes_io.numItems();
   word pos = bytes_io.pos();
   if (size_obj.isNoneType()) {
     size = buffer_len;

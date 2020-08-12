@@ -3559,6 +3559,8 @@ class RawBytesIO : public RawUnderBufferedIOBase {
   // Getters and setters
   RawObject buffer() const;
   void setBuffer(RawObject buffer) const;
+  word numItems() const;
+  void setNumItems(word num_items) const;
   word pos() const;
   void setPos(word pos) const;
   RawObject dict() const;
@@ -3566,7 +3568,8 @@ class RawBytesIO : public RawUnderBufferedIOBase {
 
   // Layout
   static const int kBufferOffset = RawUnderBufferedIOBase::kSize;
-  static const int kPosOffset = kBufferOffset + kPointerSize;
+  static const int kNumItemsOffset = kBufferOffset + kPointerSize;
+  static const int kPosOffset = kNumItemsOffset + kPointerSize;
   static const int kDictOffset = kPosOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
 
@@ -7520,6 +7523,14 @@ inline RawObject RawBytesIO::buffer() const {
 
 inline void RawBytesIO::setBuffer(RawObject buffer) const {
   instanceVariableAtPut(kBufferOffset, buffer);
+}
+
+inline word RawBytesIO::numItems() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
+}
+
+inline void RawBytesIO::setNumItems(word num_items) const {
+  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
 }
 
 inline word RawBytesIO::pos() const {
