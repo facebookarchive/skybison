@@ -43,6 +43,10 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
 // Return the type's tp_basicsize. Use only with extension types.
 uword typeGetBasicSize(const Type& type);
 
+// Return the either computed CPython flags based on Pyro type state or an
+// extension type's tp_flags. Use with either managed types or extension types.
+uword typeGetFlags(const Type& type);
+
 // Type has a list of type slots attached to it. The type slots are used by the
 // C-API emulation layer for C extension types.
 bool typeHasSlots(const Type& type);

@@ -444,6 +444,10 @@ class type(bootstrap=True):
         type._merge_class_dict_keys(self, result)
         return list(result)
 
+    @_property
+    def __flags__(self):
+        _builtin()
+
     def __getattribute__(self, name):
         _builtin()
 

@@ -88,4 +88,57 @@ uword typeGetBasicSize(const Type& type) {
   return typeSlotUWordAt(type, kSlotBasicSize);
 }
 
+uword typeGetFlags(const Type& type) {
+  if (typeHasSlots(type)) {
+    return typeSlotUWordAt(type, kSlotFlags);
+  }
+  // It is not yet clear whether presenting all Pyro types as heap types is the
+  // best way to go about things. While it is true that all of our types are
+  // allocated on the heap (as opposed to being static), we have some similar
+  // features to CPython static types such as preventing modifications to type
+  // dictionaries.
+  // Also, our default is different from CPython's default and that's okay.
+  static const uword default_flags = Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_READY;
+  uword result = default_flags;
+  // TODO(T71637829): Check if the type allows subclassing and set
+  // Py_TPFLAGS_BASETYPE appropriately.
+  Type::Flag internal_flags = type.flags();
+  if (internal_flags & Type::Flag::kHasCycleGC) {
+    result |= Py_TPFLAGS_HAVE_GC;
+  }
+  if (internal_flags & Type::Flag::kIsAbstract) {
+    result |= Py_TPFLAGS_IS_ABSTRACT;
+  }
+  switch (type.builtinBase()) {
+    case LayoutId::kInt:
+      result |= Py_TPFLAGS_LONG_SUBCLASS;
+      break;
+    case LayoutId::kList:
+      result |= Py_TPFLAGS_LIST_SUBCLASS;
+      break;
+    case LayoutId::kTuple:
+      result |= Py_TPFLAGS_TUPLE_SUBCLASS;
+      break;
+    case LayoutId::kBytes:
+      result |= Py_TPFLAGS_BYTES_SUBCLASS;
+      break;
+    case LayoutId::kStr:
+      result |= Py_TPFLAGS_UNICODE_SUBCLASS;
+      break;
+    case LayoutId::kDict:
+      result |= Py_TPFLAGS_DICT_SUBCLASS;
+      break;
+    // BaseException is handled separately down below
+    case LayoutId::kType:
+      result |= Py_TPFLAGS_TYPE_SUBCLASS;
+      break;
+    default:
+      if (type.isBaseExceptionSubclass()) {
+        result |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
+      }
+      break;
+  }
+  return result;
+}
+
 }  // namespace py

@@ -1060,6 +1060,15 @@ RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newIntFromUnsigned(basicsize);
 }
 
+RawObject METH(type, __flags__)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  uword cpython_flags = typeGetFlags(self);
+  return runtime->newIntFromUnsigned(cpython_flags);
+}
+
 RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
