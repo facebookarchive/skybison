@@ -50,6 +50,21 @@ Interpreter
   which leads to module attributes being updated immediately as the
   code is running.
 
+- Similarly, a dictionary passed to the `globals` parameter of the function
+  constructor (`types.FunctionType`), will have its contents copied to a
+  specialized proxy object inside a module. This means that any changes to
+  globals from within the function will not reflect in the dictionary
+  passed-in, but instead in the function's module proxy object. The following
+  test will fail:
+
+        def _f():
+            global foo
+            foo = "baz"
+
+        d = {"foo": "bar"}
+        result = types.FunctionType(_f.__code__, d, name="hi")
+        self.assertEqual(d["foo"], "baz")
+
 C-API
 -----
 

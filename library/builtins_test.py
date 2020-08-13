@@ -9220,6 +9220,17 @@ def foo():
         with self.assertRaises(TypeError):
             types.FunctionType(_f.__code__, "", name="hi")
 
+    def test_dunder_new_with_dict_globals_returns_function(self):
+        import types
+
+        def _f():
+            global foo
+            return foo
+
+        result = types.FunctionType(_f.__code__, {"foo": "bar"}, name="hi")
+        self.assertIsInstance(result, types.FunctionType)
+        self.assertEqual(result(), "bar")
+
     def test_dunder_new_with_non_str_names_value_raises_type_error(self):
         import types
 
