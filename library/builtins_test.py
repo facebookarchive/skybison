@@ -17051,13 +17051,13 @@ class StrModTests(unittest.TestCase):
     def test_c_format_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.__mod__("%c", (None,))
-        self.assertEqual(str(context.exception), f"%c requires int or char")
+        self.assertEqual(str(context.exception), "%c requires int or char")
         with self.assertRaises(TypeError) as context:
             str.__mod__("%c", ("ab",))
-        self.assertEqual(str(context.exception), f"%c requires int or char")
+        self.assertEqual(str(context.exception), "%c requires int or char")
         with self.assertRaises(TypeError) as context:
             str.__mod__("%c", (123456789012345678901234567890,))
-        self.assertEqual(str(context.exception), f"%c requires int or char")
+        self.assertEqual(str(context.exception), "%c requires int or char")
 
         class C:
             def __index__(self):
@@ -17065,7 +17065,7 @@ class StrModTests(unittest.TestCase):
 
         with self.assertRaises(TypeError) as context:
             str.__mod__("%c", (C(),))
-        self.assertEqual(str(context.exception), f"%c requires int or char")
+        self.assertEqual(str(context.exception), "%c requires int or char")
 
     def test_s_format_returns_string(self):
         self.assertEqual(str.__mod__("%s", ("foo",)), "foo")
