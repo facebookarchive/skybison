@@ -18634,6 +18634,30 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__subclasses__(), [])
         self.assertEqual(D.__subclasses__(), [])
 
+    def test_dunder_repr_with_bytes_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__repr__(b"")
+
+    def test_dunder_repr_returns_string_with_module_and_name(self):
+        class C:
+            pass
+
+        self.assertEqual(
+            type.__repr__(C),
+            "<class '__main__.TypeTests.test_dunder_repr_returns_string_with_module_and_name.<locals>.C'>",
+        )
+
+    def test_dunder_repr_for_builtins_returns_string_with_only_name(self):
+        self.assertEqual(type.__repr__(list), "<class 'list'>")
+        self.assertEqual(type.__repr__(TypeError), "<class 'TypeError'>")
+
+    def test_dunder_repr_for_imported_class_returns_string_with_module_and_name(self):
+        self.assertEqual(type.__repr__(ast.NodeVisitor), "<class 'ast.NodeVisitor'>")
+        self.assertEqual(
+            type.__repr__(contextlib.ContextDecorator),
+            "<class 'contextlib.ContextDecorator'>",
+        )
+
     def test_dunder_subclasses_with_leaf_type_returns_empty_list(self):
         class C:
             pass

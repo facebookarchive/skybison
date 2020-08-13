@@ -474,7 +474,11 @@ class type(bootstrap=True):
         return {}
 
     def __repr__(self):
-        return f"<class '{self.__name__}'>"
+        _type_guard(self)
+        mod = self.__module__
+        if mod and mod != "builtins":
+            return f"<class '{mod}.{self.__qualname__}'>"
+        return f"<class '{self.__qualname__}'>"
 
     def __setattr__(self, name, value):
         _builtin()

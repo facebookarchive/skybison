@@ -450,10 +450,8 @@ class Foo:
 result = type.__repr__(Foo)
 )")
                    .isError());
-  // TODO(T32810595): Once module names are supported, this should become
-  // "<class '__main__.Foo'>".
-  EXPECT_TRUE(
-      isStrEqualsCStr(mainModuleAt(runtime_, "result"), "<class 'Foo'>"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"),
+                              "<class '__main__.Foo'>"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderNewWithOneArgReturnsTypeOfArg) {
