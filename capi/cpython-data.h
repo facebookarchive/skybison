@@ -239,6 +239,8 @@ PyAPI_DATA(const unsigned char) _PyLong_DigitValue[256];
 #define PyBUF_WRITE 0x200
 
 /* Type Slots */
+#define Py_bf_getbuffer 1
+#define Py_bf_releasebuffer 2
 #define Py_mp_ass_subscript 3
 #define Py_mp_length 4
 #define Py_mp_subscript 5

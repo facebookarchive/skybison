@@ -4,9 +4,11 @@
 
 namespace py {
 
-const int kSlotFlags = 0;
-const int kSlotBasicSize = 1;
-const int kSlotItemSize = 2;
+const int kSlotFlags = -2;
+const int kSlotBasicSize = -1;
+const int kSlotItemSize = 0;
+const int kNumInternalSlots = 3;
+const int kSlotOffset = kNumInternalSlots - 1;
 
 class Thread;
 
