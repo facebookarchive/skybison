@@ -508,6 +508,56 @@ TEST_F(UnicodeExtensionApiTest, DATAReturnsSamePointer) {
   EXPECT_EQ(p1, p2);
 }
 
+TEST_F(UnicodeExtensionApiTest, FormatWithNullFormatRaisesBadInternalCall) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(nullptr, PyUnicode_Format(nullptr, str));
+  ASSERT_NE(nullptr, PyErr_Occurred());
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FormatWithNullArgsRaisesBadInternalCall) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(nullptr, PyUnicode_Format(str, nullptr));
+  ASSERT_NE(nullptr, PyErr_Occurred());
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FormatWithNonStrFormatRaisesTypeError) {
+  PyObjectPtr format(PyLong_FromLong(10));
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(nullptr, PyUnicode_Format(format, str));
+  ASSERT_NE(nullptr, PyErr_Occurred());
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FormatWithMismatchedFormatAndArgsRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("foo%s%s"));
+  PyObjectPtr args(PyUnicode_FromString("bar"));
+  EXPECT_EQ(nullptr, PyUnicode_Format(str, args));
+  ASSERT_NE(nullptr, PyErr_Occurred());
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FormatWithStrArgsReturnsStr) {
+  PyObjectPtr str(PyUnicode_FromString("foo%s"));
+  PyObjectPtr args(PyUnicode_FromString("bar"));
+  PyObjectPtr result(PyUnicode_Format(str, args));
+  EXPECT_NE(nullptr, result);
+  EXPECT_EQ(nullptr, PyErr_Occurred());
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "foobar"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FormatWithTupleArgsReturnsStr) {
+  PyObjectPtr str(PyUnicode_FromString("foo%s%s"));
+  PyObjectPtr args(PyTuple_Pack(2, PyUnicode_FromString("bar"),
+                                PyUnicode_FromString("baz")));
+  PyObjectPtr result(PyUnicode_Format(str, args));
+  EXPECT_NE(nullptr, result);
+  EXPECT_EQ(nullptr, PyErr_Occurred());
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "foobarbaz"));
+}
+
 TEST_F(UnicodeExtensionApiTest, FSDecoderWithStrSetsString) {
   PyObjectPtr str(PyUnicode_FromString("foo"));
   PyObject* result;

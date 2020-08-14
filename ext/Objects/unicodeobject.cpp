@@ -1693,8 +1693,17 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
   return strRFind(haystack, needle, start, end);
 }
 
-PY_EXPORT PyObject* PyUnicode_Format(PyObject* /* t */, PyObject* /* s */) {
-  UNIMPLEMENTED("PyUnicode_Format");
+PY_EXPORT PyObject* PyUnicode_Format(PyObject* format, PyObject* args) {
+  if (format == nullptr || args == nullptr) {
+    PyErr_BadInternalCall();
+    return nullptr;
+  }
+  if (!PyUnicode_Check(format)) {
+    PyErr_Format(PyExc_TypeError, "must be str, not %.100s",
+                 _PyType_Name(Py_TYPE(format)));
+    return nullptr;
+  }
+  return PyNumber_Remainder(format, args);
 }
 
 PY_EXPORT PyObject* PyUnicode_FromEncodedObject(PyObject* /* j */,
