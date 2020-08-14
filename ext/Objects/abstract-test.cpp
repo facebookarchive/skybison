@@ -1797,10 +1797,78 @@ TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithByteArrayReturnsBuffer) {
 }
 
 TEST_F(AbstractExtensionApiTest,
-       PyObjectGetBufferWithIntReturnsRaisesTypeError) {
+       PyObjectGetBufferWithBufferProtocolObjectReturnsBuffer) {
+  static char contents[] = "hello world";
+  static Py_ssize_t contents_len = std::strlen(contents);
+  getbufferproc getbuffer_func = [](PyObject* obj, Py_buffer* view, int flags) {
+    return PyBuffer_FillInfo(view, obj, strdup(contents), contents_len,
+                             /*readonly=*/1, flags);
+  };
+  releasebufferproc releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    std::free(view->buf);
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  PyObjectPtr instance(PyObject_CallFunction(type, nullptr));
+
   Py_buffer buffer;
-  PyObjectPtr value(PyLong_FromLong(42));
-  EXPECT_EQ(PyObject_GetBuffer(value, &buffer, 0), -1);
+  Py_ssize_t old_refcnt = Py_REFCNT(instance);
+  int result = PyObject_GetBuffer(instance, &buffer, 0);
+  EXPECT_EQ(Py_REFCNT(instance), old_refcnt + 1);
+  ASSERT_EQ(buffer.len, contents_len);
+  EXPECT_NE(buffer.buf, contents);
+  EXPECT_EQ(std::memcmp(buffer.buf, contents, contents_len), 0);
+  ASSERT_EQ(result, 0);
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(instance), old_refcnt);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithNonBufferExtensionObjectRaisesTypeError) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  PyObjectPtr instance(PyObject_CallFunction(type, nullptr));
+  Py_buffer buffer;
+  EXPECT_EQ(PyObject_GetBuffer(instance, &buffer, 0), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithNonBufferManagedObjectRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+instance = C()
+)");
+  Py_buffer buffer;
+  PyObjectPtr instance(mainModuleGet("instance"));
+  EXPECT_EQ(PyObject_GetBuffer(instance, &buffer, 0), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithNonBufferBuiltinTypeRaisesTypeError) {
+  Py_buffer buffer;
+  PyObjectPtr instance(PyLong_FromLong(42));
+  EXPECT_EQ(PyObject_GetBuffer(instance, &buffer, 0), -1);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
@@ -1851,15 +1919,45 @@ def func(a, b, c, d, e, f):
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytesReturnsTrue) {
-  PyObject* obj(PyBytes_FromString("foo"));
-  EXPECT_TRUE(PyObject_CheckBuffer(obj));
-  Py_DECREF(obj);
+  PyObjectPtr obj(PyBytes_FromString("foo"));
+  EXPECT_TRUE(PyObject_CheckBuffer(obj.get()));
 }
 
-TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithNonBytesReturnsFalse) {
-  PyObject* obj(PyLong_FromLong(2));
-  EXPECT_FALSE(PyObject_CheckBuffer(obj));
-  Py_DECREF(obj);
+TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytearrayReturnsTrue) {
+  PyObjectPtr obj(PyByteArray_FromStringAndSize("foo", 3));
+  EXPECT_TRUE(PyObject_CheckBuffer(obj.get()));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCheckBufferWithBufferObjectReturnsTrue) {
+  static char contents[] = "hello world";
+  static Py_ssize_t contents_len = std::strlen(contents);
+  getbufferproc getbuffer_func = [](PyObject* obj, Py_buffer* view, int flags) {
+    return PyBuffer_FillInfo(view, obj, strdup(contents), contents_len,
+                             /*readonly=*/1, flags);
+  };
+  releasebufferproc releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    std::free(view->buf);
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  PyObjectPtr obj(PyObject_CallFunction(type, nullptr));
+  EXPECT_TRUE(PyObject_CheckBuffer(obj.get()));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCheckBufferWithNonByteslikeReturnsFalse) {
+  PyObjectPtr obj(PyLong_FromLong(2));
+  EXPECT_FALSE(PyObject_CheckBuffer(obj.get()));
 }
 
 TEST_F(AbstractExtensionApiTest,

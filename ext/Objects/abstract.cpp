@@ -5,6 +5,7 @@
 #include "cpython-func.h"
 
 #include "capi-handles.h"
+#include "capi.h"
 #include "exception-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
@@ -12,6 +13,7 @@
 #include "object-builtins.h"
 #include "runtime.h"
 #include "type-builtins.h"
+#include "typeslots.h"
 
 namespace py {
 
@@ -185,10 +187,18 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* view) {
   PyObject* pyobj = view->obj;
   if (pyobj == nullptr) return;
 
-  // TODO(T38246066) call bf_releasebuffer type slot.
-  DCHECK(PyBytes_Check(pyobj) || PyByteArray_Check(pyobj),
-         "buffer protocol only implemented for bytes");
-
+  // TODO(T38246066): Check for other builtin byteslike types using
+  // Runtime::isByteslike
+  if (PyBytes_Check(pyobj) || PyByteArray_Check(pyobj)) {
+    // Nothing to do
+  } else {
+    // Call Py_bf_releasebuffer slot if defined
+    void* releasebuffer_fn =
+        PyType_GetSlot(Py_TYPE(pyobj), Py_bf_releasebuffer);
+    if (releasebuffer_fn != nullptr) {
+      reinterpret_cast<releasebufferproc>(releasebuffer_fn)(pyobj, view);
+    }
+  }
   view->obj = nullptr;
   Py_DECREF(pyobj);
 }
@@ -840,8 +850,23 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
 }
 
 PY_EXPORT int PyObject_CheckBuffer_Func(PyObject* pyobj) {
-  // TODO(T38246066): investigate the use of PyObjects as Buffers
-  return PyBytes_Check(pyobj);
+  // TODO(T38246066): Collapse all the cases into Runtime::isByteslike and make
+  // this function a small wrapper around that
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*obj) ||
+      runtime->isInstanceOfBytearray(*obj)) {
+    return true;
+  }
+  if (runtime->isByteslike(*obj)) {
+    UNIMPLEMENTED("PyObject_CheckBuffer with builtin byteslike");
+  }
+  Type type(&scope, runtime->typeOf(*obj));
+  if (type.isBuiltin()) return false;
+  if (!typeHasSlots(type)) return false;
+  return typeSlotAt(type, Py_bf_getbuffer) != nullptr;
 }
 
 PY_EXPORT int PyObject_CheckReadBuffer(PyObject* /* j */) {
@@ -927,6 +952,12 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   return ApiHandle::newReference(thread, *result);
 }
 
+static int raiseBufferError(Thread* thread, const Object& obj) {
+  thread->raiseWithFmt(LayoutId::kTypeError,
+                       "a bytes-like object is required, not '%T'", &obj);
+  return -1;
+}
+
 PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
   char* buffer;
@@ -939,21 +970,24 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
     buffer = PyByteArray_AsString(obj);
     if (buffer == nullptr) return -1;
     length = PyByteArray_Size(obj);
-  } else if (PyMemoryView_Check(obj)) {
-    UNIMPLEMENTED("PyObject_GetBuffer() for memoryview");
   } else {
     Thread* thread = Thread::current();
     HandleScope scope(thread);
     Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
-    Type type(&scope, thread->runtime()->typeOf(*obj_obj));
-    if (type.isBuiltin()) {
-      thread->raiseWithFmt(LayoutId::kTypeError,
-                           "a bytes-like object is required, not '%T'",
-                           &obj_obj);
-      return -1;
+    Runtime* runtime = thread->runtime();
+    if (runtime->isByteslike(*obj_obj)) {
+      Type type(&scope, runtime->typeOf(*obj_obj));
+      // TODO(T38246066): Add support for other builtin byteslike types using
+      // Runtime::isByteslike
+      UNIMPLEMENTED("PyObject_GetBuffer() for builtin byteslike type '%s'",
+                    Str::cast(type.name()).toCStr());
     }
-    // TODO(T38246066) handle subclasses or call bf_getbuffer type slot.
-    UNIMPLEMENTED("subclasses / buffer protocol bf_getbuffer()");
+    Type type(&scope, runtime->typeOf(*obj_obj));
+    if (type.isBuiltin()) return raiseBufferError(thread, obj_obj);
+    if (!typeHasSlots(type)) return raiseBufferError(thread, obj_obj);
+    void* slot = typeSlotAt(type, Py_bf_getbuffer);
+    if (slot == nullptr) return raiseBufferError(thread, obj_obj);
+    return reinterpret_cast<getbufferproc>(slot)(obj, view, flags);
   }
   return PyBuffer_FillInfo(view, obj, buffer, length, /*readonly=*/1, flags);
 }
