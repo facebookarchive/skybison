@@ -26,7 +26,7 @@ extern Vector<const char*> warn_options;
 static const char* const kInteractiveHelp =
     R"(Type "help", "copyright", "credits" or "license" for more information.)";
 
-static const char* const kSupportedOpts = "+bBc:dEhiIm:OqsSuvVW:xX:";
+static const char* const kSupportedOpts = "+bBc:dEthiIm:OqsSuvVW:xX:";
 static const struct option kSupportedLongOpts[] = {
     {"help", no_argument, nullptr, 'h'},
     {"version", no_argument, nullptr, 'V'},
@@ -179,6 +179,9 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         break;
       case 'E':
         Py_IgnoreEnvironmentFlag++;
+        break;
+      case 't':
+        // ignored for backwards compatibility.
         break;
       case 'u':
         Py_UnbufferedStdioFlag = 1;

@@ -143,6 +143,12 @@ class OptionsTest(unittest.TestCase):
         self.assertIn(b"test_c_option ok", result.stdout)
         self.assertNotIn(b">>>", result.stderr)
 
+    def test_t_option_noop(self):
+        result = subprocess.run(
+            [sys.executable, "-t", "-c", "0"], check=True, capture_output=True
+        )
+        self.assertIn(b"", result.stdout)
+
     def test_filename_option_executes_code(self):
         with TemporaryDirectory() as tempdir:
             tempfile = os.path.join(tempdir, "foo.py")
