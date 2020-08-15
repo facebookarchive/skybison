@@ -426,4 +426,11 @@ PY_EXPORT char* _Py_SetLocaleFromEnv(int category) {
   return std::setlocale(category, "");
 }
 
+PY_EXPORT int _Py_IsFinalizing(void) {
+  if (Thread::current() == nullptr) return 0;
+  Runtime* runtime = Thread::current()->runtime();
+  DCHECK(runtime != nullptr, "unexpected");
+  return runtime->isFinalizing();
+}
+
 }  // namespace py

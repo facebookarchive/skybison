@@ -155,5 +155,13 @@ TEST_F(PylifecycleExtensionApiTest, SetProgramNameSetsName) {
   EXPECT_STREQ(Py_GetProgramName(), L"new-program-name");
 }
 
+TEST(PylifecycleExtensionApiTestNoFixture,
+     IsFinalizingReturnsFalseBeforeAndAfterFinalizePyro) {
+  Py_Initialize();
+  ASSERT_EQ(_Py_IsFinalizing(), 0);
+  ASSERT_EQ(Py_FinalizeEx(), 0);
+  EXPECT_EQ(_Py_IsFinalizing(), 0);
+}
+
 }  // namespace testing
 }  // namespace py
