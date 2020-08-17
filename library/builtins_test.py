@@ -16129,6 +16129,11 @@ class StrTests(unittest.TestCase):
         self.assertTrue("8725".isdecimal())
         self.assertFalse("8-4".isdecimal())
 
+    def test_isdecimal_with_non_ascii_returns_bool(self):
+        self.assertTrue("\u0e50".isdecimal())  # THAI DIGIT ZERO
+        self.assertFalse("\u00b2".isdecimal())  # SUPERSCRIPT TWO
+        self.assertFalse("\u00bd".isdecimal())  # VULGAR FRACTION ONE HALF
+
     def test_isdecimal_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isdecimal(None)

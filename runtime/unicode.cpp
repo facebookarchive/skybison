@@ -14,6 +14,10 @@ bool Unicode::isCasedDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kCasedMask) != 0;
 }
 
+bool Unicode::isDecimalDB(int32_t code_point) {
+  return (typeRecord(code_point)->flags & kDecimalMask) != 0;
+}
+
 bool Unicode::isLinebreakDB(int32_t code_point) {
   return unicodeIsLinebreak(code_point);
 }
