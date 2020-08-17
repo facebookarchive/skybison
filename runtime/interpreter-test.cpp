@@ -4453,6 +4453,36 @@ for i in range(5):
   EXPECT_EQ(l.at(0), SmallInt::fromWord(10));
 }
 
+TEST_F(InterpreterTest, StoreSubscrWithListRewritesToStoreSubscrList) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    l[i] = 4
+    return 100
+
+l = [1,2,3]
+d = {1: -1}
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+
+  List l(&scope, mainModuleAt(runtime_, "l"));
+  SmallInt key(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), foo, l, key),
+      100));
+  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+
+  // Revert back to caching __getitem__ when a non-list is observed.
+  Dict d(&scope, mainModuleAt(runtime_, "d"));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), foo, d, key),
+      100));
+  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+}
+
 // TODO(bsimmers) Rewrite these exception tests to ensure that the specific
 // bytecodes we care about are being exercised, so we're not be at the mercy of
 // compiler optimizations or changes.

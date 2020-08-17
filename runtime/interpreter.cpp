@@ -1733,6 +1733,25 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
   return Continue::NEXT;
 }
 
+HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread,
+                                                       word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(1);
+  RawObject key = frame->peek(0);
+  if (container.isList() && key.isSmallInt()) {
+    word index = SmallInt::cast(key).value();
+    RawList list = List::cast(container);
+    word length = list.numItems();
+    if (0 <= index && index < length) {
+      RawObject value = frame->peek(2);
+      list.atPut(index, value);
+      frame->dropValues(3);
+      return Continue::NEXT;
+    }
+  }
+  return storeSubscrUpdateCache(thread, arg);
+}
+
 NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                                           word arg) {
   HandleScope scope(thread);
@@ -1832,6 +1851,19 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
                                                              word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container = frame->peek(1);
+  RawObject key = frame->peek(0);
+  switch (container.layoutId()) {
+    case LayoutId::kList:
+      if (key.isSmallInt()) {
+        rewriteCurrentBytecode(frame, STORE_SUBSCR_LIST);
+        return doStoreSubscrList(thread, arg);
+      }
+      break;
+    default:
+      break;
+  }
   return storeSubscrUpdateCache(thread, arg);
 }
 

@@ -455,6 +455,7 @@ class Interpreter {
   static Continue doStoreAttrPolymorphic(Thread* thread, word arg);
   static Continue doStoreAttrAnamorphic(Thread* thread, word arg);
   static Continue doStoreSubscr(Thread* thread, word arg);
+  static Continue doStoreSubscrList(Thread* thread, word arg);
   static Continue doStoreSubscrMonomorphic(Thread* thread, word arg);
   static Continue doStoreSubscrPolymorphic(Thread* thread, word arg);
   static Continue doStoreSubscrAnamorphic(Thread* thread, word arg);
