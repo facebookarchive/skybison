@@ -16275,6 +16275,10 @@ class StrTests(unittest.TestCase):
         self.assertTrue("Hello World!".isprintable())
         self.assertFalse("Hello\tWorld!".isprintable())
 
+    def test_isprintable_with_non_ascii_returns_bool(self):
+        self.assertTrue("\u0e50 foo \u00e3!".isprintable())
+        self.assertFalse("\u0e50 \t \u00e3!".isprintable())
+
     def test_isprintable_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isprintable(None)

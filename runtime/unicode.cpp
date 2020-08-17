@@ -34,6 +34,10 @@ bool Unicode::isNumericDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kNumericMask) != 0;
 }
 
+bool Unicode::isPrintableDB(int32_t code_point) {
+  return (typeRecord(code_point)->flags & kPrintableMask) != 0;
+}
+
 bool Unicode::isSpaceDB(int32_t code_point) {
   return unicodeIsWhitespace(code_point);
 }

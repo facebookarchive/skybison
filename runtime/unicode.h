@@ -116,6 +116,7 @@ class Unicode {
   static bool isLinebreakDB(int32_t code_point);
   static bool isLowerDB(int32_t code_point);
   static bool isNumericDB(int32_t code_point);
+  static bool isPrintableDB(int32_t code_point);
   static bool isSpaceDB(int32_t code_point);
   static bool isTitleDB(int32_t code_point);
   static bool isUnfoldedDB(int32_t code_point);
@@ -307,11 +308,10 @@ inline bool Unicode::isNumeric(int32_t code_point) {
 }
 
 inline bool Unicode::isPrintable(int32_t code_point) {
-  // TODO(T55176519): implement using Unicode database
   if (isASCII(code_point)) {
     return ASCII::isPrintable(code_point);
   }
-  return true;
+  return Unicode::isPrintableDB(code_point);
 }
 
 inline bool Unicode::isSpace(int32_t code_point) {

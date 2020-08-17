@@ -1451,12 +1451,10 @@ RawObject METH(str, isprintable)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
-  for (word i = 0, char_length = self.length(); i < char_length; i++) {
-    byte b = self.byteAt(i);
-    if (b > kMaxASCII) {
-      UNIMPLEMENTED("non-ASCII character");
-    }
-    if (!ASCII::isPrintable(b)) {
+  word char_length = self.length();
+  for (word i = 0, len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+    if (!Unicode::isPrintable(code_point)) {
       return Bool::falseObj();
     }
   }
