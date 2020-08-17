@@ -116,6 +116,7 @@ struct EmitEnv {
   const char* current_handler;
   Label call_handlers[kNumBytecodes];
   Label call_function_handler_impl;
+  Label call_prepared_no_intrinsic_function_handler_impl;
   Label call_function_pop_word_handler_impl;
   Label unwind_handler;
 };
@@ -955,13 +956,78 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   __ jmp(prepared, Assembler::kFarJump);
 }
 
-void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
+void emitCallPreparedFunctionHandlerImpl(EmitEnv* env, Register r_callable,
+                                         Label* next_opcode, word extra_pop) {
   const Register r_scratch = RAX;
-  const Register r_callable = RDI;
-  const Register r_intrinsic_id = RDX;
   const Register r_flags = RDX;
   const Register r_post_call_sp = R8;
   const Register r_saved_post_call_sp = R15;
+
+  __ leaq(r_post_call_sp,
+          Address(RSP, kOpargReg, TIMES_8, kPointerSize + extra_pop));
+
+  // Check whether the call is interpreted.
+  __ movl(r_flags,
+          Address(r_callable, heapObjectDisp(RawFunction::kFlagsOffset)));
+  __ testl(r_flags, smallIntImmediate(Function::Flags::kInterpreted));
+  Label call_trampoline;
+  __ jcc(ZERO, &call_trampoline, Assembler::kFarJump);
+
+  // We do not support freevar/cellvar setup in the assembly interpreter.
+  __ testl(r_flags, smallIntImmediate(Function::Flags::kNofree));
+  Label call_interpreted_slow_path;
+  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
+
+  // prepareDefaultArgs.
+  __ movl(r_scratch,
+          Address(r_callable, heapObjectDisp(RawFunction::kArgcountOffset)));
+  __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
+  __ cmpl(r_scratch, kOpargReg);
+  __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
+  __ testl(r_flags, smallIntImmediate(Function::Flags::kSimpleCall));
+  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
+
+  emitPushCallFrame(env, r_callable, r_post_call_sp,
+                    &call_interpreted_slow_path);
+
+  __ bind(next_opcode);
+  emitNextOpcode(env);
+
+  // Function::cast(callable).entry()(thread, frame, nargs);
+  __ bind(&call_trampoline);
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  __ movq(r_saved_post_call_sp, r_post_call_sp);
+  __ movq(r_scratch,
+          Address(r_callable, heapObjectDisp(RawFunction::kEntryOffset)));
+  __ movq(kArgRegs[0], kThreadReg);
+  __ movq(kArgRegs[2], kOpargReg);
+  __ movq(kArgRegs[1], kFrameReg);
+  __ call(r_scratch);
+  // if (kReturnRegs[0].isErrorException()) return UNWIND;
+  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                "tag should fit a byte for cmpb");
+  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
+  __ movq(RSP, r_saved_post_call_sp);
+  emitRestoreInterpreterState(env, kBytecode);
+  __ pushq(kReturnRegs[0]);
+  emitNextOpcode(env);
+
+  // Interpreter::callInterpreted(thread, nargs, frame, function, post_call_sp)
+  __ bind(&call_interpreted_slow_path);
+  __ movq(kArgRegs[3], r_callable);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kArgRegs[1] == kOpargReg, "reg mismatch");
+  __ movq(kArgRegs[2], kFrameReg);
+  static_assert(kArgRegs[4] == r_post_call_sp, "reg mismatch");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall(env, reinterpret_cast<int64_t>(Interpreter::callInterpreted));
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
+  const Register r_callable = RDI;
+  const Register r_intrinsic_id = RDX;
 
   // Check callable.
   __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
@@ -1013,70 +1079,11 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
 
   __ bind(&no_intrinsic);
 
-  __ leaq(r_post_call_sp,
-          Address(RSP, kOpargReg, TIMES_8, kPointerSize + extra_pop));
-
-  // Check whether the call is interpreted.
-  __ movl(r_flags,
-          Address(r_callable, heapObjectDisp(RawFunction::kFlagsOffset)));
-  __ testl(r_flags, smallIntImmediate(Function::Flags::kInterpreted));
-  Label call_trampoline;
-  __ jcc(ZERO, &call_trampoline, Assembler::kFarJump);
-
-  // We do not support freevar/cellvar setup in the assembly interpreter.
-  __ testl(r_flags, smallIntImmediate(Function::Flags::kNofree));
-  Label call_interpreted_slow_path;
-  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
-
-  // prepareDefaultArgs.
-  __ movl(r_scratch,
-          Address(r_callable, heapObjectDisp(RawFunction::kArgcountOffset)));
-  __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
-  __ cmpl(r_scratch, kOpargReg);
-  __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
-  __ testl(r_flags, smallIntImmediate(Function::Flags::kSimpleCall));
-  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
-
-  emitPushCallFrame(env, r_callable, r_post_call_sp,
-                    &call_interpreted_slow_path);
-
-  __ bind(&next_opcode);
-  emitNextOpcode(env);
+  emitCallPreparedFunctionHandlerImpl(env, r_callable, &next_opcode, extra_pop);
 
   __ bind(&prepare_callable_generic);
   emitPrepareCallable(env, r_callable, r_layout_id, &prepare_callable_immediate,
                       &prepared);
-
-  // Function::cast(callable).entry()(thread, frame, nargs);
-  __ bind(&call_trampoline);
-  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  __ movq(r_saved_post_call_sp, r_post_call_sp);
-  __ movq(r_scratch,
-          Address(r_callable, heapObjectDisp(RawFunction::kEntryOffset)));
-  __ movq(kArgRegs[0], kThreadReg);
-  __ movq(kArgRegs[2], kOpargReg);
-  __ movq(kArgRegs[1], kFrameReg);
-  __ call(r_scratch);
-  // if (kReturnRegs[0].isErrorException()) return UNWIND;
-  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                "tag should fit a byte for cmpb");
-  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
-  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
-  __ movq(RSP, r_saved_post_call_sp);
-  emitRestoreInterpreterState(env, kBytecode);
-  __ pushq(kReturnRegs[0]);
-  emitNextOpcode(env);
-
-  // Interpreter::callInterpreted(thread, nargs, frame, function, post_call_sp)
-  __ bind(&call_interpreted_slow_path);
-  __ movq(kArgRegs[3], r_callable);
-  __ movq(kArgRegs[0], kThreadReg);
-  static_assert(kArgRegs[1] == kOpargReg, "reg mismatch");
-  __ movq(kArgRegs[2], kFrameReg);
-  static_assert(kArgRegs[4] == r_post_call_sp, "reg mismatch");
-  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall(env, reinterpret_cast<int64_t>(Interpreter::callInterpreted));
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
 template <>
@@ -1094,9 +1101,14 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ cmpl(r_scratch, Immediate(Unbound::object().raw()));
   __ jcc(EQUAL, &env->call_function_pop_word_handler_impl, Assembler::kFarJump);
 
-  // Increment argument count by 1 and jump into CALL_FUNCTION handler.
+  // Increment argument count by 1 and jump into a call handler .
+  // Since CALL_METHOD always calls a function object from attribute lookups,
+  // the function is guaranteed to be a function object without an intrinsic
+  // since Pyro currently does not support to attach intrinsics to  a type
+  // attribute.
   __ incl(kOpargReg);
-  __ jmp(&env->call_function_handler_impl, Assembler::kFarJump);
+  __ jmp(&env->call_prepared_no_intrinsic_function_handler_impl,
+         Assembler::kFarJump);
 }
 
 template <>
@@ -1568,6 +1580,14 @@ void emitInterpreter(EmitEnv* env) {
 
   __ bind(&env->call_function_handler_impl);
   emitCallFunctionHandlerImpl(env, 0);
+
+  __ bind(&env->call_prepared_no_intrinsic_function_handler_impl);
+  {
+    const Register r_callable = RDI;
+    Label next_opcode;
+    __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
+    emitCallPreparedFunctionHandlerImpl(env, r_callable, &next_opcode, 0);
+  }
 
   __ bind(&env->call_function_pop_word_handler_impl);
   emitCallFunctionHandlerImpl(env, /*extra_pop=*/kPointerSize);
