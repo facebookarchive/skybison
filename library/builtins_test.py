@@ -16086,6 +16086,14 @@ class StrTests(unittest.TestCase):
         self.assertTrue("hElLo".isalpha())
         self.assertFalse("x8".isalpha())
 
+    def test_isalpha_with_non_ascii_returns_bool(self):
+        self.assertTrue("resum\u00e9".isalpha())
+        self.assertTrue("\u00c9tude".isalpha())
+        self.assertTrue("\u01c8udevit".isalpha())
+
+        self.assertFalse("23\u00e9".isalpha())
+        self.assertFalse("\u01c8 ".isalpha())
+
     def test_isalpha_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isalpha(None)

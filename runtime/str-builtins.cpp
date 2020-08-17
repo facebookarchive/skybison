@@ -1312,16 +1312,12 @@ RawObject METH(str, isalpha)(Thread* thread, Frame* frame, word nargs) {
   if (char_length == 0) {
     return Bool::falseObj();
   }
-  word i = 0;
-  do {
-    byte b = self.byteAt(i++);
-    if (b > kMaxASCII) {
-      UNIMPLEMENTED("non-ASCII character");
-    }
-    if (!ASCII::isAlpha(b)) {
+  for (word i = 0, len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+    if (!Unicode::isAlpha(code_point)) {
       return Bool::falseObj();
     }
-  } while (i < char_length);
+  }
   return Bool::trueObj();
 }
 

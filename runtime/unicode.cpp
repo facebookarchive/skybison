@@ -6,6 +6,10 @@
 
 namespace py {
 
+bool Unicode::isAlphaDB(int32_t code_point) {
+  return (typeRecord(code_point)->flags & kAlphaMask) != 0;
+}
+
 bool Unicode::isCasedDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kCasedMask) != 0;
 }

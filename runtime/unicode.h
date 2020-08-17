@@ -105,6 +105,7 @@ class Unicode {
 
  private:
   // Slow paths that use the Unicode database.
+  static bool isAlphaDB(int32_t code_point);
   static bool isCasedDB(int32_t code_point);
   static bool isLinebreakDB(int32_t code_point);
   static bool isLowerDB(int32_t code_point);
@@ -220,8 +221,7 @@ inline bool Unicode::isAlpha(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isAlpha(code_point);
   }
-  // TODO(T57791326) support non-ASCII
-  UNIMPLEMENTED("non-ASCII characters");
+  return Unicode::isAlphaDB(code_point);
 }
 
 inline bool Unicode::isCased(int32_t code_point) {
