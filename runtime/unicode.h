@@ -82,6 +82,7 @@ class Unicode {
   static bool isAlpha(int32_t code_point);
   static bool isCased(int32_t code_point);
   static bool isDecimal(int32_t code_point);
+  static bool isDigit(int32_t code_point);
   static bool isHangulLead(int32_t code_point);
   static bool isHangulSyllable(int32_t code_point);
   static bool isHangulTrail(int32_t code_point);
@@ -109,6 +110,7 @@ class Unicode {
   static bool isAlphaDB(int32_t code_point);
   static bool isCasedDB(int32_t code_point);
   static bool isDecimalDB(int32_t code_point);
+  static bool isDigitDB(int32_t code_point);
   static bool isLinebreakDB(int32_t code_point);
   static bool isLowerDB(int32_t code_point);
   static bool isSpaceDB(int32_t code_point);
@@ -238,6 +240,13 @@ inline bool Unicode::isDecimal(int32_t code_point) {
     return ASCII::isDecimal(code_point);
   }
   return isDecimalDB(code_point);
+}
+
+inline bool Unicode::isDigit(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isDigit(code_point);
+  }
+  return isDigitDB(code_point);
 }
 
 inline bool Unicode::isHangulLead(int32_t code_point) {

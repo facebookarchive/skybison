@@ -18,6 +18,10 @@ bool Unicode::isDecimalDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kDecimalMask) != 0;
 }
 
+bool Unicode::isDigitDB(int32_t code_point) {
+  return (typeRecord(code_point)->flags & kDigitMask) != 0;
+}
+
 bool Unicode::isLinebreakDB(int32_t code_point) {
   return unicodeIsLinebreak(code_point);
 }
