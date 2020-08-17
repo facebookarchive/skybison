@@ -16067,6 +16067,10 @@ class StrTests(unittest.TestCase):
         self.assertTrue("1a5b".isalnum())
         self.assertFalse("1b)".isalnum())
 
+    def test_isalnum_with_non_ascii_returns_bool(self):
+        self.assertTrue("\u0e50ab2\u00e9".isalnum())
+        self.assertFalse("\u0e50 \u00e9".isalnum())
+
     def test_isalnum_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isalnum(None)

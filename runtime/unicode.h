@@ -80,6 +80,7 @@ class Unicode {
   static bool isASCII(int32_t code_point);
   static bool isAlias(int32_t code_point);
   static bool isAlpha(int32_t code_point);
+  static bool isAlnum(int32_t code_point);
   static bool isCased(int32_t code_point);
   static bool isDecimal(int32_t code_point);
   static bool isDigit(int32_t code_point);
@@ -221,6 +222,14 @@ inline bool Unicode::isASCII(int32_t code_point) {
 inline bool Unicode::isAlias(int32_t code_point) {
   return (kAliasStart <= code_point) &&
          (code_point < kAliasStart + kAliasCount);
+}
+
+inline bool Unicode::isAlnum(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isAlnum(code_point);
+  }
+  return Unicode::isAlphaDB(code_point) || Unicode::isDecimalDB(code_point) ||
+         Unicode::isDigitDB(code_point) || Unicode::isNumericDB(code_point);
 }
 
 inline bool Unicode::isAlpha(int32_t code_point) {
