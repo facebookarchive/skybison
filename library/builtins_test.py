@@ -16247,6 +16247,11 @@ class StrTests(unittest.TestCase):
         self.assertTrue("28741".isnumeric())
         self.assertFalse("5e4".isnumeric())
 
+    def test_isnumeric_with_non_ascii_returns_bool(self):
+        self.assertTrue("\u0e50".isnumeric())  # THAI DIGIT ZERO
+        self.assertTrue("\u00b2".isnumeric())  # SUPERSCRIPT TWO
+        self.assertTrue("\u00bd".isnumeric())  # VULGAR FRACTION ONE HALF
+
     def test_isnumeric_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isnumeric(None)

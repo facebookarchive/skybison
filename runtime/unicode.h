@@ -90,6 +90,7 @@ class Unicode {
   static bool isLinebreak(int32_t code_point);
   static bool isLower(int32_t code_point);
   static bool isNamedSequence(int32_t code_point);
+  static bool isNumeric(int32_t code_point);
   static bool isPrintable(int32_t code_point);
   static bool isSpace(int32_t code_point);
   static bool isSurrogate(int32_t code_point);
@@ -113,6 +114,7 @@ class Unicode {
   static bool isDigitDB(int32_t code_point);
   static bool isLinebreakDB(int32_t code_point);
   static bool isLowerDB(int32_t code_point);
+  static bool isNumericDB(int32_t code_point);
   static bool isSpaceDB(int32_t code_point);
   static bool isTitleDB(int32_t code_point);
   static bool isUnfoldedDB(int32_t code_point);
@@ -286,6 +288,13 @@ inline bool Unicode::isLower(int32_t code_point) {
 inline bool Unicode::isNamedSequence(int32_t code_point) {
   return (kNamedSequenceStart <= code_point) &&
          (code_point < kNamedSequenceStart + kNamedSequenceCount);
+}
+
+inline bool Unicode::isNumeric(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::isNumeric(code_point);
+  }
+  return Unicode::isNumericDB(code_point);
 }
 
 inline bool Unicode::isPrintable(int32_t code_point) {
