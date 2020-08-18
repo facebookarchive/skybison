@@ -6,7 +6,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-_Py_IDENTIFIER(insert);
+static const char *INSERT = "insert";
 
 static Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
@@ -93,7 +93,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
+        result = PyObject_CallMethod(list, INSERT, "nO", index, item);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -197,7 +197,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
+        result = PyObject_CallMethod(list, INSERT, "nO", index, item);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -252,5 +252,10 @@ static struct PyModuleDef _bisectmodule = {
 PyMODINIT_FUNC
 PyInit__bisect(void)
 {
+    PyObject *m = PyState_FindModule(&_bisectmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     return PyModule_Create(&_bisectmodule);
 }
