@@ -3844,7 +3844,7 @@ RawObject FUNC(_builtins, _readline)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Str prompt(&scope, strUnderlying(args.get(0)));
   word length = prompt.length();
-  std::unique_ptr<char> prompt_buf(new char[length + 1]);
+  std::unique_ptr<char[]> prompt_buf(new char[length + 1]);
   prompt.copyTo(reinterpret_cast<byte*>(prompt_buf.get()), length);
   prompt_buf.get()[length] = '\0';
   char* line = PyOS_Readline(stdin, stdout, prompt_buf.get());
