@@ -80,6 +80,8 @@ CPYTHON_TESTS=(
   test_with.py
 )
 PYRO_PATCHED_CPYTHON_TESTS=(
+  test_asyncgen.py
+  test_coroutines.py
   test_dict.py
   test_hmac.py
   test_range.py
