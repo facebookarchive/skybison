@@ -2,7 +2,7 @@
 import sys
 import unittest
 
-from _io import StringIO
+from _io import StringIO, TextIOWrapper
 from test_support import pyro_only
 
 
@@ -37,6 +37,11 @@ class DisplayhookTest(unittest.TestCase):
 
     def test_displayhook_initial_value(self):
         self.assertIs(sys.displayhook, sys.__displayhook__)
+
+    def test_dunder_std_streams_are_text_io_wrappers(self):
+        self.assertIsInstance(sys.__stderr__, TextIOWrapper)
+        self.assertIsInstance(sys.__stdin__, TextIOWrapper)
+        self.assertIsInstance(sys.__stdout__, TextIOWrapper)
 
 
 class SysTests(unittest.TestCase):
@@ -233,6 +238,22 @@ class SysTests(unittest.TestCase):
         self.assertIs(sys.stderr, sys.__stderr__)
         self.assertIs(sys.stdin, sys.__stdin__)
         self.assertIs(sys.stdout, sys.__stdout__)
+
+    def test_std_streams_are_utf_8_encoded(self):
+        self.assertEqual(sys.stderr.encoding, "UTF-8")
+        self.assertEqual(sys.stdin.encoding, "UTF-8")
+        self.assertEqual(sys.stdout.encoding, "UTF-8")
+
+    def test_std_streams_have_correct_modes(self):
+        self.assertEqual(sys.stderr.mode, "w")
+        self.assertEqual(sys.stdin.mode, "r")
+        self.assertEqual(sys.stdout.mode, "w")
+
+    @pyro_only
+    def test_std_streams_point_to_correct_fileno(self):
+        self.assertEqual(sys.stderr.buffer.fileno(), sys._stderr_fd)
+        self.assertEqual(sys.stdin.buffer.fileno(), sys._stdin_fd)
+        self.assertEqual(sys.stdout.buffer.fileno(), sys._stdout_fd)
 
     def test_under_getframe_returns_frame(self):
         frame = sys._getframe(0)

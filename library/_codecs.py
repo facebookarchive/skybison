@@ -874,7 +874,7 @@ class UTF8IncrementalDecoder(BufferedIncrementalDecoder):
 
 # TODO(T61720167): Should be removed once we can freeze encodings
 def getincrementaldecoder(encoding):
-    if encoding == "utf-8":
+    if encoding == "UTF-8" or encoding == "utf-8":
         return UTF8IncrementalDecoder
     decoder = lookup(encoding).incrementaldecoder
     if decoder is None:
@@ -884,7 +884,7 @@ def getincrementaldecoder(encoding):
 
 # TODO(T61720167): Should be removed once we can freeze encodings
 def getincrementalencoder(encoding):
-    if encoding == "utf-8":
+    if encoding == "UTF-8" or encoding == "utf-8":
         return UTF8IncrementalEncoder
     encoder = lookup(encoding).incrementalencoder
     if encoder is None:

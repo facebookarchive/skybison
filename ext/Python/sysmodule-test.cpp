@@ -112,8 +112,8 @@ import sys
 del sys.stdout
 )");
   CaptureStdStreams streams;
-  PySys_WriteStdout("Konnichiwa");
-  EXPECT_EQ(streams.out(), "Konnichiwa");
+  PySys_WriteStdout("Konnichiwa\n");
+  EXPECT_EQ(streams.out(), "Konnichiwa\n");
   EXPECT_EQ(streams.err(), "");
 }
 
