@@ -119,6 +119,10 @@ FullCasing Unicode::toLowerDB(int32_t code_point) {
   return result;
 }
 
+double Unicode::toNumericDB(int32_t code_point) {
+  return numericValue(code_point);
+}
+
 FullCasing Unicode::toTitleDB(int32_t code_point) {
   const UnicodeTypeRecord* record = typeRecord(code_point);
   if ((record->flags & kExtendedCaseMask) == 0) {

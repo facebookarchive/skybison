@@ -29,6 +29,7 @@ class ASCII {
   static int8_t toDecimal(byte b);
   static int8_t toDigit(byte b);
   static byte toLower(byte b);
+  static double toNumeric(byte b);
   static byte toUpper(byte b);
 
  private:
@@ -108,6 +109,7 @@ class Unicode {
   static int8_t toDigit(int32_t code_point);
   static FullCasing toFolded(int32_t code_point);
   static FullCasing toLower(int32_t code_point);
+  static double toNumeric(int32_t code_point);
   static FullCasing toTitle(int32_t code_point);
   static FullCasing toUpper(int32_t code_point);
 
@@ -131,6 +133,7 @@ class Unicode {
   static int8_t toDigitDB(int32_t code_point);
   static FullCasing toFoldedDB(int32_t code_point);
   static FullCasing toLowerDB(int32_t code_point);
+  static double toNumericDB(int32_t code_point);
   static FullCasing toTitleDB(int32_t code_point);
   static FullCasing toUpperDB(int32_t code_point);
 
@@ -197,6 +200,10 @@ inline int8_t ASCII::toDecimal(byte b) { return toDigit(b); }
 inline int8_t ASCII::toDigit(byte b) { return isDigit(b) ? b - '0' : -1; }
 
 inline byte ASCII::toLower(byte b) { return isUpper(b) ? b + ('a' - 'A') : b; }
+
+inline double ASCII::toNumeric(byte b) {
+  return isNumeric(b) ? static_cast<double>(b - '0') : -1.0;
+}
 
 inline byte ASCII::toUpper(byte b) { return isLower(b) ? b - ('a' - 'A') : b; }
 
@@ -396,6 +403,13 @@ inline FullCasing Unicode::toLower(int32_t code_point) {
     return {ASCII::toLower(code_point), -1};
   }
   return toLowerDB(code_point);
+}
+
+inline double Unicode::toNumeric(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::toNumeric(code_point);
+  }
+  return toNumericDB(code_point);
 }
 
 inline FullCasing Unicode::toTitle(int32_t code_point) {

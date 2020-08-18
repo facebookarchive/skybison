@@ -491,7 +491,7 @@ RawObject FUNC(unicodedata, numeric)(Thread* thread, Frame* frame, word nargs) {
         LayoutId::kTypeError, "numeric() argument must be a unicode character");
   }
 
-  double value = numericValue(code_point);
+  double value = Unicode::toNumeric(code_point);
   if (value != -1.0) {
     return runtime->newFloat(value);
   }

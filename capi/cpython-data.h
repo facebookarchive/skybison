@@ -208,7 +208,6 @@ PyAPI_DATA(int) Py_VerboseFlag;
 #define PY_CTF_SPACE 0x08
 #define PY_CTF_XDIGIT 0x10
 
-PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[128];
 PyAPI_DATA(const unsigned int) _Py_ctype_table[256];
 PyAPI_DATA(const unsigned char) _Py_ctype_tolower[256];
 PyAPI_DATA(const unsigned char) _Py_ctype_toupper[256];

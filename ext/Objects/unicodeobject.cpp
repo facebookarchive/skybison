@@ -22,38 +22,6 @@ const char* Py_FileSystemDefaultEncoding = "utf-8";
 int Py_HasFileSystemDefaultEncoding = 1;
 const char* Py_FileSystemDefaultEncodeErrors = "surrogatepass";
 
-// clang-format off
-extern "C" const unsigned char _Py_ascii_whitespace[] = {  // NOLINT
-    0, 0, 0, 0, 0, 0, 0, 0,
-//     case 0x0009: * CHARACTER TABULATION
-//     case 0x000A: * LINE FEED
-//     case 0x000B: * LINE TABULATION
-//     case 0x000C: * FORM FEED
-//     case 0x000D: * CARRIAGE RETURN
-    0, 1, 1, 1, 1, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-//     case 0x001C: * FILE SEPARATOR
-//     case 0x001D: * GROUP SEPARATOR
-//     case 0x001E: * RECORD SEPARATOR
-//     case 0x001F: * UNIT SEPARATOR
-    0, 0, 0, 0, 1, 1, 1, 1,
-//     case 0x0020: * SPACE
-    1, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
-};
-// clang-format on
-
 namespace py {
 
 typedef byte Py_UCS1;
@@ -2220,6 +2188,121 @@ PY_EXPORT int PyUnicode_IS_ASCII_Func(PyObject* obj) {
   DCHECK(thread->runtime()->isInstanceOfStr(*str),
          "strIsASCII must receive a unicode object");
   return strUnderlying(*str).isASCII() ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISALPHA_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isAlpha(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISDECIMAL_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isDecimal(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISDIGIT_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isDigit(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISLINEBREAK_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isLinebreak(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISLOWER_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isLower(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISNUMERIC_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isNumeric(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISPRINTABLE_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isPrintable(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISSPACE_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isSpace(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISTITLE_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isTitle(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_ISUPPER_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return 0;
+  }
+  return Unicode::isUpper(static_cast<int32_t>(code_point)) ? 1 : 0;
+}
+
+PY_EXPORT int Py_UNICODE_TODECIMAL_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return -1;
+  }
+  return Unicode::toDecimal(static_cast<int32_t>(code_point));
+}
+
+PY_EXPORT int Py_UNICODE_TODIGIT_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return -1;
+  }
+  return Unicode::toDigit(static_cast<int32_t>(code_point));
+}
+
+PY_EXPORT Py_UCS4 Py_UNICODE_TOLOWER_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return code_point;
+  }
+  FullCasing lower = Unicode::toLower(static_cast<int32_t>(code_point));
+  return lower.code_points[0];
+}
+
+PY_EXPORT double Py_UNICODE_TONUMERIC_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return -1.0;
+  }
+  return Unicode::toNumeric(static_cast<int32_t>(code_point));
+}
+
+PY_EXPORT Py_UCS4 Py_UNICODE_TOTITLE_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return code_point;
+  }
+  FullCasing title = Unicode::toTitle(static_cast<int32_t>(code_point));
+  return title.code_points[0];
+}
+
+PY_EXPORT Py_UCS4 Py_UNICODE_TOUPPER_Func(Py_UCS4 code_point) {
+  if (code_point > kMaxUnicode) {
+    return code_point;
+  }
+  FullCasing upper = Unicode::toUpper(static_cast<int32_t>(code_point));
+  return upper.code_points[0];
 }
 
 PY_EXPORT int _Py_normalize_encoding(const char* encoding, char* lower,

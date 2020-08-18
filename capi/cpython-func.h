@@ -219,6 +219,22 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func(void);
 PyAPI_FUNC(Py_ssize_t*) Py_REFCNT_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t*) Py_SIZE_Func(PyVarObject*);
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
+PyAPI_FUNC(int) Py_UNICODE_ISALPHA_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISDECIMAL_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISDIGIT_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISLINEBREAK_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISLOWER_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISNUMERIC_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISPRINTABLE_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISSPACE_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISTITLE_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_ISUPPER_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_TODECIMAL_Func(Py_UCS4);
+PyAPI_FUNC(int) Py_UNICODE_TODIGIT_Func(Py_UCS4);
+PyAPI_FUNC(Py_UCS4) Py_UNICODE_TOLOWER_Func(Py_UCS4);
+PyAPI_FUNC(double) Py_UNICODE_TONUMERIC_Func(Py_UCS4);
+PyAPI_FUNC(Py_UCS4) Py_UNICODE_TOTITLE_Func(Py_UCS4);
+PyAPI_FUNC(Py_UCS4) Py_UNICODE_TOUPPER_Func(Py_UCS4);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject*);
@@ -1597,26 +1613,25 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(int, const void*, size_t);
 #define Py_UNICODE_ISALNUM(ch)                                                 \
   (Py_UNICODE_ISALPHA(ch) || Py_UNICODE_ISDECIMAL(ch) ||                       \
    Py_UNICODE_ISDIGIT(ch) || Py_UNICODE_ISNUMERIC(ch))
-#define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
-#define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
-#define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
-#define Py_UNICODE_ISLINEBREAK(ch) _PyUnicode_IsLinebreak(ch)
-#define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
-#define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
-#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
-#define Py_UNICODE_ISSPACE(ch)                                                 \
-  ((ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
-#define Py_UNICODE_ISTITLE(ch) _PyUnicode_IsTitlecase(ch)
-#define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)
+#define Py_UNICODE_ISALPHA(ch) Py_UNICODE_ISALPHA_Func(ch)
+#define Py_UNICODE_ISDECIMAL(ch) Py_UNICODE_ISDECIMAL_Func(ch)
+#define Py_UNICODE_ISDIGIT(ch) Py_UNICODE_ISDIGIT_Func(ch)
+#define Py_UNICODE_ISLINEBREAK(ch) Py_UNICODE_ISLINEBREAK_Func(ch)
+#define Py_UNICODE_ISLOWER(ch) Py_UNICODE_ISLOWER_Func(ch)
+#define Py_UNICODE_ISNUMERIC(ch) Py_UNICODE_ISNUMERIC_Func(ch)
+#define Py_UNICODE_ISPRINTABLE(ch) Py_UNICODE_ISPRINTABLE_Func(ch)
+#define Py_UNICODE_ISSPACE(ch) Py_UNICODE_ISSPACE_Func(ch)
+#define Py_UNICODE_ISTITLE(ch) Py_UNICODE_ISTITLE_Func(ch)
+#define Py_UNICODE_ISUPPER(ch) Py_UNICODE_ISUPPER_Func(ch)
 #define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDBFF)
 #define Py_UNICODE_IS_LOW_SURROGATE(ch) (0xDC00 <= (ch) && (ch) <= 0xDFFF)
 #define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
-#define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
-#define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
-#define Py_UNICODE_TOLOWER(ch) _PyUnicode_ToLowercase(ch)
-#define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
-#define Py_UNICODE_TOTITLE(ch) _PyUnicode_ToTitlecase(ch)
-#define Py_UNICODE_TOUPPER(ch) _PyUnicode_ToUppercase(ch)
+#define Py_UNICODE_TODECIMAL(ch) Py_UNICODE_TODECIMAL_Func(ch)
+#define Py_UNICODE_TODIGIT(ch) Py_UNICODE_TODIGIT_Func(ch)
+#define Py_UNICODE_TOLOWER(ch) Py_UNICODE_TOLOWER_Func(ch)
+#define Py_UNICODE_TONUMERIC(ch) Py_UNICODE_TONUMERIC_Func(ch)
+#define Py_UNICODE_TOTITLE(ch) Py_UNICODE_TOTITLE_Func(ch)
+#define Py_UNICODE_TOUPPER(ch) Py_UNICODE_TOUPPER_Func(ch)
 #define Py_UNICODE_JOIN_SURROGATES(high, low)                                  \
   (((((Py_UCS4)(high)&0x03FF) << 10) | ((Py_UCS4)(low)&0x03FF)) + 0x10000)
 #define Py_UNICODE_HIGH_SURROGATE(ch) (0xD800 - (0x10000 >> 10) + ((ch) >> 10))
