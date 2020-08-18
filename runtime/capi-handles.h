@@ -33,6 +33,9 @@ class IdentityDict {
     DCHECK(num_usable_items_ > 0, "num_usable_items must be > 0");
     num_usable_items_--;
   }
+  word numTombstones() {
+    return (capacity() * 2) / 3 - numItems() - numUsableItems();
+  }
 
   RawObject data() { return data_; }
   void setData(RawObject data) { data_ = data; }

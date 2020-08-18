@@ -130,6 +130,8 @@ static void identityDictInsertNoUpdate(const MutableTuple& data,
   for (word current = Bucket::bucket(*data, hash, &bucket_mask, &perturb);;
        current = Bucket::nextBucket(current, bucket_mask, &perturb)) {
     word current_index = current * Bucket::kNumPointers;
+    DCHECK(!Bucket::isTombstone(*data, current_index),
+           "There should be no tombstones in a newly created dict");
     if (Bucket::isEmpty(*data, current_index)) {
       Bucket::set(*data, current_index, hash, *key, *value);
       return;
@@ -143,8 +145,13 @@ static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
   if (dict->numUsableItems() > 0) {
     return;
   }
+  // If at least half the space taken up in the dict is tombstones, removing
+  // them will free up enough space. Otherwise, the dict must be grown.
+  word growth_factor = (dict->numItems() < dict->numTombstones())
+                           ? 1
+                           : kIdentityDictGrowthFactor;
   // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict->capacity() * kIdentityDictGrowthFactor;
+  word new_capacity = dict->capacity() * growth_factor;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   MutableTuple data(&scope, dict->data());
@@ -244,6 +251,7 @@ void IdentityDict::atPut(Thread* thread, const Object& key, word hash,
     DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
     decrementNumUsableItems();
     identityDictEnsureCapacity(thread, this);
+    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
   }
 }
 
