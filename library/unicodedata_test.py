@@ -35,6 +35,16 @@ class UnicodedataTests(unittest.TestCase):
         self.assertRaises(TypeError, unicodedata.ucd_3_2_0.decomposition)
         self.assertRaises(TypeError, unicodedata.ucd_3_2_0.decomposition, "xx")
 
+    def test_UCD_digit_uses_old_version(self):
+        self.assertEqual(unicodedata.ucd_3_2_0.digit("2"), 2)
+        self.assertEqual(unicodedata.ucd_3_2_0.digit("\u0E50"), 0)
+        self.assertEqual(unicodedata.ucd_3_2_0.digit("\u00B2"), 2)
+
+        self.assertRaises(TypeError, unicodedata.ucd_3_2_0.digit)
+        self.assertRaises(TypeError, unicodedata.ucd_3_2_0.digit, "xx")
+        self.assertRaises(ValueError, unicodedata.ucd_3_2_0.digit, "a")
+        self.assertRaises(ValueError, unicodedata.ucd_3_2_0.digit, "\u00BD")
+
     def test_UCD_normalize_with_non_UCD_raises_type_error(self):
         with self.assertRaises(TypeError):
             unicodedata.UCD.normalize(1, "NFC", "foo")
@@ -88,6 +98,16 @@ class UnicodedataTests(unittest.TestCase):
         self.assertRaises(TypeError, unicodedata.decomposition, "xx")
 
         # unassigned in 3.2.0
+
+    def test_digit_uses_current_version(self):
+        self.assertEqual(unicodedata.digit("2"), 2)
+        self.assertEqual(unicodedata.digit("\u0E50"), 0)
+        self.assertEqual(unicodedata.digit("\u00B2"), 2)
+
+        self.assertRaises(TypeError, unicodedata.digit)
+        self.assertRaises(TypeError, unicodedata.digit, "xx")
+        self.assertRaises(ValueError, unicodedata.digit, "a")
+        self.assertRaises(ValueError, unicodedata.digit, "\u00BD")
 
     def test_lookup_uses_current_version(self):
         self.assertEqual(unicodedata.lookup("latin CAPITAL Letter a"), "A")

@@ -26,7 +26,7 @@ class UCD:
         _builtin()
 
     def digit(self, chr, default=_Unbound):
-        _unimplemented()
+        _builtin()
 
     def east_asian_width(self, chr):
         _unimplemented()
@@ -75,7 +75,7 @@ def decomposition(chr):
 
 
 def digit(chr, default=_Unbound):
-    _unimplemented()
+    _builtin()
 
 
 def east_asian_width(chr):
