@@ -66,6 +66,7 @@ grp_test.py
 hashlib_test.py
 imp_test.py
 importlib_test.py
+inspect.py
 interpreter_test.py
 itertools.py
 itertools_test.py

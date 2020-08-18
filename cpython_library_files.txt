@@ -597,7 +597,6 @@ importlib/abc.py
 importlib/machinery.py
 importlib/resources.py
 importlib/util.py
-inspect.py
 io.py
 ipaddress.py
 json/__init__.py
