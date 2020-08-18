@@ -32,6 +32,7 @@ CPYTHON_TESTS=(
   test_augassign.py
   test_binhex.py
   test_binop.py
+  test_bisect.py
   test_cgi.py
   test_colorsys.py
   test_crashers.py

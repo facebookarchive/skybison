@@ -638,6 +638,7 @@ target_link_libraries(
 add_library(
   extension-modules
   STATIC
+  ${CPYTHON_DIR}/Modules/_bisectmodule.c
   ${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c
   ${CPYTHON_DIR}/Modules/_blake2/blake2module.c
   ${CPYTHON_DIR}/Modules/_blake2/blake2s_impl.c
