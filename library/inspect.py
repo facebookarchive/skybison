@@ -1710,22 +1710,6 @@ _NonUserDefinedCallables = (_WrapperDescriptor,
                             types.BuiltinFunctionType)
 
 
-def _signature_get_user_defined_method(cls, method_name):
-    """Private helper. Checks if ``cls`` has an attribute
-    named ``method_name`` and returns it only if it is a
-    pure python function.
-    """
-    try:
-        meth = getattr(cls, method_name)
-    except AttributeError:
-        return
-    else:
-        if not isinstance(meth, _NonUserDefinedCallables):
-            # Once '__signature__' will be added to 'C'-level
-            # callables, this check won't be necessary
-            return meth
-
-
 def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     """Private helper to calculate how 'wrapped_sig' signature will
     look like after applying a 'functools.partial' object (or alike)
@@ -2307,7 +2291,7 @@ def _signature_from_callable(obj, *,
 
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
-        call = _signature_get_user_defined_method(type(obj), '__call__')
+        call = getattr(type(obj), '__call__', None)
         if call is not None:
             sig = _signature_from_callable(
                 call,
@@ -2316,7 +2300,7 @@ def _signature_from_callable(obj, *,
                 sigcls=sigcls)
         else:
             # Now we check if the 'obj' class has a '__new__' method
-            new = _signature_get_user_defined_method(obj, '__new__')
+            new = getattr(obj, '__new__', None)
             if new is not None:
                 sig = _signature_from_callable(
                     new,
@@ -2325,7 +2309,7 @@ def _signature_from_callable(obj, *,
                     sigcls=sigcls)
             else:
                 # Finally, we should have at least __init__ implemented
-                init = _signature_get_user_defined_method(obj, '__init__')
+                init = getattr(obj, '__init__', None)
                 if init is not None:
                     sig = _signature_from_callable(
                         init,
@@ -2374,7 +2358,7 @@ def _signature_from_callable(obj, *,
         # We also check that the 'obj' is not an instance of
         # _WrapperDescriptor or _MethodWrapper to avoid
         # infinite recursion (and even potential segfault)
-        call = _signature_get_user_defined_method(type(obj), '__call__')
+        call = getattr(type(obj), '__call__', None)
         if call is not None:
             try:
                 sig = _signature_from_callable(

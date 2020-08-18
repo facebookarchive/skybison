@@ -67,6 +67,7 @@ hashlib_test.py
 imp_test.py
 importlib_test.py
 inspect.py
+inspect_test.py
 interpreter_test.py
 itertools.py
 itertools_test.py
