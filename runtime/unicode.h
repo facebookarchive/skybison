@@ -26,6 +26,7 @@ class ASCII {
   static bool isXidStart(byte b);
 
   // Conversion
+  static int8_t toDecimal(byte b);
   static int8_t toDigit(byte b);
   static byte toLower(byte b);
   static byte toUpper(byte b);
@@ -103,6 +104,7 @@ class Unicode {
   static bool isXidStart(int32_t code_point);
 
   // Conversion
+  static int8_t toDecimal(int32_t code_point);
   static int8_t toDigit(int32_t code_point);
   static FullCasing toFolded(int32_t code_point);
   static FullCasing toLower(int32_t code_point);
@@ -125,6 +127,7 @@ class Unicode {
   static bool isUpperDB(int32_t code_point);
   static bool isXidContinueDB(int32_t code_point);
   static bool isXidStartDB(int32_t code_point);
+  static int8_t toDecimalDB(int32_t code_point);
   static int8_t toDigitDB(int32_t code_point);
   static FullCasing toFoldedDB(int32_t code_point);
   static FullCasing toLowerDB(int32_t code_point);
@@ -188,6 +191,8 @@ inline bool ASCII::isUpper(byte b) { return 'A' <= b && b <= 'Z'; }
 inline bool ASCII::isXidContinue(byte b) { return isXidStart(b) || isDigit(b); }
 
 inline bool ASCII::isXidStart(byte b) { return isAlpha(b) || b == '_'; }
+
+inline int8_t ASCII::toDecimal(byte b) { return toDigit(b); }
 
 inline int8_t ASCII::toDigit(byte b) { return isDigit(b) ? b - '0' : -1; }
 
@@ -363,6 +368,13 @@ inline bool Unicode::isXidStart(int32_t code_point) {
     return ASCII::isXidStart(code_point);
   }
   return isXidStartDB(code_point);
+}
+
+inline int8_t Unicode::toDecimal(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return ASCII::toDecimal(code_point);
+  }
+  return toDecimalDB(code_point);
 }
 
 inline int8_t Unicode::toDigit(int32_t code_point) {

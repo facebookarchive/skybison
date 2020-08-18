@@ -64,6 +64,11 @@ bool Unicode::isXidStartDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kXidStartMask) != 0;
 }
 
+int8_t Unicode::toDecimalDB(int32_t code_point) {
+  const UnicodeTypeRecord* record = typeRecord(code_point);
+  return (record->flags & kDecimalMask) != 0 ? record->decimal : -1;
+}
+
 int8_t Unicode::toDigitDB(int32_t code_point) {
   const UnicodeTypeRecord* record = typeRecord(code_point);
   return (record->flags & kDigitMask) != 0 ? record->digit : -1;

@@ -23,6 +23,18 @@ class UnicodedataTests(unittest.TestCase):
         self.assertEqual(unicodedata.ucd_3_2_0.category("\U0001012A"), "Cn")
         self.assertEqual(unicodedata.ucd_3_2_0.category("\U00020000"), "Lo")
 
+    def test_UCD_decimal_uses_old_version(self):
+        self.assertEqual(unicodedata.ucd_3_2_0.decimal("5"), 5)
+        self.assertEqual(unicodedata.ucd_3_2_0.decimal("\u0E50"), 0)
+
+        # changed since 3.2.0
+        self.assertEqual(unicodedata.ucd_3_2_0.decimal("\u00B2"), 2)
+
+        self.assertRaises(TypeError, unicodedata.ucd_3_2_0.decimal)
+        self.assertRaises(TypeError, unicodedata.ucd_3_2_0.decimal, "xx")
+        self.assertRaises(ValueError, unicodedata.ucd_3_2_0.decimal, "a")
+        self.assertRaises(ValueError, unicodedata.ucd_3_2_0.decimal, "\u00BD")
+
     def test_UCD_decomposition_uses_old_version(self):
         self.assertEqual(unicodedata.ucd_3_2_0.decomposition("\uFFFE"), "")
         self.assertEqual(
@@ -98,6 +110,16 @@ class UnicodedataTests(unittest.TestCase):
         self.assertRaises(TypeError, unicodedata.decomposition, "xx")
 
         # unassigned in 3.2.0
+
+    def test_decimal_uses_current_version(self):
+        self.assertEqual(unicodedata.decimal("2"), 2)
+        self.assertEqual(unicodedata.decimal("\u0E50"), 0)
+
+        self.assertRaises(TypeError, unicodedata.decimal)
+        self.assertRaises(TypeError, unicodedata.decimal, "xx")
+        self.assertRaises(ValueError, unicodedata.decimal, "a")
+        self.assertRaises(ValueError, unicodedata.decimal, "\u00B2")
+        self.assertRaises(ValueError, unicodedata.decimal, "\u00BD")
 
     def test_digit_uses_current_version(self):
         self.assertEqual(unicodedata.digit("2"), 2)

@@ -20,7 +20,7 @@ class UCD:
         _unimplemented()
 
     def decimal(self, chr, default=_Unbound):
-        _unimplemented()
+        _builtin()
 
     def decomposition(self, chr):
         _builtin()
@@ -67,7 +67,7 @@ def combining(chr):
 
 
 def decimal(chr, default=_Unbound):
-    _unimplemented()
+    _builtin()
 
 
 def decomposition(chr):

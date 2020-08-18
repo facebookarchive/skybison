@@ -73,6 +73,33 @@ RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
   return kCategoryNames[databaseRecord(code_point)->category];
 }
 
+RawObject FUNC(unicodedata, decimal)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "decimal() argument must be a unicode character");
+  }
+
+  int8_t decimal = Unicode::toDecimal(code_point);
+  if (decimal != -1) {
+    return SmallInt::fromWord(decimal);
+  }
+
+  Object default_value(&scope, args.get(1));
+  if (default_value.isUnbound()) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "not a decimal");
+  }
+  return *default_value;
+}
+
 static void writeDecomposition(UnicodeDecomposition decomp,
                                const MutableBytes& out) {
   word prefix_length = std::strlen(decomp.prefix);
@@ -576,6 +603,49 @@ RawObject METH(UCD, decomposition)(Thread* thread, Frame* frame, word nargs) {
                       runtime->newMutableBytesUninitialized(result_length));
   writeDecomposition(decomp, result);
   return result.becomeStr();
+}
+
+RawObject METH(UCD, decimal)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type ucd_type(&scope,
+                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
+  if (!typeIsSubclass(self_type, ucd_type)) {
+    return thread->raiseRequiresType(self, ID(UCD));
+  }
+  Object obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*obj)) {
+    return thread->raiseRequiresType(obj, ID(str));
+  }
+  Str src(&scope, strUnderlying(*obj));
+  int32_t code_point = getCodePoint(src);
+  if (code_point == -1) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "decimal() argument must be a unicode character");
+  }
+
+  word decimal;
+  const UnicodeChangeRecord* record = changeRecord(code_point);
+  if (record->category == 0) {
+    decimal = -1;
+  } else if (record->decimal != kMaxByte) {
+    decimal = record->decimal;
+  } else {
+    decimal = Unicode::toDecimal(code_point);
+  }
+
+  if (decimal != -1) {
+    return SmallInt::fromWord(decimal);
+  }
+
+  Object default_value(&scope, args.get(2));
+  if (default_value.isUnbound()) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "not a decimal");
+  }
+  return *default_value;
 }
 
 RawObject METH(UCD, digit)(Thread* thread, Frame* frame, word nargs) {
