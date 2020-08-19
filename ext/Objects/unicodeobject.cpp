@@ -1766,7 +1766,7 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
 }
 
 PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
-  UNIMPLEMENTED("PyUnicode_GetDefaultEncoding");
+  return Py_FileSystemDefaultEncoding;
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* pyobj) {

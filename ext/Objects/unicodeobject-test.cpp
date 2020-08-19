@@ -2882,6 +2882,16 @@ encoding = sys.getfilesystemencoding()
 }
 
 TEST_F(UnicodeExtensionApiTest,
+       GetDefaultEncodingMatchesSysGetdefaultencoding) {
+  PyRun_SimpleString(R"(
+import sys
+sys_default = sys.getdefaultencoding()
+)");
+  PyObjectPtr sys_default(mainModuleGet("sys_default"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_default, PyUnicode_GetDefaultEncoding()));
+}
+
+TEST_F(UnicodeExtensionApiTest,
        DecodeUTF8SurrogateEscapeWithEmptyStringReturnsEmptyString) {
   wchar_t* wpath = _Py_DecodeUTF8_surrogateescape("", 0);
   EXPECT_STREQ(wpath, L"");

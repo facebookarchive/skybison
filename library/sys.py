@@ -234,6 +234,10 @@ float_info = _FloatInfo(
 )
 
 
+def getdefaultencoding():
+    return "utf-8"
+
+
 def getfilesystemencodeerrors():
     # TODO(T40363016): Allow arbitrary encodings and error handlings.
     return "surrogatepass"

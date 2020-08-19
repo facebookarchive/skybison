@@ -77,6 +77,9 @@ class SysTests(unittest.TestCase):
             info2 = sys.exc_info()
             self.assertEqual(info1, info2)
 
+    def test_getdefaultencoding_returns_utf8(self):
+        self.assertEqual(sys.getdefaultencoding(), "utf-8")
+
     def test_getsizeof_without_dunder_sizeof_raises_type_error(self):
         class M(type):
             def mro(cls):
