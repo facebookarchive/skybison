@@ -1182,7 +1182,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
 
   // Handle the two-arg form of RAISE_VARARGS, corresponding to "raise x from
   // y". If the cause is a type, call it to create an instance. Either way,
-  // attach the cause the the primary exception.
+  // attach the cause to the primary exception.
   if (!cause.isErrorNotFound()) {  // TODO(T25860930) use Unbound rather than
                                    // Error.
     if (runtime->isInstanceOfType(*cause) &&
