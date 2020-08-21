@@ -893,6 +893,8 @@ class NameError(Exception, bootstrap=True):
 
 
 class NoneType(bootstrap=True):
+    # Workaround for `object.__class__` descriptor misbehaving when `__get__`
+    # is called with `instance=None` (which usually indicated no instance).
     __class__ = NoneType  # noqa: F821
 
     def __new__(cls):
