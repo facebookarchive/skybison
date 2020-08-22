@@ -541,9 +541,6 @@ static void addObjectType(Thread* thread) {
   type.setInstanceLayout(*layout);
   type.setBases(runtime->emptyTuple());
 
-  // Add object as the implicit base class for new types.
-  runtime->initializeImplicitBases();
-
   // Manually create `__getattribute__` method to avoid bootstrap problems.
   Tuple parameter_names(&scope, runtime->newTuple(2));
   parameter_names.atPut(0, runtime->symbols()->at(ID(self)));

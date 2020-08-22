@@ -358,9 +358,8 @@ class Runtime {
   // Else, return Error.
   RawObject printTraceback(Thread* thread, word fd);
 
-  // Stores the implicit bases for a new class.
-  RawObject implicitBases() { return implicit_bases_; }
-  void initializeImplicitBases();
+  // Returns the implicit bases -- (object,) -- for a new class.
+  RawObject implicitBases();
 
   // Gets the internal notion of type, rather than the user-visible type.
   RawObject concreteTypeAt(LayoutId layout_id);
@@ -1043,7 +1042,6 @@ class Runtime {
   RawObject empty_mutable_bytes_ = NoneType::object();
   RawObject empty_slice_ = NoneType::object();
   RawObject empty_tuple_ = NoneType::object();
-  RawObject implicit_bases_ = NoneType::object();
   RawObject module_dunder_getattribute_ = NoneType::object();
   RawObject object_dunder_getattribute_ = NoneType::object();
   RawObject object_dunder_init_ = NoneType::object();

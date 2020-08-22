@@ -2051,12 +2051,6 @@ void Runtime::initializePrimitiveInstances() {
   ellipsis_ = heap()->createEllipsis();
 }
 
-void Runtime::initializeImplicitBases() {
-  DCHECK(!implicit_bases_.isTuple(), "implicit bases already initialized");
-  implicit_bases_ = heap()->createTuple(1);
-  Tuple::cast(implicit_bases_).atPut(0, typeAt(LayoutId::kObject));
-}
-
 void Runtime::initializeInterned(Thread* thread) {
   interned_ = emptyTuple();
   interned_remaining_ = 0;
@@ -2071,6 +2065,10 @@ void Runtime::initializeSymbols(Thread* thread) {
     Object symbol(&scope, symbols()->at(id));
     internStr(thread, symbol);
   }
+}
+
+RawObject Runtime::implicitBases() {
+  return Type::cast(typeAt(LayoutId::kObject)).mro();
 }
 
 void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
@@ -2149,7 +2147,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_mutable_bytes_, PointerKind::kRuntime);
   visitor->visitPointer(&empty_slice_, PointerKind::kRuntime);
   visitor->visitPointer(&empty_tuple_, PointerKind::kRuntime);
-  visitor->visitPointer(&implicit_bases_, PointerKind::kRuntime);
   visitor->visitPointer(&module_dunder_getattribute_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_getattribute_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_init_, PointerKind::kRuntime);
