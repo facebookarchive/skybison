@@ -482,7 +482,7 @@ class type(bootstrap=True):
         mod = self.__module__
         if mod and mod != "builtins":
             return f"<class '{mod}.{self.__qualname__}'>"
-        return f"<class '{self.__qualname__}'>"
+        return f"<class '{self.__name__}'>"
 
     def __setattr__(self, name, value):
         _builtin()
