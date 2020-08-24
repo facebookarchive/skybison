@@ -89,12 +89,6 @@ static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
   Type type(&scope, runtime->newType());
   type.setName(runtime->symbols()->at(name));
   Type superclass(&scope, runtime->typeAt(superclass_id));
-  Tuple superclass_mro(&scope, superclass.mro());
-  word mro_length = superclass_mro.length() + 1;
-  MutableTuple mro(&scope, runtime->newMutableTuple(mro_length));
-  mro.atPut(0, *type);
-  mro.replaceFromWith(1, *superclass_mro, mro_length - 1);
-  type.setMro(mro.becomeImmutable());
   type.setInstanceLayout(*layout);
   Type::Flag flags =
       static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
@@ -135,6 +129,24 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
   runtime->layoutAtPut(layout_id, *layout);
   return addBuiltinTypeWithLayout(thread, layout, name, builtin_base,
                                   superclass_id);
+}
+
+RawObject findBuiltinTypeWithName(Thread* thread, const Object& name) {
+  DCHECK(Runtime::isInternedStr(thread, name), "must be interned str");
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object layout(&scope, NoneType::object());
+  Object type_obj(&scope, NoneType::object());
+  for (int i = 0; i <= static_cast<int>(LayoutId::kLastBuiltinId); i++) {
+    layout = runtime->layoutAtSafe(static_cast<LayoutId>(i));
+    if (layout.isErrorNotFound()) continue;
+    type_obj = Layout::cast(*layout).describedType();
+    if (!type_obj.isType()) continue;
+    if (Type::cast(*type_obj).name() == name) {
+      return *type_obj;
+    }
+  }
+  return Error::notFound();
 }
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {

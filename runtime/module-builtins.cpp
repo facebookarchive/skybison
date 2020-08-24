@@ -338,6 +338,9 @@ void initializeModuleType(Thread* thread) {
   word flags = static_cast<word>(type.flags());
   flags |= RawType::Flag::kSealSubtypeLayouts;
   type.setFlags(static_cast<Type::Flag>(flags));
+  Runtime* runtime = thread->runtime();
+  Object object_type(&scope, runtime->typeAt(LayoutId::kObject));
+  type.setMro(runtime->newTupleWith2(type, object_type));
 }
 
 RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,

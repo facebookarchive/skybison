@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# $builtin-init-module$
 
 from _builtins import _builtin, _Unbound, _unimplemented
 

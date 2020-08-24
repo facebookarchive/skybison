@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import __future__
+
 import argparse
 import importlib
 import os
@@ -133,7 +135,10 @@ def process_module(filename, builtins):
     with open(filename) as fp:
         source = fp.read()
     builtin_init = "$builtin-init-module$" in source
-    module_code = compile(source, filename, "exec", dont_inherit=True, optimize=0)
+    flags = __future__.CO_FUTURE_ANNOTATIONS
+    module_code = compile(
+        source, filename, "exec", flags=flags, dont_inherit=True, optimize=0
+    )
     marked_code = mark_native_functions(module_code, builtins, name)
     bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(marked_code)
     initializer = to_char_array(bytecode)

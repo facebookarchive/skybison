@@ -25,6 +25,8 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   LayoutId layout_id, LayoutId builtin_base,
                                   LayoutId superclass_id);
 
+RawObject findBuiltinTypeWithName(Thread* thread, const Object& name);
+
 bool typeIsSubclass(const Type& subclass, const Type& superclass);
 
 void typeAddDocstring(Thread* thread, const Type& type);

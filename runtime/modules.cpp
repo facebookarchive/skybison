@@ -13,30 +13,6 @@
 
 namespace py {
 
-static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
-  // Ensure builtin types have been declared.
-  HandleScope scope(thread);
-  List values(&scope, moduleValues(thread, module));
-  Object value(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
-  for (word i = 0, num_items = values.numItems(); i < num_items; i++) {
-    value = values.at(i);
-    if (!runtime->isInstanceOfType(*value)) continue;
-    Type type(&scope, *value);
-    if (!type.isBuiltin()) continue;
-    // Check whether __doc__ exists as a signal that the type was declared.
-    if (!typeAtById(thread, type, ID(__doc__)).isErrorNotFound()) {
-      continue;
-    }
-    Str name(&scope, type.name());
-    unique_c_ptr<char> name_cstr(name.toCStr());
-    Str module_name(&scope, module.name());
-    unique_c_ptr<char> module_name_cstr(module_name.toCStr());
-    DCHECK(false, "Builtin type %s.%s not defined", module_name_cstr.get(),
-           name_cstr.get());
-  }
-}
-
 static word builtinModuleIndex(const Str& name) {
   for (word i = 0; i < kNumFrozenModules; i++) {
     if (name.equalsCStr(kFrozenModules[i].name)) {
@@ -104,9 +80,6 @@ void executeFrozenModule(Thread* thread, const Module& module,
   Object result(&scope, executeModule(thread, code, module));
   CHECK(!result.isErrorException(), "Failed to execute %s module",
         filename.toCStr());
-  if (DCHECK_IS_ON()) {
-    checkBuiltinTypeDeclarations(thread, module);
-  }
 }
 
 RawObject executeModule(Thread* thread, const Code& code,
@@ -131,16 +104,5 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
 }
 
 bool isFrozenModule(const Str& name) { return builtinModuleIndex(name) >= 0; }
-
-void moduleAddBuiltinTypes(Thread* thread, const Module& module,
-                           View<BuiltinType> types) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object type(&scope, NoneType::object());
-  for (word i = 0, length = types.length(); i < length; i++) {
-    type = runtime->typeAt(types.get(i).type);
-    moduleAtPutById(thread, module, types.get(i).name, type);
-  }
-}
 
 }  // namespace py

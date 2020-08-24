@@ -6,16 +6,6 @@
 
 namespace py {
 
-static const BuiltinType kUnderWeakrefBuiltinTypes[] = {
-    {ID(weakref), LayoutId::kWeakRef},
-};
-
-void FUNC(_weakref, __init_module__)(Thread* thread, const Module& module,
-                                     View<byte> bytecode) {
-  moduleAddBuiltinTypes(thread, module, kUnderWeakrefBuiltinTypes);
-  executeFrozenModule(thread, module, bytecode);
-}
-
 RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);

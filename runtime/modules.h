@@ -47,7 +47,4 @@ NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
 // Returns `true` if there is a frozen module with name `name`.
 bool isFrozenModule(const Str& name);
 
-void moduleAddBuiltinTypes(Thread* thread, const Module& module,
-                           View<BuiltinType> types);
-
 }  // namespace py

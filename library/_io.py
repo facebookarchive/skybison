@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# $builtin-init-module$
 """The io module provides the Python interfaces to stream handling. The
 builtin open function is defined in this module.
 

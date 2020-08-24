@@ -20,10 +20,6 @@
 
 namespace py {
 
-static const BuiltinType kMmapBuiltinTypes[] = {
-    {ID(mmap), LayoutId::kMmap},
-};
-
 void FUNC(mmap, __init_module__)(Thread* thread, const Module& module,
                                  View<byte> bytecode) {
   HandleScope scope(thread);
@@ -46,7 +42,6 @@ void FUNC(mmap, __init_module__)(Thread* thread, const Module& module,
                      SmallInt::fromWord(static_cast<word>(MAP_PRIVATE)));
   moduleAtPutById(thread, module, ID(MAP_PRIVATE), map_private);
 
-  moduleAddBuiltinTypes(thread, module, kMmapBuiltinTypes);
   executeFrozenModule(thread, module, bytecode);
 }
 

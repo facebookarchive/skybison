@@ -11,16 +11,6 @@
 
 namespace py {
 
-static const BuiltinType kArrayBuiltinTypes[] = {
-    {ID(array), LayoutId::kArray},
-};
-
-void FUNC(array, __init_module__)(Thread* thread, const Module& module,
-                                  View<byte> bytecode) {
-  moduleAddBuiltinTypes(thread, module, kArrayBuiltinTypes);
-  executeFrozenModule(thread, module, bytecode);
-}
-
 RawObject FUNC(array, _array_check)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfArray(args.get(0)));

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# $builtin-init-module$
 """Array.array module TODO(T55711876): provide an implemenation"""
 
 from builtins import _float, _index, _int

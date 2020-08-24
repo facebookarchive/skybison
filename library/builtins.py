@@ -19,6 +19,7 @@ from _builtins import (
     _bool_guard,
     _bound_method,
     _builtin,
+    _builtin_type,
     _byte_guard,
     _bytearray_append,
     _bytearray_check,
@@ -714,9 +715,13 @@ class BaseException(bootstrap=True):
 
         return property(get, set)
 
-    __cause__ = _maybe_unbound_property("cause", "__cause__", BaseException)
+    __cause__ = _maybe_unbound_property(
+        "cause", "__cause__", _builtin_type("BaseException")
+    )
 
-    __context__ = _maybe_unbound_property("context", "__context__", BaseException)
+    __context__ = _maybe_unbound_property(
+        "context", "__context__", _builtin_type("BaseException")
+    )
 
     def __init__(self, *args):
         _builtin()
@@ -992,7 +997,7 @@ class NameError(Exception, bootstrap=True):
 class NoneType(bootstrap=True):
     # Workaround for `object.__class__` descriptor misbehaving when `__get__`
     # is called with `instance=None` (which usually indicated no instance).
-    __class__ = NoneType  # noqa: F821
+    __class__ = _builtin_type("NoneType")
 
     def __new__(cls):
         _builtin()

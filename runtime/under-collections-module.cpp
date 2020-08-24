@@ -25,16 +25,6 @@ void initializeUnderCollectionsTypes(Thread* thread) {
                  /*superclass_id=*/LayoutId::kObject, kDequeAttributes);
 }
 
-static const BuiltinType kCollectionsBuiltinTypes[] = {
-    {ID(deque), LayoutId::kDeque},
-};
-
-void FUNC(_collections, __init_module__)(Thread* thread, const Module& module,
-                                         View<byte> bytecode) {
-  moduleAddBuiltinTypes(thread, module, kCollectionsBuiltinTypes);
-  executeFrozenModule(thread, module, bytecode);
-}
-
 RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Frame* frame,
                                              word nargs) {
   HandleScope scope(thread);

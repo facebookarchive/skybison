@@ -18,28 +18,6 @@
 
 namespace py {
 
-static const BuiltinType kUnderIOBuiltinTypes[] = {
-    {ID(BufferedRandom), LayoutId::kBufferedRandom},
-    {ID(BufferedReader), LayoutId::kBufferedReader},
-    {ID(BufferedWriter), LayoutId::kBufferedWriter},
-    {ID(BytesIO), LayoutId::kBytesIO},
-    {ID(FileIO), LayoutId::kFileIO},
-    {ID(StringIO), LayoutId::kStringIO},
-    {ID(IncrementalNewlineDecoder), LayoutId::kIncrementalNewlineDecoder},
-    {ID(TextIOWrapper), LayoutId::kTextIOWrapper},
-    {ID(_BufferedIOBase), LayoutId::kUnderBufferedIOBase},
-    {ID(_BufferedIOMixin), LayoutId::kUnderBufferedIOMixin},
-    {ID(_IOBase), LayoutId::kUnderIOBase},
-    {ID(_RawIOBase), LayoutId::kUnderRawIOBase},
-    {ID(_TextIOBase), LayoutId::kUnderTextIOBase},
-};
-
-void FUNC(_io, __init_module__)(Thread* thread, const Module& module,
-                                View<byte> bytecode) {
-  moduleAddBuiltinTypes(thread, module, kUnderIOBuiltinTypes);
-  executeFrozenModule(thread, module, bytecode);
-}
-
 RawObject FUNC(_io, _BytesIO_guard)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

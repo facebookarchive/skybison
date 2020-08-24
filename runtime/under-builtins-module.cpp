@@ -224,6 +224,18 @@ RawObject FUNC(_builtins, _bound_method)(Thread* thread, Frame* frame,
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
+RawObject FUNC(_builtins, _builtin_type)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object name(&scope, args.get(0));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, findBuiltinTypeWithName(thread, name));
+  CHECK(!result.isErrorNotFound(), "Built-in type not found");
+  return *result;
+}
+
 RawObject FUNC(_builtins, _byte_guard)(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);

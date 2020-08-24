@@ -6,18 +6,6 @@
 
 namespace py {
 
-static const BuiltinType kUnderContextvarsBuiltinTypes[] = {
-    {ID(Context), LayoutId::kContext},
-    {ID(ContextVar), LayoutId::kContextVar},
-    {ID(Token), LayoutId::kToken},
-};
-
-void FUNC(_contextvars, __init_module__)(Thread* thread, const Module& module,
-                                         View<byte> bytecode) {
-  moduleAddBuiltinTypes(thread, module, kUnderContextvarsBuiltinTypes);
-  executeFrozenModule(thread, module, bytecode);
-}
-
 static const BuiltinAttribute kContextVarAttributes[] = {
     {ID(name), RawContextVar::kNameOffset, AttributeFlags::kReadOnly},
 };
