@@ -859,6 +859,10 @@ def _slice_start(start, step, length):
     _builtin()
 
 
+def _staticmethod(func):
+    _builtin()
+
+
 def _slice_start_long(start, step, length):
     _builtin()
 

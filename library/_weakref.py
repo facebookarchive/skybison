@@ -106,6 +106,7 @@ class weakref(bootstrap=True):
             return self is not other
         return self_referent != other_referent
 
+    @staticmethod
     def __new__(cls, referent, callback=None):
         _builtin()
 

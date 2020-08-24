@@ -4076,6 +4076,17 @@ RawObject FUNC(_builtins, _slice_start)(Thread*, Frame* frame, word nargs) {
   return SmallInt::fromWord(start);
 }
 
+RawObject FUNC(_builtins, _staticmethod)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object function(&scope, args.get(0));
+
+  StaticMethod method(&scope, thread->runtime()->newStaticMethod());
+  method.setFunction(*function);
+  return *method;
+}
+
 RawObject FUNC(_builtins, _slice_start_long)(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
@@ -5387,15 +5398,32 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
   Type self(&scope, *self_obj);
 
   // `instance = self.__new__(...)`
+  Object dunder_new(&scope, Unbound::object());
   Object dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
-  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
   Object instance(&scope, NoneType::object());
+
   Object call_args_obj(&scope, NoneType::object());
+
+  if (self.isType()) {
+    // Metaclass is "type" so we do not need to check for __new__ being a
+    // datadescriptor and we can look it up directly on the type
+    dunder_new = typeLookupInMro(thread, self, dunder_new_name);
+  }
+
   if (dunder_new == runtime->objectDunderNew()) {
-    // Fast path when `__new__` was not overridden and is just `object.__new__`.
+    // Most common case `__new__` was not overridden and is just
+    // `object.__new__`.
     instance = objectNew(thread, self);
     if (instance.isErrorException()) return *instance;
   } else {
+    if (dunder_new.isStaticMethod()) {
+      // Next most common case `__new__` is overridden with a normal function
+      dunder_new = StaticMethod::cast(*dunder_new).function();
+    } else {
+      // Finally fallback to complete lookup for corner cases
+      dunder_new = typeGetAttribute(thread, self, dunder_new_name);
+    }
+
     CHECK(!dunder_new.isError(), "self must have __new__");
     frame->pushValue(*dunder_new);
     if (is_kwargs_empty) {

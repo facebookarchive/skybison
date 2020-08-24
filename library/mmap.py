@@ -14,6 +14,7 @@ ACCESS_COPY = 3
 
 
 class mmap(bootstrap=True):
+    @staticmethod
     def __new__(cls, fileno, length, flags=1, prot=3, access=0, offset=0):
         """
         Creates a new mmap object.

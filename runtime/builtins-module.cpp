@@ -209,7 +209,7 @@ static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
     // Use __new__ as _ctor if __init__ is undefined.
     Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
     if (!dunder_new.isErrorNotFound()) {
-      ctor = *dunder_new;
+      ctor = StaticMethod::cast(*dunder_new).function();
     }
   }
   if (ctor.isNoneType()) {
@@ -280,8 +280,18 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
           "error while assigning bootstrap type dict");
     // TODO(T53997177): Centralize type initialization
     typeAddDocstring(thread, type);
-    pickBuiltinTypeCtorFunction(thread, type);
 
+    if (DCHECK_IS_ON()) {
+      Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
+      if (!dunder_new.isStaticMethod()) {
+        if (!(dunder_new.isNoneType() || dunder_new.isErrorNotFound())) {
+          DCHECK(false, "__new__ for %s should be a staticmethod",
+                 Str::cast(*name).toCStr());
+        }
+      }
+    }
+
+    pickBuiltinTypeCtorFunction(thread, type);
     runtime->builtinTypeCreated(thread, type);
     return *type;
   }

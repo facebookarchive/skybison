@@ -25,6 +25,13 @@ class NewClassTests(unittest.TestCase):
         self.assertIsInstance(result, type)
         self.assertEqual(result.__bases__, (object,))
 
+    def test_new_class_returns_with_static___new__(self):
+        class TestClass(object):
+            def __new__(cls):
+                return super().__new__(cls)
+
+        self.assertIs(type(TestClass.__dict__["__new__"]), staticmethod)
+
 
 class ResolveBasesTests(unittest.TestCase):
     def test_resolve_bases_with_empty_returns_input(self):

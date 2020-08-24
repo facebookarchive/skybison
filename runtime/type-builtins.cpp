@@ -895,6 +895,14 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     typeAtPutById(thread, type, ID(__init_subclass__), init_subclass_method);
   }
 
+  // Special-case __new__ to be a staticmethod
+  Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
+  if (dunder_new.isFunction()) {
+    StaticMethod dunder_new_method(&scope, runtime->newStaticMethod());
+    dunder_new_method.setFunction(*dunder_new);
+    typeAtPutById(thread, type, ID(__new__), dunder_new_method);
+  }
+
   // Ensure that __class_getitem__ is a classmethod.  For convenience, the user
   // is allowed to define __class_getitem__ as a function.  When that happens,
   // wrap the function in a classmethod.

@@ -38,6 +38,7 @@ class Context(bootstrap=True):
     def __iter__(self):
         _builtin()
 
+    @staticmethod
     def __new__(cls):
         _builtin()
 
@@ -64,6 +65,7 @@ class Context(bootstrap=True):
 
 
 class ContextVar(bootstrap=True):
+    @staticmethod
     def __new__(cls, name, default=_Unbound):
         _builtin()
 
@@ -89,6 +91,7 @@ class ContextVar(bootstrap=True):
 class Token(bootstrap=True):
     MISSING = _Unbound
 
+    @staticmethod
     def __new__(cls, context, var, old_value):
         raise RuntimeError("Tokens can only be created by ContextVars")
 

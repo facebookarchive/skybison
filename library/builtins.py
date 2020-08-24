@@ -194,6 +194,7 @@ from _builtins import (
     _set_member_integral,
     _set_member_integral_unsigned,
     _set_member_pyobject,
+    _staticmethod,
     _slice_check,
     _slice_guard,
     _slice_start,
@@ -333,6 +334,7 @@ class function(bootstrap=True):
 
     __kwdefaults__ = _property(_function_kwdefaults, _function_set_kwdefaults)
 
+    @_staticmethod
     def __new__(cls, code, globals_dict, name=None, argdefs=None, closure=None):
         if _module_proxy_check(globals_dict):
             mod = globals_dict.__module_object__
@@ -355,6 +357,7 @@ class classmethod(bootstrap=True):
 
     __isabstractmethod__ = _property(_classmethod_isabstract)
 
+    @_staticmethod
     def __new__(cls, fn):
         _builtin()
 
@@ -371,6 +374,7 @@ class property(bootstrap=True):
 
     __isabstractmethod__ = _property(_property_isabstract)
 
+    @_staticmethod
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
         _builtin()
 
@@ -396,6 +400,7 @@ class staticmethod(bootstrap=True):
 
     __isabstractmethod__ = _property(_staticmethod_isabstract)
 
+    @_staticmethod
     def __new__(cls, fn):
         _builtin()
 
@@ -407,6 +412,7 @@ class super(bootstrap=True):
     def __getattribute__(self, name):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
         _builtin()
 
@@ -459,6 +465,7 @@ class type(bootstrap=True):
     def __instancecheck__(self, obj) -> bool:
         return _isinstance_type(obj, _type(obj), self)
 
+    @_staticmethod
     def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound, **kwargs):
         if cls is type and bases is _Unbound and type_dict is _Unbound:
             # If the first argument is exactly type, and there are no other
@@ -653,6 +660,7 @@ class object(bootstrap=True):  # noqa: E999
             return NotImplemented
         return not res
 
+    @_staticmethod
     def __new__(cls, *args, **kwargs):
         _builtin()
 
@@ -757,6 +765,7 @@ class LookupError(Exception, bootstrap=True):
 
 
 class OSError(Exception, bootstrap=True):
+    @_staticmethod
     def __new__(cls, *args):
         _type_subclass_guard(cls, OSError)
         if cls is OSError and _tuple_len(args) > 1:
@@ -999,6 +1008,7 @@ class NoneType(bootstrap=True):
     # is called with `instance=None` (which usually indicated no instance).
     __class__ = _builtin_type("NoneType")
 
+    @_staticmethod
     def __new__(cls):
         _builtin()
 
@@ -1571,6 +1581,7 @@ class _str_array(bootstrap=True):  # noqa: F821
 
     __hash__ = None
 
+    @_staticmethod
     def __new__(cls, source=_Unbound) -> _str_array:  # noqa: F821
         _builtin()
 
@@ -1896,6 +1907,7 @@ class bytearray(bootstrap=True):
     def __ne__(self, value):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         _builtin()
 
@@ -2091,7 +2103,7 @@ class bytearray(bootstrap=True):
     def lstrip(self, bytes=None):
         _builtin()
 
-    @staticmethod
+    @_staticmethod
     def maketrans(frm, to) -> bytes:
         return bytes.maketrans(frm, to)
 
@@ -2275,6 +2287,7 @@ class bytes(bootstrap=True):
     def __ne__(self, other):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, bytes)
         if source is _Unbound:
@@ -2482,7 +2495,7 @@ class bytes(bootstrap=True):
     def lstrip(self, bytes=None):
         _builtin()
 
-    @staticmethod
+    @_staticmethod
     def maketrans(frm, to) -> bytes:
         _byteslike_guard(frm)
         _byteslike_guard(to)
@@ -2620,6 +2633,7 @@ def chr(c):
 
 
 class code(bootstrap=True):
+    @_staticmethod
     def __new__(
         cls,
         argcount,
@@ -2874,6 +2888,7 @@ class complex(bootstrap=True):
     def __neg__(self):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, real=0.0, imag=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, complex)
         result = _complex_new(cls, real, imag)
@@ -3066,6 +3081,7 @@ class dict(bootstrap=True):
             return NotImplemented
         return not eq_result
 
+    @_staticmethod
     def __new__(cls, *args, **kwargs):
         _builtin()
 
@@ -3443,6 +3459,7 @@ class filter:
     def __iter__(self):
         return self
 
+    @_staticmethod
     def __new__(cls, function, iterable, **kwargs):
         obj = super(filter, cls).__new__(cls)
         obj.func = (lambda e: e) if function is None else function
@@ -3544,6 +3561,7 @@ class float(bootstrap=True):
     def __neg__(self) -> float:
         _builtin()
 
+    @_staticmethod
     def __new__(cls, arg=0.0) -> float:
         _type_subclass_guard(cls, float)
         if _str_check_exact(arg):
@@ -3737,6 +3755,7 @@ class frozenset(bootstrap=True):
     def __ne__(self, other):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, iterable=_Unbound):
         _builtin()
 
@@ -4176,6 +4195,7 @@ class int(bootstrap=True):
     def __neg__(self) -> int:
         _builtin()
 
+    @_staticmethod
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
         if cls is bool:
             raise TypeError("int.__new__(bool) is not safe. Use bool.__new__()")
@@ -4424,6 +4444,7 @@ class bool(int, bootstrap=True):
             return int.__and__(other, self)
         return NotImplemented
 
+    @_staticmethod
     def __new__(cls, val=False):
         _builtin()
 
@@ -4698,6 +4719,7 @@ class list(bootstrap=True):
             return NotImplemented
         return not eq_result
 
+    @_staticmethod
     def __new__(cls, iterable=()):
         _builtin()
 
@@ -5010,6 +5032,7 @@ class method(bootstrap=True):
     def __getattr__(self, name):
         return getattr(self.__func__, name)
 
+    @_staticmethod
     def __new__(cls, func, self):
         if not callable(func):
             raise TypeError("first argument must be callable")
@@ -5071,6 +5094,7 @@ class memoryview(bootstrap=True):
     def __len__(self) -> int:
         _builtin()
 
+    @_staticmethod
     def __new__(cls, object):
         _builtin()
 
@@ -5189,6 +5213,7 @@ class module(bootstrap=True):
     def __init__(self, name):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, *args, **kwargs):
         _builtin()
 
@@ -5459,6 +5484,7 @@ class range(bootstrap=True):
             return False
         return not self.step == other.step
 
+    @_staticmethod
     def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         _builtin()
 
@@ -5639,6 +5665,7 @@ class set(bootstrap=True):
     def __ne__(self, other):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, iterable=()):
         _builtin()
 
@@ -5825,6 +5852,7 @@ class slice(bootstrap=True):
     def __ne__(self, other):
         _unimplemented()
 
+    @_staticmethod
     def __new__(cls, start_or_stop, stop=_Unbound, step=None):
         _builtin()
 
@@ -5852,6 +5880,7 @@ class slot_descriptor(bootstrap=True):
     def __get__(self, instance, owner=None):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, *args, **kwargs):
         raise TypeError("cannot create 'slot_descriptor' instances")
 
@@ -5941,6 +5970,7 @@ class str(bootstrap=True):
     def __ne__(self, other):
         _builtin()
 
+    @_staticmethod
     def __new__(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, str)
         if obj is _Unbound:
@@ -6177,7 +6207,7 @@ class str(bootstrap=True):
     def lstrip(self, other=None):
         _builtin()
 
-    @staticmethod
+    @_staticmethod
     def maketrans(frm, to=_Unbound, to_none=_Unbound):
         result = {}
         if to is _Unbound:
@@ -6560,6 +6590,7 @@ class tuple(bootstrap=True):
         # If the items are all up equal up to min_len, compare lengths
         return len_self != len_other
 
+    @_staticmethod
     def __new__(cls, iterable=()):
         _type_subclass_guard(cls, tuple)
         if cls is tuple:
@@ -6648,6 +6679,7 @@ class type_proxy(bootstrap=True):
         return _type_proxy_len(self)
 
     # type_proxy is not designed to be subclassed.
+    @_staticmethod
     def __new__(cls, *args, **kwargs):
         _unimplemented()
 

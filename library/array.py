@@ -73,6 +73,7 @@ class array(bootstrap=True):
     def __len__(self):
         _builtin()
 
+    @staticmethod
     def __new__(cls, typecode, initializer=None):
         _type_subclass_guard(cls, array)
         if not _str_check(typecode) or _str_len(typecode) != 1:

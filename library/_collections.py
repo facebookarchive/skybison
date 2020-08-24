@@ -160,6 +160,7 @@ class deque(bootstrap=True):
         else:
             return NotImplemented
 
+    @staticmethod
     def __new__(cls, iterable=(), *args, **kw):
         _builtin()
 
