@@ -407,6 +407,29 @@ else()
 endif()
 
 add_library(
+  libpython
+  SHARED
+  capi/cpython-func.h
+  ext/libpython.cpp
+)
+target_compile_options(
+  libpython
+  PRIVATE
+  -Wno-return-type
+)
+target_include_directories(
+  libpython
+  PRIVATE
+  capi
+)
+set_target_properties(
+  libpython
+  PROPERTIES
+  OUTPUT_NAME
+  python.pyro3.7  # Produces libpython.pyro3.7.so
+)
+
+add_library(
   runtime
   STATIC
   runtime/array-module.cpp
@@ -1249,6 +1272,9 @@ set(CMAKE_INSTALL_MESSAGE NEVER)
 install(TARGETS ${EXECUTABLE}
   RUNTIME DESTINATION bin
   PUBLIC_HEADER DESTINATION include/${IMPLEMENTATION_DIR}
+)
+install(TARGETS libpython
+  LIBRARY DESTINATION lib
 )
 install(FILES ${EXECUTABLE_SYMLINKS} DESTINATION bin)
 foreach(file ${cpython_library_files})

@@ -28,7 +28,9 @@ extern "C" {
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
 #define Py_UNUSED(name) _unused_##name __attribute__((unused))
+#ifndef _Py_NO_RETURN
 #define _Py_NO_RETURN __attribute__((__noreturn__))
+#endif
 
 #define Py_UNREACHABLE() abort()
 
