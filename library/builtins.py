@@ -410,7 +410,7 @@ class super(bootstrap=True):
         _builtin()
 
 
-class _traceback(bootstrap=True):
+class traceback(bootstrap=True):
     pass
 
 
@@ -738,7 +738,7 @@ class BaseException(bootstrap=True):
             return str(self.args[0])
         return str(self.args)
 
-    __traceback__ = _maybe_unbound_property("traceback", "__traceback__", _traceback)
+    __traceback__ = _maybe_unbound_property("traceback", "__traceback__", traceback)
 
     del _maybe_unbound_property
 
@@ -1150,6 +1150,10 @@ class UserWarning(Warning, bootstrap=True):
 
 
 class ZeroDivisionError(ArithmeticError, bootstrap=True):
+    pass
+
+
+class _UnboundType(bootstrap=True):
     pass
 
 
@@ -2600,6 +2604,10 @@ class bytes_iterator(bootstrap=True):
 
 def callable(f):
     _builtin()
+
+
+class cell(bootstrap=True):
+    pass
 
 
 def chr(c):
@@ -6682,6 +6690,10 @@ def vars(obj=_Unbound):
         return obj.__dict__
     except Exception:
         raise TypeError("vars() argument must have __dict__ attribute")
+
+
+class valuecell(bootstrap=True):
+    pass
 
 
 class zip:

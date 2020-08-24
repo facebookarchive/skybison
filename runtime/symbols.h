@@ -116,6 +116,7 @@ class Runtime;
   V(_RawIOBase)                                                                \
   V(_TextIOBase)                                                               \
   V(_Unbound)                                                                  \
+  V(_UnboundType)                                                              \
   V(_UserBytes__value)                                                         \
   V(_UserFloat__value)                                                         \
   V(_UserInt__value)                                                           \
@@ -521,7 +522,6 @@ class Runtime;
   V(_structseq_repr)                                                           \
   V(_telling)                                                                  \
   V(_thread)                                                                   \
-  V(_traceback)                                                                \
   V(_traceback__frame)                                                         \
   V(_traceback__lasti)                                                         \
   V(_traceback__lineno)                                                        \

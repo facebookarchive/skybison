@@ -571,7 +571,7 @@ void initializeObjectTypes(Thread* thread) {
                           /*builtin_base=*/LayoutId::kNotImplementedType,
                           /*superclass_id=*/LayoutId::kObject);
 
-  addImmediateBuiltinType(thread, ID(_Unbound), LayoutId::kUnbound,
+  addImmediateBuiltinType(thread, ID(_UnboundType), LayoutId::kUnbound,
                           /*builtin_base=*/LayoutId::kUnbound,
                           /*superclass_id=*/LayoutId::kObject);
 

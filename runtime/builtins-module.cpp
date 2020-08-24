@@ -137,8 +137,8 @@ static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(ValueError), LayoutId::kValueError},
     {ID(Warning), LayoutId::kWarning},
     {ID(ZeroDivisionError), LayoutId::kZeroDivisionError},
+    {ID(_UnboundType), LayoutId::kUnbound},
     {ID(_str_array), LayoutId::kStrArray},
-    {ID(_traceback), LayoutId::kTraceback},
     {ID(async_generator), LayoutId::kAsyncGenerator},
     {ID(async_generator_aclose), LayoutId::kAsyncGeneratorAclose},
     {ID(async_generator_asend), LayoutId::kAsyncGeneratorAsend},
@@ -149,6 +149,7 @@ static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(bytes), LayoutId::kBytes},
     {ID(bytes_iterator), LayoutId::kBytesIterator},
     {ID(classmethod), LayoutId::kClassMethod},
+    {ID(cell), LayoutId::kCell},
     {ID(code), LayoutId::kCode},
     {ID(complex), LayoutId::kComplex},
     {ID(coroutine), LayoutId::kCoroutine},
@@ -189,10 +190,12 @@ static const BuiltinType kBuiltinsBuiltinTypes[] = {
     {ID(str), LayoutId::kStr},
     {ID(str_iterator), LayoutId::kStrIterator},
     {ID(super), LayoutId::kSuper},
+    {ID(traceback), LayoutId::kTraceback},
     {ID(tuple), LayoutId::kTuple},
     {ID(tuple_iterator), LayoutId::kTupleIterator},
     {ID(type), LayoutId::kType},
     {ID(type_proxy), LayoutId::kTypeProxy},
+    {ID(valuecell), LayoutId::kValueCell},
 };
 
 // clang-format off
