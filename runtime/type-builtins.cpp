@@ -730,6 +730,11 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     type.setMro(*mro_copy);
   }
 
+  // TODO(T72020586): Set __module__ in dict
+  if (dictAtById(thread, dict, ID(__qualname__)).isErrorNotFound()) {
+    dictAtPutById(thread, dict, ID(__qualname__), name);
+  }
+
   Object result(&scope, typeAssignFromDict(thread, type, dict));
   if (result.isErrorException()) return *result;
 

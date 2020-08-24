@@ -18808,6 +18808,8 @@ class TypeTests(unittest.TestCase):
     def test_dunder_new_returns_type_instance(self):
         X = type.__new__(type, "X", (object,), {})
         self.assertIsInstance(X, type)
+        self.assertEqual(X.__name__, "X")
+        self.assertEqual(X.__qualname__, "X")
 
     def test_dunder_new_adds_to_base_dunder_subclasses(self):
         A = type.__new__(type, "A", (object,), {})
