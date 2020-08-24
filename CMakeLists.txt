@@ -125,7 +125,7 @@ set(
 set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
 set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
 file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
-set(LIBPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7m.a)
+set(LIBCPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7m.a)
 set(CPYTHON_EXECUTABLE ${CPYTHON_BUILD_DIR}/python)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # The binary has a .exe suffix on systems with a case-insensitive filesystem.
@@ -186,18 +186,18 @@ ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
 make -j
 ")
 add_custom_command(
-  OUTPUT ${LIBPYTHON_BIN} ${CPYTHON_EXECUTABLE}
+  OUTPUT ${LIBCPYTHON_BIN} ${CPYTHON_EXECUTABLE}
   COMMAND cat ${CPYTHON_BUILD_DIR}/build.sh
   COMMAND /bin/sh ${CPYTHON_BUILD_DIR}/build.sh
-  COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${LIBPYTHON_BIN}
+  COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${LIBCPYTHON_BIN}
     ${CPYTHON_EXECUTABLE}
   DEPENDS ${CPYTHON_FILES}
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR}
   USES_TERMINAL)
-add_custom_target(cpython DEPENDS ${LIBPYTHON_BIN})
-add_library(libpython STATIC IMPORTED)
-add_dependencies(libpython cpython)
-set_target_properties(libpython PROPERTIES IMPORTED_LOCATION ${LIBPYTHON_BIN})
+add_custom_target(cpython DEPENDS ${LIBCPYTHON_BIN})
+add_library(libcpython STATIC IMPORTED)
+add_dependencies(libcpython cpython)
+set_target_properties(libcpython PROPERTIES IMPORTED_LOCATION ${LIBCPYTHON_BIN})
 
 set(
   C_API_HEADERS
@@ -1228,7 +1228,7 @@ if (ENABLE_CPYTHON_TESTS)
     dl
     gmock
     gtest
-    libpython
+    libcpython
     util)
   set_target_properties(
     cpython-tests
