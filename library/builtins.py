@@ -693,18 +693,6 @@ class object(bootstrap=True):  # noqa: E999
 # End: Early definitions
 
 
-class ArithmeticError(Exception, bootstrap=True):
-    pass
-
-
-class AssertionError(Exception, bootstrap=True):
-    pass
-
-
-class AttributeError(Exception, bootstrap=True):
-    pass
-
-
 class BaseException(bootstrap=True):
     # Some properties of BaseException can be Unbound to indicate that they're
     # nullptr from the C-API's point of view. We want to hide that distinction
@@ -755,6 +743,127 @@ class BaseException(bootstrap=True):
     del _maybe_unbound_property
 
 
+class Exception(BaseException, bootstrap=True):
+    pass
+
+
+class LookupError(Exception, bootstrap=True):
+    pass
+
+
+class OSError(Exception, bootstrap=True):
+    def __new__(cls, *args):
+        _type_subclass_guard(cls, OSError)
+        if cls is OSError and _tuple_len(args) > 1:
+            errno = _tuple_getitem(args, 0)
+            if _int_check(errno):
+                subclass = _os_error_subclass_from_errno(errno)
+                if subclass is not OSError:
+                    return subclass.__new__(subclass, *args)
+        # TODO(T52743795): Use super().
+        return Exception.__new__(cls, *args)
+
+    def __init__(self, *args):
+        BaseException.__init__(self, *args)
+        self.errno = None
+        self.strerror = None
+        self.filename = None
+        self.filename2 = None
+
+        arg_len = _tuple_len(args)
+        if arg_len >= 2:
+            self.errno = _tuple_getitem(args, 0)
+            self.strerror = _tuple_getitem(args, 1)
+
+        if arg_len > 2:
+            self.filename = _tuple_getitem(args, 2)
+
+        # 3rd arg is winerror, ignored in a Unix environment.
+
+        if arg_len > 4:
+            self.filename2 = _tuple_getitem(args, 4)
+
+    def __str__(self):
+        if self.filename:
+            if self.filename2:
+                return (
+                    f"[Errno {self.errno}] {self.strerror}: "
+                    + f"{self.filename!r} -> {self.filename2!r}"
+                )
+            return f"[Errno {self.errno}] {self.strerror}: " + f"{self.filename!r}"
+
+        if self.errno and self.strerror:
+            return f"[Errno {self.errno}] {self.strerror}"
+
+        return BaseException.__str__(self)
+
+
+class RuntimeError(Exception, bootstrap=True):
+    pass
+
+
+class SyntaxError(Exception, bootstrap=True):
+    def __init__(self, *args, **kwargs):
+        # TODO(T52743795): Replace with super() when that is fixed
+        super(SyntaxError, self).__init__(*args, **kwargs)
+        # msg, filename, lineno, offset, text all default to None because of
+        # Pyro's automatic None-initialization during allocation.
+        args_len = _tuple_len(args)
+        if args_len > 0:
+            self.msg = args[0]
+        if args_len == 2:
+            info = tuple(args[1])
+            if _tuple_len(info) != 4:
+                raise IndexError("tuple index out of range")
+            self.filename = info[0]
+            self.lineno = info[1]
+            self.offset = info[2]
+            self.text = info[3]
+
+    def __str__(self):
+        have_filename = _str_check(self.filename)
+        have_lineno = _int_check_exact(self.lineno)
+        # TODO(T52652299): Take basename of filename. See implementation of
+        # function my_basename in exceptions.c
+        if not have_filename and not have_lineno:
+            return str(self.msg)
+        if have_filename and have_lineno:
+            return f"{self.msg!s} ({self.filename}, line {self.lineno})"
+        elif have_filename:
+            return f"{self.msg!s} ({self.filename})"
+        else:  # have_lineno
+            return f"{self.msg!s} (line {self.lineno})"
+
+
+class ValueError(Exception, bootstrap=True):
+    pass
+
+
+class Warning(Exception, bootstrap=True):
+    pass
+
+
+class ConnectionError(OSError, bootstrap=True):
+    pass
+
+
+class UnicodeError(ValueError, bootstrap=True):  # noqa: B903
+    def __init__(self, *args):
+        self.args = args
+
+
+class ArithmeticError(Exception, bootstrap=True):
+    pass
+
+
+class AssertionError(Exception, bootstrap=True):
+    pass
+
+
+class AttributeError(Exception, bootstrap=True):
+    pass
+
+
 class BlockingIOError(OSError, bootstrap=True):
     pass
 
@@ -779,10 +888,6 @@ class ConnectionAbortedError(ConnectionError, bootstrap=True):
     pass
 
 
-class ConnectionError(OSError, bootstrap=True):
-    pass
-
-
 class ConnectionRefusedError(ConnectionError, bootstrap=True):
     pass
 
@@ -803,10 +908,6 @@ Ellipsis = ...
 
 
 EnvironmentError = OSError
-
-
-class Exception(BaseException, bootstrap=True):
-    pass
 
 
 class FileExistsError(OSError, bootstrap=True):
@@ -876,10 +977,6 @@ class KeyboardInterrupt(BaseException, bootstrap=True):
     pass
 
 
-class LookupError(Exception, bootstrap=True):
-    pass
-
-
 class MemoryError(Exception, bootstrap=True):
     pass
 
@@ -917,53 +1014,6 @@ class NotImplementedError(RuntimeError, bootstrap=True):
     pass
 
 
-class OSError(Exception, bootstrap=True):
-    def __new__(cls, *args):
-        _type_subclass_guard(cls, OSError)
-        if cls is OSError and _tuple_len(args) > 1:
-            errno = _tuple_getitem(args, 0)
-            if _int_check(errno):
-                subclass = _os_error_subclass_from_errno(errno)
-                if subclass is not OSError:
-                    return subclass.__new__(subclass, *args)
-        # TODO(T52743795): Use super().
-        return Exception.__new__(cls, *args)
-
-    def __init__(self, *args):
-        BaseException.__init__(self, *args)
-        self.errno = None
-        self.strerror = None
-        self.filename = None
-        self.filename2 = None
-
-        arg_len = _tuple_len(args)
-        if arg_len >= 2:
-            self.errno = _tuple_getitem(args, 0)
-            self.strerror = _tuple_getitem(args, 1)
-
-        if arg_len > 2:
-            self.filename = _tuple_getitem(args, 2)
-
-        # 3rd arg is winerror, ignored in a Unix environment.
-
-        if arg_len > 4:
-            self.filename2 = _tuple_getitem(args, 4)
-
-    def __str__(self):
-        if self.filename:
-            if self.filename2:
-                return (
-                    f"[Errno {self.errno}] {self.strerror}: "
-                    + f"{self.filename!r} -> {self.filename2!r}"
-                )
-            return f"[Errno {self.errno}] {self.strerror}: " + f"{self.filename!r}"
-
-        if self.errno and self.strerror:
-            return f"[Errno {self.errno}] {self.strerror}"
-
-        return BaseException.__str__(self)
-
-
 class OverflowError(ArithmeticError, bootstrap=True):
     pass
 
@@ -992,10 +1042,6 @@ class ResourceWarning(Warning, bootstrap=True):
     pass
 
 
-class RuntimeError(Exception, bootstrap=True):
-    pass
-
-
 class RuntimeWarning(Warning, bootstrap=True):
     pass
 
@@ -1020,39 +1066,6 @@ class StopAsyncIteration(Exception, bootstrap=True):
 class StopIteration(Exception, bootstrap=True):
     def __init__(self, *args, **kwargs):
         _builtin()
-
-
-class SyntaxError(Exception, bootstrap=True):
-    def __init__(self, *args, **kwargs):
-        # TODO(T52743795): Replace with super() when that is fixed
-        super(SyntaxError, self).__init__(*args, **kwargs)
-        # msg, filename, lineno, offset, text all default to None because of
-        # Pyro's automatic None-initialization during allocation.
-        args_len = _tuple_len(args)
-        if args_len > 0:
-            self.msg = args[0]
-        if args_len == 2:
-            info = tuple(args[1])
-            if _tuple_len(info) != 4:
-                raise IndexError("tuple index out of range")
-            self.filename = info[0]
-            self.lineno = info[1]
-            self.offset = info[2]
-            self.text = info[3]
-
-    def __str__(self):
-        have_filename = _str_check(self.filename)
-        have_lineno = _int_check_exact(self.lineno)
-        # TODO(T52652299): Take basename of filename. See implementation of
-        # function my_basename in exceptions.c
-        if not have_filename and not have_lineno:
-            return str(self.msg)
-        if have_filename and have_lineno:
-            return f"{self.msg!s} ({self.filename}, line {self.lineno})"
-        elif have_filename:
-            return f"{self.msg!s} ({self.filename})"
-        else:  # have_lineno
-            return f"{self.msg!s} (line {self.lineno})"
 
 
 class SyntaxWarning(Warning, bootstrap=True):
@@ -1115,11 +1128,6 @@ class UnicodeEncodeError(UnicodeError, bootstrap=True):
         self.reason = reason
 
 
-class UnicodeError(ValueError, bootstrap=True):  # noqa: B903
-    def __init__(self, *args):
-        self.args = args
-
-
 class UnicodeTranslateError(UnicodeError, bootstrap=True):
     def __init__(self, obj, start, end, reason):
         super(UnicodeTranslateError, self).__init__(obj, start, end, reason)
@@ -1138,14 +1146,6 @@ class UnicodeWarning(Warning, bootstrap=True):
 
 
 class UserWarning(Warning, bootstrap=True):
-    pass
-
-
-class ValueError(Exception, bootstrap=True):
-    pass
-
-
-class Warning(Exception, bootstrap=True):
     pass
 
 
@@ -1776,40 +1776,6 @@ class async_generator_athrow(bootstrap=True):
 
 def bin(number) -> str:
     _builtin()
-
-
-class bool(int, bootstrap=True):
-    def __and__(self, other):
-        _bool_guard(self)
-        if _bool_check(other):
-            return self and other
-        if _int_check(other):
-            return int.__and__(other, self)
-        return NotImplemented
-
-    def __new__(cls, val=False):
-        _builtin()
-
-    def __or__(self, other):
-        _builtin()
-
-    def __rand__(self, other):
-        return bool.__and__(self, other)
-
-    def __repr__(self):
-        return "True" if self else "False"
-
-    def __ror__(self, other):
-        _builtin()
-
-    def __rxor__(self, other):
-        _builtin()
-
-    def __str__(self) -> str:  # noqa: T484
-        return bool.__repr__(self)
-
-    def __xor__(self, other):
-        _builtin()
 
 
 class bytearray(bootstrap=True):
@@ -4433,6 +4399,40 @@ class int(bootstrap=True):
     real = property(__int__)
 
     def to_bytes(self, length, byteorder, signed=False):
+        _builtin()
+
+
+class bool(int, bootstrap=True):
+    def __and__(self, other):
+        _bool_guard(self)
+        if _bool_check(other):
+            return self and other
+        if _int_check(other):
+            return int.__and__(other, self)
+        return NotImplemented
+
+    def __new__(cls, val=False):
+        _builtin()
+
+    def __or__(self, other):
+        _builtin()
+
+    def __rand__(self, other):
+        return bool.__and__(self, other)
+
+    def __repr__(self):
+        return "True" if self else "False"
+
+    def __ror__(self, other):
+        _builtin()
+
+    def __rxor__(self, other):
+        _builtin()
+
+    def __str__(self) -> str:  # noqa: T484
+        return bool.__repr__(self)
+
+    def __xor__(self, other):
         _builtin()
 
 
