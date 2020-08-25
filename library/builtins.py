@@ -3509,6 +3509,9 @@ class float(bootstrap=True):
             return _float_divmod(self, int.__float__(n))[0]
         return NotImplemented
 
+    def __format__(self, format_spec: str) -> str:
+        _builtin()
+
     def __ge__(self, n: float) -> bool:
         _builtin()
 

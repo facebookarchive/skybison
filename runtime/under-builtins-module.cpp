@@ -2088,7 +2088,7 @@ RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
   Bool always_add_sign(&scope, args.get(3));
   Bool add_dot_0(&scope, args.get(4));
   Bool use_alt_formatting(&scope, args.get(5));
-  unique_c_ptr<char> c_str(formatFloat(
+  unique_c_ptr<char> c_str(doubleToString(
       value, format_code_char, precision.value(), always_add_sign.value(),
       add_dot_0.value(), use_alt_formatting.value(), nullptr));
   return thread->runtime()->newStrFromCStr(c_str.get());

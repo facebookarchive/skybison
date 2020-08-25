@@ -8637,6 +8637,209 @@ class FloatTests(unittest.TestCase):
             float.hex("")
 
 
+class FloatDunderFormatTests(unittest.TestCase):
+    def test_empty_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, ""), "0.0")
+        self.assertEqual(float.__format__(1.2, ""), "1.2")
+        self.assertEqual(float.__format__(-1.6, ""), "-1.6")
+        self.assertEqual(float("NaN").__format__(""), "nan")
+        self.assertEqual(float("inf").__format__(""), "inf")
+
+    def test_empty_format_with_subclass_calls_dunder_str(self):
+        class C(float):
+            def __str__(self):
+                return "foobar"
+
+        self.assertEqual(float.__format__(C(0.0), ""), "foobar")
+        self.assertEqual(float.__format__(C("nan"), ""), "foobar")
+        self.assertEqual(float.__format__(C("inf"), ""), "foobar")
+
+    def test_nonempty_format_with_subclass_uses_float_value(self):
+        class C(float):
+            def __str__(self):
+                return "foobar"
+
+        self.assertEqual(float.__format__(C(0.0), "e"), "0.000000e+00")
+        self.assertEqual(float.__format__(C("nan"), "F"), "NAN")
+        self.assertEqual(float.__format__(C("inf"), "g"), "inf")
+
+    def test_e_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "e"), "0.000000e+00")
+        self.assertEqual(float.__format__(-0.0, "e"), "-0.000000e+00")
+        self.assertEqual(float.__format__(0.0025, "e"), "2.500000e-03")
+        self.assertEqual(float.__format__(-1000.0001, "e"), "-1.000000e+03")
+        self.assertEqual(float.__format__(2.0 ** 64, "e"), "1.844674e+19")
+        self.assertEqual(float("NAN").__format__("e"), "nan")
+        self.assertEqual(float("-INF").__format__("e"), "-inf")
+
+    def test_big_e_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "E"), "0.000000E+00")
+        self.assertEqual(float.__format__(-0.0, "E"), "-0.000000E+00")
+        self.assertEqual(float.__format__(0.0025, "E"), "2.500000E-03")
+        self.assertEqual(float.__format__(-1000.0001, "E"), "-1.000000E+03")
+        self.assertEqual(float.__format__(2.0 ** 64, "E"), "1.844674E+19")
+        self.assertEqual(float("nan").__format__("E"), "NAN")
+        self.assertEqual(float("-inf").__format__("E"), "-INF")
+
+    def test_f_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "f"), "0.000000")
+        self.assertEqual(float.__format__(-0.0, "f"), "-0.000000")
+        self.assertEqual(float.__format__(0.0025, "f"), "0.002500")
+        self.assertEqual(float.__format__(-1000.0001, "f"), "-1000.000100")
+        self.assertEqual(
+            float.__format__(2.0 ** 64, "f"), "18446744073709551616.000000"
+        )
+        self.assertEqual(float("NaN").__format__("f"), "nan")
+        self.assertEqual(float("INF").__format__("f"), "inf")
+
+    def test_big_f_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "F"), "0.000000")
+        self.assertEqual(float.__format__(-0.0, "F"), "-0.000000")
+        self.assertEqual(float.__format__(0.0025, "F"), "0.002500")
+        self.assertEqual(float.__format__(-1000.0001, "F"), "-1000.000100")
+        self.assertEqual(
+            float.__format__(2.0 ** 64, "F"), "18446744073709551616.000000"
+        )
+        self.assertEqual(float("NaN").__format__("F"), "NAN")
+        self.assertEqual(float("iNf").__format__("F"), "INF")
+
+    def test_g_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "g"), "0")
+        self.assertEqual(float.__format__(-0.0, "g"), "-0")
+        self.assertEqual(float.__format__(0.00025, "g"), "0.00025")
+        self.assertEqual(float.__format__(0.000025, "g"), "2.5e-05")
+        self.assertEqual(float.__format__(-1000.0001, "g"), "-1000")
+        self.assertEqual(float.__format__(123456.789, "g"), "123457")
+        self.assertEqual(float.__format__(1234567.89, "g"), "1.23457e+06")
+        self.assertEqual(float.__format__(2.0 ** 64, "g"), "1.84467e+19")
+        self.assertEqual(float("NaN").__format__("g"), "nan")
+        self.assertEqual(float("INF").__format__("g"), "inf")
+
+    def test_big_g_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "G"), "0")
+        self.assertEqual(float.__format__(-0.0, "G"), "-0")
+        self.assertEqual(float.__format__(0.00025, "G"), "0.00025")
+        self.assertEqual(float.__format__(0.000025, "G"), "2.5E-05")
+        self.assertEqual(float.__format__(-1000.0001, "G"), "-1000")
+        self.assertEqual(float.__format__(123456.789, "G"), "123457")
+        self.assertEqual(float.__format__(1234567.89, "G"), "1.23457E+06")
+        self.assertEqual(float.__format__(2.0 ** 64, "G"), "1.84467E+19")
+        self.assertEqual(float("Nan").__format__("G"), "NAN")
+        self.assertEqual(float("Inf").__format__("G"), "INF")
+
+    # TODO(T52759101): test 'n' uses locale
+
+    def test_percent_format_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "%"), "0.000000%")
+        self.assertEqual(float.__format__(-0.0, "%"), "-0.000000%")
+        self.assertEqual(float.__format__(0.0025, "%"), "0.250000%")
+        self.assertEqual(float.__format__(-1000.0001, "%"), "-100000.010000%")
+        self.assertEqual(float.__format__(2.0 ** 10, "%"), "102400.000000%")
+        self.assertEqual(float("NaN").__format__("%"), "nan%")
+        self.assertEqual(float("INF").__format__("%"), "inf%")
+
+    def test_missing_precision_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            float.__format__(0.0, ".f")
+
+        self.assertEqual("Format specifier missing precision", str(context.exception))
+
+    def test_large_integer_precision_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            float.__format__(0.0, ".2147483648f")
+
+        self.assertEqual("precision too big", str(context.exception))
+
+    def test_precision_determines_remainder_length(self):
+        self.assertEqual(float.__format__(0.0, ".0e"), "0e+00")
+        self.assertEqual(float.__format__(123.0, ".0E"), "1E+02")
+        self.assertEqual(float.__format__(4.56, ".0f"), "5")
+        self.assertEqual(float.__format__(78.9, ".0F"), "79")
+        self.assertEqual(float.__format__(71.0, ".0g"), "7e+01")
+        self.assertEqual(float.__format__(0.025, ".0G"), "0.03")
+        self.assertEqual(float.__format__(0.005, ".0%"), "0%")
+        self.assertEqual(float.__format__(0.0051, ".0%"), "1%")
+
+        self.assertEqual(float.__format__(-0.0, ".2e"), "-0.00e+00")
+        self.assertEqual(float.__format__(123.0, ".1E"), "1.2E+02")
+        self.assertEqual(float.__format__(4.56, ".10f"), "4.5600000000")
+        self.assertEqual(float.__format__(0.00000000000789, ".8F"), "0.00000000")
+        self.assertEqual(float.__format__(71.0, ".4g"), "71")
+        self.assertEqual(float.__format__(0.000025, ".5G"), "2.5E-05")
+        self.assertEqual(float.__format__(0.0005, ".4%"), "0.0500%")
+
+        self.assertEqual(float.__format__(123.456, ".4"), "123.5")
+        self.assertEqual(float.__format__(1234.56, ".4"), "1.235e+03")
+        self.assertEqual(float.__format__(12345.6, ".4"), "1.235e+04")
+
+    def test_grouping_by_thousands(self):
+        self.assertEqual(float.__format__(12345678.9, "_e"), "1.234568e+07")
+        self.assertEqual(float.__format__(123456.789, "_E"), "1.234568E+05")
+        self.assertEqual(float.__format__(12345678.9, "_f"), "12_345_678.900000")
+        self.assertEqual(float.__format__(123456.789, ",F"), "123,456.789000")
+        self.assertEqual(float.__format__(12345678.9, ",g"), "1.23457e+07")
+        self.assertEqual(float.__format__(123456.789, ",G"), "123,457")
+        self.assertEqual(float.__format__(123456.789, "_%"), "12_345_678.900000%")
+
+    def test_padding(self):
+        self.assertEqual(float.__format__(123.456, "3e"), "1.234560e+02")
+        self.assertEqual(float.__format__(0.0123456789, ">11.4E"), " 1.2346E-02")
+        self.assertEqual(float.__format__(0.0, "2f"), "0.000000")
+        self.assertEqual(float.__format__(-0.0, "7.2F"), "  -0.00")
+        self.assertEqual(float("NaN").__format__("*^8g"), "**nan***")
+        self.assertEqual(float.__format__(-10.02, "=8g"), "-  10.02")
+        self.assertEqual(float.__format__(-1.234, "!<10G"), "-1.234!!!!")
+
+    def test_alternate_returns_str(self):
+        self.assertEqual(float.__format__(0.0, "#"), "0.0")
+        self.assertEqual(float.__format__(-123.00, "#.0e"), "-1.e+02")
+        self.assertEqual(float.__format__(-0.123, "#.0E"), "-1.E-01")
+        self.assertEqual(float.__format__(12.021, "#.2f"), "12.02")
+        self.assertEqual(float.__format__(12.021, "#.0F"), "12.")
+        self.assertEqual(float.__format__(12.0, "#g"), "12.0000")
+        self.assertEqual(float.__format__(2.0 ** 63, "#.1G"), "9.E+18")
+
+    def test_with_sign_returns_str(self):
+        self.assertEqual(float.__format__(1.0, " "), " 1.0")
+        self.assertEqual(float.__format__(1.0, "+"), "+1.0")
+        self.assertEqual(float.__format__(1.0, "-"), "1.0")
+        self.assertEqual(float.__format__(-4.0, " "), "-4.0")
+        self.assertEqual(float.__format__(-4.0, "+"), "-4.0")
+        self.assertEqual(float.__format__(-4.0, "-"), "-4.0")
+
+    def test_sign_aware_zero_padding_allows_zero_width(self):
+        self.assertEqual(float.__format__(123.0, "00"), "123.0")
+        self.assertEqual(float.__format__(123.34, "00f"), "123.340000")
+        self.assertEqual(float.__format__(123.34, "00e"), "1.233400e+02")
+        self.assertEqual(float.__format__(123.34, "00g"), "123.34")
+        self.assertEqual(float.__format__(123.34, "00.10f"), "123.3400000000")
+        self.assertEqual(float.__format__(123.34, "00.10e"), "1.2334000000e+02")
+        self.assertEqual(float.__format__(123.34, "00.10g"), "123.34")
+        self.assertEqual(float.__format__(123.34, "01f"), "123.340000")
+
+        self.assertEqual(float.__format__(-123.0, "00"), "-123.0")
+        self.assertEqual(float.__format__(-123.34, "00f"), "-123.340000")
+        self.assertEqual(float.__format__(-123.34, "00e"), "-1.233400e+02")
+        self.assertEqual(float.__format__(-123.34, "00g"), "-123.34")
+        self.assertEqual(float.__format__(-123.34, "00.10f"), "-123.3400000000")
+        self.assertEqual(float.__format__(-123.34, "00.10f"), "-123.3400000000")
+        self.assertEqual(float.__format__(-123.34, "00.10e"), "-1.2334000000e+02")
+        self.assertEqual(float.__format__(-123.34, "00.10g"), "-123.34")
+
+    def test_unknown_format_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            float.__format__(42.0, "c")
+        self.assertEqual(
+            str(context.exception), "Unknown format code 'c' for object of type 'float'"
+        )
+
+    def test_with_non_float_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float.__format__("not a float", "")
+        self.assertIn("'__format__' requires a 'float' object", str(context.exception))
+        self.assertIn("'str'", str(context.exception))
+
+
 class FrozensetTests(unittest.TestCase):
     def test_dunder_and_with_non_frozenset_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -10500,6 +10703,15 @@ class IntDunderFormatTests(unittest.TestCase):
             "-10100100100011100011010001110011010010011000001101111001011"
             "01001101011100010001001001001001",
         )
+
+    def test_float_format_returns_str(self):
+        self.assertEqual(int.__format__(2 ** 64, "e"), "1.844674e+19")
+        self.assertEqual(int.__format__(-12345, "E"), "-1.234500E+04")
+        self.assertEqual(int.__format__(0, "f"), "0.000000")
+        self.assertEqual(int.__format__(321, "F"), "321.000000")
+        self.assertEqual(int.__format__(-1024, "g"), "-1024")
+        self.assertEqual(int.__format__(10 ** 100, "G"), "1E+100")
+        self.assertEqual(int.__format__(1, "%"), "100.000000%")
 
     def test_alternate_returns_str(self):
         self.assertEqual(int.__format__(0, "#"), "0")

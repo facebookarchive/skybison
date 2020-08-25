@@ -17,6 +17,9 @@ struct FormatSpec {
   word precision;
 };
 
+// Format float as a decimal number with `format` spec. Returns a `str`.
+RawObject formatFloat(Thread* thread, double value, FormatSpec* format);
+
 // Format int as decimal number with `format` spec. Returns a `str`.
 RawObject formatIntDecimal(Thread* thread, const Int& value,
                            FormatSpec* format);

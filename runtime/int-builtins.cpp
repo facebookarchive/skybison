@@ -501,9 +501,12 @@ RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs) {
     case 'f':
     case 'F':
     case 'g':
-    case 'G':
-      // TODO(matthiasb): convert to float and call formatFloat().
-      UNIMPLEMENTED("print int as float");
+    case 'G': {
+      double value;
+      Object err(&scope, convertIntToDouble(thread, self, &value));
+      if (err.isErrorException()) return *err;
+      return formatFloat(thread, value, &format);
+    }
     default:
       return raiseUnknownFormatError(thread, format.type, self_obj);
   }

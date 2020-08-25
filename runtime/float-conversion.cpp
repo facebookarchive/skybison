@@ -453,9 +453,9 @@ exit:
   return buf;
 }
 
-char* formatFloat(double value, char format_code, int precision, bool skip_sign,
-                  bool add_dot_0, bool use_alt_formatting,
-                  FormatResultKind* type) {
+char* doubleToString(double value, char format_code, int precision,
+                     bool skip_sign, bool add_dot_0, bool use_alt_formatting,
+                     FormatResultKind* type) {
   const char* const* float_strings = kLcFloatStrings;
 
   // Validate format_code, and map upper and lower case. Compute the

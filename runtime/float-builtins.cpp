@@ -104,6 +104,58 @@ RawObject METH(float, __float__)(Thread* thread, Frame* frame, word nargs) {
   return floatUnderlying(*self);
 }
 
+RawObject METH(float, __format__)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(float));
+  }
+  Object spec_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*spec_obj)) {
+    return thread->raiseRequiresType(spec_obj, ID(str));
+  }
+  Float self(&scope, floatUnderlying(*self_obj));
+  Str spec(&scope, strUnderlying(*spec_obj));
+  if (spec == Str::empty()) {
+    if (self_obj.isFloat()) {
+      unique_c_ptr<char> result(
+          doubleToString(self.value(), 'r', 0, false, true, false, nullptr));
+      return runtime->newStrFromCStr(result.get());
+    }
+    Object str(&scope, thread->invokeMethod1(self_obj, ID(__str__)));
+    DCHECK(!str.isErrorNotFound(), "__str__ should always exist");
+    if (str.isErrorException()) return *str;
+    if (!runtime->isInstanceOfStr(*str)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError, "__str__ returned non-string (type %T)", &str);
+    }
+    return *str;
+  }
+
+  FormatSpec format;
+  Object err(&scope, parseFormatSpec(thread, spec, '\0', '>', &format));
+  if (err.isErrorException()) {
+    return *err;
+  }
+
+  switch (format.type) {
+    case '\0':
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+    case 'n':
+    case '%':
+      return formatFloat(thread, self.value(), &format);
+    default:
+      return raiseUnknownFormatError(thread, format.type, self_obj);
+  }
+}
+
 RawObject METH(float, __ge__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

@@ -715,6 +715,13 @@ void RawMutableBytes::replaceFromWithBytesStartAt(word dst_start, RawBytes src,
                     src_start);
 }
 
+void RawMutableBytes::replaceFromWithCharArray(word dst_start, const char* src,
+                                               word count) const {
+  DCHECK_BOUND(dst_start + count, length());
+  byte* dst = reinterpret_cast<byte*>(address());
+  std::memcpy(dst + dst_start, src, count);
+}
+
 void RawMutableBytes::replaceFromWithStr(word index, RawStr src,
                                          word char_length) const {
   DCHECK_BOUND(index + char_length, length());

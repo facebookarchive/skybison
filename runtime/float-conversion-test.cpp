@@ -19,33 +19,36 @@ using FloatConversionTest = RuntimeFixture;
 // Note: The testing here is not comprehensive; we have more testing for the
 // corresponding formatting and parsing library functions.
 
-TEST_F(FloatConversionTest, FormatFloatWithZeroReturnsString) {
-  unique_c_ptr<char> buf(formatFloat(0., 'g', 6, false, false, false, nullptr));
+TEST_F(FloatConversionTest, DoubleToStringWithZeroReturnsString) {
+  unique_c_ptr<char> buf(
+      doubleToString(0., 'g', 6, false, false, false, nullptr));
   EXPECT_EQ(std::strcmp(buf.get(), "0"), 0);
 }
 
-TEST_F(FloatConversionTest, FormatFloatWithMinusZeroReturnsString) {
+TEST_F(FloatConversionTest, DoubleToStringWithMinusZeroReturnsString) {
   unique_c_ptr<char> buf(
-      formatFloat(-0., 'f', 2, false, false, false, nullptr));
+      doubleToString(-0., 'f', 2, false, false, false, nullptr));
   EXPECT_EQ(std::strcmp(buf.get(), "-0.00"), 0);
 }
 
-TEST_F(FloatConversionTest, FormatFloatReturnsString) {
-  unique_c_ptr<char> buf(formatFloat(-42.123456789, 'e', 5, /*skip_sign=*/true,
-                                     /*add_dot_0=*/true,
-                                     /*use_alt_formatting=*/true, nullptr));
+TEST_F(FloatConversionTest, DoubleToStringReturnsString) {
+  unique_c_ptr<char> buf(doubleToString(-42.123456789, 'e', 5,
+                                        /*skip_sign=*/true,
+                                        /*add_dot_0=*/true,
+                                        /*use_alt_formatting=*/true, nullptr));
   EXPECT_EQ(std::strcmp(buf.get(), "4.21235e+01"), 0);
 }
 
-TEST_F(FloatConversionTest, FormatFloatWithNanReturnsString) {
-  unique_c_ptr<char> buf(formatFloat(std::numeric_limits<double>::quiet_NaN(),
-                                     'r', 0, false, false, false, nullptr));
+TEST_F(FloatConversionTest, DoubleToStringWithNanReturnsString) {
+  unique_c_ptr<char> buf(
+      doubleToString(std::numeric_limits<double>::quiet_NaN(), 'r', 0, false,
+                     false, false, nullptr));
   EXPECT_EQ(std::strcmp(buf.get(), "nan"), 0);
 }
 
-TEST_F(FloatConversionTest, FormatFloatWithInfReturnsString) {
-  unique_c_ptr<char> buf(formatFloat(std::numeric_limits<double>::infinity(),
-                                     'e', 0, false, false, false, nullptr));
+TEST_F(FloatConversionTest, DoubleToStringWithInfReturnsString) {
+  unique_c_ptr<char> buf(doubleToString(std::numeric_limits<double>::infinity(),
+                                        'e', 0, false, false, false, nullptr));
   EXPECT_EQ(std::strcmp(buf.get(), "inf"), 0);
 }
 

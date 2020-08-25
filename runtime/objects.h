@@ -1430,6 +1430,10 @@ class RawMutableBytes : public RawLargeBytes {
   void replaceFromWithBytesStartAt(word dst_start, RawBytes src, word count,
                                    word src_start) const;
 
+  // Replace the bytes from dst_start with count bytes from src.
+  void replaceFromWithCharArray(word dst_start, const char* src,
+                                word count) const;
+
   // Replace the bytes from index with len bytes from string src
   void replaceFromWithStr(word index, RawStr src, word char_length) const;
 

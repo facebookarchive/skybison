@@ -1,9 +1,100 @@
 #include "formatter.h"
 
 #include "float-builtins.h"
+#include "float-conversion.h"
+#include "globals.h"
+#include "handles-decl.h"
+#include "objects.h"
 #include "runtime.h"
+#include "thread.h"
+#include "unicode.h"
 
 namespace py {
+
+struct FloatWidths {
+  word left_padding;
+  byte sign;
+  word sign_padding;
+  word grouped_digits;
+  bool has_decimal;
+  word remainder;
+  word right_padding;
+};
+
+static word calculateFloatWidths(const FormatSpec* format, const char* buf,
+                                 word length, FloatWidths* result) {
+  result->left_padding = 0;
+  result->sign = '\0';
+  result->sign_padding = 0;
+  result->grouped_digits = length;
+  result->has_decimal = false;
+  result->remainder = 0;
+  result->right_padding = 0;
+
+  // Check for a sign character
+  word index = 0;
+  word total_length = 0;
+  if (buf[index] == '-') {
+    result->sign = '-';
+    index++;
+    total_length++;
+  }
+
+  // Parse the digits for a remainder
+  for (; index < length; index++) {
+    char c = buf[index];
+    if (!ASCII::isDigit(c)) {
+      word remainder = length - index;
+      if (c == '.') {
+        result->has_decimal = true;
+        result->remainder = remainder - 1;
+        total_length += remainder;  // TODO(T52759101): use locale for decimal
+      } else {
+        result->remainder = remainder;
+        total_length += remainder;
+      }
+      break;
+    }
+  }
+
+  if (format->positive_sign != '\0' && result->sign == '\0') {
+    result->sign = format->positive_sign;
+    total_length++;
+  }
+
+  // TODO(T52759101): use locale for thousands separator and grouping
+  word digits = result->sign == '-' ? index - 1 : index;
+  if (format->thousands_separator != '\0') {
+    digits += (digits - 1) / 3;
+  }
+  result->grouped_digits = digits;
+  total_length += digits;
+
+  word padding = format->width - total_length;
+  if (padding > 0) {
+    total_length +=
+        padding * SmallStr::fromCodePoint(format->fill_char).length();
+    switch (format->alignment) {
+      case '<':
+        result->right_padding = padding;
+        break;
+      case '=':
+        result->sign_padding = padding;
+        break;
+      case '>':
+        result->left_padding = padding;
+        break;
+      case '^':
+        result->left_padding = padding >> 1;
+        result->right_padding = padding - result->left_padding;
+        break;
+      default:
+        UNREACHABLE("unexpected alignment %c", format->alignment);
+    }
+  }
+
+  return total_length;
+}
 
 static bool isAlignmentSpec(int32_t cp) {
   switch (cp) {
@@ -180,6 +271,59 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
   return NoneType::object();
 }
 
+static word putFloat(const MutableBytes& dest, const char* buf,
+                     const FormatSpec* format, const FloatWidths* widths) {
+  word at = 0;
+  RawSmallStr fill = SmallStr::fromCodePoint(format->fill_char);
+  word fill_length = fill.length();
+  for (word i = 0; i < widths->left_padding; i++, at += fill_length) {
+    dest.replaceFromWithStr(at, Str::cast(fill), fill_length);
+  }
+  switch (widths->sign) {
+    case '\0':
+      break;
+    case '-':
+      buf++;
+      FALLTHROUGH;
+    case '+':
+    case ' ':
+      dest.byteAtPut(at++, widths->sign);
+      break;
+    default:
+      UNREACHABLE("unexpected sign char %c", widths->sign);
+  }
+  for (word i = 0; i < widths->sign_padding; i++, at += fill_length) {
+    dest.replaceFromWithStr(at, Str::cast(fill), fill_length);
+  }
+  // TODO(T52759101): use thousands separator from locale
+  if (format->thousands_separator == '\0') {
+    dest.replaceFromWithCharArray(at, buf, widths->grouped_digits);
+    at += widths->grouped_digits;
+    buf += widths->grouped_digits;
+  } else {
+    // TODO(T52759101): use locale for grouping
+    word prefix = widths->grouped_digits % 4;
+    dest.replaceFromWithCharArray(at, buf, prefix);
+    buf += prefix;
+    for (word i = prefix; i < widths->grouped_digits; i += 4, buf += 3) {
+      dest.byteAtPut(at + i, format->thousands_separator);
+      dest.replaceFromWithCharArray(at + i + 1, buf, 3);
+    }
+    at += widths->grouped_digits;
+  }
+  if (widths->has_decimal) {
+    // TODO(T52759101): use decimal from locale
+    dest.byteAtPut(at++, '.');
+    buf++;
+  }
+  dest.replaceFromWithCharArray(at, buf, widths->remainder);
+  at += widths->remainder;
+  for (word i = 0; i < widths->right_padding; i++, at += fill_length) {
+    dest.replaceFromWithStr(at, Str::cast(fill), fill_length);
+  }
+  return at;
+}
+
 RawObject raiseUnknownFormatError(Thread* thread, int32_t format_code,
                                   const Object& object) {
   if (32 < format_code && format_code < kMaxASCII) {
@@ -192,6 +336,66 @@ RawObject raiseUnknownFormatError(Thread* thread, int32_t format_code,
       LayoutId::kValueError,
       "Unknown format code '\\x%x' for object of type '%T'",
       static_cast<unsigned>(format_code), &object);
+}
+
+RawObject formatFloat(Thread* thread, double value, FormatSpec* format) {
+  static const word default_precision = 6;
+  word precision = format->precision;
+  if (precision > INT_MAX) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "precision too big");
+  }
+
+  int32_t type = format->type;
+  bool add_dot_0 = false;
+  bool add_percent = false;
+  switch (type) {
+    case '\0':
+      add_dot_0 = true;
+      type = 'r';
+      break;
+    case 'n':
+      type = 'g';
+      break;
+    case '%':
+      type = 'f';
+      value *= 100;
+      add_percent = true;
+      break;
+  }
+
+  if (precision < 0) {
+    precision = add_dot_0 ? 0 : default_precision;
+  } else if (type == 'r') {
+    type = 'g';
+  }
+
+  FormatResultKind kind;
+  unique_c_ptr<char> buf(doubleToString(value, type,
+                                        static_cast<int>(precision), false,
+                                        add_dot_0, format->alternate, &kind));
+  word length = std::strlen(buf.get());
+  if (add_percent) {
+    // Overwrite the terminating null character
+    buf.get()[length++] = '%';
+  }
+
+  Runtime* runtime = thread->runtime();
+  if (format->positive_sign == '\0' && format->width <= length &&
+      format->type != 'n' && format->thousands_separator == '\0') {
+    return runtime->newStrWithAll({reinterpret_cast<byte*>(buf.get()), length});
+  }
+
+  // TODO(T52759101): use locale for grouping, separator, and decimal point
+  FloatWidths widths;
+  word result_length = calculateFloatWidths(format, buf.get(), length, &widths);
+
+  HandleScope scope(thread);
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  word written = putFloat(result, buf.get(), format, &widths);
+  DCHECK(written == result_length, "expected to write %ld bytes, wrote %ld",
+         result_length, written);
+  return result.becomeStr();
 }
 
 RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {

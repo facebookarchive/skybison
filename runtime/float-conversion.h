@@ -19,9 +19,10 @@ enum class FormatResultKind {
   kNan,
 };
 
-char* formatFloat(double value, char format_code, int precision, bool skip_sign,
-                  bool add_dot_0, bool use_alt_formatting,
-                  FormatResultKind* type);
+// Returns a malloc-ed buffer containing the formatted double.
+char* doubleToString(double value, char format_code, int precision,
+                     bool skip_sign, bool add_dot_0, bool use_alt_formatting,
+                     FormatResultKind* type);
 
 // Round double value to `ndigits` decimal digits.
 double doubleRoundDecimals(double value, int ndigits);
