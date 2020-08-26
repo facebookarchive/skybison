@@ -271,7 +271,7 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
   return NoneType::object();
 }
 
-static word putFloat(const MutableBytes& dest, const char* buf,
+static word putFloat(const MutableBytes& dest, const byte* buf,
                      const FormatSpec* format, const FloatWidths* widths) {
   word at = 0;
   RawSmallStr fill = SmallStr::fromCodePoint(format->fill_char);
@@ -297,17 +297,17 @@ static word putFloat(const MutableBytes& dest, const char* buf,
   }
   // TODO(T52759101): use thousands separator from locale
   if (format->thousands_separator == '\0') {
-    dest.replaceFromWithCharArray(at, buf, widths->grouped_digits);
+    dest.replaceFromWithAll(at, {buf, widths->grouped_digits});
     at += widths->grouped_digits;
     buf += widths->grouped_digits;
   } else {
     // TODO(T52759101): use locale for grouping
     word prefix = widths->grouped_digits % 4;
-    dest.replaceFromWithCharArray(at, buf, prefix);
+    dest.replaceFromWithAll(at, {buf, prefix});
     buf += prefix;
     for (word i = prefix; i < widths->grouped_digits; i += 4, buf += 3) {
       dest.byteAtPut(at + i, format->thousands_separator);
-      dest.replaceFromWithCharArray(at + i + 1, buf, 3);
+      dest.replaceFromWithAll(at + i + 1, {buf, 3});
     }
     at += widths->grouped_digits;
   }
@@ -316,7 +316,7 @@ static word putFloat(const MutableBytes& dest, const char* buf,
     dest.byteAtPut(at++, '.');
     buf++;
   }
-  dest.replaceFromWithCharArray(at, buf, widths->remainder);
+  dest.replaceFromWithAll(at, {buf, widths->remainder});
   at += widths->remainder;
   for (word i = 0; i < widths->right_padding; i++, at += fill_length) {
     dest.replaceFromWithStr(at, Str::cast(fill), fill_length);
@@ -392,7 +392,8 @@ RawObject formatFloat(Thread* thread, double value, FormatSpec* format) {
   HandleScope scope(thread);
   MutableBytes result(&scope,
                       runtime->newMutableBytesUninitialized(result_length));
-  word written = putFloat(result, buf.get(), format, &widths);
+  word written =
+      putFloat(result, reinterpret_cast<byte*>(buf.get()), format, &widths);
   DCHECK(written == result_length, "expected to write %ld bytes, wrote %ld",
          result_length, written);
   return result.becomeStr();
@@ -907,36 +908,41 @@ RawObject formatIntDecimal(Thread* thread, const Int& value,
   bool is_negative = value.isNegative();
   word number_chars =
       (is_negative || format->positive_sign != '\0') + result_n_digits;
-  word width = format->width;
-  word padding = Utils::maximum(width - number_chars, word{0});
 
   HandleScope scope(thread);
   Str fill_cp(&scope, SmallStr::fromCodePoint(format->fill_char));
   word fill_cp_chars = fill_cp.length();
-  word padding_chars = padding * fill_cp_chars;
-  word result_chars = padding_chars + number_chars;
+  word result_chars = number_chars;
+
+  word padding = format->width - number_chars;
+  word left_padding = 0;
+  word sign_padding = 0;
+  word right_padding = 0;
+  if (padding > 0) {
+    result_chars += padding * fill_cp_chars;
+    switch (format->alignment) {
+      case '<':
+        right_padding = padding;
+        break;
+      case '=':
+        sign_padding = padding;
+        break;
+      case '>':
+        left_padding = padding;
+        break;
+      case '^':
+        left_padding = padding >> 1;
+        right_padding = padding - left_padding;
+        break;
+      default:
+        UNREACHABLE("unexpected alignment %c", format->alignment);
+    }
+  }
+
+  word index = 0;
   MutableBytes result(
       &scope, thread->runtime()->newMutableBytesUninitialized(result_chars));
-  word index = 0;
-  word padding_before;
-  word padding_after;
-  char alignment = format->alignment;
-  if (alignment == '>') {
-    padding_before = padding;
-    padding_after = 0;
-  } else if (alignment == '^') {
-    word half = padding / 2;
-    padding_before = half;
-    padding_after = half + (padding % 2);
-  } else if (alignment == '<') {
-    padding_before = 0;
-    padding_after = padding;
-  } else {
-    DCHECK(alignment == '=', "alignment must be one of '<^=>'");
-    padding_before = 0;
-    padding_after = 0;
-  }
-  for (word i = 0; i < padding_before; i++) {
+  for (word i = 0; i < left_padding; i++) {
     result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
     index += fill_cp_chars;
   }
@@ -945,18 +951,13 @@ RawObject formatIntDecimal(Thread* thread, const Int& value,
   } else if (format->positive_sign != '\0') {
     result.byteAtPut(index++, format->positive_sign);
   }
-  if (format->alignment == '=') {
-    for (word i = 0; i < padding; i++) {
-      result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
-      index += fill_cp_chars;
-    }
+  for (word i = 0; i < sign_padding; i++) {
+    result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+    index += fill_cp_chars;
   }
-
-  for (byte *b = digits, *b_end = b + result_n_digits; b < b_end; b++) {
-    result.byteAtPut(index++, *b);
-  }
-
-  for (word i = 0; i < padding_after; i++) {
+  result.replaceFromWithAll(index, {digits, result_n_digits});
+  index += result_n_digits;
+  for (word i = 0; i < right_padding; i++) {
     result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
     index += fill_cp_chars;
   }
@@ -985,36 +986,41 @@ static inline RawObject formatIntImpl(Thread* thread, const Int& value,
   word result_n_digits = num_digits(value);
   word number_chars = (is_negative || format->positive_sign != '\0') +
                       (format->alternate ? 2 : 0) + result_n_digits;
-  word width = format->width;
-  word padding = Utils::maximum(width - number_chars, word{0});
 
   HandleScope scope(thread);
   Str fill_cp(&scope, SmallStr::fromCodePoint(format->fill_char));
   word fill_cp_chars = fill_cp.length();
-  word padding_chars = padding * fill_cp_chars;
-  word result_chars = padding_chars + number_chars;
+  word result_chars = number_chars;
+
+  word padding = format->width - number_chars;
+  word left_padding = 0;
+  word sign_padding = 0;
+  word right_padding = 0;
+  if (padding > 0) {
+    result_chars += padding * fill_cp_chars;
+    switch (format->alignment) {
+      case '<':
+        right_padding = padding;
+        break;
+      case '=':
+        sign_padding = padding;
+        break;
+      case '>':
+        left_padding = padding;
+        break;
+      case '^':
+        left_padding = padding >> 1;
+        right_padding = padding - left_padding;
+        break;
+      default:
+        UNREACHABLE("unexpected alignment %c", format->alignment);
+    }
+  }
+
+  word index = 0;
   MutableBytes result(
       &scope, thread->runtime()->newMutableBytesUninitialized(result_chars));
-  word index = 0;
-  word padding_before;
-  word padding_after;
-  char alignment = format->alignment;
-  if (alignment == '>') {
-    padding_before = padding;
-    padding_after = 0;
-  } else if (alignment == '^') {
-    word half = padding / 2;
-    padding_before = half;
-    padding_after = half + (padding % 2);
-  } else if (alignment == '<') {
-    padding_before = 0;
-    padding_after = padding;
-  } else {
-    DCHECK(alignment == '=', "alignment must be one of '<^=>'");
-    padding_before = 0;
-    padding_after = 0;
-  }
-  for (word i = 0; i < padding_before; i++) {
+  for (word i = 0; i < left_padding; i++) {
     result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
     index += fill_cp_chars;
   }
@@ -1027,16 +1033,14 @@ static inline RawObject formatIntImpl(Thread* thread, const Int& value,
     result.byteAtPut(index++, '0');
     result.byteAtPut(index++, format_prefix);
   }
-  if (format->alignment == '=') {
-    for (word i = 0; i < padding; i++) {
-      result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
-      index += fill_cp_chars;
-    }
+  for (word i = 0; i < sign_padding; i++) {
+    result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+    index += fill_cp_chars;
   }
   put_digits(thread, result, index, value, result_n_digits);
   index += result_n_digits;
 
-  for (word i = 0; i < padding_after; i++) {
+  for (word i = 0; i < right_padding; i++) {
     result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
     index += fill_cp_chars;
   }

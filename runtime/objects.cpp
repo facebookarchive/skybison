@@ -7,6 +7,7 @@
 #include "runtime.h"
 #include "thread.h"
 #include "unicode.h"
+#include "view.h"
 
 namespace py {
 
@@ -715,11 +716,10 @@ void RawMutableBytes::replaceFromWithBytesStartAt(word dst_start, RawBytes src,
                     src_start);
 }
 
-void RawMutableBytes::replaceFromWithCharArray(word dst_start, const char* src,
-                                               word count) const {
-  DCHECK_BOUND(dst_start + count, length());
+void RawMutableBytes::replaceFromWithAll(word dst_start, View<byte> src) const {
+  DCHECK_BOUND(dst_start + src.length(), length());
   byte* dst = reinterpret_cast<byte*>(address());
-  std::memcpy(dst + dst_start, src, count);
+  std::memcpy(dst + dst_start, src.data(), src.length());
 }
 
 void RawMutableBytes::replaceFromWithStr(word index, RawStr src,
