@@ -275,13 +275,14 @@ from _builtins import (
 
 def _init():
     """This function completes initialization of the runtime."""
-    import _frozen_importlib
-    import _frozen_importlib_external
-    import zipimport
-
     _frozen_importlib._init()
     _frozen_importlib_external._init()
-    _sys.path_hooks.insert(0, zipimport.zipimporter)
+    _sys.path_hooks.insert(0, _zipimport.zipimporter)
+
+    global __import__
+    __import__ = _frozen_importlib.__import__
+    global _module_repr
+    _module_repr = _frozen_importlib._module_repr
 
     if not _sys.flags.no_site:
         import site  # noqa: F401
@@ -6764,5 +6765,9 @@ class zip:
 
 
 from _codecs import decode as _decode, encode as _encode
+from _io import open
 from _str_mod import format as _str_mod_format
+import _frozen_importlib
+import _frozen_importlib_external
 import sys as _sys
+import zipimport as _zipimport

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# isort:skip_file
 """Core implementation of import.
 
 This module is NOT meant to be directly imported! It has been designed such
@@ -30,9 +31,6 @@ import _thread
 import _warnings
 import _weakref
 from _builtins import _address
-
-
-_bootstrap_external = None
 
 
 def _wrap(new, old):
@@ -1156,5 +1154,6 @@ def _init():
 
     sys.meta_path.append(BuiltinImporter)
     sys.meta_path.append(FrozenImporter)
-    __builtins__.__import__ = __import__
-    __builtins__._module_repr = _module_repr
+
+
+import _frozen_importlib_external as _bootstrap_external

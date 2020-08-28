@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 from builtins import _index, _str_array
 
 from _builtins import (
@@ -24,6 +23,7 @@ from _builtins import (
     _type,
     _Unbound,
     _unimplemented,
+    maxunicode as _maxunicode,
 )
 
 
@@ -221,9 +221,9 @@ def charmap_decode(data, errors="strict", mapping=None):
                     "charmap", data, data[i], i, "character maps to <undefined>"
                 )
             if _int_check(mapped):
-                if mapped < 0 or mapped > sys.maxunicode:
+                if mapped < 0 or mapped > _maxunicode:
                     raise TypeError(
-                        f"character mapping must be in range ({sys.maxunicode + 1:#x})"
+                        f"character mapping must be in range ({_maxunicode + 1:#x})"
                     )
                 mapped = chr(mapped)
             elif not _str_check(mapped):

@@ -26,7 +26,6 @@ Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments."""
 
 import builtins
-import sys
 from builtins import BlockingIOError, _index, _int, _type_name
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
@@ -2192,19 +2191,3 @@ def open(  # noqa: C901
     except Exception:
         result.close()
         raise
-
-
-builtins.open = open
-
-sys.__stdin__ = open(
-    sys._stdin_fd, "r", buffering=True, closefd=False, encoding="UTF-8"
-)
-sys.stdin = sys.__stdin__
-sys.__stdout__ = open(
-    sys._stdout_fd, "w", buffering=True, closefd=False, encoding="UTF-8"
-)
-sys.stdout = sys.__stdout__
-sys.__stderr__ = open(
-    sys._stderr_fd, "w", buffering=True, closefd=False, encoding="UTF-8"
-)
-sys.stderr = sys.__stderr__

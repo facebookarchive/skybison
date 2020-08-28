@@ -111,6 +111,9 @@ void FUNC(_builtins, __init_module__)(Thread* thread, const Module& module,
                             SmallInt::fromWord(Code::kCompileFlagsMask));
   moduleAtPutById(thread, module, ID(_compile_flags_mask), compile_flags_mask);
 
+  Object maxunicode(&scope, SmallInt::fromWord(kMaxUnicode));
+  moduleAtPutById(thread, module, ID(maxunicode), maxunicode);
+
   // We did not initialize the `builtins` module yet, so we point
   // `__builtins__` to this module instead.
   moduleAtPutById(thread, module, ID(__builtins__), module);

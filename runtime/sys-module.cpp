@@ -58,9 +58,6 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   Object maxsize(&scope, runtime->newInt(kMaxWord));
   moduleAtPutById(thread, module, ID(maxsize), maxsize);
 
-  Object maxunicode(&scope, SmallInt::fromWord(kMaxUnicode));
-  moduleAtPutById(thread, module, ID(maxunicode), maxunicode);
-
   // Count the number of builtin modules and create a tuple
   uword num_extension_modules = 0;
   while (_PyImport_Inittab[num_extension_modules].name != nullptr) {

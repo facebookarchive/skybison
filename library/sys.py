@@ -3,7 +3,8 @@
 
 from builtins import SimpleNamespace as _SimpleNamespace, _structseq_new_type
 
-from _builtins import _builtin, _get_asyncgen_hooks, _int_check, _os_write, _Unbound
+from _builtins import maxunicode  # noqa: F401
+from _builtins import _builtin, _get_asyncgen_hooks, _int_check, _Unbound
 from _path import dirname as _dirname, join as _join
 
 
@@ -74,25 +75,6 @@ _HashInfo = _structseq_new_type(
 _AsyncGenHooks = _structseq_new_type("sys.asyncgen_hooks", ("firstiter", "finalizer"))
 
 
-class _IOStream:
-    """Simple io-stream implementation. We will replace this with
-    _io.TextIOWrapper later."""
-
-    def __init__(self, fd):
-        self._fd = fd
-        self.encoding = "utf-8"
-
-    def fileno(self):
-        return self._fd
-
-    def flush(self):
-        pass
-
-    def write(self, text):
-        text_bytes = text.encode("utf-8")
-        _os_write(self._fd, text_bytes)
-
-
 _VersionInfo = _structseq_new_type(
     "sys.version_info", ("major", "minor", "micro", "releaselevel", "serial")
 )
@@ -125,13 +107,13 @@ def _init(_executable, _python_path, _flags_data, _warnoptions):
     warnoptions = _warnoptions
 
 
-__stderr__ = _IOStream(_stderr_fd)
+__stderr__ = open(_stderr_fd, "w", buffering=True, closefd=False, encoding="UTF-8")
 
 
-__stdin__ = _IOStream(_stdin_fd)
+__stdin__ = open(_stdin_fd, "r", buffering=True, closefd=False, encoding="UTF-8")
 
 
-__stdout__ = _IOStream(_stdout_fd)
+__stdout__ = open(_stdout_fd, "w", buffering=True, closefd=False, encoding="UTF-8")
 
 
 _framework = ""

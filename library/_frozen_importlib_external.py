@@ -1553,6 +1553,5 @@ _relax_case = _make_relax_case()
 
 
 def _init():
-    _bootstrap._bootstrap_external = sys.modules[__name__]
     sys.path_hooks.extend([FileFinder.path_hook(*_get_supported_file_loaders())])
     sys.meta_path.append(PathFinder)
