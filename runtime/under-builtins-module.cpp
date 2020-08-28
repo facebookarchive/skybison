@@ -2252,6 +2252,10 @@ RawObject FUNC(_builtins, _function_globals)(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, ID(function));
   }
   Function function(&scope, *self);
+  // extension functions created via C-API have no associated module.
+  if (function.moduleObject().isNoneType()) {
+    return thread->runtime()->newDict();
+  }
   Module module(&scope, function.moduleObject());
   return module.moduleProxy();
 }

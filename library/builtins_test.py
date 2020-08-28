@@ -9246,6 +9246,15 @@ def foo():
         exec(module_code, module.__dict__)
         self.assertIs(module.__dict__["foo"].__globals__, module.__dict__)
 
+    @pyro_only
+    def test_dunder_globals_with_extension_function_returns_empty_dict(self):
+        import atexit
+
+        self.assertIn("BuiltinImporter", str(atexit.__loader__))
+        dunder_globals = atexit.register.__globals__
+        self.assertEqual(dunder_globals, {})
+        self.assertIsInstance(dunder_globals, dict)
+
     def test_dunder_defaults_returns_defaults(self):
         def foo(arg=42):
             return arg
