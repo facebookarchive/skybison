@@ -7440,6 +7440,25 @@ class DunderBuildClassTests(unittest.TestCase):
 
         self.assertEqual(observed_bases, [Tokens.__orig_bases__, Tokens.__orig_bases__])
 
+    def test_bases_with_non_class_invokes_metaclass(self):
+        class Meta:  # noqa: B903
+            def __init__(self, *args, **kwargs):
+                self.init_args = args
+                self.init_kwargs = kwargs
+
+        pseudo_type = Meta()
+
+        class C(pseudo_type):
+            pass
+
+        self.assertIsInstance(C, Meta)
+        self.assertIsNot(C, pseudo_type)
+        self.assertEqual(len(C.init_args), 3)
+        self.assertEqual(C.init_args[0], "C")
+        self.assertEqual(C.init_args[1], (pseudo_type,))
+        self.assertIsInstance(C.init_args[2], dict)
+        self.assertEqual(C.init_kwargs, {})
+
     def test_exceptions_propagated_from_dunder_mro_entries(self):
         class GenericAlias:
             def __init__(self, origin, item):

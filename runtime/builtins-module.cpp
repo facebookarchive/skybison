@@ -176,12 +176,14 @@ static RawObject replaceNonTypeBases(Thread* thread, const Tuple& bases) {
   for (word i = 0; i < num_bases; i++) {
     base = bases.at(i);
     if (runtime->isInstanceOfType(*base)) {
-      listInsert(thread, new_bases, base, new_bases.numItems());
+      runtime->listAdd(thread, new_bases, base);
       continue;
     }
     replacements = thread->invokeMethod2(base, ID(__mro_entries__), bases);
-    if (replacements.isError()) {
-      return *replacements;
+    if (replacements.isErrorException()) return *replacements;
+    if (replacements.isErrorNotFound()) {
+      runtime->listAdd(thread, new_bases, base);
+      continue;
     }
     if (!replacements.isTuple()) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
