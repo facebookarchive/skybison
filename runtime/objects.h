@@ -5183,10 +5183,7 @@ inline bool RawType::isBaseExceptionSubclass() const {
   return base >= LayoutId::kFirstException && base <= LayoutId::kLastException;
 }
 
-inline bool RawType::hasMutableDict() const {
-  // TODO(T66738428): Include more types with mutable dictionaries.
-  return !isBuiltin();
-}
+inline bool RawType::hasMutableDict() const { return !isBuiltin(); }
 
 inline void RawType::sealAttributes() const {
   RawLayout layout = RawLayout::cast(instanceLayout());

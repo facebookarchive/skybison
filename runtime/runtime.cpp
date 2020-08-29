@@ -437,8 +437,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   HandleScope scope(thread);
   Type type(&scope, *receiver);
   terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
-  // TODO(mpage): This needs to handle built-in extension types.
-  if (type.isBuiltin()) {
+  if (!type.hasMutableDict()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(
         LayoutId::kTypeError,

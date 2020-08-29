@@ -1126,7 +1126,7 @@ RawObject METH(type, __setattr__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type self(&scope, *self_obj);
-  if (self.isBuiltin()) {
+  if (!self.hasMutableDict()) {
     Str type_name(&scope, self.name());
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
