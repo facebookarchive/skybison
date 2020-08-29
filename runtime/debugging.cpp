@@ -209,6 +209,19 @@ std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value,
   return os;
 }
 
+static void dumpTypeFlags(std::ostream& os, word flags) {
+  if (flags & Type::Flag::kIsAbstract) os << " abstract";
+  if (flags & Type::Flag::kHasDunderDict) os << " has_dunder_dict";
+  if (flags & Type::Flag::kHasNativeData) os << " has_native_data";
+  if (flags & Type::Flag::kHasCycleGC) os << " has_cycle_gc";
+  if (flags & Type::Flag::kHasDefaultDealloc) os << " has_default_dealloc";
+  if (flags & Type::Flag::kSealSubtypeLayouts) os << " seal_subtype_layouts";
+  if (flags & Type::Flag::kHasSlots) os << " has_slots";
+  if (flags & Type::Flag::kIsFixedAttributeBase) {
+    os << " is_fixed_attribute_base";
+  }
+}
+
 std::ostream& dumpExtendedType(std::ostream& os, RawType value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -218,9 +231,7 @@ std::ostream& dumpExtendedType(std::ostream& os, RawType value) {
   os << "  bases: " << type.bases() << '\n';
   os << "  mro: " << type.mro() << '\n';
   os << "  flags:";
-  if (type.hasFlag(Type::kIsAbstract)) os << " abstract";
-  if (type.hasFlag(Type::kHasDunderDict)) os << " has_dunder_dict";
-  if (type.hasFlag(Type::kHasNativeData)) os << " has_native_data";
+  dumpTypeFlags(os, type.flags());
   os << '\n';
   Object builtin_base_layout(
       &scope, thread->runtime()->layoutAtSafe(type.builtinBase()));

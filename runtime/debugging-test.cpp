@@ -369,6 +369,31 @@ class C(A, B):
   EXPECT_EQ(ss.str(), expected.str());
 }
 
+TEST_F(DebuggingTests, DumpExtendedTypePrintsFlags) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_->newType());
+  word flags = Type::Flag::kIsAbstract | Type::Flag::kHasNativeData |
+               Type::Flag::kHasCycleGC | Type::Flag::kHasDefaultDealloc |
+               Type::Flag::kSealSubtypeLayouts | Type::Flag::kHasSlots |
+               Type::Flag::kIsFixedAttributeBase;
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags),
+                              LayoutId::kUserWarning);
+
+  std::stringstream ss;
+  dumpExtended(ss, *type);
+  word builtin_base = static_cast<word>(LayoutId::kUserWarning);
+  std::stringstream expected;
+  expected << R"(type None:
+  bases: None
+  mro: None
+  flags: abstract has_native_data has_cycle_gc has_default_dealloc seal_subtype_layouts has_slots is_fixed_attribute_base
+  builtin base: <layout )"
+           << builtin_base << R"( ("UserWarning")>
+  layout: None
+)";
+  EXPECT_EQ(ss.str(), expected.str());
+}
+
 TEST_F(DebuggingTests,
        DumpExtendedPrefersSimpleDumperOverDumpExtendedInstance) {
   HandleScope scope(thread_);
