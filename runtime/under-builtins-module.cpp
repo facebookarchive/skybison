@@ -4497,6 +4497,11 @@ RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Frame* frame,
          "_str_compare_digest requires 'str' instance");
   Str left(&scope, strUnderlying(*left_obj));
   Str right(&scope, strUnderlying(*right_obj));
+  if (!left.isASCII() || !right.isASCII()) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "comparing strings with non-ASCII characters is not supported");
+  }
   word left_len = left.length();
   word right_len = right.length();
   word length = Utils::minimum(left_len, right_len);
