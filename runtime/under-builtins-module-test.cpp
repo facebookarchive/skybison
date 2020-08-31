@@ -2593,6 +2593,16 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
   ::close(fds[0]);
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderStrCompareDigestWithNonASCIIRaisesTypeError) {
+  HandleScope scope(thread_);
+  Str left(&scope, runtime_->newStrFromCStr("foo\u00E4"));
+  Str right(&scope, runtime_->newStrFromCStr("foo\u00E4"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FUNC(_builtins, _str_compare_digest), left, right),
+      LayoutId::kTypeError,
+      "comparing strings with non-ASCII characters is not supported"));
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderStrCountWithStartAndEndSearchesWithinBounds) {
   HandleScope scope(thread_);
