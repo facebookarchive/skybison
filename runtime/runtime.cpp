@@ -411,6 +411,8 @@ RawObject Runtime::newBytesIterator(Thread* thread, const Bytes& bytes) {
   return *result;
 }
 
+RawObject Runtime::newTraceback() { return heap()->create<RawTraceback>(); }
+
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
 RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {

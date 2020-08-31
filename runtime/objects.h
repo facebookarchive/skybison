@@ -3440,6 +3440,9 @@ class RawAsyncGeneratorWrappedValue : public RawInstance {
 
 class RawTraceback : public RawInstance {
  public:
+  RawObject frame() const;
+  void setFrame(RawObject frame) const;
+
   // Layout.
   static const int kNextOffset = RawHeapObject::kSize;
   static const int kFrameOffset = kNextOffset + kPointerSize;
@@ -7945,6 +7948,16 @@ inline RawObject RawAsyncGeneratorWrappedValue::value() const {
 
 inline void RawAsyncGeneratorWrappedValue::setValue(RawObject value) const {
   instanceVariableAtPut(kValueOffset, value);
+}
+
+// RawTraceback
+
+inline RawObject RawTraceback::frame() const {
+  return instanceVariableAt(kFrameOffset);
+}
+
+inline void RawTraceback::setFrame(RawObject frame) const {
+  instanceVariableAtPut(kFrameOffset, frame);
 }
 
 }  // namespace py

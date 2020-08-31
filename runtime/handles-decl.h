@@ -123,6 +123,7 @@ class Handle;
   V(StopIteration)                                                             \
   V(StringIO)                                                                  \
   V(SystemExit)                                                                \
+  V(Traceback)                                                                 \
   V(TextIOWrapper)                                                             \
   V(Type)                                                                      \
   V(UnicodeDecodeError)                                                        \

@@ -1299,10 +1299,11 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   // TODO(T39919701) Always enable tracebacks.
   if (runtime->recordTracebacks() &&
       thread->pendingExceptionTraceback().isNoneType()) {
+    Traceback traceback(&scope, runtime->newTraceback());
+    thread->setPendingExceptionTraceback(*traceback);
     std::ostringstream tb;
     Utils::printTraceback(&tb);
-    thread->setPendingExceptionTraceback(
-        runtime->newStrFromCStr(tb.str().c_str()));
+    traceback.setFrame(runtime->newStrFromCStr(tb.str().c_str()));
   }
 
   Frame* frame = thread->currentFrame();

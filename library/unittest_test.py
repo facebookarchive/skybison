@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import unittest
 from unittest.mock import Mock
 
@@ -67,6 +68,25 @@ class ContainerTests(unittest.TestCase):
             """ This is a big multiline
                                   to test if it works""",
         )
+
+
+class ResultTests(unittest.TestCase):
+    def test_add_error_adds_traceback(self):
+        code = compile("\n\nraise Exception()", "test input", "exec")
+        try:
+            exec(code)
+        except Exception:
+            error = sys.exc_info()
+
+        test = unittest.TestCase()
+        result = unittest.TestResult()
+        result.addError(test, error)
+
+        self.assertEqual(len(result.errors), 1)
+        error_test, error_msg = result.errors[0]
+        self.assertIs(error_test, test)
+        self.assertIn("Traceback (most recent call last):", error_msg)
+        self.assertIn('  File "test input", line 3, in <module>', error_msg)
 
 
 class MockTests(unittest.TestCase):

@@ -5206,6 +5206,21 @@ RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+RawObject FUNC(_builtins, _traceback_str)(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object traceback_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfTraceback(*traceback_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+  }
+  Traceback traceback(&scope, *traceback_obj);
+  Object traceback_frame(&scope, traceback.frame());
+  if (traceback_frame.isNoneType()) return SmallStr::empty();
+  DCHECK(traceback_frame.isStr(), "frame should be str");
+  return *traceback_frame;
+}
+
 RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);

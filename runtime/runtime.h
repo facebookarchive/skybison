@@ -79,6 +79,8 @@ class Runtime {
   RawObject newBytesWithAll(View<byte> array);
   RawObject newBytesIterator(Thread* thread, const Bytes& bytes);
 
+  RawObject newTraceback();
+
   RawObject newType();
 
   RawObject newTypeWithMetaclass(LayoutId metaclass_id);
@@ -677,6 +679,7 @@ class Runtime {
   DEFINE_IS_INSTANCE(StringIO)
   DEFINE_IS_INSTANCE(SystemExit)
   DEFINE_IS_INSTANCE(TextIOWrapper)
+  DEFINE_IS_INSTANCE(Traceback)
   DEFINE_IS_INSTANCE(Tuple)
   DEFINE_IS_INSTANCE(Type)
   DEFINE_IS_INSTANCE(UnicodeDecodeError)

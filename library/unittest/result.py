@@ -14,6 +14,9 @@ from functools import wraps
 
 from . import util
 from functools import wraps
+# TODO(T42595911): remove when traceback module works
+from _builtins import _traceback_str
+
 
 __unittest = True
 
@@ -197,7 +200,7 @@ class TestResult(object):
         # msgLines = list(tb_e.format())
         msgLines = [str(value) + "\n"]
         if tb is not None:
-            msgLines.append(tb)
+            msgLines.append(_traceback_str(tb))
 
         if self.buffer:
             output = sys.stdout.getvalue()

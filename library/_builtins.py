@@ -1031,6 +1031,10 @@ def _super(cls):
     _builtin()
 
 
+def _traceback_str(traceback):
+    _builtin()
+
+
 def _tuple_check(obj):
     _builtin()
 
