@@ -512,6 +512,14 @@ class GroupbyTests(unittest.TestCase):
         self.assertEqual(grouper[0], 4)
         self.assertEqual(next(grouper[1]), 4)
 
+    def test_groupby_terminates(self):
+        vals = [1, 2, "hello", "bla", 5]
+        groups = itertools.groupby(vals, lambda x: type(x))
+        self.assertEqual([1, 2], list(next(groups)[1]))
+        self.assertEqual(["hello", "bla"], list(next(groups)[1]))
+        self.assertEqual([5], list(next(groups)[1]))
+        self.assertRaises(StopIteration, next, groups)
+
 
 class FilterFalseTests(unittest.TestCase):
     def test_filterfalse_with_no_predicate_returns_false_values(self):

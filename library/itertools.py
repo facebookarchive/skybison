@@ -344,26 +344,31 @@ class filterfalse:
 
 # internal helper class for groupby
 class _groupby_iterator:
-    def __init__(self, parent, key):
-        self._parent = parent
-        self._key = key
-
     def __iter__(self):
         return self
 
+    def __new__(cls, parent, cur):
+
+        obj = object.__new__(cls)
+        obj._parent = parent
+        obj._currkey = cur
+        return obj
+
     def __next__(self):
         parent = self._parent
-
-        if self._key != parent._currkey:
-            raise StopIteration
-
-        r = parent._currvalue
-        try:
-            parent._groupby_step()
-        except StopIteration:
-            # sentinel value will raise StopIteration on next iteration
-            parent._currkey = _Unbound
-        return r
+        if parent._currkey == self._currkey:
+            val = parent._currval
+            try:
+                parent._currval = next(parent._it)
+                parent._currkey = (
+                    parent._currval
+                    if parent._keyfunc is None
+                    else parent._keyfunc(parent._currval)
+                )
+            except StopIteration:
+                parent._currkey = _Unbound
+            return val
+        raise StopIteration
 
 
 class groupby:
@@ -371,33 +376,25 @@ class groupby:
         return self
 
     def __new__(cls, iterable, key=None):
-        result = object.__new__(cls)
-        result._it = iter(iterable)
-        result._lastkey = _Unbound
-        result._currkey = _Unbound
-        result._currvalue = _Unbound
-        result._keyfunc = key
-        return result
+
+        obj = object.__new__(cls)
+        obj._it = iter(iterable)
+        obj._tgtkey = obj._currkey = obj._currval = _Unbound
+        obj._keyfunc = key
+        return obj
 
     def __next__(self):
-        while self._currkey == self._lastkey:
-            self._groupby_step()
-
-        self._lastkey = self._currkey
-        grouper = _groupby_iterator(self, self._currkey)
-        return (self._currkey, grouper)
-
-    def __reduce__(self):
-        _unimplemented()
-
-    def __setstate__(self):
-        _unimplemented()
-
-    def _groupby_step(self):
-        newvalue = next(self._it)
-        newkey = newvalue if self._keyfunc is None else self._keyfunc(newvalue)
-        self._currkey = newkey
-        self._currvalue = newvalue
+        # In middle of previous iterator
+        while self._currkey == self._tgtkey:
+            self._currval = next(self._it)
+            self._currkey = (
+                self._currval if self._keyfunc is None else self._keyfunc(self._currval)
+            )
+        if self._currkey is _Unbound:
+            raise StopIteration
+        # remember group of returned iterator
+        self._tgtkey = self._currkey
+        return self._currkey, _groupby_iterator(self, self._currkey)
 
 
 class islice:
