@@ -152,6 +152,7 @@ set(CPYTHON_CONFIGURE_FLAGS
 foreach(dir
     ${BZIP2_INCLUDE_DIRS}
     ${FFI_INCLUDE_DIRS}
+    ${NCURSES_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
     ${READLINE_INCLUDE_DIRS}
     ${SQLITE_INCLUDE_DIRS}
@@ -162,6 +163,7 @@ endforeach()
 foreach(dir
     ${BZIP2_LIBRARY_DIRS}
     ${FFI_LIBRARY_DIRS}
+    ${NCURSES_LIBRARY_DIRS}
     ${OPENSSL_LIBRARY_DIRS}
     ${READLINE_LIBRARY_DIRS}
     ${SQLITE_LIBRARY_DIRS}
@@ -668,6 +670,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2b_impl.c.h
   ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h
   ${CPYTHON_DIR}/Modules/_bz2module.c
+  ${CPYTHON_DIR}/Modules/_cursesmodule.c
   ${CPYTHON_DIR}/Modules/_csv.c
   ${CPYTHON_DIR}/Modules/_hashopenssl.c
   ${CPYTHON_DIR}/Modules/_localemodule.c
@@ -707,6 +710,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/audioop.c
   ${CPYTHON_DIR}/Modules/binascii.c
   ${CPYTHON_DIR}/Modules/clinic/_bz2module.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_cursesmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_hashopenssl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_lzmamodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_ssl.c.h
@@ -796,6 +800,7 @@ add_library(
   capi/cpython-internal/osdefs.h
   capi/cpython-internal/pgen.h
   capi/cpython-internal/pgenheaders.h
+  capi/cpython-internal/py_curses.h
   capi/cpython-internal/pystrhex.h
   capi/cpython-internal/symtable.h
   capi/cpython-internal/token.h
@@ -808,6 +813,7 @@ target_include_directories(
   ${CPYTHON_DIR}/Modules/_sha3
   ${CPYTHON_DIR}/Modules/expat
   ${BZIP2_INCLUDE_DIRS}
+  ${NCURSES_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIRS}
   ${READLINE_INCLUDE_DIRS}
   ${SQLITE_INCLUDE_DIRS}
@@ -839,6 +845,7 @@ target_link_libraries(
   expat
   util
   ${BZIP2_LIBRARIES}
+  ${NCURSES_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${READLINE_LIBRARIES}
   ${SQLITE_LIBRARIES}

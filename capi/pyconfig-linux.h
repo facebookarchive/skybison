@@ -1123,7 +1123,7 @@
 #define HAVE_TERMIOS_H 1
 
 /* Define to 1 if you have the <term.h> header file. */
-/* #undef HAVE_TERM_H */
+#define HAVE_TERM_H 1
 
 /* Define to 1 if you have the `tgamma' function. */
 #define HAVE_TGAMMA 1

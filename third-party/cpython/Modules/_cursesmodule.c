@@ -134,47 +134,66 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-/*[clinic input]
-module curses
-class curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=88c860abdbb50e0c]*/
+/* Module state */
 
 #include "clinic/_cursesmodule.c.h"
 
+typedef struct {
+  /* Types */
+  PyTypeObject *PyCursesWindow_Type;
+
+  /* Errors */
+  PyObject *PyCursesError;
+
+  /* Tells whether setupterm() has been called to initialise terminfo.  */
+  int initialised_setupterm;
+
+  /* Tells whether initscr() has been called to initialise curses.  */
+  int initialised;
+
+  /* Tells whether start_color() has been called to initialise color usage. */
+  int initialisedcolors;
+  char *screen_encoding;
+} _cursesmodulestate;
+
+static struct PyModuleDef _cursesmodule;
+
+#define _cursesmodulestate(o) ((_cursesmodulestate*)PyModule_GetState(o))
+#define _cursesmodulestate_global                                              \
+  _cursesmodulestate(PyState_FindModule(&_cursesmodule))
+
+/*[clinic input]
+module curses
+class curses.window "PyCursesWindowObject *" "_cursesmodulestate_global->PyCursesWindow_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b27a663e4e7e5f91]*/
+
+
 /* Definition of exception curses.error */
 
-static PyObject *PyCursesError;
 
-/* Tells whether setupterm() has been called to initialise terminfo.  */
-static int initialised_setupterm = FALSE;
-
-/* Tells whether initscr() has been called to initialise curses.  */
-static int initialised = FALSE;
-
-/* Tells whether start_color() has been called to initialise color usage. */
-static int initialisedcolors = FALSE;
-
-static char *screen_encoding = NULL;
 
 /* Utility Macros */
-#define PyCursesSetupTermCalled                                         \
-    if (initialised_setupterm != TRUE) {                                \
-        PyErr_SetString(PyCursesError,                                  \
-                        "must call (at least) setupterm() first");      \
-        return 0; }
+#define PyCursesSetupTermCalled                                                \
+  if (_cursesmodulestate_global->initialised_setupterm != TRUE) {              \
+    PyErr_SetString(_cursesmodulestate_global->PyCursesError,                  \
+                    "must call (at least) setupterm() first");                 \
+    return 0;                                                                  \
+  }
 
-#define PyCursesInitialised                             \
-    if (initialised != TRUE) {                          \
-        PyErr_SetString(PyCursesError,                  \
-                        "must call initscr() first");   \
-        return 0; }
+#define PyCursesInitialised                                                    \
+  if (_cursesmodulestate_global->initialised != TRUE) {                        \
+    PyErr_SetString(_cursesmodulestate_global->PyCursesError,                  \
+                    "must call initscr() first");                              \
+    return 0;                                                                  \
+  }
 
-#define PyCursesInitialisedColor                                \
-    if (initialisedcolors != TRUE) {                            \
-        PyErr_SetString(PyCursesError,                          \
-                        "must call start_color() first");       \
-        return 0; }
+#define PyCursesInitialisedColor                                               \
+  if (_cursesmodulestate_global->initialisedcolors != TRUE) {                  \
+    PyErr_SetString(_cursesmodulestate_global->PyCursesError,                  \
+                    "must call start_color() first");                          \
+    return 0;                                                                  \
+  }
 
 /* Utility Functions */
 
@@ -191,9 +210,11 @@ PyCursesCheckERR(int code, const char *fname)
         Py_RETURN_NONE;
     } else {
         if (fname == NULL) {
-            PyErr_SetString(PyCursesError, catchall_ERR);
+            PyErr_SetString(_cursesmodulestate_global->PyCursesError,
+                            catchall_ERR);
         } else {
-            PyErr_Format(PyCursesError, "%s() returned ERR", fname);
+            PyErr_Format(_cursesmodulestate_global->PyCursesError,
+                         "%s() returned ERR", fname);
         }
         return NULL;
     }
@@ -228,7 +249,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             if (win)
                 encoding = win->encoding;
             else
-                encoding = screen_encoding;
+                encoding = _cursesmodulestate_global->screen_encoding;
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
@@ -250,7 +271,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
     else {
         PyErr_Format(PyExc_TypeError,
                      "expect bytes or str of length 1, or int, got %s",
-                     Py_TYPE(obj)->tp_name);
+                     _PyType_Name(Py_TYPE(obj)));
         return 0;
     }
     *ch = (chtype)value;
@@ -318,7 +339,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     else {
         PyErr_Format(PyExc_TypeError,
                      "expect bytes or str of length 1, or int, got %s",
-                     Py_TYPE(obj)->tp_name);
+                     _PyType_Name(Py_TYPE(obj)));
         return 0;
     }
 
@@ -373,7 +394,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
     }
 
     PyErr_Format(PyExc_TypeError, "expect bytes or str, got %s",
-                 Py_TYPE(obj)->tp_name);
+                 _PyType_Name(Py_TYPE(obj)));
     return 0;
 }
 
@@ -398,13 +419,14 @@ static int func_PyCursesInitialisedColor(void)
     return 1;
 }
 
+static PyTypeObject* func_PyCursesWindow_Type(void)
+{
+    return _cursesmodulestate_global->PyCursesWindow_Type;
+}
+
 /*****************************************************************************
  The Window Object
 ******************************************************************************/
-
-/* Definition of the window type */
-
-PyTypeObject PyCursesWindow_Type;
 
 /* Function prototype macros for Window object
 
@@ -538,7 +560,8 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
             encoding = "utf-8";
     }
 
-    wo = PyObject_NEW(PyCursesWindowObject, &PyCursesWindow_Type);
+    wo = PyObject_NEW(PyCursesWindowObject,
+                      _cursesmodulestate_global->PyCursesWindow_Type);
     if (wo == NULL) return NULL;
     wo->win = win;
     wo->encoding = _PyMem_Strdup(encoding);
@@ -1051,7 +1074,7 @@ PyCursesWindow_DerWin(PyCursesWindowObject *self, PyObject *args)
     win = derwin(self->win,nlines,ncols,begin_y,begin_x);
 
     if (win == NULL) {
-        PyErr_SetString(PyCursesError, catchall_NULL);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, catchall_NULL);
         return NULL;
     }
 
@@ -1168,7 +1191,7 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
         /* getch() returns ERR in nodelay mode */
         PyErr_CheckSignals();
         if (!PyErr_Occurred())
-            PyErr_SetString(PyCursesError, "no input");
+            PyErr_SetString(_cursesmodulestate_global->PyCursesError, "no input");
         return NULL;
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
@@ -1216,7 +1239,7 @@ PyCursesWindow_Get_WCh(PyCursesWindowObject *self, PyObject *args)
             return NULL;
 
         /* get_wch() returns ERR in nodelay mode */
-        PyErr_SetString(PyCursesError, "no input");
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, "no input");
         return NULL;
     }
     if (ct == KEY_CODE_YES)
@@ -1646,7 +1669,7 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
                 Py_END_ALLOW_THREADS
                 return PyCursesCheckERR(rtn, "pnoutrefresh");
             default:
-                PyErr_SetString(PyCursesError,
+                PyErr_SetString(_cursesmodulestate_global->PyCursesError,
                                 "noutrefresh() called for a pad "
                                 "requires 6 arguments");
                 return NULL;
@@ -1673,13 +1696,15 @@ PyCursesWindow_Overlay(PyCursesWindowObject *self, PyObject *args)
     switch (PyTuple_Size(args)) {
     case 1:
         if (!PyArg_ParseTuple(args, "O!;window object",
-                              &PyCursesWindow_Type, &temp))
+                              _cursesmodulestate_global->PyCursesWindow_Type,
+                              &temp))
             return NULL;
         break;
     case 7:
         if (!PyArg_ParseTuple(args, "O!iiiiii;window object, int, int, int, int, int, int",
-                              &PyCursesWindow_Type, &temp, &sminrow, &smincol,
-                              &dminrow, &dmincol, &dmaxrow, &dmaxcol))
+                              _cursesmodulestate_global->PyCursesWindow_Type,
+                              &temp, &sminrow, &smincol, &dminrow, &dmincol,
+                              &dmaxrow, &dmaxcol))
             return NULL;
         use_copywin = TRUE;
         break;
@@ -1711,13 +1736,15 @@ PyCursesWindow_Overwrite(PyCursesWindowObject *self, PyObject *args)
     switch (PyTuple_Size(args)) {
     case 1:
         if (!PyArg_ParseTuple(args, "O!;window object",
-                              &PyCursesWindow_Type, &temp))
+                              _cursesmodulestate_global->PyCursesWindow_Type,
+                              &temp))
             return NULL;
         break;
     case 7:
         if (!PyArg_ParseTuple(args, "O!iiiiii;window object, int, int, int, int, int, int",
-                              &PyCursesWindow_Type, &temp, &sminrow, &smincol,
-                              &dminrow, &dmincol, &dmaxrow, &dmaxcol))
+                              _cursesmodulestate_global->PyCursesWindow_Type,
+                              &temp, &sminrow, &smincol, &dminrow, &dmincol,
+                              &dmaxrow, &dmaxcol))
             return NULL;
         use_copywin = TRUE;
         break;
@@ -1758,12 +1785,11 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_IDENTIFIER(write);
 
         if (n <= 0)
             break;
         Py_DECREF(res);
-        res = _PyObject_CallMethodId(stream, &PyId_write, "y#", buf, n);
+        res = PyObject_CallMethod(stream, "write", "y#", buf, n);
         if (res == NULL)
             break;
     }
@@ -1810,7 +1836,7 @@ PyCursesWindow_Refresh(PyCursesWindowObject *self, PyObject *args)
                 Py_END_ALLOW_THREADS
                 return PyCursesCheckERR(rtn, "prefresh");
             default:
-                PyErr_SetString(PyCursesError,
+                PyErr_SetString(_cursesmodulestate_global->PyCursesError,
                                 "refresh() for a pad requires 6 arguments");
                 return NULL;
             }
@@ -1866,7 +1892,7 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
         win = subwin(self->win, nlines, ncols, begin_y, begin_x);
 
     if (win == NULL) {
-        PyErr_SetString(PyCursesError, catchall_NULL);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, catchall_NULL);
         return NULL;
     }
 
@@ -2093,38 +2119,19 @@ static PyGetSetDef PyCursesWindow_getsets[] = {
 
 /* -------------------------------------------------------*/
 
-PyTypeObject PyCursesWindow_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_curses.window",           /*tp_name*/
-    sizeof(PyCursesWindowObject),       /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    /* methods */
-    (destructor)PyCursesWindow_Dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
-    (getattrfunc)0,             /*tp_getattr*/
-    (setattrfunc)0,             /*tp_setattr*/
-    0,                          /*tp_reserved*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,         /*tp_flags*/
-    0,                          /*tp_doc*/
-    0,                          /*tp_traverse*/
-    0,                          /*tp_clear*/
-    0,                          /*tp_richcompare*/
-    0,                          /*tp_weaklistoffset*/
-    0,                          /*tp_iter*/
-    0,                          /*tp_iternext*/
-    PyCursesWindow_Methods,     /*tp_methods*/
-    0,                          /* tp_members */
-    PyCursesWindow_getsets,     /* tp_getset */
+PyType_Slot PyCursesWindow_Type_slots[] = {
+    {Py_tp_dealloc, PyCursesWindow_Dealloc}, /*tp_dealloc*/
+    {Py_tp_methods, PyCursesWindow_Methods}, /*tp_methods*/
+    {Py_tp_getset, PyCursesWindow_getsets},  /* tp_getset */
+    {0, 0},
+};
+
+PyType_Spec PyCursesWindow_Type_spec = {
+    "_curses.window",             /*tp_name*/
+    sizeof(PyCursesWindowObject), /*tp_basicsize*/
+    0,                            /*tp_itemsize*/
+    Py_TPFLAGS_DEFAULT,           /*tp_flags*/
+    PyCursesWindow_Type_slots,
 };
 
 /*********************************************************************
@@ -2189,7 +2196,7 @@ PyCurses_Color_Content(PyObject *self, PyObject *args)
     if (color_content(color, &r, &g, &b) != ERR)
         return Py_BuildValue("(iii)", r, g, b);
     else {
-        PyErr_SetString(PyCursesError,
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError,
                         "Argument 1 was out of range. Check value of COLORS.");
         return NULL;
     }
@@ -2272,7 +2279,7 @@ PyCurses_GetMouse(PyObject *self)
 
     rtn = getmouse( &event );
     if (rtn == ERR) {
-        PyErr_SetString(PyCursesError, "getmouse() returned ERR");
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, "getmouse() returned ERR");
         return NULL;
     }
     return Py_BuildValue("(hiiik)",
@@ -2310,7 +2317,6 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     PyObject *data;
     size_t datalen;
     WINDOW *win;
-    _Py_IDENTIFIER(read);
     PyObject *res = NULL;
 
     PyCursesInitialised;
@@ -2323,13 +2329,13 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
         goto error;
 
 
-    data = _PyObject_CallMethodId(stream, &PyId_read, NULL);
+    data = PyObject_CallMethod(stream, "read", NULL);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "f.read() returned %.100s instead of bytes",
-                     data->ob_type->tp_name);
+                     _PyType_Name(Py_TYPE(data)));
         Py_DECREF(data);
         goto error;
     }
@@ -2344,7 +2350,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     fseek(fp, 0, 0);
     win = getwin(fp);
     if (win == NULL) {
-        PyErr_SetString(PyCursesError, catchall_NULL);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, catchall_NULL);
         goto error;
     }
     res = PyCursesWindow_New(win, NULL);
@@ -2421,15 +2427,13 @@ PyCurses_Init_Pair(PyObject *self, PyObject *args)
     return PyCursesCheckERR(init_pair(pair, f, b), "init_pair");
 }
 
-static PyObject *ModDict;
-
 static PyObject *
 PyCurses_InitScr(PyObject *self)
 {
     WINDOW *win;
     PyCursesWindowObject *winobj;
 
-    if (initialised == TRUE) {
+    if (_cursesmodulestate_global->initialised == TRUE) {
         wrefresh(stdscr);
         return (PyObject *)PyCursesWindow_New(stdscr, NULL);
     }
@@ -2437,94 +2441,93 @@ PyCurses_InitScr(PyObject *self)
     win = initscr();
 
     if (win == NULL) {
-        PyErr_SetString(PyCursesError, catchall_NULL);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, catchall_NULL);
         return NULL;
     }
 
-    initialised = initialised_setupterm = TRUE;
+    _cursesmodulestate_global->initialised =
+        _cursesmodulestate_global->initialised_setupterm = TRUE;
+
+    PyObject *m = PyState_FindModule(&_cursesmodule);
+    Py_INCREF(m);
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
-#define SetDictInt(string,ch)                                           \
-    do {                                                                \
-        PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(ModDict, string, o) == 0)     {   \
-            Py_DECREF(o);                                               \
-        }                                                               \
-    } while (0)
+#define AddIntConstant(string, ch) PyModule_AddIntConstant(m, string, (long)(ch))
 
     /* Here are some graphic symbols you can use */
-    SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
-    SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
-    SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
-    SetDictInt("ACS_LRCORNER",      (ACS_LRCORNER));
-    SetDictInt("ACS_LTEE",          (ACS_LTEE));
-    SetDictInt("ACS_RTEE",          (ACS_RTEE));
-    SetDictInt("ACS_BTEE",          (ACS_BTEE));
-    SetDictInt("ACS_TTEE",          (ACS_TTEE));
-    SetDictInt("ACS_HLINE",         (ACS_HLINE));
-    SetDictInt("ACS_VLINE",         (ACS_VLINE));
-    SetDictInt("ACS_PLUS",          (ACS_PLUS));
+    AddIntConstant("ACS_ULCORNER",      (ACS_ULCORNER));
+    AddIntConstant("ACS_LLCORNER",      (ACS_LLCORNER));
+    AddIntConstant("ACS_URCORNER",      (ACS_URCORNER));
+    AddIntConstant("ACS_LRCORNER",      (ACS_LRCORNER));
+    AddIntConstant("ACS_LTEE",          (ACS_LTEE));
+    AddIntConstant("ACS_RTEE",          (ACS_RTEE));
+    AddIntConstant("ACS_BTEE",          (ACS_BTEE));
+    AddIntConstant("ACS_TTEE",          (ACS_TTEE));
+    AddIntConstant("ACS_HLINE",         (ACS_HLINE));
+    AddIntConstant("ACS_VLINE",         (ACS_VLINE));
+    AddIntConstant("ACS_PLUS",          (ACS_PLUS));
 #if !defined(__hpux) || defined(HAVE_NCURSES_H)
     /* On HP/UX 11, these are of type cchar_t, which is not an
        integral type. If this is a problem on more platforms, a
        configure test should be added to determine whether ACS_S1
        is of integral type. */
-    SetDictInt("ACS_S1",            (ACS_S1));
-    SetDictInt("ACS_S9",            (ACS_S9));
-    SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));
-    SetDictInt("ACS_CKBOARD",       (ACS_CKBOARD));
-    SetDictInt("ACS_DEGREE",        (ACS_DEGREE));
-    SetDictInt("ACS_PLMINUS",       (ACS_PLMINUS));
-    SetDictInt("ACS_BULLET",        (ACS_BULLET));
-    SetDictInt("ACS_LARROW",        (ACS_LARROW));
-    SetDictInt("ACS_RARROW",        (ACS_RARROW));
-    SetDictInt("ACS_DARROW",        (ACS_DARROW));
-    SetDictInt("ACS_UARROW",        (ACS_UARROW));
-    SetDictInt("ACS_BOARD",         (ACS_BOARD));
-    SetDictInt("ACS_LANTERN",       (ACS_LANTERN));
-    SetDictInt("ACS_BLOCK",         (ACS_BLOCK));
+    AddIntConstant("ACS_S1",            (ACS_S1));
+    AddIntConstant("ACS_S9",            (ACS_S9));
+    AddIntConstant("ACS_DIAMOND",       (ACS_DIAMOND));
+    AddIntConstant("ACS_CKBOARD",       (ACS_CKBOARD));
+    AddIntConstant("ACS_DEGREE",        (ACS_DEGREE));
+    AddIntConstant("ACS_PLMINUS",       (ACS_PLMINUS));
+    AddIntConstant("ACS_BULLET",        (ACS_BULLET));
+    AddIntConstant("ACS_LARROW",        (ACS_LARROW));
+    AddIntConstant("ACS_RARROW",        (ACS_RARROW));
+    AddIntConstant("ACS_DARROW",        (ACS_DARROW));
+    AddIntConstant("ACS_UARROW",        (ACS_UARROW));
+    AddIntConstant("ACS_BOARD",         (ACS_BOARD));
+    AddIntConstant("ACS_LANTERN",       (ACS_LANTERN));
+    AddIntConstant("ACS_BLOCK",         (ACS_BLOCK));
 #endif
-    SetDictInt("ACS_BSSB",          (ACS_ULCORNER));
-    SetDictInt("ACS_SSBB",          (ACS_LLCORNER));
-    SetDictInt("ACS_BBSS",          (ACS_URCORNER));
-    SetDictInt("ACS_SBBS",          (ACS_LRCORNER));
-    SetDictInt("ACS_SBSS",          (ACS_RTEE));
-    SetDictInt("ACS_SSSB",          (ACS_LTEE));
-    SetDictInt("ACS_SSBS",          (ACS_BTEE));
-    SetDictInt("ACS_BSSS",          (ACS_TTEE));
-    SetDictInt("ACS_BSBS",          (ACS_HLINE));
-    SetDictInt("ACS_SBSB",          (ACS_VLINE));
-    SetDictInt("ACS_SSSS",          (ACS_PLUS));
+    AddIntConstant("ACS_BSSB",          (ACS_ULCORNER));
+    AddIntConstant("ACS_SSBB",          (ACS_LLCORNER));
+    AddIntConstant("ACS_BBSS",          (ACS_URCORNER));
+    AddIntConstant("ACS_SBBS",          (ACS_LRCORNER));
+    AddIntConstant("ACS_SBSS",          (ACS_RTEE));
+    AddIntConstant("ACS_SSSB",          (ACS_LTEE));
+    AddIntConstant("ACS_SSBS",          (ACS_BTEE));
+    AddIntConstant("ACS_BSSS",          (ACS_TTEE));
+    AddIntConstant("ACS_BSBS",          (ACS_HLINE));
+    AddIntConstant("ACS_SBSB",          (ACS_VLINE));
+    AddIntConstant("ACS_SSSS",          (ACS_PLUS));
 
     /* The following are never available with strict SYSV curses */
 #ifdef ACS_S3
-    SetDictInt("ACS_S3",            (ACS_S3));
+    AddIntConstant("ACS_S3",            (ACS_S3));
 #endif
 #ifdef ACS_S7
-    SetDictInt("ACS_S7",            (ACS_S7));
+    AddIntConstant("ACS_S7",            (ACS_S7));
 #endif
 #ifdef ACS_LEQUAL
-    SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
+    AddIntConstant("ACS_LEQUAL",        (ACS_LEQUAL));
 #endif
 #ifdef ACS_GEQUAL
-    SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
+    AddIntConstant("ACS_GEQUAL",        (ACS_GEQUAL));
 #endif
 #ifdef ACS_PI
-    SetDictInt("ACS_PI",            (ACS_PI));
+    AddIntConstant("ACS_PI",            (ACS_PI));
 #endif
 #ifdef ACS_NEQUAL
-    SetDictInt("ACS_NEQUAL",        (ACS_NEQUAL));
+    AddIntConstant("ACS_NEQUAL",        (ACS_NEQUAL));
 #endif
 #ifdef ACS_STERLING
-    SetDictInt("ACS_STERLING",      (ACS_STERLING));
+    AddIntConstant("ACS_STERLING",      (ACS_STERLING));
 #endif
 
-    SetDictInt("LINES", LINES);
-    SetDictInt("COLS", COLS);
+    AddIntConstant("LINES", LINES);
+    AddIntConstant("COLS", COLS);
 
     winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
-    screen_encoding = winobj->encoding;
+    _cursesmodulestate_global->screen_encoding = winobj->encoding;
+    Py_DECREF(m);
     return (PyObject *)winobj;
 }
 
@@ -2549,7 +2552,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
 
         if (sys_stdout == NULL || sys_stdout == Py_None) {
             PyErr_SetString(
-                PyCursesError,
+                _cursesmodulestate_global->PyCursesError,
                 "lost sys.stdout");
             return NULL;
         }
@@ -2561,7 +2564,8 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
         }
     }
 
-    if (!initialised_setupterm && setupterm(termstr,fd,&err) == ERR) {
+    if (!_cursesmodulestate_global->initialised_setupterm &&
+        setupterm(termstr, fd, &err) == ERR) {
         const char* s = "setupterm: unknown error";
 
         if (err == 0) {
@@ -2570,11 +2574,11 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
             s = "setupterm: could not find terminfo database";
         }
 
-        PyErr_SetString(PyCursesError,s);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError,s);
         return NULL;
     }
 
-    initialised_setupterm = TRUE;
+    _cursesmodulestate_global->initialised_setupterm = TRUE;
 
     Py_RETURN_NONE;
 }
@@ -2719,7 +2723,7 @@ PyCurses_NewPad(PyObject *self, PyObject *args)
     win = newpad(nlines, ncols);
 
     if (win == NULL) {
-        PyErr_SetString(PyCursesError, catchall_NULL);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, catchall_NULL);
         return NULL;
     }
 
@@ -2751,7 +2755,7 @@ PyCurses_NewWindow(PyObject *self, PyObject *args)
 
     win = newwin(nlines,ncols,begin_y,begin_x);
     if (win == NULL) {
-        PyErr_SetString(PyCursesError, catchall_NULL);
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, catchall_NULL);
         return NULL;
     }
 
@@ -2776,7 +2780,7 @@ PyCurses_Pair_Content(PyObject *self, PyObject *args)
     }
 
     if (pair_content(pair, &f, &b)==ERR) {
-        PyErr_SetString(PyCursesError,
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError,
                         "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
         return NULL;
     }
@@ -2845,8 +2849,6 @@ update_lines_cols(void)
 {
     PyObject *o;
     PyObject *m = PyImport_ImportModuleNoBlock("curses");
-    _Py_IDENTIFIER(LINES);
-    _Py_IDENTIFIER(COLS);
 
     if (!m)
         return 0;
@@ -2856,34 +2858,31 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
+    if (PyObject_SetAttrString(m, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, PyId_LINES.object, o)) {
+    if (PyModule_AddObject(m, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    Py_DECREF(o);
     o = PyLong_FromLong(COLS);
     if (!o) {
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
+    if (PyObject_SetAttrString(m, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItem(ModDict, PyId_COLS.object, o)) {
+    if (PyModule_AddObject(m, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    Py_DECREF(o);
     Py_DECREF(m);
     return 1;
 }
@@ -2967,26 +2966,21 @@ static PyObject *
 PyCurses_Start_Color(PyObject *self)
 {
     int code;
-    PyObject *c, *cp;
+    PyObject *m = PyState_FindModule(&_cursesmodule);
+    Py_INCREF(m);
 
     PyCursesInitialised;
 
     code = start_color();
     if (code != ERR) {
-        initialisedcolors = TRUE;
-        c = PyLong_FromLong((long) COLORS);
-        if (c == NULL)
-            return NULL;
-        PyDict_SetItemString(ModDict, "COLORS", c);
-        Py_DECREF(c);
-        cp = PyLong_FromLong((long) COLOR_PAIRS);
-        if (cp == NULL)
-            return NULL;
-        PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
-        Py_DECREF(cp);
+        _cursesmodulestate(m)->initialisedcolors = TRUE;
+        PyModule_AddIntConstant(m, "COLORS", (long)COLORS);
+        PyModule_AddIntConstant(m, "COLOR_PAIRS", (long)COLOR_PAIRS);
+        Py_DECREF(m);
         Py_RETURN_NONE;
     } else {
-        PyErr_SetString(PyCursesError, "start_color() returned ERR");
+        PyErr_SetString(_cursesmodulestate(m)->PyCursesError, "start_color() returned ERR");
+        Py_DECREF(m);
         return NULL;
     }
 }
@@ -3051,7 +3045,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 
     result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
     if (!result) {
-        PyErr_SetString(PyCursesError, "tparm() returned NULL");
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, "tparm() returned NULL");
         return NULL;
     }
 
@@ -3148,7 +3142,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
     else {
         PyErr_Format(PyExc_TypeError,
                      "expect bytes or str of length 1, or int, got %s",
-                     Py_TYPE(obj)->tp_name);
+                     _PyType_Name(Py_TYPE(obj)));
         return 0;
     }
 }
@@ -3203,7 +3197,7 @@ PyCurses_Use_Default_Colors(PyObject *self)
     if (code != ERR) {
         Py_RETURN_NONE;
     } else {
-        PyErr_SetString(PyCursesError, "use_default_colors() returned ERR");
+        PyErr_SetString(_cursesmodulestate_global->PyCursesError, "use_default_colors() returned ERR");
         return NULL;
     }
 }
@@ -3320,146 +3314,181 @@ static PyMethodDef PyCurses_methods[] = {
 
 /* Initialization function for the module */
 
-
+static int _cursesmodule_traverse(PyObject *m, visitproc visit, void *arg);
+static int _cursesmodule_clear(PyObject *m);
+static void _cursesmodule_free(void *m);
 static struct PyModuleDef _cursesmodule = {
     PyModuleDef_HEAD_INIT,
     "_curses",
     NULL,
-    -1,
+    sizeof(_cursesmodulestate),
     PyCurses_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _cursesmodule_traverse,
+    _cursesmodule_clear,
+    _cursesmodule_free,
 };
+
+static int _cursesmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(_cursesmodulestate(m)->PyCursesWindow_Type);
+    Py_VISIT(_cursesmodulestate(m)->PyCursesError);
+    return 0;
+}
+
+static int _cursesmodule_clear(PyObject *m) {
+    Py_CLEAR(_cursesmodulestate(m)->PyCursesWindow_Type);
+    Py_CLEAR(_cursesmodulestate(m)->PyCursesError);
+    return 0;
+}
+
+static void _cursesmodule_free(void *m) { _cursesmodule_clear((PyObject *)m); }
 
 PyMODINIT_FUNC
 PyInit__curses(void)
 {
-    PyObject *m, *d, *v, *c_api_object;
-    static void *PyCurses_API[PyCurses_API_pointers];
+    PyObject *m, *v, *c_api_object;
 
-    /* Initialize object type */
-    if (PyType_Ready(&PyCursesWindow_Type) < 0)
-        return NULL;
-
-    /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)&PyCursesWindow_Type;
-    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
-    PyCurses_API[2] = (void *)func_PyCursesInitialised;
-    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
+    /* Perform module search */
+    m = PyState_FindModule(&_cursesmodule);
+    if (m != NULL) {
+      Py_INCREF(m);
+      return m;
+    }
 
     /* Create the module and add the functions */
     m = PyModule_Create(&_cursesmodule);
     if (m == NULL)
         return NULL;
 
-    /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
-    if (d == NULL)
-        return NULL;
-    ModDict = d; /* For PyCurses_InitScr to use later */
+    static void *PyCurses_API[PyCurses_API_pointers];
+
+    /* Initialize object type */
+    // Returns a new reference
+    PyObject *curses_window_type = PyType_FromSpec(&PyCursesWindow_Type_spec);
+    if(curses_window_type == NULL)
+      return NULL;
+
+    /* Initialize the C API pointer array */
+    PyCurses_API[0] = (void *)func_PyCursesWindow_Type;
+    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
+    PyCurses_API[2] = (void *)func_PyCursesInitialised;
+    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
 
     /* Add a capsule for the C API */
     c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME, NULL);
-    PyDict_SetItemString(d, "_C_API", c_api_object);
-    Py_DECREF(c_api_object);
+    PyModule_AddObject(m, "_C_API", c_api_object);
 
     /* For exception curses.error */
-    PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", PyCursesError);
+    PyObject *py_curses_error = PyErr_NewException("_curses.error", NULL, NULL);
+    // INCREF py_curses_error since AddObject will DECREF on success
+    Py_INCREF(py_curses_error);
+    PyModule_AddObject(m, "error", py_curses_error);
+    _cursesmodulestate(m)->PyCursesError = py_curses_error;
 
     /* Make the version available */
     v = PyBytes_FromString(PyCursesVersion);
-    PyDict_SetItemString(d, "version", v);
-    PyDict_SetItemString(d, "__version__", v);
-    Py_DECREF(v);
+    // INCREF v since AddObject will DECREF on success
+    Py_INCREF(v);
+    PyModule_AddObject(m, "version", v);
+    PyModule_AddObject(m, "__version__", v);
 
-    SetDictInt("ERR", ERR);
-    SetDictInt("OK", OK);
+    _cursesmodulestate(m)->PyCursesWindow_Type = (PyTypeObject*)curses_window_type;
+
+    /* Tells whether setupterm() has been called to initialise terminfo.  */
+    _cursesmodulestate(m)->initialised_setupterm = FALSE;
+
+    /* Tells whether initscr() has been called to initialise curses.  */
+    _cursesmodulestate(m)->initialised = FALSE;
+
+    /* Tells whether start_color() has been called to initialise color usage. */
+    _cursesmodulestate(m)->initialisedcolors = FALSE;
+    _cursesmodulestate(m)->screen_encoding = NULL;
+
+    AddIntConstant("ERR", ERR);
+    AddIntConstant("OK", OK);
 
     /* Here are some attributes you can add to chars to print */
 
-    SetDictInt("A_ATTRIBUTES",      A_ATTRIBUTES);
-    SetDictInt("A_NORMAL",              A_NORMAL);
-    SetDictInt("A_STANDOUT",            A_STANDOUT);
-    SetDictInt("A_UNDERLINE",           A_UNDERLINE);
-    SetDictInt("A_REVERSE",             A_REVERSE);
-    SetDictInt("A_BLINK",               A_BLINK);
-    SetDictInt("A_DIM",                 A_DIM);
-    SetDictInt("A_BOLD",                A_BOLD);
-    SetDictInt("A_ALTCHARSET",          A_ALTCHARSET);
-    SetDictInt("A_INVIS",           A_INVIS);
-    SetDictInt("A_PROTECT",         A_PROTECT);
-    SetDictInt("A_CHARTEXT",        A_CHARTEXT);
-    SetDictInt("A_COLOR",           A_COLOR);
+    AddIntConstant("A_ATTRIBUTES",      A_ATTRIBUTES);
+    AddIntConstant("A_NORMAL",              A_NORMAL);
+    AddIntConstant("A_STANDOUT",            A_STANDOUT);
+    AddIntConstant("A_UNDERLINE",           A_UNDERLINE);
+    AddIntConstant("A_REVERSE",             A_REVERSE);
+    AddIntConstant("A_BLINK",               A_BLINK);
+    AddIntConstant("A_DIM",                 A_DIM);
+    AddIntConstant("A_BOLD",                A_BOLD);
+    AddIntConstant("A_ALTCHARSET",          A_ALTCHARSET);
+    AddIntConstant("A_INVIS",           A_INVIS);
+    AddIntConstant("A_PROTECT",         A_PROTECT);
+    AddIntConstant("A_CHARTEXT",        A_CHARTEXT);
+    AddIntConstant("A_COLOR",           A_COLOR);
 
     /* The following are never available with strict SYSV curses */
 #ifdef A_HORIZONTAL
-    SetDictInt("A_HORIZONTAL",      A_HORIZONTAL);
+    AddIntConstant("A_HORIZONTAL",      A_HORIZONTAL);
 #endif
 #ifdef A_LEFT
-    SetDictInt("A_LEFT",            A_LEFT);
+    AddIntConstant("A_LEFT",            A_LEFT);
 #endif
 #ifdef A_LOW
-    SetDictInt("A_LOW",             A_LOW);
+    AddIntConstant("A_LOW",             A_LOW);
 #endif
 #ifdef A_RIGHT
-    SetDictInt("A_RIGHT",           A_RIGHT);
+    AddIntConstant("A_RIGHT",           A_RIGHT);
 #endif
 #ifdef A_TOP
-    SetDictInt("A_TOP",             A_TOP);
+    AddIntConstant("A_TOP",             A_TOP);
 #endif
 #ifdef A_VERTICAL
-    SetDictInt("A_VERTICAL",        A_VERTICAL);
+    AddIntConstant("A_VERTICAL",        A_VERTICAL);
 #endif
 
     /* ncurses extension */
 #ifdef A_ITALIC
-    SetDictInt("A_ITALIC",          A_ITALIC);
+    AddIntConstant("A_ITALIC",          A_ITALIC);
 #endif
 
-    SetDictInt("COLOR_BLACK",       COLOR_BLACK);
-    SetDictInt("COLOR_RED",         COLOR_RED);
-    SetDictInt("COLOR_GREEN",       COLOR_GREEN);
-    SetDictInt("COLOR_YELLOW",      COLOR_YELLOW);
-    SetDictInt("COLOR_BLUE",        COLOR_BLUE);
-    SetDictInt("COLOR_MAGENTA",     COLOR_MAGENTA);
-    SetDictInt("COLOR_CYAN",        COLOR_CYAN);
-    SetDictInt("COLOR_WHITE",       COLOR_WHITE);
+    AddIntConstant("COLOR_BLACK",       COLOR_BLACK);
+    AddIntConstant("COLOR_RED",         COLOR_RED);
+    AddIntConstant("COLOR_GREEN",       COLOR_GREEN);
+    AddIntConstant("COLOR_YELLOW",      COLOR_YELLOW);
+    AddIntConstant("COLOR_BLUE",        COLOR_BLUE);
+    AddIntConstant("COLOR_MAGENTA",     COLOR_MAGENTA);
+    AddIntConstant("COLOR_CYAN",        COLOR_CYAN);
+    AddIntConstant("COLOR_WHITE",       COLOR_WHITE);
 
 #ifdef NCURSES_MOUSE_VERSION
     /* Mouse-related constants */
-    SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
-    SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
-    SetDictInt("BUTTON1_CLICKED",          BUTTON1_CLICKED);
-    SetDictInt("BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
-    SetDictInt("BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
+    AddIntConstant("BUTTON1_PRESSED",          BUTTON1_PRESSED);
+    AddIntConstant("BUTTON1_RELEASED",         BUTTON1_RELEASED);
+    AddIntConstant("BUTTON1_CLICKED",          BUTTON1_CLICKED);
+    AddIntConstant("BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
+    AddIntConstant("BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON2_PRESSED",          BUTTON2_PRESSED);
-    SetDictInt("BUTTON2_RELEASED",         BUTTON2_RELEASED);
-    SetDictInt("BUTTON2_CLICKED",          BUTTON2_CLICKED);
-    SetDictInt("BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
-    SetDictInt("BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
+    AddIntConstant("BUTTON2_PRESSED",          BUTTON2_PRESSED);
+    AddIntConstant("BUTTON2_RELEASED",         BUTTON2_RELEASED);
+    AddIntConstant("BUTTON2_CLICKED",          BUTTON2_CLICKED);
+    AddIntConstant("BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
+    AddIntConstant("BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON3_PRESSED",          BUTTON3_PRESSED);
-    SetDictInt("BUTTON3_RELEASED",         BUTTON3_RELEASED);
-    SetDictInt("BUTTON3_CLICKED",          BUTTON3_CLICKED);
-    SetDictInt("BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
-    SetDictInt("BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
+    AddIntConstant("BUTTON3_PRESSED",          BUTTON3_PRESSED);
+    AddIntConstant("BUTTON3_RELEASED",         BUTTON3_RELEASED);
+    AddIntConstant("BUTTON3_CLICKED",          BUTTON3_CLICKED);
+    AddIntConstant("BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
+    AddIntConstant("BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON4_PRESSED",          BUTTON4_PRESSED);
-    SetDictInt("BUTTON4_RELEASED",         BUTTON4_RELEASED);
-    SetDictInt("BUTTON4_CLICKED",          BUTTON4_CLICKED);
-    SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
-    SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
+    AddIntConstant("BUTTON4_PRESSED",          BUTTON4_PRESSED);
+    AddIntConstant("BUTTON4_RELEASED",         BUTTON4_RELEASED);
+    AddIntConstant("BUTTON4_CLICKED",          BUTTON4_CLICKED);
+    AddIntConstant("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
+    AddIntConstant("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON_SHIFT",             BUTTON_SHIFT);
-    SetDictInt("BUTTON_CTRL",              BUTTON_CTRL);
-    SetDictInt("BUTTON_ALT",               BUTTON_ALT);
+    AddIntConstant("BUTTON_SHIFT",             BUTTON_SHIFT);
+    AddIntConstant("BUTTON_CTRL",              BUTTON_CTRL);
+    AddIntConstant("BUTTON_ALT",               BUTTON_ALT);
 
-    SetDictInt("ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
-    SetDictInt("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
+    AddIntConstant("ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
+    AddIntConstant("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
 #endif
     /* Now set everything up for KEY_ variables */
     {
@@ -3489,12 +3518,12 @@ PyInit__curses(void)
                 *p2 = (char)0;
             } else
                 key_n2 = key_n;
-            SetDictInt(key_n2,key);
+            AddIntConstant(key_n2,key);
             if (key_n2 != key_n)
                 PyMem_Free(key_n2);
         }
-        SetDictInt("KEY_MIN", KEY_MIN);
-        SetDictInt("KEY_MAX", KEY_MAX);
+        AddIntConstant("KEY_MIN", KEY_MIN);
+        AddIntConstant("KEY_MAX", KEY_MAX);
     }
     return m;
 }

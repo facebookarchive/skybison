@@ -7,6 +7,7 @@ extern "C" PyObject* PyInit__bisect();
 extern "C" PyObject* PyInit__blake2();
 extern "C" PyObject* PyInit__bz2();
 extern "C" PyObject* PyInit__compile();
+extern "C" PyObject* PyInit__curses();
 extern "C" PyObject* PyInit__csv();
 extern "C" PyObject* PyInit__hashlib();
 extern "C" PyObject* PyInit__locale();
@@ -57,6 +58,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_blake2", PyInit__blake2},
     {"_bz2", PyInit__bz2},
     {"_compile", PyInit__compile},
+    {"_curses", PyInit__curses},
     {"_csv", PyInit__csv},
     {"_empty", PyInit__empty},
     {"_hashlib", PyInit__hashlib},

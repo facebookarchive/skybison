@@ -52,6 +52,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderBz2ReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderCursesResturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_curses"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderCsvReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_csv"));
   ASSERT_NE(module, nullptr);
