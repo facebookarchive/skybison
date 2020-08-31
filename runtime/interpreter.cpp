@@ -1296,14 +1296,15 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   HandleScope scope(thread);
 
   Runtime* runtime = thread->runtime();
-  // TODO(T39919701) Always enable tracebacks.
-  if (runtime->recordTracebacks() &&
-      thread->pendingExceptionTraceback().isNoneType()) {
+  if (thread->pendingExceptionTraceback().isNoneType()) {
     Traceback traceback(&scope, runtime->newTraceback());
     thread->setPendingExceptionTraceback(*traceback);
-    std::ostringstream tb;
-    Utils::printTraceback(&tb);
-    traceback.setFrame(runtime->newStrFromCStr(tb.str().c_str()));
+    // TODO(T39919701) Always enable tracebacks.
+    if (runtime->recordTracebacks()) {
+      std::ostringstream tb;
+      Utils::printTraceback(&tb);
+      traceback.setFrame(runtime->newStrFromCStr(tb.str().c_str()));
+    }
   }
 
   Frame* frame = thread->currentFrame();
