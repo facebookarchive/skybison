@@ -33,6 +33,7 @@ class Handle;
   V(Coroutine)                                                                 \
   V(CoroutineWrapper)                                                          \
   V(DataArray)                                                                 \
+  V(DequeIterator)                                                             \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
   V(DictKeyIterator)                                                           \

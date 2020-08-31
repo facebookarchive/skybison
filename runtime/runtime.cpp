@@ -895,7 +895,17 @@ RawObject Runtime::newDeque() {
   deque.setItems(SmallInt::fromWord(0));
   deque.setLeft(0);
   deque.setNumItems(0);
+  deque.setState(0);
   return *deque;
+}
+
+RawObject Runtime::newDequeIterator(const Deque& deque, word index) {
+  HandleScope scope;
+  DequeIterator iter(&scope, heap()->create<RawDequeIterator>());
+  iter.setIndex(index);
+  iter.setIterable(*deque);
+  iter.setState(deque.state());
+  return *iter;
 }
 
 RawObject Runtime::newList() {

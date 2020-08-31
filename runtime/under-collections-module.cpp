@@ -18,11 +18,23 @@ static const BuiltinAttribute kDequeAttributes[] = {
     {ID(_deque__left), RawDeque::kLeftOffset, AttributeFlags::kHidden},
     {ID(_deque__num_items), RawDeque::kNumItemsOffset, AttributeFlags::kHidden},
     {ID(maxlen), RawDeque::kMaxlenOffset, AttributeFlags::kReadOnly},
+    {ID(_deque__state), RawDeque::kStateOffset, AttributeFlags::kHidden},
+};
+
+static const BuiltinAttribute kDequeIteratorAttributes[] = {
+    {ID(_deque_iterator__iterable), RawDequeIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_deque_iterator__index), RawDequeIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {ID(_deque_iterator__state), RawDequeIterator::kStateOffset,
+     AttributeFlags::kHidden},
 };
 
 void initializeUnderCollectionsTypes(Thread* thread) {
   addBuiltinType(thread, ID(deque), LayoutId::kDeque,
                  /*superclass_id=*/LayoutId::kObject, kDequeAttributes);
+  addBuiltinType(thread, ID(_deque_iterator), LayoutId::kDequeIterator,
+                 /*superclass_id=*/LayoutId::kObject, kDequeIteratorAttributes);
 }
 
 RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Frame* frame,
@@ -78,6 +90,115 @@ RawObject FUNC(_collections, _deque_set_maxlen)(Thread* thread, Frame* frame,
   }
   deque.setMaxlen(SmallInt::fromWord(maxlen));
   return NoneType::object();
+}
+
+RawObject METH(_deque_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isDequeIterator()) {
+    return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
+  }
+  DequeIterator self(&scope, *self_obj);
+  Deque deque(&scope, self.iterable());
+  return SmallInt::fromWord(deque.numItems() - self.index());
+}
+
+RawObject METH(_deque_iterator, __new__)(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object cls(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*cls)) {
+    return thread->raiseRequiresType(cls, ID(type));
+  }
+  if (cls != runtime->typeAt(LayoutId::kDequeIterator)) {
+    Type type(&scope, *cls);
+    Str name(&scope, type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "_collections._deque_iterator.__new__(%S): "
+        "%S is not a subtype of _collections._deque_iterator",
+        &name, &name);
+  }
+
+  Object iterable(&scope, args.get(1));
+  if (!runtime->isInstanceOfDeque(*iterable)) {
+    return thread->raiseRequiresType(iterable, ID(deque));
+  }
+  Deque deque(&scope, *iterable);
+
+  Object index_obj(&scope, args.get(2));
+  index_obj = intFromIndex(thread, index_obj);
+  if (index_obj.isErrorException()) {
+    return *index_obj;
+  }
+  Int index_int(&scope, intUnderlying(*index_obj));
+  if (index_int.numDigits() > 1) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+  word index = index_int.asWord();
+  if (index < 0) {
+    index = 0;
+  } else {
+    word length = deque.numItems();
+    if (index > length) {
+      index = length;
+    }
+  }
+  return runtime->newDequeIterator(deque, index);
+}
+
+RawObject METH(_deque_iterator, __next__)(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isDequeIterator()) {
+    return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
+  }
+
+  DequeIterator self(&scope, *self_obj);
+  Deque deque(&scope, self.iterable());
+  if (deque.state() != self.state()) {
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "deque mutated during iteration");
+  }
+
+  word index = self.index();
+  word length = deque.numItems();
+  DCHECK_BOUND(index, length);
+  if (index == length) {
+    return thread->raiseStopIteration();
+  }
+
+  self.setIndex(index + 1);
+  index += deque.left();
+  word capacity = deque.capacity();
+  if (index < capacity) {
+    return deque.at(index);
+  }
+  return deque.at(index - capacity);
+}
+
+RawObject METH(_deque_iterator, __reduce__)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isDequeIterator()) {
+    return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
+  }
+  Runtime* runtime = thread->runtime();
+  DequeIterator self(&scope, *self_obj);
+  Object type(&scope, runtime->typeAt(LayoutId::kDequeIterator));
+  Object deque(&scope, self.iterable());
+  Object index(&scope, SmallInt::fromWord(self.index()));
+  Object tuple(&scope, runtime->newTupleWith2(deque, index));
+  return runtime->newTupleWith2(type, tuple);
 }
 
 static void dequeEnsureCapacity(Thread* thread, const Deque& deque,
@@ -216,6 +337,18 @@ static RawObject dequePopLeft(Thread* thread, const Deque& deque) {
   return *result;
 }
 
+RawObject METH(deque, __iter__)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDeque(*self)) {
+    return thread->raiseRequiresType(self, ID(deque));
+  }
+  Deque deque(&scope, *self);
+  return runtime->newDequeIterator(deque, 0);
+}
+
 RawObject METH(deque, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -244,6 +377,7 @@ RawObject METH(deque, __new__)(Thread* thread, Frame* frame, word nargs) {
   deque.setItems(SmallInt::fromWord(0));
   deque.setLeft(0);
   deque.setNumItems(0);
+  deque.setState(0);
   return *deque;
 }
 
@@ -258,6 +392,7 @@ RawObject METH(deque, append)(Thread* thread, Frame* frame, word nargs) {
   Deque deque(&scope, *self);
   Object value(&scope, args.get(1));
   dequeAppend(thread, deque, value);
+  deque.setState(deque.state() + 1);
   return NoneType::object();
 }
 
@@ -269,6 +404,7 @@ RawObject METH(deque, appendleft)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, ID(deque));
   }
   Deque deque(&scope, *self);
+  deque.setState(deque.state() + 1);
   Object value(&scope, args.get(1));
   dequeAppendLeft(thread, deque, value);
   return NoneType::object();
@@ -282,6 +418,7 @@ RawObject METH(deque, clear)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, ID(deque));
   }
   Deque deque(&scope, *self);
+  deque.setState(deque.state() + 1);
   deque.clear();
   return NoneType::object();
 }
@@ -297,6 +434,7 @@ RawObject METH(deque, pop)(Thread* thread, Frame* frame, word nargs) {
   if (deque.numItems() == 0) {
     return thread->raiseWithFmt(LayoutId::kIndexError, "pop from empty deque");
   }
+  deque.setState(deque.state() + 1);
   return dequePop(thread, deque);
 }
 
@@ -311,6 +449,7 @@ RawObject METH(deque, popleft)(Thread* thread, Frame* frame, word nargs) {
   if (deque.numItems() == 0) {
     return thread->raiseWithFmt(LayoutId::kIndexError, "pop from empty deque");
   }
+  deque.setState(deque.state() + 1);
   return dequePopLeft(thread, deque);
 }
 

@@ -63,6 +63,7 @@ class Handle;
   V(Coroutine)                                                                 \
   V(CoroutineWrapper)                                                          \
   V(Deque)                                                                     \
+  V(DequeIterator)                                                             \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
@@ -328,6 +329,7 @@ class RawObject {
   bool isCoroutineWrapper() const;
   bool isDataArray() const;
   bool isDeque() const;
+  bool isDequeIterator() const;
   bool isDict() const;
   bool isDictItemIterator() const;
   bool isDictItems() const;
@@ -1980,6 +1982,19 @@ class RawBytesIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(BytesIterator);
 };
 
+class RawDequeIterator : public RawIteratorBase {
+ public:
+  // Getters and setters.
+  word state() const;
+  void setState(word state) const;
+
+  // Layout.
+  static const int kStateOffset = RawIteratorBase::kSize;
+  static const int kSize = kStateOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(DequeIterator);
+};
+
 class RawDictIteratorBase : public RawIteratorBase {
  public:
   // Getters and setters.
@@ -2691,12 +2706,17 @@ class RawDeque : public RawInstance {
   RawObject maxlen() const;
   void setMaxlen(RawObject maxlen) const;
 
+  word state() const;
+  void setState(word state) const;
+
   // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;
   static const int kLeftOffset = kItemsOffset + kPointerSize;
   static const int kNumItemsOffset = kLeftOffset + kPointerSize;
   static const int kMaxlenOffset = kNumItemsOffset + kPointerSize;
-  static const int kSize = kMaxlenOffset + kPointerSize;
+  static const int kStateOffset = kMaxlenOffset + kPointerSize;
+  static const int kSize = kStateOffset + kPointerSize;
+
   RAW_OBJECT_COMMON(Deque);
 };
 
@@ -4008,6 +4028,10 @@ inline bool RawObject::isDataArray() const {
 
 inline bool RawObject::isDeque() const {
   return isHeapObjectWithLayout(LayoutId::kDeque);
+}
+
+inline bool RawObject::isDequeIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kDequeIterator);
 }
 
 inline bool RawObject::isDict() const {
@@ -6140,6 +6164,25 @@ inline RawObject RawDeque::maxlen() const {
 inline void RawDeque::setMaxlen(RawObject maxlen) const {
   instanceVariableAtPut(kMaxlenOffset, maxlen);
 }
+
+inline word RawDeque::state() const {
+  return RawSmallInt::cast(instanceVariableAt(kStateOffset)).value();
+}
+
+inline void RawDeque::setState(word state) const {
+  instanceVariableAtPut(kStateOffset, RawSmallInt::fromWord(state));
+}
+
+// RawDeque
+
+inline word RawDequeIterator::state() const {
+  return RawSmallInt::cast(instanceVariableAt(kStateOffset)).value();
+}
+
+inline void RawDequeIterator::setState(word state) const {
+  instanceVariableAtPut(kStateOffset, RawSmallInt::fromWord(state));
+}
+
 // RawDict
 
 inline word RawDict::numItems() const {

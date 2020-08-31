@@ -18,23 +18,22 @@ from _builtins import (
 _Unbound = _Unbound  # noqa: F821
 
 
-class _deque_iterator:
-    def __init__(self, deq, itergen):
-        self.counter = len(deq)
-
-        def giveup():
-            self.counter = 0
-            raise RuntimeError("deque mutated during iteration")
-
-        self._gen = itergen(deq.state, giveup)
-
-    def __next__(self):
-        res = next(self._gen)
-        self.counter -= 1
-        return res
-
+class _deque_iterator(bootstrap=True):
     def __iter__(self):
         return self
+
+    def __length_hint__(self):
+        _builtin()
+
+    @staticmethod
+    def __new__(cls, deq, index=0):
+        _builtin()
+
+    def __next__(self):
+        _builtin()
+
+    def __reduce__(self):
+        _builtin()
 
 
 def _deque_getitem(self, index):
@@ -129,9 +128,8 @@ class deque(bootstrap=True):
         _deque_set_maxlen(self, maxlen)
         self.extend(iterable)
 
-    # def __iter__(self):
-    #     _deque_guard(self)
-    #     return _deque_iterator(self, self._iter_impl)
+    def __iter__(self):
+        _builtin()
 
     def __le__(self, other):
         _deque_guard(self)

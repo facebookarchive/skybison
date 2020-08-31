@@ -111,6 +111,8 @@ class Runtime {
 
   RawObject newDeque();
 
+  RawObject newDequeIterator(const Deque& deque, word index);
+
   RawObject newDict();
   RawObject newDictWithSize(word initial_size);
 
