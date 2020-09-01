@@ -1477,5 +1477,18 @@ TEST_F(ObjectExtensionApiTest, PyReturnNotImplementedReturnsNotImplemented) {
   EXPECT_EQ(result, Py_NotImplemented);
 }
 
+TEST_F(ObjectExtensionApiTest, PyEnumTypeIdentityIsEqual) {
+  // Test Identitiy
+  PyTypeObject* type1 = &PyEnum_Type;
+  PyTypeObject* type2 = &PyEnum_Type;
+  EXPECT_EQ(type1, type2);
+}
+
+TEST_F(ObjectExtensionApiTest, PyEnumTypeIsInBuiltins) {
+  PyObjectPtr builtins(borrow(PyEval_GetBuiltins()));
+  PyObjectPtr enumerate(PyMapping_GetItemString(builtins, "enumerate"));
+  EXPECT_EQ(enumerate.asTypeObject(), &PyEnum_Type);
+}
+
 }  // namespace testing
 }  // namespace py

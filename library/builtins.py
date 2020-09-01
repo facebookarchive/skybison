@@ -3340,7 +3340,7 @@ class ellipsis(bootstrap=True):
         return "Ellipsis"
 
 
-class enumerate:
+class enumerate(bootstrap=True):
     __getattribute__ = object.__getattribute__
 
     def __init__(self, iterable, start=0):

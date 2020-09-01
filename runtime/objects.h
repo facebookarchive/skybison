@@ -71,6 +71,7 @@ class Handle;
   V(DictKeys)                                                                  \
   V(DictValueIterator)                                                         \
   V(DictValues)                                                                \
+  V(Enumerate)                                                                 \
   V(ExceptionState)                                                            \
   V(FileIO)                                                                    \
   V(FrameProxy)                                                                \
@@ -338,6 +339,7 @@ class RawObject {
   bool isDictValueIterator() const;
   bool isDictValues() const;
   bool isEllipsis() const;
+  bool isEnumerate() const;
   bool isException() const;
   bool isExceptionState() const;
   bool isFileIO() const;
@@ -1969,6 +1971,14 @@ class RawIteratorBase : public RawInstance {
   // Layout.
   static const int kIterableOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kIterableOffset + kPointerSize;
+  static const int kSize = kIndexOffset + kPointerSize;
+};
+
+class RawEnumerate : public RawInstance {
+ public:
+  RAW_OBJECT_COMMON(Enumerate);
+  static const int kIteratorOffset = RawHeapObject::kSize;
+  static const int kIndexOffset = kIteratorOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
 };
 
@@ -4064,6 +4074,10 @@ inline bool RawObject::isDictValues() const {
 
 inline bool RawObject::isEllipsis() const {
   return isHeapObjectWithLayout(LayoutId::kEllipsis);
+}
+
+inline bool RawObject::isEnumerate() const {
+  return isHeapObjectWithLayout(LayoutId::kEnumerate);
 }
 
 inline bool RawObject::isException() const {

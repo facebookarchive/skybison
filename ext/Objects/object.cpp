@@ -35,6 +35,12 @@ PY_EXPORT PyTypeObject* PyEllipsis_Type_Ptr() {
       thread, thread->runtime()->typeAt(LayoutId::kEllipsis)));
 }
 
+PY_EXPORT PyTypeObject* PyEnum_Type_Ptr() {
+  Thread* thread = Thread::current();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      thread, thread->runtime()->typeAt(LayoutId::kEnumerate)));
+}
+
 PY_EXPORT PyObject* PyNone_Ptr() {
   return ApiHandle::borrowedReference(Thread::current(), NoneType::object());
 }

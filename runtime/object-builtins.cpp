@@ -528,6 +528,10 @@ static const BuiltinAttribute kInstanceProxyAttributes[] = {
     {ID(_instance), RawInstanceProxy::kInstanceOffset},
 };
 
+static const BuiltinAttribute kEnumerateAttributes[] = {
+    {ID(iterator), RawEnumerate::kIteratorOffset},
+    {ID(index), RawEnumerate::kIndexOffset}};
+
 static void addObjectType(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -577,6 +581,9 @@ void initializeObjectTypes(Thread* thread) {
 
   addBuiltinType(thread, ID(instance_proxy), LayoutId::kInstanceProxy,
                  /*superclass_id=*/LayoutId::kObject, kInstanceProxyAttributes);
+
+  addBuiltinType(thread, ID(enumerate), LayoutId::kEnumerate,
+                 /*superclass_id=*/LayoutId::kObject, kEnumerateAttributes);
 }
 
 }  // namespace py

@@ -124,6 +124,7 @@ PY_EXPORT void Py_Finalize() { Py_FinalizeEx(); }
   V(PyDictValues_Type)                                                         \
   V(PyDict_Type)                                                               \
   V(PyEllipsis_Type)                                                           \
+  V(PyEnum_Type)                                                               \
   V(PyFloat_Type)                                                              \
   V(PyFrozenSet_Type)                                                          \
   V(PyFunction_Type)                                                           \

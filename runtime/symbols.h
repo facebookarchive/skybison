@@ -641,6 +641,7 @@ class Runtime;
   V(encode)                                                                    \
   V(encoding)                                                                  \
   V(end)                                                                       \
+  V(enumerate)                                                                 \
   V(eval)                                                                      \
   V(excepthook)                                                                \
   V(exec)                                                                      \
@@ -676,6 +677,7 @@ class Runtime;
   V(imatmul)                                                                   \
   V(imod)                                                                      \
   V(imul)                                                                      \
+  V(index)                                                                     \
   V(indexOf)                                                                   \
   V(instance)                                                                  \
   V(instance_proxy)                                                            \
