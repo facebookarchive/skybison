@@ -11,7 +11,7 @@ if ! [ -x "./python" -a -e "Modules/Setup" ]; then
 fi
 
 # Sanity check: Should have no changes yet.
-CHANGED_FILES="$(git status --porcelain --untracked-files=no)"
+CHANGED_FILES="$(hg status -m)"
 if [ "$CHANGED_FILES" != "" ]; then
     echo 1>&2 "Error: Sanity check failed: Checkout already has changed files:"
     echo 1>&2 "${CHANGED_FILES}"
@@ -24,7 +24,7 @@ set -x
 make regen-all
 set +x
 
-CHANGED_FILES="$(git status --porcelain --untracked-files=no)"
+CHANGED_FILES="$(hg status -m)"
 if [ "${CHANGED_FILES}" != "" ]; then
     cat << __EOM__ >&2
 
