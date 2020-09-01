@@ -2593,7 +2593,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
   ::close(fds[0]);
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderStrCompareDigestWithNonASCIIRaisesTypeError) {
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrCompareDigestWithNonASCIIRaisesTypeError) {
   HandleScope scope(thread_);
   Str left(&scope, runtime_->newStrFromCStr("foo\u00E4"));
   Str right(&scope, runtime_->newStrFromCStr("foo\u00E4"));
