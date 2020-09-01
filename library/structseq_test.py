@@ -9,7 +9,7 @@ from test_support import pyro_only
 
 
 try:
-    from builtins import _structseq_new_type
+    from _builtins import _structseq_new_type
 except ImportError:
     pass
 

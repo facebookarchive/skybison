@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 # $builtin-init-module$
 
-from builtins import SimpleNamespace as _SimpleNamespace, _structseq_new_type
+from builtins import SimpleNamespace as _SimpleNamespace
 
 from _builtins import maxunicode  # noqa: F401
-from _builtins import _builtin, _get_asyncgen_hooks, _int_check, _Unbound
+from _builtins import (
+    _builtin,
+    _get_asyncgen_hooks,
+    _int_check,
+    _structseq_new_type,
+    _Unbound,
+)
 from _path import dirname as _dirname, join as _join
 
 
