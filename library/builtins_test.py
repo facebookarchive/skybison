@@ -4715,6 +4715,33 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(b.split(b"ba"), [b"foo ", b"r ", b"z"])
         self.assertEqual(b.split(b"not found"), [b])
 
+    def test_splitlines_with_non_bytes_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.splitlines(None)
+
+    def test_splitlines_with_float_keepends_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.splitlines(b"hello", 0.4)
+
+    def test_splitlines_with_string_keepends_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.splitlines(b"hello", "1")
+
+    def test_splitlines_returns_list(self):
+        self.assertEqual(bytes.splitlines(b"", False), [])
+        self.assertEqual(bytes.splitlines(b"a", 0), [b"a"])
+        self.assertEqual(bytes.splitlines(b"a\nb\rc"), [b"a", b"b", b"c"])
+        self.assertEqual(bytes.splitlines(b"a\r\nb\r\n"), [b"a", b"b"])
+        self.assertEqual(bytes.splitlines(b"\n\r\n\r"), [b"", b"", b""])
+        self.assertEqual(bytes.splitlines(b"a\x0Bb"), [b"a\x0Bb"])
+
+    def test_splitlines_with_keepend_returns_list(self):
+        self.assertEqual(bytes.splitlines(b"", True), [])
+        self.assertEqual(bytes.splitlines(b"a", 1), [b"a"])
+        self.assertEqual(bytes.splitlines(b"a\nb\rc", 1), [b"a\n", b"b\r", b"c"])
+        self.assertEqual(bytes.splitlines(b"a\r\nb\r\n", 1), [b"a\r\n", b"b\r\n"])
+        self.assertEqual(bytes.splitlines(b"\n\r\n\r", 1), [b"\n", b"\r\n", b"\r"])
+
     def test_startswith_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytes.startswith(bytearray(), b"")

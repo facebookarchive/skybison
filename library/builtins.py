@@ -2576,7 +2576,7 @@ class bytes(bootstrap=True):
         return _bytes_split(self, sep, maxsplit)
 
     def splitlines(self, keepends=False):
-        _unimplemented()
+        _builtin()
 
     def startswith(self, prefix, start=None, end=None):
         _bytes_guard(self)

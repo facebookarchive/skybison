@@ -35,6 +35,12 @@ RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes);
 // Scans bytes to select an appropriate delimiter (single or double quotes).
 RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& bytes);
 
+// Split bytes into logical lines using \r, \n, or \r\n markers.
+// keepends == true keeps the newline characters, keepends == false does not.
+// Returns a list with a bytes objects for each line.
+RawObject bytesSplitLines(Thread* thread, const Bytes& bytes, word length,
+                          bool keepends);
+
 // Strips the given characters from the end(s) of the given bytes. For left and
 // right variants, strips only the specified side. For space variants, strips
 // all ASCII whitespace from the specified side(s).

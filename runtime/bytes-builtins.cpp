@@ -207,6 +207,52 @@ static word bytesSpanRight(const Bytes& bytes, word bytes_len,
   return left;
 }
 
+RawObject bytesSplitLines(Thread* thread, const Bytes& bytes, word length,
+                          bool keepends) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+  Object subseq(&scope, Unbound::object());
+
+  for (word i = 0, j = 0; i < length; j = i) {
+    // Skip newline bytes
+    while (i < length) {
+      byte b = bytes.byteAt(i);
+      // PEP-278
+      if (b == '\n' || b == '\r') {
+        break;
+      }
+      i++;
+    }
+
+    word eol_pos = i;
+    if (i < length) {
+      word cur = i;
+      word next = i + 1;
+      i++;
+      // Check for \r\n specifically
+      if (bytes.byteAt(cur) == '\r' && next < length &&
+          bytes.byteAt(next) == '\n') {
+        i++;
+      }
+      if (keepends) {
+        eol_pos = i;
+      }
+    }
+
+    // If there are no newlines, the bytes returned should be identity-equal
+    if (j == 0 && eol_pos == length) {
+      runtime->listAdd(thread, result, bytes);
+      return *result;
+    }
+
+    subseq = bytesSubseq(thread, bytes, j, eol_pos - j);
+    runtime->listAdd(thread, result, subseq);
+  }
+
+  return *result;
+}
+
 RawObject bytesStrip(Thread* thread, const Bytes& bytes, word bytes_len,
                      const Bytes& chars, word chars_len) {
   word left = bytesSpanLeft(bytes, bytes_len, chars, chars_len);
@@ -761,6 +807,23 @@ RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "a bytes-like object is required, not '%T'",
                               &chars_obj);
+}
+
+RawObject METH(bytes, splitlines)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  Object keepends_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  if (!runtime->isInstanceOfInt(*keepends_obj)) {
+    return thread->raiseRequiresType(keepends_obj, ID(int));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  bool keepends = !intUnderlying(*keepends_obj).isZero();
+  return bytesSplitLines(thread, self, self.length(), keepends);
 }
 
 RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
