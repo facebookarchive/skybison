@@ -624,7 +624,40 @@ void typeAddDocstring(Thread* thread, const Type& type) {
   }
 }
 
-static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases);
+static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type);
+
+// This searches recursively through `bases` for classes with the
+// `kIsFixedAttributeBase` flag set. The algorithm picks the entry in bases
+// which leads to a fixed attribute base class that is equal or a superclass of
+// the fixed attribute bases found by the other bases entries.
+// If `get_fixed_attr_base` is false, then the fixed attribute base is returned.
+// If it is true, then the first entry in `bases` that is superclass of the
+// fixed attribute base is returned.
+static RawObject computeFixedAttributeBaseImpl(Thread* thread,
+                                               const Tuple& bases,
+                                               bool get_fixed_attr_base) {
+  HandleScope scope(thread);
+  Type result(&scope, bases.at(0));
+  Type result_fixed_attr_base(&scope, fixedAttributeBaseOfType(thread, result));
+  Type base(&scope, *result);
+  Type fixed_attr_base(&scope, *result);
+  for (word i = 1, length = bases.length(); i < length; i++) {
+    base = bases.at(i);
+    fixed_attr_base = fixedAttributeBaseOfType(thread, base);
+    if (typeIsSubclass(result_fixed_attr_base, fixed_attr_base)) {
+      continue;
+    }
+    if (typeIsSubclass(fixed_attr_base, result_fixed_attr_base)) {
+      result = *base;
+      result_fixed_attr_base = *fixed_attr_base;
+    } else {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "multiple bases have instance lay-out conflict");
+    }
+  }
+  return get_fixed_attr_base ? *result_fixed_attr_base : *result;
+}
 
 // Returns the most generic base of `type` on `type's type hierarchy that
 // contains all in-object attributes of `type`. Note that this is designed to
@@ -638,34 +671,17 @@ static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type) {
   }
   HandleScope scope(thread);
   Tuple bases(&scope, type.bases());
-  return computeFixedAttributeBase(thread, bases);
+  return computeFixedAttributeBaseImpl(thread, bases, true);
 }
 
 // Returns the most generic base among `bases` that captures inherited
 // attributes with a fixed offset (either from __slots__ or builtin types)
 // Note that this simulates `best_base` from CPython's typeobject.c.
 static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
-  HandleScope scope(thread);
-  Type base0(&scope, bases.at(0));
-  word length = bases.length();
-  Type result(&scope, fixedAttributeBaseOfType(thread, base0));
-  if (length == 1) return *result;
-
-  for (word i = 1; i < length; i++) {
-    Type base(&scope, bases.at(i));
-    Type fixed_attr_base(&scope, fixedAttributeBaseOfType(thread, base));
-    if (result == fixed_attr_base || typeIsSubclass(result, fixed_attr_base)) {
-      continue;
-    }
-    if (typeIsSubclass(fixed_attr_base, result)) {
-      result = *fixed_attr_base;
-    } else {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "multiple bases have instance lay-out conflict");
-    }
+  if (bases.length() == 1) {
+    return bases.at(0);
   }
-  return *result;
+  return computeFixedAttributeBaseImpl(thread, bases, false);
 }
 
 static RawObject validateSlots(Thread* thread, const Type& type,
@@ -1039,37 +1055,12 @@ void initializeTypeTypes(Thread* thread) {
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
   Type self(&scope, args.get(0));
-  if (self == runtime->typeAt(LayoutId::kObject)) {
-    return NoneType::object();
-  }
   Tuple bases(&scope, self.bases());
-  word num_bases = bases.length();
-  if (num_bases == 0) {
-    // self is the 'object' type
+  if (bases.length() == 0) {
     return NoneType::object();
   }
-  Type current_base(&scope, bases.at(0));
-  Type candidate(&scope, runtime->typeAt(current_base.builtinBase()));
-  Type winner(&scope, *candidate);
-  Type best_base(&scope, *current_base);
-  for (word i = 1; i < num_bases; i++) {
-    current_base = bases.at(i);
-    candidate = runtime->typeAt(current_base.builtinBase());
-    if (typeIsSubclass(winner, candidate)) {
-      continue;
-    }
-    if (typeIsSubclass(candidate, winner)) {
-      winner = *candidate;
-      best_base = *current_base;
-    } else {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "multiple bases have instance lay-out conflict");
-    }
-  }
-  return *best_base;
+  return computeFixedAttributeBase(thread, bases);
 }
 
 RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
