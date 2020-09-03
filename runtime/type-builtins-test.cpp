@@ -629,7 +629,7 @@ class E(C, D):
                    .isError());
   HandleScope scope(thread_);
   Type c(&scope, mainModuleAt(runtime_, "C"));
-  ASSERT_TRUE(c.hasFlag(Type::Flag::kHasDunderDict));
+  ASSERT_FALSE(Layout::cast(c.instanceLayout()).isSealed());
 
   Type e(&scope, mainModuleAt(runtime_, "E"));
   Layout layout(&scope, e.instanceLayout());
@@ -1401,10 +1401,10 @@ C.__setattr__ = lambda self, key: 5
                "unimplemented cache invalidation for type.__setattr__ update");
 }
 
-TEST_F(TypeBuiltinsTest, TypeLayoutIsSealed) {
+TEST_F(TypeBuiltinsTest, TypeIsMarkedAsCustomDict) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->typeAt(LayoutId::kType));
-  EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
+  EXPECT_TRUE(type.hasFlag(Type::Flag::kHasCustomDict));
   EXPECT_TRUE(Layout::cast(type.instanceLayout()).isSealed());
 }
 
@@ -1415,7 +1415,7 @@ class Meta(type): pass
 )")
                    .isError());
   Type meta(&scope, mainModuleAt(runtime_, "Meta"));
-  EXPECT_TRUE(meta.hasFlag(Type::Flag::kSealSubtypeLayouts));
+  EXPECT_TRUE(meta.hasFlag(Type::Flag::kHasCustomDict));
   EXPECT_TRUE(Layout::cast(meta.instanceLayout()).isSealed());
 }
 

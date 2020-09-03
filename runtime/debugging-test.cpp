@@ -354,7 +354,7 @@ class C(A, B):
   expected << R"(type "C":
   bases: (<type "A">, <type "B">)
   mro: (<type "C">, <type "A">, <type "B">, <type "bytes">, <type "object">)
-  flags: has_dunder_dict
+  flags:
   builtin base: <layout )"
            << static_cast<word>(LayoutId::kBytes) << R"( ("bytes")>
   layout )"
@@ -372,9 +372,9 @@ class C(A, B):
 TEST_F(DebuggingTests, DumpExtendedTypePrintsFlags) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->newType());
-  word flags = Type::Flag::kIsAbstract | Type::Flag::kHasNativeData |
-               Type::Flag::kHasCycleGC | Type::Flag::kHasDefaultDealloc |
-               Type::Flag::kSealSubtypeLayouts | Type::Flag::kHasSlots |
+  word flags = Type::Flag::kIsAbstract | Type::Flag::kHasCustomDict |
+               Type::Flag::kHasNativeData | Type::Flag::kHasCycleGC |
+               Type::Flag::kHasDefaultDealloc | Type::Flag::kHasSlots |
                Type::Flag::kIsFixedAttributeBase;
   type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags),
                               LayoutId::kUserWarning);
@@ -386,7 +386,7 @@ TEST_F(DebuggingTests, DumpExtendedTypePrintsFlags) {
   expected << R"(type None:
   bases: None
   mro: None
-  flags: abstract has_native_data has_cycle_gc has_default_dealloc seal_subtype_layouts has_slots is_fixed_attribute_base
+  flags: abstract has_custom_dict has_native_data has_cycle_gc has_default_dealloc has_slots is_fixed_attribute_base
   builtin base: <layout )"
            << builtin_base << R"( ("UserWarning")>
   layout: None

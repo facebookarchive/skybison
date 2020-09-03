@@ -1764,8 +1764,11 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (spec->flags & Py_TPFLAGS_HAVE_GC) {
     flags |= Type::Flag::kHasCycleGC;
   }
+  // TODO(T53922464) Check for `__dictoffset__` tp_members and set accordingly.
+  bool add_instance_dict = true;
   Object type_obj(&scope, typeNew(thread, LayoutId::kType, type_name, bases_obj,
-                                  dict, static_cast<Type::Flag>(flags)));
+                                  dict, static_cast<Type::Flag>(flags),
+                                  /*add_instance_dict=*/add_instance_dict));
   if (type_obj.isError()) return nullptr;
   Type type(&scope, *type_obj);
 

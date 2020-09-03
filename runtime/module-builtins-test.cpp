@@ -381,10 +381,10 @@ result = sys.__repr__()
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
 }
 
-TEST_F(ModuleBuiltinsTest, ModuleLayoutIsSealed) {
+TEST_F(ModuleBuiltinsTest, ModuleIsMarkedAsCustomDict) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->typeAt(LayoutId::kModule));
-  EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
+  EXPECT_TRUE(type.hasFlag(Type::Flag::kHasCustomDict));
   EXPECT_TRUE(Layout::cast(type.instanceLayout()).isSealed());
 }
 
@@ -395,7 +395,7 @@ class C(module): pass
 )")
                    .isError());
   Type type(&scope, mainModuleAt(runtime_, "C"));
-  EXPECT_TRUE(type.hasFlag(Type::Flag::kSealSubtypeLayouts));
+  EXPECT_TRUE(type.hasFlag(Type::Flag::kHasCustomDict));
   EXPECT_TRUE(Layout::cast(type.instanceLayout()).isSealed());
 }
 

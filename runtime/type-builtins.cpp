@@ -687,12 +687,13 @@ static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
 static RawObject validateSlots(Thread* thread, const Type& type,
                                const Tuple& slots,
                                LayoutId fixed_attr_base_layout_id,
-                               bool* should_add_dunder_dict) {
+                               bool base_has_instance_dict,
+                               bool* add_instance_dict) {
   HandleScope scope(thread);
   word slots_len = slots.length();
   Runtime* runtime = thread->runtime();
   Str dunder_dict(&scope, runtime->symbols()->at(ID(__dict__)));
-  *should_add_dunder_dict = false;
+  *add_instance_dict = false;
   List result(&scope, runtime->newList());
   Object slot_obj(&scope, NoneType::object());
   Str slot_str(&scope, Str::empty());
@@ -711,12 +712,12 @@ static RawObject validateSlots(Thread* thread, const Type& type,
     }
     slot_str = attributeName(thread, slot_str);
     if (slot_str == dunder_dict) {
-      if (*should_add_dunder_dict) {
+      if (base_has_instance_dict || *add_instance_dict) {
         return thread->raiseWithFmt(
             LayoutId::kTypeError,
             "__dict__ slot disallowed: we already got one");
       }
-      *should_add_dunder_dict = true;
+      *add_instance_dict = true;
       continue;
     }
     if (!typeAt(type, slot_str).isErrorNotFound()) {
@@ -735,7 +736,8 @@ static RawObject validateSlots(Thread* thread, const Type& type,
 }
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Dict& dict, const Tuple& mro, bool inherit_slots) {
+                   const Dict& dict, const Tuple& mro, bool inherit_slots,
+                   bool add_instance_dict) {
   type.setName(*name);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -773,15 +775,23 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   LayoutId fixed_attr_base =
       Layout::cast(fixed_attr_base_type.instanceLayout()).id();
 
-  // Analyze bases: Merge flags; add to subclasses list.
+  // Analyze bases: Merge flags; add to subclasses lists; check for attribute
+  // dictionaries.
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
+  bool bases_have_instance_dict = false;
+  bool bases_have_overflow_layout = false;
   bool bases_have_type_slots = false;
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     flags |= base_type.flags();
     addSubclass(thread, base_type, type);
     bases_have_type_slots |= typeHasSlots(base_type);
+    if (base_type.hasCustomDict()) bases_have_instance_dict = true;
+    if (!Layout::cast(base_type.instanceLayout()).isSealed()) {
+      bases_have_instance_dict = true;
+      bases_have_overflow_layout = true;
+    }
   }
   flags &= ~Type::Flag::kIsAbstract;
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
@@ -793,15 +803,13 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       if (result.isErrorException()) return *result;
     }
   }
-  // TODO(T53800222): We may need a better signal than is/is not a builtin
-  // class.
-  bool should_add_dunder_dict = !(flags & Type::Flag::kHasNativeData);
 
   Layout layout(&scope, runtime->layoutAt(LayoutId::kNoneType));
   Object dunder_slots_obj(&scope, typeAtById(thread, type, ID(__slots__)));
   bool has_non_empty_dunder_slots = false;
   if (dunder_slots_obj.isErrorNotFound()) {
     layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
+    if (bases_have_instance_dict) add_instance_dict = false;
   } else {
     // NOTE: CPython raises an exception when slots are given to a subtype of a
     // type with type.tp_itemsize != 0, which means having a variable length.
@@ -824,7 +832,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     Tuple slots_tuple(&scope, *dunder_slots_obj);
     Object sorted_dunder_slots_obj(
         &scope, validateSlots(thread, type, slots_tuple, fixed_attr_base,
-                              &should_add_dunder_dict));
+                              bases_have_instance_dict, &add_instance_dict));
     if (sorted_dunder_slots_obj.isErrorException()) {
       return *sorted_dunder_slots_obj;
     }
@@ -852,22 +860,16 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     } else {
       layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
     }
-    if (!should_add_dunder_dict && !(flags & Type::Flag::kHasDunderDict)) {
-      // Seal the type when bases do not have __dict__, and __dict_ does not
-      // appear in __slots__.
-      layout.setOverflowAttributes(NoneType::object());
-      DCHECK(layout.isSealed(), "layout.isSealed() is expected");
-    }
     has_non_empty_dunder_slots = slots.numItems() > 0;
+  }
+  // Use tuple overflow layout mode as attribute dictionary.
+  if (add_instance_dict || (bases_have_overflow_layout && layout.isSealed())) {
+    runtime->layoutSetTupleOverflow(*layout);
   }
 
   // Initialize instance layout.
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
-
-  if (should_add_dunder_dict) {
-    flags |= Type::Flag::kHasDunderDict;
-  }
 
   if (has_non_empty_dunder_slots) {
     flags |= Type::Flag::kHasSlots;
@@ -884,8 +886,9 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   }
   type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
 
-  if (type.hasFlag(Type::Flag::kHasDunderDict) &&
-      typeLookupInMroById(thread, type, ID(__dict__)).isErrorNotFound()) {
+  // Add a `__dict__` descriptor when we added an instance dict.
+  if (add_instance_dict &&
+      typeAtById(thread, type, ID(__dict__)).isErrorNotFound()) {
     Object instance_proxy(&scope, runtime->typeAt(LayoutId::kInstanceProxy));
     CHECK(instance_proxy.isType(), "instance_proxy not found");
     Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
@@ -897,10 +900,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                     runtime->newProperty(instance_proxy,
                                          under_instance_dunder_dict_set, none));
     typeAtPutById(thread, type, ID(__dict__), property);
-  }
-  if (!should_add_dunder_dict) {
-    Str dunder_dict(&scope, runtime->symbols()->at(ID(__dict__)));
-    typeRemove(thread, type, dunder_dict);
   }
 
   // Special-case __init_subclass__ to be a classmethod
@@ -943,7 +942,8 @@ void typeInitAttributes(Thread* thread, const Type& type) {
 }
 
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
-                  const Tuple& bases, const Dict& dict, Type::Flag flags) {
+                  const Tuple& bases, const Dict& dict, Type::Flag flags,
+                  bool add_instance_dict) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
@@ -953,7 +953,8 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   if (mro_obj.isError()) return *mro_obj;
   Tuple mro(&scope, *mro_obj);
   type.setFlags(flags);
-  return typeInit(thread, type, name, dict, mro, /*inherit_slots=*/false);
+  return typeInit(thread, type, name, dict, mro, /*inherit_slots=*/false,
+                  /*add_instance_dict=*/add_instance_dict);
 }
 
 // NOTE: Keep the order of these type attributes same as the one from
@@ -1045,7 +1046,7 @@ void initializeTypeTypes(Thread* thread) {
                                    /*superclass_id=*/LayoutId::kObject,
                                    kTypeAttributes));
   word flags = static_cast<word>(type.flags());
-  flags |= RawType::Flag::kSealSubtypeLayouts;
+  flags |= RawType::Flag::kHasCustomDict;
   type.setFlags(static_cast<Type::Flag>(flags));
 
   addBuiltinType(thread, ID(type_proxy), LayoutId::kTypeProxy,

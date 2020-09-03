@@ -336,7 +336,7 @@ void initializeModuleType(Thread* thread) {
                                    /*superclass_id=*/LayoutId::kObject,
                                    kModuleAttributes));
   word flags = static_cast<word>(type.flags());
-  flags |= RawType::Flag::kSealSubtypeLayouts;
+  flags |= RawType::Flag::kHasCustomDict;
   type.setFlags(static_cast<Type::Flag>(flags));
   Runtime* runtime = thread->runtime();
   Object object_type(&scope, runtime->typeAt(LayoutId::kObject));

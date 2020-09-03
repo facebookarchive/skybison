@@ -340,6 +340,7 @@ RawObject Runtime::layoutCreateSubclassWithSlotAttributes(
   Layout result(&scope, newLayout(subclass_id));
 
   // Copy down all of the superclass attributes into the subclass layout
+  result.setOverflowAttributes(super_layout.overflowAttributes());
   word super_attributes_len = super_attributes.length();
   word in_object_len = super_attributes_len + attributes.numItems();
   if (in_object_len == 0) {
@@ -3143,9 +3144,6 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   Layout layout(&scope, layoutCreateSubclassWithBuiltins(
                             layout_id, base_layout_id,
                             View<BuiltinAttribute>(nullptr, 0)));
-  if (!type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
-    layoutSetTupleOverflow(*layout);
-  }
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);
@@ -3163,9 +3161,6 @@ RawObject Runtime::computeInitialLayoutWithSlotAttributes(
   LayoutId layout_id = reserveLayoutId(thread);
   Layout layout(&scope, layoutCreateSubclassWithSlotAttributes(
                             thread, layout_id, base_layout_id, slots));
-  if (!type.hasFlag(Type::Flag::kSealSubtypeLayouts)) {
-    layoutSetTupleOverflow(*layout);
-  }
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
   layoutAtPut(layout_id, *layout);

@@ -76,7 +76,8 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance_type);
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Dict& dict, const Tuple& mro, bool inherit_slots);
+                   const Dict& dict, const Tuple& mro, bool inherit_slots,
+                   bool add_instance_dict);
 
 void typeInitAttributes(Thread* thread, const Type& type);
 
@@ -93,7 +94,8 @@ RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id);
 
 // Creates a new type. This function does not perform typeslot inheritance.
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
-                  const Tuple& bases, const Dict& dict, Type::Flag flags);
+                  const Tuple& bases, const Dict& dict, Type::Flag flags,
+                  bool add_instance_dict);
 
 RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
                       const Object& value);

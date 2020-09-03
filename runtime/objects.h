@@ -1161,8 +1161,9 @@ class RawType : public RawInstance {
     // Has non-empty __abstractmethods__
     kIsAbstract = 1 << 8,
 
-    // Has an instance __dict__
-    kHasDunderDict = 1 << 9,
+    // The type has an attribute dictionary in cpython but is not using the
+    // usual tuple-overflow or dict-overflow modes in the layout to provide it.
+    kHasCustomDict = 1 << 9,
 
     // Instances have a block of of memory in the unmanaged C heap attached to
     // them. Instances are `RawNativeProxy`s.
@@ -1174,14 +1175,11 @@ class RawType : public RawInstance {
     // Has a default extension dealloc slot
     kHasDefaultDealloc = 1 << 12,
 
-    // Instance layouts are sealed
-    kSealSubtypeLayouts = 1 << 13,
-
     // Has __slots__ in itself or its base
-    kHasSlots = 1 << 14,
+    kHasSlots = 1 << 13,
 
     // Runtime expects some attributes of this type to be at a fixed address.
-    kIsFixedAttributeBase = 1 << 15,
+    kIsFixedAttributeBase = 1 << 14,
   };
 
   // Getters and setters.
@@ -1223,6 +1221,7 @@ class RawType : public RawInstance {
 
   bool isBuiltin() const;
 
+  bool hasCustomDict() const;
   bool hasNativeData() const;
 
   RawObject slots() const;
@@ -5169,6 +5168,10 @@ inline word RawType::attributesRemaining() const {
 inline void RawType::setAttributesRemaining(word free) const {
   instanceVariableAtPut(kAttributesRemainingOffset,
                         RawSmallInt::fromWord(free));
+}
+
+inline bool RawType::hasCustomDict() const {
+  return hasFlag(RawType::Flag::kHasCustomDict);
 }
 
 inline bool RawType::hasNativeData() const {
