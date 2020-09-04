@@ -117,6 +117,13 @@ def format(string: str, args) -> str:  # noqa: C901
             c = it.__next__()
             idx += 1
 
+            # Escaped % symbol
+            if c is "%":  # noqa: F632
+                _str_array_iadd(result, "%")
+                begin = idx + 1
+                in_specifier = False
+                continue
+
             # Parse named reference.
             if c is "(":  # noqa: F632
                 # Lazily initialize args_dict.
@@ -222,15 +229,12 @@ def format(string: str, args) -> str:  # noqa: C901
                         precision *= 10
 
             # Parse and process format.
-            if c is not "%":  # noqa: F632
-                if arg_idx >= args_len:
-                    raise TypeError("not enough arguments for format string")
-                arg = _tuple_getitem(args_tuple, arg_idx)
-                arg_idx += 1
+            if arg_idx >= args_len:
+                raise TypeError("not enough arguments for format string")
+            arg = _tuple_getitem(args_tuple, arg_idx)
+            arg_idx += 1
 
-            if c is "%":  # noqa: F632
-                _str_array_iadd(result, "%")
-            elif c is "s":  # noqa: F632
+            if c is "s":  # noqa: F632
                 fragment = str(arg)
                 _format_string(result, flags, width, precision, fragment)
             elif c is "r":  # noqa: F632

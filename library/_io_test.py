@@ -2521,17 +2521,14 @@ class BufferedReaderTests(unittest.TestCase):
             buffered.read()
         self.assertIn("closed file", str(context.exception))
 
-    # TODO(T65863013): Make read behavior match CPython and remove this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_read_with_negative_size_raises_value_error(self):
         with _io.FileIO(_getfd(), mode="r") as file_reader:
             buffered = _io.BufferedReader(file_reader)
             with self.assertRaises(ValueError) as context:
                 buffered.read(-2)
-        self.assertEqual(str(context.exception), "read length must be positive or -1")
+        self.assertEqual(
+            str(context.exception), "read length must be non-negative or -1"
+        )
 
     def test_read_with_none_size_calls_raw_readall(self):
         class C(_io.FileIO):
@@ -2654,17 +2651,12 @@ class TextIOWrapperTests(unittest.TestCase):
             "TextIOWrapper() argument 2 must be str or None, not int",
         )
 
-    # TODO(T65863013): Make read behavior match CPython and remove this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_dunder_init_with_non_str_errors_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             _io.TextIOWrapper("hello", errors=5)
         self.assertEqual(
             str(context.exception),
-            "TextIOWrapper() argument 3 must be str or None, not int",
+            "TextIOWrapper() argument 'errors' must be str or None, not int",
         )
 
     def test_dunder_init_with_non_str_newline_raises_type_error(self):

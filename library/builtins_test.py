@@ -2824,39 +2824,24 @@ class ByteArrayTests(unittest.TestCase):
             haystack.count(needle)
         self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
 
-    # TODO(T65863013): Make bytearray.count behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_count_with_string_raises_type_error(self):
         haystack = bytearray()
         needle = "133"
         with self.assertRaises(TypeError) as context:
             haystack.count(needle)
         self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'str'"
+            str(context.exception),
+            "argument should be integer or bytes-like object, not 'str'",
         )
 
-    # TODO(T65863013): Make bytearray.count behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_count_with_non_number_index_raises_type_error(self):
+    def test_count_with_non_number_index(self):
         class Idx:
             def __index__(self):
                 return ord("a")
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(TypeError) as context:
-            haystack.count(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(haystack.count(needle), 1)
 
     def test_count_with_dunder_int_calls_dunder_index(self):
         class Desc:
@@ -2888,13 +2873,7 @@ class ByteArrayTests(unittest.TestCase):
         needle = Idx()
         self.assertEqual(haystack.count(needle), 1)
 
-    # TODO(T65863013): Make bytearray.count behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_count_with_index_overflow_raises_value_error(self):
+    def test_count_with_index_overflow_raises_overflow_error(self):
         class Idx:
             def __float__(self):
                 return 0.0
@@ -2904,16 +2883,10 @@ class ByteArrayTests(unittest.TestCase):
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(OverflowError) as context:
             haystack.count(needle)
-        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+        self.assertEqual(str(context.exception), "not a byte!")
 
-    # TODO(T65863013): Make bytearray.count behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_count_with_dunder_index_error_raises_type_error(self):
         class Idx:
             def __float__(self):
@@ -2924,11 +2897,9 @@ class ByteArrayTests(unittest.TestCase):
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(MemoryError) as context:
             haystack.count(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(str(context.exception), "not a byte!")
 
     def test_count_with_empty_sub_returns_length_minus_adjusted_start_plus_one(self):
         haystack = bytearray(b"abcde")
@@ -3086,21 +3057,14 @@ class ByteArrayTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             haystack.find(needle)
 
-    # TODO(T65863013): Make bytearray.find behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_find_with_non_number_index_raises_type_error(self):
+    def test_find_with_non_number_index(self):
         class Idx:
             def __index__(self):
                 return ord("a")
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(TypeError):
-            haystack.find(needle)
+        self.assertEqual(haystack.find(needle), 0)
 
     def test_find_with_dunder_int_calls_dunder_index(self):
         class Desc:
@@ -3132,13 +3096,7 @@ class ByteArrayTests(unittest.TestCase):
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
 
-    # TODO(T65863013): Make bytearray.find behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_find_with_index_overflow_raises_value_error(self):
+    def test_find_with_index_overflow_raises_overflow_error(self):
         class Idx:
             def __float__(self):
                 return 0.0
@@ -3148,16 +3106,10 @@ class ByteArrayTests(unittest.TestCase):
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(OverflowError) as context:
             haystack.find(needle)
-        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+        self.assertEqual(str(context.exception), "not a byte!")
 
-    # TODO(T65863013): Make bytearray.find behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_find_with_dunder_index_error_raises_type_error(self):
         class Idx:
             def __float__(self):
@@ -3168,11 +3120,9 @@ class ByteArrayTests(unittest.TestCase):
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(MemoryError) as context:
             haystack.find(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(str(context.exception), "not a byte!")
 
     def test_index_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -3404,39 +3354,24 @@ class ByteArrayTests(unittest.TestCase):
             haystack.rfind(needle)
         self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
 
-    # TODO(T65863013): Make bytearray.rfind behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_rfind_with_string_raises_type_error(self):
         haystack = bytearray()
         needle = "133"
         with self.assertRaises(TypeError) as context:
             haystack.rfind(needle)
         self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'str'"
+            str(context.exception),
+            "argument should be integer or bytes-like object, not 'str'",
         )
 
-    # TODO(T65863013): Make bytearray.rfind behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_rfind_with_non_number_index_raises_type_error(self):
+    def test_rfind_with_non_number_index(self):
         class Idx:
             def __index__(self):
                 return ord("a")
 
         haystack = bytearray(b"abc")
         needle = Idx()
-        with self.assertRaises(TypeError) as context:
-            haystack.rfind(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(haystack.rfind(needle), 0)
 
     def test_rfind_with_dunder_int_calls_dunder_index(self):
         class Idx:
@@ -3935,39 +3870,24 @@ class BytesTests(unittest.TestCase):
             haystack.count(needle)
         self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
 
-    # TODO(T65863013): Make bytes.count behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_count_with_string_raises_type_error(self):
         haystack = b""
         needle = "133"
         with self.assertRaises(TypeError) as context:
             haystack.count(needle)
         self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'str'"
+            str(context.exception),
+            "argument should be integer or bytes-like object, not 'str'",
         )
 
-    # TODO(T65863013): Make bytes.count behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_count_with_non_number_index_raises_type_error(self):
+    def test_count_with_non_number_index(self):
         class Idx:
             def __index__(self):
                 return ord("a")
 
         haystack = b"abc"
         needle = Idx()
-        with self.assertRaises(TypeError) as context:
-            haystack.count(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(haystack.count(needle), 1)
 
     def test_count_with_dunder_int_calls_dunder_index(self):
         class Desc:
@@ -3999,13 +3919,7 @@ class BytesTests(unittest.TestCase):
         needle = Idx()
         self.assertEqual(haystack.count(needle), 1)
 
-    # TODO(T65863013): Make bytes.count behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_count_with_index_overflow_raises_value_error(self):
+    def test_count_with_index_overflow_raises_overflow_error(self):
         class Idx:
             def __float__(self):
                 return 0.0
@@ -4015,16 +3929,10 @@ class BytesTests(unittest.TestCase):
 
         haystack = b"abc"
         needle = Idx()
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(OverflowError) as context:
             haystack.count(needle)
-        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+        self.assertEqual(str(context.exception), "not a byte!")
 
-    # TODO(T65863013): Make bytes.count behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_count_with_index_error_raises_type_error(self):
         class Idx:
             def __float__(self):
@@ -4037,9 +3945,7 @@ class BytesTests(unittest.TestCase):
         needle = Idx()
         with self.assertRaises(TypeError) as context:
             haystack.count(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(str(context.exception), "not a byte!")
 
     def test_count_with_empty_sub_returns_length_minus_adjusted_start_plus_one(self):
         haystack = b"abcde"
@@ -4160,21 +4066,14 @@ class BytesTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             haystack.find(needle)
 
-    # TODO(T65863013): Make bytes.find behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_find_with_non_number_index_raises_type_error(self):
+    def test_find_with_non_number_index(self):
         class Idx:
             def __index__(self):
                 return ord("a")
 
         haystack = b"abc"
         needle = Idx()
-        with self.assertRaises(TypeError):
-            haystack.find(needle)
+        self.assertEqual(haystack.find(needle), 0)
 
     def test_find_with_dunder_int_calls_dunder_index(self):
         class Desc:
@@ -4206,13 +4105,7 @@ class BytesTests(unittest.TestCase):
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
 
-    # TODO(T65863013): Make bytes.find behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_find_with_index_overflow_raises_value_error(self):
+    def test_find_with_index_overflow_raises_overflow_error(self):
         class Idx:
             def __float__(self):
                 return 0.0
@@ -4222,16 +4115,10 @@ class BytesTests(unittest.TestCase):
 
         haystack = b"abc"
         needle = Idx()
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(OverflowError) as context:
             haystack.find(needle)
-        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+        self.assertEqual(str(context.exception), "not a byte!")
 
-    # TODO(T65863013): Make bytes.find behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_find_with_index_error_raises_type_error(self):
         class Idx:
             def __float__(self):
@@ -4244,9 +4131,7 @@ class BytesTests(unittest.TestCase):
         needle = Idx()
         with self.assertRaises(TypeError) as context:
             haystack.find(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(str(context.exception), "not a byte!")
 
     def test_fromhex_returns_bytes_instance(self):
         self.assertEqual(bytes.fromhex("1234 ab AB"), b"\x124\xab\xab")
@@ -4520,39 +4405,24 @@ class BytesTests(unittest.TestCase):
             haystack.rfind(needle)
         self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
 
-    # TODO(T65863013): Make bytes.rfind behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_rfind_with_string_raises_type_error(self):
         haystack = b""
         needle = "133"
         with self.assertRaises(TypeError) as context:
             haystack.rfind(needle)
         self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'str'"
+            str(context.exception),
+            "argument should be integer or bytes-like object, not 'str'",
         )
 
-    # TODO(T65863013): Make bytes.rfind behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_rfind_with_non_number_index_raises_type_error(self):
+    def test_rfind_with_non_number_index_calls_dunder_index(self):
         class Idx:
             def __index__(self):
                 return ord("a")
 
         haystack = b"abc"
         needle = Idx()
-        with self.assertRaises(TypeError) as context:
-            haystack.rfind(needle)
-        self.assertEqual(
-            str(context.exception), "a bytes-like object is required, not 'Idx'"
-        )
+        self.assertEqual(haystack.rfind(needle), 0)
 
     def test_rfind_with_dunder_int_calls_dunder_index(self):
         class Idx:
@@ -5608,12 +5478,6 @@ class ComplexTests(unittest.TestCase):
         c = complex(C())
         self.assertEqual(c, 1 + 0j)
 
-    # TODO(T65863013): Make complex.__new__ behavior match CPython and remove
-    # this skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
     def test_dunder_new_with_non_complex_dunder_complex(self):
         class C:
             def __complex__(self):
@@ -5622,7 +5486,7 @@ class ComplexTests(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             complex(C())
         self.assertEqual(
-            str(context.exception), "__complex__ should return a complex object"
+            str(context.exception), "__complex__ returned non-complex (type int)"
         )
 
     def test_dunder_new_with_bytes_real_raises_type_error(self):
@@ -17832,17 +17696,39 @@ class StrModTests(unittest.TestCase):
     def test_percent_format_returns_percent(self):
         self.assertEqual(str.__mod__("%%", ()), "%")
 
-    # TODO(T65863013): Make str.__mod__ behavior match CPython and remove this
-    # skipIf
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info >= (3, 7),
-        "behavior changes in CPython 3.7",
-    )
-    def test_percent_with_flags_percision_and_width_returns_percent(self):
-        self.assertEqual(str.__mod__("%0.0%", ()), "%")
-        self.assertEqual(str.__mod__("%*.%", (42,)), "%")
-        self.assertEqual(str.__mod__("%.*%", (88,)), "%")
-        self.assertEqual(str.__mod__("%0#*.42%", (1234,)), "%")
+    def test_escaped_percent_with_characters_between_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.__mod__("%0.0%", ())
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            str.__mod__("%*.%", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            str.__mod__("%d %*.%", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            str.__mod__("%.*%", (88,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            str.__mod__("%0#*.42%", (1234,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_escaped_percent_with_characters_between_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__mod__("%*.%", (42, 1))
+        self.assertEqual(
+            str(context.exception), "unsupported format character '%' (0x25) at index 3"
+        )
 
     def test_flags_get_accepted(self):
         self.assertEqual(str.__mod__("%-s", ""), "")

@@ -1978,18 +1978,11 @@ class bytearray(bootstrap=True):
             return _byteslike_count(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_count(self, sub, start, end)
-        if not _number_check(sub):
+        if not _object_type_hasattr(sub, "__index__"):
             raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+                f"argument should be integer or bytes-like object, not '{_type(sub).__name__}'"
             )
-        try:
-            sub = _index(sub)
-        except OverflowError:
-            raise ValueError("byte must be in range(0, 256)")
-        except Exception:
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
-            )
+        sub = _index(sub)
         return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors=_Unbound):
@@ -2029,18 +2022,11 @@ class bytearray(bootstrap=True):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
-        if not _number_check(sub):
+        if not _object_type_hasattr(sub, "__index__"):
             raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+                f"argument should be integer or bytes-like object, not '{_type(sub).__name__}'"
             )
-        try:
-            sub = _index(sub)
-        except OverflowError:
-            raise ValueError("byte must be in range(0, 256)")
-        except Exception:
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
-            )
+        sub = _index(sub)
         return _byteslike_find_int(self, sub, start, end)
 
     @classmethod
@@ -2129,18 +2115,11 @@ class bytearray(bootstrap=True):
             return _byteslike_rfind_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_rfind_int(self, sub, start, end)
-        if not _number_check(sub):
+        if not _object_type_hasattr(sub, "__index__"):
             raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+                f"argument should be integer or bytes-like object, not '{_type(sub).__name__}'"
             )
-        try:
-            sub = _index(sub)
-        except OverflowError:
-            raise ValueError("byte must be in range(0, 256)")
-        except Exception:
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
-            )
+        sub = _index(sub)
         return _byteslike_rfind_int(self, sub, start, end)
 
     def rindex(self, sub, start=None, end=None) -> int:
@@ -2360,18 +2339,11 @@ class bytes(bootstrap=True):
             return _byteslike_count(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_count(self, sub, start, end)
-        if not _number_check(sub):
+        if not _object_type_hasattr(sub, "__index__"):
             raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+                f"argument should be integer or bytes-like object, not '{_type(sub).__name__}'"
             )
-        try:
-            sub = _index(sub)
-        except OverflowError:
-            raise ValueError("byte must be in range(0, 256)")
-        except Exception:
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
-            )
+        sub = _index(sub)
         return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors="strict") -> str:
@@ -2400,18 +2372,11 @@ class bytes(bootstrap=True):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
-        if not _number_check(sub):
+        if not _object_type_hasattr(sub, "__index__"):
             raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+                f"argument should be integer or bytes-like object, not '{_type(sub).__name__}'"
             )
-        try:
-            sub = _index(sub)
-        except OverflowError:
-            raise ValueError("byte must be in range(0, 256)")
-        except Exception:
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
-            )
+        sub = _index(sub)
         return _byteslike_find_int(self, sub, start, end)
 
     @classmethod
@@ -2519,18 +2484,11 @@ class bytes(bootstrap=True):
             return _byteslike_rfind_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_rfind_int(self, sub, start, end)
-        if not _number_check(sub):
+        if not _object_type_hasattr(sub, "__index__"):
             raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+                f"argument should be integer or bytes-like object, not '{_type(sub).__name__}'"
             )
-        try:
-            sub = _index(sub)
-        except OverflowError:
-            raise ValueError("byte must be in range(0, 256)")
-        except Exception:
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(sub).__name__}'"
-            )
+        sub = _index(sub)
         return _byteslike_rfind_int(self, sub, start, end)
 
     def rindex(self, sub, start=None, end=None) -> int:
@@ -2904,7 +2862,9 @@ class complex(bootstrap=True):
         if dunder_complex is not _Unbound:
             real = dunder_complex()
             if not _complex_check(real):
-                raise TypeError("__complex__ should return a complex object")
+                raise TypeError(
+                    f"__complex__ returned non-complex (type {_type(real).__name__})"
+                )
             elif not _complex_checkexact(real):
                 # NOTE: type(real) could a subclass of complex, so coerce it here
                 real = _complex_new(complex, real.real, real.imag)

@@ -1412,7 +1412,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             errors = "strict"
         elif not _str_check(errors):
             raise TypeError(
-                "TextIOWrapper() argument 3 must be str or None, not "
+                "TextIOWrapper() argument 'errors' must be str or None, not "
                 f"{_type(errors).__name__}"
             )
         if newline is not None and not _str_check(newline):

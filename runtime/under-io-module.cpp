@@ -557,7 +557,7 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
       num_bytes = kMaxWord;
     } else if (num_bytes < 0) {
       return thread->raiseWithFmt(LayoutId::kValueError,
-                                  "read length must be positive or -1");
+                                  "read length must be non-negative or -1");
     }
   }
 
@@ -679,7 +679,7 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
       max_line_bytes = kMaxWord;
     } else if (max_line_bytes < 0) {
       return thread->raiseWithFmt(LayoutId::kValueError,
-                                  "read length must be positive or -1");
+                                  "read length must be non-negative or -1");
     }
   }
 
