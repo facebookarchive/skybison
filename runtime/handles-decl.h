@@ -25,7 +25,6 @@ class Handle;
   V(Bytes)                                                                     \
   V(BytesIterator)                                                             \
   V(Cell)                                                                      \
-  V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
   V(Context)                                                                   \
@@ -75,7 +74,6 @@ class Handle;
   V(NotImplementedType)                                                        \
   V(Object)                                                                    \
   V(Pointer)                                                                   \
-  V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
   V(RuntimeError)                                                              \
@@ -86,7 +84,6 @@ class Handle;
   V(SmallBytes)                                                                \
   V(SmallInt)                                                                  \
   V(SmallStr)                                                                  \
-  V(StaticMethod)                                                              \
   V(Str)                                                                       \
   V(StrArray)                                                                  \
   V(StrIterator)                                                               \
@@ -110,6 +107,7 @@ class Handle;
   V(BaseException)                                                             \
   V(Bytearray)                                                                 \
   V(BytesIO)                                                                   \
+  V(ClassMethod)                                                               \
   V(Deque)                                                                     \
   V(Dict)                                                                      \
   V(FileIO)                                                                    \
@@ -119,8 +117,10 @@ class Handle;
   V(Mmap)                                                                      \
   V(Module)                                                                    \
   V(NativeProxy)                                                               \
+  V(Property)                                                                  \
   V(Set)                                                                       \
   V(SetBase)                                                                   \
+  V(StaticMethod)                                                              \
   V(StopIteration)                                                             \
   V(StringIO)                                                                  \
   V(SystemExit)                                                                \
