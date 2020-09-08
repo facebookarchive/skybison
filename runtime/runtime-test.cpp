@@ -1,5 +1,6 @@
 #include "runtime.h"
 
+#include <csignal>
 #include <cstdlib>
 #include <memory>
 
@@ -3895,6 +3896,13 @@ TEST_F(RuntimeStrArrayTest, AddASCIIAppendsASCII) {
   runtime_->strArrayAddASCII(thread_, array, 'i');
   EXPECT_EQ(array.numItems(), 2);
   EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(array), "hi"));
+}
+
+TEST(RuntimeTestNoFixture, DestructorRestoresSignalHandlers) {
+  Runtime* runtime = createTestRuntime();
+  EXPECT_NE(OS::signalHandler(SIGINT), SIG_DFL);
+  delete runtime;
+  EXPECT_EQ(OS::signalHandler(SIGINT), SIG_DFL);
 }
 
 }  // namespace testing

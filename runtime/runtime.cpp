@@ -192,6 +192,7 @@ Runtime::~Runtime() {
     Thread::setCurrentThread(threads_);
   }
   callAtExit();
+  finalizeSignals(Thread::current());
   clearHandleScopes();
   finalizeCAPI();
   freeApiHandles();
@@ -1785,9 +1786,11 @@ void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
     return;  // already initialized
   }
 
+  HandleScope scope(thread);
+  MutableTuple callbacks(&scope, newMutableTuple(OS::kNumSignals));
+
   is_signal_pending_ = false;
-  signal_callbacks_ = newMutableTuple(OS::kNumSignals);
-  RawMutableTuple callbacks = MutableTuple::cast(signal_callbacks_);
+  signal_callbacks_ = *callbacks;
 
   OS::pending_signals_[0] = false;
   for (int i = 1; i < OS::kNumSignals; i++) {
@@ -1804,6 +1807,19 @@ void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
     callbacks.atPut(
         SIGINT, moduleAtById(thread, under_signal, ID(default_int_handler)));
     OS::setSignalHandler(SIGINT, handleSignal);
+  }
+}
+
+void Runtime::finalizeSignals(Thread* thread) {
+  if (signal_callbacks_.isNoneType()) return;
+  HandleScope scope(thread);
+  MutableTuple callbacks(&scope, signal_callbacks_);
+  Object callback(&scope, NoneType::object());
+  for (int i = 1; i < OS::kNumSignals; i++) {
+    callback = callbacks.at(i);
+    if (callback != kDefaultHandler && callback != kIgnoreHandler) {
+      OS::setSignalHandler(i, SIG_DFL);
+    }
   }
 }
 

@@ -896,6 +896,8 @@ class Runtime {
   // Sets up the signal handlers.
   void initializeSignals(Thread* thread, const Module& under_signal);
 
+  void finalizeSignals(Thread* thread);
+
   RawObject handlePendingSignals(Thread* thread);
   void setPendingSignal(Thread* thread, int signum);
 
