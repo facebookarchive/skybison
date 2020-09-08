@@ -1056,7 +1056,11 @@ void initializeTypeTypes(Thread* thread) {
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Type self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type self(&scope, *self_obj);
   Tuple bases(&scope, self.bases());
   if (bases.length() == 0) {
     return NoneType::object();
@@ -1068,7 +1072,11 @@ RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
-  Type self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type self(&scope, *self_obj);
   if (!self.hasNativeData()) {
     Str name(&scope, strUnderlying(self.name()));
     UNIMPLEMENTED("'__basicsize__' for type '%s'", name.toCStr());
@@ -1080,8 +1088,12 @@ RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
 RawObject METH(type, __flags__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Type self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type self(&scope, *self_obj);
   uword cpython_flags = typeGetFlags(self);
   return runtime->newIntFromUnsigned(cpython_flags);
 }

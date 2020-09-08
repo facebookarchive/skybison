@@ -4817,6 +4817,10 @@ class ClassMethodTests(unittest.TestCase):
         method = classmethod(foo)
         self.assertIs(method.__isabstractmethod__, True)
 
+    def test_dunder_abstractmethod_with_non_classmethod_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            classmethod.__dict__["__isabstractmethod__"].__get__(42)
+
     def test_dunder_class_setter_with_non_type_raises_type_error(self):
         class C:
             pass
@@ -12880,6 +12884,12 @@ class ModuleTests(unittest.TestCase):
             mymodule.foo()
         self.assertEqual(str(context.exception), "name 'x' is not defined")
 
+    def test_dunder_dict_with_non_module_raises_type_error(self):
+        from types import ModuleType
+
+        with self.assertRaises(TypeError):
+            ModuleType.__dict__["__dict__"].__get__(42)
+
     def test_dunder_dir_returns_newly_created_list_object(self):
         from types import ModuleType
 
@@ -14344,6 +14354,10 @@ class PropertyTests(unittest.TestCase):
         prop = property(fdel=foo)
         self.assertIs(prop.__isabstractmethod__, True)
 
+    def test_dunder_abstractmethod_with_non_abstractmethod_raise_type_error(self):
+        with self.assertRaises(TypeError):
+            property.__dict__["__isabstractmethod__"].__get__(42)
+
     def test_dunder_doc_returns_updated_value(self):
         p = property()
         self.assertIsNone(p.__doc__)
@@ -15629,6 +15643,10 @@ class StaticMethodTests(unittest.TestCase):
             type(foo).__isabstractmethod__
         method = staticmethod(foo)
         self.assertIs(method.__isabstractmethod__, True)
+
+    def test_dunder_abstractmethod_with_non_staticmethod_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            staticmethod.__dict__["__isabstractmethod__"].__get__(42)
 
     def test_dunder_func_returns_function(self):
         def foo():
@@ -18611,6 +18629,10 @@ class TypeTests(unittest.TestCase):
             Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
 
+    def test_abstract_methods_get_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__abstractmethods__"].__get__(42)
+
     def test_abstract_methods_set_with_builtin_type_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             int.__abstractmethods__ = ["foo"]
@@ -18641,6 +18663,14 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(AttributeError) as context:
             del Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
+
+    def test_abstract_methods_del_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__abstractmethods__"].__delete__(42)
+
+    def test_abstract_methods_set_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__abstractmethods__"].__set__(42, [])
 
     def test_dunder_base_with_object_type_returns_none(self):
         self.assertIs(object.__base__, None)
@@ -18681,6 +18711,10 @@ class TypeTests(unittest.TestCase):
             del C.__bases__
         self.assertEqual(str(context.exception), "can't delete C.__bases__")
 
+    def test_dunder_bases_del_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__bases__"].__delete__(42)
+
     def test_dunder_bases_get_with_builtin_type_returns_tuple(self):
         self.assertEqual(object.__bases__, ())
         self.assertEqual(type.__bases__, (object,))
@@ -18704,6 +18738,14 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(B.__bases__, (object,))
         self.assertEqual(C.__bases__, (A,))
         self.assertEqual(D.__bases__, (C, B))
+
+    def test_dunder_bases_get_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__bases__"].__get__(42)
+
+    def test_dunder_basicsize_get_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__basicsize__"].__get__(42)
 
     def test_dunder_dir_with_non_type_object_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -18793,6 +18835,10 @@ class TypeTests(unittest.TestCase):
 
         self.assertEqual(len(C.__abstractmethods__), 1)
         self.assertTrue(C.__flags__ & TypeTests.Py_TPFLAGS_IS_ABSTRACT)
+
+    def test_dunder_flags_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dict__["__flags__"].__get__(42)
 
     def test_dunder_flags_sets_long_subclass_if_int_subclass(self):
         class C:

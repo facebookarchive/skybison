@@ -1703,7 +1703,11 @@ RawObject FUNC(_builtins, _classmethod_isabstract)(Thread* thread, Frame* frame,
                                                    word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  ClassMethod self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfClassMethod(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(classmethod));
+  }
+  ClassMethod self(&scope, *self_obj);
   Object func(&scope, self.function());
   return isAbstract(thread, func);
 }
@@ -3551,7 +3555,11 @@ RawObject FUNC(_builtins, _module_proxy)(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Module module(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfModule(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(module));
+  }
+  Module module(&scope, *self_obj);
   return module.moduleProxy();
 }
 
@@ -3809,7 +3817,11 @@ RawObject FUNC(_builtins, _property_isabstract)(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Property self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(property));
+  }
+  Property self(&scope, *self_obj);
   Object getter(&scope, self.getter());
   Object abstract(&scope, isAbstract(thread, getter));
   if (abstract != Bool::falseObj()) {
@@ -4220,7 +4232,11 @@ RawObject FUNC(_builtins, _staticmethod_isabstract)(Thread* thread,
                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  StaticMethod self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStaticMethod(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(staticmethod));
+  }
+  StaticMethod self(&scope, *self_obj);
   Object func(&scope, self.function());
   return isAbstract(thread, func);
 }
@@ -5324,7 +5340,11 @@ RawObject FUNC(_builtins, _type_abstractmethods_del)(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Type type(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
   if (type.abstractMethods().isUnbound()) {
     Object name(&scope,
                 thread->runtime()->symbols()->at(ID(__abstractmethods__)));
@@ -5341,7 +5361,11 @@ RawObject FUNC(_builtins, _type_abstractmethods_get)(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Type type(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
   Object methods(&scope, type.abstractMethods());
   if (!methods.isUnbound()) {
     return *methods;
@@ -5355,7 +5379,11 @@ RawObject FUNC(_builtins, _type_abstractmethods_set)(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Type type(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
   Object abstract(&scope, Interpreter::isTrue(thread, args.get(1)));
   if (abstract.isError()) return *abstract;
   type.setAbstractMethods(args.get(1));
@@ -5371,8 +5399,12 @@ RawObject FUNC(_builtins, _type_bases_del)(Thread* thread, Frame* frame,
                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Type type(&scope, args.get(0));
-  Str name(&scope, type.name());
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
+  Str name(&scope, strUnderlying(type.name()));
   return thread->raiseWithFmt(LayoutId::kTypeError, "can't delete %S.__bases__",
                               &name);
 }
@@ -5381,7 +5413,12 @@ RawObject FUNC(_builtins, _type_bases_get)(Thread* thread, Frame* frame,
                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  return Type(&scope, args.get(0)).bases();
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
+  return type.bases();
 }
 
 RawObject FUNC(_builtins, _type_bases_set)(Thread*, Frame*, word) {
