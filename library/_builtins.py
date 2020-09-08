@@ -314,6 +314,10 @@ def _complex_real(c):
     _builtin()
 
 
+def _compute_mro(type):
+    _builtin()
+
+
 def _deque_guard(obj):
     _builtin()
 

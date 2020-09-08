@@ -19105,6 +19105,43 @@ class TypeTests(unittest.TestCase):
         _gc()
         self.assertEqual(type.__subclasses__(B), [S2, S4])
 
+    def test_mro_returns_list(self):
+        class C:
+            pass
+
+        mro = C.mro()
+        self.assertIsInstance(mro, list)
+        self.assertEqual(mro, [C, object])
+
+    def test_mro_with_multiple_inheritance_returns_linearization(self):
+        class A:
+            pass
+
+        class B:
+            pass
+
+        class C(A, B):
+            pass
+
+        mro = type.mro(C)
+        self.assertIsInstance(mro, list)
+        self.assertEqual(mro, [C, A, B, object])
+
+    def test_mro_with_invalid_linearization_raises_type_error(self):
+        class A:
+            pass
+
+        class B(A):
+            pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            r"Cannot create a consistent method resolution\s+order \(MRO\) for bases A, B",
+        ):
+
+            class C(A, B):
+                pass
+
     def test_mro_with_custom_method_propagates_exception(self):
         class Meta(type):
             def mro(cls):

@@ -1189,23 +1189,4 @@ RawObject METH(type, __subclasses__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(type, mro)(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfType(*self)) {
-    return thread->raiseRequiresType(self, ID(type));
-  }
-  Type type(&scope, *self);
-  Object maybe_mro(&scope, computeMro(thread, type));
-  if (maybe_mro.isError()) {
-    return *maybe_mro;
-  }
-  List result(&scope, runtime->newList());
-  Tuple mro(&scope, *maybe_mro);
-  listExtend(thread, result, mro, mro.length());
-  return *result;
-}
-
 }  // namespace py

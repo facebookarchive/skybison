@@ -77,6 +77,7 @@ from _builtins import (
     _complex_imag,
     _complex_new,
     _complex_real,
+    _compute_mro,
     _dict_check,
     _dict_check_exact,
     _dict_get,
@@ -506,7 +507,8 @@ class type(bootstrap=True):
             type._merge_class_dict_keys(base, result)
 
     def mro(self):
-        _builtin()
+        _type_guard(self)
+        return [*_compute_mro(self)]
 
 
 def _object_reduce_getnewargs(self):

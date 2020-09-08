@@ -1882,6 +1882,14 @@ RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
   return runtime->newFloat(self.real());
 }
 
+RawObject FUNC(_builtins, _compute_mro)(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Type type(&scope, args.get(0));
+  return computeMro(thread, type);
+}
+
 RawObject FUNC(_builtins, _deque_guard)(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);

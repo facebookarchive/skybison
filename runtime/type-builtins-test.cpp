@@ -1037,58 +1037,6 @@ C()
                             "C.__init__ returned non None"));
 }
 
-TEST_F(TypeBuiltinsTest, MroReturnsList) {
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-class C:
-  pass
-result = C.mro()
-)")
-                   .isError());
-  HandleScope scope;
-  Object ctype(&scope, mainModuleAt(runtime_, "C"));
-  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
-  ASSERT_TRUE(result_obj.isList());
-  List result(&scope, *result_obj);
-  EXPECT_EQ(result.at(0), *ctype);
-  EXPECT_EQ(result.at(1), runtime_->typeAt(LayoutId::kObject));
-}
-
-TEST_F(TypeBuiltinsTest, MroWithMultipleInheritanceReturnsLinearization) {
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-class A:
-  pass
-class B:
-  pass
-class C(A, B):
-  pass
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object atype(&scope, mainModuleAt(runtime_, "A"));
-  Object btype(&scope, mainModuleAt(runtime_, "B"));
-  Object ctype(&scope, mainModuleAt(runtime_, "C"));
-  Object result_obj(&scope, runBuiltin(METH(type, mro), ctype));
-  ASSERT_TRUE(result_obj.isList());
-  List result(&scope, *result_obj);
-  EXPECT_EQ(result.at(0), *ctype);
-  EXPECT_EQ(result.at(1), *atype);
-  EXPECT_EQ(result.at(2), *btype);
-  EXPECT_EQ(result.at(3), runtime_->typeAt(LayoutId::kObject));
-}
-
-TEST_F(TypeBuiltinsTest, MroWithInvalidLinearizationRaisesTypeError) {
-  HandleScope scope(thread_);
-  Type type(&scope, runtime_->newType());
-  Object obj1(&scope, runtime_->typeAt(LayoutId::kObject));
-  Object obj2(&scope, runtime_->typeAt(LayoutId::kInt));
-  Tuple bases(&scope, runtime_->newTupleWith2(obj1, obj2));
-  type.setBases(*bases);
-  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, mro), type),
-                            LayoutId::kTypeError,
-                            "Cannot create a consistent method resolution "
-                            "order (MRO) for bases object, int"));
-}
-
 TEST_F(TypeBuiltinsTest, TypeGetAttributeReturnsAttributeValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
