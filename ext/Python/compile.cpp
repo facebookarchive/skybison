@@ -109,6 +109,7 @@ PY_EXPORT PyCodeObject* PyAST_CompileObject(_mod* mod, PyObject* pyfilename,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   PyObject* pyast = PyAST_mod2obj(mod);
+  if (pyast == nullptr) return nullptr;
   Object ast(&scope, ApiHandle::fromPyObject(pyast)->asObject());
   Object filename(&scope, ApiHandle::fromPyObject(pyfilename)->asObject());
   SymbolId mode_id;

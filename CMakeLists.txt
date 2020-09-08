@@ -1145,6 +1145,7 @@ set(
   ext/Modules/getbuildinfo-test.cpp
   ext/Modules/main-test.cpp
   ext/Modules/posixmodule-test.cpp
+  ext/Modules/signalmodule-test.cpp
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/bytearrayobject-test.cpp

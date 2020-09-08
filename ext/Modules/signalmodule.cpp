@@ -1,3 +1,7 @@
+#include <csignal>
+
+#include "cpython-func.h"
+
 #include "runtime.h"
 
 namespace py {
@@ -14,7 +18,10 @@ PY_EXPORT int PyErr_CheckSignals() {
   return 0;
 }
 
-PY_EXPORT void PyErr_SetInterrupt() { UNIMPLEMENTED("PyErr_SetInterrupt"); }
+PY_EXPORT void PyErr_SetInterrupt() {
+  Thread* thread = Thread::current();
+  thread->runtime()->setPendingSignal(thread, SIGINT);
+}
 
 PY_EXPORT void PyOS_InitInterrupts() { UNIMPLEMENTED("PyOS_InitInterrupts"); }
 
