@@ -521,7 +521,7 @@ void handleSystemExit(Thread* thread) {
   // The calls below can't have an exception pending
   thread->clearPendingException();
 
-  Object result(&scope, thread->invokeMethod1(arg, ID(__repr__)));
+  Object result(&scope, thread->invokeMethod1(arg, ID(__str__)));
   if (!runtime->isInstanceOfStr(*result)) {
     // The calls below can't have an exception pending
     thread->clearPendingException();
