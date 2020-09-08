@@ -177,6 +177,16 @@ byte* Thread::stackPtr() {
   return reinterpret_cast<byte*>(current_frame_->valueStackTop());
 }
 
+void Thread::clearInterrupt() {
+  is_interrupted_ = false;
+  limit_ = start_;
+}
+
+void Thread::interrupt() {
+  limit_ = end_;
+  is_interrupted_ = true;
+}
+
 bool Thread::wouldStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
   // TODO(T36407214): Grow stack
@@ -185,8 +195,6 @@ bool Thread::wouldStackOverflow(word max_size) {
     return false;
   }
   if (is_interrupted_) {
-    limit_ = start_;
-    is_interrupted_ = false;
     runtime_->handlePendingSignals(this);
     return true;
   }

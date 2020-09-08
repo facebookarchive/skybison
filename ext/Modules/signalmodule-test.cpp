@@ -22,5 +22,17 @@ TEST_F(SignalModuleApiTest, PyErrSetInterruptTriggersInterrupt) {
   PyErr_Clear();
 }
 
+TEST_F(SignalModuleApiTest, PyErrCheckSignalsReturnsZero) {
+  EXPECT_EQ(PyErr_CheckSignals(), 0);
+}
+
+TEST_F(SignalModuleApiTest, PyErrCheckSignalsRunsSignalHandlers) {
+  PyErr_SetInterrupt();
+  EXPECT_EQ(PyErr_CheckSignals(), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyboardInterrupt));
+  PyErr_Clear();
+}
+
 }  // namespace testing
 }  // namespace py

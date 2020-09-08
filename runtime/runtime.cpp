@@ -1753,6 +1753,7 @@ const byte* Runtime::hashSecret(size_t size) {
 }
 
 RawObject Runtime::handlePendingSignals(Thread* thread) {
+  thread->clearInterrupt();
   if (!is_signal_pending_ || !thread->isMainThread()) {
     return NoneType::object();
   }

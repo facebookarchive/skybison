@@ -86,11 +86,8 @@ class Thread {
   // frame.
   byte* stackPtr();
 
-  void interrupt() {
-    limit_ = stackPtr();
-    is_interrupted_ = true;
-  }
-
+  void clearInterrupt();
+  void interrupt();
   bool isInterrupted() { return is_interrupted_; }
 
   bool isMainThread();
