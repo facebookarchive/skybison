@@ -186,11 +186,16 @@ void Utils::printDebugInfoAndAbort() {
   if (thread != nullptr) {
     thread->runtime()->printTraceback(thread, STDERR_FILENO);
     if (thread->hasPendingException()) {
+      HandleScope scope(thread);
+      Object traceback(&scope, thread->pendingExceptionTraceback());
+      // TODO(T39919701) Replace when traceback type is properly designed.
+      if (traceback.isTraceback()) {
+        traceback = Traceback::cast(*traceback).frame();
+      }
       std::cerr << "Pending exception\n  Type      : "
                 << thread->pendingExceptionType()
                 << "\n  Value     : " << thread->pendingExceptionValue()
-                << "\n  Traceback : " << thread->pendingExceptionTraceback()
-                << "\n";
+                << "\n  Traceback : " << traceback << '\n';
     }
   }
   std::abort();

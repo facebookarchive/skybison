@@ -16,6 +16,7 @@ namespace py {
 namespace testing {
 
 using UtilsTest = RuntimeFixture;
+using UtilsDeathTest = RuntimeFixture;
 
 TEST(UtilsTestNoFixture, MemoryFindWithEmptyHaystackReturnsNegativeOne) {
   byte haystack[] = "hello";
@@ -226,6 +227,22 @@ TEST(UtilsTestNoFixture, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 61), 0x2000000000000000ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 62), 0x4000000000000000ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 63), 0x8000000000000000ULL);
+}
+
+TEST_F(UtilsDeathTest, PrintDebugInfoAndAbortPrintsTraceback) {
+  ASSERT_TRUE(runFromCStr(runtime_, R"(
+raise UserWarning("foo")
+)")
+                  .isErrorException());
+  ASSERT_TRUE(thread_->pendingExceptionMatches(LayoutId::kUserWarning));
+  ASSERT_DEATH(Utils::printDebugInfoAndAbort(),
+               R"(Stack \(most recent call first\):
+Pending exception
+  Type      : <type "UserWarning">
+  Value     : <"UserWarning" object>
+  Traceback : "Traceback \(most recent call last\):
+  File "<test string>", line 2, in <module>
+)");
 }
 
 static RawObject testPrintStacktrace(Thread* thread, Frame*, word) {
