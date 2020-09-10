@@ -1020,6 +1020,57 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
   return NoneType::object();
 }
 
+RawObject typeSetDunderClass(Thread* thread, const Object& self,
+                             const Type& new_type) {
+  Runtime* runtime = thread->runtime();
+  // TODO(T60761420): A module can't change its type since its attributes are
+  // cached based on object identity (and not layout id). This needs extra
+  // cache invalidation code here to support it.
+  if (runtime->isInstanceOfModule(*self)) {
+    UNIMPLEMENTED("Cannot change type of modules");
+  }
+
+  HandleScope scope(thread);
+  Type instance_type(&scope, runtime->typeOf(*self));
+  // Builtin base type must match
+  if (instance_type.builtinBase() != new_type.builtinBase()) {
+    Str type_name(&scope, new_type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "__class__ assignment '%T' object layout differs from '%S'", &self,
+        &type_name);
+  }
+
+  // Handle C Extension types
+  if (instance_type.hasFlag(RawType::Flag::kHasNativeData) &&
+      new_type.hasFlag(RawType::Flag::kHasNativeData)) {
+    // TODO(T60752528): Handle __class__ setter for C Extension Types
+    UNIMPLEMENTED("Check if native memory is compatible");
+  } else if (instance_type.hasFlag(RawType::Flag::kHasNativeData) !=
+             new_type.hasFlag(RawType::Flag::kHasNativeData)) {
+    Str type_name(&scope, new_type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "__class__ assignment '%T' object layout differs from '%S'", &self,
+        &type_name);
+  }
+
+  // Change the cache key for LOAD_ATTR_TYPE
+  if (runtime->isInstanceOfType(*self)) {
+    Type type(&scope, *self);
+    type.setInstanceLayout(new_type.instanceLayout());
+    type.setInstanceLayoutId(new_type.instanceLayoutId());
+  }
+
+  // Transition the layout
+  Instance instance(&scope, *self);
+  Layout from_layout(&scope, runtime->layoutOf(*instance));
+  Layout new_layout(
+      &scope, runtime->layoutSetDescribedType(thread, from_layout, new_type));
+  instance.setLayoutId(new_layout.id());
+  return NoneType::object();
+}
+
 static const BuiltinAttribute kTypeAttributes[] = {
     {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
     {ID(_type__bases), RawType::kBasesOffset, AttributeFlags::kHidden},

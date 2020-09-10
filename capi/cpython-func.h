@@ -224,6 +224,7 @@ PyAPI_FUNC_DECL(void Py_LeaveRecursiveCall_Func(void));
 PyAPI_FUNC_DECL(Py_ssize_t* Py_REFCNT_Func(PyObject*));
 PyAPI_FUNC_DECL(Py_ssize_t* Py_SIZE_Func(PyVarObject*));
 PyAPI_FUNC_DECL(PyTypeObject* Py_TYPE_Func(PyObject* obj));
+PyAPI_FUNC_DECL(void Py_SET_TYPE_Func(PyObject* obj, PyTypeObject* type));
 PyAPI_FUNC_DECL(int Py_UNICODE_ISALPHA_Func(Py_UCS4));
 PyAPI_FUNC_DECL(int Py_UNICODE_ISDECIMAL_Func(Py_UCS4));
 PyAPI_FUNC_DECL(int Py_UNICODE_ISDIGIT_Func(Py_UCS4));
@@ -1623,6 +1624,7 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 #define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
 #define Py_SIZE(obj) (*Py_SIZE_Func((PyVarObject*)(obj)))
 #define Py_TYPE(obj) Py_TYPE_Func((PyObject*)(obj))
+#define Py_SET_TYPE(obj, type) Py_SET_TYPE_Func((PyObject*)(obj), type)
 #define PyExceptionClass_Check(obj)                                            \
   PyExceptionClass_Check_Func((PyObject*)(obj))
 #define PyExceptionInstance_Class(obj)                                         \

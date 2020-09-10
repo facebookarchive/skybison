@@ -2530,6 +2530,47 @@ TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsSameTypeForSmallAndLarge) {
   EXPECT_EQ(type1, type2);
 }
 
+#ifndef Py_SET_TYPE
+#define Py_SET_TYPE(obj, type) ((Py_TYPE(obj) = (type)), (void)0)
+#endif
+
+TEST_F(AbstractExtensionApiTest, PySETTYPEWithObjectSetsType) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+class D:
+  pass
+instance = C()
+)");
+  PyObjectPtr class_c(mainModuleGet("C"));
+  PyObjectPtr class_d(mainModuleGet("D"));
+  PyObjectPtr instance(mainModuleGet("instance"));
+  EXPECT_TRUE(PyObject_IsInstance(instance, class_c));
+  // The instance must have an owned reference to D
+  Py_INCREF(class_d);
+  Py_SET_TYPE(instance.get(), class_d.asTypeObject());
+  EXPECT_TRUE(PyObject_IsInstance(instance, class_d));
+}
+
+TEST_F(AbstractExtensionApiTest, PySETTYPEWithTypeObjectSetsMetaclass) {
+  PyRun_SimpleString(R"(
+class M(type):
+  pass
+class C(metaclass=M):
+  pass
+class D(type):
+  pass
+)");
+  PyObjectPtr class_m(mainModuleGet("M"));
+  PyObjectPtr class_c(mainModuleGet("C"));
+  PyObjectPtr class_d(mainModuleGet("D"));
+  EXPECT_TRUE(PyObject_IsInstance(class_c, class_m));
+  // The instance must have an owned reference to D
+  Py_INCREF(class_d);
+  Py_SET_TYPE(class_c.get(), class_d.asTypeObject());
+  EXPECT_TRUE(PyObject_IsInstance(class_c, class_d));
+}
+
 // Sequence Protocol
 
 TEST_F(AbstractExtensionApiTest,

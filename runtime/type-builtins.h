@@ -100,6 +100,12 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
                       const Object& value);
 
+// Sets __class__ of self to new_type.
+// Returns None on success.
+// Raises an exception and returns Error::exception() otherwise.
+RawObject typeSetDunderClass(Thread* thread, const Object& self,
+                             const Type& new_type);
+
 // Terminate the process if cache invalidation for updating attr_name in type
 // objects is unimplemented.
 void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,

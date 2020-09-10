@@ -1119,6 +1119,23 @@ PY_EXPORT PyTypeObject* Py_TYPE_Func(PyObject* pyobj) {
       ApiHandle::borrowedReference(thread, thread->runtime()->typeOf(*obj)));
 }
 
+PY_EXPORT void Py_SET_TYPE_Func(PyObject* obj, PyTypeObject* type) {
+  DCHECK(obj != nullptr, "obj must be non-null");
+  DCHECK(type != nullptr, "type must be non-null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object self(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Type new_type(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
+  Type instance_type(&scope, thread->runtime()->typeOf(*self));
+  if (instance_type.isBuiltin()) {
+    UNIMPLEMENTED("Py_SET_TYPE on builtin type");
+  }
+  Object result(&scope, typeSetDunderClass(thread, self, new_type));
+  if (result.isError()) {
+    UNIMPLEMENTED("unhandled case in __class__ setter");
+  }
+}
+
 PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
   Thread* thread = Thread::current();
   if (pyobj == nullptr) {
