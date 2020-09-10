@@ -774,16 +774,19 @@ TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
   EXPECT_TRUE(std::isnan(remainder.value()));
 }
 
-TEST_F(UnderBuiltinsModuleTest,
-       UnderObjectDunderClassSetterWithTypeSelfDeathTest) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
+TEST_F(UnderBuiltinsModuleTest, UnderObjectDunderClassSetterWithTypeSelf) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class M(type):
   pass
 class C(metaclass=M):
   pass
 C.__class__ = type
-)")),
-               "Cannot change type of types and modules");
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_->typeAt(LayoutId::kType));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  EXPECT_EQ(type.instanceLayoutId(), c.instanceLayoutId());
 }
 
 // TODO(T64924852): Once module.__setattr__ is fixed, write death test for

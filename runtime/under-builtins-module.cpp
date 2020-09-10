@@ -3647,11 +3647,11 @@ RawObject FUNC(_builtins, _object_class_set)(Thread* thread, Frame* frame,
         "__class__ assignment only supported for user types");
   }
 
-  // TODO(T60761420): A type or module can't change its type since their
-  // attributes are cached based on object identity (and not layout id).
-  // This needs extra cache invalidation code here to support it.
-  if (runtime->isInstanceOfModule(*self) || runtime->isInstanceOfType(*self)) {
-    UNIMPLEMENTED("Cannot change type of types and modules");
+  // TODO(T60761420): A module can't change its type since its attributes are
+  // cached based on object identity (and not layout id). This needs extra
+  // cache invalidation code here to support it.
+  if (runtime->isInstanceOfModule(*self)) {
+    UNIMPLEMENTED("Cannot change type of modules");
   }
 
   // The new class must be an instance of type
@@ -3684,6 +3684,13 @@ RawObject FUNC(_builtins, _object_class_set)(Thread* thread, Frame* frame,
         LayoutId::kTypeError,
         "__class__ assignment '%T' object layout differs from '%S'", &self,
         &type_name);
+  }
+
+  // Change the cache key for LOAD_ATTR_TYPE
+  if (runtime->isInstanceOfType(*self)) {
+    Type type(&scope, *self);
+    type.setInstanceLayout(new_type.instanceLayout());
+    type.setInstanceLayoutId(new_type.instanceLayoutId());
   }
 
   // Transition the layout
