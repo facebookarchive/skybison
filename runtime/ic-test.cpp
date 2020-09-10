@@ -511,8 +511,7 @@ y(a)
   ValueCell bar_in_a(&scope, typeValueCellAt(type_a, bar_name));
   ASSERT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
-  LayoutId type_a_instance_layout_id =
-      Layout::cast(type_a.instanceLayout()).id();
+  LayoutId type_a_instance_layout_id = type_a.instanceLayoutId();
   // Try to delete dependent_y under name "foo". Nothing happens.
   icDeleteDependentFromInheritingTypes(thread_, type_a_instance_layout_id,
                                        foo_name, type_a, dependent_y);
@@ -661,8 +660,7 @@ x(c)
   Type type_c(&scope, mainModuleAt(runtime_, "C"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
-  LayoutId type_c_instance_layout_id =
-      Layout::cast(type_c.instanceLayout()).id();
+  LayoutId type_c_instance_layout_id = type_c.instanceLayoutId();
   // Check if A.foo is not retrived from C.foo.
   EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(
       thread_, type_c_instance_layout_id, foo_name, type_a));

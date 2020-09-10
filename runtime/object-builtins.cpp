@@ -543,6 +543,7 @@ static void addObjectType(Thread* thread) {
   Tuple mro(&scope, runtime->newTupleWith1(type));
   type.setMro(*mro);
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   type.setBases(runtime->emptyTuple());
 
   // Manually create `__getattribute__` method to avoid bootstrap problems.

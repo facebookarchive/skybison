@@ -1198,6 +1198,9 @@ class RawType : public RawInstance {
   RawObject instanceLayout() const;
   void setInstanceLayout(RawObject layout) const;
 
+  LayoutId instanceLayoutId() const;
+  void setInstanceLayoutId(LayoutId id) const;
+
   RawObject bases() const;
   void setBases(RawObject bases_tuple) const;
 
@@ -1260,15 +1263,13 @@ class RawType : public RawInstance {
   // immutable, its parents' dicts are immutable too.
   bool hasMutableDict() const;
 
-  // Seal the attributes of the type. Sets the layout's overflowAttributes to
-  // RawNoneType::object().
-  void sealAttributes() const;
-
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
   static const int kBasesOffset = kMroOffset + kPointerSize;
   static const int kInstanceLayoutOffset = kBasesOffset + kPointerSize;
-  static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
+  static const int kInstanceLayoutIdOffset =
+      kInstanceLayoutOffset + kPointerSize;
+  static const int kNameOffset = kInstanceLayoutIdOffset + kPointerSize;
   static const int kDocOffset = kNameOffset + kPointerSize;
   static const int kFlagsOffset = kDocOffset + kPointerSize;
   static const int kAttributesOffset = kFlagsOffset + kPointerSize;
@@ -5128,6 +5129,16 @@ inline void RawType::setInstanceLayout(RawObject layout) const {
   instanceVariableAtPut(kInstanceLayoutOffset, layout);
 }
 
+inline LayoutId RawType::instanceLayoutId() const {
+  return static_cast<LayoutId>(
+      RawSmallInt::cast(instanceVariableAt(kInstanceLayoutIdOffset)).value());
+}
+
+inline void RawType::setInstanceLayoutId(LayoutId id) const {
+  instanceVariableAtPut(kInstanceLayoutIdOffset,
+                        RawSmallInt::fromWord(static_cast<word>(id)));
+}
+
 inline RawObject RawType::name() const {
   return instanceVariableAt(kNameOffset);
 }
@@ -5231,7 +5242,7 @@ inline void RawType::setCtor(RawObject function) const {
 }
 
 inline bool RawType::isBuiltin() const {
-  return RawLayout::cast(instanceLayout()).id() <= LayoutId::kLastBuiltinId;
+  return instanceLayoutId() <= LayoutId::kLastBuiltinId;
 }
 
 inline bool RawType::isBaseExceptionSubclass() const {
@@ -5240,20 +5251,6 @@ inline bool RawType::isBaseExceptionSubclass() const {
 }
 
 inline bool RawType::hasMutableDict() const { return !isBuiltin(); }
-
-inline void RawType::sealAttributes() const {
-  RawLayout layout = RawLayout::cast(instanceLayout());
-  DCHECK(layout.additions().isList(), "Additions must be list");
-  DCHECK(RawList::cast(layout.additions()).numItems() == 0,
-         "Cannot seal a layout with outgoing edges");
-  DCHECK(layout.deletions().isList(), "Deletions must be list");
-  DCHECK(RawList::cast(layout.deletions()).numItems() == 0,
-         "Cannot seal a layout with outgoing edges");
-  DCHECK(layout.hasTupleOverflow(), "OverflowAttributes must be tuple");
-  DCHECK(RawTuple::cast(layout.overflowAttributes()).length() == 0,
-         "Cannot seal a layout with outgoing edges");
-  layout.seal();
-}
 
 // RawContext
 

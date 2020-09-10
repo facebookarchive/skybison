@@ -765,8 +765,7 @@ RawObject METH(bool, __new__)(Thread* thread, Frame* frame, word nargs) {
 
   // Since bool can't be subclassed, only need to check if the type is exactly
   // bool.
-  Layout layout(&scope, type.instanceLayout());
-  if (layout.id() != LayoutId::kBool) {
+  if (type.instanceLayoutId() != LayoutId::kBool) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "bool.__new__(X): X is not bool");
   }

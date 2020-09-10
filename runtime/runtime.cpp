@@ -2109,7 +2109,7 @@ void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
 }
 
 void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
-  LayoutId layout_id = Layout::cast(type.instanceLayout()).id();
+  LayoutId layout_id = type.instanceLayoutId();
   switch (layout_id) {
     case LayoutId::kObject:
       object_dunder_getattribute_ =

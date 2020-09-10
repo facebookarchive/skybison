@@ -90,6 +90,7 @@ static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
   type.setName(runtime->symbols()->at(name));
   Type superclass(&scope, runtime->typeAt(superclass_id));
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   Type::Flag flags =
       static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
   type.setFlagsAndBuiltinBase(flags, builtin_base);
@@ -151,7 +152,7 @@ RawObject findBuiltinTypeWithName(Thread* thread, const Object& name) {
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
   if (type.isBuiltin()) {
-    LayoutId layout_id = Layout::cast(type.instanceLayout()).id();
+    LayoutId layout_id = type.instanceLayoutId();
     return layout_id == LayoutId::kProperty ||
            layout_id == LayoutId::kSlotDescriptor;
   }
@@ -161,7 +162,7 @@ bool typeIsDataDescriptor(Thread* thread, const Type& type) {
 
 bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
   if (type.isBuiltin()) {
-    switch (Layout::cast(type.instanceLayout()).id()) {
+    switch (type.instanceLayoutId()) {
       case LayoutId::kClassMethod:
       case LayoutId::kFunction:
       case LayoutId::kProperty:
@@ -772,8 +773,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     return *fixed_attr_base_obj;
   }
   Type fixed_attr_base_type(&scope, *fixed_attr_base_obj);
-  LayoutId fixed_attr_base =
-      Layout::cast(fixed_attr_base_type.instanceLayout()).id();
+  LayoutId fixed_attr_base = fixed_attr_base_type.instanceLayoutId();
 
   // Analyze bases: Merge flags; add to subclasses lists; check for attribute
   // dictionaries.
@@ -870,6 +870,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // Initialize instance layout.
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
 
   if (has_non_empty_dunder_slots) {
     flags |= Type::Flag::kHasSlots;
@@ -1023,6 +1024,8 @@ static const BuiltinAttribute kTypeAttributes[] = {
     {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
     {ID(_type__bases), RawType::kBasesOffset, AttributeFlags::kHidden},
     {ID(_type__instance_layout), RawType::kInstanceLayoutOffset,
+     AttributeFlags::kHidden},
+    {ID(_type__instance_layout_id), RawType::kInstanceLayoutIdOffset,
      AttributeFlags::kHidden},
     {ID(__name__), RawType::kNameOffset},
     {ID(__doc__), RawType::kDocOffset},

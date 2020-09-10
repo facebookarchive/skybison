@@ -199,7 +199,7 @@ static RawObject replaceNonTypeBases(Thread* thread, const Tuple& bases) {
 static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Object ctor(&scope, NoneType::object());
-  LayoutId layout_id = Layout::cast(type.instanceLayout()).id();
+  LayoutId layout_id = type.instanceLayoutId();
   Runtime* runtime = thread->runtime();
   if (layout_id == LayoutId::kStopIteration) {
     Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));

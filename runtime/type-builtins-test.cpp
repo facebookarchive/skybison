@@ -464,8 +464,8 @@ b = type.__new__(type, "hello");
   Type a(&scope, mainModuleAt(runtime_, "a"));
   Type b(&scope, mainModuleAt(runtime_, "b"));
 
-  EXPECT_EQ(Layout::cast(a.instanceLayout()).id(), LayoutId::kInt);
-  EXPECT_EQ(Layout::cast(b.instanceLayout()).id(), LayoutId::kStr);
+  EXPECT_EQ(a.instanceLayoutId(), LayoutId::kInt);
+  EXPECT_EQ(b.instanceLayoutId(), LayoutId::kStr);
 }
 
 TEST_F(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
@@ -477,7 +477,7 @@ a = type.__new__(type, Foo);
 )")
                    .isError());
   Type a(&scope, mainModuleAt(runtime_, "a"));
-  EXPECT_EQ(Layout::cast(a.instanceLayout()).id(), LayoutId::kType);
+  EXPECT_EQ(a.instanceLayoutId(), LayoutId::kType);
 }
 
 TEST_F(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
@@ -828,6 +828,7 @@ static RawObject newExtensionType(PyObject* extension_type) {
   layout.setNumInObjectAttributes(3);
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   type.setFlagsAndBuiltinBase(RawType::Flag::kHasNativeData, LayoutId::kObject);
 
   extension_type->reference_ = type.raw();

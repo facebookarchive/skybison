@@ -5588,7 +5588,7 @@ RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Type metaclass(&scope, args.get(0));
   Tuple bases(&scope, args.get(1));
-  LayoutId metaclass_id = Layout::cast(metaclass.instanceLayout()).id();
+  LayoutId metaclass_id = metaclass.instanceLayoutId();
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());

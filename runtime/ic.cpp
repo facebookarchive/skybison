@@ -124,8 +124,7 @@ void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word index,
   DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_ANAMORPHIC,
          "current opcode must be LOAD_ATTR_ANAMORPHIC");
   bytecode.byteAtPut(pc, LOAD_ATTR_TYPE);
-  LayoutId layout_id =
-      Layout::cast(receiver.rawCast<RawType>().instanceLayout()).id();
+  LayoutId layout_id = receiver.rawCast<RawType>().instanceLayoutId();
   insertDependencyForTypeLookupInMro(thread, layout_id, selector, dependent);
 }
 

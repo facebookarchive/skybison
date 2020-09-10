@@ -519,6 +519,7 @@ TEST_F(HeapProfilerTest, WriteClassDumpWithOverflowAttributes) {
   Type type(&scope, runtime_->newType());
   type.setName(SmallStr::fromCStr("C"));
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   layout.setDescribedType(*type);
 
   Vector<byte> result;
@@ -579,6 +580,7 @@ TEST_F(HeapProfilerTest, WriteClassDumpWithDictOverflow) {
   Type type(&scope, runtime_->newType());
   type.setName(SmallStr::fromCStr("C"));
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   layout.setDescribedType(*type);
 
   Vector<byte> result;
@@ -631,6 +633,7 @@ TEST_F(HeapProfilerTest, WriteInstanceWithDictOverflow) {
   Type type(&scope, runtime_->newType());
   type.setName(SmallStr::fromCStr("C"));
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   layout.setDescribedType(*type);
 
   // Make an instance with an overflow attribute
@@ -674,6 +677,7 @@ TEST_F(HeapProfilerTest, WriteInstanceWithOverflowAttributes) {
   Type type(&scope, runtime_->newType());
   type.setName(SmallStr::fromCStr("C"));
   type.setInstanceLayout(*empty);
+  type.setInstanceLayoutId(empty.id());
   empty.setDescribedType(*type);
 
   // Make an instance with an overflow attribute

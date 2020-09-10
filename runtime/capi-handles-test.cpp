@@ -33,6 +33,7 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   layout.setNumInObjectAttributes(3);
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
   type.setFlagsAndBuiltinBase(RawType::Flag::kHasNativeData, LayoutId::kObject);
 
   pyobj->reference_ = type.raw();
