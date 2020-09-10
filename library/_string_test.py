@@ -84,6 +84,43 @@ class FormatterFieldNameSplitTests(unittest.TestCase):
         self.assertTrue(res == "" or res == 0)
         self.assertEqual(tuple(it), ((False, 2),))
 
+    def test_select_attr_from_name(self):
+        res, it = formatter_field_name_split("hello.attr")
+        self.assertEqual(res, "hello")
+        self.assertEqual(tuple(it), ((True, "attr"),))
+
+    def test_select_multiple_attr_from_name(self):
+        res, it = formatter_field_name_split("hello.first.second.third")
+        self.assertEqual(res, "hello")
+        self.assertEqual(
+            tuple(it), ((True, "first"), (True, "second"), (True, "third"))
+        )
+
+    def test_select_attr_from_number(self):
+        res, it = formatter_field_name_split("0.attr")
+        self.assertEqual(res, 0)
+        self.assertEqual(tuple(it), ((True, "attr"),))
+
+    def test_select_attr_from_name_and_index_with_subscript(self):
+        res1, it1 = formatter_field_name_split("hello.attr[2]")
+        res2, it2 = formatter_field_name_split("hello[2].attr")
+        self.assertEqual(res1, res2, "hello")
+        self.assertEqual(tuple(it1), ((True, "attr"), (False, 2)))
+        self.assertEqual(tuple(it2), ((False, 2), (True, "attr")))
+
+    def test_select_attr_from_number_and_index_with_subscript(self):
+        res1, it1 = formatter_field_name_split("0.attr[2]")
+        res2, it2 = formatter_field_name_split("0[2].attr")
+        self.assertEqual(res1, res2, 0)
+        self.assertEqual(tuple(it1), ((True, "attr"), (False, 2)))
+        self.assertEqual(tuple(it2), ((False, 2), (True, "attr")))
+
+    def test_missing_attr_raises_value_error(self):
+        res, it = formatter_field_name_split("hello.")
+        with self.assertRaises(ValueError) as context:
+            it.__next__()
+        self.assertEqual(str(context.exception), "Empty attribute in format string")
+
     def test_simple_string_returns_string_iter_tuple(self):
         res, it = formatter_field_name_split("foo")
         self.assertEqual(res, "foo")

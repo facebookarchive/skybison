@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from _builtins import _str_from_str, _str_guard, _str_len, _unimplemented
+from _builtins import _str_from_str, _str_guard, _str_len
 
 
 _empty_iterator = iter(())
@@ -18,8 +18,20 @@ class _SubscriptParser:
         field_name = self.field_name
         if not field_name:
             raise StopIteration
-        if field_name[0] != "[":
+        if field_name[0] != "[" and field_name[0] != ".":
             raise ValueError("Only '.' or '[' may follow ']' in format field specifier")
+        if field_name[0] == ".":
+            right_idx = find_arg_end(field_name[1:])
+            subscript = (
+                field_name[self.idx + 1 :]
+                if right_idx == -1
+                else field_name[self.idx + 1 : right_idx + 1]
+            )
+            if subscript == "":
+                raise ValueError("Empty attribute in format string")
+            self.field_name = "" if right_idx == -1 else field_name[right_idx + 1 :]
+            self.idx = 0
+            return (True, subscript)
         right_idx = field_name.find("]")
         if right_idx == -1:
             raise ValueError("Missing ']' in format string")
@@ -27,14 +39,29 @@ class _SubscriptParser:
         if subscript == "":
             raise ValueError("Empty attribute in format string")
         self.field_name = field_name[right_idx + 1 :]
-        self.idx = self.field_name.find("[")
+        self.idx = 0
         return (False, int(subscript) if subscript.isdigit() else subscript)
+
+
+def find_arg_end(field_name):
+    """
+    Returns the index of the end of an attribute name or element index.
+    field_name:   the field being looked up, e.g. "0.name"
+                  or "lookup[3]"
+    """
+    dot_idx = field_name.find(".")
+    lbrack_idx = field_name.find("[")
+    if dot_idx == -1:
+        return lbrack_idx
+    if lbrack_idx == -1:
+        return dot_idx
+    return min(dot_idx, lbrack_idx)
 
 
 def formatter_field_name_split(field_name):
     _str_guard(field_name)
 
-    idx = field_name.find("[")
+    idx = find_arg_end(field_name)
     if idx != -1:
         field = field_name[:idx]
         if field.isdigit():
@@ -45,9 +72,6 @@ def formatter_field_name_split(field_name):
             # for more detail.
             field = 0
         return (field, _SubscriptParser(field_name[idx:], 0))
-
-    if "." in field_name:
-        _unimplemented()
 
     if field_name.isdigit():
         field_name = int(field_name)
