@@ -93,14 +93,7 @@ class TimeTool(SequentialPerformanceTool):
         )
         completed_process = run(command, stdout=subprocess.PIPE)
         time_output = completed_process.stdout.strip()
-        time_outputs = time_output.split("\n")
-        # The 2to3 benchmark will generate some garbage output.
-        # Use a "pyro: " prefix to extract only the pyro output.
-        events = [
-            event.lstrip("pyro: ").split(" , ")
-            for event in time_outputs
-            if event.startswith("pyro: ")
-        ]
+        events = [event.split(" , ") for event in time_output.split("\n")]
         result = {event[0]: event[1] for event in events}
         if "time_sec" in result:
             result["time_sec"] = float(result["time_sec"])

@@ -97,15 +97,15 @@ class TimeTool:
             repetitions -= 1
         if self.reps == 1:
             return {
-                "pyro: time_sec": tm_results[0],
-                "pyro: num_iters": total_iters,
-                "pyro: num_repetitions": self.reps,
+                "time_sec": tm_results[0],
+                "num_iters": total_iters,
+                "num_repetitions": self.reps,
             }
         return {
-            "pyro: time_sec_mean": TimeTool.mean(tm_results),
-            "pyro: time_sec_stdev": TimeTool.stdev(tm_results),
-            "pyro: num_iters": total_iters,
-            "pyro: num_repetitions": self.reps,
+            "time_sec_mean": TimeTool.mean(tm_results),
+            "time_sec_stdev": TimeTool.stdev(tm_results),
+            "num_iters": total_iters,
+            "num_repetitions": self.reps,
         }
 
 
