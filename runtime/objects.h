@@ -1,3 +1,15 @@
+// Object structures
+// -----------------
+//
+// This file describes the layout of built-in types on the managed heap. There
+// is one class for each type providing an abstraction over a simple pointer.
+// Each class provides constants for field offsets and a getter and setter
+// function for each field.
+//
+// There should be a public getter and setter for every field using RawObject
+// or word types. The code is meant to abstract over the layout, not to provide
+// abstract data types: Do not add further type or consistency checks and leave
+// that to higher levels.
 #pragma once
 
 #include <cstdio>
