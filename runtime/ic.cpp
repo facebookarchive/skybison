@@ -116,7 +116,10 @@ void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word index,
                       const Object& value, const Function& dependent) {
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
   word i = index * kIcPointersPerEntry;
-  caches.atPut(i + kIcEntryKeyOffset, *receiver);
+  HandleScope scope(thread);
+  Type type(&scope, *receiver);
+  word id = static_cast<word>(type.instanceLayoutId());
+  caches.atPut(i + kIcEntryKeyOffset, SmallInt::fromWord(id));
   caches.atPut(i + kIcEntryValueOffset, *value);
   RawMutableBytes bytecode =
       RawMutableBytes::cast(dependent.rewrittenBytecode());

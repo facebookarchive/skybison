@@ -3793,12 +3793,16 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
   RawObject receiver = frame->topValue();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   word index = arg * kIcPointersPerEntry;
-  RawObject type = caches.at(index + kIcEntryKeyOffset);
-  if (receiver == type) {
-    RawObject result = caches.at(index + kIcEntryValueOffset);
-    DCHECK(result.isValueCell(), "cached value is not a value cell");
-    frame->setTopValue(ValueCell::cast(result).value());
-    return Continue::NEXT;
+  RawObject layout_id = caches.at(index + kIcEntryKeyOffset);
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfType(receiver)) {
+    word id = static_cast<word>(receiver.rawCast<RawType>().instanceLayoutId());
+    if (SmallInt::fromWord(id) == layout_id) {
+      RawObject result = caches.at(index + kIcEntryValueOffset);
+      DCHECK(result.isValueCell(), "cached value is not a value cell");
+      frame->setTopValue(ValueCell::cast(result).value());
+      return Continue::NEXT;
+    }
   }
   return retryLoadAttrCached(thread, arg);
 }

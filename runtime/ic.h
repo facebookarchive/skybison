@@ -382,10 +382,6 @@ class IcIterator {
 
   LayoutId layoutId() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");
-    if (bytecode_op_.bc == LOAD_ATTR_TYPE) {
-      RawType type = key().rawCast<RawType>();
-      return type.instanceLayoutId();
-    }
     return static_cast<LayoutId>(SmallInt::cast(key()).value());
   }
 
