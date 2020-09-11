@@ -51,15 +51,33 @@ void initializeDescriptorTypes(Thread* thread) {
 
 // classmethod
 
-RawObject METH(classmethod, __new__)(Thread* thread, Frame*, word) {
-  return thread->runtime()->newClassMethod();
+RawObject METH(classmethod, __new__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object type_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
+  }
+  Type type(&scope, *type_obj);
+  if (type.builtinBase() != LayoutId::kClassMethod) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of classmethod");
+  }
+  Layout layout(&scope, type.instanceLayout());
+  ClassMethod result(&scope, runtime->newInstance(layout));
+  return *result;
 }
 
 RawObject METH(classmethod, __init__)(Thread* thread, Frame* frame,
                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ClassMethod classmethod(&scope, args.get(0));
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfClassMethod(*self)) {
+    return thread->raiseRequiresType(self, ID(classmethod));
+  }
+  ClassMethod classmethod(&scope, *self);
   Object arg(&scope, args.get(1));
   classmethod.setFunction(*arg);
   return NoneType::object();
@@ -68,11 +86,16 @@ RawObject METH(classmethod, __init__)(Thread* thread, Frame* frame,
 RawObject METH(classmethod, __get__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfClassMethod(*self)) {
+    return thread->raiseRequiresType(self, ID(classmethod));
+  }
   Object owner(&scope, args.get(2));
 
-  Object method(&scope, ClassMethod::cast(*self).function());
-  return thread->runtime()->newBoundMethod(method, owner);
+  ClassMethod classmethod(&scope, *self);
+  Object method(&scope, classmethod.function());
+  return runtime->newBoundMethod(method, owner);
 }
 
 // slot_descriptor

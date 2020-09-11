@@ -4916,6 +4916,66 @@ class ClassMethodTests(unittest.TestCase):
 
         C.bar.__getattribute__("__call__")
 
+    def test_dunder_get_returns_value(self):
+        class C:
+            @classmethod
+            def bar(cls):
+                return 5
+
+        self.assertEqual(C.bar(), 5)
+
+    def test_dunder_get_with_subclassed_classmethod_returns_value(self):
+        class foo(classmethod):
+            pass
+
+        class C:
+            @foo
+            def bar(self):
+                return 5
+
+        self.assertEqual(C.bar(), 5)
+
+    def test_dunder_get_called_with_non_classmethod_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            classmethod.__get__(42.3, None, bar)
+        self.assertIn(
+            "'__get__' requires a 'classmethod' object but received a 'float'",
+            str(context.exception),
+        )
+
+    def test_dunder_new_called_with_non_type_object_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            classmethod.__new__(42.3, bar)
+        self.assertIn("not a type object", str(context.exception))
+
+    def test_dunder_new_called_with_non_subtype_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            classmethod.__new__(float, bar)
+        self.assertIn("not a subtype of classmethod", str(context.exception))
+
+    def test_dunder_new_with_subclassed_classmethod_returns_instance_of_superclass(
+        self,
+    ):
+        class foo(classmethod):
+            pass
+
+        def bar():
+            pass
+
+        self.assertIsInstance(classmethod.__new__(foo, bar), foo)
+
 
 class CodeTests(unittest.TestCase):
     def foo(self):
