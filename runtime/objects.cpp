@@ -761,7 +761,7 @@ RawObject RawMutableBytes::becomeStr() const {
 void RawMutableTuple::fill(RawObject value) const {
   word len = length();
   if (value.isNoneType()) {
-    initialize();
+    std::memset(reinterpret_cast<byte*>(address()), -1, len * kWordSize);
     return;
   }
   for (word i = 0; i < len; i++) {

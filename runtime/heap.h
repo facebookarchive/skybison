@@ -12,9 +12,11 @@ class Heap {
   explicit Heap(word size);
   ~Heap();
 
-  RawObject allocate(word size, word offset);
+  // Returns true if allocation succeeded and writes output address + offset to
+  // *address. Returns false otherwise.
+  bool allocate(word size, word offset, uword* address);
 
-  bool contains(RawObject address);
+  bool contains(uword address);
   bool verify();
 
   Space* space() { return space_; }
@@ -27,8 +29,6 @@ class Heap {
   RawObject createType(LayoutId metaclass_id);
 
   RawObject createComplex(double real, double imag);
-
-  RawObject createDict();
 
   RawObject createFloat(double value);
 

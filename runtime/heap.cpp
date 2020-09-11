@@ -18,28 +18,27 @@ static word allocationSize() {
   return T::kSize + RawHeader::kSize;
 }
 
-RawObject Heap::allocate(word size, word offset) {
+bool Heap::allocate(word size, word offset, uword* address) {
   DCHECK(size >= RawHeapObject::kMinimumSize, "allocation %ld too small", size);
   DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
   // Try allocating.  If the allocation fails, invoke the garbage collector and
   // retry the allocation.
   for (word attempt = 0; attempt < 2 && size < space_->size(); attempt++) {
-    uword address = space_->allocate(size);
-    if (address != 0) {
+    uword result = space_->allocate(size);
+    if (result != 0) {
       // Allocation succeeded return the address as an object.
-      return HeapObject::fromAddress(address + offset);
+      *address = result + offset;
+      return true;
     }
     if (attempt == 0) {
       // Allocation failed, garbage collect and retry the allocation.
       Thread::current()->runtime()->collectGarbage();
     }
   }
-  return Error::outOfMemory();
+  return false;
 }
 
-bool Heap::contains(RawObject address) {
-  return space_->contains(address.raw());
-}
+bool Heap::contains(uword address) { return space_->contains(address); }
 
 bool Heap::verify() {
   uword scan = space_->start();
@@ -85,154 +84,116 @@ bool Heap::verify() {
 }
 
 RawObject Heap::createType(LayoutId metaclass_id) {
-  RawObject raw = allocate(allocationSize<RawType>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawType>();
-  result.setHeader(Header::from(RawType::kSize / kPointerSize, 0, metaclass_id,
-                                ObjectFormat::kObjects));
-  result.initialize(RawType::kSize, NoneType::object());
+  uword address;
+  CHECK(allocate(allocationSize<RawType>(), RawHeader::kSize, &address),
+        "out of memory");
+  word num_attributes = RawType::kSize / kPointerSize;
+  RawObject result = Instance::initialize(address, num_attributes, metaclass_id,
+                                          NoneType::object());
   DCHECK(Thread::current()->runtime()->isInstanceOfType(result),
          "Invalid Type");
   return result;
 }
 
 RawObject Heap::createComplex(double real, double imag) {
-  RawObject raw = allocate(allocationSize<RawComplex>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawComplex>();
-  result.setHeader(Header::from(RawComplex::kSize, 0, LayoutId::kComplex,
-                                ObjectFormat::kData));
-  result.initialize(real, imag);
-  return Complex::cast(result);
-}
-
-RawObject Heap::createDict() {
-  word num_attributes = Dict::kSize / kPointerSize;
-  word size = Instance::allocationSize(num_attributes);
-  RawObject raw = allocate(size, HeapObject::headerSize(num_attributes));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawInstance>();
-  result.setHeaderAndOverflow(num_attributes, 0, LayoutId::kDict,
-                              ObjectFormat::kObjects);
-  return result;
+  uword address;
+  CHECK(allocate(allocationSize<RawComplex>(), RawHeader::kSize, &address),
+        "out of memory");
+  return Complex::cast(Complex::initialize(address, real, imag));
 }
 
 RawObject Heap::createFloat(double value) {
-  RawObject raw = allocate(allocationSize<RawFloat>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawFloat>();
-  result.setHeader(
-      Header::from(RawFloat::kSize, 0, LayoutId::kFloat, ObjectFormat::kData));
-  result.initialize(value);
-  return Float::cast(result);
+  uword address;
+  CHECK(allocate(allocationSize<RawFloat>(), RawHeader::kSize, &address),
+        "out of memory");
+  return Float::cast(Float::initialize(address, value));
 }
 
 RawObject Heap::createEllipsis() {
-  RawObject raw = allocate(allocationSize<RawEllipsis>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawEllipsis>();
-  result.setHeader(Header::from(RawEllipsis::kSize, 0, LayoutId::kEllipsis,
-                                ObjectFormat::kData));
-  return Ellipsis::cast(result);
+  uword address;
+  CHECK(allocate(allocationSize<RawEllipsis>(), RawHeader::kSize, &address),
+        "out of memory");
+  return Ellipsis::cast(Ellipsis::initialize(address));
 }
 
 RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
-  RawObject raw = allocate(size, HeapObject::headerSize(num_attributes));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawInstance>();
-  result.setHeaderAndOverflow(num_attributes, 0, layout_id,
-                              ObjectFormat::kObjects);
-  result.initialize(num_attributes * kPointerSize, NoneType::object());
-  return result;
+  uword address;
+  CHECK(allocate(size, HeapObject::headerSize(num_attributes), &address),
+        "out of memory");
+  return Instance::cast(Instance::initialize(address, num_attributes, layout_id,
+                                             NoneType::object()));
 }
 
 RawObject Heap::createLargeBytes(word length) {
   DCHECK(length > SmallBytes::kMaxLength, "fits into a SmallBytes");
   word size = LargeBytes::allocationSize(length);
-  RawObject raw = allocate(size, LargeBytes::headerSize(length));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawLargeBytes>();
-  result.setHeaderAndOverflow(length, 0, LayoutId::kLargeBytes,
-                              ObjectFormat::kData);
-  return LargeBytes::cast(result);
+  uword address;
+  CHECK(allocate(size, LargeBytes::headerSize(length), &address),
+        "out of memory");
+  return LargeBytes::cast(
+      DataArray::initialize(address, length, LayoutId::kLargeBytes));
 }
 
 RawObject Heap::createLargeInt(word num_digits) {
   DCHECK(num_digits > 0, "num_digits must be positive");
   word size = LargeInt::allocationSize(num_digits);
-  RawObject raw = allocate(size, LargeInt::headerSize(num_digits));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawLargeInt>();
-  result.setHeaderAndOverflow(num_digits * kWordSize, 0, LayoutId::kLargeInt,
-                              ObjectFormat::kData);
-  return LargeInt::cast(result);
+  uword address;
+  CHECK(allocate(size, LargeInt::headerSize(num_digits), &address),
+        "out of memory");
+  return LargeInt::cast(LargeInt::initialize(address, num_digits));
 }
 
 RawObject Heap::createLargeStr(word length) {
   DCHECK(length > RawSmallStr::kMaxLength,
          "string len %ld is too small to be a large string", length);
   word size = LargeStr::allocationSize(length);
-  RawObject raw = allocate(size, LargeStr::headerSize(length));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawLargeStr>();
-  result.setHeaderAndOverflow(length, 0, LayoutId::kLargeStr,
-                              ObjectFormat::kData);
-  return LargeStr::cast(result);
+  uword address;
+  CHECK(allocate(size, LargeStr::headerSize(length), &address),
+        "out of memory");
+  return LargeStr::cast(
+      DataArray::initialize(address, length, LayoutId::kLargeStr));
 }
 
 RawObject Heap::createLayout(LayoutId layout_id) {
-  RawObject raw = allocate(allocationSize<RawLayout>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawLayout>();
-  result.setHeader(Header::from(RawLayout::kSize / kPointerSize,
-                                static_cast<word>(layout_id), LayoutId::kLayout,
-                                ObjectFormat::kObjects));
-  result.initialize(RawLayout::kSize, NoneType::object());
-  return Layout::cast(result);
+  uword address;
+  CHECK(allocate(allocationSize<RawLayout>(), RawHeader::kSize, &address),
+        "out of memory");
+  return Layout::cast(
+      Layout::initialize(address, layout_id, RawNoneType::object()));
 }
 
 RawObject Heap::createMutableBytes(word length) {
   DCHECK(length >= 0, "cannot allocate negative size");
   word size = MutableBytes::allocationSize(length);
-  RawObject raw = allocate(size, MutableBytes::headerSize(length));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawMutableBytes>();
-  result.setHeaderAndOverflow(length, 0, LayoutId::kMutableBytes,
-                              ObjectFormat::kData);
-  return MutableBytes::cast(result);
+  uword address;
+  CHECK(allocate(size, MutableBytes::headerSize(length), &address),
+        "out of memory");
+  return MutableBytes::cast(
+      DataArray::initialize(address, length, LayoutId::kMutableBytes));
 }
 
 RawObject Heap::createMutableTuple(word length) {
   word size = MutableTuple::allocationSize(length);
-  RawObject raw = allocate(size, HeapObject::headerSize(length));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawMutableTuple>();
-  result.setHeaderAndOverflow(length, 0, LayoutId::kMutableTuple,
-                              ObjectFormat::kObjects);
-  result.initialize();
-  return MutableTuple::cast(result);
+  uword address;
+  CHECK(allocate(size, HeapObject::headerSize(length), &address),
+        "out of memory");
+  return MutableTuple::cast(MutableTuple::initialize(address, length));
 }
 
 RawObject Heap::createPointer(void* c_ptr, word length) {
-  RawObject raw = allocate(allocationSize<RawPointer>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawPointer>();
-  result.setHeader(Header::from(RawPointer::kSize, 0, LayoutId::kPointer,
-                                ObjectFormat::kData));
-  result.initialize(c_ptr, length);
-  return Pointer::cast(result);
+  uword address;
+  CHECK(allocate(allocationSize<RawPointer>(), RawHeader::kSize, &address),
+        "out of memory");
+  return Pointer::cast(Pointer::initialize(address, c_ptr, length));
 }
 
 RawObject Heap::createTuple(word length) {
   word size = Tuple::allocationSize(length);
-  RawObject raw = allocate(size, HeapObject::headerSize(length));
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawTuple>();
-  result.setHeaderAndOverflow(length, 0, LayoutId::kTuple,
-                              ObjectFormat::kObjects);
-  result.initialize();
-  return Tuple::cast(result);
+  uword address;
+  CHECK(allocate(size, HeapObject::headerSize(length), &address),
+        "out of memory");
+  return Tuple::cast(Tuple::initialize(address, length));
 }
 
 void Heap::visitAllObjects(HeapObjectVisitor* visitor) {

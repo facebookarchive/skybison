@@ -17,14 +17,16 @@ TEST(HeapTestNoFixture, AllocateObjects) {
   Heap heap(size);
 
   // Allocate the first half of the heap.
-  RawObject raw1 = heap.allocate(size / 2, 0);
-  ASSERT_FALSE(raw1.isError());
-  EXPECT_TRUE(heap.contains(raw1));
+  uword address1;
+  bool result1 = heap.allocate(size / 2, 0, &address1);
+  ASSERT_TRUE(result1);
+  EXPECT_TRUE(heap.contains(address1));
 
   // Allocate the second half of the heap.
-  RawObject raw2 = heap.allocate(size / 2, 0);
-  ASSERT_FALSE(raw2.isError());
-  EXPECT_TRUE(heap.contains(raw2));
+  uword address2;
+  bool result2 = heap.allocate(size / 2, 0, &address2);
+  ASSERT_TRUE(result2);
+  EXPECT_TRUE(heap.contains(address2));
 }
 
 TEST_F(HeapTest, AllocateFails) {
@@ -37,17 +39,19 @@ TEST_F(HeapTest, AllocateFails) {
   Object object1(&scope, heap->createLargeStr(first_half));
   RawObject raw1 = *object1;
   ASSERT_FALSE(raw1.isError());
-  EXPECT_TRUE(heap->contains(raw1));
+  EXPECT_TRUE(heap->contains(HeapObject::cast(raw1).address()));
 
   // Try over allocating.
-  RawObject raw2 = heap->allocate(free_space, 0);
-  ASSERT_TRUE(raw2.isError());
+  uword address2;
+  bool result2 = heap->allocate(free_space, 0, &address2);
+  ASSERT_FALSE(result2);
 
   // Allocate the second half of the heap.
   word second_half = heap->space()->end() - heap->space()->fill();
-  RawObject raw3 = heap->allocate(second_half, 0);
-  ASSERT_FALSE(raw3.isError());
-  EXPECT_TRUE(heap->contains(raw3));
+  uword address3;
+  bool result3 = heap->allocate(second_half, 0, &address3);
+  ASSERT_TRUE(result3);
+  EXPECT_TRUE(heap->contains(address3));
 
   ASSERT_EQ(heap->space()->end(), heap->space()->fill());
 }

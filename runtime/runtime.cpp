@@ -2915,7 +2915,16 @@ void Runtime::listAdd(Thread* thread, const List& list, const Object& value) {
 
 // Dict
 
-RawObject Runtime::newDict() { return heap()->createDict(); }
+RawObject Runtime::newDict() {
+  word num_attributes = Dict::kSize / kPointerSize;
+  word size = Instance::allocationSize(num_attributes);
+  uword address;
+  CHECK(
+      heap()->allocate(size, HeapObject::headerSize(num_attributes), &address),
+      "out of memory");
+  return Instance::cast(Instance::initialize(
+      address, num_attributes, LayoutId::kDict, SmallInt::fromWord(0)));
+}
 
 RawObject Runtime::newDictWithSize(word initial_size) {
   Thread* thread = Thread::current();
