@@ -1525,6 +1525,17 @@ PY_EXPORT PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE* unicode,
   return result;
 }
 
+static bool hasNulByte(PyObject* bytes_obj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(bytes_obj)->asObject());
+  Bytes bytes(&scope, bytesUnderlying(*obj));
+  if (bytes.findByte('\0', /*start=*/0, /*length=*/bytes.length()) == -1) {
+    return false;
+  }
+  return true;
+}
+
 PY_EXPORT int PyUnicode_FSConverter(PyObject* arg, void* addr) {
   if (arg == nullptr) {
     Py_DECREF(*reinterpret_cast<PyObject**>(addr));
@@ -1547,15 +1558,9 @@ PY_EXPORT int PyUnicode_FSConverter(PyObject* arg, void* addr) {
     }
     CHECK(PyBytes_Check(output), "output must be a bytes object");
   }
-  for (int i = 0; i < PyBytes_Size(output); i++) {
-    PyObject* item = PySequence_GetItem(output, i);
-    if (PyLong_AsLong(item) == 0) {
-      PyErr_SetString(PyExc_ValueError, "embedded null byte");
-      Py_DECREF(output);
-      Py_DECREF(item);
-      return 0;
-    }
-    Py_DECREF(item);
+  if (hasNulByte(output)) {
+    PyErr_SetString(PyExc_ValueError, "embedded null byte");
+    return 0;
   }
   *reinterpret_cast<PyObject**>(addr) = output;
   return Py_CLEANUP_SUPPORTED;
