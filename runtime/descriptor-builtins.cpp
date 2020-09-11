@@ -198,12 +198,30 @@ RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-
-  return StaticMethod::cast(*self).function();
+  if (!thread->runtime()->isInstanceOfStaticMethod(*self)) {
+    return thread->raiseRequiresType(self, ID(staticmethod));
+  }
+  StaticMethod staticmethod(&scope, *self);
+  return staticmethod.function();
 }
 
-RawObject METH(staticmethod, __new__)(Thread* thread, Frame*, word) {
-  return thread->runtime()->newStaticMethod();
+RawObject METH(staticmethod, __new__)(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object type_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
+  }
+  Type type(&scope, *type_obj);
+  if (type.builtinBase() != LayoutId::kStaticMethod) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of staticmethod");
+  }
+  Layout layout(&scope, type.instanceLayout());
+  StaticMethod result(&scope, runtime->newInstance(layout));
+  return *result;
 }
 
 RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,

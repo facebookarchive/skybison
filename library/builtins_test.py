@@ -15734,6 +15734,66 @@ class StaticMethodTests(unittest.TestCase):
 
         C.bar.__getattribute__("__call__")
 
+    def test_dunder_get_returns_value(self):
+        class C:
+            @staticmethod
+            def bar(self):
+                return 5
+
+        self.assertEqual(C.bar(C()), 5)
+
+    def test_dunder_get_with_subclassed_staticmethod_returns_value(self):
+        class foo(staticmethod):
+            pass
+
+        class C:
+            @foo
+            def bar(self):
+                return 5
+
+        self.assertEqual(C.bar(C()), 5)
+
+    def test_dunder_get_called_with_non_staticmethod_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            staticmethod.__get__(42.3, None, bar)
+        self.assertIn(
+            "'__get__' requires a 'staticmethod' object but received a 'float'",
+            str(context.exception),
+        )
+
+    def test_dunder_new_called_with_non_type_object_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            staticmethod.__new__(42.3, bar)
+        self.assertIn("not a type object", str(context.exception))
+
+    def test_dunder_new_called_with_non_subtype_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            staticmethod.__new__(float, bar)
+        self.assertIn("not a subtype of staticmethod", str(context.exception))
+
+    def test_dunder_new_with_subclassed_staticmethod_returns_instance_of_superclass(
+        self,
+    ):
+        class foo(staticmethod):
+            pass
+
+        def bar():
+            pass
+
+        self.assertIsInstance(staticmethod.__new__(foo, bar), foo)
+
 
 class StrTests(unittest.TestCase):
     def test_binary_add_with_non_str_other_falls_back_on_other_dunder_radd(self):
