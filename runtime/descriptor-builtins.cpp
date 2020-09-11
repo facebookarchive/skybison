@@ -240,7 +240,7 @@ RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
@@ -257,7 +257,7 @@ RawObject METH(property, __get__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
@@ -277,7 +277,7 @@ RawObject METH(property, __init__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
@@ -288,17 +288,29 @@ RawObject METH(property, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(property, __new__)(Thread* thread, Frame*, word) {
+RawObject METH(property, __new__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object none(&scope, NoneType::object());
-  return thread->runtime()->newProperty(none, none, none);
+  Object type_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
+  }
+  Type type(&scope, *type_obj);
+  if (type.builtinBase() != LayoutId::kProperty) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of property");
+  }
+  Layout layout(&scope, type.instanceLayout());
+  Property result(&scope, runtime->newInstance(layout));
+  return *result;
 }
 
 RawObject METH(property, __set__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
@@ -315,43 +327,46 @@ RawObject METH(property, __set__)(Thread* thread, Frame* frame, word nargs) {
 RawObject METH(property, deleter)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!runtime->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, self.getter());
   Object setter(&scope, self.setter());
   Object deleter(&scope, args.get(1));
-  return thread->runtime()->newProperty(getter, setter, deleter);
+  return runtime->newProperty(getter, setter, deleter);
 }
 
 RawObject METH(property, getter)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!runtime->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, args.get(1));
   Object setter(&scope, self.setter());
   Object deleter(&scope, self.deleter());
-  return thread->runtime()->newProperty(getter, setter, deleter);
+  return runtime->newProperty(getter, setter, deleter);
 }
 
 RawObject METH(property, setter)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isProperty()) {
+  if (!runtime->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, self.getter());
   Object setter(&scope, args.get(1));
   Object deleter(&scope, self.deleter());
-  return thread->runtime()->newProperty(getter, setter, deleter);
+  return runtime->newProperty(getter, setter, deleter);
 }
 
 }  // namespace py

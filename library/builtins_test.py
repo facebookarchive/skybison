@@ -14426,6 +14426,64 @@ class PropertyTests(unittest.TestCase):
         p.__doc__ = document_message
         self.assertIs(p.__doc__, document_message)
 
+    def test_dunder_get_returns_value(self):
+        class C:
+            @property
+            def bar(self):
+                return 5
+
+        self.assertEqual(C().bar, 5)
+
+    def test_dunder_get_with_subclassed_property_returns_value(self):
+        class foo(property):
+            pass
+
+        class C:
+            @foo
+            def bar(self):
+                return 5
+
+        self.assertEqual(C().bar, 5)
+
+    def test_dunder_get_called_with_non_property_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            property.__get__(42.3, None, bar)
+        self.assertIn(
+            "'__get__' requires a 'property' object but received a 'float'",
+            str(context.exception),
+        )
+
+    def test_dunder_new_called_with_non_type_object_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            property.__new__(42.3, bar)
+        self.assertIn("not a type object", str(context.exception))
+
+    def test_dunder_new_called_with_non_subtype_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+
+            def bar():
+                pass
+
+            property.__new__(float, bar)
+        self.assertIn("not a subtype of property", str(context.exception))
+
+    def test_dunder_new_with_subclassed_property_returns_instance_of_superclass(self):
+        class foo(property):
+            pass
+
+        def bar():
+            pass
+
+        self.assertIsInstance(property.__new__(foo, bar), foo)
+
     def test_getter_and_setter_and_deleter_default_to_none(self):
         p = property()
         self.assertIsNone(p.fget)
