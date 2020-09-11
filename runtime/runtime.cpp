@@ -2533,7 +2533,8 @@ RawObject Runtime::bytesCopy(Thread* thread, const Bytes& src) {
 
 RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
                                      word new_length) {
-  DCHECK(new_length > 0, "length must be positive");
+  DCHECK(new_length >= 0, "length must be nonnegative");
+  if (new_length == 0) return Bytes::empty();
   word old_length = original.length();
   if (new_length <= SmallBytes::kMaxLength) {
     byte buffer[SmallBytes::kMaxLength];

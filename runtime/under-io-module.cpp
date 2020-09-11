@@ -1152,7 +1152,6 @@ RawObject METH(BytesIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes buffer(&scope, bytes_io.buffer());
   word num_items = bytes_io.numItems();
-  if (num_items == 0) return Bytes::empty();
   return runtime->bytesCopyWithSize(thread, buffer, num_items);
 }
 

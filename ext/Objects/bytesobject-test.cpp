@@ -695,6 +695,16 @@ TEST_F(BytesExtensionApiTest, ResizeWithSmallerSizeAllocatesSmallerBytes) {
   Py_DECREF(bytes);
 }
 
+TEST_F(BytesExtensionApiTest,
+       ResizeWithNonEmptyBytesAndZeroNewsizeReturnsEmpty) {
+  PyObject* bytes = PyBytes_FromString("hello");
+  ASSERT_EQ(_PyBytes_Resize(&bytes, 0), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyBytes_Size(bytes), 0);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "");
+  Py_DECREF(bytes);
+}
+
 TEST_F(BytesExtensionApiTest, SizeWithNonBytesReturnsNegative) {
   PyObjectPtr dict(PyDict_New());
 
