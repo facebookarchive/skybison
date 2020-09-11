@@ -1,5 +1,3 @@
-#include <set>
-
 #include "globals.h"
 #include "handles.h"
 #include "objects.h"
@@ -8,6 +6,10 @@
 
 namespace py {
 
+const uword kDummyVal = Error::error().raw();
+const uword kInitialCapacity = 1000;
+const float kLoadFactor = 0.6;
+
 class WordVisitor {
  public:
   virtual void visit(uword element) = 0;
@@ -15,24 +17,88 @@ class WordVisitor {
 
 class WordSet {
  public:
-  // Return true if element is in set, otherwise return false.
-  bool contains(uword element) { return set_.find(element) != set_.end(); }
-
-  // Return true if element was found when adding, otherwise return false.
-  bool add(uword element) {
-    if (contains(element)) return true;
-    set_.insert(element);
-    return false;
-  }
-
-  void visitElements(WordVisitor* visitor) {
-    for (uword w : set_) {
-      visitor->visit(w);
+  WordSet()
+      : size_(0),
+        capacity_(kInitialCapacity),
+        map_(new uword[kInitialCapacity]) {
+    // Set elements to kDummyVal since 0 is a possible value
+    for (word i = 0; i < capacity_; ++i) {
+      map_[i] = kDummyVal;
     }
   }
 
+  ~WordSet() { delete[] map_; }
+
+  // Return true if element is in set, otherwise return false
+  bool contains(uword element) {
+    DCHECK(element != kDummyVal, "Cannot insert Error into set");
+    uword k = hash(element);
+    for (word i = 0; i < capacity_; ++i) {
+      if (map_[k] == element) {
+        return true;
+      }
+      k = (k + 1) % capacity_;
+    }
+    return false;
+  }
+
+  // Return true if element was found when adding, otherwise return false
+  bool add(uword element) {
+    bool flag = true;
+    uword k = hash(element);
+    if (size_ > kLoadFactor * capacity_) {
+      resizeAndRehash();
+    }
+    for (word i = 0; i < capacity_; ++i) {
+      if (map_[k] == kDummyVal) {
+        map_[k] = element;
+        ++size_;
+        flag = false;
+        break;
+      }
+      if (map_[k] == element) {
+        break;
+      }
+      k = (k + 1) % capacity_;
+    }
+    return flag;
+  }
+
+  void visitElements(WordVisitor* visitor) {
+    for (word i = 0; i < capacity_; ++i) {
+      if (map_[i] != kDummyVal) {
+        visitor->visit(map_[i]);
+      }
+    }
+  }
+
+  word arrayAt(word index) { return map_[index]; }
+
+  word capacity() { return capacity_; }
+
  private:
-  std::set<uword> set_;
+  word size_;
+  word capacity_;
+  uword* map_;
+
+  uword hash(uword element) { return element % capacity_; }
+
+  void resizeAndRehash() {
+    word old_capacity = capacity_;
+    uword* old_map = map_;
+    capacity_ = capacity_ + (capacity_ >> 1);
+    map_ = new uword[capacity_];
+    for (word i = 0; i < capacity_; ++i) {
+      map_[i] = kDummyVal;
+    }
+    size_ = 0;
+    for (word i = 0; i < old_capacity; ++i) {
+      if (old_map[i] != kDummyVal) {
+        add(old_map[i]);
+      }
+    }
+    delete[] old_map;
+  }
 };
 
 using HeapProfilerWriteCallback = void (*)(const void* data, word length,

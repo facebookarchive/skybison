@@ -1474,6 +1474,45 @@ _heap_dump("/dev/null")
                    .isError());
 }
 
+class WordSetTest : public ::testing::Test {
+ protected:
+  WordSet ws;
+  uword test_word1 = uword{1};
+};
+
+TEST_F(WordSetTest, ContainsWithWordNotInSetReturnsFalse) {
+  ASSERT_FALSE(ws.contains(test_word1));
+}
+
+TEST_F(WordSetTest, ContainsWithWordInSetReturnsTrue) {
+  ws.add(test_word1);
+  ASSERT_TRUE(ws.contains(test_word1));
+}
+
+TEST_F(WordSetTest, AddWithWordNotInSetReturnsFalse) {
+  ASSERT_FALSE(ws.add(test_word1));
+}
+
+TEST_F(WordSetTest, AddWithWordInSetReturnsTrue) {
+  ws.add(test_word1);
+  ASSERT_TRUE(ws.add(test_word1));
+}
+
+TEST_F(WordSetTest,
+       MapWithResizeAndRehashTriggeredContainsAllOriginalElements) {
+  // Insert one element over the default capacity of 1000
+  for (uword i = 0; i <= 1000; ++i) {
+    if (i != kDummyVal) {
+      ws.add(i);
+    }
+  }
+  for (uword i = 0; i <= 1000; ++i) {
+    if (i != kDummyVal) {
+      ASSERT_TRUE(ws.contains(i));
+    }
+  }
+}
+
 }  // namespace testing
 
 }  // namespace py
