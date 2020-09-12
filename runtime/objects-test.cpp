@@ -311,9 +311,8 @@ TEST_F(IntTest, IntTest) {
 TEST_F(IntTest, LargeIntValid) {
   HandleScope scope(thread_);
 
-  LargeInt i(&scope, runtime_->heap()->createLargeInt(2));
-  i.digitAtPut(0, -1234);
-  i.digitAtPut(1, -1);
+  uword digits[] = {static_cast<uword>(-1234), static_cast<uword>(-1)};
+  LargeInt i(&scope, newLargeIntWithDigits(digits));
   // Redundant sign-extension
   EXPECT_FALSE(i.isValid());
 

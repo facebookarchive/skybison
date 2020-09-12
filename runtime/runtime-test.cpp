@@ -884,6 +884,13 @@ TEST_F(RuntimeListTest, AppendToList) {
   }
 }
 
+TEST_F(RuntimeTest, NewMutableBytesUninitializedReturnsMutableBytes) {
+  HandleScope scope(thread_);
+  Object result(&scope, runtime_->newMutableBytesUninitialized(3));
+  ASSERT_TRUE(result.isMutableBytes());
+  EXPECT_EQ(MutableBytes::cast(*result).length(), 3);
+}
+
 TEST_F(RuntimeTest, MutableBytesCopyWithLengthWithSameLengthReturnsFull) {
   HandleScope scope(thread_);
   const MutableBytes mutable_bytes(&scope,

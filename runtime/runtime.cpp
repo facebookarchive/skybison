@@ -213,7 +213,8 @@ Runtime::~Runtime() {
 
 RawObject Runtime::newBoundMethod(const Object& function, const Object& self) {
   HandleScope scope;
-  BoundMethod bound_method(&scope, heap()->create<RawBoundMethod>());
+  BoundMethod bound_method(
+      &scope, newInstanceWithSize(LayoutId::kBoundMethod, BoundMethod::kSize));
   bound_method.setFunction(*function);
   bound_method.setSelf(*self);
   return *bound_method;
@@ -221,7 +222,11 @@ RawObject Runtime::newBoundMethod(const Object& function, const Object& self) {
 
 RawObject Runtime::newLayout(LayoutId id) {
   HandleScope scope;
-  Layout layout(&scope, heap()->createLayout(LayoutId::kError));
+  uword address;
+  CHECK(
+      heap()->allocate(Layout::kSize + Header::kSize, Header::kSize, &address),
+      "out of memory");
+  Layout layout(&scope, Layout::initialize(address, id, RawNoneType::object()));
   layout.setId(id);
   layout.setInObjectAttributes(empty_tuple_);
   layout.setAdditions(newList());
@@ -362,9 +367,14 @@ RawObject Runtime::layoutCreateSubclassWithSlotAttributes(
   return *result;
 }
 
+template <typename T>
+static RawObject createInstance(Runtime* runtime) {
+  return runtime->newInstanceWithSize(ObjectLayoutId<T>::value, T::kSize);
+}
+
 RawObject Runtime::newBytearray() {
   HandleScope scope;
-  Bytearray result(&scope, heap()->create<RawBytearray>());
+  Bytearray result(&scope, createInstance<RawBytearray>(this));
   result.setItems(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
@@ -373,10 +383,58 @@ RawObject Runtime::newBytearray() {
 RawObject Runtime::newBytearrayIterator(Thread* thread,
                                         const Bytearray& bytearray) {
   HandleScope scope(thread);
-  BytearrayIterator result(&scope, heap()->create<RawBytearrayIterator>());
+  BytearrayIterator result(&scope, createInstance<RawBytearrayIterator>(this));
   result.setIterable(*bytearray);
   result.setIndex(0);
   return *result;
+}
+
+RawObject Runtime::createLargeBytes(word length) {
+  DCHECK(length > SmallBytes::kMaxLength, "fits into a SmallBytes");
+  word size = LargeBytes::allocationSize(length);
+  uword address;
+  CHECK(heap()->allocate(size, LargeBytes::headerSize(length), &address),
+        "out of memory");
+  return LargeBytes::cast(
+      DataArray::initialize(address, length, LayoutId::kLargeBytes));
+}
+
+RawObject Runtime::createLargeInt(word num_digits) {
+  DCHECK(num_digits > 0, "num_digits must be positive");
+  word size = LargeInt::allocationSize(num_digits);
+  uword address;
+  CHECK(heap()->allocate(size, LargeInt::headerSize(num_digits), &address),
+        "out of memory");
+  return LargeInt::cast(LargeInt::initialize(address, num_digits));
+}
+
+RawObject Runtime::createLargeStr(word length) {
+  DCHECK(length > RawSmallStr::kMaxLength,
+         "string len %ld is too small to be a large string", length);
+  word size = LargeStr::allocationSize(length);
+  uword address;
+  CHECK(heap()->allocate(size, LargeStr::headerSize(length), &address),
+        "out of memory");
+  return LargeStr::cast(
+      DataArray::initialize(address, length, LayoutId::kLargeStr));
+}
+
+RawObject Runtime::createMutableBytes(word length) {
+  DCHECK(length >= 0, "cannot allocate negative size");
+  word size = MutableBytes::allocationSize(length);
+  uword address;
+  CHECK(heap()->allocate(size, MutableBytes::headerSize(length), &address),
+        "out of memory");
+  return MutableBytes::cast(
+      DataArray::initialize(address, length, LayoutId::kMutableBytes));
+}
+
+RawObject Runtime::createTuple(word length) {
+  word size = Tuple::allocationSize(length);
+  uword address;
+  CHECK(heap()->allocate(size, HeapObject::headerSize(length), &address),
+        "out of memory");
+  return Tuple::cast(Tuple::initialize(address, length));
 }
 
 RawObject Runtime::newBytes(word length, byte fill) {
@@ -389,7 +447,7 @@ RawObject Runtime::newBytes(word length, byte fill) {
     return SmallBytes::fromBytes({buffer, length});
   }
   HandleScope scope;
-  LargeBytes result(&scope, heap()->createLargeBytes(length));
+  LargeBytes result(&scope, createLargeBytes(length));
   std::memset(reinterpret_cast<byte*>(result.address()), fill, length);
   return *result;
 }
@@ -400,27 +458,33 @@ RawObject Runtime::newBytesWithAll(View<byte> array) {
     return SmallBytes::fromBytes(array);
   }
   HandleScope scope;
-  LargeBytes result(&scope, heap()->createLargeBytes(length));
+  LargeBytes result(&scope, createLargeBytes(length));
   std::memcpy(reinterpret_cast<byte*>(result.address()), array.data(), length);
   return *result;
 }
 
 RawObject Runtime::newBytesIterator(Thread* thread, const Bytes& bytes) {
   HandleScope scope(thread);
-  BytesIterator result(&scope, heap()->create<RawBytesIterator>());
+  BytesIterator result(&scope, createInstance<RawBytesIterator>(this));
   result.setIndex(0);
   result.setIterable(*bytes);
   return *result;
 }
 
-RawObject Runtime::newTraceback() { return heap()->create<RawTraceback>(); }
+RawObject Runtime::newTraceback() { return createInstance<RawTraceback>(this); }
 
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
 RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type result(&scope, heap()->createType(metaclass_id));
+  uword address;
+  CHECK(
+      heap()->allocate(Type::kSize + Header::kSize, RawHeader::kSize, &address),
+      "out of memory");
+  word num_attributes = Type::kSize / kPointerSize;
+  Type result(&scope, Instance::initialize(address, num_attributes,
+                                           metaclass_id, NoneType::object()));
   result.setFlagsAndBuiltinBase(Type::Flag::kNone, LayoutId::kObject);
   typeInitAttributes(thread, result);
   result.setDoc(NoneType::object());
@@ -431,7 +495,7 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
 RawObject Runtime::newTypeProxy(const Type& type) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  TypeProxy result(&scope, heap()->create<RawTypeProxy>());
+  TypeProxy result(&scope, createInstance<RawTypeProxy>(this));
   result.setType(*type);
   return *result;
 }
@@ -591,7 +655,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
     flags &= ~Code::Flags::kNofree;
   }
 
-  Code result(&scope, heap()->create<RawCode>());
+  Code result(&scope, createInstance<RawCode>(this));
   result.setArgcount(argcount);
   result.setPosonlyargcount(posonlyargcount);
   result.setKwonlyargcount(kwonlyargcount);
@@ -673,7 +737,7 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
   DCHECK(isInstanceOfStr(*name), "expected str");
 
   HandleScope scope(thread);
-  Function function(&scope, heap()->create<RawFunction>());
+  Function function(&scope, createInstance<RawFunction>(this));
   function.setCode(*code);
   function.setFlags(flags);
   function.setArgcount(argcount);
@@ -838,14 +902,14 @@ RawObject Runtime::newExtensionFunction(Thread* thread, const Object& name,
 }
 
 RawObject Runtime::newExceptionState() {
-  return heap()->create<RawExceptionState>();
+  return createInstance<RawExceptionState>(this);
 }
 
-RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
+RawObject Runtime::newCoroutine() { return createInstance<RawCoroutine>(this); }
 
 RawObject Runtime::newFrameProxy(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
-  FrameProxy heap_frame(&scope, heap()->create<RawFrameProxy>());
+  FrameProxy heap_frame(&scope, createInstance<RawFrameProxy>(this));
   DCHECK(frame->function().isFunction(), "expected to be a function");
   heap_frame.setFunction(frame->function());
   if (!frame->isNative()) {
@@ -854,7 +918,7 @@ RawObject Runtime::newFrameProxy(Thread* thread, Frame* frame) {
   return *heap_frame;
 }
 
-RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
+RawObject Runtime::newGenerator() { return createInstance<RawGenerator>(this); }
 
 RawObject Runtime::newGeneratorFrame(const Function& function) {
   DCHECK(function.isGeneratorLike(), "expected a generator-like code object");
@@ -865,23 +929,34 @@ RawObject Runtime::newGeneratorFrame(const Function& function) {
   word stacksize = function.stacksize();
   // +1 for the function pointer.
   word extra_words = num_args + num_vars + stacksize + 1;
-  GeneratorFrame frame(&scope, heap()->createInstance(
-                                   LayoutId::kGeneratorFrame,
-                                   GeneratorFrame::numAttributes(extra_words)));
+  GeneratorFrame frame(
+      &scope, newInstanceWithSize(
+                  LayoutId::kGeneratorFrame,
+                  GeneratorFrame::numAttributes(extra_words) * kPointerSize));
   frame.setMaxStackSize(stacksize);
   return *frame;
 }
 
 RawObject Runtime::newInstance(const Layout& layout) {
   // This takes into account the potential overflow pointer.
-  word num_attrs = layout.instanceSize() / kPointerSize;
-  RawObject object = heap()->createInstance(layout.id(), num_attrs);
-  RawInstance instance = Instance::cast(object);
+  RawInstance instance =
+      Instance::cast(newInstanceWithSize(layout.id(), layout.instanceSize()));
   // Set the overflow array
   if (layout.hasTupleOverflow()) {
     instance.instanceVariableAtPut(layout.overflowOffset(), empty_tuple_);
   }
   return instance;
+}
+
+RawObject Runtime::newInstanceWithSize(LayoutId layout_id, word object_size) {
+  word num_attributes = object_size / kPointerSize;
+  word allocation_size = Instance::allocationSize(num_attributes);
+  uword address;
+  CHECK(heap()->allocate(allocation_size,
+                         HeapObject::headerSize(num_attributes), &address),
+        "out of memory");
+  return Instance::cast(Instance::initialize(address, num_attributes, layout_id,
+                                             NoneType::object()));
 }
 
 RawObject Runtime::newQualname(Thread* thread, const Type& type,
@@ -893,7 +968,7 @@ RawObject Runtime::newQualname(Thread* thread, const Type& type,
 
 RawObject Runtime::newDeque() {
   HandleScope scope;
-  Deque deque(&scope, heap()->create<RawDeque>());
+  Deque deque(&scope, createInstance<RawDeque>(this));
   deque.setItems(SmallInt::fromWord(0));
   deque.setLeft(0);
   deque.setNumItems(0);
@@ -903,7 +978,7 @@ RawObject Runtime::newDeque() {
 
 RawObject Runtime::newDequeIterator(const Deque& deque, word index) {
   HandleScope scope;
-  DequeIterator iter(&scope, heap()->create<RawDequeIterator>());
+  DequeIterator iter(&scope, createInstance<RawDequeIterator>(this));
   iter.setIndex(index);
   iter.setIterable(*deque);
   iter.setState(deque.state());
@@ -912,7 +987,7 @@ RawObject Runtime::newDequeIterator(const Deque& deque, word index) {
 
 RawObject Runtime::newList() {
   HandleScope scope;
-  List result(&scope, heap()->create<RawList>());
+  List result(&scope, createInstance<RawList>(this));
   result.setNumItems(0);
   result.setItems(empty_tuple_);
   return *result;
@@ -920,7 +995,7 @@ RawObject Runtime::newList() {
 
 RawObject Runtime::newListIterator(const Object& list) {
   HandleScope scope;
-  ListIterator list_iterator(&scope, heap()->create<RawListIterator>());
+  ListIterator list_iterator(&scope, createInstance<RawListIterator>(this));
   list_iterator.setIndex(0);
   list_iterator.setIterable(*list);
   return *list_iterator;
@@ -928,7 +1003,7 @@ RawObject Runtime::newListIterator(const Object& list) {
 
 RawObject Runtime::newSeqIterator(const Object& sequence) {
   HandleScope scope;
-  SeqIterator iter(&scope, heap()->create<RawSeqIterator>());
+  SeqIterator iter(&scope, createInstance<RawSeqIterator>(this));
   iter.setIndex(0);
   iter.setIterable(*sequence);
   return *iter;
@@ -937,7 +1012,7 @@ RawObject Runtime::newSeqIterator(const Object& sequence) {
 RawObject Runtime::newModule(const Object& name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Module result(&scope, heap()->create<RawModule>());
+  Module result(&scope, createInstance<RawModule>(this));
   result.setDict(newDict());
   result.setDef(newIntFromCPtr(nullptr));
   result.setId(reserveModuleId());
@@ -949,7 +1024,7 @@ RawObject Runtime::newModule(const Object& name) {
 RawObject Runtime::newModuleProxy(const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  ModuleProxy result(&scope, heap()->create<RawModuleProxy>());
+  ModuleProxy result(&scope, createInstance<RawModuleProxy>(this));
   result.setModule(*module);
   return *result;
 }
@@ -958,7 +1033,7 @@ RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name,
                                      word offset) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  SlotDescriptor result(&scope, heap()->create<RawSlotDescriptor>());
+  SlotDescriptor result(&scope, createInstance<RawSlotDescriptor>(this));
   result.setType(*type);
   result.setName(*name);
   result.setOffset(offset);
@@ -969,7 +1044,7 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& obj,
                                  const Object& buffer, word length,
                                  ReadOnly read_only) {
   HandleScope scope(thread);
-  MemoryView result(&scope, heap()->create<RawMemoryView>());
+  MemoryView result(&scope, createInstance<RawMemoryView>(this));
   result.setBuffer(*buffer);
   result.setObject(*obj);
   result.setLength(length);
@@ -993,7 +1068,7 @@ RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, const Object& obj,
 
 RawObject Runtime::newMmap() {
   HandleScope scope;
-  Mmap result(&scope, heap()->create<RawMmap>());
+  Mmap result(&scope, createInstance<RawMmap>(this));
   result.setAccess(0);
   result.setData(NoneType::object());
   result.setFd(NoneType::object());
@@ -1004,7 +1079,7 @@ RawObject Runtime::newMutableBytesUninitialized(word size) {
   if (size == 0) {
     return empty_mutable_bytes_;
   }
-  return heap()->createMutableBytes(size);
+  return createMutableBytes(size);
 }
 
 RawObject Runtime::mutableBytesCopyWithLength(Thread* thread,
@@ -1027,7 +1102,7 @@ RawObject Runtime::mutableBytesCopyWithLength(Thread* thread,
 RawObject Runtime::mutableBytesFromBytes(Thread* thread, const Bytes& bytes) {
   HandleScope scope(thread);
   word len = bytes.length();
-  MutableBytes mb(&scope, heap()->createMutableBytes(len));
+  MutableBytes mb(&scope, createMutableBytes(len));
   bytes.copyTo(reinterpret_cast<byte*>(mb.address()), len);
   return *mb;
 }
@@ -1036,7 +1111,7 @@ RawObject Runtime::mutableBytesWith(word length, byte value) {
   if (length == 0) return empty_mutable_bytes_;
   DCHECK(length > 0, "invalid length %ld", length);
   HandleScope scope;
-  MutableBytes result(&scope, heap()->createMutableBytes(length));
+  MutableBytes result(&scope, createMutableBytes(length));
   std::memset(reinterpret_cast<byte*>(result.address()), value, length);
   return *result;
 }
@@ -1053,14 +1128,18 @@ RawObject Runtime::emptyTuple() { return empty_tuple_; }
 
 RawObject Runtime::newMutableTuple(word length) {
   DCHECK(length > 0, "use emptyTuple() for MutableTuple with length 0");
-  return heap()->createMutableTuple(length);
+  word size = MutableTuple::allocationSize(length);
+  uword address;
+  CHECK(heap()->allocate(size, HeapObject::headerSize(length), &address),
+        "out of memory");
+  return MutableTuple::cast(MutableTuple::initialize(address, length));
 }
 
 RawObject Runtime::newTuple(word length) {
   if (length == 0) {
     return emptyTuple();
   }
-  return heap()->createTuple(length);
+  return createTuple(length);
 }
 
 RawObject Runtime::newTupleWith1(const Object& item1) {
@@ -1128,11 +1207,18 @@ RawObject Runtime::newIntFromUnsigned(uword value) {
 }
 
 RawObject Runtime::newFloat(double value) {
-  return Float::cast(heap()->createFloat(value));
+  uword address;
+  CHECK(heap()->allocate(Float::kSize + Header::kSize, Header::kSize, &address),
+        "out of memory");
+  return Float::cast(Float::initialize(address, value));
 }
 
 RawObject Runtime::newComplex(double real, double imag) {
-  return Complex::cast(heap()->createComplex(real, imag));
+  uword address;
+  CHECK(heap()->allocate(Complex::kSize + Header::kSize, RawHeader::kSize,
+                         &address),
+        "out of memory");
+  return Complex::cast(Complex::initialize(address, real, imag));
 }
 
 RawObject Runtime::newIntWithDigits(View<uword> digits) {
@@ -1146,7 +1232,7 @@ RawObject Runtime::newIntWithDigits(View<uword> digits) {
     }
   }
   HandleScope scope;
-  LargeInt result(&scope, heap()->createLargeInt(digits.length()));
+  LargeInt result(&scope, createLargeInt(digits.length()));
   for (word i = 0; i < digits.length(); i++) {
     result.digitAtPut(i, digits.get(i));
   }
@@ -1155,13 +1241,17 @@ RawObject Runtime::newIntWithDigits(View<uword> digits) {
 }
 
 RawObject Runtime::newPointer(void* cptr, word length) {
-  return heap()->createPointer(cptr, length);
+  uword address;
+  CHECK(
+      heap()->allocate(Pointer::kSize + Header::kSize, Header::kSize, &address),
+      "out of memory");
+  return Pointer::cast(Pointer::initialize(address, cptr, length));
 }
 
 RawObject Runtime::newProperty(const Object& getter, const Object& setter,
                                const Object& deleter) {
   HandleScope scope;
-  Property new_prop(&scope, heap()->create<RawProperty>());
+  Property new_prop(&scope, createInstance<RawProperty>(this));
   new_prop.setGetter(*getter);
   new_prop.setSetter(*setter);
   new_prop.setDeleter(*deleter);
@@ -1171,7 +1261,7 @@ RawObject Runtime::newProperty(const Object& getter, const Object& setter,
 RawObject Runtime::newRange(const Object& start, const Object& stop,
                             const Object& step) {
   HandleScope scope;
-  Range result(&scope, heap()->create<RawRange>());
+  Range result(&scope, createInstance<RawRange>(this));
   result.setStart(*start);
   result.setStop(*stop);
   result.setStep(*step);
@@ -1181,7 +1271,7 @@ RawObject Runtime::newRange(const Object& start, const Object& stop,
 RawObject Runtime::newLongRangeIterator(const Int& start, const Int& stop,
                                         const Int& step) {
   HandleScope scope;
-  LongRangeIterator result(&scope, heap()->create<RawLongRangeIterator>());
+  LongRangeIterator result(&scope, createInstance<RawLongRangeIterator>(this));
   result.setNext(*start);
   result.setStop(*stop);
   result.setStep(*step);
@@ -1190,7 +1280,7 @@ RawObject Runtime::newLongRangeIterator(const Int& start, const Int& stop,
 
 RawObject Runtime::newRangeIterator(word start, word step, word length) {
   HandleScope scope;
-  RangeIterator result(&scope, heap()->create<RawRangeIterator>());
+  RangeIterator result(&scope, createInstance<RawRangeIterator>(this));
   result.setNext(start);
   result.setStep(step);
   result.setLength(length);
@@ -1199,7 +1289,7 @@ RawObject Runtime::newRangeIterator(word start, word step, word length) {
 
 RawObject Runtime::newSetIterator(const Object& set) {
   HandleScope scope;
-  SetIterator result(&scope, heap()->create<RawSetIterator>());
+  SetIterator result(&scope, createInstance<RawSetIterator>(this));
   result.setIterable(*set);
   result.setIndex(0);
   result.setConsumedCount(0);
@@ -1212,7 +1302,7 @@ RawObject Runtime::newSlice(const Object& start, const Object& stop,
     return emptySlice();
   }
   HandleScope scope;
-  Slice slice(&scope, heap()->create<RawSlice>());
+  Slice slice(&scope, createInstance<RawSlice>(this));
   slice.setStart(*start);
   slice.setStop(*stop);
   slice.setStep(*step);
@@ -1220,12 +1310,12 @@ RawObject Runtime::newSlice(const Object& start, const Object& stop,
 }
 
 RawObject Runtime::newStaticMethod() {
-  return heap()->create<RawStaticMethod>();
+  return createInstance<RawStaticMethod>(this);
 }
 
 RawObject Runtime::newStrArray() {
   HandleScope scope;
-  StrArray result(&scope, heap()->create<RawStrArray>());
+  StrArray result(&scope, createInstance<RawStrArray>(this));
   result.setItems(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
@@ -1245,7 +1335,7 @@ RawObject Runtime::strFromStrArray(const StrArray& array) {
     return SmallStr::fromBytes({buffer, length});
   }
   HandleScope scope;
-  LargeStr result(&scope, heap()->createLargeStr(length));
+  LargeStr result(&scope, createLargeStr(length));
   array.copyTo(reinterpret_cast<byte*>(result.address()), length);
   return *result;
 }
@@ -1448,7 +1538,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
     }
     return SmallStr::fromBytes(View<byte>(dst, size));
   }
-  RawObject result = heap()->createLargeStr(size);
+  RawObject result = createLargeStr(size);
   DCHECK(!result.isError(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(LargeStr::cast(result).address());
   if (code_units.length() == size) {
@@ -1472,7 +1562,7 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
   if (length <= RawSmallStr::kMaxLength) {
     return SmallStr::fromBytes(code_units);
   }
-  RawObject result = heap()->createLargeStr(length);
+  RawObject result = createLargeStr(length);
   DCHECK(!result.isError(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(LargeStr::cast(result).address());
   const byte* src = code_units.data();
@@ -2065,7 +2155,8 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
 
 void Runtime::initializeThreads() {
   main_thread_ = new Thread(Thread::kDefaultStackSize);
-  main_thread_->setCaughtExceptionState(heap()->create<RawExceptionState>());
+  main_thread_->setCaughtExceptionState(
+      createInstance<RawExceptionState>(this));
   main_thread_->setRuntime(this);
   interpreter_->setupThread(main_thread_);
   Thread::setCurrentThread(main_thread_);
@@ -2073,11 +2164,17 @@ void Runtime::initializeThreads() {
 }
 
 void Runtime::initializePrimitiveInstances() {
-  empty_tuple_ = heap()->createTuple(0);
+  empty_tuple_ = createTuple(0);
   empty_frozen_set_ = newFrozenSet();
-  empty_mutable_bytes_ = heap()->createMutableBytes(0);
-  empty_slice_ = heap()->create<RawSlice>();
-  ellipsis_ = heap()->createEllipsis();
+  empty_mutable_bytes_ = createMutableBytes(0);
+  empty_slice_ = createInstance<RawSlice>(this);
+  {
+    uword address;
+    CHECK(heap()->allocate(Ellipsis::kSize + Header::kSize, Header::kSize,
+                           &address),
+          "out of memory");
+    ellipsis_ = Ellipsis::cast(Ellipsis::initialize(address));
+  }
 }
 
 void Runtime::initializeInterned(Thread* thread) {
@@ -2791,7 +2888,7 @@ RawObject Runtime::bytesRepr(Thread* thread, const Bytes& bytes,
   }
 
   HandleScope scope(thread);
-  LargeStr result(&scope, heap()->createLargeStr(result_length));
+  LargeStr result(&scope, createLargeStr(result_length));
   writeBytesRepr(bytes, reinterpret_cast<byte*>(result.address()),
                  result_length, delimiter);
   return *result;
@@ -2992,7 +3089,7 @@ RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
 
 RawObject Runtime::newDictItemIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
+  DictItemIterator result(&scope, createInstance<RawDictItemIterator>(this));
   result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
@@ -3003,7 +3100,7 @@ RawObject Runtime::newDictItemIterator(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictItems(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictItems result(&scope, heap()->create<RawDictItems>());
+  DictItems result(&scope, createInstance<RawDictItems>(this));
   result.setDict(*dict);
   return *result;
 }
@@ -3012,7 +3109,7 @@ RawObject Runtime::newDictItems(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictKeyIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
+  DictKeyIterator result(&scope, createInstance<RawDictKeyIterator>(this));
   result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
@@ -3023,7 +3120,7 @@ RawObject Runtime::newDictKeyIterator(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictKeys(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictKeys result(&scope, heap()->create<RawDictKeys>());
+  DictKeys result(&scope, createInstance<RawDictKeys>(this));
   result.setDict(*dict);
   return *result;
 }
@@ -3032,7 +3129,7 @@ RawObject Runtime::newDictKeys(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictValueIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
+  DictValueIterator result(&scope, createInstance<RawDictValueIterator>(this));
   result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
@@ -3043,7 +3140,7 @@ RawObject Runtime::newDictValueIterator(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictValues(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictValues result(&scope, heap()->create<RawDictValues>());
+  DictValues result(&scope, createInstance<RawDictValues>(this));
   result.setDict(*dict);
   return *result;
 }
@@ -3052,7 +3149,7 @@ RawObject Runtime::newDictValues(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newSet() {
   HandleScope scope;
-  Set result(&scope, heap()->create<RawSet>());
+  Set result(&scope, createInstance<RawSet>(this));
   result.setNumItems(0);
   result.setNumFilled(0);
   result.setData(empty_tuple_);
@@ -3061,7 +3158,7 @@ RawObject Runtime::newSet() {
 
 RawObject Runtime::newFrozenSet() {
   HandleScope scope;
-  FrozenSet result(&scope, heap()->create<RawFrozenSet>());
+  FrozenSet result(&scope, createInstance<RawFrozenSet>(this));
   result.setNumItems(0);
   result.setNumFilled(0);
   result.setData(empty_tuple_);
@@ -3081,12 +3178,12 @@ RawObject Runtime::tupleSubseq(Thread* thread, const Tuple& tuple, word start,
   return result.becomeImmutable();
 }
 
-RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
+RawObject Runtime::newValueCell() { return createInstance<RawValueCell>(this); }
 
 RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
                                const Object& prev, const Object& next) {
   HandleScope scope(thread);
-  WeakLink link(&scope, heap()->create<RawWeakLink>());
+  WeakLink link(&scope, createInstance<RawWeakLink>(this));
   link.setReferent(*referent);
   link.setCallback(NoneType::object());
   link.setPrev(*prev);
@@ -3097,7 +3194,7 @@ RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
 RawObject Runtime::newWeakRef(Thread* thread, const Object& referent,
                               const Object& callback) {
   HandleScope scope(thread);
-  WeakRef ref(&scope, heap()->create<RawWeakRef>());
+  WeakRef ref(&scope, createInstance<RawWeakRef>(this));
   ref.setReferent(*referent);
   ref.setCallback(*callback);
   return *ref;
@@ -3292,7 +3389,7 @@ RawObject Runtime::strConcat(Thread* thread, const Str& left,
     return SmallStr::fromBytes(View<byte>(buffer, result_len));
   }
   // Large result
-  LargeStr result(&scope, heap()->createLargeStr(result_len));
+  LargeStr result(&scope, createLargeStr(result_len));
   left.copyTo(reinterpret_cast<byte*>(result.address()), left_len);
   right.copyTo(reinterpret_cast<byte*>(result.address() + left_len), right_len);
   return *result;
@@ -3329,7 +3426,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
     return SmallStr::fromBytes(View<byte>(buffer, result_len));
   }
   // Large result
-  LargeStr result(&scope, heap()->createLargeStr(result_len));
+  LargeStr result(&scope, createLargeStr(result_len));
   for (word i = 0, offset = 0; i < allocated; ++i) {
     elt = items.at(i);
     str = strUnderlying(*elt);
@@ -3361,7 +3458,7 @@ RawObject Runtime::strRepeat(Thread* thread, const Str& str, word count) {
   }
   // LargeStr result
   HandleScope scope(thread);
-  LargeStr result(&scope, heap()->createLargeStr(new_length));
+  LargeStr result(&scope, createLargeStr(new_length));
   const byte* src;
   if (length <= SmallStr::kMaxLength) {
     // SmallStr original
@@ -3441,7 +3538,7 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
   // LargeStr result
   HandleScope scope(thread);
   LargeStr source(&scope, *str);
-  LargeStr result(&scope, heap()->createLargeStr(length));
+  LargeStr result(&scope, createLargeStr(length));
   std::memcpy(reinterpret_cast<void*>(result.address()),
               reinterpret_cast<void*>(source.address() + start), length);
   return *result;
@@ -3506,7 +3603,7 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope(thread);
-  MutableBytes new_bytes(&scope, heap()->createMutableBytes(new_capacity));
+  MutableBytes new_bytes(&scope, createMutableBytes(new_capacity));
   byte* dst = reinterpret_cast<byte*>(new_bytes.address());
   word old_length = array.numItems();
   array.copyTo(dst, old_length);
@@ -3514,15 +3611,17 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   array.setItems(*new_bytes);
 }
 
-RawObject Runtime::newCell() { return heap()->create<RawCell>(); }
+RawObject Runtime::newCell() { return createInstance<RawCell>(this); }
 
-RawObject Runtime::newClassMethod() { return heap()->create<RawClassMethod>(); }
+RawObject Runtime::newClassMethod() {
+  return createInstance<RawClassMethod>(this);
+}
 
-RawObject Runtime::newSuper() { return heap()->create<RawSuper>(); }
+RawObject Runtime::newSuper() { return createInstance<RawSuper>(this); }
 
 RawObject Runtime::newStrIterator(const Object& str) {
   HandleScope scope;
-  StrIterator result(&scope, heap()->create<RawStrIterator>());
+  StrIterator result(&scope, createInstance<RawStrIterator>(this));
   result.setIndex(0);
   result.setIterable(*str);
   return *result;
@@ -3530,7 +3629,7 @@ RawObject Runtime::newStrIterator(const Object& str) {
 
 RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
   HandleScope scope;
-  TupleIterator result(&scope, heap()->create<RawTupleIterator>());
+  TupleIterator result(&scope, createInstance<RawTupleIterator>(this));
   result.setIndex(0);
   result.setIterable(*tuple);
   result.setLength(length);
@@ -3539,7 +3638,7 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
 
 RawObject Runtime::newContext(const Dict& data) {
   HandleScope scope;
-  Context result(&scope, heap()->create<RawContext>());
+  Context result(&scope, createInstance<RawContext>(this));
   result.setData(*data);
   result.setPrevContext(NoneType::object());
   return *result;
@@ -3547,7 +3646,7 @@ RawObject Runtime::newContext(const Dict& data) {
 
 RawObject Runtime::newContextVar(const Str& name, const Object& default_value) {
   HandleScope scope;
-  ContextVar result(&scope, heap()->create<RawContextVar>());
+  ContextVar result(&scope, createInstance<RawContextVar>(this));
   result.setName(*name);
   result.setDefaultValue(*default_value);
   return *result;
@@ -3556,7 +3655,7 @@ RawObject Runtime::newContextVar(const Str& name, const Object& default_value) {
 RawObject Runtime::newToken(const Context& ctx, const ContextVar& var,
                             const Object& old_value) {
   HandleScope scope;
-  Token result(&scope, heap()->create<RawToken>());
+  Token result(&scope, createInstance<RawToken>(this));
   result.setContext(*ctx);
   result.setVar(*var);
   result.setOldValue(*old_value);
@@ -3875,7 +3974,7 @@ RawObject Runtime::bytesToInt(Thread* thread, const Bytes& bytes,
   bool extra_digit = high_bit && !is_signed && length % kWordSize == 0;
   word num_digits = (length + (kWordSize - 1)) / kWordSize + extra_digit;
   HandleScope scope(thread);
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, createLargeInt(num_digits));
 
   byte sign_extension = (is_signed && high_bit) ? kMaxByte : 0;
   if (endianness == endian::little && endian::native == endian::little) {
@@ -3920,7 +4019,7 @@ RawObject Runtime::normalizeLargeInt(Thread* thread,
 
   // Shrink.  Future Optimization: Shrink in-place instead of copying.
   HandleScope scope(thread);
-  LargeInt result(&scope, heap()->createLargeInt(shrink_to_digits));
+  LargeInt result(&scope, createLargeInt(shrink_to_digits));
   for (word i = 0; i < shrink_to_digits; ++i) {
     result.digitAtPut(i, large_int.digitAt(i));
   }
@@ -3953,7 +4052,7 @@ RawObject Runtime::intAdd(Thread* thread, const Int& left, const Int& right) {
   word shorter_digits = shorter.numDigits();
   word longer_digits = longer.numDigits();
   word result_digits = longer_digits + 1;
-  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  LargeInt result(&scope, createLargeInt(result_digits));
   uword carry = 0;
   for (word i = 0; i < shorter_digits; i++) {
     uword sum =
@@ -3985,7 +4084,7 @@ RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
   Int shorter(&scope, left_digits <= right_digits ? *left : *right);
 
   word num_digits = longer.numDigits();
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, createLargeInt(num_digits));
   for (word i = 0, e = shorter.numDigits(); i < e; ++i) {
     result.digitAtPut(i, longer.digitAt(i) & shorter.digitAt(i));
   }
@@ -4009,7 +4108,7 @@ RawObject Runtime::intInvert(Thread* thread, const Int& value) {
   }
   HandleScope scope(thread);
   LargeInt large_int(&scope, *value);
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, createLargeInt(num_digits));
   for (word i = 0; i < num_digits; ++i) {
     uword digit = large_int.digitAt(i);
     result.digitAtPut(i, ~digit);
@@ -4047,7 +4146,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
   uword highest_digit = large_int.digitAt(num_digits - 1);
   if (highest_digit == static_cast<uword>(kMinWord) &&
       digits_zero(num_digits - 1)) {
-    LargeInt result(&scope, heap()->createLargeInt(num_digits + 1));
+    LargeInt result(&scope, createLargeInt(num_digits + 1));
     for (word i = 0; i < num_digits; i++) {
       result.digitAtPut(i, large_int.digitAt(i));
     }
@@ -4060,7 +4159,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
   if (highest_digit == 0 &&
       large_int.digitAt(num_digits - 2) == static_cast<uword>(kMinWord) &&
       digits_zero(num_digits - 2)) {
-    LargeInt result(&scope, heap()->createLargeInt(num_digits - 1));
+    LargeInt result(&scope, createLargeInt(num_digits - 1));
     for (word i = 0; i < num_digits - 1; i++) {
       result.digitAtPut(i, large_int.digitAt(i));
     }
@@ -4068,7 +4167,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
     return *result;
   }
 
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, createLargeInt(num_digits));
   word carry = 1;
   for (word i = 0; i < num_digits; i++) {
     uword digit = large_int.digitAt(i);
@@ -4196,7 +4295,7 @@ static RawObject largeIntFromHalves(Thread* thread, const halfuword* halves,
   word digits = num_halves / 2;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  LargeInt result(&scope, runtime->heap()->createLargeInt(digits));
+  LargeInt result(&scope, runtime->createLargeInt(digits));
   for (word i = 0; i < digits; i++) {
     uword digit =
         halves[i * 2] | (uword{halves[i * 2 + 1]} << kBitsPerHalfWord);
@@ -4542,7 +4641,7 @@ RawObject Runtime::intMultiply(Thread* thread, const Int& left,
 
   HandleScope scope(thread);
   word result_digits = left.numDigits() + right.numDigits();
-  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  LargeInt result(&scope, createLargeInt(result_digits));
 
   for (word i = 0; i < result_digits; i++) {
     result.digitAtPut(i, 0);
@@ -4617,7 +4716,7 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   Int longer(&scope, left_digits > right_digits ? *left : *right);
   Int shorter(&scope, left_digits <= right_digits ? *left : *right);
   word num_digits = longer.numDigits();
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, createLargeInt(num_digits));
   for (word i = 0, e = shorter.numDigits(); i < e; ++i) {
     result.digitAtPut(i, longer.digitAt(i) | shorter.digitAt(i));
   }
@@ -4674,7 +4773,7 @@ RawObject Runtime::intBinaryRshift(Thread* thread, const Int& num,
     return *num;
   }
   HandleScope scope(thread);
-  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  LargeInt result(&scope, createLargeInt(result_digits));
   if (shift_bits == 0) {
     for (word i = 0; i < result_digits; i++) {
       result.digitAtPut(i, num.digitAt(shift_words + i));
@@ -4725,7 +4824,7 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
 
   // allocate large int and zero-initialize low digits
   HandleScope scope(thread);
-  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  LargeInt result(&scope, createLargeInt(result_digits));
   for (word i = 0; i < shift_words; i++) {
     result.digitAtPut(i, 0);
   }
@@ -4768,7 +4867,7 @@ RawObject Runtime::intBinaryXor(Thread* thread, const Int& left,
   Int shorter(&scope, left_digits <= right_digits ? *left : *right);
 
   word num_digits = longer.numDigits();
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, createLargeInt(num_digits));
   for (word i = 0, e = shorter.numDigits(); i < e; ++i) {
     result.digitAtPut(i, longer.digitAt(i) ^ shorter.digitAt(i));
   }
@@ -4800,7 +4899,7 @@ RawObject Runtime::intSubtract(Thread* thread, const Int& left,
   word shorter_digits = Utils::minimum(left_digits, right_digits);
   word longer_digits = Utils::maximum(left_digits, right_digits);
   word result_digits = longer_digits + 1;
-  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  LargeInt result(&scope, createLargeInt(result_digits));
   uword borrow = 0;
   for (word i = 0; i < shorter_digits; i++) {
     uword difference =
@@ -4836,7 +4935,7 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
   if (length <= SmallBytes::kMaxLength) {
     dst = buffer;
   } else {
-    result = heap()->createLargeBytes(length);
+    result = thread->runtime()->createLargeBytes(length);
     dst = reinterpret_cast<byte*>(LargeBytes::cast(*result).address());
   }
   word extension_idx;
@@ -4932,7 +5031,7 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
   }
 
   HandleScope scope(thread);
-  LargeStr result(&scope, heap()->createLargeStr(result_len));
+  LargeStr result(&scope, createLargeStr(result_len));
   word diff = new_len - old_len;
   word offset = 0;
   word match_count = 0;

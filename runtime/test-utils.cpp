@@ -330,8 +330,7 @@ RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
 RawLargeInt newLargeIntWithDigits(View<uword> digits) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  LargeInt result(&scope,
-                  thread->runtime()->heap()->createLargeInt(digits.length()));
+  LargeInt result(&scope, thread->runtime()->createLargeInt(digits.length()));
   for (word i = 0, e = digits.length(); i < e; ++i) {
     result.digitAtPut(i, digits.get(i));
   }

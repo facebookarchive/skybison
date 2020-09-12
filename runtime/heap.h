@@ -15,6 +15,7 @@ class Heap {
   // Returns true if allocation succeeded and writes output address + offset to
   // *address. Returns false otherwise.
   bool allocate(word size, word offset, uword* address);
+  void collectGarbage();
 
   bool contains(uword address);
   bool verify();
@@ -22,37 +23,6 @@ class Heap {
   Space* space() { return space_; }
 
   void setSpace(Space* new_space) { space_ = new_space; }
-
-  template <typename T>
-  RawObject create();
-
-  RawObject createType(LayoutId metaclass_id);
-
-  RawObject createComplex(double real, double imag);
-
-  RawObject createFloat(double value);
-
-  RawObject createEllipsis();
-
-  RawObject createInstance(LayoutId layout_id, word num_attributes);
-
-  RawObject createLargeBytes(word length);
-
-  RawObject createLargeInt(word num_digits);
-
-  RawObject createLargeStr(word length);
-
-  RawObject createLayout(LayoutId layout_id);
-
-  RawObject createMutableBytes(word length);
-
-  RawObject createMutableTuple(word length);
-
-  RawObject createPointer(void* c_ptr, word length);
-
-  RawObject createRange();
-
-  RawObject createTuple(word length);
 
   static int spaceOffset() { return offsetof(Heap, space_); };
 
@@ -62,9 +32,25 @@ class Heap {
   Space* space_;
 };
 
-template <typename T>
-RawObject Heap::create() {
-  return createInstance(ObjectLayoutId<T>::value, T::kSize / kPointerSize);
+// Left in the header for inling into Runtime::newXXX functions.
+inline bool Heap::allocate(word size, word offset, uword* address) {
+  DCHECK(size >= RawHeapObject::kMinimumSize, "allocation %ld too small", size);
+  DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
+  // Try allocating.  If the allocation fails, invoke the garbage collector and
+  // retry the allocation.
+  for (word attempt = 0; attempt < 2 && size < space_->size(); attempt++) {
+    uword result = space_->allocate(size);
+    if (result != 0) {
+      // Allocation succeeded return the address as an object.
+      *address = result + offset;
+      return true;
+    }
+    if (attempt == 0) {
+      // Allocation failed, garbage collect and retry the allocation.
+      collectGarbage();
+    }
+  }
+  return false;
 }
 
 }  // namespace py

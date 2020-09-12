@@ -374,7 +374,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   }
 
   HandleScope scope(thread);
-  LargeStr result(&scope, thread->runtime()->heap()->createLargeStr(new_len));
+  LargeStr result(&scope, thread->runtime()->createLargeStr(new_len));
   word offset = RawLargeStr::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
     RawStr str = Str::cast(sp[i]);

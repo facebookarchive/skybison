@@ -978,13 +978,9 @@ class RawInstance : public RawHeapObject {
 
   RAW_OBJECT_COMMON(Instance);
 
- private:
-  // Instance initialization should only done by the Heap.
+  // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, word num_attributes,
                               LayoutId layout_id, RawObject value);
-
-  friend class Heap;
-  friend class Runtime;
 };
 
 class RawBaseException : public RawInstance {
@@ -1365,14 +1361,11 @@ class RawDataArray : public RawHeapObject {
   // Read adjacent bytes as `uint64_t` integer.
   uint64_t uint64At(word index) const;
 
-  RAW_OBJECT_COMMON(DataArray);
-
- protected:
-  // Sizing.
+  // Sizing. Sizing and initialization should only be done by the Runtime.
   static word allocationSize(word length);
   static RawObject initialize(uword address, word length, LayoutId layout_id);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(DataArray);
 };
 
 class RawLargeBytes : public RawDataArray {
@@ -1382,11 +1375,8 @@ class RawLargeBytes : public RawDataArray {
 
   RAW_OBJECT_COMMON(LargeBytes);
 
- private:
-  // Sizing.
+  // Sizing. Sizing should only be done by the Runtime.
   static word allocationSize(word length);
-
-  friend class Heap;
 };
 
 class RawLargeStr : public RawDataArray {
@@ -1406,13 +1396,10 @@ class RawLargeStr : public RawDataArray {
   // Layout
   static const int kDataOffset = RawHeapObject::kSize;
 
-  RAW_OBJECT_COMMON(LargeStr);
-
- private:
-  // Sizing.
+  // Sizing. Sizing should only be done by the Runtime.
   static word allocationSize(word length);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(LargeStr);
 };
 
 class RawMutableBytes : public RawLargeBytes {
@@ -1461,13 +1448,10 @@ class RawMutableBytes : public RawLargeBytes {
   RawObject becomeImmutable() const;
   RawObject becomeStr() const;
 
-  RAW_OBJECT_COMMON(MutableBytes);
-
- private:
-  // Sizing.
+  // Sizing. Sizing should only be done by the Runtime.
   static word allocationSize(word length);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(MutableBytes);
 };
 
 // A mutable array, for the array module
@@ -1551,17 +1535,13 @@ class RawTuple : public RawHeapObject {
 
   bool contains(RawObject object) const;
 
-  RAW_OBJECT_COMMON(Tuple);
-
- protected:
-  // Fill tuple with `None`.
+  // Fill tuple with `None`. Initialization should only be done by the Runtime.
   static RawObject initialize(uword address, word length);
 
- private:
-  // Sizing.
+  // Sizing. Sizing should only be done by the Runtime.
   static word allocationSize(word length);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(Tuple);
 };
 
 class RawMutableTuple : public RawTuple {
@@ -1582,11 +1562,10 @@ class RawMutableTuple : public RawTuple {
   // Swap elements at indices i, j
   void swap(word i, word j) const;
 
-  RAW_OBJECT_COMMON(MutableTuple);
-
- private:
+  // Initialization should only be done by the Runtime.
   static RawObject initialize(uword address, word length);
-  friend class Heap;
+
+  RAW_OBJECT_COMMON(MutableTuple);
 };
 
 class RawUserTupleBase : public RawInstance {
@@ -1650,14 +1629,11 @@ class RawLargeInt : public RawHeapObject {
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(LargeInt);
-
- private:
-  // Sizing.
+  // Sizing. Sizing and initialization should only be done by the Runtime.
   static word allocationSize(word num_digits);
   static RawObject initialize(uword address, word num_digits);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(LargeInt);
 };
 
 class RawFloat : public RawHeapObject {
@@ -1669,13 +1645,10 @@ class RawFloat : public RawHeapObject {
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
 
-  RAW_OBJECT_COMMON(Float);
-
- private:
-  // Instance initialization should only done by the Heap.
+  // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, double value);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(Float);
 };
 
 class RawFrameProxy : public RawInstance {
@@ -1793,13 +1766,10 @@ class RawComplex : public RawHeapObject {
   static const int kImagOffset = kRealOffset + kDoubleSize;
   static const int kSize = kImagOffset + kDoubleSize;
 
-  RAW_OBJECT_COMMON(Complex);
-
- private:
-  // Instance initialization should only done by the Heap.
+  // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, double real, double imag);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(Complex);
 };
 
 class RawNativeProxy : public RawInstance {
@@ -1848,13 +1818,10 @@ class RawPointer : public RawHeapObject {
   static const int kLengthOffset = kCPtrOffset + kPointerSize;
   static const int kSize = kLengthOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Pointer);
-
- private:
-  // Instance initialization should only done by the Heap.
+  // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, void* cptr, word length);
 
-  friend class Heap;
+  RAW_OBJECT_COMMON(Pointer);
 };
 
 class RawProperty : public RawInstance {
@@ -2920,11 +2887,10 @@ class RawEllipsis : public RawHeapObject {
   static const int kPaddingOffset = RawHeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Ellipsis);
-
- private:
+  // Initialization should only be done by the Runtime.
   static RawObject initialize(uword address);
-  friend class Heap;
+
+  RAW_OBJECT_COMMON(Ellipsis);
 };
 
 class RawToken : public RawInstance {
@@ -3225,12 +3191,11 @@ class RawLayout : public RawInstance {
       kDeletionsOffset + kPointerSize;
   static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Layout);
-
- private:
+  // Initialization should only be done by the Runtime.
   static RawObject initialize(uword address, LayoutId layout_id,
                               RawObject value);
-  friend class Heap;
+
+  RAW_OBJECT_COMMON(Layout);
 };
 
 class RawSuper : public RawInstance {

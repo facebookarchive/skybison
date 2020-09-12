@@ -29,6 +29,17 @@ TEST(HeapTestNoFixture, AllocateObjects) {
   EXPECT_TRUE(heap.contains(address2));
 }
 
+static RawObject createLargeStr(Heap* heap, word length) {
+  DCHECK(length > RawSmallStr::kMaxLength,
+         "string len %ld is too small to be a large string", length);
+  word size = LargeStr::allocationSize(length);
+  uword address;
+  CHECK(heap->allocate(size, LargeStr::headerSize(length), &address),
+        "out of memory");
+  return LargeStr::cast(
+      DataArray::initialize(address, length, LayoutId::kLargeStr));
+}
+
 TEST_F(HeapTest, AllocateFails) {
   HandleScope scope(thread_);
   Heap* heap = runtime_->heap();
@@ -36,7 +47,7 @@ TEST_F(HeapTest, AllocateFails) {
 
   // Allocate the first half of the heap. Use a handle to prevent gc
   word first_half = Utils::roundUp(free_space / 2, kPointerSize * 2);
-  Object object1(&scope, heap->createLargeStr(first_half));
+  Object object1(&scope, createLargeStr(runtime_->heap(), first_half));
   RawObject raw1 = *object1;
   ASSERT_FALSE(raw1.isError());
   EXPECT_TRUE(heap->contains(HeapObject::cast(raw1).address()));
@@ -58,7 +69,7 @@ TEST_F(HeapTest, AllocateFails) {
 
 TEST_F(HeapTest, AllocateBigLargeInt) {
   HandleScope scope(thread_);
-  Object result(&scope, runtime_->heap()->createLargeInt(100000));
+  Object result(&scope, runtime_->createLargeInt(100000));
   ASSERT_TRUE(result.isLargeInt());
   EXPECT_EQ(LargeInt::cast(*result).numDigits(), 100000);
 }
@@ -66,16 +77,10 @@ TEST_F(HeapTest, AllocateBigLargeInt) {
 TEST_F(HeapTest, AllocateBigInstance) {
   HandleScope scope(thread_);
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
-  Object result(&scope, runtime_->heap()->createInstance(layout.id(), 100000));
+  Object result(&scope, runtime_->newInstanceWithSize(layout.id(),
+                                                      100000 * kPointerSize));
   ASSERT_TRUE(result.isInstance());
   EXPECT_EQ(Instance::cast(*result).headerCountOrOverflow(), 100000);
-}
-
-TEST_F(HeapTest, AllocateMutableBytes) {
-  HandleScope scope(thread_);
-  Object result(&scope, runtime_->heap()->createMutableBytes(15));
-  ASSERT_TRUE(result.isMutableBytes());
-  EXPECT_EQ(MutableBytes::cast(*result).length(), 15);
 }
 
 class DummyVisitor : public HeapObjectVisitor {
@@ -107,9 +112,9 @@ TEST(HeapTestNoFixture, VisitAllObjectsVisitsAllObjects) {
   EXPECT_EQ(visitor.count(), 0);
   heap.visitAllObjects(&visitor);
   EXPECT_EQ(visitor.count(), 0);
-  RawObject obj1 = heap.createLargeStr(10);
-  RawObject obj2 = heap.createLargeStr(10);
-  RawObject obj3 = heap.createLargeStr(10);
+  RawObject obj1 = createLargeStr(&heap, 10);
+  RawObject obj2 = createLargeStr(&heap, 10);
+  RawObject obj3 = createLargeStr(&heap, 10);
   heap.visitAllObjects(&visitor);
   EXPECT_TRUE(visitor.visited(obj1));
   EXPECT_TRUE(visitor.visited(obj2));

@@ -143,7 +143,7 @@ TEST_F(ObjectBuiltinsTest,
 
 TEST_F(ObjectBuiltinsTest, DunderSizeofWithLargeStrReturnsSizeofHeapObject) {
   HandleScope scope;
-  HeapObject large_str(&scope, runtime_->heap()->createLargeStr(40));
+  HeapObject large_str(&scope, runtime_->createLargeStr(40));
   Object result(&scope, runBuiltin(METH(object, __sizeof__), large_str));
   EXPECT_TRUE(isIntEqualsWord(*result, large_str.size()));
 }

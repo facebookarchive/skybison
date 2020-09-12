@@ -70,6 +70,10 @@ class Runtime {
   // `initializeSys`.
   RawObject initialize(Thread* thread);
 
+  // TODO(T75349221): Make createXXX functions private or remove them
+  RawObject createLargeInt(word num_digits);
+  RawObject createLargeStr(word length);
+
   RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newBytearray();
@@ -145,6 +149,7 @@ class Runtime {
   RawObject newGeneratorFrame(const Function& function);
 
   RawObject newInstance(const Layout& layout);
+  RawObject newInstanceWithSize(LayoutId layout_id, word object_size);
 
   // Create a new Int from a signed value.
   RawObject newInt(word value);
@@ -935,6 +940,10 @@ class Runtime {
   word siphash24(View<byte> array);
 
   void growInternSet(Thread* thread);
+
+  RawObject createLargeBytes(word length);
+  RawObject createMutableBytes(word length);
+  RawObject createTuple(word length);
 
   RawObject newFunction(Thread* thread, const Object& name, const Object& code,
                         word flags, word argcount, word total_args,
