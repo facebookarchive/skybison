@@ -170,8 +170,7 @@ class Runtime {
 
   RawObject newSeqIterator(const Object& sequence);
 
-  RawObject newSlotDescriptor(const Type& type, const Object& name,
-                              word offset);
+  RawObject newSlotDescriptor(const Type& type, const Object& name);
 
   // Create a new MemoryView object. Initializes the view format to "B".
   RawObject newMemoryView(Thread* thread, const Object& obj,
@@ -587,22 +586,6 @@ class Runtime {
   // are set via `self.<attribute> =` into attributes.
   void collectAttributes(const Code& code, const Dict& attributes);
 
-  // Constructs the initial layout for instances of type.
-  //
-  // The layout contains the set of in-object attributes. This is computed by
-  // scanning the constructors of every type in type's MRO.
-  RawObject computeInitialLayout(Thread* thread, const Type& type,
-                                 LayoutId base_layout_id);
-
-  // Constructs the initial layout for instances of type.
-  //
-  // The layout contains the set of in-object attributes, as given by
-  // `in_object_attributes`.
-  RawObject computeInitialLayoutWithSlotAttributes(Thread* thread,
-                                                   const Type& type,
-                                                   LayoutId base_layout_id,
-                                                   const List& slots);
-
   // Returns type's __init__ method, or None
   RawObject classConstructor(const Type& type);
 
@@ -967,13 +950,6 @@ class Runtime {
   // TODO(T55871582): Remove code paths that can raise from the Runtime
   NODISCARD RawObject moduleDelAttr(Thread* thread, const Object& receiver,
                                     const Object& name);
-
-  // Creates a layout that is a subclass of `subclass_id` with additional
-  // slot attributes in object as described by `attributes`.
-  RawObject layoutCreateSubclassWithSlotAttributes(Thread* thread,
-                                                   LayoutId subclass_id,
-                                                   LayoutId superclass_id,
-                                                   const List& attributes);
 
   // Appends attribute entries for fixed attributes to an array of in-object
   // attribute entries starting at a specific index.  Useful for constructing

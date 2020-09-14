@@ -725,8 +725,125 @@ static RawObject validateSlots(Thread* thread, const Type& type,
     }
     runtime->listAdd(thread, result, slot_str);
   }
+  if (result.numItems() == 0) return NoneType::object();
   listSort(thread, result);
   return *result;
+}
+
+static word estimateNumAttributes(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  // Collect set of in-object attributes by scanning the __init__ method of
+  // each class in the MRO. This is used to determine the number of slots
+  // allocated for in-object attributes when instances are created.
+  Tuple mro(&scope, type.mro());
+  Dict attr_names(&scope, runtime->newDict());
+  for (word i = 0; i < mro.length(); i++) {
+    Type mro_type(&scope, mro.at(i));
+    Object maybe_init(&scope, runtime->classConstructor(mro_type));
+    if (!maybe_init.isFunction()) {
+      continue;
+    }
+    Function init(&scope, *maybe_init);
+    RawObject maybe_code = init.code();
+    if (!maybe_code.isCode()) {
+      continue;  // native trampoline
+    }
+    Code code(&scope, maybe_code);
+    if (code.code().isSmallInt()) {
+      continue;  // builtin trampoline
+    }
+    runtime->collectAttributes(code, attr_names);
+  }
+  return attr_names.numItems();
+}
+
+static void setSlotAttributes(Thread* thread, const MutableTuple& dst,
+                              word start_index, const List& slots) {
+  HandleScope scope(thread);
+  Object descriptor(&scope, NoneType::object());
+  Object name(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  for (word i = 0, offset = start_index * kPointerSize; i < slots.numItems();
+       i++, offset += kPointerSize) {
+    descriptor = slots.at(i);
+    AttributeInfo info(offset, AttributeFlags::kInObject |
+                                   AttributeFlags::kFixedOffset |
+                                   AttributeFlags::kInitWithUnbound);
+    name = SlotDescriptor::cast(*descriptor).name();
+    dst.atPut(start_index + i, runtime->layoutNewAttribute(name, info));
+    SlotDescriptor::cast(*descriptor).setOffset(offset);
+  }
+}
+
+static RawObject typeComputeLayout(Thread* thread, const Type& type,
+                                   bool enable_overflow, const Object& slots) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple bases(&scope, type.bases());
+  Object fixed_attr_base_obj(&scope, computeFixedAttributeBase(thread, bases));
+  if (fixed_attr_base_obj.isErrorException()) return *fixed_attr_base_obj;
+  Type fixed_attr_base(&scope, *fixed_attr_base_obj);
+
+  // Create new layout.
+  DCHECK(type.instanceLayout().isNoneType(),
+         "must not set layout multiple times");
+  LayoutId layout_id = runtime->reserveLayoutId(thread);
+  Layout layout(&scope, runtime->newLayout(layout_id));
+
+  // Compute in-object attributes.
+  Layout base_layout(&scope, fixed_attr_base.instanceLayout());
+  Tuple base_attributes(&scope, base_layout.inObjectAttributes());
+  word num_base_attributes = base_attributes.length();
+  word num_slots = slots.isList() ? List::cast(*slots).numItems() : 0;
+  word num_initial_attributes = num_base_attributes + num_slots;
+  if (num_initial_attributes == 0) {
+    layout.setInObjectAttributes(runtime->emptyTuple());
+  } else {
+    MutableTuple attributes(&scope,
+                            runtime->newMutableTuple(num_initial_attributes));
+    attributes.replaceFromWith(0, *base_attributes, num_base_attributes);
+    if (num_slots > 0) {
+      List slots_list(&scope, *slots);
+      setSlotAttributes(thread, attributes, /*start_index=*/num_base_attributes,
+                        slots_list);
+    }
+    layout.setInObjectAttributes(attributes.becomeImmutable());
+  }
+
+  word num_extra_attributes = estimateNumAttributes(thread, type);
+  layout.setNumInObjectAttributes(num_initial_attributes +
+                                  num_extra_attributes);
+
+  // Determine overflow mode.
+  Type base(&scope, *type);
+  Object overflow(&scope, base_layout.overflowAttributes());
+  Object base_overflow(&scope, NoneType::object());
+  bool bases_have_custom_dict = false;
+  for (word i = 0, length = bases.length(); i < length; i++) {
+    base = bases.at(i);
+    if (base.hasCustomDict()) bases_have_custom_dict = true;
+    base_overflow = Layout::cast(base.instanceLayout()).overflowAttributes();
+    if (overflow == base_overflow || base_overflow.isNoneType()) continue;
+    if (overflow.isNoneType() && base_overflow.isTuple()) {
+      overflow = *base_overflow;
+      continue;
+    }
+    UNIMPLEMENTED("Mixing dict and tuple overflow");
+  }
+  DCHECK(!overflow.isTuple() || Tuple::cast(*overflow).length() == 0,
+         "base layout must not have tuple overflow attributes assigned");
+  if (enable_overflow && !bases_have_custom_dict && overflow.isNoneType()) {
+    overflow = runtime->emptyTuple();
+  }
+  layout.setOverflowAttributes(*overflow);
+
+  runtime->layoutAtPut(layout_id, *layout);
+  layout.setDescribedType(*type);
+  type.setInstanceLayout(*layout);
+  type.setInstanceLayoutId(layout.id());
+  type.setBuiltinBase(fixed_attr_base.builtinBase());
+  return NoneType::object();
 }
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
@@ -760,21 +877,13 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // TODO(T53997177): Centralize type initialization
   typeAddDocstring(thread, type);
 
-  Tuple bases(&scope, type.bases());
-  Object fixed_attr_base_obj(&scope, computeFixedAttributeBase(thread, bases));
-  if (fixed_attr_base_obj.isErrorException()) {
-    return *fixed_attr_base_obj;
-  }
-  Type fixed_attr_base_type(&scope, *fixed_attr_base_obj);
-  LayoutId fixed_attr_base = fixed_attr_base_type.instanceLayoutId();
-
   // Analyze bases: Merge flags; add to subclasses lists; check for attribute
   // dictionaries.
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
   bool bases_have_instance_dict = false;
-  bool bases_have_overflow_layout = false;
   bool bases_have_type_slots = false;
+  Tuple bases(&scope, type.bases());
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     flags |= base_type.flags();
@@ -783,10 +892,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     if (base_type.hasCustomDict()) bases_have_instance_dict = true;
     if (!Layout::cast(base_type.instanceLayout()).isSealed()) {
       bases_have_instance_dict = true;
-      bases_have_overflow_layout = true;
     }
   }
-  flags &= ~Type::Flag::kIsAbstract;
+  if (bases_have_instance_dict) add_instance_dict = false;
+  flags &= ~(Type::Flag::kIsAbstract | Type::Flag::kIsFixedAttributeBase);
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
   type.setFlags(static_cast<Type::Flag>(flags));
 
@@ -797,22 +906,16 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
   }
 
-  Layout layout(&scope, runtime->layoutAt(LayoutId::kNoneType));
   Object dunder_slots_obj(&scope, typeAtById(thread, type, ID(__slots__)));
-  bool has_non_empty_dunder_slots = false;
-  if (dunder_slots_obj.isErrorNotFound()) {
-    layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
-    if (bases_have_instance_dict) add_instance_dict = false;
-  } else {
+  Object slots_obj(&scope, NoneType::object());
+  if (!dunder_slots_obj.isErrorNotFound()) {
     // NOTE: CPython raises an exception when slots are given to a subtype of a
     // type with type.tp_itemsize != 0, which means having a variable length.
     // For example, __slots__ in int's subtype or str's type is disallowed.
     // This behavior is ignored in Pyro since all objects' size in RawObject is
     // fixed in Pyro.
     if (runtime->isInstanceOfStr(*dunder_slots_obj)) {
-      Tuple slots_tuple(&scope, runtime->newTuple(1));
-      slots_tuple.atPut(0, *dunder_slots_obj);
-      dunder_slots_obj = *slots_tuple;
+      dunder_slots_obj = runtime->newTupleWith1(dunder_slots_obj);
     } else if (!runtime->isInstanceOfTuple(*dunder_slots_obj)) {
       Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
       dunder_slots_obj = Interpreter::callFunction1(
@@ -820,65 +923,34 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       if (dunder_slots_obj.isErrorException()) {
         return *dunder_slots_obj;
       }
-      DCHECK(dunder_slots_obj.isTuple(), "tuple is expected");
+      CHECK(dunder_slots_obj.isTuple(), "Converting __slots__ to tuple failed");
     }
     Tuple slots_tuple(&scope, *dunder_slots_obj);
-    Object sorted_dunder_slots_obj(
-        &scope, validateSlots(thread, type, slots_tuple,
-                              bases_have_instance_dict, &add_instance_dict));
-    if (sorted_dunder_slots_obj.isErrorException()) {
-      return *sorted_dunder_slots_obj;
+    slots_obj = validateSlots(thread, type, slots_tuple,
+                              bases_have_instance_dict, &add_instance_dict);
+    if (slots_obj.isErrorException()) {
+      return *slots_obj;
     }
-    List slots(&scope, *sorted_dunder_slots_obj);
-    if (slots.numItems() > 0) {
-      // Create a new layout with in-object attributes for __slots__ based off
-      // fixed_attr_base.
-      layout = runtime->computeInitialLayoutWithSlotAttributes(
-          thread, type, fixed_attr_base, slots);
+    if (!slots_obj.isNoneType()) {
+      List slots(&scope, *slots_obj);
       // Add descriptors that mediate access to __slots__ attributes.
       Object slot_descriptor(&scope, NoneType::object());
       Object slot_name(&scope, NoneType::object());
-      for (word i = 0; i < slots.numItems(); i++) {
+      for (word i = 0, num_items = slots.numItems(); i < num_items; i++) {
         slot_name = slots.at(i);
-        AttributeInfo info;
-        CHECK(Runtime::layoutFindAttribute(*layout, slot_name, &info),
-              "expected to find the slot attribute");
-        DCHECK(
-            info.isInObject() && info.isFixedOffset(),
-            "slot attributes are expected to be in object with a fixed offset");
-        slot_descriptor =
-            runtime->newSlotDescriptor(type, slot_name, info.offset());
+        slot_descriptor = runtime->newSlotDescriptor(type, slot_name);
         typeAtPut(thread, type, slot_name, slot_descriptor);
+        slots.atPut(i, *slot_descriptor);
       }
-    } else {
-      layout = runtime->computeInitialLayout(thread, type, fixed_attr_base);
     }
-    has_non_empty_dunder_slots = slots.numItems() > 0;
-  }
-  // Use tuple overflow layout mode as attribute dictionary.
-  if (add_instance_dict || (bases_have_overflow_layout && layout.isSealed())) {
-    runtime->layoutSetTupleOverflow(*layout);
   }
 
-  // Initialize instance layout.
-  layout.setDescribedType(*type);
-  type.setInstanceLayout(*layout);
-  type.setInstanceLayoutId(layout.id());
-
-  if (has_non_empty_dunder_slots) {
+  if (!slots_obj.isNoneType()) {
     flags |= Type::Flag::kHasSlots;
     flags |= Type::Flag::kIsFixedAttributeBase;
   }
 
-  if (!has_non_empty_dunder_slots) {
-    flags &= ~Type::Flag::kIsFixedAttributeBase;
-  }
-
-  LayoutId builtin_base = fixed_attr_base_type.builtinBase();
-  if (builtin_base == LayoutId::kError) {
-    return Error::exception();
-  }
-  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
+  type.setFlags(static_cast<Type::Flag>(flags));
 
   // Add a `__dict__` descriptor when we added an instance dict.
   if (add_instance_dict &&
@@ -926,6 +998,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                             runtime->lookupNameInModule(thread, ID(_builtins),
                                                         ID(_type_dunder_call)));
   type.setCtor(*type_dunder_call);
+
+  result = typeComputeLayout(thread, type, add_instance_dict, slots_obj);
+  if (result.isErrorException()) return *result;
+
   return *type;
 }
 

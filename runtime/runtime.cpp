@@ -315,55 +315,6 @@ void Runtime::appendBuiltinAttributes(Thread* thread,
   }
 }
 
-static void appendSlotAttributes(Thread* thread, const List& slots,
-                                 const Tuple& dst, word start_offset,
-                                 word start_index) {
-  HandleScope scope(thread);
-  Str name(&scope, Str::empty());
-  Runtime* runtime = thread->runtime();
-  for (word i = 0, offset = start_offset; i < slots.numItems();
-       i++, offset += kPointerSize) {
-    name = slots.at(i);
-    AttributeInfo info(offset, AttributeFlags::kInObject |
-                                   AttributeFlags::kFixedOffset |
-                                   AttributeFlags::kInitWithUnbound);
-    dst.atPut(start_index + i, runtime->layoutNewAttribute(name, info));
-  }
-}
-
-RawObject Runtime::layoutCreateSubclassWithSlotAttributes(
-    Thread* thread, LayoutId subclass_id, LayoutId superclass_id,
-    const List& attributes) {
-  HandleScope scope(thread);
-  Layout super_layout(&scope, layoutAt(superclass_id));
-  Tuple super_attributes(&scope, super_layout.inObjectAttributes());
-  checkInObjectAttributesWithFixedOffset(super_attributes);
-
-  // Create an empty layout for the subclass
-  Layout result(&scope, newLayout(subclass_id));
-
-  // Copy down all of the superclass attributes into the subclass layout
-  result.setOverflowAttributes(super_layout.overflowAttributes());
-  word super_attributes_len = super_attributes.length();
-  word in_object_len = super_attributes_len + attributes.numItems();
-  if (in_object_len == 0) {
-    result.setInObjectAttributes(emptyTuple());
-    result.setNumInObjectAttributes(0);
-  } else {
-    word attribute_start_offset = super_attributes_len * kPointerSize;
-    MutableTuple in_object(&scope, newMutableTuple(in_object_len));
-    in_object.replaceFromWith(0, *super_attributes, super_attributes_len);
-    appendSlotAttributes(thread, attributes, in_object, attribute_start_offset,
-                         super_attributes_len);
-
-    // Install the in-object attributes
-    result.setInObjectAttributes(in_object.becomeImmutable());
-    result.setNumInObjectAttributes(in_object_len);
-  }
-
-  return *result;
-}
-
 template <typename T>
 static RawObject createInstance(Runtime* runtime) {
   return runtime->newInstanceWithSize(ObjectLayoutId<T>::value, T::kSize);
@@ -1026,14 +977,12 @@ RawObject Runtime::newModuleProxy(const Module& module) {
   return *result;
 }
 
-RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name,
-                                     word offset) {
+RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   SlotDescriptor result(&scope, createInstance<RawSlotDescriptor>(this));
   result.setType(*type);
   result.setName(*name);
-  result.setOffset(offset);
   return *result;
 }
 
@@ -3228,67 +3177,6 @@ void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
 RawObject Runtime::classConstructor(const Type& type) {
   Thread* thread = Thread::current();
   return typeAtById(thread, type, ID(__init__));
-}
-
-// Collect set of in-object attributes by scanning the __init__ method of
-// each class in the MRO
-static word numInferredInObjectAttributes(Thread* thread, const Type& type) {
-  HandleScope scope(thread);
-  Tuple mro(&scope, type.mro());
-  Runtime* runtime = thread->runtime();
-  Dict attrs(&scope, runtime->newDict());
-  for (word i = 0; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    Object maybe_init(&scope, runtime->classConstructor(mro_type));
-    if (!maybe_init.isFunction()) {
-      continue;
-    }
-    Function init(&scope, *maybe_init);
-    RawObject maybe_code = init.code();
-    if (!maybe_code.isCode()) {
-      continue;  // native trampoline
-    }
-    Code code(&scope, maybe_code);
-    if (code.code().isSmallInt()) {
-      continue;  // builtin trampoline
-    }
-    runtime->collectAttributes(code, attrs);
-  }
-  return attrs.numItems();
-}
-
-RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
-                                        LayoutId base_layout_id) {
-  HandleScope scope(thread);
-  // Create the layout
-  LayoutId layout_id = reserveLayoutId(thread);
-  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
-                            thread, layout_id, base_layout_id,
-                            View<BuiltinAttribute>(nullptr, 0)));
-  layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
-                                  numInferredInObjectAttributes(thread, type));
-  layoutAtPut(layout_id, *layout);
-  // TODO(T67674517): Delete this once heap dumper can deal with partially
-  // filled objects.
-  layout.setDescribedType(*type);
-  return *layout;
-}
-
-RawObject Runtime::computeInitialLayoutWithSlotAttributes(
-    Thread* thread, const Type& type, LayoutId base_layout_id,
-    const List& slots) {
-  HandleScope scope(thread);
-  // Create the layout
-  LayoutId layout_id = reserveLayoutId(thread);
-  Layout layout(&scope, layoutCreateSubclassWithSlotAttributes(
-                            thread, layout_id, base_layout_id, slots));
-  layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
-                                  numInferredInObjectAttributes(thread, type));
-  layoutAtPut(layout_id, *layout);
-  // TODO(T67674517): Delete this once heap dumper can deal with partially
-  // filled objects.
-  layout.setDescribedType(*type);
-  return *layout;
 }
 
 RawObject Runtime::attributeAt(Thread* thread, const Object& object,

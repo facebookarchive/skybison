@@ -813,23 +813,12 @@ static RawObject newExtensionType(PyObject* extension_type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  // Initialize Type
-  Type type(&scope, runtime->newType());
-
-  // Compute MRO
-  Tuple mro(&scope, runtime->newTuple(2));
-  mro.atPut(0, *type);
-  mro.atPut(1, runtime->typeAt(LayoutId::kObject));
-  type.setMro(*mro);
-
-  // Initialize instance Layout
-  Layout layout(&scope,
-                runtime->computeInitialLayout(thread, type, LayoutId::kObject));
-  layout.setNumInObjectAttributes(3);
-  layout.setDescribedType(*type);
-  type.setInstanceLayout(*layout);
-  type.setInstanceLayoutId(layout.id());
-  type.setFlagsAndBuiltinBase(RawType::Flag::kHasNativeData, LayoutId::kObject);
+  Str name(&scope, runtime->newStrFromCStr("ExtType"));
+  Object object_type(&scope, runtime->typeAt(LayoutId::kObject));
+  Tuple bases(&scope, runtime->newTupleWith1(object_type));
+  Dict dict(&scope, runtime->newDict());
+  Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict,
+                            Type::Flag::kHasNativeData, false));
 
   extension_type->reference_ = type.raw();
   return *type;

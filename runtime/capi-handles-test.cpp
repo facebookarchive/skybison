@@ -7,6 +7,7 @@
 #include "object-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
+#include "type-builtins.h"
 
 namespace py {
 namespace testing {
@@ -19,24 +20,14 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  // Initialize Type
-  PyObject* pyobj = reinterpret_cast<PyObject*>(extension_type);
-  Type type(&scope, runtime->newType());
+  Str name(&scope, runtime->newStrFromCStr("ExtType"));
+  Object object_type(&scope, runtime->typeAt(LayoutId::kObject));
+  Tuple bases(&scope, runtime->newTupleWith1(object_type));
+  Dict dict(&scope, runtime->newDict());
+  Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict,
+                            Type::Flag::kHasNativeData, false));
 
-  // Compute MRO
-  Tuple mro(&scope, runtime->emptyTuple());
-  type.setMro(*mro);
-
-  // Initialize instance Layout
-  Layout layout(&scope,
-                runtime->computeInitialLayout(thread, type, LayoutId::kObject));
-  layout.setNumInObjectAttributes(3);
-  layout.setDescribedType(*type);
-  type.setInstanceLayout(*layout);
-  type.setInstanceLayoutId(layout.id());
-  type.setFlagsAndBuiltinBase(RawType::Flag::kHasNativeData, LayoutId::kObject);
-
-  pyobj->reference_ = type.raw();
+  extension_type->reference_ = type.raw();
   return *type;
 }
 
