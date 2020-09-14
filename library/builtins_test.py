@@ -7611,6 +7611,30 @@ class DunderSlotsTests(unittest.TestCase):
         self.assertEqual(c["p"], 4)
         self.assertEqual(c["q"], 5)
 
+    def test_dunder_slots_are_independent_from_inherited_slots(self):
+        class C:
+            __slots__ = ("a", "c")
+
+        class D(C):
+            __slots__ = ("b", "c")
+
+        obj = D()
+        obj.a = 1
+        obj.b = 2
+        obj.c = 3
+        C.c.__set__(obj, 33)
+
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(C.a.__get__(obj), 1)
+        self.assertEqual(D.a.__get__(obj), 1)
+        self.assertEqual(obj.b, 2)
+        with self.assertRaises(AttributeError):
+            C.b
+        self.assertEqual(D.b.__get__(obj), 2)
+        self.assertEqual(obj.c, 3)
+        self.assertEqual(C.c.__get__(obj), 33)
+        self.assertEqual(D.c.__get__(obj), 3)
+
     def test_dunder_slots_member_descriptor_works_only_for_subtypes(self):
         class C:
             __slots__ = "x"

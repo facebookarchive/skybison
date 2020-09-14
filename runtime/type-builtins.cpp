@@ -686,9 +686,7 @@ static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
 }
 
 static RawObject validateSlots(Thread* thread, const Type& type,
-                               const Tuple& slots,
-                               LayoutId fixed_attr_base_layout_id,
-                               bool base_has_instance_dict,
+                               const Tuple& slots, bool base_has_instance_dict,
                                bool* add_instance_dict) {
   HandleScope scope(thread);
   word slots_len = slots.length();
@@ -698,7 +696,6 @@ static RawObject validateSlots(Thread* thread, const Type& type,
   List result(&scope, runtime->newList());
   Object slot_obj(&scope, NoneType::object());
   Str slot_str(&scope, Str::empty());
-  Layout base_layout(&scope, runtime->layoutAt(fixed_attr_base_layout_id));
   for (word i = 0; i < slots_len; i++) {
     slot_obj = slots.at(i);
     if (!runtime->isInstanceOfStr(*slot_obj)) {
@@ -726,11 +723,7 @@ static RawObject validateSlots(Thread* thread, const Type& type,
           LayoutId::kValueError,
           "'%S' in __slots__ conflicts with class variable", &slot_str);
     }
-    AttributeInfo ignored;
-    // Filter out attribute already defined by `fixed_attr_base`.
-    if (!Runtime::layoutFindAttribute(*base_layout, slot_str, &ignored)) {
-      runtime->listAdd(thread, result, slot_str);
-    }
+    runtime->listAdd(thread, result, slot_str);
   }
   listSort(thread, result);
   return *result;
@@ -831,7 +824,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
     Tuple slots_tuple(&scope, *dunder_slots_obj);
     Object sorted_dunder_slots_obj(
-        &scope, validateSlots(thread, type, slots_tuple, fixed_attr_base,
+        &scope, validateSlots(thread, type, slots_tuple,
                               bases_have_instance_dict, &add_instance_dict));
     if (sorted_dunder_slots_obj.isErrorException()) {
       return *sorted_dunder_slots_obj;
