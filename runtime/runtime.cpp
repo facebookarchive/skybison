@@ -256,9 +256,9 @@ static void checkInObjectAttributesWithFixedOffset(const Tuple& attributes) {
 }
 
 RawObject Runtime::layoutCreateSubclassWithBuiltins(
-    LayoutId subclass_id, LayoutId superclass_id,
+    Thread* thread, LayoutId subclass_id, LayoutId superclass_id,
     View<BuiltinAttribute> attributes) {
-  HandleScope scope;
+  HandleScope scope(thread);
 
   // A builtin class is special since it contains attributes that must be
   // located at fixed offsets from the start of an instance.  These attributes
@@ -280,7 +280,8 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   } else {
     MutableTuple in_object(&scope, newMutableTuple(in_object_len));
     in_object.replaceFromWith(0, *super_attributes, super_attributes_len);
-    appendBuiltinAttributes(attributes, in_object, super_attributes_len);
+    appendBuiltinAttributes(thread, attributes, in_object,
+                            super_attributes_len);
 
     // Install the in-object attributes
     result.setInObjectAttributes(in_object.becomeImmutable());
@@ -290,13 +291,15 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   return *result;
 }
 
-void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
+void Runtime::appendBuiltinAttributes(Thread* thread,
+                                      View<BuiltinAttribute> attributes,
                                       const MutableTuple& dst,
                                       word start_index) {
   if (attributes.length() == 0) {
     return;
   }
-  HandleScope scope;
+  HandleScope scope(thread);
+  Object name(&scope, NoneType::object());
   for (word i = 0; i < attributes.length(); i++) {
     DCHECK((attributes.get(i).flags &
             (AttributeFlags::kInObject | AttributeFlags::kDeleted |
@@ -306,11 +309,9 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
                        attributes.get(i).flags | AttributeFlags::kInObject |
                            AttributeFlags::kFixedOffset);
     SymbolId symbol_id = attributes.get(i).name;
-    Object name(&scope, symbol_id == SymbolId::kInvalid
-                            ? NoneType::object()
-                            : symbols()->at(symbol_id));
-    Object info_obj(&scope, info.asSmallInt());
-    dst.atPut(start_index + i, newTupleWith2(name, info_obj));
+    name = symbol_id == SymbolId::kInvalid ? NoneType::object()
+                                           : symbols()->at(symbol_id);
+    dst.atPut(start_index + i, layoutNewAttribute(name, info));
   }
 }
 
@@ -318,7 +319,6 @@ static void appendSlotAttributes(Thread* thread, const List& slots,
                                  const Tuple& dst, word start_offset,
                                  word start_index) {
   HandleScope scope(thread);
-  Tuple entry(&scope, thread->runtime()->emptyTuple());
   Str name(&scope, Str::empty());
   Runtime* runtime = thread->runtime();
   for (word i = 0, offset = start_offset; i < slots.numItems();
@@ -327,10 +327,7 @@ static void appendSlotAttributes(Thread* thread, const List& slots,
     AttributeInfo info(offset, AttributeFlags::kInObject |
                                    AttributeFlags::kFixedOffset |
                                    AttributeFlags::kInitWithUnbound);
-    entry = runtime->newTuple(2);
-    entry.atPut(0, *name);
-    entry.atPut(1, info.asSmallInt());
-    dst.atPut(start_index + i, *entry);
+    dst.atPut(start_index + i, runtime->layoutNewAttribute(name, info));
   }
 }
 
@@ -3266,7 +3263,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   // Create the layout
   LayoutId layout_id = reserveLayoutId(thread);
   Layout layout(&scope, layoutCreateSubclassWithBuiltins(
-                            layout_id, base_layout_id,
+                            thread, layout_id, base_layout_id,
                             View<BuiltinAttribute>(nullptr, 0)));
   layout.setNumInObjectAttributes(layout.numInObjectAttributes() +
                                   numInferredInObjectAttributes(thread, type));
@@ -3665,6 +3662,13 @@ RawObject Runtime::newToken(const Context& ctx, const ContextVar& var,
 
 RawObject Runtime::emptyFrozenSet() { return empty_frozen_set_; }
 
+RawObject Runtime::layoutNewAttribute(const Object& name, AttributeInfo info) {
+  RawMutableTuple result = MutableTuple::cast(newMutableTuple(2));
+  result.atPut(0, *name);
+  result.atPut(1, info.asSmallInt());
+  return result.becomeImmutable();
+}
+
 static RawObject layoutFollowEdge(RawObject edges, RawObject key) {
   RawList list = List::cast(edges);
   DCHECK(list.numItems() % 2 == 0,
@@ -3734,8 +3738,7 @@ RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
   MutableTuple new_entries(&scope, newMutableTuple(entries_len + 1));
   new_entries.replaceFromWith(0, *entries, entries_len);
 
-  Object info_obj(&scope, info.asSmallInt());
-  new_entries.atPut(entries_len, newTupleWith2(name, info_obj));
+  new_entries.atPut(entries_len, layoutNewAttribute(name, info));
 
   return new_entries.becomeImmutable();
 }
@@ -3858,16 +3861,14 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
   DCHECK(length > 0, "length must be positive");
   Runtime* runtime = thread->runtime();
   MutableTuple entries_new(&scope, runtime->newMutableTuple(length));
+  Object none(&scope, NoneType::object());
   Tuple entry(&scope, runtime->emptyTuple());
-  Object entry_name(&scope, NoneType::object());
-  Object info(&scope, NoneType::object());
   for (word i = 0; i < length; i++) {
     entry = entries_old.at(i);
     if (entry.at(0) == name) {
       AttributeInfo old_info(entry.at(1));
-      info = AttributeInfo(old_info.offset(), AttributeFlags::kDeleted)
-                 .asSmallInt();
-      entry = runtime->newTupleWith2(entry_name, info);
+      AttributeInfo info(old_info.offset(), AttributeFlags::kDeleted);
+      entry = runtime->layoutNewAttribute(/*name=*/none, info);
     }
     entries_new.atPut(i, *entry);
   }

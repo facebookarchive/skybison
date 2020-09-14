@@ -104,7 +104,7 @@ RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutCreateSubclassWithBuiltins(
-                            layout_id, superclass_id, attrs));
+                            thread, layout_id, superclass_id, attrs));
   runtime->layoutAtPut(layout_id, *layout);
   LayoutId builtin_base = attrs.length() == 0 ? superclass_id : layout_id;
   return addBuiltinTypeWithLayout(thread, layout, name, builtin_base,

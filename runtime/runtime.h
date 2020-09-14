@@ -576,9 +576,12 @@ class Runtime {
 
   // Creates a layout that is a subclass of a built-in class and zero or more
   // additional built-in attributes.
-  RawObject layoutCreateSubclassWithBuiltins(LayoutId subclass_id,
+  RawObject layoutCreateSubclassWithBuiltins(Thread* thread,
+                                             LayoutId subclass_id,
                                              LayoutId superclass_id,
                                              View<BuiltinAttribute> attributes);
+
+  RawObject layoutNewAttribute(const Object& name, AttributeInfo info);
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
@@ -975,7 +978,8 @@ class Runtime {
   // Appends attribute entries for fixed attributes to an array of in-object
   // attribute entries starting at a specific index.  Useful for constructing
   // the in-object attributes array for built-in classes with fixed attributes.
-  void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
+  void appendBuiltinAttributes(Thread* thread,
+                               View<BuiltinAttribute> attributes,
                                const MutableTuple& dst, word start_index);
 
   // Creates a new layout that will be a child layout of the supplied parent.
