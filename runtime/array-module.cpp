@@ -337,8 +337,11 @@ static void arrayEnsureCapacity(Thread* thread, const Array& array,
   word curr_length = buffer.length();
   if (min_length <= curr_length) return;
   word new_length = Runtime::newCapacity(curr_length, min_length);
-  array.setBuffer(thread->runtime()->mutableBytesCopyWithLength(thread, buffer,
-                                                                new_length));
+  MutableBytes new_buffer(
+      &scope, thread->runtime()->newMutableBytesUninitialized(new_length));
+  new_buffer.replaceFromWith(0, *buffer, curr_length);
+  new_buffer.replaceFromWithByte(curr_length, 0, new_length - curr_length);
+  array.setBuffer(*new_buffer);
 }
 
 RawObject FUNC(array, _array_reserve)(Thread* thread, Frame* frame,

@@ -891,59 +891,6 @@ TEST_F(RuntimeTest, NewMutableBytesUninitializedReturnsMutableBytes) {
   EXPECT_EQ(MutableBytes::cast(*result).length(), 3);
 }
 
-TEST_F(RuntimeTest, MutableBytesCopyWithLengthWithSameLengthReturnsFull) {
-  HandleScope scope(thread_);
-  const MutableBytes mutable_bytes(&scope,
-                                   runtime_->newMutableBytesUninitialized(3));
-  mutable_bytes.byteAtPut(0, 0x11);
-  mutable_bytes.byteAtPut(1, 0x22);
-  mutable_bytes.byteAtPut(2, 0x33);
-
-  MutableBytes dst_longer(
-      &scope, runtime_->mutableBytesCopyWithLength(thread_, mutable_bytes, 3));
-  EXPECT_EQ(dst_longer.length(), 3);
-
-  EXPECT_EQ(dst_longer.byteAt(0), 0x11);
-  EXPECT_EQ(dst_longer.byteAt(1), 0x22);
-  EXPECT_EQ(dst_longer.byteAt(2), 0x33);
-}
-
-TEST_F(RuntimeTest, MutableBytesCopyWithLengthWithLargerLengthPadsWithZero) {
-  HandleScope scope(thread_);
-  const MutableBytes mutable_bytes(&scope,
-                                   runtime_->newMutableBytesUninitialized(3));
-  mutable_bytes.byteAtPut(0, 0x11);
-  mutable_bytes.byteAtPut(1, 0x22);
-  mutable_bytes.byteAtPut(2, 0x33);
-
-  MutableBytes dst_longer(
-      &scope, runtime_->mutableBytesCopyWithLength(thread_, mutable_bytes, 6));
-  EXPECT_EQ(dst_longer.length(), 6);
-
-  EXPECT_EQ(dst_longer.byteAt(0), 0x11);
-  EXPECT_EQ(dst_longer.byteAt(1), 0x22);
-  EXPECT_EQ(dst_longer.byteAt(2), 0x33);
-  EXPECT_EQ(dst_longer.byteAt(3), 0);
-  EXPECT_EQ(dst_longer.byteAt(4), 0);
-  EXPECT_EQ(dst_longer.byteAt(5), 0);
-}
-
-TEST_F(RuntimeTest, MutableBytesCopyWithLengthWithSmallerLengthTruncates) {
-  HandleScope scope(thread_);
-  const MutableBytes mutable_bytes(&scope,
-                                   runtime_->newMutableBytesUninitialized(3));
-  mutable_bytes.byteAtPut(0, 0x11);
-  mutable_bytes.byteAtPut(1, 0x22);
-  mutable_bytes.byteAtPut(2, 0x33);
-
-  MutableBytes dst_shorter(
-      &scope, runtime_->mutableBytesCopyWithLength(thread_, mutable_bytes, 2));
-  EXPECT_EQ(dst_shorter.length(), 2);
-
-  EXPECT_EQ(dst_shorter.byteAt(0), 0x11);
-  EXPECT_EQ(dst_shorter.byteAt(1), 0x22);
-}
-
 TEST_F(RuntimeTest, MutableBytesFromBytesWithSmallBytes) {
   HandleScope scope(thread_);
 

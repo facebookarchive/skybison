@@ -1074,26 +1074,32 @@ static const BuiltinAttribute kBytesIOAttributes[] = {
     {ID(__dict__), RawBytesIO::kDictOffset},
 };
 
+static void bytesIOEnsureCapacity(Thread* thread, const BytesIO& bytes_io,
+                                  word min_capacity) {
+  DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
+  HandleScope scope(thread);
+  MutableBytes curr_buffer(&scope, bytes_io.buffer());
+  word curr_capacity = curr_buffer.length();
+  if (min_capacity <= curr_capacity) return;
+  word new_capacity = Runtime::newCapacity(curr_capacity, min_capacity);
+  MutableBytes new_buffer(
+      &scope, thread->runtime()->newMutableBytesUninitialized(new_capacity));
+  new_buffer.replaceFromWith(0, *curr_buffer, curr_capacity);
+  new_buffer.replaceFromWithByte(curr_capacity, 0,
+                                 new_capacity - curr_capacity);
+  bytes_io.setBuffer(*new_buffer);
+}
+
 static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
                               const Object& value) {
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-
-  word val_len = runtime->byteslikeLength(thread, value);
-
   word pos = bytes_io.pos();
+  word val_len = runtime->byteslikeLength(thread, value);
   word new_pos = pos + val_len;
+  bytesIOEnsureCapacity(thread, bytes_io, new_pos);
+
+  HandleScope scope(thread);
   MutableBytes buffer(&scope, bytes_io.buffer());
-  word capacity = buffer.length();
-  if (new_pos > capacity) {
-    // Resize first
-    word new_size =
-        Runtime::newCapacity(capacity, bytes_io.numItems() + val_len);
-    MutableBytes new_buffer(
-        &scope, runtime->mutableBytesCopyWithLength(thread, buffer, new_size));
-    bytes_io.setBuffer(*new_buffer);
-    buffer = *new_buffer;
-  }
   runtime->mutableBytesReplaceFromByteslike(thread, buffer, pos, value,
                                             val_len);
   if (new_pos > bytes_io.numItems()) {
@@ -1426,9 +1432,14 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   }
 
   MutableBytes buffer(&scope, string_io.buffer());
-  if (buffer.length() < new_len) {
-    buffer = runtime->mutableBytesCopyWithLength(thread, buffer, new_len);
-    string_io.setBuffer(*buffer);
+  word old_len = buffer.length();
+  if (old_len < new_len) {
+    MutableBytes new_buffer(&scope,
+                            runtime->newMutableBytesUninitialized(new_len));
+    new_buffer.replaceFromWith(0, *buffer, old_len);
+    new_buffer.replaceFromWithByte(old_len, 0, new_len - old_len);
+    string_io.setBuffer(*new_buffer);
+    buffer = *new_buffer;
   }
 
   if (has_read_translate) {

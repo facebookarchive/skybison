@@ -1028,23 +1028,6 @@ RawObject Runtime::newMutableBytesUninitialized(word size) {
   return createMutableBytes(size);
 }
 
-RawObject Runtime::mutableBytesCopyWithLength(Thread* thread,
-                                              const MutableBytes& original,
-                                              word length) {
-  DCHECK(length > 0, "length must be positive");
-  word old_length = original.length();
-  HandleScope scope(thread);
-  MutableBytes copy(&scope, newMutableBytesUninitialized(length));
-  byte* dst = reinterpret_cast<byte*>(copy.address());
-  if (old_length < length) {
-    original.copyTo(dst, old_length);
-    std::memset(dst + old_length, 0, length - old_length);
-  } else {
-    original.copyTo(dst, length);
-  }
-  return *copy;
-}
-
 RawObject Runtime::mutableBytesFromBytes(Thread* thread, const Bytes& bytes) {
   HandleScope scope(thread);
   word len = bytes.length();

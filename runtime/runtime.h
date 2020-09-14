@@ -559,13 +559,6 @@ class Runtime {
   // Appends an element to the end of the list.
   void listAdd(Thread* thread, const List& list, const Object& value);
 
-  // Makes a new copy of the `original` MutableBytes with the specified positive
-  // `length`. If the new length is less than the old length, truncate the bytes
-  // to fit. If the new length is greater than the old length, pad with zeros.
-  RawObject mutableBytesCopyWithLength(Thread* thread,
-                                       const MutableBytes& original,
-                                       word length);
-
   // Create a MutableBytes object from a given Bytes
   RawObject mutableBytesFromBytes(Thread* thread, const Bytes& bytes);
   RawObject mutableBytesWith(word length, byte value);
