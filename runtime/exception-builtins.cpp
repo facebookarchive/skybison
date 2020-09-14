@@ -21,26 +21,40 @@ namespace py {
 
 LayoutId errorLayoutFromErrno(int errno_value) {
   switch (errno_value) {
-    case EAGAIN:
+    case EACCES:
+      return LayoutId::kPermissionError;
+    case EAGAIN:  // duplicates EWOULDBLOCK
       return LayoutId::kBlockingIOError;
     case EALREADY:
       return LayoutId::kBlockingIOError;
     case EINPROGRESS:
       return LayoutId::kBlockingIOError;
-    case EPIPE:
-      return LayoutId::kBrokenPipeError;
     case ECHILD:
       return LayoutId::kChildProcessError;
+    case ECONNABORTED:
+      return LayoutId::kConnectionAbortedError;
+    case ECONNREFUSED:
+      return LayoutId::kConnectionRefusedError;
+    case ECONNRESET:
+      return LayoutId::kConnectionResetError;
     case EEXIST:
       return LayoutId::kFileExistsError;
     case ENOENT:
       return LayoutId::kFileNotFoundError;
     case EINTR:
       return LayoutId::kInterruptedError;
-    case EACCES:
-      return LayoutId::kPermissionError;
+    case EISDIR:
+      return LayoutId::kIsADirectoryError;
+    case ENOTDIR:
+      return LayoutId::kNotADirectoryError;
     case EPERM:
       return LayoutId::kPermissionError;
+    case EPIPE:
+      return LayoutId::kBrokenPipeError;
+    case ESRCH:
+      return LayoutId::kProcessLookupError;
+    case ETIMEDOUT:
+      return LayoutId::kTimeoutError;
     default:
       return LayoutId::kOSError;
   }

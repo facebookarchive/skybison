@@ -2,6 +2,7 @@
 import ast
 import builtins
 import contextlib
+import errno
 import sys
 import types
 import unittest
@@ -7650,8 +7651,6 @@ class EllipsisTypeTests(unittest.TestCase):
 
 class ExceptionTests(unittest.TestCase):
     def test_oserror_with_errno_enoent_returns_file_not_found_error(self):
-        import errno
-
         result = OSError(errno.ENOENT, "foo", "bar.py")
         self.assertIsInstance(result, FileNotFoundError)
         self.assertEqual(result.errno, errno.ENOENT)
@@ -7665,14 +7664,73 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(result.strerror, "foo")
         self.assertEqual(result.filename, "bar.py")
 
-    def test_oserror_with_errno_enoent_returns_file_not_found_error(self):
-        import errno
+    def test_oserror_with_errno_eacces_returns_permission_error(self):
+        result = OSError(errno.EACCES, "foo", "bar.py")
+        self.assertIsInstance(result, PermissionError)
 
-        result = OSError(errno.ENOENT, "foo", "bar.py")
-        self.assertIsInstance(result, FileNotFoundError)
-        self.assertEqual(result.errno, errno.ENOENT)
-        self.assertEqual(result.strerror, "foo")
-        self.assertEqual(result.filename, "bar.py")
+    def test_oserror_with_errno_eagain_returns_blocking_io_error(self):
+        result = OSError(errno.EAGAIN, "foo", "bar.py")
+        self.assertIsInstance(result, BlockingIOError)
+
+    def test_oserror_with_errno_ealready_returns_blocking_io_error(self):
+        result = OSError(errno.EALREADY, "foo", "bar.py")
+        self.assertIsInstance(result, BlockingIOError)
+
+    def test_oserror_with_errno_einprogress_returns_blocking_io_error(self):
+        result = OSError(errno.EINPROGRESS, "foo", "bar.py")
+        self.assertIsInstance(result, BlockingIOError)
+
+    def test_oserror_with_errno_echild_returns_child_process_error(self):
+        result = OSError(errno.ECHILD, "foo", "bar.py")
+        self.assertIsInstance(result, ChildProcessError)
+
+    def test_oserror_with_errno_econnaborted_returns_connection_aborted_error(self):
+        result = OSError(errno.ECONNABORTED, "foo", "bar.py")
+        self.assertIsInstance(result, ConnectionAbortedError)
+
+    def test_oserror_with_errno_econnrefused_returns_connection_refused_error(self):
+        result = OSError(errno.ECONNREFUSED, "foo", "bar.py")
+        self.assertIsInstance(result, ConnectionRefusedError)
+
+    def test_oserror_with_errno_econnreset_returns_connection_reset_error(self):
+        result = OSError(errno.ECONNRESET, "foo", "bar.py")
+        self.assertIsInstance(result, ConnectionResetError)
+
+    def test_oserror_with_errno_eexist_returns_file_exists_error(self):
+        result = OSError(errno.EEXIST, "foo", "bar.py")
+        self.assertIsInstance(result, FileExistsError)
+
+    def test_oserror_with_errno_eintr_returns_interrupted_error(self):
+        result = OSError(errno.EINTR, "foo", "bar.py")
+        self.assertIsInstance(result, InterruptedError)
+
+    def test_oserror_with_errno_eisdir_returns_is_a_directory_error(self):
+        result = OSError(errno.EISDIR, "foo", "bar.py")
+        self.assertIsInstance(result, IsADirectoryError)
+
+    def test_oserror_with_errno_enotdir_returns_not_a_directory_error(self):
+        result = OSError(errno.ENOTDIR, "foo", "bar.py")
+        self.assertIsInstance(result, NotADirectoryError)
+
+    def test_oserror_with_errno_eperm_returns_permission_error(self):
+        result = OSError(errno.EPERM, "foo", "bar.py")
+        self.assertIsInstance(result, PermissionError)
+
+    def test_oserror_with_errno_epipe_returns_broken_pipe_error(self):
+        result = OSError(errno.EPIPE, "foo", "bar.py")
+        self.assertIsInstance(result, BrokenPipeError)
+
+    def test_oserror_with_esrch_returns_process_lookup_error(self):
+        result = OSError(errno.ESRCH, "foo", "bar.py")
+        self.assertIsInstance(result, ProcessLookupError)
+
+    def test_oserror_with_errno_etimedout_returns_timeout_error(self):
+        result = OSError(errno.ETIMEDOUT, "foo", "bar.py")
+        self.assertIsInstance(result, TimeoutError)
+
+    def test_oserror_with_errno_ewouldblock_returns_blocking_io_error(self):
+        result = OSError(errno.EWOULDBLOCK, "foo", "bar.py")
+        self.assertIsInstance(result, BlockingIOError)
 
     def test_oserror_dunder_new_with_subclass_return_subclass_instance(self):
         result = OSError.__new__(FileNotFoundError)
