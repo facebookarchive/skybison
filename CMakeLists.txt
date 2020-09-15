@@ -946,18 +946,14 @@ target_include_directories(
   $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
   runtime)
 
-file(READ ${CMAKE_SOURCE_DIR}/cpython_library_files.txt cpython_library_files)
-string(REPLACE "\n" ";" cpython_library_files "${cpython_library_files}")
-list(FILTER cpython_library_files EXCLUDE REGEX "^[ \t\r\n]*#")
+include(${CMAKE_SOURCE_DIR}/cpython_library_files.cmake)
+include(${CMAKE_SOURCE_DIR}/library_files.cmake)
 
-file(READ ${CMAKE_SOURCE_DIR}/library_files.txt library_files)
-string(REPLACE "\n" ";" library_files "${library_files}")
-list(FILTER library_files EXCLUDE REGEX "^[ \t\r\n]*#")
-list(REMOVE_ITEM library_files ${FROZEN_MODULE_INPUT})
+list(REMOVE_ITEM LIBRARY_FILES ${FROZEN_MODULE_INPUT})
 
 set(BINARY_LIB_DIR ${CMAKE_BINARY_DIR}/lib/${IMPLEMENTATION_DIR})
-set(LIBRARY_FILES)
-foreach(file ${cpython_library_files})
+set(ALL_LIBRARY_FILES)
+foreach(file ${CPYTHON_LIBRARY_FILES})
   set(src_file ${CPYTHON_DIR}/Lib/${file})
   set(dst_file ${BINARY_LIB_DIR}/${file})
   get_filename_component(dst_dir ${dst_file} DIRECTORY)
@@ -970,10 +966,10 @@ foreach(file ${cpython_library_files})
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src_file}" "${dst_file}"
     DEPENDS ${src_file}
     COMMENT "Copying to ${dst_file}")
-  list(APPEND LIBRARY_FILES ${dst_file})
+  list(APPEND ALL_LIBRARY_FILES ${dst_file})
 endforeach()
 
-foreach(file ${library_files})
+foreach(file ${LIBRARY_FILES})
   set(src_file ${CMAKE_SOURCE_DIR}/library/${file})
   set(dst_file ${BINARY_LIB_DIR}/${file})
   get_filename_component(dst_dir ${dst_file} DIRECTORY)
@@ -986,9 +982,9 @@ foreach(file ${library_files})
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src_file}" "${dst_file}"
     DEPENDS ${src_file}
     COMMENT "Copying to ${dst_file}")
-  list(APPEND LIBRARY_FILES ${dst_file})
+  list(APPEND ALL_LIBRARY_FILES ${dst_file})
 endforeach()
-add_custom_target(copy_library DEPENDS ${LIBRARY_FILES})
+add_custom_target(copy_library DEPENDS ${ALL_LIBRARY_FILES})
 
 add_library(
   modules
@@ -1285,12 +1281,12 @@ install(TARGETS libpython
   LIBRARY DESTINATION lib
 )
 install(FILES ${EXECUTABLE_SYMLINKS} DESTINATION bin)
-foreach(file ${cpython_library_files})
+foreach(file ${CPYTHON_LIBRARY_FILES})
   set(src_file ${CPYTHON_DIR}/Lib/${file})
   get_filename_component(dest_dir lib/${IMPLEMENTATION_DIR}/${file} DIRECTORY)
   install(FILES ${src_file} DESTINATION ${dest_dir})
 endforeach()
-foreach(file ${library_files})
+foreach(file ${LIBRARY_FILES})
   set(src_file ${CMAKE_SOURCE_DIR}/library/${file})
   get_filename_component(dest_dir lib/${IMPLEMENTATION_DIR}/${file} DIRECTORY)
   install(FILES ${src_file} DESTINATION ${dest_dir})
