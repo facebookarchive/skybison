@@ -36,8 +36,7 @@ RawObject uninitializedInterpreterFunc(Thread*) {
 thread_local Thread* Thread::current_thread_ = nullptr;
 
 Thread::Thread(word size)
-    : size_(Utils::roundUp(size, kPointerSize)),
-      is_interrupted_(false),
+    : is_interrupted_(false),
       next_(nullptr),
       runtime_(nullptr),
       pending_exc_type_(NoneType::object()),
@@ -48,9 +47,10 @@ Thread::Thread(word size)
       asyncgen_hooks_first_iter_(NoneType::object()),
       asyncgen_hooks_finalizer_(NoneType::object()),
       contextvars_context_(NoneType::object()) {
-  start_ = new byte[size_ + SIGSTKSZ]();  // Zero-initialize the stack
+  CHECK(size % kPointerSize == 0, "size must be a multiple of kPointerSize");
+  start_ = new byte[size + SIGSTKSZ]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
-  end_ = start_ + size_;
+  end_ = start_ + size;
   limit_ = start_;
 
   stack_t altstack;

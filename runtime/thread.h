@@ -328,7 +328,6 @@ class Thread {
 
   Handles handles_;
 
-  word size_;
   byte* start_;  // base address of the stack
   byte* end_;    // exclusive limit of the stack
   byte* limit_;  // current limit of the stack

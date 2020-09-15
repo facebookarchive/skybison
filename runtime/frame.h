@@ -248,9 +248,6 @@ class Frame {
   // returns the top of the stack)
   RawObject peek(word offset);
 
-  // Push locals at [offset, offset + count) onto the stack
-  void pushLocals(word count, word offset);
-
   bool isSentinel();
 
   // Versions of valueStackTop() and popValue() for a Frame that's had
@@ -495,13 +492,6 @@ inline void Frame::dropValues(word count) {
 inline RawObject Frame::topValue() { return peek(0); }
 
 inline void Frame::setTopValue(RawObject value) { *valueStackTop() = value; }
-
-inline void Frame::pushLocals(word count, word offset) {
-  DCHECK(offset + count <= function().totalLocals(), "locals overflow");
-  for (word i = offset; i < offset + count; i++) {
-    pushValue(local(i));
-  }
-}
 
 inline RawObject Frame::peek(word offset) {
   DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
