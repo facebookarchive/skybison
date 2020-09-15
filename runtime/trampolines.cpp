@@ -1317,23 +1317,24 @@ static inline RawObject builtinTrampolineImpl(Thread* thread,
       prepare_call(thread, Function::cast(caller_frame->peek(function_idx)),
                    caller_frame, arg);
   if (prepare_result.isError()) return prepare_result;
-  RawFunction function = Function::cast(prepare_result);
+  RawFunction function_obj = Function::cast(prepare_result);
 
   RawObject result = NoneType::object();
   {
-    DCHECK(!function.code().isNoneType(),
+    DCHECK(!function_obj.code().isNoneType(),
            "builtin functions should have annotated code objects");
-    RawCode code = Code::cast(function.code());
+    RawCode code = Code::cast(function_obj.code());
     DCHECK(code.code().isSmallInt(),
            "builtin functions should contain entrypoint in code.code");
-    void* entry = SmallInt::cast(code.code()).asCPtr();
+    BuiltinFunction function =
+        bit_cast<BuiltinFunction>(SmallInt::cast(code.code()).asCPtr());
 
-    word nargs = function.totalArgs();
+    word nargs = function_obj.totalArgs();
     Frame* callee_frame = thread->pushNativeFrame(nargs);
     if (UNLIKELY(callee_frame == nullptr)) {
       return Error::exception();
     }
-    result = bit_cast<Function::Entry>(entry)(thread, callee_frame, nargs);
+    result = (*function)(thread, callee_frame, nargs);
     // End scope so people do not accidentally use raw variables after the call
     // which could have triggered a GC.
   }

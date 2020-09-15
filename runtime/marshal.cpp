@@ -95,7 +95,7 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
 }
 
 void Marshal::Reader::setBuiltinFunctions(
-    const Function::Entry* builtin_functions, word num_builtin_functions) {
+    const BuiltinFunction* builtin_functions, word num_builtin_functions) {
   builtin_functions_ = builtin_functions;
   num_builtin_functions_ = num_builtin_functions;
 }
@@ -441,9 +441,9 @@ RawObject Marshal::Reader::readTypeCode() {
     CHECK(freevars.length() == 0, "must not have free vars in native code");
     CHECK(cellvars.length() == 0, "must not have cell vars in native code");
     CHECK_INDEX(function_index, num_builtin_functions_);
-    Function::Entry entry = builtin_functions_[function_index];
+    BuiltinFunction function = builtin_functions_[function_index];
     result = runtime_->newBuiltinCode(argcount, posonlyargcount, kwonlyargcount,
-                                      flags, entry, varnames, name);
+                                      flags, function, varnames, name);
     Code::cast(*result).setFilename(*filename);
     Code::cast(*result).setFirstlineno(firstlineno);
   } else {

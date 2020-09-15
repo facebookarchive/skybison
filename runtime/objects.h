@@ -24,6 +24,7 @@ namespace py {
 class Frame;
 template <typename T>
 class Handle;
+class Thread;
 
 // Python types that store their value directly in a RawObject.
 #define IMMEDIATE_CLASS_NAMES(V)                                               \
@@ -2109,6 +2110,10 @@ class RawTupleIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(TupleIterator);
 };
 
+// For builtin functions RawCode::code() is a pointer to a function with this
+// signature.
+using BuiltinFunction = RawObject (*)(Thread* thread, Frame* frame, word nargs);
+
 class RawCode : public RawInstance {
  public:
   // Matching CPython
@@ -2237,9 +2242,6 @@ class RawCode : public RawInstance {
 
   RAW_OBJECT_COMMON(Code);
 };
-
-class Frame;
-class Thread;
 
 // A function object.
 //

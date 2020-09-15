@@ -369,7 +369,7 @@ RawObject setFromRange(word start, word stop) {
   return *result;
 }
 
-RawObject runBuiltinImpl(NativeMethodType method,
+RawObject runBuiltinImpl(BuiltinFunction function,
                          View<std::reference_wrapper<const Object>> args) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -389,22 +389,22 @@ RawObject runBuiltinImpl(NativeMethodType method,
   Object name(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Code code(&scope, runtime->newBuiltinCode(args_length, /*posonlyargcount=*/0,
                                             /*kwonlyargcount=*/0,
-                                            /*flags=*/0, method,
+                                            /*flags=*/0, function,
                                             parameter_names, name));
   Module main(&scope, runtime->findOrCreateMainModule());
-  Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, main));
+  Function function_obj(&scope,
+                        runtime->newFunctionWithCode(thread, name, code, main));
 
   Frame* frame = thread->currentFrame();
-  frame->pushValue(*function);
+  frame->pushValue(*function_obj);
   for (word i = 0; i < args_length; i++) {
     frame->pushValue(*args.get(i).get());
   }
   return Interpreter::call(thread, frame, args_length);
 }
 
-RawObject runBuiltin(NativeMethodType method) {
-  return runBuiltinImpl(method,
+RawObject runBuiltin(BuiltinFunction function) {
+  return runBuiltinImpl(function,
                         View<std::reference_wrapper<const Object>>{nullptr, 0});
 }
 
@@ -457,7 +457,7 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   return *result;
 }
 
-void addBuiltin(const char* name_cstr, Function::Entry entry,
+void addBuiltin(const char* name_cstr, BuiltinFunction function,
                 View<const char*> parameter_names, word flags) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
@@ -481,11 +481,11 @@ void addBuiltin(const char* name_cstr, Function::Entry entry,
                   ((flags & Code::Flags::kVarkeyargs) != 0);
   Code code(&scope, runtime->newBuiltinCode(
                         /*argcount=*/argcount, /*posonlyargcount=*/0,
-                        /*kwonlyargcount=*/0, flags, entry,
+                        /*kwonlyargcount=*/0, flags, function,
                         /*parameter_names=*/parameter_names_tuple, name));
-  Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, main));
-  moduleAtPut(thread, main, name, function);
+  Function function_obj(&scope,
+                        runtime->newFunctionWithCode(thread, name, code, main));
+  moduleAtPut(thread, main, name, function_obj);
 }
 
 // Equivalent to evaluating "list(range(start, stop))" in Python

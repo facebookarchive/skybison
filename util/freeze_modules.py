@@ -200,7 +200,7 @@ def gen_builtins_cpp(builtins):
 
 namespace py {{
 
-const Function::Entry kBuiltinFunctions[] = {{
+const BuiltinFunction kBuiltinFunctions[] = {{
 """
 
     for builtin in builtins:
@@ -227,7 +227,7 @@ namespace py {{
 
 class Thread;
 
-extern const Function::Entry kBuiltinFunctions[];
+extern const BuiltinFunction kBuiltinFunctions[];
 extern const word kNumBuiltinFunctions;
 
 """

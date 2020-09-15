@@ -164,10 +164,10 @@ bool setIncludes(Thread* thread, const SetBase& set, const Object& key);
 
 void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value);
 
-RawObject runBuiltinImpl(NativeMethodType method,
+RawObject runBuiltinImpl(BuiltinFunction function,
                          View<std::reference_wrapper<const Object>> args);
 
-RawObject runBuiltin(NativeMethodType method);
+RawObject runBuiltin(BuiltinFunction function);
 
 // Create an ad-hoc function with 0 parameters for `code` and execute it in the
 // current thread.
@@ -179,14 +179,14 @@ NODISCARD RawObject runCodeNoBytecodeRewriting(const Code& code);
 // Helper to compile and run a snippet of Python code.
 NODISCARD RawObject runFromCStr(Runtime* runtime, const char* c_str);
 
-void addBuiltin(const char* name, Function::Entry entry,
+void addBuiltin(const char* name, BuiltinFunction function,
                 View<const char*> parameter_names, word code_flags);
 
 template <typename... Args>
-RawObject runBuiltin(NativeMethodType method, const Args&... args) {
+RawObject runBuiltin(BuiltinFunction function, const Args&... args) {
   using ref = std::reference_wrapper<const Object>;
   ref args_array[] = {ref(args)...};
-  return runBuiltinImpl(method, args_array);
+  return runBuiltinImpl(function, args_array);
 }
 
 struct FileDeleter {

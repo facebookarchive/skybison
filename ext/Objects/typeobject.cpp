@@ -432,7 +432,7 @@ struct SlotDef {
   word num_parameters;
 
   // The wrapper function for this slot.
-  Function::Entry wrapper;
+  BuiltinFunction wrapper;
 
   // RawCode::Flags to be set on slot function.
   word flags;
@@ -696,10 +696,11 @@ static const SlotDef kSlotdefs[] = {
 
 static RawObject newExtCode(Thread* thread, const Object& name,
                             const SymbolId* parameters, word num_parameters,
-                            word flags, void* fptr, void* slot_value) {
+                            word flags, BuiltinFunction function,
+                            void* slot_value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object code_code(&scope, runtime->newIntFromCPtr(fptr));
+  Object code_code(&scope, runtime->newIntFromCPtr(bit_cast<void*>(function)));
   Tuple empty_tuple(&scope, runtime->emptyTuple());
 
   // TODO(T41024929): Many of the slot parameters should be positional only,
@@ -767,10 +768,9 @@ RawObject addOperators(Thread* thread, const Type& type) {
       Str slot_name(&scope, runtime->symbols()->at(slot.name));
       Str qualname(&scope,
                    runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
-      Code code(&scope,
-                newExtCode(thread, slot_name, slot.parameters,
-                           slot.num_parameters, slot.flags,
-                           reinterpret_cast<void*>(slot.wrapper), slot_value));
+      Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
+                                   slot.num_parameters, slot.flags,
+                                   slot.wrapper, slot_value));
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
                                                          globals));
@@ -1179,10 +1179,10 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
   if (def.get == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Code code(&scope,
-            newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
-                       /*flags=*/0, reinterpret_cast<void*>(&getterWrapper),
-                       reinterpret_cast<void*>(def.get)));
+  Code code(
+      &scope,
+      newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
+                 /*flags=*/0, getterWrapper, reinterpret_cast<void*>(def.get)));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -1198,10 +1198,10 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   if (def.set == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Code code(&scope, newExtCode(thread, name, kParamsSelfValue,
-                               ARRAYSIZE(kParamsSelfValue), /*flags=*/0,
-                               reinterpret_cast<void*>(&setterWrapper),
-                               reinterpret_cast<void*>(def.set)));
+  Code code(
+      &scope,
+      newExtCode(thread, name, kParamsSelfValue, ARRAYSIZE(kParamsSelfValue),
+                 /*flags=*/0, setterWrapper, reinterpret_cast<void*>(def.set)));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -1628,7 +1628,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
                 newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
                            ARRAYSIZE(kParamsTypeArgsKwargs),
                            Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
-                           reinterpret_cast<void*>(&wrapVarkwTernaryfunc),
+                           wrapVarkwTernaryfunc,
                            reinterpret_cast<void*>(&PyType_GenericNew)));
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,

@@ -45,9 +45,6 @@ using AtExitFn = void (*)(void*);
 
 using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
 
-using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
-                                       word nargs);
-
 enum class ReadOnly : bool {
   ReadWrite,
   ReadOnly,
@@ -106,7 +103,8 @@ class Runtime {
 
   RawObject newBuiltinCode(word argcount, word posonlyargcount,
                            word kwonlyargcount, word flags,
-                           Function::Entry entry, const Object& parameter_names,
+                           BuiltinFunction function,
+                           const Object& parameter_names,
                            const Object& name_str);
 
   RawObject newComplex(double real, double imag);

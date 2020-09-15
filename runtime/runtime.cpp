@@ -656,7 +656,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
 
 RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
                                   word kwonlyargcount, word flags,
-                                  Function::Entry entry,
+                                  BuiltinFunction function,
                                   const Object& parameter_names,
                                   const Object& name_str) {
   Thread* thread = Thread::current();
@@ -668,10 +668,10 @@ RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
                  ((flags & Code::Flags::kVarargs) != 0) +
                  ((flags & Code::Flags::kVarkeyargs) != 0);
   flags |= Code::Flags::kOptimized | Code::Flags::kNewlocals;
-  Object entry_ptr(&scope, newIntFromCPtr(bit_cast<void*>(entry)));
+  Object function_ptr(&scope, newIntFromCPtr(bit_cast<void*>(function)));
   return newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
-                 /*stacksize=*/0, flags, entry_ptr, /*consts=*/empty_tuple,
-                 /*names=*/empty_tuple,
+                 /*stacksize=*/0, flags, /*code=*/function_ptr,
+                 /*consts=*/empty_tuple, /*names=*/empty_tuple,
                  /*varnames=*/parameter_names, /*freevars=*/empty_tuple,
                  /*cellvars=*/empty_tuple, /*filename=*/empty_string, name_str,
                  /*firstlineno=*/0, lnotab);
