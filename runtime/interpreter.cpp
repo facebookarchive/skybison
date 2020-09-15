@@ -921,10 +921,7 @@ HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     frame->pushValue(left);
     frame->pushValue(right);
   }
-  RawObject* sp = frame->valueStackTop() + /*nargs=*/2 + /*callable=*/1;
-  RawObject result = Function::cast(method).entry()(thread, frame, 2);
-  frame->setValueStackTop(sp);
-  return result;
+  return callPreparedFunction(thread, frame, method, /*nargs=*/2);
 }
 
 RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
@@ -1811,12 +1808,8 @@ ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
   frame->setValueAt(set_item_method, 2);
   frame->pushValue(value_raw);
 
-  word nargs = 3;
-  RawObject* sp = frame->valueStackTop() + nargs + 1;
-  RawObject result =
-      Function::cast(set_item_method).entry()(thread, frame, nargs);
-  // Clear the stack of the function object and return.
-  frame->setValueStackTop(sp);
+  RawObject result = callPreparedFunction(thread, frame, set_item_method,
+                                          /*nargs=*/3);
   if (result.isErrorException()) {
     return Continue::UNWIND;
   }
@@ -2725,12 +2718,10 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
   DCHECK(next_method.isFunction(), "Unexpected next_method value");
   Frame* frame = thread->currentFrame();
   RawObject iter = frame->topValue();
-  RawObject* sp = frame->valueStackTop();
   frame->pushValue(next_method);
   frame->pushValue(iter);
-  RawObject result =
-      Function::cast(Function::cast(next_method)).entry()(thread, frame, 1);
-  frame->setValueStackTop(sp);
+  RawObject result = callPreparedFunction(thread, frame, next_method,
+                                          /*nargs=*/1);
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
