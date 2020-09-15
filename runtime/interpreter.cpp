@@ -510,16 +510,6 @@ RawObject Interpreter::callFunction6(Thread* thread, Frame* frame,
   return call(thread, frame, 6);
 }
 
-RawObject Interpreter::callFunction(Thread* thread, Frame* frame,
-                                    const Object& func, const Tuple& args) {
-  frame->pushValue(*func);
-  word length = args.length();
-  for (word i = 0; i < length; i++) {
-    frame->pushValue(args.at(i));
-  }
-  return call(thread, frame, length);
-}
-
 RawObject Interpreter::callMethod1(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self) {
   word nargs = 0;
