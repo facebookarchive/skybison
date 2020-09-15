@@ -416,7 +416,7 @@ RawObject runCode(const Code& code) {
   Object qualname(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, qualname, code, main));
-  return Interpreter::callFunction0(thread, thread->currentFrame(), function);
+  return Interpreter::call0(thread, thread->currentFrame(), function);
 }
 
 RawObject runCodeNoBytecodeRewriting(const Code& code) {
@@ -434,7 +434,7 @@ RawObject runCodeNoBytecodeRewriting(const Code& code) {
       &scope, runtime->newMutableBytesUninitialized(bytecode.length()));
   rewritten_bytecode.replaceFromWithBytes(0, *bytecode, bytecode.length());
   function.setRewrittenBytecode(*rewritten_bytecode);
-  return Interpreter::callFunction0(thread, thread->currentFrame(), function);
+  return Interpreter::call0(thread, thread->currentFrame(), function);
 }
 
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {

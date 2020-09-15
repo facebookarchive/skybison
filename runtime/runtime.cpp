@@ -1787,8 +1787,7 @@ RawObject Runtime::handlePendingSignals(Thread* thread) {
       Object callback(&scope, signalCallback(i));
       Object signum(&scope, SmallInt::fromWord(i));
       Object frame(&scope, NoneType::object());
-      Object result(&scope,
-                    Interpreter::callFunction2(thread, thread->currentFrame(),
+      Object result(&scope, Interpreter::call2(thread, thread->currentFrame(),
                                                callback, signum, frame));
 
       if (result.isErrorException()) {

@@ -226,8 +226,8 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
 
   Object dunder_getattr(&scope, moduleAtById(thread, module, ID(__getattr__)));
   if (!dunder_getattr.isErrorNotFound()) {
-    return Interpreter::callFunction1(thread, thread->currentFrame(),
-                                      dunder_getattr, name);
+    return Interpreter::call1(thread, thread->currentFrame(), dunder_getattr,
+                              name);
   }
 
   return Error::notFound();

@@ -209,8 +209,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
           *location_out = *getter;
           *kind = LoadAttrKind::kInstanceProperty;
         }
-        return Interpreter::callFunction1(thread, thread->currentFrame(),
-                                          getter, object);
+        return Interpreter::call1(thread, thread->currentFrame(), getter,
+                                  object);
       }
     }
     if (type_attr.isSlotDescriptor()) {
@@ -396,8 +396,8 @@ RawObject objectGetItem(Thread* thread, const Object& object,
       Object class_getitem(&scope, typeGetAttribute(thread, object_as_type,
                                                     dunder_class_getitem_name));
       if (!class_getitem.isErrorNotFound()) {
-        return Interpreter::callFunction1(thread, thread->currentFrame(),
-                                          class_getitem, key);
+        return Interpreter::call1(thread, thread->currentFrame(), class_getitem,
+                                  key);
       }
     }
     return thread->raiseWithFmt(LayoutId::kTypeError,

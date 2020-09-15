@@ -93,8 +93,11 @@ class Interpreter {
   static RawObject call(Thread* thread, Frame* frame, word nargs);
   static RawObject callEx(Thread* thread, Frame* frame, word flags);
   static RawObject callKw(Thread* thread, Frame* frame, word nargs);
-  static RawObject callPreparedFunction(Thread* thread, Frame* frame,
-                                        RawObject function, word nargs);
+
+  // Perform positional call of function `function`. Does not work for arbitrary
+  // callables objects; that case requires `call`.
+  static RawObject callFunction(Thread* thread, Frame* frame,
+                                RawObject function, word nargs);
 
   // Calls __hash__ on `value`, checks result and postprocesses.  Returns a
   // SmallInt or Error::exception().
@@ -122,29 +125,25 @@ class Interpreter {
   static RawObject lookupMethod(Thread* thread, Frame* frame,
                                 const Object& receiver, SymbolId selector);
 
-  static RawObject callFunction0(Thread* thread, Frame* frame,
-                                 const Object& func);
-  static RawObject callFunction1(Thread* thread, Frame* frame,
-                                 const Object& func, const Object& arg1);
-  static RawObject callFunction2(Thread* thread, Frame* frame,
-                                 const Object& func, const Object& arg1,
-                                 const Object& arg2);
-  static RawObject callFunction3(Thread* thread, Frame* frame,
-                                 const Object& func, const Object& arg1,
-                                 const Object& arg2, const Object& arg3);
-  static RawObject callFunction4(Thread* thread, Frame* frame,
-                                 const Object& func, const Object& arg1,
-                                 const Object& arg2, const Object& arg3,
-                                 const Object& arg4);
-  static RawObject callFunction5(Thread* thread, Frame* frame,
-                                 const Object& func, const Object& arg1,
-                                 const Object& arg2, const Object& arg3,
-                                 const Object& arg4, const Object& arg5);
-  static RawObject callFunction6(Thread* thread, Frame* frame,
-                                 const Object& func, const Object& arg1,
-                                 const Object& arg2, const Object& arg3,
-                                 const Object& arg4, const Object& arg5,
-                                 const Object& arg6);
+  static RawObject call0(Thread* thread, Frame* frame, const Object& callable);
+  static RawObject call1(Thread* thread, Frame* frame, const Object& callable,
+                         const Object& arg1);
+  static RawObject call2(Thread* thread, Frame* frame, const Object& callable,
+                         const Object& arg1, const Object& arg2);
+  static RawObject call3(Thread* thread, Frame* frame, const Object& callable,
+                         const Object& arg1, const Object& arg2,
+                         const Object& arg3);
+  static RawObject call4(Thread* thread, Frame* frame, const Object& callable,
+                         const Object& arg1, const Object& arg2,
+                         const Object& arg3, const Object& arg4);
+  static RawObject call5(Thread* thread, Frame* frame, const Object& callable,
+                         const Object& arg1, const Object& arg2,
+                         const Object& arg3, const Object& arg4,
+                         const Object& arg5);
+  static RawObject call6(Thread* thread, Frame* frame, const Object& callable,
+                         const Object& arg1, const Object& arg2,
+                         const Object& arg3, const Object& arg4,
+                         const Object& arg5, const Object& arg6);
 
   static RawObject callMethod1(Thread* thread, Frame* frame,
                                const Object& method, const Object& self);
@@ -587,15 +586,14 @@ class Interpreter {
   static Continue tailcallMethod2(Thread* thread, RawObject method,
                                   RawObject self, RawObject arg1);
 
-  // Call function with `arg` parameters at the end of an opcode handler. Use
+  // Call callable with `arg` parameters at the end of an opcode handler. Use
   // this when the number of parameters is more than 2.
-  static Continue tailcallFunction(Thread* thread, word arg);
+  static Continue tailcall(Thread* thread, word arg);
 
-  // Fast path for calling a function object at frame[nargs] skipping all
-  // callable checks. The result from calling the function gets available on top
-  // of the stack.
-  static Continue tailcallPreparedFunction(Thread* thread, Frame* frame,
-                                           RawObject function_obj, word nargs);
+  // Call function object at frame[nargs]. The result functionc all result
+  // is pushed onto the stack.
+  static Continue tailcallFunction(Thread* thread, Frame* frame,
+                                   RawObject function_obj, word nargs);
 
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's

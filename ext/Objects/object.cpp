@@ -242,8 +242,7 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   if (func.isError() || !func.isFunction()) {
     return nullptr;
   }
-  Object sequence(&scope,
-                  Interpreter::callFunction1(thread, frame, func, object));
+  Object sequence(&scope, Interpreter::call1(thread, frame, func, object));
   if (sequence.isError()) {
     return nullptr;
   }

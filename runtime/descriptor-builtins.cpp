@@ -250,7 +250,7 @@ RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
                                 "can't delete attribute");
   }
   Object instance(&scope, args.get(1));
-  return Interpreter::callFunction1(thread, frame, deleter, instance);
+  return Interpreter::call1(thread, frame, deleter, instance);
 }
 
 RawObject METH(property, __get__)(Thread* thread, Frame* frame, word nargs) {
@@ -270,7 +270,7 @@ RawObject METH(property, __get__)(Thread* thread, Frame* frame, word nargs) {
   if (instance.isNoneType()) {
     return *self;
   }
-  return Interpreter::callFunction1(thread, frame, getter, instance);
+  return Interpreter::call1(thread, frame, getter, instance);
 }
 
 RawObject METH(property, __init__)(Thread* thread, Frame* frame, word nargs) {
@@ -321,7 +321,7 @@ RawObject METH(property, __set__)(Thread* thread, Frame* frame, word nargs) {
   }
   Object obj(&scope, args.get(1));
   Object value(&scope, args.get(2));
-  return Interpreter::callFunction2(thread, frame, setter, obj, value);
+  return Interpreter::call2(thread, frame, setter, obj, value);
 }
 
 RawObject METH(property, deleter)(Thread* thread, Frame* frame, word nargs) {

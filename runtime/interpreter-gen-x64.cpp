@@ -114,10 +114,10 @@ struct EmitEnv {
   Assembler as;
   Bytecode current_op;
   const char* current_handler;
-  Label call_handlers[kNumBytecodes];
-  Label call_function_handler_impl;
-  Label call_prepared_no_intrinsic_function_handler_impl;
-  Label call_function_pop_word_handler_impl;
+  Label opcode_handlers[kNumBytecodes];
+  Label call_function_no_intrinsic_handler;
+  Label call_handler;
+  Label call_pop_word_handler;
   Label unwind_handler;
 };
 
@@ -293,7 +293,7 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
 }
 
 Label* genericHandlerLabel(EmitEnv* env) {
-  return &env->call_handlers[env->current_op];
+  return &env->opcode_handlers[env->current_op];
 }
 
 // Jump to the generic handler for the Bytecode being currently emitted.
@@ -956,8 +956,8 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   __ jmp(prepared, Assembler::kFarJump);
 }
 
-void emitCallPreparedFunctionHandlerImpl(EmitEnv* env, Register r_callable,
-                                         Label* next_opcode, word extra_pop) {
+void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
+                                        Label* next_opcode, word extra_pop) {
   const Register r_scratch = RAX;
   const Register r_flags = RDX;
   const Register r_post_call_sp = R8;
@@ -1025,7 +1025,7 @@ void emitCallPreparedFunctionHandlerImpl(EmitEnv* env, Register r_callable,
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
-void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
+void emitCallHandler(EmitEnv* env, word extra_pop) {
   const Register r_callable = RDI;
   const Register r_intrinsic_id = RDX;
 
@@ -1079,7 +1079,7 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
 
   __ bind(&no_intrinsic);
 
-  emitCallPreparedFunctionHandlerImpl(env, r_callable, &next_opcode, extra_pop);
+  emitCallFunctionNoIntrinsicHandler(env, r_callable, &next_opcode, extra_pop);
 
   __ bind(&prepare_callable_generic);
   emitPrepareCallable(env, r_callable, r_layout_id, &prepare_callable_immediate,
@@ -1089,17 +1089,17 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
 template <>
 void emitHandler<CALL_FUNCTION>(EmitEnv* env) {
   // The CALL_FUNCTION handler is generated out-of-line after the handler table.
-  __ jmp(&env->call_function_handler_impl, Assembler::kFarJump);
+  __ jmp(&env->call_handler, Assembler::kFarJump);
 }
 
 template <>
 void emitHandler<CALL_METHOD>(EmitEnv* env) {
   Register r_scratch = RAX;
 
-  // if (frame->peek(arg + 1).isUnbound()) goto call_function_pop_word;
+  // if (frame->peek(arg + 1).isUnbound()) goto call_pop_word_handler;
   __ movl(r_scratch, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
   __ cmpl(r_scratch, Immediate(Unbound::object().raw()));
-  __ jcc(EQUAL, &env->call_function_pop_word_handler_impl, Assembler::kFarJump);
+  __ jcc(EQUAL, &env->call_pop_word_handler, Assembler::kFarJump);
 
   // Increment argument count by 1 and jump into a call handler .
   // Since CALL_METHOD always calls a function object from attribute lookups,
@@ -1107,8 +1107,7 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   // since Pyro currently does not support to attach intrinsics to  a type
   // attribute.
   __ incl(kOpargReg);
-  __ jmp(&env->call_prepared_no_intrinsic_function_handler_impl,
-         Assembler::kFarJump);
+  __ jmp(&env->call_function_no_intrinsic_handler, Assembler::kFarJump);
 }
 
 template <>
@@ -1578,24 +1577,24 @@ void emitInterpreter(EmitEnv* env) {
   FOREACH_BYTECODE(BC)
 #undef BC
 
-  __ bind(&env->call_function_handler_impl);
-  emitCallFunctionHandlerImpl(env, 0);
+  __ bind(&env->call_handler);
+  emitCallHandler(env, 0);
 
-  __ bind(&env->call_prepared_no_intrinsic_function_handler_impl);
+  __ bind(&env->call_function_no_intrinsic_handler);
   {
     const Register r_callable = RDI;
     Label next_opcode;
     __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
-    emitCallPreparedFunctionHandlerImpl(env, r_callable, &next_opcode, 0);
+    emitCallFunctionNoIntrinsicHandler(env, r_callable, &next_opcode, 0);
   }
 
-  __ bind(&env->call_function_pop_word_handler_impl);
-  emitCallFunctionHandlerImpl(env, /*extra_pop=*/kPointerSize);
+  __ bind(&env->call_pop_word_handler);
+  emitCallHandler(env, /*extra_pop=*/kPointerSize);
 
   // Emit the generic handler stubs at the end, out of the way of the
   // interesting code.
   for (word i = 0; i < 256; ++i) {
-    __ bind(&env->call_handlers[i]);
+    __ bind(&env->opcode_handlers[i]);
     emitGenericHandler(env, static_cast<Bytecode>(i));
   }
 }

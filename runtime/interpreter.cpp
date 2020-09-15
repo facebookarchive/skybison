@@ -174,16 +174,12 @@ RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
     frame->setValueStackTop(sp);
     return function;
   }
-  RawObject result = Function::cast(function).entry()(thread, frame, nargs);
-  // Clear the stack of the function object and return.
-  frame->setValueStackTop(sp);
-  return result;
+  return callFunction(thread, frame, function, nargs);
 }
 
-ALWAYS_INLINE RawObject Interpreter::callPreparedFunction(Thread* thread,
-                                                          Frame* frame,
-                                                          RawObject function,
-                                                          word nargs) {
+ALWAYS_INLINE RawObject Interpreter::callFunction(Thread* thread, Frame* frame,
+                                                  RawObject function,
+                                                  word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
   RawObject* sp = frame->valueStackTop() + nargs + 1;
   DCHECK(function == frame->peek(nargs),
@@ -438,43 +434,43 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* frame */,
   return resolveDescriptorGet(thread, method, receiver, type);
 }
 
-RawObject Interpreter::callFunction0(Thread* thread, Frame* frame,
-                                     const Object& func) {
-  frame->pushValue(*func);
+RawObject Interpreter::call0(Thread* thread, Frame* frame,
+                             const Object& callable) {
+  frame->pushValue(*callable);
   return call(thread, frame, 0);
 }
 
-RawObject Interpreter::callFunction1(Thread* thread, Frame* frame,
-                                     const Object& func, const Object& arg1) {
-  frame->pushValue(*func);
+RawObject Interpreter::call1(Thread* thread, Frame* frame,
+                             const Object& callable, const Object& arg1) {
+  frame->pushValue(*callable);
   frame->pushValue(*arg1);
   return call(thread, frame, 1);
 }
 
-RawObject Interpreter::callFunction2(Thread* thread, Frame* frame,
-                                     const Object& func, const Object& arg1,
-                                     const Object& arg2) {
-  frame->pushValue(*func);
+RawObject Interpreter::call2(Thread* thread, Frame* frame,
+                             const Object& callable, const Object& arg1,
+                             const Object& arg2) {
+  frame->pushValue(*callable);
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
   return call(thread, frame, 2);
 }
 
-RawObject Interpreter::callFunction3(Thread* thread, Frame* frame,
-                                     const Object& func, const Object& arg1,
-                                     const Object& arg2, const Object& arg3) {
-  frame->pushValue(*func);
+RawObject Interpreter::call3(Thread* thread, Frame* frame,
+                             const Object& callable, const Object& arg1,
+                             const Object& arg2, const Object& arg3) {
+  frame->pushValue(*callable);
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
   frame->pushValue(*arg3);
   return call(thread, frame, 3);
 }
 
-RawObject Interpreter::callFunction4(Thread* thread, Frame* frame,
-                                     const Object& func, const Object& arg1,
-                                     const Object& arg2, const Object& arg3,
-                                     const Object& arg4) {
-  frame->pushValue(*func);
+RawObject Interpreter::call4(Thread* thread, Frame* frame,
+                             const Object& callable, const Object& arg1,
+                             const Object& arg2, const Object& arg3,
+                             const Object& arg4) {
+  frame->pushValue(*callable);
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
   frame->pushValue(*arg3);
@@ -482,11 +478,11 @@ RawObject Interpreter::callFunction4(Thread* thread, Frame* frame,
   return call(thread, frame, 4);
 }
 
-RawObject Interpreter::callFunction5(Thread* thread, Frame* frame,
-                                     const Object& func, const Object& arg1,
-                                     const Object& arg2, const Object& arg3,
-                                     const Object& arg4, const Object& arg5) {
-  frame->pushValue(*func);
+RawObject Interpreter::call5(Thread* thread, Frame* frame,
+                             const Object& callable, const Object& arg1,
+                             const Object& arg2, const Object& arg3,
+                             const Object& arg4, const Object& arg5) {
+  frame->pushValue(*callable);
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
   frame->pushValue(*arg3);
@@ -495,12 +491,12 @@ RawObject Interpreter::callFunction5(Thread* thread, Frame* frame,
   return call(thread, frame, 5);
 }
 
-RawObject Interpreter::callFunction6(Thread* thread, Frame* frame,
-                                     const Object& func, const Object& arg1,
-                                     const Object& arg2, const Object& arg3,
-                                     const Object& arg4, const Object& arg5,
-                                     const Object& arg6) {
-  frame->pushValue(*func);
+RawObject Interpreter::call6(Thread* thread, Frame* frame,
+                             const Object& callable, const Object& arg1,
+                             const Object& arg2, const Object& arg3,
+                             const Object& arg4, const Object& arg5,
+                             const Object& arg6) {
+  frame->pushValue(*callable);
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
   frame->pushValue(*arg3);
@@ -516,7 +512,7 @@ RawObject Interpreter::callMethod1(Thread* thread, Frame* frame,
   frame->pushValue(*method);
   if (method.isFunction()) {
     frame->pushValue(*self);
-    return callPreparedFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, frame, *method, nargs + 1);
   }
   return call(thread, frame, nargs);
 }
@@ -529,7 +525,7 @@ RawObject Interpreter::callMethod2(Thread* thread, Frame* frame,
   if (method.isFunction()) {
     frame->pushValue(*self);
     frame->pushValue(*other);
-    return callPreparedFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, frame, *method, nargs + 1);
   }
   frame->pushValue(*other);
   return call(thread, frame, nargs);
@@ -544,7 +540,7 @@ RawObject Interpreter::callMethod3(Thread* thread, Frame* frame,
     frame->pushValue(*self);
     frame->pushValue(*arg1);
     frame->pushValue(*arg2);
-    return callPreparedFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, frame, *method, nargs + 1);
   }
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
@@ -562,7 +558,7 @@ RawObject Interpreter::callMethod4(Thread* thread, Frame* frame,
     frame->pushValue(*arg1);
     frame->pushValue(*arg2);
     frame->pushValue(*arg3);
-    return callPreparedFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, frame, *method, nargs + 1);
   }
   frame->pushValue(*arg1);
   frame->pushValue(*arg2);
@@ -579,9 +575,9 @@ Continue Interpreter::tailcallMethod1(Thread* thread, RawObject method,
   if (method.isFunction()) {
     frame->pushValue(self);
     nargs++;
-    return tailcallPreparedFunction(thread, frame, method, nargs);
+    return tailcallFunction(thread, frame, method, nargs);
   }
-  return tailcallFunction(thread, nargs);
+  return tailcall(thread, nargs);
 }
 
 HANDLER_INLINE
@@ -593,14 +589,13 @@ Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
   if (method.isFunction()) {
     frame->pushValue(self);
     nargs++;
-    return tailcallPreparedFunction(thread, frame, method, nargs);
+    return tailcallFunction(thread, frame, method, nargs);
   }
   frame->pushValue(arg1);
-  return tailcallFunction(thread, nargs);
+  return tailcall(thread, nargs);
 }
 
-HANDLER_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
-                                                      word arg) {
+HANDLER_INLINE Continue Interpreter::tailcall(Thread* thread, word arg) {
   return handleCall(thread, arg, arg, 0, preparePositionalCall,
                     &Function::entry);
 }
@@ -911,7 +906,7 @@ HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     frame->pushValue(left);
     frame->pushValue(right);
   }
-  return callPreparedFunction(thread, frame, method, /*nargs=*/2);
+  return callFunction(thread, frame, method, /*nargs=*/2);
 }
 
 RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
@@ -1145,7 +1140,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
     // raise was given a BaseException subtype. Use it as the type, and call
     // the type object to create the value.
     type = *exc;
-    value = Interpreter::callFunction0(thread, frame, type);
+    value = Interpreter::call0(thread, frame, type);
     if (value.isErrorException()) return;
     if (!runtime->isInstanceOfBaseException(*value)) {
       thread->raiseWithFmt(
@@ -1174,7 +1169,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
                                    // Error.
     if (runtime->isInstanceOfType(*cause) &&
         Type(&scope, *cause).isBaseExceptionSubclass()) {
-      cause = Interpreter::callFunction0(thread, frame, cause);
+      cause = Interpreter::call0(thread, frame, cause);
       if (cause.isErrorException()) return;
     } else if (!runtime->isInstanceOfBaseException(*cause) &&
                !cause.isNoneType()) {
@@ -1493,7 +1488,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     getitem = resolveDescriptorGet(thread, getitem, container, type);
     if (getitem.isErrorException()) return Continue::UNWIND;
     frame->setValueAt(*getitem, 1);
-    return tailcallFunction(thread, 1);
+    return tailcall(thread, 1);
   }
   if (index >= 0) {
     // TODO(T55274956): Make this into a separate function to be shared.
@@ -1509,7 +1504,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   }
   frame->setValueAt(*getitem, 1);
   frame->insertValueAt(*container, 1);
-  return tailcallPreparedFunction(thread, frame, *getitem, 2);
+  return tailcallFunction(thread, frame, *getitem, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
@@ -1546,7 +1541,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
     return binarySubscrUpdateCache(thread, arg);
   }
   frame->insertValueAt(cached, 2);
-  return tailcallPreparedFunction(thread, frame, cached, 2);
+  return tailcallFunction(thread, frame, cached, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
@@ -1560,7 +1555,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
     return binarySubscrUpdateCache(thread, arg);
   }
   frame->insertValueAt(cached, 2);
-  return tailcallPreparedFunction(thread, frame, cached, 2);
+  return tailcallFunction(thread, frame, cached, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
@@ -1798,8 +1793,8 @@ ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
   frame->setValueAt(set_item_method, 2);
   frame->pushValue(value_raw);
 
-  RawObject result = callPreparedFunction(thread, frame, set_item_method,
-                                          /*nargs=*/3);
+  RawObject result = callFunction(thread, frame, set_item_method,
+                                  /*nargs=*/3);
   if (result.isErrorException()) {
     return Continue::UNWIND;
   }
@@ -2233,7 +2228,7 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   frame->pushValue(*exc);
   frame->pushValue(*value);
   frame->pushValue(*traceback);
-  return tailcallFunction(thread, 3);
+  return tailcall(thread, 3);
 }
 
 HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
@@ -2642,7 +2637,7 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   } else {
     next = resolveDescriptorGet(thread, next, iter, type);
     if (next.isErrorException()) return Continue::UNWIND;
-    result = callFunction0(thread, frame, next);
+    result = call0(thread, frame, next);
   }
 
   if (result.isErrorException()) {
@@ -2710,8 +2705,8 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
   RawObject iter = frame->topValue();
   frame->pushValue(next_method);
   frame->pushValue(iter);
-  RawObject result = callPreparedFunction(thread, frame, next_method,
-                                          /*nargs=*/1);
+  RawObject result = callFunction(thread, frame, next_method,
+                                  /*nargs=*/1);
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
@@ -3669,7 +3664,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   }
   frame->pushValue(receiver);
   frame->setValueAt(cached, 1);
-  return tailcallPreparedFunction(thread, frame, cached, 1);
+  return tailcallFunction(thread, frame, cached, 1);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
@@ -3883,7 +3878,7 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   frame->pushValue(*locals);
   frame->pushValue(*fromlist);
   frame->pushValue(*level);
-  return tailcallFunction(thread, 5);
+  return tailcall(thread, 5);
 }
 
 static RawObject tryImportFromSysModules(Thread* thread, const Object& from,
@@ -4306,8 +4301,10 @@ Interpreter::handleCall(Thread* thread, word nargs, word callable_idx,
                              post_call_sp, prepare_args);
 }
 
-ALWAYS_INLINE Continue Interpreter::tailcallPreparedFunction(
-    Thread* thread, Frame* frame, RawObject function_obj, word nargs) {
+ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
+                                                     Frame* frame,
+                                                     RawObject function_obj,
+                                                     word nargs) {
   RawObject* sp = frame->valueStackTop() + nargs + 1;
   DCHECK(function_obj == frame->peek(nargs),
          "frame->peek(nargs) is expected to be the given function");
@@ -4913,7 +4910,7 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
   }
   // Add one to bind receiver to the self argument. See doLoadMethod()
   // for details on the stack's shape.
-  return tailcallPreparedFunction(thread, frame, maybe_method, arg + 1);
+  return tailcallFunction(thread, frame, maybe_method, arg + 1);
 }
 
 NEVER_INLINE

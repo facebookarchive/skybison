@@ -726,7 +726,7 @@ def func(arg0, arg1):
   Code code(&scope,
             runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
                                      /*kwonlyargcount=*/0,
-                                     /*flags=*/0, /*entry=*/nullptr,
+                                     /*flags=*/0, /*function=*/nullptr,
                                      /*parameter_names=*/empty_tuple, name));
   Str qualname(&scope, runtime_->newStrFromCStr("test._bytearray_check"));
   Module module(&scope, runtime_->findOrCreateMainModule());

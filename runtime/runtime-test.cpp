@@ -2277,8 +2277,8 @@ def test(x):
 
   // Run __init__ then RMW the attribute
   Function test(&scope, mainModuleAt(runtime_, "test"));
-  Object result(&scope, Interpreter::callFunction1(
-                            thread_, thread_->currentFrame(), test, instance));
+  Object result(&scope, Interpreter::call1(thread_, thread_->currentFrame(),
+                                           test, instance));
   EXPECT_PYLIST_EQ(result, {"testing 123", "321 testing"});
 }
 
@@ -2315,16 +2315,16 @@ def test(x):
 
   // Add overflow attributes that should force layout transitions
   Function test(&scope, mainModuleAt(runtime_, "test"));
-  Object result0(&scope, Interpreter::callFunction1(
-                             thread_, thread_->currentFrame(), test, foo1));
+  Object result0(
+      &scope, Interpreter::call1(thread_, thread_->currentFrame(), test, foo1));
   EXPECT_PYLIST_EQ(result0, {100, 200, "hello", "aaa", "bbb", "ccc"});
   EXPECT_NE(foo1.layoutId(), original_layout_id);
 
   // Add the same set of attributes to a new instance, should arrive at the
   // same layout
   Instance foo2(&scope, runtime_->newInstance(layout));
-  Object result1(&scope, Interpreter::callFunction1(
-                             thread_, thread_->currentFrame(), test, foo2));
+  Object result1(
+      &scope, Interpreter::call1(thread_, thread_->currentFrame(), test, foo2));
   EXPECT_PYLIST_EQ(result1, {100, 200, "hello", "aaa", "bbb", "ccc"});
 }
 
@@ -2360,8 +2360,8 @@ def test(x):
 
   // Run the test
   Function test(&scope, mainModuleAt(runtime_, "test"));
-  Object result(&scope, Interpreter::callFunction1(
-                            thread_, thread_->currentFrame(), test, instance));
+  Object result(&scope, Interpreter::call1(thread_, thread_->currentFrame(),
+                                           test, instance));
   EXPECT_PYLIST_EQ(result, {"foo", "bar", "baz", "aaa", "bbb", "ccc"});
 }
 

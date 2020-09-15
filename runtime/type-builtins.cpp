@@ -544,8 +544,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
     if (meta_attr.isProperty()) {
       Object getter(&scope, Property::cast(*meta_attr).getter());
       if (!getter.isNoneType()) {
-        return Interpreter::callFunction1(thread, thread->currentFrame(),
-                                          getter, type);
+        return Interpreter::call1(thread, thread->currentFrame(), getter, type);
       }
     }
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
@@ -918,8 +917,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       dunder_slots_obj = runtime->newTupleWith1(dunder_slots_obj);
     } else if (!runtime->isInstanceOfTuple(*dunder_slots_obj)) {
       Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
-      dunder_slots_obj = Interpreter::callFunction1(
-          thread, thread->currentFrame(), tuple_type, dunder_slots_obj);
+      dunder_slots_obj = Interpreter::call1(thread, thread->currentFrame(),
+                                            tuple_type, dunder_slots_obj);
       if (dunder_slots_obj.isErrorException()) {
         return *dunder_slots_obj;
       }
