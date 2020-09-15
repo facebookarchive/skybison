@@ -5551,11 +5551,11 @@ RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type metaclass(&scope, args.get(0));
-  Tuple bases(&scope, args.get(1));
+  Tuple bases(&scope, tupleUnderlying(args.get(1)));
   LayoutId metaclass_id = metaclass.instanceLayoutId();
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
-  type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
+  type.setBases(*bases);
   Function type_dunder_call(&scope,
                             runtime->lookupNameInModule(thread, ID(_builtins),
                                                         ID(_type_dunder_call)));

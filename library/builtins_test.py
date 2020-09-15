@@ -19412,6 +19412,39 @@ class TypeTests(unittest.TestCase):
             class Foo(metaclass=Meta):
                 pass
 
+    def test_new_calculates_metaclass_and_calls_dunder_new(self):
+        class M0(type):
+            def __new__(metacls, name, bases, type_dict, **kwargs):
+                metacls.new_args = (metacls, name, bases, kwargs)
+                return type.__new__(metacls, name, bases, type_dict)
+
+        class M1(M0):
+            foo = 7
+
+        class A(metaclass=M0):
+            pass
+
+        class B(metaclass=M1):
+            pass
+
+        C = type.__new__(type, "C", (A, B), {}, bar=8)
+        self.assertIs(type(C), M1)
+        self.assertEqual(C.new_args, (M1, "C", (A, B), {"bar": 8}))
+        self.assertEqual(C.foo, 7)
+
+    def test_new_with_mro_entries_base_raises_type_error(self):
+        class X:
+            def __mro_entries__(self, bases):
+                return (object,)
+
+        pseudo_base = X()
+        with self.assertRaises(TypeError) as ctx:
+            type.__new__(type, "C", (pseudo_base,), {})
+        self.assertEqual(
+            str(ctx.exception),
+            "type() doesn't support MRO entry resolution; use types.new_class()",
+        )
+
     def test_new_calls_init_subclass(self):
         class Foo:
             def __init_subclass__(cls, *args, **kwargs):

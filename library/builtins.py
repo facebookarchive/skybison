@@ -300,6 +300,21 @@ def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **k
     _builtin()
 
 
+def _calculate_metaclass(metatype, bases):
+    result = metatype
+    for base in bases:
+        base_type = _type(base)
+        if base_type is result:
+            continue
+        if _type_issubclass(base_type, result):
+            result = base_type
+        elif not _type_issubclass(result, base_type):
+            raise TypeError(
+                "metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases"
+            )
+    return result
+
+
 def _function_dict(self):
     # TODO(T56646836) we should not need to define a custom __dict__.
     _function_guard(self)
@@ -475,6 +490,20 @@ class type(bootstrap=True):
         _str_guard(name_or_object)
         _tuple_guard(bases)
         _dict_guard(type_dict)
+        if not bases:
+            bases = (object,)
+        else:
+            for base in bases:
+                if not _type_check(base) and hasattr(base, "__mro_entries__"):
+                    raise TypeError(
+                        "type() doesn't support MRO entry resolution; use types.new_class()"
+                    )
+            metaclass = _calculate_metaclass(cls, bases)
+            if metaclass is not cls:
+                new = metaclass.__new__
+                if new is not type.__new__:
+                    return new(metaclass, name_or_object, bases, type_dict, **kwargs)
+                cls = metaclass
         instance = _type_new(cls, bases)
         mro = _Unbound if cls is type else tuple(cls.mro(instance))
         new_type = _type_init(instance, name_or_object, type_dict, mro)
