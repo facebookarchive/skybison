@@ -2330,15 +2330,15 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
 
   // Save starting value stack top
   Frame* frame = thread_->currentFrame();
-  RawObject* value_stack_start = frame->valueStackTop();
+  RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
-  frame->pushValue(*callee);
-  frame->pushValue(SmallInt::fromWord(1));
+  thread_->stackPush(*callee);
+  thread_->stackPush(SmallInt::fromWord(1));
 
   // Make sure we got the right result and stack is back where it should be
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call(thread_, frame, 1), 42));
-  EXPECT_EQ(value_stack_start, frame->valueStackTop());
+  EXPECT_EQ(value_stack_start, thread_->stackPointer());
 }
 
 TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
@@ -2379,17 +2379,17 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
 
   // Save starting value stack top
   Frame* frame = thread_->currentFrame();
-  RawObject* value_stack_start = frame->valueStackTop();
+  RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
   Object arg(&scope, SmallInt::fromWord(2));
   Tuple ex(&scope, runtime_->newTupleWith1(arg));
-  frame->pushValue(*callee);
-  frame->pushValue(*ex);
+  thread_->stackPush(*callee);
+  thread_->stackPush(*ex);
 
   // Make sure we got the right result and stack is back where it should be
   EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 42));
-  EXPECT_EQ(value_stack_start, frame->valueStackTop());
+  EXPECT_EQ(value_stack_start, thread_->stackPointer());
 }
 
 TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
@@ -2434,18 +2434,18 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
 
   // Save starting value stack top
   Frame* frame = thread_->currentFrame();
-  RawObject* value_stack_start = frame->valueStackTop();
+  RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
   Object arg(&scope, Runtime::internStrFromCStr(thread_, "b"));
   Tuple arg_names(&scope, runtime_->newTupleWith1(arg));
-  frame->pushValue(*callee);
-  frame->pushValue(SmallInt::fromWord(4));
-  frame->pushValue(*arg_names);
+  thread_->stackPush(*callee);
+  thread_->stackPush(SmallInt::fromWord(4));
+  thread_->stackPush(*arg_names);
 
   // Make sure we got the right result and stack is back where it should be
   EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 1), 42));
-  EXPECT_EQ(value_stack_start, frame->valueStackTop());
+  EXPECT_EQ(value_stack_start, thread_->stackPointer());
 }
 
 TEST_F(InterpreterTest, LookupMethodInvokesDescriptor) {
@@ -2485,18 +2485,18 @@ meth = C().foo
   ASSERT_TRUE(meth_obj.isBoundMethod());
 
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(*meth_obj);
-  frame->pushValue(SmallInt::fromWord(1234));
-  ASSERT_EQ(frame->valueStackSize(), 2);
+  thread_->stackPush(*meth_obj);
+  thread_->stackPush(SmallInt::fromWord(1234));
+  ASSERT_EQ(thread_->valueStackSize(), 2);
   word nargs = 1;
   Interpreter::PrepareCallableResult result =
       Interpreter::prepareCallableCall(thread_, frame, nargs, nargs);
   ASSERT_TRUE(result.function.isFunction());
   ASSERT_EQ(result.nargs, 2);
-  ASSERT_EQ(frame->valueStackSize(), 3);
-  EXPECT_TRUE(isIntEqualsWord(frame->peek(0), 1234));
-  EXPECT_TRUE(frame->peek(1).isInstance());
-  EXPECT_EQ(frame->peek(2), result.function);
+  ASSERT_EQ(thread_->valueStackSize(), 3);
+  EXPECT_TRUE(isIntEqualsWord(thread_->stackPeek(0), 1234));
+  EXPECT_TRUE(thread_->stackPeek(1).isInstance());
+  EXPECT_EQ(thread_->stackPeek(2), result.function);
 }
 
 TEST_F(InterpreterTest, CallExWithListSubclassCallsDunderIter) {
@@ -4358,7 +4358,7 @@ TEST_F(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
   Str not_a_func(&scope, Str::empty());
-  frame->pushValue(*not_a_func);
+  thread_->stackPush(*not_a_func);
   EXPECT_TRUE(
       raised(Interpreter::call(thread_, frame, 0), LayoutId::kTypeError));
 }
@@ -4367,9 +4367,9 @@ TEST_F(InterpreterTest, FunctionCallExWithNonFunctionRaisesTypeError) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
   Str not_a_func(&scope, Str::empty());
-  frame->pushValue(*not_a_func);
+  thread_->stackPush(*not_a_func);
   Tuple empty_args(&scope, runtime_->emptyTuple());
-  frame->pushValue(*empty_args);
+  thread_->stackPush(*empty_args);
   EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
                             LayoutId::kTypeError,
                             "'str' object is not callable"));
@@ -6160,9 +6160,9 @@ TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
   Frame* frame = thread_->currentFrame();
-  frame->pushValue(*obj);
+  thread_->stackPush(*obj);
   ASSERT_FALSE(doIntrinsic(thread_, frame, ID(_tuple_len)));
-  EXPECT_EQ(frame->peek(0), *obj);
+  EXPECT_EQ(thread_->stackPeek(0), *obj);
 }
 
 }  // namespace testing

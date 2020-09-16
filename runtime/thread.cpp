@@ -52,6 +52,7 @@ Thread::Thread(word size)
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
   limit_ = start_;
+  stack_pointer_ = reinterpret_cast<RawObject*>(end_);
 
   stack_t altstack;
   altstack.ss_sp = end_;
@@ -81,7 +82,7 @@ void Thread::visitRoots(PointerVisitor* visitor) {
 }
 
 void Thread::visitStackRoots(PointerVisitor* visitor) {
-  auto address = reinterpret_cast<uword>(stackPtr());
+  auto address = reinterpret_cast<uword>(stackPointer());
   auto end = reinterpret_cast<uword>(end_);
   std::memset(start_, 0, reinterpret_cast<byte*>(address) - start_);
   for (; address < end; address += kPointerSize) {
@@ -173,10 +174,6 @@ void Thread::setCurrentThread(Thread* thread) {
   Thread::current_thread_ = thread;
 }
 
-byte* Thread::stackPtr() {
-  return reinterpret_cast<byte*>(current_frame_->valueStackTop());
-}
-
 void Thread::clearInterrupt() {
   is_interrupted_ = false;
   limit_ = start_;
@@ -190,7 +187,7 @@ void Thread::interrupt() {
 bool Thread::wouldStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
   // TODO(T36407214): Grow stack
-  byte* sp = stackPtr();
+  byte* sp = reinterpret_cast<byte*>(stack_pointer_);
   if (LIKELY(sp - max_size >= limit_)) {
     return false;
   }
@@ -209,7 +206,8 @@ void Thread::linkFrame(Frame* frame) {
 
 inline Frame* Thread::openAndLinkFrame(word size, word total_locals) {
   // Initialize the frame.
-  byte* new_sp = stackPtr() - size;
+  byte* new_sp = reinterpret_cast<byte*>(stack_pointer_) - size;
+  stack_pointer_ = reinterpret_cast<RawObject*>(new_sp);
   Frame* frame = reinterpret_cast<Frame*>(new_sp);
   frame->init(total_locals);
 
@@ -256,11 +254,12 @@ Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
 
   byte* src = reinterpret_cast<byte*>(generator_frame.address() +
                                       RawGeneratorFrame::kFrameOffset);
-  byte* dest = stackPtr() - size;
+  byte* dest = reinterpret_cast<byte*>(stack_pointer_) - size;
   std::memcpy(dest, src, num_frame_words * kPointerSize);
   word value_stack_size = generator_frame.maxStackSize() * kPointerSize;
   Frame* result = reinterpret_cast<Frame*>(dest + value_stack_size);
-  result->unstashInternalPointers(Function::cast(generator_frame.function()));
+  result->unstashInternalPointers(this,
+                                  Function::cast(generator_frame.function()));
   linkFrame(result);
   DCHECK(result->isInvalid() == nullptr, "invalid frame");
   return result;
@@ -298,6 +297,7 @@ Frame* Thread::pushInitialFrame() {
   CHECK(sp > start_, "no space for initial frame");
   Frame* frame = reinterpret_cast<Frame*>(sp);
   frame->init(0);
+  stack_pointer_ = reinterpret_cast<RawObject*>(sp);
   frame->setPreviousFrame(nullptr);
   return frame;
 }
@@ -305,21 +305,20 @@ Frame* Thread::pushInitialFrame() {
 Frame* Thread::popFrame() {
   Frame* frame = current_frame_;
   DCHECK(!frame->isSentinel(), "cannot pop initial frame");
+  stack_pointer_ = frame->frameEnd();
   current_frame_ = frame->previousFrame();
-  current_frame_->setValueStackTop(frame->frameEnd());
   return current_frame_;
 }
 
 Frame* Thread::popFrameToGeneratorFrame(const GeneratorFrame& generator_frame) {
-  Frame* frame = currentFrame();
-  DCHECK(frame->valueStackSize() <= generator_frame.maxStackSize(),
+  DCHECK(valueStackSize() <= generator_frame.maxStackSize(),
          "not enough space in RawGeneratorBase to save live stack");
   byte* dest = reinterpret_cast<byte*>(generator_frame.address() +
                                        RawGeneratorFrame::kFrameOffset);
-  byte* src = reinterpret_cast<byte*>(frame->valueStackBase() -
+  byte* src = reinterpret_cast<byte*>(valueStackBase() -
                                       generator_frame.maxStackSize());
   std::memcpy(dest, src, generator_frame.numFrameWords() * kPointerSize);
-  generator_frame.stashInternalPointers(frame);
+  generator_frame.stashInternalPointers(this);
   return popFrame();
 }
 
@@ -343,15 +342,15 @@ RawObject Thread::exec(const Code& code, const Module& module,
   Function function(&scope,
                     runtime->newFunctionWithCode(this, qualname, code, module));
   // Push implicit globals.
-  currentFrame()->pushValue(*implicit_globals);
+  stackPush(*implicit_globals);
   // Push function to be available from frame.function().
-  currentFrame()->pushValue(*function);
+  stackPush(*function);
   if (UNLIKELY(pushCallFrame(*function) == nullptr)) {
     return Error::exception();
   }
   Object result(&scope, Interpreter::execute(this));
-  DCHECK(currentFrame()->topValue() == *implicit_globals, "stack mismatch");
-  currentFrame()->dropValues(1);
+  DCHECK(stackTop() == *implicit_globals, "stack mismatch");
+  stackDrop(1);
   return *result;
 }
 
@@ -361,14 +360,14 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
 
   HandleScope scope(this);
   // Push implicit globals and function.
-  currentFrame()->pushValue(*dict);
-  currentFrame()->pushValue(*function);
+  stackPush(*dict);
+  stackPush(*function);
   if (UNLIKELY(pushClassFunctionFrame(function) == nullptr)) {
     return Error::exception();
   }
   Object result(&scope, Interpreter::execute(this));
-  DCHECK(currentFrame()->topValue() == *dict, "stack mismatch");
-  currentFrame()->dropValues(1);
+  DCHECK(stackTop() == *dict, "stack mismatch");
+  stackDrop(1);
   return *result;
 }
 

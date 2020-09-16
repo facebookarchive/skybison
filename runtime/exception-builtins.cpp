@@ -100,11 +100,11 @@ RawObject createException(Thread* thread, const Type& type,
   }
   if (thread->runtime()->isInstanceOfTuple(*value)) {
     HandleScope scope(thread);
-    frame->pushValue(*type);
+    thread->stackPush(*type);
     Tuple args(&scope, tupleUnderlying(*value));
     word length = args.length();
     for (word i = 0; i < length; i++) {
-      frame->pushValue(args.at(i));
+      thread->stackPush(args.at(i));
     }
     return Interpreter::call(thread, frame, /*nargs=*/length);
   }

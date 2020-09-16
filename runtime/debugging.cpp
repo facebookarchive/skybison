@@ -528,7 +528,8 @@ std::ostream& operator<<(std::ostream& os, RawValueCell value) {
   return os;
 }
 
-static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
+static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame,
+                            RawObject* stack_pointer) {
   if (const char* invalid = frame->isInvalid()) {
     os << "- invalid frame (" << invalid << ")\n";
     return;
@@ -602,10 +603,15 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
     os << ": " << frame->local(l) << '\n';
   }
 
-  word stack_size = frame->valueStackSize();
-  if (stack_size > 0) os << "  stack:\n";
-  for (word i = stack_size - 1; i >= 0; i--) {
-    os << "    " << i << ": " << frame->peek(i) << '\n';
+  if (stack_pointer != nullptr) {
+    RawObject* base = reinterpret_cast<RawObject*>(frame);
+    word stack_size = base - stack_pointer;
+    if (stack_size > 0) {
+      os << "  stack:\n";
+      for (word i = stack_size - 1; i >= 0; i--) {
+        os << "    " << i << ": " << stack_pointer[i] << '\n';
+      }
+    }
   }
 }
 
@@ -621,7 +627,13 @@ std::ostream& operator<<(std::ostream& os, Frame* frame) {
 
   Thread* thread = Thread::current();
   for (word i = frames.size() - 1; i >= 0; i--) {
-    dumpSingleFrame(thread, os, frames[i]);
+    RawObject* stack_pointer;
+    if (i == 0) {
+      stack_pointer = thread->stackPointer();
+    } else {
+      stack_pointer = frames[i - 1]->frameEnd();
+    }
+    dumpSingleFrame(thread, os, frames[i], stack_pointer);
   }
   return os;
 }
@@ -722,7 +734,7 @@ USED void dump(Frame* frame) { std::cerr << frame; }
 USED void dumpPendingException(Thread* thread) { std::cerr << thread; }
 
 USED void dumpSingleFrame(Frame* frame) {
-  dumpSingleFrame(Thread::current(), std::cerr, frame);
+  dumpSingleFrame(Thread::current(), std::cerr, frame, nullptr);
 }
 
 void initializeDebugging() {

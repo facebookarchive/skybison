@@ -204,12 +204,12 @@ template <typename T1, typename T2>
 
 RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::current();
-  Frame* frame = thread->currentFrame();
-  frame->pushValue(*func);
+  thread->stackPush(*func);
   word args_length = args.length();
   for (word i = 0; i < args_length; i++) {
-    frame->pushValue(args.at(i));
+    thread->stackPush(args.at(i));
   }
+  Frame* frame = thread->currentFrame();
   return Interpreter::call(thread, frame, args_length);
 }
 
@@ -395,11 +395,11 @@ RawObject runBuiltinImpl(BuiltinFunction function,
   Function function_obj(&scope,
                         runtime->newFunctionWithCode(thread, name, code, main));
 
-  Frame* frame = thread->currentFrame();
-  frame->pushValue(*function_obj);
+  thread->stackPush(*function_obj);
   for (word i = 0; i < args_length; i++) {
-    frame->pushValue(*args.get(i).get());
+    thread->stackPush(*args.get(i).get());
   }
+  Frame* frame = thread->currentFrame();
   return Interpreter::call(thread, frame, args_length);
 }
 

@@ -16,10 +16,10 @@ PY_EXPORT PyObject* _PyNamespace_New(PyObject* kwds) {
   } else {
     Object type(&scope, runtime->lookupNameInModule(thread, ID(builtins),
                                                     ID(SimpleNamespace)));
+    thread->stackPush(*type);
+    thread->stackPush(runtime->emptyTuple());
+    thread->stackPush(ApiHandle::fromPyObject(kwds)->asObject());
     Frame* frame = thread->currentFrame();
-    frame->pushValue(*type);
-    frame->pushValue(runtime->emptyTuple());
-    frame->pushValue(ApiHandle::fromPyObject(kwds)->asObject());
     result =
         Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
   }

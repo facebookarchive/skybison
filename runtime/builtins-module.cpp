@@ -333,10 +333,10 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     thread->clearPendingException();
     dict_obj = runtime->newDict();
   } else {
-    frame->pushValue(*prepare_method);
+    thread->stackPush(*prepare_method);
     Tuple pargs(&scope, runtime->newTupleWith2(name, bases));
-    frame->pushValue(*pargs);
-    frame->pushValue(*kwargs);
+    thread->stackPush(*pargs);
+    thread->stackPush(*kwargs);
     dict_obj =
         Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
     if (dict_obj.isError()) return *dict_obj;
@@ -367,10 +367,10 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     dictAtPutById(thread, type_dict, ID(__orig_bases__), orig_bases);
   }
 
-  frame->pushValue(*metaclass);
+  thread->stackPush(*metaclass);
   Tuple pargs(&scope, runtime->newTupleWith3(name, bases, type_dict));
-  frame->pushValue(*pargs);
-  frame->pushValue(*kwargs);
+  thread->stackPush(*pargs);
+  thread->stackPush(*kwargs);
   return Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
 }
 

@@ -190,7 +190,7 @@ void emitSaveInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
     __ movq(Address(kThreadReg, Thread::currentFrameOffset()), kFrameReg);
   }
   if (flags & kVMStack) {
-    __ movq(Address(kFrameReg, Frame::kValueStackTopOffset), RSP);
+    __ movq(Address(kThreadReg, Thread::stackPointerOffset()), RSP);
     __ leaq(RSP, Address(RBP, -kNativeStackFrameSize));
   }
   DCHECK((flags & kBytecode) == 0, "Storing bytecode not supported");
@@ -204,7 +204,7 @@ void emitRestoreInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
     __ movq(kFrameReg, Address(kThreadReg, Thread::currentFrameOffset()));
   }
   if (flags & kVMStack) {
-    __ movq(RSP, Address(kFrameReg, Frame::kValueStackTopOffset));
+    __ movq(RSP, Address(kThreadReg, Thread::stackPointerOffset()));
   }
   if (flags & kBytecode) {
     __ movq(kBCReg, Address(kFrameReg, Frame::kBytecodeOffset));
@@ -1085,7 +1085,7 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   Register r_scratch = RAX;
   Label remove_value_and_call;
 
-  // if (frame->peek(arg + 1).isUnbound()) goto remove_value_and_call;
+  // if (thread->stackPeek(arg + 1).isUnbound()) goto remove_value_and_call;
   __ movl(r_scratch, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
   __ cmpl(r_scratch, Immediate(Unbound::object().raw()));
   __ jcc(EQUAL, &remove_value_and_call, Assembler::kNearJump);
@@ -1098,7 +1098,7 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ incl(kOpargReg);
   __ jmp(&env->call_function_no_intrinsic_handler, Assembler::kFarJump);
 
-  // frame->removeValueAt(arg + 1)
+  // thread->removeValueAt(arg + 1)
   __ bind(&remove_value_and_call);
   Register r_saved_rdi = R8;
   Register r_saved_rsi = R9;
@@ -1462,7 +1462,7 @@ void emitHandler<POP_BLOCK>(EmitEnv* env) {
       Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
       r_depth);
 
-  // frame->setValueStackTop(frame->valueStackBase() - block.level());
+  // thread->setStackPointer(thread->valueStackBase() - block.level());
   // =>   RSP = kFrameReg - (block.level() * kPointerSize)
   __ shrq(r_block, Immediate(TryBlock::kLevelOffset));
   __ andl(r_block, Immediate(TryBlock::kLevelMask));
@@ -1554,16 +1554,12 @@ void emitInterpreter(EmitEnv* env) {
   {
     env->current_handler = "YIELD pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
-    // RAX = thread->currentFrame()->popValue()
-    Register r_scratch_frame = RDX;
+    // RAX = thread->stackPop()
     Register r_scratch_top = RCX;
-    __ movq(r_scratch_frame, Address(kThreadReg, Thread::currentFrameOffset()));
-    __ movq(r_scratch_top,
-            Address(r_scratch_frame, Frame::kValueStackTopOffset));
+    __ movq(r_scratch_top, Address(kThreadReg, Thread::stackPointerOffset()));
     __ movq(RAX, Address(r_scratch_top, 0));
     __ addq(r_scratch_top, Immediate(kPointerSize));
-    __ movq(Address(r_scratch_frame, Frame::kValueStackTopOffset),
-            r_scratch_top);
+    __ movq(Address(kThreadReg, Thread::stackPointerOffset()), r_scratch_top);
 
     __ jmp(&do_return, Assembler::kFarJump);
   }

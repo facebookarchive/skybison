@@ -1099,8 +1099,8 @@ RawObject RawGeneratorFrame::popValue() const {
   return frame()->stashedPopValue();
 }
 
-void RawGeneratorFrame::stashInternalPointers(Frame* original_frame) const {
-  frame()->stashInternalPointers(original_frame);
+void RawGeneratorFrame::stashInternalPointers(Thread* thread) const {
+  frame()->stashInternalPointers(thread);
 }
 
 }  // namespace py

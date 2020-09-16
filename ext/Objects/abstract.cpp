@@ -600,16 +600,16 @@ PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   word flags = 0;
-  frame->pushValue(ApiHandle::fromPyObject(callable)->asObject());
+  thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
   Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
   DCHECK(thread->runtime()->isInstanceOfTuple(*args_obj),
          "args mut be a tuple");
-  frame->pushValue(*args_obj);
+  thread->stackPush(*args_obj);
   if (kwargs != nullptr) {
     Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
     DCHECK(thread->runtime()->isInstanceOfDict(*kwargs_obj),
            "kwargs must be a dict");
-    frame->pushValue(*kwargs_obj);
+    thread->stackPush(*kwargs_obj);
     flags |= CallFunctionExFlag::VAR_KEYWORDS;
   }
 
@@ -631,7 +631,7 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
                                  const char* format, std::va_list* va,
                                  int build_value_flags) {
   Frame* frame = thread->currentFrame();
-  frame->pushValue(*callable);
+  thread->stackPush(*callable);
 
   if (format == nullptr) {
     return makeInterpreterCall(thread, frame, /*nargs=*/0);
@@ -641,7 +641,7 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
   if (nargs == 1) {
     PyObject* value = makeValueFromFormat(&format, va, build_value_flags);
     if (!PyTuple_Check(value)) {
-      frame->pushValue(ApiHandle::stealReference(thread, value));
+      thread->stackPush(ApiHandle::stealReference(thread, value));
       return makeInterpreterCall(thread, frame, nargs);
     }
     // If the only argument passed is a tuple, splat the tuple as positional
@@ -649,14 +649,14 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
     nargs = PyTuple_Size(value);
     for (word i = 0; i < nargs; i++) {
       PyObject* arg = PyTuple_GetItem(value, i);
-      frame->pushValue(ApiHandle::fromPyObject(arg)->asObject());
+      thread->stackPush(ApiHandle::fromPyObject(arg)->asObject());
     }
     return makeInterpreterCall(thread, frame, nargs);
   }
   for (const char* f = format; *f != '\0';) {
     PyObject* value = makeValueFromFormat(&f, va, build_value_flags);
     if (value == nullptr) break;
-    frame->pushValue(ApiHandle::stealReference(thread, value));
+    thread->stackPush(ApiHandle::stealReference(thread, value));
   }
 
   return makeInterpreterCall(thread, frame, nargs);
@@ -699,10 +699,10 @@ static PyObject* callWithObjArgs(Thread* thread, const Object& callable,
          "may accidentally clear pending exception");
 
   Frame* frame = thread->currentFrame();
-  frame->pushValue(*callable);
+  thread->stackPush(*callable);
   word nargs = 0;
   for (PyObject* arg; (arg = va_arg(va, PyObject*)) != nullptr; nargs++) {
-    frame->pushValue(ApiHandle::fromPyObject(arg)->asObject());
+    thread->stackPush(ApiHandle::fromPyObject(arg)->asObject());
   }
 
   // TODO(T30925218): CPython tracks recursive calls before calling the function
@@ -830,7 +830,7 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
          "may accidentally clear pending exception");
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  frame->pushValue(ApiHandle::fromPyObject(callable)->asObject());
+  thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
   Object result(&scope, NoneType::object());
   if (args != nullptr) {
     Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
@@ -839,7 +839,7 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
                            "argument list must be a tuple");
       return nullptr;
     }
-    frame->pushValue(*args_obj);
+    thread->stackPush(*args_obj);
     // TODO(T30925218): Protect against native stack overflow.
     result = Interpreter::callEx(thread, frame, 0);
   } else {
@@ -901,7 +901,7 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
 
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  frame->pushValue(ApiHandle::fromPyObject(callable)->asObject());
+  thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
   DCHECK(n_args == 0 || pyargs != nullptr, "Args array must not be nullptr");
   Object result(&scope, NoneType::object());
   if (kwargs != nullptr) {
@@ -909,17 +909,17 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
     for (Py_ssize_t i = 0; i < n_args; i++) {
       args.atPut(i, ApiHandle::fromPyObject(pyargs[i])->asObject());
     }
-    frame->pushValue(*args);
+    thread->stackPush(*args);
     Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
     DCHECK(thread->runtime()->isInstanceOfDict(*kwargs_obj),
            "kwargs must be a dict");
-    frame->pushValue(*kwargs_obj);
+    thread->stackPush(*kwargs_obj);
     // TODO(T30925218): Protect against native stack overflow.
     result =
         Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
   } else {
     for (Py_ssize_t i = 0; i < n_args; i++) {
-      frame->pushValue(ApiHandle::fromPyObject(pyargs[i])->asObject());
+      thread->stackPush(ApiHandle::fromPyObject(pyargs[i])->asObject());
     }
     // TODO(T30925218): Protect against native stack overflow.
     result = Interpreter::call(thread, frame, n_args);

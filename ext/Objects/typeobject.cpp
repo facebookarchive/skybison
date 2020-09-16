@@ -822,11 +822,11 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
                     runtime->attributeAtById(thread, type_obj, ID(__new__)));
   if (dunder_new.isError()) return nullptr;
   Frame* frame = thread->currentFrame();
-  frame->pushValue(*dunder_new);
-  frame->pushValue(new_args.becomeImmutable());
+  thread->stackPush(*dunder_new);
+  thread->stackPush(new_args.becomeImmutable());
   word flags = 0;
   if (kwargs != nullptr) {
-    frame->pushValue(*kwargs_obj);
+    thread->stackPush(*kwargs_obj);
     flags = CallFunctionExFlag::VAR_KEYWORDS;
   }
   Object result(&scope, Interpreter::callEx(thread, frame, flags));

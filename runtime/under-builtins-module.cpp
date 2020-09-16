@@ -5461,11 +5461,11 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
     }
 
     CHECK(!dunder_new.isError(), "self must have __new__");
-    frame->pushValue(*dunder_new);
+    thread->stackPush(*dunder_new);
     if (is_kwargs_empty) {
-      frame->pushValue(*self);
+      thread->stackPush(*self);
       for (word i = 0; i < pargs_length; ++i) {
-        frame->pushValue(pargs.at(i));
+        thread->stackPush(pargs.at(i));
       }
       instance = Interpreter::call(thread, frame, pargs_length + 1);
     } else {
@@ -5473,8 +5473,8 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
                              runtime->newMutableTuple(pargs_length + 1));
       call_args.atPut(0, *self);
       call_args.replaceFromWith(1, *pargs, pargs_length);
-      frame->pushValue(call_args.becomeImmutable());
-      frame->pushValue(*kwargs);
+      thread->stackPush(call_args.becomeImmutable());
+      thread->stackPush(*kwargs);
       instance =
           Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
       call_args_obj = *call_args;
@@ -5497,11 +5497,11 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
        (pargs.length() != 0 || kwargs.numItems() != 0))) {
     CHECK(!dunder_init.isError(), "self must have __init__");
     Object result(&scope, NoneType::object());
-    frame->pushValue(*dunder_init);
+    thread->stackPush(*dunder_init);
     if (is_kwargs_empty) {
-      frame->pushValue(*instance);
+      thread->stackPush(*instance);
       for (word i = 0; i < pargs_length; ++i) {
-        frame->pushValue(pargs.at(i));
+        thread->stackPush(pargs.at(i));
       }
       result = Interpreter::call(thread, frame, pargs_length + 1);
     } else {
@@ -5514,8 +5514,8 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
       } else {
         MutableTuple::cast(*call_args_obj).atPut(0, *instance);
       }
-      frame->pushValue(*call_args_obj);
-      frame->pushValue(*kwargs);
+      thread->stackPush(*call_args_obj);
+      thread->stackPush(*kwargs);
       result =
           Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
     }

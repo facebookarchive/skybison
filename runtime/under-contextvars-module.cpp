@@ -249,9 +249,9 @@ RawObject METH(Context, run)(Thread* thread, Frame* frame, word nargs) {
   thread->setContextvarsContext(*self);
 
   // Call callable forwarding all args
-  frame->pushValue(args.get(1));  // callable
-  frame->pushValue(args.get(2));  // *args
-  frame->pushValue(args.get(3));  // **kwargs
+  thread->stackPush(args.get(1));  // callable
+  thread->stackPush(args.get(2));  // *args
+  thread->stackPush(args.get(3));  // **kwargs
   Object call_result(
       &scope,
       Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS));

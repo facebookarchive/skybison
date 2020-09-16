@@ -736,24 +736,26 @@ def func(arg0, arg1):
   Frame* root = thread_->currentFrame();
   ASSERT_TRUE(root->isSentinel());
   root->setVirtualPC(8);
-  root->pushValue(NoneType::object());
-  root->pushValue(*builtin);
-  Frame* frame0 = thread_->pushNativeFrame(0);
+  thread_->stackPush(NoneType::object());
+  thread_->stackPush(*builtin);
+  thread_->pushNativeFrame(0);
 
   Function function(&scope, makeTestFunction(thread_));
-  frame0->pushValue(*function);
-  frame0->pushValue(runtime_->newStrFromCStr("foo bar"));
-  frame0->pushValue(runtime_->emptyTuple());
-  frame0->pushValue(runtime_->newDict());
-
+  thread_->stackPush(*function);
+  thread_->stackPush(runtime_->newStrFromCStr("foo bar"));
+  thread_->stackPush(runtime_->emptyTuple());
+  thread_->stackPush(runtime_->newDict());
   Frame* frame1 = thread_->pushCallFrame(*function);
   frame1->setVirtualPC(42);
   frame1->setLocal(3, runtime_->newStrFromCStr("bar foo"));
   frame1->setLocal(4, runtime_->newInt(88));
   frame1->setLocal(5, runtime_->newInt(-99));
-  frame1->pushValue(*func);
-  frame1->pushValue(runtime_->newInt(-9));
-  frame1->pushValue(runtime_->newInt(17));
+
+  thread_->stackPush(runtime_->newInt(-8));
+  thread_->stackPush(runtime_->newStrFromCStr("baz bam"));
+  thread_->stackPush(*func);
+  thread_->stackPush(runtime_->newInt(-9));
+  thread_->stackPush(runtime_->newInt(17));
   Frame* frame2 = thread_->pushCallFrame(*func);
   frame2->setVirtualPC(4);
   frame2->setLocal(2, runtime_->newStrFromCStr("world"));
@@ -763,16 +765,10 @@ def func(arg0, arg1):
   EXPECT_EQ(ss.str(), R"(- initial frame
   pc: 8
   stack:
-    1: None
-    0: <function "test._bytearray_check">
+    0: None
 - function: <function "test._bytearray_check">
   code: "_bytearray_check"
   pc: n/a (native)
-  stack:
-    3: <function "footype.baz">
-    2: "foo bar"
-    1: ()
-    0: {}
 - function: <function "footype.baz">
   code: "name0"
   pc: 42 ("filename0":0)
@@ -784,9 +780,8 @@ def func(arg0, arg1):
     4 "freevar0": 88
     5 "cellvar0": -99
   stack:
-    2: <function "func">
-    1: -9
-    0: 17
+    1: -8
+    0: "baz bam"
 - function: <function "func">
   code: "func"
   pc: 4 ("<test string>":4)

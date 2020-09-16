@@ -110,7 +110,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
 HANDLER_INLINE USED Interpreter::PrepareCallableResult
 Interpreter::prepareCallableCall(Thread* thread, Frame* frame, word nargs,
                                  word callable_idx) {
-  RawObject callable = frame->peek(callable_idx);
+  RawObject callable = thread->stackPeek(callable_idx);
   if (callable.isFunction()) {
     return {callable, nargs};
   }
@@ -119,8 +119,8 @@ Interpreter::prepareCallableCall(Thread* thread, Frame* frame, word nargs,
     RawBoundMethod method = BoundMethod::cast(callable);
     RawObject method_function = method.function();
     if (method_function.isFunction()) {
-      frame->setValueAt(method_function, callable_idx);
-      frame->insertValueAt(method.self(), callable_idx);
+      thread->stackSetAt(callable_idx, method_function);
+      thread->stackInsertAt(callable_idx, method.self());
       return {method_function, nargs + 1};
     }
   }
@@ -131,13 +131,13 @@ NEVER_INLINE
 Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
     Thread* thread, Frame* frame, word nargs, word callable_idx) {
   HandleScope scope(thread);
-  Object callable(&scope, frame->peek(callable_idx));
+  Object callable(&scope, thread->stackPeek(callable_idx));
   Object self(&scope, NoneType::object());
   RawObject prepare_result = prepareCallable(thread, frame, &callable, &self);
   if (prepare_result.isErrorException()) {
     return {prepare_result, nargs};
   }
-  frame->setValueAt(*callable, callable_idx);
+  thread->stackSetAt(callable_idx, *callable);
   if (prepare_result == Bool::trueObj()) {
     // Shift all arguments on the stack down by 1 and use the unpacked
     // BoundMethod.
@@ -157,7 +157,7 @@ Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
     //
     // Our contention is that uses of this pattern are not performance
     // sensitive.
-    frame->insertValueAt(*self, callable_idx);
+    thread->stackInsertAt(callable_idx, *self);
     return {*callable, nargs + 1};
   }
   return {*callable, nargs};
@@ -165,14 +165,14 @@ Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
 
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
-  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
+  RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, frame, nargs, nargs);
   RawObject function = prepare_result.function;
   nargs = prepare_result.nargs;
   if (function.isErrorException()) {
-    frame->dropValues(nargs + 1);
-    DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    thread->stackDrop(nargs + 1);
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return function;
   }
   return callFunction(thread, frame, function, nargs);
@@ -182,29 +182,29 @@ ALWAYS_INLINE RawObject Interpreter::callFunction(Thread* thread, Frame* frame,
                                                   RawObject function,
                                                   word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
-  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
-  DCHECK(function == frame->peek(nargs),
-         "frame->peek(nargs) is expected to be the given function");
+  RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
+  DCHECK(function == thread->stackPeek(nargs),
+         "thread->stackPeek(nargs) is expected to be the given function");
   RawObject result = Function::cast(function).entry()(thread, frame, nargs);
-  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+  DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   return result;
 }
 
 RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
-  RawObject* post_call_sp = frame->valueStackTop() + nargs + 2;
+  RawObject* post_call_sp = thread->stackPointer() + nargs + 2;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, frame, nargs, nargs + 1);
   RawObject function = prepare_result.function;
   nargs = prepare_result.nargs;
   if (function.isErrorException()) {
-    frame->dropValues(nargs + 2);
-    DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    thread->stackDrop(nargs + 2);
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return function;
   }
   RawObject result = Function::cast(function).entryKw()(thread, frame, nargs);
-  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+  DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   return result;
 }
 
@@ -213,26 +213,26 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   // In all cases, var-positional tuple is next, followed by the function
   // pointer.
   word callable_idx = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
+  RawObject* post_call_sp = thread->stackPointer() + callable_idx + 1;
   HandleScope scope(thread);
   Object callable(&scope, prepareCallableEx(thread, frame, callable_idx));
   if (callable.isErrorException()) {
-    frame->dropValues(callable_idx + 1);
-    DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    thread->stackDrop(callable_idx + 1);
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return *callable;
   }
   RawObject result =
       RawFunction::cast(*callable).entryEx()(thread, frame, flags);
-  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+  DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   return result;
 }
 
 RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
                                          word callable_idx) {
   HandleScope scope(thread);
-  Object callable(&scope, frame->peek(callable_idx));
+  Object callable(&scope, thread->stackPeek(callable_idx));
   word args_idx = callable_idx - 1;
-  Object args_obj(&scope, frame->peek(args_idx));
+  Object args_obj(&scope, thread->stackPeek(args_idx));
   if (!args_obj.isTuple()) {
     // Make sure the argument sequence is a tuple.
     if (args_obj.isList()) {
@@ -243,13 +243,13 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
     }
     args_obj = thread->invokeFunction1(ID(builtins), ID(tuple), args_obj);
     if (args_obj.isErrorException()) return *args_obj;
-    frame->setValueAt(*args_obj, args_idx);
+    thread->stackSetAt(args_idx, *args_obj);
   }
   if (!callable.isFunction()) {
     Object self(&scope, NoneType::object());
     Object result(&scope, prepareCallable(thread, frame, &callable, &self));
     if (result.isErrorException()) return *result;
-    frame->setValueAt(*callable, callable_idx);
+    thread->stackSetAt(callable_idx, *callable);
 
     if (result == Bool::trueObj()) {
       // Create a new argument tuple with self as the first argument
@@ -258,7 +258,7 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
           &scope, thread->runtime()->newMutableTuple(args.length() + 1));
       new_args.atPut(0, *self);
       new_args.replaceFromWith(1, *args, args.length());
-      frame->setValueAt(new_args.becomeImmutable(), args_idx);
+      thread->stackSetAt(args_idx, new_args.becomeImmutable());
     }
   }
   return *callable;
@@ -441,33 +441,33 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* frame */,
 
 RawObject Interpreter::call0(Thread* thread, Frame* frame,
                              const Object& callable) {
-  frame->pushValue(*callable);
+  thread->stackPush(*callable);
   return call(thread, frame, 0);
 }
 
 RawObject Interpreter::call1(Thread* thread, Frame* frame,
                              const Object& callable, const Object& arg1) {
-  frame->pushValue(*callable);
-  frame->pushValue(*arg1);
+  thread->stackPush(*callable);
+  thread->stackPush(*arg1);
   return call(thread, frame, 1);
 }
 
 RawObject Interpreter::call2(Thread* thread, Frame* frame,
                              const Object& callable, const Object& arg1,
                              const Object& arg2) {
-  frame->pushValue(*callable);
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
+  thread->stackPush(*callable);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
   return call(thread, frame, 2);
 }
 
 RawObject Interpreter::call3(Thread* thread, Frame* frame,
                              const Object& callable, const Object& arg1,
                              const Object& arg2, const Object& arg3) {
-  frame->pushValue(*callable);
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
-  frame->pushValue(*arg3);
+  thread->stackPush(*callable);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
+  thread->stackPush(*arg3);
   return call(thread, frame, 3);
 }
 
@@ -475,11 +475,11 @@ RawObject Interpreter::call4(Thread* thread, Frame* frame,
                              const Object& callable, const Object& arg1,
                              const Object& arg2, const Object& arg3,
                              const Object& arg4) {
-  frame->pushValue(*callable);
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
-  frame->pushValue(*arg3);
-  frame->pushValue(*arg4);
+  thread->stackPush(*callable);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
+  thread->stackPush(*arg3);
+  thread->stackPush(*arg4);
   return call(thread, frame, 4);
 }
 
@@ -487,12 +487,12 @@ RawObject Interpreter::call5(Thread* thread, Frame* frame,
                              const Object& callable, const Object& arg1,
                              const Object& arg2, const Object& arg3,
                              const Object& arg4, const Object& arg5) {
-  frame->pushValue(*callable);
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
-  frame->pushValue(*arg3);
-  frame->pushValue(*arg4);
-  frame->pushValue(*arg5);
+  thread->stackPush(*callable);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
+  thread->stackPush(*arg3);
+  thread->stackPush(*arg4);
+  thread->stackPush(*arg5);
   return call(thread, frame, 5);
 }
 
@@ -501,22 +501,22 @@ RawObject Interpreter::call6(Thread* thread, Frame* frame,
                              const Object& arg2, const Object& arg3,
                              const Object& arg4, const Object& arg5,
                              const Object& arg6) {
-  frame->pushValue(*callable);
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
-  frame->pushValue(*arg3);
-  frame->pushValue(*arg4);
-  frame->pushValue(*arg5);
-  frame->pushValue(*arg6);
+  thread->stackPush(*callable);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
+  thread->stackPush(*arg3);
+  thread->stackPush(*arg4);
+  thread->stackPush(*arg5);
+  thread->stackPush(*arg6);
   return call(thread, frame, 6);
 }
 
 RawObject Interpreter::callMethod1(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self) {
   word nargs = 0;
-  frame->pushValue(*method);
+  thread->stackPush(*method);
   if (method.isFunction()) {
-    frame->pushValue(*self);
+    thread->stackPush(*self);
     return callFunction(thread, frame, *method, nargs + 1);
   }
   return call(thread, frame, nargs);
@@ -526,13 +526,13 @@ RawObject Interpreter::callMethod2(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self,
                                    const Object& other) {
   word nargs = 1;
-  frame->pushValue(*method);
+  thread->stackPush(*method);
   if (method.isFunction()) {
-    frame->pushValue(*self);
-    frame->pushValue(*other);
+    thread->stackPush(*self);
+    thread->stackPush(*other);
     return callFunction(thread, frame, *method, nargs + 1);
   }
-  frame->pushValue(*other);
+  thread->stackPush(*other);
   return call(thread, frame, nargs);
 }
 
@@ -540,15 +540,15 @@ RawObject Interpreter::callMethod3(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self,
                                    const Object& arg1, const Object& arg2) {
   word nargs = 2;
-  frame->pushValue(*method);
+  thread->stackPush(*method);
   if (method.isFunction()) {
-    frame->pushValue(*self);
-    frame->pushValue(*arg1);
-    frame->pushValue(*arg2);
+    thread->stackPush(*self);
+    thread->stackPush(*arg1);
+    thread->stackPush(*arg2);
     return callFunction(thread, frame, *method, nargs + 1);
   }
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
   return call(thread, frame, nargs);
 }
 
@@ -557,17 +557,17 @@ RawObject Interpreter::callMethod4(Thread* thread, Frame* frame,
                                    const Object& arg1, const Object& arg2,
                                    const Object& arg3) {
   word nargs = 3;
-  frame->pushValue(*method);
+  thread->stackPush(*method);
   if (method.isFunction()) {
-    frame->pushValue(*self);
-    frame->pushValue(*arg1);
-    frame->pushValue(*arg2);
-    frame->pushValue(*arg3);
+    thread->stackPush(*self);
+    thread->stackPush(*arg1);
+    thread->stackPush(*arg2);
+    thread->stackPush(*arg3);
     return callFunction(thread, frame, *method, nargs + 1);
   }
-  frame->pushValue(*arg1);
-  frame->pushValue(*arg2);
-  frame->pushValue(*arg3);
+  thread->stackPush(*arg1);
+  thread->stackPush(*arg2);
+  thread->stackPush(*arg3);
   return call(thread, frame, nargs);
 }
 
@@ -576,9 +576,9 @@ Continue Interpreter::tailcallMethod1(Thread* thread, RawObject method,
                                       RawObject self) {
   word nargs = 0;
   Frame* frame = thread->currentFrame();
-  frame->pushValue(method);
+  thread->stackPush(method);
   if (method.isFunction()) {
-    frame->pushValue(self);
+    thread->stackPush(self);
     nargs++;
     return tailcallFunction(thread, frame, method, nargs);
   }
@@ -590,13 +590,13 @@ Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
                                       RawObject self, RawObject arg1) {
   word nargs = 1;
   Frame* frame = thread->currentFrame();
-  frame->pushValue(method);
+  thread->stackPush(method);
   if (method.isFunction()) {
-    frame->pushValue(self);
+    thread->stackPush(self);
     nargs++;
     return tailcallFunction(thread, frame, method, nargs);
   }
-  frame->pushValue(arg1);
+  thread->stackPush(arg1);
   return tailcall(thread, nargs);
 }
 
@@ -628,11 +628,10 @@ RawObject Interpreter::unaryOperation(Thread* thread, const Object& self,
 HANDLER_INLINE Continue Interpreter::doUnaryOperation(SymbolId selector,
                                                       Thread* thread) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
-  Object receiver(&scope, frame->topValue());
+  Object receiver(&scope, thread->stackTop());
   RawObject result = unaryOperation(thread, receiver, selector);
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->setTopValue(result);
+  thread->stackSetTop(result);
   return Continue::NEXT;
 }
 
@@ -745,11 +744,11 @@ HANDLER_INLINE Continue Interpreter::doBinaryOperation(BinaryOp op,
                                                        Thread* thread) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object other(&scope, frame->popValue());
-  Object self(&scope, frame->popValue());
+  Object other(&scope, thread->stackPop());
+  Object self(&scope, thread->stackPop());
   RawObject result = binaryOperation(thread, frame, op, self, other);
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -795,11 +794,11 @@ HANDLER_INLINE Continue Interpreter::doInplaceOperation(BinaryOp op,
                                                         Thread* thread) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   RawObject result = inplaceOperation(thread, frame, op, left, right);
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -902,13 +901,13 @@ HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     Thread* thread, Frame* frame, RawObject method, BinaryOpFlags flags,
     RawObject left, RawObject right) {
   DCHECK(method.isFunction(), "function is expected");
-  frame->pushValue(method);
+  thread->stackPush(method);
   if (flags & kBinaryOpReflected) {
-    frame->pushValue(right);
-    frame->pushValue(left);
+    thread->stackPush(right);
+    thread->stackPush(left);
   } else {
-    frame->pushValue(left);
-    frame->pushValue(right);
+    thread->stackPush(left);
+    thread->stackPush(right);
   }
   return callFunction(thread, frame, method, /*nargs=*/2);
 }
@@ -1194,16 +1193,15 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
   thread->raiseWithType(*type, *value);
 }
 
-HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread,
-                                                     Frame* frame,
+HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread, Frame*,
                                                      TryBlock block) {
   // Drop all dead values except for the 3 that are popped into the caught
   // exception state.
   DCHECK(block.kind() == TryBlock::kExceptHandler, "Invalid TryBlock Kind");
-  frame->dropValues(frame->valueStackSize() - block.level() - 3);
-  thread->setCaughtExceptionType(frame->popValue());
-  thread->setCaughtExceptionValue(frame->popValue());
-  thread->setCaughtExceptionTraceback(frame->popValue());
+  thread->stackDrop(thread->valueStackSize() - block.level() - 3);
+  thread->setCaughtExceptionType(thread->stackPop());
+  thread->setCaughtExceptionValue(thread->stackPop());
+  thread->setCaughtExceptionTraceback(thread->stackPop());
 }
 
 bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
@@ -1223,7 +1221,7 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
     unwindExceptHandler(thread, frame, block);
     return false;
   }
-  frame->dropValues(frame->valueStackSize() - block.level());
+  thread->stackDrop(thread->valueStackSize() - block.level());
 
   if (block.kind() == TryBlock::kLoop) {
     if (why == TryBlock::Why::kBreak) {
@@ -1241,16 +1239,16 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
 
   DCHECK(block.kind() == TryBlock::kFinally, "Unexpected TryBlock kind");
   if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
-    frame->pushValue(value);
+    thread->stackPush(value);
   }
-  frame->pushValue(SmallInt::fromWord(static_cast<word>(why)));
+  thread->stackPush(SmallInt::fromWord(static_cast<word>(why)));
   frame->setVirtualPC(block.handler());
   return true;
 }
 
 RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
   Frame* frame = thread->currentFrame();
-  RawObject retval = frame->popValue();
+  RawObject retval = thread->stackPop();
   while (frame->blockStack()->depth() > 0) {
     if (popBlock(thread, TryBlock::Why::kReturn, retval)) {
       return Error::error();  // continue interpreter loop.
@@ -1263,8 +1261,8 @@ RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
     return retval;
   }
 
-  frame = thread->popFrame();
-  frame->pushValue(retval);
+  thread->popFrame();
+  thread->stackPush(retval);
   return Error::error();  // continue interpreter loop.
 }
 
@@ -1303,7 +1301,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
         unwindExceptHandler(thread, frame, block);
         continue;
       }
-      frame->dropValues(frame->valueStackSize() - block.level());
+      thread->stackDrop(thread->valueStackSize() - block.level());
 
       if (block.kind() == TryBlock::kLoop) continue;
       DCHECK(block.kind() == TryBlock::kExcept ||
@@ -1312,18 +1310,18 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
 
       // Push a handler block and save the current caught exception, if any.
       stack->push(
-          TryBlock{TryBlock::kExceptHandler, 0, frame->valueStackSize()});
+          TryBlock{TryBlock::kExceptHandler, 0, thread->valueStackSize()});
       Object caught_exc_state_obj(&scope,
                                   thread->topmostCaughtExceptionState());
       if (caught_exc_state_obj.isNoneType()) {
-        frame->pushValue(NoneType::object());
-        frame->pushValue(NoneType::object());
-        frame->pushValue(NoneType::object());
+        thread->stackPush(NoneType::object());
+        thread->stackPush(NoneType::object());
+        thread->stackPush(NoneType::object());
       } else {
         ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
-        frame->pushValue(caught_exc_state.traceback());
-        frame->pushValue(caught_exc_state.value());
-        frame->pushValue(caught_exc_state.type());
+        thread->stackPush(caught_exc_state.traceback());
+        thread->stackPush(caught_exc_state.value());
+        thread->stackPush(caught_exc_state.type());
       }
 
       // Load and normalize the pending exception.
@@ -1339,9 +1337,9 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
       thread->setCaughtExceptionType(*type);
       thread->setCaughtExceptionValue(*value);
       thread->setCaughtExceptionTraceback(*traceback);
-      frame->pushValue(*traceback);
-      frame->pushValue(*value);
-      frame->pushValue(*type);
+      thread->stackPush(*traceback);
+      thread->stackPush(*value);
+      thread->stackPush(*type);
       frame->setVirtualPC(block.handler());
       return false;  // continue interpreter loop.
     }
@@ -1371,42 +1369,36 @@ HANDLER_INLINE Continue Interpreter::doInvalidBytecode(Thread* thread, word) {
 }
 
 HANDLER_INLINE Continue Interpreter::doPopTop(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  frame->popValue();
+  thread->stackPop();
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doRotTwo(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  RawObject* sp = frame->valueStackTop();
-  RawObject top = *sp;
-  *sp = *(sp + 1);
-  *(sp + 1) = top;
+  RawObject peek0 = thread->stackPeek(0);
+  RawObject peek1 = thread->stackPeek(1);
+  thread->stackSetAt(1, peek0);
+  thread->stackSetAt(0, peek1);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doRotThree(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  RawObject* sp = frame->valueStackTop();
-  RawObject top = *sp;
-  *sp = *(sp + 1);
-  *(sp + 1) = *(sp + 2);
-  *(sp + 2) = top;
+  RawObject top = thread->stackTop();
+  thread->stackSetAt(0, thread->stackPeek(1));
+  thread->stackSetAt(1, thread->stackPeek(2));
+  thread->stackSetAt(2, top);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doDupTop(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  frame->pushValue(frame->topValue());
+  thread->stackPush(thread->stackTop());
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doDupTopTwo(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  RawObject first = frame->topValue();
-  RawObject second = frame->peek(1);
-  frame->pushValue(second);
-  frame->pushValue(first);
+  RawObject first = thread->stackTop();
+  RawObject second = thread->stackPeek(1);
+  thread->stackPush(second);
+  thread->stackPush(first);
   return Continue::NEXT;
 }
 
@@ -1423,13 +1415,12 @@ HANDLER_INLINE Continue Interpreter::doUnaryNegative(Thread* thread, word) {
 }
 
 HANDLER_INLINE Continue Interpreter::doUnaryNot(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  RawObject value = frame->topValue();
+  RawObject value = thread->stackTop();
   if (!value.isBool()) {
     value = isTrue(thread, value);
     if (value.isErrorException()) return Continue::UNWIND;
   }
-  frame->setTopValue(RawBool::negate(value));
+  thread->stackSetTop(RawBool::negate(value));
   return Continue::NEXT;
 }
 
@@ -1470,7 +1461,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubtract(Thread* thread, word) {
 Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object container(&scope, frame->peek(1));
+  Object container(&scope, thread->stackPeek(1));
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*container));
   Object getitem(&scope, typeLookupInMroById(thread, type, ID(__getitem__)));
@@ -1491,7 +1482,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   if (!getitem.isFunction()) {
     getitem = resolveDescriptorGet(thread, getitem, container, type);
     if (getitem.isErrorException()) return Continue::UNWIND;
-    frame->setValueAt(*getitem, 1);
+    thread->stackSetAt(1, *getitem);
     return tailcall(thread, 1);
   }
   if (index >= 0) {
@@ -1506,8 +1497,8 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
                                       ? BINARY_SUBSCR_MONOMORPHIC
                                       : BINARY_SUBSCR_POLYMORPHIC);
   }
-  frame->setValueAt(*getitem, 1);
-  frame->insertValueAt(*container, 1);
+  thread->stackSetAt(1, *getitem);
+  thread->stackInsertAt(1, *container);
   return tailcallFunction(thread, frame, *getitem, 2);
 }
 
@@ -1517,16 +1508,15 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
                                                         word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(1);
-  RawObject key = frame->peek(0);
+  RawObject container = thread->stackPeek(1);
+  RawObject key = thread->stackPeek(0);
   if (container.isList() && key.isSmallInt()) {
     word index = SmallInt::cast(key).value();
     RawList list = List::cast(container);
     word length = list.numItems();
     if (0 <= index && index < length) {
-      frame->popValue();
-      frame->setTopValue(list.at(index));
+      thread->stackPop();
+      thread->stackSetTop(list.at(index));
       return Continue::NEXT;
     }
   }
@@ -1537,36 +1527,36 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
                                                                word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  LayoutId receiver_layout_id = frame->peek(1).layoutId();
+  LayoutId receiver_layout_id = thread->stackPeek(1).layoutId();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver_layout_id, &is_found);
   if (!is_found) {
     return binarySubscrUpdateCache(thread, arg);
   }
-  frame->insertValueAt(cached, 2);
+  thread->stackInsertAt(2, cached);
   return tailcallFunction(thread, frame, cached, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
                                                                word arg) {
   Frame* frame = thread->currentFrame();
-  LayoutId container_layout_id = frame->peek(1).layoutId();
+  LayoutId container_layout_id = thread->stackPeek(1).layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, container_layout_id, &is_found);
   if (!is_found) {
     return binarySubscrUpdateCache(thread, arg);
   }
-  frame->insertValueAt(cached, 2);
+  thread->stackInsertAt(2, cached);
   return tailcallFunction(thread, frame, cached, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
                                                               word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(1);
-  RawObject key = frame->peek(0);
+  RawObject container = thread->stackPeek(1);
+  RawObject key = thread->stackPeek(0);
   switch (container.layoutId()) {
     case LayoutId::kList:
       if (key.isSmallInt()) {
@@ -1600,7 +1590,7 @@ HANDLER_INLINE Continue Interpreter::doInplaceTrueDivide(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object obj(&scope, frame->popValue());
+  Object obj(&scope, thread->stackPop());
   Object method(&scope, lookupMethod(thread, frame, obj, ID(__aiter__)));
   if (method.isError()) {
     if (method.isErrorException()) {
@@ -1620,7 +1610,7 @@ HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object obj(&scope, frame->topValue());
+  Object obj(&scope, thread->stackTop());
   // TODO(T67736679) Add inline caching for this method lookup.
   Object anext(&scope, lookupMethod(thread, frame, obj, ID(__anext__)));
   if (anext.isError()) {
@@ -1637,7 +1627,7 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   }
   Object awaitable(&scope, callMethod1(thread, frame, anext, obj));
   if (awaitable.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*awaitable);
+  thread->stackPush(*awaitable);
   // TODO(T67736679) Add inline caching for the lookupMethod() in
   // awaitableIter.
   Object result(
@@ -1654,7 +1644,7 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object manager(&scope, frame->popValue());
+  Object manager(&scope, thread->stackPop());
 
   // resolve __aexit__ and push it
   Runtime* runtime = thread->runtime();
@@ -1662,7 +1652,7 @@ HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   if (exit.isErrorException()) {
     return Continue::UNWIND;
   }
-  frame->pushValue(*exit);
+  thread->stackPush(*exit);
 
   // resolve __aenter__ call it and push the return value
   Object enter(&scope, lookupMethod(thread, frame, manager, ID(__aenter__)));
@@ -1698,8 +1688,8 @@ HANDLER_INLINE Continue Interpreter::doInplaceModulo(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object key(&scope, frame->popValue());
-  Object container(&scope, frame->popValue());
+  Object key(&scope, thread->stackPop());
+  Object container(&scope, thread->stackPop());
   Object setitem(&scope,
                  lookupMethod(thread, frame, container, ID(__setitem__)));
   if (setitem.isError()) {
@@ -1713,7 +1703,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
     }
     return Continue::UNWIND;
   }
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   if (callMethod3(thread, frame, setitem, container, key, value)
           .isErrorException()) {
     return Continue::UNWIND;
@@ -1723,17 +1713,16 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread,
                                                        word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(1);
-  RawObject key = frame->peek(0);
+  RawObject container = thread->stackPeek(1);
+  RawObject key = thread->stackPeek(0);
   if (container.isList() && key.isSmallInt()) {
     word index = SmallInt::cast(key).value();
     RawList list = List::cast(container);
     word length = list.numItems();
     if (0 <= index && index < length) {
-      RawObject value = frame->peek(2);
+      RawObject value = thread->stackPeek(2);
       list.atPut(index, value);
-      frame->dropValues(3);
+      thread->stackDrop(3);
       return Continue::NEXT;
     }
   }
@@ -1744,8 +1733,8 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                                           word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object key(&scope, frame->popValue());
-  Object container(&scope, frame->popValue());
+  Object key(&scope, thread->stackPop());
+  Object container(&scope, thread->stackPop());
   Object setitem(&scope,
                  lookupMethod(thread, frame, container, ID(__setitem__)));
   if (setitem.isError()) {
@@ -1771,7 +1760,7 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                       ? STORE_SUBSCR_MONOMORPHIC
                                       : STORE_SUBSCR_POLYMORPHIC);
   }
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   if (callMethod3(thread, frame, setitem, container, key, value)
           .isErrorException()) {
     return Continue::UNWIND;
@@ -1793,9 +1782,9 @@ ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
   //   2: container
   //   1: key
   //   0: value
-  RawObject value_raw = frame->peek(2);
-  frame->setValueAt(set_item_method, 2);
-  frame->pushValue(value_raw);
+  RawObject value_raw = thread->stackPeek(2);
+  thread->stackSetAt(2, set_item_method);
+  thread->stackPush(value_raw);
 
   RawObject result = callFunction(thread, frame, set_item_method,
                                   /*nargs=*/3);
@@ -1809,7 +1798,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrMonomorphic(Thread* thread,
                                                               word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  LayoutId container_layout_id = frame->peek(1).layoutId();
+  LayoutId container_layout_id = thread->stackPeek(1).layoutId();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, container_layout_id, &is_found);
@@ -1822,7 +1811,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrMonomorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
                                                               word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject container_raw = frame->peek(1);
+  RawObject container_raw = thread->stackPeek(1);
   LayoutId container_layout_id = container_raw.layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
@@ -1836,8 +1825,8 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
                                                              word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(1);
-  RawObject key = frame->peek(0);
+  RawObject container = thread->stackPeek(1);
+  RawObject key = thread->stackPeek(0);
   switch (container.layoutId()) {
     case LayoutId::kList:
       if (key.isSmallInt()) {
@@ -1854,8 +1843,8 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object key(&scope, frame->popValue());
-  Object container(&scope, frame->popValue());
+  Object key(&scope, thread->stackPop());
+  Object container(&scope, thread->stackPop());
   Object delitem(&scope,
                  lookupMethod(thread, frame, container, ID(__delitem__)));
   if (delitem.isError()) {
@@ -1903,7 +1892,7 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
-  Object iterable(&scope, frame->popValue());
+  Object iterable(&scope, thread->stackPop());
   Object iterator(&scope, NoneType::object());
   switch (iterable.layoutId()) {
     case LayoutId::kList:
@@ -1964,21 +1953,21 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
       break;
   }
   if (!iterator.isNoneType()) {
-    frame->pushValue(*iterator);
+    thread->stackPush(*iterator);
     return Continue::NEXT;
   }
   // TODO(T44729606): Add caching, and turn into a simpler call for builtin
   // types with known iterator creating functions
   iterator = createIterator(thread, frame, iterable);
   if (iterator.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*iterator);
+  thread->stackPush(*iterator);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object iterable(&scope, frame->topValue());
+  Object iterable(&scope, thread->stackTop());
 
   if (iterable.isGenerator()) return Continue::NEXT;
 
@@ -1994,19 +1983,19 @@ HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
     return Continue::NEXT;
   }
 
-  frame->dropValues(1);
+  thread->stackDrop(1);
   // TODO(T44729661): Add caching, and turn into a simpler call for builtin
   // types with known iterator creating functions
   Object iterator(&scope, createIterator(thread, frame, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*iterator);
+  thread->stackPush(*iterator);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doPrintExpr(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   ValueCell value_cell(&scope, thread->runtime()->displayHook());
   if (value_cell.isUnbound()) {
     UNIMPLEMENTED("RuntimeError: lost sys.displayhook");
@@ -2020,8 +2009,7 @@ HANDLER_INLINE Continue Interpreter::doPrintExpr(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doLoadBuildClass(Thread* thread, word) {
   RawValueCell value_cell = ValueCell::cast(thread->runtime()->buildClass());
-  Frame* frame = thread->currentFrame();
-  frame->pushValue(value_cell.value());
+  thread->stackPush(value_cell.value());
   return Continue::NEXT;
 }
 
@@ -2029,8 +2017,8 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
 
-  Object value(&scope, frame->popValue());
-  Object iterator(&scope, frame->topValue());
+  Object value(&scope, thread->stackPop());
+  Object iterator(&scope, thread->stackTop());
   Object result(&scope, NoneType::object());
   if (iterator.isGenerator() || iterator.isCoroutine() || !value.isNoneType()) {
     Object send_method(&scope, lookupMethod(thread, frame, iterator, ID(send)));
@@ -2065,7 +2053,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   if (result.isErrorException()) {
     if (!thread->hasPendingStopIteration()) return Continue::UNWIND;
 
-    frame->setTopValue(thread->pendingStopIterationValue());
+    thread->stackSetTop(thread->pendingStopIterationValue());
     thread->clearPendingException();
     return Continue::NEXT;
   }
@@ -2073,7 +2061,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   // Decrement PC: We want this to re-execute until the subiterator is
   // exhausted.
   frame->setVirtualPC(frame->virtualPC() - kCodeUnitSize);
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::YIELD;
 }
 
@@ -2081,7 +2069,7 @@ RawObject Interpreter::awaitableIter(Thread* thread,
                                      const char* invalid_type_message) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object obj(&scope, frame->topValue());
+  Object obj(&scope, thread->stackTop());
   if (obj.isCoroutine() || obj.isAsyncGenerator()) {
     return *obj;
   }
@@ -2094,7 +2082,7 @@ RawObject Interpreter::awaitableIter(Thread* thread,
     }
     return thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
   }
-  frame->popValue();
+  thread->stackPop();
   Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
   if (await.isError()) {
     if (await.isErrorException()) {
@@ -2127,7 +2115,7 @@ RawObject Interpreter::awaitableIter(Thread* thread,
         LayoutId::kTypeError, "__await__() returned non-iterator of type '%T'",
         &result);
   }
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return *obj;
 }
 
@@ -2176,7 +2164,7 @@ HANDLER_INLINE Continue Interpreter::doBreakLoop(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object exc(&scope, frame->popValue());
+  Object exc(&scope, thread->stackPop());
   Object value(&scope, NoneType::object());
   Object traceback(&scope, NoneType::object());
   Object exit(&scope, NoneType::object());
@@ -2187,32 +2175,32 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   // everything above it down to compensate.
   if (exc.isNoneType()) {
     // The with block exited normally. __exit__ is just below the None.
-    exit = frame->topValue();
-    frame->setTopValue(*exc);
+    exit = thread->stackTop();
+    thread->stackSetTop(*exc);
   } else if (exc.isSmallInt()) {
     // The with block exited for a return, continue, or break. __exit__ will be
     // below 'why' and an optional return value (depending on 'why').
     auto why = static_cast<TryBlock::Why>(SmallInt::cast(*exc).value());
     if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
-      exit = frame->peek(1);
-      frame->setValueAt(frame->peek(0), 1);
+      exit = thread->stackPeek(1);
+      thread->stackSetAt(1, thread->stackPeek(0));
     } else {
-      exit = frame->topValue();
+      exit = thread->stackTop();
     }
-    frame->setTopValue(*exc);
+    thread->stackSetTop(*exc);
     exc = NoneType::object();
   } else {
     // The stack contains the caught exception, the previous exception state,
     // then __exit__. Grab __exit__ then shift everything else down.
-    exit = frame->peek(5);
+    exit = thread->stackPeek(5);
     for (word i = 5; i > 0; i--) {
-      frame->setValueAt(frame->peek(i - 1), i);
+      thread->stackSetAt(i, thread->stackPeek(i - 1));
     }
 
     // Put exc at the top of the stack and grab value/traceback from below it.
-    frame->setTopValue(*exc);
-    value = frame->peek(1);
-    traceback = frame->peek(2);
+    thread->stackSetTop(*exc);
+    value = thread->stackPeek(1);
+    traceback = thread->stackPeek(2);
 
     // We popped __exit__ out from under the depth recorded by the top
     // ExceptHandler block, so adjust it.
@@ -2224,27 +2212,26 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   }
 
   // Push exc, to be consumed by WITH_CLEANUP_FINISH.
-  frame->pushValue(*exc);
+  thread->stackPush(*exc);
 
   // Call exit(exc, value, traceback), leaving the result on the stack for
   // WITH_CLEANUP_FINISH.
-  frame->pushValue(*exit);
-  frame->pushValue(*exc);
-  frame->pushValue(*value);
-  frame->pushValue(*traceback);
+  thread->stackPush(*exit);
+  thread->stackPush(*exc);
+  thread->stackPush(*value);
+  thread->stackPush(*traceback);
   return tailcall(thread, 3);
 }
 
 HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object result(&scope, frame->popValue());
-  Object exc(&scope, frame->popValue());
+  Object result(&scope, thread->stackPop());
+  Object exc(&scope, thread->stackPop());
   if (!exc.isNoneType()) {
     Object is_true(&scope, isTrue(thread, *result));
     if (is_true.isErrorException()) return Continue::UNWIND;
     if (*is_true == Bool::trueObj()) {
-      frame->pushValue(
+      thread->stackPush(
           SmallInt::fromWord(static_cast<int>(TryBlock::Why::kSilenced)));
     }
   }
@@ -2313,14 +2300,14 @@ HANDLER_INLINE Continue Interpreter::doYieldValue(Thread* thread, word) {
   // from awaitables via `YIELD_FROM`.
   if (Code::cast(frame->code()).isAsyncGenerator()) {
     HandleScope scope(thread);
-    Object value(&scope, frame->popValue());
+    Object value(&scope, thread->stackPop());
     Runtime* runtime = thread->runtime();
     Layout async_gen_wrapped_value_layout(
         &scope, runtime->layoutAt(LayoutId::kAsyncGeneratorWrappedValue));
     AsyncGeneratorWrappedValue wrapped_value(
         &scope, runtime->newInstance(async_gen_wrapped_value_layout));
     wrapped_value.setValue(*value);
-    frame->pushValue(*wrapped_value);
+    thread->stackPush(*wrapped_value);
   }
   return Continue::YIELD;
 }
@@ -2420,7 +2407,7 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
   // that's not necessary anymore. You can't import * inside a function
   // body anymore.
 
-  Object object(&scope, frame->popValue());
+  Object object(&scope, thread->stackPop());
   if (importAllFrom(thread, frame, object).isErrorException()) {
     return Continue::UNWIND;
   }
@@ -2430,7 +2417,7 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doPopBlock(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   TryBlock block = frame->blockStack()->pop();
-  frame->setValueStackTop(frame->valueStackBase() - block.level());
+  thread->setStackPointer(thread->valueStackBase() - block.level());
   return Continue::NEXT;
 }
 
@@ -2438,14 +2425,14 @@ HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
 
-  Object status(&scope, frame->popValue());
+  Object status(&scope, thread->stackPop());
   if (status.isSmallInt()) {
     auto why = static_cast<TryBlock::Why>(SmallInt::cast(*status).value());
     switch (why) {
       case TryBlock::Why::kReturn:
         return Continue::RETURN;
       case TryBlock::Why::kContinue:
-        handleLoopExit(thread, why, frame->popValue());
+        handleLoopExit(thread, why, thread->stackPop());
         return Continue::NEXT;
       case TryBlock::Why::kBreak:
       case TryBlock::Why::kYield:
@@ -2461,8 +2448,8 @@ HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
   if (thread->runtime()->isInstanceOfType(*status) &&
       Type(&scope, *status).isBaseExceptionSubclass()) {
     thread->setPendingExceptionType(*status);
-    thread->setPendingExceptionValue(frame->popValue());
-    thread->setPendingExceptionTraceback(frame->popValue());
+    thread->setPendingExceptionValue(thread->stackPop());
+    thread->setPendingExceptionTraceback(thread->stackPop());
     return Continue::UNWIND;
   }
   if (!status.isNoneType()) {
@@ -2493,7 +2480,7 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   HandleScope scope(thread);
   RawObject names = Code::cast(frame->code()).names();
   Str name(&scope, Tuple::cast(names).at(arg));
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   Object implicit_globals(&scope, frame->implicitGlobals());
   if (implicitGlobalsAtPut(thread, frame, implicit_globals, name, value)
           .isErrorException()) {
@@ -2534,8 +2521,10 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-static HANDLER_INLINE Continue unpackSequenceWithLength(
-    Thread* thread, Frame* frame, const Tuple& tuple, word count, word length) {
+static HANDLER_INLINE Continue unpackSequenceWithLength(Thread* thread, Frame*,
+                                                        const Tuple& tuple,
+                                                        word count,
+                                                        word length) {
   if (length < count) {
     thread->raiseWithFmt(LayoutId::kValueError, "not enough values to unpack");
     return Continue::UNWIND;
@@ -2545,7 +2534,7 @@ static HANDLER_INLINE Continue unpackSequenceWithLength(
     return Continue::UNWIND;
   }
   for (word i = length - 1; i >= 0; i--) {
-    frame->pushValue(tuple.at(i));
+    thread->stackPush(tuple.at(i));
   }
   return Continue::NEXT;
 }
@@ -2554,7 +2543,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
                                                       word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object iterable(&scope, frame->popValue());
+  Object iterable(&scope, thread->stackPop());
   if (iterable.isTuple()) {
     Tuple tuple(&scope, *iterable);
     return unpackSequenceWithLength(thread, frame, tuple, arg, tuple.length());
@@ -2595,7 +2584,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
       thread->raiseWithFmt(LayoutId::kValueError, "too many values to unpack");
       return Continue::UNWIND;
     }
-    frame->pushValue(*value);
+    thread->stackPush(*value);
     ++num_pushed;
   }
 
@@ -2603,9 +2592,9 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
   Object tmp(&scope, NoneType::object());
   for (word i = 0, j = num_pushed - 1, half = num_pushed / 2; i < half;
        ++i, --j) {
-    tmp = frame->peek(i);
-    frame->setValueAt(frame->peek(j), i);
-    frame->setValueAt(*tmp, j);
+    tmp = thread->stackPeek(i);
+    thread->stackSetAt(i, thread->stackPeek(j));
+    thread->stackSetAt(j, *tmp);
   }
   return Continue::NEXT;
 }
@@ -2617,7 +2606,7 @@ HANDLER_INLINE Continue Interpreter::doForIter(Thread* thread, word arg) {
 Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object iter(&scope, frame->topValue());
+  Object iter(&scope, thread->stackTop());
   Type type(&scope, thread->runtime()->typeOf(*iter));
   Object next(&scope, typeLookupInMroById(thread, type, ID(__next__)));
   if (next.isErrorNotFound()) {
@@ -2646,13 +2635,13 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
 
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
-      frame->popValue();
+      thread->stackPop();
       frame->setVirtualPC(frame->virtualPC() + arg);
       return Continue::NEXT;
     }
     return Continue::UNWIND;
   }
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
@@ -2706,21 +2695,21 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
                                             RawObject next_method, word arg) {
   DCHECK(next_method.isFunction(), "Unexpected next_method value");
   Frame* frame = thread->currentFrame();
-  RawObject iter = frame->topValue();
-  frame->pushValue(next_method);
-  frame->pushValue(iter);
+  RawObject iter = thread->stackTop();
+  thread->stackPush(next_method);
+  thread->stackPush(iter);
   RawObject result = callFunction(thread, frame, next_method,
                                   /*nargs=*/1);
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
-      frame->popValue();
+      thread->stackPop();
       frame->setVirtualPC(frame->virtualPC() +
                           originalArg(frame->function(), arg));
       return Continue::NEXT;
     }
     return Continue::UNWIND;
   }
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -2733,7 +2722,7 @@ static Continue retryForIterAnamorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter_obj = frame->topValue();
+  RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isListIterator()) {
     return retryForIterAnamorphic(thread, arg);
   }
@@ -2742,11 +2731,11 @@ HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
   word idx = iter.index();
   RawList underlying = iter.iterable().rawCast<RawList>();
   if (idx >= underlying.numItems()) {
-    frame->popValue();
+    thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));
   } else {
-    frame->pushValue(underlying.at(idx));
+    thread->stackPush(underlying.at(idx));
     iter.setIndex(idx + 1);
   }
   return Continue::NEXT;
@@ -2754,7 +2743,7 @@ HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter_obj = frame->topValue();
+  RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isDictKeyIterator()) {
     return retryForIterAnamorphic(thread, arg);
   }
@@ -2768,11 +2757,11 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
     // At this point, we have found a valid index in the buckets.
     iter.setIndex(i);
     iter.setNumFound(iter.numFound() + 1);
-    frame->pushValue(*key);
+    thread->stackPush(*key);
   } else {
     // We hit the end.
     iter.setIndex(i);
-    frame->popValue();
+    thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));
   }
@@ -2781,7 +2770,7 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter_obj = frame->topValue();
+  RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isTupleIterator()) {
     return retryForIterAnamorphic(thread, arg);
   }
@@ -2789,21 +2778,21 @@ HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   RawTupleIterator iter = TupleIterator::cast(iter_obj);
   word idx = iter.index();
   if (idx == iter.length()) {
-    frame->popValue();
+    thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));
   } else {
     RawTuple underlying = iter.iterable().rawCast<RawTuple>();
     RawObject item = underlying.at(idx);
     iter.setIndex(idx + 1);
-    frame->pushValue(item);
+    thread->stackPush(item);
   }
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter_obj = frame->topValue();
+  RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isRangeIterator()) {
     return retryForIterAnamorphic(thread, arg);
   }
@@ -2811,7 +2800,7 @@ HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
   RawRangeIterator iter = RangeIterator::cast(iter_obj);
   word length = iter.length();
   if (length == 0) {
-    frame->popValue();
+    thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));
   } else {
@@ -2821,14 +2810,14 @@ HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
       word step = iter.step();
       iter.setNext(next + step);
     }
-    frame->pushValue(SmallInt::fromWord(next));
+    thread->stackPush(SmallInt::fromWord(next));
   }
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter_obj = frame->topValue();
+  RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isStrIterator()) {
     return retryForIterAnamorphic(thread, arg);
   }
@@ -2837,14 +2826,14 @@ HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
   word byte_offset = iter.index();
   RawStr underlying = iter.iterable().rawCast<RawStr>();
   if (byte_offset == underlying.length()) {
-    frame->popValue();
+    thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
                         originalArg(frame->function(), arg));
   } else {
     word num_bytes = 0;
     word code_point = underlying.codePointAt(byte_offset, &num_bytes);
     iter.setIndex(byte_offset + num_bytes);
-    frame->pushValue(RawSmallStr::fromCodePoint(code_point));
+    thread->stackPush(RawSmallStr::fromCodePoint(code_point));
   }
   return Continue::NEXT;
 }
@@ -2853,7 +2842,7 @@ HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
                                                           word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  LayoutId iter_layout_id = frame->topValue().layoutId();
+  LayoutId iter_layout_id = thread->stackTop().layoutId();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, iter_layout_id, &is_found);
@@ -2866,7 +2855,7 @@ HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doForIterPolymorphic(Thread* thread,
                                                           word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter = frame->topValue();
+  RawObject iter = thread->stackTop();
   LayoutId iter_layout_id = iter.layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
@@ -2880,7 +2869,7 @@ HANDLER_INLINE Continue Interpreter::doForIterPolymorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
                                                          word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject iter = frame->topValue();
+  RawObject iter = thread->stackTop();
   LayoutId iter_layout_id = iter.layoutId();
   switch (iter_layout_id) {
     case LayoutId::kListIterator:
@@ -2908,7 +2897,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object iterable(&scope, frame->popValue());
+  Object iterable(&scope, thread->stackPop());
   Object iterator(&scope, createIterator(thread, frame, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
 
@@ -2935,7 +2924,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
       if (thread->clearPendingStopIteration()) break;
       return Continue::UNWIND;
     }
-    frame->pushValue(*value);
+    thread->stackPush(*value);
   }
 
   if (num_pushed < before) {
@@ -2953,7 +2942,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
     runtime->listAdd(thread, list, value);
   }
 
-  frame->pushValue(*list);
+  thread->stackPush(*list);
   num_pushed++;
 
   if (list.numItems() < after) {
@@ -2965,7 +2954,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
     // Pop elements off the list and set them on the stack
     for (word i = list.numItems() - after, j = list.numItems(); i < j;
          ++i, ++num_pushed) {
-      frame->pushValue(list.at(i));
+      thread->stackPush(list.at(i));
       list.atPut(i, NoneType::object());
     }
     list.setNumItems(list.numItems() - after);
@@ -2975,9 +2964,9 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   Object tmp(&scope, NoneType::object());
   for (word i = 0, j = num_pushed - 1, half = num_pushed / 2; i < half;
        ++i, --j) {
-    tmp = frame->peek(i);
-    frame->setValueAt(frame->peek(j), i);
-    frame->setValueAt(*tmp, j);
+    tmp = thread->stackPeek(i);
+    thread->stackSetAt(i, thread->stackPeek(j));
+    thread->stackSetAt(j, *tmp);
   }
   return Continue::NEXT;
 }
@@ -3019,10 +3008,10 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
   HandleScope scope(thread);
-  Object receiver(&scope, frame->popValue());
+  Object receiver(&scope, thread->stackPop());
   Str name(&scope,
            Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
 
   Object location(&scope, NoneType::object());
   LayoutId saved_layout_id = receiver.layoutId();
@@ -3109,7 +3098,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstance(Thread* thread,
                                                          word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3119,8 +3108,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstance(Thread* thread,
   word offset = SmallInt::cast(cached).value();
   DCHECK(offset >= 0, "unexpected offset");
   RawInstance instance = Instance::cast(receiver);
-  instance.instanceVariableAtPut(offset, frame->peek(1));
-  frame->dropValues(2);
+  instance.instanceVariableAtPut(offset, thread->stackPeek(1));
+  thread->stackDrop(2);
   return Continue::NEXT;
 }
 
@@ -3128,7 +3117,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
                                                                  word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3141,8 +3130,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
   RawLayout layout = Layout::cast(thread->runtime()->layoutOf(receiver));
   RawTuple overflow =
       Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
-  overflow.atPut(-offset - 1, frame->peek(1));
-  frame->dropValues(2);
+  overflow.atPut(-offset - 1, thread->stackPeek(1));
+  thread->stackDrop(2);
   return Continue::NEXT;
 }
 
@@ -3150,7 +3139,7 @@ HANDLER_INLINE Continue
 Interpreter::doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3167,14 +3156,14 @@ Interpreter::doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg) {
   Instance instance(&scope, receiver);
   Layout layout(&scope, thread->runtime()->layoutOf(receiver));
   Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
-  Object value(&scope, frame->peek(1));
+  Object value(&scope, thread->stackPeek(1));
   if (offset >= overflow.length()) {
     instanceGrowOverflow(thread, instance, offset + 1);
     overflow = instance.instanceVariableAt(layout.overflowOffset());
   }
   instance.setLayoutId(new_layout_id);
   overflow.atPut(offset, *value);
-  frame->dropValues(2);
+  thread->stackDrop(2);
   return Continue::NEXT;
 }
 
@@ -3182,7 +3171,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceUpdate(Thread* thread,
                                                                word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3197,16 +3186,16 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceUpdate(Thread* thread,
   word offset = offset_and_new_offset_id >> Header::kLayoutIdBits;
   DCHECK(offset >= 0, "unexpected offset");
   RawInstance instance = Instance::cast(receiver);
-  instance.instanceVariableAtPut(offset, frame->peek(1));
+  instance.instanceVariableAtPut(offset, thread->stackPeek(1));
   instance.setLayoutId(new_layout_id);
-  frame->dropValues(2);
+  thread->stackDrop(2);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
                                                             word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   LayoutId layout_id = receiver.layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
@@ -3214,8 +3203,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
   if (!is_found) {
     return storeAttrUpdateCache(thread, arg);
   }
-  RawObject value = frame->peek(1);
-  frame->dropValues(2);
+  RawObject value = thread->stackPeek(1);
+  thread->stackDrop(2);
   storeAttrWithLocation(thread, receiver, cached, value);
   return Continue::NEXT;
 }
@@ -3223,10 +3212,10 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doStoreAttr(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object receiver(&scope, frame->popValue());
+  Object receiver(&scope, thread->stackPop());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   if (thread->invokeMethod3(receiver, ID(__setattr__), name, value)
           .isErrorException()) {
     return Continue::UNWIND;
@@ -3237,7 +3226,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttr(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doDeleteAttr(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object receiver(&scope, frame->popValue());
+  Object receiver(&scope, thread->stackPop());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
   if (thread->runtime()
@@ -3253,7 +3242,7 @@ HANDLER_INLINE Continue Interpreter::doStoreGlobal(Thread* thread, word arg) {
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str key(&scope, names.at(arg));
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   Module module(&scope, frame->function().moduleObject());
   Function function(&scope, frame->function());
   globalsAtPut(thread, module, key, value, function, arg);
@@ -3265,7 +3254,7 @@ HANDLER_INLINE Continue Interpreter::doStoreGlobalCached(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject cached =
       icLookupGlobalVar(MutableTuple::cast(frame->caches()), arg);
-  ValueCell::cast(cached).setValue(frame->popValue());
+  ValueCell::cast(cached).setValue(thread->stackPop());
   return Continue::NEXT;
 }
 
@@ -3285,13 +3274,12 @@ HANDLER_INLINE Continue Interpreter::doDeleteGlobal(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doLoadConst(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject consts = Code::cast(frame->code()).consts();
-  frame->pushValue(Tuple::cast(consts).at(arg));
+  thread->stackPush(Tuple::cast(consts).at(arg));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadImmediate(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  frame->pushValue(objectFromOparg(arg));
+  thread->stackPush(objectFromOparg(arg));
   return Continue::NEXT;
 }
 
@@ -3310,13 +3298,13 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
       DCHECK(!result.isError() || result.isErrorNotFound(),
              "expected value or not found");
       if (!result.isErrorNotFound()) {
-        frame->pushValue(*result);
+        thread->stackPush(*result);
         return Continue::NEXT;
       }
     } else {
       Object result(&scope, objectGetItem(thread, implicit_globals_obj, name));
       if (!result.isErrorException()) {
-        frame->pushValue(*result);
+        thread->stackPush(*result);
         return Continue::NEXT;
       }
       if (!thread->pendingExceptionMatches(LayoutId::kKeyError)) {
@@ -3328,81 +3316,77 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
   Module module(&scope, frame->function().moduleObject());
   Object module_result(&scope, moduleAt(thread, module, name));
   if (!module_result.isErrorNotFound()) {
-    frame->pushValue(*module_result);
+    thread->stackPush(*module_result);
     return Continue::NEXT;
   }
   Module builtins(&scope, builtinsModule(thread, module));
   Object builtins_result(&scope, moduleAt(thread, builtins, name));
   if (!builtins_result.isErrorNotFound()) {
-    frame->pushValue(*builtins_result);
+    thread->stackPush(*builtins_result);
     return Continue::NEXT;
   }
   return raiseUndefinedName(thread, name);
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildTuple(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   if (arg == 0) {
-    frame->pushValue(thread->runtime()->emptyTuple());
+    thread->stackPush(thread->runtime()->emptyTuple());
     return Continue::NEXT;
   }
   HandleScope scope(thread);
   MutableTuple tuple(&scope, thread->runtime()->newMutableTuple(arg));
   for (word i = arg - 1; i >= 0; i--) {
-    tuple.atPut(i, frame->popValue());
+    tuple.atPut(i, thread->stackPop());
   }
-  frame->pushValue(tuple.becomeImmutable());
+  thread->stackPush(tuple.becomeImmutable());
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildList(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   if (arg == 0) {
-    frame->pushValue(runtime->newList());
+    thread->stackPush(runtime->newList());
     return Continue::NEXT;
   }
   HandleScope scope(thread);
   MutableTuple array(&scope, runtime->newMutableTuple(arg));
   for (word i = arg - 1; i >= 0; i--) {
-    array.atPut(i, frame->popValue());
+    array.atPut(i, thread->stackPop());
   }
   RawList list = List::cast(runtime->newList());
   list.setItems(*array);
   list.setNumItems(array.length());
-  frame->pushValue(list);
+  thread->stackPush(list);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildSet(Thread* thread, word arg) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   Set set(&scope, runtime->newSet());
   Object value(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    value = frame->popValue();
+    value = thread->stackPop();
     hash_obj = hash(thread, value);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
     setAdd(thread, set, value, hash);
   }
-  frame->pushValue(*set);
+  thread->stackPush(*set);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
   Runtime* runtime = thread->runtime();
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Dict dict(&scope, runtime->newDictWithSize(arg));
   Object value(&scope, NoneType::object());
   Object key(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
-    value = frame->popValue();
-    key = frame->popValue();
+    value = thread->stackPop();
+    key = thread->stackPop();
     hash_obj = hash(thread, key);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
@@ -3410,19 +3394,19 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
       return Continue::UNWIND;
     }
   }
-  frame->pushValue(*dict);
+  thread->stackPush(*dict);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object receiver(&scope, frame->topValue());
+  Object receiver(&scope, thread->stackTop());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
   RawObject result = thread->runtime()->attributeAt(thread, receiver, name);
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->setTopValue(result);
+  thread->stackSetTop(result);
   return Continue::NEXT;
 }
 
@@ -3491,7 +3475,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
-  Object receiver(&scope, frame->topValue());
+  Object receiver(&scope, thread->stackTop());
   Str name(&scope,
            Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
 
@@ -3501,7 +3485,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
                 loadAttrSetLocation(thread, receiver, name, &kind, &location));
   if (result.isErrorException()) return Continue::UNWIND;
   if (location.isNoneType()) {
-    frame->setTopValue(*result);
+    thread->stackSetTop(*result);
     return Continue::NEXT;
   }
 
@@ -3572,7 +3556,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
         break;
     }
   }
-  frame->setTopValue(*result);
+  thread->stackSetTop(*result);
   return Continue::NEXT;
 }
 
@@ -3608,7 +3592,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
                                                         word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3616,7 +3600,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
     return Interpreter::loadAttrUpdateCache(thread, arg);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
-  frame->setTopValue(result);
+  thread->stackSetTop(result);
   return Continue::NEXT;
 }
 
@@ -3624,7 +3608,7 @@ HANDLER_INLINE Continue
 Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3634,7 +3618,7 @@ Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
   HandleScope scope(thread);
   Object self(&scope, receiver);
   Object function(&scope, cached);
-  frame->setTopValue(thread->runtime()->newBoundMethod(function, self));
+  thread->stackSetTop(thread->runtime()->newBoundMethod(function, self));
   return Continue::NEXT;
 }
 
@@ -3659,15 +3643,15 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
                                                                 word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
     return retryLoadAttrCached(thread, arg);
   }
-  frame->pushValue(receiver);
-  frame->setValueAt(cached, 1);
+  thread->stackPush(receiver);
+  thread->stackSetAt(1, cached);
   return tailcallFunction(thread, frame, cached, 1);
 }
 
@@ -3675,7 +3659,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
                                                                  word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3685,7 +3669,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
   word offset = SmallInt::cast(cached).value();
   RawObject value = Instance::cast(receiver).instanceVariableAt(offset);
   if (!value.isUnbound()) {
-    frame->setTopValue(value);
+    thread->stackSetTop(value);
     return Continue::NEXT;
   }
   // If the value is unbound, we remove the cached slot descriptor.
@@ -3696,7 +3680,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
                                                                  word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -3711,7 +3695,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
                 Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                                descr, self, self_type));
   if (result.isError()) return Continue::UNWIND;
-  frame->setTopValue(*result);
+  thread->stackSetTop(*result);
   return Continue::NEXT;
 }
 
@@ -3719,21 +3703,21 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceType(Thread* thread,
                                                             word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
     return retryLoadAttrCached(thread, arg);
   }
-  frame->setTopValue(cached);
+  thread->stackSetTop(cached);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
                                                       word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   word index = arg * kIcPointersPerEntry;
   RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
@@ -3746,7 +3730,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
       SmallInt::fromWord(receiver.rawCast<RawModule>().id()) == cache_key) {
     RawObject result = caches.at(index + kIcEntryValueOffset);
     DCHECK(result.isValueCell(), "cached value is not a value cell");
-    frame->setTopValue(ValueCell::cast(result).value());
+    thread->stackSetTop(ValueCell::cast(result).value());
     return Continue::NEXT;
   }
   return retryLoadAttrCached(thread, arg);
@@ -3755,7 +3739,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
                                                            word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   LayoutId layout_id = receiver.layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
@@ -3764,13 +3748,13 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
     return loadAttrUpdateCache(thread, arg);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
-  frame->setTopValue(result);
+  thread->stackSetTop(result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   word index = arg * kIcPointersPerEntry;
   RawObject layout_id = caches.at(index + kIcEntryKeyOffset);
@@ -3780,7 +3764,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
     if (SmallInt::fromWord(id) == layout_id) {
       RawObject result = caches.at(index + kIcEntryValueOffset);
       DCHECK(result.isValueCell(), "cached value is not a value cell");
-      frame->setTopValue(ValueCell::cast(result).value());
+      thread->stackSetTop(ValueCell::cast(result).value());
       return Continue::NEXT;
     }
   }
@@ -3812,26 +3796,24 @@ static RawObject excMatch(Thread* thread, const Object& left,
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareIs(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  RawObject right = frame->popValue();
-  RawObject left = frame->popValue();
-  frame->pushValue(Bool::fromBool(left == right));
+  RawObject right = thread->stackPop();
+  RawObject left = thread->stackPop();
+  thread->stackPush(Bool::fromBool(left == right));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareIsNot(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  RawObject right = frame->popValue();
-  RawObject left = frame->popValue();
-  frame->pushValue(Bool::fromBool(left != right));
+  RawObject right = thread->stackPop();
+  RawObject left = thread->stackPop();
+  thread->stackPush(Bool::fromBool(left != right));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   CompareOp op = static_cast<CompareOp>(arg);
   RawObject result = NoneType::object();
   if (op == IS) {
@@ -3850,7 +3832,7 @@ HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   }
 
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -3859,8 +3841,8 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Code code(&scope, frame->code());
   Object name(&scope, Tuple::cast(code.names()).at(arg));
-  Object fromlist(&scope, frame->popValue());
-  Object level(&scope, frame->popValue());
+  Object fromlist(&scope, thread->stackPop());
+  Object level(&scope, thread->stackPop());
   Module module(&scope, frame->function().moduleObject());
   Object globals(&scope, module.moduleProxy());
   // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
@@ -3876,12 +3858,12 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
     return Continue::UNWIND;
   }
 
-  frame->pushValue(*dunder_import);
-  frame->pushValue(*name);
-  frame->pushValue(*globals);
-  frame->pushValue(*locals);
-  frame->pushValue(*fromlist);
-  frame->pushValue(*level);
+  thread->stackPush(*dunder_import);
+  thread->stackPush(*name);
+  thread->stackPush(*globals);
+  thread->stackPush(*locals);
+  thread->stackPush(*fromlist);
+  thread->stackPush(*level);
   return tailcall(thread, 5);
 }
 
@@ -3910,7 +3892,7 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Code code(&scope, frame->code());
   Str name(&scope, Tuple::cast(code.names()).at(arg));
-  Object from(&scope, frame->topValue());
+  Object from(&scope, thread->stackTop());
 
   Object value(&scope, NoneType::object());
   if (from.isModule()) {
@@ -3952,7 +3934,7 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
       return Continue::UNWIND;
     }
   }
-  frame->pushValue(*value);
+  thread->stackPush(*value);
   return Continue::NEXT;
 }
 
@@ -3965,14 +3947,14 @@ HANDLER_INLINE Continue Interpreter::doJumpForward(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doJumpIfFalseOrPop(Thread* thread,
                                                         word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject value = frame->topValue();
+  RawObject value = thread->stackTop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::falseObj())) {
     frame->setVirtualPC(arg);
     return Continue::NEXT;
   }
   if (value == Bool::trueObj()) {
-    frame->popValue();
+    thread->stackPop();
     return Continue::NEXT;
   }
   DCHECK(value.isErrorException(), "value must be error");
@@ -3982,14 +3964,14 @@ HANDLER_INLINE Continue Interpreter::doJumpIfFalseOrPop(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doJumpIfTrueOrPop(Thread* thread,
                                                        word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject value = frame->topValue();
+  RawObject value = thread->stackTop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::trueObj())) {
     frame->setVirtualPC(arg);
     return Continue::NEXT;
   }
   if (value == Bool::falseObj()) {
-    frame->popValue();
+    thread->stackPop();
     return Continue::NEXT;
   }
   DCHECK(value.isErrorException(), "value must be error");
@@ -4005,7 +3987,7 @@ HANDLER_INLINE Continue Interpreter::doJumpAbsolute(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doPopJumpIfFalse(Thread* thread,
                                                       word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject value = frame->popValue();
+  RawObject value = thread->stackPop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::falseObj())) {
     frame->setVirtualPC(arg);
@@ -4020,7 +4002,7 @@ HANDLER_INLINE Continue Interpreter::doPopJumpIfFalse(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doPopJumpIfTrue(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject value = frame->popValue();
+  RawObject value = thread->stackPop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::trueObj())) {
     frame->setVirtualPC(arg);
@@ -4044,7 +4026,7 @@ HANDLER_INLINE Continue Interpreter::doLoadGlobal(Thread* thread, word arg) {
   if (result.isErrorNotFound()) {
     return raiseUndefinedName(thread, key);
   }
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
@@ -4056,7 +4038,7 @@ HANDLER_INLINE Continue Interpreter::doLoadGlobalCached(Thread* thread,
   DCHECK(cached.isValueCell(), "cached value must be a ValueCell");
   DCHECK(!ValueCell::cast(cached).isPlaceholder(),
          "cached ValueCell must not be a placeholder");
-  frame->pushValue(ValueCell::cast(cached).value());
+  thread->stackPush(ValueCell::cast(cached).value());
   return Continue::NEXT;
 }
 
@@ -4067,7 +4049,7 @@ HANDLER_INLINE Continue Interpreter::doContinueLoop(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doSetupLoop(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
+  word stack_depth = thread->valueStackBase() - thread->stackPointer();
   BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
   block_stack->push(TryBlock(TryBlock::kLoop, handler_pc, stack_depth));
@@ -4076,7 +4058,7 @@ HANDLER_INLINE Continue Interpreter::doSetupLoop(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doSetupExcept(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  word stack_depth = frame->valueStackSize();
+  word stack_depth = thread->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
   block_stack->push(TryBlock(TryBlock::kExcept, handler_pc, stack_depth));
@@ -4085,7 +4067,7 @@ HANDLER_INLINE Continue Interpreter::doSetupExcept(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doSetupFinally(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
+  word stack_depth = thread->valueStackBase() - thread->stackPointer();
   BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
   block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
@@ -4105,7 +4087,7 @@ HANDLER_INLINE Continue Interpreter::doLoadFast(Thread* thread, word arg) {
                          &name);
     return Continue::UNWIND;
   }
-  frame->pushValue(value);
+  thread->stackPush(value);
   return Continue::NEXT;
 }
 
@@ -4125,13 +4107,13 @@ HANDLER_INLINE Continue Interpreter::doLoadFastReverse(Thread* thread,
                          &name);
     return Continue::UNWIND;
   }
-  frame->pushValue(value);
+  thread->stackPush(value);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreFast(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject value = frame->popValue();
+  RawObject value = thread->stackPop();
   frame->setLocal(arg, value);
   return Continue::NEXT;
 }
@@ -4139,7 +4121,7 @@ HANDLER_INLINE Continue Interpreter::doStoreFast(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doStoreFastReverse(Thread* thread,
                                                         word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject value = frame->popValue();
+  RawObject value = thread->stackPop();
   frame->setLocalWithReverseIndex(arg, value);
   return Continue::NEXT;
 }
@@ -4167,7 +4149,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object names(&scope, Code::cast(frame->code()).names());
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   Str name(&scope, Tuple::cast(*names).at(arg));
   Object annotations(&scope, NoneType::object());
   Object dunder_annotations(&scope,
@@ -4219,9 +4201,8 @@ HANDLER_INLINE Continue Interpreter::doRaiseVarargs(Thread* thread, word arg) {
       thread->setPendingExceptionTraceback(caught_exc_state.traceback());
     }
   } else {
-    Frame* frame = thread->currentFrame();
-    RawObject cause = (arg >= 2) ? frame->popValue() : Error::notFound();
-    RawObject exn = (arg >= 1) ? frame->popValue() : NoneType::object();
+    RawObject cause = (arg >= 2) ? thread->stackPop() : Error::notFound();
+    RawObject exn = (arg >= 1) ? thread->stackPop() : NoneType::object();
     raise(thread, exn, cause);
   }
 
@@ -4233,9 +4214,9 @@ Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
                                      word nargs, RawObject* post_call_sp) {
   Frame* frame = thread->currentFrame();
   RawObject result = entry(thread, frame, nargs);
-  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+  DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -4251,7 +4232,7 @@ static HANDLER_INLINE Continue callInterpretedImpl(
 
   RawObject result = prepare_args(thread, function, caller_frame, nargs);
   if (result.isErrorException()) {
-    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
   }
   function = RawFunction::cast(result);
@@ -4269,7 +4250,7 @@ static HANDLER_INLINE Continue callInterpretedImpl(
 
 Continue Interpreter::callInterpreted(Thread* thread, word nargs, Frame* frame,
                                       RawFunction function) {
-  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
+  RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
   return callInterpretedImpl(thread, nargs, frame, function, post_call_sp,
                              preparePositionalCall);
 }
@@ -4285,21 +4266,20 @@ HANDLER_INLINE Continue Interpreter::handleCall(
   // invariant if you change the code!
 
   Frame* caller_frame = thread->currentFrame();
-  RawObject* post_call_sp = caller_frame->valueStackTop() + callable_idx + 1;
+  RawObject* post_call_sp = thread->stackPointer() + callable_idx + 1;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, caller_frame, nargs, callable_idx);
   nargs = prepare_result.nargs;
   if (prepare_result.function.isErrorException()) {
-    caller_frame->dropValues(nargs + 1);
-    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    thread->stackDrop(nargs + 1);
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
   }
   RawFunction function = RawFunction::cast(prepare_result.function);
 
   SymbolId name = static_cast<SymbolId>(function.intrinsicId());
   if (name != SymbolId::kInvalid && doIntrinsic(thread, caller_frame, name)) {
-    DCHECK(caller_frame->valueStackTop() == post_call_sp - 1,
-           "stack not cleaned");
+    DCHECK(thread->stackPointer() == post_call_sp - 1, "stack not cleaned");
     return Continue::NEXT;
   }
 
@@ -4315,9 +4295,9 @@ ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
                                                      Frame* frame,
                                                      RawObject function_obj,
                                                      word nargs) {
-  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
-  DCHECK(function_obj == frame->peek(nargs),
-         "frame->peek(nargs) is expected to be the given function");
+  RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
+  DCHECK(function_obj == thread->stackPeek(nargs),
+         "thread->stackPeek(nargs) is expected to be the given function");
   RawFunction function = Function::cast(function_obj);
   if (!function.isInterpreted()) {
     return callTrampoline(thread, function.entry(), nargs, post_call_sp);
@@ -4333,46 +4313,45 @@ HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object qualname(&scope, frame->popValue());
-  Code code(&scope, frame->popValue());
+  Object qualname(&scope, thread->stackPop());
+  Code code(&scope, thread->stackPop());
   Module module(&scope, frame->function().moduleObject());
   Runtime* runtime = thread->runtime();
   Function function(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
   if (arg & MakeFunctionFlag::CLOSURE) {
-    function.setClosure(frame->popValue());
+    function.setClosure(thread->stackPop());
     DCHECK(runtime->isInstanceOfTuple(function.closure()), "expected tuple");
   }
   if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
-    function.setAnnotations(frame->popValue());
+    function.setAnnotations(thread->stackPop());
     DCHECK(runtime->isInstanceOfDict(function.annotations()), "expected dict");
   }
   if (arg & MakeFunctionFlag::DEFAULT_KW) {
-    function.setKwDefaults(frame->popValue());
+    function.setKwDefaults(thread->stackPop());
     DCHECK(runtime->isInstanceOfDict(function.kwDefaults()), "expected dict");
   }
   if (arg & MakeFunctionFlag::DEFAULT) {
-    function.setDefaults(frame->popValue());
+    function.setDefaults(thread->stackPop());
     DCHECK(runtime->isInstanceOfTuple(function.defaults()), "expected tuple");
   }
-  frame->pushValue(*function);
+  thread->stackPush(*function);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildSlice(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject step = arg == 3 ? frame->popValue() : NoneType::object();
-  RawObject stop = frame->popValue();
-  RawObject start = frame->topValue();
+  RawObject step = arg == 3 ? thread->stackPop() : NoneType::object();
+  RawObject stop = thread->stackPop();
+  RawObject start = thread->stackTop();
   Runtime* runtime = thread->runtime();
   if (start.isNoneType() && stop.isNoneType() && step.isNoneType()) {
-    frame->setTopValue(runtime->emptySlice());
+    thread->stackSetTop(runtime->emptySlice());
   } else {
     HandleScope scope(thread);
     Object start_obj(&scope, start);
     Object stop_obj(&scope, stop);
     Object step_obj(&scope, step);
-    frame->setTopValue(runtime->newSlice(start_obj, stop_obj, step_obj));
+    thread->stackSetTop(runtime->newSlice(start_obj, stop_obj, step_obj));
   }
   return Continue::NEXT;
 }
@@ -4380,7 +4359,7 @@ HANDLER_INLINE Continue Interpreter::doBuildSlice(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doLoadClosure(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawCode code = Code::cast(frame->code());
-  frame->pushValue(frame->local(code.nlocals() + arg));
+  thread->stackPush(frame->local(code.nlocals() + arg));
   return Continue::NEXT;
 }
 
@@ -4414,14 +4393,14 @@ HANDLER_INLINE Continue Interpreter::doLoadDeref(Thread* thread, word arg) {
     raiseUnboundCellFreeVar(thread, code, arg);
     return Continue::UNWIND;
   }
-  frame->pushValue(*value);
+  thread->stackPush(*value);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreDeref(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawCode code = Code::cast(frame->code());
-  Cell::cast(frame->local(code.nlocals() + arg)).setValue(frame->popValue());
+  Cell::cast(frame->local(code.nlocals() + arg)).setValue(thread->stackPop());
   return Continue::NEXT;
 }
 
@@ -4442,13 +4421,13 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
                                                       word arg) {
   Frame* caller_frame = thread->currentFrame();
   word callable_idx = (arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  RawObject* post_call_sp = caller_frame->valueStackTop() + callable_idx + 1;
+  RawObject* post_call_sp = thread->stackPointer() + callable_idx + 1;
   HandleScope scope(thread);
   Object callable(&scope,
                   prepareCallableEx(thread, caller_frame, callable_idx));
   if (callable.isErrorException()) {
-    caller_frame->dropValues(callable_idx + 1);
-    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    thread->stackDrop(callable_idx + 1);
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
   }
 
@@ -4459,7 +4438,7 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
 
   if (prepareExplodeCall(thread, *function, caller_frame, arg)
           .isErrorException()) {
-    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
   }
 
@@ -4478,7 +4457,7 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
-  Object mgr(&scope, frame->topValue());
+  Object mgr(&scope, thread->stackTop());
   Object enter(&scope, lookupMethod(thread, frame, mgr, ID(__enter__)));
   if (enter.isError()) {
     if (enter.isErrorNotFound()) {
@@ -4502,47 +4481,44 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
     return Continue::UNWIND;
   }
   Object exit_bound(&scope, runtime->newBoundMethod(exit, mgr));
-  frame->setTopValue(*exit_bound);
+  thread->stackSetTop(*exit_bound);
   Object result(&scope, callMethod1(thread, frame, enter, mgr));
   if (result.isErrorException()) return Continue::UNWIND;
 
-  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
+  word stack_depth = thread->valueStackBase() - thread->stackPointer();
   BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
   block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doListAppend(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object value(&scope, frame->popValue());
-  List list(&scope, frame->peek(arg - 1));
+  Object value(&scope, thread->stackPop());
+  List list(&scope, thread->stackPeek(arg - 1));
   thread->runtime()->listAdd(thread, list, value);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doSetAdd(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   Object hash_obj(&scope, hash(thread, value));
   if (hash_obj.isErrorException()) {
     return Continue::UNWIND;
   }
   word hash = SmallInt::cast(*hash_obj).value();
-  Set set(&scope, Set::cast(frame->peek(arg - 1)));
+  Set set(&scope, Set::cast(thread->stackPeek(arg - 1)));
   setAdd(thread, set, value, hash);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doMapAdd(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object key(&scope, frame->popValue());
-  Object value(&scope, frame->popValue());
-  Dict dict(&scope, Dict::cast(frame->peek(arg - 1)));
+  Object key(&scope, thread->stackPop());
+  Object value(&scope, thread->stackPop());
+  Dict dict(&scope, Dict::cast(thread->stackPeek(arg - 1)));
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return Continue::UNWIND;
   word hash = SmallInt::cast(*hash_obj).value();
@@ -4585,9 +4561,9 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
     if (cell.isUnbound()) {
       UNIMPLEMENTED("unbound free var %s", Str::cast(*name).toCStr());
     }
-    frame->pushValue(cell.value());
+    thread->stackPush(cell.value());
   } else {
-    frame->pushValue(*result);
+    thread->stackPush(*result);
   }
 
   return Continue::NEXT;
@@ -4595,31 +4571,29 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doBuildListUnpack(Thread* thread,
                                                        word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   List list(&scope, runtime->newList());
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = frame->peek(i);
+    obj = thread->stackPeek(i);
     RawObject result =
         thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list, obj);
     if (result.isErrorException()) return Continue::UNWIND;
   }
-  frame->dropValues(arg - 1);
-  frame->setTopValue(*list);
+  thread->stackDrop(arg - 1);
+  thread->stackSetTop(*list);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildMapUnpack(Thread* thread,
                                                       word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Dict dict(&scope, runtime->newDict());
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = frame->peek(i);
+    obj = thread->stackPeek(i);
     if (dictMergeOverride(thread, dict, obj).isErrorException()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
@@ -4630,20 +4604,19 @@ HANDLER_INLINE Continue Interpreter::doBuildMapUnpack(Thread* thread,
       return Continue::UNWIND;
     }
   }
-  frame->dropValues(arg - 1);
-  frame->setTopValue(*dict);
+  thread->stackDrop(arg - 1);
+  thread->stackSetTop(*dict);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildMapUnpackWithCall(Thread* thread,
                                                               word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Dict dict(&scope, runtime->newDict());
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = frame->peek(i);
+    obj = thread->stackPeek(i);
     if (dictMergeError(thread, dict, obj).isErrorException()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
@@ -4666,44 +4639,42 @@ HANDLER_INLINE Continue Interpreter::doBuildMapUnpackWithCall(Thread* thread,
       return Continue::UNWIND;
     }
   }
-  frame->dropValues(arg - 1);
-  frame->setTopValue(*dict);
+  thread->stackDrop(arg - 1);
+  thread->stackSetTop(*dict);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildTupleUnpack(Thread* thread,
                                                         word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   List list(&scope, runtime->newList());
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = frame->peek(i);
+    obj = thread->stackPeek(i);
     RawObject result =
         thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list, obj);
     if (result.isErrorException()) return Continue::UNWIND;
   }
   Tuple items(&scope, list.items());
   Tuple tuple(&scope, runtime->tupleSubseq(thread, items, 0, list.numItems()));
-  frame->dropValues(arg - 1);
-  frame->setTopValue(*tuple);
+  thread->stackDrop(arg - 1);
+  thread->stackSetTop(*tuple);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildSetUnpack(Thread* thread,
                                                       word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Set set(&scope, runtime->newSet());
   Object obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
-    obj = frame->peek(i);
+    obj = thread->stackPeek(i);
     if (setUpdate(thread, set, obj).isErrorException()) return Continue::UNWIND;
   }
-  frame->dropValues(arg - 1);
-  frame->setTopValue(*set);
+  thread->stackDrop(arg - 1);
+  thread->stackSetTop(*set);
   return Continue::NEXT;
 }
 
@@ -4711,24 +4682,23 @@ HANDLER_INLINE Continue Interpreter::doSetupAsyncWith(Thread* thread,
                                                       word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object result(&scope, frame->popValue());
-  word stack_depth = frame->valueStackSize();
+  Object result(&scope, thread->stackPop());
+  word stack_depth = thread->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
   block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object fmt_spec(&scope, Str::empty());
   if (arg & kFormatValueHasSpecBit) {
-    fmt_spec = frame->popValue();
+    fmt_spec = thread->stackPop();
   }
-  Object value(&scope, frame->popValue());
+  Object value(&scope, thread->stackPop());
   switch (static_cast<FormatValueConv>(arg & kFormatValueConvMask)) {
     case FormatValueConv::kStr: {
       if (!value.isStr()) {
@@ -4779,15 +4749,14 @@ HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
       return Continue::UNWIND;
     }
   }
-  frame->pushValue(*value);
+  thread->stackPush(*value);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
                                                         word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Tuple keys(&scope, frame->topValue());
+  Tuple keys(&scope, thread->stackTop());
   Dict dict(&scope, thread->runtime()->newDictWithSize(keys.length()));
   Object key(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
@@ -4796,28 +4765,27 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
     hash_obj = Interpreter::hash(thread, key);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
-    Object value(&scope, frame->peek(arg - i));
+    Object value(&scope, thread->stackPeek(arg - i));
     if (dictAtPut(thread, dict, key, hash, value).isErrorException()) {
       return Continue::UNWIND;
     }
   }
-  frame->dropValues(arg + 1);
-  frame->pushValue(*dict);
+  thread->stackDrop(arg + 1);
+  thread->stackPush(*dict);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildString(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   switch (arg) {
     case 0:  // empty
-      frame->pushValue(Str::empty());
+      thread->stackPush(Str::empty());
       break;
     case 1:  // no-op
       break;
     default: {  // concat
-      RawObject res = stringJoin(thread, frame->valueStackTop(), arg);
-      frame->dropValues(arg - 1);
-      frame->setTopValue(res);
+      RawObject res = stringJoin(thread, thread->stackPointer(), arg);
+      thread->stackDrop(arg - 1);
+      thread->stackSetTop(res);
       break;
     }
   }
@@ -4832,8 +4800,7 @@ HANDLER_INLINE Continue Interpreter::doBuildString(Thread* thread, word arg) {
 // LOAD_METHOD is paired with a CALL_METHOD, and the matching CALL_METHOD
 // falls back to the behavior of CALL_FUNCTION in this shape of the stack.
 HANDLER_INLINE Continue Interpreter::doLoadMethod(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  frame->insertValueAt(Unbound::object(), 1);
+  thread->stackInsertAt(1, Unbound::object());
   return doLoadAttr(thread, arg);
 }
 
@@ -4841,7 +4808,7 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
-  Object receiver(&scope, frame->topValue());
+  Object receiver(&scope, thread->stackTop());
   Str name(&scope,
            Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
 
@@ -4851,8 +4818,8 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
                 loadAttrSetLocation(thread, receiver, name, &kind, &location));
   if (result.isErrorException()) return Continue::UNWIND;
   if (kind != LoadAttrKind::kInstanceFunction) {
-    frame->pushValue(*result);
-    frame->setValueAt(Unbound::object(), 1);
+    thread->stackPush(*result);
+    thread->stackSetAt(1, Unbound::object());
     return Continue::NEXT;
   }
 
@@ -4873,7 +4840,7 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
       UNREACHABLE("next_ic_state cannot be anamorphic");
       break;
   }
-  frame->insertValueAt(*location, 1);
+  thread->stackInsertAt(1, *location);
   return Continue::NEXT;
 }
 
@@ -4886,7 +4853,7 @@ HANDLER_INLINE Continue
 Interpreter::doLoadMethodInstanceFunction(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
@@ -4894,14 +4861,14 @@ Interpreter::doLoadMethodInstanceFunction(Thread* thread, word arg) {
     return loadMethodUpdateCache(thread, arg);
   }
   DCHECK(cached.isFunction(), "cached is expected to be a function");
-  frame->insertValueAt(cached, 1);
+  thread->stackInsertAt(1, cached);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadMethodPolymorphic(Thread* thread,
                                                              word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject receiver = frame->topValue();
+  RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, receiver.layoutId(), &is_found);
@@ -4909,15 +4876,15 @@ HANDLER_INLINE Continue Interpreter::doLoadMethodPolymorphic(Thread* thread,
     return loadMethodUpdateCache(thread, arg);
   }
   DCHECK(cached.isFunction(), "cached is expected to be a function");
-  frame->insertValueAt(cached, 1);
+  thread->stackInsertAt(1, cached);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject maybe_method = frame->peek(arg + 1);
+  RawObject maybe_method = thread->stackPeek(arg + 1);
   if (maybe_method.isUnbound()) {
-    frame->removeValueAt(arg + 1);
+    thread->stackRemoveAt(arg + 1);
     return handleCall(thread, arg, arg, preparePositionalCall,
                       &Function::entry);
   }
@@ -4930,8 +4897,8 @@ NEVER_INLINE
 Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object container(&scope, frame->popValue());
-  Object value(&scope, frame->popValue());
+  Object container(&scope, thread->stackPop());
+  Object value(&scope, thread->stackPop());
   Object method(&scope, NoneType::object());
   Object result(&scope, sequenceContainsSetMethod(thread, frame, value,
                                                   container, &method));
@@ -4948,18 +4915,18 @@ Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
                                       : COMPARE_IN_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
                                                            word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
+  RawObject container = thread->stackPeek(0);
   switch (container.layoutId()) {
     case LayoutId::kSmallStr:
     case LayoutId::kLargeStr:
-      if (frame->peek(1).isStr()) {
+      if (thread->stackPeek(1).isStr()) {
         rewriteCurrentBytecode(frame, COMPARE_IN_STR);
         return doCompareInStr(thread, arg);
       }
@@ -4979,84 +4946,80 @@ HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
+  RawObject container = thread->stackPeek(0);
   if (!container.isDict()) {
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
   Dict dict(&scope, container);
-  Object key(&scope, frame->peek(1));
+  Object key(&scope, thread->stackPeek(1));
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return Continue::UNWIND;
   word hash = SmallInt::cast(*hash_obj).value();
   RawObject result = dictAt(thread, dict, key, hash);
   DCHECK(!result.isErrorException(), "dictAt raised an exception");
-  frame->dropValues(2);
+  thread->stackDrop(2);
   if (result.isErrorNotFound()) {
-    frame->pushValue(Bool::falseObj());
+    thread->stackPush(Bool::falseObj());
   } else {
-    frame->pushValue(Bool::trueObj());
+    thread->stackPush(Bool::trueObj());
   }
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInList(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
+  RawObject container = thread->stackPeek(0);
   if (!container.isList()) {
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
   List list(&scope, container);
-  Object key(&scope, frame->peek(1));
+  Object key(&scope, thread->stackPeek(1));
   Object result(&scope, listContains(thread, list, key));
   if (result.isErrorException()) return Continue::UNWIND;
   DCHECK(result.isBool(), "bool is unexpected");
-  frame->dropValues(2);
-  frame->pushValue(*result);
+  thread->stackDrop(2);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInStr(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
-  RawObject value = frame->peek(1);
+  RawObject container = thread->stackPeek(0);
+  RawObject value = thread->stackPeek(1);
   if (!(container.isStr() && value.isStr())) {
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
   Str haystack(&scope, container);
   Str needle(&scope, value);
-  frame->dropValues(2);
-  frame->pushValue(Bool::fromBool(strFind(haystack, needle) != -1));
+  thread->stackDrop(2);
+  thread->stackPush(Bool::fromBool(strFind(haystack, needle) != -1));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInTuple(Thread* thread,
                                                       word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
+  RawObject container = thread->stackPeek(0);
   if (!container.isTuple()) {
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
   Tuple tuple(&scope, container);
-  Object value(&scope, frame->peek(1));
+  Object value(&scope, thread->stackPeek(1));
   RawObject result = tupleContains(thread, tuple, value);
   if (result.isErrorException()) {
     return Continue::UNWIND;
   }
-  frame->dropValues(2);
-  frame->pushValue(result);
+  thread->stackDrop(2);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
                                                             word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
-  RawObject value = frame->peek(1);
+  RawObject container = thread->stackPeek(0);
+  RawObject value = thread->stackPeek(1);
   LayoutId container_layout_id = container.layoutId();
   bool is_found;
   RawObject cached = icLookupMonomorphic(MutableTuple::cast(frame->caches()),
@@ -5064,22 +5027,22 @@ HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
   if (!is_found) {
     return compareInUpdateCache(thread, arg);
   }
-  frame->dropValues(2);
-  frame->pushValue(cached);
-  frame->pushValue(container);
-  frame->pushValue(value);
+  thread->stackDrop(2);
+  thread->stackPush(cached);
+  thread->stackPush(container);
+  thread->stackPush(value);
   // A recursive call is needed to coerce the return value to bool.
   RawObject result = call(thread, frame, 2);
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(isTrue(thread, result));
+  thread->stackPush(isTrue(thread, result));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
                                                             word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject container = frame->peek(0);
-  RawObject value = frame->peek(1);
+  RawObject container = thread->stackPeek(0);
+  RawObject value = thread->stackPeek(1);
   LayoutId container_layout_id = container.layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
@@ -5087,14 +5050,14 @@ HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
   if (!is_found) {
     return compareInUpdateCache(thread, arg);
   }
-  frame->dropValues(2);
-  frame->pushValue(cached);
-  frame->pushValue(container);
-  frame->pushValue(value);
+  thread->stackDrop(2);
+  thread->stackPush(cached);
+  thread->stackPush(container);
+  thread->stackPush(value);
   // Should use a recursive call to convert it return type to bool.
   RawObject result = call(thread, frame, 2);
   if (result.isError()) return Continue::UNWIND;
-  frame->pushValue(isTrue(thread, result));
+  thread->stackPush(isTrue(thread, result));
   return Continue::NEXT;
 }
 
@@ -5102,8 +5065,8 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
     Thread* thread, word arg, OpcodeHandler update_cache,
     BinaryOpFallbackHandler fallback) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5119,8 +5082,8 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
                                                left_raw, right_raw);
   if (result.isErrorException()) return Continue::UNWIND;
   if (!result.isNotImplementedType()) {
-    frame->dropValues(1);
-    frame->setTopValue(result);
+    thread->stackDrop(1);
+    thread->stackSetTop(result);
     return Continue::NEXT;
   }
 
@@ -5130,8 +5093,8 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
 Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   Function function(&scope, frame->function());
   CompareOp op = static_cast<CompareOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
@@ -5151,7 +5114,7 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
                                       ? COMPARE_OP_MONOMORPHIC
                                       : COMPARE_OP_POLYMORPHIC);
   }
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -5162,25 +5125,24 @@ Continue Interpreter::compareOpFallback(Thread* thread, word arg,
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   CompareOp op = static_cast<CompareOp>(originalArg(frame->function(), arg));
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   Object result(&scope,
                 compareOperationRetry(thread, frame, op, flags, left, right));
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE
 Continue Interpreter::doCompareEqSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(left_value == right_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(left_value == right_value));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5188,14 +5150,13 @@ Continue Interpreter::doCompareEqSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareGtSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(left_value > right_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(left_value > right_value));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5203,14 +5164,13 @@ Continue Interpreter::doCompareGtSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareLtSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(left_value < right_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(left_value < right_value));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5218,14 +5178,13 @@ Continue Interpreter::doCompareLtSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareGeSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(left_value >= right_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(left_value >= right_value));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5233,14 +5192,13 @@ Continue Interpreter::doCompareGeSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareNeSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(left_value != right_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(left_value != right_value));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5248,14 +5206,13 @@ Continue Interpreter::doCompareNeSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareLeSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(left_value <= right_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(left_value <= right_value));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5263,12 +5220,11 @@ Continue Interpreter::doCompareLeSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isStr() && right.isStr()) {
-    frame->dropValues(1);
-    frame->setTopValue(Bool::fromBool(Str::cast(left).equals(right)));
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(Str::cast(left).equals(right)));
     return Continue::NEXT;
   }
   return compareOpUpdateCache(thread, arg);
@@ -5277,8 +5233,8 @@ Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5295,8 +5251,8 @@ Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5313,8 +5269,8 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
       case CompareOp::EQ:
@@ -5351,8 +5307,8 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
 Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   Function function(&scope, frame->function());
   BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
@@ -5372,7 +5328,7 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
                                       : INPLACE_OP_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(result);
+  thread->stackPush(result);
   return Continue::NEXT;
 }
 
@@ -5383,8 +5339,8 @@ Continue Interpreter::inplaceOpFallback(Thread* thread, word arg,
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   Object result(&scope, NoneType::object());
   if (flags & kInplaceBinaryOpRetry) {
     // The cached operation was an in-place operation we have to try to the
@@ -5396,15 +5352,15 @@ Continue Interpreter::inplaceOpFallback(Thread* thread, word arg,
     result = binaryOperationRetry(thread, frame, op, flags, left, right);
   }
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE
 Continue Interpreter::doInplaceOpMonomorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5421,8 +5377,8 @@ Continue Interpreter::doInplaceOpMonomorphic(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doInplaceOpPolymorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5438,16 +5394,15 @@ Continue Interpreter::doInplaceOpPolymorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doInplaceAddSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
     word result_value = left_value + right_value;
     if (SmallInt::isValid(result_value)) {
-      frame->dropValues(1);
-      frame->setTopValue(SmallInt::fromWord(result_value));
+      thread->stackDrop(1);
+      thread->stackSetTop(SmallInt::fromWord(result_value));
       return Continue::NEXT;
     }
   }
@@ -5457,7 +5412,7 @@ Continue Interpreter::doInplaceAddSmallInt(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
+  if (thread->stackPeek(0).isSmallInt() && thread->stackPeek(1).isSmallInt()) {
     switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
       case BinaryOp::ADD:
         rewriteCurrentBytecode(frame, INPLACE_ADD_SMALLINT);
@@ -5472,8 +5427,8 @@ Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
 Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   Function function(&scope, frame->function());
   BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
@@ -5493,7 +5448,7 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
                                       : BINARY_OP_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
@@ -5504,12 +5459,12 @@ Continue Interpreter::binaryOpFallback(Thread* thread, word arg,
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
-  Object right(&scope, frame->popValue());
-  Object left(&scope, frame->popValue());
+  Object right(&scope, thread->stackPop());
+  Object left(&scope, thread->stackPop());
   Object result(&scope,
                 binaryOperationRetry(thread, frame, op, flags, left, right));
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->pushValue(*result);
+  thread->stackPush(*result);
   return Continue::NEXT;
 }
 
@@ -5524,8 +5479,8 @@ ALWAYS_INLINE Continue Interpreter::binaryOp(Thread* thread, word arg,
       binaryOperationWithMethod(thread, frame, method, flags, left, right);
   if (result.isErrorException()) return Continue::UNWIND;
   if (!result.isNotImplementedType()) {
-    frame->dropValues(1);
-    frame->setTopValue(result);
+    thread->stackDrop(1);
+    thread->stackSetTop(result);
     return Continue::NEXT;
   }
   return fallback(thread, arg, flags);
@@ -5534,8 +5489,8 @@ ALWAYS_INLINE Continue Interpreter::binaryOp(Thread* thread, word arg,
 HANDLER_INLINE
 Continue Interpreter::doBinaryOpMonomorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5552,8 +5507,8 @@ Continue Interpreter::doBinaryOpMonomorphic(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
+  RawObject left_raw = thread->stackPeek(1);
+  RawObject right_raw = thread->stackPeek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
@@ -5569,16 +5524,15 @@ Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doBinaryAddSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
     word result_value = left_value + right_value;
     if (SmallInt::isValid(result_value)) {
-      frame->dropValues(1);
-      frame->setTopValue(SmallInt::fromWord(result_value));
+      thread->stackDrop(1);
+      thread->stackSetTop(SmallInt::fromWord(result_value));
       return Continue::NEXT;
     }
   }
@@ -5587,16 +5541,15 @@ Continue Interpreter::doBinaryAddSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doBinaryAndSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
     word result_value = left_value & right_value;
     DCHECK(SmallInt::isValid(result_value), "result should be a SmallInt");
-    frame->dropValues(1);
-    frame->setTopValue(SmallInt::fromWord(result_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(SmallInt::fromWord(result_value));
     return Continue::NEXT;
   }
   return binaryOpUpdateCache(thread, arg);
@@ -5604,9 +5557,8 @@ Continue Interpreter::doBinaryAndSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
@@ -5617,8 +5569,8 @@ Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
     }
     word result_value = left_value / right_value;
     DCHECK(SmallInt::isValid(result_value), "result should be a SmallInt");
-    frame->dropValues(1);
-    frame->setTopValue(SmallInt::fromWord(result_value));
+    thread->stackDrop(1);
+    thread->stackSetTop(SmallInt::fromWord(result_value));
     return Continue::NEXT;
   }
   return binaryOpUpdateCache(thread, arg);
@@ -5626,16 +5578,15 @@ Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doBinarySubSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
     word result_value = left_value - right_value;
     if (SmallInt::isValid(result_value)) {
-      frame->dropValues(1);
-      frame->setTopValue(SmallInt::fromWord(result_value));
+      thread->stackDrop(1);
+      thread->stackSetTop(SmallInt::fromWord(result_value));
       return Continue::NEXT;
     }
   }
@@ -5644,16 +5595,15 @@ Continue Interpreter::doBinarySubSmallInt(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doBinaryOrSmallInt(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject left = frame->peek(1);
-  RawObject right = frame->peek(0);
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
     word result_value = left_value | right_value;
     if (SmallInt::isValid(result_value)) {
-      frame->dropValues(1);
-      frame->setTopValue(SmallInt::fromWord(result_value));
+      thread->stackDrop(1);
+      thread->stackSetTop(SmallInt::fromWord(result_value));
       return Continue::NEXT;
     }
   }
@@ -5663,7 +5613,7 @@ Continue Interpreter::doBinaryOrSmallInt(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
+  if (thread->stackPeek(0).isSmallInt() && thread->stackPeek(1).isSmallInt()) {
     switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
       case BinaryOp::ADD:
         rewriteCurrentBytecode(frame, BINARY_ADD_SMALLINT);
@@ -5763,7 +5713,7 @@ RawObject Interpreter::resumeGenerator(Thread* thread,
     return Error::exception();
   }
   if (pc != 0) {
-    frame->pushValue(*send_value);
+    thread->stackPush(*send_value);
   } else if (!send_value.isNoneType()) {
     thread->popFrame();
     return thread->raiseWithFmt(
@@ -5916,7 +5866,7 @@ handle_return_or_unwind:
     }
   } else {
     DCHECK(cont == Continue::YIELD, "expected RETURN, UNWIND or YIELD");
-    return thread->currentFrame()->popValue();
+    return thread->stackPop();
   }
   goto* next_label();
 #pragma GCC diagnostic pop

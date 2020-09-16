@@ -59,6 +59,45 @@ class Thread {
   Frame* popFrame();
   Frame* popFrameToGeneratorFrame(const GeneratorFrame& generator_frame);
 
+  RawObject* stackPointer() { return stack_pointer_; }
+  void setStackPointer(RawObject* stack_pointer) {
+    stack_pointer_ = stack_pointer;
+  }
+
+  // Begin of the value stack of the current frame.
+  RawObject* valueStackBase();
+
+  // Returns the number of items on the value stack of the current frame.
+  word valueStackSize();
+
+  // Pop n items off the stack.
+  void stackDrop(word count);
+
+  // Insert value at offset on the stack.
+  void stackInsertAt(word offset, RawObject value);
+
+  // Return the object at offset from the top of the value stack (e.g. peek(0)
+  // returns the top of the stack)
+  RawObject stackPeek(word offset);
+
+  // Pop the top value off the stack and return it.
+  RawObject stackPop();
+
+  // Push value on the stack.
+  void stackPush(RawObject value);
+
+  // Remove value at offset on the stack.
+  void stackRemoveAt(word offset);
+
+  // Set value at offset on the stack.
+  void stackSetAt(word offset, RawObject value);
+
+  // Set the top value of the stack.
+  void stackSetTop(RawObject value);
+
+  // Return the top value of the stack.
+  RawObject stackTop();
+
   // Runs a code object on the current thread.
   RawObject exec(const Code& code, const Module& module,
                  const Object& implicit_globals);
@@ -81,10 +120,6 @@ class Thread {
 
   InterpreterFunc interpreterFunc() { return interpreter_func_; }
   void setInterpreterFunc(InterpreterFunc func) { interpreter_func_ = func; }
-
-  // The stack pointer is computed by taking the value stack top of the current
-  // frame.
-  byte* stackPtr();
 
   void clearInterrupt();
   void interrupt();
@@ -322,6 +357,8 @@ class Thread {
 
   static int startOffset() { return offsetof(Thread, start_); }
 
+  static int stackPointerOffset() { return offsetof(Thread, stack_pointer_); }
+
  private:
   Frame* pushInitialFrame();
   Frame* openAndLinkFrame(word size, word total_locals);
@@ -331,6 +368,8 @@ class Thread {
   byte* start_;  // base address of the stack
   byte* end_;    // exclusive limit of the stack
   byte* limit_;  // current limit of the stack
+
+  RawObject* stack_pointer_;
 
   // Has the runtime requested a thread interruption? (e.g. signals, GC)
   bool is_interrupted_;
@@ -369,5 +408,64 @@ class Thread {
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
+
+inline RawObject* Thread::valueStackBase() {
+  return reinterpret_cast<RawObject*>(current_frame_);
+}
+
+inline word Thread::valueStackSize() {
+  return valueStackBase() - stack_pointer_;
+}
+
+inline void Thread::stackDrop(word count) {
+  DCHECK(stack_pointer_ + count <= valueStackBase(), "stack underflow");
+  stack_pointer_ += count;
+}
+
+inline void Thread::stackInsertAt(word offset, RawObject value) {
+  RawObject* sp = stack_pointer_ - 1;
+  DCHECK(sp + offset < valueStackBase(), "stack underflow");
+  for (word i = 0; i < offset; i++) {
+    sp[i] = sp[i + 1];
+  }
+  sp[offset] = value;
+  stack_pointer_ = sp;
+}
+
+inline RawObject Thread::stackPeek(word offset) {
+  DCHECK(stack_pointer_ + offset < valueStackBase(), "stack underflow");
+  return *(stack_pointer_ + offset);
+}
+
+inline RawObject Thread::stackPop() {
+  DCHECK(stack_pointer_ + 1 <= valueStackBase(), "stack underflow");
+  return *(stack_pointer_++);
+}
+
+inline void Thread::stackPush(RawObject value) { *(--stack_pointer_) = value; }
+
+inline void Thread::stackRemoveAt(word offset) {
+  DCHECK(stack_pointer_ + offset < valueStackBase(), "stack underflow");
+  RawObject* sp = stack_pointer_;
+  for (word i = offset; i >= 1; i--) {
+    sp[i] = sp[i - 1];
+  }
+  stack_pointer_ = sp + 1;
+}
+
+inline void Thread::stackSetAt(word offset, RawObject value) {
+  DCHECK(stack_pointer_ + offset < valueStackBase(), "stack underflow");
+  *(stack_pointer_ + offset) = value;
+}
+
+inline void Thread::stackSetTop(RawObject value) {
+  DCHECK(stack_pointer_ < valueStackBase(), "stack underflow");
+  *stack_pointer_ = value;
+}
+
+inline RawObject Thread::stackTop() {
+  DCHECK(stack_pointer_ < valueStackBase(), "stack underflow");
+  return *stack_pointer_;
+}
 
 }  // namespace py

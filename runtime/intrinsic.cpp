@@ -4,221 +4,221 @@
 
 namespace py {
 
-static bool underBoolCheck(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isBool()));
+static bool underBoolCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isBool()));
   return true;
 }
 
-static bool underBoolGuard(Frame* frame) {
-  if (frame->topValue().isBool()) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underBoolGuard(Thread* thread) {
+  if (thread->stackTop().isBool()) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underBytearrayCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(Bool::fromBool(
-      thread->runtime()->isInstanceOfBytearray(frame->popValue())));
+static bool underBytearrayCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(
+      thread->runtime()->isInstanceOfBytearray(thread->stackPop())));
   return true;
 }
 
-static bool underBytearrayGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfBytearray(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underBytearrayGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfBytearray(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underBytearrayLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+static bool underBytearrayLen(Thread* thread) {
+  RawObject arg = thread->stackPop();
   if (arg.isBytearray()) {
-    frame->setTopValue(SmallInt::fromWord(Bytearray::cast(arg).numItems()));
+    thread->stackSetTop(SmallInt::fromWord(Bytearray::cast(arg).numItems()));
     return true;
   }
   return false;
 }
 
-static bool underBytesCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfBytes(frame->popValue())));
+static bool underBytesCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfBytes(thread->stackPop())));
   return true;
 }
 
-static bool underBytesGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfBytes(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underBytesGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfBytes(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underBytesLen(Frame* frame) {
-  RawObject arg = frame->peek(0);
+static bool underBytesLen(Thread* thread) {
+  RawObject arg = thread->stackPeek(0);
   if (arg.isBytes()) {
-    frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(Bytes::cast(arg).length()));
+    thread->stackPop();
+    thread->stackSetTop(SmallInt::fromWord(Bytes::cast(arg).length()));
     return true;
   }
   return false;
 }
 
-static bool underByteslikeCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isByteslike(frame->popValue())));
+static bool underByteslikeCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isByteslike(thread->stackPop())));
   return true;
 }
 
-static bool underByteslikeGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isByteslike(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underByteslikeGuard(Thread* thread) {
+  if (thread->runtime()->isByteslike(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underComplexCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(Bool::fromBool(
-      thread->runtime()->isInstanceOfComplex(frame->popValue())));
+static bool underComplexCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(
+      thread->runtime()->isInstanceOfComplex(thread->stackPop())));
   return true;
 }
 
-static bool underDequeGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfDeque(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underDequeGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfDeque(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underDictCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfDict(frame->popValue())));
+static bool underDictCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfDict(thread->stackPop())));
   return true;
 }
 
-static bool underDictCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isDict()));
+static bool underDictCheckExact(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isDict()));
   return true;
 }
 
-static bool underDictGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfDict(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underDictGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfDict(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underDictLen(Frame* frame) {
-  RawObject arg = frame->peek(0);
+static bool underDictLen(Thread* thread) {
+  RawObject arg = thread->stackPeek(0);
   if (arg.isDict()) {
-    frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(Dict::cast(arg).numItems()));
+    thread->stackPop();
+    thread->stackSetTop(SmallInt::fromWord(Dict::cast(arg).numItems()));
     return true;
   }
   return false;
 }
 
-static bool underFloatCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfFloat(frame->popValue())));
+static bool underFloatCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfFloat(thread->stackPop())));
   return true;
 }
 
-static bool underFloatCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isFloat()));
+static bool underFloatCheckExact(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isFloat()));
   return true;
 }
 
-static bool underFloatGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfFloat(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underFloatGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfFloat(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underFrozensetCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(Bool::fromBool(
-      thread->runtime()->isInstanceOfFrozenSet(frame->popValue())));
+static bool underFrozensetCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(
+      thread->runtime()->isInstanceOfFrozenSet(thread->stackPop())));
   return true;
 }
 
-static bool underFrozensetGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfFrozenSet(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underFrozensetGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfFrozenSet(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underFunctionGuard(Thread*, Frame* frame) {
-  if (frame->topValue().isFunction()) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underFunctionGuard(Thread* thread) {
+  if (thread->stackTop().isFunction()) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underIndex(Thread* thread, Frame* frame) {
-  RawObject value = frame->topValue();
+static bool underIndex(Thread* thread) {
+  RawObject value = thread->stackTop();
   if (thread->runtime()->isInstanceOfInt(value)) {
-    frame->popValue();
-    frame->setTopValue(value);
+    thread->stackPop();
+    thread->stackSetTop(value);
     return true;
   }
   return false;
 }
 
-static bool underIntCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfInt(frame->popValue())));
+static bool underIntCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfInt(thread->stackPop())));
   return true;
 }
 
-static bool underIntCheckExact(Frame* frame) {
-  RawObject arg = frame->popValue();
-  frame->setTopValue(Bool::fromBool(arg.isSmallInt() || arg.isLargeInt()));
+static bool underIntCheckExact(Thread* thread) {
+  RawObject arg = thread->stackPop();
+  thread->stackSetTop(Bool::fromBool(arg.isSmallInt() || arg.isLargeInt()));
   return true;
 }
 
-static bool underIntGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfInt(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underIntGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfInt(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underListCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfList(frame->popValue())));
+static bool underListCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfList(thread->stackPop())));
   return true;
 }
 
-static bool underListCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isList()));
+static bool underListCheckExact(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isList()));
   return true;
 }
 
-static bool underListGetitem(Frame* frame) {
-  RawObject arg0 = frame->peek(1);
+static bool underListGetitem(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(1);
   if (!arg0.isList()) {
     return false;
   }
-  RawObject arg1 = frame->peek(0);
+  RawObject arg1 = thread->stackPeek(0);
   word idx;
   if (arg1.isSmallInt()) {
     idx = SmallInt::cast(arg1).value();
@@ -229,38 +229,38 @@ static bool underListGetitem(Frame* frame) {
   }
   RawList self = List::cast(arg0);
   if (0 <= idx && idx < self.numItems()) {
-    frame->dropValues(2);
-    frame->setTopValue(self.at(idx));
+    thread->stackDrop(2);
+    thread->stackSetTop(self.at(idx));
     return true;
   }
   return false;
 }
 
-static bool underListGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfList(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underListGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfList(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underListLen(Frame* frame) {
-  RawObject arg = frame->peek(0);
+static bool underListLen(Thread* thread) {
+  RawObject arg = thread->stackPeek(0);
   if (arg.isList()) {
-    frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(List::cast(arg).numItems()));
+    thread->stackPop();
+    thread->stackSetTop(SmallInt::fromWord(List::cast(arg).numItems()));
     return true;
   }
   return false;
 }
 
-static bool underListSetitem(Frame* frame) {
-  RawObject arg0 = frame->peek(2);
+static bool underListSetitem(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(2);
   if (!arg0.isList()) {
     return false;
   }
-  RawObject arg1 = frame->peek(1);
+  RawObject arg1 = thread->stackPeek(1);
   word idx;
   if (arg1.isSmallInt()) {
     idx = SmallInt::cast(arg1).value();
@@ -273,177 +273,177 @@ static bool underListSetitem(Frame* frame) {
   if (idx < 0 || idx >= self.numItems()) {
     return false;
   }
-  self.atPut(idx, frame->peek(0));
-  frame->dropValues(3);
-  frame->setTopValue(NoneType::object());
+  self.atPut(idx, thread->stackPeek(0));
+  thread->stackDrop(3);
+  thread->stackSetTop(NoneType::object());
   return true;
 }
 
-static bool underMemoryviewGuard(Frame* frame) {
-  if (frame->topValue().isMemoryView()) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underMemoryviewGuard(Thread* thread) {
+  if (thread->stackTop().isMemoryView()) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underNumberCheck(Thread* thread, Frame* frame) {
+static bool underNumberCheck(Thread* thread) {
   Runtime* runtime = thread->runtime();
-  RawObject arg = frame->topValue();
+  RawObject arg = thread->stackTop();
   if (runtime->isInstanceOfInt(arg) || runtime->isInstanceOfFloat(arg)) {
-    frame->popValue();
-    frame->setTopValue(Bool::trueObj());
+    thread->stackPop();
+    thread->stackSetTop(Bool::trueObj());
     return true;
   }
   return false;
 }
 
-static bool underRangeCheck(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isRange()));
+static bool underRangeCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isRange()));
   return true;
 }
 
-static bool underRangeGuard(Frame* frame) {
-  if (frame->topValue().isRange()) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underRangeGuard(Thread* thread) {
+  if (thread->stackTop().isRange()) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underSeqIndex(Frame* frame) {
-  frame->setTopValue(
-      SmallInt::fromWord(SeqIterator::cast(frame->popValue()).index()));
+static bool underSeqIndex(Thread* thread) {
+  thread->stackSetTop(
+      SmallInt::fromWord(SeqIterator::cast(thread->stackPop()).index()));
   return true;
 }
 
-static bool underSeqIterable(Frame* frame) {
-  frame->setTopValue(SeqIterator::cast(frame->popValue()).iterable());
+static bool underSeqIterable(Thread* thread) {
+  thread->stackSetTop(SeqIterator::cast(thread->stackPop()).iterable());
   return true;
 }
 
-static bool underSeqSetIndex(Frame* frame) {
-  RawObject seq_iter = frame->popValue();
-  RawObject index = frame->popValue();
+static bool underSeqSetIndex(Thread* thread) {
+  RawObject seq_iter = thread->stackPop();
+  RawObject index = thread->stackPop();
   SeqIterator::cast(seq_iter).setIndex(Int::cast(index).asWord());
   return true;
 }
 
-static bool underSeqSetIterable(Frame* frame) {
-  RawObject seq_iter = frame->popValue();
-  RawObject iterable = frame->popValue();
+static bool underSeqSetIterable(Thread* thread) {
+  RawObject seq_iter = thread->stackPop();
+  RawObject iterable = thread->stackPop();
   SeqIterator::cast(seq_iter).setIterable(iterable);
   return true;
 }
 
-static bool underSetCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfSet(frame->popValue())));
+static bool underSetCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfSet(thread->stackPop())));
   return true;
 }
 
-static bool underSetGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfSet(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underSetGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfSet(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underSetLen(Frame* frame) {
-  RawObject arg = frame->peek(0);
+static bool underSetLen(Thread* thread) {
+  RawObject arg = thread->stackPeek(0);
   if (arg.isSet()) {
-    frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(Set::cast(arg).numItems()));
+    thread->stackPop();
+    thread->stackSetTop(SmallInt::fromWord(Set::cast(arg).numItems()));
     return true;
   }
   return false;
 }
 
-static bool underSliceCheck(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isSlice()));
+static bool underSliceCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isSlice()));
   return true;
 }
 
-static bool underSliceGuard(Frame* frame) {
-  if (frame->topValue().isSlice()) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underSliceGuard(Thread* thread) {
+  if (thread->stackTop().isSlice()) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underSliceIndex(Thread* thread, Frame* frame) {
-  RawObject value = frame->peek(0);
+static bool underSliceIndex(Thread* thread) {
+  RawObject value = thread->stackPeek(0);
   if (value.isNoneType() || thread->runtime()->isInstanceOfInt(value)) {
-    frame->popValue();
-    frame->setTopValue(value);
+    thread->stackPop();
+    thread->stackSetTop(value);
     return true;
   }
   return false;
 }
 
-static bool underSliceIndexNotNone(Thread* thread, Frame* frame) {
-  RawObject value = frame->topValue();
+static bool underSliceIndexNotNone(Thread* thread) {
+  RawObject value = thread->stackTop();
   if (thread->runtime()->isInstanceOfInt(value)) {
-    frame->popValue();
-    frame->setTopValue(value);
+    thread->stackPop();
+    thread->stackSetTop(value);
     return true;
   }
   return false;
 }
 
-static bool underStrCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfStr(frame->popValue())));
+static bool underStrCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfStr(thread->stackPop())));
   return true;
 }
 
-static bool underStrCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isStr()));
+static bool underStrCheckExact(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isStr()));
   return true;
 }
 
-static bool underStrGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfStr(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underStrGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfStr(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underStrLen(Frame* frame) {
-  RawObject arg = frame->peek(0);
+static bool underStrLen(Thread* thread) {
+  RawObject arg = thread->stackPeek(0);
   if (arg.isStr()) {
-    frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(Str::cast(arg).codePointLength()));
+    thread->stackPop();
+    thread->stackSetTop(SmallInt::fromWord(Str::cast(arg).codePointLength()));
     return true;
   }
   return false;
 }
 
-static bool underTupleCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfTuple(frame->popValue())));
+static bool underTupleCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfTuple(thread->stackPop())));
   return true;
 }
 
-static bool underTupleCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isTuple()));
+static bool underTupleCheckExact(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isTuple()));
   return true;
 }
 
-static bool underTupleGetitem(Frame* frame) {
-  RawObject arg0 = frame->peek(1);
+static bool underTupleGetitem(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(1);
   if (!arg0.isTuple()) {
     return false;
   }
-  RawObject arg1 = frame->peek(0);
+  RawObject arg1 = thread->stackPeek(0);
   word idx;
   if (arg1.isSmallInt()) {
     idx = SmallInt::cast(arg1).value();
@@ -454,94 +454,94 @@ static bool underTupleGetitem(Frame* frame) {
   }
   RawTuple self = Tuple::cast(arg0);
   if (0 <= idx && idx < self.length()) {
-    frame->dropValues(2);
-    frame->setTopValue(self.at(idx));
+    thread->stackDrop(2);
+    thread->stackSetTop(self.at(idx));
     return true;
   }
   return false;
 }
 
-static bool underTupleGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfTuple(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underTupleGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfTuple(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underTupleLen(Frame* frame) {
-  RawObject arg = frame->peek(0);
+static bool underTupleLen(Thread* thread) {
+  RawObject arg = thread->stackPeek(0);
   if (arg.isTuple()) {
-    frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(Tuple::cast(arg).length()));
+    thread->stackPop();
+    thread->stackSetTop(SmallInt::fromWord(Tuple::cast(arg).length()));
     return true;
   }
   return false;
 }
 
-static bool underType(Thread* thread, Frame* frame) {
-  frame->setTopValue(thread->runtime()->typeOf(frame->popValue()));
+static bool underType(Thread* thread) {
+  thread->stackSetTop(thread->runtime()->typeOf(thread->stackPop()));
   return true;
 }
 
-static bool underTypeCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(
-      Bool::fromBool(thread->runtime()->isInstanceOfType(frame->popValue())));
+static bool underTypeCheck(Thread* thread) {
+  thread->stackSetTop(
+      Bool::fromBool(thread->runtime()->isInstanceOfType(thread->stackPop())));
   return true;
 }
 
-static bool underTypeCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isType()));
+static bool underTypeCheckExact(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(thread->stackPop().isType()));
   return true;
 }
 
-static bool underTypeGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfType(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underTypeGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfType(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underTypeSubclassGuard(Frame* frame) {
-  RawObject subclass = frame->peek(0);
-  RawObject superclass = frame->peek(1);
+static bool underTypeSubclassGuard(Thread* thread) {
+  RawObject subclass = thread->stackPeek(0);
+  RawObject superclass = thread->stackPeek(1);
   if (subclass == superclass && subclass.isType()) {
-    frame->dropValues(2);
-    frame->setTopValue(NoneType::object());
+    thread->stackDrop(2);
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool underWeakrefCheck(Thread* thread, Frame* frame) {
-  frame->setTopValue(Bool::fromBool(
-      thread->runtime()->isInstanceOfWeakRef(frame->popValue())));
+static bool underWeakrefCheck(Thread* thread) {
+  thread->stackSetTop(Bool::fromBool(
+      thread->runtime()->isInstanceOfWeakRef(thread->stackPop())));
   return true;
 }
 
-static bool underWeakrefGuard(Thread* thread, Frame* frame) {
-  if (thread->runtime()->isInstanceOfWeakRef(frame->topValue())) {
-    frame->popValue();
-    frame->setTopValue(NoneType::object());
+static bool underWeakrefGuard(Thread* thread) {
+  if (thread->runtime()->isInstanceOfWeakRef(thread->stackTop())) {
+    thread->stackPop();
+    thread->stackSetTop(NoneType::object());
     return true;
   }
   return false;
 }
 
-static bool isinstance(Thread* thread, Frame* frame) {
-  if (thread->runtime()->typeOf(frame->peek(1)) == frame->peek(0)) {
-    frame->dropValues(2);
-    frame->setTopValue(Bool::trueObj());
+static bool isinstance(Thread* thread) {
+  if (thread->runtime()->typeOf(thread->stackPeek(1)) == thread->stackPeek(0)) {
+    thread->stackDrop(2);
+    thread->stackSetTop(Bool::trueObj());
     return true;
   }
   return false;
 }
 
-static bool len(Frame* frame) {
-  RawObject arg = frame->topValue();
+static bool len(Thread* thread) {
+  RawObject arg = thread->stackTop();
   word length;
   switch (arg.layoutId()) {
     case LayoutId::kBytearray:
@@ -577,143 +577,143 @@ static bool len(Frame* frame) {
     default:
       return false;
   }
-  frame->popValue();
-  frame->setTopValue(SmallInt::fromWord(length));
+  thread->stackPop();
+  thread->stackSetTop(SmallInt::fromWord(length));
   return true;
 }
 
-bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
+bool doIntrinsic(Thread* thread, Frame*, SymbolId name) {
   switch (name) {
     case ID(_bool_check):
-      return underBoolCheck(frame);
+      return underBoolCheck(thread);
     case ID(_bool_guard):
-      return underBoolGuard(frame);
+      return underBoolGuard(thread);
     case ID(_bytearray_check):
-      return underBytearrayCheck(thread, frame);
+      return underBytearrayCheck(thread);
     case ID(_bytearray_guard):
-      return underBytearrayGuard(thread, frame);
+      return underBytearrayGuard(thread);
     case ID(_bytearray_len):
-      return underBytearrayLen(frame);
+      return underBytearrayLen(thread);
     case ID(_bytes_check):
-      return underBytesCheck(thread, frame);
+      return underBytesCheck(thread);
     case ID(_bytes_guard):
-      return underBytesGuard(thread, frame);
+      return underBytesGuard(thread);
     case ID(_bytes_len):
-      return underBytesLen(frame);
+      return underBytesLen(thread);
     case ID(_byteslike_check):
-      return underByteslikeCheck(thread, frame);
+      return underByteslikeCheck(thread);
     case ID(_byteslike_guard):
-      return underByteslikeGuard(thread, frame);
+      return underByteslikeGuard(thread);
     case ID(_complex_check):
-      return underComplexCheck(thread, frame);
+      return underComplexCheck(thread);
     case ID(_deque_guard):
-      return underDequeGuard(thread, frame);
+      return underDequeGuard(thread);
     case ID(_dict_check):
-      return underDictCheck(thread, frame);
+      return underDictCheck(thread);
     case ID(_dict_check_exact):
-      return underDictCheckExact(frame);
+      return underDictCheckExact(thread);
     case ID(_dict_guard):
-      return underDictGuard(thread, frame);
+      return underDictGuard(thread);
     case ID(_dict_len):
-      return underDictLen(frame);
+      return underDictLen(thread);
     case ID(_float_check):
-      return underFloatCheck(thread, frame);
+      return underFloatCheck(thread);
     case ID(_float_check_exact):
-      return underFloatCheckExact(frame);
+      return underFloatCheckExact(thread);
     case ID(_float_guard):
-      return underFloatGuard(thread, frame);
+      return underFloatGuard(thread);
     case ID(_frozenset_check):
-      return underFrozensetCheck(thread, frame);
+      return underFrozensetCheck(thread);
     case ID(_frozenset_guard):
-      return underFrozensetGuard(thread, frame);
+      return underFrozensetGuard(thread);
     case ID(_function_guard):
-      return underFunctionGuard(thread, frame);
+      return underFunctionGuard(thread);
     case ID(_index):
-      return underIndex(thread, frame);
+      return underIndex(thread);
     case ID(_int_check):
-      return underIntCheck(thread, frame);
+      return underIntCheck(thread);
     case ID(_int_check_exact):
-      return underIntCheckExact(frame);
+      return underIntCheckExact(thread);
     case ID(_int_guard):
-      return underIntGuard(thread, frame);
+      return underIntGuard(thread);
     case ID(_list_check):
-      return underListCheck(thread, frame);
+      return underListCheck(thread);
     case ID(_list_check_exact):
-      return underListCheckExact(frame);
+      return underListCheckExact(thread);
     case ID(_list_getitem):
-      return underListGetitem(frame);
+      return underListGetitem(thread);
     case ID(_list_guard):
-      return underListGuard(thread, frame);
+      return underListGuard(thread);
     case ID(_list_len):
-      return underListLen(frame);
+      return underListLen(thread);
     case ID(_list_setitem):
-      return underListSetitem(frame);
+      return underListSetitem(thread);
     case ID(_memoryview_guard):
-      return underMemoryviewGuard(frame);
+      return underMemoryviewGuard(thread);
     case ID(_number_check):
-      return underNumberCheck(thread, frame);
+      return underNumberCheck(thread);
     case ID(_range_check):
-      return underRangeCheck(frame);
+      return underRangeCheck(thread);
     case ID(_range_guard):
-      return underRangeGuard(frame);
+      return underRangeGuard(thread);
     case ID(_seq_index):
-      return underSeqIndex(frame);
+      return underSeqIndex(thread);
     case ID(_seq_iterable):
-      return underSeqIterable(frame);
+      return underSeqIterable(thread);
     case ID(_seq_set_index):
-      return underSeqSetIndex(frame);
+      return underSeqSetIndex(thread);
     case ID(_seq_set_iterable):
-      return underSeqSetIterable(frame);
+      return underSeqSetIterable(thread);
     case ID(_set_check):
-      return underSetCheck(thread, frame);
+      return underSetCheck(thread);
     case ID(_set_guard):
-      return underSetGuard(thread, frame);
+      return underSetGuard(thread);
     case ID(_set_len):
-      return underSetLen(frame);
+      return underSetLen(thread);
     case ID(_slice_check):
-      return underSliceCheck(frame);
+      return underSliceCheck(thread);
     case ID(_slice_guard):
-      return underSliceGuard(frame);
+      return underSliceGuard(thread);
     case ID(_slice_index):
-      return underSliceIndex(thread, frame);
+      return underSliceIndex(thread);
     case ID(_slice_index_not_none):
-      return underSliceIndexNotNone(thread, frame);
+      return underSliceIndexNotNone(thread);
     case ID(_str_check):
-      return underStrCheck(thread, frame);
+      return underStrCheck(thread);
     case ID(_str_check_exact):
-      return underStrCheckExact(frame);
+      return underStrCheckExact(thread);
     case ID(_str_guard):
-      return underStrGuard(thread, frame);
+      return underStrGuard(thread);
     case ID(_str_len):
-      return underStrLen(frame);
+      return underStrLen(thread);
     case ID(_tuple_check):
-      return underTupleCheck(thread, frame);
+      return underTupleCheck(thread);
     case ID(_tuple_check_exact):
-      return underTupleCheckExact(frame);
+      return underTupleCheckExact(thread);
     case ID(_tuple_getitem):
-      return underTupleGetitem(frame);
+      return underTupleGetitem(thread);
     case ID(_tuple_guard):
-      return underTupleGuard(thread, frame);
+      return underTupleGuard(thread);
     case ID(_tuple_len):
-      return underTupleLen(frame);
+      return underTupleLen(thread);
     case ID(_type):
-      return underType(thread, frame);
+      return underType(thread);
     case ID(_type_check):
-      return underTypeCheck(thread, frame);
+      return underTypeCheck(thread);
     case ID(_type_check_exact):
-      return underTypeCheckExact(frame);
+      return underTypeCheckExact(thread);
     case ID(_type_guard):
-      return underTypeGuard(thread, frame);
+      return underTypeGuard(thread);
     case ID(_type_subclass_guard):
-      return underTypeSubclassGuard(frame);
+      return underTypeSubclassGuard(thread);
     case ID(_weakref_check):
-      return underWeakrefCheck(thread, frame);
+      return underWeakrefCheck(thread);
     case ID(_weakref_guard):
-      return underWeakrefGuard(thread, frame);
+      return underWeakrefGuard(thread);
     case ID(isinstance):
-      return isinstance(thread, frame);
+      return isinstance(thread);
     case ID(len):
-      return len(frame);
+      return len(thread);
     default:
       UNREACHABLE("function %s does not have an intrinsic implementation",
                   Symbols::predefinedSymbolAt(name));

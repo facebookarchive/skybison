@@ -299,12 +299,13 @@ TEST_F(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
 
   Function function(&scope, newEmptyFunction());
 
-  Frame* frame = thread_->currentFrame();
-  frame->pushValue(*function);
+  thread_->stackPush(*function);
+  RawObject* func = thread_->stackPointer();
+  ASSERT_EQ(*func, *function);
   thread_->pushCallFrame(*function);
 
   // Destroy function on frame.
-  frame->setValueAt(NoneType::object(), 0);
+  *func = NoneType::object();
 
   std::ostringstream stream;
   Utils::printTraceback(&stream);

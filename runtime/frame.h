@@ -220,35 +220,6 @@ class Frame {
   Frame* previousFrame();
   void setPreviousFrame(Frame* frame);
 
-  // A pointer to the top of the value stack
-  RawObject* valueStackTop();
-  void setValueStackTop(RawObject* top);
-
-  RawObject* valueStackBase();
-
-  // Returns the number of items on the value stack
-  word valueStackSize();
-
-  // Push value on the stack.
-  void pushValue(RawObject value);
-  // Insert value at offset on the stack.
-  void insertValueAt(RawObject value, word offset);
-  void removeValueAt(word offset);
-  // Set value at offset on the stack.
-  void setValueAt(RawObject value, word offset);
-  // Pop the top value off the stack and return it.
-  RawObject popValue();
-  // Pop n items off the stack.
-  void dropValues(word count);
-  // Return the top value of the stack.
-  RawObject topValue();
-  // Set the top value of the stack.
-  void setTopValue(RawObject value);
-
-  // Return the object at offset from the top of the value stack (e.g. peek(0)
-  // returns the top of the stack)
-  RawObject peek(word offset);
-
   // Returns a pointer to the end of the frame including locals / parameters.
   RawObject* frameEnd() {
     // The locals() pointer points at the first local, so we need + 1 to skip
@@ -265,13 +236,13 @@ class Frame {
 
   // Adjust and/or save the values of internal pointers after copying this Frame
   // from the stack to the heap.
-  void stashInternalPointers(Frame* old_frame);
+  void stashInternalPointers(Thread* thread);
 
   // Adjust and/or restore internal pointers after copying this Frame from the
   // heap to the stack.
   // The parameter is the function belonging to the frame. This is necessary
   // because `function()` does not work on a frame that is stashed away.
-  void unstashInternalPointers(RawFunction function);
+  void unstashInternalPointers(Thread* thread, RawFunction function);
 
   // Compute the total space required for a frame object
   static word allocationSize(RawObject code);
@@ -282,8 +253,7 @@ class Frame {
   static const int kBytecodeOffset = 0;
   static const int kCachesOffset = kBytecodeOffset + kPointerSize;
   static const int kPreviousFrameOffset = kCachesOffset + kPointerSize;
-  static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kVirtualPCOffset = kValueStackTopOffset + kPointerSize;
+  static const int kVirtualPCOffset = kPreviousFrameOffset + kPointerSize;
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
   static const int kLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kSize = kLocalsOffset + kPointerSize;
@@ -335,7 +305,6 @@ class Arguments {
 RawObject frameLocals(Thread* thread, Frame* frame);
 
 inline void Frame::init(word total_locals) {
-  setValueStackTop(reinterpret_cast<RawObject*>(this));
   resetLocals(total_locals);
   blockStack()->setDepth(0);
 }
@@ -444,79 +413,6 @@ inline void Frame::setPreviousFrame(Frame* frame) {
         SmallInt::fromAlignedCPtr(reinterpret_cast<void*>(frame)));
 }
 
-inline RawObject* Frame::valueStackBase() {
-  return reinterpret_cast<RawObject*>(this);
-}
-
-inline RawObject* Frame::valueStackTop() {
-  RawObject top = at(kValueStackTopOffset);
-  return static_cast<RawObject*>(SmallInt::cast(top).asAlignedCPtr());
-}
-
-inline void Frame::setValueStackTop(RawObject* top) {
-  atPut(kValueStackTopOffset, SmallInt::fromAlignedCPtr(top));
-}
-
-inline word Frame::valueStackSize() {
-  return valueStackBase() - valueStackTop();
-}
-
-inline void Frame::pushValue(RawObject value) {
-  RawObject* top = valueStackTop();
-  *--top = value;
-  setValueStackTop(top);
-}
-
-inline void Frame::insertValueAt(RawObject value, word offset) {
-  DCHECK(valueStackTop() + offset <= valueStackBase(), "offset %ld overflows",
-         offset);
-  RawObject* sp = valueStackTop() - 1;
-  for (word i = 0; i < offset; i++) {
-    sp[i] = sp[i + 1];
-  }
-  sp[offset] = value;
-  setValueStackTop(sp);
-}
-
-inline void Frame::removeValueAt(word offset) {
-  DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
-         offset);
-  RawObject* sp = valueStackTop();
-  for (word i = offset; i >= 1; i--) {
-    sp[i] = sp[i - 1];
-  }
-  setValueStackTop(sp + 1);
-}
-
-inline void Frame::setValueAt(RawObject value, word offset) {
-  DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
-         offset);
-  *(valueStackTop() + offset) = value;
-}
-
-inline RawObject Frame::popValue() {
-  DCHECK(valueStackTop() + 1 <= valueStackBase(), "offset %d overflows", 1);
-  RawObject result = *valueStackTop();
-  setValueStackTop(valueStackTop() + 1);
-  return result;
-}
-
-inline void Frame::dropValues(word count) {
-  DCHECK(valueStackTop() + count <= valueStackBase(), "count %ld overflows",
-         count);
-  setValueStackTop(valueStackTop() + count);
-}
-
-inline RawObject Frame::topValue() { return peek(0); }
-
-inline void Frame::setTopValue(RawObject value) { *valueStackTop() = value; }
-
-inline RawObject Frame::peek(word offset) {
-  DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
-         offset);
-  return *(valueStackTop() + offset);
-}
-
 inline bool Frame::isSentinel() {
   // This is the same as `previousFrame() == nullptr` but will not fail
   // assertion checks if the field is not a SmallInt.
@@ -524,28 +420,29 @@ inline bool Frame::isSentinel() {
 }
 
 inline RawObject* Frame::stashedValueStackTop() {
-  word depth = SmallInt::cast(at(kValueStackTopOffset)).value();
-  return valueStackBase() - depth;
+  word depth = SmallInt::cast(at(kPreviousFrameOffset)).value();
+  return reinterpret_cast<RawObject*>(this) - depth;
 }
 
 inline RawObject Frame::stashedPopValue() {
   RawObject result = *stashedValueStackTop();
   // valueStackTop() contains the stack depth as a RawSmallInt rather than a
   // pointer, so decrement it by 1.
-  word depth = SmallInt::cast(at(kValueStackTopOffset)).value();
-  atPut(kValueStackTopOffset, SmallInt::fromWord(depth - 1));
+  word depth = SmallInt::cast(at(kPreviousFrameOffset)).value();
+  atPut(kPreviousFrameOffset, SmallInt::fromWord(depth - 1));
   return result;
 }
 
-inline void Frame::stashInternalPointers(Frame* old_frame) {
+inline void Frame::stashInternalPointers(Thread* thread) {
   // Replace ValueStackTop with the stack depth while this Frame is on the heap,
   // to survive being moved by the GC.
-  word depth = old_frame->valueStackSize();
-  atPut(kValueStackTopOffset, SmallInt::fromWord(depth));
+  word depth = thread->valueStackSize();
+  atPut(kPreviousFrameOffset, SmallInt::fromWord(depth));
 }
 
-inline void Frame::unstashInternalPointers(RawFunction function) {
-  setValueStackTop(stashedValueStackTop());
+inline void Frame::unstashInternalPointers(Thread* thread,
+                                           RawFunction function) {
+  thread->setStackPointer(stashedValueStackTop());
   resetLocals(function.totalLocals());
 }
 
