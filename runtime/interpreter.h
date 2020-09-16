@@ -520,8 +520,7 @@ class Interpreter {
   // process after intrinsics are processed and it has been determined that the
   // callable is an interpreted function).
   static Continue callInterpreted(Thread* thread, word nargs, Frame* frame,
-                                  RawFunction function,
-                                  RawObject* post_call_sp);
+                                  RawFunction function);
 
   // Resolve a callable object to a function (resolving `__call__` descriptors
   // as necessary).

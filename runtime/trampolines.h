@@ -120,6 +120,7 @@ inline RawObject addDefaultArguments(Thread* thread, RawFunction function,
   RawObject defaults = function.defaults();
   word n_defaults = defaults.isNoneType() ? 0 : Tuple::cast(defaults).length();
   if (UNLIKELY(n_missing_args > n_defaults)) {
+    frame->dropValues(nargs + 1);
     return raiseMissingArgumentsError(thread, function, nargs);
   }
   // Add default args.

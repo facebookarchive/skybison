@@ -135,7 +135,7 @@ Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
   Object self(&scope, NoneType::object());
   RawObject prepare_result = prepareCallable(thread, frame, &callable, &self);
   if (prepare_result.isErrorException()) {
-    return {prepare_result, 0};
+    return {prepare_result, nargs};
   }
   frame->setValueAt(*callable, callable_idx);
   if (prepare_result == Bool::trueObj()) {
@@ -165,13 +165,14 @@ Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
 
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
-  RawObject* sp = frame->valueStackTop() + nargs + 1;
+  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, frame, nargs, nargs);
   RawObject function = prepare_result.function;
   nargs = prepare_result.nargs;
   if (function.isErrorException()) {
-    frame->setValueStackTop(sp);
+    frame->dropValues(nargs + 1);
+    DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
     return function;
   }
   return callFunction(thread, frame, function, nargs);
@@ -181,29 +182,29 @@ ALWAYS_INLINE RawObject Interpreter::callFunction(Thread* thread, Frame* frame,
                                                   RawObject function,
                                                   word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
-  RawObject* sp = frame->valueStackTop() + nargs + 1;
+  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
   DCHECK(function == frame->peek(nargs),
          "frame->peek(nargs) is expected to be the given function");
   RawObject result = Function::cast(function).entry()(thread, frame, nargs);
-  // Clear the stack of the function object and return.
-  frame->setValueStackTop(sp);
+  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
   return result;
 }
 
 RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
-  RawObject* sp = frame->valueStackTop() + nargs + 2;
+  RawObject* post_call_sp = frame->valueStackTop() + nargs + 2;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, frame, nargs, nargs + 1);
   RawObject function = prepare_result.function;
   nargs = prepare_result.nargs;
   if (function.isErrorException()) {
-    frame->setValueStackTop(sp);
+    frame->dropValues(nargs + 2);
+    DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
     return function;
   }
   RawObject result = Function::cast(function).entryKw()(thread, frame, nargs);
-  frame->setValueStackTop(sp);
+  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
   return result;
 }
 
@@ -215,11 +216,15 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
   HandleScope scope(thread);
   Object callable(&scope, prepareCallableEx(thread, frame, callable_idx));
-  if (callable.isErrorException()) return *callable;
-  Object result(&scope,
-                RawFunction::cast(*callable).entryEx()(thread, frame, flags));
-  frame->setValueStackTop(post_call_sp);
-  return *result;
+  if (callable.isErrorException()) {
+    frame->dropValues(callable_idx + 1);
+    DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    return *callable;
+  }
+  RawObject result =
+      RawFunction::cast(*callable).entryEx()(thread, frame, flags);
+  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
+  return result;
 }
 
 RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
@@ -4228,8 +4233,8 @@ Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
                                      word nargs, RawObject* post_call_sp) {
   Frame* frame = thread->currentFrame();
   RawObject result = entry(thread, frame, nargs);
+  DCHECK(frame->valueStackTop() == post_call_sp, "stack not cleaned");
   if (result.isErrorException()) return Continue::UNWIND;
-  frame->setValueStackTop(post_call_sp);
   frame->pushValue(result);
   return Continue::NEXT;
 }
@@ -4245,7 +4250,10 @@ static HANDLER_INLINE Continue callInterpretedImpl(
   // invariant if you change the code!
 
   RawObject result = prepare_args(thread, function, caller_frame, nargs);
-  if (result.isErrorException()) return Continue::UNWIND;
+  if (result.isErrorException()) {
+    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    return Continue::UNWIND;
+  }
   function = RawFunction::cast(result);
 
   bool has_freevars_or_cellvars = function.hasFreevarsOrCellvars();
@@ -4253,7 +4261,6 @@ static HANDLER_INLINE Continue callInterpretedImpl(
   if (UNLIKELY(callee_frame == nullptr)) {
     return Continue::UNWIND;
   }
-  caller_frame->setValueStackTop(post_call_sp);
   if (has_freevars_or_cellvars) {
     processFreevarsAndCellvars(thread, callee_frame);
   }
@@ -4261,8 +4268,8 @@ static HANDLER_INLINE Continue callInterpretedImpl(
 }
 
 Continue Interpreter::callInterpreted(Thread* thread, word nargs, Frame* frame,
-                                      RawFunction function,
-                                      RawObject* post_call_sp) {
+                                      RawFunction function) {
+  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
   return callInterpretedImpl(thread, nargs, frame, function, post_call_sp,
                              preparePositionalCall);
 }
@@ -4281,12 +4288,18 @@ HANDLER_INLINE Continue Interpreter::handleCall(
   RawObject* post_call_sp = caller_frame->valueStackTop() + callable_idx + 1;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, caller_frame, nargs, callable_idx);
-  if (prepare_result.function.isErrorException()) return Continue::UNWIND;
-  RawFunction function = RawFunction::cast(prepare_result.function);
   nargs = prepare_result.nargs;
+  if (prepare_result.function.isErrorException()) {
+    caller_frame->dropValues(nargs + 1);
+    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    return Continue::UNWIND;
+  }
+  RawFunction function = RawFunction::cast(prepare_result.function);
 
   SymbolId name = static_cast<SymbolId>(function.intrinsicId());
   if (name != SymbolId::kInvalid && doIntrinsic(thread, caller_frame, name)) {
+    DCHECK(caller_frame->valueStackTop() == post_call_sp - 1,
+           "stack not cleaned");
     return Continue::NEXT;
   }
 
@@ -4302,14 +4315,14 @@ ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
                                                      Frame* frame,
                                                      RawObject function_obj,
                                                      word nargs) {
-  RawObject* sp = frame->valueStackTop() + nargs + 1;
+  RawObject* post_call_sp = frame->valueStackTop() + nargs + 1;
   DCHECK(function_obj == frame->peek(nargs),
          "frame->peek(nargs) is expected to be the given function");
   RawFunction function = Function::cast(function_obj);
   if (!function.isInterpreted()) {
-    return callTrampoline(thread, function.entry(), nargs, sp);
+    return callTrampoline(thread, function.entry(), nargs, post_call_sp);
   }
-  return callInterpretedImpl(thread, nargs, frame, function, sp,
+  return callInterpretedImpl(thread, nargs, frame, function, post_call_sp,
                              preparePositionalCall);
 }
 
@@ -4433,7 +4446,11 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
   HandleScope scope(thread);
   Object callable(&scope,
                   prepareCallableEx(thread, caller_frame, callable_idx));
-  if (callable.isErrorException()) return Continue::UNWIND;
+  if (callable.isErrorException()) {
+    caller_frame->dropValues(callable_idx + 1);
+    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
+    return Continue::UNWIND;
+  }
 
   Function function(&scope, *callable);
   if (!function.isInterpreted()) {
@@ -4442,6 +4459,7 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
 
   if (prepareExplodeCall(thread, *function, caller_frame, arg)
           .isErrorException()) {
+    DCHECK(caller_frame->valueStackTop() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
   }
 
@@ -4450,7 +4468,6 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
   if (UNLIKELY(callee_frame == nullptr)) {
     return Continue::UNWIND;
   }
-  caller_frame->setValueStackTop(post_call_sp);
   if (has_freevars_or_cellvars) {
     processFreevarsAndCellvars(thread, callee_frame);
   }

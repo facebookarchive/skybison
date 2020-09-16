@@ -306,6 +306,7 @@ Frame* Thread::popFrame() {
   Frame* frame = current_frame_;
   DCHECK(!frame->isSentinel(), "cannot pop initial frame");
   current_frame_ = frame->previousFrame();
+  current_frame_->setValueStackTop(frame->frameEnd());
   return current_frame_;
 }
 
@@ -349,9 +350,8 @@ RawObject Thread::exec(const Code& code, const Module& module,
     return Error::exception();
   }
   Object result(&scope, Interpreter::execute(this));
-  DCHECK(currentFrame()->topValue() == function, "stack mismatch");
-  DCHECK(currentFrame()->peek(1) == *implicit_globals, "stack mismatch");
-  currentFrame()->dropValues(2);
+  DCHECK(currentFrame()->topValue() == *implicit_globals, "stack mismatch");
+  currentFrame()->dropValues(1);
   return *result;
 }
 
@@ -367,9 +367,8 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
     return Error::exception();
   }
   Object result(&scope, Interpreter::execute(this));
-  DCHECK(currentFrame()->topValue() == function, "stack mismatch");
-  DCHECK(currentFrame()->peek(1) == *dict, "stack mismatch");
-  currentFrame()->dropValues(2);
+  DCHECK(currentFrame()->topValue() == *dict, "stack mismatch");
+  currentFrame()->dropValues(1);
   return *result;
 }
 

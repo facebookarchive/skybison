@@ -71,7 +71,7 @@ const Register kHandlersBaseReg = R13;
 // | entry_frame |
 // | padding     | <- native %rsp, when materialized for a C++ call
 // +-------------+
-constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14, R15};
+constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14};
 const word kNumCalleeSavedRegs = ARRAYSIZE(kUsedCalleeSavedRegs);
 const word kEntryFrameOffset = -(kNumCalleeSavedRegs + 1) * kPointerSize;
 const word kPaddingBytes = (kEntryFrameOffset % 16) == 0 ? 0 : kPointerSize;
@@ -819,7 +819,7 @@ void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
 }
 
 static void emitPushCallFrame(EmitEnv* env, Register r_callable,
-                              Register r_post_call_sp, Label* stack_overflow) {
+                              Label* stack_overflow) {
   Register r_total_vars = RSI;
   Register r_initial_size = R9;
   Register r_max_size = RAX;
@@ -875,9 +875,6 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   // caller_frame.setVirtualPC(kPCReg); kPCReg = 0
   emitSaveInterpreterState(env, SaveRestoreFlags::kVMPC);
   __ xorl(kPCReg, kPCReg);
-
-  // caller_frame.setStack(r_post_call_sp)
-  __ movq(Address(kFrameReg, Frame::kValueStackTopOffset), r_post_call_sp);
 
   // kFrameReg = new_frame
   __ movq(kFrameReg, RSP);
@@ -959,10 +956,6 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
                                         Label* next_opcode) {
   const Register r_scratch = RAX;
   const Register r_flags = RDX;
-  const Register r_post_call_sp = R8;
-  const Register r_saved_post_call_sp = R15;
-
-  __ leaq(r_post_call_sp, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
 
   // Check whether the call is interpreted.
   __ movl(r_flags,
@@ -985,8 +978,7 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
   __ testl(r_flags, smallIntImmediate(Function::Flags::kSimpleCall));
   __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
 
-  emitPushCallFrame(env, r_callable, r_post_call_sp,
-                    &call_interpreted_slow_path);
+  emitPushCallFrame(env, r_callable, &call_interpreted_slow_path);
 
   __ bind(next_opcode);
   emitNextOpcode(env);
@@ -994,7 +986,6 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
   // Function::cast(callable).entry()(thread, frame, nargs);
   __ bind(&call_trampoline);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  __ movq(r_saved_post_call_sp, r_post_call_sp);
   __ movq(r_scratch,
           Address(r_callable, heapObjectDisp(RawFunction::kEntryOffset)));
   __ movq(kArgRegs[0], kThreadReg);
@@ -1006,20 +997,19 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
                 "tag should fit a byte for cmpb");
   __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
-  __ movq(RSP, r_saved_post_call_sp);
-  emitRestoreInterpreterState(env, kBytecode);
+  emitRestoreInterpreterState(env, kVMStack | kBytecode);
   __ pushq(kReturnRegs[0]);
   emitNextOpcode(env);
 
-  // Interpreter::callInterpreted(thread, nargs, frame, function, post_call_sp)
+  // Interpreter::callInterpreted(thread, nargs, frame, function)
   __ bind(&call_interpreted_slow_path);
   __ movq(kArgRegs[3], r_callable);
   __ movq(kArgRegs[0], kThreadReg);
   static_assert(kArgRegs[1] == kOpargReg, "reg mismatch");
   __ movq(kArgRegs[2], kFrameReg);
-  static_assert(kArgRegs[4] == r_post_call_sp, "reg mismatch");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall(env, reinterpret_cast<int64_t>(Interpreter::callInterpreted));
+  emitCall<Interpreter::Continue (*)(Thread*, word, Frame*, RawFunction)>(
+      env, Interpreter::callInterpreted);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
@@ -1426,8 +1416,6 @@ template <>
 void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Label slow_path;
 
-  // TODO(bsimmers): Until we emit smarter RETURN_* opcodes from the compiler,
-  // check for the common case here:
   // Go to slow_path if frame == entry_frame...
   __ cmpq(kFrameReg, Address(RBP, kEntryFrameOffset));
   __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
@@ -1440,8 +1428,11 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
 
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(RAX);
+  // RSP = frame->frameEnd(); ( = locals() + 2)
+  __ movq(RSP, Address(kFrameReg, Frame::kLocalsOffset));
+  __ addq(RSP, Immediate(2 * kPointerSize));
   __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
-  emitRestoreInterpreterState(env, kVMStack | kBytecode | kVMPC);
+  emitRestoreInterpreterState(env, kBytecode | kVMPC);
   __ pushq(RAX);
   emitNextOpcode(env);
 

@@ -249,8 +249,8 @@ TEST_F(ThreadTest, PushPopFrame) {
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
-  thread_->currentFrame()->pushValue(*function);
   byte* prev_sp = thread_->stackPtr();
+  thread_->currentFrame()->pushValue(*function);
   Frame* frame = thread_->pushCallFrame(*function);
 
   // Verify frame invariants post-push

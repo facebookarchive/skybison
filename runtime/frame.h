@@ -249,6 +249,13 @@ class Frame {
   // returns the top of the stack)
   RawObject peek(word offset);
 
+  // Returns a pointer to the end of the frame including locals / parameters.
+  RawObject* frameEnd() {
+    // The locals() pointer points at the first local, so we need + 1 to skip
+    // the first local and another +1 to skip the function reference before.
+    return locals() + 2;
+  }
+
   bool isSentinel();
 
   // Versions of valueStackTop() and popValue() for a Frame that's had

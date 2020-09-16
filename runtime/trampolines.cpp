@@ -72,7 +72,7 @@ RawObject raiseMissingArgumentsError(Thread* thread, RawFunction function,
 }
 
 RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
-                                  Frame* frame, const word nargs) {
+                                  Frame* frame, word nargs) {
   word argcount = function_raw.argcount();
   word n_missing_args = argcount - nargs;
   if (n_missing_args > 0) {
@@ -80,7 +80,9 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
         addDefaultArguments(thread, function_raw, frame, nargs, n_missing_args);
     if (result.isErrorException()) return result;
     function_raw = Function::cast(result);
+    nargs += n_missing_args;
     if (function_raw.hasSimpleCall()) {
+      DCHECK(function_raw.totalArgs() == nargs, "argument count mismatch");
       return function_raw;
     }
   }
@@ -92,6 +94,7 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   if (n_missing_args < 0) {
     // We have too many arguments.
     if (!function.hasVarargs()) {
+      frame->dropValues(nargs + 1);
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "'%F' takes max %w positional arguments but %w given", &function,
@@ -103,6 +106,7 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
     for (word i = (len - 1); i >= 0; i--) {
       tuple.atPut(i, frame->popValue());
     }
+    nargs -= len;
     varargs_param = *tuple;
   }
 
@@ -113,6 +117,7 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   word kwonlyargcount = code.kwonlyargcount();
   if (kwonlyargcount > 0) {
     if (function.kwDefaults().isNoneType()) {
+      frame->dropValues(nargs + 1);
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "missing keyword-only argument");
     }
@@ -124,23 +129,28 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
       for (word i = 0; i < kwonlyargcount; i++) {
         name = formal_names.at(first_kw + i);
         RawObject value = dictAtByStr(thread, kw_defaults, name);
-        if (value.isError()) {
+        if (value.isErrorNotFound()) {
+          frame->dropValues(nargs + i + 1);
           return thread->raiseWithFmt(LayoutId::kTypeError,
                                       "missing keyword-only argument");
         }
         frame->pushValue(value);
       }
+      nargs += kwonlyargcount;
     }
   }
 
   if (function.hasVarargs()) {
     frame->pushValue(*varargs_param);
+    nargs++;
   }
   if (function.hasVarkeyargs()) {
     // VARKEYARGS - because we arrived via CALL_FUNCTION, no keyword arguments
     // provided.  Just add an empty dict.
     frame->pushValue(runtime->newDict());
+    nargs++;
   }
+  DCHECK(function.totalArgs() == nargs, "argument count mismatch");
   return *function;
 }
 
@@ -261,7 +271,7 @@ static RawObject checkArgs(Thread* thread, const Function& function,
       Dict kw_defaults(&scope, function.kwDefaults());
       Str name(&scope, formal_names.at(arg_pos + start));
       RawObject val = dictAtByStr(thread, kw_defaults, name);
-      if (!val.isError()) {
+      if (!val.isErrorNotFound()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
       }
@@ -335,6 +345,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
     if (function.hasVarkeyargs()) {
       // Too many positional args passed?
       if (num_positional_args > function.argcount()) {
+        frame->dropValues(nargs + 1);
         return thread->raiseWithFmt(LayoutId::kTypeError,
                                     "Too many positional arguments");
       }
@@ -351,7 +362,10 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
         Object key(&scope, keywords.at(i));
         Object value(&scope, *(p - i));
         word result = findName(thread, posonlyargcount, key, varnames);
-        if (result < 0) return Error::exception();
+        if (result < 0) {
+          frame->dropValues(nargs + 1);
+          return Error::exception();
+        }
         if (result < expected_args) {
           // Got a match, stash pair for future restoration on the stack
           runtime->listAdd(thread, saved_keyword_list, key);
@@ -359,10 +373,16 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
         } else {
           // New, add it and associated value to the varkeyargs dict
           Object hash_obj(&scope, Interpreter::hash(thread, key));
-          if (hash_obj.isErrorException()) return *hash_obj;
+          if (hash_obj.isErrorException()) {
+            frame->dropValues(nargs + 1);
+            return *hash_obj;
+          }
           word hash = SmallInt::cast(*hash_obj).value();
           Object dict_result(&scope, dictAtPut(thread, dict, key, hash, value));
-          if (dict_result.isErrorException()) return *dict_result;
+          if (dict_result.isErrorException()) {
+            frame->dropValues(nargs + 1);
+            return *dict_result;
+          }
           nargs--;
         }
       }
@@ -383,6 +403,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
   RawObject* kw_arg_base = (frame->valueStackTop() + num_keyword_args) -
                            1;  // pointer to first non-positional arg
   if (UNLIKELY(nargs > expected_args)) {
+    frame->dropValues(nargs + 1);
     return thread->raiseWithFmt(LayoutId::kTypeError, "Too many arguments");
   }
   if (UNLIKELY(nargs < expected_args)) {
@@ -396,6 +417,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
     // Fill in missing spots w/ Error code
     for (word i = num_keyword_args; i < name_tuple_size; i++) {
       frame->pushValue(Error::error());
+      nargs++;
       padded_keywords.atPut(i, Error::error());
     }
     keywords = *padded_keywords;
@@ -403,17 +425,21 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
   // Now we've got the right number.  Do they match up?
   RawObject res = checkArgs(thread, function, kw_arg_base, keywords, varnames,
                             num_positional_args);
-  if (res.isError()) {
+  if (res.isErrorException()) {
+    frame->dropValues(nargs + 1);
     return res;  // TypeError created by checkArgs.
   }
   CHECK(res.isNoneType(), "checkArgs should return an Error or None");
   // If we're a vararg form, need to push the tuple/dict.
   if (function.hasVarargs()) {
     frame->pushValue(*tmp_varargs);
+    nargs++;
   }
   if (function.hasVarkeyargs()) {
     frame->pushValue(*tmp_dict);
+    nargs++;
   }
+  DCHECK(function.totalArgs() == nargs, "argument count mismatch");
   return *function;
 }
 
@@ -429,10 +455,11 @@ static RawObject processExplodeArguments(Thread* thread, Frame* frame,
     kw_mapping = frame->popValue();
   }
   Tuple positional_args(&scope, frame->popValue());
-  word nargs = positional_args.length();
-  for (word i = 0; i < nargs; i++) {
+  word length = positional_args.length();
+  for (word i = 0; i < length; i++) {
     frame->pushValue(positional_args.at(i));
   }
+  word nargs = length;
   Runtime* runtime = thread->runtime();
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     if (!kw_mapping.isDict()) {
@@ -440,7 +467,8 @@ static RawObject processExplodeArguments(Thread* thread, Frame* frame,
              "kw_mapping must have __getitem__");
       Dict dict(&scope, runtime->newDict());
       Object result(&scope, dictMergeIgnore(thread, dict, kw_mapping));
-      if (result.isError()) {
+      if (result.isErrorException()) {
+        frame->dropValues(nargs + 1);
         if (thread->pendingExceptionType() ==
             runtime->typeAt(LayoutId::kAttributeError)) {
           thread->clearPendingException();
@@ -463,13 +491,14 @@ static RawObject processExplodeArguments(Thread* thread, Frame* frame,
     Object value(&scope, NoneType::object());
     for (word i = 0, j = 0; dictNextItem(dict, &i, &key, &value); j++) {
       if (!runtime->isInstanceOfStr(*key)) {
+        frame->dropValues(nargs + 1);
         return thread->raiseWithFmt(LayoutId::kTypeError,
                                     "keywords must be strings");
       }
       keys.atPut(j, *key);
       frame->pushValue(*value);
+      nargs++;
     }
-    nargs += len;
     frame->pushValue(keys.becomeImmutable());
   }
   return SmallInt::fromWord(nargs);
@@ -483,12 +512,12 @@ RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
   Function function(&scope, function_raw);
 
   RawObject arg_obj = processExplodeArguments(thread, frame, flags);
-  if (arg_obj.isError()) return arg_obj;
+  if (arg_obj.isErrorException()) return arg_obj;
   word new_argc = SmallInt::cast(arg_obj).value();
 
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     RawObject result = prepareKeywordCall(thread, *function, frame, new_argc);
-    if (result.isError()) {
+    if (result.isErrorException()) {
       return result;
     }
   } else {
@@ -496,7 +525,7 @@ RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
     if (new_argc != function.argcount() || !(function.hasSimpleCall())) {
       RawObject result =
           processDefaultArguments(thread, *function, frame, new_argc);
-      if (result.isError()) {
+      if (result.isErrorException()) {
         return result;
       }
     }
@@ -535,10 +564,11 @@ RawObject generatorTrampoline(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   RawObject error = preparePositionalCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    frame->dropValues(nargs + 1);
     return Error::exception();
   }
   return createGenerator(thread, function);
@@ -550,10 +580,11 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* frame, word nargs) {
   // one to skip over the keyword dictionary to read the function object.
   Function function(&scope, frame->peek(nargs + 1));
   RawObject error = prepareKeywordCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    frame->dropValues(nargs + 1);
     return Error::exception();
   }
   return createGenerator(thread, function);
@@ -563,13 +594,14 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
-  Function function(
-      &scope, frame->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  word function_offset = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  Function function(&scope, frame->peek(function_offset));
   RawObject error = prepareExplodeCall(thread, *function, frame, flags);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    frame->dropValues(function_offset + 1);
     return Error::exception();
   }
   return createGenerator(thread, function);
@@ -579,11 +611,12 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   RawObject error = preparePositionalCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
+    frame->dropValues(nargs + 1);
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
@@ -597,11 +630,12 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* frame,
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, frame->peek(nargs + 1));
   RawObject error = prepareKeywordCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
+    frame->dropValues(nargs + 2);
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
@@ -613,14 +647,15 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
-  Function function(
-      &scope, frame->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  word function_offset = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  Function function(&scope, frame->peek(function_offset));
   RawObject error = prepareExplodeCall(thread, *function, frame, flags);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
+    frame->dropValues(function_offset + 1);
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
@@ -631,10 +666,11 @@ RawObject interpreterTrampoline(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   RawObject error = preparePositionalCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    frame->dropValues(nargs + 1);
     return Error::exception();
   }
   return Interpreter::execute(thread);
@@ -646,10 +682,11 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* frame, word nargs) {
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, frame->peek(nargs + 1));
   RawObject error = prepareKeywordCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    frame->dropValues(nargs + 2);
     return Error::exception();
   }
   return Interpreter::execute(thread);
@@ -659,13 +696,14 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* frame, word flags) {
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
-  Function function(
-      &scope, frame->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  word function_offset = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  Function function(&scope, frame->peek(function_offset));
   RawObject error = prepareExplodeCall(thread, *function, frame, flags);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    frame->dropValues(function_offset + 1);
     return Error::exception();
   }
   return Interpreter::execute(thread);
@@ -676,11 +714,12 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   RawObject error = preparePositionalCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
+    frame->dropValues(nargs + 1);
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
@@ -694,11 +733,12 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* frame,
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, frame->peek(nargs + 1));
   RawObject error = prepareKeywordCall(thread, *function, frame, nargs);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
+    frame->dropValues(nargs + 2);
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
@@ -710,14 +750,15 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
-  Function function(
-      &scope, frame->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  word function_offset = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  Function function(&scope, frame->peek(function_offset));
   RawObject error = prepareExplodeCall(thread, *function, frame, flags);
-  if (error.isError()) {
+  if (error.isErrorException()) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
+    frame->dropValues(function_offset + 1);
     return Error::exception();
   }
   processFreevarsAndCellvars(thread, callee_frame);
@@ -774,10 +815,14 @@ RawObject methodTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   if (nargs != 1) {
-    return raiseTypeErrorNoArguments(thread, function, nargs);
+    RawObject result = raiseTypeErrorNoArguments(thread, function, nargs);
+    frame->dropValues(nargs + 1);
+    return result;
   }
   Object self(&scope, frame->peek(0));
-  return callMethNoArgs(thread, function, self);
+  RawObject result = callMethNoArgs(thread, function, self);
+  frame->dropValues(nargs + 1);
+  return result;
 }
 
 RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
@@ -785,13 +830,19 @@ RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
   Function function(&scope, frame->peek(nargs + 1));
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return raiseTypeErrorNoKeywordArguments(thread, function);
+    RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   if (nargs != 1) {
-    return raiseTypeErrorNoArguments(thread, function, nargs);
+    RawObject result = raiseTypeErrorNoArguments(thread, function, nargs);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   Object self(&scope, frame->peek(1));
-  return callMethNoArgs(thread, function, self);
+  RawObject result = callMethNoArgs(thread, function, self);
+  frame->dropValues(nargs + 2);
+  return result;
 }
 
 RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
@@ -803,15 +854,21 @@ RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
     if (Dict::cast(*kw_args).numItems() != 0) {
-      return raiseTypeErrorNoKeywordArguments(thread, function);
+      RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+      frame->dropValues(has_varkeywords + 2);
+      return result;
     }
   }
   word args_length = args.length();
   if (args_length != 1) {
-    return raiseTypeErrorNoArguments(thread, function, args_length);
+    RawObject result = raiseTypeErrorNoArguments(thread, function, args_length);
+    frame->dropValues(has_varkeywords + 2);
+    return result;
   }
   Object self(&scope, args.at(0));
-  return callMethNoArgs(thread, function, self);
+  RawObject result = callMethNoArgs(thread, function, self);
+  frame->dropValues(has_varkeywords + 2);
+  return result;
 }
 
 // method one arg
@@ -850,11 +907,15 @@ RawObject methodTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   if (nargs != 2) {
-    return raiseTypeErrorOneArgument(thread, function, nargs);
+    RawObject result = raiseTypeErrorOneArgument(thread, function, nargs);
+    frame->dropValues(nargs + 1);
+    return result;
   }
   Object self(&scope, frame->peek(1));
   Object arg(&scope, frame->peek(0));
-  return callMethOneArg(thread, function, self, arg);
+  RawObject result = callMethOneArg(thread, function, self, arg);
+  frame->dropValues(nargs + 1);
+  return result;
 }
 
 RawObject methodTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
@@ -862,14 +923,20 @@ RawObject methodTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
   Function function(&scope, frame->peek(nargs + 1));
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return raiseTypeErrorNoKeywordArguments(thread, function);
+    RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   if (nargs != 2) {
-    return raiseTypeErrorOneArgument(thread, function, nargs);
+    RawObject result = raiseTypeErrorOneArgument(thread, function, nargs);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   Object self(&scope, frame->peek(2));
   Object arg(&scope, frame->peek(1));
-  return callMethOneArg(thread, function, self, arg);
+  RawObject result = callMethOneArg(thread, function, self, arg);
+  frame->dropValues(nargs + 2);
+  return result;
 }
 
 RawObject methodTrampolineOneArgEx(Thread* thread, Frame* frame, word flags) {
@@ -880,16 +947,23 @@ RawObject methodTrampolineOneArgEx(Thread* thread, Frame* frame, word flags) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
     if (Dict::cast(*kw_args).numItems() != 0) {
-      return raiseTypeErrorNoKeywordArguments(thread, function);
+      RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+      frame->dropValues(has_varkeywords + 2);
+      return result;
     }
   }
   Tuple varargs(&scope, frame->peek(has_varkeywords));
   if (varargs.length() != 2) {
-    return raiseTypeErrorOneArgument(thread, function, varargs.length());
+    RawObject result =
+        raiseTypeErrorOneArgument(thread, function, varargs.length());
+    frame->dropValues(has_varkeywords + 2);
+    return result;
   }
   Object self(&scope, varargs.at(0));
   Object arg(&scope, varargs.at(1));
-  return callMethOneArg(thread, function, self, arg);
+  RawObject result = callMethOneArg(thread, function, self, arg);
+  frame->dropValues(has_varkeywords + 2);
+  return result;
 }
 
 // callMethVarArgs
@@ -915,14 +989,18 @@ RawObject methodTrampolineVarArgs(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 1);
+    return result;
   }
   Object self(&scope, frame->peek(nargs - 1));
   Tuple varargs(&scope, thread->runtime()->newTuple(nargs - 1));
   for (word i = 0; i < nargs - 1; i++) {
     varargs.atPut(nargs - i - 2, frame->peek(i));
   }
-  return callMethVarArgs(thread, function, self, varargs);
+  RawObject result = callMethVarArgs(thread, function, self, varargs);
+  frame->dropValues(nargs + 1);
+  return result;
 }
 
 RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* frame, word nargs) {
@@ -930,17 +1008,23 @@ RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* frame, word nargs) {
   Function function(&scope, frame->peek(nargs + 1));
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return raiseTypeErrorNoKeywordArguments(thread, function);
+    RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   Object self(&scope, frame->peek(nargs));
   Tuple varargs(&scope, thread->runtime()->newTuple(nargs - 1));
   for (word i = 0; i < nargs - 1; i++) {
     varargs.atPut(i, frame->peek(nargs - i - 1));
   }
-  return callMethVarArgs(thread, function, self, varargs);
+  RawObject result = callMethVarArgs(thread, function, self, varargs);
+  frame->dropValues(nargs + 2);
+  return result;
 }
 
 RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* frame, word flags) {
@@ -951,17 +1035,23 @@ RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* frame, word flags) {
     Object kw_args(&scope, frame->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
     if (Dict::cast(*kw_args).numItems() != 0) {
-      return raiseTypeErrorNoKeywordArguments(thread, function);
+      RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+      frame->dropValues(has_varkeywords + 2);
+      return result;
     }
   }
   Tuple args(&scope, frame->peek(has_varkeywords));
   if (args.length() == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(has_varkeywords + 2);
+    return result;
   }
   Object self(&scope, args.at(0));
   Object varargs(&scope, thread->runtime()->tupleSubseq(thread, args, 1,
                                                         args.length() - 1));
-  return callMethVarArgs(thread, function, self, varargs);
+  RawObject result = callMethVarArgs(thread, function, self, varargs);
+  frame->dropValues(has_varkeywords + 2);
+  return result;
 }
 
 // callMethKeywordArgs
@@ -996,7 +1086,9 @@ RawObject methodTrampolineKeywords(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Function function(&scope, frame->peek(nargs));
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 1);
+    return result;
   }
   Object self(&scope, frame->peek(nargs - 1));
   Tuple varargs(&scope, runtime->newTuple(nargs - 1));
@@ -1004,7 +1096,10 @@ RawObject methodTrampolineKeywords(Thread* thread, Frame* frame, word nargs) {
     varargs.atPut(nargs - i - 2, frame->peek(i));
   }
   Object keywords(&scope, NoneType::object());
-  return callMethKeywords(thread, function, self, varargs, keywords);
+  RawObject result =
+      callMethKeywords(thread, function, self, varargs, keywords);
+  frame->dropValues(nargs + 1);
+  return result;
 }
 
 RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame, word nargs) {
@@ -1024,7 +1119,9 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame, word nargs) {
   }
   Function function(&scope, frame->peek(nargs + 1));
   if (nargs - num_keywords == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   word num_positional = nargs - num_keywords - 1;
   Tuple args(&scope, runtime->newTuple(num_positional));
@@ -1032,7 +1129,9 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame, word nargs) {
     args.atPut(i, frame->peek(nargs - i - 1));
   }
   Object self(&scope, frame->peek(nargs));
-  return callMethKeywords(thread, function, self, args, kwargs);
+  RawObject result = callMethKeywords(thread, function, self, args, kwargs);
+  frame->dropValues(nargs + 2);
+  return result;
 }
 
 RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* frame, word flags) {
@@ -1046,12 +1145,16 @@ RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* frame, word flags) {
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
   if (varargs.length() == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(has_varkeywords + 2);
+    return result;
   }
   Object self(&scope, varargs.at(0));
   Object args(&scope, thread->runtime()->tupleSubseq(thread, varargs, 1,
                                                      varargs.length() - 1));
-  return callMethKeywords(thread, function, self, args, kwargs);
+  RawObject result = callMethKeywords(thread, function, self, args, kwargs);
+  frame->dropValues(has_varkeywords + 2);
+  return result;
 }
 
 static RawObject callMethFast(Thread* thread, const Function& function,
@@ -1073,7 +1176,9 @@ RawObject methodTrampolineFast(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 1);
+    return result;
   }
   Object self(&scope, frame->peek(nargs - 1));
 
@@ -1088,6 +1193,7 @@ RawObject methodTrampolineFast(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < num_positional; i++) {
     ApiHandle::fromPyObject(fastcall_args[nargs - i - 2])->decref();
   }
+  frame->dropValues(nargs + 1);
   return *result;
 }
 
@@ -1095,11 +1201,15 @@ RawObject methodTrampolineFastKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs + 1));
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   Tuple kw_names(&scope, frame->peek(0));
   if (kw_names.length() != 0) {
-    return raiseTypeErrorNoKeywordArguments(thread, function);
+    RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
 
   Object self(&scope, frame->peek(nargs));
@@ -1114,6 +1224,7 @@ RawObject methodTrampolineFastKw(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < num_positional; i++) {
     ApiHandle::fromPyObject(fastcall_args[i])->decref();
   }
+  frame->dropValues(nargs + 2);
   return *result;
 }
 
@@ -1128,14 +1239,18 @@ RawObject methodTrampolineFastEx(Thread* thread, Frame* frame, word flags) {
     if (!kw_args_obj.isDict()) UNIMPLEMENTED("mapping kwargs");
     Dict kw_args(&scope, *kw_args_obj);
     if (kw_args.numItems() != 0) {
-      return raiseTypeErrorNoKeywordArguments(thread, function);
+      RawObject result = raiseTypeErrorNoKeywordArguments(thread, function);
+      frame->dropValues(has_varkeywords + 2);
+      return result;
     }
   }
 
   Tuple args(&scope, frame->peek(has_varkeywords));
   word args_length = args.length();
   if (args_length == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(has_varkeywords + 2);
+    return result;
   }
   Object self(&scope, args.at(0));
   word num_positional = args_length - 1;
@@ -1151,6 +1266,7 @@ RawObject methodTrampolineFastEx(Thread* thread, Frame* frame, word flags) {
   for (word i = 0; i < num_positional; i++) {
     ApiHandle::fromPyObject(fastcall_args[i])->decref();
   }
+  frame->dropValues(has_varkeywords + 2);
   return *result;
 }
 
@@ -1193,7 +1309,9 @@ RawObject methodTrampolineFastWithKeywords(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 1);
+    return result;
   }
   Object self(&scope, frame->peek(nargs - 1));
 
@@ -1209,6 +1327,7 @@ RawObject methodTrampolineFastWithKeywords(Thread* thread, Frame* frame,
   for (word i = 0; i < nargs - 1; i++) {
     ApiHandle::fromPyObject(fastcall_args[nargs - i - 2])->decref();
   }
+  frame->dropValues(nargs + 1);
   return *result;
 }
 
@@ -1217,7 +1336,9 @@ RawObject methodTrampolineFastWithKeywordsKw(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs + 1));
   if (nargs == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(nargs + 2);
+    return result;
   }
   Object self(&scope, frame->peek(nargs));
 
@@ -1234,6 +1355,7 @@ RawObject methodTrampolineFastWithKeywordsKw(Thread* thread, Frame* frame,
   for (word i = 0; i < nargs - 1; i++) {
     ApiHandle::fromPyObject(fastcall_args[i])->decref();
   }
+  frame->dropValues(nargs + 2);
   return *result;
 }
 
@@ -1257,7 +1379,9 @@ RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, Frame* frame,
   Tuple args(&scope, frame->peek(has_varkeywords));
   word args_length = args.length();
   if (args_length == 0) {
-    return raiseTypeErrorMustBeBound(thread, function);
+    RawObject result = raiseTypeErrorMustBeBound(thread, function);
+    frame->dropValues(has_varkeywords + 2);
+    return result;
   }
   Object self(&scope, args.at(0));
   word num_positional = args_length - 1;
@@ -1295,6 +1419,7 @@ RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, Frame* frame,
   for (word i = 0; i < num_positional + num_keywords; i++) {
     ApiHandle::fromPyObject(fastcall_args[i])->decref();
   }
+  frame->dropValues(has_varkeywords + 2);
   return *result;
 }
 
@@ -1302,9 +1427,8 @@ RawObject unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
 }
 
-static inline RawObject builtinTrampolineImpl(Thread* thread,
-                                              Frame* caller_frame, word arg,
-                                              word function_idx,
+static inline RawObject builtinTrampolineImpl(Thread* thread, Frame* frame,
+                                              word arg, word function_idx,
                                               PrepareCallFunc prepare_call) {
   // Warning: This code is using `RawXXX` variables for performance! This is
   // despite the fact that we call functions that do potentially perform memory
@@ -1314,9 +1438,11 @@ static inline RawObject builtinTrampolineImpl(Thread* thread,
   // invariant if you change the code!
 
   RawObject prepare_result =
-      prepare_call(thread, Function::cast(caller_frame->peek(function_idx)),
-                   caller_frame, arg);
-  if (prepare_result.isError()) return prepare_result;
+      prepare_call(thread, Function::cast(frame->peek(function_idx)),
+                   thread->currentFrame(), arg);
+  if (prepare_result.isErrorException()) {
+    return prepare_result;
+  }
   RawFunction function_obj = Function::cast(prepare_result);
 
   RawObject result = NoneType::object();
@@ -1332,6 +1458,7 @@ static inline RawObject builtinTrampolineImpl(Thread* thread,
     word nargs = function_obj.totalArgs();
     Frame* callee_frame = thread->pushNativeFrame(nargs);
     if (UNLIKELY(callee_frame == nullptr)) {
+      frame->dropValues(nargs + 1);
       return Error::exception();
     }
     result = (*function)(thread, callee_frame, nargs);
