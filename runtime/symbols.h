@@ -532,6 +532,7 @@ class Runtime;
   V(_traceback__lineno)                                                        \
   V(_traceback__next)                                                          \
   V(_translate)                                                                \
+  V(_try_run_package)                                                          \
   V(_tuple_check)                                                              \
   V(_tuple_check_exact)                                                        \
   V(_tuple_getitem)                                                            \

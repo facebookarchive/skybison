@@ -1697,6 +1697,17 @@ def _structseq_repr(self):
     return f"{fullname}({', '.join(value_strings)})"
 
 
+def _try_run_package(path):
+    importer = _frozen_importlib_external.PathFinder._path_hooks(path)
+    if importer is None:
+        return None
+    _sys.path.insert(0, path)
+    import runpy  # import this locally, so we only load it when we need it!
+
+    runpy._run_module_as_main("__main__", False)
+    return True
+
+
 def _type_name(cls):
     return f"{cls.__module__}.{cls.__qualname__}"
 

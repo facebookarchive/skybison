@@ -108,6 +108,28 @@ static int runModule(const char* modname_cstr, bool set_argv0) {
   return 0;
 }
 
+static int runPackage(const char* packagename_cstr) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  runtime->findOrCreateMainModule();
+  Str path(&scope, runtime->newStrFromCStr(packagename_cstr));
+  Object result(&scope, thread->invokeFunction1(ID(builtins),
+                                                ID(_try_run_package), path));
+  int return_value;
+  if (result.isError()) {
+    printPendingException(thread);
+    return_value = -1;
+  } else if (!result.isNoneType()) {
+    /* all good, package did execute */
+    return_value = 0;
+  } else {
+    // no errors, but not a package
+    return_value = 1;
+  }
+  return return_value;
+}
+
 static void runStartupFile(PyCompilerFlags* cf) {
   const char* startupfile = std::getenv("PYTHONSTARTUP");
   if (startupfile == nullptr || startupfile[0] == '\0') return;
@@ -303,7 +325,12 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
       }
     }
 
-    returncode = runFile(fp, filename, &flags);
+    int run_package_result = runPackage(filename);
+    if (run_package_result != 0) {
+      returncode = runFile(fp, filename, &flags);
+    } else {
+      returncode = run_package_result;
+    }
   }
 
   if (Py_InspectFlag && is_interactive &&

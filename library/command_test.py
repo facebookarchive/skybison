@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import unittest
+import zipfile
 from tempfile import TemporaryDirectory
 
 
@@ -167,6 +168,56 @@ class OptionsTest(unittest.TestCase):
             self.assertIn(
                 f"argv: ['{tempfile}', 'arg0', 'arg1 with spaces']", result.stdout
             )
+
+    def test_directoryname_executes_code(self):
+        with TemporaryDirectory() as tempdir:
+            tempfile = os.path.join(tempdir, "__main__.py")
+            tempfile = os.path.abspath(tempfile)
+            with open(tempfile, "w") as fp:
+                fp.write("print('test directory executed')\n")
+            result = subprocess.run(
+                [sys.executable, tempdir],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertIn("test directory executed", result.stdout)
+
+    def test_directoryname_executes_code_fail(self):
+        with TemporaryDirectory() as tempdir:
+            tempfile = os.path.join(tempdir, "sample.py")
+            tempfile = os.path.abspath(tempfile)
+            with open(tempfile, "w") as fp:
+                fp.write("print('test file executed')\n")
+            result = subprocess.run([sys.executable, tempdir], capture_output=True)
+            self.assertIn(b"can't find '__main__' module in ", result.stderr)
+            self.assertEqual(1, result.returncode)
+
+    def test_zipfile_executes_code(self):
+        with TemporaryDirectory() as tempdir:
+            tempzipfile = os.path.join(tempdir, "test.zip")
+            tempzipfile = os.path.abspath(tempzipfile)
+            with zipfile.ZipFile(tempzipfile, "w") as myzip:
+                myzip.writestr("__main__.py", "print('test zip file executed')\n")
+            result = subprocess.run(
+                [sys.executable, tempzipfile],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertIn("test zip file executed", result.stdout)
+
+    def test_zipfile_executes_code_fail(self):
+        with TemporaryDirectory() as tempdir:
+            tempzipfile = os.path.join(tempdir, "test.zip")
+            tempzipfile = os.path.abspath(tempzipfile)
+            with zipfile.ZipFile(tempzipfile, "w") as myzip:
+                myzip.writestr("test.py", "print('test zip file executed')\n")
+            result = subprocess.run(
+                [sys.executable, tempzipfile], capture_output=True, encoding="utf-8"
+            )
+            self.assertIn("can't find '__main__' module in", result.stderr)
+            self.assertEqual(1, result.returncode)
 
     def test_i_option_sets_inspect_interactive_flags(self):
         result = subprocess.run(
