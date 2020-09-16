@@ -617,7 +617,7 @@ class Interpreter {
   // Perform a positional or keyword call. Used by doCallFunction() and
   // doCallFunctionKw().
   static Continue handleCall(Thread* thread, word nargs, word callable_idx,
-                             word num_extra_pop, PrepareCallFunc prepare_args,
+                             PrepareCallFunc prepare_args,
                              Function::Entry (RawFunction::*get_entry)() const);
 
   // Call a function through its trampoline, pushing the result on the stack.

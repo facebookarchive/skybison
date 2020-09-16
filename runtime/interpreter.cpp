@@ -596,8 +596,7 @@ Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
 }
 
 HANDLER_INLINE Continue Interpreter::tailcall(Thread* thread, word arg) {
-  return handleCall(thread, arg, arg, 0, preparePositionalCall,
-                    &Function::entry);
+  return handleCall(thread, arg, arg, preparePositionalCall, &Function::entry);
 }
 
 static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
@@ -4268,10 +4267,9 @@ Continue Interpreter::callInterpreted(Thread* thread, word nargs, Frame* frame,
                              preparePositionalCall);
 }
 
-HANDLER_INLINE Continue
-Interpreter::handleCall(Thread* thread, word nargs, word callable_idx,
-                        word num_extra_pop, PrepareCallFunc prepare_args,
-                        Function::Entry (RawFunction::*get_entry)() const) {
+HANDLER_INLINE Continue Interpreter::handleCall(
+    Thread* thread, word nargs, word callable_idx, PrepareCallFunc prepare_args,
+    Function::Entry (RawFunction::*get_entry)() const) {
   // Warning: This code is using `RawXXX` variables for performance! This is
   // despite the fact that we call functions that do potentially perform memory
   // allocations. This is legal here because we always rely on the functions
@@ -4280,8 +4278,7 @@ Interpreter::handleCall(Thread* thread, word nargs, word callable_idx,
   // invariant if you change the code!
 
   Frame* caller_frame = thread->currentFrame();
-  RawObject* post_call_sp =
-      caller_frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
+  RawObject* post_call_sp = caller_frame->valueStackTop() + callable_idx + 1;
   PrepareCallableResult prepare_result =
       prepareCallableCall(thread, caller_frame, nargs, callable_idx);
   if (prepare_result.function.isErrorException()) return Continue::UNWIND;
@@ -4317,8 +4314,7 @@ ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {
-  return handleCall(thread, arg, arg, 0, preparePositionalCall,
-                    &Function::entry);
+  return handleCall(thread, arg, arg, preparePositionalCall, &Function::entry);
 }
 
 HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {
@@ -4425,7 +4421,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteDeref(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doCallFunctionKw(Thread* thread,
                                                       word arg) {
-  return handleCall(thread, arg, arg + 1, 0, prepareKeywordCall,
+  return handleCall(thread, arg, arg + 1, prepareKeywordCall,
                     &Function::entryKw);
 }
 
@@ -4904,8 +4900,8 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject maybe_method = frame->peek(arg + 1);
   if (maybe_method.isUnbound()) {
-    // Need to pop the extra Unbound.
-    return handleCall(thread, arg, arg, 1, preparePositionalCall,
+    frame->removeValueAt(arg + 1);
+    return handleCall(thread, arg, arg, preparePositionalCall,
                       &Function::entry);
   }
   // Add one to bind receiver to the self argument. See doLoadMethod()

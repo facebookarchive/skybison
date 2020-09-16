@@ -233,6 +233,7 @@ class Frame {
   void pushValue(RawObject value);
   // Insert value at offset on the stack.
   void insertValueAt(RawObject value, word offset);
+  void removeValueAt(word offset);
   // Set value at offset on the stack.
   void setValueAt(RawObject value, word offset);
   // Pop the top value off the stack and return it.
@@ -468,6 +469,16 @@ inline void Frame::insertValueAt(RawObject value, word offset) {
   }
   sp[offset] = value;
   setValueStackTop(sp);
+}
+
+inline void Frame::removeValueAt(word offset) {
+  DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
+         offset);
+  RawObject* sp = valueStackTop();
+  for (word i = offset; i >= 1; i--) {
+    sp[i] = sp[i - 1];
+  }
+  setValueStackTop(sp + 1);
 }
 
 inline void Frame::setValueAt(RawObject value, word offset) {

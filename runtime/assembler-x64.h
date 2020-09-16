@@ -379,6 +379,7 @@ class Assembler {
   F(leave, 0xc9)                                                               \
   F(hlt, 0xf4)                                                                 \
   F(cld, 0xfc)                                                                 \
+  F(std, 0xfd)                                                                 \
   F(int3, 0xcc)                                                                \
   F(pushad, 0x60)                                                              \
   F(popad, 0x61)                                                               \

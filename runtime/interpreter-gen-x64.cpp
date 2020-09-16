@@ -117,7 +117,6 @@ struct EmitEnv {
   Label opcode_handlers[kNumBytecodes];
   Label call_function_no_intrinsic_handler;
   Label call_handler;
-  Label call_pop_word_handler;
   Label unwind_handler;
 };
 
@@ -957,14 +956,13 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
 }
 
 void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
-                                        Label* next_opcode, word extra_pop) {
+                                        Label* next_opcode) {
   const Register r_scratch = RAX;
   const Register r_flags = RDX;
   const Register r_post_call_sp = R8;
   const Register r_saved_post_call_sp = R15;
 
-  __ leaq(r_post_call_sp,
-          Address(RSP, kOpargReg, TIMES_8, kPointerSize + extra_pop));
+  __ leaq(r_post_call_sp, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
 
   // Check whether the call is interpreted.
   __ movl(r_flags,
@@ -1025,7 +1023,7 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
-void emitCallHandler(EmitEnv* env, word extra_pop) {
+void emitCallHandler(EmitEnv* env) {
   const Register r_callable = RDI;
   const Register r_intrinsic_id = RDX;
 
@@ -1079,7 +1077,7 @@ void emitCallHandler(EmitEnv* env, word extra_pop) {
 
   __ bind(&no_intrinsic);
 
-  emitCallFunctionNoIntrinsicHandler(env, r_callable, &next_opcode, extra_pop);
+  emitCallFunctionNoIntrinsicHandler(env, r_callable, &next_opcode);
 
   __ bind(&prepare_callable_generic);
   emitPrepareCallable(env, r_callable, r_layout_id, &prepare_callable_immediate,
@@ -1095,11 +1093,12 @@ void emitHandler<CALL_FUNCTION>(EmitEnv* env) {
 template <>
 void emitHandler<CALL_METHOD>(EmitEnv* env) {
   Register r_scratch = RAX;
+  Label remove_value_and_call;
 
-  // if (frame->peek(arg + 1).isUnbound()) goto call_pop_word_handler;
+  // if (frame->peek(arg + 1).isUnbound()) goto remove_value_and_call;
   __ movl(r_scratch, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
   __ cmpl(r_scratch, Immediate(Unbound::object().raw()));
-  __ jcc(EQUAL, &env->call_pop_word_handler, Assembler::kFarJump);
+  __ jcc(EQUAL, &remove_value_and_call, Assembler::kNearJump);
 
   // Increment argument count by 1 and jump into a call handler .
   // Since CALL_METHOD always calls a function object from attribute lookups,
@@ -1108,6 +1107,24 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   // attribute.
   __ incl(kOpargReg);
   __ jmp(&env->call_function_no_intrinsic_handler, Assembler::kFarJump);
+
+  // frame->removeValueAt(arg + 1)
+  __ bind(&remove_value_and_call);
+  Register r_saved_rdi = R8;
+  Register r_saved_rsi = R9;
+  __ movq(r_saved_rdi, RDI);
+  __ movq(r_saved_rsi, RSI);
+  // Use `rep movsq` to copy RCX words from RSI to RDI.
+  __ std();
+  __ leaq(RCX, Address(kOpargReg, 1));
+  __ leaq(RSI, Address(RSP, kOpargReg, TIMES_8, 0));
+  __ leaq(RDI, Address(RSI, kPointerSize));
+  __ repMovsq();
+  __ cld();
+  __ addq(RSP, Immediate(kPointerSize));
+  __ movq(RDI, r_saved_rdi);
+  __ movq(RSI, r_saved_rsi);
+  __ jmp(&env->call_handler, Assembler::kFarJump);
 }
 
 template <>
@@ -1578,18 +1595,15 @@ void emitInterpreter(EmitEnv* env) {
 #undef BC
 
   __ bind(&env->call_handler);
-  emitCallHandler(env, 0);
+  emitCallHandler(env);
 
   __ bind(&env->call_function_no_intrinsic_handler);
   {
     const Register r_callable = RDI;
     Label next_opcode;
     __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
-    emitCallFunctionNoIntrinsicHandler(env, r_callable, &next_opcode, 0);
+    emitCallFunctionNoIntrinsicHandler(env, r_callable, &next_opcode);
   }
-
-  __ bind(&env->call_pop_word_handler);
-  emitCallHandler(env, /*extra_pop=*/kPointerSize);
 
   // Emit the generic handler stubs at the end, out of the way of the
   // interesting code.
