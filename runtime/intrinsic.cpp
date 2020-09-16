@@ -582,7 +582,7 @@ static bool len(Thread* thread) {
   return true;
 }
 
-bool doIntrinsic(Thread* thread, Frame*, SymbolId name) {
+bool doIntrinsic(Thread* thread, SymbolId name) {
   switch (name) {
     case ID(_bool_check):
       return underBoolCheck(thread);

@@ -93,10 +93,8 @@ bool givenExceptionMatches(Thread* thread, const Object& given,
 
 RawObject createException(Thread* thread, const Type& type,
                           const Object& value) {
-  Frame* frame = thread->currentFrame();
-
   if (value.isNoneType()) {
-    return Interpreter::call0(thread, frame, type);
+    return Interpreter::call0(thread, type);
   }
   if (thread->runtime()->isInstanceOfTuple(*value)) {
     HandleScope scope(thread);
@@ -106,9 +104,9 @@ RawObject createException(Thread* thread, const Type& type,
     for (word i = 0; i < length; i++) {
       thread->stackPush(args.at(i));
     }
-    return Interpreter::call(thread, frame, /*nargs=*/length);
+    return Interpreter::call(thread, /*nargs=*/length);
   }
-  return Interpreter::call1(thread, frame, type, value);
+  return Interpreter::call1(thread, type, value);
 }
 
 void normalizeException(Thread* thread, Object* exc, Object* val,
@@ -204,8 +202,7 @@ static void printPendingExceptionImpl(Thread* thread, bool set_sys_last_vars) {
     return;
   }
 
-  Object result(&scope, Interpreter::call3(thread, thread->currentFrame(), hook,
-                                           type, value, tb));
+  Object result(&scope, Interpreter::call3(thread, hook, type, value, tb));
   if (!result.isError()) return;
   Object type2(&scope, thread->pendingExceptionType());
   if (givenExceptionMatches(thread, type2, system_exit)) {

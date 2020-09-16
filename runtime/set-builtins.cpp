@@ -276,20 +276,17 @@ RawObject setIntersection(Thread* thread, const SetBase& set,
   }
   // Generic case
   Object iter_method(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterable, ID(__iter__)));
+                     Interpreter::lookupMethod(thread, iterable, ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object iterator(&scope,
-                  Interpreter::callMethod1(thread, thread->currentFrame(),
-                                           iter_method, iterable));
+                  Interpreter::callMethod1(thread, iter_method, iterable));
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object next_method(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterator, ID(__next__)));
+                     Interpreter::lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
@@ -300,8 +297,7 @@ RawObject setIntersection(Thread* thread, const SetBase& set,
   Tuple data(&scope, set.data());
   Object hash_obj(&scope, NoneType::object());
   for (;;) {
-    value = Interpreter::callMethod1(thread, thread->currentFrame(),
-                                     next_method, iterator);
+    value = Interpreter::callMethod1(thread, next_method, iterator);
     if (value.isError()) {
       if (thread->clearPendingStopIteration()) break;
       return *value;
@@ -392,29 +388,25 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
   }
   // Generic case
   Object iter_method(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterable, ID(__iter__)));
+                     Interpreter::lookupMethod(thread, iterable, ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object is not iterable", &iterable);
   }
   Object iterator(&scope,
-                  Interpreter::callMethod1(thread, thread->currentFrame(),
-                                           iter_method, iterable));
+                  Interpreter::callMethod1(thread, iter_method, iterable));
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object is not iterable", &iterable);
   }
   Object next_method(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterator, ID(__next__)));
+                     Interpreter::lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
   }
   for (;;) {
-    elt = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
-                                   iterator);
+    elt = Interpreter::callMethod1(thread, next_method, iterator);
     if (elt.isError()) {
       if (thread->clearPendingStopIteration()) break;
       return *elt;
@@ -521,29 +513,24 @@ static RawObject isdisjointImpl(Thread* thread, Frame* frame, word nargs,
     return Bool::trueObj();
   }
   // Generic iterator case
-  Object iter_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), other,
-                                        ID(__iter__)));
+  Object iter_method(&scope,
+                     Interpreter::lookupMethod(thread, other, ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
-  Object iterator(&scope,
-                  Interpreter::callMethod1(thread, thread->currentFrame(),
-                                           iter_method, other));
+  Object iterator(&scope, Interpreter::callMethod1(thread, iter_method, other));
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object next_method(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterator, ID(__next__)));
+                     Interpreter::lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
   }
   Object hash_obj(&scope, NoneType::object());
   for (;;) {
-    value = Interpreter::callMethod1(thread, thread->currentFrame(),
-                                     next_method, iterator);
+    value = Interpreter::callMethod1(thread, next_method, iterator);
     if (value.isError()) {
       if (thread->clearPendingStopIteration()) break;
       return *value;
@@ -809,8 +796,7 @@ RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
     return *iterable;
   }
   Object dunder_iter(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterable, ID(__iter__)));
+                     Interpreter::lookupMethod(thread, iterable, ID(__iter__)));
   if (dunder_iter.isError()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,

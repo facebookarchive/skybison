@@ -96,13 +96,11 @@ static RawObject throwYieldFrom(Thread* thread, const GeneratorBase& gen,
   // This is awkward but necessary to maintain compatibility with how CPython
   // calls yf.throw(): it forwards exaclty as many arguments as it was given.
   if (value.isUnbound()) {
-    result = Interpreter::call1(thread, thread->currentFrame(), throw_obj, exc);
+    result = Interpreter::call1(thread, throw_obj, exc);
   } else if (tb.isUnbound()) {
-    result = Interpreter::call2(thread, thread->currentFrame(), throw_obj, exc,
-                                value);
+    result = Interpreter::call2(thread, throw_obj, exc, value);
   } else {
-    result = Interpreter::call3(thread, thread->currentFrame(), throw_obj, exc,
-                                value, tb);
+    result = Interpreter::call3(thread, throw_obj, exc, value, tb);
   }
   gen.setRunning(Bool::falseObj());
 
@@ -327,9 +325,7 @@ static RawObject initAsyncGenHooksOnInstance(Thread* thread,
   gen.setFinalizer(thread->asyncgenHooksFinalizer());
   Object first_iter(&scope, thread->asyncgenHooksFirstIter());
   if (!first_iter.isNoneType()) {
-    Object first_iter_res(
-        &scope,
-        Interpreter::call1(thread, thread->currentFrame(), first_iter, gen));
+    Object first_iter_res(&scope, Interpreter::call1(thread, first_iter, gen));
     if (first_iter_res.isErrorException()) {
       return *first_iter_res;
     }

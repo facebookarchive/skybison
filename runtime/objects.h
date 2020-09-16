@@ -2257,7 +2257,7 @@ class RawFunction : public RawInstance {
   //
   // The entry point is called with the current thread, the caller's stack
   // frame, and the number of arguments that have been pushed onto the stack.
-  using Entry = RawObject (*)(Thread*, Frame*, word);
+  using Entry = RawObject (*)(Thread*, word);
 
   enum Flags {
     kNone = 0,

@@ -38,8 +38,7 @@ def test(callable):
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
-  Object result(&scope, Interpreter::call1(thread_, thread_->currentFrame(),
-                                           func, method));
+  Object result(&scope, Interpreter::call1(thread_, func, method));
   EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
@@ -64,8 +63,7 @@ def test(callable):
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
-  Object result(&scope, Interpreter::call1(thread_, thread_->currentFrame(),
-                                           func, method));
+  Object result(&scope, Interpreter::call1(thread_, func, method));
   EXPECT_PYLIST_EQ(result, {1111, 2222, 3333});
 }
 
@@ -731,8 +729,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   foo.setClosure(*closure_tuple);
 
   Object argument(&scope, runtime_->newInt(3));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), foo, argument), 3));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, argument), 3));
 }
 
 TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
@@ -793,14 +790,13 @@ TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
   Function function(&scope, makeFunctionWithPosOnlyArg(thread_));
 
   // `foo(a=2, b=4)`
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(*function);
   thread_->stackPush(runtime_->newInt(2));
   thread_->stackPush(runtime_->newInt(4));
   Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
   Object b(&scope, Runtime::internStrFromCStr(thread_, "b"));
   thread_->stackPush(runtime_->newTupleWith2(a, b));
-  Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
+  Object result_obj(&scope, Interpreter::callKw(thread_, 2));
   EXPECT_TRUE(raisedWithStr(
       *result_obj, LayoutId::kTypeError,
       "keyword argument specified for positional-only argument 'a'"));
@@ -811,13 +807,12 @@ TEST_F(TrampolinesTest, KeywordCallAcceptsNonPositionalOnlyArgumentNames) {
   Function function(&scope, makeFunctionWithPosOnlyArg(thread_));
 
   // `foo(2, b=9)`
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(*function);
   thread_->stackPush(runtime_->newInt(2));
   thread_->stackPush(runtime_->newInt(9));
   Object b(&scope, Runtime::internStrFromCStr(thread_, "b"));
   thread_->stackPush(runtime_->newTupleWith1(b));
-  Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
+  Object result_obj(&scope, Interpreter::callKw(thread_, 2));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -863,13 +858,12 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   Object ten(&scope, runtime_->newInt(10));
   foo.setDefaults(runtime_->newTupleWith2(seven, ten));
   // Call foo(1, c=13, b=5).
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(*foo);
   thread_->stackPush(runtime_->newInt(1));
   thread_->stackPush(runtime_->newInt(13));
   thread_->stackPush(runtime_->newInt(5));
   thread_->stackPush(runtime_->newTupleWith2(c, b));
-  Object result_obj(&scope, Interpreter::callKw(thread_, frame, 3));
+  Object result_obj(&scope, Interpreter::callKw(thread_, 3));
 
   // Expect a `(1, 7, 13, {'b': 5})` result.
   ASSERT_TRUE(result_obj.isTuple());
@@ -1155,17 +1149,16 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgs) {
   HandleScope scope(thread_);
   Object function(&scope, newFunctionNoArgs(thread_));
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), function, arg0),
-      1230));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call1(thread_, function, arg0), 1230));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Function function(&scope, newFunctionNoArgs(thread_));
-  EXPECT_TRUE(raisedWithStr(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      LayoutId::kTypeError, "'foo' must be bound to an object"));
+  EXPECT_TRUE(raisedWithStr(Interpreter::call0(thread_, function),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsWithTooManyArgsRaisesTypeError) {
@@ -1173,37 +1166,33 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsWithTooManyArgsRaisesTypeError) {
   Function function(&scope, newFunctionNoArgs(thread_));
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newStrFromCStr("bar"));
-  EXPECT_TRUE(raisedWithStr(Interpreter::call2(thread_, thread_->currentFrame(),
-                                               function, arg0, arg1),
+  EXPECT_TRUE(raisedWithStr(Interpreter::call2(thread_, function, arg0, arg1),
                             LayoutId::kTypeError,
                             "'foo' takes no arguments (1 given)"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsKw) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 1), 1230));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 1), 1230));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsKwWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest,
        MethodTrampolineNoArgsKwWithTooManyArgsRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newStrFromCStr("bar"));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 2),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 2),
                             LayoutId::kTypeError,
                             "'foo' takes no arguments (1 given)"));
 }
@@ -1212,12 +1201,11 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsKwWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
   Object key(&scope, runtime_->newStrFromCStr("key"));
   Tuple kw_names(&scope, runtime_->newTupleWith1(key));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newStrFromCStr("value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 2),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 2),
                             LayoutId::kTypeError,
                             "'foo' takes no keyword arguments"));
 }
@@ -1226,30 +1214,26 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithoutKwargs) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Tuple args(&scope, runtime_->newTupleWith1(self));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1230));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 1230));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithKwargs) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Tuple args(&scope, runtime_->newTupleWith1(self));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(runtime_->newDict());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
-      1230));
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS), 1230));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1260,10 +1244,9 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithArgRaisesTypeError) {
   Object bar(&scope, runtime_->newStrFromCStr("bar"));
   Object num(&scope, runtime_->newInt(88));
   Tuple args(&scope, runtime_->newTupleWith3(self, bar, num));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' takes no arguments (2 given)"));
 }
@@ -1275,12 +1258,11 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsExWithKeywordArgRaisesTypeError) {
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionNoArgs(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(*kwargs);
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS),
       LayoutId::kTypeError, "'foo' takes no keyword arguments"));
 }
 
@@ -1312,17 +1294,15 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArg) {
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newFloat(42.5));
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, arg0, arg1),
-                      1231));
+      isIntEqualsWord(Interpreter::call2(thread_, function, arg0, arg1), 1231));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Function function(&scope, newFunctionOneArg(thread_));
-  EXPECT_TRUE(raisedWithStr(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      LayoutId::kTypeError, "'foo' must be bound to an object"));
+  EXPECT_TRUE(raisedWithStr(Interpreter::call0(thread_, function),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgWithTooManyArgsRaisesTypeError) {
@@ -1333,38 +1313,34 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgWithTooManyArgsRaisesTypeError) {
   Object arg2(&scope, runtime_->newInt(5));
   Object arg3(&scope, runtime_->newInt(7));
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::call4(thread_, thread_->currentFrame(), function, arg0, arg1,
-                         arg2, arg3),
+      Interpreter::call4(thread_, function, arg0, arg1, arg2, arg3),
       LayoutId::kTypeError, "'foo' takes exactly one argument (3 given)"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgKw) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newFloat(42.5));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 2), 1231));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 2), 1231));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgKwWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest,
        MethodTrampolineOneArgKwWithTooManyArgsRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newFloat(42.5));
   thread_->stackPush(runtime_->newInt(5));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 3),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 3),
                             LayoutId::kTypeError,
                             "'foo' takes exactly one argument (2 given)"));
 }
@@ -1373,12 +1349,11 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgKwWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
   Object key(&scope, runtime_->newStrFromCStr("key"));
   Tuple kw_names(&scope, runtime_->newTupleWith1(key));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(runtime_->newFloat(42.5));
   thread_->stackPush(runtime_->newStrFromCStr("value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 2),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 2),
                             LayoutId::kTypeError,
                             "'foo' takes no keyword arguments"));
 }
@@ -1388,10 +1363,9 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithoutKwargs) {
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Object num(&scope, runtime_->newFloat(42.5));
   Tuple args(&scope, runtime_->newTupleWith2(self, num));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1231));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 1231));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithKwargs) {
@@ -1399,20 +1373,17 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithKwargs) {
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Object num(&scope, runtime_->newFloat(42.5));
   Tuple args(&scope, runtime_->newTupleWith2(self, num));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(runtime_->newDict());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
-      1231));
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS), 1231));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1421,12 +1392,11 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithTooFewArgsRaisesTypeError) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Tuple args(&scope, runtime_->newTupleWith1(self));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(runtime_->newDict());
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS),
       LayoutId::kTypeError, "'foo' takes exactly one argument (0 given)"));
 }
 
@@ -1438,12 +1408,11 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgExWithKeywordArgRaisesTypeError) {
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionOneArg(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(*kwargs);
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS),
       LayoutId::kTypeError, "'foo' takes no keyword arguments"));
 }
 
@@ -1480,35 +1449,31 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgs) {
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newInt(88));
   Object arg2(&scope, runtime_->newInt(33));
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call3(thread_, thread_->currentFrame(),
-                                         function, arg0, arg1, arg2),
-                      1239));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::call3(thread_, function, arg0, arg1, arg2), 1239));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object function(&scope, newFunctionVarArgs(thread_));
-  EXPECT_TRUE(raisedWithStr(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      LayoutId::kTypeError, "'foo' must be bound to an object"));
+  EXPECT_TRUE(raisedWithStr(Interpreter::call0(thread_, function),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsKw) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionVarArgs(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newInt(88));
   thread_->stackPush(runtime_->newInt(33));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 3), 1239));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 3), 1239));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsKwWithoutSelfRausesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionVarArgs(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1516,7 +1481,6 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsKwWithoutSelfRausesTypeError) {
 TEST_F(TrampolinesTest,
        MethodTrampolineVarArgsKwWithKeywordArgRausesTypeError) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Object key(&scope, runtime_->newStrFromCStr("key"));
   Tuple kw_names(&scope, runtime_->newTupleWith1(key));
   thread_->stackPush(newFunctionVarArgs(thread_));
@@ -1525,7 +1489,7 @@ TEST_F(TrampolinesTest,
   thread_->stackPush(runtime_->newInt(33));
   thread_->stackPush(runtime_->newStrFromCStr("value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 4),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 4),
                             LayoutId::kTypeError,
                             "'foo' takes no keyword arguments"));
 }
@@ -1536,10 +1500,9 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithoutKwargs) {
   Object num1(&scope, runtime_->newInt(88));
   Object num2(&scope, runtime_->newInt(33));
   Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionVarArgs(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1239));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 1239));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithKwargs) {
@@ -1548,20 +1511,17 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithKwargs) {
   Object num1(&scope, runtime_->newInt(88));
   Object num2(&scope, runtime_->newInt(33));
   Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionVarArgs(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(runtime_->newDict());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
-      1239));
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS), 1239));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionVarArgs(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1569,7 +1529,6 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsExWithoutSelfRaisesTypeError) {
 TEST_F(TrampolinesTest,
        MethodTrampolineVarArgsExWithKeywordArgRaisesTypeError) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Object num1(&scope, runtime_->newInt(88));
   Object num2(&scope, runtime_->newInt(33));
@@ -1581,7 +1540,7 @@ TEST_F(TrampolinesTest,
   thread_->stackPush(*args);
   thread_->stackPush(*kwargs);
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS),
       LayoutId::kTypeError, "'foo' takes no keyword arguments"));
 }
 
@@ -1620,18 +1579,16 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywords) {
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newInt(17));
   Object arg2(&scope, runtime_->newInt(-8));
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call3(thread_, thread_->currentFrame(),
-                                         function, arg0, arg1, arg2),
-                      1237));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::call3(thread_, function, arg0, arg1, arg2), 1237));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object function(&scope, newFunctionKeywordsNullKwargs(thread_));
-  EXPECT_TRUE(raisedWithStr(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      LayoutId::kTypeError, "'foo' must be bound to an object"));
+  EXPECT_TRUE(raisedWithStr(Interpreter::call0(thread_, function),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
 }
 
 static PyObject* capiFunctionKeywords(PyObject* self, PyObject* args,
@@ -1674,44 +1631,40 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsKw) {
   HandleScope scope(thread_);
   Object key(&scope, runtime_->newStrFromCStr("key"));
   Tuple kw_names(&scope, runtime_->newTupleWith1(key));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionKeywords(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newInt(17));
   thread_->stackPush(runtime_->newInt(-8));
   thread_->stackPush(runtime_->newStrFromCStr("value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 4), 1237));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 4), 1237));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsKwWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object key(&scope, runtime_->newStrFromCStr("key"));
   Tuple kw_names(&scope, runtime_->newTupleWith1(key));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionKeywords(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 1),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 1),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithoutKwargs) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Object num1(&scope, runtime_->newInt(17));
   Object num2(&scope, runtime_->newInt(-8));
   Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
   thread_->stackPush(newFunctionKeywordsNullKwargs(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1237));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 1237));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithKwargs) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Object self(&scope, runtime_->newStrFromCStr("the self argument"));
   Object num1(&scope, runtime_->newInt(17));
   Object num2(&scope, runtime_->newInt(-8));
@@ -1723,15 +1676,13 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithKwargs) {
   thread_->stackPush(*args);
   thread_->stackPush(*kwargs);
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
-      1237));
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS), 1237));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineKeywordsExWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newFunctionKeywordsNullKwargs(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1769,35 +1720,31 @@ TEST_F(TrampolinesTest, MethodTrampolineFast) {
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newFloat(-13.));
   Object arg2(&scope, runtime_->newFloat(0.125));
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call3(thread_, thread_->currentFrame(),
-                                         function, arg0, arg1, arg2),
-                      1236));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::call3(thread_, function, arg0, arg1, arg2), 1236));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineFastWithoutSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object function(&scope, newExtensionFunctionFast(thread_));
-  EXPECT_TRUE(raisedWithStr(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      LayoutId::kTypeError, "'foo' must be bound to an object"));
+  EXPECT_TRUE(raisedWithStr(Interpreter::call0(thread_, function),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineFastKw) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newFloat(-13.));
   thread_->stackPush(runtime_->newFloat(0.125));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 3), 1236));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 3), 1236));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineFastKwWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1806,14 +1753,13 @@ TEST_F(TrampolinesTest, MethodTrampolineFastKwWithKeywordRaisesTypeError) {
   HandleScope scope(thread_);
   Object key(&scope, runtime_->newStrFromCStr("key"));
   Tuple kw_names(&scope, runtime_->newTupleWith1(key));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newFloat(-13.));
   thread_->stackPush(runtime_->newFloat(0.125));
   thread_->stackPush(runtime_->newStrFromCStr("value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 4),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 4),
                             LayoutId::kTypeError,
                             "'foo' takes no keyword arguments"));
 }
@@ -1824,10 +1770,9 @@ TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutKwargs) {
   Object num1(&scope, runtime_->newFloat(-13.));
   Object num2(&scope, runtime_->newFloat(0.125));
   Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1236));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 1236));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineFastExWithKwargs) {
@@ -1836,20 +1781,17 @@ TEST_F(TrampolinesTest, MethodTrampolineFastExWithKwargs) {
   Object num1(&scope, runtime_->newFloat(-13.));
   Object num2(&scope, runtime_->newFloat(0.125));
   Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(runtime_->newDict());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
-      1236));
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS), 1236));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineFastExWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -1863,12 +1805,11 @@ TEST_F(TrampolinesTest, MethodTrampolineFastExWithKeywordArgRaisesTypeError) {
   Dict kwargs(&scope, runtime_->newDict());
   Object value(&scope, runtime_->newStrFromCStr("value"));
   dictAtPutById(thread_, kwargs, ID(key), value);
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFast(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(*kwargs);
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS),
       LayoutId::kTypeError, "'foo' takes no keyword arguments"));
 }
 
@@ -1911,10 +1852,8 @@ TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywords) {
   Object arg0(&scope, runtime_->newStrFromCStr("the self argument"));
   Object arg1(&scope, runtime_->newFloat(42.5));
   Object arg2(&scope, runtime_->newFloat(-8.8));
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call3(thread_, thread_->currentFrame(),
-                                         function, arg0, arg1, arg2),
-                      1238));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::call3(thread_, function, arg0, arg1, arg2), 1238));
 }
 
 TEST_F(TrampolinesTest,
@@ -1922,9 +1861,9 @@ TEST_F(TrampolinesTest,
   HandleScope scope(thread_);
   Object function(&scope,
                   newExtensionFunctionFastWithKeywordsNullKwnames(thread_));
-  EXPECT_TRUE(raisedWithStr(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      LayoutId::kTypeError, "'foo' must be bound to an object"));
+  EXPECT_TRUE(raisedWithStr(Interpreter::call0(thread_, function),
+                            LayoutId::kTypeError,
+                            "'foo' must be bound to an object"));
 }
 
 static PyObject* capiFunctionFastWithKeywords(PyObject* self,
@@ -1974,7 +1913,6 @@ TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsKw) {
   Object foo(&scope, runtime_->newStrFromCStr("foo"));
   Object bar(&scope, runtime_->newStrFromCStr("bar"));
   Tuple kw_names(&scope, runtime_->newTupleWith2(foo, bar));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFastWithKeywords(thread_));
   thread_->stackPush(runtime_->newStrFromCStr("the self argument"));
   thread_->stackPush(runtime_->newFloat(42.5));
@@ -1982,15 +1920,14 @@ TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsKw) {
   thread_->stackPush(runtime_->newStrFromCStr("foo_value"));
   thread_->stackPush(runtime_->newStrFromCStr("bar_value"));
   thread_->stackPush(*kw_names);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 5), 1238));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 5), 1238));
 }
 
 TEST_F(TrampolinesTest,
        MethodTrampolineFastWithKeywordsKwWihoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFastWithKeywords(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callKw(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }
@@ -2001,10 +1938,9 @@ TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithoutKwargs) {
   Object num1(&scope, runtime_->newFloat(42.5));
   Object num2(&scope, runtime_->newFloat(-8.8));
   Tuple args(&scope, runtime_->newTupleWith3(self, num1, num2));
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFastWithKeywordsNullKwnames(thread_));
   thread_->stackPush(*args);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 1238));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 1238));
 }
 
 TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithKwargs) {
@@ -2020,21 +1956,18 @@ TEST_F(TrampolinesTest, MethodTrampolineFastWithKeywordsExWithKwargs) {
   Object bar(&scope, runtime_->newStrFromCStr("bar"));
   Object bar_value(&scope, runtime_->newStrFromCStr("bar_value"));
   dictAtPutByStr(thread_, kwargs, bar, bar_value);
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFastWithKeywords(thread_));
   thread_->stackPush(*args);
   thread_->stackPush(*kwargs);
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callEx(thread_, frame, CallFunctionExFlag::VAR_KEYWORDS),
-      1238));
+      Interpreter::callEx(thread_, CallFunctionExFlag::VAR_KEYWORDS), 1238));
 }
 
 TEST_F(TrampolinesTest,
        MethodTrampolineFastWithKeywordsExWithoutSelfRaisesTypeError) {
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(newExtensionFunctionFastWithKeywords(thread_));
   thread_->stackPush(runtime_->emptyTuple());
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'foo' must be bound to an object"));
 }

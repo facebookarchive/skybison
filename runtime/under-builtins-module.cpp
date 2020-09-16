@@ -2015,8 +2015,8 @@ RawObject FUNC(_builtins, _divmod)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object number(&scope, args.get(0));
   Object divisor(&scope, args.get(1));
-  return Interpreter::binaryOperation(
-      thread, frame, Interpreter::BinaryOp::DIVMOD, number, divisor);
+  return Interpreter::binaryOperation(thread, Interpreter::BinaryOp::DIVMOD,
+                                      number, divisor);
 }
 
 RawObject FUNC(_builtins, _exec)(Thread* thread, Frame* frame, word nargs) {
@@ -2950,7 +2950,7 @@ RawObject FUNC(_builtins, _iter)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object object(&scope, args.get(0));
-  return Interpreter::createIterator(thread, thread->currentFrame(), object);
+  return Interpreter::createIterator(thread, object);
 }
 
 RawObject FUNC(_builtins, _list_append)(Thread* thread, Frame* frame,
@@ -5467,7 +5467,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
       for (word i = 0; i < pargs_length; ++i) {
         thread->stackPush(pargs.at(i));
       }
-      instance = Interpreter::call(thread, frame, pargs_length + 1);
+      instance = Interpreter::call(thread, pargs_length + 1);
     } else {
       MutableTuple call_args(&scope,
                              runtime->newMutableTuple(pargs_length + 1));
@@ -5475,8 +5475,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
       call_args.replaceFromWith(1, *pargs, pargs_length);
       thread->stackPush(call_args.becomeImmutable());
       thread->stackPush(*kwargs);
-      instance =
-          Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+      instance = Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
       call_args_obj = *call_args;
     }
     if (instance.isErrorException()) return *instance;
@@ -5503,7 +5502,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
       for (word i = 0; i < pargs_length; ++i) {
         thread->stackPush(pargs.at(i));
       }
-      result = Interpreter::call(thread, frame, pargs_length + 1);
+      result = Interpreter::call(thread, pargs_length + 1);
     } else {
       if (!call_args_obj.isMutableTuple()) {
         MutableTuple call_args(&scope,
@@ -5516,8 +5515,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
       }
       thread->stackPush(*call_args_obj);
       thread->stackPush(*kwargs);
-      result =
-          Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+      result = Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
     }
     if (result.isErrorException()) return *result;
     if (!result.isNoneType()) {

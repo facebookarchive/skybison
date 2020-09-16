@@ -55,8 +55,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
       }
       return runtime->newBoundMethod(value, self);
     }
-    return Interpreter::callDescriptorGet(thread, thread->currentFrame(), value,
-                                          self, start_type);
+    return Interpreter::callDescriptorGet(thread, value, self, start_type);
   }
 
   return objectGetAttribute(thread, super, name);

@@ -821,7 +821,6 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   Object dunder_new(&scope,
                     runtime->attributeAtById(thread, type_obj, ID(__new__)));
   if (dunder_new.isError()) return nullptr;
-  Frame* frame = thread->currentFrame();
   thread->stackPush(*dunder_new);
   thread->stackPush(new_args.becomeImmutable());
   word flags = 0;
@@ -829,7 +828,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
     thread->stackPush(*kwargs_obj);
     flags = CallFunctionExFlag::VAR_KEYWORDS;
   }
-  Object result(&scope, Interpreter::callEx(thread, frame, flags));
+  Object result(&scope, Interpreter::callEx(thread, flags));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

@@ -1132,8 +1132,7 @@ TEST_F(ThreadTest,
   Object obj1(&scope, runtime_->newInt(123));
   Type stop_iteration_type(&scope, runtime_->typeAt(LayoutId::kStopIteration));
   Object stop_iteration(&scope,
-                        Interpreter::call1(thread_, thread_->currentFrame(),
-                                           stop_iteration_type, obj1));
+                        Interpreter::call1(thread_, stop_iteration_type, obj1));
   thread_->raiseStopIterationWithValue(stop_iteration);
 
   ASSERT_TRUE(thread_->hasPendingStopIteration());

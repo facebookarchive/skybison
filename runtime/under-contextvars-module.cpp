@@ -253,8 +253,7 @@ RawObject METH(Context, run)(Thread* thread, Frame* frame, word nargs) {
   thread->stackPush(args.get(2));  // *args
   thread->stackPush(args.get(3));  // **kwargs
   Object call_result(
-      &scope,
-      Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS));
+      &scope, Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS));
 
   // Always restore the thread's previous Context even if call above failed
   thread->setContextvarsContext(self.prevContext());

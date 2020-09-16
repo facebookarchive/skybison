@@ -373,29 +373,25 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
 
 RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {
   HandleScope scope(this);
-  Object method(&scope, Interpreter::lookupMethod(this, current_frame_,
-                                                  receiver, selector));
+  Object method(&scope, Interpreter::lookupMethod(this, receiver, selector));
   if (method.isError()) return *method;
-  return Interpreter::callMethod1(this, current_frame_, method, receiver);
+  return Interpreter::callMethod1(this, method, receiver);
 }
 
 RawObject Thread::invokeMethod2(const Object& receiver, SymbolId selector,
                                 const Object& arg1) {
   HandleScope scope(this);
-  Object method(&scope, Interpreter::lookupMethod(this, current_frame_,
-                                                  receiver, selector));
+  Object method(&scope, Interpreter::lookupMethod(this, receiver, selector));
   if (method.isError()) return *method;
-  return Interpreter::callMethod2(this, current_frame_, method, receiver, arg1);
+  return Interpreter::callMethod2(this, method, receiver, arg1);
 }
 
 RawObject Thread::invokeMethod3(const Object& receiver, SymbolId selector,
                                 const Object& arg1, const Object& arg2) {
   HandleScope scope(this);
-  Object method(&scope, Interpreter::lookupMethod(this, current_frame_,
-                                                  receiver, selector));
+  Object method(&scope, Interpreter::lookupMethod(this, receiver, selector));
   if (method.isError()) return *method;
-  return Interpreter::callMethod3(this, current_frame_, method, receiver, arg1,
-                                  arg2);
+  return Interpreter::callMethod3(this, method, receiver, arg1, arg2);
 }
 
 RawObject Thread::invokeMethodStatic1(LayoutId type, SymbolId method_name,
@@ -406,7 +402,7 @@ RawObject Thread::invokeMethodStatic1(LayoutId type, SymbolId method_name,
   Type type_handle(&scope, *type_obj);
   Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
-  return Interpreter::callMethod1(this, current_frame_, method, receiver);
+  return Interpreter::callMethod1(this, method, receiver);
 }
 
 RawObject Thread::invokeMethodStatic2(LayoutId type, SymbolId method_name,
@@ -418,7 +414,7 @@ RawObject Thread::invokeMethodStatic2(LayoutId type, SymbolId method_name,
   Type type_handle(&scope, *type_obj);
   Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
-  return Interpreter::callMethod2(this, current_frame_, method, receiver, arg1);
+  return Interpreter::callMethod2(this, method, receiver, arg1);
 }
 
 RawObject Thread::invokeMethodStatic3(LayoutId type, SymbolId method_name,
@@ -430,8 +426,7 @@ RawObject Thread::invokeMethodStatic3(LayoutId type, SymbolId method_name,
   Type type_handle(&scope, *type_obj);
   Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
-  return Interpreter::callMethod3(this, current_frame_, method, receiver, arg1,
-                                  arg2);
+  return Interpreter::callMethod3(this, method, receiver, arg1, arg2);
 }
 
 RawObject Thread::invokeMethodStatic4(LayoutId type, SymbolId method_name,
@@ -444,15 +439,14 @@ RawObject Thread::invokeMethodStatic4(LayoutId type, SymbolId method_name,
   Type type_handle(&scope, *type_obj);
   Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
-  return Interpreter::callMethod4(this, current_frame_, method, receiver, arg1,
-                                  arg2, arg3);
+  return Interpreter::callMethod4(this, method, receiver, arg1, arg2, arg3);
 }
 
 RawObject Thread::invokeFunction0(SymbolId module, SymbolId name) {
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call0(this, current_frame_, func);
+  return Interpreter::call0(this, func);
 }
 
 RawObject Thread::invokeFunction1(SymbolId module, SymbolId name,
@@ -460,7 +454,7 @@ RawObject Thread::invokeFunction1(SymbolId module, SymbolId name,
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call1(this, current_frame_, func, arg1);
+  return Interpreter::call1(this, func, arg1);
 }
 
 RawObject Thread::invokeFunction2(SymbolId module, SymbolId name,
@@ -468,7 +462,7 @@ RawObject Thread::invokeFunction2(SymbolId module, SymbolId name,
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call2(this, current_frame_, func, arg1, arg2);
+  return Interpreter::call2(this, func, arg1, arg2);
 }
 
 RawObject Thread::invokeFunction3(SymbolId module, SymbolId name,
@@ -477,7 +471,7 @@ RawObject Thread::invokeFunction3(SymbolId module, SymbolId name,
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call3(this, current_frame_, func, arg1, arg2, arg3);
+  return Interpreter::call3(this, func, arg1, arg2, arg3);
 }
 
 RawObject Thread::invokeFunction4(SymbolId module, SymbolId name,
@@ -486,7 +480,7 @@ RawObject Thread::invokeFunction4(SymbolId module, SymbolId name,
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call4(this, current_frame_, func, arg1, arg2, arg3, arg4);
+  return Interpreter::call4(this, func, arg1, arg2, arg3, arg4);
 }
 
 RawObject Thread::invokeFunction5(SymbolId module, SymbolId name,
@@ -496,8 +490,7 @@ RawObject Thread::invokeFunction5(SymbolId module, SymbolId name,
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call5(this, current_frame_, func, arg1, arg2, arg3, arg4,
-                            arg5);
+  return Interpreter::call5(this, func, arg1, arg2, arg3, arg4, arg5);
 }
 
 RawObject Thread::invokeFunction6(SymbolId module, SymbolId name,
@@ -507,8 +500,7 @@ RawObject Thread::invokeFunction6(SymbolId module, SymbolId name,
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func.isError()) return *func;
-  return Interpreter::call6(this, current_frame_, func, arg1, arg2, arg3, arg4,
-                            arg5, arg6);
+  return Interpreter::call6(this, func, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 RawObject Thread::raise(LayoutId type, RawObject value) {

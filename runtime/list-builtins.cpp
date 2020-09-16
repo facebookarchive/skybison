@@ -443,8 +443,8 @@ RawObject METH(list, remove)(Thread* thread, Frame* frame, word nargs) {
       listPop(thread, self, i);
       return NoneType::object();
     }
-    comp_result = Interpreter::compareOperation(thread, frame, CompareOp::EQ,
-                                                item, value);
+    comp_result =
+        Interpreter::compareOperation(thread, CompareOp::EQ, item, value);
     if (comp_result.isError()) return *comp_result;
     found = Interpreter::isTrue(thread, *comp_result);
     if (found.isError()) return *found;

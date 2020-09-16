@@ -465,8 +465,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   Object meta_attr(&scope, typeLookupInMro(thread, metatype, name));
   if (!meta_attr.isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
-      return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
-                                               meta_attr, receiver);
+      return Interpreter::callDescriptorDelete(thread, meta_attr, receiver);
     }
   }
 
@@ -489,8 +488,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
-      return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
-                                               type_attr, receiver);
+      return Interpreter::callDescriptorDelete(thread, type_attr, receiver);
     }
   }
 
@@ -515,8 +513,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
-      return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
-                                               type_attr, receiver);
+      return Interpreter::callDescriptorDelete(thread, type_attr, receiver);
     }
   }
 
@@ -1787,8 +1784,8 @@ RawObject Runtime::handlePendingSignals(Thread* thread) {
       Object callback(&scope, signalCallback(i));
       Object signum(&scope, SmallInt::fromWord(i));
       Object frame(&scope, NoneType::object());
-      Object result(&scope, Interpreter::call2(thread, thread->currentFrame(),
-                                               callback, signum, frame));
+      Object result(&scope,
+                    Interpreter::call2(thread, callback, signum, frame));
 
       if (result.isErrorException()) {
         is_signal_pending_ = true;
@@ -1944,7 +1941,6 @@ void Runtime::collectGarbage() {
 
 void Runtime::processCallbacks() {
   Thread* thread = Thread::current();
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object saved_type(&scope, thread->pendingExceptionType());
   Object saved_value(&scope, thread->pendingExceptionValue());
@@ -1954,7 +1950,7 @@ void Runtime::processCallbacks() {
   while (callbacks_ != NoneType::object()) {
     Object weak(&scope, WeakRef::dequeue(&callbacks_));
     Object callback(&scope, WeakRef::cast(*weak).callback());
-    Interpreter::callMethod1(thread, frame, callback, weak);
+    Interpreter::callMethod1(thread, callback, weak);
     thread->ignorePendingException();
     WeakRef::cast(*weak).setCallback(NoneType::object());
   }
@@ -2969,8 +2965,7 @@ static RawObject NEVER_INLINE callDunderEq(Thread* thread, RawObject o0_raw,
   Object o0(&scope, o0_raw);
   Object o1(&scope, o1_raw);
   Object compare_result(
-      &scope, Interpreter::compareOperation(thread, thread->currentFrame(),
-                                            CompareOp::EQ, o0, o1));
+      &scope, Interpreter::compareOperation(thread, CompareOp::EQ, o0, o1));
   if (compare_result.isErrorException()) return *compare_result;
   Object result(&scope, Interpreter::isTrue(thread, *compare_result));
   if (result.isErrorException()) return *result;
@@ -3165,10 +3160,8 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
                                const Object& name) {
   DCHECK(isInternedStr(thread, name), "name must be an interned str");
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object dunder_getattribute(
-      &scope,
-      Interpreter::lookupMethod(thread, frame, object, ID(__getattribute__)));
+      &scope, Interpreter::lookupMethod(thread, object, ID(__getattribute__)));
   DCHECK(!dunder_getattribute.isErrorNotFound(),
          "__getattribute__ is expected to be found");
   if (UNLIKELY(dunder_getattribute.isError())) return *dunder_getattribute;
@@ -3184,8 +3177,8 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
     }
     return objectRaiseAttributeError(thread, object, name);
   }
-  Object result(&scope, Interpreter::callMethod2(
-                            thread, frame, dunder_getattribute, object, name));
+  Object result(&scope, Interpreter::callMethod2(thread, dunder_getattribute,
+                                                 object, name));
   if (!result.isErrorException() ||
       !thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
     return *result;
@@ -3229,8 +3222,7 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
                         typeLookupInMroById(thread, type, ID(__delattr__)));
   RawObject result = NoneType::object();
   if (!dunder_delattr.isError()) {
-    result = Interpreter::callMethod2(thread, thread->currentFrame(),
-                                      dunder_delattr, receiver, name);
+    result = Interpreter::callMethod2(thread, dunder_delattr, receiver, name);
   } else if (isInstanceOfType(*receiver)) {
     result = classDelAttr(thread, receiver, name);
   } else if (isInstanceOfModule(*receiver)) {

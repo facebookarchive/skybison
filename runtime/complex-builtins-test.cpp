@@ -26,12 +26,10 @@ TEST_F(ComplexBuiltinsTest, AddWithIntReturnsComplex) {
 
 TEST_F(ComplexBuiltinsTest, IntAddWithComplexReturnsComplex) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Int i(&scope, runtime_->newInt(10));
   Complex c(&scope, runtime_->newComplex(1, 2));
-  Object result_obj(
-      &scope, Interpreter::binaryOperation(thread_, frame,
-                                           Interpreter::BinaryOp::ADD, i, c));
+  Object result_obj(&scope, Interpreter::binaryOperation(
+                                thread_, Interpreter::BinaryOp::ADD, i, c));
   ASSERT_FALSE(result_obj.isError());
   Complex result(&scope, *result_obj);
   EXPECT_EQ(result.real(), 11);

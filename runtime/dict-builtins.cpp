@@ -613,7 +613,6 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   Object hash_obj(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   Object included(&scope, NoneType::object());
-  Frame* frame = thread->currentFrame();
   Object keys_method(&scope,
                      runtime->attributeAtById(thread, mapping, ID(keys)));
   if (keys_method.isError()) {
@@ -627,8 +626,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   if (subscr_method.isError()) {
     return *subscr_method;
   }
-  Object keys(&scope,
-              Interpreter::callMethod1(thread, frame, keys_method, mapping));
+  Object keys(&scope, Interpreter::callMethod1(thread, keys_method, mapping));
   if (keys.isError()) return *keys;
 
   if (keys.isList()) {
@@ -640,8 +638,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (hash_obj.isErrorException()) return *hash_obj;
       word hash = SmallInt::cast(*hash_obj).value();
       if (do_override == Override::kOverride) {
-        value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
-                                         key);
+        value = Interpreter::callMethod2(thread, subscr_method, mapping, key);
         if (value.isError()) return *value;
         dict_result = dictAtPut(thread, dict, key, hash, value);
         if (dict_result.isErrorException()) return *dict_result;
@@ -649,8 +646,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
         included = dictIncludes(thread, dict, key, hash);
         if (included.isErrorException()) return *included;
         if (included == Bool::falseObj()) {
-          value = Interpreter::callMethod2(thread, frame, subscr_method,
-                                           mapping, key);
+          value = Interpreter::callMethod2(thread, subscr_method, mapping, key);
           if (value.isError()) return *value;
           dict_result = dictAtPut(thread, dict, key, hash, value);
           if (dict_result.isErrorException()) return *dict_result;
@@ -671,8 +667,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (hash_obj.isErrorException()) return *hash_obj;
       word hash = SmallInt::cast(*hash_obj).value();
       if (do_override == Override::kOverride) {
-        value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
-                                         key);
+        value = Interpreter::callMethod2(thread, subscr_method, mapping, key);
         if (value.isError()) return *value;
         dict_result = dictAtPut(thread, dict, key, hash, value);
         if (dict_result.isErrorException()) return *dict_result;
@@ -680,8 +675,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
         included = dictIncludes(thread, dict, key, hash);
         if (included.isErrorException()) return *included;
         if (included == Bool::falseObj()) {
-          value = Interpreter::callMethod2(thread, frame, subscr_method,
-                                           mapping, key);
+          value = Interpreter::callMethod2(thread, subscr_method, mapping, key);
           if (value.isError()) return *value;
           dict_result = dictAtPut(thread, dict, key, hash, value);
           if (dict_result.isErrorException()) return *dict_result;
@@ -694,29 +688,24 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   }
 
   // keys is probably an iterator
-  Object iter_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
-                                        ID(__iter__)));
+  Object iter_method(&scope,
+                     Interpreter::lookupMethod(thread, keys, ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
 
-  Object iterator(&scope,
-                  Interpreter::callMethod1(thread, thread->currentFrame(),
-                                           iter_method, keys));
+  Object iterator(&scope, Interpreter::callMethod1(thread, iter_method, keys));
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
   Object next_method(&scope,
-                     Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                               iterator, ID(__next__)));
+                     Interpreter::lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
   Object dict_result(&scope, NoneType::object());
   for (;;) {
-    key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
-                                   iterator);
+    key = Interpreter::callMethod1(thread, next_method, iterator);
     if (key.isError()) {
       if (thread->clearPendingStopIteration()) break;
       return *key;
@@ -725,8 +714,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     if (hash_obj.isErrorException()) return *hash_obj;
     word hash = SmallInt::cast(*hash_obj).value();
     if (do_override == Override::kOverride) {
-      value =
-          Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
+      value = Interpreter::callMethod2(thread, subscr_method, mapping, key);
       if (value.isError()) return *value;
       dict_result = dictAtPut(thread, dict, key, hash, value);
       if (dict_result.isErrorException()) return *dict_result;
@@ -734,8 +722,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       included = dictIncludes(thread, dict, key, hash);
       if (included.isErrorException()) return *included;
       if (included == Bool::falseObj()) {
-        value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
-                                         key);
+        value = Interpreter::callMethod2(thread, subscr_method, mapping, key);
         if (value.isError()) return *value;
         dict_result = dictAtPut(thread, dict, key, hash, value);
         if (dict_result.isErrorException()) return *dict_result;
@@ -781,8 +768,7 @@ RawObject dictEq(Thread* thread, const Dict& left, const Dict& right) {
     if (left_value == right_value) {
       continue;
     }
-    result = Interpreter::compareOperation(thread, thread->currentFrame(), EQ,
-                                           left_value, right_value);
+    result = Interpreter::compareOperation(thread, EQ, left_value, right_value);
     if (result.isErrorException()) {
       // equality comparison raised
       return *result;

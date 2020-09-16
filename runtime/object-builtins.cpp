@@ -209,8 +209,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
           *location_out = *getter;
           *kind = LoadAttrKind::kInstanceProperty;
         }
-        return Interpreter::call1(thread, thread->currentFrame(), getter,
-                                  object);
+        return Interpreter::call1(thread, getter, object);
       }
     }
     if (type_attr.isSlotDescriptor()) {
@@ -231,8 +230,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
         *location_out = *type_attr;
         *kind = LoadAttrKind::kInstanceTypeDescr;
       }
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            type_attr, object, type);
+      return Interpreter::callDescriptorGet(thread, type_attr, object, type);
     }
   }
 
@@ -270,8 +268,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
       *location_out = *type_attr;
       *kind = LoadAttrKind::kInstanceTypeDescr;
     }
-    return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                          type_attr, object, type);
+    return Interpreter::callDescriptorGet(thread, type_attr, object, type);
   }
   return Error::notFound();
 }
@@ -347,9 +344,8 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
       // Do not cache data descriptors.
-      Object set_result(
-          &scope, Interpreter::callDescriptorSet(thread, thread->currentFrame(),
-                                                 type_attr, object, value));
+      Object set_result(&scope, Interpreter::callDescriptorSet(
+                                    thread, type_attr, object, value));
       if (set_result.isError()) return *set_result;
       return NoneType::object();
     }
@@ -396,8 +392,7 @@ RawObject objectGetItem(Thread* thread, const Object& object,
       Object class_getitem(&scope, typeGetAttribute(thread, object_as_type,
                                                     dunder_class_getitem_name));
       if (!class_getitem.isErrorNotFound()) {
-        return Interpreter::call1(thread, thread->currentFrame(), class_getitem,
-                                  key);
+        return Interpreter::call1(thread, class_getitem, key);
       }
     }
     return thread->raiseWithFmt(LayoutId::kTypeError,

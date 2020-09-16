@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
+#include <type_traits>
 
 #include "assembler-x64.h"
 #include "bytecode.h"
@@ -930,17 +931,16 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   // If it is a function, jump to the fast path.
   __ jcc(EQUAL, prepared, Assembler::kFarJump);
 
-  // res = Interpreter::prepareCallableDunderCall(thread, frame, nargs, nargs)
+  // res = Interpreter::prepareCallableDunderCall(thread, nargs, nargs)
   // callable = res.function
   // nargs = res.nargs
   __ bind(prepare_callable_immediate);
   __ bind(&slow_path);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kArgRegs[1] == kOpargReg, "mismatch");
   __ movq(kArgRegs[2], kOpargReg);
-  __ movq(kArgRegs[3], kOpargReg);
-  __ movq(kArgRegs[1], kFrameReg);
-  emitCall<Interpreter::PrepareCallableResult (*)(Thread*, Frame*, word, word)>(
+  emitCall<Interpreter::PrepareCallableResult (*)(Thread*, word, word)>(
       env, Interpreter::prepareCallableCallDunderCall);
   static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                 "tag should fit a byte for cmpb");
@@ -983,14 +983,15 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
   __ bind(next_opcode);
   emitNextOpcode(env);
 
-  // Function::cast(callable).entry()(thread, frame, nargs);
+  // Function::cast(callable).entry()(thread, nargs);
   __ bind(&call_trampoline);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ movq(r_scratch,
           Address(r_callable, heapObjectDisp(RawFunction::kEntryOffset)));
   __ movq(kArgRegs[0], kThreadReg);
-  __ movq(kArgRegs[2], kOpargReg);
-  __ movq(kArgRegs[1], kFrameReg);
+  static_assert(kArgRegs[1] == kOpargReg, "register mismatch");
+  static_assert(std::is_same<Function::Entry, RawObject (*)(Thread*, word)>(),
+                "type mismatch");
   __ call(r_scratch);
   // if (kReturnRegs[0].isErrorException()) return UNWIND;
   static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
@@ -1001,14 +1002,13 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
   __ pushq(kReturnRegs[0]);
   emitNextOpcode(env);
 
-  // Interpreter::callInterpreted(thread, nargs, frame, function)
+  // Interpreter::callInterpreted(thread, nargs, function)
   __ bind(&call_interpreted_slow_path);
-  __ movq(kArgRegs[3], r_callable);
+  __ movq(kArgRegs[2], r_callable);
   __ movq(kArgRegs[0], kThreadReg);
   static_assert(kArgRegs[1] == kOpargReg, "reg mismatch");
-  __ movq(kArgRegs[2], kFrameReg);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word, Frame*, RawFunction)>(
+  emitCall<Interpreter::Continue (*)(Thread*, word, RawFunction)>(
       env, Interpreter::callInterpreted);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -1050,14 +1050,13 @@ void emitCallHandler(EmitEnv* env) {
   Label no_intrinsic;
   __ jcc(EQUAL, &no_intrinsic, Assembler::kNearJump);
 
-  // if (doIntrinsic(thread, frame, id)) return Continue::NEXT;
+  // if (doIntrinsic(thread, id)) return Continue::NEXT;
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ pushq(r_callable);
   __ pushq(kOpargReg);
   __ movq(kArgRegs[0], kThreadReg);
-  __ movq(kArgRegs[1], kFrameReg);
-  static_assert(kArgRegs[2] == r_intrinsic_id, "reg mismatch");
-  emitCall<bool (*)(Thread*, Frame*, SymbolId)>(env, doIntrinsic);
+  __ movq(kArgRegs[1], r_intrinsic_id);
+  emitCall<bool (*)(Thread*, SymbolId)>(env, doIntrinsic);
   __ popq(kOpargReg);
   __ popq(r_callable);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);

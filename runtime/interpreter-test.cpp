@@ -7,7 +7,6 @@
 #include "builtins-module.h"
 #include "bytecode.h"
 #include "dict-builtins.h"
-#include "frame.h"
 #include "handles.h"
 #include "ic.h"
 #include "intrinsic.h"
@@ -31,10 +30,6 @@ using InterpreterTest = RuntimeFixture;
 TEST_F(InterpreterTest, IsTrueBool) {
   HandleScope scope(thread_);
 
-  Frame* frame = thread_->currentFrame();
-
-  ASSERT_TRUE(frame->isSentinel());
-
   Object true_value(&scope, Bool::trueObj());
   EXPECT_EQ(Interpreter::isTrue(thread_, *true_value), Bool::trueObj());
 
@@ -44,10 +39,6 @@ TEST_F(InterpreterTest, IsTrueBool) {
 
 TEST_F(InterpreterTest, IsTrueInt) {
   HandleScope scope(thread_);
-
-  Frame* frame = thread_->currentFrame();
-
-  ASSERT_TRUE(frame->isSentinel());
 
   Object true_value(&scope, runtime_->newInt(1234));
   EXPECT_EQ(Interpreter::isTrue(thread_, *true_value), Bool::trueObj());
@@ -105,10 +96,6 @@ false_value = Bar(0)
 
 TEST_F(InterpreterTest, IsTrueDunderLen) {
   HandleScope scope(thread_);
-
-  Frame* frame = thread_->currentFrame();
-
-  ASSERT_TRUE(frame->isSentinel());
 
   List nonempty_list(&scope, runtime_->newList());
   Object elt(&scope, NoneType::object());
@@ -242,15 +229,13 @@ right = C()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object c_class(&scope, mainModuleAt(runtime_, "C"));
 
   Object result_obj(
-      &scope, Interpreter::binaryOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::binaryOperation(thread_, Interpreter::BinaryOp::SUB,
+                                           left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -275,15 +260,13 @@ right = C()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object c_class(&scope, mainModuleAt(runtime_, "C"));
 
   Object result_obj(
-      &scope, Interpreter::binaryOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::binaryOperation(thread_, Interpreter::BinaryOp::SUB,
+                                           left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -310,15 +293,13 @@ right = D()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object d_class(&scope, mainModuleAt(runtime_, "D"));
 
   Object result_obj(
-      &scope, Interpreter::binaryOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::binaryOperation(thread_, Interpreter::BinaryOp::SUB,
+                                           left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -344,15 +325,13 @@ right = D()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object d_class(&scope, mainModuleAt(runtime_, "D"));
 
   Object result_obj(
-      &scope, Interpreter::binaryOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::binaryOperation(thread_, Interpreter::BinaryOp::SUB,
+                                           left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -407,9 +386,8 @@ a = A()
 )")
                    .isError());
   Object a(&scope, mainModuleAt(runtime_, "a"));
-  Frame* frame = thread_->currentFrame();
   Object result(&scope, Interpreter::binaryOperation(
-                            thread_, frame, Interpreter::BinaryOp::MUL, a, a));
+                            thread_, Interpreter::BinaryOp::MUL, a, a));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -431,9 +409,8 @@ b = B()
                    .isError());
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
-  Frame* frame = thread_->currentFrame();
   Object result(&scope, Interpreter::binaryOperation(
-                            thread_, frame, Interpreter::BinaryOp::MUL, a, b));
+                            thread_, Interpreter::BinaryOp::MUL, a, b));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -444,9 +421,8 @@ TEST_F(InterpreterTest, BinaryOperationSetMethodSetsMethod) {
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationSetMethod(thread_, thread_->currentFrame(),
-                                            Interpreter::BinaryOp::SUB, v0, v1,
-                                            &method, &flags),
+      Interpreter::binaryOperationSetMethod(thread_, Interpreter::BinaryOp::SUB,
+                                            v0, v1, &method, &flags),
       -29));
   EXPECT_TRUE(method.isFunction());
   EXPECT_EQ(flags, kBinaryOpNotImplementedRetry);
@@ -456,8 +432,7 @@ TEST_F(InterpreterTest, BinaryOperationSetMethodSetsMethod) {
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationWithMethod(thread_, thread_->currentFrame(),
-                                             *method, flags, *v2, *v3),
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3),
       -5));
 }
 
@@ -486,10 +461,9 @@ v3 = ASub(2)
 
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  Object result_obj(
-      &scope, Interpreter::binaryOperationSetMethod(
-                  thread_, thread_->currentFrame(), Interpreter::BinaryOp::SUB,
-                  v0, v1, &method, &flags));
+  Object result_obj(&scope, Interpreter::binaryOperationSetMethod(
+                                thread_, Interpreter::BinaryOp::SUB, v0, v1,
+                                &method, &flags));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -500,8 +474,8 @@ v3 = ASub(2)
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
-  result_obj = Interpreter::binaryOperationWithMethod(
-      thread_, thread_->currentFrame(), *method, flags, *v2, *v3);
+  result_obj =
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3);
   ASSERT_TRUE(result.isTuple());
   result = *result_obj;
   ASSERT_EQ(result.length(), 2);
@@ -534,9 +508,8 @@ v3 = B(-12)
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationSetMethod(thread_, thread_->currentFrame(),
-                                            Interpreter::BinaryOp::SUB, v0, v1,
-                                            &method, &flags),
+      Interpreter::binaryOperationSetMethod(thread_, Interpreter::BinaryOp::SUB,
+                                            v0, v1, &method, &flags),
       -12));
   EXPECT_TRUE(method.isFunction());
   EXPECT_EQ(flags, kBinaryOpReflected);
@@ -544,8 +517,7 @@ v3 = B(-12)
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationWithMethod(thread_, thread_->currentFrame(),
-                                             *method, flags, *v2, *v3),
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3),
       45));
 }
 
@@ -576,9 +548,8 @@ v3 = B(1)
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationSetMethod(thread_, thread_->currentFrame(),
-                                            Interpreter::BinaryOp::SUB, v0, v1,
-                                            &method, &flags),
+      Interpreter::binaryOperationSetMethod(thread_, Interpreter::BinaryOp::SUB,
+                                            v0, v1, &method, &flags),
       2));
   EXPECT_TRUE(method.isFunction());
   EXPECT_EQ(flags, kBinaryOpNotImplementedRetry);
@@ -586,8 +557,7 @@ v3 = B(1)
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationWithMethod(thread_, thread_->currentFrame(),
-                                             *method, flags, *v2, *v3),
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3),
       -8));
 }
 
@@ -612,9 +582,8 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update inline cache.
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      left - right));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 
   ASSERT_TRUE(function.caches().isTuple());
   MutableTuple caches(&scope, function.caches());
@@ -624,9 +593,8 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
                    .isErrorNotFound());
 
   // Call from inline cache.
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      left - right));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 }
 
 TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsRetry) {
@@ -658,8 +626,7 @@ v1 = 7
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update inline cache.
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function), -4));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, function), -4));
 
   ASSERT_TRUE(function.caches().isTuple());
   MutableTuple caches(&scope, function.caches());
@@ -669,8 +636,7 @@ v1 = 7
           .isErrorNotFound());
 
   // Should hit the cache for __sub__ and then call binaryOperationRetry().
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function), -4));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, function), -4));
 }
 
 TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
@@ -694,17 +660,15 @@ TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      left - right));
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), BINARY_SUB_SMALLINT);
 
   // Updated opcode returns the same value.
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      left - right));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 }
 
 TEST_F(InterpreterTest, BinaryOpWithSmallInts) {
@@ -726,16 +690,12 @@ def foo(a, b):
   right = SmallInt::fromWord(-13);
   // 7 + (-13)
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      -6));
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), -6));
   // 7 + 7
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(7);
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      14));
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 14));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_ADD_SMALLINT);
 
   rewritten.byteAtPut(4, BINARY_SUB_SMALLINT);
@@ -743,33 +703,25 @@ def foo(a, b):
   right = SmallInt::fromWord(-13);
   // 7 - (-13)
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      20));
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 20));
   // 7 - 7
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(7);
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      0));
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 0));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUB_SMALLINT);
 
   rewritten.byteAtPut(4, BINARY_OR_SMALLINT);
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(-13);
   // 7 | (-13)
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      7 | -13));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::call2(thread_, function, left, right), 7 | -13));
   // 7 | 8
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(8);
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      7 | 8));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::call2(thread_, function, left, right), 7 | 8));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_OR_SMALLINT);
 }
 
@@ -789,14 +741,12 @@ d = {1: -1}
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call2(thread_, thread_->currentFrame(), foo, l, key), 2));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Dict d(&scope, mainModuleAt(runtime_, "d"));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call2(thread_, thread_->currentFrame(), foo, d, key), -1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), -1));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
 }
 
@@ -817,8 +767,7 @@ def foo(a, b):
   rewritten.byteAtPut(4, BINARY_ADD_SMALLINT);
   // LARGE_SMALL_INT + SMALL_INT
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
                       SmallInt::kMaxValue + 1 + 13));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_OP_MONOMORPHIC);
 }
@@ -967,15 +916,13 @@ right = C()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object c_class(&scope, mainModuleAt(runtime_, "C"));
 
   Object result_obj(
-      &scope, Interpreter::inplaceOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::inplaceOperation(thread_, Interpreter::BinaryOp::SUB,
+                                            left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -998,15 +945,13 @@ right = C()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object c_class(&scope, mainModuleAt(runtime_, "C"));
 
   Object result_obj(
-      &scope, Interpreter::inplaceOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::inplaceOperation(thread_, Interpreter::BinaryOp::SUB,
+                                            left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -1031,15 +976,13 @@ right = C()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
   Object c_class(&scope, mainModuleAt(runtime_, "C"));
 
   Object result_obj(
-      &scope, Interpreter::inplaceOperation(
-                  thread_, frame, Interpreter::BinaryOp::SUB, left, right));
+      &scope, Interpreter::inplaceOperation(thread_, Interpreter::BinaryOp::SUB,
+                                            left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -1068,17 +1011,15 @@ v3 = MyInt(7)
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::inplaceOperationSetMethod(thread_, thread_->currentFrame(),
-                                             Interpreter::BinaryOp::SUB, v0, v1,
-                                             &method, &flags),
+      Interpreter::inplaceOperationSetMethod(
+          thread_, Interpreter::BinaryOp::SUB, v0, v1, &method, &flags),
       18));
   EXPECT_EQ(flags, kInplaceBinaryOpRetry);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationWithMethod(thread_, thread_->currentFrame(),
-                                             *method, flags, *v2, *v3),
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3),
       -12));
 }
 
@@ -1103,17 +1044,15 @@ v3 = MyIntSub(4)
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::inplaceOperationSetMethod(thread_, thread_->currentFrame(),
-                                             Interpreter::BinaryOp::POW, v0, v1,
-                                             &method, &flags),
+      Interpreter::inplaceOperationSetMethod(
+          thread_, Interpreter::BinaryOp::POW, v0, v1, &method, &flags),
       20));
   EXPECT_EQ(flags, kBinaryOpReflected | kBinaryOpNotImplementedRetry);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::binaryOperationWithMethod(thread_, thread_->currentFrame(),
-                                             *method, flags, *v2, *v3),
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3),
       249));
 }
 
@@ -1138,17 +1077,15 @@ TEST_F(InterpreterTest, DoInplaceOpWithSmallIntsRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      left + right));
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left + right));
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), INPLACE_ADD_SMALLINT);
 
   // Updated opcode returns the same value.
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), function),
-      left + right));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left + right));
 }
 
 TEST_F(InterpreterTest, InplaceOpWithSmallInts) {
@@ -1171,9 +1108,7 @@ def foo(a, b):
   right = SmallInt::fromWord(-13);
   // 7 + (-13)
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
-                      -6));
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), -6));
 }
 
 TEST_F(InterpreterTest, InplaceOpWithSmallIntsRevertsBackToInplaceOp) {
@@ -1194,8 +1129,7 @@ def foo(a, b):
   rewritten.byteAtPut(4, INPLACE_ADD_SMALLINT);
   // LARGE_SMALL_INT += SMALL_INT
   EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, thread_->currentFrame(),
-                                         function, left, right),
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
                       SmallInt::kMaxValue + 1 + 13));
   EXPECT_EQ(rewritten.byteAt(4), INPLACE_OP_MONOMORPHIC);
 }
@@ -1229,15 +1163,13 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_STR);
 
   // Updated opcode returns the same value.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 }
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
@@ -1260,15 +1192,13 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_DICT);
 
   // Updated opcode returns the same value.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 }
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
@@ -1289,15 +1219,13 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_TUPLE);
 
   // Updated opcode returns the same value.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 }
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithListRewritesOpcode) {
@@ -1321,15 +1249,13 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithListRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_LIST);
 
   // Updated opcode returns the same value.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::trueObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -1350,19 +1276,15 @@ c20 = C(20)
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
-  ASSERT_TRUE(frame->isSentinel());
-
   Object left(&scope, mainModuleAt(runtime_, "c10"));
   Object right(&scope, mainModuleAt(runtime_, "c20"));
 
   Object left_lt_right(&scope, Interpreter::compareOperation(
-                                   thread_, frame, CompareOp::LT, left, right));
+                                   thread_, CompareOp::LT, left, right));
   EXPECT_EQ(left_lt_right, Bool::trueObj());
 
   Object right_lt_left(&scope, Interpreter::compareOperation(
-                                   thread_, frame, CompareOp::LT, right, left));
+                                   thread_, CompareOp::LT, right, left));
   EXPECT_EQ(right_lt_left, Bool::falseObj());
 }
 
@@ -1379,25 +1301,21 @@ c20 = C(20)
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
-  ASSERT_TRUE(frame->isSentinel());
-
   Object left(&scope, mainModuleAt(runtime_, "c10"));
   Object right(&scope, mainModuleAt(runtime_, "c20"));
 
   Object left_eq_right(&scope, Interpreter::compareOperation(
-                                   thread_, frame, CompareOp::EQ, left, right));
+                                   thread_, CompareOp::EQ, left, right));
   EXPECT_EQ(left_eq_right, Bool::falseObj());
   Object left_ne_right(&scope, Interpreter::compareOperation(
-                                   thread_, frame, CompareOp::NE, left, right));
+                                   thread_, CompareOp::NE, left, right));
   EXPECT_EQ(left_ne_right, Bool::trueObj());
 
   Object right_eq_left(&scope, Interpreter::compareOperation(
-                                   thread_, frame, CompareOp::EQ, left, right));
+                                   thread_, CompareOp::EQ, left, right));
   EXPECT_EQ(right_eq_left, Bool::falseObj());
   Object right_ne_left(&scope, Interpreter::compareOperation(
-                                   thread_, frame, CompareOp::NE, left, right));
+                                   thread_, CompareOp::NE, left, right));
   EXPECT_EQ(right_ne_left, Bool::trueObj());
 }
 
@@ -1439,16 +1357,13 @@ c = C()
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinel());
-
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
   Object c(&scope, mainModuleAt(runtime_, "c"));
 
   // Comparisons where rhs is not a subtype of lhs try lhs.__eq__(rhs) first.
-  Object a_eq_b(&scope, Interpreter::compareOperation(thread_, frame,
-                                                      CompareOp::EQ, a, b));
+  Object a_eq_b(&scope,
+                Interpreter::compareOperation(thread_, CompareOp::EQ, a, b));
   EXPECT_EQ(a_eq_b, Bool::falseObj());
   Object called(&scope, mainModuleAt(runtime_, "called"));
   EXPECT_TRUE(isStrEqualsCStr(*called, "A"));
@@ -1457,23 +1372,23 @@ c = C()
   Object none(&scope, NoneType::object());
   Module main(&scope, findMainModule(runtime_));
   moduleAtPut(thread_, main, called_name, none);
-  Object b_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
-                                                      CompareOp::EQ, b, a));
+  Object b_eq_a(&scope,
+                Interpreter::compareOperation(thread_, CompareOp::EQ, b, a));
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = mainModuleAt(runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
   moduleAtPut(thread_, main, called_name, none);
-  Object c_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
-                                                      CompareOp::EQ, c, a));
+  Object c_eq_a(&scope,
+                Interpreter::compareOperation(thread_, CompareOp::EQ, c, a));
   EXPECT_EQ(c_eq_a, Bool::trueObj());
   called = mainModuleAt(runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
   moduleAtPut(thread_, main, called_name, none);
-  Object a_eq_c(&scope, Interpreter::compareOperation(thread_, frame,
-                                                      CompareOp::EQ, a, c));
+  Object a_eq_c(&scope,
+                Interpreter::compareOperation(thread_, CompareOp::EQ, a, c));
   EXPECT_EQ(a_eq_c, Bool::trueObj());
   called = mainModuleAt(runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
@@ -1501,15 +1416,13 @@ TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::falseObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_EQ_STR);
 
   // Updated opcode returns the same value.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::falseObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 }
 
 TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
@@ -1536,15 +1449,13 @@ TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   // Update the opcode.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::falseObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_LT_SMALLINT);
 
   // Updated opcode returns the same value.
-  ASSERT_EQ(Interpreter::call0(thread_, thread_->currentFrame(), function),
-            Bool::falseObj());
+  ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 }
 
 TEST_F(InterpreterTest, CompareOpWithSmallInts) {
@@ -1565,14 +1476,12 @@ def foo(a, b):
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(-13);
   // 7 == -13
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::falseObj());
   // 7 == 7
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(7);
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_EQ_SMALLINT);
 
@@ -1580,14 +1489,12 @@ def foo(a, b):
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(7);
   // 7 != 7
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::falseObj());
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(-13);
   // 7 != -13
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_NE_SMALLINT);
 
@@ -1595,14 +1502,12 @@ def foo(a, b):
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(10);
   // 10 > 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::falseObj());
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(-10);
   // 10 > -10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_GT_SMALLINT);
 
@@ -1610,20 +1515,17 @@ def foo(a, b):
   left = SmallInt::fromWord(-10);
   right = SmallInt::fromWord(10);
   // -10 >= 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::falseObj());
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(10);
   // 10 >= 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   left = SmallInt::fromWord(11);
   right = SmallInt::fromWord(10);
   // 11 > = 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_GE_SMALLINT);
 
@@ -1631,14 +1533,12 @@ def foo(a, b):
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(-10);
   // 10 < -10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::falseObj());
   left = SmallInt::fromWord(-10);
   right = SmallInt::fromWord(10);
   // -10 < 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_LT_SMALLINT);
 
@@ -1646,20 +1546,17 @@ def foo(a, b):
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(-10);
   // 10 <= -10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::falseObj());
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(10);
   // 10 <= 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   left = SmallInt::fromWord(9);
   right = SmallInt::fromWord(10);
   // 9 <= 10
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_LE_SMALLINT);
 }
@@ -1680,8 +1577,7 @@ def foo(a, b):
 
   rewritten.byteAtPut(4, COMPARE_EQ_SMALLINT);
   // LARGE_SMALL_INT == SMALL_INT
-  EXPECT_EQ(Interpreter::call2(thread_, thread_->currentFrame(), function, left,
-                               right),
+  EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
   EXPECT_EQ(rewritten.byteAt(4), COMPARE_OP_MONOMORPHIC);
 }
@@ -1692,9 +1588,8 @@ TEST_F(InterpreterTest, CompareOpSetMethodSetsMethod) {
   Object v1(&scope, runtime_->newInt(11));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  EXPECT_EQ(Interpreter::compareOperationSetMethod(
-                thread_, thread_->currentFrame(), CompareOp::LT, v0, v1,
-                &method, &flags),
+  EXPECT_EQ(Interpreter::compareOperationSetMethod(thread_, CompareOp::LT, v0,
+                                                   v1, &method, &flags),
             Bool::falseObj());
   EXPECT_TRUE(method.isFunction());
   EXPECT_EQ(flags, kBinaryOpNotImplementedRetry);
@@ -1703,9 +1598,9 @@ TEST_F(InterpreterTest, CompareOpSetMethodSetsMethod) {
   Object v3(&scope, runtime_->newInt(8));
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
-  EXPECT_EQ(Interpreter::binaryOperationWithMethod(
-                thread_, thread_->currentFrame(), *method, flags, *v2, *v3),
-            Bool::trueObj());
+  EXPECT_EQ(
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3),
+      Bool::trueObj());
 }
 
 TEST_F(InterpreterTest, CompareOpSetMethodSetsReverseMethod) {
@@ -1729,9 +1624,9 @@ b2 = B()
   Object b1(&scope, mainModuleAt(runtime_, "b1"));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  Object result_obj(&scope, Interpreter::compareOperationSetMethod(
-                                thread_, thread_->currentFrame(), CompareOp::LE,
-                                a1, b1, &method, &flags));
+  Object result_obj(
+      &scope, Interpreter::compareOperationSetMethod(thread_, CompareOp::LE, a1,
+                                                     b1, &method, &flags));
   EXPECT_TRUE(method.isFunction());
   EXPECT_EQ(flags, kBinaryOpReflected | kBinaryOpNotImplementedRetry);
   ASSERT_TRUE(result_obj.isTuple());
@@ -1744,8 +1639,8 @@ b2 = B()
   Object b2(&scope, mainModuleAt(runtime_, "b2"));
   ASSERT_EQ(a1.layoutId(), a2.layoutId());
   ASSERT_EQ(b1.layoutId(), b2.layoutId());
-  result_obj = Interpreter::binaryOperationWithMethod(
-      thread_, thread_->currentFrame(), *method, flags, *a2, *b2);
+  result_obj =
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *a2, *b2);
   ASSERT_TRUE(result_obj.isTuple());
   result = *result_obj;
   ASSERT_EQ(result.length(), 2);
@@ -1777,9 +1672,9 @@ v3 = ASub(2)
   Object v3(&scope, mainModuleAt(runtime_, "v3"));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  Object result_obj(&scope, Interpreter::compareOperationSetMethod(
-                                thread_, thread_->currentFrame(), CompareOp::LE,
-                                v0, v1, &method, &flags));
+  Object result_obj(
+      &scope, Interpreter::compareOperationSetMethod(thread_, CompareOp::LE, v0,
+                                                     v1, &method, &flags));
   EXPECT_TRUE(method.isFunction());
   EXPECT_EQ(flags, kBinaryOpReflected | kBinaryOpNotImplementedRetry);
   ASSERT_TRUE(result_obj.isTuple());
@@ -1790,8 +1685,8 @@ v3 = ASub(2)
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
-  result_obj = Interpreter::binaryOperationWithMethod(
-      thread_, thread_->currentFrame(), *method, flags, *v2, *v3);
+  result_obj =
+      Interpreter::binaryOperationWithMethod(thread_, *method, flags, *v2, *v3);
   ASSERT_TRUE(result_obj.isTuple());
   result = *result_obj;
   ASSERT_EQ(result.length(), 2);
@@ -2120,16 +2015,13 @@ c = 3
 )")
                    .isError());
 
-  Frame* frame = thread_->currentFrame();
-
-  ASSERT_TRUE(frame->isSentinel());
   Object container(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
   Object c(&scope, mainModuleAt(runtime_, "c"));
-  Object contains_true(
-      &scope, Interpreter::sequenceContains(thread_, frame, b, container));
-  Object contains_false(
-      &scope, Interpreter::sequenceContains(thread_, frame, c, container));
+  Object contains_true(&scope,
+                       Interpreter::sequenceContains(thread_, b, container));
+  Object contains_false(&scope,
+                        Interpreter::sequenceContains(thread_, c, container));
   EXPECT_EQ(contains_true, Bool::trueObj());
   EXPECT_EQ(contains_false, Bool::falseObj());
 }
@@ -2141,11 +2033,10 @@ class C: pass
 container = C()
 )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Object val(&scope, NoneType::object());
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2158,11 +2049,10 @@ class C:
 container = C()
 )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Object val(&scope, NoneType::object());
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2176,11 +2066,10 @@ class C:
 container = C()
 )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Object val(&scope, NoneType::object());
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2196,21 +2085,19 @@ class C:
 container = C()
 )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Object val(&scope, NoneType::object());
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST_F(InterpreterTest, SequenceIterSearchWithListReturnsTrue) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   List container(&scope, listFromRange(1, 3));
   Object val(&scope, SmallInt::fromWord(2));
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(result, Bool::trueObj());
 }
@@ -2219,9 +2106,8 @@ TEST_F(InterpreterTest, SequenceIterSearchWithListReturnsFalse) {
   HandleScope scope(thread_);
   Object container(&scope, listFromRange(1, 3));
   Object val(&scope, SmallInt::fromWord(5));
-  Frame* frame = thread_->currentFrame();
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(result, Bool::falseObj());
 }
@@ -2236,16 +2122,14 @@ class Seq:
 seq_iter = Seq()
 )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinel());
   Object seq_iter(&scope, mainModuleAt(runtime_, "seq_iter"));
   Object obj_in_seq(&scope, SmallInt::fromWord(42));
-  Object contains_true(&scope, Interpreter::sequenceIterSearch(
-                                   thread_, frame, obj_in_seq, seq_iter));
+  Object contains_true(
+      &scope, Interpreter::sequenceIterSearch(thread_, obj_in_seq, seq_iter));
   EXPECT_EQ(contains_true, Bool::trueObj());
   Object obj_not_in_seq(&scope, NoneType::object());
   Object contains_false(&scope, Interpreter::sequenceIterSearch(
-                                    thread_, frame, obj_not_in_seq, seq_iter));
+                                    thread_, obj_not_in_seq, seq_iter));
   EXPECT_EQ(contains_false, Bool::falseObj());
 }
 
@@ -2261,9 +2145,8 @@ container = C()
                    .isError());
   Object container(&scope, mainModuleAt(runtime_, "container"));
   Object val(&scope, SmallInt::fromWord(5));
-  Frame* frame = thread_->currentFrame();
-  Object result(
-      &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread_, val, container));
   EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
 }
 
@@ -2329,7 +2212,6 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   callee.setDefaults(*defaults);
 
   // Save starting value stack top
-  Frame* frame = thread_->currentFrame();
   RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
@@ -2337,7 +2219,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   thread_->stackPush(SmallInt::fromWord(1));
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::call(thread_, frame, 1), 42));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call(thread_, 1), 42));
   EXPECT_EQ(value_stack_start, thread_->stackPointer());
 }
 
@@ -2378,7 +2260,6 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   callee.setDefaults(*defaults);
 
   // Save starting value stack top
-  Frame* frame = thread_->currentFrame();
   RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
@@ -2388,7 +2269,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   thread_->stackPush(*ex);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, frame, 0), 42));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread_, 0), 42));
   EXPECT_EQ(value_stack_start, thread_->stackPointer());
 }
 
@@ -2433,7 +2314,6 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   callee.setDefaults(*defaults);
 
   // Save starting value stack top
-  Frame* frame = thread_->currentFrame();
   RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
@@ -2444,7 +2324,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   thread_->stackPush(*arg_names);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, frame, 1), 42));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread_, 1), 42));
   EXPECT_EQ(value_stack_start, thread_->stackPointer());
 }
 
@@ -2463,12 +2343,9 @@ class C:
 c = C()
   )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinel());
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Object f(&scope, mainModuleAt(runtime_, "f"));
-  Object method(&scope,
-                Interpreter::lookupMethod(thread_, frame, c, ID(__call__)));
+  Object method(&scope, Interpreter::lookupMethod(thread_, c, ID(__call__)));
   EXPECT_EQ(*f, *method);
 }
 
@@ -2484,13 +2361,12 @@ meth = C().foo
   Object meth_obj(&scope, mainModuleAt(runtime_, "meth"));
   ASSERT_TRUE(meth_obj.isBoundMethod());
 
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(*meth_obj);
   thread_->stackPush(SmallInt::fromWord(1234));
   ASSERT_EQ(thread_->valueStackSize(), 2);
   word nargs = 1;
   Interpreter::PrepareCallableResult result =
-      Interpreter::prepareCallableCall(thread_, frame, nargs, nargs);
+      Interpreter::prepareCallableCall(thread_, nargs, nargs);
   ASSERT_TRUE(result.function.isFunction());
   ASSERT_EQ(result.nargs, 2);
   ASSERT_EQ(thread_->valueStackSize(), 3);
@@ -2614,8 +2490,6 @@ c = C3()
 result = c(42)
   )")
                    .isError());
-  Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinel());
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, SmallInt::fromWord(42));
 }
@@ -3626,8 +3500,7 @@ async_it = AsyncIterator()
   Object async_gen(&scope, mainModuleAt(runtime_, "async_gen"));
   Object async_it(&scope, mainModuleAt(runtime_, "async_it"));
   // The async generator object instance should not have an __await__() method.
-  ASSERT_TRUE(Interpreter::lookupMethod(thread_, thread_->currentFrame(),
-                                        async_gen, ID(__await__))
+  ASSERT_TRUE(Interpreter::lookupMethod(thread_, async_gen, ID(__await__))
                   .isErrorNotFound());
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(async_it));
@@ -4356,21 +4229,18 @@ def bar(): pass
 
 TEST_F(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Str not_a_func(&scope, Str::empty());
   thread_->stackPush(*not_a_func);
-  EXPECT_TRUE(
-      raised(Interpreter::call(thread_, frame, 0), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(Interpreter::call(thread_, 0), LayoutId::kTypeError));
 }
 
 TEST_F(InterpreterTest, FunctionCallExWithNonFunctionRaisesTypeError) {
   HandleScope scope(thread_);
-  Frame* frame = thread_->currentFrame();
   Str not_a_func(&scope, Str::empty());
   thread_->stackPush(*not_a_func);
   Tuple empty_args(&scope, runtime_->emptyTuple());
   thread_->stackPush(*empty_args);
-  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, 0),
                             LayoutId::kTypeError,
                             "'str' object is not callable"));
 }
@@ -4454,14 +4324,12 @@ d = {1: -1}
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call2(thread_, thread_->currentFrame(), foo, l, key), 100));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 100));
   EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Dict d(&scope, mainModuleAt(runtime_, "d"));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call2(thread_, thread_->currentFrame(), foo, d, key), 100));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 100));
   EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
 }
 
@@ -4898,35 +4766,29 @@ user_obj = C()
   ASSERT_EQ(bytecode.byteAt(6), FOR_ITER_ANAMORPHIC);
 
   Object arg(&scope, mainModuleAt(runtime_, "list_obj"));
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), foo, arg), 9));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_LIST);
 
   arg = mainModuleAt(runtime_, "dict_obj");
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), foo, arg), 9));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_DICT);
 
   arg = mainModuleAt(runtime_, "tuple_obj");
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), foo, arg), 9));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_TUPLE);
 
   arg = mainModuleAt(runtime_, "range_obj");
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), foo, arg), 9));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_RANGE);
 
   arg = mainModuleAt(runtime_, "str_obj");
   Str s(&scope, runtime_->newStrFromCStr(""));
-  EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::call2(thread_, thread_->currentFrame(), foo, arg, s), "45"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, arg, s), "45"));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_STR);
 
   // Resetting the opcode.
   arg = mainModuleAt(runtime_, "user_obj");
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), foo, arg), 400));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 400));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_MONOMORPHIC);
 }
 
@@ -5414,31 +5276,24 @@ c = C()
   MutableTuple caches(&scope, get_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), get_foo, c), 400));
+  ASSERT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, get_foo, c), 400));
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a data descriptor to a different attribute name.
-  ASSERT_TRUE(
-      Interpreter::call0(thread_, thread_->currentFrame(), do_not_invalidate0)
-          .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, do_not_invalidate0).isNoneType());
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a non-data descriptor to the cache's attribute name.
-  ASSERT_TRUE(
-      Interpreter::call0(thread_, thread_->currentFrame(), do_not_invalidate1)
-          .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, do_not_invalidate1).isNoneType());
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a data descriptor the cache's attribute name that actually causes
   // invalidation.
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(), invalidate)
-                  .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, invalidate).isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::call1(thread_, thread_->currentFrame(), get_foo, c),
-      "data descriptor"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, get_foo, c),
+                              "data descriptor"));
 }
 
 TEST_F(InterpreterTest,
@@ -5471,24 +5326,19 @@ c = C()
   MutableTuple caches(&scope, call_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), call_foo, c), 400));
+  ASSERT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, call_foo, c), 400));
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), *old_foo);
 
   // Assign a non-data descriptor to different attribute name.
-  ASSERT_TRUE(
-      Interpreter::call0(thread_, thread_->currentFrame(), do_not_invalidate)
-          .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, do_not_invalidate).isNoneType());
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), *old_foo);
 
   // Invalidate the cache.
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(), invalidate)
-                  .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, invalidate).isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::call1(thread_, thread_->currentFrame(), call_foo, c),
-      "new type attr"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, call_foo, c),
+                              "new type attr"));
 }
 
 TEST_F(
@@ -5528,14 +5378,11 @@ c = C()
   MutableTuple caches(&scope, get_foo.caches());
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), get_foo, c), 400));
+  ASSERT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, get_foo, c), 400));
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Updating a subclass' type attribute doesn't invalidate the cache.
-  ASSERT_TRUE(
-      Interpreter::call0(thread_, thread_->currentFrame(), do_not_invalidate)
-          .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, do_not_invalidate).isNoneType());
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that all type dictionaries in C's mro have dependentices to get_foo.
@@ -5555,13 +5402,11 @@ c = C()
       *get_foo);
 
   // Invalidate the cache.
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(), invalidate)
-                  .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, invalidate).isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::call1(thread_, thread_->currentFrame(), get_foo, c),
-      "data descriptor"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, get_foo, c),
+                              "data descriptor"));
 }
 
 TEST_F(InterpreterTest, StoreAttrCachedInvalidatesBinaryOpCaches) {
@@ -5617,8 +5462,7 @@ cache_A_add(a, b)
 
   // Updating A.__add__ invalidates the cache.
   Function invalidate(&scope, mainModuleAt(runtime_, "update_A_add"));
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(), invalidate)
-                  .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, invalidate).isNoneType());
   // Verify that the cache is evicted.
   EXPECT_TRUE(icLookupBinaryOp(MutableTuple::cast(cache_a_add.caches()), 0,
                                a.layoutId(), b.layoutId(), &flags_out)
@@ -5673,16 +5517,13 @@ c = cache_compare_op(a, b)
   // invalidation.
   Function do_not_invalidate(&scope,
                              mainModuleAt(runtime_, "do_not_invalidate"));
-  ASSERT_TRUE(
-      Interpreter::call0(thread_, thread_->currentFrame(), do_not_invalidate)
-          .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, do_not_invalidate).isNoneType());
   cached = icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flags_out);
   EXPECT_EQ(*cached, *type_a__dunder_ge);
 
   // Updating relevant compare op dunder functions triggers invalidation.
   Function invalidate(&scope, mainModuleAt(runtime_, "invalidate"));
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(), invalidate)
-                  .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, invalidate).isNoneType());
   ASSERT_TRUE(
       icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flags_out)
           .isErrorNotFound());
@@ -5747,8 +5588,7 @@ cache_A_iadd(a, b)
 
   // Updating A.__iadd__ invalidates the cache.
   Function invalidate(&scope, mainModuleAt(runtime_, "update_A_iadd"));
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(), invalidate)
-                  .isNoneType());
+  ASSERT_TRUE(Interpreter::call0(thread_, invalidate).isNoneType());
   // Verify that the cache is evicted.
   EXPECT_TRUE(icLookupBinaryOp(MutableTuple::cast(cache_a_iadd.caches()), 0,
                                a.layoutId(), b.layoutId(), &flags_out)
@@ -5780,8 +5620,7 @@ c = C()
   ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
   ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
 
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), test_function), 70));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 70));
 }
 
 TEST_F(InterpreterTest, LoadMethodInitDoesNotCacheInstanceAttributes) {
@@ -5809,8 +5648,7 @@ def test():
   // Cache miss.
   ASSERT_TRUE(
       icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), test_function), 30));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 30));
 
   // Still cache miss.
   ASSERT_TRUE(
@@ -5844,14 +5682,12 @@ c = C()
   MutableTuple caches(&scope, test_function.caches());
   ASSERT_TRUE(
       icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), test_function), 70));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 70));
 
   // Cache hit.
   ASSERT_TRUE(
       icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isFunction());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call0(thread_, thread_->currentFrame(), test_function), 70));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 70));
 }
 
 TEST_F(InterpreterTest, LoadMethodCachedDoesNotCacheProperty) {
@@ -5900,14 +5736,12 @@ d = D()
   Object d(&scope, mainModuleAt(runtime_, "d"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), test_function, c),
-      4));
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::call1(thread_, test_function, c), 4));
   EXPECT_EQ(bytecode.byteAt(2), LOAD_METHOD_INSTANCE_FUNCTION);
 
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), test_function, d),
-      -4));
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::call1(thread_, test_function, d), -4));
   EXPECT_EQ(bytecode.byteAt(2), LOAD_METHOD_POLYMORPHIC);
 }
 
@@ -5949,9 +5783,8 @@ c = C()
 
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::call1(thread_, thread_->currentFrame(), cache_attribute, c),
-      400));
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::call1(thread_, cache_attribute, c), 400));
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that cache_attribute function is added as a dependent.
@@ -5988,25 +5821,22 @@ c = C()
 
   // Load the cache.
   ASSERT_EQ(icCurrentState(*caches, 1), ICState::kAnamorphic);
-  ASSERT_TRUE(isStrEqualsCStr(
-      Interpreter::call1(thread_, thread_->currentFrame(), cache_attribute, c),
-      "instance attribute"));
+  ASSERT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, cache_attribute, c),
+                              "instance attribute"));
   ASSERT_EQ(icCurrentState(*caches, 1), ICState::kMonomorphic);
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE);
 
   // Invalidate the cache.
   Function invalidate_attribute(&scope,
                                 mainModuleAt(runtime_, "invalidate_attribute"));
-  ASSERT_TRUE(Interpreter::call1(thread_, thread_->currentFrame(),
-                                 invalidate_attribute, c)
-                  .isNoneType());
+  ASSERT_TRUE(
+      Interpreter::call1(thread_, invalidate_attribute, c).isNoneType());
   ASSERT_EQ(icCurrentState(*caches, 1), ICState::kAnamorphic);
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE);
 
   // Load the cache again.
-  EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::call1(thread_, thread_->currentFrame(), cache_attribute, c),
-      "descriptor attribute"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, cache_attribute, c),
+                              "descriptor attribute"));
   EXPECT_EQ(icCurrentState(*caches, 1), ICState::kMonomorphic);
   EXPECT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE_PROPERTY);
 }
@@ -6032,9 +5862,7 @@ c = C()
 
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  ASSERT_TRUE(
-      Interpreter::call1(thread_, thread_->currentFrame(), cache_attribute, c)
-          .isNoneType());
+  ASSERT_TRUE(Interpreter::call1(thread_, cache_attribute, c).isNoneType());
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that cache_attribute function is added as a dependent.
@@ -6123,8 +5951,7 @@ function_that_caches_attr_lookup(a, b, c)
   // Change the class A so that any caches that reference A.foo are invalidated.
   Function func_that_causes_shadowing_of_attr_a(
       &scope, mainModuleAt(runtime_, "func_that_causes_shadowing_of_attr_a"));
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(),
-                                 func_that_causes_shadowing_of_attr_a)
+  ASSERT_TRUE(Interpreter::call0(thread_, func_that_causes_shadowing_of_attr_a)
                   .isNoneType());
   // Verify that the cache for A.foo is cleared out, and dependent does not
   // depend on A.foo anymore.
@@ -6142,8 +5969,7 @@ function_that_caches_attr_lookup(a, b, c)
   // Invalidate the cache for B.foo.
   Function func_that_causes_shadowing_of_attr_b(
       &scope, mainModuleAt(runtime_, "func_that_causes_shadowing_of_attr_b"));
-  ASSERT_TRUE(Interpreter::call0(thread_, thread_->currentFrame(),
-                                 func_that_causes_shadowing_of_attr_b)
+  ASSERT_TRUE(Interpreter::call0(thread_, func_that_causes_shadowing_of_attr_b)
                   .isNoneType());
   // Check that caches for A are still invalidated.
   EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
@@ -6159,9 +5985,8 @@ function_that_caches_attr_lookup(a, b, c)
 TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
-  Frame* frame = thread_->currentFrame();
   thread_->stackPush(*obj);
-  ASSERT_FALSE(doIntrinsic(thread_, frame, ID(_tuple_len)));
+  ASSERT_FALSE(doIntrinsic(thread_, ID(_tuple_len)));
   EXPECT_EQ(thread_->stackPeek(0), *obj);
 }
 

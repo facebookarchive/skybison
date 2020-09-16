@@ -209,8 +209,7 @@ RawObject callFunction(const Function& func, const Tuple& args) {
   for (word i = 0; i < args_length; i++) {
     thread->stackPush(args.at(i));
   }
-  Frame* frame = thread->currentFrame();
-  return Interpreter::call(thread, frame, args_length);
+  return Interpreter::call(thread, args_length);
 }
 
 bool tupleContains(const Tuple& object_array, const Object& key) {
@@ -399,8 +398,7 @@ RawObject runBuiltinImpl(BuiltinFunction function,
   for (word i = 0; i < args_length; i++) {
     thread->stackPush(*args.get(i).get());
   }
-  Frame* frame = thread->currentFrame();
-  return Interpreter::call(thread, frame, args_length);
+  return Interpreter::call(thread, args_length);
 }
 
 RawObject runBuiltin(BuiltinFunction function) {
@@ -416,7 +414,7 @@ RawObject runCode(const Code& code) {
   Object qualname(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, qualname, code, main));
-  return Interpreter::call0(thread, thread->currentFrame(), function);
+  return Interpreter::call0(thread, function);
 }
 
 RawObject runCodeNoBytecodeRewriting(const Code& code) {
@@ -434,7 +432,7 @@ RawObject runCodeNoBytecodeRewriting(const Code& code) {
       &scope, runtime->newMutableBytesUninitialized(bytecode.length()));
   rewritten_bytecode.replaceFromWithBytes(0, *bytecode, bytecode.length());
   function.setRewrittenBytecode(*rewritten_bytecode);
-  return Interpreter::call0(thread, thread->currentFrame(), function);
+  return Interpreter::call0(thread, function);
 }
 
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {

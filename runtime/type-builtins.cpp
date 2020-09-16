@@ -182,8 +182,7 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeOf(*descr));
   if (!typeIsNonDataDescriptor(thread, type)) return *descr;
-  return Interpreter::callDescriptorGet(thread, thread->currentFrame(), descr,
-                                        instance, instance_type);
+  return Interpreter::callDescriptorGet(thread, descr, instance, instance_type);
 }
 
 static inline RawObject lookupCell(RawMutableTuple data, RawObject name,
@@ -544,13 +543,12 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
     if (meta_attr.isProperty()) {
       Object getter(&scope, Property::cast(*meta_attr).getter());
       if (!getter.isNoneType()) {
-        return Interpreter::call1(thread, thread->currentFrame(), getter, type);
+        return Interpreter::call1(thread, getter, type);
       }
     }
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            meta_attr, type, meta_type);
+      return Interpreter::callDescriptorGet(thread, meta_attr, type, meta_type);
     }
   }
 
@@ -581,8 +579,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
         *location_out = NoneType::object();
       }
       Object none(&scope, NoneType::object());
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            attr, none, type);
+      return Interpreter::callDescriptorGet(thread, attr, none, type);
     }
     return *attr;
   }
@@ -917,8 +914,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       dunder_slots_obj = runtime->newTupleWith1(dunder_slots_obj);
     } else if (!runtime->isInstanceOfTuple(*dunder_slots_obj)) {
       Type tuple_type(&scope, runtime->typeAt(LayoutId::kTuple));
-      dunder_slots_obj = Interpreter::call1(thread, thread->currentFrame(),
-                                            tuple_type, dunder_slots_obj);
+      dunder_slots_obj =
+          Interpreter::call1(thread, tuple_type, dunder_slots_obj);
       if (dunder_slots_obj.isErrorException()) {
         return *dunder_slots_obj;
       }
@@ -1075,9 +1072,8 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
-      Object set_result(
-          &scope, Interpreter::callDescriptorSet(thread, thread->currentFrame(),
-                                                 meta_attr, type, value));
+      Object set_result(&scope, Interpreter::callDescriptorSet(
+                                    thread, meta_attr, type, value));
       if (set_result.isError()) return *set_result;
       return NoneType::object();
     }

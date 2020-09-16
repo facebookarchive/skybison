@@ -242,7 +242,7 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   if (func.isError() || !func.isFunction()) {
     return nullptr;
   }
-  Object sequence(&scope, Interpreter::call1(thread, frame, func, object));
+  Object sequence(&scope, Interpreter::call1(thread, func, object));
   if (sequence.isError()) {
     return nullptr;
   }
@@ -509,8 +509,7 @@ PY_EXPORT PyObject* PyObject_RichCompare(PyObject* v, PyObject* w, int op) {
   Object left(&scope, ApiHandle::fromPyObject(v)->asObject());
   Object right(&scope, ApiHandle::fromPyObject(w)->asObject());
   Object result(&scope, Interpreter::compareOperation(
-                            thread, thread->currentFrame(),
-                            static_cast<CompareOp>(op), left, right));
+                            thread, static_cast<CompareOp>(op), left, right));
   if (result.isError()) {
     return nullptr;
   }

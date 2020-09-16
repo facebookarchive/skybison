@@ -43,8 +43,8 @@ using Continue = Interpreter::Continue;
 
 Interpreter::~Interpreter() {}
 
-RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
-                                       Object* callable, Object* self) {
+RawObject Interpreter::prepareCallable(Thread* thread, Object* callable,
+                                       Object* self) {
   DCHECK(!callable->isFunction(),
          "prepareCallable should only be called on non-function types");
   HandleScope scope(thread);
@@ -91,8 +91,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
       }
       Type call_type(&scope, runtime->typeOf(*dunder_call));
       if (typeIsNonDataDescriptor(thread, call_type)) {
-        *callable =
-            callDescriptorGet(thread, frame, dunder_call, *callable, type);
+        *callable = callDescriptorGet(thread, dunder_call, *callable, type);
         if (callable->isErrorException()) return **callable;
         if (callable->isFunction()) return Bool::falseObj();
 
@@ -108,7 +107,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
 }
 
 HANDLER_INLINE USED Interpreter::PrepareCallableResult
-Interpreter::prepareCallableCall(Thread* thread, Frame* frame, word nargs,
+Interpreter::prepareCallableCall(Thread* thread, word nargs,
                                  word callable_idx) {
   RawObject callable = thread->stackPeek(callable_idx);
   if (callable.isFunction()) {
@@ -124,16 +123,16 @@ Interpreter::prepareCallableCall(Thread* thread, Frame* frame, word nargs,
       return {method_function, nargs + 1};
     }
   }
-  return prepareCallableCallDunderCall(thread, frame, nargs, callable_idx);
+  return prepareCallableCallDunderCall(thread, nargs, callable_idx);
 }
 
 NEVER_INLINE
 Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
-    Thread* thread, Frame* frame, word nargs, word callable_idx) {
+    Thread* thread, word nargs, word callable_idx) {
   HandleScope scope(thread);
   Object callable(&scope, thread->stackPeek(callable_idx));
   Object self(&scope, NoneType::object());
-  RawObject prepare_result = prepareCallable(thread, frame, &callable, &self);
+  RawObject prepare_result = prepareCallable(thread, &callable, &self);
   if (prepare_result.isErrorException()) {
     return {prepare_result, nargs};
   }
@@ -163,11 +162,11 @@ Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
   return {*callable, nargs};
 }
 
-RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
+RawObject Interpreter::call(Thread* thread, word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
   RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
   PrepareCallableResult prepare_result =
-      prepareCallableCall(thread, frame, nargs, nargs);
+      prepareCallableCall(thread, nargs, nargs);
   RawObject function = prepare_result.function;
   nargs = prepare_result.nargs;
   if (function.isErrorException()) {
@@ -175,27 +174,26 @@ RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
     DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return function;
   }
-  return callFunction(thread, frame, function, nargs);
+  return callFunction(thread, nargs, function);
 }
 
-ALWAYS_INLINE RawObject Interpreter::callFunction(Thread* thread, Frame* frame,
-                                                  RawObject function,
-                                                  word nargs) {
+ALWAYS_INLINE RawObject Interpreter::callFunction(Thread* thread, word nargs,
+                                                  RawObject function) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
   RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
   DCHECK(function == thread->stackPeek(nargs),
          "thread->stackPeek(nargs) is expected to be the given function");
-  RawObject result = Function::cast(function).entry()(thread, frame, nargs);
+  RawObject result = Function::cast(function).entry()(thread, nargs);
   DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   return result;
 }
 
-RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
+RawObject Interpreter::callKw(Thread* thread, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
   RawObject* post_call_sp = thread->stackPointer() + nargs + 2;
   PrepareCallableResult prepare_result =
-      prepareCallableCall(thread, frame, nargs, nargs + 1);
+      prepareCallableCall(thread, nargs, nargs + 1);
   RawObject function = prepare_result.function;
   nargs = prepare_result.nargs;
   if (function.isErrorException()) {
@@ -203,32 +201,30 @@ RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
     DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return function;
   }
-  RawObject result = Function::cast(function).entryKw()(thread, frame, nargs);
+  RawObject result = Function::cast(function).entryKw()(thread, nargs);
   DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   return result;
 }
 
-RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
+RawObject Interpreter::callEx(Thread* thread, word flags) {
   // Low bit of flags indicates whether var-keyword argument is on TOS.
   // In all cases, var-positional tuple is next, followed by the function
   // pointer.
   word callable_idx = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
   RawObject* post_call_sp = thread->stackPointer() + callable_idx + 1;
   HandleScope scope(thread);
-  Object callable(&scope, prepareCallableEx(thread, frame, callable_idx));
+  Object callable(&scope, prepareCallableEx(thread, callable_idx));
   if (callable.isErrorException()) {
     thread->stackDrop(callable_idx + 1);
     DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return *callable;
   }
-  RawObject result =
-      RawFunction::cast(*callable).entryEx()(thread, frame, flags);
+  RawObject result = RawFunction::cast(*callable).entryEx()(thread, flags);
   DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   return result;
 }
 
-RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
-                                         word callable_idx) {
+RawObject Interpreter::prepareCallableEx(Thread* thread, word callable_idx) {
   HandleScope scope(thread);
   Object callable(&scope, thread->stackPeek(callable_idx));
   word args_idx = callable_idx - 1;
@@ -247,7 +243,7 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
   }
   if (!callable.isFunction()) {
     Object self(&scope, NoneType::object());
-    Object result(&scope, prepareCallable(thread, frame, &callable, &self));
+    Object result(&scope, prepareCallable(thread, &callable, &self));
     if (result.isErrorException()) return *result;
     thread->stackSetAt(callable_idx, *callable);
 
@@ -266,11 +262,10 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
 
 static RawObject callDunderHash(Thread* thread, const Object& value) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   // TODO(T52406106): This lookup is unfortunately not inline-cached but should
   // eventually be called less and less as code moves to managed.
-  Object dunder_hash(
-      &scope, Interpreter::lookupMethod(thread, frame, value, ID(__hash__)));
+  Object dunder_hash(&scope,
+                     Interpreter::lookupMethod(thread, value, ID(__hash__)));
   if (dunder_hash.isNoneType() || dunder_hash.isError()) {
     if (dunder_hash.isErrorException()) {
       thread->clearPendingException();
@@ -281,8 +276,7 @@ static RawObject callDunderHash(Thread* thread, const Object& value) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type: '%T'",
                                 &value);
   }
-  Object result(&scope,
-                Interpreter::callMethod1(thread, frame, dunder_hash, value));
+  Object result(&scope, Interpreter::callMethod1(thread, dunder_hash, value));
   if (result.isErrorException()) return *result;
   if (!thread->runtime()->isInstanceOfInt(*result)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -386,7 +380,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   return *result;
 }
 
-RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* frame,
+RawObject Interpreter::callDescriptorGet(Thread* thread,
                                          const Object& descriptor,
                                          const Object& receiver,
                                          const Object& receiver_type) {
@@ -396,11 +390,10 @@ RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* frame,
   Object method(&scope,
                 typeLookupInMroById(thread, descriptor_type, ID(__get__)));
   DCHECK(!method.isErrorNotFound(), "no __get__ method found");
-  return callMethod3(thread, frame, method, descriptor, receiver,
-                     receiver_type);
+  return callMethod3(thread, method, descriptor, receiver, receiver_type);
 }
 
-RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* frame,
+RawObject Interpreter::callDescriptorSet(Thread* thread,
                                          const Object& descriptor,
                                          const Object& receiver,
                                          const Object& value) {
@@ -410,10 +403,10 @@ RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* frame,
   Object method(&scope,
                 typeLookupInMroById(thread, descriptor_type, ID(__set__)));
   DCHECK(!method.isErrorNotFound(), "no __set__ method found");
-  return callMethod3(thread, frame, method, descriptor, receiver, value);
+  return callMethod3(thread, method, descriptor, receiver, value);
 }
 
-RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* frame,
+RawObject Interpreter::callDescriptorDelete(Thread* thread,
                                             const Object& descriptor,
                                             const Object& receiver) {
   HandleScope scope(thread);
@@ -422,11 +415,11 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* frame,
   Object method(&scope,
                 typeLookupInMroById(thread, descriptor_type, ID(__delete__)));
   DCHECK(!method.isErrorNotFound(), "no __delete__ method found");
-  return callMethod2(thread, frame, method, descriptor, receiver);
+  return callMethod2(thread, method, descriptor, receiver);
 }
 
-RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* frame */,
-                                    const Object& receiver, SymbolId selector) {
+RawObject Interpreter::lookupMethod(Thread* thread, const Object& receiver,
+                                    SymbolId selector) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
@@ -439,68 +432,64 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* frame */,
   return resolveDescriptorGet(thread, method, receiver, type);
 }
 
-RawObject Interpreter::call0(Thread* thread, Frame* frame,
-                             const Object& callable) {
+RawObject Interpreter::call0(Thread* thread, const Object& callable) {
   thread->stackPush(*callable);
-  return call(thread, frame, 0);
+  return call(thread, 0);
 }
 
-RawObject Interpreter::call1(Thread* thread, Frame* frame,
-                             const Object& callable, const Object& arg1) {
+RawObject Interpreter::call1(Thread* thread, const Object& callable,
+                             const Object& arg1) {
   thread->stackPush(*callable);
   thread->stackPush(*arg1);
-  return call(thread, frame, 1);
+  return call(thread, 1);
 }
 
-RawObject Interpreter::call2(Thread* thread, Frame* frame,
-                             const Object& callable, const Object& arg1,
-                             const Object& arg2) {
+RawObject Interpreter::call2(Thread* thread, const Object& callable,
+                             const Object& arg1, const Object& arg2) {
   thread->stackPush(*callable);
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
-  return call(thread, frame, 2);
+  return call(thread, 2);
 }
 
-RawObject Interpreter::call3(Thread* thread, Frame* frame,
-                             const Object& callable, const Object& arg1,
-                             const Object& arg2, const Object& arg3) {
+RawObject Interpreter::call3(Thread* thread, const Object& callable,
+                             const Object& arg1, const Object& arg2,
+                             const Object& arg3) {
   thread->stackPush(*callable);
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
   thread->stackPush(*arg3);
-  return call(thread, frame, 3);
+  return call(thread, 3);
 }
 
-RawObject Interpreter::call4(Thread* thread, Frame* frame,
-                             const Object& callable, const Object& arg1,
-                             const Object& arg2, const Object& arg3,
-                             const Object& arg4) {
+RawObject Interpreter::call4(Thread* thread, const Object& callable,
+                             const Object& arg1, const Object& arg2,
+                             const Object& arg3, const Object& arg4) {
   thread->stackPush(*callable);
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
   thread->stackPush(*arg3);
   thread->stackPush(*arg4);
-  return call(thread, frame, 4);
+  return call(thread, 4);
 }
 
-RawObject Interpreter::call5(Thread* thread, Frame* frame,
-                             const Object& callable, const Object& arg1,
-                             const Object& arg2, const Object& arg3,
-                             const Object& arg4, const Object& arg5) {
+RawObject Interpreter::call5(Thread* thread, const Object& callable,
+                             const Object& arg1, const Object& arg2,
+                             const Object& arg3, const Object& arg4,
+                             const Object& arg5) {
   thread->stackPush(*callable);
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
   thread->stackPush(*arg3);
   thread->stackPush(*arg4);
   thread->stackPush(*arg5);
-  return call(thread, frame, 5);
+  return call(thread, 5);
 }
 
-RawObject Interpreter::call6(Thread* thread, Frame* frame,
-                             const Object& callable, const Object& arg1,
-                             const Object& arg2, const Object& arg3,
-                             const Object& arg4, const Object& arg5,
-                             const Object& arg6) {
+RawObject Interpreter::call6(Thread* thread, const Object& callable,
+                             const Object& arg1, const Object& arg2,
+                             const Object& arg3, const Object& arg4,
+                             const Object& arg5, const Object& arg6) {
   thread->stackPush(*callable);
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
@@ -508,54 +497,52 @@ RawObject Interpreter::call6(Thread* thread, Frame* frame,
   thread->stackPush(*arg4);
   thread->stackPush(*arg5);
   thread->stackPush(*arg6);
-  return call(thread, frame, 6);
+  return call(thread, 6);
 }
 
-RawObject Interpreter::callMethod1(Thread* thread, Frame* frame,
-                                   const Object& method, const Object& self) {
+RawObject Interpreter::callMethod1(Thread* thread, const Object& method,
+                                   const Object& self) {
   word nargs = 0;
   thread->stackPush(*method);
   if (method.isFunction()) {
     thread->stackPush(*self);
-    return callFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, nargs + 1, *method);
   }
-  return call(thread, frame, nargs);
+  return call(thread, nargs);
 }
 
-RawObject Interpreter::callMethod2(Thread* thread, Frame* frame,
-                                   const Object& method, const Object& self,
-                                   const Object& other) {
+RawObject Interpreter::callMethod2(Thread* thread, const Object& method,
+                                   const Object& self, const Object& other) {
   word nargs = 1;
   thread->stackPush(*method);
   if (method.isFunction()) {
     thread->stackPush(*self);
     thread->stackPush(*other);
-    return callFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, nargs + 1, *method);
   }
   thread->stackPush(*other);
-  return call(thread, frame, nargs);
+  return call(thread, nargs);
 }
 
-RawObject Interpreter::callMethod3(Thread* thread, Frame* frame,
-                                   const Object& method, const Object& self,
-                                   const Object& arg1, const Object& arg2) {
+RawObject Interpreter::callMethod3(Thread* thread, const Object& method,
+                                   const Object& self, const Object& arg1,
+                                   const Object& arg2) {
   word nargs = 2;
   thread->stackPush(*method);
   if (method.isFunction()) {
     thread->stackPush(*self);
     thread->stackPush(*arg1);
     thread->stackPush(*arg2);
-    return callFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, nargs + 1, *method);
   }
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
-  return call(thread, frame, nargs);
+  return call(thread, nargs);
 }
 
-RawObject Interpreter::callMethod4(Thread* thread, Frame* frame,
-                                   const Object& method, const Object& self,
-                                   const Object& arg1, const Object& arg2,
-                                   const Object& arg3) {
+RawObject Interpreter::callMethod4(Thread* thread, const Object& method,
+                                   const Object& self, const Object& arg1,
+                                   const Object& arg2, const Object& arg3) {
   word nargs = 3;
   thread->stackPush(*method);
   if (method.isFunction()) {
@@ -563,24 +550,23 @@ RawObject Interpreter::callMethod4(Thread* thread, Frame* frame,
     thread->stackPush(*arg1);
     thread->stackPush(*arg2);
     thread->stackPush(*arg3);
-    return callFunction(thread, frame, *method, nargs + 1);
+    return callFunction(thread, nargs + 1, *method);
   }
   thread->stackPush(*arg1);
   thread->stackPush(*arg2);
   thread->stackPush(*arg3);
-  return call(thread, frame, nargs);
+  return call(thread, nargs);
 }
 
 HANDLER_INLINE
 Continue Interpreter::tailcallMethod1(Thread* thread, RawObject method,
                                       RawObject self) {
   word nargs = 0;
-  Frame* frame = thread->currentFrame();
   thread->stackPush(method);
   if (method.isFunction()) {
     thread->stackPush(self);
     nargs++;
-    return tailcallFunction(thread, frame, method, nargs);
+    return tailcallFunction(thread, nargs, method);
   }
   return tailcall(thread, nargs);
 }
@@ -589,12 +575,11 @@ HANDLER_INLINE
 Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
                                       RawObject self, RawObject arg1) {
   word nargs = 1;
-  Frame* frame = thread->currentFrame();
   thread->stackPush(method);
   if (method.isFunction()) {
     thread->stackPush(self);
     nargs++;
-    return tailcallFunction(thread, frame, method, nargs);
+    return tailcallFunction(thread, nargs, method);
   }
   thread->stackPush(arg1);
   return tailcall(thread, nargs);
@@ -660,10 +645,12 @@ static RawObject binaryOperationLookupReflected(Thread* thread,
   return *right_reversed_method;
 }
 
-static RawObject executeAndCacheBinaryOp(
-    Thread* thread, Frame* frame, const Object& method, BinaryOpFlags flags,
-    const Object& left, const Object& right, Object* method_out,
-    BinaryOpFlags* flags_out) {
+static RawObject executeAndCacheBinaryOp(Thread* thread, const Object& method,
+                                         BinaryOpFlags flags,
+                                         const Object& left,
+                                         const Object& right,
+                                         Object* method_out,
+                                         BinaryOpFlags* flags_out) {
   if (method.isErrorNotFound()) {
     return NotImplementedType::object();
   }
@@ -672,17 +659,17 @@ static RawObject executeAndCacheBinaryOp(
     DCHECK(method.isFunction(), "must be a plain function");
     *method_out = *method;
     *flags_out = flags;
-    return Interpreter::binaryOperationWithMethod(thread, frame, *method, flags,
-                                                  *left, *right);
+    return Interpreter::binaryOperationWithMethod(thread, *method, flags, *left,
+                                                  *right);
   }
   if (flags & kBinaryOpReflected) {
-    return Interpreter::callMethod2(thread, frame, method, right, left);
+    return Interpreter::callMethod2(thread, method, right, left);
   }
-  return Interpreter::callMethod2(thread, frame, method, left, right);
+  return Interpreter::callMethod2(thread, method, left, right);
 }
 
-RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* frame,
-                                                BinaryOp op, const Object& left,
+RawObject Interpreter::binaryOperationSetMethod(Thread* thread, BinaryOp op,
+                                                const Object& left,
                                                 const Object& right,
                                                 Object* method_out,
                                                 BinaryOpFlags* flags_out) {
@@ -723,38 +710,37 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* frame,
     }
   }
 
-  Object result(
-      &scope, executeAndCacheBinaryOp(thread, frame, method, flags, left, right,
-                                      method_out, flags_out));
+  Object result(&scope, executeAndCacheBinaryOp(thread, method, flags, left,
+                                                right, method_out, flags_out));
   if (!result.isNotImplementedType()) return *result;
 
   // Invoke a 2nd method (normal or reverse depends on what we did the first
   // time) or report an error.
-  return binaryOperationRetry(thread, frame, op, flags, left, right);
+  return binaryOperationRetry(thread, op, flags, left, right);
 }
 
-RawObject Interpreter::binaryOperation(Thread* thread, Frame* frame,
-                                       BinaryOp op, const Object& left,
+RawObject Interpreter::binaryOperation(Thread* thread, BinaryOp op,
+                                       const Object& left,
                                        const Object& right) {
-  return binaryOperationSetMethod(thread, frame, op, left, right, nullptr,
-                                  nullptr);
+  return binaryOperationSetMethod(thread, op, left, right, nullptr, nullptr);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinaryOperation(BinaryOp op,
                                                        Thread* thread) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object other(&scope, thread->stackPop());
   Object self(&scope, thread->stackPop());
-  RawObject result = binaryOperation(thread, frame, op, self, other);
+  RawObject result = binaryOperation(thread, op, self, other);
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(result);
   return Continue::NEXT;
 }
 
-RawObject Interpreter::inplaceOperationSetMethod(
-    Thread* thread, Frame* frame, BinaryOp op, const Object& left,
-    const Object& right, Object* method_out, BinaryOpFlags* flags_out) {
+RawObject Interpreter::inplaceOperationSetMethod(Thread* thread, BinaryOp op,
+                                                 const Object& left,
+                                                 const Object& right,
+                                                 Object* method_out,
+                                                 BinaryOpFlags* flags_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   SymbolId selector = runtime->inplaceOperationSelector(op);
@@ -774,37 +760,37 @@ RawObject Interpreter::inplaceOperationSetMethod(
     // Make sure we do not put a possible 2nd method call (from
     // binaryOperationSetMethod() down below) into the cache.
     method_out = nullptr;
-    Object result(&scope, callMethod2(thread, frame, method, left, right));
+    Object result(&scope, callMethod2(thread, method, left, right));
     if (result != NotImplementedType::object()) {
       return *result;
     }
   }
-  return binaryOperationSetMethod(thread, frame, op, left, right, method_out,
+  return binaryOperationSetMethod(thread, op, left, right, method_out,
                                   flags_out);
 }
 
-RawObject Interpreter::inplaceOperation(Thread* thread, Frame* frame,
-                                        BinaryOp op, const Object& left,
+RawObject Interpreter::inplaceOperation(Thread* thread, BinaryOp op,
+                                        const Object& left,
                                         const Object& right) {
-  return inplaceOperationSetMethod(thread, frame, op, left, right, nullptr,
-                                   nullptr);
+  return inplaceOperationSetMethod(thread, op, left, right, nullptr, nullptr);
 }
 
 HANDLER_INLINE Continue Interpreter::doInplaceOperation(BinaryOp op,
                                                         Thread* thread) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
-  RawObject result = inplaceOperation(thread, frame, op, left, right);
+  RawObject result = inplaceOperation(thread, op, left, right);
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(result);
   return Continue::NEXT;
 }
 
-RawObject Interpreter::compareOperationSetMethod(
-    Thread* thread, Frame* frame, CompareOp op, const Object& left,
-    const Object& right, Object* method_out, BinaryOpFlags* flags_out) {
+RawObject Interpreter::compareOperationSetMethod(Thread* thread, CompareOp op,
+                                                 const Object& left,
+                                                 const Object& right,
+                                                 Object* method_out,
+                                                 BinaryOpFlags* flags_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   SymbolId selector = runtime->comparisonSelector(op);
@@ -843,16 +829,15 @@ RawObject Interpreter::compareOperationSetMethod(
     }
   }
 
-  Object result(
-      &scope, executeAndCacheBinaryOp(thread, frame, method, flags, left, right,
-                                      method_out, flags_out));
+  Object result(&scope, executeAndCacheBinaryOp(thread, method, flags, left,
+                                                right, method_out, flags_out));
   if (!result.isNotImplementedType()) return *result;
 
-  return compareOperationRetry(thread, frame, op, flags, left, right);
+  return compareOperationRetry(thread, op, flags, left, right);
 }
 
-RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* frame,
-                                             CompareOp op, BinaryOpFlags flags,
+RawObject Interpreter::compareOperationRetry(Thread* thread, CompareOp op,
+                                             BinaryOpFlags flags,
                                              const Object& left,
                                              const Object& right) {
   HandleScope scope(thread);
@@ -862,25 +847,25 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* frame,
     // If we tried reflected first, try normal now.
     if (flags & kBinaryOpReflected) {
       SymbolId selector = runtime->comparisonSelector(op);
-      Object method(&scope, lookupMethod(thread, frame, left, selector));
+      Object method(&scope, lookupMethod(thread, left, selector));
       if (method.isError()) {
         if (method.isErrorException()) return *method;
         DCHECK(method.isErrorNotFound(), "expected not found");
       } else {
-        Object result(&scope, callMethod2(thread, frame, method, left, right));
+        Object result(&scope, callMethod2(thread, method, left, right));
         if (!result.isNotImplementedType()) return *result;
       }
     } else {
       // If we tried normal first, try to find a reflected method and call it.
       SymbolId selector = runtime->swappedComparisonSelector(op);
-      Object method(&scope, lookupMethod(thread, frame, right, selector));
+      Object method(&scope, lookupMethod(thread, right, selector));
       if (!method.isErrorNotFound()) {
         if (!method.isFunction()) {
           Type right_type(&scope, runtime->typeOf(*right));
           method = resolveDescriptorGet(thread, method, right, right_type);
           if (method.isErrorException()) return *method;
         }
-        Object result(&scope, callMethod2(thread, frame, method, right, left));
+        Object result(&scope, callMethod2(thread, method, right, left));
         if (!result.isNotImplementedType()) return *result;
       }
     }
@@ -898,8 +883,8 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* frame,
 }
 
 HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
-    Thread* thread, Frame* frame, RawObject method, BinaryOpFlags flags,
-    RawObject left, RawObject right) {
+    Thread* thread, RawObject method, BinaryOpFlags flags, RawObject left,
+    RawObject right) {
   DCHECK(method.isFunction(), "function is expected");
   thread->stackPush(method);
   if (flags & kBinaryOpReflected) {
@@ -909,11 +894,11 @@ HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     thread->stackPush(left);
     thread->stackPush(right);
   }
-  return callFunction(thread, frame, method, /*nargs=*/2);
+  return callFunction(thread, /*nargs=*/2, method);
 }
 
-RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
-                                            BinaryOp op, BinaryOpFlags flags,
+RawObject Interpreter::binaryOperationRetry(Thread* thread, BinaryOp op,
+                                            BinaryOpFlags flags,
                                             const Object& left,
                                             const Object& right) {
   HandleScope scope(thread);
@@ -923,12 +908,12 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
     // If we tried reflected first, try normal now.
     if (flags & kBinaryOpReflected) {
       SymbolId selector = runtime->binaryOperationSelector(op);
-      Object method(&scope, lookupMethod(thread, frame, left, selector));
+      Object method(&scope, lookupMethod(thread, left, selector));
       if (method.isError()) {
         if (method.isErrorException()) return *method;
         DCHECK(method.isErrorNotFound(), "expected not found");
       } else {
-        Object result(&scope, callMethod2(thread, frame, method, left, right));
+        Object result(&scope, callMethod2(thread, method, left, right));
         if (!result.isNotImplementedType()) return *result;
       }
     } else {
@@ -941,7 +926,7 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
           method = resolveDescriptorGet(thread, method, right, right_type);
           if (method.isErrorException()) return *method;
         }
-        Object result(&scope, callMethod2(thread, frame, method, right, left));
+        Object result(&scope, callMethod2(thread, method, right, left));
         if (!result.isNotImplementedType()) return *result;
       }
     }
@@ -951,19 +936,16 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
   return thread->raiseUnsupportedBinaryOperation(left, right, op_symbol);
 }
 
-RawObject Interpreter::compareOperation(Thread* thread, Frame* frame,
-                                        CompareOp op, const Object& left,
+RawObject Interpreter::compareOperation(Thread* thread, CompareOp op,
+                                        const Object& left,
                                         const Object& right) {
-  return compareOperationSetMethod(thread, frame, op, left, right, nullptr,
-                                   nullptr);
+  return compareOperationSetMethod(thread, op, left, right, nullptr, nullptr);
 }
 
-RawObject Interpreter::createIterator(Thread* thread, Frame* frame,
-                                      const Object& iterable) {
+RawObject Interpreter::createIterator(Thread* thread, const Object& iterable) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object dunder_iter(&scope,
-                     lookupMethod(thread, frame, iterable, ID(__iter__)));
+  Object dunder_iter(&scope, lookupMethod(thread, iterable, ID(__iter__)));
   if (dunder_iter.isError() || dunder_iter.isNoneType()) {
     if (dunder_iter.isErrorNotFound() &&
         runtime->isSequence(thread, iterable)) {
@@ -973,7 +955,7 @@ RawObject Interpreter::createIterator(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object is not iterable", &iterable);
   }
-  Object iterator(&scope, callMethod1(thread, frame, dunder_iter, iterable));
+  Object iterator(&scope, callMethod1(thread, dunder_iter, iterable));
   if (iterator.isErrorException()) return *iterator;
   if (!runtime->isIterator(thread, iterator)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -983,15 +965,14 @@ RawObject Interpreter::createIterator(Thread* thread, Frame* frame,
   return *iterator;
 }
 
-RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
-                                          const Object& value,
+RawObject Interpreter::sequenceIterSearch(Thread* thread, const Object& value,
                                           const Object& container) {
   HandleScope scope(thread);
-  Object iter(&scope, createIterator(thread, frame, container));
+  Object iter(&scope, createIterator(thread, container));
   if (iter.isErrorException()) {
     return *iter;
   }
-  Object dunder_next(&scope, lookupMethod(thread, frame, iter, ID(__next__)));
+  Object dunder_next(&scope, lookupMethod(thread, iter, ID(__next__)));
   if (dunder_next.isError()) {
     if (dunder_next.isErrorException()) {
       thread->clearPendingException();
@@ -1006,7 +987,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
   Object compare_result(&scope, NoneType::object());
   Object result(&scope, NoneType::object());
   for (;;) {
-    current = callMethod1(thread, frame, dunder_next, iter);
+    current = callMethod1(thread, dunder_next, iter);
     if (current.isErrorException()) {
       if (thread->hasPendingStopIteration()) {
         thread->clearPendingStopIteration();
@@ -1014,7 +995,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
       }
       return *current;
     }
-    compare_result = compareOperation(thread, frame, EQ, value, current);
+    compare_result = compareOperation(thread, EQ, value, current);
     if (compare_result.isErrorException()) {
       return *compare_result;
     }
@@ -1028,22 +1009,20 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
   return Bool::falseObj();
 }
 
-RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
-                                        const Object& value,
+RawObject Interpreter::sequenceContains(Thread* thread, const Object& value,
                                         const Object& container) {
-  return sequenceContainsSetMethod(thread, frame, value, container, nullptr);
+  return sequenceContainsSetMethod(thread, value, container, nullptr);
 }
 
-RawObject Interpreter::sequenceContainsSetMethod(Thread* thread, Frame* frame,
+RawObject Interpreter::sequenceContainsSetMethod(Thread* thread,
                                                  const Object& value,
                                                  const Object& container,
                                                  Object* method_out) {
   HandleScope scope(thread);
-  Object method(&scope,
-                lookupMethod(thread, frame, container, ID(__contains__)));
+  Object method(&scope, lookupMethod(thread, container, ID(__contains__)));
   if (!method.isError()) {
     if (method_out != nullptr && method.isFunction()) *method_out = *method;
-    Object result(&scope, callMethod2(thread, frame, method, container, value));
+    Object result(&scope, callMethod2(thread, method, container, value));
     if (result.isErrorException()) {
       return *result;
     }
@@ -1055,7 +1034,7 @@ RawObject Interpreter::sequenceContainsSetMethod(Thread* thread, Frame* frame,
     DCHECK(method.isErrorNotFound(),
            "expected Error::exception() or Error::notFound()");
   }
-  return sequenceIterSearch(thread, frame, value, container);
+  return sequenceIterSearch(thread, value, container);
 }
 
 HANDLER_INLINE USED RawObject Interpreter::isTrue(Thread* thread,
@@ -1130,7 +1109,6 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
 
 HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
                                        RawObject cause_obj) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object exc(&scope, exc_obj);
@@ -1143,7 +1121,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
     // raise was given a BaseException subtype. Use it as the type, and call
     // the type object to create the value.
     type = *exc;
-    value = Interpreter::call0(thread, frame, type);
+    value = Interpreter::call0(thread, type);
     if (value.isErrorException()) return;
     if (!runtime->isInstanceOfBaseException(*value)) {
       thread->raiseWithFmt(
@@ -1172,7 +1150,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
                                    // Error.
     if (runtime->isInstanceOfType(*cause) &&
         Type(&scope, *cause).isBaseExceptionSubclass()) {
-      cause = Interpreter::call0(thread, frame, cause);
+      cause = Interpreter::call0(thread, cause);
       if (cause.isErrorException()) return;
     } else if (!runtime->isInstanceOfBaseException(*cause) &&
                !cause.isNoneType()) {
@@ -1193,7 +1171,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
   thread->raiseWithType(*type, *value);
 }
 
-HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread, Frame*,
+HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread,
                                                      TryBlock block) {
   // Drop all dead values except for the 3 that are popped into the caught
   // exception state.
@@ -1218,7 +1196,7 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
 
   frame->blockStack()->pop();
   if (block.kind() == TryBlock::kExceptHandler) {
-    unwindExceptHandler(thread, frame, block);
+    unwindExceptHandler(thread, block);
     return false;
   }
   thread->stackDrop(thread->valueStackSize() - block.level());
@@ -1298,7 +1276,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
     while (stack->depth() > 0) {
       TryBlock block = stack->pop();
       if (block.kind() == TryBlock::kExceptHandler) {
-        unwindExceptHandler(thread, frame, block);
+        unwindExceptHandler(thread, block);
         continue;
       }
       thread->stackDrop(thread->valueStackSize() - block.level());
@@ -1499,7 +1477,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   }
   thread->stackSetAt(1, *getitem);
   thread->stackInsertAt(1, *container);
-  return tailcallFunction(thread, frame, *getitem, 2);
+  return tailcallFunction(thread, 2, *getitem);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
@@ -1535,7 +1513,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
     return binarySubscrUpdateCache(thread, arg);
   }
   thread->stackInsertAt(2, cached);
-  return tailcallFunction(thread, frame, cached, 2);
+  return tailcallFunction(thread, 2, cached);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
@@ -1549,7 +1527,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
     return binarySubscrUpdateCache(thread, arg);
   }
   thread->stackInsertAt(2, cached);
-  return tailcallFunction(thread, frame, cached, 2);
+  return tailcallFunction(thread, 2, cached);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
@@ -1589,9 +1567,8 @@ HANDLER_INLINE Continue Interpreter::doInplaceTrueDivide(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object obj(&scope, thread->stackPop());
-  Object method(&scope, lookupMethod(thread, frame, obj, ID(__aiter__)));
+  Object method(&scope, lookupMethod(thread, obj, ID(__aiter__)));
   if (method.isError()) {
     if (method.isErrorException()) {
       thread->clearPendingException();
@@ -1609,10 +1586,9 @@ HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object obj(&scope, thread->stackTop());
   // TODO(T67736679) Add inline caching for this method lookup.
-  Object anext(&scope, lookupMethod(thread, frame, obj, ID(__anext__)));
+  Object anext(&scope, lookupMethod(thread, obj, ID(__anext__)));
   if (anext.isError()) {
     if (anext.isErrorException()) {
       thread->clearPendingException();
@@ -1625,7 +1601,7 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
         "'async for' requires an iterator with __anext__ method");
     return Continue::UNWIND;
   }
-  Object awaitable(&scope, callMethod1(thread, frame, anext, obj));
+  Object awaitable(&scope, callMethod1(thread, anext, obj));
   if (awaitable.isErrorException()) return Continue::UNWIND;
   thread->stackPush(*awaitable);
   // TODO(T67736679) Add inline caching for the lookupMethod() in
@@ -1643,7 +1619,6 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object manager(&scope, thread->stackPop());
 
   // resolve __aexit__ and push it
@@ -1655,7 +1630,7 @@ HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   thread->stackPush(*exit);
 
   // resolve __aenter__ call it and push the return value
-  Object enter(&scope, lookupMethod(thread, frame, manager, ID(__aenter__)));
+  Object enter(&scope, lookupMethod(thread, manager, ID(__aenter__)));
   if (enter.isError()) {
     if (enter.isErrorNotFound()) {
       Object aenter_str(&scope, runtime->newStrFromFmt("__aenter__"));
@@ -1687,11 +1662,9 @@ HANDLER_INLINE Continue Interpreter::doInplaceModulo(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object key(&scope, thread->stackPop());
   Object container(&scope, thread->stackPop());
-  Object setitem(&scope,
-                 lookupMethod(thread, frame, container, ID(__setitem__)));
+  Object setitem(&scope, lookupMethod(thread, container, ID(__setitem__)));
   if (setitem.isError()) {
     if (setitem.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1704,8 +1677,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
     return Continue::UNWIND;
   }
   Object value(&scope, thread->stackPop());
-  if (callMethod3(thread, frame, setitem, container, key, value)
-          .isErrorException()) {
+  if (callMethod3(thread, setitem, container, key, value).isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1732,11 +1704,9 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread,
 NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                                           word arg) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object key(&scope, thread->stackPop());
   Object container(&scope, thread->stackPop());
-  Object setitem(&scope,
-                 lookupMethod(thread, frame, container, ID(__setitem__)));
+  Object setitem(&scope, lookupMethod(thread, container, ID(__setitem__)));
   if (setitem.isError()) {
     if (setitem.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1749,6 +1719,7 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
     return Continue::UNWIND;
   }
   if (setitem.isFunction()) {
+    Frame* frame = thread->currentFrame();
     MutableTuple caches(&scope, frame->caches());
     Str set_item_name(&scope,
                       thread->runtime()->symbols()->at(ID(__setitem__)));
@@ -1761,8 +1732,7 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                       : STORE_SUBSCR_POLYMORPHIC);
   }
   Object value(&scope, thread->stackPop());
-  if (callMethod3(thread, frame, setitem, container, key, value)
-          .isErrorException()) {
+  if (callMethod3(thread, setitem, container, key, value).isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1771,7 +1741,6 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
 ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
                                                 RawObject set_item_method) {
   DCHECK(set_item_method.isFunction(), "cached should be a function");
-  Frame* frame = thread->currentFrame();
   // The shape of the frame before STORE_SUBSCR:
   //   2: value
   //   1: container
@@ -1786,8 +1755,7 @@ ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
   thread->stackSetAt(2, set_item_method);
   thread->stackPush(value_raw);
 
-  RawObject result = callFunction(thread, frame, set_item_method,
-                                  /*nargs=*/3);
+  RawObject result = callFunction(thread, /*nargs=*/3, set_item_method);
   if (result.isErrorException()) {
     return Continue::UNWIND;
   }
@@ -1824,13 +1792,12 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
                                                              word arg) {
-  Frame* frame = thread->currentFrame();
   RawObject container = thread->stackPeek(1);
   RawObject key = thread->stackPeek(0);
   switch (container.layoutId()) {
     case LayoutId::kList:
       if (key.isSmallInt()) {
-        rewriteCurrentBytecode(frame, STORE_SUBSCR_LIST);
+        rewriteCurrentBytecode(thread->currentFrame(), STORE_SUBSCR_LIST);
         return doStoreSubscrList(thread, arg);
       }
       break;
@@ -1842,11 +1809,9 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object key(&scope, thread->stackPop());
   Object container(&scope, thread->stackPop());
-  Object delitem(&scope,
-                 lookupMethod(thread, frame, container, ID(__delitem__)));
+  Object delitem(&scope, lookupMethod(thread, container, ID(__delitem__)));
   if (delitem.isError()) {
     if (delitem.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1858,7 +1823,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
     }
     return Continue::UNWIND;
   }
-  if (callMethod2(thread, frame, delitem, container, key).isErrorException()) {
+  if (callMethod2(thread, delitem, container, key).isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1891,7 +1856,6 @@ HANDLER_INLINE Continue Interpreter::doInplacePower(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Frame* frame = thread->currentFrame();
   Object iterable(&scope, thread->stackPop());
   Object iterator(&scope, NoneType::object());
   switch (iterable.layoutId()) {
@@ -1958,21 +1922,20 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
   }
   // TODO(T44729606): Add caching, and turn into a simpler call for builtin
   // types with known iterator creating functions
-  iterator = createIterator(thread, frame, iterable);
+  iterator = createIterator(thread, iterable);
   if (iterator.isErrorException()) return Continue::UNWIND;
   thread->stackPush(*iterator);
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object iterable(&scope, thread->stackTop());
 
   if (iterable.isGenerator()) return Continue::NEXT;
 
   if (iterable.isCoroutine()) {
-    Function function(&scope, frame->function());
+    Function function(&scope, thread->currentFrame()->function());
     if (!(function.isCoroutine() || function.isIterableCoroutine())) {
       thread->raiseWithFmt(
           LayoutId::kTypeError,
@@ -1986,7 +1949,7 @@ HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
   thread->stackDrop(1);
   // TODO(T44729661): Add caching, and turn into a simpler call for builtin
   // types with known iterator creating functions
-  Object iterator(&scope, createIterator(thread, frame, iterable));
+  Object iterator(&scope, createIterator(thread, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
   thread->stackPush(*iterator);
   return Continue::NEXT;
@@ -1994,7 +1957,6 @@ HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doPrintExpr(Thread* thread, word) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object value(&scope, thread->stackPop());
   ValueCell value_cell(&scope, thread->runtime()->displayHook());
   if (value_cell.isUnbound()) {
@@ -2002,7 +1964,7 @@ HANDLER_INLINE Continue Interpreter::doPrintExpr(Thread* thread, word) {
   }
   // TODO(T55021263): Replace with non-recursive call
   Object display_hook(&scope, value_cell.value());
-  return callMethod1(thread, frame, display_hook, value).isErrorException()
+  return callMethod1(thread, display_hook, value).isErrorException()
              ? Continue::UNWIND
              : Continue::NEXT;
 }
@@ -2014,14 +1976,13 @@ HANDLER_INLINE Continue Interpreter::doLoadBuildClass(Thread* thread, word) {
 }
 
 HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
 
   Object value(&scope, thread->stackPop());
   Object iterator(&scope, thread->stackTop());
   Object result(&scope, NoneType::object());
   if (iterator.isGenerator() || iterator.isCoroutine() || !value.isNoneType()) {
-    Object send_method(&scope, lookupMethod(thread, frame, iterator, ID(send)));
+    Object send_method(&scope, lookupMethod(thread, iterator, ID(send)));
     if (send_method.isError()) {
       if (send_method.isErrorException()) {
         thread->clearPendingException();
@@ -2033,10 +1994,9 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
                            "iter() returned non-iterator");
       return Continue::UNWIND;
     }
-    result = callMethod2(thread, frame, send_method, iterator, value);
+    result = callMethod2(thread, send_method, iterator, value);
   } else {
-    Object next_method(&scope,
-                       lookupMethod(thread, frame, iterator, ID(__next__)));
+    Object next_method(&scope, lookupMethod(thread, iterator, ID(__next__)));
     if (next_method.isError()) {
       if (next_method.isErrorException()) {
         thread->clearPendingException();
@@ -2048,7 +2008,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
                            "iter() returned non-iterator");
       return Continue::UNWIND;
     }
-    result = callMethod1(thread, frame, next_method, iterator);
+    result = callMethod1(thread, next_method, iterator);
   }
   if (result.isErrorException()) {
     if (!thread->hasPendingStopIteration()) return Continue::UNWIND;
@@ -2060,6 +2020,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
 
   // Decrement PC: We want this to re-execute until the subiterator is
   // exhausted.
+  Frame* frame = thread->currentFrame();
   frame->setVirtualPC(frame->virtualPC() - kCodeUnitSize);
   thread->stackPush(*result);
   return Continue::YIELD;
@@ -2068,7 +2029,6 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
 RawObject Interpreter::awaitableIter(Thread* thread,
                                      const char* invalid_type_message) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object obj(&scope, thread->stackTop());
   if (obj.isCoroutine() || obj.isAsyncGenerator()) {
     return *obj;
@@ -2083,7 +2043,7 @@ RawObject Interpreter::awaitableIter(Thread* thread,
     return thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
   }
   thread->stackPop();
-  Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
+  Object await(&scope, lookupMethod(thread, obj, ID(__await__)));
   if (await.isError()) {
     if (await.isErrorException()) {
       thread->clearPendingException();
@@ -2093,7 +2053,7 @@ RawObject Interpreter::awaitableIter(Thread* thread,
     }
     return thread->raiseWithFmt(LayoutId::kTypeError, invalid_type_message);
   }
-  Object result(&scope, callMethod1(thread, frame, await, obj));
+  Object result(&scope, callMethod1(thread, await, obj));
   if (result.isError()) return *result;
   if (result.isGenerator()) {
     Generator gen(&scope, *result);
@@ -2440,7 +2400,7 @@ HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
         handleLoopExit(thread, why, NoneType::object());
         return Continue::NEXT;
       case TryBlock::Why::kSilenced:
-        unwindExceptHandler(thread, frame, frame->blockStack()->pop());
+        unwindExceptHandler(thread, frame->blockStack()->pop());
         return Continue::NEXT;
     }
     UNIMPLEMENTED("unexpected why value");
@@ -2471,7 +2431,7 @@ HANDLER_INLINE Continue Interpreter::doPopExcept(Thread* thread, word) {
     return Continue::UNWIND;
   }
 
-  unwindExceptHandler(thread, frame, block);
+  unwindExceptHandler(thread, block);
   return Continue::NEXT;
 }
 
@@ -2521,7 +2481,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-static HANDLER_INLINE Continue unpackSequenceWithLength(Thread* thread, Frame*,
+static HANDLER_INLINE Continue unpackSequenceWithLength(Thread* thread,
                                                         const Tuple& tuple,
                                                         word count,
                                                         word length) {
@@ -2541,23 +2501,21 @@ static HANDLER_INLINE Continue unpackSequenceWithLength(Thread* thread, Frame*,
 
 HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
                                                       word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object iterable(&scope, thread->stackPop());
   if (iterable.isTuple()) {
     Tuple tuple(&scope, *iterable);
-    return unpackSequenceWithLength(thread, frame, tuple, arg, tuple.length());
+    return unpackSequenceWithLength(thread, tuple, arg, tuple.length());
   }
   if (iterable.isList()) {
     List list(&scope, *iterable);
     Tuple tuple(&scope, list.items());
-    return unpackSequenceWithLength(thread, frame, tuple, arg, list.numItems());
+    return unpackSequenceWithLength(thread, tuple, arg, list.numItems());
   }
-  Object iterator(&scope, createIterator(thread, frame, iterable));
+  Object iterator(&scope, createIterator(thread, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
 
-  Object next_method(&scope,
-                     lookupMethod(thread, frame, iterator, ID(__next__)));
+  Object next_method(&scope, lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     if (next_method.isErrorException()) {
       thread->clearPendingException();
@@ -2571,7 +2529,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
   word num_pushed = 0;
   Object value(&scope, RawNoneType::object());
   for (;;) {
-    value = callMethod1(thread, frame, next_method, iterator);
+    value = callMethod1(thread, next_method, iterator);
     if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) {
         if (num_pushed == arg) break;
@@ -2626,11 +2584,11 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
                                         ? FOR_ITER_MONOMORPHIC
                                         : FOR_ITER_POLYMORPHIC);
     }
-    result = Interpreter::callMethod1(thread, frame, next, iter);
+    result = Interpreter::callMethod1(thread, next, iter);
   } else {
     next = resolveDescriptorGet(thread, next, iter, type);
     if (next.isErrorException()) return Continue::UNWIND;
-    result = call0(thread, frame, next);
+    result = call0(thread, next);
   }
 
   if (result.isErrorException()) {
@@ -2698,8 +2656,7 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
   RawObject iter = thread->stackTop();
   thread->stackPush(next_method);
   thread->stackPush(iter);
-  RawObject result = callFunction(thread, frame, next_method,
-                                  /*nargs=*/1);
+  RawObject result = callFunction(thread, /*nargs=*/1, next_method);
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       thread->stackPop();
@@ -2894,15 +2851,13 @@ HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object iterable(&scope, thread->stackPop());
-  Object iterator(&scope, createIterator(thread, frame, iterable));
+  Object iterator(&scope, createIterator(thread, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
 
-  Object next_method(&scope,
-                     lookupMethod(thread, frame, iterator, ID(__next__)));
+  Object next_method(&scope, lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     if (next_method.isErrorException()) {
       thread->clearPendingException();
@@ -2919,7 +2874,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   word num_pushed = 0;
   Object value(&scope, RawNoneType::object());
   for (; num_pushed < before; ++num_pushed) {
-    value = callMethod1(thread, frame, next_method, iterator);
+    value = callMethod1(thread, next_method, iterator);
     if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) break;
       return Continue::UNWIND;
@@ -2934,7 +2889,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
 
   List list(&scope, runtime->newList());
   for (;;) {
-    value = callMethod1(thread, frame, next_method, iterator);
+    value = callMethod1(thread, next_method, iterator);
     if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) break;
       return Continue::UNWIND;
@@ -3652,7 +3607,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   }
   thread->stackPush(receiver);
   thread->stackSetAt(1, cached);
-  return tailcallFunction(thread, frame, cached, 1);
+  return tailcallFunction(thread, 1, cached);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
@@ -3692,8 +3647,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
   Object self(&scope, receiver);
   Type self_type(&scope, thread->runtime()->typeAt(self.layoutId()));
   Object result(&scope,
-                Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                               descr, self, self_type));
+                Interpreter::callDescriptorGet(thread, descr, self, self_type));
   if (result.isError()) return Continue::UNWIND;
   thread->stackSetTop(*result);
   return Continue::NEXT;
@@ -3811,7 +3765,6 @@ HANDLER_INLINE Continue Interpreter::doCompareIsNot(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   CompareOp op = static_cast<CompareOp>(arg);
@@ -3821,14 +3774,14 @@ HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   } else if (op == IS_NOT) {
     result = Bool::fromBool(*left != *right);
   } else if (op == IN) {
-    result = sequenceContains(thread, frame, left, right);
+    result = sequenceContains(thread, left, right);
   } else if (op == NOT_IN) {
-    result = sequenceContains(thread, frame, left, right);
+    result = sequenceContains(thread, left, right);
     if (result.isBool()) result = Bool::negate(result);
   } else if (op == EXC_MATCH) {
     result = excMatch(thread, left, right);
   } else {
-    result = compareOperation(thread, frame, op, left, right);
+    result = compareOperation(thread, op, left, right);
   }
 
   if (result.isErrorException()) return Continue::UNWIND;
@@ -4212,17 +4165,16 @@ HANDLER_INLINE Continue Interpreter::doRaiseVarargs(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
                                      word nargs, RawObject* post_call_sp) {
-  Frame* frame = thread->currentFrame();
-  RawObject result = entry(thread, frame, nargs);
+  RawObject result = entry(thread, nargs);
   DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(result);
   return Continue::NEXT;
 }
 
-static HANDLER_INLINE Continue callInterpretedImpl(
-    Thread* thread, word nargs, Frame* caller_frame, RawFunction function,
-    RawObject* post_call_sp, PrepareCallFunc prepare_args) {
+static HANDLER_INLINE Continue
+callInterpretedImpl(Thread* thread, word nargs, RawFunction function,
+                    RawObject* post_call_sp, PrepareCallFunc prepare_args) {
   // Warning: This code is using `RawXXX` variables for performance! This is
   // despite the fact that we call functions that do potentially perform memory
   // allocations. This is legal here because we always rely on the functions
@@ -4230,7 +4182,7 @@ static HANDLER_INLINE Continue callInterpretedImpl(
   // produce before a call after that call. Be careful not to break this
   // invariant if you change the code!
 
-  RawObject result = prepare_args(thread, function, caller_frame, nargs);
+  RawObject result = prepare_args(thread, nargs, function);
   if (result.isErrorException()) {
     DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
@@ -4248,10 +4200,10 @@ static HANDLER_INLINE Continue callInterpretedImpl(
   return Continue::NEXT;
 }
 
-Continue Interpreter::callInterpreted(Thread* thread, word nargs, Frame* frame,
+Continue Interpreter::callInterpreted(Thread* thread, word nargs,
                                       RawFunction function) {
   RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
-  return callInterpretedImpl(thread, nargs, frame, function, post_call_sp,
+  return callInterpretedImpl(thread, nargs, function, post_call_sp,
                              preparePositionalCall);
 }
 
@@ -4265,10 +4217,9 @@ HANDLER_INLINE Continue Interpreter::handleCall(
   // produce before a call after that call. Be careful not to break this
   // invariant if you change the code!
 
-  Frame* caller_frame = thread->currentFrame();
   RawObject* post_call_sp = thread->stackPointer() + callable_idx + 1;
   PrepareCallableResult prepare_result =
-      prepareCallableCall(thread, caller_frame, nargs, callable_idx);
+      prepareCallableCall(thread, nargs, callable_idx);
   nargs = prepare_result.nargs;
   if (prepare_result.function.isErrorException()) {
     thread->stackDrop(nargs + 1);
@@ -4278,7 +4229,7 @@ HANDLER_INLINE Continue Interpreter::handleCall(
   RawFunction function = RawFunction::cast(prepare_result.function);
 
   SymbolId name = static_cast<SymbolId>(function.intrinsicId());
-  if (name != SymbolId::kInvalid && doIntrinsic(thread, caller_frame, name)) {
+  if (name != SymbolId::kInvalid && doIntrinsic(thread, name)) {
     DCHECK(thread->stackPointer() == post_call_sp - 1, "stack not cleaned");
     return Continue::NEXT;
   }
@@ -4287,14 +4238,12 @@ HANDLER_INLINE Continue Interpreter::handleCall(
     return callTrampoline(thread, (function.*get_entry)(), nargs, post_call_sp);
   }
 
-  return callInterpretedImpl(thread, nargs, caller_frame, function,
-                             post_call_sp, prepare_args);
+  return callInterpretedImpl(thread, nargs, function, post_call_sp,
+                             prepare_args);
 }
 
-ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
-                                                     Frame* frame,
-                                                     RawObject function_obj,
-                                                     word nargs) {
+ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread, word nargs,
+                                                     RawObject function_obj) {
   RawObject* post_call_sp = thread->stackPointer() + nargs + 1;
   DCHECK(function_obj == thread->stackPeek(nargs),
          "thread->stackPeek(nargs) is expected to be the given function");
@@ -4302,7 +4251,7 @@ ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread,
   if (!function.isInterpreted()) {
     return callTrampoline(thread, function.entry(), nargs, post_call_sp);
   }
-  return callInterpretedImpl(thread, nargs, frame, function, post_call_sp,
+  return callInterpretedImpl(thread, nargs, function, post_call_sp,
                              preparePositionalCall);
 }
 
@@ -4419,12 +4368,10 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionKw(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
                                                       word arg) {
-  Frame* caller_frame = thread->currentFrame();
   word callable_idx = (arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
   RawObject* post_call_sp = thread->stackPointer() + callable_idx + 1;
   HandleScope scope(thread);
-  Object callable(&scope,
-                  prepareCallableEx(thread, caller_frame, callable_idx));
+  Object callable(&scope, prepareCallableEx(thread, callable_idx));
   if (callable.isErrorException()) {
     thread->stackDrop(callable_idx + 1);
     DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
@@ -4436,8 +4383,7 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
     return callTrampoline(thread, function.entryEx(), arg, post_call_sp);
   }
 
-  if (prepareExplodeCall(thread, *function, caller_frame, arg)
-          .isErrorException()) {
+  if (prepareExplodeCall(thread, arg, *function).isErrorException()) {
     DCHECK(thread->stackPointer() == post_call_sp, "stack not cleaned");
     return Continue::UNWIND;
   }
@@ -4456,9 +4402,8 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Frame* frame = thread->currentFrame();
   Object mgr(&scope, thread->stackTop());
-  Object enter(&scope, lookupMethod(thread, frame, mgr, ID(__enter__)));
+  Object enter(&scope, lookupMethod(thread, mgr, ID(__enter__)));
   if (enter.isError()) {
     if (enter.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
@@ -4469,7 +4414,7 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
     }
     return Continue::UNWIND;
   }
-  Object exit(&scope, lookupMethod(thread, frame, mgr, ID(__exit__)));
+  Object exit(&scope, lookupMethod(thread, mgr, ID(__exit__)));
   if (exit.isError()) {
     if (exit.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
@@ -4482,10 +4427,11 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
   }
   Object exit_bound(&scope, runtime->newBoundMethod(exit, mgr));
   thread->stackSetTop(*exit_bound);
-  Object result(&scope, callMethod1(thread, frame, enter, mgr));
+  Object result(&scope, callMethod1(thread, enter, mgr));
   if (result.isErrorException()) return Continue::UNWIND;
 
   word stack_depth = thread->valueStackBase() - thread->stackPointer();
+  Frame* frame = thread->currentFrame();
   BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
   block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
@@ -4881,7 +4827,6 @@ HANDLER_INLINE Continue Interpreter::doLoadMethodPolymorphic(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   RawObject maybe_method = thread->stackPeek(arg + 1);
   if (maybe_method.isUnbound()) {
     thread->stackRemoveAt(arg + 1);
@@ -4890,19 +4835,19 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
   }
   // Add one to bind receiver to the self argument. See doLoadMethod()
   // for details on the stack's shape.
-  return tailcallFunction(thread, frame, maybe_method, arg + 1);
+  return tailcallFunction(thread, arg + 1, maybe_method);
 }
 
 NEVER_INLINE
 Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object container(&scope, thread->stackPop());
   Object value(&scope, thread->stackPop());
   Object method(&scope, NoneType::object());
-  Object result(&scope, sequenceContainsSetMethod(thread, frame, value,
-                                                  container, &method));
+  Object result(&scope,
+                sequenceContainsSetMethod(thread, value, container, &method));
   if (method.isFunction()) {
+    Frame* frame = thread->currentFrame();
     MutableTuple caches(&scope, frame->caches());
     Str dunder_contains_name(
         &scope, thread->runtime()->symbols()->at(ID(__contains__)));
@@ -5032,7 +4977,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
   thread->stackPush(container);
   thread->stackPush(value);
   // A recursive call is needed to coerce the return value to bool.
-  RawObject result = call(thread, frame, 2);
+  RawObject result = call(thread, 2);
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(isTrue(thread, result));
   return Continue::NEXT;
@@ -5055,7 +5000,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
   thread->stackPush(container);
   thread->stackPush(value);
   // Should use a recursive call to convert it return type to bool.
-  RawObject result = call(thread, frame, 2);
+  RawObject result = call(thread, 2);
   if (result.isError()) return Continue::UNWIND;
   thread->stackPush(isTrue(thread, result));
   return Continue::NEXT;
@@ -5078,8 +5023,8 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
   }
 
   // Fast-path: Call cached method and return if possible.
-  RawObject result = binaryOperationWithMethod(thread, frame, method, flags,
-                                               left_raw, right_raw);
+  RawObject result =
+      binaryOperationWithMethod(thread, method, flags, left_raw, right_raw);
   if (result.isErrorException()) return Continue::UNWIND;
   if (!result.isNotImplementedType()) {
     thread->stackDrop(1);
@@ -5099,8 +5044,8 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
   CompareOp op = static_cast<CompareOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  RawObject result = compareOperationSetMethod(thread, frame, op, left, right,
-                                               &method, &flags);
+  RawObject result =
+      compareOperationSetMethod(thread, op, left, right, &method, &flags);
   if (result.isErrorException()) return Continue::UNWIND;
   if (!method.isNoneType()) {
     MutableTuple caches(&scope, frame->caches());
@@ -5127,8 +5072,7 @@ Continue Interpreter::compareOpFallback(Thread* thread, word arg,
   CompareOp op = static_cast<CompareOp>(originalArg(frame->function(), arg));
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
-  Object result(&scope,
-                compareOperationRetry(thread, frame, op, flags, left, right));
+  Object result(&scope, compareOperationRetry(thread, op, flags, left, right));
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(*result);
   return Continue::NEXT;
@@ -5313,8 +5257,8 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
   BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  RawObject result = inplaceOperationSetMethod(thread, frame, op, left, right,
-                                               &method, &flags);
+  RawObject result =
+      inplaceOperationSetMethod(thread, op, left, right, &method, &flags);
   if (!method.isNoneType()) {
     MutableTuple caches(&scope, frame->caches());
     LayoutId left_layout_id = left.layoutId();
@@ -5345,11 +5289,11 @@ Continue Interpreter::inplaceOpFallback(Thread* thread, word arg,
   if (flags & kInplaceBinaryOpRetry) {
     // The cached operation was an in-place operation we have to try to the
     // usual binary operation mechanics now.
-    result = binaryOperation(thread, frame, op, left, right);
+    result = binaryOperation(thread, op, left, right);
   } else {
     // The cached operation was already a binary operation (e.g. __add__ or
     // __radd__) so we have to invoke `binaryOperationRetry`.
-    result = binaryOperationRetry(thread, frame, op, flags, left, right);
+    result = binaryOperationRetry(thread, op, flags, left, right);
   }
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(*result);
@@ -5433,7 +5377,7 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
   BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
-  Object result(&scope, binaryOperationSetMethod(thread, frame, op, left, right,
+  Object result(&scope, binaryOperationSetMethod(thread, op, left, right,
                                                  &method, &flags));
   if (!method.isNoneType()) {
     MutableTuple caches(&scope, frame->caches());
@@ -5461,8 +5405,7 @@ Continue Interpreter::binaryOpFallback(Thread* thread, word arg,
   BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
-  Object result(&scope,
-                binaryOperationRetry(thread, frame, op, flags, left, right));
+  Object result(&scope, binaryOperationRetry(thread, op, flags, left, right));
   if (result.isErrorException()) return Continue::UNWIND;
   thread->stackPush(*result);
   return Continue::NEXT;
@@ -5474,9 +5417,8 @@ ALWAYS_INLINE Continue Interpreter::binaryOp(Thread* thread, word arg,
                                              RawObject left, RawObject right,
                                              BinaryOpFallbackHandler fallback) {
   DCHECK(method.isFunction(), "method is expected to be a function");
-  Frame* frame = thread->currentFrame();
   RawObject result =
-      binaryOperationWithMethod(thread, frame, method, flags, left, right);
+      binaryOperationWithMethod(thread, method, flags, left, right);
   if (result.isErrorException()) return Continue::UNWIND;
   if (!result.isNotImplementedType()) {
     thread->stackDrop(1);

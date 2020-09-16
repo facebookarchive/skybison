@@ -200,8 +200,7 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
     if (typeIsDataDescriptor(thread, attr_type)) {
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            attr, module, module_type);
+      return Interpreter::callDescriptorGet(thread, attr, module, module_type);
     }
   }
 
@@ -218,16 +217,14 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
     if (typeIsNonDataDescriptor(thread, attr_type)) {
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            attr, module, module_type);
+      return Interpreter::callDescriptorGet(thread, attr, module, module_type);
     }
     return *attr;
   }
 
   Object dunder_getattr(&scope, moduleAtById(thread, module, ID(__getattr__)));
   if (!dunder_getattr.isErrorNotFound()) {
-    return Interpreter::call1(thread, thread->currentFrame(), dunder_getattr,
-                              name);
+    return Interpreter::call1(thread, dunder_getattr, name);
   }
 
   return Error::notFound();

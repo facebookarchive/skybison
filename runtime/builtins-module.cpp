@@ -337,8 +337,7 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     Tuple pargs(&scope, runtime->newTupleWith2(name, bases));
     thread->stackPush(*pargs);
     thread->stackPush(*kwargs);
-    dict_obj =
-        Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+    dict_obj = Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
     if (dict_obj.isError()) return *dict_obj;
   }
   if (!runtime->isMapping(thread, dict_obj)) {
@@ -371,7 +370,7 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
   Tuple pargs(&scope, runtime->newTupleWith3(name, bases, type_dict));
   thread->stackPush(*pargs);
   thread->stackPush(*kwargs);
-  return Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+  return Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
 }
 
 RawObject FUNC(builtins, callable)(Thread* thread, Frame* frame, word nargs) {
