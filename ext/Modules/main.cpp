@@ -66,12 +66,6 @@ static void encodeWargv(int argc, const wchar_t* const* wargv, char** argv) {
   }
 }
 
-static int runFile(FILE* fp, const char* filename, PyCompilerFlags* flags) {
-  bool is_stdin = filename == nullptr;
-  const char* file_or_stdin = is_stdin ? "<stdin>" : filename;
-  return PyRun_AnyFileExFlags(fp, file_or_stdin, !is_stdin, flags) != 0;
-}
-
 static void runInteractiveHook() {
   Thread* thread = Thread::current();
   RawObject result = thread->invokeFunction0(ID(sys), ID(__interactivehook__));
@@ -108,26 +102,21 @@ static int runModule(const char* modname_cstr, bool set_argv0) {
   return 0;
 }
 
-static int runPackage(const char* packagename_cstr) {
-  Thread* thread = Thread::current();
+static int tryRunPackage(Thread* thread, const char* path_cst) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   runtime->findOrCreateMainModule();
-  Str path(&scope, runtime->newStrFromCStr(packagename_cstr));
+  Str path(&scope, runtime->newStrFromCStr(path_cst));
   Object result(&scope, thread->invokeFunction1(ID(builtins),
                                                 ID(_try_run_package), path));
-  int return_value;
-  if (result.isError()) {
-    printPendingException(thread);
-    return_value = -1;
-  } else if (!result.isNoneType()) {
-    /* all good, package did execute */
-    return_value = 0;
-  } else {
-    // no errors, but not a package
-    return_value = 1;
+  if (result.isErrorException()) {
+    PyErr_Print();
+    return -1;
   }
-  return return_value;
+  // path was not a package.
+  if (result.isNoneType()) return 0;
+  // package executed fine.
+  return 1;
 }
 
 static void runStartupFile(PyCompilerFlags* cf) {
@@ -302,42 +291,51 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   PyCompilerFlags flags;
   flags.cf_flags = 0;
 
-  int returncode = EXIT_SUCCESS;
-
+  int returncode;
   if (command != nullptr) {
-    returncode = PyRun_SimpleStringFlags(command, &flags) != 0;
+    returncode = PyRun_SimpleStringFlags(command, &flags) == 0 ? EXIT_SUCCESS
+                                                               : EXIT_FAILURE;
   } else if (module != nullptr) {
-    returncode = runModule(module, true) != 0;
-  } else {
-    if (filename == nullptr && is_interactive) {
-      Py_InspectFlag = 0;  // do exit on SystemExit
-      runStartupFile(&flags);
-      runInteractiveHook();
-    }
-
-    FILE* fp = stdin;
-    if (filename != nullptr) {
-      fp = std::fopen(filename, "r");
+    returncode = runModule(module, true) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+  } else if (filename != nullptr) {
+    Thread* thread = Thread::current();
+    int run_package_result = tryRunPackage(thread, filename);
+    if (run_package_result == 1) {
+      returncode = EXIT_SUCCESS;
+    } else if (run_package_result < 0) {
+      returncode = EXIT_FAILURE;
+    } else {
+      // `filename` was not a package, run as single file.
+      FILE* fp = std::fopen(filename, "r");
       if (fp == nullptr) {
         std::fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
                      argv[0], filename, errno, std::strerror(errno));
         return 2;
       }
+      returncode =
+          PyRun_AnyFileExFlags(fp, filename, /*closeit=*/1, &flags) == 0
+              ? EXIT_SUCCESS
+              : EXIT_FAILURE;
     }
-
-    int run_package_result = runPackage(filename);
-    if (run_package_result != 0) {
-      returncode = runFile(fp, filename, &flags);
-    } else {
-      returncode = run_package_result;
+  } else {
+    // filename == nullptr: read input from stdin
+    if (is_interactive) {
+      Py_InspectFlag = 0;  // do exit on SystemExit
+      runStartupFile(&flags);
+      runInteractiveHook();
     }
+    returncode =
+        PyRun_AnyFileExFlags(stdin, "<stdin>", /*closeit=*/0, &flags) == 0
+            ? EXIT_SUCCESS
+            : EXIT_FAILURE;
   }
 
-  if (Py_InspectFlag && is_interactive &&
-      (filename != nullptr || command != nullptr || module != nullptr)) {
+  if (Py_InspectFlag && is_interactive) {
     Py_InspectFlag = 0;
     runInteractiveHook();
-    returncode = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &flags) != 0;
+    returncode = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &flags) == 0
+                     ? EXIT_SUCCESS
+                     : EXIT_FAILURE;
   }
 
   Py_Finalize();

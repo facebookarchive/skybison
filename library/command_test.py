@@ -164,6 +164,7 @@ class OptionsTest(unittest.TestCase):
                 capture_output=True,
                 encoding="utf-8",
             )
+            self.assertEqual(result.returncode, 0)
             self.assertIn("test file executed", result.stdout)
             self.assertIn(
                 f"argv: ['{tempfile}', 'arg0', 'arg1 with spaces']", result.stdout
@@ -181,6 +182,7 @@ class OptionsTest(unittest.TestCase):
                 capture_output=True,
                 encoding="utf-8",
             )
+            self.assertEqual(result.returncode, 0)
             self.assertIn("test directory executed", result.stdout)
 
     def test_directoryname_executes_code_fail(self):
@@ -247,6 +249,10 @@ class OptionsTest(unittest.TestCase):
             b"sys.flags(debug=0, inspect=0, interactive=0, optimize=0, dont_write_bytecode=0, no_user_site=0, no_site=0, ignore_environment=0, verbose=0, bytes_warning=0, quiet=0, hash_randomization=1, isolated=0, dev_mode=False, utf8_mode",
             result.stdout,
         )
+
+    def test_no_arguments_works(self):
+        result = subprocess.run([sys.executable], stdin=subprocess.DEVNULL)
+        self.assertEqual(result.returncode, 0)
 
     def test_s_option_sets_no_user_site_flag(self):
         result = subprocess.run(
