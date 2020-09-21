@@ -398,11 +398,19 @@ static int win32_can_symlink = 0;
 
 static struct PyModuleDef posixmodule;
 
+#ifdef HAVE_PUTENV
+#  define PY_PUTENV_DICT
+#endif
+
 typedef struct {
     PyObject *billion;
-#ifdef HAVE_PUTENV
-    PyObject *posix_putenv_garbage;
-#endif /* HAVE_PUTENV */
+#ifdef PY_PUTENV_DICT
+    /* putenv() and _wputenv() requires that the caller manages the environment
+       variable memory. Use a Python dictionary for that: name => env, where
+       env is a string like "name=value". On Windows, dict keys and values are
+       Unicode strings. On Unix, they are bytes strings. */
+    PyObject *putenv_dict;
+#endif
     int stat_float_times;
     PyObject *DirEntryType;
     PyObject *ScandirIteratorType;
@@ -2018,9 +2026,9 @@ static int
 _posix_clear(PyObject *module)
 {
     Py_CLEAR(_posixstate(module)->billion);
-#ifdef HAVE_PUTENV
-    Py_CLEAR(_posixstate(module)->posix_putenv_garbage);
-#endif /* HAVE_PUTENV */
+#ifdef PY_PUTENV_DICT
+    Py_CLEAR(_posixstate(module)->putenv_dict);
+#endif
     Py_CLEAR(_posixstate(module)->DirEntryType);
     Py_CLEAR(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
@@ -2052,9 +2060,9 @@ static int
 _posix_traverse(PyObject *module, visitproc visit, void *arg)
 {
     Py_VISIT(_posixstate(module)->billion);
-#ifdef HAVE_PUTENV
-    Py_VISIT(_posixstate(module)->posix_putenv_garbage);
-#endif /* HAVE_PUTENV */
+#ifdef PY_PUTENV_DICT
+    Py_VISIT(_posixstate(module)->putenv_dict);
+#endif
     Py_VISIT(_posixstate(module)->DirEntryType);
     Py_VISIT(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
@@ -9307,22 +9315,25 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 
-#ifdef HAVE_PUTENV
 
+#ifdef PY_PUTENV_DICT
 static void
-posix_putenv_garbage_setitem(PyObject *name, PyObject *value)
+posix_putenv_dict_setitem(PyObject *name, PyObject *value)
 {
-    /* Install the first arg and newstr in posix_putenv_garbage;
+    /* Install the first arg and newstr in putenv_dict;
      * this will cause previous value to be collected.  This has to
      * happen after the real putenv() call because the old value
      * was still accessible until then. */
-    if (PyDict_SetItem(_posixstate_global->posix_putenv_garbage, name, value))
+    if (PyDict_SetItem(_posixstate_global->putenv_dict, name, value))
         /* really not much we can do; just leak */
         PyErr_Clear();
     else
         Py_DECREF(value);
 }
+#endif  /* PY_PUTENV_DICT */
 
+
+#ifdef HAVE_PUTENV
 
 #ifdef MS_WINDOWS
 /*[clinic input]
@@ -9374,7 +9385,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         goto error;
     }
 
-    posix_putenv_garbage_setitem(name, unicode);
+    posix_putenv_dict_setitem(name, unicode);
     Py_RETURN_NONE;
 
 error:
@@ -9416,7 +9427,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         return posix_error();
     }
 
-    posix_putenv_garbage_setitem(name, bytes);
+    posix_putenv_dict_setitem(name, bytes);
     Py_RETURN_NONE;
 }
 #endif /* MS_WINDOWS */
@@ -9448,17 +9459,20 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
         return posix_error();
 #endif
 
-#ifdef HAVE_PUTENV
-    /* Remove the key from posix_putenv_garbage;
+#ifdef PY_PUTENV_DICT
+    /* Remove the key from putenv_dict;
      * this will cause it to be collected.  This has to
      * happen after the real unsetenv() call because the
      * old value was still accessible until then.
      */
-    if (PyDict_DelItem(_posixstate(module)->posix_putenv_garbage, name)) {
+    if (PyDict_DelItem(_posixstate(module)->putenv_dict, name)) {
         /* really not much we can do; just leak */
+        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            return NULL;
+        }
         PyErr_Clear();
     }
-#endif /* HAVE_PUTENV */
+#endif
     Py_RETURN_NONE;
 }
 #endif /* HAVE_UNSETENV */
@@ -13563,10 +13577,10 @@ INITFUNC(void)
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
 
-#ifdef HAVE_PUTENV
+#ifdef PY_PUTENV_DICT
     /* Save putenv() parameters as values here, so we can collect them when they
      * get re-set with another call for the same key. */
-    _posixstate(m)->posix_putenv_garbage = PyDict_New();
+    _posixstate(m)->putenv_dict = PyDict_New();
 #endif
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
