@@ -51,7 +51,6 @@ class Runtime;
   V(LookupError)                                                               \
   V(MAP_SHARED)                                                                \
   V(MAP_PRIVATE)                                                               \
-  V(MISSING)                                                                   \
   V(MemoryError)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(NSIG)                                                                      \
@@ -92,7 +91,6 @@ class Runtime;
   V(SystemExit)                                                                \
   V(TabError)                                                                  \
   V(TextIOWrapper)                                                             \
-  V(TIMEOUT_MAX)                                                               \
   V(TimeoutError)                                                              \
   V(Token)                                                                     \
   V(True)                                                                      \
@@ -122,7 +120,6 @@ class Runtime;
   V(_UserInt__value)                                                           \
   V(_UserStr__value)                                                           \
   V(_UserTuple__value)                                                         \
-  V(_VersionInfo)                                                              \
   V(__abs__)                                                                   \
   V(__abstractmethods__)                                                       \
   V(__add__)                                                                   \
@@ -263,10 +260,8 @@ class Runtime;
   V(_async_generator__frame)                                                   \
   V(_async_generator__hooks_inited)                                            \
   V(_async_generator__running)                                                 \
-  V(_async_generator__state_flags)                                             \
   V(_async_generator_aclose__generator)                                        \
   V(_async_generator_aclose__state)                                            \
-  V(_async_generator_aclose__value)                                            \
   V(_async_generator_asend__generator)                                         \
   V(_async_generator_asend__state)                                             \
   V(_async_generator_asend__value)                                             \
@@ -275,10 +270,8 @@ class Runtime;
   V(_async_generator_athrow__exception_value)                                  \
   V(_async_generator_athrow__generator)                                        \
   V(_async_generator_athrow__state)                                            \
-  V(_async_generator_athrow__value)                                            \
   V(_async_generator_wrapped_value__value)                                     \
   V(_b2cratio)                                                                 \
-  V(_base_dir)                                                                 \
   V(_bool_check)                                                               \
   V(_bool_guard)                                                               \
   V(_buffer)                                                                   \
@@ -312,10 +305,8 @@ class Runtime;
   V(_coroutine__exception_state)                                               \
   V(_coroutine__frame)                                                         \
   V(_coroutine__origin)                                                        \
-  V(_contextvars)                                                              \
   V(_coroutine_wrapper__cw_coroutine)                                          \
   V(_created)                                                                  \
-  V(_ctypes)                                                                   \
   V(_decoded_chars)                                                            \
   V(_decoded_chars_used)                                                       \
   V(_decoder)                                                                  \
@@ -323,7 +314,6 @@ class Runtime;
   V(_deque__left)                                                              \
   V(_deque__num_items)                                                         \
   V(_deque__state)                                                             \
-  V(_deque_getitem)                                                            \
   V(_deque_guard)                                                              \
   V(_deque_iterator)                                                           \
   V(_deque_iterator__index)                                                    \
@@ -347,7 +337,6 @@ class Runtime;
   V(_dict_value_iterator__index)                                               \
   V(_dict_value_iterator__iterable)                                            \
   V(_dict_values__dict)                                                        \
-  V(_early_init)                                                               \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
   V(_err_program_text)                                                         \
@@ -387,7 +376,6 @@ class Runtime;
   V(_generator__frame)                                                         \
   V(_generator__yield_from)                                                    \
   V(_has_read1)                                                                \
-  V(_imp)                                                                      \
   V(_import_all_from)                                                          \
   V(_index)                                                                    \
   V(_init)                                                                     \
@@ -398,7 +386,6 @@ class Runtime;
   V(_int_check_exact)                                                          \
   V(_int_guard)                                                                \
   V(_int_new_from_str)                                                         \
-  V(_io)                                                                       \
   V(_iterator__index)                                                          \
   V(_iterator__iterable)                                                       \
   V(_layout__described_type)                                                   \
@@ -463,8 +450,6 @@ class Runtime;
   V(_new_member_set_readonly)                                                  \
   V(_new_member_set_readonly_strings)                                          \
   V(_number_check)                                                             \
-  V(_os)                                                                       \
-  V(_path)                                                                     \
   V(_pendingcr)                                                                \
   V(_pointer)                                                                  \
   V(_pos)                                                                      \
@@ -519,14 +504,12 @@ class Runtime;
   V(_str_iterator__index)                                                      \
   V(_str_iterator__iterable)                                                   \
   V(_str_len)                                                                  \
-  V(_str_mod)                                                                  \
   V(_string_at_addr)                                                           \
   V(_structseq_field)                                                          \
   V(_structseq_field_names)                                                    \
   V(_structseq_new)                                                            \
   V(_structseq_repr)                                                           \
   V(_telling)                                                                  \
-  V(_thread)                                                                   \
   V(_traceback__frame)                                                         \
   V(_traceback__lasti)                                                         \
   V(_traceback__lineno)                                                        \
@@ -559,11 +542,9 @@ class Runtime;
   V(_type_guard)                                                               \
   V(_type_subclass_guard)                                                      \
   V(_unicode_escape_decode_stateful)                                           \
-  V(_valgrind)                                                                 \
   V(_valuecell__dependency_link)                                               \
   V(_valuecell__value)                                                         \
   V(_version_releaselevel)                                                     \
-  V(_warnings)                                                                 \
   V(_weaklink)                                                                 \
   V(_weakref)                                                                  \
   V(_weakref_check)                                                            \
@@ -651,7 +632,6 @@ class Runtime;
   V(f_back)                                                                    \
   V(f_lasti)                                                                   \
   V(f_locals)                                                                  \
-  V(faulthandler)                                                              \
   V(fdel)                                                                      \
   V(fget)                                                                      \
   V(filename)                                                                  \
@@ -717,7 +697,6 @@ class Runtime;
   V(longrange_iterator)                                                        \
   V(lshift)                                                                    \
   V(mappingproxy)                                                              \
-  V(marshal)                                                                   \
   V(matmul)                                                                    \
   V(maxlen)                                                                    \
   V(maxsize)                                                                   \
@@ -817,11 +796,9 @@ class Runtime;
   V(valuecell)                                                                 \
   V(var)                                                                       \
   V(version)                                                                   \
-  V(version_info)                                                              \
   V(warn)                                                                      \
   V(warn_explicit)                                                             \
   V(warnings)                                                                  \
-  V(warnoptions)                                                               \
   V(weakref)                                                                   \
   V(write)                                                                     \
   V(xor)
