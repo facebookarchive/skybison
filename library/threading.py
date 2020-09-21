@@ -90,16 +90,56 @@ class Thread:
     def _bootstrap(self):
         _unimplemented()
 
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, daemonic):
+        _unimplemented()
+
     def getName(self):
-        return "MainThread"
+        return self.name
 
     @property
     def ident(self):
         return 1
 
+    def isDaemon(self):
+        return self.daemon
+
     @property
     def name(self):
         return "MainThread"
+
+    @name.setter
+    def name(self, name):
+        _unimplemented()
+
+    def run(self):
+        _unimplemented()
+
+    def setDaemon(self, daemonic):
+        self.daemon = daemonic
+
+    def setName(self, name):
+        self.name = name
+
+    def start(self):
+        _unimplemented()
+
+    def join(self, timeout=None):
+        _unimplemented()
+
+    def is_alive(self):
+        return True
+
+    def isAlive(self):
+        return self.is_alive()
+
+
+class _DummyThread(Thread):
+    pass
 
 
 class _MainThread(Thread):
