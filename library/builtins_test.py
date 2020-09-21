@@ -19240,6 +19240,14 @@ class TypeTests(unittest.TestCase):
         self.assertIs(str.__subclasscheck__(object), False)
         self.assertIs(type.__subclasscheck__(type, object), False)
 
+    def test_dunder_new_with_duplicated_base_raises_type_error(self):
+        class C:
+            pass
+
+        error_msg = "duplicate base class C"
+        with self.assertRaisesRegex(TypeError, error_msg):
+            type.__new__(type, "X", (C, C), {})
+
     def test_dunder_new_with_one_arg_returns_type_of_arg(self):
         class C:
             pass

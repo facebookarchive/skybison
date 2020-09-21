@@ -134,6 +134,18 @@ RawObject computeMro(Thread* thread, const Type& type) {
     }
   }
 
+  for (word i = 0, length = parents.length(); i < length; i++) {
+    for (word j = i + 1; j < length; j++) {
+      if (parents.at(i) == parents.at(j)) {
+        Type superclass_type(&scope, parents.at(i));
+        Str superclass_type_name(&scope, superclass_type.name());
+        return thread->raiseWithFmt(LayoutId::kTypeError,
+                                    "duplicate base class %S",
+                                    &superclass_type_name);
+      }
+    }
+  }
+
   // Copy the mro to an array of exact size. (new_mro_length is an upper bound).
   Tuple new_mro_immutable(&scope, new_mro.becomeImmutable());
   return runtime->tupleSubseq(thread, new_mro_immutable, 0, next_idx);
