@@ -398,7 +398,9 @@ static int win32_can_symlink = 0;
 
 static struct PyModuleDef posixmodule;
 
-#ifdef HAVE_PUTENV
+/* Windows: _wputenv(env) copies the *env* string and doesn't require the
+   caller to manage the variable memory. */
+#if defined(HAVE_PUTENV) && !defined(MS_WINDOWS)
 #  define PY_PUTENV_DICT
 #endif
 
@@ -9384,8 +9386,10 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         posix_error();
         goto error;
     }
+    /* _wputenv(env) copies the *env* string and doesn't require the caller
+       to manage the variable memory. */
+    Py_DECREF(unicode);
 
-    posix_putenv_dict_setitem(name, unicode);
     Py_RETURN_NONE;
 
 error:
