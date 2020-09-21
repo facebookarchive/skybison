@@ -32,6 +32,8 @@ class Scavenger : public PointerVisitor {
 
   void processLayouts();
 
+  void compactLayoutTypeTransitions();
+
   Runtime* runtime_;
   Space* from_;
   Space* to_;
@@ -197,8 +199,56 @@ void Scavenger::processLayouts() {
     }
   }
 
-  // TODO(T65021438): Implement None-compaction to avoid having a sparse table
+  compactLayoutTypeTransitions();
   runtime_->setLayoutTypeTransitions(transport(layout_type_transitions_));
+}
+
+static inline word getLeftMostNoneObjectIndex(RawTuple layout_type_transitions,
+                                              word left, word right) {
+  while (left < right &&
+         !layout_type_transitions.at(left + LayoutTypeTransition::kFrom)
+              .isNoneType()) {
+    left += LayoutTypeTransition::kTransitionSize;
+  }
+  return left;
+}
+
+static inline word getRightMostValidObjectIndex(
+    RawTuple layout_type_transitions, word left, word right) {
+  while (left < right &&
+         layout_type_transitions.at(right + LayoutTypeTransition::kFrom)
+             .isNoneType()) {
+    right -= LayoutTypeTransition::kTransitionSize;
+  }
+  return right;
+}
+
+static inline void swapTriplesInLayoutTypeTransitions(
+    RawMutableTuple layout_type_transitions, word left, word right) {
+  layout_type_transitions.swap(left + LayoutTypeTransition::kFrom,
+                               right + LayoutTypeTransition::kFrom);
+  layout_type_transitions.swap(left + LayoutTypeTransition::kTo,
+                               right + LayoutTypeTransition::kTo);
+  layout_type_transitions.swap(left + LayoutTypeTransition::kResult,
+                               right + LayoutTypeTransition::kResult);
+}
+
+// applies compaction to layout_type_transitions
+// moves all valid triplets to front, and all None-Type triplets to end
+void Scavenger::compactLayoutTypeTransitions() {
+  word length = layout_type_transitions_.length();
+  length = (length / LayoutTypeTransition::kTransitionSize) *
+           LayoutTypeTransition::kTransitionSize;
+
+  word left = 0;
+  word right = length - LayoutTypeTransition::kTransitionSize;
+
+  do {
+    left = getLeftMostNoneObjectIndex(layout_type_transitions_, left, right);
+    right = getRightMostValidObjectIndex(layout_type_transitions_, left, right);
+
+    swapTriplesInLayoutTypeTransitions(layout_type_transitions_, left, right);
+  } while (left < right);
 }
 
 // Process the list of weakrefs that had otherwise-unreachable referents during
