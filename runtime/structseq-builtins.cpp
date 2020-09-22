@@ -1,5 +1,6 @@
 #include "structseq-builtins.h"
 
+#include "dict-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -66,8 +67,10 @@ RawObject structseqNewType(Thread* thread, const Str& name,
         runtime->strSubstr(thread, name, dot + 1, name.length() - (dot + 1));
   }
 
-  // Create type
   Dict dict(&scope, runtime->newDict());
+  dictAtPutById(thread, dict, ID(__qualname__), type_name);
+
+  // Create type
   Tuple bases(&scope, runtime->newTuple(1));
   bases.atPut(0, runtime->typeAt(LayoutId::kTuple));
   Type type(&scope, typeNew(thread, LayoutId::kType, type_name, bases, dict,
@@ -115,7 +118,6 @@ RawObject structseqNewType(Thread* thread, const Str& name,
     typeAtPut(thread, type, field_name, descriptor);
   }
 
-  typeAtPutById(thread, type, ID(__qualname__), type_name);
   if (!module_name.isNoneType()) {
     typeAtPutById(thread, type, ID(__module__), module_name);
   }

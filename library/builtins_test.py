@@ -19353,6 +19353,24 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(X.__module__, "foobar")
         self.assertEqual(X.__dict__["__module__"], "foobar")
 
+    def test_dunder_new_sets_qualname(self):
+        X = type.__new__(type, "foo.bar", (), {})
+        self.assertEqual(X.__qualname__, "foo.bar")
+        self.assertNotIn("__qualname__", X.__dict__)
+
+    def test_dunder_new_sets_qualname_from_dict(self):
+        namespace = {"__qualname__": "quux"}
+        X = type.__new__(type, "X", (), namespace)
+        self.assertEqual(X.__qualname__, "quux")
+        self.assertNotIn("__qualname__", X.__dict__)
+        self.assertEqual(namespace["__qualname__"], "quux")
+
+    def test_dunder_new_with_non_string_qualname_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "type __qualname__ must be a str, not float"
+        ):
+            type.__new__(type, "X", (), {"__qualname__": 2.3})
+
     def test_dunder_new_adds_to_base_dunder_subclasses(self):
         A = type.__new__(type, "A", (object,), {})
         B = type.__new__(type, "B", (object,), {})
@@ -19362,6 +19380,41 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(B.__subclasses__(), [C])
         self.assertEqual(C.__subclasses__(), [])
         self.assertEqual(D.__subclasses__(), [])
+
+    def test_dunder_qualname_returns_qualname(self):
+        class C:
+            __qualname__ = "bar"
+
+        self.assertEqual(C.__qualname__, "bar")
+        self.assertEqual(type.__dict__["__qualname__"].__get__(C), "bar")
+
+    def test_dunder_qualname_sets_qualname(self):
+        class C:
+            pass
+
+        type.__dict__["__qualname__"].__set__(C, "baz")
+        self.assertEqual(C.__qualname__, "baz")
+        C.__qualname__ = "bam"
+        self.assertEqual(type.__dict__["__qualname__"].__get__(C), "bam")
+
+    def test_dunder_qualname_set_with_non_string_raises_type_error(self):
+        class C:
+            pass
+
+        with self.assertRaisesRegex(
+            TypeError, "can only assign string to C.__qualname__, not 'int'"
+        ):
+            C.__qualname__ = 42
+        with self.assertRaisesRegex(
+            TypeError, "can only assign string to C.__qualname__, not 'float'"
+        ):
+            type.__dict__["__qualname__"].__set__(C, 1.2)
+
+    def test_dunder_qualname_set_on_builtin_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, ".*list.*"):
+            list.__qualname__ = "foo"
+        with self.assertRaisesRegex(TypeError, ".*list.*"):
+            type.__dict__["__qualname__"].__set__(list, "foo")
 
     def test_dunder_repr_with_bytes_raises_type_error(self):
         with self.assertRaises(TypeError):

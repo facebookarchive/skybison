@@ -1167,6 +1167,14 @@ def _type_proxy_values(self):
     _builtin()
 
 
+def _type_qualname_get(self):
+    _builtin()
+
+
+def _type_qualname_set(self, value):
+    _builtin()
+
+
 def _type_subclass_guard(subclass, superclass):
     _builtin()
 

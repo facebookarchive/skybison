@@ -266,6 +266,8 @@ from _builtins import (
     _type_proxy_keys,
     _type_proxy_len,
     _type_proxy_values,
+    _type_qualname_get,
+    _type_qualname_set,
     _type_subclass_guard,
     _Unbound,
     _unimplemented,
@@ -521,6 +523,8 @@ class type(bootstrap=True):
     @_classmethod
     def __prepare__(self, *args, **kwargs):
         return {}
+
+    __qualname__ = _property(_type_qualname_get, _type_qualname_set)
 
     def __repr__(self):
         _type_guard(self)

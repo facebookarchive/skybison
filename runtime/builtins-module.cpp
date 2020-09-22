@@ -281,6 +281,17 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     CHECK(!typeAssignFromDict(thread, type, type_dict).isErrorException(),
           "error while assigning bootstrap type dict");
     // TODO(T53997177): Centralize type initialization
+    Object qualname(&scope, NoneType::object());
+    if (type.instanceLayoutId() == LayoutId::kType) {
+      qualname = *name;
+      // Note: `type` is the only type allowed to have a descriptor instead of
+      // a string for `__qualname__`.
+    } else {
+      qualname = typeRemoveById(thread, type, ID(__qualname__));
+      DCHECK(qualname.isStr() && Str::cast(*qualname).equals(*name),
+             "unexpected __qualname__ attribute");
+    }
+    type.setQualname(*qualname);
     typeAddDocstring(thread, type);
 
     if (DCHECK_IS_ON()) {

@@ -898,9 +898,15 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
   }
 
-  if (typeAtById(thread, type, ID(__qualname__)).isErrorNotFound()) {
-    typeAtPutById(thread, type, ID(__qualname__), name);
+  Object qualname(&scope, typeRemoveById(thread, type, ID(__qualname__)));
+  if (qualname.isErrorNotFound()) {
+    qualname = *name;
+  } else if (!runtime->isInstanceOfStr(*qualname)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "type __qualname__ must be a str, not %T",
+                                &qualname);
   }
+  type.setQualname(*qualname);
 
   // TODO(T53997177): Centralize type initialization
   typeAddDocstring(thread, type);
@@ -1191,6 +1197,7 @@ static const BuiltinAttribute kTypeAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_type__proxy), RawType::kProxyOffset, AttributeFlags::kHidden},
     {ID(_type__ctor), RawType::kCtorOffset, AttributeFlags::kHidden},
+    {ID(_type__qualname), RawType::kQualnameOffset, AttributeFlags::kHidden},
 };
 
 void initializeTypeTypes(Thread* thread) {

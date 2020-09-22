@@ -1256,6 +1256,9 @@ class RawType : public RawInstance {
   RawObject ctor() const;
   void setCtor(RawObject function) const;
 
+  RawObject qualname() const;
+  void setQualname(RawObject qualname) const;
+
   bool isBaseExceptionSubclass() const;
 
   // Check if the type dictionary is mutable. If the current type's dict is
@@ -1279,7 +1282,8 @@ class RawType : public RawInstance {
   static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;
   static const int kProxyOffset = kSubclassesOffset + kPointerSize;
   static const int kCtorOffset = kProxyOffset + kPointerSize;
-  static const int kSize = kCtorOffset + kPointerSize;
+  static const int kQualnameOffset = kCtorOffset + kPointerSize;
+  static const int kSize = kQualnameOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -5229,6 +5233,14 @@ inline RawObject RawType::ctor() const {
 
 inline void RawType::setCtor(RawObject function) const {
   instanceVariableAtPut(kCtorOffset, function);
+}
+
+inline RawObject RawType::qualname() const {
+  return instanceVariableAt(kQualnameOffset);
+}
+
+inline void RawType::setQualname(RawObject qualname) const {
+  instanceVariableAtPut(kQualnameOffset, qualname);
 }
 
 inline bool RawType::isBuiltin() const {
