@@ -1115,6 +1115,14 @@ def _type_issubclass(subclass, superclass):
     _builtin()
 
 
+def _type_module_get(self):
+    _builtin()
+
+
+def _type_module_set(self, value):
+    _builtin()
+
+
 def _type_proxy(type_obj):
     _builtin()
 

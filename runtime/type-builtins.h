@@ -27,6 +27,8 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
 
 RawObject findBuiltinTypeWithName(Thread* thread, const Object& name);
 
+RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type);
+
 bool typeIsSubclass(const Type& subclass, const Type& superclass);
 
 void typeAddDocstring(Thread* thread, const Type& type);

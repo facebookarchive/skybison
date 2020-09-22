@@ -454,10 +454,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   Type type(&scope, *receiver);
   terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
   if (!type.hasMutableDict()) {
-    Str type_name(&scope, type.name());
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "can't set attributes of built-in/extension type '%S'", &type_name);
+    return raiseTypeErrorCannotSetImmutable(thread, type);
   }
 
   // Check for a delete descriptor

@@ -5545,6 +5545,42 @@ RawObject FUNC(_builtins, _type_issubclass)(Thread* thread, Frame* frame,
   return Bool::fromBool(typeIsSubclass(subclass, superclass));
 }
 
+RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
+  Object result(&scope, typeAtById(thread, type, ID(__module__)));
+  if (result.isErrorNotFound()) {
+    Object name(&scope, runtime->symbols()->at(ID(__module__)));
+    return objectRaiseAttributeError(thread, type, name);
+  }
+  return *result;
+}
+
+RawObject FUNC(_builtins, _type_module_set)(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
+  Object value(&scope, args.get(1));
+  if (!type.hasMutableDict()) {
+    return raiseTypeErrorCannotSetImmutable(thread, type);
+  }
+  typeAtPutById(thread, type, ID(__module__), value);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

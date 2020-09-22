@@ -19240,13 +19240,35 @@ class TypeTests(unittest.TestCase):
         self.assertIs(str.__subclasscheck__(object), False)
         self.assertIs(type.__subclasscheck__(type, object), False)
 
-    def test_dunder_new_with_duplicated_base_raises_type_error(self):
+    def test_dunder_module_set_on_builtin_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, ".*int.*"):
+            int.__module__ = "foo"
+        with self.assertRaisesRegex(TypeError, ".*int.*"):
+            type.__dict__["__module__"].__set__(int, "foo")
+
+    def test_dunder_module_sets_module(self):
         class C:
             pass
 
-        error_msg = "duplicate base class C"
-        with self.assertRaisesRegex(TypeError, error_msg):
-            type.__new__(type, "X", (C, C), {})
+        type.__dict__["__module__"].__set__(C, "foo")
+        self.assertEqual(type.__dict__["__module__"].__get__(C), "foo")
+        self.assertEqual(C.__dict__["__module__"], "foo")
+        self.assertEqual(C.__module__, "foo")
+
+    def test_dunder_module_set_accepts_anything(self):
+        class C:
+            pass
+
+        type.__dict__["__module__"].__set__(C, 42.42)
+        self.assertEqual(C.__module__, 42.42)
+
+        C.__module__ = None
+        self.assertIsNone(type.__dict__["__module__"].__get__(C))
+
+    def test_dunder_module_with_builtin_type_returns_builtins(self):
+        self.assertEqual(int.__module__, "builtins")
+        self.assertEqual(dict.__module__, "builtins")
+        self.assertEqual(OSError.__module__, "builtins")
 
     def test_dunder_new_with_one_arg_returns_type_of_arg(self):
         class C:
@@ -19271,6 +19293,14 @@ class TypeTests(unittest.TestCase):
     def test_dunder_new_with_non_dict_type_dict_raises_type_error(self):
         with self.assertRaises(TypeError):
             type.__new__(type, "X", (object,), 1)
+
+    def test_dunder_new_with_duplicated_base_raises_type_error(self):
+        class C:
+            pass
+
+        error_msg = "duplicate base class C"
+        with self.assertRaisesRegex(TypeError, error_msg):
+            type.__new__(type, "X", (C, C), {})
 
     def test_dunder_new_returns_type_instance(self):
         X = type.__new__(type, "X", (object,), {})

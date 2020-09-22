@@ -150,6 +150,14 @@ RawObject findBuiltinTypeWithName(Thread* thread, const Object& name) {
   return Error::notFound();
 }
 
+RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Object type_name(&scope, type.name());
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
+      "can't set attributes of built-in/extension type '%S'", &type_name);
+}
+
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
   if (type.isBuiltin()) {
     LayoutId layout_id = type.instanceLayoutId();
@@ -1089,11 +1097,8 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
   // Make sure cache invalidation is correctly done for this.
   terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
   HandleScope scope(thread);
-  if (type.isBuiltin()) {
-    Object type_name(&scope, type.name());
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "can't set attributes of built-in/extension type '%S'", &type_name);
+  if (!type.hasMutableDict()) {
+    return raiseTypeErrorCannotSetImmutable(thread, type);
   }
 
   // Check for a data descriptor
@@ -1278,12 +1283,6 @@ RawObject METH(type, __setattr__)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type self(&scope, *self_obj);
-  if (!self.hasMutableDict()) {
-    Str type_name(&scope, self.name());
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "can't set attributes of built-in/extension type '%S'", &type_name);
-  }
   Object name(&scope, args.get(1));
   name = attributeName(thread, name);
   if (name.isErrorException()) return *name;

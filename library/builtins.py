@@ -254,6 +254,8 @@ from _builtins import (
     _type_guard,
     _type_init,
     _type_issubclass,
+    _type_module_get,
+    _type_module_set,
     _type_new,
     _type_proxy,
     _type_proxy_check,
@@ -479,6 +481,8 @@ class type(bootstrap=True):
 
     def __instancecheck__(self, obj) -> bool:
         return _isinstance_type(obj, _type(obj), self)
+
+    __module__ = _property(_type_module_get, _type_module_set)
 
     @_staticmethod
     def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound, **kwargs):
