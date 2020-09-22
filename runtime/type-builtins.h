@@ -51,6 +51,8 @@ RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
 
 RawObject typeRemove(Thread* thread, const Type& type, const Object& name);
 
+RawObject typeRemoveById(Thread* thread, const Type& type, SymbolId id);
+
 RawObject typeKeys(Thread* thread, const Type& type);
 
 RawObject typeLen(Thread* thread, const Type& type);

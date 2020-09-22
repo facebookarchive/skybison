@@ -772,7 +772,7 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     Module module(&scope, *module_obj);
     function.setModuleObject(*module_obj);
     Object module_name(&scope, moduleAtById(thread, module, ID(__name__)));
-    if (!module_name.isErrorNotFound()) {
+    if (!module_name.isErrorNotFound() && isInstanceOfStr(*module_name)) {
       function.setModuleName(*module_name);
     }
   } else {

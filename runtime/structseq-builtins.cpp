@@ -73,6 +73,9 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   Type type(&scope, typeNew(thread, LayoutId::kType, type_name, bases, dict,
                             static_cast<Type::Flag>(0),
                             /*add_instance_dict=*/false));
+  // TODO(T75672111): We should rather set a flag to get non-heap type behavior.
+  // For now we just manually remove `__module__` after the fact.
+  typeRemoveById(thread, type, ID(__module__));
 
   // Add hidden fields as in-object attributes in the instance layout.
   Layout layout(&scope, type.instanceLayout());

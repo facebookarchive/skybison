@@ -19278,6 +19278,17 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(X.__name__, "X")
         self.assertEqual(X.__qualname__, "X")
 
+    def test_dunder_new_sets_dunder_module(self):
+        globals = {"__name__": 8.13}
+        X = eval("type('X', (), {})", globals)  # noqa: P204
+        self.assertEqual(X.__module__, 8.13)
+        self.assertEqual(X.__dict__["__module__"], 8.13)
+
+    def test_dunder_new_does_not_override_dunder_module(self):
+        X = type.__new__(type, "X", (), {"__module__": "foobar"})
+        self.assertEqual(X.__module__, "foobar")
+        self.assertEqual(X.__dict__["__module__"], "foobar")
+
     def test_dunder_new_adds_to_base_dunder_subclasses(self):
         A = type.__new__(type, "A", (object,), {})
         B = type.__new__(type, "B", (object,), {})

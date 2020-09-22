@@ -450,13 +450,22 @@ RawObject typeRemove(Thread* thread, const Type& type, const Object& name) {
           "attributes changed?");
       data.atPut(idx + kBucketKeyOffset, kTombstoneKey);
       data.atPut(idx + kBucketValueOffset, NoneType::object());
-      return *value_cell;
+      if (value_cell.isPlaceholder()) {
+        return Error::notFound();
+      }
+      return value_cell.value();
     }
     if (key.isNoneType()) {
       return Error::notFound();
     }
     // Remaining cases are either a key that does not match or tombstone.
   }
+}
+
+RawObject typeRemoveById(Thread* thread, const Type& type, SymbolId id) {
+  HandleScope scope(thread);
+  Object name(&scope, thread->runtime()->symbols()->at(id));
+  return typeRemove(thread, type, name);
 }
 
 RawObject typeKeys(Thread* thread, const Type& type) {
@@ -842,6 +851,20 @@ static RawObject typeComputeLayout(Thread* thread, const Type& type,
   return NoneType::object();
 }
 
+static RawObject getModuleNameAtFrame(Thread* thread, int depth) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  for (int i = 0; i < depth && !frame->isSentinel(); i++) {
+    frame = frame->previousFrame();
+  }
+  if (frame->isSentinel()) return Error::notFound();
+  Object module_obj(&scope, frame->function().moduleObject());
+  // Some functions (e.g C-API extension functions) have no associated module.
+  if (module_obj.isNoneType()) return Error::notFound();
+  Module module(&scope, *module_obj);
+  return moduleAtById(thread, module, ID(__name__));
+}
+
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                    const Dict& dict, const Tuple& mro, bool inherit_slots,
                    bool add_instance_dict) {
@@ -858,7 +881,14 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   Object result(&scope, typeAssignFromDict(thread, type, dict));
   if (result.isErrorException()) return *result;
 
-  // TODO(T72020586): Set __module__ in type
+  if (typeAtById(thread, type, ID(__module__)).isErrorNotFound()) {
+    // Use depth=3 to skip over frame of `_type_init`, `type.__new__`
+    // and `type.__call__`.
+    Object module_name(&scope, getModuleNameAtFrame(thread, /*depth=*/3));
+    if (!module_name.isErrorNotFound()) {
+      typeAtPutById(thread, type, ID(__module__), module_name);
+    }
+  }
 
   if (typeAtById(thread, type, ID(__qualname__)).isErrorNotFound()) {
     typeAtPutById(thread, type, ID(__qualname__), name);
