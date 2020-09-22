@@ -335,6 +335,17 @@ def _function_set_dict(self, rhs):
     d.update(rhs)
 
 
+def _non_heaptype(name, bases, type_dict, **kwargs):
+    _str_guard(name)
+    _tuple_guard(bases)
+    _dict_guard(type_dict)
+    if not bases:
+        bases = (object,)
+    heaptype = False
+    instance = _type_new(type, bases, heaptype)
+    return _type_init(instance, name, type_dict, _Unbound)
+
+
 class function(bootstrap=True):
     __annotations__ = _property(_function_annotations, _function_set_annotations)
 
@@ -514,7 +525,8 @@ class type(bootstrap=True):
                 if new is not type.__new__:
                     return new(metaclass, name_or_object, bases, type_dict, **kwargs)
                 cls = metaclass
-        instance = _type_new(cls, bases)
+        heaptype = True
+        instance = _type_new(cls, bases, heaptype)
         mro = _Unbound if cls is type else tuple(cls.mro(instance))
         new_type = _type_init(instance, name_or_object, type_dict, mro)
         _super(new_type).__init_subclass__(**kwargs)
@@ -1103,7 +1115,7 @@ class RuntimeWarning(Warning, bootstrap=True):
     pass
 
 
-class SimpleNamespace:
+class SimpleNamespace(metaclass=_non_heaptype):
     def __init__(self, **kwargs):
         instance_proxy(self).update(kwargs)
 
@@ -1229,7 +1241,7 @@ def _bytes_new(source) -> bytes:
     return _bytes_from_ints([_index(x) for x in iterator])
 
 
-class _descrclassmethod:
+class _descrclassmethod(metaclass=_non_heaptype):
     def __init__(self, cls, fn):
         self.cls = cls
         self.fn = fn
@@ -1636,7 +1648,7 @@ class _str_array(bootstrap=True):  # noqa: F821
         _builtin()
 
 
-class _structseq_field:
+class _structseq_field(metaclass=_non_heaptype):
     def __get__(self, instance, owner):
         if _type(instance) is not self.type:
             if instance is None:
@@ -3460,7 +3472,7 @@ def exec(source, globals=None, locals=None):
         globals.update(mod.__dict__)
 
 
-class filter:
+class filter(metaclass=_non_heaptype):
     """filter(function or None, iterable) --> filter object
 
     Return an iterator yielding those items of iterable for which function(item)
@@ -4527,7 +4539,7 @@ def issubclass(cls, type_or_tuple) -> bool:
     return _issubclass(cls, type_or_tuple)
 
 
-class callable_iterator:
+class callable_iterator(metaclass=_non_heaptype):
     def __init__(self, callable, sentinel):
         self.__callable = callable
         self.__sentinel = sentinel
@@ -4898,7 +4910,7 @@ class longrange_iterator(bootstrap=True):
         _builtin()
 
 
-class map:
+class map(metaclass=_non_heaptype):
     __getattribute__ = object.__getattribute__
 
     def __init__(self, func, *iterables):
@@ -5564,7 +5576,7 @@ def repr(obj):
     return result
 
 
-class reversed:
+class reversed(metaclass=_non_heaptype):
     __getattribute__ = object.__getattribute__
 
     def __iter__(self):
@@ -6749,7 +6761,7 @@ class valuecell(bootstrap=True):
     pass
 
 
-class zip:
+class zip(metaclass=_non_heaptype):
     def __init__(self, *iterables):
         if not iterables:
             iterators = [iter(())]

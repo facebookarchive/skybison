@@ -26,7 +26,7 @@ Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments."""
 
 import builtins
-from builtins import BlockingIOError, _index, _int, _type_name
+from builtins import BlockingIOError, _index, _int, _non_heaptype, _type_name
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
 from _builtins import (
@@ -797,7 +797,7 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
         return self.raw.isatty()
 
 
-class BufferedRWPair(_BufferedIOBase):
+class BufferedRWPair(_BufferedIOBase, metaclass=_non_heaptype):
     def __init__(self, reader, writer, buffer_size=DEFAULT_BUFFER_SIZE):
         if not reader.readable():
             raise UnsupportedOperation('"reader" argument must be readable.')

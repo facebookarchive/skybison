@@ -4,6 +4,7 @@ import posix
 import sys
 import time
 import unittest
+from test.support import _TPFLAGS_HEAPTYPE
 
 from test_support import pyro_only
 
@@ -130,7 +131,7 @@ class StructSequenceTests(unittest.TestCase):
                     "st_mtime_ns",
                     "st_ctime_ns",
                 ),
-                10,
+                num_in_sequence=10,
             )
         else:
             stat_result = posix.stat_result
@@ -147,7 +148,7 @@ class StructSequenceTests(unittest.TestCase):
 
     @pyro_only
     def test_structseq_new_type_returns_type(self):
-        tp = _structseq_new_type("foo.bar", ("f0", "f1", "f2"), 2)
+        tp = _structseq_new_type("foo.bar", ("f0", "f1", "f2"), num_in_sequence=2)
         self.assertIsInstance(tp, type)
         self.assertTrue(issubclass(tp, tuple))
         self.assertEqual(tp.__module__, "foo")
@@ -160,12 +161,14 @@ class StructSequenceTests(unittest.TestCase):
 
     @pyro_only
     def test_structseq_new_type_without_dot_in_name_does_not_set_module(self):
-        tp = _structseq_new_type("foo", (), 0)
+        tp = _structseq_new_type("foo", (), num_in_sequence=0)
         self.assertNotIn("__module__", tp.__dict__)
 
     @pyro_only
     def test_structseq_new_type_with_unnamed_fields_returns_structseq_type(self):
-        tp = _structseq_new_type("quux", ("foo", None, "bar", None, "baz"), 4)
+        tp = _structseq_new_type(
+            "quux", ("foo", None, "bar", None, "baz"), num_in_sequence=4
+        )
         self.assertIsInstance(tp, type)
         self.assertTrue(issubclass(tp, tuple))
         self.assertEqual(tp.__name__, "quux")
@@ -177,6 +180,25 @@ class StructSequenceTests(unittest.TestCase):
         self.assertEqual(instance, (1, 2, 3, 4))
         self.assertEqual(instance.bar, 3)
         self.assertEqual(instance.baz, 5)
+
+    @pyro_only
+    def test_structseq_new_type_returns_heap_type(self):
+        tp = _structseq_new_type("foo", ("a",), is_heaptype=True)
+        self.assertTrue(tp.__flags__ & _TPFLAGS_HEAPTYPE)
+        tp.bar = 1
+
+    @pyro_only
+    def test_structseq_new_type_default_returns_heap_type(self):
+        tp = _structseq_new_type("foo", ("a",))
+        self.assertTrue(tp.__flags__ & _TPFLAGS_HEAPTYPE)
+        tp.bar = 1
+
+    @pyro_only
+    def test_structseq_new_type_default_returns_non_heap_type(self):
+        tp = _structseq_new_type("foo", ("a",), is_heaptype=False)
+        self.assertFalse(tp.__flags__ & _TPFLAGS_HEAPTYPE)
+        with self.assertRaises(TypeError):
+            tp.bar = 1
 
 
 if __name__ == "__main__":

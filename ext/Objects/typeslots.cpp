@@ -94,14 +94,7 @@ uword typeGetFlags(const Type& type) {
   if (typeHasSlots(type)) {
     return typeSlotUWordAt(type, kSlotFlags);
   }
-  // It is not yet clear whether presenting all Pyro types as heap types is the
-  // best way to go about things. While it is true that all of our types are
-  // allocated on the heap (as opposed to being static), we have some similar
-  // features to CPython static types such as preventing modifications to type
-  // dictionaries.
-  // Also, our default is different from CPython's default and that's okay.
-  static const uword default_flags = Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_READY;
-  uword result = default_flags;
+  uword result = Py_TPFLAGS_READY;
   // TODO(T71637829): Check if the type allows subclassing and set
   // Py_TPFLAGS_BASETYPE appropriately.
   Type::Flag internal_flags = type.flags();
@@ -110,6 +103,9 @@ uword typeGetFlags(const Type& type) {
   }
   if (internal_flags & Type::Flag::kIsAbstract) {
     result |= Py_TPFLAGS_IS_ABSTRACT;
+  }
+  if (internal_flags & Type::Flag::kIsCPythonHeaptype) {
+    result |= Py_TPFLAGS_HEAPTYPE;
   }
   switch (type.builtinBase()) {
     case LayoutId::kInt:

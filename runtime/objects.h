@@ -1191,6 +1191,12 @@ class RawType : public RawInstance {
 
     // Runtime expects some attributes of this type to be at a fixed address.
     kIsFixedAttributeBase = 1 << 14,
+
+    // Whether the type should behave like a CPython heap-type. Heap-types are
+    // the default for user defined types. Non-heap types are used for most
+    // built-in types. They have immutable type dictionaries and deal with
+    // `__module__`, `__name__` and `__qualname__` in a different way.
+    kIsCPythonHeaptype = 1 << 15,
   };
 
   // Getters and setters.
@@ -1237,6 +1243,7 @@ class RawType : public RawInstance {
 
   bool hasCustomDict() const;
   bool hasNativeData() const;
+  bool isCPythonHeaptype() const;
 
   RawObject slots() const;
   void setSlots(RawObject slots) const;
@@ -5195,6 +5202,10 @@ inline bool RawType::hasNativeData() const {
   return hasFlag(RawType::Flag::kHasNativeData);
 }
 
+inline bool RawType::isCPythonHeaptype() const {
+  return hasFlag(RawType::Flag::kIsCPythonHeaptype);
+}
+
 inline RawObject RawType::slots() const {
   return instanceVariableAt(kSlotsOffset);
 }
@@ -5252,7 +5263,7 @@ inline bool RawType::isBaseExceptionSubclass() const {
   return base >= LayoutId::kFirstException && base <= LayoutId::kLastException;
 }
 
-inline bool RawType::hasMutableDict() const { return !isBuiltin(); }
+inline bool RawType::hasMutableDict() const { return isCPythonHeaptype(); }
 
 // RawContext
 

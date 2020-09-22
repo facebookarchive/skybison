@@ -42,6 +42,7 @@ _Flags = _structseq_new_type(
         "dev_mode",
         "utf8_mode",
     ),
+    is_heaptype=False,
 )
 
 
@@ -60,6 +61,7 @@ _FloatInfo = _structseq_new_type(
         "radix",
         "rounds",
     ),
+    is_heaptype=False,
 )
 
 
@@ -76,13 +78,18 @@ _HashInfo = _structseq_new_type(
         "seed_bits",
         "cutoff",
     ),
+    is_heaptype=False,
 )
 
-_AsyncGenHooks = _structseq_new_type("sys.asyncgen_hooks", ("firstiter", "finalizer"))
+_AsyncGenHooks = _structseq_new_type(
+    "sys.asyncgen_hooks", ("firstiter", "finalizer"), is_heaptype=False
+)
 
 
 _VersionInfo = _structseq_new_type(
-    "sys.version_info", ("major", "minor", "micro", "releaselevel", "serial")
+    "sys.version_info",
+    ("major", "minor", "micro", "releaselevel", "serial"),
+    is_heaptype=False,
 )
 
 

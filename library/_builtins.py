@@ -1023,7 +1023,7 @@ def _structseq_getitem(structseq, index):
     _builtin()
 
 
-def _structseq_new_type(name, field_names, num_in_sequence=_Unbound):
+def _structseq_new_type(name, field_names, is_heaptype=True, num_in_sequence=_Unbound):
     _builtin()
 
 
@@ -1139,7 +1139,7 @@ def _type_init(metaclass_instance, name, dict, mro):
     _builtin()
 
 
-def _type_new(cls, bases):
+def _type_new(cls, bases, is_heaptype):
     _builtin()
 
 

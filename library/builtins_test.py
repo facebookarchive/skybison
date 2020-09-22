@@ -12,8 +12,22 @@ from unittest.mock import Mock, call as mock_call
 from test_support import pyro_only
 
 
+Py_TPFLAGS_HEAPTYPE = 1 << 9
+Py_TPFLAGS_READY = 1 << 12
+Py_TPFLAGS_READYING = 1 << 13
+Py_TPFLAGS_IS_ABSTRACT = 1 << 20
+Py_TPFLAGS_LONG_SUBCLASS = 1 << 24
+Py_TPFLAGS_LIST_SUBCLASS = 1 << 25
+Py_TPFLAGS_TUPLE_SUBCLASS = 1 << 26
+Py_TPFLAGS_BYTES_SUBCLASS = 1 << 27
+Py_TPFLAGS_UNICODE_SUBCLASS = 1 << 28
+Py_TPFLAGS_DICT_SUBCLASS = 1 << 29
+Py_TPFLAGS_BASE_EXC_SUBCLASS = 1 << 30
+Py_TPFLAGS_TYPE_SUBCLASS = 1 << 31
+
+
 try:
-    from builtins import _number_check, instance_proxy
+    from builtins import _number_check, instance_proxy, _non_heaptype
     from _builtins import _async_generator_op_iter_get_state, _gc
 except ImportError:
     pass
@@ -15789,6 +15803,11 @@ class SimpleNamespaceTests(unittest.TestCase):
             r == "namespace(foo=42, bar='baz')" or r == "namespace(bar='baz', foo=42)"
         )
 
+    def test_simple_namespace_is_non_heaptype(self):
+        from types import SimpleNamespace
+
+        self.assertFalse(SimpleNamespace.__flags__ & Py_TPFLAGS_HEAPTYPE)
+
 
 class SliceTest(unittest.TestCase):
     def test_dunder_repr_with_nones_returns_str(self):
@@ -19041,31 +19060,18 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__doc__, "docstring")
         self.assertIsNone(D.__doc__)
 
-    Py_TPFLAGS_HEAPTYPE = 1 << 9
-    Py_TPFLAGS_READY = 1 << 12
-    Py_TPFLAGS_READYING = 1 << 13
-    Py_TPFLAGS_IS_ABSTRACT = 1 << 20
-    Py_TPFLAGS_LONG_SUBCLASS = 1 << 24
-    Py_TPFLAGS_LIST_SUBCLASS = 1 << 25
-    Py_TPFLAGS_TUPLE_SUBCLASS = 1 << 26
-    Py_TPFLAGS_BYTES_SUBCLASS = 1 << 27
-    Py_TPFLAGS_UNICODE_SUBCLASS = 1 << 28
-    Py_TPFLAGS_DICT_SUBCLASS = 1 << 29
-    Py_TPFLAGS_BASE_EXC_SUBCLASS = 1 << 30
-    Py_TPFLAGS_TYPE_SUBCLASS = 1 << 31
-
     def test_dunder_flags_with_managed_type_is_heap_type(self):
         class C:
             pass
 
-        self.assertTrue(C.__flags__ & TypeTests.Py_TPFLAGS_HEAPTYPE)
+        self.assertTrue(C.__flags__ & Py_TPFLAGS_HEAPTYPE)
 
     def test_dunder_flags_with_managed_type_is_ready(self):
         class C:
             pass
 
-        self.assertTrue(C.__flags__ & TypeTests.Py_TPFLAGS_READY)
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_READYING)
+        self.assertTrue(C.__flags__ & Py_TPFLAGS_READY)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_READYING)
 
     def test_dunder_flags_without_dunder_abstractmethods_returns_false(self):
         class C:
@@ -19074,7 +19080,7 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             C.__abstractmethods__
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_IS_ABSTRACT)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_IS_ABSTRACT)
 
     def test_dunder_flags_with_empty_dunder_abstractmethods_returns_false(self):
         import abc
@@ -19083,7 +19089,7 @@ class TypeTests(unittest.TestCase):
             pass
 
         self.assertEqual(len(C.__abstractmethods__), 0)
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_IS_ABSTRACT)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_IS_ABSTRACT)
 
     def test_dunder_flags_with_non_empty_dunder_abstractmethods_returns_true(self):
         import abc
@@ -19094,7 +19100,7 @@ class TypeTests(unittest.TestCase):
                 pass
 
         self.assertEqual(len(C.__abstractmethods__), 1)
-        self.assertTrue(C.__flags__ & TypeTests.Py_TPFLAGS_IS_ABSTRACT)
+        self.assertTrue(C.__flags__ & Py_TPFLAGS_IS_ABSTRACT)
 
     def test_dunder_flags_with_non_type_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -19104,100 +19110,98 @@ class TypeTests(unittest.TestCase):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_LONG_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_LONG_SUBCLASS)
 
         class D(int):
             pass
 
-        self.assertTrue(int.__flags__ & TypeTests.Py_TPFLAGS_LONG_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_LONG_SUBCLASS)
+        self.assertTrue(int.__flags__ & Py_TPFLAGS_LONG_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_LONG_SUBCLASS)
 
     def test_dunder_flags_sets_list_subclass_if_list_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_LIST_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_LIST_SUBCLASS)
 
         class D(list):
             pass
 
-        self.assertTrue(list.__flags__ & TypeTests.Py_TPFLAGS_LIST_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_LIST_SUBCLASS)
+        self.assertTrue(list.__flags__ & Py_TPFLAGS_LIST_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_LIST_SUBCLASS)
 
     def test_dunder_flags_sets_tuple_subclass_if_tuple_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_TUPLE_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_TUPLE_SUBCLASS)
 
         class D(tuple):
             pass
 
-        self.assertTrue(tuple.__flags__ & TypeTests.Py_TPFLAGS_TUPLE_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_TUPLE_SUBCLASS)
+        self.assertTrue(tuple.__flags__ & Py_TPFLAGS_TUPLE_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_TUPLE_SUBCLASS)
 
     def test_dunder_flags_sets_bytes_subclass_if_bytes_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_BYTES_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_BYTES_SUBCLASS)
 
         class D(bytes):
             pass
 
-        self.assertTrue(bytes.__flags__ & TypeTests.Py_TPFLAGS_BYTES_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_BYTES_SUBCLASS)
+        self.assertTrue(bytes.__flags__ & Py_TPFLAGS_BYTES_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_BYTES_SUBCLASS)
 
     def test_dunder_flags_sets_unicode_subclass_if_str_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_UNICODE_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_UNICODE_SUBCLASS)
 
         class D(str):
             pass
 
-        self.assertTrue(str.__flags__ & TypeTests.Py_TPFLAGS_UNICODE_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_UNICODE_SUBCLASS)
+        self.assertTrue(str.__flags__ & Py_TPFLAGS_UNICODE_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_UNICODE_SUBCLASS)
 
     def test_dunder_flags_sets_dict_subclass_if_dict_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_DICT_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_DICT_SUBCLASS)
 
         class D(dict):
             pass
 
-        self.assertTrue(dict.__flags__ & TypeTests.Py_TPFLAGS_DICT_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_DICT_SUBCLASS)
+        self.assertTrue(dict.__flags__ & Py_TPFLAGS_DICT_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_DICT_SUBCLASS)
 
     def test_dunder_flags_sets_base_exc_subclass_if_base_exception_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_BASE_EXC_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
         class D(BaseException):
             pass
 
-        self.assertTrue(
-            BaseException.__flags__ & TypeTests.Py_TPFLAGS_BASE_EXC_SUBCLASS
-        )
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_BASE_EXC_SUBCLASS)
-        self.assertTrue(MemoryError.__flags__ & TypeTests.Py_TPFLAGS_BASE_EXC_SUBCLASS)
+        self.assertTrue(BaseException.__flags__ & Py_TPFLAGS_BASE_EXC_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_BASE_EXC_SUBCLASS)
+        self.assertTrue(MemoryError.__flags__ & Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
     def test_dunder_flags_sets_type_subclass_if_type_subclass(self):
         class C:
             pass
 
-        self.assertFalse(C.__flags__ & TypeTests.Py_TPFLAGS_TYPE_SUBCLASS)
+        self.assertFalse(C.__flags__ & Py_TPFLAGS_TYPE_SUBCLASS)
 
         class D(type):
             pass
 
-        self.assertTrue(type.__flags__ & TypeTests.Py_TPFLAGS_TYPE_SUBCLASS)
-        self.assertTrue(D.__flags__ & TypeTests.Py_TPFLAGS_TYPE_SUBCLASS)
+        self.assertTrue(type.__flags__ & Py_TPFLAGS_TYPE_SUBCLASS)
+        self.assertTrue(D.__flags__ & Py_TPFLAGS_TYPE_SUBCLASS)
 
     def test_dunder_init_with_no_name_or_object_param_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
@@ -19341,6 +19345,7 @@ class TypeTests(unittest.TestCase):
         self.assertIsInstance(X, type)
         self.assertEqual(X.__name__, "X")
         self.assertEqual(X.__qualname__, "X")
+        self.assertTrue(X.__flags__ & Py_TPFLAGS_HEAPTYPE)
 
     def test_dunder_new_sets_dunder_module(self):
         globals = {"__name__": 8.13}
@@ -19604,6 +19609,13 @@ class TypeTests(unittest.TestCase):
         T.foo = 20
         self.assertEqual(d["foo"], -7)
         self.assertFalse("bar" in d)
+
+    @pyro_only
+    def test_non_heaptype_returns_non_heaptype(self):
+        X = _non_heaptype("X", (), {})
+        self.assertFalse(X.__flags__ & Py_TPFLAGS_HEAPTYPE)
+        with self.assertRaises(TypeError):
+            X.foo = 1
 
     def test_setattr_with_metaclass_does_not_abort(self):
         class Meta(type):

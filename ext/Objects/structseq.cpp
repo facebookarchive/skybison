@@ -74,8 +74,9 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
                              : Runtime::internStrFromCStr(thread, field_name));
   }
   Str name(&scope, runtime->newStrFromCStr(desc->name));
-  Object result(
-      &scope, structseqNewType(thread, name, field_names, desc->n_in_sequence));
+  word flags = Type::Flag::kIsCPythonHeaptype;
+  Object result(&scope, structseqNewType(thread, name, field_names,
+                                         desc->n_in_sequence, flags));
   if (result.isErrorException()) return nullptr;
   return reinterpret_cast<PyTypeObject*>(
       ApiHandle::newReference(thread, *result));

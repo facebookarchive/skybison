@@ -52,7 +52,8 @@ RawObject structseqNew(Thread* thread, const Type& type) {
 }
 
 RawObject structseqNewType(Thread* thread, const Str& name,
-                           const Tuple& field_names, word num_in_sequence) {
+                           const Tuple& field_names, word num_in_sequence,
+                           word flags) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   word num_fields = field_names.length();
@@ -74,7 +75,7 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   Tuple bases(&scope, runtime->newTuple(1));
   bases.atPut(0, runtime->typeAt(LayoutId::kTuple));
   Type type(&scope, typeNew(thread, LayoutId::kType, type_name, bases, dict,
-                            static_cast<Type::Flag>(0),
+                            static_cast<Type::Flag>(flags),
                             /*add_instance_dict=*/false));
   // TODO(T75672111): We should rather set a flag to get non-heap type behavior.
   // For now we just manually remove `__module__` after the fact.

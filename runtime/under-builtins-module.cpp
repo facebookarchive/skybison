@@ -4293,6 +4293,7 @@ RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
   Str name(&scope, strUnderlying(args.get(0)));
   name = Runtime::internStr(thread, name);
   Tuple field_names(&scope, args.get(1));
+  Bool is_heaptype(&scope, args.get(2));
   word num_fields = field_names.length();
   if (num_fields > 0) {
     MutableTuple field_names_interned(&scope,
@@ -4305,10 +4306,12 @@ RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
     }
     field_names = field_names_interned.becomeImmutable();
   }
-  word num_in_sequence = args.get(2).isUnbound()
+  word num_in_sequence = args.get(3).isUnbound()
                              ? num_fields
-                             : SmallInt::cast(args.get(2)).value();
-  return structseqNewType(thread, name, field_names, num_in_sequence);
+                             : SmallInt::cast(args.get(3)).value();
+  word flags =
+      is_heaptype.value() ? Type::Flag::kIsCPythonHeaptype : Type::Flag::kNone;
+  return structseqNewType(thread, name, field_names, num_in_sequence, flags);
 }
 
 RawObject FUNC(_builtins, _structseq_setitem)(Thread* thread, Frame* frame,
@@ -5557,6 +5560,9 @@ RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Frame* frame,
   Type type(&scope, *self_obj);
   Object result(&scope, typeAtById(thread, type, ID(__module__)));
   if (result.isErrorNotFound()) {
+    if (!type.isCPythonHeaptype()) {
+      return runtime->symbols()->at(ID(builtins));
+    }
     Object name(&scope, runtime->symbols()->at(ID(__module__)));
     return objectRaiseAttributeError(thread, type, name);
   }
@@ -5624,10 +5630,13 @@ RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Type metaclass(&scope, args.get(0));
   Tuple bases(&scope, tupleUnderlying(args.get(1)));
+  Bool is_heaptype(&scope, args.get(2));
   LayoutId metaclass_id = metaclass.instanceLayoutId();
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setBases(*bases);
+  type.setFlags(is_heaptype.value() ? Type::Flag::kIsCPythonHeaptype
+                                    : Type::Flag::kNone);
   Function type_dunder_call(&scope,
                             runtime->lookupNameInModule(thread, ID(_builtins),
                                                         ID(_type_dunder_call)));

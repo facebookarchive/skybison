@@ -12,6 +12,7 @@ RawObject structseqSetItem(Thread* thread, const Object& structseq, word index,
 RawObject structseqNew(Thread* thread, const Type& type);
 
 RawObject structseqNewType(Thread* thread, const Str& name,
-                           const Tuple& field_names, word num_in_sequence);
+                           const Tuple& field_names, word num_in_sequence,
+                           word flags);
 
 }  // namespace py
