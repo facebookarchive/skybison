@@ -320,6 +320,15 @@ static void emitJumpIfNotSmallInt(EmitEnv* env, Register object,
   __ jcc(NOT_ZERO, target, Assembler::kNearJump);
 }
 
+static void emitJumpIfNotBothSmallInt(EmitEnv* env, Register value0,
+                                      Register value1, Register scratch,
+                                      Label* target) {
+  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
+  __ movq(scratch, value1);
+  __ orq(scratch, value0);
+  emitJumpIfNotSmallInt(env, scratch, target);
+}
+
 // Load the LayoutId of the RawObject in r_obj into r_dst as a SmallInt.
 //
 // Writes to r_dst.
@@ -513,8 +522,7 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitJumpIfNotSmallInt(env, r_right, &slow_path);
-  emitJumpIfNotSmallInt(env, r_left, &slow_path);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
   // Preserve argument values in case of overflow.
   __ movq(r_result, r_left);
   __ addq(r_result, r_right);
@@ -541,8 +549,7 @@ void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitJumpIfNotSmallInt(env, r_right, &slow_path);
-  emitJumpIfNotSmallInt(env, r_left, &slow_path);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
   __ movq(r_result, r_left);
   __ andq(r_result, r_right);
   __ pushq(r_result);
@@ -567,8 +574,7 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitJumpIfNotSmallInt(env, r_right, &slow_path);
-  emitJumpIfNotSmallInt(env, r_left, &slow_path);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
   // Preserve argument values in case of overflow.
   __ movq(r_result, r_left);
   __ subq(r_result, r_right);
@@ -594,9 +600,9 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitJumpIfNotSmallInt(env, r_right, &slow_path);
-  emitJumpIfNotSmallInt(env, r_left, &slow_path);
-  __ orq(r_right, r_left);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_right, &slow_path);
+  // There is not __ orq instruction here because it is in the
+  // emitJumpIfNotSmallInt implementation.
   __ pushq(r_right);
   emitNextOpcode(env);
 
@@ -1302,8 +1308,7 @@ static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
   __ popq(r_right);
   __ popq(r_left);
   // Use the fast path only when both arguments are SmallInt.
-  emitJumpIfNotSmallInt(env, r_left, &slow_path);
-  emitJumpIfNotSmallInt(env, r_right, &slow_path);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
   __ movq(r_true, boolImmediate(true));
   __ movq(r_result, boolImmediate(false));
   __ cmpq(r_left, r_right);
@@ -1391,8 +1396,7 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitJumpIfNotSmallInt(env, r_left, &slow_path);
-  emitJumpIfNotSmallInt(env, r_right, &slow_path);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
   // Preserve argument values in case of overflow.
   __ movq(r_result, r_left);
   __ addq(r_result, r_right);
