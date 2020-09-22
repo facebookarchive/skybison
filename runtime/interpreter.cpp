@@ -390,32 +390,20 @@ RawObject Interpreter::callDescriptorGet(Thread* thread,
   Object method(&scope,
                 typeLookupInMroById(thread, descriptor_type, ID(__get__)));
   DCHECK(!method.isErrorNotFound(), "no __get__ method found");
-  return callMethod3(thread, method, descriptor, receiver, receiver_type);
+  return call3(thread, method, descriptor, receiver, receiver_type);
 }
 
 RawObject Interpreter::callDescriptorSet(Thread* thread,
                                          const Object& descriptor,
                                          const Object& receiver,
                                          const Object& value) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope,
-                typeLookupInMroById(thread, descriptor_type, ID(__set__)));
-  DCHECK(!method.isErrorNotFound(), "no __set__ method found");
-  return callMethod3(thread, method, descriptor, receiver, value);
+  return thread->invokeMethod3(descriptor, ID(__set__), receiver, value);
 }
 
 RawObject Interpreter::callDescriptorDelete(Thread* thread,
                                             const Object& descriptor,
                                             const Object& receiver) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope,
-                typeLookupInMroById(thread, descriptor_type, ID(__delete__)));
-  DCHECK(!method.isErrorNotFound(), "no __delete__ method found");
-  return callMethod2(thread, method, descriptor, receiver);
+  return thread->invokeMethod2(descriptor, ID(__delete__), receiver);
 }
 
 RawObject Interpreter::lookupMethod(Thread* thread, const Object& receiver,

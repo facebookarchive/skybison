@@ -120,6 +120,67 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
 
+    def test_load_attr_calls_dunder_get(self):
+        class Descriptor:
+            def __get__(self, *args):
+                self.args = args
+                return 42
+
+        descriptor = Descriptor()
+
+        class C:
+            foo = descriptor
+
+        self.assertEqual(C.foo, 42)
+        self.assertEqual(descriptor.args, (None, C))
+        c = C()
+        self.assertEqual(c.foo, 42)
+        self.assertEqual(descriptor.args, (c, C))
+
+    def test_load_attr_calls_callable_dunder_get(self):
+        class Callable:
+            def __call__(self, *args):
+                self.args = args
+                return 42
+
+        callable = Callable()
+
+        class Descriptor:
+            __get__ = callable
+
+        descriptor = Descriptor()
+
+        class C:
+            foo = descriptor
+
+        self.assertEqual(C.foo, 42)
+        self.assertEqual(callable.args, (descriptor, None, C))
+        c = C()
+        self.assertEqual(c.foo, 42)
+        self.assertEqual(callable.args, (descriptor, c, C))
+
+    def test_load_attr_does_not_recursively_call_dunder_get(self):
+        class Descriptor0:
+            def __get__(self, *args):
+                return 13
+
+            def __call__(self, *args):
+                return 42
+
+        descriptor0 = Descriptor0()
+
+        class Descriptor1:
+            __get__ = descriptor0
+
+        descriptor1 = Descriptor1()
+
+        class C:
+            foo = descriptor1
+
+        self.assertEqual(C.foo, 42)
+        self.assertEqual(C().foo, 42)
+        self.assertIs(C.__dict__["foo"].__get__, 13)
+
     def test_load_attr_with_module_prioritizes_data_descr_than_instance_attr(self):
         from types import ModuleType
 
@@ -247,6 +308,77 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(str(context.exception), "baz")
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
+
+    def test_delete_attr_calls_dunder_delete(self):
+        class Descriptor:
+            def __delete__(self, *args):
+                self.args = args
+                return "return value ignored"
+
+        descriptor = Descriptor()
+
+        class C:
+            foo = descriptor
+
+        c = C()
+        del c.foo
+        self.assertEqual(descriptor.args, (c,))
+        # Deletion on class should just delete descriptor
+        del C.foo
+        self.assertFalse(hasattr(C, "foo"))
+        self.assertNotIn("foo", C.__dict__)
+
+    def test_delete_attr_calls_callable_dunder_delete(self):
+        class Callable:
+            def __call__(self, *args):
+                self.args = args
+                return "return value ignored"
+
+        callable = Callable()
+
+        class Descriptor:
+            __delete__ = callable
+
+        descriptor = Descriptor()
+
+        class C:
+            foo = descriptor
+
+        c = C()
+        del c.foo
+        self.assertEqual(callable.args, (c,))
+        # Deletion on class should just delete descriptor
+        del C.foo
+        self.assertFalse(hasattr(C, "foo"))
+        self.assertNotIn("foo", C.__dict__)
+
+    def test_delete_attr_call_dunder_delete_descriptor(self):
+        class Callable:
+            def __call__(self, *args):
+                self.args = args
+                return "return value ignored"
+
+        callable = Callable()
+
+        class Descriptor0:
+            def __get__(self, *args):
+                self.args = args
+                return callable
+
+        descriptor0 = Descriptor0()
+
+        class Descriptor1:
+            __delete__ = descriptor0
+
+        descriptor1 = Descriptor1()
+
+        class C:
+            foo = descriptor1
+
+        c = C()
+        del c.foo
+        self.assertEqual(descriptor0.args, (descriptor1, Descriptor1))
+        self.assertEqual(callable.args, (c,))
 
     def test_delete_fast_with_assigned_name_succeeds(self):
         def foo():
@@ -482,6 +614,77 @@ class InlineCacheTests(unittest.TestCase):
 
         # Verify that the updated type attribute is used for `c.x`.
         self.assertEqual(read_x(c), 100)
+
+    def test_store_attr_calls_dunder_set(self):
+        class Descriptor:
+            def __set__(self, *args):
+                self.args = args
+                return "return value ignored"
+
+        descriptor = Descriptor()
+
+        class C:
+            foo = descriptor
+
+        c = C()
+        c.foo = 42
+        self.assertEqual(descriptor.args, (c, 42))
+        # Assignment on the class should replace descriptor.
+        C.foo = 13
+        self.assertEqual(C.foo, 13)
+        self.assertEqual(C.__dict__["foo"], 13)
+
+    def test_store_attr_calls_callable_dunder_set(self):
+        class Callable:
+            def __call__(self, *args):
+                self.args = args
+                return "return value ignored"
+
+        callable = Callable()
+
+        class Descriptor:
+            __set__ = callable
+
+        descriptor = Descriptor()
+
+        class C:
+            foo = descriptor
+
+        c = C()
+        c.foo = 42
+        self.assertEqual(callable.args, (c, 42))
+        # Assignment on the class should replace descriptor.
+        C.foo = 13
+        self.assertEqual(C.foo, 13)
+        self.assertEqual(C.__dict__["foo"], 13)
+
+    def test_store_attr_call_dunder_set_descriptor(self):
+        class Callable:
+            def __call__(self, *args):
+                self.args = args
+                return "return value ignored"
+
+        callable = Callable()
+
+        class Descriptor0:
+            def __get__(self, *args):
+                self.args = args
+                return callable
+
+        descriptor0 = Descriptor0()
+
+        class Descriptor1:
+            __set__ = descriptor0
+
+        descriptor1 = Descriptor1()
+
+        class C:
+            foo = descriptor1
+
+        c = C()
+        c.foo = 42
+        self.assertEqual(descriptor0.args, (descriptor1, Descriptor1))
+        self.assertEqual(callable.args, (c, 42))
 
     def test_store_slot_descriptor(self):
         class C:
