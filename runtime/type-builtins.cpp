@@ -855,13 +855,41 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     type.setMro(*mro_copy);
   }
 
-  // TODO(T72020586): Set __module__ in dict
-  if (dictAtById(thread, dict, ID(__qualname__)).isErrorNotFound()) {
-    dictAtPutById(thread, dict, ID(__qualname__), name);
-  }
-
   Object result(&scope, typeAssignFromDict(thread, type, dict));
   if (result.isErrorException()) return *result;
+
+  // TODO(T72020586): Set __module__ in type
+
+  if (typeAtById(thread, type, ID(__qualname__)).isErrorNotFound()) {
+    typeAtPutById(thread, type, ID(__qualname__), name);
+  }
+
+  // TODO(T53997177): Centralize type initialization
+  typeAddDocstring(thread, type);
+
+  // Special-case __new__ to be a staticmethod
+  Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
+  if (dunder_new.isFunction()) {
+    StaticMethod dunder_new_method(&scope, runtime->newStaticMethod());
+    dunder_new_method.setFunction(*dunder_new);
+    typeAtPutById(thread, type, ID(__new__), dunder_new_method);
+  }
+
+  // Special-case __init_subclass__ to be a classmethod
+  Object init_subclass(&scope, typeAtById(thread, type, ID(__init_subclass__)));
+  if (init_subclass.isFunction()) {
+    ClassMethod init_subclass_method(&scope, runtime->newClassMethod());
+    init_subclass_method.setFunction(*init_subclass);
+    typeAtPutById(thread, type, ID(__init_subclass__), init_subclass_method);
+  }
+
+  // Special-case __class_getitem__ to be a classmethod
+  Object class_getitem(&scope, typeAtById(thread, type, ID(__class_getitem__)));
+  if (class_getitem.isFunction()) {
+    ClassMethod class_getitem_method(&scope, runtime->newClassMethod());
+    class_getitem_method.setFunction(*class_getitem);
+    typeAtPutById(thread, type, ID(__class_getitem__), class_getitem_method);
+  }
 
   Object class_cell(&scope, typeAtById(thread, type, ID(__classcell__)));
   if (!class_cell.isErrorNotFound()) {
@@ -870,8 +898,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     Object class_cell_name(&scope, runtime->symbols()->at(ID(__classcell__)));
     typeRemove(thread, type, class_cell_name);
   }
-  // TODO(T53997177): Centralize type initialization
-  typeAddDocstring(thread, type);
 
   // Analyze bases: Merge flags; add to subclasses lists; check for attribute
   // dictionaries.
@@ -962,32 +988,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                     runtime->newProperty(instance_proxy,
                                          under_instance_dunder_dict_set, none));
     typeAtPutById(thread, type, ID(__dict__), property);
-  }
-
-  // Special-case __init_subclass__ to be a classmethod
-  Object init_subclass(&scope, typeAtById(thread, type, ID(__init_subclass__)));
-  if (init_subclass.isFunction()) {
-    ClassMethod init_subclass_method(&scope, runtime->newClassMethod());
-    init_subclass_method.setFunction(*init_subclass);
-    typeAtPutById(thread, type, ID(__init_subclass__), init_subclass_method);
-  }
-
-  // Special-case __new__ to be a staticmethod
-  Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
-  if (dunder_new.isFunction()) {
-    StaticMethod dunder_new_method(&scope, runtime->newStaticMethod());
-    dunder_new_method.setFunction(*dunder_new);
-    typeAtPutById(thread, type, ID(__new__), dunder_new_method);
-  }
-
-  // Ensure that __class_getitem__ is a classmethod.  For convenience, the user
-  // is allowed to define __class_getitem__ as a function.  When that happens,
-  // wrap the function in a classmethod.
-  Object class_getitem(&scope, typeAtById(thread, type, ID(__class_getitem__)));
-  if (class_getitem.isFunction()) {
-    ClassMethod class_getitem_method(&scope, runtime->newClassMethod());
-    class_getitem_method.setFunction(*class_getitem);
-    typeAtPutById(thread, type, ID(__class_getitem__), class_getitem_method);
   }
 
   Function type_dunder_call(&scope,
