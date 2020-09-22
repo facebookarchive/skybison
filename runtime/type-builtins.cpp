@@ -889,12 +889,22 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   Object result(&scope, typeAssignFromDict(thread, type, dict));
   if (result.isErrorException()) return *result;
 
-  if (typeAtById(thread, type, ID(__module__)).isErrorNotFound()) {
-    // Use depth=3 to skip over frame of `_type_init`, `type.__new__`
-    // and `type.__call__`.
-    Object module_name(&scope, getModuleNameAtFrame(thread, /*depth=*/3));
-    if (!module_name.isErrorNotFound()) {
-      typeAtPutById(thread, type, ID(__module__), module_name);
+  if (type.isCPythonHeaptype()) {
+    if (typeAtById(thread, type, ID(__module__)).isErrorNotFound()) {
+      // Use depth=3 to skip over frame of `_type_init`, `type.__new__`
+      // and `type.__call__`.
+      Object module_name(&scope, getModuleNameAtFrame(thread, /*depth=*/3));
+      if (!module_name.isErrorNotFound()) {
+        typeAtPutById(thread, type, ID(__module__), module_name);
+      }
+    }
+  } else {
+    // Non-heap-types in CPython have no `__module__` unless there is a
+    // "." in `tp_name`. Remove the attribute when it equals "builtins".
+    Object module_name(&scope, typeAtById(thread, type, ID(__module__)));
+    if (module_name.isStr() &&
+        Str::cast(*module_name).equals(runtime->symbols()->at(ID(builtins)))) {
+      typeRemoveById(thread, type, ID(__module__));
     }
   }
 

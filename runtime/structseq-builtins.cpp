@@ -66,10 +66,13 @@ RawObject structseqNewType(Thread* thread, const Str& name,
     module_name = runtime->strSubstr(thread, name, 0, dot);
     type_name =
         runtime->strSubstr(thread, name, dot + 1, name.length() - (dot + 1));
+  } else {
+    module_name = runtime->symbols()->at(ID(builtins));
   }
 
   Dict dict(&scope, runtime->newDict());
   dictAtPutById(thread, dict, ID(__qualname__), type_name);
+  dictAtPutById(thread, dict, ID(__module__), module_name);
 
   // Create type
   Tuple bases(&scope, runtime->newTuple(1));
@@ -77,9 +80,6 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   Type type(&scope, typeNew(thread, LayoutId::kType, type_name, bases, dict,
                             static_cast<Type::Flag>(flags),
                             /*add_instance_dict=*/false));
-  // TODO(T75672111): We should rather set a flag to get non-heap type behavior.
-  // For now we just manually remove `__module__` after the fact.
-  typeRemoveById(thread, type, ID(__module__));
 
   // Add hidden fields as in-object attributes in the instance layout.
   Layout layout(&scope, type.instanceLayout());
@@ -119,9 +119,6 @@ RawObject structseqNewType(Thread* thread, const Str& name,
     typeAtPut(thread, type, field_name, descriptor);
   }
 
-  if (!module_name.isNoneType()) {
-    typeAtPutById(thread, type, ID(__module__), module_name);
-  }
   typeAtPutById(thread, type, ID(_structseq_field_names), field_names);
   Object value(&scope, SmallInt::fromWord(num_fields));
   typeAtPutById(thread, type, ID(n_fields), value);

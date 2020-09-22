@@ -29,6 +29,14 @@ class InspectModuleTest(unittest.TestCase):
         result = inspect.signature(instance)
         self.assertEqual(str(result), "(arg0, arg1)")
 
+    def test_getmodule_with_frame_returns_module(self):
+        from types import ModuleType
+
+        frame = inspect.currentframe()
+        module = inspect.getmodule(frame)
+        self.assertIsInstance(module, ModuleType)
+        self.assertIs(module.__name__, __name__)
+
 
 if __name__ == "__main__":
     unittest.main()

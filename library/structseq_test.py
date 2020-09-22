@@ -161,7 +161,7 @@ class StructSequenceTests(unittest.TestCase):
 
     @pyro_only
     def test_structseq_new_type_without_dot_in_name_does_not_set_module(self):
-        tp = _structseq_new_type("foo", (), num_in_sequence=0)
+        tp = _structseq_new_type("foo", (), is_heaptype=False, num_in_sequence=0)
         self.assertNotIn("__module__", tp.__dict__)
 
     @pyro_only

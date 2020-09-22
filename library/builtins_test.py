@@ -18951,6 +18951,14 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type.__dict__["__abstractmethods__"].__set__(42, [])
 
+    def test_builtin_types_have_no_module_attribute(self):
+        from types import FrameType
+
+        self.assertNotIn("__module__", int.__dict__)
+        self.assertNotIn("__module__", object.__dict__)
+        self.assertNotIn("__module__", tuple.__dict__)
+        self.assertNotIn("__module__", FrameType.__dict__)
+
     def test_dunder_base_with_object_type_returns_none(self):
         self.assertIs(object.__base__, None)
 
@@ -19616,6 +19624,13 @@ class TypeTests(unittest.TestCase):
         self.assertFalse(X.__flags__ & Py_TPFLAGS_HEAPTYPE)
         with self.assertRaises(TypeError):
             X.foo = 1
+
+    def test_non_heaptype_has_no_module_attribute(self):
+        from types import SimpleNamespace
+
+        self.assertNotIn("__module__", SimpleNamespace.__dict__)
+        self.assertNotIn("__module__", zip.__dict__)
+        self.assertNotIn("__module__", map.__dict__)
 
     def test_setattr_with_metaclass_does_not_abort(self):
         class Meta(type):

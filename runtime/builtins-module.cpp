@@ -281,6 +281,14 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
     CHECK(!typeAssignFromDict(thread, type, type_dict).isErrorException(),
           "error while assigning bootstrap type dict");
     // TODO(T53997177): Centralize type initialization
+    Object module_name(&scope, typeAtById(thread, type, ID(__module__)));
+    // non-heap-types in CPython have no `__module__` unless there is a
+    // "." in `tp_name`. Remove the attribute when it equals "builtins".
+    if (module_name.isStr() &&
+        Str::cast(*module_name).equals(runtime->symbols()->at(ID(builtins)))) {
+      typeRemoveById(thread, type, ID(__module__));
+    }
+
     Object qualname(&scope, NoneType::object());
     if (type.instanceLayoutId() == LayoutId::kType) {
       qualname = *name;
