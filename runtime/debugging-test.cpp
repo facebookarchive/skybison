@@ -32,9 +32,13 @@ static RawObject makeTestCode(Thread* thread) {
   Object freevar0(&scope, runtime->newStrFromCStr("freevar0"));
   Tuple freevars(&scope, runtime->newTupleWith1(freevar0));
   Object cellvar0(&scope, runtime->newStrFromCStr("cellvar0"));
-  Tuple cellvars(&scope, runtime->newTupleWith1(cellvar0));
+  Object cellvar1(&scope, runtime->newStrFromCStr("cellvar1"));
+  Object cellvar2(&scope, runtime->newStrFromCStr("cellvar2"));
+  Tuple cellvars(&scope, runtime->newTupleWith3(cellvar0, cellvar1, cellvar2));
   Str filename(&scope, runtime->newStrFromCStr("filename0"));
   Str name(&scope, runtime->newStrFromCStr("name0"));
+  DCHECK(freevars.length() != cellvars.length(),
+         "it's helpful for debugging if they are different lengths");
   Object lnotab(&scope, Bytes::empty());
   word argcount = 1;
   word posonlyargcount = 0;
@@ -101,7 +105,7 @@ TEST_F(DebuggingTests, DumpExtendedCode) {
   filename: "filename0"
   consts: ("const0",)
   names: ("name0",)
-  cellvars: ("cellvar0",)
+  cellvars: ("cellvar0", "cellvar1", "cellvar2")
   freevars: ("freevar0",)
   varnames: ("argument0", "varargs", "varkeyargs", "variable0")
      0 LOAD_CONST 0
@@ -136,7 +140,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
     filename: "filename0"
     consts: ("const0",)
     names: ("name0",)
-    cellvars: ("cellvar0",)
+    cellvars: ("cellvar0", "cellvar1", "cellvar2")
     freevars: ("freevar0",)
     varnames: ("argument0", "varargs", "varkeyargs", "variable0")
        0 LOAD_CONST 0
@@ -207,7 +211,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
   (in-object) "_function__stack_size" = 2
   (in-object) "_function__total_args" = 3
-  (in-object) "_function__total_vars" = 3
+  (in-object) "_function__total_vars" = 5
   overflow dict: {"funcattr0": 4}
 )";
   EXPECT_EQ(ss.str(), expected.str());
@@ -749,7 +753,9 @@ def func(arg0, arg1):
   frame1->setVirtualPC(42);
   frame1->setLocal(3, runtime_->newStrFromCStr("bar foo"));
   frame1->setLocal(4, runtime_->newInt(88));
-  frame1->setLocal(5, runtime_->newInt(-99));
+  frame1->setLocal(5, runtime_->newInt(-99));  // cellvar0
+  frame1->setLocal(6, runtime_->newInt(12));   // cellvar1
+  frame1->setLocal(7, runtime_->newInt(34));   // cellvar2
 
   thread_->stackPush(runtime_->newInt(-8));
   thread_->stackPush(runtime_->newStrFromCStr("baz bam"));
@@ -779,6 +785,8 @@ def func(arg0, arg1):
     3 "variable0": "bar foo"
     4 "freevar0": 88
     5 "cellvar0": -99
+    6 "cellvar1": 12
+    7 "cellvar2": 34
   stack:
     1: -8
     0: "baz bam"

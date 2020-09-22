@@ -598,7 +598,7 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame,
     } else if (l <
                var_names_length + freevar_names_length + cellvar_names_length) {
       os << ' '
-         << cellvar_names.at(l - var_names_length - cellvar_names_length);
+         << cellvar_names.at(l - var_names_length - freevar_names_length);
     }
     os << ": " << frame->local(l) << '\n';
   }
