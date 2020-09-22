@@ -5581,6 +5581,44 @@ RawObject FUNC(_builtins, _type_module_set)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject FUNC(_builtins, _type_name_get)(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
+  return type.name();
+}
+
+RawObject FUNC(_builtins, _type_name_set)(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type type(&scope, *self_obj);
+  if (!type.hasMutableDict()) {
+    return raiseTypeErrorCannotSetImmutable(thread, type);
+  }
+
+  Object value(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*value)) {
+    Object type_name(&scope, type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "can only assign string to %S.__name__, not '%T'",
+        &type_name, &value);
+  }
+  type.setName(*value);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

@@ -256,6 +256,8 @@ from _builtins import (
     _type_issubclass,
     _type_module_get,
     _type_module_set,
+    _type_name_get,
+    _type_name_set,
     _type_new,
     _type_proxy,
     _type_proxy_check,
@@ -483,6 +485,8 @@ class type(bootstrap=True):
         return _isinstance_type(obj, _type(obj), self)
 
     __module__ = _property(_type_module_get, _type_module_set)
+
+    __name__ = _property(_type_name_get, _type_name_set)
 
     @_staticmethod
     def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound, **kwargs):

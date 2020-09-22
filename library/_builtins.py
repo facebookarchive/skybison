@@ -1123,6 +1123,14 @@ def _type_module_set(self, value):
     _builtin()
 
 
+def _type_name_get(self):
+    _builtin()
+
+
+def _type_name_set(self, value):
+    _builtin()
+
+
 def _type_proxy(type_obj):
     _builtin()
 

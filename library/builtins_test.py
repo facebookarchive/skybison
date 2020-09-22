@@ -19270,6 +19270,40 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(dict.__module__, "builtins")
         self.assertEqual(OSError.__module__, "builtins")
 
+    def test_dunder_name_returns_name(self):
+        class FooBar:
+            pass
+
+        self.assertEqual(FooBar.__name__, "FooBar")
+        self.assertEqual(type.__dict__["__name__"].__get__(FooBar), "FooBar")
+
+    def test_dunder_name_sets_name(self):
+        class C:
+            pass
+
+        type.__dict__["__name__"].__set__(C, "foo")
+        self.assertEqual(type.__dict__["__name__"].__get__(C), "foo")
+        self.assertEqual(C.__name__, "foo")
+
+    def test_dunder_name_set_with_non_string_raises_type_error(self):
+        class C:
+            pass
+
+        with self.assertRaisesRegex(
+            TypeError, "can only assign string to C.__name__, not 'int'"
+        ):
+            C.__name__ = 42
+        with self.assertRaisesRegex(
+            TypeError, "can only assign string to C.__name__, not 'float'"
+        ):
+            type.__dict__["__name__"].__set__(C, 1.2)
+
+    def test_dunder_name_set_on_builtin_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, ".*int.*"):
+            int.__name__ = "foo"
+        with self.assertRaisesRegex(TypeError, ".*int.*"):
+            type.__dict__["__name__"].__set__(int, "foo")
+
     def test_dunder_new_with_one_arg_returns_type_of_arg(self):
         class C:
             pass

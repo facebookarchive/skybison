@@ -1177,7 +1177,7 @@ static const BuiltinAttribute kTypeAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_type__instance_layout_id), RawType::kInstanceLayoutIdOffset,
      AttributeFlags::kHidden},
-    {ID(__name__), RawType::kNameOffset},
+    {ID(_type__name), RawType::kNameOffset, AttributeFlags::kHidden},
     {ID(__doc__), RawType::kDocOffset},
     {ID(_type__flags), RawType::kFlagsOffset, AttributeFlags::kHidden},
     {ID(_type__attributes), RawType::kAttributesOffset,

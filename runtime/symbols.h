@@ -533,6 +533,7 @@ class Runtime;
   V(_type__flags)                                                              \
   V(_type__instance_layout)                                                    \
   V(_type__instance_layout_id)                                                 \
+  V(_type__name)                                                               \
   V(_type__proxy)                                                              \
   V(_type__slots)                                                              \
   V(_type__subclasses)                                                         \
