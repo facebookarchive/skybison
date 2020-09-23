@@ -228,12 +228,15 @@ RawObject wrapVarkwTernaryfunc(Thread* thread, Frame* frame, word nargs) {
   if (!checkSelfWithSlotType(thread, frame, self_obj)) {
     return Error::exception();
   }
-  PyObject* self = ApiHandle::borrowedReference(thread, *self_obj);
-  PyObject* varargs = ApiHandle::borrowedReference(thread, args.get(1));
+  PyObject* self = ApiHandle::newReference(thread, *self_obj);
+  PyObject* varargs = ApiHandle::newReference(thread, args.get(1));
   PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
                          ? nullptr
-                         : ApiHandle::borrowedReference(thread, args.get(2));
+                         : ApiHandle::newReference(thread, args.get(2));
   PyObject* result = (*func)(self, varargs, kwargs);
+  Py_DECREF(self);
+  Py_DECREF(varargs);
+  Py_XDECREF(kwargs);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
