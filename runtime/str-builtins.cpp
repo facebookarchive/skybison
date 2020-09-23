@@ -1601,6 +1601,71 @@ RawObject METH(str, strip)(Thread* thread, Frame* frame, word nargs) {
   return strStrip(thread, str, chars);
 }
 
+static int32_t handleCapitalSigma(const Str& str, word i) {
+  bool final_sigma = false;
+  for (word j = str.offsetByCodePoints(i, -1), len; j >= 0;
+       j = str.offsetByCodePoints(j, -1)) {
+    int32_t code_point = str.codePointAt(j, &len);
+    if (!Unicode::isCaseIgnorable(code_point)) {
+      final_sigma = Unicode::isCased(code_point);
+      break;
+    }
+  }
+  if (!final_sigma) {
+    return 0x03C3;
+  }
+
+  word char_length = str.length();
+  for (word j = str.offsetByCodePoints(i, 1), len; j < char_length; j += len) {
+    int32_t code_point = str.codePointAt(j, &len);
+    if (!Unicode::isCaseIgnorable(code_point)) {
+      return Unicode::isCased(code_point) ? 0x03C3 : 0x03C2;
+    }
+  }
+  return 0x03C2;
+}
+
+RawObject METH(str, swapcase)(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(str));
+  }
+  Str self(&scope, strUnderlying(*self_obj));
+  word char_length = self.length();
+
+  // Most of the time, this will be sufficient. However, due to Unicode casing,
+  // it's possible that we could need up to 3 times as much space as the input.
+  StrArray result(&scope, runtime->newStrArray());
+  runtime->strArrayEnsureCapacity(thread, result, char_length);
+  for (word i = 0, len; i < char_length; i += len) {
+    int32_t code_point = self.codePointAt(i, &len);
+    if (Unicode::isUpper(code_point)) {
+      if (code_point == 0x03a3) {
+        runtime->strArrayAddCodePoint(thread, result,
+                                      handleCapitalSigma(self, i));
+      } else {
+        FullCasing lower = Unicode::toLower(code_point);
+        for (word j = 0; j < 3; j++) {
+          int32_t decoded = lower.code_points[j];
+          if (decoded == -1) break;
+          runtime->strArrayAddCodePoint(thread, result, decoded);
+        }
+      }
+    } else {
+      FullCasing upper = Unicode::toUpper(code_point);
+      for (word j = 0; j < 3; j++) {
+        int32_t decoded = upper.code_points[j];
+        if (decoded == -1) break;
+        runtime->strArrayAddCodePoint(thread, result, decoded);
+      }
+    }
+  }
+  return runtime->strFromStrArray(result);
+}
+
 RawObject METH(str_iterator, __iter__)(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);

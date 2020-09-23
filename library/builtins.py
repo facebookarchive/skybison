@@ -234,7 +234,6 @@ from _builtins import (
     _structseq_getitem,
     _structseq_setitem,
     _super,
-    _swapcase_capital_sigma,
     _tuple_check,
     _tuple_check_exact,
     _tuple_getitem,
@@ -6374,18 +6373,7 @@ class str(bootstrap=True):
         _builtin()
 
     def swapcase(self):
-        # TODO(T76179674): Move this entire function to a native builtin
-        _str_guard(self)
-        result = _str_array()
-        for i, ch in enumerate(self):
-            if ch.isupper():
-                if ch == "\u03a3":
-                    _str_array_iadd(result, _swapcase_capital_sigma(self, i))
-                else:
-                    _str_array_iadd(result, ch.lower())
-            else:
-                _str_array_iadd(result, ch.upper())
-        return str(result)
+        _builtin()
 
     def title(self):
         _builtin()

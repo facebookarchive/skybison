@@ -5197,49 +5197,6 @@ RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(_builtins, _swapcase_capital_sigma)(Thread* thread, Frame* frame,
-                                                   word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object string_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStr(*string_obj)) {
-    return thread->raiseRequiresType(string_obj, ID(str));
-  }
-  Str string(&scope, strUnderlying(*string_obj));
-  Object index_obj(&scope, args.get(1));
-  word sigma_code_point_index = intUnderlying(*index_obj).asWordSaturated();
-  word sigma_char_index = string.offsetByCodePoints(0, sigma_code_point_index);
-
-  word ignored;
-  word char_index = string.offsetByCodePoints(sigma_char_index, -1);
-  for (; char_index >= 0;
-       char_index = string.offsetByCodePoints(char_index, -1)) {
-    if (!Unicode::isCaseIgnorable(string.codePointAt(char_index, &ignored))) {
-      break;
-    }
-  }
-
-  if (char_index < 0 ||
-      !Unicode::isCased(string.codePointAt(char_index, &ignored))) {
-    return SmallStr::fromCodePoint(0x03C3);
-  }
-
-  char_index = string.offsetByCodePoints(sigma_char_index, 1);
-  word length = string.length();
-  for (word char_length; char_index < length; char_index += char_length) {
-    if (!Unicode::isCaseIgnorable(
-            string.codePointAt(char_index, &char_length))) {
-      break;
-    }
-  }
-
-  if (char_index == length ||
-      !Unicode::isCased(string.codePointAt(char_index, &ignored))) {
-    return SmallStr::fromCodePoint(0x03C2);
-  }
-  return SmallStr::fromCodePoint(0x03C3);
-}
-
 RawObject FUNC(_builtins, _traceback_str)(Thread* thread, Frame* frame,
                                           word nargs) {
   HandleScope scope(thread);
