@@ -1750,8 +1750,9 @@ RawObject typeInheritSlots(Thread* thread, const Type& type) {
     // Bases must define Py_TPFLAGS_BASETYPE
     unsigned long base_flags = typeSlotUWordAt(base, kSlotFlags);
     if ((base_flags & Py_TPFLAGS_BASETYPE) == 0) {
+      Str name(&scope, strUnderlying(type.name()));
       thread->raiseWithFmt(LayoutId::kTypeError,
-                           "type is not an acceptable base type");
+                           "type '%S' is not an acceptable base type", &name);
       return Error::exception();
     }
     inheritSlots(thread, type, base);
