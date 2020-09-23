@@ -1119,10 +1119,6 @@ PY_EXPORT void Py_SET_TYPE_Func(PyObject* obj, PyTypeObject* type) {
   HandleScope scope(thread);
   Object self(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type new_type(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
-  Type instance_type(&scope, thread->runtime()->typeOf(*self));
-  if (instance_type.isBuiltin()) {
-    UNIMPLEMENTED("Py_SET_TYPE on builtin type");
-  }
   Object result(&scope, typeSetDunderClass(thread, self, new_type));
   if (result.isError()) {
     UNIMPLEMENTED("unhandled case in __class__ setter");
