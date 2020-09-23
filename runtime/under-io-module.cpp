@@ -965,7 +965,7 @@ RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Frame* frame,
 
   int32_t codepoint;
   word num_bytes;
-  bool hasnl;
+  bool hasnl = false;
 
   if (writenl == SmallStr::fromCStr("\n")) {
     for (word offset = 0; offset < text_len;) {
