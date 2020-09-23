@@ -2057,10 +2057,43 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
       runtime->strSubstr(thread, self, start_index, end_index - start_index));
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_Tailmatch(PyObject* /* r */, PyObject* /* r */,
-                                         Py_ssize_t /* t */, Py_ssize_t /* d */,
-                                         int /* n */) {
-  UNIMPLEMENTED("PyUnicode_Tailmatch");
+PY_EXPORT Py_ssize_t PyUnicode_Tailmatch(PyObject* str, PyObject* substr,
+                                         Py_ssize_t start, Py_ssize_t end,
+                                         int direction) {
+  DCHECK(str != nullptr, "str must be non-null");
+  DCHECK(substr != nullptr, "substr must be non-null");
+  DCHECK(direction == -1 || direction == 1, "direction must be -1 or 1");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object haystack_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object needle_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*haystack_obj) ||
+      !runtime->isInstanceOfStr(*needle_obj)) {
+    thread->raiseBadArgument();
+    return -1;
+  }
+  Str haystack(&scope, strUnderlying(*haystack_obj));
+  Str needle(&scope, strUnderlying(*needle_obj));
+  word haystack_len = haystack.codePointLength();
+  Slice::adjustSearchIndices(&start, &end, haystack_len);
+  word needle_len = needle.codePointLength();
+  if (start + needle_len > end) {
+    return 0;
+  }
+  word start_offset;
+  if (direction == 1) {
+    start_offset = haystack.offsetByCodePoints(0, end - needle_len);
+  } else {
+    start_offset = haystack.offsetByCodePoints(0, start);
+  }
+  word needle_chars = needle.length();
+  for (word i = start_offset, j = 0; j < needle_chars; i++, j++) {
+    if (haystack.byteAt(i) != needle.byteAt(j)) {
+      return 0;
+    }
+  }
+  return 1;
 }
 
 PY_EXPORT PyObject* PyUnicode_Translate(PyObject* /* r */, PyObject* /* g */,

@@ -2123,6 +2123,79 @@ TEST_F(UnicodeExtensionApiTest, SubstringCountsCodePoints) {
   EXPECT_STREQ(PyUnicode_AsUTF8(result), "e\u0300me bru\u0302");
 }
 
+TEST_F(UnicodeExtensionApiTest, TailmatchSuffixWithEmptyStringsReturnsOne) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  PyObjectPtr substr(PyUnicode_FromString(""));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 0, 0, 1), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchPrefixWithEmptyStringsReturnsOne) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  PyObjectPtr substr(PyUnicode_FromString(""));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 0, 0, -1), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchPrefixWithMatchReturnsOne) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr substr(PyUnicode_FromString("cde"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 2, 9, -1), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchPrefixWithoutMatchReturnsZero) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr substr(PyUnicode_FromString("cde"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 2, 4, -1), 0);
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 1, 6, -1), 0);
+
+  PyObjectPtr substr2(PyUnicode_FromString("cdf"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr2, 2, 6, -1), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchSuffixWithMatchReturnsOne) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr substr(PyUnicode_FromString("cde"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 1, 5, 1), 1);
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 1, 6, 1), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchSuffixWithoutMatchReturnsZero) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr substr(PyUnicode_FromString("cde"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 3, 5, 1), 0);
+  PyObjectPtr substr2(PyUnicode_FromString("bde"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr2, 1, 5, 1), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchWithLargerNeedleReturnsZero) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr substr(PyUnicode_FromString("bananas"));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 3, 5, 1), 0);
+  EXPECT_EQ(PyUnicode_Tailmatch(str, substr, 3, 5, -1), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchWithNonStrHaystackRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr num(PyLong_FromLong(7));
+  EXPECT_EQ(PyUnicode_Tailmatch(num, str, 1, 6, 1), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, TailmatchWithNonStrNeedleRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("abcde"));
+  PyObjectPtr num(PyLong_FromLong(7));
+  EXPECT_EQ(PyUnicode_Tailmatch(str, num, 1, 6, 1), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(UnicodeExtensionApiTest, NewWithInvalidSizeReturnsError) {
   EXPECT_EQ(PyUnicode_New(-1, 0), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
