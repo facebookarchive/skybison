@@ -1415,6 +1415,50 @@ h2 = Bar.__hash__(b)
   EXPECT_TRUE(isLongEqualsLong(h2, 0xba5eba11));
 }
 
+static PyObject* abortingTernaryFunc(PyObject*, PyObject*, PyObject*) {
+  std::fprintf(stderr, "%s should not have been called!\n", __func__);
+  std::abort();
+}
+
+TEST_F(TypeExtensionApiTest, CallCallSlotWithMismatchedSelfRaisesTypeError) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("MyType", Py_tp_call, &abortingTernaryFunc));
+  PyObjectPtr my_type(mainModuleGet("MyType"));
+  PyObjectPtr dunder_call(PyObject_GetAttrString(my_type, "__call__"));
+  PyObjectPtr arg(PyLong_FromLong(5));
+  PyObjectPtr call_result(
+      PyObject_CallFunctionObjArgs(dunder_call, arg.get(), nullptr));
+  EXPECT_EQ(call_result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(TypeExtensionApiTest, CallNewSlotWithNonTypeClsRaisesTypeError) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("MyType", Py_tp_new, &abortingTernaryFunc));
+  PyObjectPtr my_type(mainModuleGet("MyType"));
+  PyObjectPtr dunder_call(PyObject_GetAttrString(my_type, "__new__"));
+  PyObjectPtr arg(PyLong_FromLong(5));
+  PyObjectPtr call_result(
+      PyObject_CallFunctionObjArgs(dunder_call, arg.get(), nullptr));
+  EXPECT_EQ(call_result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(TypeExtensionApiTest, CallNewSlotWithNonSubclassClsRaisesTypeError) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("MyType", Py_tp_new, &abortingTernaryFunc));
+  PyObjectPtr my_type(mainModuleGet("MyType"));
+  PyObjectPtr dunder_call(PyObject_GetAttrString(my_type, "__new__"));
+  PyObjectPtr arg(borrow(reinterpret_cast<PyObject*>(&PyType_Type)));
+  PyObjectPtr call_result(
+      PyObject_CallFunctionObjArgs(dunder_call, arg.get(), nullptr));
+  EXPECT_EQ(call_result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(TypeExtensionApiTest, CallCallSlotFromManagedCode) {
   ternaryfunc call_func = [](PyObject* self, PyObject* args, PyObject* kwargs) {
     return PyTuple_Pack(3, self, args, kwargs ? kwargs : Py_None);

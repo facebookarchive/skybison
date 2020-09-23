@@ -170,12 +170,65 @@ RawObject wrapTernaryfuncSwapped(Thread* thread, Frame* frame, word nargs) {
   return wrapTernaryfuncImpl(thread, frame, nargs, true);
 }
 
-RawObject wrapVarkwTernaryfunc(Thread* thread, Frame* frame, word nargs) {
+RawObject wrapTpNew(Thread* thread, Frame* frame, word nargs) {
   DCHECK(nargs == 3, "Unexpected nargs");
   auto func = getNativeFunc<ternaryfunc>(thread, frame);
 
   Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__new__' requires 'type' but got '%T'",
+                                &self_obj);
+  }
+  Type self_type(&scope, *self_obj);
+  Function function(&scope, frame->function());
+  Type expected_type(&scope, slotWrapperFunctionType(function));
+  if (!typeIsSubclass(self_type, expected_type)) {
+    Str expected_type_name(&scope, strUnderlying(expected_type.name()));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__new__' requires '%S' but got '%T'",
+                                &expected_type_name, &self_obj);
+  }
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* varargs = ApiHandle::borrowedReference(thread, args.get(1));
+  PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
+                         ? nullptr
+                         : ApiHandle::borrowedReference(thread, args.get(2));
+  PyObject* result = (*func)(self, varargs, kwargs);
+  return ApiHandle::checkFunctionResult(thread, result);
+}
+
+bool checkSelfWithSlotType(Thread* thread, Frame* frame, const Object& self) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type self_type(&scope, runtime->typeOf(*self));
+  Function function(&scope, frame->function());
+  Type expected_type(&scope, slotWrapperFunctionType(function));
+  if (!typeIsSubclass(self_type, expected_type)) {
+    Str slot_name(&scope, function.name());
+    Str expected_type_name(&scope, strUnderlying(expected_type.name()));
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "'%S' requires '%S' but got '%T'", &slot_name,
+                         &expected_type_name, &self);
+    return false;
+  }
+  return true;
+}
+
+RawObject wrapVarkwTernaryfunc(Thread* thread, Frame* frame, word nargs) {
+  DCHECK(nargs == 3, "Unexpected nargs");
+
+  auto func = getNativeFunc<ternaryfunc>(thread, frame);
+
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!checkSelfWithSlotType(thread, frame, self_obj)) {
+    return Error::exception();
+  }
+  PyObject* self = ApiHandle::borrowedReference(thread, *self_obj);
   PyObject* varargs = ApiHandle::borrowedReference(thread, args.get(1));
   PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
                          ? nullptr
@@ -559,7 +612,7 @@ static const SlotDef kSlotdefs[] = {
            "__init__($self, /, *args, **kwargs)\n--\n\nInitialize self.  See "
            "help(type(self)) for accurate signature."),
     KWSLOT(ID(__new__), Py_tp_new, kParamsTypeArgsKwargs, slot_tp_new,
-           wrapVarkwTernaryfunc,
+           wrapTpNew,
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate "
            "signature."),
@@ -774,6 +827,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
                                                          globals));
+      slotWrapperFunctionSetType(func, type);
       if (slot.id == Py_nb_power) {
         func.setDefaults(runtime->newTuple(1));
       }
@@ -1623,15 +1677,16 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
       Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
       Str qualname(&scope, runtime->newStrFromFmt("%S.%S", &type_name,
                                                   &dunder_new_name));
-      Code code(&scope,
-                newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
-                           ARRAYSIZE(kParamsTypeArgsKwargs),
-                           Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
-                           wrapVarkwTernaryfunc,
-                           reinterpret_cast<void*>(&PyType_GenericNew)));
+      Code code(
+          &scope,
+          newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
+                     ARRAYSIZE(kParamsTypeArgsKwargs),
+                     Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
+                     wrapTpNew, reinterpret_cast<void*>(&PyType_GenericNew)));
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
                                                          globals));
+      slotWrapperFunctionSetType(func, type);
       Object func_obj(&scope, thread->invokeFunction1(ID(builtins),
                                                       ID(staticmethod), func));
       if (func_obj.isError()) return *func;

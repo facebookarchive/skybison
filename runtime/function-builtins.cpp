@@ -69,6 +69,24 @@ void initializeFunctionTypes(Thread* thread) {
                  /*superclass_id=*/LayoutId::kObject, kBoundMethodAttributes);
 }
 
+RawObject slotWrapperFunctionType(const Function& function) {
+  DCHECK(
+      !function.isInterpreted(),
+      "slotWrapperFunctionType does not make sense for interpreted functions");
+  // We misuse the rewrittenBytecode slot for extension functions (they do not
+  // have bytecode).
+  return function.rewrittenBytecode();
+}
+
+void slotWrapperFunctionSetType(const Function& function, const Type& type) {
+  DCHECK(!function.isInterpreted(),
+         "slotWrapperFunctionSetType does not make sense for interpreted "
+         "functions");
+  // We misuse the rewrittenBytecode slot for extension functions (they do not
+  // have bytecode).
+  function.setRewrittenBytecode(*type);
+}
+
 RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
