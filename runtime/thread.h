@@ -136,46 +136,53 @@ class Thread {
   // Calls out to the interpreter to lookup and call a method on the receiver
   // with the given argument(s). Returns Error<NotFound> if the method can't be
   // found, or the result of the call otheriwse (which may be Error<Exception>).
-  RawObject invokeMethod1(const Object& receiver, SymbolId selector);
-  RawObject invokeMethod2(const Object& receiver, SymbolId selector,
-                          const Object& arg1);
-  RawObject invokeMethod3(const Object& receiver, SymbolId selector,
-                          const Object& arg1, const Object& arg2);
+  NODISCARD RawObject invokeMethod1(const Object& receiver, SymbolId selector);
+  NODISCARD RawObject invokeMethod2(const Object& receiver, SymbolId selector,
+                                    const Object& arg1);
+  NODISCARD RawObject invokeMethod3(const Object& receiver, SymbolId selector,
+                                    const Object& arg1, const Object& arg2);
 
   // Looks up a method on a type and invokes it with the given receiver and
   // argument(s). Returns Error<NotFound> if the method can't be found, or the
   // result of the call otheriwse (which may be Error<Exception>).
   // ex: str.foo(receiver, arg1, ...)
-  RawObject invokeMethodStatic1(LayoutId type, SymbolId method_name,
-                                const Object& receiver);
-  RawObject invokeMethodStatic2(LayoutId type, SymbolId method_name,
-                                const Object& receiver, const Object& arg1);
-  RawObject invokeMethodStatic3(LayoutId type, SymbolId method_name,
-                                const Object& receiver, const Object& arg1,
-                                const Object& arg2);
-  RawObject invokeMethodStatic4(LayoutId type, SymbolId method_name,
-                                const Object& receiver, const Object& arg1,
-                                const Object& arg2, const Object& arg3);
+  NODISCARD RawObject invokeMethodStatic1(LayoutId type, SymbolId method_name,
+                                          const Object& receiver);
+  NODISCARD RawObject invokeMethodStatic2(LayoutId type, SymbolId method_name,
+                                          const Object& receiver,
+                                          const Object& arg1);
+  NODISCARD RawObject invokeMethodStatic3(LayoutId type, SymbolId method_name,
+                                          const Object& receiver,
+                                          const Object& arg1,
+                                          const Object& arg2);
+  NODISCARD RawObject invokeMethodStatic4(LayoutId type, SymbolId method_name,
+                                          const Object& receiver,
+                                          const Object& arg1,
+                                          const Object& arg2,
+                                          const Object& arg3);
 
   // Calls out to the interpreter to lookup and call a function with the given
   // argument(s). Returns Error<NotFound> if the function can't be found, or the
   // result of the call otherwise (which may be Error<Exception>).
-  RawObject invokeFunction0(SymbolId module, SymbolId name);
-  RawObject invokeFunction1(SymbolId module, SymbolId name, const Object& arg1);
-  RawObject invokeFunction2(SymbolId module, SymbolId name, const Object& arg1,
-                            const Object& arg2);
-  RawObject invokeFunction3(SymbolId module, SymbolId name, const Object& arg1,
-                            const Object& arg2, const Object& arg3);
-  RawObject invokeFunction4(SymbolId module, SymbolId name, const Object& arg1,
-                            const Object& arg2, const Object& arg3,
-                            const Object& arg4);
-  RawObject invokeFunction5(SymbolId module, SymbolId name, const Object& arg1,
-                            const Object& arg2, const Object& arg3,
-                            const Object& arg4, const Object& arg5);
-  RawObject invokeFunction6(SymbolId module, SymbolId name, const Object& arg1,
-                            const Object& arg2, const Object& arg3,
-                            const Object& arg4, const Object& arg5,
-                            const Object& arg6);
+  NODISCARD RawObject invokeFunction0(SymbolId module, SymbolId name);
+  NODISCARD RawObject invokeFunction1(SymbolId module, SymbolId name,
+                                      const Object& arg1);
+  NODISCARD RawObject invokeFunction2(SymbolId module, SymbolId name,
+                                      const Object& arg1, const Object& arg2);
+  NODISCARD RawObject invokeFunction3(SymbolId module, SymbolId name,
+                                      const Object& arg1, const Object& arg2,
+                                      const Object& arg3);
+  NODISCARD RawObject invokeFunction4(SymbolId module, SymbolId name,
+                                      const Object& arg1, const Object& arg2,
+                                      const Object& arg3, const Object& arg4);
+  NODISCARD RawObject invokeFunction5(SymbolId module, SymbolId name,
+                                      const Object& arg1, const Object& arg2,
+                                      const Object& arg3, const Object& arg4,
+                                      const Object& arg5);
+  NODISCARD RawObject invokeFunction6(SymbolId module, SymbolId name,
+                                      const Object& arg1, const Object& arg2,
+                                      const Object& arg3, const Object& arg4,
+                                      const Object& arg5, const Object& arg6);
 
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.

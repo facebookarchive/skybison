@@ -621,7 +621,10 @@ PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
     Object exc(&scope,
                thread->invokeFunction5(ID(builtins), ID(UnicodeEncodeError),
                                        encoding, str, start, end, reason));
-    thread->invokeFunction1(ID(_codecs), ID(strict_errors), exc);
+    Object err(&scope,
+               thread->invokeFunction1(ID(_codecs), ID(strict_errors), exc));
+    DCHECK(err.isErrorException(),
+           "_codecs.strict_errors should raise an exception");
     return nullptr;
   }
 
@@ -794,9 +797,12 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
                          encoding));
       Object stack_level(&scope, runtime->newInt(1));
       Object source(&scope, NoneType::object());
-      thread->invokeFunction4(ID(warnings), ID(warn), message, category,
-                              stack_level, source);
-      thread->clearPendingException();
+      Object err(&scope,
+                 thread->invokeFunction4(ID(warnings), ID(warn), message,
+                                         category, stack_level, source));
+      if (err.isErrorException()) {
+        thread->clearPendingException();
+      }
     }
     Bytearray result_bytearray(&scope, *result);
     return ApiHandle::newReference(thread,
