@@ -84,6 +84,7 @@ class Unicode {
   static bool isAlias(int32_t code_point);
   static bool isAlpha(int32_t code_point);
   static bool isAlnum(int32_t code_point);
+  static bool isCaseIgnorable(int32_t code_point);
   static bool isCased(int32_t code_point);
   static bool isDecimal(int32_t code_point);
   static bool isDigit(int32_t code_point);
@@ -116,6 +117,7 @@ class Unicode {
  private:
   // Slow paths that use the Unicode database.
   static bool isAlphaDB(int32_t code_point);
+  static bool isCaseIgnorableDB(int32_t code_point);
   static bool isCasedDB(int32_t code_point);
   static bool isDecimalDB(int32_t code_point);
   static bool isDigitDB(int32_t code_point);
@@ -255,6 +257,13 @@ inline bool Unicode::isAlpha(int32_t code_point) {
     return ASCII::isAlpha(code_point);
   }
   return Unicode::isAlphaDB(code_point);
+}
+
+inline bool Unicode::isCaseIgnorable(int32_t code_point) {
+  if (isASCII(code_point)) {
+    return !ASCII::isAlpha(code_point);
+  }
+  return isCaseIgnorableDB(code_point);
 }
 
 inline bool Unicode::isCased(int32_t code_point) {

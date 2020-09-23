@@ -17208,6 +17208,49 @@ class StrTests(unittest.TestCase):
         self.assertEqual("\u0130".swapcase(), "\u0069\u0307")
         self.assertEqual("\u00e9TuDe".swapcase(), "\u00c9tUdE")
 
+    def test_swapcase_with_capital_sigma_character(self):
+        """
+        Test cases that match Final Capital Sigma context
+        ("\u03A3" should be lower-cased to "\u03C2")
+        (Note: {# C} = # cased characters, {# CI} = # case-ignorable characters)
+        """
+        # {1 C} {0 CI} Sigma {0 CI} {0 C}
+        self.assertEqual("A\u03A3".swapcase(), "a\u03C2")
+        # {1 C} {1 CI} Sigma {0 CI} {0 C}
+        self.assertEqual("a.\u03A3".swapcase(), "A.\u03C2")
+        # {1 C} {0 CI} Sigma {1 CI} {0 C}
+        self.assertEqual("A\u03A3.".swapcase(), "a\u03C2.")
+        # {1 C} {1 CI} Sigma {1 CI} {0 C}
+        self.assertEqual("a.\u03A3.".swapcase(), "A.\u03C2.")
+        """
+        Test cases that do NOT match Final Capital Sigma context
+        ("\u03A3" should be lower-cased to "\u03C3")
+        """
+        # {0 C} {0 CI} Sigma {0 CI} {0 C}
+        self.assertEqual("\u03A3".swapcase(), "\u03C3")
+        # {0 C} {1 CI} Sigma {0 CI} {0 C}
+        self.assertEqual(".\u03A3".swapcase(), ".\u03C3")
+        # {0 C} {0 CI} Sigma {1 CI} {0 C}
+        self.assertEqual("\u03A3.".swapcase(), "\u03C3.")
+        # {0 C} {1 CI} Sigma {1 CI} {0 C}
+        self.assertEqual(".\u03A3.".swapcase(), ".\u03C3.")
+        # {0 C} {0 CI} Sigma {1 CI} {1 C}
+        self.assertEqual("\u03A3.a".swapcase(), "\u03C3.A")
+        # {0 C} {1 CI} Sigma {1 CI} {1 C}
+        self.assertEqual(".\u03A3.A".swapcase(), ".\u03C3.a")
+        # {1 C} {0 CI} Sigma {1 CI} {1 C}
+        self.assertEqual("A\u03A3.a".swapcase(), "a\u03C3.A")
+        # {1 C} {1 CI} Sigma {1 CI} {1 C}
+        self.assertEqual("a.\u03A3.A".swapcase(), "A.\u03C3.a")
+        # {0 C} {0 CI} Sigma {0 CI} {1 C}
+        self.assertEqual("\u03A3a".swapcase(), "\u03C3A")
+        # {0 C} {1 CI} Sigma {0 CI} {1 C}
+        self.assertEqual(".\u03A3A".swapcase(), ".\u03C3a")
+        # {1 C} {0 CI} Sigma {0 CI} {1 C}
+        self.assertEqual("A\u03A3a".swapcase(), "a\u03C3A")
+        # {1 C} {1 CI} Sigma {0 CI} {1 C}
+        self.assertEqual("a.\u03A3A".swapcase(), "A.\u03C3a")
+
     def test_title_with_returns_titlecased_string(self):
         self.assertEqual("".title(), "")
         self.assertEqual("1234!@#$".title(), "1234!@#$")

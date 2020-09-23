@@ -1035,6 +1035,10 @@ def _super(cls):
     _builtin()
 
 
+def _swapcase_capital_sigma(string, index):
+    _builtin()
+
+
 def _traceback_str(traceback):
     _builtin()
 
