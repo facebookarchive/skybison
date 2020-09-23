@@ -2904,7 +2904,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __mul__(self, other):
-        _unimplemented()
+        _builtin()
 
     def __ne__(self, other):
         _unimplemented()
@@ -2995,7 +2995,7 @@ class complex(bootstrap=True):
         _builtin()
 
     def __truediv__(self, other):
-        _unimplemented()
+        _builtin()
 
     def conjugate(self):
         _unimplemented()

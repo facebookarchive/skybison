@@ -101,6 +101,29 @@ RawObject METH(complex, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(complexHash(*self));
 }
 
+RawObject METH(complex, __mul__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfComplex(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(complex));
+  }
+  Complex self(&scope, complexUnderlying(*self_obj));
+  double other_real, other_imag;
+  Object other(&scope, args.get(1));
+  other = unpackNumber(thread, other, &other_real, &other_imag);
+  if (!other.isNoneType()) {
+    return *other;
+  }
+
+  double self_real = self.real();
+  double self_imag = self.imag();
+  double res_real = self_real * other_real - self_imag * other_imag;
+  double res_imag = self_real * other_imag + self_imag * other_real;
+  return runtime->newComplex(res_real, res_imag);
+}
+
 RawObject METH(complex, __neg__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -161,6 +184,55 @@ RawObject METH(complex, __sub__)(Thread* thread, Frame* frame, word nargs) {
   }
   return runtime->newComplex(self.real() - other_real,
                              self.imag() - other_imag);
+}
+
+RawObject METH(complex, __truediv__)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfComplex(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(complex));
+  }
+  Complex self(&scope, complexUnderlying(*self_obj));
+  double other_real, other_imag;
+  Object other(&scope, args.get(1));
+  other = unpackNumber(thread, other, &other_real, &other_imag);
+  if (!other.isNoneType()) {
+    return *other;
+  }
+
+  double self_real = self.real();
+  double self_imag = self.imag();
+  double abs_other_real = std::abs(other_real);
+  double abs_other_imag = std::abs(other_imag);
+
+  double res_real, res_imag;
+  if (abs_other_real >= abs_other_imag) {
+    if (abs_other_real == 0.0) {
+      return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                  "complex division by zero");
+    }
+    double ratio = other_imag / other_real;
+    double denom = other_real + other_imag * ratio;
+
+    res_real = (self_real + self_imag * ratio) / denom;
+    res_imag = (self_imag - self_real * ratio) / denom;
+
+  } else if (abs_other_real < abs_other_imag) {
+    double ratio = other_real / other_imag;
+    double denom = other_real * ratio + other_imag;
+
+    res_real = (self_real * ratio + self_imag) / denom;
+    res_imag = (self_imag * ratio - self_real) / denom;
+
+  } else {
+    // TODO(T76232003): clean up NaN
+    res_real = std::numeric_limits<double>::quiet_NaN();
+    res_imag = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  return runtime->newComplex(res_real, res_imag);
 }
 
 }  // namespace py

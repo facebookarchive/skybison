@@ -5672,6 +5672,38 @@ class ComplexTests(unittest.TestCase):
         self.assertIsInstance(r, float)
         self.assertEqual(r, 1.0)
 
+    def test_dunder_mul_complex_returns_complex(self):
+        self.assertEqual(complex(1, 2).__mul__(complex(-2, 3)), complex(-8, -1))
+        self.assertEqual(complex(1, 2).__mul__(complex(2.5, -1)), complex(4.5, 4))
+        self.assertEqual(complex(1, 2).__mul__(complex(0, 3)), complex(-6, 3))
+        self.assertEqual(complex(1, 2).__mul__(complex(2, 0)), complex(2, 4))
+
+    def test_dunder_mul_complex_with_nan_returns_nan_complex(self):
+        import math
+
+        res = complex(1, 2).__mul__(complex(2, float("nan")))
+        self.assertTrue(math.isnan(res.real))
+        self.assertTrue(math.isnan(res.imag))
+
+    def test_dunder_div_complex_returns_complex(self):
+        self.assertEqual(complex(1, 2).__truediv__(complex(1, 1)), complex(1.5, 0.5))
+        self.assertEqual(
+            complex(1, 2).__truediv__(complex(-2, 2)), complex(0.25, -0.75)
+        )
+        self.assertEqual(complex(2, 1).__truediv__(complex(0, 2)), complex(0.5, -1))
+        self.assertEqual(complex(3, 2).__truediv__(complex(-0.5, 0)), complex(-6, -4))
+
+    def test_dunder_div_complex_with_nan_returns_nan_complex(self):
+        import math
+
+        res = complex(1, 2).__truediv__(complex(2, float("nan")))
+        self.assertTrue(math.isnan(res.real))
+        self.assertTrue(math.isnan(res.imag))
+
+    def test_dunder_div_zero_raises_error(self):
+        with self.assertRaises(ZeroDivisionError):
+            complex(1, 2).__truediv__(complex(0, 0))
+
 
 class CoroutineTests(unittest.TestCase):
     class MyError(Exception):
