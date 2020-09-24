@@ -38,13 +38,6 @@ TEST_F(ComplexBuiltinsTest, IntAddWithComplexReturnsComplex) {
   EXPECT_EQ(result.imag(), 2);
 }
 
-TEST_F(ComplexBuiltinsTest, DunderReprHasRealAndImag) {
-  ASSERT_FALSE(runFromCStr(runtime_, "result = repr(complex(1, 2))").isError());
-  HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(runtime_, "result"));
-  EXPECT_TRUE(isStrEqualsCStr(*result, "(1.0+2.0j)"));
-}
-
 TEST_F(ComplexBuiltinsTest, BuiltinBaseIsComplex) {
   HandleScope scope(thread_);
   Type complex_type(&scope, runtime_->typeAt(LayoutId::kComplex));

@@ -5704,6 +5704,50 @@ class ComplexTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             complex(1, 2).__truediv__(complex(0, 0))
 
+    def test_dunder_repr_with_int_real_and_imag_returns_string(self):
+        self.assertEqual(complex.__repr__(complex(1, 2)), "(1+2j)")
+        self.assertEqual(complex.__repr__(complex(1, -2)), "(1-2j)")
+        self.assertEqual(complex.__repr__(complex(-1, 2)), "(-1+2j)")
+        self.assertEqual(complex.__repr__(complex(-1, -2)), "(-1-2j)")
+
+    def test_dunder_repr_with_float_real_and_imag_returns_string(self):
+        self.assertEqual(complex.__repr__(complex(1.1, 2.3)), "(1.1+2.3j)")
+        self.assertEqual(complex.__repr__(complex(1.1, -2.3)), "(1.1-2.3j)")
+        self.assertEqual(complex.__repr__(complex(-1.1, 2.3)), "(-1.1+2.3j)")
+        self.assertEqual(complex.__repr__(complex(-1.1, -2.3)), "(-1.1-2.3j)")
+
+    def test_dunder_repr_with_int_real_and_float_imag_returns_string(self):
+        self.assertEqual(complex.__repr__(complex(1, 2.3)), "(1+2.3j)")
+        self.assertEqual(complex.__repr__(complex(1, -2.3)), "(1-2.3j)")
+        self.assertEqual(complex.__repr__(complex(-1, 2.3)), "(-1+2.3j)")
+        self.assertEqual(complex.__repr__(complex(-1, -2.3)), "(-1-2.3j)")
+
+    def test_dunder_repr_with_float_real_and_int_imag_returns_string(self):
+        self.assertEqual(complex.__repr__(complex(1.1, 2)), "(1.1+2j)")
+        self.assertEqual(complex.__repr__(complex(1.1, -2)), "(1.1-2j)")
+        self.assertEqual(complex.__repr__(complex(-1.1, 2)), "(-1.1+2j)")
+        self.assertEqual(complex.__repr__(complex(-1.1, -2)), "(-1.1-2j)")
+
+    def test_dunder_repr_with_positive_zero_real_returns_string(self):
+        self.assertEqual(complex.__repr__(complex(0, 2.3)), "2.3j")
+        self.assertEqual(complex.__repr__(complex(0, -2.3)), "-2.3j")
+        self.assertEqual(complex.__repr__(complex(0, 2)), "2j")
+        self.assertEqual(complex.__repr__(complex(0, -2)), "-2j")
+
+    def test_dunder_repr_with_negative_zero_real_returns_string(self):
+        self.assertEqual(complex.__repr__(complex(-0.0, 2.3)), "(-0+2.3j)")
+        self.assertEqual(complex.__repr__(complex(-0.0, -2.3)), "(-0-2.3j)")
+        self.assertEqual(complex.__repr__(complex(-0.0, 2)), "(-0+2j)")
+        self.assertEqual(complex.__repr__(complex(-0.0, -2)), "(-0-2j)")
+
+    def test_dunder_repr_with_non_complex_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__repr__(1.0)
+        with self.assertRaises(TypeError):
+            complex.__repr__("a")
+        with self.assertRaises(TypeError):
+            complex.__repr__(None)
+
 
 class CoroutineTests(unittest.TestCase):
     class MyError(Exception):

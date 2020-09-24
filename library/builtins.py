@@ -2967,7 +2967,20 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __repr__(self):
-        return f"({self.real}+{self.imag}j)"
+        if not _complex_check(self):
+            raise TypeError(
+                "descriptor '__repr__' requires a 'complex' object but "
+                f"received a '{type(self).__name__}'"
+            )
+
+        real_str = f"{self.real:g}"
+
+        if real_str == "0":  # Real part is +0
+            # Output the imag part with no parentheses
+            return f"{self.imag:g}j"
+
+        # Real part is not +0. Output with parentheses
+        return f"({real_str}{self.imag:+g}j)"
 
     def __rfloordiv__(self, other):
         _unimplemented()
