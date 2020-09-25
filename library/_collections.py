@@ -5,6 +5,7 @@ from builtins import _index
 from _builtins import (
     _builtin,
     _deque_guard,
+    _dict_guard,
     _int_check,
     _int_guard,
     _object_type_hasattr,
@@ -42,6 +43,41 @@ def _deque_getitem(self, index):
 
 def _deque_set_maxlen(self, maxlen):
     _builtin()
+
+
+class defaultdict(dict):
+    def __copy__(self):
+        _unimplemented()
+
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if default_factory is not None and not callable(default_factory):
+            raise TypeError("default_factory must be callable or None")
+        self.default_factory = default_factory
+
+    def __getitem__(self, key):
+        _dict_guard(self)
+        result = dict.get(self, key, _Unbound)
+        if result is _Unbound:
+            return _type(self).__missing__(self, key)
+        return result
+
+    def __missing__(self, key):
+        default_factory = self.default_factory
+        if default_factory is None:
+            raise KeyError(key)
+        value = default_factory()
+        dict.__setitem__(self, key, value)
+        return value
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __repr__(self):
+        return f"defaultdict({self.default_factory!r}, {dict.__repr__(self)})"
+
+    def copy(self):
+        _unimplemented()
 
 
 class deque(bootstrap=True):

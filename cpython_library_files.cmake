@@ -65,6 +65,8 @@ cmd.py
 code.py
 codecs.py
 codeop.py
+collections/__init__.py
+collections/abc.py
 colorsys.py
 compileall.py
 concurrent/__init__.py
@@ -295,6 +297,8 @@ email/parser.py
 email/policy.py
 email/quoprimime.py
 email/utils.py
+encodings/__init__.py
+encodings/aliases.py
 encodings/base64_codec.py
 encodings/big5.py
 encodings/big5hkscs.py
@@ -316,6 +320,7 @@ encodings/cp1257.py
 encodings/cp1258.py
 encodings/cp273.py
 encodings/cp424.py
+encodings/cp437.py
 encodings/cp500.py
 encodings/cp65001.py
 encodings/cp720.py
@@ -350,6 +355,7 @@ encodings/gbk.py
 encodings/hex_codec.py
 encodings/hp_roman8.py
 encodings/hz.py
+encodings/idna.py
 encodings/iso2022_jp.py
 encodings/iso2022_jp_1.py
 encodings/iso2022_jp_2.py
@@ -392,6 +398,7 @@ encodings/mbcs.py
 encodings/oem.py
 encodings/palmos.py
 encodings/ptcp154.py
+encodings/punycode.py
 encodings/quopri_codec.py
 encodings/rot_13.py
 encodings/shift_jis.py
@@ -400,6 +407,7 @@ encodings/shift_jisx0213.py
 encodings/tis_620.py
 encodings/undefined.py
 encodings/unicode_internal.py
+encodings/utf_16.py
 encodings/utf_32.py
 encodings/utf_32_be.py
 encodings/utf_32_le.py
@@ -711,6 +719,8 @@ lib2to3/tests/test_refactor.py
 lib2to3/tests/test_util.py
 linecache.py
 locale.py
+logging/config.py
+logging/handlers.py
 lzma.py
 macpath.py
 mailbox.py
@@ -822,6 +832,7 @@ tarfile.py
 telnetlib.py
 tempfile.py
 test/Sine-1000Hz-300ms.aif
+test/__init__.py
 test/__main__.py
 test/_test_multiprocessing.py
 test/allsans.pem
@@ -1199,6 +1210,9 @@ test/subprocessdata/input_reader.py
 test/subprocessdata/qcat.py
 test/subprocessdata/qgrep.py
 test/subprocessdata/sigchild_ignore.py
+test/support/__init__.py
+test/support/script_helper.py
+test/support/testresult.py
 test/talos-2019-0758.pem
 test/test___all__.py
 test/test___future__.py
@@ -1919,6 +1933,12 @@ turtledemo/tree.py
 turtledemo/turtle.cfg
 turtledemo/two_canvases.py
 turtledemo/yinyang.py
+unittest/__init__.py
+unittest/__main__.py
+unittest/main.py
+unittest/mock.py
+unittest/result.py
+unittest/suite.py
 unittest/test/__init__.py
 unittest/test/__main__.py
 unittest/test/_test_warnings.py
@@ -1947,6 +1967,7 @@ unittest/test/testmock/testpatch.py
 unittest/test/testmock/testsealable.py
 unittest/test/testmock/testsentinel.py
 unittest/test/testmock/testwith.py
+unittest/util.py
 urllib/__init__.py
 urllib/error.py
 urllib/parse.py
