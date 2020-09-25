@@ -80,7 +80,7 @@ TEST_F(ComplexBuiltinsTest, ComplexDividesComplexRealLargerThanImag) {
 TEST_F(ComplexBuiltinsTest, ComplexDividesComplexWithNan) {
   HandleScope scope(thread_);
   Complex c1(&scope, runtime_->newComplex(-1, 2));
-  Complex c2(&scope, runtime_->newComplex(2, std::nan("")));
+  Complex c2(&scope, runtime_->newComplex(2, kDoubleNaN));
   Object result_obj(&scope, runBuiltin(METH(complex, __truediv__), c1, c2));
   ASSERT_FALSE(result_obj.isError());
   Complex result(&scope, *result_obj);

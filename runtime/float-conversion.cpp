@@ -66,8 +66,7 @@ double parseInfOrNan(const char* p, char** endptr) {
                     : std::numeric_limits<double>::infinity();
   } else if (caseInsensitiveMatch(s, "nan")) {
     s += 3;
-    retval = negate ? -std::numeric_limits<double>::quiet_NaN()
-                    : std::numeric_limits<double>::quiet_NaN();
+    retval = negate ? -kDoubleNaN : kDoubleNaN;
   } else {
     s = p;
     retval = -1.0;

@@ -227,9 +227,8 @@ RawObject METH(complex, __truediv__)(Thread* thread, Frame* frame, word nargs) {
     res_imag = (self_imag * ratio - self_real) / denom;
 
   } else {
-    // TODO(T76232003): clean up NaN
-    res_real = std::numeric_limits<double>::quiet_NaN();
-    res_imag = std::numeric_limits<double>::quiet_NaN();
+    res_real = kDoubleNaN;
+    res_imag = kDoubleNaN;
   }
 
   return runtime->newComplex(res_real, res_imag);

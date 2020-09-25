@@ -41,8 +41,7 @@ TEST_F(FloatConversionTest, DoubleToStringReturnsString) {
 
 TEST_F(FloatConversionTest, DoubleToStringWithNanReturnsString) {
   unique_c_ptr<char> buf(
-      doubleToString(std::numeric_limits<double>::quiet_NaN(), 'r', 0, false,
-                     false, false, nullptr));
+      doubleToString(kDoubleNaN, 'r', 0, false, false, false, nullptr));
   EXPECT_EQ(std::strcmp(buf.get(), "nan"), 0);
 }
 

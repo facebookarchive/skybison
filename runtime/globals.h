@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <type_traits>
 
 typedef unsigned char byte;
@@ -37,6 +38,7 @@ const int kBitsPerWord = kBitsPerByte * kWordSize;
 const int kBitsPerDouble = kBitsPerByte * kDoubleSize;
 
 const int kDoubleMantissaBits = 52;
+const double kDoubleNaN = std::numeric_limits<double>::quiet_NaN();
 
 const int16_t kMaxInt16 = INT16_MAX;
 const int16_t kMinInt16 = INT16_MIN;

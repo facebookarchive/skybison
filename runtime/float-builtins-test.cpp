@@ -412,8 +412,7 @@ TEST_F(FloatBuiltinsTest, SubWithNonFloatOtherRaisesTypeError) {
 
 TEST_F(FloatBuiltinsTest, DunderEqWithFloatsReturnsBool) {
   HandleScope scope(thread_);
-  Object nan(&scope,
-             runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object nan(&scope, runtime_->newFloat(kDoubleNaN));
   Object f0(&scope, runtime_->newFloat(1.0));
   Object f1(&scope, runtime_->newFloat(-42.5));
   Object zero(&scope, runtime_->newFloat(0.0));
@@ -508,8 +507,7 @@ TEST_F(FloatBuiltinsTest, DunderEqWithLargeIntInexactReturnsFalse) {
 
 TEST_F(FloatBuiltinsTest, DunderEqWithNonFiniteFloatIntReturnsFalse) {
   HandleScope scope(thread_);
-  Object nan(&scope,
-             runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object nan(&scope, runtime_->newFloat(kDoubleNaN));
   Object inf(&scope,
              runtime_->newFloat(std::numeric_limits<double>::infinity()));
   Object int0(&scope, runtime_->newInt(7));
@@ -578,8 +576,7 @@ TEST_F(FloatBuiltinsTest, DunderGeWithFloatReturnsBool) {
 
 TEST_F(FloatBuiltinsTest, DunderGeWithIntSelfNanReturnsFalse) {
   HandleScope scope(thread_);
-  Object left(&scope,
-              runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object left(&scope, runtime_->newFloat(kDoubleNaN));
   const uword digits[] = {0, 1};
   Object right(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(METH(float, __ge__), left, right), Bool::falseObj());
@@ -700,8 +697,7 @@ TEST_F(FloatBuiltinsTest, DunderGtWithFloatReturnsBool) {
 
 TEST_F(FloatBuiltinsTest, DunderGtWithIntSelfNanReturnsFalse) {
   HandleScope scope(thread_);
-  Object left(&scope,
-              runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object left(&scope, runtime_->newFloat(kDoubleNaN));
   const uword digits[] = {0, 1};
   Object right(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(METH(float, __gt__), left, right), Bool::falseObj());
@@ -753,8 +749,7 @@ TEST_F(FloatBuiltinsTest, DunderIntWithInfinityRaisesOverflowError) {
 
 TEST_F(FloatBuiltinsTest, DunderIntWithNaNRaisesOverflowError) {
   HandleScope scope(thread_);
-  Object input_obj(
-      &scope, runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object input_obj(&scope, runtime_->newFloat(kDoubleNaN));
   Object result_obj(&scope, runBuiltin(METH(float, __int__), input_obj));
   EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kValueError,
                             "cannot convert float NaN to integer"));
@@ -878,8 +873,7 @@ TEST_F(FloatBuiltinsTest, DunderLeWithFloatReturnsBool) {
 
 TEST_F(FloatBuiltinsTest, DunderLeWithIntSelfNanReturnsFalse) {
   HandleScope scope(thread_);
-  Object left(&scope,
-              runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object left(&scope, runtime_->newFloat(kDoubleNaN));
   const uword digits[] = {0, 1};
   Object right(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(METH(float, __le__), left, right), Bool::falseObj());
@@ -940,8 +934,7 @@ TEST_F(FloatBuiltinsTest, DunderLtWithFloatReturnsBool) {
 
 TEST_F(FloatBuiltinsTest, DunderLtWithIntSelfNanReturnsFalse) {
   HandleScope scope(thread_);
-  Object left(&scope,
-              runtime_->newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object left(&scope, runtime_->newFloat(kDoubleNaN));
   const uword digits[] = {0, 1};
   Object right(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(METH(float, __lt__), left, right), Bool::falseObj());
