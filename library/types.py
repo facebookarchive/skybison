@@ -52,12 +52,8 @@ try:
 except TypeError:
     tb = sys.exc_info()[2]
     TracebackType = type(tb)
-# TODO(T42624200)
-#    FrameType = type(tb.tb_frame)
+    FrameType = type(tb.tb_frame)
     tb = None; del tb
-
-# TODO(T42624200) synchronize with traceback type once we have it.
-FrameType = frame
 
 # For Jython, the following two types are identical
 # TODO(T42626925)

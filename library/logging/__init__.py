@@ -156,19 +156,15 @@ def addLevelName(level, levelName):
     finally:
         _releaseLock()
 
-# TODO(T43303879, T42624200): Remove. Necessary because sys._getframe() and
-# tracebacks on exc_info is not supported yet.
-#if hasattr(sys, '_getframe'):
-#    currentframe = lambda: sys._getframe(3)
-#else: #pragma: no cover
-#    def currentframe():
-#        """Return the frame object for the caller's stack frame."""
-#        try:
-#            raise Exception
-#        except Exception:
-#            return sys.exc_info()[2].tb_frame.f_back
-def currentframe():
-    return None
+if hasattr(sys, '_getframe'):
+   currentframe = lambda: sys._getframe(3)
+else: #pragma: no cover
+   def currentframe():
+       """Return the frame object for the caller's stack frame."""
+       try:
+           raise Exception
+       except Exception:
+           return sys.exc_info()[2].tb_frame.f_back
 
 #
 # _srcfile is used when walking the stack to check when we've got the first

@@ -660,8 +660,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         else:
             raise AssertionError("This ought to be impossible")
 
-    # TODO(T42624200): Remove skipIf
-    @unittest.skipIf(sys.implementation.name == "pyro", "does not work in PyRo yet")
     def testTraceback(self):
         files = {TESTMOD + ".py": (NOW, raise_src)}
         self.doTest(None, files, TESTMOD, call=self.doTraceback)
