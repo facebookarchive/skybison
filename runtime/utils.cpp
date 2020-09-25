@@ -186,7 +186,8 @@ void Utils::printDebugInfoAndAbort() {
 
   Thread* thread = Thread::current();
   if (thread != nullptr) {
-    thread->runtime()->printTraceback(thread, File::kStderr);
+    Runtime* runtime = thread->runtime();
+    runtime->printTraceback(thread, File::kStderr);
     if (thread->hasPendingException()) {
       HandleScope scope(thread);
       Object type(&scope, thread->pendingExceptionType());
@@ -194,11 +195,15 @@ void Utils::printDebugInfoAndAbort() {
       Traceback traceback(&scope, thread->pendingExceptionTraceback());
       thread->clearPendingException();
 
-      std::cerr << "Pending exception\n  Type      : " << type
-                << "\n  Value     : " << value
-                << "\n  Traceback : " << traceback << '\n';
+      std::cerr << "Pending exception\n  Type          : " << type
+                << "\n  Value         : " << value;
+      if (runtime->isInstanceOfBaseException(*value)) {
+        BaseException exception(&scope, *value);
+        std::cerr << "\n  Exception Args: " << exception.args();
+      }
+      std::cerr << "\n  Traceback     : " << traceback << '\n';
 
-      ValueCell stderr_cell(&scope, thread->runtime()->sysStderr());
+      ValueCell stderr_cell(&scope, runtime->sysStderr());
       if (!stderr_cell.isUnbound()) {
         Object stderr(&scope, stderr_cell.value());
         CHECK(!tracebackWrite(thread, traceback, stderr).isErrorException(),

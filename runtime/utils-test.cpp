@@ -262,9 +262,10 @@ bar()
   File "<test string>", line 12 in bar
   File "<test string>", line 14 in <module>
 Pending exception
-  Type      : <type "UserWarning">
-  Value     : <"UserWarning" object>
-  Traceback : <"traceback" object>
+  Type          : <type "UserWarning">
+  Value         : <"UserWarning" object>
+  Exception Args: \("Hello",\)
+  Traceback     : <"traceback" object>
 Traceback \(most recent call last\):
   File <test string>, line 6, in call_raising
   File <test string>, line 3, in raising
