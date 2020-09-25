@@ -50,6 +50,7 @@ add_subdirectory(third-party/benchmark-1.5.1)
 set(INSTALL_GTEST CACHE BOOL OFF FORCE)
 add_subdirectory(third-party/googletest)
 add_subdirectory(third-party/siphash-20170224)
+add_subdirectory(third-party/systemtap)
 add_subdirectory(third-party/valgrind-3.15.0)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -463,6 +464,7 @@ add_library(
   runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
   runtime/dict-builtins.h
+  runtime/event.h
   runtime/exception-builtins.cpp
   runtime/exception-builtins.h
   runtime/faulthandler-module.cpp
@@ -618,6 +620,7 @@ target_link_libraries(
   PRIVATE
   modules
   siphash
+  systemtap
   valgrind
   ${FFI_LIBRARIES})
 target_include_directories(runtime PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}

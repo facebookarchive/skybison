@@ -24,6 +24,7 @@
 #include "complex-builtins.h"
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
+#include "event.h"
 #include "exception-builtins.h"
 #include "file.h"
 #include "float-builtins.h"
@@ -1925,6 +1926,7 @@ void Runtime::initializeTypes(Thread* thread) {
 }
 
 void Runtime::collectGarbage() {
+  EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
   RawObject cb = scavenge(this);
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);

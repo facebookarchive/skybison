@@ -4,6 +4,7 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
+#include "event.h"
 #include "object-builtins.h"
 #include "runtime.h"
 #include "visitor.h"
@@ -299,6 +300,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   }
 
   // Initialize an ApiHandle for a builtin object or runtime instance
+  EVENT_ID(AllocateCAPIHandle, obj.layoutId());
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   handle->reference_ = NoneType::object().raw();

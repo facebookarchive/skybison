@@ -8,6 +8,7 @@
 #include "bytes-builtins.h"
 #include "complex-builtins.h"
 #include "dict-builtins.h"
+#include "event.h"
 #include "exception-builtins.h"
 #include "float-builtins.h"
 #include "frame.h"
@@ -28,6 +29,10 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "utils.h"
+
+// TODO(emacs): Figure out why this produces different (more) results than
+// using EVENT_ID with the opcode as arg0 and remove EVENT_CACHE.
+#define EVENT_CACHE(op) EVENT(InvalidateInlineCache_##op)
 
 namespace py {
 
@@ -1486,6 +1491,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
       return Continue::NEXT;
     }
   }
+  EVENT_CACHE(BINARY_SUBSCR_LIST);
   return binarySubscrUpdateCache(thread, arg);
 }
 
@@ -1498,6 +1504,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(BINARY_SUBSCR_MONOMORPHIC);
     return binarySubscrUpdateCache(thread, arg);
   }
   thread->stackInsertAt(2, cached);
@@ -1512,6 +1519,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, container_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(BINARY_SUBSCR_POLYMORPHIC);
     return binarySubscrUpdateCache(thread, arg);
   }
   thread->stackInsertAt(2, cached);
@@ -1759,6 +1767,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrMonomorphic(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, container_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_SUBSCR_MONOMORPHIC);
     return storeSubscrUpdateCache(thread, arg);
   }
   return storeSubscr(thread, cached);
@@ -1773,6 +1782,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, container_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_SUBSCR_POLYMORPHIC);
     return storeSubscrUpdateCache(thread, arg);
   }
   return storeSubscr(thread, cached);
@@ -2669,6 +2679,7 @@ HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isListIterator()) {
+    EVENT_CACHE(FOR_ITER_LIST);
     return retryForIterAnamorphic(thread, arg);
   }
   // NOTE: This should be synced with listIteratorNext in list-builtins.cpp.
@@ -2690,6 +2701,7 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isDictKeyIterator()) {
+    EVENT_CACHE(FOR_ITER_DICT);
     return retryForIterAnamorphic(thread, arg);
   }
   // NOTE: This should be synced with dictKeyIteratorNext in dict-builtins.cpp.
@@ -2717,6 +2729,7 @@ HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isTupleIterator()) {
+    EVENT_CACHE(FOR_ITER_TUPLE);
     return retryForIterAnamorphic(thread, arg);
   }
   // NOTE: This should be synced with tupleIteratorNext in tuple-builtins.cpp.
@@ -2739,6 +2752,7 @@ HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isRangeIterator()) {
+    EVENT_CACHE(FOR_ITER_RANGE);
     return retryForIterAnamorphic(thread, arg);
   }
   // NOTE: This should be synced with rangeIteratorNext in range-builtins.cpp.
@@ -2764,6 +2778,7 @@ HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter_obj = thread->stackTop();
   if (!iter_obj.isStrIterator()) {
+    EVENT_CACHE(FOR_ITER_STR);
     return retryForIterAnamorphic(thread, arg);
   }
   // NOTE: This should be synced with strIteratorNext in str-builtins.cpp.
@@ -2792,6 +2807,7 @@ HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, iter_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(FOR_ITER_MONOMORPHIC);
     return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg);
   }
   return forIter(thread, cached, arg);
@@ -2806,6 +2822,7 @@ HANDLER_INLINE Continue Interpreter::doForIterPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, iter_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(FOR_ITER_POLYMORPHIC);
     return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg);
   }
   return forIter(thread, cached, arg);
@@ -3046,6 +3063,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstance(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_ATTR_INSTANCE);
     return storeAttrUpdateCache(thread, arg);
   }
   word offset = SmallInt::cast(cached).value();
@@ -3065,6 +3083,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_ATTR_INSTANCE_OVERFLOW);
     return storeAttrUpdateCache(thread, arg);
   }
   word offset = SmallInt::cast(cached).value();
@@ -3087,6 +3106,7 @@ Interpreter::doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg) {
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_ATTR_INSTANCE_OVERFLOW_UPDATE);
     return retryStoreAttrCached(thread, arg);
   }
   // Set the value in an overflow tuple that needs expansion.
@@ -3119,6 +3139,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceUpdate(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_ATTR_INSTANCE_UPDATE);
     return retryStoreAttrCached(thread, arg);
   }
   // Set the value in object at offset.
@@ -3144,6 +3165,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(STORE_ATTR_POLYMORPHIC);
     return storeAttrUpdateCache(thread, arg);
   }
   RawObject value = thread->stackPeek(1);
@@ -3540,6 +3562,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_INSTANCE);
     return Interpreter::loadAttrUpdateCache(thread, arg);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
@@ -3556,6 +3579,7 @@ Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD);
     return Interpreter::loadAttrUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
@@ -3591,6 +3615,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_INSTANCE_PROPERTY);
     return retryLoadAttrCached(thread, arg);
   }
   thread->stackPush(receiver);
@@ -3607,6 +3632,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_INSTANCE_SLOT_DESCR);
     return retryLoadAttrCached(thread, arg);
   }
   word offset = SmallInt::cast(cached).value();
@@ -3616,6 +3642,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
     return Continue::NEXT;
   }
   // If the value is unbound, we remove the cached slot descriptor.
+  EVENT_CACHE(LOAD_ATTR_INSTANCE_SLOT_DESCR);
   return retryLoadAttrCached(thread, arg);
 }
 
@@ -3628,6 +3655,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_INSTANCE_TYPE_DESCR);
     return retryLoadAttrCached(thread, arg);
   }
   HandleScope scope(thread);
@@ -3650,6 +3678,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceType(Thread* thread,
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_INSTANCE_TYPE);
     return retryLoadAttrCached(thread, arg);
   }
   thread->stackSetTop(cached);
@@ -3675,6 +3704,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
     thread->stackSetTop(ValueCell::cast(result).value());
     return Continue::NEXT;
   }
+  EVENT_CACHE(LOAD_ATTR_MODULE);
   return retryLoadAttrCached(thread, arg);
 }
 
@@ -3687,6 +3717,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_ATTR_POLYMORPHIC);
     return loadAttrUpdateCache(thread, arg);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
@@ -3710,6 +3741,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
       return Continue::NEXT;
     }
   }
+  EVENT_CACHE(LOAD_ATTR_TYPE);
   return retryLoadAttrCached(thread, arg);
 }
 
@@ -4792,6 +4824,7 @@ Interpreter::doLoadMethodInstanceFunction(Thread* thread, word arg) {
   RawObject cached =
       icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_METHOD_INSTANCE_FUNCTION);
     return loadMethodUpdateCache(thread, arg);
   }
   DCHECK(cached.isFunction(), "cached is expected to be a function");
@@ -4807,6 +4840,7 @@ HANDLER_INLINE Continue Interpreter::doLoadMethodPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, receiver.layoutId(), &is_found);
   if (!is_found) {
+    EVENT_CACHE(LOAD_METHOD_POLYMORPHIC);
     return loadMethodUpdateCache(thread, arg);
   }
   DCHECK(cached.isFunction(), "cached is expected to be a function");
@@ -4881,6 +4915,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word arg) {
   RawObject container = thread->stackPeek(0);
   if (!container.isDict()) {
+    EVENT_CACHE(COMPARE_IN_DICT);
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
@@ -4903,6 +4938,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doCompareInList(Thread* thread, word arg) {
   RawObject container = thread->stackPeek(0);
   if (!container.isList()) {
+    EVENT_CACHE(COMPARE_IN_LIST);
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
@@ -4920,6 +4956,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInStr(Thread* thread, word arg) {
   RawObject container = thread->stackPeek(0);
   RawObject value = thread->stackPeek(1);
   if (!(container.isStr() && value.isStr())) {
+    EVENT_CACHE(COMPARE_IN_STR);
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
@@ -4934,6 +4971,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInTuple(Thread* thread,
                                                       word arg) {
   RawObject container = thread->stackPeek(0);
   if (!container.isTuple()) {
+    EVENT_CACHE(COMPARE_IN_TUPLE);
     return compareInUpdateCache(thread, arg);
   }
   HandleScope scope(thread);
@@ -4958,6 +4996,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
   RawObject cached = icLookupMonomorphic(MutableTuple::cast(frame->caches()),
                                          arg, container_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(COMPARE_IN_MONOMORPHIC);
     return compareInUpdateCache(thread, arg);
   }
   thread->stackDrop(2);
@@ -4981,6 +5020,7 @@ HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
                                          arg, container_layout_id, &is_found);
   if (!is_found) {
+    EVENT_CACHE(COMPARE_IN_POLYMORPHIC);
     return compareInUpdateCache(thread, arg);
   }
   thread->stackDrop(2);
@@ -5077,6 +5117,7 @@ Continue Interpreter::doCompareEqSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(left_value == right_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_EQ_SMALLINT);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5091,6 +5132,7 @@ Continue Interpreter::doCompareGtSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(left_value > right_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_GT_SMALLINT);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5105,6 +5147,7 @@ Continue Interpreter::doCompareLtSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(left_value < right_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_LT_SMALLINT);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5119,6 +5162,7 @@ Continue Interpreter::doCompareGeSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(left_value >= right_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_GE_SMALLINT);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5133,6 +5177,7 @@ Continue Interpreter::doCompareNeSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(left_value != right_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_NE_SMALLINT);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5147,6 +5192,7 @@ Continue Interpreter::doCompareLeSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(left_value <= right_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_LE_SMALLINT);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5159,6 +5205,7 @@ Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
     thread->stackSetTop(Bool::fromBool(Str::cast(left).equals(right)));
     return Continue::NEXT;
   }
+  EVENT_CACHE(COMPARE_EQ_STR);
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -5174,6 +5221,7 @@ Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
       icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), arg,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
+    EVENT_CACHE(COMPARE_OP_MONOMORPHIC);
     return compareOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
@@ -5192,6 +5240,7 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
       icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
+    EVENT_CACHE(COMPARE_OP_POLYMORPHIC);
     return compareOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
@@ -5300,6 +5349,7 @@ Continue Interpreter::doInplaceOpMonomorphic(Thread* thread, word arg) {
       icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), arg,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
+    EVENT_CACHE(INPLACE_OP_MONOMORPHIC);
     return inplaceOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
@@ -5318,6 +5368,7 @@ Continue Interpreter::doInplaceOpPolymorphic(Thread* thread, word arg) {
       icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
+    EVENT_CACHE(INPLACE_OP_POLYMORPHIC);
     return inplaceOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
@@ -5338,6 +5389,7 @@ Continue Interpreter::doInplaceAddSmallInt(Thread* thread, word arg) {
       return Continue::NEXT;
     }
   }
+  EVENT_CACHE(INPLACE_ADD_SMALLINT);
   return inplaceOpUpdateCache(thread, arg);
 }
 
@@ -5428,6 +5480,7 @@ Continue Interpreter::doBinaryOpMonomorphic(Thread* thread, word arg) {
       icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), arg,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
+    EVENT_CACHE(BINARY_OP_MONOMORPHIC);
     return binaryOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
@@ -5446,6 +5499,7 @@ Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
       icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
+    EVENT_CACHE(BINARY_OP_POLYMORPHIC);
     return binaryOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
@@ -5466,6 +5520,7 @@ Continue Interpreter::doBinaryAddSmallInt(Thread* thread, word arg) {
       return Continue::NEXT;
     }
   }
+  EVENT_CACHE(BINARY_ADD_SMALLINT);
   return binaryOpUpdateCache(thread, arg);
 }
 
@@ -5482,6 +5537,7 @@ Continue Interpreter::doBinaryAndSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(SmallInt::fromWord(result_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(BINARY_AND_SMALLINT);
   return binaryOpUpdateCache(thread, arg);
 }
 
@@ -5503,6 +5559,7 @@ Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
     thread->stackSetTop(SmallInt::fromWord(result_value));
     return Continue::NEXT;
   }
+  EVENT_CACHE(BINARY_FLOORDIV_SMALLINT);
   return binaryOpUpdateCache(thread, arg);
 }
 
@@ -5520,6 +5577,7 @@ Continue Interpreter::doBinarySubSmallInt(Thread* thread, word arg) {
       return Continue::NEXT;
     }
   }
+  EVENT_CACHE(BINARY_SUB_SMALLINT);
   return binaryOpUpdateCache(thread, arg);
 }
 
@@ -5537,6 +5595,7 @@ Continue Interpreter::doBinaryOrSmallInt(Thread* thread, word arg) {
       return Continue::NEXT;
     }
   }
+  EVENT_CACHE(BINARY_OR_SMALLINT);
   return binaryOpUpdateCache(thread, arg);
 }
 
