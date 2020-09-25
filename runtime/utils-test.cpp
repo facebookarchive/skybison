@@ -229,19 +229,45 @@ TEST(UtilsTestNoFixture, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 63), 0x8000000000000000ULL);
 }
 
+RawObject printDebugInfoAndAbortTest(Thread* thread, Frame*, word) {
+  // Produce a pending exception with stacktrace!
+  HandleScope scope(thread);
+  Object call_raising(&scope, mainModuleAt(thread->runtime(), "call_raising"));
+  EXPECT_TRUE(Interpreter::call0(thread, call_raising).isErrorException());
+
+  Utils::printDebugInfoAndAbort();
+}
+
 TEST_F(UtilsDeathTest, PrintDebugInfoAndAbortPrintsTraceback) {
-  ASSERT_TRUE(runFromCStr(runtime_, R"(
-raise UserWarning("foo")
-)")
-                  .isErrorException());
-  ASSERT_TRUE(thread_->pendingExceptionMatches(LayoutId::kUserWarning));
-  ASSERT_DEATH(Utils::printDebugInfoAndAbort(),
-               R"(Pending exception
+  addBuiltin("test_print_debug_info_and_abort", printDebugInfoAndAbortTest,
+             View<const char*>(nullptr, 0), /*code_flags=*/0);
+  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
+def raising():
+  raise UserWarning("Hello")
+
+def call_raising():
+  raising()
+
+def foo():
+  test_print_debug_info_and_abort()
+
+def bar():
+  foo()
+
+bar()
+)")),
+               R"(Stack \(most recent call first\):
+  File "", line \?\?\? in test_print_debug_info_and_abort
+  File "<test string>", line 9 in foo
+  File "<test string>", line 12 in bar
+  File "<test string>", line 14 in <module>
+Pending exception
   Type      : <type "UserWarning">
   Value     : <"UserWarning" object>
   Traceback : <"traceback" object>
 Traceback \(most recent call last\):
-  File <test string>, line 2, in <module>
+  File <test string>, line 6, in call_raising
+  File <test string>, line 3, in raising
 )");
 }
 

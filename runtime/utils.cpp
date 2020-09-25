@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "debugging.h"
+#include "file.h"
 #include "frame.h"
 #include "handles.h"
 #include "runtime.h"
@@ -185,6 +186,7 @@ void Utils::printDebugInfoAndAbort() {
 
   Thread* thread = Thread::current();
   if (thread != nullptr) {
+    thread->runtime()->printTraceback(thread, File::kStderr);
     if (thread->hasPendingException()) {
       HandleScope scope(thread);
       Object type(&scope, thread->pendingExceptionType());

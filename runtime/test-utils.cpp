@@ -460,7 +460,7 @@ void addBuiltin(const char* name_cstr, BuiltinFunction function,
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Module main(&scope, findMainModule(runtime));
+  Module main(&scope, runtime->findOrCreateMainModule());
   word num_parameters = parameter_names.length();
   Object parameter_names_tuple(&scope, NoneType::object());
   if (num_parameters > 0) {
