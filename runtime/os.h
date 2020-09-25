@@ -76,6 +76,8 @@ class OS {
   static void* sharedObjectSymbolAddress(void* handle, const char* symbol,
                                          const char** error_msg);
 
+  static word sharedObjectSymbolName(void* addr, char* buf, word size);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
 };

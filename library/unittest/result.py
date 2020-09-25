@@ -8,14 +8,10 @@
 
 import io
 import sys
-# TODO(T42595911): traceback module
-# import traceback
+import traceback
 from functools import wraps
 
 from . import util
-from functools import wraps
-# TODO(T42595911): remove when traceback module works
-from _builtins import _traceback_str
 
 
 __unittest = True
@@ -185,22 +181,17 @@ class TestResult(object):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
         # Skip test runner traceback levels
-        # TODO(T42595911): traceback module
-        # while tb and self._is_relevant_tb_level(tb):
-        #    tb = tb.tb_next
+        while tb and self._is_relevant_tb_level(tb):
+           tb = tb.tb_next
 
-        # TODO(T42595911): traceback module
-        # if exctype is test.failureException:
-        #     # Skip assert*() traceback levels
-        #     length = self._count_relevant_tb_levels(tb)
-        # else:
-        #     length = None
-        # tb_e = traceback.TracebackException(
-        #     exctype, value, tb, limit=length, capture_locals=self.tb_locals)
-        # msgLines = list(tb_e.format())
-        msgLines = [str(value) + "\n"]
-        if tb is not None:
-            msgLines.append(_traceback_str(tb))
+        if exctype is test.failureException:
+            # Skip assert*() traceback levels
+            length = self._count_relevant_tb_levels(tb)
+        else:
+            length = None
+        tb_e = traceback.TracebackException(
+            exctype, value, tb, limit=length, capture_locals=self.tb_locals)
+        msgLines = list(tb_e.format())
 
         if self.buffer:
             output = sys.stdout.getvalue()

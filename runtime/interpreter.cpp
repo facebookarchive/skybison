@@ -1251,19 +1251,13 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   HandleScope scope(thread);
 
   Runtime* runtime = thread->runtime();
-  if (thread->pendingExceptionTraceback().isNoneType()) {
-    Traceback traceback(&scope, runtime->newTraceback());
-    thread->setPendingExceptionTraceback(*traceback);
-    // TODO(T39919701) Always enable tracebacks.
-    if (runtime->recordTracebacks()) {
-      std::ostringstream tb;
-      Utils::printTraceback(&tb);
-      traceback.setFrame(runtime->newStrFromCStr(tb.str().c_str()));
-    }
-  }
-
   Frame* frame = thread->currentFrame();
+  Object new_traceback(&scope, NoneType::object());
   for (;;) {
+    new_traceback = runtime->newTraceback(thread, frame);
+    Traceback::cast(*new_traceback)
+        .setNext(thread->pendingExceptionTraceback());
+    thread->setPendingExceptionTraceback(*new_traceback);
     BlockStack* stack = frame->blockStack();
 
     while (stack->depth() > 0) {

@@ -87,6 +87,14 @@ void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol,
   return result;
 }
 
+word OS::sharedObjectSymbolName(void* addr, char* buf, word size) {
+  Dl_info info;
+  if (::dladdr(addr, &info) && info.dli_sname != nullptr) {
+    return std::snprintf(buf, size, "%s", info.dli_sname);
+  }
+  return -1;
+}
+
 uint64_t OS::threadID() {
   uint64_t tid;
   pthread_threadid_np(nullptr, &tid);

@@ -14,6 +14,7 @@
 #include "runtime.h"
 #include "set-builtins.h"
 #include "sys-module.h"
+#include "traceback-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 
@@ -383,11 +384,7 @@ static RawObject printSingleException(Thread* thread, const Object& file,
   Object tb_obj(&scope, exc.traceback());
   if (tb_obj.isTraceback()) {
     Traceback traceback(&scope, *tb_obj);
-    // TODO(T39919701): Delete this once we can print real tracebacks.
-    Object str(&scope, traceback.frame());
-    if (str.isStr()) {
-      MAY_RAISE(fileWriteObjectStr(thread, file, str));
-    }
+    MAY_RAISE(tracebackWrite(thread, traceback, file));
   }
 
   if (runtime->attributeAtById(thread, value, ID(print_file_and_line))

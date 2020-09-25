@@ -5206,11 +5206,9 @@ RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread, Frame* frame,
     return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
   }
   Traceback self(&scope, *self_obj);
-  Object frame_obj(&scope, self.frame());
-  if (!frame_obj.isNoneType()) {
-    return *frame_obj;
-  }
-  UNIMPLEMENTED("calculate frame");
+  Object function(&scope, self.function());
+  Object lasti(&scope, self.lasti());
+  return thread->runtime()->newFrameProxy(thread, function, lasti);
 }
 
 RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread, Frame* frame,
@@ -5226,7 +5224,18 @@ RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread, Frame* frame,
   if (!lineno.isNoneType()) {
     return *lineno;
   }
-  UNIMPLEMENTED("calculate lineno");
+
+  Function function(&scope, self.function());
+  Object code_obj(&scope, function.code());
+  if (code_obj.isCode()) {
+    Code code(&scope, *code_obj);
+    if (!code.isNative() && code.lnotab().isBytes()) {
+      word lasti = SmallInt::cast(self.lasti()).value();
+      lineno = SmallInt::fromWord(code.offsetToLineNum(lasti));
+      self.setLineno(*lineno);
+    }
+  }
+  return *lineno;
 }
 
 RawObject FUNC(_builtins, _traceback_next_get)(Thread* thread, Frame* frame,
@@ -5271,21 +5280,6 @@ RawObject FUNC(_builtins, _traceback_next_set)(Thread* thread, Frame* frame,
   DCHECK(cursor.isNoneType(), "tb_next should be a traceback or None");
   self.setNext(*next);
   return NoneType::object();
-}
-
-RawObject FUNC(_builtins, _traceback_str)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object traceback_obj(&scope, args.get(0));
-  if (!traceback_obj.isTraceback()) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
-  }
-  Traceback traceback(&scope, *traceback_obj);
-  Object traceback_frame(&scope, traceback.frame());
-  if (traceback_frame.isNoneType()) return SmallStr::empty();
-  DCHECK(traceback_frame.isStr(), "frame should be str");
-  return *traceback_frame;
 }
 
 RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Frame* frame,

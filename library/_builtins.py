@@ -1051,10 +1051,6 @@ def _traceback_next_set(self):
     _builtin()
 
 
-def _traceback_str(traceback):
-    _builtin()
-
-
 def _tuple_check(obj):
     _builtin()
 

@@ -420,7 +420,16 @@ RawObject Runtime::newBytesIterator(Thread* thread, const Bytes& bytes) {
   return *result;
 }
 
-RawObject Runtime::newTraceback() { return createInstance<RawTraceback>(this); }
+RawObject Runtime::newTraceback(Thread* thread, Frame* frame) {
+  HandleScope scope(thread);
+  Traceback result(&scope, createInstance<RawTraceback>(this));
+  result.setFunction(frame->function());
+  if (!frame->isNative()) {
+    word lasti = frame->virtualPC() - kCodeUnitSize;
+    result.setLasti(SmallInt::fromWord(lasti));
+  }
+  return *result;
+}
 
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
@@ -850,15 +859,13 @@ RawObject Runtime::newExceptionState() {
 
 RawObject Runtime::newCoroutine() { return createInstance<RawCoroutine>(this); }
 
-RawObject Runtime::newFrameProxy(Thread* thread, Frame* frame) {
+RawObject Runtime::newFrameProxy(Thread* thread, const Object& function,
+                                 const Object& lasti) {
   HandleScope scope(thread);
-  FrameProxy heap_frame(&scope, createInstance<RawFrameProxy>(this));
-  DCHECK(frame->function().isFunction(), "expected to be a function");
-  heap_frame.setFunction(frame->function());
-  if (!frame->isNative()) {
-    heap_frame.setLasti(SmallInt::fromWord(frame->virtualPC()));
-  }
-  return *heap_frame;
+  FrameProxy result(&scope, createInstance<RawFrameProxy>(this));
+  result.setFunction(*function);
+  result.setLasti(*lasti);
+  return *result;
 }
 
 RawObject Runtime::newGenerator() { return createInstance<RawGenerator>(this); }

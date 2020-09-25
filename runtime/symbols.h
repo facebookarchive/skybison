@@ -510,7 +510,6 @@ class Runtime;
   V(_structseq_new)                                                            \
   V(_structseq_repr)                                                           \
   V(_telling)                                                                  \
-  V(_traceback__frame)                                                         \
   V(_traceback__function)                                                      \
   V(_traceback__lineno)                                                        \
   V(_traceback__next)                                                          \

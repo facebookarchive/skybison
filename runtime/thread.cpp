@@ -118,7 +118,12 @@ class UserVisibleFrameVisitor : public FrameVisitor {
     // Once visitor reaches the target depth, start creating a linked list of
     // FrameProxys objects.
     // TOOD(T63960421): Cache an already created object in the stack frame.
-    heap_frame_ = thread_->runtime()->newFrameProxy(thread_, frame);
+    Object function(&scope_, frame->function());
+    Object lasti(&scope_, NoneType::object());
+    if (!frame->isNative()) {
+      lasti = SmallInt::fromWord(frame->virtualPC());
+    }
+    heap_frame_ = thread_->runtime()->newFrameProxy(thread_, function, lasti);
     if (result_.isNoneType()) {
       // The head of the linked list is returned as the result.
       result_ = *heap_frame_;

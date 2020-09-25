@@ -378,8 +378,6 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
                                  ? createCppInterpreter()
                                  : createAsmInterpreter();
   Runtime* runtime = new Runtime(heap_size, interpreter, random_seed);
-  runtime->setRecordTracebacks(
-      boolFromEnv("PYRO_RECORD_TRACEBACKS", DCHECK_IS_ON()));
   Thread* thread = Thread::current();
   initializeSysFromGlobals(thread);
   CHECK(runtime->initialize(thread).isNoneType(),

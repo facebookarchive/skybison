@@ -13,6 +13,7 @@
 #include "handles.h"
 #include "runtime.h"
 #include "thread.h"
+#include "traceback-builtins.h"
 
 namespace py {
 
@@ -184,18 +185,23 @@ void Utils::printDebugInfoAndAbort() {
 
   Thread* thread = Thread::current();
   if (thread != nullptr) {
-    thread->runtime()->printTraceback(thread, STDERR_FILENO);
     if (thread->hasPendingException()) {
       HandleScope scope(thread);
-      Object traceback(&scope, thread->pendingExceptionTraceback());
-      // TODO(T39919701) Replace when traceback type is properly designed.
-      if (traceback.isTraceback()) {
-        traceback = Traceback::cast(*traceback).frame();
-      }
-      std::cerr << "Pending exception\n  Type      : "
-                << thread->pendingExceptionType()
-                << "\n  Value     : " << thread->pendingExceptionValue()
+      Object type(&scope, thread->pendingExceptionType());
+      Object value(&scope, thread->pendingExceptionValue());
+      Traceback traceback(&scope, thread->pendingExceptionTraceback());
+      thread->clearPendingException();
+
+      std::cerr << "Pending exception\n  Type      : " << type
+                << "\n  Value     : " << value
                 << "\n  Traceback : " << traceback << '\n';
+
+      ValueCell stderr_cell(&scope, thread->runtime()->sysStderr());
+      if (!stderr_cell.isUnbound()) {
+        Object stderr(&scope, stderr_cell.value());
+        CHECK(!tracebackWrite(thread, traceback, stderr).isErrorException(),
+              "failed to print traceback");
+      }
     }
   }
   std::abort();

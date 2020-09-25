@@ -80,7 +80,7 @@ class Runtime {
   RawObject newBytesWithAll(View<byte> array);
   RawObject newBytesIterator(Thread* thread, const Bytes& bytes);
 
-  RawObject newTraceback();
+  RawObject newTraceback(Thread* thread, Frame* frame);
 
   RawObject newType();
 
@@ -140,7 +140,8 @@ class Runtime {
 
   RawObject newExceptionState();
 
-  RawObject newFrameProxy(Thread* thread, Frame* frame);
+  RawObject newFrameProxy(Thread* thread, const Object& function,
+                          const Object& lasti);
 
   RawObject newGenerator();
 
@@ -887,11 +888,6 @@ class Runtime {
 
   bool isFinalizing() { return is_finalizing_; }
 
-  bool recordTracebacks() { return record_tracebacks_; }
-  void setRecordTracebacks(bool record_tracebacks) {
-    record_tracebacks_ = record_tracebacks;
-  }
-
   Thread* mainThread() { return main_thread_; }
 
  private:
@@ -976,8 +972,6 @@ class Runtime {
   void freeApiHandles();
 
   bool is_finalizing_ = false;
-  // TODO(T39919701) Remove this flag and always enable tracebacks.
-  bool record_tracebacks_ = true;
 
   // The size newCapacity grows to if array is empty. Must be large enough to
   // guarantee a LargeBytes/LargeStr for Bytearray/StrArray.

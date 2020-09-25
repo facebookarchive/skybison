@@ -134,4 +134,4 @@ else
     TEST_RUNNER=(xargs -t -P "$NUM_CPUS")
 fi
 find "$PYRO_BUILD_DIR/tests/" -name "$TEST_RUNNING_FILTER" -print0 |
-    PYRO_RECORD_TRACEBACKS=1 "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"
+    "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"

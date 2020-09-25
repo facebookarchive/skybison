@@ -3477,9 +3477,6 @@ class RawAsyncGeneratorWrappedValue : public RawInstance {
 
 class RawTraceback : public RawInstance {
  public:
-  RawObject frame() const;
-  void setFrame(RawObject frame) const;
-
   RawObject function() const;
   void setFunction(RawObject function) const;
 
@@ -3497,8 +3494,7 @@ class RawTraceback : public RawInstance {
   static const int kFunctionOffset = kNextOffset + kPointerSize;
   static const int kLastiOffset = kFunctionOffset + kPointerSize;
   static const int kLinenoOffset = kLastiOffset + kPointerSize;
-  static const int kFrameOffset = kLinenoOffset + kPointerSize;
-  static const int kSize = kFrameOffset + kPointerSize;
+  static const int kSize = kLinenoOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Traceback);
 };
@@ -8112,14 +8108,6 @@ inline void RawAsyncGeneratorWrappedValue::setValue(RawObject value) const {
 }
 
 // RawTraceback
-
-inline RawObject RawTraceback::frame() const {
-  return instanceVariableAt(kFrameOffset);
-}
-
-inline void RawTraceback::setFrame(RawObject frame) const {
-  instanceVariableAtPut(kFrameOffset, frame);
-}
 
 inline RawObject RawTraceback::function() const {
   return instanceVariableAt(kFunctionOffset);

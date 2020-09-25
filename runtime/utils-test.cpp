@@ -236,12 +236,12 @@ raise UserWarning("foo")
                   .isErrorException());
   ASSERT_TRUE(thread_->pendingExceptionMatches(LayoutId::kUserWarning));
   ASSERT_DEATH(Utils::printDebugInfoAndAbort(),
-               R"(Stack \(most recent call first\):
-Pending exception
+               R"(Pending exception
   Type      : <type "UserWarning">
   Value     : <"UserWarning" object>
-  Traceback : "Traceback \(most recent call last\):
-  File "<test string>", line 2, in <module>
+  Traceback : <"traceback" object>
+Traceback \(most recent call last\):
+  File <test string>, line 2, in <module>
 )");
 }
 
