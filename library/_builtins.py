@@ -1035,6 +1035,22 @@ def _super(cls):
     _builtin()
 
 
+def _traceback_frame_get(self):
+    _builtin()
+
+
+def _traceback_lineno_get(self):
+    _builtin()
+
+
+def _traceback_next_get(self):
+    _builtin()
+
+
+def _traceback_next_set(self):
+    _builtin()
+
+
 def _traceback_str(traceback):
     _builtin()
 

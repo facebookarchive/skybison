@@ -5197,12 +5197,88 @@ RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isTraceback()) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+  }
+  Traceback self(&scope, *self_obj);
+  Object frame_obj(&scope, self.frame());
+  if (!frame_obj.isNoneType()) {
+    return *frame_obj;
+  }
+  UNIMPLEMENTED("calculate frame");
+}
+
+RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isTraceback()) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+  }
+  Traceback self(&scope, *self_obj);
+  Object lineno(&scope, self.lineno());
+  if (!lineno.isNoneType()) {
+    return *lineno;
+  }
+  UNIMPLEMENTED("calculate lineno");
+}
+
+RawObject FUNC(_builtins, _traceback_next_get)(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isTraceback()) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+  }
+  Traceback self(&scope, *self_obj);
+  return self.next();
+}
+
+RawObject FUNC(_builtins, _traceback_next_set)(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isTraceback()) {
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+  }
+  Traceback self(&scope, *self_obj);
+  Object next(&scope, args.get(1));
+  if (next.isNoneType()) {
+    self.setNext(NoneType::object());
+    return NoneType::object();
+  }
+  if (!next.isTraceback()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "expected traceback object, got '%T", &next);
+  }
+
+  Object cursor(&scope, *next);
+  while (cursor.isTraceback()) {
+    if (cursor == self) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "traceback loop detected");
+    }
+    cursor = Traceback::cast(*cursor).next();
+  }
+  DCHECK(cursor.isNoneType(), "tb_next should be a traceback or None");
+  self.setNext(*next);
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _traceback_str)(Thread* thread, Frame* frame,
                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object traceback_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfTraceback(*traceback_obj)) {
+  if (!traceback_obj.isTraceback()) {
     return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
   }
   Traceback traceback(&scope, *traceback_obj);

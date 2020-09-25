@@ -7,11 +7,12 @@ namespace py {
 
 static const BuiltinAttribute kTracebackAttributes[] = {
     {ID(_traceback__next), RawTraceback::kNextOffset, AttributeFlags::kHidden},
-    {ID(_traceback__frame), RawTraceback::kFrameOffset,
+    {ID(_traceback__function), RawTraceback::kFunctionOffset,
      AttributeFlags::kHidden},
-    {ID(_traceback__lasti), RawTraceback::kLastiOffset,
-     AttributeFlags::kHidden},
+    {ID(tb_lasti), RawTraceback::kLastiOffset, AttributeFlags::kReadOnly},
     {ID(_traceback__lineno), RawTraceback::kLinenoOffset,
+     AttributeFlags::kHidden},
+    {ID(_traceback__frame), RawTraceback::kFrameOffset,
      AttributeFlags::kHidden},
 };
 

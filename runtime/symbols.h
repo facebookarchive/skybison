@@ -511,7 +511,7 @@ class Runtime;
   V(_structseq_repr)                                                           \
   V(_telling)                                                                  \
   V(_traceback__frame)                                                         \
-  V(_traceback__lasti)                                                         \
+  V(_traceback__function)                                                      \
   V(_traceback__lineno)                                                        \
   V(_traceback__next)                                                          \
   V(_translate)                                                                \
@@ -778,6 +778,7 @@ class Runtime;
   V(surrogateescape)                                                           \
   V(surrogatepass)                                                             \
   V(sys)                                                                       \
+  V(tb_lasti)                                                                  \
   V(text)                                                                      \
   V(throw)                                                                     \
   V(time)                                                                      \

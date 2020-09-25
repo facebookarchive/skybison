@@ -89,6 +89,7 @@ class Handle;
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(Token)                                                                     \
+  V(Traceback)                                                                 \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(TypeProxy)                                                                 \
@@ -124,7 +125,6 @@ class Handle;
   V(StopIteration)                                                             \
   V(StringIO)                                                                  \
   V(SystemExit)                                                                \
-  V(Traceback)                                                                 \
   V(TextIOWrapper)                                                             \
   V(Type)                                                                      \
   V(UnicodeDecodeError)                                                        \

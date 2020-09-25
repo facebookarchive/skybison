@@ -3480,12 +3480,25 @@ class RawTraceback : public RawInstance {
   RawObject frame() const;
   void setFrame(RawObject frame) const;
 
+  RawObject function() const;
+  void setFunction(RawObject function) const;
+
+  RawObject lasti() const;
+  void setLasti(RawObject lasti) const;
+
+  RawObject lineno() const;
+  void setLineno(RawObject lineno) const;
+
+  RawObject next() const;
+  void setNext(RawObject next) const;
+
   // Layout.
   static const int kNextOffset = RawHeapObject::kSize;
-  static const int kFrameOffset = kNextOffset + kPointerSize;
-  static const int kLastiOffset = kFrameOffset + kPointerSize;
+  static const int kFunctionOffset = kNextOffset + kPointerSize;
+  static const int kLastiOffset = kFunctionOffset + kPointerSize;
   static const int kLinenoOffset = kLastiOffset + kPointerSize;
-  static const int kSize = kLinenoOffset + kPointerSize;
+  static const int kFrameOffset = kLinenoOffset + kPointerSize;
+  static const int kSize = kFrameOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Traceback);
 };
@@ -8106,6 +8119,38 @@ inline RawObject RawTraceback::frame() const {
 
 inline void RawTraceback::setFrame(RawObject frame) const {
   instanceVariableAtPut(kFrameOffset, frame);
+}
+
+inline RawObject RawTraceback::function() const {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+inline void RawTraceback::setFunction(RawObject function) const {
+  instanceVariableAtPut(kFunctionOffset, function);
+}
+
+inline RawObject RawTraceback::lasti() const {
+  return instanceVariableAt(kLastiOffset);
+}
+
+inline void RawTraceback::setLasti(RawObject lasti) const {
+  instanceVariableAtPut(kLastiOffset, lasti);
+}
+
+inline RawObject RawTraceback::lineno() const {
+  return instanceVariableAt(kLinenoOffset);
+}
+
+inline void RawTraceback::setLineno(RawObject lineno) const {
+  instanceVariableAtPut(kLinenoOffset, lineno);
+}
+
+inline RawObject RawTraceback::next() const {
+  return instanceVariableAt(kNextOffset);
+}
+
+inline void RawTraceback::setNext(RawObject next) const {
+  instanceVariableAtPut(kNextOffset, next);
 }
 
 }  // namespace py

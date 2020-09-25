@@ -234,6 +234,10 @@ from _builtins import (
     _structseq_getitem,
     _structseq_setitem,
     _super,
+    _traceback_frame_get,
+    _traceback_lineno_get,
+    _traceback_next_get,
+    _traceback_next_set,
     _tuple_check,
     _tuple_check_exact,
     _tuple_getitem,
@@ -450,7 +454,22 @@ class super(bootstrap=True):
 
 
 class traceback(bootstrap=True):
-    pass
+    def __dir__(self):
+        if _type(self) is not traceback:
+            raise TypeError(
+                f"'__dir__' requires a 'traceback' object but received a {_type(self).__name__}"
+            )
+        return ["tb_frame", "tb_next", "tb_lasti", "tb_lineno"]
+
+    @_staticmethod
+    def __new__(cls, tb_next, tb_frame, tb_lasti, tb_lineno):
+        _unimplemented()
+
+    tb_frame = _property(_traceback_frame_get)
+
+    tb_lineno = _property(_traceback_lineno_get)
+
+    tb_next = _property(_traceback_next_get, _traceback_next_set)
 
 
 class type(bootstrap=True):
