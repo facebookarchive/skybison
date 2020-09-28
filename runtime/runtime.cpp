@@ -1908,18 +1908,16 @@ void Runtime::initializeTypes(Thread* thread) {
   initializeUnderIOTypes(thread);
   initializeValueCellTypes(thread);
 
-  addEmptyBuiltinType(thread, ID(ExceptionState), LayoutId::kExceptionState,
-                      LayoutId::kObject);
-  addEmptyBuiltinType(thread, ID(_mutablebytes), LayoutId::kMutableBytes,
-                      LayoutId::kObject);
-  addEmptyBuiltinType(thread, ID(_mutabletuple), LayoutId::kMutableTuple,
-                      LayoutId::kObject);
-  addEmptyBuiltinType(thread, ID(_pointer), LayoutId::kPointer,
-                      LayoutId::kObject);
-  addEmptyBuiltinType(thread, ID(ellipsis), LayoutId::kEllipsis,
-                      LayoutId::kObject);
-  addEmptyBuiltinType(thread, ID(frame), LayoutId::kGeneratorFrame,
-                      LayoutId::kObject);
+  addBuiltinType(thread, ID(ExceptionState), LayoutId::kExceptionState,
+                 LayoutId::kObject, kNoAttributes);
+  addBuiltinType(thread, ID(_mutablebytes), LayoutId::kMutableBytes,
+                 LayoutId::kObject, kNoAttributes);
+  addBuiltinType(thread, ID(_mutabletuple), LayoutId::kMutableTuple,
+                 LayoutId::kObject, kNoAttributes);
+  addBuiltinType(thread, ID(_pointer), LayoutId::kPointer, LayoutId::kObject,
+                 kNoAttributes);
+  addBuiltinType(thread, ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject,
+                 kNoAttributes);
 }
 
 void Runtime::collectGarbage() {

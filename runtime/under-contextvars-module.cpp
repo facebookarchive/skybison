@@ -16,8 +16,8 @@ static const BuiltinAttribute kTokenAttributes[] = {
 };
 
 void initializeUnderContextvarsTypes(Thread* thread) {
-  addEmptyBuiltinType(thread, ID(Context), LayoutId::kContext,
-                      /*superclass_id=*/LayoutId::kObject);
+  addBuiltinType(thread, ID(Context), LayoutId::kContext,
+                 /*superclass_id=*/LayoutId::kObject, kNoAttributes);
 
   addBuiltinType(thread, ID(ContextVar), LayoutId::kContextVar,
                  /*superclass_id=*/LayoutId::kObject, kContextVarAttributes);

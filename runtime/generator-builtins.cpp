@@ -271,6 +271,9 @@ void initializeGeneratorTypes(Thread* thread) {
   addBuiltinType(thread, ID(generator), LayoutId::kGenerator,
                  /*superclass_id=*/LayoutId::kObject, kGeneratorAttributes);
 
+  addBuiltinType(thread, ID(frame), LayoutId::kGeneratorFrame,
+                 LayoutId::kObject, kNoAttributes);
+
   addBuiltinType(thread, ID(coroutine), LayoutId::kCoroutine,
                  /*superclass_id=*/LayoutId::kObject, kCoroutineAttributes);
 

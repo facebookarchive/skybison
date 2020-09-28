@@ -113,16 +113,6 @@ RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
                                   superclass_id);
 }
 
-RawObject addEmptyBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
-                              LayoutId superclass_id) {
-  HandleScope scope(thread);
-  Type type(&scope, addBuiltinType(thread, name, layout_id, superclass_id,
-                                   kNoAttributes));
-  Layout layout(&scope, type.instanceLayout());
-  thread->runtime()->layoutSetTupleOverflow(*layout);
-  return *type;
-}
-
 RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   LayoutId layout_id, LayoutId builtin_base,
                                   LayoutId superclass_id) {

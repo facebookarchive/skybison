@@ -928,15 +928,14 @@ TEST_F(HeapProfilerTest, WriteEllipsisWritesInstanceDumpRecord) {
   // Heap dump segment
   EXPECT_TRUE(readTag(result, &pos, HeapProfiler::Tag::kHeapDumpSegment));
   EXPECT_EQ(read32(result, &pos), 0);   // time
-  EXPECT_EQ(read32(result, &pos), 33);  // length
+  EXPECT_EQ(read32(result, &pos), 25);  // length
 
   // Instance dump subrecord
   EXPECT_TRUE(readSubtag(result, &pos, HeapProfiler::Subtag::kInstanceDump));
   EXPECT_EQ(readu64(result, &pos), instance.raw());  // object ID
   EXPECT_EQ(read32(result, &pos), 0);  // stack trace serial number
   EXPECT_EQ(readu64(result, &pos), ellipsis_layout.raw());  // class object ID
-  EXPECT_EQ(read32(result, &pos), kPointerSize);  // number of bytes that follow
-  EXPECT_EQ(readu64(result, &pos), Unbound::object().raw());  // padding
+  EXPECT_EQ(read32(result, &pos), 0);  // number of bytes that follow
 
   EXPECT_EQ(pos, result.size());
 }
