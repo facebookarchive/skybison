@@ -3735,8 +3735,7 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   LayoutId layout_id = LayoutId::kUserWarning;
   Object previous_layout(&scope, runtime_->layoutAt(layout_id));
   Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
-                                   LayoutId::kObject,
-                                   View<BuiltinAttribute>(nullptr, 0)));
+                                   LayoutId::kObject, kNoAttributes));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
   runtime_->layoutAtPut(layout_id, *previous_layout);
 }

@@ -117,7 +117,7 @@ RawObject addEmptyBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
                               LayoutId superclass_id) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, name, layout_id, superclass_id,
-                                   {nullptr, 0}));
+                                   kNoAttributes));
   Layout layout(&scope, type.instanceLayout());
   thread->runtime()->layoutSetTupleOverflow(*layout);
   return *type;
@@ -1218,7 +1218,7 @@ void initializeTypeTypes(Thread* thread) {
   type.setFlags(static_cast<Type::Flag>(flags));
 
   addBuiltinType(thread, ID(type_proxy), LayoutId::kTypeProxy,
-                 /*superclass_id=*/LayoutId::kObject, {nullptr, 0});
+                 /*superclass_id=*/LayoutId::kObject, kNoAttributes);
 }
 
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {

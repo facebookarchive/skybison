@@ -8,6 +8,8 @@
 
 namespace py {
 
+constexpr View<BuiltinAttribute> kNoAttributes(nullptr, 0);
+
 // Prepare `name_obj` to be used as an attribute name: Raise a TypeError if it
 // is not a string; reject some string subclasses. Otherwise return an
 // interned string that can be used with attribute accessors.

@@ -10,7 +10,7 @@ namespace py {
 template <typename T>
 class View {
  public:
-  View(const T* data, word length) : data_(data), length_(length) {}
+  constexpr View(const T* data, word length) : data_(data), length_(length) {}
 
   template <word N>
   View(const T (&data)[N]) : data_(data), length_(N) {}

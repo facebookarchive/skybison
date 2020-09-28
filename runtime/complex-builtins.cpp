@@ -51,7 +51,7 @@ void initializeComplexType(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope,
             addBuiltinType(thread, ID(complex), LayoutId::kComplex,
-                           /*superclass_id=*/LayoutId::kObject, {nullptr, 0}));
+                           /*superclass_id=*/LayoutId::kObject, kNoAttributes));
   type.setBuiltinBase(LayoutId::kComplex);
 }
 

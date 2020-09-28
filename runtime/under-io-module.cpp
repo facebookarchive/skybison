@@ -1836,10 +1836,10 @@ void initializeUnderIOTypes(Thread* thread) {
                  kIncrementalNewlineDecoderAttributes);
 
   addBuiltinType(thread, ID(_RawIOBase), LayoutId::kUnderRawIOBase,
-                 /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0});
+                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes);
 
   addBuiltinType(thread, ID(_BufferedIOBase), LayoutId::kUnderBufferedIOBase,
-                 /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0});
+                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes);
 
   addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
@@ -1866,7 +1866,7 @@ void initializeUnderIOTypes(Thread* thread) {
                  kFileIOAttributes);
 
   addBuiltinType(thread, ID(_TextIOBase), LayoutId::kUnderTextIOBase,
-                 /*superclass_id=*/LayoutId::kUnderIOBase, {nullptr, 0});
+                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes);
 
   addBuiltinType(thread, ID(TextIOWrapper), LayoutId::kTextIOWrapper,
                  /*superclass_id=*/LayoutId::kUnderTextIOBase,
