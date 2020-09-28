@@ -31,6 +31,7 @@ _warnings.py
 _weakref.py
 array.py
 array_test.py
+asyncio/tasks.py
 builtins.py
 builtins_bytearray_test.py
 builtins_bytes_test.py

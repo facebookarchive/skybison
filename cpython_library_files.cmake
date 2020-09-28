@@ -45,7 +45,6 @@ asyncio/selector_events.py
 asyncio/sslproto.py
 asyncio/streams.py
 asyncio/subprocess.py
-asyncio/tasks.py
 asyncio/transports.py
 asyncio/unix_events.py
 asyncio/windows_events.py
