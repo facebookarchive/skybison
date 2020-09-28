@@ -33,6 +33,7 @@ array.py
 array_test.py
 builtins.py
 builtins_int_test.py
+builtins_str_test.py
 builtins_test.py
 collections_test.py
 command_test.py
