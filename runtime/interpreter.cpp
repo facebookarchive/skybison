@@ -85,7 +85,8 @@ RawObject Interpreter::prepareCallable(Thread* thread, Object* callable,
     }
     // TODO(T44238481): Look into using lookupMethod() once it's fixed.
     Type type(&scope, runtime->typeOf(**callable));
-    Object dunder_call(&scope, typeLookupInMroById(thread, type, ID(__call__)));
+    Object dunder_call(&scope,
+                       typeLookupInMroById(thread, *type, ID(__call__)));
     if (!dunder_call.isErrorNotFound()) {
       if (dunder_call.isFunction()) {
         // Avoid calling function.__get__ and creating a short-lived BoundMethod
@@ -95,7 +96,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Object* callable,
         return Bool::trueObj();
       }
       Type call_type(&scope, runtime->typeOf(*dunder_call));
-      if (typeIsNonDataDescriptor(thread, call_type)) {
+      if (typeIsNonDataDescriptor(thread, *call_type)) {
         *callable = callDescriptorGet(thread, dunder_call, *callable, type);
         if (callable->isErrorException()) return **callable;
         if (callable->isFunction()) return Bool::falseObj();
@@ -390,10 +391,9 @@ RawObject Interpreter::callDescriptorGet(Thread* thread,
                                          const Object& receiver,
                                          const Object& receiver_type) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope,
-                typeLookupInMroById(thread, descriptor_type, ID(__get__)));
+  Object method(
+      &scope, typeLookupInMroById(
+                  thread, thread->runtime()->typeOf(*descriptor), ID(__get__)));
   DCHECK(!method.isErrorNotFound(), "no __get__ method found");
   return call3(thread, method, descriptor, receiver, receiver_type);
 }
@@ -416,7 +416,7 @@ RawObject Interpreter::lookupMethod(Thread* thread, const Object& receiver,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
-  Object method(&scope, typeLookupInMroById(thread, type, selector));
+  Object method(&scope, typeLookupInMroById(thread, *type, selector));
   if (method.isFunction() || method.isErrorNotFound()) {
     // Do not create a short-lived bound method object, and propagate
     // exceptions.
@@ -620,17 +620,17 @@ static RawObject binaryOperationLookupReflected(Thread* thread,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
-  Type right_type(&scope, runtime->typeOf(*right));
   Object right_reversed_method(
-      &scope, typeLookupInMroById(thread, right_type, swapped_selector));
+      &scope,
+      typeLookupInMroById(thread, runtime->typeOf(*right), swapped_selector));
   if (right_reversed_method.isErrorNotFound()) return *right_reversed_method;
 
   // Python doesn't bother calling the reverse method when the slot on left and
   // right points to the same method. We compare the reverse methods to get
   // close to this behavior.
-  Type left_type(&scope, runtime->typeOf(*left));
   Object left_reversed_method(
-      &scope, typeLookupInMroById(thread, left_type, swapped_selector));
+      &scope,
+      typeLookupInMroById(thread, runtime->typeOf(*left), swapped_selector));
   if (left_reversed_method == right_reversed_method) {
     return Error::notFound();
   }
@@ -671,7 +671,7 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, BinaryOp op,
   SymbolId selector = runtime->binaryOperationSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
   Type right_type(&scope, runtime->typeOf(*right));
-  Object left_method(&scope, typeLookupInMroById(thread, left_type, selector));
+  Object left_method(&scope, typeLookupInMroById(thread, *left_type, selector));
 
   // Figure out whether we want to run the normal or the reverse operation
   // first and set `flags` accordingly.
@@ -738,7 +738,7 @@ RawObject Interpreter::inplaceOperationSetMethod(Thread* thread, BinaryOp op,
   Runtime* runtime = thread->runtime();
   SymbolId selector = runtime->inplaceOperationSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
-  Object method(&scope, typeLookupInMroById(thread, left_type, selector));
+  Object method(&scope, typeLookupInMroById(thread, *left_type, selector));
   if (!method.isErrorNotFound()) {
     if (method.isFunction()) {
       if (method_out != nullptr) {
@@ -789,7 +789,7 @@ RawObject Interpreter::compareOperationSetMethod(Thread* thread, CompareOp op,
   SymbolId selector = runtime->comparisonSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
   Type right_type(&scope, runtime->typeOf(*right));
-  Object left_method(&scope, typeLookupInMroById(thread, left_type, selector));
+  Object left_method(&scope, typeLookupInMroById(thread, *left_type, selector));
 
   // Figure out whether we want to run the normal or the reverse operation
   // first and set `flags` accordingly.
@@ -798,7 +798,7 @@ RawObject Interpreter::compareOperationSetMethod(Thread* thread, CompareOp op,
   if (left_type != right_type && (left_method.isErrorNotFound() ||
                                   typeIsSubclass(right_type, left_type))) {
     SymbolId reverse_selector = runtime->swappedComparisonSelector(op);
-    method = typeLookupInMroById(thread, right_type, reverse_selector);
+    method = typeLookupInMroById(thread, *right_type, reverse_selector);
     if (!method.isErrorNotFound()) {
       flags = kBinaryOpReflected;
       if (!left_method.isErrorNotFound()) {
@@ -1429,7 +1429,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   Object container(&scope, thread->stackPeek(1));
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*container));
-  Object getitem(&scope, typeLookupInMroById(thread, type, ID(__getitem__)));
+  Object getitem(&scope, typeLookupInMroById(thread, *type, ID(__getitem__)));
   if (getitem.isErrorNotFound()) {
     if (runtime->isInstanceOfType(*container)) {
       Type container_as_type(&scope, *container);
@@ -2558,7 +2558,7 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   HandleScope scope(thread);
   Object iter(&scope, thread->stackTop());
   Type type(&scope, thread->runtime()->typeOf(*iter));
-  Object next(&scope, typeLookupInMroById(thread, type, ID(__next__)));
+  Object next(&scope, typeLookupInMroById(thread, *type, ID(__next__)));
   if (next.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return Continue::UNWIND;
@@ -2949,7 +2949,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
   Object dunder_setattr(&scope,
-                        typeLookupInMroById(thread, type, ID(__setattr__)));
+                        typeLookupInMroById(thread, *type, ID(__setattr__)));
   if (dunder_setattr == runtime->objectDunderSetattr()) {
     return objectSetAttrSetLocation(thread, object, name, value, location_out);
   }
@@ -3378,7 +3378,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
   Object dunder_getattribute(
-      &scope, typeLookupInMroById(thread, type, ID(__getattribute__)));
+      &scope, typeLookupInMroById(thread, *type, ID(__getattribute__)));
   *kind = LoadAttrKind::kUnknown;
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,

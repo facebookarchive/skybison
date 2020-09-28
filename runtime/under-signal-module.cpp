@@ -97,7 +97,7 @@ RawObject FUNC(_signal, signal)(Thread* thread, Frame* frame, word nargs) {
     handler = SIG_DFL;
   } else {
     Type type(&scope, runtime->typeOf(*callback));
-    if (typeLookupInMroById(thread, type, ID(__call__)).isErrorNotFound()) {
+    if (typeLookupInMroById(thread, *type, ID(__call__)).isErrorNotFound()) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "signal handler must be signal.SIG_IGN, "
                                   "signal.SIG_DFL, or a callable object");

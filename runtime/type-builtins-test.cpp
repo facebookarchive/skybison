@@ -791,7 +791,7 @@ class D(C):
     // "x" is inherited from C to D.
     Str x(&scope, runtime_->newStrFromCStr("x"));
     ASSERT_TRUE(typeAt(d, x).isErrorNotFound());
-    SlotDescriptor descriptor_x(&scope, typeLookupInMro(thread_, d, x));
+    SlotDescriptor descriptor_x(&scope, typeLookupInMro(thread_, *d, *x));
     EXPECT_EQ(descriptor_x.type(), *c);
     EXPECT_TRUE(isStrEqualsCStr(descriptor_x.name(), "x"));
     AttributeInfo info;
@@ -901,7 +901,7 @@ class A:
   ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, a, foo), 2));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, *a, *foo), 2));
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsParentValue) {
@@ -917,7 +917,7 @@ class B(A):
   ASSERT_TRUE(b_obj.isType());
   Type b(&scope, *b_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, b, name), 2));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, *b, *name), 2));
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsOverriddenValue) {
@@ -933,7 +933,7 @@ class B(A):
   ASSERT_TRUE(b_obj.isType());
   Type b(&scope, *b_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, b, name), 4));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, *b, *name), 4));
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroWithNonExistentNameReturnsError) {
@@ -947,7 +947,7 @@ class A:
   ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  EXPECT_TRUE(typeLookupInMro(thread_, a, name).isError());
+  EXPECT_TRUE(typeLookupInMro(thread_, *a, *name).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -961,7 +961,8 @@ class A:
   Object a_obj(&scope, mainModuleAt(runtime_, "A"));
   ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  EXPECT_TRUE(isIntEqualsWord(typeLookupInMroById(thread_, a, ID(__add__)), 3));
+  EXPECT_TRUE(
+      isIntEqualsWord(typeLookupInMroById(thread_, *a, ID(__add__)), 3));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallReceivesExArgs) {
@@ -1297,7 +1298,7 @@ TEST_F(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
 
   Object instance(&scope, runtime_->newInt(123));
   Type owner(&scope, runtime_->typeOf(*instance));
-  Object descr(&scope, typeLookupInMroById(thread_, owner, ID(__add__)));
+  Object descr(&scope, typeLookupInMroById(thread_, *owner, ID(__add__)));
   ASSERT_TRUE(descr.isFunction());
   EXPECT_TRUE(
       resolveDescriptorGet(thread_, descr, instance, owner).isBoundMethod());

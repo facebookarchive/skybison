@@ -196,10 +196,10 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
   Type module_type(&scope, runtime->typeOf(*module));
   // TODO(T66579052): Skip type lookups for `module` type when `name` doesn't
   // start with "__".
-  Object attr(&scope, typeLookupInMro(thread, module_type, name));
+  Object attr(&scope, typeLookupInMro(thread, *module_type, *name));
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
-    if (typeIsDataDescriptor(thread, attr_type)) {
+    if (typeIsDataDescriptor(thread, *attr_type)) {
       return Interpreter::callDescriptorGet(thread, attr, module, module_type);
     }
   }
@@ -216,7 +216,7 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
 
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
-    if (typeIsNonDataDescriptor(thread, attr_type)) {
+    if (typeIsNonDataDescriptor(thread, *attr_type)) {
       return Interpreter::callDescriptorGet(thread, attr, module, module_type);
     }
     return *attr;

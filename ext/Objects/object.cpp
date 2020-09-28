@@ -237,8 +237,7 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   Runtime* runtime = thread->runtime();
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, runtime->typeOf(*object));
-  Object name(&scope, runtime->symbols()->at(ID(__dir__)));
-  Object func(&scope, typeLookupInMro(thread, type, name));
+  Object func(&scope, typeLookupInMroById(thread, *type, ID(__dir__)));
   if (func.isError() || !func.isFunction()) {
     return nullptr;
   }

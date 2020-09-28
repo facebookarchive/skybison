@@ -68,10 +68,10 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
                                       const Object& name, Object* location_out);
 
 // Returns true if the type defines a __set__ method.
-bool typeIsDataDescriptor(Thread* thread, const Type& type);
+bool typeIsDataDescriptor(Thread* thread, RawType type);
 
 // Returns true if the type defines a __get__ method.
-bool typeIsNonDataDescriptor(Thread* thread, const Type& type);
+bool typeIsNonDataDescriptor(Thread* thread, RawType type);
 
 // If descr's Type has __get__(), call it with the appropriate arguments and
 // return the result. Otherwise, return descr.
@@ -87,14 +87,14 @@ void typeInitAttributes(Thread* thread, const Type& type);
 
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
-RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& name);
+RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name);
 
-RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
-                                     const Object& name, Object* location);
+RawObject typeLookupInMroSetLocation(Thread* thread, RawType type,
+                                     RawObject name, Object* location);
 
 // Looks up `id` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
-RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id);
+RawObject typeLookupInMroById(Thread* thread, RawType type, SymbolId id);
 
 // Creates a new type. This function does not perform typeslot inheritance.
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,

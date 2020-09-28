@@ -211,7 +211,7 @@ PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, thread->runtime()->typeOf(*num));
-  return !typeLookupInMroById(thread, type, ID(__index__)).isErrorNotFound();
+  return !typeLookupInMroById(thread, *type, ID(__index__)).isErrorNotFound();
 }
 
 // PyIter_Next
@@ -395,10 +395,10 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, thread->runtime()->typeOf(*num));
-  if (!typeLookupInMroById(thread, type, ID(__int__)).isErrorNotFound()) {
+  if (!typeLookupInMroById(thread, *type, ID(__int__)).isErrorNotFound()) {
     return true;
   }
-  if (!typeLookupInMroById(thread, type, ID(__float__)).isErrorNotFound()) {
+  if (!typeLookupInMroById(thread, *type, ID(__float__)).isErrorNotFound()) {
     return true;
   }
   return false;

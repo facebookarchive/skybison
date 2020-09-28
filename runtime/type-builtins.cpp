@@ -45,8 +45,9 @@ RawObject attributeName(Thread* thread, const Object& name_obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*name_obj));
-  if (typeLookupInMroById(thread, type, ID(__eq__)) != runtime->strDunderEq() ||
-      typeLookupInMroById(thread, type, ID(__hash__)) !=
+  if (typeLookupInMroById(thread, *type, ID(__eq__)) !=
+          runtime->strDunderEq() ||
+      typeLookupInMroById(thread, *type, ID(__hash__)) !=
           runtime->strDunderHash()) {
     UNIMPLEMENTED(
         "str subclasses with __eq__ or __hash__ not supported as attribute "
@@ -70,8 +71,9 @@ RawObject attributeNameNoException(Thread* thread, const Object& name_obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*name_obj));
-  if (typeLookupInMroById(thread, type, ID(__eq__)) != runtime->strDunderEq() ||
-      typeLookupInMroById(thread, type, ID(__hash__)) !=
+  if (typeLookupInMroById(thread, *type, ID(__eq__)) !=
+          runtime->strDunderEq() ||
+      typeLookupInMroById(thread, *type, ID(__hash__)) !=
           runtime->strDunderHash()) {
     UNIMPLEMENTED(
         "str subclasses with __eq__ or __hash__ not supported as attribute "
@@ -158,7 +160,7 @@ RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type) {
       "can't set attributes of built-in/extension type '%S'", &type_name);
 }
 
-bool typeIsDataDescriptor(Thread* thread, const Type& type) {
+bool typeIsDataDescriptor(Thread* thread, RawType type) {
   if (type.isBuiltin()) {
     LayoutId layout_id = type.instanceLayoutId();
     return layout_id == LayoutId::kProperty ||
@@ -168,7 +170,7 @@ bool typeIsDataDescriptor(Thread* thread, const Type& type) {
   return !typeLookupInMroById(thread, type, ID(__set__)).isError();
 }
 
-bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
+bool typeIsNonDataDescriptor(Thread* thread, RawType type) {
   if (type.isBuiltin()) {
     switch (type.instanceLayoutId()) {
       case LayoutId::kClassMethod:
@@ -187,9 +189,10 @@ bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
 RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance,
                                const Object& instance_type) {
-  HandleScope scope(thread);
-  Type type(&scope, thread->runtime()->typeOf(*descr));
-  if (!typeIsNonDataDescriptor(thread, type)) return *descr;
+  if (!typeIsNonDataDescriptor(
+          thread, thread->runtime()->typeOf(*descr).rawCast<RawType>())) {
+    return *descr;
+  }
   return Interpreter::callDescriptorGet(thread, descr, instance, instance_type);
 }
 
@@ -401,15 +404,14 @@ RawObject inline USED typeValueCellAtPut(Thread* thread, const Type& type,
   }
 }
 
-RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
-                                     const Object& name, Object* location) {
+RawObject typeLookupInMroSetLocation(Thread* thread, RawType type,
+                                     RawObject name, Object* location) {
   RawTuple mro = Tuple::cast(type.mro());
-  RawObject name_raw = *name;
-  word hash = internedStrHash(name_raw);
-  for (word i = 0; i < mro.length(); i++) {
+  word hash = internedStrHash(name);
+  for (word i = 0, length = mro.length(); i < length; i++) {
     DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
     RawType mro_type = mro.at(i).rawCast<RawType>();
-    RawObject result = typeAtSetLocation(mro_type, name_raw, hash, location);
+    RawObject result = typeAtSetLocation(mro_type, name, hash, location);
     if (!result.isErrorNotFound()) {
       return result;
     }
@@ -417,15 +419,13 @@ RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
   return Error::notFound();
 }
 
-RawObject typeLookupInMro(Thread* thread, const Type& type,
-                          const Object& name) {
+RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name) {
   RawTuple mro = Tuple::cast(type.mro());
-  RawObject name_raw = *name;
-  word hash = internedStrHash(name_raw);
-  for (word i = 0; i < mro.length(); i++) {
+  word hash = internedStrHash(name);
+  for (word i = 0, length = mro.length(); i < length; i++) {
     DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
     RawType mro_type = mro.at(i).rawCast<RawType>();
-    RawObject result = typeAtWithHash(mro_type, name_raw, hash);
+    RawObject result = typeAtWithHash(mro_type, name, hash);
     if (!result.isErrorNotFound()) {
       return result;
     }
@@ -433,10 +433,8 @@ RawObject typeLookupInMro(Thread* thread, const Type& type,
   return Error::notFound();
 }
 
-RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id) {
-  HandleScope scope(thread);
-  Object name(&scope, thread->runtime()->symbols()->at(id));
-  return typeLookupInMro(thread, type, name);
+RawObject typeLookupInMroById(Thread* thread, RawType type, SymbolId id) {
+  return typeLookupInMro(thread, type, thread->runtime()->symbols()->at(id));
 }
 
 RawObject typeRemove(Thread* thread, const Type& type, const Object& name) {
@@ -554,7 +552,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type meta_type(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name));
+  Object meta_attr(&scope, typeLookupInMro(thread, *meta_type, *name));
   if (!meta_attr.isError()) {
     // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
     if (meta_attr.isProperty()) {
@@ -564,14 +562,14 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
       }
     }
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
-    if (typeIsDataDescriptor(thread, meta_attr_type)) {
+    if (typeIsDataDescriptor(thread, *meta_attr_type)) {
       return Interpreter::callDescriptorGet(thread, meta_attr, type, meta_type);
     }
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
   Object attr(&scope,
-              typeLookupInMroSetLocation(thread, type, name, location_out));
+              typeLookupInMroSetLocation(thread, *type, *name, location_out));
   if (!attr.isError()) {
     // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
     if (attr.isFunction()) {
@@ -581,7 +579,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
       return *attr;
     }
     Type attr_type(&scope, runtime->typeOf(*attr));
-    if (typeIsNonDataDescriptor(thread, attr_type)) {
+    if (typeIsNonDataDescriptor(thread, *attr_type)) {
       // Unfortunately calling `__get__` for a lookup on `type(None)` will look
       // exactly the same as calling it for a lookup on the `None` object.
       // To solve the ambiguity we add a special case for `type(None)` here.
@@ -1119,10 +1117,10 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
 
   // Check for a data descriptor
   Type metatype(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope, typeLookupInMro(thread, metatype, name));
+  Object meta_attr(&scope, typeLookupInMro(thread, *metatype, *name));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
-    if (typeIsDataDescriptor(thread, meta_attr_type)) {
+    if (typeIsDataDescriptor(thread, *meta_attr_type)) {
       Object set_result(&scope, Interpreter::callDescriptorSet(
                                     thread, meta_attr, type, value));
       if (set_result.isError()) return *set_result;

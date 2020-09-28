@@ -1641,7 +1641,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
     typeSlotAtPut(thread, type, Py_tp_repr,
                   reinterpret_cast<void*>(&PyObject_Repr));
     // PyObject_Repr delegates its job to type.__repr__().
-    DCHECK(!typeLookupInMroById(thread, type, ID(__repr__)).isErrorNotFound(),
+    DCHECK(!typeLookupInMroById(thread, *type, ID(__repr__)).isErrorNotFound(),
            "__repr__ is expected");
   }
 
@@ -1650,7 +1650,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
     typeSlotAtPut(thread, type, Py_tp_str,
                   reinterpret_cast<void*>(&PyObject_Str));
     // PyObject_Str delegates its job to type.__str__().
-    DCHECK(!typeLookupInMroById(thread, type, ID(__str__)).isErrorNotFound(),
+    DCHECK(!typeLookupInMroById(thread, *type, ID(__str__)).isErrorNotFound(),
            "__str__ is expected");
   }
 
@@ -1989,7 +1989,7 @@ PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   name_obj = attributeNameNoException(thread, name_obj);
   if (name_obj.isErrorError()) return nullptr;
-  Object res(&scope, typeLookupInMro(thread, type_obj, name_obj));
+  Object res(&scope, typeLookupInMro(thread, *type_obj, *name_obj));
   if (res.isErrorNotFound()) {
     return nullptr;
   }

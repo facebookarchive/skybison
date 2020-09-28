@@ -382,8 +382,8 @@ class Runtime {
   void setSmallIntType(const Type& type);
   void setSmallStrType(const Type& type);
 
-  RawObject typeOf(RawObject object) {
-    return Layout::cast(layoutOf(object)).describedType();
+  RawType typeOf(RawObject object) {
+    return Layout::cast(layoutOf(object)).describedType().rawCast<RawType>();
   }
 
   RawObject typeAt(LayoutId layout_id);

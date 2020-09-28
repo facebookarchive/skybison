@@ -459,7 +459,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a delete descriptor
   Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, typeLookupInMro(thread, metatype, name));
+  Object meta_attr(&scope, typeLookupInMro(thread, *metatype, *name));
   if (!meta_attr.isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
       return Interpreter::callDescriptorDelete(thread, meta_attr, receiver);
@@ -482,7 +482,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a descriptor with __delete__
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, type_attr, receiver);
@@ -507,7 +507,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, type_attr, receiver);
@@ -533,27 +533,27 @@ bool Runtime::isCallable(Thread* thread, const Object& obj) {
     return true;
   }
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, ID(__call__)).isError();
+  return !typeLookupInMroById(thread, *type, ID(__call__)).isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !typeLookupInMroById(thread, type, ID(__delete__)).isError();
+  return !typeLookupInMroById(thread, *type, ID(__delete__)).isError();
 }
 
 bool Runtime::isIterator(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, ID(__next__)).isError();
+  return !typeLookupInMroById(thread, *type, ID(__next__)).isError();
 }
 
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
   if (obj.isDict()) return true;
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, ID(__getitem__)).isError();
+  return !typeLookupInMroById(thread, *type, ID(__getitem__)).isError();
 }
 
 bool Runtime::isSequence(Thread* thread, const Object& obj) {
@@ -562,7 +562,7 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, ID(__getitem__)).isError();
+  return !typeLookupInMroById(thread, *type, ID(__getitem__)).isError();
 }
 
 RawObject Runtime::newCode(word argcount, word posonlyargcount,
@@ -3215,7 +3215,7 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
   // If present, __delattr__ overrides all attribute deletion logic.
   Type type(&scope, typeOf(*receiver));
   Object dunder_delattr(&scope,
-                        typeLookupInMroById(thread, type, ID(__delattr__)));
+                        typeLookupInMroById(thread, *type, ID(__delattr__)));
   RawObject result = NoneType::object();
   if (!dunder_delattr.isError()) {
     result = Interpreter::callMethod2(thread, dunder_delattr, receiver, name);

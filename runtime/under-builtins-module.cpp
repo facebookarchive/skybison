@@ -3716,7 +3716,7 @@ RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread, Frame* frame,
   name = attributeName(thread, name);
   if (name.isErrorException()) return *name;
   Type type(&scope, thread->runtime()->typeOf(*instance));
-  Object attr(&scope, typeLookupInMro(thread, type, name));
+  Object attr(&scope, typeLookupInMro(thread, *type, *name));
   if (attr.isErrorNotFound()) {
     return Unbound::object();
   }
@@ -3734,7 +3734,7 @@ RawObject FUNC(_builtins, _object_type_hasattr)(Thread* thread, Frame* frame,
   Object name(&scope, args.get(1));
   name = attributeName(thread, name);
   if (name.isErrorException()) return *name;
-  Object result(&scope, typeLookupInMro(thread, type, name));
+  Object result(&scope, typeLookupInMro(thread, *type, *name));
   return Bool::fromBool(!result.isErrorNotFound());
 }
 
@@ -5516,7 +5516,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
   if (self.isType()) {
     // Metaclass is "type" so we do not need to check for __new__ being a
     // datadescriptor and we can look it up directly on the type
-    dunder_new = typeLookupInMro(thread, self, dunder_new_name);
+    dunder_new = typeLookupInMro(thread, *self, *dunder_new_name);
   }
 
   if (dunder_new == runtime->objectDunderNew()) {

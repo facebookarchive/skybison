@@ -196,7 +196,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
   Object type_attr_location(&scope, NoneType::object());
-  Object type_attr(&scope, typeLookupInMroSetLocation(thread, type, name,
+  Object type_attr(&scope, typeLookupInMroSetLocation(thread, *type, *name,
                                                       &type_attr_location));
   if (!type_attr.isError()) {
     // TODO(T56252621): Remove this once property gets cached.
@@ -225,7 +225,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
       return *result;
     }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
-    if (typeIsDataDescriptor(thread, type_attr_type)) {
+    if (typeIsDataDescriptor(thread, *type_attr_type)) {
       if (location_out != nullptr) {
         *location_out = *type_attr;
         *kind = LoadAttrKind::kInstanceTypeDescr;
@@ -257,7 +257,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     }
 
     Type type_attr_type(&scope, thread->runtime()->typeOf(*type_attr));
-    if (!typeIsNonDataDescriptor(thread, type_attr_type)) {
+    if (!typeIsNonDataDescriptor(thread, *type_attr_type)) {
       if (location_out != nullptr) {
         *location_out = *type_attr;
         *kind = LoadAttrKind::kInstanceType;
@@ -326,7 +326,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
   if (!type_attr.isError()) {
     if (type_attr.isSlotDescriptor()) {
       SlotDescriptor slot_descriptor(&scope, *type_attr);
@@ -342,7 +342,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
       return *result;
     }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
-    if (typeIsDataDescriptor(thread, type_attr_type)) {
+    if (typeIsDataDescriptor(thread, *type_attr_type)) {
       // Do not cache data descriptors.
       Object set_result(&scope, Interpreter::callDescriptorSet(
                                     thread, type_attr, object, value));
@@ -460,9 +460,9 @@ RawObject METH(object, __init__)(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   Type type(&scope, runtime->typeOf(*self));
-  if ((typeLookupInMroById(thread, type, ID(__new__)) ==
+  if ((typeLookupInMroById(thread, *type, ID(__new__)) ==
        runtime->objectDunderNew()) ||
-      (typeLookupInMroById(thread, type, ID(__init__)) !=
+      (typeLookupInMroById(thread, *type, ID(__init__)) !=
        runtime->objectDunderInit())) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
     // overwritten by self, or __init__ was overloaded by self.
