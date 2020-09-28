@@ -16,10 +16,6 @@ namespace py {
 
 static bool dumpSimple(std::ostream& os, RawObject value);
 
-static const char* kOpNames[] = {
-#define OPNAME(name, num, handler) #name,
-    FOREACH_BYTECODE(OPNAME)};
-
 static std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
                                   const char* indent) {
   for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
@@ -28,7 +24,7 @@ static std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
     std::ios_base::fmtflags saved_flags = os.flags();
     os << indent << "  " << std::setw(4) << std::hex << i << ' ';
     os.flags(saved_flags);
-    os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
+    os << kBytecodeNames[op] << " " << static_cast<unsigned>(arg) << '\n';
   }
   return os;
 }
@@ -42,7 +38,7 @@ static std::ostream& dumpMutableBytecode(std::ostream& os,
     std::ios_base::fmtflags saved_flags = os.flags();
     os << indent << "  " << std::setw(4) << std::hex << i << ' ';
     os.flags(saved_flags);
-    os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
+    os << kBytecodeNames[op] << " " << static_cast<unsigned>(arg) << '\n';
   }
   return os;
 }
