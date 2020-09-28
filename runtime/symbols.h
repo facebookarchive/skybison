@@ -710,6 +710,7 @@ class Runtime;
   V(module)                                                                    \
   V(module_proxy)                                                              \
   V(modules)                                                                   \
+  V(mro)                                                                       \
   V(msg)                                                                       \
   V(mul)                                                                       \
   V(n_fields)                                                                  \

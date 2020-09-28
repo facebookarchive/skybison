@@ -256,7 +256,6 @@ from _builtins import (
     _type_check_exact,
     _type_dunder_call,
     _type_guard,
-    _type_init,
     _type_issubclass,
     _type_module_get,
     _type_module_set,
@@ -346,8 +345,7 @@ def _non_heaptype(name, bases, type_dict, **kwargs):
     if not bases:
         bases = (object,)
     heaptype = False
-    instance = _type_new(type, bases, heaptype)
-    return _type_init(instance, name, type_dict, _Unbound)
+    return _type_new(type, name, bases, type_dict, heaptype)
 
 
 class function(bootstrap=True):
@@ -521,15 +519,15 @@ class type(bootstrap=True):
     __name__ = _property(_type_name_get, _type_name_set)
 
     @_staticmethod
-    def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound, **kwargs):
-        if cls is type and bases is _Unbound and type_dict is _Unbound:
+    def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound, **kwargs):
+        if cls is type and bases is _Unbound and dict is _Unbound:
             # If the first argument is exactly type, and there are no other
             # arguments, then this call returns the type of the argument.
             return _type(name_or_object)
         _type_guard(cls)
         _str_guard(name_or_object)
         _tuple_guard(bases)
-        _dict_guard(type_dict)
+        _dict_guard(dict)
         if not bases:
             bases = (object,)
         else:
@@ -542,12 +540,10 @@ class type(bootstrap=True):
             if metaclass is not cls:
                 new = metaclass.__new__
                 if new is not type.__new__:
-                    return new(metaclass, name_or_object, bases, type_dict, **kwargs)
+                    return new(metaclass, name_or_object, bases, dict, **kwargs)
                 cls = metaclass
         heaptype = True
-        instance = _type_new(cls, bases, heaptype)
-        mro = _Unbound if cls is type else tuple(cls.mro(instance))
-        new_type = _type_init(instance, name_or_object, type_dict, mro)
+        new_type = _type_new(cls, name_or_object, bases, dict, heaptype)
         _super(new_type).__init_subclass__(**kwargs)
         return new_type
 

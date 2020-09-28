@@ -5699,19 +5699,15 @@ RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type metaclass(&scope, args.get(0));
-  Tuple bases(&scope, tupleUnderlying(args.get(1)));
-  Bool is_heaptype(&scope, args.get(2));
-  LayoutId metaclass_id = metaclass.instanceLayoutId();
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
-  type.setBases(*bases);
-  type.setFlags(is_heaptype.value() ? Type::Flag::kIsCPythonHeaptype
-                                    : Type::Flag::kNone);
-  Function type_dunder_call(&scope,
-                            runtime->lookupNameInModule(thread, ID(_builtins),
-                                                        ID(_type_dunder_call)));
-  type.setCtor(*type_dunder_call);
-  return *type;
+  Str name(&scope, strUnderlying(args.get(1)));
+  Tuple bases(&scope, tupleUnderlying(args.get(2)));
+  Dict dict(&scope, args.get(3));
+  Bool is_heaptype(&scope, args.get(4));
+
+  word flags =
+      is_heaptype.value() ? Type::Flag::kIsCPythonHeaptype : Type::Flag::kNone;
+  return typeNew(thread, metaclass, name, bases, dict, flags,
+                 /*inherit_slots=*/true, /*add_instance_dict=*/true);
 }
 
 RawObject FUNC(_builtins, _type_proxy)(Thread* thread, Frame* frame,
@@ -5821,25 +5817,6 @@ RawObject FUNC(_builtins, _type_qualname_set)(Thread* thread, Frame* frame,
   }
   type.setQualname(*value);
   return NoneType::object();
-}
-
-RawObject FUNC(_builtins, _type_init)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Type type(&scope, args.get(0));
-  Str name(&scope, args.get(1));
-  Dict dict(&scope, args.get(2));
-  Tuple mro(&scope, thread->runtime()->emptyTuple());
-  if (args.get(3).isUnbound()) {
-    Object mro_obj(&scope, computeMro(thread, type));
-    if (mro_obj.isError()) return *mro_obj;
-    mro = *mro_obj;
-  } else {
-    mro = args.get(3);
-  }
-  return typeInit(thread, type, name, dict, mro, /*inherit_slots=*/true,
-                  /*add_instance_dict=*/true);
 }
 
 RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,

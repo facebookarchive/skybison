@@ -13507,6 +13507,26 @@ class TypeTests(unittest.TestCase):
             "type() doesn't support MRO entry resolution; use types.new_class()",
         )
 
+    def test_mro_returning_iterable_returns_class_with_mro_tuple(self):
+        class A:
+            foo = 42
+
+        class X:
+            def __init__(self, cls):
+                self.cls = cls
+
+            def __iter__(self):
+                return iter((self.cls, A))
+
+        class Meta(type):
+            def mro(cls):
+                return X(cls)
+
+        C = Meta.__new__(Meta, "C", (object,), {})
+        self.assertIs(type(C.__mro__), tuple)
+        self.assertEqual(C.__mro__, (C, A))
+        self.assertEqual(C.foo, 42)
+
     def test_new_calls_init_subclass(self):
         class Foo:
             def __init_subclass__(cls, *args, **kwargs):

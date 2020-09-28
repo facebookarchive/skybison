@@ -1147,11 +1147,7 @@ def _type_proxy(type_obj):
     _builtin()
 
 
-def _type_init(metaclass_instance, name, dict, mro):
-    _builtin()
-
-
-def _type_new(cls, bases, is_heaptype):
+def _type_new(cls, name, bases, dict, is_heaptype):
     _builtin()
 
 

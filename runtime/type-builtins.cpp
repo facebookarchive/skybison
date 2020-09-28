@@ -871,23 +871,41 @@ static RawObject getModuleNameAtFrame(Thread* thread, int depth) {
   return moduleAtById(thread, module, ID(__name__));
 }
 
-RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Dict& dict, const Tuple& mro, bool inherit_slots,
-                   bool add_instance_dict) {
-  type.setName(*name);
+RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
+                  const Tuple& bases, const Dict& dict, word flags,
+                  bool inherit_slots, bool add_instance_dict) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (mro.isTuple()) {
-    type.setMro(*mro);
+
+  LayoutId metaclass_id = Layout::cast(metaclass.instanceLayout()).id();
+  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
+  type.setName(*name);
+  type.setBases(*bases);
+
+  Object mro_obj(&scope, NoneType::object());
+  if (metaclass_id == LayoutId::kType) {
+    mro_obj = computeMro(thread, type);
+    if (mro_obj.isErrorException()) return *mro_obj;
   } else {
-    Tuple mro_copy(&scope, runtime->tupleSubseq(thread, mro, 0, mro.length()));
-    type.setMro(*mro_copy);
+    mro_obj = thread->invokeMethod1(type, ID(mro));
+    if (mro_obj.isErrorException()) return *mro_obj;
+    if (mro_obj.isErrorNotFound()) {
+      Object mro_name(&scope, runtime->symbols()->at(ID(mro)));
+      return objectRaiseAttributeError(thread, metaclass, mro_name);
+    }
+    if (!mro_obj.isTuple()) {
+      mro_obj = thread->invokeFunction1(ID(builtins), ID(tuple), mro_obj);
+      if (mro_obj.isErrorException()) return *mro_obj;
+      CHECK(mro_obj.isTuple(), "Result of builtins.tuple should be tuple");
+    }
   }
+  Tuple mro(&scope, *mro_obj);
+  type.setMro(*mro);
 
   Object result(&scope, typeAssignFromDict(thread, type, dict));
   if (result.isErrorException()) return *result;
 
-  if (type.isCPythonHeaptype()) {
+  if (flags & Type::Flag::kIsCPythonHeaptype) {
     if (typeAtById(thread, type, ID(__module__)).isErrorNotFound()) {
       // Use depth=3 to skip over frame of `_type_init`, `type.__new__`
       // and `type.__call__`.
@@ -953,11 +971,9 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 
   // Analyze bases: Merge flags; add to subclasses lists; check for attribute
   // dictionaries.
-  word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
   bool bases_have_instance_dict = false;
   bool bases_have_type_slots = false;
-  Tuple bases(&scope, type.bases());
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     flags |= base_type.flags();
@@ -1057,22 +1073,6 @@ void typeInitAttributes(Thread* thread, const Type& type) {
   type.setAttributes(thread->runtime()->newMutableTuple(kInitialCapacity));
   word num_buckets = kInitialCapacity >> 1;
   type.setAttributesRemaining((num_buckets * 2) / 3);
-}
-
-RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
-                  const Tuple& bases, const Dict& dict, Type::Flag flags,
-                  bool add_instance_dict) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
-  type.setName(*name);
-  type.setBases(*bases);
-  Object mro_obj(&scope, computeMro(thread, type));
-  if (mro_obj.isError()) return *mro_obj;
-  Tuple mro(&scope, *mro_obj);
-  type.setFlags(flags);
-  return typeInit(thread, type, name, dict, mro, /*inherit_slots=*/false,
-                  /*add_instance_dict=*/add_instance_dict);
 }
 
 // NOTE: Keep the order of these type attributes same as the one from

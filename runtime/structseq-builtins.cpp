@@ -77,8 +77,9 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   // Create type
   Tuple bases(&scope, runtime->newTuple(1));
   bases.atPut(0, runtime->typeAt(LayoutId::kTuple));
-  Type type(&scope, typeNew(thread, LayoutId::kType, type_name, bases, dict,
-                            static_cast<Type::Flag>(flags),
+  Type metaclass(&scope, runtime->typeAt(LayoutId::kType));
+  Type type(&scope, typeNew(thread, metaclass, type_name, bases, dict, flags,
+                            /*inherit_slots=*/true,
                             /*add_instance_dict=*/false));
 
   // Add hidden fields as in-object attributes in the instance layout.
