@@ -33,6 +33,7 @@ array.py
 array_test.py
 builtins.py
 builtins_bytearray_test.py
+builtins_bytes_test.py
 builtins_int_test.py
 builtins_list_test.py
 builtins_str_test.py
