@@ -3076,9 +3076,6 @@ class coroutine_wrapper(bootstrap=True):
         _builtin()
 
 
-credits = ""
-
-
 def delattr(obj, name):
     _builtin()
 
@@ -3977,10 +3974,6 @@ class frame(bootstrap=True):
         _unimplemented()
 
 
-def help(obj=_Unbound):
-    _unimplemented()
-
-
 def hex(number) -> str:
     _builtin()
 
@@ -4618,9 +4611,6 @@ def len(seq):
     if dunder_len is _Unbound:
         raise TypeError(f"object of type '{_type(seq).__name__}' has no len()")
     return _index(dunder_len())
-
-
-license = ""
 
 
 class list(bootstrap=True):
@@ -5428,10 +5418,6 @@ def print(*args, sep=" ", end="\n", file=None, flush=False):
     file.write(end)
     if flush:
         file.flush()
-
-
-def quit():
-    _unimplemented()
 
 
 class range(bootstrap=True):
