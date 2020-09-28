@@ -3204,10 +3204,6 @@ class RawLayout : public RawInstance {
       kDeletionsOffset + kPointerSize;
   static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
 
-  // Initialization should only be done by the Runtime.
-  static RawObject initialize(uword address, LayoutId layout_id,
-                              RawObject value);
-
   RAW_OBJECT_COMMON(Layout);
 };
 
@@ -7297,24 +7293,6 @@ inline bool RawLayout::isNativeProxyLayout() const {
     return false;
   }
   return described_type.rawCast<RawType>().hasNativeData();
-}
-
-inline RawObject RawLayout::initialize(uword address, LayoutId layout_id,
-                                       RawObject value) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeader(RawHeader::from(RawLayout::kSize / kPointerSize,
-                                static_cast<word>(layout_id), LayoutId::kLayout,
-                                ObjectFormat::kObjects));
-  word start = RawHeapObject::kSize;
-  word size = RawLayout::kSize;
-  if (LIKELY(value == RawNoneType::object())) {
-    std::memset(reinterpret_cast<byte*>(address + start), -1, size - start);
-  } else {
-    for (word offset = start; offset < size; offset += kPointerSize) {
-      *reinterpret_cast<RawObject*>(address + offset) = value;
-    }
-  }
-  return raw;
 }
 
 // RawSetIterator

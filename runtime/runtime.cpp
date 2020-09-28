@@ -223,11 +223,7 @@ RawObject Runtime::newBoundMethod(const Object& function, const Object& self) {
 
 RawObject Runtime::newLayout(LayoutId id) {
   HandleScope scope;
-  uword address;
-  CHECK(
-      heap()->allocate(Layout::kSize + Header::kSize, Header::kSize, &address),
-      "out of memory");
-  Layout layout(&scope, Layout::initialize(address, id, RawNoneType::object()));
+  Layout layout(&scope, newInstanceWithSize(LayoutId::kLayout, Layout::kSize));
   layout.setId(id);
   layout.setInObjectAttributes(empty_tuple_);
   layout.setAdditions(newList());
@@ -436,13 +432,7 @@ RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  uword address;
-  CHECK(
-      heap()->allocate(Type::kSize + Header::kSize, RawHeader::kSize, &address),
-      "out of memory");
-  word num_attributes = Type::kSize / kPointerSize;
-  Type result(&scope, Instance::initialize(address, num_attributes,
-                                           metaclass_id, NoneType::object()));
+  Type result(&scope, newInstanceWithSize(metaclass_id, Type::kSize));
   result.setFlagsAndBuiltinBase(Type::Flag::kNone, LayoutId::kObject);
   typeInitAttributes(thread, result);
   result.setDoc(NoneType::object());
