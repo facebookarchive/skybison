@@ -671,58 +671,125 @@ TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
       isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 }
 
-TEST_F(InterpreterTest, BinaryOpWithSmallInts) {
+static bool containsBytecode(const Function& function, Bytecode bc) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  MutableBytes bytecode(&scope, function.rewrittenBytecode());
+  for (word i = 0, length = bytecode.length(); i < length;) {
+    BytecodeOp bco = nextBytecodeOp(bytecode, &i);
+    if (bco.bc == bc) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool functionMatchesRef2(const Function& function,
+                                const Object& reference, const Object& arg0,
+                                const Object& arg1) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object expected(&scope, Interpreter::call2(thread, reference, arg0, arg1));
+  EXPECT_FALSE(expected.isError());
+  Object actual(&scope, Interpreter::call2(thread, function, arg0, arg1));
+  EXPECT_FALSE(actual.isError());
+  return Runtime::objectEquals(thread, *expected, *actual) == Bool::trueObj();
+}
+
+// Test that `function(arg0, arg1) == reference(arg0, arg1)` with the assumption
+// that `function` contains a `BINARY_OP_MONOMORPHIC` opcode that will be
+// specialized to `opcode_specialized` when called with `arg0` and `arg1`.
+// Calling the function with `arg_o` should trigger a revert to
+// `BINARY_OP_MONOMORPHIC`.
+static void testBinaryOpRewrite(const Function& function,
+                                const Function& reference,
+                                Bytecode opcode_specialized, const Object& arg0,
+                                const Object& arg1, const Object& arg_o) {
+  EXPECT_TRUE(containsBytecode(function, BINARY_OP_ANAMORPHIC));
+
+  EXPECT_TRUE(functionMatchesRef2(function, reference, arg0, arg1));
+  EXPECT_FALSE(containsBytecode(function, BINARY_OP_ANAMORPHIC));
+  EXPECT_TRUE(containsBytecode(function, opcode_specialized));
+  EXPECT_TRUE(functionMatchesRef2(function, reference, arg1, arg0));
+  EXPECT_TRUE(containsBytecode(function, opcode_specialized));
+
+  EXPECT_TRUE(functionMatchesRef2(function, reference, arg0, arg_o));
+  EXPECT_TRUE(containsBytecode(function, BINARY_OP_MONOMORPHIC));
+  EXPECT_FALSE(containsBytecode(function, opcode_specialized));
+
+  EXPECT_TRUE(functionMatchesRef2(function, reference, arg0, arg1));
+}
+
+TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinaryAddSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
-def foo(a, b):
+def function(a, b):
     return a + b
+reference = int.__add__
 )")
                    .isError());
-  Function function(&scope, mainModuleAt(runtime_, "foo"));
-  MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_OP_ANAMORPHIC);
+  Function function(&scope, mainModuleAt(runtime_, "function"));
+  Function reference(&scope, mainModuleAt(runtime_, "reference"));
+  Object arg0(&scope, SmallInt::fromWord(34));
+  Object arg1(&scope, SmallInt::fromWord(12));
+  const uword digits2[] = {0x12345678, 0xabcdef};
+  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  testBinaryOpRewrite(function, reference, BINARY_ADD_SMALLINT, arg0, arg1,
+                      arg_l);
+}
 
-  SmallInt left(&scope, SmallInt::fromWord(7));
-  SmallInt right(&scope, SmallInt::fromWord(-13));
+TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinarySubSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def function(a, b):
+    return a - b
+reference = int.__sub__
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "function"));
+  Function reference(&scope, mainModuleAt(runtime_, "reference"));
+  Object arg0(&scope, SmallInt::fromWord(94));
+  Object arg1(&scope, SmallInt::fromWord(21));
+  const uword digits2[] = {0x12345678, 0xabcdef};
+  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  testBinaryOpRewrite(function, reference, BINARY_SUB_SMALLINT, arg0, arg1,
+                      arg_l);
+}
 
-  rewritten.byteAtPut(4, BINARY_ADD_SMALLINT);
-  left = SmallInt::fromWord(7);
-  right = SmallInt::fromWord(-13);
-  // 7 + (-13)
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), -6));
-  // 7 + 7
-  left = SmallInt::fromWord(7);
-  right = SmallInt::fromWord(7);
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 14));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_ADD_SMALLINT);
+TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinaryOrSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def function(a, b):
+    return a | b
+reference = int.__or__
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "function"));
+  Function reference(&scope, mainModuleAt(runtime_, "reference"));
+  Object arg0(&scope, SmallInt::fromWord(0xa5));
+  Object arg1(&scope, SmallInt::fromWord(0x42));
+  const uword digits2[] = {0x12345678, 0xabcdef};
+  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  testBinaryOpRewrite(function, reference, BINARY_OR_SMALLINT, arg0, arg1,
+                      arg_l);
+}
 
-  rewritten.byteAtPut(4, BINARY_SUB_SMALLINT);
-  left = SmallInt::fromWord(7);
-  right = SmallInt::fromWord(-13);
-  // 7 - (-13)
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 20));
-  // 7 - 7
-  left = SmallInt::fromWord(7);
-  right = SmallInt::fromWord(7);
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 0));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUB_SMALLINT);
-
-  rewritten.byteAtPut(4, BINARY_OR_SMALLINT);
-  left = SmallInt::fromWord(7);
-  right = SmallInt::fromWord(-13);
-  // 7 | (-13)
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call2(thread_, function, left, right), 7 | -13));
-  // 7 | 8
-  left = SmallInt::fromWord(7);
-  right = SmallInt::fromWord(8);
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::call2(thread_, function, left, right), 7 | 8));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_OR_SMALLINT);
+TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinaryAndSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def function(a, b):
+    return a & b
+reference = int.__and__
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "function"));
+  Function reference(&scope, mainModuleAt(runtime_, "reference"));
+  Object arg0(&scope, SmallInt::fromWord(0xa5));
+  Object arg1(&scope, SmallInt::fromWord(0x42));
+  const uword digits2[] = {0x12345678, 0xabcdef};
+  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  testBinaryOpRewrite(function, reference, BINARY_AND_SMALLINT, arg0, arg1,
+                      arg_l);
 }
 
 TEST_F(InterpreterTest, BinarySubscrWithList) {
@@ -748,28 +815,6 @@ d = {1: -1}
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), -1));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
-}
-
-TEST_F(InterpreterTest, BinaryOpWithSmallIntsRevertsBackToBinaryOp) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-def foo(a, b):
-    return a + b
-)")
-                   .isError());
-  Function function(&scope, mainModuleAt(runtime_, "foo"));
-  MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_OP_ANAMORPHIC);
-
-  LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
-  SmallInt right(&scope, SmallInt::fromWord(13));
-
-  rewritten.byteAtPut(4, BINARY_ADD_SMALLINT);
-  // LARGE_SMALL_INT + SMALL_INT
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
-                      SmallInt::kMaxValue + 1 + 13));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, InplaceOpCachedInsertsDependencyForThreeAttributes) {

@@ -597,13 +597,14 @@ template <>
 void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   Register r_right = RAX;
   Register r_left = R8;
+  Register r_result = RDI;
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_right, &slow_path);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
   // There is not __ orq instruction here because it is in the
   // emitJumpIfNotSmallInt implementation.
-  __ pushq(r_right);
+  __ pushq(r_result);
   emitNextOpcode(env);
 
   __ bind(&slow_path);
