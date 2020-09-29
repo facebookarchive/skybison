@@ -55,6 +55,7 @@ void dump(const Object& object);
 void dump(Frame* frame);
 void dumpPendingException(Thread* thread);
 void dumpSingleFrame(Frame* frame);
+void dumpTraceback();
 
 void initializeDebugging();
 

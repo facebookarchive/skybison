@@ -13,6 +13,7 @@
 #include "runtime.h"
 #include "sys-module.h"
 #include "thread.h"
+#include "traceback-builtins.h"
 #include "type-builtins.h"
 
 namespace py {
@@ -543,6 +544,7 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
   HandleScope scope(thread);
   Object exc_obj(&scope, thread->pendingExceptionType());
   Object val(&scope, thread->pendingExceptionValue());
+  Object tb(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
 
   Runtime* runtime = thread->runtime();
@@ -565,9 +567,11 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
     }
   }
 
-  // TODO(T42602699): Replace with user-level traceback object printer
-  // TODO(T42602545): Write to given file object
-  Utils::printTracebackToStderr();
+  if (tb.isTraceback()) {
+    Traceback traceback(&scope, *tb);
+    Object err(&scope, tracebackWrite(thread, traceback, sys_stderr));
+    DCHECK(!err.isErrorException(), "failed to write traceback");
+  }
 
   if (exc_obj.isNoneType()) {
     thread->clearPendingException();

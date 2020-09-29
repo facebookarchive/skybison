@@ -12,6 +12,7 @@
 #include "capi-handles.h"
 #include "capi.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "modules.h"
 #include "os.h"
 #include "runtime.h"
@@ -78,7 +79,7 @@ PY_EXPORT void _Py_NO_RETURN Py_FatalError(const char* msg) {
     if (thread->hasPendingException()) {
       printPendingException(thread);
     } else {
-      Utils::printTracebackToStderr();
+      thread->runtime()->printTraceback(thread, File::kStderr);
     }
   }
   std::abort();

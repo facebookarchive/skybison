@@ -9,6 +9,7 @@
 
 #include "builtins-module.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -721,7 +722,7 @@ void Thread::ignorePendingException() {
   }
   fprintf(stderr, "\n");
   clearPendingException();
-  Utils::printTracebackToStderr();
+  runtime_->printTraceback(this, File::kStderr);
 }
 
 void Thread::clearPendingException() {

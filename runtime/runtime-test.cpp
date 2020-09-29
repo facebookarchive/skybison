@@ -10,6 +10,7 @@
 #include "bytes-builtins.h"
 #include "capi.h"
 #include "dict-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "layout.h"
@@ -3574,6 +3575,47 @@ TEST_F(RuntimeTest, ObjectEqualsWithIntAndBoolReturnsBool) {
   EXPECT_EQ(
       Runtime::objectEquals(thread_, SmallInt::fromWord(0), Bool::trueObj()),
       Bool::falseObj());
+}
+
+static RawObject testPrintTraceback(Thread* thread, Frame*, word) {
+  TemporaryDirectory tempdir;
+  std::string temp = tempdir.path + "traceback";
+  int fd = File::open(temp.c_str(), File::kCreate | File::kWriteOnly, 0777);
+  DCHECK(fd != -1, "error opening file");
+
+  thread->runtime()->printTraceback(thread, fd);
+  DCHECK(File::close(fd) == 0, "error closing file");
+
+  word length;
+  FILE* fp = std::fopen(temp.c_str(), "r");
+  std::unique_ptr<char[]> traceback(OS::readFile(fp, &length));
+  std::fclose(fp);
+
+  return thread->runtime()->newStrWithAll(
+      {reinterpret_cast<byte*>(traceback.get()), length});
+}
+
+TEST_F(RuntimeTest, PrintTracebackPrintsToFileDescriptor) {
+  addBuiltin("traceback", testPrintTraceback, {nullptr, 0}, 0);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(x, y):
+  # emptyline
+  result = bar(y, x)
+  return result
+def bar(y, x):
+  local = 42
+  return traceback()
+result = foo('a', 99)
+)")
+                   .isError());
+
+  const char* expected = R"(Stack (most recent call first):
+  File "", line ??? in traceback
+  File "<test string>", line 8 in bar
+  File "<test string>", line 4 in foo
+  File "<test string>", line 9 in <module>
+)";
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), expected));
 }
 
 TEST_F(RuntimeStrTest, StrJoinWithStrSubclassReturnsJoinedString) {

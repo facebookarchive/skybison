@@ -1,7 +1,6 @@
 #include "utils.h"
 
 #include <dlfcn.h>
-#include <unistd.h>
 
 #include <cstring>
 #include <iostream>
@@ -17,86 +16,6 @@
 #include "traceback-builtins.h"
 
 namespace py {
-
-class TracebackPrinter : public FrameVisitor {
- public:
-  bool visit(Frame* frame) {
-    std::stringstream line;
-    if (const char* invalid_frame = frame->isInvalid()) {
-      line << "  Invalid frame (" << invalid_frame << ")";
-      lines_.emplace_back(line.str());
-      return false;
-    }
-
-    DCHECK(!frame->isSentinel(), "should not be called for sentinel");
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Function function(&scope, frame->function());
-    Object code_obj(&scope, function.code());
-    if (code_obj.isCode()) {
-      Code code(&scope, *code_obj);
-
-      // Extract filename
-      if (code.filename().isStr()) {
-        char* filename = Str::cast(code.filename()).toCStr();
-        line << "  File \"" << filename << "\", ";
-        std::free(filename);
-      } else {
-        line << "  File \"<unknown>\",  ";
-      }
-
-      // Extract line number unless it is a native functions.
-      if (!code.isNative() && code.lnotab().isBytes()) {
-        // virtualPC() points to the next PC. The currently executing PC
-        // should be immediately before this when raising an exception which
-        // should be the only relevant case for managed code. This value will
-        // be off when we produce debug output in a failed `CHECK` or in lldb
-        // immediately after a jump.
-        word pc = Utils::maximum(frame->virtualPC() - kCodeUnitSize, word{0});
-        word linenum = code.offsetToLineNum(pc);
-        line << "line " << linenum << ", ";
-      }
-    }
-
-    Object name(&scope, function.name());
-    if (name.isStr()) {
-      unique_c_ptr<char> name_cstr(Str::cast(*name).toCStr());
-      line << "in " << name_cstr.get();
-    } else {
-      line << "in <invalid name>";
-    }
-
-    if (code_obj.isCode()) {
-      Code code(&scope, *code_obj);
-      if (code.isNative()) {
-        void* fptr = Int::cast(code.code()).asCPtr();
-        line << "  <native function at " << fptr << " (";
-
-        Dl_info info = Dl_info();
-        if (dladdr(fptr, &info) && info.dli_sname != nullptr) {
-          line << info.dli_sname;
-        } else {
-          line << "no symbol found";
-        }
-        line << ")>";
-      }
-    }
-
-    lines_.emplace_back(line.str());
-    return true;
-  }
-
-  void print(std::ostream* os) {
-    *os << "Traceback (most recent call last):\n";
-    for (auto it = lines_.rbegin(); it != lines_.rend(); it++) {
-      *os << *it << '\n';
-    }
-    os->flush();
-  }
-
- private:
-  std::vector<std::string> lines_;
-};
 
 const byte Utils::kHexDigits[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -165,14 +84,6 @@ word Utils::memoryFindReverse(const byte* haystack, word haystack_len,
     }
   }
   return -1;
-}
-
-void Utils::printTracebackToStderr() { printTraceback(&std::cerr); }
-
-void Utils::printTraceback(std::ostream* os) {
-  TracebackPrinter printer;
-  Thread::current()->visitFrames(&printer);
-  printer.print(os);
 }
 
 void Utils::printDebugInfoAndAbort() {

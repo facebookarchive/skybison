@@ -124,10 +124,6 @@ class Utils {
     *addr = Utils::kHexDigits[value & 0xf];
   }
 
-  // Prints a python level stack trace to stderr or the stream of your choice.
-  static void printTraceback(std::ostream* os);
-  static void printTracebackToStderr();
-
   // Print the current traceback, information about the pending exception, if
   // one is set, and call std::abort().
   [[noreturn]] static void printDebugInfoAndAbort();

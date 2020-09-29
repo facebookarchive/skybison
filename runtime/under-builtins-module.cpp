@@ -25,6 +25,7 @@
 #include "str-builtins.h"
 #include "strarray-builtins.h"
 #include "structseq-builtins.h"
+#include "traceback-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "unicode.h"
@@ -5841,7 +5842,7 @@ RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Frame* frame, word) {
-  py::Utils::printTracebackToStderr();
+  thread->runtime()->printTraceback(thread, File::kStderr);
 
   // Attempt to identify the calling function.
   HandleScope scope(thread);

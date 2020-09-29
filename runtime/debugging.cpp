@@ -7,6 +7,7 @@
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "handles.h"
 #include "runtime.h"
@@ -731,6 +732,11 @@ USED void dumpPendingException(Thread* thread) { std::cerr << thread; }
 
 USED void dumpSingleFrame(Frame* frame) {
   dumpSingleFrame(Thread::current(), std::cerr, frame, nullptr);
+}
+
+void dumpTraceback() {
+  Thread* thread = Thread::current();
+  thread->runtime()->printTraceback(thread, File::kStderr);
 }
 
 void initializeDebugging() {
