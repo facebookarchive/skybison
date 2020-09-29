@@ -2234,7 +2234,7 @@ class bytearray(bootstrap=True):
         return [bytearray(x) for x in result]
 
     def splitlines(self, keepends=False):
-        _unimplemented()
+        _builtin()
 
     def startswith(self, prefix, start=None, end=None):
         _bytearray_guard(self)

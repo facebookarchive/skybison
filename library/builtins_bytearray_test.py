@@ -1357,6 +1357,48 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsInstance(dst, bytearray)
         self.assertEqual(dst, b"A1!B2@C3#D4$E5%F6^G7&H8*I9(J0)")
 
+    def test_splitlines_with_non_bytearray_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.splitlines(None)
+
+    def test_splitlines_with_float_keepends_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.splitlines(bytearray(b"hello"), 0.4)
+
+    def test_splitlines_with_string_keepends_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.splitlines(bytearray(b"hello"), "1")
+
+    def test_splitlines_returns_list(self):
+        self.assertEqual(bytearray.splitlines(bytearray(b""), False), [])
+        self.assertEqual(bytearray.splitlines(bytearray(b"a"), 0), [bytearray(b"a")])
+        exp = [bytearray(b"a"), bytearray(b"b"), bytearray(b"c")]
+        self.assertEqual(bytearray.splitlines(bytearray(b"a\nb\rc")), exp)
+        exp = [bytearray(b"a"), bytearray(b"b")]
+        self.assertEqual(bytearray.splitlines(bytearray(b"a\r\nb\r\n")), exp)
+        exp = [bytearray(b""), bytearray(b""), bytearray(b"")]
+        self.assertEqual(bytearray.splitlines(bytearray(b"\n\r\n\r")), exp)
+        self.assertEqual(
+            bytearray.splitlines(bytearray(b"a\x0Bb")), [bytearray(b"a\x0Bb")]
+        )
+
+    def test_splitlines_with_keepend_returns_list(self):
+        self.assertEqual(bytearray.splitlines(bytearray(b""), True), [])
+        self.assertEqual(bytearray.splitlines(bytearray(b"a"), 1), [bytearray(b"a")])
+        exp = [bytearray(b"a\n"), bytearray(b"b\r"), bytearray(b"c")]
+        self.assertEqual(bytearray.splitlines(bytearray(b"a\nb\rc"), 1), exp)
+        exp = [bytearray(b"a\r\n"), bytearray(b"b\r\n")]
+        self.assertEqual(bytearray.splitlines(bytearray(b"a\r\nb\r\n"), 1), exp)
+        exp = [bytearray(b"\n"), bytearray(b"\r\n"), bytearray(b"\r")]
+        self.assertEqual(bytearray.splitlines(bytearray(b"\n\r\n\r"), 1), exp)
+
+    def test_splitlines_returns_bytearray_list(self):
+        ret = bytearray.splitlines(bytearray(b"one\ntwo\nthree"))
+        self.assertIs(type(ret), list)
+        self.assertIs(type(ret[0]), bytearray)
+        self.assertIs(type(ret[1]), bytearray)
+        self.assertIs(type(ret[2]), bytearray)
+
 
 if __name__ == "__main__":
     unittest.main()

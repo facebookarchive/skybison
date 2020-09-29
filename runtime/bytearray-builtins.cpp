@@ -707,6 +707,68 @@ RawObject METH(bytearray, upper)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+static RawObject bytearraySplitLines(Thread* thread, const Bytearray& bytearray,
+                                     bool keepends) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+  word length = bytearray.numItems();
+  Bytearray line(&scope, *bytearray);
+
+  for (word i = 0, j = 0; i < length; j = i) {
+    // Skip newline bytes
+    for (; i < length; i++) {
+      byte b = bytearray.byteAt(i);
+      if (b == '\n' || b == '\r') {
+        break;
+      }
+    }
+
+    word eol_pos = i;
+    if (i < length) {
+      word cur = i;
+      word next = i + 1;
+      i++;
+      // Check for \r\n specifically
+      if (bytearray.byteAt(cur) == '\r' && next < length &&
+          bytearray.byteAt(next) == '\n') {
+        i++;
+      }
+      if (keepends) {
+        eol_pos = i;
+      }
+    }
+
+    line = runtime->newBytearray();
+    word line_length = eol_pos - j;
+    runtime->bytearrayEnsureCapacity(thread, line, line_length);
+    line.setNumItems(line_length);
+    line.replaceFromWithStartAt(0, *bytearray, line_length, j);
+
+    runtime->listAdd(thread, result, line);
+  }
+
+  return *result;
+}
+
+RawObject METH(bytearray, splitlines)(Thread* thread, Frame* frame,
+                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  Object keepends_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytearray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytearray));
+  }
+  if (!runtime->isInstanceOfInt(*keepends_obj)) {
+    return thread->raiseRequiresType(keepends_obj, ID(int));
+  }
+  Bytearray self(&scope, *self_obj);
+  bool keepends = !intUnderlying(*keepends_obj).isZero();
+  return bytearraySplitLines(thread, self, keepends);
+}
+
 RawObject METH(bytearray_iterator, __iter__)(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
