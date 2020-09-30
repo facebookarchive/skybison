@@ -106,8 +106,8 @@ static const BuiltinAttribute kLongRangeIteratorAttributes[] = {
 
 static const BuiltinAttribute kRangeAttributes[] = {
     {ID(start), RawRange::kStartOffset, AttributeFlags::kReadOnly},
-    {ID(step), RawRange::kStepOffset, AttributeFlags::kReadOnly},
     {ID(stop), RawRange::kStopOffset, AttributeFlags::kReadOnly},
+    {ID(step), RawRange::kStepOffset, AttributeFlags::kReadOnly},
 };
 
 static const BuiltinAttribute kRangeIteratorAttributes[] = {

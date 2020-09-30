@@ -832,9 +832,7 @@ RawObject FUNC(_io, _TextIOWrapper_attached_closed_guard)(Thread* thread,
 
   if (runtime->isInstanceOfBufferedWriter(*buffer_obj)) {
     BufferedWriter buffer(&scope, *buffer_obj);
-    // TODO(T61927696): changed this when BufferedWriter.closed() returns bool
-    Object closed_obj(&scope, buffer.closed());
-    if (closed_obj.isNoneType() || closed_obj == Bool::falseObj()) {
+    if (!buffer.closed()) {
       return NoneType::object();
     }
     return thread->raiseWithFmt(LayoutId::kValueError,
@@ -878,9 +876,7 @@ RawObject FUNC(_io,
 
   if (runtime->isInstanceOfBufferedWriter(*buffer_obj)) {
     BufferedWriter buffer(&scope, *buffer_obj);
-    // TODO(T61927696): change this when BufferedWriter.closed() returns bool
-    Object closed_obj(&scope, buffer.closed());
-    if (closed_obj.isNoneType() || closed_obj == Bool::falseObj()) {
+    if (!buffer.closed()) {
       // TODO(T61927696): change this when TextIOWrapper.seekable() returns bool
       Object seekable_obj(&scope, self.seekable());
       if (seekable_obj.isNoneType() || seekable_obj == Bool::falseObj()) {
@@ -936,8 +932,7 @@ RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Frame* frame,
     return Unbound::object();
   }
   BufferedWriter buffer(&scope, text_io.buffer());
-  Object buffer_closed(&scope, buffer.closed());
-  if (!buffer_closed.isNoneType() && buffer_closed == Bool::trueObj()) {
+  if (buffer.closed()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "I/O operation on closed file.");
   }
@@ -1041,18 +1036,17 @@ static const BuiltinAttribute kUnderBufferedIOMixinAttributes[] = {
 };
 
 static const BuiltinAttribute kBufferedRandomAttributes[] = {
-    {ID(_raw), RawBufferedRandom::kUnderlyingOffset},
+    {ID(buffer_size), RawBufferedRandom::kBufferSizeOffset},
     {ID(_reader), RawBufferedRandom::kReaderOffset},
     {ID(_write_buf), RawBufferedRandom::kWriteBufOffset},
     {ID(_write_lock), RawBufferedRandom::kWriteLockOffset},
-    {ID(buffer_size), RawBufferedRandom::kBufferSizeOffset},
 };
 
 static const BuiltinAttribute kBufferedReaderAttributes[] = {
-    {ID(_raw), RawBufferedReader::kUnderlyingOffset},
     {ID(_buffer_size), RawBufferedReader::kBufferSizeOffset,
      AttributeFlags::kReadOnly},
-    {SymbolId::kInvalid, RawBufferedReader::kReadBufOffset},
+    {ID(_buffered_reader__read_buf), RawBufferedReader::kReadBufOffset,
+     AttributeFlags::kHidden},
     {ID(_read_pos), RawBufferedReader::kReadPosOffset,
      AttributeFlags::kReadOnly},
     {ID(_buffer_num_bytes), RawBufferedReader::kBufferNumBytesOffset,
@@ -1060,10 +1054,9 @@ static const BuiltinAttribute kBufferedReaderAttributes[] = {
 };
 
 static const BuiltinAttribute kBufferedWriterAttributes[] = {
-    {ID(_raw), RawBufferedWriter::kUnderlyingOffset},
+    {ID(buffer_size), RawBufferedWriter::kBufferSizeOffset},
     {ID(_write_buf), RawBufferedWriter::kWriteBufOffset},
     {ID(_write_lock), RawBufferedWriter::kWriteLockOffset},
-    {ID(buffer_size), RawBufferedWriter::kBufferSizeOffset},
 };
 
 static const BuiltinAttribute kBytesIOAttributes[] = {
@@ -1805,24 +1798,24 @@ RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs) {
 }
 
 static const BuiltinAttribute kTextIOWrapperAttributes[] = {
-    {ID(_b2cratio), RawTextIOWrapper::kB2cratioOffset},
     {ID(_buffer), RawTextIOWrapper::kBufferOffset},
-    {ID(_decoded_chars), RawTextIOWrapper::kDecodedCharsOffset},
-    {ID(_decoded_chars_used), RawTextIOWrapper::kDecodedCharsUsedOffset},
-    {ID(_decoder), RawTextIOWrapper::kDecoderOffset},
-    {ID(_encoder), RawTextIOWrapper::kEncoderOffset},
+    {ID(_line_buffering), RawTextIOWrapper::kLineBufferingOffset},
     {ID(_encoding), RawTextIOWrapper::kEncodingOffset},
     {ID(_errors), RawTextIOWrapper::kErrorsOffset},
-    {ID(_has_read1), RawTextIOWrapper::kHasRead1Offset},
-    {ID(_line_buffering), RawTextIOWrapper::kLineBufferingOffset},
-    {ID(_readnl), RawTextIOWrapper::kReadnlOffset},
-    {ID(_readtranslate), RawTextIOWrapper::kReadtranslateOffset},
     {ID(_readuniversal), RawTextIOWrapper::kReaduniversalOffset},
-    {ID(_seekable), RawTextIOWrapper::kSeekableOffset},
-    {ID(_snapshot), RawTextIOWrapper::kSnapshotOffset},
-    {ID(_telling), RawTextIOWrapper::kTellingOffset},
-    {ID(_writenl), RawTextIOWrapper::kWritenlOffset},
+    {ID(_readtranslate), RawTextIOWrapper::kReadtranslateOffset},
+    {ID(_readnl), RawTextIOWrapper::kReadnlOffset},
     {ID(_writetranslate), RawTextIOWrapper::kWritetranslateOffset},
+    {ID(_writenl), RawTextIOWrapper::kWritenlOffset},
+    {ID(_encoder), RawTextIOWrapper::kEncoderOffset},
+    {ID(_decoder), RawTextIOWrapper::kDecoderOffset},
+    {ID(_decoded_chars), RawTextIOWrapper::kDecodedCharsOffset},
+    {ID(_decoded_chars_used), RawTextIOWrapper::kDecodedCharsUsedOffset},
+    {ID(_snapshot), RawTextIOWrapper::kSnapshotOffset},
+    {ID(_seekable), RawTextIOWrapper::kSeekableOffset},
+    {ID(_has_read1), RawTextIOWrapper::kHasRead1Offset},
+    {ID(_b2cratio), RawTextIOWrapper::kB2cratioOffset},
+    {ID(_telling), RawTextIOWrapper::kTellingOffset},
     {ID(mode), RawTextIOWrapper::kModeOffset},  // TODO(T54575279): remove
 };
 

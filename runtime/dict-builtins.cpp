@@ -844,6 +844,8 @@ static const BuiltinAttribute kDictItemIteratorAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_dict_item_iterator__index), RawDictItemIterator::kIndexOffset,
      AttributeFlags::kHidden},
+    {ID(_dict_item_iterator__num_found), RawDictItemIterator::kNumFoundOffset,
+     AttributeFlags::kHidden},
 };
 
 static const BuiltinAttribute kDictItemsAttributes[] = {
@@ -855,6 +857,8 @@ static const BuiltinAttribute kDictKeyIteratorAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_dict_key_iterator__index), RawDictKeyIterator::kIndexOffset,
      AttributeFlags::kHidden},
+    {ID(_dict_key_iterator__num_found), RawDictKeyIterator::kNumFoundOffset,
+     AttributeFlags::kHidden},
 };
 
 static const BuiltinAttribute kDictKeysAttributes[] = {
@@ -865,6 +869,8 @@ static const BuiltinAttribute kDictValueIteratorAttributes[] = {
     {ID(_dict_value_iterator__iterable), RawDictValueIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_dict_value_iterator__index), RawDictValueIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {ID(_dict_value_iterator__num_found), RawDictValueIterator::kNumFoundOffset,
      AttributeFlags::kHidden},
 };
 

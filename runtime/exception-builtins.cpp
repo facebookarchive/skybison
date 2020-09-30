@@ -23,8 +23,8 @@ namespace py {
 static const BuiltinAttribute kBaseExceptionAttributes[] = {
     {ID(args), RawBaseException::kArgsOffset},
     {ID(__traceback__), RawBaseException::kTracebackOffset},
-    {ID(__context__), RawBaseException::kContextOffset},
     {ID(__cause__), RawBaseException::kCauseOffset},
+    {ID(__context__), RawBaseException::kContextOffset},
     {ID(__suppress_context__), RawBaseException::kSuppressContextOffset},
 };
 

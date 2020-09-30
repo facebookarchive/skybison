@@ -1216,6 +1216,10 @@ static const BuiltinAttribute kTypeAttributes[] = {
     {ID(_type__qualname), RawType::kQualnameOffset, AttributeFlags::kHidden},
 };
 
+static const BuiltinAttribute kTypeProxyAttributes[] = {
+    {ID(_type_proxy__type), TypeProxy::kTypeOffset, AttributeFlags::kHidden},
+};
+
 void initializeTypeTypes(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, ID(type), LayoutId::kType,
@@ -1226,7 +1230,7 @@ void initializeTypeTypes(Thread* thread) {
   type.setFlags(static_cast<Type::Flag>(flags));
 
   addBuiltinType(thread, ID(type_proxy), LayoutId::kTypeProxy,
-                 /*superclass_id=*/LayoutId::kObject, kNoAttributes,
+                 /*superclass_id=*/LayoutId::kObject, kTypeProxyAttributes,
                  /*basetype=*/false);
 }
 

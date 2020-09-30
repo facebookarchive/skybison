@@ -1944,7 +1944,7 @@ class RawSlotDescriptor : public RawInstance {
   void setOffset(word offset) const;
 
   // Layout.
-  static const int kTypeOffset = RawHeapObject::kSize + kPointerSize;
+  static const int kTypeOffset = RawHeapObject::kSize;
   static const int kNameOffset = kTypeOffset + kPointerSize;
   static const int kOffsetOffset = kNameOffset + kPointerSize;
   static const int kSize = kOffsetOffset + kPointerSize;
@@ -2901,11 +2901,7 @@ class RawValueCell : public RawInstance {
 
 class RawEllipsis : public RawHeapObject {
  public:
-  // Layout.
-  // kPaddingOffset is not used, but the GC expects the object to be
-  // at least one word.
-  static const int kPaddingOffset = RawHeapObject::kSize;
-  static const int kSize = kPaddingOffset + kPointerSize;
+  static word allocationSize();
 
   // Initialization should only be done by the Runtime.
   static RawObject initialize(uword address);
@@ -3545,8 +3541,6 @@ class RawBufferedRandom : public RawUnderBufferedIOMixin {
   // Getters and setters
   word bufferSize() const;
   void setBufferSize(word buffer_size) const;
-  RawObject closed() const;
-  void setClosed(RawObject closed) const;
   RawObject reader() const;
   void setReader(RawObject reader) const;
   RawObject writeBuf() const;
@@ -3556,8 +3550,7 @@ class RawBufferedRandom : public RawUnderBufferedIOMixin {
 
   // Layout
   static const int kBufferSizeOffset = RawUnderBufferedIOMixin::kSize;
-  static const int kClosedOffset = kBufferSizeOffset + kPointerSize;
-  static const int kReaderOffset = kClosedOffset + kPointerSize;
+  static const int kReaderOffset = kBufferSizeOffset + kPointerSize;
   static const int kWriteBufOffset = kReaderOffset + kPointerSize;
   static const int kWriteLockOffset = kWriteBufOffset + kPointerSize;
   static const int kSize = kWriteLockOffset + kPointerSize;
@@ -3592,8 +3585,6 @@ class RawBufferedWriter : public RawUnderBufferedIOMixin {
   // Getters and setters
   word bufferSize() const;
   void setBufferSize(RawObject buffer_size) const;
-  RawObject closed() const;
-  void setClosed(RawObject closed) const;
   RawObject writeBuf() const;
   void setWriteBuf(RawObject under_write_buf) const;
   RawObject writeLock() const;
@@ -3601,8 +3592,7 @@ class RawBufferedWriter : public RawUnderBufferedIOMixin {
 
   // Layout
   static const int kBufferSizeOffset = RawUnderBufferedIOMixin::kSize;
-  static const int kClosedOffset = kBufferSizeOffset + kPointerSize;
-  static const int kWriteBufOffset = kClosedOffset + kPointerSize;
+  static const int kWriteBufOffset = kBufferSizeOffset + kPointerSize;
   static const int kWriteLockOffset = kWriteBufOffset + kPointerSize;
   static const int kSize = kWriteLockOffset + kPointerSize;
 
@@ -7020,10 +7010,12 @@ inline bool RawValueCell::isPlaceholder() const { return *this == value(); }
 
 // RawEllipsis
 
+inline word RawEllipsis::allocationSize() { return kMinimumSize; }
+
 inline RawObject RawEllipsis::initialize(uword address) {
   RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeader(RawHeader::from(RawEllipsis::kSize, 0, LayoutId::kEllipsis,
-                                ObjectFormat::kData));
+  raw.setHeader(
+      RawHeader::from(0, 0, LayoutId::kEllipsis, ObjectFormat::kObjects));
   return raw;
 }
 
@@ -7563,14 +7555,6 @@ inline void RawBufferedRandom::setBufferSize(word buffer_size) const {
   instanceVariableAtPut(kBufferSizeOffset, RawSmallInt::fromWord(buffer_size));
 }
 
-inline RawObject RawBufferedRandom::closed() const {
-  return instanceVariableAt(kClosedOffset);
-}
-
-inline void RawBufferedRandom::setClosed(RawObject closed) const {
-  instanceVariableAtPut(kClosedOffset, closed);
-}
-
 inline RawObject RawBufferedRandom::reader() const {
   return instanceVariableAt(kReaderOffset);
 }
@@ -7638,14 +7622,6 @@ inline word RawBufferedWriter::bufferSize() const {
 
 inline void RawBufferedWriter::setBufferSize(RawObject buffer_size) const {
   instanceVariableAtPut(kBufferSizeOffset, buffer_size);
-}
-
-inline RawObject RawBufferedWriter::closed() const {
-  return instanceVariableAt(kClosedOffset);
-}
-
-inline void RawBufferedWriter::setClosed(RawObject closed) const {
-  instanceVariableAtPut(kClosedOffset, closed);
 }
 
 inline RawObject RawBufferedWriter::writeBuf() const {

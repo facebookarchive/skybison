@@ -14,9 +14,16 @@ static const BuiltinAttribute kRefAttributes[] = {
     {ID(_ref__referent), RawWeakRef::kReferentOffset, AttributeFlags::kHidden},
     {ID(_ref__callback), RawWeakRef::kCallbackOffset, AttributeFlags::kHidden},
     {ID(_ref__link), RawWeakRef::kLinkOffset, AttributeFlags::kHidden},
+    {ID(_ref__hash), RawWeakRef::kHashOffset, AttributeFlags::kHidden},
 };
 
 static const BuiltinAttribute kWeakLinkAttributes[] = {
+    {ID(__weaklink__referent), RawWeakLink::kReferentOffset,
+     AttributeFlags::kHidden},
+    {ID(__weaklink__callback), RawWeakLink::kCallbackOffset,
+     AttributeFlags::kHidden},
+    {ID(__weaklink__link), RawWeakLink::kLinkOffset, AttributeFlags::kHidden},
+    {ID(__weaklink__hash), RawWeakLink::kHashOffset, AttributeFlags::kHidden},
     {ID(__weaklink__next), RawWeakLink::kNextOffset, AttributeFlags::kHidden},
     {ID(__weaklink__prev), RawWeakLink::kPrevOffset, AttributeFlags::kHidden},
 };

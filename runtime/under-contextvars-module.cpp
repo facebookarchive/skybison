@@ -6,18 +6,28 @@
 
 namespace py {
 
+static const BuiltinAttribute kContextAttributes[] = {
+    {ID(_context__data), RawContext::kDataOffset, AttributeFlags::kHidden},
+    {ID(_context__prev_context), RawContext::kPrevContextOffset,
+     AttributeFlags::kHidden},
+};
+
 static const BuiltinAttribute kContextVarAttributes[] = {
+    {ID(_context_var__default_value), RawContextVar::kDefaultValueOffset,
+     AttributeFlags::kHidden},
     {ID(name), RawContextVar::kNameOffset, AttributeFlags::kReadOnly},
 };
 
 static const BuiltinAttribute kTokenAttributes[] = {
-    {ID(var), RawToken::kVarOffset, AttributeFlags::kReadOnly},
+    {ID(_token__context), RawToken::kContextOffset, AttributeFlags::kHidden},
     {ID(old_value), RawToken::kOldValueOffset},
+    {ID(_token__used), RawToken::kUsedOffset, AttributeFlags::kHidden},
+    {ID(var), RawToken::kVarOffset, AttributeFlags::kReadOnly},
 };
 
 void initializeUnderContextvarsTypes(Thread* thread) {
   addBuiltinType(thread, ID(Context), LayoutId::kContext,
-                 /*superclass_id=*/LayoutId::kObject, kNoAttributes,
+                 /*superclass_id=*/LayoutId::kObject, kContextAttributes,
                  /*basetype=*/false);
 
   addBuiltinType(thread, ID(ContextVar), LayoutId::kContextVar,

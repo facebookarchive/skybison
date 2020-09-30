@@ -190,28 +190,28 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   expected << "heap object with layout " << static_cast<word>(func.layoutId())
            << R"( (<type "function">):
   (in-object) "__code__" = <code "name0">
-  (in-object) "__doc__" = "const0"
-  (in-object) "__module__" = "barmodule"
-  (in-object) "__module_object__" = <module "__main__">
-  (in-object) "__name__" = "baz"
-  (in-object) "__qualname__" = "footype.baz"
-  (in-object) "_function__annotations" = {"return": <type "int">}
-  (in-object) "_function__argcount" = 1
-  (in-object) "_function__caches" = mutabletuple(None, None, None, None)
-  (in-object) "_function__closure" = ()
-  (in-object) "_function__defaults" = (-9,)
-  (in-object) "_function__dict" = {"funcattr0": 4}
-  (in-object) "_function__entry" = 50
-  (in-object) "_function__entry_ex" = 100
-  (in-object) "_function__entry_kw" = 150
   (in-object) "_function__flags" = )"
            << raw_flags << R"(
-  (in-object) "_function__kw_defaults" = {"name0": None}
-  (in-object) "_function__original_arguments" = (None, 0)
-  (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
-  (in-object) "_function__stack_size" = 2
+  (in-object) "_function__argcount" = 1
   (in-object) "_function__total_args" = 3
   (in-object) "_function__total_vars" = 5
+  (in-object) "_function__stack_size" = 2
+  (in-object) "__doc__" = "const0"
+  (in-object) "__name__" = "baz"
+  (in-object) "__qualname__" = "footype.baz"
+  (in-object) "__module__" = "barmodule"
+  (in-object) "__module_object__" = <module "__main__">
+  (in-object) "_function__defaults" = (-9,)
+  (in-object) "_function__annotations" = {"return": <type "int">}
+  (in-object) "_function__kw_defaults" = {"name0": None}
+  (in-object) "_function__closure" = ()
+  (in-object) "_function__entry" = 50
+  (in-object) "_function__entry_kw" = 150
+  (in-object) "_function__entry_ex" = 100
+  (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
+  (in-object) "_function__caches" = mutabletuple(None, None, None, None)
+  (in-object) "_function__original_arguments" = (None, 0)
+  (in-object) "_function__dict" = {"funcattr0": 4}
   overflow dict: {"funcattr0": 4}
 )";
   EXPECT_EQ(ss.str(), expected.str());

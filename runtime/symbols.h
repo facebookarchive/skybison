@@ -249,8 +249,12 @@ class Runtime;
   V(__thisclass__)                                                             \
   V(__traceback__)                                                             \
   V(__truediv__)                                                               \
+  V(__weaklink__callback)                                                      \
+  V(__weaklink__hash)                                                          \
+  V(__weaklink__link)                                                          \
   V(__weaklink__next)                                                          \
   V(__weaklink__prev)                                                          \
+  V(__weaklink__referent)                                                      \
   V(__xor__)                                                                   \
   V(_appending)                                                                \
   V(_array__buffer)                                                            \
@@ -277,6 +281,7 @@ class Runtime;
   V(_buffer)                                                                   \
   V(_buffer_num_bytes)                                                         \
   V(_buffer_size)                                                              \
+  V(_buffered_reader__read_buf)                                                \
   V(_builtins)                                                                 \
   V(_bytearray__bytes)                                                         \
   V(_bytearray__num_items)                                                     \
@@ -297,10 +302,14 @@ class Runtime;
   V(_cast_addr)                                                                \
   V(_closed)                                                                   \
   V(_closefd)                                                                  \
+  V(_code__cell2arg)                                                           \
   V(_codecs)                                                                   \
   V(_compile)                                                                  \
   V(_compile_flags_mask)                                                       \
   V(_complex_check)                                                            \
+  V(_context__data)                                                            \
+  V(_context__prev_context)                                                    \
+  V(_context_var__default_value)                                               \
   V(_coroutine__await)                                                         \
   V(_coroutine__exception_state)                                               \
   V(_coroutine__frame)                                                         \
@@ -329,13 +338,16 @@ class Runtime;
   V(_dict_guard)                                                               \
   V(_dict_item_iterator__index)                                                \
   V(_dict_item_iterator__iterable)                                             \
+  V(_dict_item_iterator__num_found)                                            \
   V(_dict_items__dict)                                                         \
   V(_dict_key_iterator__index)                                                 \
   V(_dict_key_iterator__iterable)                                              \
+  V(_dict_key_iterator__num_found)                                             \
   V(_dict_keys__dict)                                                          \
   V(_dict_len)                                                                 \
   V(_dict_value_iterator__index)                                               \
   V(_dict_value_iterator__iterable)                                            \
+  V(_dict_value_iterator__num_found)                                           \
   V(_dict_values__dict)                                                        \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
@@ -343,6 +355,10 @@ class Runtime;
   V(_errors)                                                                   \
   V(_escape_decode_stateful)                                                   \
   V(_exception_new)                                                            \
+  V(_exception_state__previous)                                                \
+  V(_exception_state__traceback)                                               \
+  V(_exception_state__type)                                                    \
+  V(_exception_state__value)                                                   \
   V(_fd)                                                                       \
   V(_float)                                                                    \
   V(_float_check)                                                              \
@@ -351,6 +367,7 @@ class Runtime;
   V(_frozen_importlib)                                                         \
   V(_frozen_importlib_external)                                                \
   V(_frozenset__data)                                                          \
+  V(_frozenset__num_filled)                                                    \
   V(_frozenset__num_items)                                                     \
   V(_frozenset_check)                                                          \
   V(_frozenset_guard)                                                          \
@@ -413,8 +430,10 @@ class Runtime;
   V(_lt_key)                                                                   \
   V(_mappingproxy__mapping)                                                    \
   V(_memmove_addr)                                                             \
-  V(_memoryview_guard)                                                         \
+  V(_memoryview__buffer)                                                       \
+  V(_memoryview__length)                                                       \
   V(_memoryview__start)                                                        \
+  V(_memoryview_guard)                                                         \
   V(_memset_addr)                                                              \
   V(_mmap__access)                                                             \
   V(_mmap__data)                                                               \
@@ -452,6 +471,8 @@ class Runtime;
   V(_number_check)                                                             \
   V(_pendingcr)                                                                \
   V(_pointer)                                                                  \
+  V(_pointer__cptr)                                                            \
+  V(_pointer__length)                                                          \
   V(_pos)                                                                      \
   V(_range_check)                                                              \
   V(_range_guard)                                                              \
@@ -465,9 +486,10 @@ class Runtime;
   V(_readnl)                                                                   \
   V(_readtranslate)                                                            \
   V(_readuniversal)                                                            \
-  V(_ref__referent)                                                            \
   V(_ref__callback)                                                            \
+  V(_ref__hash)                                                                \
   V(_ref__link)                                                                \
+  V(_ref__referent)                                                            \
   V(_run_module_as_main)                                                       \
   V(_seekable)                                                                 \
   V(_seennl)                                                                   \
@@ -480,6 +502,7 @@ class Runtime;
   V(_set__num_filled)                                                          \
   V(_set_check)                                                                \
   V(_set_guard)                                                                \
+  V(_set_iterator__consumed_count)                                             \
   V(_set_iterator__index)                                                      \
   V(_set_iterator__iterable)                                                   \
   V(_set_len)                                                                  \
@@ -513,6 +536,8 @@ class Runtime;
   V(_telling)                                                                  \
   V(_traceback__function)                                                      \
   V(_traceback__lineno)                                                        \
+  V(_token__context)                                                           \
+  V(_token__used)                                                              \
   V(_traceback__next)                                                          \
   V(_translate)                                                                \
   V(_try_run_package)                                                          \
@@ -542,6 +567,7 @@ class Runtime;
   V(_type_check_exact)                                                         \
   V(_type_dunder_call)                                                         \
   V(_type_guard)                                                               \
+  V(_type_proxy__type)                                                         \
   V(_type_subclass_guard)                                                      \
   V(_unicode_escape_decode_stateful)                                           \
   V(_valuecell__dependency_link)                                               \

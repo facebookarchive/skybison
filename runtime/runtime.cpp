@@ -1869,6 +1869,22 @@ void Runtime::initializeLayouts() {
       newMutableTuple(LayoutTypeTransition::kTransitionSize);
 }
 
+static const BuiltinAttribute kExceptionStateAttributes[] = {
+    {ID(_exception_state__type), ExceptionState::kTypeOffset,
+     AttributeFlags::kHidden},
+    {ID(_exception_state__value), ExceptionState::kValueOffset,
+     AttributeFlags::kHidden},
+    {ID(_exception_state__traceback), ExceptionState::kTracebackOffset,
+     AttributeFlags::kHidden},
+    {ID(_exception_state__previous), ExceptionState::kPreviousOffset,
+     AttributeFlags::kHidden},
+};
+
+static const BuiltinAttribute kPointerAttributes[] = {
+    {ID(_pointer__cptr), Pointer::kCPtrOffset, AttributeFlags::kHidden},
+    {ID(_pointer__length), Pointer::kLengthOffset, AttributeFlags::kHidden},
+};
+
 void Runtime::initializeTypes(Thread* thread) {
   initializeObjectTypes(thread);
 
@@ -1909,13 +1925,14 @@ void Runtime::initializeTypes(Thread* thread) {
   initializeValueCellTypes(thread);
 
   addBuiltinType(thread, ID(ExceptionState), LayoutId::kExceptionState,
-                 LayoutId::kObject, kNoAttributes, /*basetype*/ false);
+                 LayoutId::kObject, kExceptionStateAttributes,
+                 /*basetype=*/false);
   addBuiltinType(thread, ID(_mutablebytes), LayoutId::kMutableBytes,
                  LayoutId::kObject, kNoAttributes, /*basetype=*/false);
   addBuiltinType(thread, ID(_mutabletuple), LayoutId::kMutableTuple,
                  LayoutId::kObject, kNoAttributes, /*basetype=*/false);
   addBuiltinType(thread, ID(_pointer), LayoutId::kPointer, LayoutId::kObject,
-                 kNoAttributes, /*basetype=*/false);
+                 kPointerAttributes, /*basetype=*/false);
   addBuiltinType(thread, ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject,
                  kNoAttributes, /*basetype=*/false);
 }
@@ -2088,8 +2105,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_slice_ = createInstance<RawSlice>(this);
   {
     uword address;
-    CHECK(heap()->allocate(Ellipsis::kSize + Header::kSize, Header::kSize,
-                           &address),
+    CHECK(heap()->allocate(Ellipsis::allocationSize(), Header::kSize, &address),
           "out of memory");
     ellipsis_ = Ellipsis::cast(Ellipsis::initialize(address));
   }

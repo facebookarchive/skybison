@@ -691,9 +691,11 @@ static RawObject dunderGtImpl(Thread* thread, Frame* frame, word nargs,
 }
 
 static const BuiltinAttribute kFrozenSetAttributes[] = {
+    {ID(_frozenset__data), RawFrozenSet::kDataOffset, AttributeFlags::kHidden},
     {ID(_frozenset__num_items), RawFrozenSet::kNumItemsOffset,
      AttributeFlags::kHidden},
-    {ID(_frozenset__data), RawFrozenSet::kDataOffset, AttributeFlags::kHidden},
+    {ID(_frozenset__num_filled), RawFrozenSet::kNumFilledOffset,
+     AttributeFlags::kHidden},
 };
 
 RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs) {
@@ -1211,6 +1213,8 @@ static const BuiltinAttribute kSetIteratorAttributes[] = {
     {ID(_set_iterator__iterable), RawSetIterator::kIterableOffset,
      AttributeFlags::kHidden},
     {ID(_set_iterator__index), RawSetIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {ID(_set_iterator__consumed_count), RawSetIterator::kConsumedCountOffset,
      AttributeFlags::kHidden},
 };
 

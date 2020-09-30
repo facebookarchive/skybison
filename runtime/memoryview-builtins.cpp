@@ -10,13 +10,17 @@
 namespace py {
 
 static const BuiltinAttribute kMemoryViewAttributes[] = {
+    {ID(_memoryview__buffer), RawMemoryView::kBufferOffset,
+     AttributeFlags::kHidden},
     {ID(format), RawMemoryView::kFormatOffset, AttributeFlags::kReadOnly},
-    {ID(obj), RawMemoryView::kObjectOffset, AttributeFlags::kReadOnly},
+    {ID(_memoryview__length), RawMemoryView::kLengthOffset,
+     AttributeFlags::kHidden},
     {ID(readonly), RawMemoryView::kReadOnlyOffset, AttributeFlags::kReadOnly},
+    {ID(obj), RawMemoryView::kObjectOffset, AttributeFlags::kReadOnly},
     {ID(shape), RawMemoryView::kShapeOffset, AttributeFlags::kReadOnly},
-    {ID(strides), RawMemoryView::kStridesOffset, AttributeFlags::kReadOnly},
     {ID(_memoryview__start), RawMemoryView::kStartOffset,
      AttributeFlags::kHidden},
+    {ID(strides), RawMemoryView::kStridesOffset, AttributeFlags::kReadOnly},
 };
 
 void initializeMemoryViewType(Thread* thread) {
