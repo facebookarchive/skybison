@@ -15,7 +15,7 @@ static const BuiltinAttribute kStrArrayAttributes[] = {
 void initializeStrArrayType(Thread* thread) {
   addBuiltinType(thread, ID(_str_array), LayoutId::kStrArray,
                  /*superclass_id=*/LayoutId::kObject, kStrArrayAttributes,
-                 /*basetype=*/false);
+                 StrArray::kSize, /*basetype=*/false);
 }
 
 RawObject METH(_str_array, __init__)(Thread* thread, Frame* frame, word nargs) {

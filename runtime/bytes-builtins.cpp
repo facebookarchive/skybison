@@ -433,7 +433,7 @@ bool bytesIsValidStr(RawBytes bytes) {
 }
 
 // Used only for UserBytesBase as a heap-allocated object.
-static const BuiltinAttribute kBytesAttributes[] = {
+static const BuiltinAttribute kUserBytesBaseAttributes[] = {
     {ID(_UserBytes__value), RawUserBytesBase::kValueOffset,
      AttributeFlags::kHidden},
 };
@@ -449,9 +449,11 @@ void initializeBytesTypes(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Type bytes(&scope, addBuiltinType(thread, ID(bytes), LayoutId::kBytes,
-                                    /*superclass_id=*/LayoutId::kObject,
-                                    kBytesAttributes, /*basetype=*/true));
+  Type bytes(&scope,
+             addBuiltinType(thread, ID(bytes), LayoutId::kBytes,
+                            /*superclass_id=*/LayoutId::kObject,
+                            kUserBytesBaseAttributes, RawUserBytesBase::kSize,
+                            /*basetype=*/true));
 
   {
     Type type(&scope, addImmediateBuiltinType(
@@ -475,7 +477,7 @@ void initializeBytesTypes(Thread* thread) {
 
   addBuiltinType(thread, ID(bytes_iterator), LayoutId::kBytesIterator,
                  /*superclass_id=*/LayoutId::kObject, kBytesIteratorAttributes,
-                 /*basetype=*/false);
+                 BytesIterator::kSize, /*basetype=*/false);
 }
 
 RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {

@@ -26,7 +26,7 @@ static const BuiltinAttribute kMemoryViewAttributes[] = {
 void initializeMemoryViewType(Thread* thread) {
   addBuiltinType(thread, ID(memoryview), LayoutId::kMemoryView,
                  /*superclass_id=*/LayoutId::kObject, kMemoryViewAttributes,
-                 /*basetype=*/false);
+                 MemoryView::kSize, /*basetype=*/false);
 }
 
 static char formatChar(const Str& format) {

@@ -331,7 +331,8 @@ void initializeModuleType(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, ID(module), LayoutId::kModule,
                                    /*superclass_id=*/LayoutId::kObject,
-                                   kModuleAttributes, /*basetype=*/true));
+                                   kModuleAttributes, Module::kSize,
+                                   /*basetype=*/true));
   word flags = static_cast<word>(type.flags());
   flags |= RawType::Flag::kHasCustomDict;
   type.setFlags(static_cast<Type::Flag>(flags));

@@ -570,7 +570,8 @@ class Runtime {
   RawObject layoutCreateSubclassWithBuiltins(Thread* thread,
                                              LayoutId subclass_id,
                                              LayoutId superclass_id,
-                                             View<BuiltinAttribute> attributes);
+                                             View<BuiltinAttribute> attributes,
+                                             word size);
 
   RawObject layoutNewAttribute(const Object& name, AttributeInfo info);
 

@@ -418,9 +418,10 @@ TEST_F(ObjectBuiltinsTest,
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
   };
-  Type type(&scope,
-            addBuiltinType(thread_, ID(UserWarning), layout_id,
-                           LayoutId::kObject, attrs, /*basetype=*/true));
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
+                                   LayoutId::kObject, attrs,
+                                   /*size=*/kPointerSize,
+                                   /*basetype=*/true));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_->newInstance(layout));

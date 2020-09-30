@@ -37,19 +37,19 @@ static const BuiltinAttribute kStaticMethodAttributes[] = {
 void initializeDescriptorTypes(Thread* thread) {
   addBuiltinType(thread, ID(classmethod), LayoutId::kClassMethod,
                  /*superclass_id=*/LayoutId::kObject, kClassMethodAttributes,
-                 /*basetype=*/true);
+                 ClassMethod::kSize, /*basetype=*/true);
 
   addBuiltinType(thread, ID(property), LayoutId::kProperty,
                  /*superclass_id=*/LayoutId::kObject, kPropertyAttributes,
-                 /*basetype=*/true);
+                 Property::kSize, /*basetype=*/true);
 
   addBuiltinType(thread, ID(slot_descriptor), LayoutId::kSlotDescriptor,
                  /*superclass_id=*/LayoutId::kObject, kSlotDescriptorAttributes,
-                 /*basetype=*/false);
+                 SlotDescriptor::kSize, /*basetype=*/false);
 
   addBuiltinType(thread, ID(staticmethod), LayoutId::kStaticMethod,
                  /*superclass_id=*/LayoutId::kObject, kStaticMethodAttributes,
-                 /*basetype=*/true);
+                 StaticMethod::kSize, /*basetype=*/true);
 }
 
 // classmethod

@@ -31,7 +31,7 @@ static const BuiltinAttribute kCodeAttributes[] = {
 void initializeCodeType(Thread* thread) {
   addBuiltinType(thread, ID(code), LayoutId::kCode,
                  /*superclass_id=*/LayoutId::kObject, kCodeAttributes,
-                 /*basetype=*/false);
+                 Code::kSize, /*basetype=*/false);
 }
 
 }  // namespace py

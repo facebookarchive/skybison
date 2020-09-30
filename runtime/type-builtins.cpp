@@ -102,11 +102,11 @@ static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
 
 RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
                          LayoutId superclass_id, View<BuiltinAttribute> attrs,
-                         bool basetype) {
+                         word size, bool basetype) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutCreateSubclassWithBuiltins(
-                            thread, layout_id, superclass_id, attrs));
+                            thread, layout_id, superclass_id, attrs, size));
   runtime->layoutAtPut(layout_id, *layout);
   LayoutId builtin_base = attrs.length() == 0 ? superclass_id : layout_id;
   word flags = basetype ? Type::Flag::kIsBasetype : Type::Flag::kNone;
@@ -1224,14 +1224,15 @@ void initializeTypeTypes(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, ID(type), LayoutId::kType,
                                    /*superclass_id=*/LayoutId::kObject,
-                                   kTypeAttributes, /*basetype=*/true));
+                                   kTypeAttributes, Type::kSize,
+                                   /*basetype=*/true));
   word flags = static_cast<word>(type.flags());
   flags |= RawType::Flag::kHasCustomDict;
   type.setFlags(static_cast<Type::Flag>(flags));
 
   addBuiltinType(thread, ID(type_proxy), LayoutId::kTypeProxy,
                  /*superclass_id=*/LayoutId::kObject, kTypeProxyAttributes,
-                 /*basetype=*/false);
+                 TypeProxy::kSize, /*basetype=*/false);
 }
 
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {

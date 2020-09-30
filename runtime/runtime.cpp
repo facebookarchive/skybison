@@ -254,7 +254,7 @@ static void checkInObjectAttributesWithFixedOffset(const Tuple& attributes) {
 
 RawObject Runtime::layoutCreateSubclassWithBuiltins(
     Thread* thread, LayoutId subclass_id, LayoutId superclass_id,
-    View<BuiltinAttribute> attributes) {
+    View<BuiltinAttribute> attributes, word size) {
   HandleScope scope(thread);
 
   // A builtin class is special since it contains attributes that must be
@@ -264,13 +264,21 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   Tuple super_attributes(&scope, super_layout.inObjectAttributes());
   checkInObjectAttributesWithFixedOffset(super_attributes);
 
+  word super_attributes_len = super_attributes.length();
+  word attributes_length = attributes.length();
+  CHECK((attributes_length + super_attributes_len) * kPointerSize == size,
+        "Object size does not match attribute count");
+  for (word i = 0; i < attributes_length; i++) {
+    CHECK(attributes.get(i).offset == (i + super_attributes_len) * kPointerSize,
+          "unexpected attribute offset (not sorted or duplicated?)");
+  }
+
   // Create an empty layout for the subclass
   Layout result(&scope, newLayout(subclass_id));
 
   // Copy down all of the superclass attributes into the subclass layout
   result.setOverflowAttributes(super_layout.overflowAttributes());
-  word super_attributes_len = super_attributes.length();
-  word in_object_len = super_attributes_len + attributes.length();
+  word in_object_len = super_attributes_len + attributes_length;
   if (in_object_len == 0) {
     result.setInObjectAttributes(emptyTuple());
     result.setNumInObjectAttributes(0);
@@ -1926,15 +1934,17 @@ void Runtime::initializeTypes(Thread* thread) {
 
   addBuiltinType(thread, ID(ExceptionState), LayoutId::kExceptionState,
                  LayoutId::kObject, kExceptionStateAttributes,
-                 /*basetype=*/false);
+                 ExceptionState::kSize, /*basetype=*/false);
   addBuiltinType(thread, ID(_mutablebytes), LayoutId::kMutableBytes,
-                 LayoutId::kObject, kNoAttributes, /*basetype=*/false);
+                 LayoutId::kObject, kNoAttributes, MutableBytes::kSize,
+                 /*basetype=*/false);
   addBuiltinType(thread, ID(_mutabletuple), LayoutId::kMutableTuple,
-                 LayoutId::kObject, kNoAttributes, /*basetype=*/false);
+                 LayoutId::kObject, kNoAttributes, MutableTuple::kSize,
+                 /*basetype=*/false);
   addBuiltinType(thread, ID(_pointer), LayoutId::kPointer, LayoutId::kObject,
-                 kPointerAttributes, /*basetype=*/false);
+                 kPointerAttributes, Pointer::kSize, /*basetype=*/false);
   addBuiltinType(thread, ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject,
-                 kNoAttributes, /*basetype=*/false);
+                 kNoAttributes, Ellipsis::kSize, /*basetype=*/false);
 }
 
 void Runtime::collectGarbage() {

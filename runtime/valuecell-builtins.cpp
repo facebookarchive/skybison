@@ -18,11 +18,11 @@ static const BuiltinAttribute kValueCellAttributes[] = {
 void initializeValueCellTypes(Thread* thread) {
   addBuiltinType(thread, ID(cell), LayoutId::kCell,
                  /*superclass_id=*/LayoutId::kObject, kCellAttributes,
-                 /*basetype=*/false);
+                 Cell::kSize, /*basetype=*/false);
 
   addBuiltinType(thread, ID(valuecell), LayoutId::kValueCell,
                  /*superclass_id=*/LayoutId::kObject, kValueCellAttributes,
-                 /*basetype=*/false);
+                 ValueCell::kSize, /*basetype=*/false);
 }
 
 }  // namespace py

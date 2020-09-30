@@ -410,7 +410,7 @@ static const BuiltinAttribute kArrayAttributes[] = {
 void initializeArrayType(Thread* thread) {
   addBuiltinType(thread, ID(array), LayoutId::kArray,
                  /*superclass_id=*/LayoutId::kObject, kArrayAttributes,
-                 /*basetype=*/true);
+                 Array::kSize, /*basetype=*/true);
 }
 
 }  // namespace py

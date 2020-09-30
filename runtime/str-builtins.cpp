@@ -422,7 +422,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   return RawSmallStr::fromCodePoint(code_point);
 }
 
-static const BuiltinAttribute kStrAttributes[] = {
+static const BuiltinAttribute kUserStrBaseAttributes[] = {
     {ID(_UserStr__value), RawUserStrBase::kValueOffset,
      AttributeFlags::kHidden},
 };
@@ -438,10 +438,10 @@ void initializeStrTypes(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Type str(&scope,
-           addBuiltinType(thread, ID(str), LayoutId::kStr,
-                          /*superclass_id=*/LayoutId::kObject, kStrAttributes,
-                          /*basetype=*/true));
+  Type str(&scope, addBuiltinType(thread, ID(str), LayoutId::kStr,
+                                  /*superclass_id=*/LayoutId::kObject,
+                                  kUserStrBaseAttributes, UserStrBase::kSize,
+                                  /*basetype=*/true));
 
   {
     Type type(&scope,
@@ -465,7 +465,7 @@ void initializeStrTypes(Thread* thread) {
 
   addBuiltinType(thread, ID(str_iterator), LayoutId::kStrIterator,
                  /*superclass_id=*/LayoutId::kObject, kStrIteratorAttributes,
-                 /*basetype=*/false);
+                 StrIterator::kSize, /*basetype=*/false);
 }
 
 RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs) {

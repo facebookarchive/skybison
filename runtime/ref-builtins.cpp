@@ -31,11 +31,11 @@ static const BuiltinAttribute kWeakLinkAttributes[] = {
 void initializeRefTypes(Thread* thread) {
   addBuiltinType(thread, ID(weakref), LayoutId::kWeakRef,
                  /*superclass_id=*/LayoutId::kObject, kRefAttributes,
-                 /*basetype=*/true);
+                 WeakRef::kSize, /*basetype=*/true);
 
   addBuiltinType(thread, ID(_weaklink), LayoutId::kWeakLink,
                  /*superclass_id=*/LayoutId::kObject, kWeakLinkAttributes,
-                 /*basetype=*/false);
+                 WeakLink::kSize, /*basetype=*/false);
 }
 
 RawObject METH(weakref, __call__)(Thread* thread, Frame* frame, word nargs) {

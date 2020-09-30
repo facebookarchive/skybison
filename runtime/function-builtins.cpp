@@ -61,14 +61,14 @@ void initializeFunctionTypes(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, ID(function), LayoutId::kFunction,
                                    /*superclass_id=*/LayoutId::kObject,
-                                   kFunctionAttributes,
+                                   kFunctionAttributes, Function::kSize,
                                    /*basetype=*/false));
   Layout layout(&scope, type.instanceLayout());
   layout.setDictOverflowOffset(RawFunction::kDictOffset);
 
   addBuiltinType(thread, ID(method), LayoutId::kBoundMethod,
                  /*superclass_id=*/LayoutId::kObject, kBoundMethodAttributes,
-                 /*basetype=*/false);
+                 BoundMethod::kSize, /*basetype=*/false);
 }
 
 RawObject slotWrapperFunctionType(const Function& function) {

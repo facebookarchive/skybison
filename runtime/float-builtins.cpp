@@ -37,14 +37,15 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
   return NotImplementedType::object();
 }
 
-static const BuiltinAttribute kFloatAttributes[] = {
+static const BuiltinAttribute kUserFloatBaseAttributes[] = {
     {ID(_UserFloat__value), RawUserFloatBase::kValueOffset,
      AttributeFlags::kHidden},
 };
 
 void initializeFloatType(Thread* thread) {
   addBuiltinType(thread, ID(float), LayoutId::kFloat,
-                 /*superclass_id=*/LayoutId::kObject, kFloatAttributes,
+                 /*superclass_id=*/LayoutId::kObject, kUserFloatBaseAttributes,
+                 UserFloatBase::kSize,
                  /*basetype=*/true);
 }
 

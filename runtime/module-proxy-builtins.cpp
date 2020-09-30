@@ -13,7 +13,7 @@ static const BuiltinAttribute kModuleProxyAttributes[] = {
 void initializeModuleProxyType(Thread* thread) {
   addBuiltinType(thread, ID(module_proxy), LayoutId::kModuleProxy,
                  /*superclass_id=*/LayoutId::kObject, kModuleProxyAttributes,
-                 /*basetype=*/true);
+                 ModuleProxy::kSize, /*basetype=*/true);
 }
 
 RawObject METH(module_proxy, __contains__)(Thread* thread, Frame* frame,

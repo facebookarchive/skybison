@@ -19,7 +19,7 @@ RawObject attributeNameNoException(Thread* thread, const Object& name_obj);
 
 RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
                          LayoutId superclass_id, View<BuiltinAttribute> attrs,
-                         bool basetype);
+                         word size, bool basetype);
 
 RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   LayoutId layout_id, LayoutId builtin_base,

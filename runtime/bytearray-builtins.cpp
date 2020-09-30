@@ -33,11 +33,12 @@ static const BuiltinAttribute kBytearrayIteratorAttributes[] = {
 void initializeBytearrayTypes(Thread* thread) {
   addBuiltinType(thread, ID(bytearray), LayoutId::kBytearray,
                  /*superclass_id=*/LayoutId::kObject, kBytearrayAttributes,
-                 /*basetype=*/true);
+                 Bytearray::kSize, /*basetype=*/true);
 
   addBuiltinType(thread, ID(bytearray_iterator), LayoutId::kBytearrayIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kBytearrayIteratorAttributes, /*basetype=*/false);
+                 kBytearrayIteratorAttributes, BytearrayIterator::kSize,
+                 /*basetype=*/false);
 }
 
 RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {

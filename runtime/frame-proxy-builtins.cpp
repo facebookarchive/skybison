@@ -15,7 +15,7 @@ static const BuiltinAttribute kFrameProxyAttributes[] = {
 void initializeFrameProxyType(Thread* thread) {
   addBuiltinType(thread, ID(frame), LayoutId::kFrameProxy,
                  /*superclass_id=*/LayoutId::kObject, kFrameProxyAttributes,
-                 /*basetype=*/false);
+                 FrameProxy::kSize, /*basetype=*/false);
 }
 
 }  // namespace py

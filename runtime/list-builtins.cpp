@@ -257,11 +257,11 @@ static const BuiltinAttribute kListIteratorAttributes[] = {
 void initializeListTypes(Thread* thread) {
   addBuiltinType(thread, ID(list), LayoutId::kList,
                  /*superclass_id=*/LayoutId::kObject, kListAttributes,
-                 /*basetype=*/true);
+                 List::kSize, /*basetype=*/true);
 
   addBuiltinType(thread, ID(list_iterator), LayoutId::kListIterator,
                  /*superclass_id=*/LayoutId::kObject, kListIteratorAttributes,
-                 /*basetype=*/false);
+                 ListIterator::kSize, /*basetype=*/false);
 }
 
 RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {

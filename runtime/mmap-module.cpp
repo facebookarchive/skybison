@@ -137,7 +137,7 @@ static const BuiltinAttribute kMmapAttributes[] = {
 void initializeMmapType(Thread* thread) {
   addBuiltinType(thread, ID(mmap), LayoutId::kMmap,
                  /*superclass_id=*/LayoutId::kObject, kMmapAttributes,
-                 /*basetype=*/true);
+                 Mmap::kSize, /*basetype=*/true);
 }
 
 }  // namespace py

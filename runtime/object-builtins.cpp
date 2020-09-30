@@ -581,11 +581,11 @@ void initializeObjectTypes(Thread* thread) {
 
   addBuiltinType(thread, ID(instance_proxy), LayoutId::kInstanceProxy,
                  /*superclass_id=*/LayoutId::kObject, kInstanceProxyAttributes,
-                 /*basetype=*/false);
+                 RawInstanceProxy::kSize, /*basetype=*/false);
 
   addBuiltinType(thread, ID(enumerate), LayoutId::kEnumerate,
                  /*superclass_id=*/LayoutId::kObject, kEnumerateAttributes,
-                 /*basetype=*/true);
+                 RawEnumerate::kSize, /*basetype=*/true);
 }
 
 }  // namespace py

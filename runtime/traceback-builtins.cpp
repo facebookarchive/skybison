@@ -19,7 +19,7 @@ static const BuiltinAttribute kTracebackAttributes[] = {
 void initializeTracebackType(Thread* thread) {
   addBuiltinType(thread, ID(traceback), LayoutId::kTraceback,
                  /*superclass_id=*/LayoutId::kObject, kTracebackAttributes,
-                 /*basetype=*/false);
+                 Traceback::kSize, /*basetype=*/false);
 }
 
 static void writeCStr(const MutableBytes& dst, word* index, const char* src) {

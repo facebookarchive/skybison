@@ -882,31 +882,34 @@ static const BuiltinAttribute kDictValuesAttributes[] = {
 void initializeDictTypes(Thread* thread) {
   addBuiltinType(thread, ID(dict), LayoutId::kDict,
                  /*superclass_id=*/LayoutId::kObject, kDictAttributes,
-                 /*basetype=*/true);
+                 Dict::kSize, /*basetype=*/true);
 
   addBuiltinType(thread, ID(dict_itemiterator), LayoutId::kDictItemIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kDictItemIteratorAttributes, /*basetype=*/false);
+                 kDictItemIteratorAttributes, DictItemIterator::kSize,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_items), LayoutId::kDictItems,
                  /*superclass_id=*/LayoutId::kObject, kDictItemsAttributes,
-                 /*basetype=*/false);
+                 DictItems::kSize, /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_keyiterator), LayoutId::kDictKeyIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kDictKeyIteratorAttributes, /*basetype=*/false);
+                 kDictKeyIteratorAttributes, DictKeyIterator::kSize,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_keys), LayoutId::kDictKeys,
                  /*superclass_id=*/LayoutId::kObject, kDictKeysAttributes,
-                 /*basetype=*/false);
+                 DictKeys::kSize, /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_valueiterator), LayoutId::kDictValueIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kDictValueIteratorAttributes, /*basetype=*/false);
+                 kDictValueIteratorAttributes, DictValueIterator::kSize,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_values), LayoutId::kDictValues,
                  /*superclass_id=*/LayoutId::kObject, kDictValuesAttributes,
-                 /*basetype=*/false);
+                 DictValues::kSize, /*basetype=*/false);
 }
 
 RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {

@@ -124,7 +124,7 @@ word largeIntHash(RawLargeInt value) {
 }
 
 // Used only for UserIntBase as a heap-allocated object.
-static const BuiltinAttribute kIntAttributes[] = {
+static const BuiltinAttribute kUserIntBaseAttributes[] = {
     {ID(_UserInt__value), RawUserIntBase::kValueOffset,
      AttributeFlags::kHidden},
 };
@@ -135,7 +135,8 @@ void initializeIntTypes(Thread* thread) {
 
   Type int_type(&scope, addBuiltinType(thread, ID(int), LayoutId::kInt,
                                        /*superclass_id=*/LayoutId::kObject,
-                                       kIntAttributes, /*basetype=*/true));
+                                       kUserIntBaseAttributes,
+                                       UserIntBase::kSize, /*basetype=*/true));
 
   {
     Type type(&scope,

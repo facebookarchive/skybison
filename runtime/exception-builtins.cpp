@@ -790,8 +790,12 @@ void initializeExceptionTypes(Thread* thread) {
   Layout layout(&scope, runtime->layoutAt(LayoutId::kNoneType));
   Type type(&scope, layout.describedType());
   for (ExceptionTypeSpec spec : kExceptionSpecs) {
+    Layout super_layout(&scope, runtime->layoutAt(spec.superclass_id));
+    word size = (Tuple::cast(super_layout.inObjectAttributes()).length() +
+                 spec.attributes.length()) *
+                kPointerSize;
     type = addBuiltinType(thread, spec.name, spec.layout_id, spec.superclass_id,
-                          spec.attributes, /*basetype=*/true);
+                          spec.attributes, size, /*basetype=*/true);
     layout = type.instanceLayout();
     runtime->layoutSetTupleOverflow(*layout);
   }
