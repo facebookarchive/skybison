@@ -4528,6 +4528,32 @@ RawObject FUNC(_builtins, _str_count)(Thread* thread, Frame* frame,
   return strCount(haystack, needle, start, end);
 }
 
+RawObject FUNC(_builtins, _str_ctor)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStr), "unexpected cls");
+  RawObject obj_raw = args.get(1);
+  if (obj_raw.isUnbound()) {
+    return Str::empty();
+  }
+  RawObject encoding_raw = args.get(2);
+  RawObject errors_raw = args.get(3);
+  if (encoding_raw.isUnbound() && errors_raw.isUnbound() && obj_raw.isStr()) {
+    return obj_raw;
+  }
+  HandleScope scope(thread);
+  Type str_type(&scope, runtime->typeAt(LayoutId::kStr));
+  Object dunder_new(&scope, runtime->symbols()->at(ID(__new__)));
+  Function str_dunder_new(&scope,
+                          typeGetAttribute(thread, str_type, dunder_new));
+  Object cls(&scope, args.get(0));
+  Object obj(&scope, obj_raw);
+  Object encoding(&scope, encoding_raw);
+  Object errors(&scope, errors_raw);
+  // TODO(T76654356): Use Thread::invokeMethodStatic.
+  return Interpreter::call4(thread, str_dunder_new, cls, obj, encoding, errors);
+}
+
 RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Frame* frame,
                                          word nargs) {
   HandleScope scope(thread);

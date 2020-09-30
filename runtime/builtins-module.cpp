@@ -201,7 +201,10 @@ static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
   Object ctor(&scope, NoneType::object());
   LayoutId layout_id = type.instanceLayoutId();
   Runtime* runtime = thread->runtime();
-  if (layout_id == LayoutId::kStopIteration) {
+  if (layout_id == LayoutId::kStr) {
+    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+    ctor = moduleAtById(thread, under_builtins, ID(_str_ctor));
+  } else if (layout_id == LayoutId::kStopIteration) {
     Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
     ctor = moduleAtById(thread, under_builtins, ID(_stop_iteration_ctor));
   } else if (layout_id == LayoutId::kStrArray) {

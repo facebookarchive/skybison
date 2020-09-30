@@ -927,6 +927,10 @@ def _str_count(self, sub, start, end):
     _builtin()
 
 
+def _str_ctor(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):
+    _builtin()
+
+
 def _str_encode(self, encoding):
     _builtin()
 

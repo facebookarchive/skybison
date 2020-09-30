@@ -500,6 +500,7 @@ class Runtime;
   V(_str_array_ctor)                                                           \
   V(_str_check)                                                                \
   V(_str_check_exact)                                                          \
+  V(_str_ctor)                                                                 \
   V(_str_guard)                                                                \
   V(_str_iterator__index)                                                      \
   V(_str_iterator__iterable)                                                   \

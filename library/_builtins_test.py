@@ -71,6 +71,48 @@ class UnderBuiltinsTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             _builtins._set_function_flag_iterable_coroutine("str")
 
+    def test_str_ctor_with_bytes_and_no_encoding_returns_str(self):
+        decoded = _builtins._str_ctor(str, b"abc")
+        self.assertEqual(decoded, "b'abc'")
+
+    def test_str_ctor_with_str_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _builtins._str_ctor(str, "", encoding="utf_8")
+
+    def test_str_ctor_with_non_bytes_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _builtins._str_ctor(str, 1, encoding="utf_8")
+
+    def test_str_ctor_with_bytes_and_encoding_returns_decoded_str(self):
+        decoded = _builtins._str_ctor(str, b"abc", encoding="ascii")
+        self.assertEqual(decoded, "abc")
+
+    def test_str_ctor_with_no_object_and_encoding_returns_empty_string(self):
+        self.assertEqual(_builtins._str_ctor(str, encoding="ascii"), "")
+
+    def test_str_ctor_with_class_without_dunder_str_returns_str(self):
+        class A:
+            def __repr__(self):
+                return "test"
+
+        self.assertEqual(_builtins._str_ctor(str, A()), "test")
+
+    def test_str_ctor_with_class_with_faulty_dunder_str_raises_type_error(self):
+        with self.assertRaises(TypeError):
+
+            class A:
+                def __str__(self):
+                    return 1
+
+            _builtins._str_ctor(str, A())
+
+    def test_str_ctor_with_class_with_proper_duner_str_returns_str(self):
+        class A:
+            def __str__(self):
+                return "test"
+
+        self.assertEqual(_builtins._str_ctor(str, A()), "test")
+
     def test_str_mod_fast_path_returns_string(self):
         self.assertEqual(_builtins._str_mod_fast_path("", ()), "")
         self.assertEqual(_builtins._str_mod_fast_path("hello", ()), "hello")

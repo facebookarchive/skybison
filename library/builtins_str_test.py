@@ -1190,30 +1190,30 @@ class StrTests(unittest.TestCase):
         self.assertFalse("hello".startswith(("foo", "bar")))
 
     def test_str_new_with_bytes_and_no_encoding_returns_str(self):
-        decoded = str(b"abc")
+        decoded = str.__new__(str, b"abc")
         self.assertEqual(decoded, "b'abc'")
 
     def test_str_new_with_str_raises_type_error(self):
         with self.assertRaises(TypeError):
-            str("", encoding="utf_8")
+            str.__new__(str, "", encoding="utf_8")
 
     def test_str_new_with_non_bytes_raises_type_error(self):
         with self.assertRaises(TypeError):
-            str(1, encoding="utf_8")
+            str.__new__(str, 1, encoding="utf_8")
 
     def test_str_new_with_bytes_and_encoding_returns_decoded_str(self):
-        decoded = str(b"abc", encoding="ascii")
+        decoded = str.__new__(str, b"abc", encoding="ascii")
         self.assertEqual(decoded, "abc")
 
     def test_str_new_with_no_object_and_encoding_returns_empty_string(self):
-        self.assertEqual(str(encoding="ascii"), "")
+        self.assertEqual(str.__new__(str, encoding="ascii"), "")
 
     def test_str_new_with_class_without_dunder_str_returns_str(self):
         class A:
             def __repr__(self):
                 return "test"
 
-        self.assertEqual(str(A()), "test")
+        self.assertEqual(str.__new__(str, A()), "test")
 
     def test_str_new_with_class_with_faulty_dunder_str_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -1222,14 +1222,14 @@ class StrTests(unittest.TestCase):
                 def __str__(self):
                     return 1
 
-            str(A())
+            str.__new__(str, A())
 
     def test_str_new_with_class_with_proper_duner_str_returns_str(self):
         class A:
             def __str__(self):
                 return "test"
 
-        self.assertEqual(str(A()), "test")
+        self.assertEqual(str.__new__(str, A()), "test")
 
     def test_swapcase_with_int_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
