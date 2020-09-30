@@ -540,6 +540,7 @@ static void addObjectType(Thread* thread) {
   type.setInstanceLayout(*layout);
   type.setInstanceLayoutId(layout.id());
   type.setBases(runtime->emptyTuple());
+  type.setFlagsAndBuiltinBase(Type::Flag::kIsBasetype, LayoutId::kObject);
 
   // Manually create `__getattribute__` method to avoid bootstrap problems.
   Tuple parameter_names(&scope, runtime->newTuple(2));
@@ -564,22 +565,27 @@ void initializeObjectTypes(Thread* thread) {
 
   addImmediateBuiltinType(thread, ID(NoneType), LayoutId::kNoneType,
                           /*builtin_base=*/LayoutId::kNoneType,
-                          /*superclass_id=*/LayoutId::kObject);
+                          /*superclass_id=*/LayoutId::kObject,
+                          /*basetype=*/false);
 
   addImmediateBuiltinType(thread, ID(NotImplementedType),
                           LayoutId::kNotImplementedType,
                           /*builtin_base=*/LayoutId::kNotImplementedType,
-                          /*superclass_id=*/LayoutId::kObject);
+                          /*superclass_id=*/LayoutId::kObject,
+                          /*basetype=*/false);
 
   addImmediateBuiltinType(thread, ID(_UnboundType), LayoutId::kUnbound,
                           /*builtin_base=*/LayoutId::kUnbound,
-                          /*superclass_id=*/LayoutId::kObject);
+                          /*superclass_id=*/LayoutId::kObject,
+                          /*basetype=*/false);
 
   addBuiltinType(thread, ID(instance_proxy), LayoutId::kInstanceProxy,
-                 /*superclass_id=*/LayoutId::kObject, kInstanceProxyAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kInstanceProxyAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(enumerate), LayoutId::kEnumerate,
-                 /*superclass_id=*/LayoutId::kObject, kEnumerateAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kEnumerateAttributes,
+                 /*basetype=*/true);
 }
 
 }  // namespace py

@@ -12,7 +12,8 @@ static const BuiltinAttribute kMappingProxyAttributes[] = {
 
 void initializeMappingProxyType(Thread* thread) {
   addBuiltinType(thread, ID(mappingproxy), LayoutId::kMappingProxy,
-                 /*superclass_id=*/LayoutId::kObject, kMappingProxyAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kMappingProxyAttributes,
+                 /*basetype=*/false);
 }
 
 }  // namespace py

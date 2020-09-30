@@ -121,14 +121,16 @@ static const BuiltinAttribute kRangeIteratorAttributes[] = {
 
 void initializeRangeTypes(Thread* thread) {
   addBuiltinType(thread, ID(range), LayoutId::kRange,
-                 /*superclass_id=*/LayoutId::kObject, kRangeAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kRangeAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(range_iterator), LayoutId::kRangeIterator,
-                 /*superclass_id=*/LayoutId::kObject, kRangeIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kRangeIteratorAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(longrange_iterator), LayoutId::kLongRangeIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kLongRangeIteratorAttributes);
+                 kLongRangeIteratorAttributes, /*basetype=*/false);
 }
 
 RawObject METH(range, __iter__)(Thread* thread, Frame* frame, word nargs) {

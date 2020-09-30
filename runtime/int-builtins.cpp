@@ -135,13 +135,14 @@ void initializeIntTypes(Thread* thread) {
 
   Type int_type(&scope, addBuiltinType(thread, ID(int), LayoutId::kInt,
                                        /*superclass_id=*/LayoutId::kObject,
-                                       kIntAttributes));
+                                       kIntAttributes, /*basetype=*/true));
 
   {
     Type type(&scope,
               addImmediateBuiltinType(thread, ID(largeint), LayoutId::kLargeInt,
                                       /*builtin_base=*/LayoutId::kInt,
-                                      /*superclass_id=*/LayoutId::kObject));
+                                      /*superclass_id=*/LayoutId::kObject,
+                                      /*basetype=*/false));
     Layout layout(&scope, type.instanceLayout());
     layout.setDescribedType(*int_type);
     runtime->setLargeIntType(type);
@@ -151,7 +152,8 @@ void initializeIntTypes(Thread* thread) {
     Type type(&scope,
               addImmediateBuiltinType(thread, ID(smallint), LayoutId::kSmallInt,
                                       /*builtin_base=*/LayoutId::kInt,
-                                      /*superclass_id=*/LayoutId::kObject));
+                                      /*superclass_id=*/LayoutId::kObject,
+                                      /*basetype=*/false));
     Layout layout(&scope, type.instanceLayout());
     layout.setDescribedType(*int_type);
     runtime->setSmallIntType(type);
@@ -167,7 +169,8 @@ void initializeIntTypes(Thread* thread) {
 
   addImmediateBuiltinType(thread, ID(bool), LayoutId::kBool,
                           /*builtin_base=*/LayoutId::kInt,
-                          /*superclass_id=*/LayoutId::kInt);
+                          /*superclass_id=*/LayoutId::kInt,
+                          /*basetype=*/false);
 }
 
 RawObject convertBoolToInt(RawObject object) {

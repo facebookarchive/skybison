@@ -1828,53 +1828,57 @@ static const BuiltinAttribute kTextIOWrapperAttributes[] = {
 
 void initializeUnderIOTypes(Thread* thread) {
   addBuiltinType(thread, ID(_IOBase), LayoutId::kUnderIOBase,
-                 /*superclass_id=*/LayoutId::kObject, kUnderIOBaseAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kUnderIOBaseAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(IncrementalNewlineDecoder),
                  LayoutId::kIncrementalNewlineDecoder,
                  /*superclass_id=*/LayoutId::kObject,
-                 kIncrementalNewlineDecoderAttributes);
+                 kIncrementalNewlineDecoderAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(_RawIOBase), LayoutId::kUnderRawIOBase,
-                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes);
+                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(_BufferedIOBase), LayoutId::kUnderBufferedIOBase,
-                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes);
+                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
-                 kBytesIOAttributes);
+                 kBytesIOAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(_BufferedIOMixin), LayoutId::kUnderBufferedIOMixin,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
-                 kUnderBufferedIOMixinAttributes);
+                 kUnderBufferedIOMixinAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(BufferedRandom), LayoutId::kBufferedRandom,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
-                 kBufferedRandomAttributes);
+                 kBufferedRandomAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(BufferedReader), LayoutId::kBufferedReader,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
-                 kBufferedReaderAttributes);
+                 kBufferedReaderAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(BufferedWriter), LayoutId::kBufferedWriter,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
-                 kBufferedWriterAttributes);
+                 kBufferedWriterAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(FileIO), LayoutId::kFileIO,
-                 /*superclass_id=*/LayoutId::kUnderRawIOBase,
-                 kFileIOAttributes);
+                 /*superclass_id=*/LayoutId::kUnderRawIOBase, kFileIOAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(_TextIOBase), LayoutId::kUnderTextIOBase,
-                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes);
+                 /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(TextIOWrapper), LayoutId::kTextIOWrapper,
                  /*superclass_id=*/LayoutId::kUnderTextIOBase,
-                 kTextIOWrapperAttributes);
+                 kTextIOWrapperAttributes, /*basetype=*/true);
 
   addBuiltinType(thread, ID(StringIO), LayoutId::kStringIO,
                  /*superclass_id=*/LayoutId::kUnderTextIOBase,
-                 kStringIOAttributes);
+                 kStringIOAttributes, /*basetype=*/true);
 }
 
 }  // namespace py

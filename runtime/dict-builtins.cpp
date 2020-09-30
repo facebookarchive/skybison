@@ -875,28 +875,32 @@ static const BuiltinAttribute kDictValuesAttributes[] = {
 
 void initializeDictTypes(Thread* thread) {
   addBuiltinType(thread, ID(dict), LayoutId::kDict,
-                 /*superclass_id=*/LayoutId::kObject, kDictAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kDictAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(dict_itemiterator), LayoutId::kDictItemIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kDictItemIteratorAttributes);
+                 kDictItemIteratorAttributes, /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_items), LayoutId::kDictItems,
-                 /*superclass_id=*/LayoutId::kObject, kDictItemsAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kDictItemsAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_keyiterator), LayoutId::kDictKeyIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kDictKeyIteratorAttributes);
+                 kDictKeyIteratorAttributes, /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_keys), LayoutId::kDictKeys,
-                 /*superclass_id=*/LayoutId::kObject, kDictKeysAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kDictKeysAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_valueiterator), LayoutId::kDictValueIterator,
                  /*superclass_id=*/LayoutId::kObject,
-                 kDictValueIteratorAttributes);
+                 kDictValueIteratorAttributes, /*basetype=*/false);
 
   addBuiltinType(thread, ID(dict_values), LayoutId::kDictValues,
-                 /*superclass_id=*/LayoutId::kObject, kDictValuesAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kDictValuesAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {

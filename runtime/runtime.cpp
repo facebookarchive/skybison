@@ -1909,15 +1909,15 @@ void Runtime::initializeTypes(Thread* thread) {
   initializeValueCellTypes(thread);
 
   addBuiltinType(thread, ID(ExceptionState), LayoutId::kExceptionState,
-                 LayoutId::kObject, kNoAttributes);
+                 LayoutId::kObject, kNoAttributes, /*basetype*/ false);
   addBuiltinType(thread, ID(_mutablebytes), LayoutId::kMutableBytes,
-                 LayoutId::kObject, kNoAttributes);
+                 LayoutId::kObject, kNoAttributes, /*basetype=*/false);
   addBuiltinType(thread, ID(_mutabletuple), LayoutId::kMutableTuple,
-                 LayoutId::kObject, kNoAttributes);
+                 LayoutId::kObject, kNoAttributes, /*basetype=*/false);
   addBuiltinType(thread, ID(_pointer), LayoutId::kPointer, LayoutId::kObject,
-                 kNoAttributes);
+                 kNoAttributes, /*basetype=*/false);
   addBuiltinType(thread, ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject,
-                 kNoAttributes);
+                 kNoAttributes, /*basetype=*/false);
 }
 
 void Runtime::collectGarbage() {

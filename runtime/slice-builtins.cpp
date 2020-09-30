@@ -17,7 +17,8 @@ static const BuiltinAttribute kSliceAttributes[] = {
 
 void initializeSliceType(Thread* thread) {
   addBuiltinType(thread, ID(slice), LayoutId::kSlice,
-                 /*superclass_id=*/LayoutId::kObject, kSliceAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kSliceAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(slice, __new__)(Thread* thread, Frame* frame, word nargs) {

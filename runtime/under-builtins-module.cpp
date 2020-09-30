@@ -5731,7 +5731,8 @@ RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, args.get(3));
   Bool is_heaptype(&scope, args.get(4));
 
-  word flags =
+  word flags = Type::Flag::kIsBasetype;
+  flags |=
       is_heaptype.value() ? Type::Flag::kIsCPythonHeaptype : Type::Flag::kNone;
   return typeNew(thread, metaclass, name, bases, dict, flags,
                  /*inherit_slots=*/true, /*add_instance_dict=*/true);

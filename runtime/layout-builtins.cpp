@@ -17,7 +17,8 @@ static const BuiltinAttribute kLayoutAttributes[] = {
 
 void initializeLayoutType(Thread* thread) {
   addBuiltinType(thread, ID(layout), LayoutId::kLayout,
-                 /*superclass_id=*/LayoutId::kObject, kLayoutAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kLayoutAttributes,
+                 /*basetype=*/false);
 }
 
 }  // namespace py

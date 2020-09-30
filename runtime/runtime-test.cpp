@@ -3281,8 +3281,9 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
   };
-  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
-                                   LayoutId::kObject, attrs));
+  Type type(&scope,
+            addBuiltinType(thread_, ID(UserWarning), layout_id,
+                           LayoutId::kObject, attrs, /*basetype=*/true));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_->newInstance(layout));
@@ -3765,8 +3766,9 @@ TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   BuiltinAttribute attrs[] = {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
   };
-  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
-                                   LayoutId::kObject, attrs));
+  Type type(&scope,
+            addBuiltinType(thread_, ID(UserWarning), layout_id,
+                           LayoutId::kObject, attrs, /*basetype=*/true));
   EXPECT_EQ(type.builtinBase(), layout_id);
   runtime_->layoutAtPut(layout_id, *previous_layout);
 }
@@ -3777,7 +3779,8 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   LayoutId layout_id = LayoutId::kUserWarning;
   Object previous_layout(&scope, runtime_->layoutAt(layout_id));
   Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
-                                   LayoutId::kObject, kNoAttributes));
+                                   LayoutId::kObject, kNoAttributes,
+                                   /*basetype=*/true));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
   runtime_->layoutAtPut(layout_id, *previous_layout);
 }

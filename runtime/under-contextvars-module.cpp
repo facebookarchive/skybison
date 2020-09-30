@@ -17,13 +17,16 @@ static const BuiltinAttribute kTokenAttributes[] = {
 
 void initializeUnderContextvarsTypes(Thread* thread) {
   addBuiltinType(thread, ID(Context), LayoutId::kContext,
-                 /*superclass_id=*/LayoutId::kObject, kNoAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kNoAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(ContextVar), LayoutId::kContextVar,
-                 /*superclass_id=*/LayoutId::kObject, kContextVarAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kContextVarAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(Token), LayoutId::kToken,
-                 /*superclass_id=*/LayoutId::kObject, kTokenAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kTokenAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject FUNC(_contextvars, _ContextVar_default_value)(Thread* thread,

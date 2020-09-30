@@ -14,7 +14,8 @@ static const BuiltinAttribute kSeqIteratorAttributes[] = {
 
 void initializeIteratorType(Thread* thread) {
   addBuiltinType(thread, ID(iterator), LayoutId::kSeqIterator,
-                 /*superclass_id=*/LayoutId::kObject, kSeqIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kSeqIteratorAttributes,
+                 /*basetype=*/false);
 }
 
 }  // namespace py

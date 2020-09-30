@@ -451,13 +451,14 @@ void initializeBytesTypes(Thread* thread) {
 
   Type bytes(&scope, addBuiltinType(thread, ID(bytes), LayoutId::kBytes,
                                     /*superclass_id=*/LayoutId::kObject,
-                                    kBytesAttributes));
+                                    kBytesAttributes, /*basetype=*/true));
 
   {
     Type type(&scope, addImmediateBuiltinType(
                           thread, ID(largebytes), LayoutId::kLargeBytes,
                           /*builtin_base=*/LayoutId::kBytes,
-                          /*superclass_id=*/LayoutId::kObject));
+                          /*superclass_id=*/LayoutId::kObject,
+                          /*basetype=*/false));
     Layout::cast(type.instanceLayout()).setDescribedType(*bytes);
     runtime->setLargeBytesType(type);
   }
@@ -466,13 +467,15 @@ void initializeBytesTypes(Thread* thread) {
     Type type(&scope, addImmediateBuiltinType(
                           thread, ID(smallbytes), LayoutId::kSmallBytes,
                           /*builtin_base=*/LayoutId::kBytes,
-                          /*superclass_id=*/LayoutId::kObject));
+                          /*superclass_id=*/LayoutId::kObject,
+                          /*basetype=*/false));
     Layout::cast(type.instanceLayout()).setDescribedType(*bytes);
     runtime->setSmallBytesType(type);
   }
 
   addBuiltinType(thread, ID(bytes_iterator), LayoutId::kBytesIterator,
-                 /*superclass_id=*/LayoutId::kObject, kBytesIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kBytesIteratorAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {

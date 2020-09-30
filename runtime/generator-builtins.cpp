@@ -269,38 +269,44 @@ static const BuiltinAttribute kAsyncGeneratorWrappedValueAttributes[] = {
 
 void initializeGeneratorTypes(Thread* thread) {
   addBuiltinType(thread, ID(generator), LayoutId::kGenerator,
-                 /*superclass_id=*/LayoutId::kObject, kGeneratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kGeneratorAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(frame), LayoutId::kGeneratorFrame,
-                 LayoutId::kObject, kNoAttributes);
+                 LayoutId::kObject, kNoAttributes, /*basetype=*/false);
 
   addBuiltinType(thread, ID(coroutine), LayoutId::kCoroutine,
-                 /*superclass_id=*/LayoutId::kObject, kCoroutineAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kCoroutineAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(thread, ID(coroutine_wrapper), LayoutId::kCoroutineWrapper,
                  /*superclass_id=*/LayoutId::kObject,
-                 kCoroutineWrapperAttributes);
+                 kCoroutineWrapperAttributes, /*basetype=*/false);
 
   addBuiltinType(thread, ID(async_generator), LayoutId::kAsyncGenerator,
-                 /*superclass_id=*/LayoutId::kObject,
-                 kAsyncGeneratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAttributes,
+                 /*basetype=*/false);
 
   addBuiltinType(
       thread, ID(async_generator_aclose), LayoutId::kAsyncGeneratorAclose,
-      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAcloseAttributes);
+      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAcloseAttributes,
+      /*basetype=*/false);
 
   addBuiltinType(
       thread, ID(async_generator_asend), LayoutId::kAsyncGeneratorAsend,
-      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAsendAttributes);
+      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAsendAttributes,
+      /*basetype=*/false);
 
   addBuiltinType(
       thread, ID(async_generator_athrow), LayoutId::kAsyncGeneratorAthrow,
-      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAthrowAttributes);
+      /*superclass_id=*/LayoutId::kObject, kAsyncGeneratorAthrowAttributes,
+      /*basetype=*/false);
 
   addBuiltinType(thread, ID(async_generator_wrapped_value),
                  LayoutId::kAsyncGeneratorWrappedValue,
                  /*superclass_id=*/LayoutId::kObject,
-                 kAsyncGeneratorWrappedValueAttributes);
+                 kAsyncGeneratorWrappedValueAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(async_generator, __aiter__)(Thread* thread, Frame* frame,

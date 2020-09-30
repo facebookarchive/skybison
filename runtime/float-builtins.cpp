@@ -44,7 +44,8 @@ static const BuiltinAttribute kFloatAttributes[] = {
 
 void initializeFloatType(Thread* thread) {
   addBuiltinType(thread, ID(float), LayoutId::kFloat,
-                 /*superclass_id=*/LayoutId::kObject, kFloatAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kFloatAttributes,
+                 /*basetype=*/true);
 }
 
 RawObject METH(float, __abs__)(Thread* thread, Frame* frame, word nargs) {

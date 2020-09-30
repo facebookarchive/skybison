@@ -85,7 +85,7 @@ RawObject attributeNameNoException(Thread* thread, const Object& name_obj) {
 
 static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
                                           SymbolId name, LayoutId builtin_base,
-                                          LayoutId superclass_id) {
+                                          LayoutId superclass_id, word flags) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newType());
@@ -93,35 +93,37 @@ static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
   Type superclass(&scope, runtime->typeAt(superclass_id));
   type.setInstanceLayout(*layout);
   type.setInstanceLayoutId(layout.id());
-  Type::Flag flags =
-      static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
-  type.setFlagsAndBuiltinBase(flags, builtin_base);
+  flags |= superclass.flags() & Type::kInheritableFlags;
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
   type.setBases(runtime->newTupleWith1(superclass));
   layout.setDescribedType(*type);
   return *type;
 }
 
 RawObject addBuiltinType(Thread* thread, SymbolId name, LayoutId layout_id,
-                         LayoutId superclass_id, View<BuiltinAttribute> attrs) {
+                         LayoutId superclass_id, View<BuiltinAttribute> attrs,
+                         bool basetype) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutCreateSubclassWithBuiltins(
                             thread, layout_id, superclass_id, attrs));
   runtime->layoutAtPut(layout_id, *layout);
   LayoutId builtin_base = attrs.length() == 0 ? superclass_id : layout_id;
+  word flags = basetype ? Type::Flag::kIsBasetype : Type::Flag::kNone;
   return addBuiltinTypeWithLayout(thread, layout, name, builtin_base,
-                                  superclass_id);
+                                  superclass_id, flags);
 }
 
 RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   LayoutId layout_id, LayoutId builtin_base,
-                                  LayoutId superclass_id) {
+                                  LayoutId superclass_id, bool basetype) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->newLayout(layout_id));
   runtime->layoutAtPut(layout_id, *layout);
+  word flags = basetype ? Type::Flag::kIsBasetype : Type::Flag::kNone;
   return addBuiltinTypeWithLayout(thread, layout, name, builtin_base,
-                                  superclass_id);
+                                  superclass_id, flags);
 }
 
 RawObject findBuiltinTypeWithName(Thread* thread, const Object& name) {
@@ -640,11 +642,29 @@ static RawObject computeFixedAttributeBaseImpl(Thread* thread,
                                                bool get_fixed_attr_base) {
   HandleScope scope(thread);
   Type result(&scope, bases.at(0));
+  if (!result.isBasetype()) {
+    Object type_name(&scope, result.name());
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "type '%S' is not an acceptable base type",
+                                &type_name);
+  }
+  word bases_length = bases.length();
+  if (!get_fixed_attr_base && bases_length == 1) {
+    return *result;
+  }
+
   Type result_fixed_attr_base(&scope, fixedAttributeBaseOfType(thread, result));
   Type base(&scope, *result);
   Type fixed_attr_base(&scope, *result);
   for (word i = 1, length = bases.length(); i < length; i++) {
     base = bases.at(i);
+    if (!base.isBasetype()) {
+      Object type_name(&scope, base.name());
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "type '%S' is not an acceptable base type",
+                                  &type_name);
+    }
+
     fixed_attr_base = fixedAttributeBaseOfType(thread, base);
     if (typeIsSubclass(result_fixed_attr_base, fixed_attr_base)) {
       continue;
@@ -680,9 +700,6 @@ static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type) {
 // attributes with a fixed offset (either from __slots__ or builtin types)
 // Note that this simulates `best_base` from CPython's typeobject.c.
 static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
-  if (bases.length() == 1) {
-    return bases.at(0);
-  }
   return computeFixedAttributeBaseImpl(thread, bases, false);
 }
 
@@ -964,9 +981,10 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
   Type base_type(&scope, *type);
   bool bases_have_instance_dict = false;
   bool bases_have_type_slots = false;
+  word bases_flags = 0;
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
-    flags |= base_type.flags();
+    bases_flags |= base_type.flags();
     addSubclass(thread, base_type, type);
     bases_have_type_slots |= typeHasSlots(base_type);
     if (base_type.hasCustomDict()) bases_have_instance_dict = true;
@@ -975,7 +993,7 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
     }
   }
   if (bases_have_instance_dict) add_instance_dict = false;
-  flags &= ~(Type::Flag::kIsAbstract | Type::Flag::kIsFixedAttributeBase);
+  flags |= (bases_flags & Type::kInheritableFlags);
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
   type.setFlags(static_cast<Type::Flag>(flags));
 
@@ -1202,13 +1220,14 @@ void initializeTypeTypes(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, ID(type), LayoutId::kType,
                                    /*superclass_id=*/LayoutId::kObject,
-                                   kTypeAttributes));
+                                   kTypeAttributes, /*basetype=*/true));
   word flags = static_cast<word>(type.flags());
   flags |= RawType::Flag::kHasCustomDict;
   type.setFlags(static_cast<Type::Flag>(flags));
 
   addBuiltinType(thread, ID(type_proxy), LayoutId::kTypeProxy,
-                 /*superclass_id=*/LayoutId::kObject, kNoAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kNoAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {

@@ -70,7 +70,8 @@ static const BuiltinAttribute kSuperAttributes[] = {
 
 void initializeSuperType(Thread* thread) {
   addBuiltinType(thread, ID(super), LayoutId::kSuper,
-                 /*superclass_id=*/LayoutId::kObject, kSuperAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kSuperAttributes,
+                 /*basetype=*/true);
 }
 
 RawObject METH(super, __getattribute__)(Thread* thread, Frame* frame,

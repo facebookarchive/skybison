@@ -107,6 +107,9 @@ uword typeGetFlags(const Type& type) {
   if (internal_flags & Type::Flag::kIsCPythonHeaptype) {
     result |= Py_TPFLAGS_HEAPTYPE;
   }
+  if (internal_flags & Type::Flag::kIsBasetype) {
+    result |= Py_TPFLAGS_BASETYPE;
+  }
   switch (type.builtinBase()) {
     case LayoutId::kInt:
       result |= Py_TPFLAGS_LONG_SUBCLASS;

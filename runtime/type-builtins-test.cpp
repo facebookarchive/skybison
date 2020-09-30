@@ -818,10 +818,11 @@ static RawObject newExtensionType(PyObject* extension_type) {
   Tuple bases(&scope, runtime->newTupleWith1(object_type));
   Dict dict(&scope, runtime->newDict());
   Type metaclass(&scope, runtime->typeAt(LayoutId::kType));
-  Type type(&scope, typeNew(thread, metaclass, name, bases, dict,
-                            Type::Flag::kHasNativeData,
-                            /*inherit_slots=*/false,
-                            /*add_instance_dict=*/false));
+  Type type(&scope,
+            typeNew(thread, metaclass, name, bases, dict,
+                    Type::Flag::kHasNativeData | Type::Flag::kIsBasetype,
+                    /*inherit_slots=*/false,
+                    /*add_instance_dict=*/false));
 
   extension_type->reference_ = type.raw();
   return *type;

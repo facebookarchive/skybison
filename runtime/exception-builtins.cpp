@@ -791,7 +791,7 @@ void initializeExceptionTypes(Thread* thread) {
   Type type(&scope, layout.describedType());
   for (ExceptionTypeSpec spec : kExceptionSpecs) {
     type = addBuiltinType(thread, spec.name, spec.layout_id, spec.superclass_id,
-                          spec.attributes);
+                          spec.attributes, /*basetype=*/true);
     layout = type.instanceLayout();
     runtime->layoutSetTupleOverflow(*layout);
   }

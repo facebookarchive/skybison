@@ -440,13 +440,15 @@ void initializeStrTypes(Thread* thread) {
 
   Type str(&scope,
            addBuiltinType(thread, ID(str), LayoutId::kStr,
-                          /*superclass_id=*/LayoutId::kObject, kStrAttributes));
+                          /*superclass_id=*/LayoutId::kObject, kStrAttributes,
+                          /*basetype=*/true));
 
   {
     Type type(&scope,
               addImmediateBuiltinType(thread, ID(largestr), LayoutId::kLargeStr,
                                       /*builtin_base=*/LayoutId::kStr,
-                                      /*superclass_id=*/LayoutId::kObject));
+                                      /*superclass_id=*/LayoutId::kObject,
+                                      /*basetype=*/false));
     Layout::cast(type.instanceLayout()).setDescribedType(*str);
     runtime->setLargeStrType(type);
   }
@@ -455,13 +457,15 @@ void initializeStrTypes(Thread* thread) {
     Type type(&scope,
               addImmediateBuiltinType(thread, ID(smallstr), LayoutId::kSmallStr,
                                       /*builtin_base=*/LayoutId::kStr,
-                                      /*superclass_id=*/LayoutId::kObject));
+                                      /*superclass_id=*/LayoutId::kObject,
+                                      /*basetype=*/false));
     Layout::cast(type.instanceLayout()).setDescribedType(*str);
     runtime->setSmallStrType(type);
   }
 
   addBuiltinType(thread, ID(str_iterator), LayoutId::kStrIterator,
-                 /*superclass_id=*/LayoutId::kObject, kStrIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kStrIteratorAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs) {

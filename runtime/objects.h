@@ -1197,7 +1197,13 @@ class RawType : public RawInstance {
     // built-in types. They have immutable type dictionaries and deal with
     // `__module__`, `__name__` and `__qualname__` in a different way.
     kIsCPythonHeaptype = 1 << 15,
+
+    // Type may be used as a base class to create subclasses. A cleared basetype
+    // is sometimes called "final class" in other languages.
+    kIsBasetype = 1 << 16,
   };
+  static const word kInheritableFlags =
+      ~(Flag::kIsAbstract | Flag::kIsFixedAttributeBase | Flag::kIsBasetype);
 
   // Getters and setters.
   RawObject instanceLayout() const;
@@ -1244,6 +1250,7 @@ class RawType : public RawInstance {
   bool hasCustomDict() const;
   bool hasNativeData() const;
   bool isCPythonHeaptype() const;
+  bool isBasetype() const;
 
   RawObject slots() const;
   void setSlots(RawObject slots) const;
@@ -5209,6 +5216,10 @@ inline bool RawType::hasNativeData() const {
 
 inline bool RawType::isCPythonHeaptype() const {
   return hasFlag(RawType::Flag::kIsCPythonHeaptype);
+}
+
+inline bool RawType::isBasetype() const {
+  return hasFlag(RawType::Flag::kIsBasetype);
 }
 
 inline RawObject RawType::slots() const {

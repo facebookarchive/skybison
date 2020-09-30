@@ -1822,6 +1822,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (spec->flags & Py_TPFLAGS_HAVE_GC) {
     flags |= Type::Flag::kHasCycleGC;
   }
+  if (spec->flags & Py_TPFLAGS_BASETYPE) {
+    flags |= Type::Flag::kIsBasetype;
+  }
   // TODO(T53922464) Check for `__dictoffset__` tp_members and set accordingly.
   bool add_instance_dict = true;
   Type metaclass(&scope, runtime->typeAt(LayoutId::kType));

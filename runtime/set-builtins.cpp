@@ -1256,13 +1256,16 @@ RawObject METH(set_iterator, __length_hint__)(Thread* thread, Frame* frame,
 
 void initializeSetTypes(Thread* thread) {
   addBuiltinType(thread, ID(set), LayoutId::kSet,
-                 /*superclass_id=*/LayoutId::kObject, kSetAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kSetAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(frozenset), LayoutId::kFrozenSet,
-                 /*superclass_id=*/LayoutId::kObject, kFrozenSetAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kFrozenSetAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(set_iterator), LayoutId::kSetIterator,
-                 /*superclass_id=*/LayoutId::kObject, kSetIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kSetIteratorAttributes,
+                 /*basetype=*/false);
 }
 
 }  // namespace py

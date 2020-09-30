@@ -80,10 +80,12 @@ static const BuiltinAttribute kTupleIteratorAttributes[] = {
 
 void initializeTupleTypes(Thread* thread) {
   addBuiltinType(thread, ID(tuple), LayoutId::kTuple,
-                 /*superclass_id=*/LayoutId::kObject, kTupleAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kTupleAttributes,
+                 /*basetype=*/true);
 
   addBuiltinType(thread, ID(tuple_iterator), LayoutId::kTupleIterator,
-                 /*superclass_id=*/LayoutId::kObject, kTupleIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kTupleIteratorAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {

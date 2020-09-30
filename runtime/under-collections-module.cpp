@@ -32,9 +32,11 @@ static const BuiltinAttribute kDequeIteratorAttributes[] = {
 
 void initializeUnderCollectionsTypes(Thread* thread) {
   addBuiltinType(thread, ID(deque), LayoutId::kDeque,
-                 /*superclass_id=*/LayoutId::kObject, kDequeAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kDequeAttributes,
+                 /*basetype=*/true);
   addBuiltinType(thread, ID(_deque_iterator), LayoutId::kDequeIterator,
-                 /*superclass_id=*/LayoutId::kObject, kDequeIteratorAttributes);
+                 /*superclass_id=*/LayoutId::kObject, kDequeIteratorAttributes,
+                 /*basetype=*/false);
 }
 
 RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Frame* frame,

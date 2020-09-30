@@ -13,6 +13,7 @@ from test_support import pyro_only
 
 
 Py_TPFLAGS_HEAPTYPE = 1 << 9
+Py_TPFLAGS_BASETYPE = 1 << 10
 Py_TPFLAGS_READY = 1 << 12
 Py_TPFLAGS_READYING = 1 << 13
 Py_TPFLAGS_IS_ABSTRACT = 1 << 20
@@ -11145,6 +11146,19 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__doc__, "docstring")
         self.assertIsNone(D.__doc__)
 
+    def test_dunder_flags_returns_basetype_set(self):
+        class C:
+            pass
+
+        self.assertTrue(object.__flags__ & Py_TPFLAGS_BASETYPE)
+        self.assertTrue(float.__flags__ & Py_TPFLAGS_BASETYPE)
+        self.assertTrue(C.__flags__ & Py_TPFLAGS_BASETYPE)
+
+    def test_dunder_flags_returns_basetype_clear(self):
+        self.assertFalse(bool.__flags__ & Py_TPFLAGS_BASETYPE)
+        str_iter_type = type(iter(""))
+        self.assertFalse(str_iter_type.__flags__ & Py_TPFLAGS_BASETYPE)
+
     def test_dunder_flags_with_managed_type_is_heap_type(self):
         class C:
             pass
@@ -11412,6 +11426,12 @@ class TypeTests(unittest.TestCase):
     def test_dunder_new_with_non_tuple_bases_raises_type_error(self):
         with self.assertRaises(TypeError):
             type.__new__(type, "X", [object], {})
+
+    def test_dunder_new_with_non_basetype_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "type 'bool' is not an acceptable base type"
+        ):
+            type.__new__(type, "X", (bool,), {})
 
     def test_dunder_new_with_non_dict_type_dict_raises_type_error(self):
         with self.assertRaises(TypeError):
