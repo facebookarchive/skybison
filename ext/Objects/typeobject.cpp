@@ -2001,4 +2001,60 @@ PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
   return ApiHandle::borrowedReference(thread, *res);
 }
 
+uword typeGetBasicSize(const Type& type) {
+  return typeSlotUWordAt(type, kSlotBasicSize);
+}
+
+uword typeGetFlags(const Type& type) {
+  if (typeHasSlots(type)) {
+    return typeSlotUWordAt(type, kSlotFlags);
+  }
+  uword result = Py_TPFLAGS_READY;
+  // TODO(T71637829): Check if the type allows subclassing and set
+  // Py_TPFLAGS_BASETYPE appropriately.
+  Type::Flag internal_flags = type.flags();
+  if (internal_flags & Type::Flag::kHasCycleGC) {
+    result |= Py_TPFLAGS_HAVE_GC;
+  }
+  if (internal_flags & Type::Flag::kIsAbstract) {
+    result |= Py_TPFLAGS_IS_ABSTRACT;
+  }
+  if (internal_flags & Type::Flag::kIsCPythonHeaptype) {
+    result |= Py_TPFLAGS_HEAPTYPE;
+  }
+  if (internal_flags & Type::Flag::kIsBasetype) {
+    result |= Py_TPFLAGS_BASETYPE;
+  }
+  switch (type.builtinBase()) {
+    case LayoutId::kInt:
+      result |= Py_TPFLAGS_LONG_SUBCLASS;
+      break;
+    case LayoutId::kList:
+      result |= Py_TPFLAGS_LIST_SUBCLASS;
+      break;
+    case LayoutId::kTuple:
+      result |= Py_TPFLAGS_TUPLE_SUBCLASS;
+      break;
+    case LayoutId::kBytes:
+      result |= Py_TPFLAGS_BYTES_SUBCLASS;
+      break;
+    case LayoutId::kStr:
+      result |= Py_TPFLAGS_UNICODE_SUBCLASS;
+      break;
+    case LayoutId::kDict:
+      result |= Py_TPFLAGS_DICT_SUBCLASS;
+      break;
+    // BaseException is handled separately down below
+    case LayoutId::kType:
+      result |= Py_TPFLAGS_TYPE_SUBCLASS;
+      break;
+    default:
+      if (type.isBaseExceptionSubclass()) {
+        result |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
+      }
+      break;
+  }
+  return result;
+}
+
 }  // namespace py
