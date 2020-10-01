@@ -8139,6 +8139,20 @@ class ObjectTests(unittest.TestCase):
             Foo().__reduce_ex__(3)
         self.assertEqual(str(context.exception), "'NoneType' object is not callable")
 
+    def test_dunder_repr_returns_string_with_module_and_name(self):
+        class C:
+            pass
+
+        self.assertTrue(
+            object.__repr__(C()).startswith(
+                "<__main__.ObjectTests.test_dunder_repr_returns_string_with_module_and_name.<locals>.C object at"
+            )
+        )
+
+    def test_dunder_repr_returns_string_with_only_name(self):
+        self.assertTrue(object.__repr__(42).startswith("<int object at "))
+        self.assertTrue(object.__repr__("").startswith("<str object at "))
+
     def test_dir_without_dict_returns_type_attributes(self):
         o = dir(object())
         self.assertIn("__class__", o)

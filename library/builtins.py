@@ -749,6 +749,9 @@ class object(bootstrap=True):  # noqa: E999
         return _object_reduce(self, proto)
 
     def __repr__(self):
+        mod = _type(self).__module__
+        if mod and mod != "builtins":
+            return f"<{mod}.{_type(self).__qualname__} object at {_address(self):#x}>"
         return f"<{_type(self).__name__} object at {_address(self):#x}>"
 
     def __setattr__(self, name, value):
