@@ -4062,8 +4062,6 @@ HANDLER_INLINE Continue Interpreter::doLoadFastReverse(Thread* thread,
                                                        word arg) {
   Frame* frame = thread->currentFrame();
   RawObject value = frame->localWithReverseIndex(arg);
-  // TODO(T66255738): Remove this once we can statically prove local variable
-  // are always bound.
   if (UNLIKELY(value.isErrorNotFound())) {
     HandleScope scope(thread);
     Code code(&scope, frame->code());
@@ -4074,6 +4072,14 @@ HANDLER_INLINE Continue Interpreter::doLoadFastReverse(Thread* thread,
                          &name);
     return Continue::UNWIND;
   }
+  thread->stackPush(value);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadFastReverseUnchecked(Thread* thread,
+                                                                word arg) {
+  RawObject value = thread->currentFrame()->localWithReverseIndex(arg);
+  DCHECK(!value.isErrorNotFound(), "no value assigned yet");
   thread->stackPush(value);
   return Continue::NEXT;
 }

@@ -498,6 +498,52 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   word argcount = 1;
   word nlocals = 3;
   byte bytecode[] = {
+      LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,  1,
+      STORE_FAST, 2, STORE_FAST, 1, STORE_FAST, 0,
+  };
+  Bytes code_code(&scope, runtime_->newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime_->emptyTuple());
+  Object empty_string(&scope, Str::empty());
+  Object lnotab(&scope, Bytes::empty());
+  Code code(&scope,
+            runtime_->newCode(argcount, /*posonlyargcount=*/0,
+                              /*kwonlyargcount=*/0, nlocals,
+                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*consts=*/empty_tuple, /*names=*/empty_tuple,
+                              varnames, freevars, cellvars,
+                              /*filename=*/empty_string, /*name=*/empty_string,
+                              /*firstlineno=*/0, lnotab));
+  code.setFlags(code.flags() | Code::Flags::kOptimized);
+
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
+                                                          code, module));
+  // newFunctionWithCode() calls rewriteBytecode().
+
+  byte expected[] = {
+      LOAD_FAST_REVERSE,  2, LOAD_FAST_REVERSE,  3, LOAD_FAST_REVERSE,  3,
+      STORE_FAST_REVERSE, 2, STORE_FAST_REVERSE, 3, STORE_FAST_REVERSE, 4,
+  };
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
+  EXPECT_TRUE(function.caches().isNoneType());
+}
+
+TEST_F(BytecodeTest,
+       RewriteBytecodeRewritesLoadFastToLoadFastReverseBoundForArguments) {
+  HandleScope scope(thread_);
+  Object arg0(&scope, Runtime::internStrFromCStr(thread_, "arg0"));
+  Object var0(&scope, Runtime::internStrFromCStr(thread_, "var0"));
+  Object var1(&scope, Runtime::internStrFromCStr(thread_, "var1"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(arg0, var0, var1));
+  Object freevar0(&scope, Runtime::internStrFromCStr(thread_, "freevar0"));
+  Tuple freevars(&scope, runtime_->newTupleWith1(freevar0));
+  Object cellvar0(&scope, Runtime::internStrFromCStr(thread_, "cellvar0"));
+  Tuple cellvars(&scope, runtime_->newTupleWith1(cellvar0));
+  word argcount = 1;
+  word nlocals = 3;
+  byte bytecode[] = {
       LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,  0,
       STORE_FAST, 2, STORE_FAST, 1, STORE_FAST, 0,
   };
@@ -521,8 +567,57 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
+      LOAD_FAST_REVERSE,           2, LOAD_FAST_REVERSE,  3,
+      LOAD_FAST_REVERSE_UNCHECKED, 4, STORE_FAST_REVERSE, 2,
+      STORE_FAST_REVERSE,          3, STORE_FAST_REVERSE, 4,
+  };
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
+  EXPECT_TRUE(function.caches().isNoneType());
+}
+
+TEST_F(
+    BytecodeTest,
+    RewriteBytecodeRewritesLoadFastToLoadFastReverseWhenDeleteFastIsPresent) {
+  HandleScope scope(thread_);
+  Object arg0(&scope, Runtime::internStrFromCStr(thread_, "arg0"));
+  Object var0(&scope, Runtime::internStrFromCStr(thread_, "var0"));
+  Object var1(&scope, Runtime::internStrFromCStr(thread_, "var1"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(arg0, var0, var1));
+  Object freevar0(&scope, Runtime::internStrFromCStr(thread_, "freevar0"));
+  Tuple freevars(&scope, runtime_->newTupleWith1(freevar0));
+  Object cellvar0(&scope, Runtime::internStrFromCStr(thread_, "cellvar0"));
+  Tuple cellvars(&scope, runtime_->newTupleWith1(cellvar0));
+  word argcount = 1;
+  word nlocals = 3;
+  byte bytecode[] = {
+      LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,   0, STORE_FAST, 2,
+      STORE_FAST, 1, STORE_FAST, 0, DELETE_FAST, 0,
+  };
+  Bytes code_code(&scope, runtime_->newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime_->emptyTuple());
+  Object empty_string(&scope, Str::empty());
+  Object lnotab(&scope, Bytes::empty());
+  Code code(&scope,
+            runtime_->newCode(argcount, /*posonlyargcount=*/0,
+                              /*kwonlyargcount=*/0, nlocals,
+                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*consts=*/empty_tuple, /*names=*/empty_tuple,
+                              varnames, freevars, cellvars,
+                              /*filename=*/empty_string, /*name=*/empty_string,
+                              /*firstlineno=*/0, lnotab));
+  code.setFlags(code.flags() | Code::Flags::kOptimized);
+
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
+                                                          code, module));
+  // newFunctionWithCode() calls rewriteBytecode().
+
+  byte expected[] = {
       LOAD_FAST_REVERSE,  2, LOAD_FAST_REVERSE,  3, LOAD_FAST_REVERSE,  4,
       STORE_FAST_REVERSE, 2, STORE_FAST_REVERSE, 3, STORE_FAST_REVERSE, 4,
+      DELETE_FAST,        0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));

@@ -1135,6 +1135,12 @@ void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<LOAD_FAST_REVERSE_UNCHECKED>(EmitEnv* env) {
+  __ pushq(Address(kFrameReg, kOpargReg, TIMES_8, Frame::kSize));
+  emitNextOpcode(env);
+}
+
+template <>
 void emitHandler<STORE_FAST_REVERSE>(EmitEnv* env) {
   __ popq(Address(kFrameReg, kOpargReg, TIMES_8, Frame::kSize));
   emitNextOpcode(env);

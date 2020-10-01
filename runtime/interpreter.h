@@ -424,6 +424,7 @@ class Interpreter {
   static Continue doLoadDeref(Thread* thread, word arg);
   static Continue doLoadFast(Thread* thread, word arg);
   static Continue doLoadFastReverse(Thread* thread, word arg);
+  static Continue doLoadFastReverseUnchecked(Thread* thread, word arg);
   static Continue doLoadMethod(Thread* thread, word arg);
   static Continue doLoadMethodAnamorphic(Thread* thread, word arg);
   static Continue doLoadMethodInstanceFunction(Thread* thread, word arg);

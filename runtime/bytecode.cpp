@@ -37,7 +37,8 @@ struct RewrittenOp {
   bool needs_inline_cache;
 };
 
-static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
+static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
+                                    bool use_load_fast_reverse_unchecked) {
   auto cached_binop = [](Interpreter::BinaryOp bin_op) {
     return RewrittenOp{BINARY_OP_ANAMORPHIC, static_cast<int32_t>(bin_op),
                        true};
@@ -128,7 +129,14 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
             "unexpected local number");
       word total_locals = function.totalLocals();
       int32_t reverse_arg = total_locals - op.arg - 1;
-      return RewrittenOp{LOAD_FAST_REVERSE, reverse_arg, false};
+      // TODO(T66255738): Use a more complete static analysis to capture all
+      // bound local variables other than just arguments.
+      return RewrittenOp{
+          // Arguments are always bound.
+          (op.arg < function.totalArgs() && use_load_fast_reverse_unchecked)
+              ? LOAD_FAST_REVERSE_UNCHECKED
+              : LOAD_FAST_REVERSE,
+          reverse_arg, false};
     }
     case LOAD_METHOD:
       return RewrittenOp{LOAD_METHOD_ANAMORPHIC, op.arg, true};
@@ -192,9 +200,14 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   // Scan bytecode to figure out how many caches we need.
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
   word bytecode_length = bytecode.length();
+  bool use_load_fast_reverse_unchecked = true;
   for (word i = 0; i < bytecode_length;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    RewrittenOp rewritten = rewriteOperation(function, op);
+    if (op.bc == DELETE_FAST) {
+      use_load_fast_reverse_unchecked = false;
+      continue;
+    }
+    RewrittenOp rewritten = rewriteOperation(function, op, false);
     if (rewritten.needs_inline_cache) {
       num_caches++;
     }
@@ -218,7 +231,8 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
     word begin = i;
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    RewrittenOp rewritten = rewriteOperation(function, op);
+    RewrittenOp rewritten =
+        rewriteOperation(function, op, use_load_fast_reverse_unchecked);
     if (rewritten.bc == UNUSED_BYTECODE_0) continue;
     if (rewritten.needs_inline_cache) {
       for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
