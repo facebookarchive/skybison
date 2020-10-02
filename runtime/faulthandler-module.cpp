@@ -202,8 +202,7 @@ RawObject FUNC(faulthandler, dump_traceback)(Thread* thread, Frame* frame,
     UNIMPLEMENTED("all_threads=True");
   }
 
-  // TODO(wmeehan): call Pyro-equivalent to PyErr_CheckSignals
-  return NoneType::object();
+  return runtime->handlePendingSignals(thread);
 }
 
 static bool enableHandler(FaultHandler* handler, void (*handler_func)(int)) {

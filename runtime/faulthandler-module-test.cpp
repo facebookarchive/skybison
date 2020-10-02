@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include <csignal>
+
 #include "gtest/gtest.h"
 
 #include "builtins.h"
@@ -51,6 +53,17 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
   word expected_length = std::strlen(expected);
   ASSERT_EQ(length, expected_length);
   EXPECT_EQ(std::memcmp(actual.get(), expected, expected_length), 0);
+}
+
+TEST_F(FaulthandlerModuleTest, DumpTracebackHandlesPendingSignal) {
+  HandleScope scope(thread_);
+  Object file(&scope, SmallInt::fromWord(File::kStderr));
+  Object all_threads(&scope, Bool::falseObj());
+
+  runtime_->setPendingSignal(thread_, SIGINT);
+  EXPECT_TRUE(
+      raised(runBuiltin(FUNC(faulthandler, dump_traceback), file, all_threads),
+             LayoutId::kKeyboardInterrupt));
 }
 
 }  // namespace testing

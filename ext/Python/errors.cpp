@@ -314,8 +314,8 @@ PY_EXPORT void PyErr_SetExcInfo(PyObject* type, PyObject* value,
 
 static void setFromErrno(PyObject* type, PyObject* name1, PyObject* name2) {
   int saved_errno = errno;
-  if (saved_errno == EINTR) {
-    UNIMPLEMENTED("&& PyErr_CheckSignals() != 0) return;");
+  if (saved_errno == EINTR && PyErr_CheckSignals() != 0) {
+    return;
   }
 
   const char* str = saved_errno ? strerror(saved_errno) : "Error";

@@ -592,6 +592,15 @@ TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithNonZeroSetsError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+TEST_F(ErrorsExtensionApiTest,
+       SetFromErrnoWithInterruptRaisesKeyboardInterrupt) {
+  PyErr_SetInterrupt();
+  errno = EINTR;
+  ASSERT_EQ(PyErr_SetFromErrno(PyExc_SystemError), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyboardInterrupt));
+}
+
 TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithFilenameSetsError) {
   errno = 1;
   ASSERT_EQ(PyErr_SetFromErrnoWithFilename(PyExc_NameError, "foo"), nullptr);
