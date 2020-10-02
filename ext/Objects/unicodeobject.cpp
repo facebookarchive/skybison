@@ -1803,34 +1803,31 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* pyobj) {
 
 PY_EXPORT PyObject* PyUnicode_InternFromString(const char* c_str) {
   DCHECK(c_str != nullptr, "c_str must not be nullptr");
-  PyObject* str = PyUnicode_FromString(c_str);
-  if (str == nullptr) {
-    return nullptr;
-  }
-  PyUnicode_InternInPlace(&str);
-  return str;
+  Thread* thread = Thread::current();
+  return ApiHandle::newReference(thread,
+                                 Runtime::internStrFromCStr(thread, c_str));
 }
 
 PY_EXPORT void PyUnicode_InternImmortal(PyObject** /* p */) {
   UNIMPLEMENTED("PyUnicode_InternImmortal");
 }
 
-PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
+PY_EXPORT void PyUnicode_InternInPlace(PyObject** obj_ptr) {
+  PyObject* pobj = *obj_ptr;
   DCHECK(pobj != nullptr, "pobj should not be null");
-  if (*pobj == nullptr) {
+  if (pobj == nullptr) {
     return;
   }
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object obj(&scope, ApiHandle::fromPyObject(*pobj)->asObject());
+  Object obj(&scope, ApiHandle::fromPyObject(pobj)->asObject());
   if (!obj.isLargeStr()) {
     return;
   }
-  Str obj_str(&scope, *obj);
-  Object result(&scope, Runtime::internStr(thread, obj_str));
-  if (result != obj_str) {
-    Py_DECREF(*pobj);
-    *pobj = ApiHandle::newReference(thread, *result);
+  Object result(&scope, Runtime::internStr(thread, obj));
+  if (result != obj) {
+    Py_DECREF(pobj);
+    *obj_ptr = ApiHandle::newReference(thread, *result);
   }
 }
 
