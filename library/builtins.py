@@ -823,6 +823,10 @@ class BaseException(bootstrap=True):
             return str(self.args[0])
         return str(self.args)
 
+    def with_traceback(self, tb):
+        self.__traceback__ = tb
+        return self
+
     __traceback__ = _maybe_unbound_property("traceback", "__traceback__", traceback)
 
     del _maybe_unbound_property

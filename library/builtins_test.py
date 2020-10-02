@@ -4515,6 +4515,28 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(exc2.__context__, exc1)
         self.assertIs(exc1.__context__, None)
 
+    def test_with_traceback_sets_none_as_dunder_traceback(self):
+        e = BaseException()
+        self.assertIs(e, e.with_traceback(None))
+        self.assertIs(e.__traceback__, None)
+
+    def test_with_traceback_sets_traceback_as_dunder_traceback(self):
+        traceback_obj = None
+        try:
+            raise Exception("test")
+        except Exception as e:
+            traceback_obj = e.__traceback__
+        self.assertIsNot(traceback_obj, None)
+
+        e = BaseException()
+        self.assertIs(e, e.with_traceback(traceback_obj))
+        self.assertIs(e.__traceback__, traceback_obj)
+
+    def test_with_traceback_with_non_traceback_raises_type_error(self):
+        e = BaseException()
+        with self.assertRaises(TypeError):
+            e.with_traceback("not_a_traceback_obj")
+
 
 class EvalTests(unittest.TestCase):
     def test_globals_none_accesses_function_globals(self):
