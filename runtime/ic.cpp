@@ -711,7 +711,16 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
     DCHECK(caches.at(index) == *value_cell, "caches.at(index) == *value_cell");
     return;
   }
-  icInsertDependentToValueCellDependencyLink(thread, function, value_cell);
+  // Insert function as the first dependent on value_cell.
+  Object old_head(&scope, value_cell.dependencyLink());
+  Object none(&scope, NoneType::object());
+  WeakLink new_head(
+      &scope, thread->runtime()->newWeakLink(thread, function, none, old_head));
+  if (old_head.isWeakLink()) {
+    WeakLink::cast(*old_head).setPrev(*new_head);
+  }
+  value_cell.setDependencyLink(*new_head);
+
   caches.atPut(index, *value_cell);
 
   // Update all global variable access to the cached value in the function.
