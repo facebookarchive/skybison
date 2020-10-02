@@ -30,6 +30,7 @@ class Runtime;
   V(ContextVar)                                                                \
   V(DeprecationWarning)                                                        \
   V(EOFError)                                                                  \
+  V(Error)                                                                     \
   V(Exception)                                                                 \
   V(ExceptionState)                                                            \
   V(False)                                                                     \

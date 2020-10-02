@@ -208,6 +208,10 @@ class Thread {
   // Raises an OSError exception generated from the value of errno.
   RawObject raiseOSErrorFromErrno(int errno_value);
 
+  RawObject raiseFromErrnoWithFilenames(const Object& type, int errno_value,
+                                        const Object& filename0,
+                                        const Object& filename1);
+
   // Raises a TypeError exception of the form '<method> requires a <type(obj)>
   // object but received a <expected_type>' and returns an Error object that
   // must be returned up the stack by the caller.

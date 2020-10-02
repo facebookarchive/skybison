@@ -312,59 +312,53 @@ PY_EXPORT void PyErr_SetExcInfo(PyObject* type, PyObject* value,
   thread->setCaughtExceptionTraceback(*traceback_obj);
 }
 
-static void setFromErrno(PyObject* type, PyObject* name1, PyObject* name2) {
-  int saved_errno = errno;
-  if (saved_errno == EINTR && PyErr_CheckSignals() != 0) {
-    return;
-  }
-
-  const char* str = saved_errno ? strerror(saved_errno) : "Error";
-  DCHECK(str != nullptr, "str must not be null");
-  PyObject* msg = PyUnicode_FromString(str);
-  PyObject* err = PyLong_FromLong(saved_errno);
-  PyObject* result;
-  if (name1 == nullptr) {
-    DCHECK(name2 == nullptr, "name2 must be nullptr");
-    result = PyObject_CallFunctionObjArgs(type, err, msg, nullptr);
-  } else if (name2 == nullptr) {
-    result = PyObject_CallFunctionObjArgs(type, err, msg, name1, nullptr);
-  } else {
-    PyObject* zero = PyLong_FromLong(0);
-    result = PyObject_CallFunctionObjArgs(type, err, msg, name1, zero, name2,
-                                          nullptr);
-    Py_DECREF(zero);
-  }
-
-  Py_DECREF(msg);
-  Py_DECREF(err);
-  DCHECK(result != nullptr, "result must not be null");
-  PyErr_SetObject(type, result);
-  Py_DECREF(result);
-}
-
 PY_EXPORT PyObject* PyErr_SetFromErrno(PyObject* type) {
-  setFromErrno(type, nullptr, nullptr);
+  int errno_value = errno;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type_obj(&scope, ApiHandle::fromPyObject(type)->asObject());
+  Object none(&scope, NoneType::object());
+  thread->raiseFromErrnoWithFilenames(type_obj, errno_value, none, none);
   return nullptr;
 }
 
 PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilename(PyObject* type,
                                                    const char* filename) {
-  PyObject* name = filename ? PyUnicode_FromString(filename) : nullptr;
-  setFromErrno(type, name, nullptr);
-  Py_XDECREF(name);
+  int errno_value = errno;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type_obj(&scope, ApiHandle::fromPyObject(type)->asObject());
+  Object filename_obj(&scope, thread->runtime()->newStrFromCStr(filename));
+  Object none(&scope, NoneType::object());
+  thread->raiseFromErrnoWithFilenames(type_obj, errno_value, filename_obj,
+                                      none);
   return nullptr;
 }
 
 PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilenameObject(PyObject* type,
-                                                         PyObject* name) {
-  setFromErrno(type, name, nullptr);
+                                                         PyObject* filename) {
+  int errno_value = errno;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type_obj(&scope, ApiHandle::fromPyObject(type)->asObject());
+  Object filename_obj(&scope, ApiHandle::fromPyObject(filename)->asObject());
+  Object none(&scope, NoneType::object());
+  thread->raiseFromErrnoWithFilenames(type_obj, errno_value, filename_obj,
+                                      none);
   return nullptr;
 }
 
 PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilenameObjects(PyObject* type,
-                                                          PyObject* name1,
-                                                          PyObject* name2) {
-  setFromErrno(type, name1, name2);
+                                                          PyObject* filename0,
+                                                          PyObject* filename1) {
+  int errno_value = errno;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type_obj(&scope, ApiHandle::fromPyObject(type)->asObject());
+  Object filename0_obj(&scope, ApiHandle::fromPyObject(filename0)->asObject());
+  Object filename1_obj(&scope, ApiHandle::fromPyObject(filename1)->asObject());
+  thread->raiseFromErrnoWithFilenames(type_obj, errno_value, filename0_obj,
+                                      filename1_obj);
   return nullptr;
 }
 

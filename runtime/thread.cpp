@@ -619,12 +619,42 @@ RawObject Thread::raiseMemoryError() {
 }
 
 RawObject Thread::raiseOSErrorFromErrno(int errno_value) {
-  // TODO(T67323177): Pass filename & filname2.
   HandleScope scope(this);
-  SmallInt errno_value_int(&scope, SmallInt::fromWord(errno_value));
-  Object message(&scope, runtime()->newStrFromCStr(std::strerror(errno_value)));
-  Tuple args(&scope, runtime()->newTupleWith2(errno_value_int, message));
-  return raise(errorLayoutFromErrno(errno_value), *args);
+  Object type(&scope, runtime()->typeAt(LayoutId::kOSError));
+  NoneType none(&scope, NoneType::object());
+  return raiseFromErrnoWithFilenames(type, errno_value, none, none);
+}
+
+RawObject Thread::raiseFromErrnoWithFilenames(const Object& type,
+                                              int errno_value,
+                                              const Object& filename0,
+                                              const Object& filename1) {
+  HandleScope scope(this);
+  if (errno_value == EINTR) {
+    Object result(&scope, runtime_->handlePendingSignals(this));
+    if (result.isErrorException()) return *result;
+  }
+
+  stackPush(*type);
+  stackPush(SmallInt::fromWord(errno_value));
+  stackPush(errno_value == 0
+                ? runtime_->symbols()->at(ID(Error))
+                : Runtime::internStrFromCStr(this, std::strerror(errno_value)));
+  word nargs = 2;
+  if (!filename0.isNoneType()) {
+    stackPush(*filename0);
+    ++nargs;
+    if (!filename1.isNoneType()) {
+      stackPush(SmallInt::fromWord(0));
+      stackPush(*filename1);
+      nargs += 2;
+    }
+  } else {
+    DCHECK(filename1.isNoneType(), "expected filename1 to be None");
+  }
+  Object exception(&scope, Interpreter::call(this, nargs));
+  if (exception.isErrorException()) return *exception;
+  return raiseWithType(runtime_->typeOf(*exception), *exception);
 }
 
 RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
