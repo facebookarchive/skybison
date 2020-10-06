@@ -1254,7 +1254,12 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   Frame* frame = thread->currentFrame();
   Object new_traceback(&scope, NoneType::object());
   for (;;) {
-    new_traceback = runtime->newTraceback(thread, frame);
+    new_traceback = runtime->newTraceback();
+    Traceback::cast(*new_traceback).setFunction(frame->function());
+    if (!frame->isNative()) {
+      word lasti = frame->virtualPC() - kCodeUnitSize;
+      Traceback::cast(*new_traceback).setLasti(SmallInt::fromWord(lasti));
+    }
     Traceback::cast(*new_traceback)
         .setNext(thread->pendingExceptionTraceback());
     thread->setPendingExceptionTraceback(*new_traceback);

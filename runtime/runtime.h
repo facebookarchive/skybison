@@ -80,7 +80,7 @@ class Runtime {
   RawObject newBytesWithAll(View<byte> array);
   RawObject newBytesIterator(Thread* thread, const Bytes& bytes);
 
-  RawObject newTraceback(Thread* thread, Frame* frame);
+  RawObject newTraceback();
 
   RawObject newType();
 

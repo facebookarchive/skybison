@@ -425,16 +425,7 @@ RawObject Runtime::newBytesIterator(Thread* thread, const Bytes& bytes) {
   return *result;
 }
 
-RawObject Runtime::newTraceback(Thread* thread, Frame* frame) {
-  HandleScope scope(thread);
-  Traceback result(&scope, createInstance<RawTraceback>(this));
-  result.setFunction(frame->function());
-  if (!frame->isNative()) {
-    word lasti = frame->virtualPC() - kCodeUnitSize;
-    result.setLasti(SmallInt::fromWord(lasti));
-  }
-  return *result;
-}
+RawObject Runtime::newTraceback() { return createInstance<RawTraceback>(this); }
 
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
