@@ -1837,6 +1837,40 @@ TEST_F(UnicodeExtensionApiTest, FSConverterWithUnicodeReturnsBytes) {
   Py_DECREF(result);
 }
 
+TEST_F(UnicodeExtensionApiTest, FSConverterCallsDunderFspath) {
+  PyRun_SimpleString(R"(
+class C:
+  def __fspath__(self):
+    return "foo"
+
+foo = C()
+)");
+  PyObjectPtr path(mainModuleGet("foo"));
+  PyObject* result = nullptr;
+  ASSERT_EQ(PyUnicode_FSConverter(path, &result), Py_CLEANUP_SUPPORTED);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyBytes_Check(result));
+  Py_DECREF(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, FSConverterWithBytesSubclassReturnsSubclass) {
+  PyRun_SimpleString(R"(
+class C(bytes):
+  pass
+
+foo = C()
+)");
+  PyObjectPtr path(mainModuleGet("foo"));
+  PyObject* result = nullptr;
+  ASSERT_EQ(PyUnicode_FSConverter(path, &result), Py_CLEANUP_SUPPORTED);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyBytes_Check(result));
+  EXPECT_EQ(result, path);
+  Py_DECREF(result);
+}
+
 TEST_F(UnicodeExtensionApiTest, FSConverterWithEmbeddedNullRaisesValueError) {
   PyObjectPtr bytes(PyBytes_FromStringAndSize("foo \0 bar", 9));
   PyObject* result = nullptr;

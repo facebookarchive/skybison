@@ -1531,44 +1531,51 @@ PY_EXPORT PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE* unicode,
   return result;
 }
 
-static bool hasNulByte(PyObject* bytes_obj) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object obj(&scope, ApiHandle::fromPyObject(bytes_obj)->asObject());
-  Bytes bytes(&scope, bytesUnderlying(*obj));
-  if (bytes.findByte('\0', /*start=*/0, /*length=*/bytes.length()) == -1) {
-    return false;
-  }
-  return true;
-}
-
 PY_EXPORT int PyUnicode_FSConverter(PyObject* arg, void* addr) {
   if (arg == nullptr) {
     Py_DECREF(*reinterpret_cast<PyObject**>(addr));
     *reinterpret_cast<PyObject**>(addr) = nullptr;
     return 1;
   }
-  PyObject* path = PyOS_FSPath(arg);
-  if (path == nullptr) {
-    return 0;
-  }
-  PyObject* output = nullptr;
-  if (PyBytes_Check(path)) {
-    output = path;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object arg_obj(&scope, ApiHandle::fromPyObject(arg)->asObject());
+  Object path(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfStr(*arg_obj) ||
+      runtime->isInstanceOfBytes(*arg_obj)) {
+    path = *arg_obj;
   } else {
-    // PyOS_FSPath() guarantees its returned value is bytes or str.
-    output = PyUnicode_EncodeFSDefault(path);
-    Py_DECREF(path);
-    if (output == nullptr) {
+    path = thread->invokeFunction1(ID(_io), ID(_fspath), arg_obj);
+    if (path.isErrorException()) {
       return 0;
     }
-    CHECK(PyBytes_Check(output), "output must be a bytes object");
   }
-  if (hasNulByte(output)) {
-    PyErr_SetString(PyExc_ValueError, "embedded null byte");
+  Object output(&scope, NoneType::object());
+  if (runtime->isInstanceOfBytes(*path)) {
+    output = *path;
+  } else {
+    CHECK(std::strcmp(Py_FileSystemDefaultEncoding, "utf-8") == 0, "");
+    CHECK(std::strcmp(Py_FileSystemDefaultEncodeErrors, "surrogatepass") == 0,
+          "");
+    // PyOS_FSPath/_io._fspath guarantee their returned value is bytes or str.
+    // This is an inlined PyUnicode_FSDecoder, which does a UTF-8 decode with
+    // surrogatepass. Since our strings are UTF-8 with UTF-16 surrogates
+    // (WTF-8), we can just copy the bytes out.
+    Str path_str(&scope, strUnderlying(*path));
+    word path_len = path_str.length();
+    MutableBytes bytes(&scope, runtime->newMutableBytesUninitialized(path_len));
+    bytes.replaceFromWithStr(0, *path_str, path_len);
+    output = bytes.becomeImmutable();
+  }
+  Bytes underlying(&scope, bytesUnderlying(*output));
+  if (underlying.findByte('\0', /*start=*/0, /*length=*/underlying.length()) !=
+      -1) {
+    thread->raiseWithFmt(LayoutId::kValueError, "embedded null byte");
     return 0;
   }
-  *reinterpret_cast<PyObject**>(addr) = output;
+  *reinterpret_cast<PyObject**>(addr) =
+      ApiHandle::newReference(thread, *output);
   return Py_CLEANUP_SUPPORTED;
 }
 

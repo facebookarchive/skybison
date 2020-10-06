@@ -372,6 +372,7 @@ class Runtime;
   V(_frozenset__num_items)                                                     \
   V(_frozenset_check)                                                          \
   V(_frozenset_guard)                                                          \
+  V(_fspath)                                                                   \
   V(_function)                                                                 \
   V(_function__annotations)                                                    \
   V(_function__argcount)                                                       \
@@ -404,6 +405,7 @@ class Runtime;
   V(_int_check_exact)                                                          \
   V(_int_guard)                                                                \
   V(_int_new_from_str)                                                         \
+  V(_io)                                                                       \
   V(_iterator__index)                                                          \
   V(_iterator__iterable)                                                       \
   V(_layout__described_type)                                                   \
