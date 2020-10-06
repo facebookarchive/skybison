@@ -355,7 +355,7 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
   CHECK(Py_UnbufferedStdioFlag == 0, "Unbuffered stdio not supported");
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
-  word heap_size = 1 * kGiB;
+  word heap_size = word{2} * kGiB;
   RandomState random_seed;
   const char* hashseed =
       Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONHASHSEED");
