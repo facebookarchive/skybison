@@ -41,6 +41,7 @@ void ExtensionApi::SetUp() {
 }
 
 void ExtensionApi::TearDown() {
+  PyErr_Clear();
   Py_FinalizeEx();
   std::setlocale(LC_CTYPE, "C");
 }

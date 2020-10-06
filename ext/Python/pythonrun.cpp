@@ -10,6 +10,7 @@
 #include "modules.h"
 #include "os.h"
 #include "runtime.h"
+#include "sys-module.h"
 
 namespace py {
 
@@ -109,37 +110,6 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
   return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
 }
 
-static void flushIO(void) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  // PyErr_Fetch
-  Object exc(&scope, thread->pendingExceptionType());
-  Object val(&scope, thread->pendingExceptionValue());
-  Object tb(&scope, thread->pendingExceptionTraceback());
-  thread->clearPendingException();
-
-  Runtime* runtime = thread->runtime();
-  Module sys(&scope, runtime->findModuleById(ID(sys)));
-  Object stderr_obj(&scope, moduleAtById(thread, sys, ID(stderr)));
-  if (!stderr_obj.isErrorNotFound()) {
-    if (thread->invokeMethod1(stderr_obj, ID(flush)).isErrorException()) {
-      thread->clearPendingException();
-    }
-  }
-  Object stdout_obj(&scope, moduleAtById(thread, sys, ID(stdout)));
-  if (!stdout_obj.isErrorNotFound()) {
-    if (thread->invokeMethod1(stdout_obj, ID(flush)).isErrorException()) {
-      thread->clearPendingException();
-    }
-  }
-
-  // PyErr_Restore
-  thread->setPendingExceptionType(*exc);
-  thread->setPendingExceptionValue(*val);
-  thread->setPendingExceptionTraceback(*tb);
-}
-
 static PyObject* moduleProxy(PyObject* module_obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -214,7 +184,7 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
     return -1;
   }
   Py_DECREF(result);
-  flushIO();
+  flushStdFiles();
   return 0;
 }
 
@@ -254,7 +224,7 @@ PY_EXPORT int PyRun_InteractiveLoopFlags(FILE* fp, const char* filename,
         nomem_count = 0;
       }
       PyErr_Print();
-      flushIO();
+      flushStdFiles();
     } else {
       nomem_count = 0;
     }
@@ -317,7 +287,7 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
     result = PyRun_FileExFlags(fp, filename, Py_file_input, module_proxy,
                                module_proxy, closeit, flags);
   }
-  flushIO();
+  flushStdFiles();
 
   int returncode;
   if (result == nullptr) {

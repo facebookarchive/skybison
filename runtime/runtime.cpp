@@ -193,6 +193,7 @@ Runtime::~Runtime() {
     Thread::setCurrentThread(threads_);
   }
   callAtExit();
+  flushStdFiles();
   finalizeSignals(Thread::current());
   clearHandleScopes();
   finalizeCAPI();

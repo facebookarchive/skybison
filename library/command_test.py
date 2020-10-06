@@ -144,6 +144,30 @@ class OptionsTest(unittest.TestCase):
         self.assertIn(b"test_c_option ok", result.stdout)
         self.assertNotIn(b">>>", result.stderr)
 
+    def test_c_option_flushes_stderr_on_finalize(self):
+        result = subprocess.run(
+            [sys.executable, "-c", "import sys; sys.stderr.write('1;2;3')"],
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"1;2;3", result.stderr)
+
+    def test_c_option_flushes_stdout_on_finalize(self):
+        result = subprocess.run(
+            [sys.executable, "-c", "import sys; sys.stdout.write('1;2;3')"],
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"1;2;3", result.stdout)
+
+    def test_c_option_flushes_stdout_afer_sys_exit_call_on_finalize(self):
+        result = subprocess.run(
+            [sys.executable, "-c", "import sys; sys.stdout.write('1;2;3'); sys.exit()"],
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"1;2;3", result.stdout)
+
     def test_t_option_noop(self):
         result = subprocess.run(
             [sys.executable, "-t", "-c", "0"], check=True, capture_output=True

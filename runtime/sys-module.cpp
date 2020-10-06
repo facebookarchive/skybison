@@ -111,6 +111,41 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   runtime->cacheSysInstances(thread, module);
 }
 
+int flushStdFiles() {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  int return_value = 0;
+
+  // PyErr_Fetch
+  Object exc(&scope, thread->pendingExceptionType());
+  Object val(&scope, thread->pendingExceptionValue());
+  Object tb(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+
+  Runtime* runtime = thread->runtime();
+  Module sys(&scope, runtime->findModuleById(ID(sys)));
+  Object stdout_obj(&scope, moduleAtById(thread, sys, ID(stdout)));
+  if (!stdout_obj.isErrorNotFound()) {
+    if (thread->invokeMethod1(stdout_obj, ID(flush)).isErrorException()) {
+      thread->clearPendingException();
+      return_value = -1;
+    }
+  }
+  Object stderr_obj(&scope, moduleAtById(thread, sys, ID(stderr)));
+  if (!stderr_obj.isErrorNotFound()) {
+    if (thread->invokeMethod1(stderr_obj, ID(flush)).isErrorException()) {
+      thread->clearPendingException();
+      return_value = -1;
+    }
+  }
+
+  // PyErr_Restore
+  thread->setPendingExceptionType(*exc);
+  thread->setPendingExceptionValue(*val);
+  thread->setPendingExceptionTraceback(*tb);
+  return return_value;
+}
+
 void initializeRuntimePaths(Thread* thread) {
   HandleScope scope(thread);
   Object result(&scope, thread->invokeFunction0(ID(sys), ID(_calculate_path)));

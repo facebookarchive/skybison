@@ -27,6 +27,9 @@ enum class SysFlag {
   kNumFlags,
 };
 
+// Helper function to flush stdout and stderr
+int flushStdFiles();
+
 void initializeRuntimePaths(Thread* thread);
 
 // Initializes sys module with data that can vary between startups.  This must
