@@ -267,8 +267,8 @@ Pending exception
   Exception Args: \("Hello",\)
   Traceback     : <"traceback" object>
 Traceback \(most recent call last\):
-  File <test string>, line 6, in call_raising
-  File <test string>, line 3, in raising
+  File "<test string>", line 6, in call_raising
+  File "<test string>", line 3, in raising
 )");
 }
 

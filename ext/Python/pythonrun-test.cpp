@@ -194,9 +194,11 @@ TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringPrintsSyntaxError) {
 TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringPrintsUncaughtException) {
   CaptureStdStreams streams;
   ASSERT_EQ(PyRun_SimpleString("raise RuntimeError('boom')"), -1);
-  // TODO(T39919701): Check the whole string once we have tracebacks.
-  ASSERT_NE(streams.err().find("RuntimeError: boom\n"), std::string::npos);
   EXPECT_EQ(streams.out(), "");
+  EXPECT_EQ(streams.err(), R"(Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+RuntimeError: boom
+)");
 }
 
 TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringFlagsReturnsTrue) {

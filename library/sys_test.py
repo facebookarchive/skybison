@@ -1,9 +1,26 @@
 #!/usr/bin/env python3
+import contextlib
 import sys
 import unittest
 
 from _io import StringIO, TextIOWrapper
 from test_support import pyro_only
+
+
+# Tests for traceback printing in sys.excepthook
+def panic():
+    raise RuntimeError("PANIC!!!")
+
+
+def call_panic():
+    # empty line
+    panic()
+
+
+def raise_after_n_frames(n):
+    if not n:
+        raise RuntimeError("PANIC!!!")
+    raise_after_n_frames(n - 1)
 
 
 class DisplayhookTest(unittest.TestCase):
@@ -42,6 +59,124 @@ class DisplayhookTest(unittest.TestCase):
         self.assertIsInstance(sys.__stderr__, TextIOWrapper)
         self.assertIsInstance(sys.__stdin__, TextIOWrapper)
         self.assertIsInstance(sys.__stdout__, TextIOWrapper)
+
+
+class ExceptHookTests(unittest.TestCase):
+    def test_traceback_with_sys_tracebacklimit_truncates_stack_trace(self):
+        has_tracebacklimit = hasattr(sys, "tracebacklimit")
+        if has_tracebacklimit:
+            tmp = sys.tracebacklimit
+
+        with StringIO() as stderr, contextlib.redirect_stderr(stderr):
+            try:
+                sys.tracebacklimit = 1
+                call_panic()
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+            finally:
+                if has_tracebacklimit:
+                    sys.tracebacklimit = tmp
+                else:
+                    del sys.tracebacklimit
+            self.assertRegex(
+                stderr.getvalue(),
+                r"""Traceback \(most recent call last\):
+  File ".*/sys_test.py", line \d+, in panic
+    raise RuntimeError\("PANIC!!!"\)
+RuntimeError: PANIC!!!
+""",
+            )
+
+    def test_traceback_without_sys_tracebacklimit_prints_entire_small_traceback(self):
+        has_tracebacklimit = hasattr(sys, "tracebacklimit")
+        if has_tracebacklimit:
+            tmp = sys.tracebacklimit
+            del sys.tracebacklimit
+
+        with StringIO() as stderr, contextlib.redirect_stderr(stderr):
+            try:
+                call_panic()
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+            finally:
+                if has_tracebacklimit:
+                    sys.tracebacklimit = tmp
+            self.assertRegex(
+                stderr.getvalue(),
+                r"""Traceback \(most recent call last\):
+  File ".*/sys_test.py", line \d+, in test_traceback_without_sys_tracebacklimit_prints_entire_small_traceback
+    call_panic\(\)
+  File ".*/sys_test.py", line \d+, in call_panic
+    panic\(\)
+  File ".*/sys_test.py", line \d+, in panic
+    raise RuntimeError\("PANIC!!!"\)
+RuntimeError: PANIC!!!
+""",
+            )
+
+    def test_traceback_cuts_recursion_at_3_repeated_lines(self):
+        has_tracebacklimit = hasattr(sys, "tracebacklimit")
+        if has_tracebacklimit:
+            tmp = sys.tracebacklimit
+            del sys.tracebacklimit
+
+        with StringIO() as stderr, contextlib.redirect_stderr(stderr):
+            try:
+                raise_after_n_frames(4)
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+            finally:
+                if has_tracebacklimit:
+                    sys.tracebacklimit = tmp
+            self.assertRegex(
+                stderr.getvalue(),
+                r"""Traceback \(most recent call last\):
+  File ".*/sys_test.py", line \d+, in test_traceback_cuts_recursion_at_3_repeated_lines
+    raise_after_n_frames\(4\)
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise_after_n_frames\(n - 1\)
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise_after_n_frames\(n - 1\)
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise_after_n_frames\(n - 1\)
+  \[Previous line repeated 1 more time\]
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise RuntimeError\("PANIC!!!"\)
+RuntimeError: PANIC!!!
+""",
+            )
+
+    def test_traceback_limits_recursion_and_depth(self):
+        has_tracebacklimit = hasattr(sys, "tracebacklimit")
+        if has_tracebacklimit:
+            tmp = sys.tracebacklimit
+
+        with StringIO() as stderr, contextlib.redirect_stderr(stderr):
+            try:
+                sys.tracebacklimit = 10
+                raise_after_n_frames(20)
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+            finally:
+                if has_tracebacklimit:
+                    sys.tracebacklimit = tmp
+                else:
+                    del sys.tracebacklimit
+            self.assertRegex(
+                stderr.getvalue(),
+                r"""Traceback \(most recent call last\):
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise_after_n_frames\(n - 1\)
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise_after_n_frames\(n - 1\)
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise_after_n_frames\(n - 1\)
+  \[Previous line repeated 6 more times\]
+  File ".*/sys_test.py", line \d+, in raise_after_n_frames
+    raise RuntimeError\("PANIC!!!"\)
+RuntimeError: PANIC!!!
+""",
+            )
 
 
 class SysTests(unittest.TestCase):

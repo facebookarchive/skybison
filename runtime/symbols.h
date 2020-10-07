@@ -676,6 +676,7 @@ class Runtime;
   V(fset)                                                                      \
   V(function)                                                                  \
   V(generator)                                                                 \
+  V(getline)                                                                   \
   V(getsizeof)                                                                 \
   V(gi_running)                                                                \
   V(hash_info)                                                                 \
@@ -721,6 +722,7 @@ class Runtime;
   V(latin_1_encode)                                                            \
   V(layout)                                                                    \
   V(len)                                                                       \
+  V(linecache)                                                                 \
   V(lineno)                                                                    \
   V(list)                                                                      \
   V(list_iterator)                                                             \
@@ -813,6 +815,7 @@ class Runtime;
   V(throw)                                                                     \
   V(time)                                                                      \
   V(traceback)                                                                 \
+  V(tracebacklimit)                                                            \
   V(truediv)                                                                   \
   V(tuple)                                                                     \
   V(tuple_iterator)                                                            \
