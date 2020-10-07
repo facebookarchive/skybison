@@ -554,32 +554,8 @@ static RawObject intersectionImpl(Thread* thread, Frame* frame, word nargs,
     return thread->raiseRequiresType(self, id);
   }
   SetBase set(&scope, *self);
-  // TODO(T46058798): convert others to starargs
-  if (nargs == 1) {
-    // Return a copy of the set
-    return setCopy(thread, set);
-  }
-  // nargs is at least 2
   Object other(&scope, args.get(1));
-  Object result(&scope, setIntersection(thread, set, other));
-  if (result.isError() || nargs == 2) {
-    return *result;
-  }
-
-  SetBase base(&scope, *result);
-  for (word i = 2; i < nargs; i++) {
-    other = args.get(i);
-    result = setIntersection(thread, base, other);
-    if (result.isError()) {
-      return *result;
-    }
-    base = *result;
-    // Early exit
-    if (base.numItems() == 0) {
-      break;
-    }
-  }
-  return *result;
+  return setIntersection(thread, set, other);
 }
 
 static RawObject dunderEqImpl(Thread* thread, Frame* frame, word nargs,

@@ -5799,6 +5799,7 @@ class set(bootstrap=True):
         _builtin()
 
     def intersection(self, other):
+        # TODO(T46058798): `other` should be `*others`.
         _builtin()
 
     def intersection_update(self, *others):

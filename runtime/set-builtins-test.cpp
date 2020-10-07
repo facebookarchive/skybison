@@ -154,25 +154,6 @@ TEST_F(SetBuiltinsTest, DunderIandWithNonSet) {
   ASSERT_TRUE(result.isNotImplementedType());
 }
 
-TEST_F(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Set set(&scope, setFromRange(0, 3));
-  // set.intersect() with no arguments
-  Object result(&scope, runBuiltin(METH(set, intersection), set));
-  ASSERT_TRUE(result.isSet());
-  EXPECT_NE(*result, *set);
-  set = *result;
-  EXPECT_EQ(set.numItems(), 3);
-
-  Object key(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(setIncludes(thread, set, key));
-  key = SmallInt::fromWord(1);
-  EXPECT_TRUE(setIncludes(thread, set, key));
-  key = SmallInt::fromWord(2);
-  EXPECT_TRUE(setIncludes(thread, set, key));
-}
-
 TEST_F(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -192,33 +173,14 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
   EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
-TEST_F(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Set set(&scope, setFromRange(0, 3));
-  Set set1(&scope, setFromRange(0, 2));
-  Set set2(&scope, setFromRange(0, 1));
-
-  // set.intersect() with 2 arguments
-  Object result(&scope, runBuiltin(METH(set, intersection), set, set1, set2));
-  ASSERT_TRUE(result.isSet());
-  EXPECT_NE(*result, *set);
-  set = *result;
-  EXPECT_EQ(set.numItems(), 1);
-  Object key(&scope, SmallInt::fromWord(0));
-  key = SmallInt::fromWord(0);
-  EXPECT_TRUE(setIncludes(thread, set, key));
-}
-
 TEST_F(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
-  Set set1(&scope, setFromRange(0, 2));
-  Set set2(&scope, runtime_->newSet());
+  Set set1(&scope, runtime_->newSet());
 
   // set.intersect() with 2 arguments
-  Object result(&scope, runBuiltin(METH(set, intersection), set, set1, set2));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, set1));
   ASSERT_TRUE(result.isSet());
   EXPECT_NE(*result, *set);
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
