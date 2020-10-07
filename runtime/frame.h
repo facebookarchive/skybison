@@ -265,11 +265,12 @@ class Frame {
   // to fit the constraints of `setVirtualPC()`/`virtualPD()`.
   static const word kFinishedGeneratorPC = RawSmallInt::kMaxValue - 1;
 
+  RawObject* locals();
+
  private:
   uword address();
   RawObject at(int offset);
   void atPut(int offset, RawObject value);
-  RawObject* locals();
 
   // Re-compute the locals pointer based on this and num_locals.
   void resetLocals(word num_locals);
@@ -285,21 +286,12 @@ class FrameVisitor {
 
 class Arguments {
  public:
-  Arguments(Frame* frame, word nargs) {
-    frame_ = frame;
-    nargs_ = nargs;
-  }
+  Arguments(Frame* frame) : locals_(frame->locals()) {}
 
-  RawObject get(word n) const {
-    DCHECK(n < nargs_, "index out of range");
-    return frame_->localWithReverseIndex(nargs_ - n - 1);
-  }
-
-  word numArgs() const { return nargs_; }
+  RawObject get(word n) const { return *(locals_ - n); }
 
  protected:
-  Frame* frame_;
-  word nargs_;
+  RawObject* locals_;
 };
 
 RawObject frameLocals(Thread* thread, Frame* frame);
