@@ -13,6 +13,7 @@ from multiprocessing.pool import ThreadPool
 
 
 log = logging.getLogger(__name__)
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def run(cmd, **kwargs):
@@ -87,7 +88,7 @@ class TimeTool(SequentialPerformanceTool):
         command.extend(
             [
                 *interpreter.interpreter_cmd,
-                f"{os.path.dirname(os.path.abspath(__file__))}/_time_tool.py",
+                f"{SCRIPT_DIR}/_time_tool.py",
                 benchmark.filepath(),
             ]
         )
@@ -288,6 +289,15 @@ def add_tools_arguments(parser):
         parser = tool.add_optional_arguments(parser)
 
     return parser
+
+
+def compile_bytecode(interpreter, benchmark):
+    command = [
+        *interpreter.interpreter_cmd,
+        f"{SCRIPT_DIR}/_compile_tool.py",
+        benchmark.filepath(),
+    ]
+    run(command)
 
 
 # Use this to register any new tools

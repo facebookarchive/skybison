@@ -4,11 +4,17 @@ import io
 import logging
 import os.path
 import sys
+from lib2to3 import refactor
 from lib2to3.main import main as main_2to3
 
 
 BENCHMARKDIR = os.path.dirname(os.path.abspath(__file__))
 FIXER_PKG = "lib2to3.fixes"
+
+
+# Import all fixers upfront, to make sure bytecode is compiled
+for fixer in refactor.get_fixers_from_package(FIXER_PKG):
+    __import__(fixer)
 
 
 expected_log = """\
