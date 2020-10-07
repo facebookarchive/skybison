@@ -1,5 +1,6 @@
 #include "capi-handles.h"
 #include "runtime.h"
+#include "traceback-builtins.h"
 
 namespace py {
 
@@ -23,8 +24,22 @@ PY_EXPORT int PyTraceBack_Here(PyFrameObject* frame) {
   return 0;
 }
 
-PY_EXPORT int PyTraceBack_Print(PyObject* /* v */, PyObject* /* f */) {
-  UNIMPLEMENTED("PyTraceBack_Print");
+PY_EXPORT int PyTraceBack_Print(PyObject* traceback, PyObject* file) {
+  if (traceback == nullptr) {
+    return 0;
+  }
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object tb_obj(&scope, ApiHandle::fromPyObject(traceback)->asObject());
+  if (!tb_obj.isTraceback()) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+
+  Traceback tb(&scope, *tb_obj);
+  Object file_obj(&scope, ApiHandle::fromPyObject(file)->asObject());
+  return tracebackWrite(thread, tb, file_obj).isErrorException() ? -1 : 0;
 }
 
 PY_EXPORT void _PyTraceback_Add(const char* /* funcname */,

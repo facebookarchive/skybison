@@ -1195,6 +1195,7 @@ set(
   ext/Python/random-test.cpp
   ext/Python/sysmodule-test.cpp
   ext/Python/thread-test.cpp
+  ext/Python/traceback-test.cpp
   ext/Python/_warnings-test.cpp
   ext/test/capi-fixture.cpp
   ext/test/capi-fixture.h
