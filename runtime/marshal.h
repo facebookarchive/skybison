@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "handles.h"
+#include "modules.h"
 
 namespace py {
 

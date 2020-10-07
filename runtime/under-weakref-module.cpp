@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "modules.h"
 #include "objects.h"
+#include "runtime.h"
 
 namespace py {
 

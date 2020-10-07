@@ -1,23 +1,28 @@
 #pragma once
 
 #include "globals.h"
-#include "handles.h"
+#include "handles-decl.h"
 #include "objects.h"
-#include "runtime.h"
 #include "symbols.h"
-#include "thread.h"
+#include "view.h"
+
+#define FUNC(module, name) module##_##name##_func
+#define METH(type, name) type##_##name##_meth
 
 namespace py {
 
-#define FUNC(module, name) module##_##name##_func
+class Thread;
+
+// Function pointer stored in RawCode::code() for builtin functions.
+using BuiltinFunction = RawObject (*)(Thread* thread, Frame* frame, word nargs);
+
+using ModuleInitFunc = void (*)(Thread* thread, const Module& module,
+                                View<byte> bytecode);
 
 struct BuiltinType {
   SymbolId name;
   LayoutId type;
 };
-
-typedef void (*ModuleInitFunc)(Thread* thread, const Module& module,
-                               View<byte> bytecode);
 
 struct FrozenModule {
   const char* name;

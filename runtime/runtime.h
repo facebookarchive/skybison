@@ -7,6 +7,7 @@
 #include "interpreter-gen.h"
 #include "interpreter.h"
 #include "layout.h"
+#include "modules.h"
 #include "symbols.h"
 #include "view.h"
 
@@ -1096,7 +1097,5 @@ inline RawObject Runtime::internStr(Thread* thread, const Object& str) {
   }
   return internLargeStr(thread, str);
 }
-
-#define METH(type, name) type##_##name##_meth
 
 }  // namespace py

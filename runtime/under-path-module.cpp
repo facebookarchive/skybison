@@ -6,6 +6,7 @@
 
 #include "builtins.h"
 #include "file.h"
+#include "frame.h"
 #include "module-builtins.h"
 #include "modules.h"
 #include "os.h"
