@@ -16,7 +16,7 @@
 
 namespace py {
 
-typedef PyObject* (*ModuleInitFunc)();
+using ExtensionModuleInitFunc = PyObject* (*)();
 extern struct _inittab _PyImport_Inittab[];
 
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
@@ -251,7 +251,7 @@ void freeExtensionModule(Thread* thread, const Module& module) {
   }
 }
 
-static RawObject initializeModule(Thread* thread, ModuleInitFunc init,
+static RawObject initializeModule(Thread* thread, ExtensionModuleInitFunc init,
                                   const Str& name) {
   PyObject* module_or_def = (*init)();
   if (module_or_def == nullptr) {
@@ -295,7 +295,7 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
   unique_c_ptr<char> name_cstr(name.toCStr());
   char init_name[256];
   std::snprintf(init_name, sizeof(init_name), "PyInit_%s", name_cstr.get());
-  ModuleInitFunc init = reinterpret_cast<ModuleInitFunc>(
+  ExtensionModuleInitFunc init = reinterpret_cast<ExtensionModuleInitFunc>(
       OS::sharedObjectSymbolAddress(handle, init_name, /*error_msg=*/nullptr));
   if (init == nullptr) {
     return thread->raiseWithFmt(LayoutId::kImportError,
