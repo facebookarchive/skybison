@@ -16,9 +16,7 @@ void initializeModuleProxyType(Thread* thread) {
                  ModuleProxy::kSize, /*basetype=*/true);
 }
 
-RawObject METH(module_proxy, __contains__)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, __contains__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {
@@ -37,9 +35,7 @@ RawObject METH(module_proxy, __contains__)(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject METH(module_proxy, __delitem__)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, __delitem__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {
@@ -60,9 +56,7 @@ RawObject METH(module_proxy, __delitem__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(module_proxy, __getitem__)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, __getitem__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {
@@ -81,9 +75,7 @@ RawObject METH(module_proxy, __getitem__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(module_proxy, __len__)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {
@@ -95,8 +87,7 @@ RawObject METH(module_proxy, __len__)(Thread* thread, Frame* frame,
   return moduleLen(thread, module);
 }
 
-RawObject METH(module_proxy, get)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {
@@ -116,8 +107,7 @@ RawObject METH(module_proxy, get)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(module_proxy, pop)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, pop)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {
@@ -143,9 +133,7 @@ RawObject METH(module_proxy, pop)(Thread* thread, Frame* frame, word nargs) {
   return moduleRemove(thread, module, name, hash);
 }
 
-RawObject METH(module_proxy, setdefault)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module_proxy, setdefault)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isModuleProxy()) {

@@ -49,10 +49,9 @@ void initializeFloatType(Thread* thread) {
                  /*basetype=*/true);
 }
 
-RawObject METH(float, __abs__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __abs__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(float));
@@ -61,10 +60,9 @@ RawObject METH(float, __abs__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(std::fabs(self));
 }
 
-RawObject METH(float, __bool__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __bool__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(float));
@@ -73,9 +71,8 @@ RawObject METH(float, __bool__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self != 0.0);
 }
 
-RawObject METH(float, __eq__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __eq__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
@@ -96,9 +93,8 @@ RawObject METH(float, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject METH(float, __float__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __float__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, ID(float));
@@ -106,9 +102,8 @@ RawObject METH(float, __float__)(Thread* thread, Frame* frame, word nargs) {
   return floatUnderlying(*self);
 }
 
-RawObject METH(float, __format__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __format__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
@@ -158,9 +153,8 @@ RawObject METH(float, __format__)(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
-RawObject METH(float, __ge__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __ge__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
@@ -181,9 +175,8 @@ RawObject METH(float, __ge__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject METH(float, __gt__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __gt__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
@@ -337,9 +330,8 @@ word doubleHash(double value) {
   return static_cast<word>(result);
 }
 
-RawObject METH(float, __hash__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __hash__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(float));
@@ -348,9 +340,8 @@ RawObject METH(float, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(doubleHash(self));
 }
 
-RawObject METH(float, __int__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __int__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(float));
@@ -359,9 +350,8 @@ RawObject METH(float, __int__)(Thread* thread, Frame* frame, word nargs) {
   return intFromDouble(thread, self);
 }
 
-RawObject METH(float, __le__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __le__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
@@ -382,9 +372,8 @@ RawObject METH(float, __le__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject METH(float, __lt__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __lt__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
@@ -405,9 +394,8 @@ RawObject METH(float, __lt__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject METH(float, __mul__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __mul__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
@@ -424,10 +412,9 @@ RawObject METH(float, __mul__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left * right);
 }
 
-RawObject METH(float, __neg__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __neg__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(float));
@@ -436,8 +423,7 @@ RawObject METH(float, __neg__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(-self);
 }
 
-RawObject METH(float, __add__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(float, __add__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -455,9 +441,8 @@ RawObject METH(float, __add__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left + right);
 }
 
-RawObject METH(float, __truediv__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __truediv__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
 
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -479,8 +464,7 @@ RawObject METH(float, __truediv__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left / right);
 }
 
-RawObject METH(float, __round__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(float, __round__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -542,9 +526,8 @@ RawObject METH(float, __round__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(result);
 }
 
-RawObject METH(float, __rtruediv__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __rtruediv__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
 
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -566,8 +549,7 @@ RawObject METH(float, __rtruediv__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left / right);
 }
 
-RawObject METH(float, __sub__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(float, __sub__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -585,8 +567,7 @@ RawObject METH(float, __sub__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left - right);
 }
 
-RawObject METH(float, __trunc__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(float, __trunc__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
@@ -598,8 +579,7 @@ RawObject METH(float, __trunc__)(Thread* thread, Frame* frame, word nargs) {
   return intFromDouble(thread, integral_part);
 }
 
-RawObject METH(float, __pow__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(float, __pow__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -622,8 +602,7 @@ RawObject METH(float, __pow__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(std::pow(left, right));
 }
 
-RawObject METH(float, hex)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(float, hex)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();

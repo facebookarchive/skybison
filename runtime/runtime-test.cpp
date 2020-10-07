@@ -3579,7 +3579,7 @@ TEST_F(RuntimeTest, ObjectEqualsWithIntAndBoolReturnsBool) {
       Bool::falseObj());
 }
 
-static RawObject testPrintTraceback(Thread* thread, Frame*, word) {
+static RawObject testPrintTraceback(Thread* thread, Arguments) {
   TemporaryDirectory tempdir;
   std::string temp = tempdir.path + "traceback";
   int fd = File::open(temp.c_str(), File::kCreate | File::kWriteOnly, 0777);

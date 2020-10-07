@@ -45,9 +45,8 @@ void FUNC(mmap, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 }
 
-RawObject FUNC(mmap, _mmap_new)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(mmap, _mmap_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   word fd = intUnderlying(args.get(1)).asWord();
   word length = intUnderlying(args.get(2)).asWord();
@@ -104,8 +103,7 @@ RawObject FUNC(mmap, _mmap_new)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(mmap, close)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(mmap, close)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfMmap(*self)) {

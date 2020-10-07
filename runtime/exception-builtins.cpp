@@ -727,10 +727,8 @@ void handleSystemExit(Thread* thread) {
   do_exit(EXIT_FAILURE);
 }
 
-RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(BaseException, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBaseException(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(BaseException));
@@ -745,10 +743,8 @@ RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(StopIteration, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStopIteration(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(StopIteration));
@@ -765,15 +761,14 @@ RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject METH(SystemExit, __init__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(SystemExit, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSystemExit(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(SystemExit));
   }
   SystemExit self(&scope, *self_obj);
-  RawObject result = METH(BaseException, __init__)(thread, frame, nargs);
+  RawObject result = METH(BaseException, __init__)(thread, args);
   if (result.isError()) {
     return result;
   }

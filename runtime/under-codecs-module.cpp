@@ -48,11 +48,9 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
   return end;
 }
 
-RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object data(&scope, args.get(0));
   Str errors(&scope, strUnderlying(args.get(1)));
   word index = intUnderlying(args.get(2)).asWord();
@@ -119,11 +117,9 @@ static bool isEscapedLatin1Surrogate(int32_t codepoint) {
          codepoint <= (kLowSurrogateStart + kMaxByte);
 }
 
-RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
   DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _ascii_encode must be bytearray");
@@ -256,10 +252,8 @@ static int32_t decodeEscaped(const Bytes& bytes, word* i,
   }
 }
 
-RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object bytes_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfStr(*bytes_obj)) {
@@ -331,11 +325,9 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
   return runtime->newTupleWith3(dst_obj, length_obj, escape_obj);
 }
 
-RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object data(&scope, args.get(0));
   StrArray array(&scope, runtime->newStrArray());
   word length;
@@ -368,11 +360,9 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
   return runtime->newTupleWith2(array_str, length_obj);
 }
 
-RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
   DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _latin_1_encode must be bytearray");
@@ -578,10 +568,9 @@ static int32_t decodeUnicodeEscaped(const Bytes& bytes, word* i,
   }
 }
 
-RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object data(&scope, args.get(0));
   Str errors(&scope, strUnderlying(args.get(1)));
@@ -788,11 +777,9 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
   return kInvalidStart;
 }
 
-RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object final_obj(&scope, args.get(4));
   DCHECK(final_obj.isBool(), "Fifth arg to _utf_8_decode must be bool");
   Object data(&scope, args.get(0));
@@ -892,11 +879,9 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
   return runtime->newTupleWith3(dst_obj, outpos_obj, message_obj);
 }
 
-RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
   DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _utf_8_encode must be bytearray");
@@ -975,11 +960,9 @@ static int32_t lowSurrogate(int32_t codepoint) {
   return kLowSurrogateStart + (codepoint & 0x3FF);
 }
 
-RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
   DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _utf_16_encode must be bytearray");
@@ -1058,11 +1041,9 @@ static void appendUtf32ToBytearray(Thread* thread, Runtime* runtime,
   }
 }
 
-RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object output_obj(&scope, args.get(3));
   DCHECK(runtime->isInstanceOfBytearray(*output_obj),
          "Fourth arg to _utf_32_encode must be bytearray");
@@ -1120,10 +1101,9 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
 
 // Takes a Bytearray and a Str object, and appends each byte in the Str to the
 // Bytearray one by one
-RawObject FUNC(_codecs, _bytearray_string_append)(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_codecs, _bytearray_string_append)(Thread* thread,
+                                                  Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytearray dst(&scope, args.get(0));
   Str data(&scope, args.get(1));
   for (word i = 0; i < data.length(); ++i) {

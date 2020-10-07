@@ -442,10 +442,8 @@ RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
   return SmallInt::fromWordTruncated(result);
 }
 
-static RawObject dunderLenImpl(Thread* thread, Frame* frame, word nargs,
-                               SymbolId id) {
+static RawObject dunderLenImpl(Thread* thread, Arguments args, SymbolId id) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
     return thread->raiseRequiresType(self, id);
@@ -454,10 +452,9 @@ static RawObject dunderLenImpl(Thread* thread, Frame* frame, word nargs,
   return SmallInt::fromWord(set.numItems());
 }
 
-static RawObject dunderContainsImpl(Thread* thread, Frame* frame, word nargs,
+static RawObject dunderContainsImpl(Thread* thread, Arguments args,
                                     SymbolId id) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
     return thread->raiseRequiresType(self, id);
@@ -470,9 +467,7 @@ static RawObject dunderContainsImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(setIncludes(thread, set, key, hash));
 }
 
-static RawObject dunderIterImpl(Thread* thread, Frame* frame, word nargs,
-                                SymbolId id) {
-  Arguments args(frame, nargs);
+static RawObject dunderIterImpl(Thread* thread, Arguments args, SymbolId id) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
@@ -481,10 +476,8 @@ static RawObject dunderIterImpl(Thread* thread, Frame* frame, word nargs,
   return thread->runtime()->newSetIterator(self);
 }
 
-static RawObject isdisjointImpl(Thread* thread, Frame* frame, word nargs,
-                                SymbolId id) {
+static RawObject isdisjointImpl(Thread* thread, Arguments args, SymbolId id) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Object value(&scope, NoneType::object());
@@ -545,10 +538,8 @@ static RawObject isdisjointImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::trueObj();
 }
 
-static RawObject intersectionImpl(Thread* thread, Frame* frame, word nargs,
-                                  SymbolId id) {
+static RawObject intersectionImpl(Thread* thread, Arguments args, SymbolId id) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
     return thread->raiseRequiresType(self, id);
@@ -558,11 +549,9 @@ static RawObject intersectionImpl(Thread* thread, Frame* frame, word nargs,
   return setIntersection(thread, set, other);
 }
 
-static RawObject dunderEqImpl(Thread* thread, Frame* frame, word nargs,
-                              SymbolId id) {
+static RawObject dunderEqImpl(Thread* thread, Arguments args, SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
@@ -576,11 +565,9 @@ static RawObject dunderEqImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(setEquals(thread, set, other_set));
 }
 
-static RawObject dunderNeImpl(Thread* thread, Frame* frame, word nargs,
-                              SymbolId id) {
+static RawObject dunderNeImpl(Thread* thread, Arguments args, SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
@@ -594,11 +581,9 @@ static RawObject dunderNeImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(!setEquals(thread, set, other_set));
 }
 
-static RawObject dunderLeImpl(Thread* thread, Frame* frame, word nargs,
-                              SymbolId id) {
+static RawObject dunderLeImpl(Thread* thread, Arguments args, SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
@@ -612,11 +597,9 @@ static RawObject dunderLeImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(setIsSubset(thread, set, other_set));
 }
 
-static RawObject dunderLtImpl(Thread* thread, Frame* frame, word nargs,
-                              SymbolId id) {
+static RawObject dunderLtImpl(Thread* thread, Arguments args, SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
@@ -630,11 +613,9 @@ static RawObject dunderLtImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(setIsProperSubset(thread, set, other_set));
 }
 
-static RawObject dunderGeImpl(Thread* thread, Frame* frame, word nargs,
-                              SymbolId id) {
+static RawObject dunderGeImpl(Thread* thread, Arguments args, SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
@@ -648,11 +629,9 @@ static RawObject dunderGeImpl(Thread* thread, Frame* frame, word nargs,
   return Bool::fromBool(setIsSubset(thread, other_set, set));
 }
 
-static RawObject dunderGtImpl(Thread* thread, Frame* frame, word nargs,
-                              SymbolId id) {
+static RawObject dunderGtImpl(Thread* thread, Arguments args, SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
@@ -674,9 +653,8 @@ static const BuiltinAttribute kFrozenSetAttributes[] = {
      AttributeFlags::kHidden},
 };
 
-RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(frozenset, __and__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -691,26 +669,24 @@ RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs) {
   return setIntersection(thread, set, other_set);
 }
 
-RawObject METH(frozenset, __contains__)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  return dunderContainsImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __contains__)(Thread* thread, Arguments args) {
+  return dunderContainsImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __eq__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderEqImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __eq__)(Thread* thread, Arguments args) {
+  return dunderEqImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __ge__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderGeImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __ge__)(Thread* thread, Arguments args) {
+  return dunderGeImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __gt__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderGtImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __gt__)(Thread* thread, Arguments args) {
+  return dunderGtImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __hash__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(frozenset, __hash__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
     return thread->raiseRequiresType(self, ID(frozenset));
@@ -719,28 +695,27 @@ RawObject METH(frozenset, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return frozensetHash(thread, set);
 }
 
-RawObject METH(frozenset, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderIterImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __iter__)(Thread* thread, Arguments args) {
+  return dunderIterImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __le__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderLeImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __le__)(Thread* thread, Arguments args) {
+  return dunderLeImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __len__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderLenImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __len__)(Thread* thread, Arguments args) {
+  return dunderLenImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __lt__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderLtImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __lt__)(Thread* thread, Arguments args) {
+  return dunderLtImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __ne__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderNeImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, __ne__)(Thread* thread, Arguments args) {
+  return dunderNeImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(frozenset, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -800,9 +775,8 @@ RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
   return setUpdate(thread, result, iterable);
 }
 
-RawObject METH(frozenset, __or__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(frozenset, __or__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -829,9 +803,8 @@ RawObject METH(frozenset, __or__)(Thread* thread, Frame* frame, word nargs) {
   return setUpdate(thread, result, other);
 }
 
-RawObject METH(frozenset, copy)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(frozenset, copy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
     return thread->raiseRequiresType(self, ID(frozenset));
@@ -843,14 +816,12 @@ RawObject METH(frozenset, copy)(Thread* thread, Frame* frame, word nargs) {
   return setCopy(thread, set);
 }
 
-RawObject METH(frozenset, intersection)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  return intersectionImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, intersection)(Thread* thread, Arguments args) {
+  return intersectionImpl(thread, args, ID(frozenset));
 }
 
-RawObject METH(frozenset, isdisjoint)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  return isdisjointImpl(thread, frame, nargs, ID(frozenset));
+RawObject METH(frozenset, isdisjoint)(Thread* thread, Arguments args) {
+  return isdisjointImpl(thread, args, ID(frozenset));
 }
 
 RawObject setCopy(Thread* thread, const SetBase& set) {
@@ -943,9 +914,8 @@ static const BuiltinAttribute kSetAttributes[] = {
     {ID(_set__num_filled), RawSet::kNumFilledOffset, AttributeFlags::kHidden},
 };
 
-RawObject METH(set, __and__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __and__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -960,25 +930,24 @@ RawObject METH(set, __and__)(Thread* thread, Frame* frame, word nargs) {
   return setIntersection(thread, set, other_set);
 }
 
-RawObject METH(set, __contains__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderContainsImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __contains__)(Thread* thread, Arguments args) {
+  return dunderContainsImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __eq__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderEqImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __eq__)(Thread* thread, Arguments args) {
+  return dunderEqImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __ge__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderGeImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __ge__)(Thread* thread, Arguments args) {
+  return dunderGeImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __gt__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderGtImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __gt__)(Thread* thread, Arguments args) {
+  return dunderGtImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __iand__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __iand__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -1000,10 +969,9 @@ RawObject METH(set, __iand__)(Thread* thread, Frame* frame, word nargs) {
   return *set;
 }
 
-RawObject METH(set, __init__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __init__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfSet(*self)) {
     return thread->raiseRequiresType(self, ID(set));
@@ -1017,28 +985,27 @@ RawObject METH(set, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(set, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderIterImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __iter__)(Thread* thread, Arguments args) {
+  return dunderIterImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __le__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderLeImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __le__)(Thread* thread, Arguments args) {
+  return dunderLeImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __len__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderLenImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __len__)(Thread* thread, Arguments args) {
+  return dunderLenImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __lt__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderLtImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __lt__)(Thread* thread, Arguments args) {
+  return dunderLtImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __ne__)(Thread* thread, Frame* frame, word nargs) {
-  return dunderNeImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, __ne__)(Thread* thread, Arguments args) {
+  return dunderNeImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(set, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object type_obj(&scope, args.get(0));
@@ -1057,9 +1024,8 @@ RawObject METH(set, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(set, add)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, add)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
@@ -1076,9 +1042,8 @@ RawObject METH(set, add)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(set, clear)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
     return thread->raiseRequiresType(self, ID(set));
@@ -1094,9 +1059,8 @@ RawObject METH(set, clear)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(set, copy)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, copy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
     return thread->raiseRequiresType(self, ID(set));
@@ -1105,9 +1069,8 @@ RawObject METH(set, copy)(Thread* thread, Frame* frame, word nargs) {
   return setCopy(thread, set);
 }
 
-RawObject METH(set, discard)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, discard)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self_obj)) {
@@ -1122,17 +1085,16 @@ RawObject METH(set, discard)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(set, intersection)(Thread* thread, Frame* frame, word nargs) {
-  return intersectionImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, intersection)(Thread* thread, Arguments args) {
+  return intersectionImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, isdisjoint)(Thread* thread, Frame* frame, word nargs) {
-  return isdisjointImpl(thread, frame, nargs, ID(set));
+RawObject METH(set, isdisjoint)(Thread* thread, Arguments args) {
+  return isdisjointImpl(thread, args, ID(set));
 }
 
-RawObject METH(set, pop)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, pop)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
     return thread->raiseRequiresType(self, ID(set));
@@ -1141,9 +1103,8 @@ RawObject METH(set, pop)(Thread* thread, Frame* frame, word nargs) {
   return setPop(thread, set);
 }
 
-RawObject METH(set, remove)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, remove)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
@@ -1160,9 +1121,8 @@ RawObject METH(set, remove)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(set, update)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, update)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfSet(*self_obj)) {
@@ -1194,9 +1154,7 @@ static const BuiltinAttribute kSetIteratorAttributes[] = {
      AttributeFlags::kHidden},
 };
 
-RawObject METH(set_iterator, __iter__)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(set_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isSetIterator()) {
@@ -1205,9 +1163,7 @@ RawObject METH(set_iterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(set_iterator, __next__)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(set_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSetIterator()) {
@@ -1221,9 +1177,7 @@ RawObject METH(set_iterator, __next__)(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject METH(set_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(set_iterator, __length_hint__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isSetIterator()) {

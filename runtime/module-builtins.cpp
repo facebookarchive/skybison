@@ -341,9 +341,7 @@ void initializeModuleType(Thread* thread) {
   type.setMro(runtime->newTupleWith2(type, object_type));
 }
 
-RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module, __getattribute__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -361,8 +359,7 @@ RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(module, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object cls_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -391,8 +388,7 @@ RawObject METH(module, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(module, __init__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -409,8 +405,7 @@ RawObject METH(module, __init__)(Thread* thread, Frame* frame, word nargs) {
   return moduleInit(thread, self, name);
 }
 
-RawObject METH(module, __setattr__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(module, __setattr__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();

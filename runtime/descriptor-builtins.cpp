@@ -54,8 +54,7 @@ void initializeDescriptorTypes(Thread* thread) {
 
 // classmethod
 
-RawObject METH(classmethod, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(classmethod, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -72,9 +71,7 @@ RawObject METH(classmethod, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(classmethod, __init__)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(classmethod, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfClassMethod(*self)) {
@@ -86,9 +83,8 @@ RawObject METH(classmethod, __init__)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject METH(classmethod, __get__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(classmethod, __get__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfClassMethod(*self)) {
@@ -140,10 +136,8 @@ RawObject slotDescriptorGet(Thread* thread,
   return *attribute_value;
 }
 
-RawObject METH(slot_descriptor, __delete__)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(slot_descriptor, __delete__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SlotDescriptor slot_descriptor(&scope, args.get(0));
   Object instance_obj(&scope, args.get(1));
   Object existing_value(
@@ -156,10 +150,8 @@ RawObject METH(slot_descriptor, __delete__)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject METH(slot_descriptor, __get__)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject METH(slot_descriptor, __get__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SlotDescriptor slot_descriptor(&scope, args.get(0));
   Object instance(&scope, args.get(1));
   return slotDescriptorGet(thread, slot_descriptor, instance);
@@ -184,10 +176,8 @@ RawObject slotDescriptorSet(Thread* thread,
   return NoneType::object();
 }
 
-RawObject METH(slot_descriptor, __set__)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject METH(slot_descriptor, __set__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SlotDescriptor slot_descriptor(&scope, args.get(0));
   Object instance(&scope, args.get(1));
   Object value(&scope, args.get(2));
@@ -196,10 +186,8 @@ RawObject METH(slot_descriptor, __set__)(Thread* thread, Frame* frame,
 
 // staticmethod
 
-RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(staticmethod, __get__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStaticMethod(*self)) {
     return thread->raiseRequiresType(self, ID(staticmethod));
@@ -208,9 +196,7 @@ RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame,
   return staticmethod.function();
 }
 
-RawObject METH(staticmethod, __new__)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(staticmethod, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object type_obj(&scope, args.get(0));
@@ -227,9 +213,7 @@ RawObject METH(staticmethod, __new__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(staticmethod, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   StaticMethod staticmethod(&scope, args.get(0));
   Object arg(&scope, args.get(1));
@@ -239,9 +223,8 @@ RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
 
 // property
 
-RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, __delete__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
@@ -256,9 +239,8 @@ RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call1(thread, deleter, instance);
 }
 
-RawObject METH(property, __get__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, __get__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
@@ -276,9 +258,8 @@ RawObject METH(property, __get__)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call1(thread, getter, instance);
 }
 
-RawObject METH(property, __init__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
@@ -291,8 +272,7 @@ RawObject METH(property, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(property, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(property, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -309,9 +289,8 @@ RawObject METH(property, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(property, __set__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, __set__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
@@ -327,9 +306,8 @@ RawObject METH(property, __set__)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call2(thread, setter, obj, value);
 }
 
-RawObject METH(property, deleter)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, deleter)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfProperty(*self_obj)) {
@@ -342,9 +320,8 @@ RawObject METH(property, deleter)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newProperty(getter, setter, deleter);
 }
 
-RawObject METH(property, getter)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, getter)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfProperty(*self_obj)) {
@@ -357,9 +334,8 @@ RawObject METH(property, getter)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newProperty(getter, setter, deleter);
 }
 
-RawObject METH(property, setter)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(property, setter)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfProperty(*self_obj)) {

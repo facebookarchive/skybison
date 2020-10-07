@@ -49,9 +49,7 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
   return SmallInt::fromWord(0);
 }
 
-RawObject METH(longrange_iterator, __iter__)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(longrange_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isLongRangeIterator()) {
@@ -61,8 +59,7 @@ RawObject METH(longrange_iterator, __iter__)(Thread* thread, Frame* frame,
 }
 
 RawObject METH(longrange_iterator, __length_hint__)(Thread* thread,
-                                                    Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+                                                    Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isLongRangeIterator()) {
@@ -75,9 +72,7 @@ RawObject METH(longrange_iterator, __length_hint__)(Thread* thread,
   return rangeLen(thread, next, stop, step);
 }
 
-RawObject METH(longrange_iterator, __next__)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(longrange_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isLongRangeIterator()) {
@@ -134,8 +129,7 @@ void initializeRangeTypes(Thread* thread) {
                  /*basetype=*/false);
 }
 
-RawObject METH(range, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(range, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRange()) {
@@ -163,9 +157,8 @@ RawObject METH(range, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newLongRangeIterator(start_int, stop_int, step_int);
 }
 
-RawObject METH(range, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(range, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isRange()) {
     return thread->raiseRequiresType(self_obj, ID(range));
@@ -183,9 +176,8 @@ RawObject METH(range, __len__)(Thread* thread, Frame* frame, word nargs) {
   return *len;
 }
 
-RawObject METH(range, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(range, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object cls(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*cls)) {
@@ -237,9 +229,7 @@ RawObject METH(range, __new__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newRange(start, stop, step);
 }
 
-RawObject METH(range_iterator, __iter__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(range_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
@@ -248,9 +238,8 @@ RawObject METH(range_iterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(range_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(range_iterator, __length_hint__)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
@@ -260,9 +249,7 @@ RawObject METH(range_iterator, __length_hint__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(iter.length());
 }
 
-RawObject METH(range_iterator, __next__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(range_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {

@@ -912,9 +912,8 @@ void initializeDictTypes(Thread* thread) {
                  DictValues::kSize, /*basetype=*/false);
 }
 
-RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDict(*self)) {
     return thread->raiseRequiresType(self, ID(dict));
@@ -924,8 +923,7 @@ RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(dict, __delitem__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, __delitem__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
@@ -944,8 +942,7 @@ RawObject METH(dict, __delitem__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(dict, __eq__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, __eq__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -961,8 +958,7 @@ RawObject METH(dict, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return dictEq(thread, a, b);
 }
 
-RawObject METH(dict, __len__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDict(*self)) {
@@ -972,8 +968,7 @@ RawObject METH(dict, __len__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(dict.numItems());
 }
 
-RawObject METH(dict, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -985,8 +980,7 @@ RawObject METH(dict, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictKeyIterator(thread, dict);
 }
 
-RawObject METH(dict, items)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, items)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -997,8 +991,7 @@ RawObject METH(dict, items)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictItems(thread, dict);
 }
 
-RawObject METH(dict, keys)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, keys)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1009,8 +1002,7 @@ RawObject METH(dict, keys)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictKeys(thread, dict);
 }
 
-RawObject METH(dict, popitem)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, popitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1059,8 +1051,7 @@ RawObject METH(dict, popitem)(Thread* thread, Frame* frame, word nargs) {
   UNREACHABLE("dict.numItems() > 0, but couldn't find any active item");
 }
 
-RawObject METH(dict, values)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, values)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1071,8 +1062,7 @@ RawObject METH(dict, values)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictValues(thread, dict);
 }
 
-RawObject METH(dict, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1096,9 +1086,7 @@ RawObject METH(dict, __new__)(Thread* thread, Frame* frame, word nargs) {
 // helper function that takes a member function (type check) and string for the
 // Python symbol name
 
-RawObject METH(dict_itemiterator, __iter__)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_itemiterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
@@ -1107,9 +1095,7 @@ RawObject METH(dict_itemiterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(dict_itemiterator, __next__)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_itemiterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
@@ -1123,9 +1109,8 @@ RawObject METH(dict_itemiterator, __next__)(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject METH(dict_itemiterator, __length_hint__)(Thread* thread, Frame* frame,
-                                                   word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_itemiterator, __length_hint__)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
@@ -1136,8 +1121,7 @@ RawObject METH(dict_itemiterator, __length_hint__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_items, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItems()) {
@@ -1148,8 +1132,7 @@ RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newDictItemIterator(thread, dict);
 }
 
-RawObject METH(dict_items, __len__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_items, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItems()) {
@@ -1160,9 +1143,7 @@ RawObject METH(dict_items, __len__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(dict.numItems());
 }
 
-RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
@@ -1171,9 +1152,7 @@ RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(dict_keyiterator, __next__)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_keyiterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
@@ -1187,9 +1166,8 @@ RawObject METH(dict_keyiterator, __next__)(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject METH(dict_keyiterator, __length_hint__)(Thread* thread, Frame* frame,
-                                                  word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_keyiterator, __length_hint__)(Thread* thread,
+                                                  Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
@@ -1200,8 +1178,7 @@ RawObject METH(dict_keyiterator, __length_hint__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_keys, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeys()) {
@@ -1212,8 +1189,7 @@ RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newDictKeyIterator(thread, dict);
 }
 
-RawObject METH(dict_keys, __len__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_keys, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeys()) {
@@ -1224,9 +1200,7 @@ RawObject METH(dict_keys, __len__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(dict.numItems());
 }
 
-RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
@@ -1235,9 +1209,7 @@ RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(dict_valueiterator, __next__)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_valueiterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
@@ -1252,8 +1224,7 @@ RawObject METH(dict_valueiterator, __next__)(Thread* thread, Frame* frame,
 }
 
 RawObject METH(dict_valueiterator, __length_hint__)(Thread* thread,
-                                                    Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+                                                    Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
@@ -1264,9 +1235,7 @@ RawObject METH(dict_valueiterator, __length_hint__)(Thread* thread,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-RawObject METH(dict_values, __iter__)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_values, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValues()) {
@@ -1277,8 +1246,7 @@ RawObject METH(dict_values, __iter__)(Thread* thread, Frame* frame,
   return thread->runtime()->newDictValueIterator(thread, dict);
 }
 
-RawObject METH(dict_values, __len__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(dict_values, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValues()) {

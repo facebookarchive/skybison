@@ -1,5 +1,6 @@
 #pragma once
 
+#include "frame.h"
 #include "globals.h"
 #include "handles-decl.h"
 #include "objects.h"
@@ -14,7 +15,7 @@ namespace py {
 class Thread;
 
 // Function pointer stored in RawCode::code() for builtin functions.
-using BuiltinFunction = RawObject (*)(Thread* thread, Frame* frame, word nargs);
+using BuiltinFunction = RawObject (*)(Thread* thread, Arguments args);
 
 using ModuleInitFunc = void (*)(Thread* thread, const Module& module,
                                 View<byte> bytecode);

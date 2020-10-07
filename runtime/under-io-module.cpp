@@ -18,8 +18,7 @@
 
 namespace py {
 
-RawObject FUNC(_io, _BytesIO_guard)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _BytesIO_guard)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytesIO(*self_obj)) {
@@ -28,9 +27,7 @@ RawObject FUNC(_io, _BytesIO_guard)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject FUNC(_io, _BytesIO_closed_guard)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _BytesIO_closed_guard)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytesIO(*self_obj)) {
@@ -44,8 +41,7 @@ RawObject FUNC(_io, _BytesIO_closed_guard)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_io, _BytesIO_seek)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _BytesIO_seek)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
 
   Runtime* runtime = thread->runtime();
@@ -107,9 +103,7 @@ RawObject FUNC(_io, _BytesIO_seek)(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
-RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -147,9 +141,7 @@ RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Frame* frame,
   return runtime->newInt(size);
 }
 
-RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -164,8 +156,7 @@ RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_io, _StringIO_seek)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _StringIO_seek)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object offset_obj(&scope, args.get(1));
   Object whence_obj(&scope, args.get(2));
@@ -421,10 +412,9 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
   return result.becomeImmutable();
 }
 
-RawObject FUNC(_io, _buffered_reader_clear_buffer)(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_io, _buffered_reader_clear_buffer)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
@@ -436,10 +426,8 @@ RawObject FUNC(_io, _buffered_reader_clear_buffer)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_io, _buffered_reader_init)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_io, _buffered_reader_init)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
@@ -470,12 +458,9 @@ RawObject FUNC(_io, _buffered_reader_init)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Arguments args) {
   // TODO(T58490915): Investigate what thread safety guarantees python has,
   // and add locking code as necessary.
-
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -524,12 +509,9 @@ RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Frame* frame,
   return bytesSubseq(thread, read_buf, read_pos, available);
 }
 
-RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Arguments args) {
   // TODO(T58490915): Investigate what thread safety guarantees python has,
   // and add locking code as necessary.
-
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -645,12 +627,9 @@ RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
   return bytesSubseq(thread, read_buf_bytes, 0, length);
 }
 
-RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Arguments args) {
   // TODO(T58490915): Investigate what thread safety guarantees Python has,
   // and add locking code as necessary.
-
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -788,9 +767,8 @@ RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
   return result.becomeImmutable();
 }
 
-RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
-                                                   word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -806,9 +784,7 @@ RawObject FUNC(_io, _TextIOWrapper_attached_guard)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_io, _TextIOWrapper_attached_closed_guard)(Thread* thread,
-                                                          Frame* frame,
-                                                          word nargs) {
-  Arguments args(frame, nargs);
+                                                          Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -844,9 +820,7 @@ RawObject FUNC(_io, _TextIOWrapper_attached_closed_guard)(Thread* thread,
 
 RawObject FUNC(_io,
                _TextIOWrapper_attached_closed_seekable_guard)(Thread* thread,
-                                                              Frame* frame,
-                                                              word nargs) {
-  Arguments args(frame, nargs);
+                                                              Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -904,9 +878,7 @@ RawObject FUNC(_io,
 // TODO(T61927696): Implement native version of BufferedWriter._flush_unlocked()
 // with FileIO as BufferedWriter.raw. With that function, we can do flush in
 // here.
-RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
 
   Object text_obj(&scope, args.get(1));
@@ -1102,8 +1074,7 @@ static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
   return runtime->newInt(val_len);
 }
 
-RawObject METH(BytesIO, __init__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(BytesIO, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1136,8 +1107,7 @@ RawObject METH(BytesIO, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(BytesIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(BytesIO, getvalue)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -1154,8 +1124,7 @@ RawObject METH(BytesIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
   return runtime->bytesCopyWithSize(thread, buffer, num_items);
 }
 
-RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(BytesIO, read)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -1201,8 +1170,7 @@ RawObject METH(BytesIO, read)(Thread* thread, Frame* frame, word nargs) {
   return bytesSubseq(thread, result, pos, new_pos - pos);
 }
 
-RawObject METH(BytesIO, write)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(BytesIO, write)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -1238,8 +1206,7 @@ static const BuiltinAttribute kFileIOAttributes[] = {
 
 static const word kDefaultBufferSize = 1 * kKiB;  // bytes
 
-RawObject METH(FileIO, readall)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(FileIO, readall)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -1316,8 +1283,7 @@ static RawObject readintoBytesAddress(Thread* thread, const int fd, byte* dst,
   return SmallInt::fromWord(result);
 }
 
-RawObject METH(FileIO, readinto)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(FileIO, readinto)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1483,8 +1449,7 @@ static bool isValidStringIONewline(const Object& newline) {
   return newline == SmallStr::fromCStr("\r\n");
 }
 
-RawObject METH(StringIO, __init__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
@@ -1602,8 +1567,7 @@ static word stringIOReadline(Thread* thread, const StringIO& string_io,
   return i;
 }
 
-RawObject METH(StringIO, __next__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
@@ -1624,8 +1588,7 @@ RawObject METH(StringIO, __next__)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject METH(StringIO, close)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, close)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self_obj)) {
@@ -1636,8 +1599,7 @@ RawObject METH(StringIO, close)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(StringIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, getvalue)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -1654,8 +1616,7 @@ RawObject METH(StringIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
   return buffer.becomeStr();
 }
 
-RawObject METH(StringIO, read)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, read)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
@@ -1698,8 +1659,7 @@ RawObject METH(StringIO, read)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject METH(StringIO, readline)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, readline)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
@@ -1735,8 +1695,7 @@ RawObject METH(StringIO, readline)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject METH(StringIO, truncate)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, truncate)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
@@ -1777,8 +1736,7 @@ RawObject METH(StringIO, truncate)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(size);
 }
 
-RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(StringIO, write)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {

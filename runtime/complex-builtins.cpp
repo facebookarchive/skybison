@@ -56,8 +56,7 @@ void initializeComplexType(Thread* thread) {
   type.setBuiltinBase(LayoutId::kComplex);
 }
 
-RawObject METH(complex, __abs__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __abs__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -71,8 +70,7 @@ RawObject METH(complex, __abs__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(magnitude);
 }
 
-RawObject METH(complex, __add__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __add__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -90,8 +88,7 @@ RawObject METH(complex, __add__)(Thread* thread, Frame* frame, word nargs) {
                              self.imag() + other_imag);
 }
 
-RawObject METH(complex, __hash__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __hash__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
 
   Object self_obj(&scope, args.get(0));
@@ -102,8 +99,7 @@ RawObject METH(complex, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(complexHash(*self));
 }
 
-RawObject METH(complex, __mul__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __mul__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -125,8 +121,7 @@ RawObject METH(complex, __mul__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newComplex(res_real, res_imag);
 }
 
-RawObject METH(complex, __neg__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __neg__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -138,8 +133,7 @@ RawObject METH(complex, __neg__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newComplex(-self.real(), -self.imag());
 }
 
-RawObject METH(complex, __pos__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __pos__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
 
   Object self_obj(&scope, args.get(0));
@@ -149,8 +143,7 @@ RawObject METH(complex, __pos__)(Thread* thread, Frame* frame, word nargs) {
   return complexUnderlying(*self_obj);
 }
 
-RawObject METH(complex, __rsub__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __rsub__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -168,8 +161,7 @@ RawObject METH(complex, __rsub__)(Thread* thread, Frame* frame, word nargs) {
                              other_imag - self.imag());
 }
 
-RawObject METH(complex, __sub__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __sub__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -187,8 +179,7 @@ RawObject METH(complex, __sub__)(Thread* thread, Frame* frame, word nargs) {
                              self.imag() - other_imag);
 }
 
-RawObject METH(complex, __truediv__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(complex, __truediv__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));

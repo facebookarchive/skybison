@@ -229,7 +229,7 @@ TEST(UtilsTestNoFixture, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 63), 0x8000000000000000ULL);
 }
 
-RawObject printDebugInfoAndAbortTest(Thread* thread, Frame*, word) {
+RawObject printDebugInfoAndAbortTest(Thread* thread, Arguments) {
   // Produce a pending exception with stacktrace!
   HandleScope scope(thread);
   Object call_raising(&scope, mainModuleAt(thread->runtime(), "call_raising"));

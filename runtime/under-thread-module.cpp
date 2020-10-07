@@ -8,7 +8,7 @@
 
 namespace py {
 
-RawObject FUNC(_thread, get_ident)(Thread* thread, Frame*, word) {
+RawObject FUNC(_thread, get_ident)(Thread* thread, Arguments) {
   return thread->runtime()->newIntFromUnsigned(thread->id());
 }
 

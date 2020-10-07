@@ -310,9 +310,7 @@ void initializeGeneratorTypes(Thread* thread) {
                  /*basetype=*/false);
 }
 
-RawObject METH(async_generator, __aiter__)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator, __aiter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isAsyncGenerator()) {
@@ -378,30 +376,22 @@ static RawObject setupAsyncGenASend(Thread* thread, RawObject raw_self_obj,
   return *asend;
 }
 
-RawObject METH(async_generator, __anext__)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator, __anext__)(Thread* thread, Arguments args) {
   return setupAsyncGenASend(thread, args.get(0), NoneType::object());
 }
 
-RawObject METH(async_generator, aclose)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator, aclose)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   return setupAsyncGenOpIter(scope, thread, args.get(0),
                              LayoutId::kAsyncGeneratorAclose);
 }
 
-RawObject METH(async_generator, asend)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator, asend)(Thread* thread, Arguments args) {
   return setupAsyncGenASend(thread, args.get(0), args.get(1));
 }
 
-RawObject METH(async_generator, athrow)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(async_generator, athrow)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object athrow_obj(&scope,
                     setupAsyncGenOpIter(scope, thread, args.get(0),
                                         LayoutId::kAsyncGeneratorAthrow));
@@ -427,17 +417,15 @@ static RawObject asyncOpIterReturnSelf(Thread* thread, RawObject raw_self_obj,
   return *self;
 }
 
-RawObject METH(async_generator_aclose, __await__)(Thread* thread, Frame* frame,
-                                                  word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_aclose, __await__)(Thread* thread,
+                                                  Arguments args) {
   return asyncOpIterReturnSelf(thread, args.get(0),
                                LayoutId::kAsyncGeneratorAclose, ID(__await__),
                                ID(async_generator_aclose));
 }
 
-RawObject METH(async_generator_aclose, __iter__)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_aclose, __iter__)(Thread* thread,
+                                                 Arguments args) {
   return asyncOpIterReturnSelf(thread, args.get(0),
                                LayoutId::kAsyncGeneratorAclose, ID(__iter__),
                                ID(async_generator_aclose));
@@ -512,9 +500,8 @@ static RawObject asyncGenAcloseSend(Thread* thread, RawObject raw_self_obj,
   return *res;
 }
 
-RawObject METH(async_generator_aclose, __next__)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_aclose, __next__)(Thread* thread,
+                                                 Arguments args) {
   return asyncGenAcloseSend(thread, args.get(0), NoneType::object());
 }
 
@@ -533,23 +520,17 @@ static RawObject closeAsyncGenOpIter(Thread* thread, RawObject raw_self_obj,
   return NoneType::object();
 }
 
-RawObject METH(async_generator_aclose, close)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_aclose, close)(Thread* thread, Arguments args) {
   return closeAsyncGenOpIter(thread, args.get(0),
                              LayoutId::kAsyncGeneratorAclose,
                              ID(async_generator_aclose));
 }
 
-RawObject METH(async_generator_aclose, send)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_aclose, send)(Thread* thread, Arguments args) {
   return asyncGenAcloseSend(thread, args.get(0), args.get(1));
 }
 
-RawObject METH(async_generator_aclose, throw)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_aclose, throw)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isAsyncGeneratorAclose()) {
@@ -589,17 +570,15 @@ RawObject METH(async_generator_aclose, throw)(Thread* thread, Frame* frame,
   return *res;
 }
 
-RawObject METH(async_generator_asend, __await__)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_asend, __await__)(Thread* thread,
+                                                 Arguments args) {
   return asyncOpIterReturnSelf(thread, args.get(0),
                                LayoutId::kAsyncGeneratorAsend, ID(__await__),
                                ID(async_generator_asend));
 }
 
-RawObject METH(async_generator_asend, __iter__)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_asend, __iter__)(Thread* thread,
+                                                Arguments args) {
   return asyncOpIterReturnSelf(thread, args.get(0),
                                LayoutId::kAsyncGeneratorAsend, ID(__iter__),
                                ID(async_generator_asend));
@@ -651,29 +630,22 @@ static RawObject asyncGenAsendSend(Thread* thread, RawObject raw_self_obj,
   return *send_res;
 }
 
-RawObject METH(async_generator_asend, __next__)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_asend, __next__)(Thread* thread,
+                                                Arguments args) {
   return asyncGenAsendSend(thread, args.get(0), NoneType::object());
 }
 
-RawObject METH(async_generator_asend, close)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_asend, close)(Thread* thread, Arguments args) {
   return closeAsyncGenOpIter(thread, args.get(0),
                              LayoutId::kAsyncGeneratorAsend,
                              ID(async_generator_asend));
 }
 
-RawObject METH(async_generator_asend, send)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_asend, send)(Thread* thread, Arguments args) {
   return asyncGenAsendSend(thread, args.get(0), args.get(1));
 }
 
-RawObject METH(async_generator_asend, throw)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_asend, throw)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isAsyncGeneratorAsend()) {
@@ -718,17 +690,15 @@ RawObject METH(async_generator_asend, throw)(Thread* thread, Frame* frame,
   return *res;
 }
 
-RawObject METH(async_generator_athrow, __await__)(Thread* thread, Frame* frame,
-                                                  word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_athrow, __await__)(Thread* thread,
+                                                  Arguments args) {
   return asyncOpIterReturnSelf(thread, args.get(0),
                                LayoutId::kAsyncGeneratorAthrow, ID(__await__),
                                ID(async_generator_athrow));
 }
 
-RawObject METH(async_generator_athrow, __iter__)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_athrow, __iter__)(Thread* thread,
+                                                 Arguments args) {
   return asyncOpIterReturnSelf(thread, args.get(0),
                                LayoutId::kAsyncGeneratorAthrow, ID(__iter__),
                                ID(async_generator_athrow));
@@ -806,29 +776,22 @@ static RawObject asyncGenAthrowSend(Thread* thread, RawObject raw_self_obj,
   return *res;
 }
 
-RawObject METH(async_generator_athrow, __next__)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_athrow, __next__)(Thread* thread,
+                                                 Arguments args) {
   return asyncGenAthrowSend(thread, args.get(0), NoneType::object());
 }
 
-RawObject METH(async_generator_athrow, close)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_athrow, close)(Thread* thread, Arguments args) {
   return closeAsyncGenOpIter(thread, args.get(0),
                              LayoutId::kAsyncGeneratorAthrow,
                              ID(async_generator_athrow));
 }
 
-RawObject METH(async_generator_athrow, send)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_athrow, send)(Thread* thread, Arguments args) {
   return asyncGenAthrowSend(thread, args.get(0), args.get(1));
 }
 
-RawObject METH(async_generator_athrow, throw)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(async_generator_athrow, throw)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isAsyncGeneratorAthrow()) {
@@ -873,8 +836,7 @@ RawObject METH(async_generator_athrow, throw)(Thread* thread, Frame* frame,
   return *res;
 }
 
-RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(generator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
@@ -886,8 +848,7 @@ RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return *self;
 }
 
-RawObject METH(generator, __next__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(generator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
@@ -898,8 +859,7 @@ RawObject METH(generator, __next__)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::resumeGenerator(thread, gen, value);
 }
 
-RawObject METH(generator, close)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(generator, close)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
@@ -909,20 +869,17 @@ RawObject METH(generator, close)(Thread* thread, Frame* frame, word nargs) {
   return closeImpl(thread, gen);
 }
 
-RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(generator, send)(Thread* thread, Arguments args) {
   return sendImpl<ID(generator), LayoutId::kGenerator>(thread, args.get(0),
                                                        args.get(1));
 }
 
-RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(generator, throw)(Thread* thread, Arguments args) {
   return throwImpl<ID(generator), LayoutId::kGenerator>(
       thread, args.get(0), args.get(1), args.get(2), args.get(3));
 }
 
-RawObject METH(coroutine, __await__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine, __await__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isCoroutine()) {
@@ -937,8 +894,7 @@ RawObject METH(coroutine, __await__)(Thread* thread, Frame* frame, word nargs) {
   return *coro_wrap;
 }
 
-RawObject METH(coroutine, close)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine, close)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isCoroutine()) {
@@ -948,21 +904,17 @@ RawObject METH(coroutine, close)(Thread* thread, Frame* frame, word nargs) {
   return closeImpl(thread, gen);
 }
 
-RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine, send)(Thread* thread, Arguments args) {
   return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, args.get(0),
                                                        args.get(1));
 }
 
-RawObject METH(coroutine, throw)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine, throw)(Thread* thread, Arguments args) {
   return throwImpl<ID(coroutine), LayoutId::kCoroutine>(
       thread, args.get(0), args.get(1), args.get(2), args.get(3));
 }
 
-RawObject METH(coroutine_wrapper, __iter__)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine_wrapper, __iter__)(Thread* thread, Arguments args) {
   RawObject self = args.get(0);
   if (self.isCoroutineWrapper()) return self;
   HandleScope scope(thread);
@@ -970,9 +922,7 @@ RawObject METH(coroutine_wrapper, __iter__)(Thread* thread, Frame* frame,
   return thread->raiseRequiresType(self_obj, ID(coroutine));
 }
 
-RawObject METH(coroutine_wrapper, __next__)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine_wrapper, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isCoroutineWrapper()) {
@@ -984,9 +934,7 @@ RawObject METH(coroutine_wrapper, __next__)(Thread* thread, Frame* frame,
   return Interpreter::resumeGenerator(thread, gen, none);
 }
 
-RawObject METH(coroutine_wrapper, close)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine_wrapper, close)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isCoroutineWrapper()) {
@@ -997,9 +945,7 @@ RawObject METH(coroutine_wrapper, close)(Thread* thread, Frame* frame,
   return closeImpl(thread, gen);
 }
 
-RawObject METH(coroutine_wrapper, send)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine_wrapper, send)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isCoroutineWrapper()) {
@@ -1011,9 +957,7 @@ RawObject METH(coroutine_wrapper, send)(Thread* thread, Frame* frame,
   return Interpreter::resumeGenerator(thread, gen, val);
 }
 
-RawObject METH(coroutine_wrapper, throw)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(coroutine_wrapper, throw)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isCoroutineWrapper()) {
@@ -1029,9 +973,7 @@ RawObject METH(coroutine_wrapper, throw)(Thread* thread, Frame* frame,
 
 // Intended for tests only
 RawObject FUNC(_builtins, _async_generator_finalizer)(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
-  Arguments args(frame, nargs);
+                                                      Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isAsyncGenerator()) {
@@ -1047,9 +989,7 @@ RawObject FUNC(_builtins, _async_generator_finalizer)(Thread* thread,
 
 // Intended for tests only
 RawObject FUNC(_builtins, _async_generator_op_iter_get_state)(Thread* thread,
-                                                              Frame* frame,
-                                                              word nargs) {
-  Arguments args(frame, nargs);
+                                                              Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isAsyncGeneratorOpIterBase()) {

@@ -10,8 +10,7 @@
 
 namespace py {
 
-RawObject FUNC(marshal, loads)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(marshal, loads)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();

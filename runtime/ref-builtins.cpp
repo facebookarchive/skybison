@@ -38,9 +38,8 @@ void initializeRefTypes(Thread* thread) {
                  WeakLink::kSize, /*basetype=*/false);
 }
 
-RawObject METH(weakref, __call__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(weakref, __call__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfWeakRef(*self)) {
     return thread->raiseRequiresType(self, ID(weakref));
@@ -49,8 +48,7 @@ RawObject METH(weakref, __call__)(Thread* thread, Frame* frame, word nargs) {
   return ref.referent();
 }
 
-RawObject METH(weakref, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(weakref, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();

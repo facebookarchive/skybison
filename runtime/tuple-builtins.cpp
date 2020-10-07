@@ -88,9 +88,8 @@ void initializeTupleTypes(Thread* thread) {
                  TupleIterator::kSize, /*basetype=*/false);
 }
 
-RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(tuple, __add__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object lhs(&scope, args.get(0));
   if (!runtime->isInstanceOfTuple(*lhs)) {
@@ -130,8 +129,7 @@ RawObject tupleContains(Thread* thread, const Tuple& tuple,
   return Bool::falseObj();
 }
 
-RawObject METH(tuple, __contains__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple, __contains__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfTuple(*self_obj)) {
@@ -142,8 +140,7 @@ RawObject METH(tuple, __contains__)(Thread* thread, Frame* frame, word nargs) {
   return tupleContains(thread, self, value);
 }
 
-RawObject METH(tuple, __hash__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple, __hash__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -154,8 +151,7 @@ RawObject METH(tuple, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return tupleHash(thread, self);
 }
 
-RawObject METH(tuple, __len__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -166,8 +162,7 @@ RawObject METH(tuple, __len__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(self.length());
 }
 
-RawObject METH(tuple, __mul__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple, __mul__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -212,8 +207,7 @@ RawObject METH(tuple, __mul__)(Thread* thread, Frame* frame, word nargs) {
   return new_tuple.becomeImmutable();
 }
 
-RawObject METH(tuple, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -224,9 +218,7 @@ RawObject METH(tuple, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 
-RawObject METH(tuple_iterator, __iter__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isTupleIterator()) {
@@ -235,9 +227,7 @@ RawObject METH(tuple_iterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(tuple_iterator, __next__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTupleIterator()) {
@@ -251,9 +241,8 @@ RawObject METH(tuple_iterator, __next__)(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject METH(tuple_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(tuple_iterator, __length_hint__)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isTupleIterator()) {

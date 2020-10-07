@@ -9,9 +9,8 @@
 
 namespace py {
 
-RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Object description(&scope, args.get(0));
   if (description.isNoneType()) {
@@ -27,19 +26,17 @@ RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_valgrind, callgrind_start_instrumentation)(Thread*, Frame*,
-                                                           word) {
+RawObject FUNC(_valgrind, callgrind_start_instrumentation)(Thread*, Arguments) {
   CALLGRIND_START_INSTRUMENTATION;
   return NoneType::object();
 }
 
-RawObject FUNC(_valgrind, callgrind_stop_instrumentation)(Thread*, Frame*,
-                                                          word) {
+RawObject FUNC(_valgrind, callgrind_stop_instrumentation)(Thread*, Arguments) {
   CALLGRIND_STOP_INSTRUMENTATION;
   return NoneType::object();
 }
 
-RawObject FUNC(_valgrind, callgrind_zero_stats)(Thread*, Frame*, word) {
+RawObject FUNC(_valgrind, callgrind_zero_stats)(Thread*, Arguments) {
   CALLGRIND_ZERO_STATS;
   return NoneType::object();
 }

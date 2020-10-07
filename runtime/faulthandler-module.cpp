@@ -142,31 +142,31 @@ static void suppressCrashReport() {
   }
 }
 
-RawObject FUNC(faulthandler, _read_null)(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _read_null)(Thread*, Arguments) {
   suppressCrashReport();
   *static_cast<volatile word*>(nullptr);
   return NoneType::object();
 }
 
-RawObject FUNC(faulthandler, _sigabrt)(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _sigabrt)(Thread*, Arguments) {
   suppressCrashReport();
   std::abort();
   return NoneType::object();
 }
 
-RawObject FUNC(faulthandler, _sigfpe)(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _sigfpe)(Thread*, Arguments) {
   suppressCrashReport();
   std::raise(SIGFPE);
   return NoneType::object();
 }
 
-RawObject FUNC(faulthandler, _sigsegv)(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _sigsegv)(Thread*, Arguments) {
   suppressCrashReport();
   std::raise(SIGSEGV);
   return NoneType::object();
 }
 
-RawObject FUNC(faulthandler, disable)(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, disable)(Thread*, Arguments) {
   if (!fatal_error.enabled) {
     return Bool::falseObj();
   }
@@ -180,10 +180,8 @@ RawObject FUNC(faulthandler, disable)(Thread*, Frame*, word) {
   return Bool::trueObj();
 }
 
-RawObject FUNC(faulthandler, dump_traceback)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(faulthandler, dump_traceback)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object file(&scope, args.get(0));
   Object all_threads(&scope, args.get(1));
 
@@ -220,9 +218,8 @@ static bool enableHandler(FaultHandler* handler, void (*handler_func)(int)) {
   return true;
 }
 
-RawObject FUNC(faulthandler, enable)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(faulthandler, enable)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object file(&scope, args.get(0));
   Object all_threads(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -257,7 +254,7 @@ RawObject FUNC(faulthandler, enable)(Thread* thread, Frame* frame, word nargs) {
   return thread->raise(LayoutId::kRuntimeError, val.becomeImmutable());
 }
 
-RawObject FUNC(faulthandler, is_enabled)(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, is_enabled)(Thread*, Arguments) {
   return Bool::fromBool(fatal_error.enabled);
 }
 

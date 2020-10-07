@@ -423,9 +423,7 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
   return *result;
 }
 
-RawObject METH(object, __getattribute__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(object, __getattribute__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -438,15 +436,13 @@ RawObject METH(object, __getattribute__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(object, __hash__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(object, __hash__)(Thread* thread, Arguments args) {
   return SmallInt::fromWord(thread->runtime()->hash(args.get(0)));
 }
 
-RawObject METH(object, __init__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(object, __init__)(Thread* thread, Arguments args) {
   // Too many arguments were given. Determine if the __new__ was not overwritten
   // or the __init__ was to throw a TypeError.
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
@@ -473,8 +469,7 @@ RawObject METH(object, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(object, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(object, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*type_obj)) {
@@ -484,8 +479,7 @@ RawObject METH(object, __new__)(Thread* thread, Frame* frame, word nargs) {
   return objectNew(thread, type);
 }
 
-RawObject METH(object, __setattr__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(object, __setattr__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -495,8 +489,7 @@ RawObject METH(object, __setattr__)(Thread* thread, Frame* frame, word nargs) {
   return objectSetAttr(thread, self, name, value);
 }
 
-RawObject METH(object, __sizeof__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(object, __sizeof__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
   if (obj.isHeapObject()) {
@@ -506,12 +499,11 @@ RawObject METH(object, __sizeof__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(kPointerSize);
 }
 
-RawObject METH(NoneType, __new__)(Thread*, Frame*, word) {
+RawObject METH(NoneType, __new__)(Thread*, Arguments) {
   return NoneType::object();
 }
 
-RawObject METH(NoneType, __repr__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(NoneType, __repr__)(Thread* thread, Arguments args) {
   if (!args.get(0).isNoneType()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__repr__ expects None as first argument");

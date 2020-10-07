@@ -18,9 +18,8 @@ void initializeStrArrayType(Thread* thread) {
                  StrArray::kSize, /*basetype=*/false);
 }
 
-RawObject METH(_str_array, __init__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(_str_array, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isStrArray()) {
     return thread->raiseRequiresType(self_obj, ID(_str_array));
@@ -41,16 +40,14 @@ RawObject METH(_str_array, __init__)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(_str_array, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(_str_array, __new__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStrArray),
          "_str_array.__new__(X): X is not '_str_array'");
   return runtime->newStrArray();
 }
 
-RawObject METH(_str_array, __str__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(_str_array, __str__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isStrArray()) {

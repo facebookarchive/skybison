@@ -11,8 +11,7 @@
 
 namespace py {
 
-RawObject FUNC(array, _array_check)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(array, _array_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfArray(args.get(0)));
 }
 
@@ -44,9 +43,8 @@ static word itemSize(byte typecode) {
   }
 }
 
-RawObject FUNC(array, _array_new)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(array, _array_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Str typecode_str(&scope, strUnderlying(args.get(1)));
   DCHECK(typecode_str.length() == 1, "typecode must be a single-char str");
   byte typecode = typecode_str.byteAt(0);
@@ -249,10 +247,8 @@ static RawObject unpackObject(Thread* thread, uword address, char format,
   }
 }
 
-RawObject FUNC(array, _array_getitem)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(array, _array_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfArray(*self_obj)) {
@@ -289,10 +285,8 @@ RawObject FUNC(array, _array_getitem)(Thread* thread, Frame* frame,
                       typecode, byte_index);
 }
 
-RawObject FUNC(array, _array_setitem)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(array, _array_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfArray(*self_obj)) {
@@ -344,9 +338,7 @@ static void arrayEnsureCapacity(Thread* thread, const Array& array,
   array.setBuffer(*new_buffer);
 }
 
-RawObject FUNC(array, _array_reserve)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(array, _array_reserve)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object array_obj(&scope, args.get(0));
@@ -360,9 +352,8 @@ RawObject FUNC(array, _array_reserve)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(array, _array_append)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(array, _array_append)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfArray(*self_obj)) {
@@ -390,9 +381,8 @@ RawObject FUNC(array, _array_append)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(array, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(array, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfArray(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(array));

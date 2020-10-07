@@ -74,9 +74,7 @@ void initializeSuperType(Thread* thread) {
                  Super::kSize, /*basetype=*/true);
 }
 
-RawObject METH(super, __getattribute__)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(super, __getattribute__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSuper()) {
@@ -94,16 +92,15 @@ RawObject METH(super, __getattribute__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(super, __new__)(Thread* thread, Frame*, word) {
+RawObject METH(super, __new__)(Thread* thread, Arguments) {
   return thread->runtime()->newSuper();
 }
 
-RawObject METH(super, __init__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(super, __init__)(Thread* thread, Arguments args) {
   // only support idiomatic usage for now
   // super() -> same as super(__class__, <first argument>)
   // super(type, obj) -> bound super object; requires isinstance(obj, type)
   // super(type, type2) -> bound super object; requires issubclass(type2, type)
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSuper()) {
@@ -114,6 +111,7 @@ RawObject METH(super, __init__)(Thread* thread, Frame* frame, word nargs) {
   Object obj(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   if (args.get(1).isUnbound()) {
+    Frame* frame = thread->currentFrame();
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
     if (frame->isSentinel()) {

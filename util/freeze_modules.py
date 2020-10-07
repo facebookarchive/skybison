@@ -234,7 +234,7 @@ extern const word kNumBuiltinFunctions;
 
     for builtin in builtins:
         result += f"""\
-RawObject {builtin}(Thread*, Frame*, word);
+RawObject {builtin}(Thread* thread, Arguments args);
 """
     result += "\n"
     for module in modules:

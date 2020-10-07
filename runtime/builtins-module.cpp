@@ -134,8 +134,7 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
   return *result;
 }
 
-RawObject FUNC(builtins, bin)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, bin)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object number(&scope, args.get(0));
   number = intFromIndex(thread, number);
@@ -146,8 +145,7 @@ RawObject FUNC(builtins, bin)(Thread* thread, Frame* frame, word nargs) {
   return formatIntBinarySimple(thread, number_int);
 }
 
-RawObject FUNC(builtins, delattr)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, delattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -225,12 +223,9 @@ static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
   type.setCtor(*ctor);
 }
 
-RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(builtins, __build_class__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
-  Arguments args(frame, nargs);
   Object body_obj(&scope, args.get(0));
   if (!body_obj.isFunction()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -395,16 +390,14 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
   return Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
 }
 
-RawObject FUNC(builtins, callable)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, callable)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object arg(&scope, args.get(0));
   return Bool::fromBool(thread->runtime()->isCallable(thread, arg));
 }
 
-RawObject FUNC(builtins, chr)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, chr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object arg(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*arg)) {
@@ -437,8 +430,7 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
                                  mode_str, flags_int, optimize_int);
 }
 
-RawObject FUNC(builtins, id)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, id)(Thread* thread, Arguments args) {
   // NOTE: This pins a handle until the runtime exits.
   // TODO(emacs): Either determine that this function is used so little that it
   // does not matter or add a section to the GC to clean up handles created by
@@ -447,8 +439,7 @@ RawObject FUNC(builtins, id)(Thread* thread, Frame* frame, word nargs) {
       ApiHandle::newReference(thread, args.get(0)));
 }
 
-RawObject FUNC(builtins, oct)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, oct)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object number(&scope, args.get(0));
   number = intFromIndex(thread, number);
@@ -459,8 +450,7 @@ RawObject FUNC(builtins, oct)(Thread* thread, Frame* frame, word nargs) {
   return formatIntOctalSimple(thread, number_int);
 }
 
-RawObject FUNC(builtins, ord)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, ord)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -493,11 +483,10 @@ RawObject FUNC(builtins, ord)(Thread* thread, Frame* frame, word nargs) {
                               "Builtin 'ord' expects string of length 1");
 }
 
-RawObject FUNC(builtins, __import__)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, __import__)(Thread* thread, Arguments args) {
   // Note that this is a simplified __import__ implementation that is used
   // during early bootstrap; it is replaced by importlib.__import__ once
   // import lib is fully initialized.
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str name(&scope, args.get(0));
   name = Runtime::internStr(thread, name);
@@ -514,8 +503,7 @@ RawObject FUNC(builtins, __import__)(Thread* thread, Frame* frame, word nargs) {
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
-RawObject FUNC(builtins, getattr)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, getattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -533,23 +521,20 @@ RawObject FUNC(builtins, getattr)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(builtins, hasattr)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, hasattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
   return hasAttribute(thread, self, name);
 }
 
-RawObject FUNC(builtins, hash)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, hash)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object object(&scope, args.get(0));
   return Interpreter::hash(thread, object);
 }
 
-RawObject FUNC(builtins, hex)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, hex)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object number(&scope, args.get(0));
   number = intFromIndex(thread, number);
@@ -560,8 +545,7 @@ RawObject FUNC(builtins, hex)(Thread* thread, Frame* frame, word nargs) {
   return formatIntHexadecimalSimple(thread, number_int);
 }
 
-RawObject FUNC(builtins, setattr)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(builtins, setattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -569,8 +553,7 @@ RawObject FUNC(builtins, setattr)(Thread* thread, Frame* frame, word nargs) {
   return setAttribute(thread, self, name, value);
 }
 
-RawObject METH(method, __eq__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(method, __eq__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isBoundMethod()) {

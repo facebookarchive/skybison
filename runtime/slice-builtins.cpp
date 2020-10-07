@@ -21,9 +21,8 @@ void initializeSliceType(Thread* thread) {
                  Slice::kSize, /*basetype=*/false);
 }
 
-RawObject METH(slice, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(slice, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*type_obj)) {

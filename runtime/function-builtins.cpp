@@ -89,9 +89,8 @@ void slotWrapperFunctionSetType(const Function& function, const Type& type) {
   function.setRewrittenBytecode(*type);
 }
 
-RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(function, __get__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));

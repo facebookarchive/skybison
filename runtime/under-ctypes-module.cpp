@@ -113,9 +113,8 @@ void FUNC(_ctypes, __init_module__)(Thread* thread, const Module& module,
   moduleAtPut(thread, module, wstring_at_addr_name, wstring_at_addr);
 }
 
-RawObject FUNC(_ctypes, _CharArray_value_to_bytes)(Thread* thread, Frame* frame,
-                                                   word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_ctypes, _CharArray_value_to_bytes)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
   Object value(&scope, args.get(0));
   word length = intUnderlying(args.get(1)).asWord();
@@ -134,9 +133,7 @@ RawObject FUNC(_ctypes, _CharArray_value_to_bytes)(Thread* thread, Frame* frame,
                      first_nul == -1 ? length : first_nul);
 }
 
-RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
 
   void* addr = Int::cast(args.get(0)).asCPtr();
@@ -157,9 +154,7 @@ RawObject FUNC(_ctypes, _call_cfuncptr)(Thread* thread, Frame* frame,
   }
 }
 
-RawObject FUNC(_ctypes, _memset)(Thread* /* thread */, Frame* frame,
-                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_ctypes, _memset)(Thread*, Arguments args) {
   void* addr = Int::cast(args.get(0)).asCPtr();
   OptInt<int> val = Int::cast(args.get(1)).asInt<int>();
   if (val.error != CastError::None) {
@@ -174,9 +169,7 @@ RawObject FUNC(_ctypes, _memset)(Thread* /* thread */, Frame* frame,
 }
 
 RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
-  Arguments args(frame, nargs);
+                                                       Arguments args) {
   HandleScope scope(thread);
   Int handle(&scope, args.get(0));
   Str name(&scope, args.get(1));
@@ -191,8 +184,7 @@ RawObject FUNC(_ctypes, _shared_object_symbol_address)(Thread* thread,
   return thread->runtime()->newIntFromCPtr(address);
 }
 
-RawObject FUNC(_ctypes, _addressof)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_ctypes, _addressof)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object value(&scope, args.get(0));
   if (value.isMmap()) {
@@ -204,8 +196,7 @@ RawObject FUNC(_ctypes, _addressof)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
-                                                    Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+                                                    Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object value(&scope, args.get(0));
@@ -240,8 +231,7 @@ RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
   }
 }
 
-RawObject FUNC(_ctypes, dlopen)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_ctypes, dlopen)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
@@ -274,8 +264,7 @@ RawObject FUNC(_ctypes, dlopen)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newIntFromCPtr(handle);
 }
 
-RawObject FUNC(_ctypes, _sizeof_typeclass)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_ctypes, _sizeof_typeclass)(Thread*, Arguments args) {
   DCHECK(args.get(0).isStr(), "bad internal call");
   FieldDesc* field_desc = fieldDesc(Str::cast(args.get(0)).byteAt(0));
   size_t size = field_desc->pffi_type->size;

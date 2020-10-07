@@ -33,11 +33,9 @@ RawObject getCategory(Thread* thread, const Object& message,
 }
 }  // namespace
 
-RawObject FUNC(_warnings, warn)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_warnings, warn)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
-  Arguments args(frame, nargs);
   Object message(&scope, args.get(0));
   Object category(&scope, args.get(1));
   Object stacklevel(&scope, args.get(2));

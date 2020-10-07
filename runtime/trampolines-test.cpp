@@ -666,9 +666,7 @@ foo(3, 4);
   EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
-static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+static RawObject builtinReturnSecondArg(Thread*, Arguments args) {
   return args.get(1);
 }
 
@@ -900,8 +898,8 @@ result = foo(**{})
   EXPECT_EQ(result, SmallInt::fromWord(10));
 }
 
-static RawObject numArgs(Thread*, Frame*, word nargs) {
-  return SmallInt::fromWord(nargs);
+static RawObject numArgs(Thread* thread, Arguments) {
+  return SmallInt::fromWord(thread->currentFrame()->function().totalArgs());
 }
 
 static void createAndPatchBuiltinNumArgs(Runtime* runtime) {

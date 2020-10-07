@@ -49,13 +49,12 @@ void handleSignal(int signum) {
   errno = saved_errno;
 }
 
-RawObject FUNC(_signal, default_int_handler)(Thread* thread, Frame*, word) {
+RawObject FUNC(_signal, default_int_handler)(Thread* thread, Arguments) {
   return thread->raise(LayoutId::kKeyboardInterrupt, NoneType::object());
 }
 
-RawObject FUNC(_signal, getsignal)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_signal, getsignal)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfInt(*obj)) {
@@ -69,9 +68,8 @@ RawObject FUNC(_signal, getsignal)(Thread* thread, Frame* frame, word nargs) {
   return runtime->signalCallback(signum);
 }
 
-RawObject FUNC(_signal, signal)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_signal, signal)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfInt(*obj)) {

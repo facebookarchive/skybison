@@ -33,11 +33,11 @@
 
 namespace py {
 
-static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
-                                         word nargs, SymbolId expected_type) {
+static RawObject raiseRequiresFromCaller(Thread* thread, Arguments args,
+                                         SymbolId expected_type) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Function function(&scope, frame->previousFrame()->function());
+  Function function(&scope,
+                    thread->currentFrame()->previousFrame()->function());
   Str function_name(&scope, function.name());
   Object obj(&scope, args.get(0));
   return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -163,75 +163,59 @@ static bool trySlice(const Object& key, word* start, word* stop) {
   return true;
 }
 
-RawObject FUNC(_builtins, _ContextVar_guard)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _ContextVar_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isContextVar()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(ContextVar));
+  return raiseRequiresFromCaller(thread, args, ID(ContextVar));
 }
 
-RawObject FUNC(_builtins, _Token_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _Token_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isToken()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(Token));
+  return raiseRequiresFromCaller(thread, args, ID(Token));
 }
 
-RawObject FUNC(_builtins, _address)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _address)(Thread* thread, Arguments args) {
   return thread->runtime()->newInt(args.get(0).raw());
 }
 
-RawObject FUNC(_builtins, _anyset_check)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _anyset_check)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   RawObject arg = args.get(0);
   return Bool::fromBool(runtime->isInstanceOfSet(arg) ||
                         runtime->isInstanceOfFrozenSet(arg));
 }
 
-RawObject FUNC(_builtins, _async_generator_guard)(Thread* thread, Frame* frame,
-                                                  word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _async_generator_guard)(Thread* thread,
+                                                  Arguments args) {
   if (args.get(0).isAsyncGenerator()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(async_generator));
+  return raiseRequiresFromCaller(thread, args, ID(async_generator));
 }
 
-RawObject FUNC(_builtins, _bool_check)(Thread* /* t */, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bool_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isBool());
 }
 
-RawObject FUNC(_builtins, _bool_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bool_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isBool()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(bool));
+  return raiseRequiresFromCaller(thread, args, ID(bool));
 }
 
-RawObject FUNC(_builtins, _bound_method)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _bound_method)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object function(&scope, args.get(0));
   Object owner(&scope, args.get(1));
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
-RawObject FUNC(_builtins, _builtin_type)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _builtin_type)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object name(&scope, args.get(0));
   name = attributeName(thread, name);
   if (name.isErrorException()) return *name;
@@ -240,10 +224,8 @@ RawObject FUNC(_builtins, _builtin_type)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _byte_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_builtins, _byte_guard)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (runtime->isInstanceOfBytes(*obj)) {
@@ -257,7 +239,8 @@ RawObject FUNC(_builtins, _byte_guard)(Thread* thread, Frame* frame,
       return SmallInt::fromWord(array.byteAt(0));
     }
   }
-  Function function(&scope, frame->previousFrame()->function());
+  Function function(&scope,
+                    thread->currentFrame()->previousFrame()->function());
   Str function_name(&scope, function.name());
   return thread->raiseWithFmt(
       LayoutId::kTypeError,
@@ -265,14 +248,12 @@ RawObject FUNC(_builtins, _byte_guard)(Thread* thread, Frame* frame,
       &function_name, &obj);
 }
 
-RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
   Bytearray self(&scope, *self_obj);
   Object item_obj(&scope, args.get(1));
@@ -288,23 +269,19 @@ RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytearray_clear)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _bytearray_clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytearray self(&scope, args.get(0));
   self.downsize(0);
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
   Object key_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*key_obj)) {
@@ -320,14 +297,12 @@ RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
   return Bool::fromBool(bytes.findByte(key_opt.value, 0, self.numItems()) >= 0);
 }
 
-RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
   Bytearray self(&scope, *self_obj);
   Bytes src(&scope, self.items());
@@ -338,24 +313,18 @@ RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytearray_check)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytearray_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfBytearray(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _bytearray_guard)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytearray_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfBytearray(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+  return raiseRequiresFromCaller(thread, args, ID(bytearray));
 }
 
-RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Bytearray self(&scope, args.get(0));
   word length = self.numItems();
@@ -375,14 +344,12 @@ RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytearray_delslice)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _bytearray_delslice)(Thread* thread, Arguments args) {
   // This function deletes elements that are specified by a slice by copying.
   // It compacts to the left elements in the slice range and then copies
   // elements after the slice into the free area.  The self element count is
   // decremented and elements in the unused part of the self are overwritten
   // with None.
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Bytearray self(&scope, args.get(0));
 
@@ -433,14 +400,12 @@ RawObject FUNC(_builtins, _bytearray_delslice)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -483,10 +448,8 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytearray self(&scope, args.get(0));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
@@ -502,14 +465,12 @@ RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytearray_ljust)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _bytearray_ljust)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
 
   word width;
@@ -557,14 +518,12 @@ RawObject FUNC(_builtins, _bytearray_ljust)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytearray_rjust)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _bytearray_rjust)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
 
   word width;
@@ -614,10 +573,8 @@ RawObject FUNC(_builtins, _bytearray_rjust)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytearray self(&scope, args.get(0));
   word index = intUnderlying(args.get(1)).asWordSaturated();
   if (!SmallInt::isValid(index)) {
@@ -642,10 +599,8 @@ RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytearray self(&scope, args.get(0));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
@@ -733,20 +688,16 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytes_check)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytes_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfBytes(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _bytes_contains)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _bytes_contains)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+    return raiseRequiresFromCaller(thread, args, ID(bytes));
   }
   Object key_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*key_obj)) {
@@ -761,9 +712,7 @@ RawObject FUNC(_builtins, _bytes_contains)(Thread* thread, Frame* frame,
   return Bool::fromBool(self.findByte(key_opt.value, 0, self.length()) >= 0);
 }
 
-RawObject FUNC(_builtins, _bytes_decode)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytes_decode)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));
   if (!bytes_obj.isBytes()) {
@@ -781,9 +730,7 @@ RawObject FUNC(_builtins, _bytes_decode)(Thread* thread, Frame* frame,
   return bytesDecodeASCII(thread, bytes);
 }
 
-RawObject FUNC(_builtins, _bytes_decode_ascii)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytes_decode_ascii)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));
   if (!bytes_obj.isBytes()) {
@@ -793,9 +740,7 @@ RawObject FUNC(_builtins, _bytes_decode_ascii)(Thread* thread, Frame* frame,
   return bytesDecodeASCII(thread, bytes);
 }
 
-RawObject FUNC(_builtins, _bytes_decode_utf_8)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytes_decode_utf_8)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));
   if (!bytes_obj.isBytes()) {
@@ -805,23 +750,19 @@ RawObject FUNC(_builtins, _bytes_decode_utf_8)(Thread* thread, Frame* frame,
   return bytesDecodeASCII(thread, bytes);
 }
 
-RawObject FUNC(_builtins, _bytes_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytes_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfBytes(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+  return raiseRequiresFromCaller(thread, args, ID(bytes));
 }
 
-RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object sep_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytearray(*sep_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
   Bytearray sep(&scope, args.get(0));
   Bytes sep_bytes(&scope, sep.items());
@@ -857,18 +798,14 @@ RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytearray_len)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _bytearray_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytearray self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject FUNC(_builtins, _bytes_from_bytes)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _bytes_from_bytes)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   DCHECK(type.builtinBase() == LayoutId::kBytes, "type must subclass bytes");
   Object value(&scope, bytesUnderlying(args.get(1)));
@@ -879,10 +816,8 @@ RawObject FUNC(_builtins, _bytes_from_bytes)(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object src(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   // TODO(T38246066): buffers other than bytes, bytearray
@@ -910,14 +845,12 @@ RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+    return raiseRequiresFromCaller(thread, args, ID(bytes));
   }
 
   Object key(&scope, args.get(1));
@@ -949,10 +882,8 @@ RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Frame* frame,
   return bytesSubseq(thread, self, start, result_len);
 }
 
-RawObject FUNC(_builtins, _bytes_getslice)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _bytes_getslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
@@ -960,14 +891,12 @@ RawObject FUNC(_builtins, _bytes_getslice)(Thread* thread, Frame* frame,
   return thread->runtime()->bytesSlice(thread, self, start, stop, step);
 }
 
-RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+    return raiseRequiresFromCaller(thread, args, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(*self_obj));
   Object iterable(&scope, args.get(1));
@@ -996,19 +925,16 @@ RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Frame* frame,
   return runtime->bytesJoin(thread, self, self.length(), tuple, length);
 }
 
-RawObject FUNC(_builtins, _bytes_len)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _bytes_len)(Thread*, Arguments args) {
   return SmallInt::fromWord(bytesUnderlying(args.get(0)).length());
 }
 
-RawObject FUNC(_builtins, _bytes_ljust)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _bytes_ljust)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+    return raiseRequiresFromCaller(thread, args, ID(bytes));
   }
 
   Object width_obj(&scope, args.get(1));
@@ -1063,10 +989,8 @@ RawObject FUNC(_builtins, _bytes_ljust)(Thread* thread, Frame* frame,
   return buffer.becomeImmutable();
 }
 
-RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object from_obj(&scope, args.get(0));
   Object to_obj(&scope, args.get(1));
   word length;
@@ -1105,10 +1029,8 @@ RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
   return runtime->newBytesWithAll(table);
 }
 
-RawObject FUNC(_builtins, _bytes_repeat)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _bytes_repeat)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
   // TODO(T55084422): unify bounds checking
   word count = intUnderlying(args.get(1)).asWordSaturated();
@@ -1125,10 +1047,8 @@ RawObject FUNC(_builtins, _bytes_repeat)(Thread* thread, Frame* frame,
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
-RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Object old_bytes_obj(&scope, args.get(1));
@@ -1137,7 +1057,7 @@ RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
 
   // Type Checks
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
+    return raiseRequiresFromCaller(thread, args, ID(bytes));
   }
   if (!runtime->isByteslike(*old_bytes_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1197,10 +1117,8 @@ RawObject FUNC(_builtins, _bytes_replace)(Thread* thread, Frame* frame,
                                new_bytes, new_bytes_len, count);
 }
 
-RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
   Object sep_obj(&scope, args.get(1));
   Int maxsplit_int(&scope, intUnderlying(args.get(2)));
@@ -1261,10 +1179,9 @@ RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
   Int maxsplit_int(&scope, intUnderlying(args.get(1)));
   if (maxsplit_int.numDigits() > 1) {
@@ -1324,16 +1241,13 @@ RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _byteslike_check)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _byteslike_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isByteslike(args.get(0)));
 }
 
 RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object left_obj(&scope, args.get(0));
   Object right_obj(&scope, args.get(1));
@@ -1372,10 +1286,8 @@ RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
   return Bool::fromBool(result == 0);
 }
 
-RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   word haystack_len;
@@ -1423,10 +1335,8 @@ RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Frame* frame,
       bytesCount(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   word self_len;
@@ -1473,9 +1383,8 @@ RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   word haystack_len;
@@ -1511,10 +1420,8 @@ RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
       bytesFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   word sub = intUnderlying(args.get(1)).asWordSaturated();
   if (sub < 0 || sub > kMaxByte) {
@@ -1539,10 +1446,8 @@ RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Frame* frame,
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
 
-RawObject FUNC(_builtins, _byteslike_guard)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _byteslike_guard)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (thread->runtime()->isByteslike(*obj)) {
     return NoneType::object();
@@ -1552,10 +1457,8 @@ RawObject FUNC(_builtins, _byteslike_guard)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _byteslike_rfind_byteslike)(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+                                                      Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   word haystack_len;
@@ -1591,10 +1494,9 @@ RawObject FUNC(_builtins, _byteslike_rfind_byteslike)(Thread* thread,
       bytesRFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject FUNC(_builtins, _byteslike_rfind_int)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _byteslike_rfind_int)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   word sub = intUnderlying(args.get(1)).asWordSaturated();
   if (sub < 0 || sub > kMaxByte) {
@@ -1619,10 +1521,9 @@ RawObject FUNC(_builtins, _byteslike_rfind_int)(Thread* thread, Frame* frame,
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
 
-RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   word self_len;
@@ -1664,19 +1565,17 @@ RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
                                   end);
 }
 
-RawObject FUNC(_builtins, _caller_function)(Thread* thread, Frame*, word) {
+RawObject FUNC(_builtins, _caller_function)(Thread* thread, Arguments) {
   return thread->currentFrame()->previousFrame()->previousFrame()->function();
 }
 
-RawObject FUNC(_builtins, _caller_locals)(Thread* thread, Frame*, word) {
+RawObject FUNC(_builtins, _caller_locals)(Thread* thread, Arguments) {
   return frameLocals(thread,
                      thread->currentFrame()->previousFrame()->previousFrame());
 }
 
-RawObject FUNC(_builtins, _classmethod)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _classmethod)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   ClassMethod result(&scope, thread->runtime()->newClassMethod());
   result.setFunction(args.get(0));
   return *result;
@@ -1700,10 +1599,9 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   return Interpreter::isTrue(thread, *abstract);
 }
 
-RawObject FUNC(_builtins, _classmethod_isabstract)(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _classmethod_isabstract)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfClassMethod(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(classmethod));
@@ -1713,22 +1611,18 @@ RawObject FUNC(_builtins, _classmethod_isabstract)(Thread* thread, Frame* frame,
   return isAbstract(thread, func);
 }
 
-RawObject FUNC(_builtins, _code_check)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _code_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isCode());
 }
 
-RawObject FUNC(_builtins, _code_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _code_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isCode()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(code));
+  return raiseRequiresFromCaller(thread, args, ID(code));
 }
 
-RawObject FUNC(_builtins, _code_new)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _code_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object cls(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1757,10 +1651,8 @@ RawObject FUNC(_builtins, _code_new)(Thread* thread, Frame* frame, word nargs) {
                           lnotab);
 }
 
-RawObject FUNC(_builtins, _code_set_filename)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _code_set_filename)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object code_obj(&scope, args.get(0));
   CHECK(code_obj.isCode(), "Expected code to be a code object");
   Code code(&scope, *code_obj);
@@ -1772,9 +1664,8 @@ RawObject FUNC(_builtins, _code_set_filename)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object code_obj(&scope, args.get(0));
   CHECK(code_obj.isCode(), "Expected code to be a Code");
   Code code(&scope, *code_obj);
@@ -1786,21 +1677,15 @@ RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _complex_check)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _complex_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfComplex(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _complex_checkexact)(Thread*, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _complex_checkexact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isComplex());
 }
 
-RawObject FUNC(_builtins, _complex_imag)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _complex_imag)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1838,9 +1723,7 @@ static bool unpackNumeric(const Object& val, double* real, double* imag) {
   }
 }
 
-RawObject FUNC(_builtins, _complex_new)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _complex_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Type cls(&scope, args.get(0));
   DCHECK(cls.builtinBase() == LayoutId::kComplex, "cls must subclass complex");
@@ -1870,9 +1753,7 @@ RawObject FUNC(_builtins, _complex_new)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _complex_real)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1883,37 +1764,28 @@ RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
   return runtime->newFloat(self.real());
 }
 
-RawObject FUNC(_builtins, _compute_mro)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _compute_mro)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   return computeMro(thread, type);
 }
 
-RawObject FUNC(_builtins, _deque_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _deque_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfDeque(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(deque));
+  return raiseRequiresFromCaller(thread, args, ID(deque));
 }
 
-RawObject FUNC(_builtins, _dict_check)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _dict_check_exact)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isDict());
 }
 
-RawObject FUNC(_builtins, _dict_get)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
@@ -1933,39 +1805,30 @@ RawObject FUNC(_builtins, _dict_get)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(_builtins, _dict_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfDict(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(dict));
+  return raiseRequiresFromCaller(thread, args, ID(dict));
 }
 
-RawObject FUNC(_builtins, _dict_items_guard)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_items_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isDictItems()) return NoneType::object();
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(dict_items));
+  return raiseRequiresFromCaller(thread, args, ID(dict_items));
 }
 
-RawObject FUNC(_builtins, _dict_keys_guard)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_keys_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isDictKeys()) return NoneType::object();
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(dict_keys));
+  return raiseRequiresFromCaller(thread, args, ID(dict_keys));
 }
 
-RawObject FUNC(_builtins, _dict_len)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _dict_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Dict self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
@@ -1983,14 +1846,12 @@ RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _dict_update)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _dict_update)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(dict));
+    return raiseRequiresFromCaller(thread, args, ID(dict));
   }
   Dict self(&scope, *self_obj);
   Object other(&scope, args.get(1));
@@ -2011,33 +1872,27 @@ RawObject FUNC(_builtins, _dict_update)(Thread* thread, Frame* frame,
   return dictMergeOverride(thread, self, kwargs);
 }
 
-RawObject FUNC(_builtins, _divmod)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _divmod)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object number(&scope, args.get(0));
   Object divisor(&scope, args.get(1));
   return Interpreter::binaryOperation(thread, Interpreter::BinaryOp::DIVMOD,
                                       number, divisor);
 }
 
-RawObject FUNC(_builtins, _exec)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _exec)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Code code(&scope, args.get(0));
   Module module(&scope, args.get(1));
   Object implicit_globals(&scope, args.get(2));
   return thread->exec(code, module, implicit_globals);
 }
 
-RawObject FUNC(_builtins, _float_check)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _float_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfFloat(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _float_check_exact)(Thread*, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _float_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isFloat());
 }
 
@@ -2068,10 +1923,8 @@ static double floatDivmod(double x, double y, double* remainder) {
   return floordiv;
 }
 
-RawObject FUNC(_builtins, _float_divmod)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _float_divmod)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
 
   double left = floatUnderlying(args.get(0)).value();
   double divisor = floatUnderlying(args.get(1)).value();
@@ -2087,10 +1940,8 @@ RawObject FUNC(_builtins, _float_divmod)(Thread* thread, Frame* frame,
   return runtime->newTupleWith2(quotient_obj, remainder_obj);
 }
 
-RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _float_format)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   double value = floatUnderlying(args.get(0)).value();
   Str format_code(&scope, args.get(1));
   DCHECK(format_code.length() == 1, "expected len(format_code) == 1");
@@ -2110,13 +1961,11 @@ RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
   return thread->runtime()->newStrFromCStr(c_str.get());
 }
 
-RawObject FUNC(_builtins, _float_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _float_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfFloat(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(float));
+  return raiseRequiresFromCaller(thread, args, ID(float));
 }
 
 static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
@@ -2155,9 +2004,8 @@ static RawObject floatNewFromDigits(Thread* thread, const Type& type,
 }
 
 RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Object arg(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -2177,18 +2025,15 @@ RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* thread,
                             length);
 }
 
-RawObject FUNC(_builtins, _float_new_from_float)(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _float_new_from_float)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   return floatNew(thread, type, args.get(1));
 }
 
-RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Object arg(&scope, args.get(1));
   Str str(&scope, strUnderlying(*arg));
@@ -2197,31 +2042,25 @@ RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
   return floatNewFromDigits(thread, type, c_str.get(), length);
 }
 
-RawObject FUNC(_builtins, _float_signbit)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _float_signbit)(Thread*, Arguments args) {
   double value = floatUnderlying(args.get(0)).value();
   return Bool::fromBool(std::signbit(value));
 }
 
-RawObject FUNC(_builtins, _frozenset_check)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _frozenset_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfFrozenSet(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _frozenset_guard)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _frozenset_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfFrozenSet(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(frozenset));
+  return raiseRequiresFromCaller(thread, args, ID(frozenset));
 }
 
-RawObject FUNC(_builtins, _function_annotations)(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _function_annotations)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2235,10 +2074,8 @@ RawObject FUNC(_builtins, _function_annotations)(Thread* thread, Frame* frame,
   return *annotations;
 }
 
-RawObject FUNC(_builtins, _function_closure)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _function_closure)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2247,10 +2084,8 @@ RawObject FUNC(_builtins, _function_closure)(Thread* thread, Frame* frame,
   return function.closure();
 }
 
-RawObject FUNC(_builtins, _function_defaults)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _function_defaults)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2259,10 +2094,8 @@ RawObject FUNC(_builtins, _function_defaults)(Thread* thread, Frame* frame,
   return function.defaults();
 }
 
-RawObject FUNC(_builtins, _function_globals)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _function_globals)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2276,19 +2109,16 @@ RawObject FUNC(_builtins, _function_globals)(Thread* thread, Frame* frame,
   return module.moduleProxy();
 }
 
-RawObject FUNC(_builtins, _function_guard)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _function_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isFunction()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(function));
+  return raiseRequiresFromCaller(thread, args, ID(function));
 }
 
-RawObject FUNC(_builtins, _function_kwdefaults)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _function_kwdefaults)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2297,20 +2127,16 @@ RawObject FUNC(_builtins, _function_kwdefaults)(Thread* thread, Frame* frame,
   return function.kwDefaults();
 }
 
-RawObject FUNC(_builtins, _function_lineno)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _function_lineno)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Function function(&scope, args.get(0));
   SmallInt pc(&scope, args.get(1));
   Code code(&scope, function.code());
   return SmallInt::fromWord(code.offsetToLineNum(pc.value()));
 }
 
-RawObject FUNC(_builtins, _function_new)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _function_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object cls_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*cls_obj)) {
@@ -2365,9 +2191,8 @@ RawObject FUNC(_builtins, _function_new)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _function_set_annotations)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2382,10 +2207,9 @@ RawObject FUNC(_builtins, _function_set_annotations)(Thread* thread,
   return thread->raiseRequiresType(annotations, ID(dict));
 }
 
-RawObject FUNC(_builtins, _function_set_defaults)(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _function_set_defaults)(Thread* thread,
+                                                  Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2404,9 +2228,8 @@ RawObject FUNC(_builtins, _function_set_defaults)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _function_set_kwdefaults)(Thread* thread,
-                                                    Frame* frame, word nargs) {
+                                                    Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
     return thread->raiseRequiresType(self, ID(function));
@@ -2421,73 +2244,60 @@ RawObject FUNC(_builtins, _function_set_kwdefaults)(Thread* thread,
   return thread->raiseRequiresType(kwdefaults, ID(dict));
 }
 
-RawObject FUNC(_builtins, _gc)(Thread* thread, Frame* /* frame */,
-                               word /* nargs */) {
+RawObject FUNC(_builtins, _gc)(Thread* thread, Arguments) {
   thread->runtime()->collectGarbage();
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _get_asyncgen_hooks)(Thread* thread, Frame*, word) {
+RawObject FUNC(_builtins, _get_asyncgen_hooks)(Thread* thread, Arguments) {
   HandleScope scope(thread);
   Object firstiter(&scope, thread->asyncgenHooksFirstIter());
   Object finalizer(&scope, thread->asyncgenHooksFinalizer());
   return thread->runtime()->newTupleWith2(firstiter, finalizer);
 }
 
-RawObject FUNC(_builtins, _get_member_byte)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_byte)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   char value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), 1);
   return thread->runtime()->newInt(value);
 }
 
-RawObject FUNC(_builtins, _get_member_char)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_char)(Thread*, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   return SmallStr::fromCodePoint(*reinterpret_cast<byte*>(addr));
 }
 
-RawObject FUNC(_builtins, _get_member_double)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_double)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   double value = 0.0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newFloat(value);
 }
 
-RawObject FUNC(_builtins, _get_member_float)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_float)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   float value = 0.0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newFloat(value);
 }
 
-RawObject FUNC(_builtins, _get_member_int)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_int)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   int value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newInt(value);
 }
 
-RawObject FUNC(_builtins, _get_member_long)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_long)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   long value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newInt(value);
 }
 
-RawObject FUNC(_builtins, _get_member_pyobject)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_pyobject)(Thread* thread,
+                                                Arguments args) {
   ApiHandle* value =
       *reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
   if (value == nullptr) {
@@ -2500,62 +2310,48 @@ RawObject FUNC(_builtins, _get_member_pyobject)(Thread* thread, Frame* frame,
   return value->asObject();
 }
 
-RawObject FUNC(_builtins, _get_member_short)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_short)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   short value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newInt(value);
 }
 
-RawObject FUNC(_builtins, _get_member_string)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_string)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   if (*reinterpret_cast<char**>(addr) == nullptr) return NoneType::object();
   return thread->runtime()->newStrFromCStr(*reinterpret_cast<char**>(addr));
 }
 
-RawObject FUNC(_builtins, _get_member_ubyte)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_ubyte)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned char value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject FUNC(_builtins, _get_member_uint)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_uint)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned int value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject FUNC(_builtins, _get_member_ulong)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_ulong)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned long value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject FUNC(_builtins, _get_member_ushort)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _get_member_ushort)(Thread* thread, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned short value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject FUNC(_builtins, _heap_dump)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _heap_dump)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Str filename(&scope, args.get(0));
   unique_c_ptr<char> filename_str(filename.toCStr());
@@ -2563,9 +2359,8 @@ RawObject FUNC(_builtins, _heap_dump)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _instance_dunder_dict_set)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
   Object dict_obj(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
@@ -2601,10 +2396,8 @@ RawObject FUNC(_builtins, _instance_dunder_dict_set)(Thread* thread,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
   name = attributeName(thread, name);
@@ -2612,10 +2405,8 @@ RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Frame* frame,
   return instanceDelAttr(thread, instance, name);
 }
 
-RawObject FUNC(_builtins, _instance_getattr)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _instance_getattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
   name = attributeName(thread, name);
@@ -2624,19 +2415,16 @@ RawObject FUNC(_builtins, _instance_getattr)(Thread* thread, Frame* frame,
   return result.isErrorNotFound() ? Unbound::object() : *result;
 }
 
-RawObject FUNC(_builtins, _instance_guard)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _instance_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isInstance()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(instance));
+  return raiseRequiresFromCaller(thread, args, ID(instance));
 }
 
-RawObject FUNC(_builtins, _instance_overflow_dict)(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _instance_overflow_dict)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object object(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutOf(*object));
@@ -2651,10 +2439,8 @@ RawObject FUNC(_builtins, _instance_overflow_dict)(Thread* thread, Frame* frame,
   return *overflow_dict_obj;
 }
 
-RawObject FUNC(_builtins, _instance_setattr)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _instance_setattr)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
   name = attributeName(thread, name);
@@ -2663,14 +2449,11 @@ RawObject FUNC(_builtins, _instance_setattr)(Thread* thread, Frame* frame,
   return instanceSetAttr(thread, instance, name, value);
 }
 
-RawObject FUNC(_builtins, _int_check)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _int_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfInt(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _int_check_exact)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _int_check_exact)(Thread*, Arguments args) {
   RawObject arg = args.get(0);
   return Bool::fromBool(arg.isSmallInt() || arg.isLargeInt());
 }
@@ -2688,10 +2471,8 @@ static RawObject intOrUserSubclass(Thread* thread, const Type& type,
   return *instance;
 }
 
-RawObject FUNC(_builtins, _int_from_bytes)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _int_from_bytes)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
 
   Type type(&scope, args.get(0));
@@ -2704,13 +2485,11 @@ RawObject FUNC(_builtins, _int_from_bytes)(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, value);
 }
 
-RawObject FUNC(_builtins, _int_guard)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _int_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfInt(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(int));
+  return raiseRequiresFromCaller(thread, args, ID(int));
 }
 
 static word digitValue(byte digit, word base) {
@@ -2803,10 +2582,9 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
   return *result;
 }
 
-RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread,
+                                                   Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Bytearray array(&scope, args.get(1));
   Bytes bytes(&scope, array.items());
@@ -2822,10 +2600,8 @@ RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject FUNC(_builtins, _int_new_from_bytes)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _int_new_from_bytes)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Bytes bytes(&scope, bytesUnderlying(args.get(1)));
   word base = intUnderlying(args.get(2)).asWord();
@@ -2839,10 +2615,8 @@ RawObject FUNC(_builtins, _int_new_from_bytes)(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject FUNC(_builtins, _int_new_from_int)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _int_new_from_int)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Object value(&scope, args.get(1));
   if (value.isBool()) {
@@ -2930,10 +2704,8 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   return *result;
 }
 
-RawObject FUNC(_builtins, _int_new_from_str)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _int_new_from_str)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Str str(&scope, args.get(1));
   word base = intUnderlying(args.get(2)).asWord();
@@ -2947,17 +2719,14 @@ RawObject FUNC(_builtins, _int_new_from_str)(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject FUNC(_builtins, _iter)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _iter)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object object(&scope, args.get(0));
   return Interpreter::createIterator(thread, object);
 }
 
-RawObject FUNC(_builtins, _list_append)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _list_append)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self)) {
@@ -2969,21 +2738,15 @@ RawObject FUNC(_builtins, _list_append)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _list_check)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfList(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _list_check_exact)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isList());
 }
 
-RawObject FUNC(_builtins, _list_delitem)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_delitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   List self(&scope, args.get(0));
   word length = self.numItems();
@@ -2999,14 +2762,12 @@ RawObject FUNC(_builtins, _list_delitem)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _list_delslice)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _list_delslice)(Thread* thread, Arguments args) {
   // This function deletes elements that are specified by a slice by copying.
   // It compacts to the left elements in the slice range and then copies
   // elements after the slice into the free area.  The list element count is
   // decremented and elements in the unused part of the list are overwritten
   // with None.
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   List list(&scope, args.get(0));
 
@@ -3060,10 +2821,8 @@ RawObject FUNC(_builtins, _list_delslice)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _list_extend)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _list_extend)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfList(*self_obj)) {
@@ -3088,14 +2847,12 @@ RawObject FUNC(_builtins, _list_extend)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(list));
+    return raiseRequiresFromCaller(thread, args, ID(list));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -3136,10 +2893,8 @@ RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _list_getslice)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _list_getslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   List self(&scope, args.get(0));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
@@ -3147,25 +2902,21 @@ RawObject FUNC(_builtins, _list_getslice)(Thread* thread, Frame* frame,
   return listSlice(thread, self, start, stop, step);
 }
 
-RawObject FUNC(_builtins, _list_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfList(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(list));
+  return raiseRequiresFromCaller(thread, args, ID(list));
 }
 
-RawObject FUNC(_builtins, _list_len)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _list_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   List self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject FUNC(_builtins, _list_new)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _list_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   word size = SmallInt::cast(args.get(0)).value();
   Runtime* runtime = thread->runtime();
   List result(&scope, runtime->newList());
@@ -3181,9 +2932,7 @@ RawObject FUNC(_builtins, _list_new)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(_builtins, _list_sort)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_sort)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   CHECK(thread->runtime()->isInstanceOfList(args.get(0)),
         "Unsupported argument type for 'ls'");
@@ -3191,9 +2940,7 @@ RawObject FUNC(_builtins, _list_sort)(Thread* thread, Frame* frame,
   return listSort(thread, list);
 }
 
-RawObject FUNC(_builtins, _list_sort_by_key)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_sort_by_key)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   CHECK(thread->runtime()->isInstanceOfList(args.get(0)),
         "Unsupported argument type for 'ls'");
@@ -3263,10 +3010,8 @@ static RawObject listSetSlice(Thread* thread, const List& self, word start,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _list_setitem)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _list_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfList(*self_obj)) {
@@ -3322,10 +3067,8 @@ RawObject FUNC(_builtins, _list_setitem)(Thread* thread, Frame* frame,
   return listSetSlice(thread, self, start, stop, 1, src_tuple, src_length);
 }
 
-RawObject FUNC(_builtins, _list_setslice)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _list_setslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
 
   List self(&scope, args.get(0));
@@ -3355,9 +3098,7 @@ RawObject FUNC(_builtins, _list_setslice)(Thread* thread, Frame* frame,
   return listSetSlice(thread, self, start, stop, step, src_tuple, src_length);
 }
 
-RawObject FUNC(_builtins, _list_swap)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _list_swap)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   List list(&scope, args.get(0));
   word i = SmallInt::cast(args.get(1)).value();
@@ -3366,10 +3107,8 @@ RawObject FUNC(_builtins, _list_swap)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -3403,10 +3142,9 @@ RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Frame* frame,
   return memoryviewGetitem(thread, self, byte_index);
 }
 
-RawObject FUNC(_builtins, _memoryview_getslice)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _memoryview_getslice)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -3421,51 +3159,42 @@ RawObject FUNC(_builtins, _memoryview_getslice)(Thread* thread, Frame* frame,
   return memoryviewGetslice(thread, self, start, stop, step);
 }
 
-RawObject FUNC(_builtins, _mappingproxy_guard)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _mappingproxy_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isMappingProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(mappingproxy));
+  return raiseRequiresFromCaller(thread, args, ID(mappingproxy));
 }
 
-RawObject FUNC(_builtins, _mappingproxy_mapping)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _mappingproxy_mapping)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
   MappingProxy mappingproxy(&scope, args.get(0));
   return mappingproxy.mapping();
 }
 
 RawObject FUNC(_builtins, _mappingproxy_set_mapping)(Thread* thread,
-                                                     Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+                                                     Arguments args) {
   HandleScope scope(thread);
   MappingProxy mappingproxy(&scope, args.get(0));
   mappingproxy.setMapping(args.get(1));
   return *mappingproxy;
 }
 
-RawObject FUNC(_builtins, _memoryview_check)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _memoryview_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isMemoryView());
 }
 
-RawObject FUNC(_builtins, _memoryview_guard)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _memoryview_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isMemoryView()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(memoryview));
+  return raiseRequiresFromCaller(thread, args, ID(memoryview));
 }
 
-RawObject FUNC(_builtins, _memoryview_itemsize)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _memoryview_itemsize)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -3474,10 +3203,8 @@ RawObject FUNC(_builtins, _memoryview_itemsize)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(memoryviewItemsize(thread, self));
 }
 
-RawObject FUNC(_builtins, _memoryview_nbytes)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _memoryview_nbytes)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -3486,10 +3213,8 @@ RawObject FUNC(_builtins, _memoryview_nbytes)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(self.length());
 }
 
-RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -3516,10 +3241,9 @@ RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Frame* frame,
   return memoryviewSetitem(thread, self, byte_index, value);
 }
 
-RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -3540,29 +3264,21 @@ RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread, Frame* frame,
   return memoryviewSetslice(thread, self, start, stop, step, slice_len, value);
 }
 
-RawObject FUNC(_builtins, _memoryview_start)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _memoryview_start)(Thread*, Arguments args) {
   return SmallInt::fromWord(MemoryView::cast(args.get(0)).start());
 }
 
-RawObject FUNC(_builtins, _mmap_check)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _mmap_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfMmap(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _module_dir)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_dir)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Module self(&scope, args.get(0));
   return moduleKeys(thread, self);
 }
 
-RawObject FUNC(_builtins, _module_proxy)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_proxy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfModule(*self_obj)) {
@@ -3572,24 +3288,18 @@ RawObject FUNC(_builtins, _module_proxy)(Thread* thread, Frame* frame,
   return module.moduleProxy();
 }
 
-RawObject FUNC(_builtins, _module_proxy_check)(Thread*, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_proxy_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isModuleProxy());
 }
 
-RawObject FUNC(_builtins, _module_proxy_guard)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_proxy_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isModuleProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(module_proxy));
+  return raiseRequiresFromCaller(thread, args, ID(module_proxy));
 }
 
-RawObject FUNC(_builtins, _module_proxy_keys)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_proxy_keys)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isModuleProxy()) {
@@ -3601,9 +3311,8 @@ RawObject FUNC(_builtins, _module_proxy_keys)(Thread* thread, Frame* frame,
   return moduleKeys(thread, module);
 }
 
-RawObject FUNC(_builtins, _module_proxy_setitem)(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_proxy_setitem)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isModuleProxy()) {
@@ -3619,9 +3328,8 @@ RawObject FUNC(_builtins, _module_proxy_setitem)(Thread* thread, Frame* frame,
   return moduleAtPut(thread, module, name, value);
 }
 
-RawObject FUNC(_builtins, _module_proxy_values)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _module_proxy_values)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isModuleProxy()) {
@@ -3633,11 +3341,9 @@ RawObject FUNC(_builtins, _module_proxy_values)(Thread* thread, Frame* frame,
   return moduleValues(thread, module);
 }
 
-RawObject FUNC(_builtins, _object_class_set)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _object_class_set)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
 
   // Disallow setting __class__ on builtin instances
@@ -3660,10 +3366,8 @@ RawObject FUNC(_builtins, _object_class_set)(Thread* thread, Frame* frame,
   return typeSetDunderClass(thread, self, new_type);
 }
 
-RawObject FUNC(_builtins, _object_keys)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _object_keys)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object object(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutOf(*object));
@@ -3708,9 +3412,8 @@ RawObject FUNC(_builtins, _object_keys)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Object instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -3727,9 +3430,8 @@ RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread, Frame* frame,
   return resolveDescriptorGet(thread, attr, instance, type);
 }
 
-RawObject FUNC(_builtins, _object_type_hasattr)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _object_type_hasattr)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeOf(args.get(0)));
   Object name(&scope, args.get(1));
@@ -3739,8 +3441,7 @@ RawObject FUNC(_builtins, _object_type_hasattr)(Thread* thread, Frame* frame,
   return Bool::fromBool(!result.isErrorNotFound());
 }
 
-RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _os_write)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object fd_obj(&scope, args.get(0));
   CHECK(fd_obj.isSmallInt(), "fd must be small int");
@@ -3767,18 +3468,15 @@ RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FUNC(_builtins, _os_error_subclass_from_errno)(Thread* thread,
-                                                         Frame* frame,
-                                                         word nargs) {
-  Arguments args(frame, nargs);
+                                                         Arguments args) {
   HandleScope scope(thread);
   Int errno_value(&scope, intUnderlying(args.get(0)));
   LayoutId subclass = errorLayoutFromErrno(errno_value.asWord());
   return thread->runtime()->typeAt(subclass);
 }
 
-RawObject FUNC(_builtins, _property)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _property)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object getter(&scope, args.get(0));
   Object setter(&scope, args.get(1));
   Object deleter(&scope, args.get(2));
@@ -3786,10 +3484,9 @@ RawObject FUNC(_builtins, _property)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-RawObject FUNC(_builtins, _property_isabstract)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _property_isabstract)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfProperty(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(property));
@@ -3808,34 +3505,27 @@ RawObject FUNC(_builtins, _property_isabstract)(Thread* thread, Frame* frame,
   return isAbstract(thread, deleter);
 }
 
-RawObject FUNC(_builtins, _pyobject_offset)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _pyobject_offset)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   NativeProxy proxy(&scope, args.get(0));
   uword addr = reinterpret_cast<uword>(Int::cast(proxy.native()).asCPtr());
   addr += Int::cast(args.get(1)).asWord();
   return thread->runtime()->newIntFromCPtr(reinterpret_cast<void*>(addr));
 }
 
-RawObject FUNC(_builtins, _range_check)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _range_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isRange());
 }
 
-RawObject FUNC(_builtins, _range_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _range_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isRange()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(range));
+  return raiseRequiresFromCaller(thread, args, ID(range));
 }
 
-RawObject FUNC(_builtins, _range_len)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _range_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Range self(&scope, args.get(0));
   Object start(&scope, self.start());
   Object stop(&scope, self.stop());
@@ -3843,9 +3533,8 @@ RawObject FUNC(_builtins, _range_len)(Thread* thread, Frame* frame,
   return rangeLen(thread, start, stop, step);
 }
 
-RawObject FUNC(_builtins, _readline)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _readline)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Str prompt(&scope, strUnderlying(args.get(0)));
   word length = prompt.length();
   std::unique_ptr<char[]> prompt_buf(new char[length + 1]);
@@ -3861,70 +3550,55 @@ RawObject FUNC(_builtins, _readline)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(_builtins, _repr_enter)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_builtins, _repr_enter)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   return thread->reprEnter(obj);
 }
 
-RawObject FUNC(_builtins, _repr_leave)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_builtins, _repr_leave)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   thread->reprLeave(obj);
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _seq_index)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _seq_index)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
   return SmallInt::fromWord(self.index());
 }
 
-RawObject FUNC(_builtins, _seq_iterable)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _seq_iterable)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
   return self.iterable();
 }
 
-RawObject FUNC(_builtins, _seq_set_index)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _seq_set_index)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
   Int index(&scope, args.get(1));
   self.setIndex(index.asWord());
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _seq_set_iterable)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _seq_set_iterable)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
   Object iterable(&scope, args.get(1));
   self.setIterable(*iterable);
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _set_check)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _set_function_flag_iterable_coroutine)(Thread* thread,
-                                                                 Frame* frame,
-                                                                 word nargs) {
+RawObject FUNC(_builtins,
+               _set_function_flag_iterable_coroutine)(Thread* thread,
+                                                      Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object function_obj(&scope, args.get(0));
   if (!function_obj.isFunction()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -3955,43 +3629,34 @@ RawObject FUNC(_builtins, _set_function_flag_iterable_coroutine)(Thread* thread,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _set_guard)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfSet(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(set));
+  return raiseRequiresFromCaller(thread, args, ID(set));
 }
 
-RawObject FUNC(_builtins, _set_len)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _set_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Set self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject FUNC(_builtins, _set_member_double)(Thread*, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_member_double)(Thread*, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   double value = Float::cast(args.get(1)).value();
   std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _set_member_float)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_member_float)(Thread*, Arguments args) {
   auto addr = Int::cast(args.get(0)).asCPtr();
   float value = Float::cast(args.get(1)).value();
   std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _set_member_integral)(Thread*, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_member_integral)(Thread*, Arguments args) {
   void* addr = Int::cast(args.get(0)).asCPtr();
   OptInt<long long> optint = RawInt::cast(args.get(1)).asInt<long long>();
   CHECK(optint.error == CastError::None, "Overflow casting to primitive type");
@@ -4002,9 +3667,8 @@ RawObject FUNC(_builtins, _set_member_integral)(Thread*, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _set_member_integral_unsigned)(Thread*, Frame* frame,
-                                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_member_integral_unsigned)(Thread*,
+                                                         Arguments args) {
   void* addr = Int::cast(args.get(0)).asCPtr();
   OptInt<unsigned long long> optint =
       RawInt::cast(args.get(1)).asInt<unsigned long long>();
@@ -4016,9 +3680,8 @@ RawObject FUNC(_builtins, _set_member_integral_unsigned)(Thread*, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread,
+                                                Arguments args) {
   ApiHandle* newvalue = ApiHandle::newReference(thread, args.get(1));
   ApiHandle** oldvalue =
       reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
@@ -4027,22 +3690,18 @@ RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _slice_check)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isSlice());
 }
 
-RawObject FUNC(_builtins, _slice_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isSlice()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(slice));
+  return raiseRequiresFromCaller(thread, args, ID(slice));
 }
 
-RawObject FUNC(_builtins, _slice_start)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_start)(Thread*, Arguments args) {
   RawObject start_obj = args.get(0);
   word step = SmallInt::cast(args.get(1)).value();
   word length = SmallInt::cast(args.get(2)).value();
@@ -4068,10 +3727,8 @@ RawObject FUNC(_builtins, _slice_start)(Thread*, Frame* frame, word nargs) {
   return SmallInt::fromWord(start);
 }
 
-RawObject FUNC(_builtins, _staticmethod)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _staticmethod)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object function(&scope, args.get(0));
 
   StaticMethod method(&scope, thread->runtime()->newStaticMethod());
@@ -4079,9 +3736,7 @@ RawObject FUNC(_builtins, _staticmethod)(Thread* thread, Frame* frame,
   return *method;
 }
 
-RawObject FUNC(_builtins, _slice_start_long)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_start_long)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Int step(&scope, intUnderlying(args.get(1)));
   Int length(&scope, intUnderlying(args.get(2)));
@@ -4107,9 +3762,7 @@ RawObject FUNC(_builtins, _slice_start_long)(Thread* thread, Frame* frame,
   return *start;
 }
 
-RawObject FUNC(_builtins, _slice_step)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_step)(Thread* thread, Arguments args) {
   RawObject step_obj = args.get(0);
   if (step_obj.isNoneType()) return SmallInt::fromWord(1);
   RawInt step = intUnderlying(step_obj);
@@ -4127,9 +3780,7 @@ RawObject FUNC(_builtins, _slice_step)(Thread* thread, Frame* frame,
                                               : SmallInt::kMaxValue);
 }
 
-RawObject FUNC(_builtins, _slice_step_long)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_step_long)(Thread* thread, Arguments args) {
   RawObject step_obj = args.get(0);
   if (step_obj.isNoneType()) return SmallInt::fromWord(1);
   RawInt step = intUnderlying(step_obj);
@@ -4146,8 +3797,7 @@ RawObject FUNC(_builtins, _slice_step_long)(Thread* thread, Frame* frame,
   return step;
 }
 
-RawObject FUNC(_builtins, _slice_stop)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_stop)(Thread*, Arguments args) {
   RawObject stop_obj = args.get(0);
   word step = SmallInt::cast(args.get(1)).value();
   word length = SmallInt::cast(args.get(2)).value();
@@ -4173,9 +3823,7 @@ RawObject FUNC(_builtins, _slice_stop)(Thread*, Frame* frame, word nargs) {
   return SmallInt::fromWord(stop);
 }
 
-RawObject FUNC(_builtins, _slice_stop_long)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _slice_stop_long)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Int step(&scope, intUnderlying(args.get(1)));
   Int length(&scope, intUnderlying(args.get(2)));
@@ -4202,9 +3850,8 @@ RawObject FUNC(_builtins, _slice_stop_long)(Thread* thread, Frame* frame,
 }
 
 RawObject FUNC(_builtins, _staticmethod_isabstract)(Thread* thread,
-                                                    Frame* frame, word nargs) {
+                                                    Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStaticMethod(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(staticmethod));
@@ -4214,10 +3861,9 @@ RawObject FUNC(_builtins, _staticmethod_isabstract)(Thread* thread,
   return isAbstract(thread, func);
 }
 
-RawObject FUNC(_builtins, _stop_iteration_ctor)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _stop_iteration_ctor)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStopIteration),
          "unexpected type; should be StopIteration");
@@ -4234,19 +3880,15 @@ RawObject FUNC(_builtins, _stop_iteration_ctor)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject FUNC(_builtins, _str_array_clear)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _str_array_clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   StrArray self(&scope, args.get(0));
   self.setNumItems(0);
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _str_array_ctor)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _str_array_ctor)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStrArray),
          "_str_array.__new__(X): X is not '_str_array'");
@@ -4267,29 +3909,23 @@ RawObject FUNC(_builtins, _str_array_ctor)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject FUNC(_builtins, _str_array_iadd)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _str_array_iadd)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   StrArray self(&scope, args.get(0));
   Str other(&scope, strUnderlying(args.get(1)));
   thread->runtime()->strArrayAddStr(thread, self, other);
   return *self;
 }
 
-RawObject FUNC(_builtins, _structseq_getitem)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _structseq_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   word index = SmallInt::cast(args.get(1)).value();
   return structseqGetItem(thread, self, index);
 }
 
-RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Str name(&scope, strUnderlying(args.get(0)));
   name = Runtime::internStr(thread, name);
@@ -4315,10 +3951,8 @@ RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Frame* frame,
   return structseqNewType(thread, name, field_names, num_in_sequence, flags);
 }
 
-RawObject FUNC(_builtins, _structseq_setitem)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _structseq_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   word index = SmallInt::cast(args.get(1)).value();
   Object value(&scope, args.get(2));
@@ -4368,10 +4002,8 @@ static RawObject padString(Thread* thread, const Str& str,
 
   return buffer.becomeStr();
 }
-RawObject FUNC(_builtins, _str_center)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(_builtins, _str_center)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
@@ -4432,15 +4064,11 @@ RawObject FUNC(_builtins, _str_center)(Thread* thread, Frame* frame,
                    fill_char_length, result_length);
 }
 
-RawObject FUNC(_builtins, _str_check)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfStr(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _str_encode)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_encode)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object str_obj(&scope, args.get(0));
   if (!str_obj.isStr()) {
@@ -4458,9 +4086,7 @@ RawObject FUNC(_builtins, _str_encode)(Thread* thread, Frame* frame,
   return strEncodeASCII(thread, str);
 }
 
-RawObject FUNC(_builtins, _str_encode_ascii)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_encode_ascii)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object str_obj(&scope, args.get(0));
   if (!str_obj.isStr()) {
@@ -4470,15 +4096,12 @@ RawObject FUNC(_builtins, _str_encode_ascii)(Thread* thread, Frame* frame,
   return strEncodeASCII(thread, str);
 }
 
-RawObject FUNC(_builtins, _str_check_exact)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isStr());
 }
 
-RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   // TODO(T57794178): Use volatile
   Object left_obj(&scope, args.get(0));
@@ -4504,10 +4127,8 @@ RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Frame* frame,
   return Bool::fromBool(result == 0);
 }
 
-RawObject FUNC(_builtins, _str_count)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _str_count)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
          "_str_count requires 'str' instance");
   DCHECK(runtime->isInstanceOfStr(args.get(1)),
@@ -4528,8 +4149,7 @@ RawObject FUNC(_builtins, _str_count)(Thread* thread, Frame* frame,
   return strCount(haystack, needle, start, end);
 }
 
-RawObject FUNC(_builtins, _str_ctor)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_ctor)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStr), "unexpected cls");
   RawObject obj_raw = args.get(1);
@@ -4554,10 +4174,8 @@ RawObject FUNC(_builtins, _str_ctor)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call4(thread, str_dunder_new, cls, obj, encoding, errors);
 }
 
-RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
   Str self(&scope, strUnderlying(args.get(0)));
@@ -4590,19 +4208,17 @@ RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject FUNC(_builtins, _str_escape_non_ascii)(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _str_escape_non_ascii)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   CHECK(thread->runtime()->isInstanceOfStr(args.get(0)),
         "_str_escape_non_ascii expected str instance");
   Str obj(&scope, args.get(0));
   return strEscapeNonASCII(thread, obj);
 }
 
-RawObject FUNC(_builtins, _str_find)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _str_find)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
          "_str_find requires 'str' instance");
   DCHECK(runtime->isInstanceOfStr(args.get(1)),
@@ -4628,10 +4244,8 @@ RawObject FUNC(_builtins, _str_find)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(result);
 }
 
-RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   DCHECK(type.builtinBase() == LayoutId::kStr, "type must subclass str");
   Str value(&scope, strUnderlying(args.get(1)));
@@ -4653,14 +4267,12 @@ static word adjustedStrIndex(const Str& str, word index) {
   return 0;
 }
 
-RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+    return raiseRequiresFromCaller(thread, args, ID(str));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -4698,9 +4310,7 @@ RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
                             stop_index - start_index);
 }
 
-RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Str self(&scope, strUnderlying(args.get(0)));
   word start = SmallInt::cast(args.get(1)).value();
@@ -4709,28 +4319,24 @@ RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Frame* frame,
   return thread->runtime()->strSlice(thread, self, start, stop, step);
 }
 
-RawObject FUNC(_builtins, _str_guard)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfStr(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+  return raiseRequiresFromCaller(thread, args, ID(str));
 }
 
-RawObject FUNC(_builtins, _str_ischr)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_ischr)(Thread*, Arguments args) {
   RawStr str = strUnderlying(args.get(0));
   return Bool::fromBool(str.isSmallStr() && str.codePointLength() == 1);
 }
 
-RawObject FUNC(_builtins, _str_join)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _str_join)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object sep_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*sep_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+    return raiseRequiresFromCaller(thread, args, ID(str));
   }
   Str sep(&scope, strUnderlying(*sep_obj));
   Object iterable(&scope, args.get(1));
@@ -4758,17 +4364,14 @@ RawObject FUNC(_builtins, _str_join)(Thread* thread, Frame* frame, word nargs) {
   return runtime->strJoin(thread, sep, tuple, length);
 }
 
-RawObject FUNC(_builtins, _str_len)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _str_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Str self(&scope, strUnderlying(args.get(0)));
   return SmallInt::fromWord(self.codePointLength());
 }
 
-RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
@@ -4821,9 +4424,7 @@ RawObject FUNC(_builtins, _str_ljust)(Thread* thread, Frame* frame,
   return padString(thread, self, fillchar, self_length, left_padding,
                    fill_char_length, result_length);
 }
-RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(args.get(0)) ||
       !runtime->isInstanceOfTuple(args.get(1))) {
@@ -4922,9 +4523,7 @@ static word strScan(const Str& haystack, word haystack_len, const Str& needle,
 // * needle
 // * haystack after and not including needle
 // If needle is not found in haystack, return (haystack, "", "")
-RawObject FUNC(_builtins, _str_partition)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_partition)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Str haystack(&scope, strUnderlying(args.get(0)));
   Str needle(&scope, strUnderlying(args.get(1)));
@@ -4951,10 +4550,8 @@ RawObject FUNC(_builtins, _str_partition)(Thread* thread, Frame* frame,
   return result.becomeImmutable();
 }
 
-RawObject FUNC(_builtins, _str_replace)(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_builtins, _str_replace)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str self(&scope, strUnderlying(args.get(0)));
   Str oldstr(&scope, strUnderlying(args.get(1)));
@@ -4963,10 +4560,8 @@ RawObject FUNC(_builtins, _str_replace)(Thread* thread, Frame* frame,
   return runtime->strReplace(thread, self, oldstr, newstr, count);
 }
 
-RawObject FUNC(_builtins, _str_rfind)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _str_rfind)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
          "_str_rfind requires 'str' instance");
   DCHECK(runtime->isInstanceOfStr(args.get(1)),
@@ -4989,10 +4584,8 @@ RawObject FUNC(_builtins, _str_rfind)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(result);
 }
 
-RawObject FUNC(_builtins, _str_rjust)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _str_rjust)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
@@ -5051,9 +4644,7 @@ RawObject FUNC(_builtins, _str_rjust)(Thread* thread, Frame* frame,
 // * needle
 // * haystack after and not including needle
 // If needle is not found in haystack, return ("", "", haystack)
-RawObject FUNC(_builtins, _str_rpartition)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_rpartition)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Str haystack(&scope, strUnderlying(args.get(0)));
@@ -5126,9 +4717,7 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
   return *result;
 }
 
-RawObject FUNC(_builtins, _str_split)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _str_split)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Str self(&scope, strUnderlying(args.get(0)));
   Object sep_obj(&scope, args.get(1));
@@ -5146,10 +4735,8 @@ RawObject FUNC(_builtins, _str_split)(Thread* thread, Frame* frame,
   return strSplit(thread, self, sep, maxsplit);
 }
 
-RawObject FUNC(_builtins, _str_splitlines)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _str_splitlines)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
          "_str_splitlines requires 'str' instance");
   DCHECK(runtime->isInstanceOfInt(args.get(1)),
@@ -5160,10 +4747,8 @@ RawObject FUNC(_builtins, _str_splitlines)(Thread* thread, Frame* frame,
   return strSplitlines(thread, self, keepends);
 }
 
-RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
   Str self(&scope, strUnderlying(args.get(0)));
@@ -5195,14 +4780,12 @@ RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject FUNC(_builtins, _str_translate)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _str_translate)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, strUnderlying(args.get(0)));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
+    return raiseRequiresFromCaller(thread, args, ID(str));
   }
   Str self(&scope, *self_obj);
   Object table_obj(&scope, args.get(1));
@@ -5213,9 +4796,8 @@ RawObject FUNC(_builtins, _str_translate)(Thread* thread, Frame* frame,
   return strTranslateASCII(thread, self, table);
 }
 
-RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _super)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object cls(&scope, args.get(0));
   Super result(&scope, thread->runtime()->newSuper());
   result.setType(*cls);
@@ -5224,13 +4806,12 @@ RawObject FUNC(_builtins, _super)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTraceback()) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+    return raiseRequiresFromCaller(thread, args, ID(traceback));
   }
   Traceback self(&scope, *self_obj);
   Object function(&scope, self.function());
@@ -5238,13 +4819,12 @@ RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread, Frame* frame,
   return thread->runtime()->newFrameProxy(thread, function, lasti);
 }
 
-RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTraceback()) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+    return raiseRequiresFromCaller(thread, args, ID(traceback));
   }
   Traceback self(&scope, *self_obj);
   Object lineno(&scope, self.lineno());
@@ -5265,25 +4845,21 @@ RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread, Frame* frame,
   return *lineno;
 }
 
-RawObject FUNC(_builtins, _traceback_next_get)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _traceback_next_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTraceback()) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+    return raiseRequiresFromCaller(thread, args, ID(traceback));
   }
   Traceback self(&scope, *self_obj);
   return self.next();
 }
 
-RawObject FUNC(_builtins, _traceback_next_set)(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _traceback_next_set)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTraceback()) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(traceback));
+    return raiseRequiresFromCaller(thread, args, ID(traceback));
   }
   Traceback self(&scope, *self_obj);
   Object next(&scope, args.get(1));
@@ -5309,26 +4885,20 @@ RawObject FUNC(_builtins, _traceback_next_set)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfTuple(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _tuple_check_exact)(Thread*, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _tuple_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isTuple());
 }
 
-RawObject FUNC(_builtins, _tuple_getitem)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _tuple_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(tuple));
+    return raiseRequiresFromCaller(thread, args, ID(tuple));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -5364,10 +4934,8 @@ RawObject FUNC(_builtins, _tuple_getitem)(Thread* thread, Frame* frame,
   return runtime->tupleSubseq(thread, self, start, result_len);
 }
 
-RawObject FUNC(_builtins, _tuple_getslice)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _tuple_getslice)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Tuple self(&scope, tupleUnderlying(args.get(0)));
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
@@ -5375,24 +4943,19 @@ RawObject FUNC(_builtins, _tuple_getslice)(Thread* thread, Frame* frame,
   return tupleSlice(thread, self, start, stop, step);
 }
 
-RawObject FUNC(_builtins, _tuple_guard)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _tuple_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfTuple(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(tuple));
+  return raiseRequiresFromCaller(thread, args, ID(tuple));
 }
 
-RawObject FUNC(_builtins, _tuple_len)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _tuple_len)(Thread*, Arguments args) {
   return SmallInt::fromWord(tupleUnderlying(args.get(0)).length());
 }
 
-RawObject FUNC(_builtins, _tuple_new)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_builtins, _tuple_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   DCHECK(type != runtime->typeAt(LayoutId::kTuple), "cls must not be tuple");
@@ -5403,15 +4966,13 @@ RawObject FUNC(_builtins, _tuple_new)(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject FUNC(_builtins, _type)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type)(Thread* thread, Arguments args) {
   return thread->runtime()->typeOf(args.get(0));
 }
 
 RawObject FUNC(_builtins, _type_abstractmethods_del)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(type));
@@ -5430,9 +4991,8 @@ RawObject FUNC(_builtins, _type_abstractmethods_del)(Thread* thread,
 }
 
 RawObject FUNC(_builtins, _type_abstractmethods_get)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(type));
@@ -5448,9 +5008,8 @@ RawObject FUNC(_builtins, _type_abstractmethods_get)(Thread* thread,
 }
 
 RawObject FUNC(_builtins, _type_abstractmethods_set)(Thread* thread,
-                                                     Frame* frame, word nargs) {
+                                                     Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(type));
@@ -5467,10 +5026,8 @@ RawObject FUNC(_builtins, _type_abstractmethods_set)(Thread* thread,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _type_bases_del)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _type_bases_del)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(type));
@@ -5481,10 +5038,8 @@ RawObject FUNC(_builtins, _type_bases_del)(Thread* thread, Frame* frame,
                               &name);
 }
 
-RawObject FUNC(_builtins, _type_bases_get)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _type_bases_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(type));
@@ -5493,25 +5048,19 @@ RawObject FUNC(_builtins, _type_bases_get)(Thread* thread, Frame* frame,
   return type.bases();
 }
 
-RawObject FUNC(_builtins, _type_bases_set)(Thread*, Frame*, word) {
+RawObject FUNC(_builtins, _type_bases_set)(Thread*, Arguments) {
   UNIMPLEMENTED("type.__bases__ setter");
 }
 
-RawObject FUNC(_builtins, _type_check)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfType(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _type_check_exact)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isType());
 }
 
-RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
@@ -5627,28 +5176,22 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject FUNC(_builtins, _type_guard)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfType(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(type));
+  return raiseRequiresFromCaller(thread, args, ID(type));
 }
 
-RawObject FUNC(_builtins, _type_issubclass)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _type_issubclass)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type subclass(&scope, args.get(0));
   Type superclass(&scope, args.get(1));
   return Bool::fromBool(typeIsSubclass(subclass, superclass));
 }
 
-RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -5666,10 +5209,8 @@ RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _type_module_set)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _type_module_set)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -5684,10 +5225,8 @@ RawObject FUNC(_builtins, _type_module_set)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _type_name_get)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _type_name_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -5697,10 +5236,8 @@ RawObject FUNC(_builtins, _type_name_get)(Thread* thread, Frame* frame,
   return type.name();
 }
 
-RawObject FUNC(_builtins, _type_name_set)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _type_name_set)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -5722,9 +5259,8 @@ RawObject FUNC(_builtins, _type_name_set)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _type_new)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Type metaclass(&scope, args.get(0));
   Str name(&scope, strUnderlying(args.get(1)));
   Tuple bases(&scope, tupleUnderlying(args.get(2)));
@@ -5738,9 +5274,7 @@ RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
                  /*inherit_slots=*/true, /*add_instance_dict=*/true);
 }
 
-RawObject FUNC(_builtins, _type_proxy)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.proxy().isNoneType()) {
@@ -5749,15 +5283,11 @@ RawObject FUNC(_builtins, _type_proxy)(Thread* thread, Frame* frame,
   return type.proxy();
 }
 
-RawObject FUNC(_builtins, _type_proxy_check)(Thread*, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isTypeProxy());
 }
 
-RawObject FUNC(_builtins, _type_proxy_get)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
   Object name(&scope, args.get(1));
@@ -5772,46 +5302,36 @@ RawObject FUNC(_builtins, _type_proxy_get)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FUNC(_builtins, _type_proxy_guard)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isTypeProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(type_proxy));
+  return raiseRequiresFromCaller(thread, args, ID(type_proxy));
 }
 
-RawObject FUNC(_builtins, _type_proxy_keys)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy_keys)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
   Type type(&scope, self.type());
   return typeKeys(thread, type);
 }
 
-RawObject FUNC(_builtins, _type_proxy_len)(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
   Type type(&scope, self.type());
   return typeLen(thread, type);
 }
 
-RawObject FUNC(_builtins, _type_proxy_values)(Thread* thread, Frame* frame,
-                                              word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _type_proxy_values)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
   Type type(&scope, self.type());
   return typeValues(thread, type);
 }
 
-RawObject FUNC(_builtins, _type_qualname_get)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _type_qualname_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -5821,10 +5341,8 @@ RawObject FUNC(_builtins, _type_qualname_get)(Thread* thread, Frame* frame,
   return type.qualname();
 }
 
-RawObject FUNC(_builtins, _type_qualname_set)(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _type_qualname_set)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -5847,19 +5365,19 @@ RawObject FUNC(_builtins, _type_qualname_set)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfType(args.get(0))) {
-    return raiseRequiresFromCaller(thread, frame, nargs, ID(type));
+    return raiseRequiresFromCaller(thread, args, ID(type));
   }
   Type subclass(&scope, args.get(0));
   Type superclass(&scope, args.get(1));
   if (typeIsSubclass(subclass, superclass)) {
     return NoneType::object();
   }
-  Function function(&scope, frame->previousFrame()->function());
+  Function function(&scope,
+                    thread->currentFrame()->previousFrame()->function());
   Str function_name(&scope, function.name());
   Str subclass_name(&scope, subclass.name());
   Str superclass_name(&scope, superclass.name());
@@ -5868,12 +5386,13 @@ RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,
                               &function_name, &subclass_name, &superclass_name);
 }
 
-RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Frame* frame, word) {
+RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Arguments) {
   thread->runtime()->printTraceback(thread, File::kStderr);
 
   // Attempt to identify the calling function.
   HandleScope scope(thread);
-  Object function_obj(&scope, frame->previousFrame()->function());
+  Object function_obj(&scope,
+                      thread->currentFrame()->previousFrame()->function());
   if (!function_obj.isError()) {
     Function function(&scope, *function_obj);
     Str function_name(&scope, function.name());
@@ -5887,8 +5406,7 @@ RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Frame* frame, word) {
   std::abort();
 }
 
-RawObject FUNC(_builtins, _warn)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _warn)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object message(&scope, args.get(0));
   Object category(&scope, args.get(1));
@@ -5898,9 +5416,7 @@ RawObject FUNC(_builtins, _warn)(Thread* thread, Frame* frame, word nargs) {
                                  stacklevel, source);
 }
 
-RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -5911,24 +5427,18 @@ RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Frame* frame,
   return self.callback();
 }
 
-RawObject FUNC(_builtins, _weakref_check)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _weakref_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfWeakRef(args.get(0)));
 }
 
-RawObject FUNC(_builtins, _weakref_guard)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _weakref_guard)(Thread* thread, Arguments args) {
   if (thread->runtime()->isInstanceOfWeakRef(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, ID(weakref));
+  return raiseRequiresFromCaller(thread, args, ID(weakref));
 }
 
-RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();

@@ -249,8 +249,7 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
   writeImpl(thread, sys_stderr, stderr, format, va);
 }
 
-RawObject FUNC(sys, _getframe)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(sys, _getframe)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object depth_obj(&scope, args.get(0));
@@ -272,13 +271,11 @@ RawObject FUNC(sys, _getframe)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(sys, _program_name)(Thread* thread, Frame* /* frame */,
-                                   word /* nargs */) {
+RawObject FUNC(sys, _program_name)(Thread* thread, Arguments) {
   return newStrFromWideChar(thread, Runtime::programName());
 }
 
-RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(sys, excepthook)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   // type argument is ignored
   Object value(&scope, args.get(1));
@@ -286,8 +283,7 @@ RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
   return displayException(thread, value, tb);
 }
 
-RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
-                              word /* nargs */) {
+RawObject FUNC(sys, exc_info)(Thread* thread, Arguments) {
   HandleScope scope(thread);
   Object caught_exc_state_obj(&scope, thread->topmostCaughtExceptionState());
   if (caught_exc_state_obj.isNoneType()) {
@@ -303,8 +299,7 @@ RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
   return thread->runtime()->newTupleWith3(type, value, traceback);
 }
 
-RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(sys, intern)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object string(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*string)) {
@@ -317,19 +312,15 @@ RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs) {
   return Runtime::internStr(thread, string);
 }
 
-RawObject FUNC(sys, getrecursionlimit)(Thread* thread, Frame* /* frame */,
-                                       word /* nargs */) {
+RawObject FUNC(sys, getrecursionlimit)(Thread* thread, Arguments) {
   return thread->runtime()->newInt(thread->recursionLimit());
 }
 
-RawObject FUNC(sys, is_finalizing)(Thread* thread, Frame* /* frame */,
-                                   word /* nargs */) {
+RawObject FUNC(sys, is_finalizing)(Thread* thread, Arguments) {
   return Bool::fromBool(thread->runtime()->isFinalizing());
 }
 
-RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Int limit(&scope, args.get(0));
   OptInt<int> opt_val = limit.asInt<int>();
@@ -345,9 +336,7 @@ RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject FUNC(sys, set_asyncgen_hooks)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(sys, set_asyncgen_hooks)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object finalizer(&scope, args.get(1));
   Runtime* runtime = thread->runtime();

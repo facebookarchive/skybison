@@ -1450,7 +1450,7 @@ static inline RawObject builtinTrampolineImpl(Thread* thread, word arg,
       thread->stackDrop(nargs + 1);
       return Error::exception();
     }
-    result = (*function)(thread, callee_frame, nargs);
+    result = (*function)(thread, Arguments(callee_frame, nargs));
     // End scope so people do not accidentally use raw variables after the call
     // which could have triggered a GC.
   }

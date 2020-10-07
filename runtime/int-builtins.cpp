@@ -179,10 +179,9 @@ RawObject convertBoolToInt(RawObject object) {
   return RawSmallInt::fromWord(object == RawBool::trueObj() ? 1 : 0);
 }
 
-static RawObject intBinaryOpSubclass(Thread* thread, Frame* frame, word nargs,
+static RawObject intBinaryOpSubclass(Thread* thread, Arguments args,
                                      RawObject (*op)(Thread* t, const Int& left,
                                                      const Int& right)) {
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
@@ -198,17 +197,16 @@ static RawObject intBinaryOpSubclass(Thread* thread, Frame* frame, word nargs,
   return op(thread, self, other);
 }
 
-inline static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
+inline static RawObject intBinaryOp(Thread* thread, Arguments args,
                                     RawObject (*op)(Thread* t, const Int& left,
                                                     const Int& right)) {
-  Arguments args(frame, nargs);
   if (args.get(0).isInt() && args.get(1).isInt()) {
     HandleScope scope(thread);
     Int self(&scope, args.get(0));
     Int other(&scope, args.get(1));
     return op(thread, self, other);
   }
-  return intBinaryOpSubclass(thread, frame, nargs, op);
+  return intBinaryOpSubclass(thread, args, op);
 }
 
 static word gcd(word dividend, word divisor) {
@@ -276,9 +274,8 @@ RawObject intGCD(Thread* thread, const Int& a, const Int& b) {
   return *dividend;
 }
 
-static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
+static RawObject intUnaryOp(Thread* thread, Arguments args,
                             RawObject (*op)(Thread* t, const Int& self)) {
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
@@ -288,74 +285,71 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   return op(thread, self);
 }
 
-static RawObject asInt(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs,
-                    [](Thread*, const Int& self) -> RawObject {
-                      if (self.isBool()) {
-                        return convertBoolToInt(*self);
-                      }
-                      return *self;
-                    });
+static RawObject asInt(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread*, const Int& self) -> RawObject {
+    if (self.isBool()) {
+      return convertBoolToInt(*self);
+    }
+    return *self;
+  });
 }
 
-static RawObject asStr(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+static RawObject asStr(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread* t, const Int& self) {
     return formatIntDecimalSimple(t, self);
   });
 }
 
-RawObject METH(int, __abs__)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs,
-                    [](Thread* t, const Int& self) -> RawObject {
-                      if (self.isNegative()) {
-                        return t->runtime()->intNegate(t, self);
-                      }
-                      if (self.isBool()) return convertBoolToInt(*self);
-                      return *self;
-                    });
+RawObject METH(int, __abs__)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread* t, const Int& self) -> RawObject {
+    if (self.isNegative()) {
+      return t->runtime()->intNegate(t, self);
+    }
+    if (self.isBool()) return convertBoolToInt(*self);
+    return *self;
+  });
 }
 
-RawObject METH(int, __add__)(Thread* thread, Frame* frame, word nargs) {
-  return intBinaryOp(thread, frame, nargs,
+RawObject METH(int, __add__)(Thread* thread, Arguments args) {
+  return intBinaryOp(thread, args,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intAdd(t, left, right);
                      });
 }
 
-RawObject METH(int, __and__)(Thread* thread, Frame* frame, word nargs) {
-  return intBinaryOp(thread, frame, nargs,
+RawObject METH(int, __and__)(Thread* thread, Arguments args) {
+  return intBinaryOp(thread, args,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intBinaryAnd(t, left, right);
                      });
 }
 
-RawObject METH(int, __bool__)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(
-      thread, frame, nargs, [](Thread*, const Int& self) -> RawObject {
-        if (self.isBool()) return *self;
-        if (self.isSmallInt()) {
-          return Bool::fromBool(SmallInt::cast(*self).value() != 0);
-        }
-        DCHECK(self.isLargeInt(), "remaining case should be LargeInt");
-        return Bool::trueObj();
-      });
+RawObject METH(int, __bool__)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread*, const Int& self) -> RawObject {
+    if (self.isBool()) return *self;
+    if (self.isSmallInt()) {
+      return Bool::fromBool(SmallInt::cast(*self).value() != 0);
+    }
+    DCHECK(self.isLargeInt(), "remaining case should be LargeInt");
+    return Bool::trueObj();
+  });
 }
 
-RawObject METH(int, __ceil__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __ceil__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, __eq__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __eq__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) == 0);
       });
 }
 
-RawObject METH(int, __divmod__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __divmod__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread* t, const Int& left, const Int& right) -> RawObject {
         HandleScope scope(t);
         Object quotient(&scope, NoneType::object());
@@ -369,8 +363,8 @@ RawObject METH(int, __divmod__)(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject METH(int, __float__)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+RawObject METH(int, __float__)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread* t, const Int& self) {
     HandleScope scope(t);
     double value = 0.0;
     Object maybe_error(&scope, convertIntToDouble(t, self, &value));
@@ -379,19 +373,19 @@ RawObject METH(int, __float__)(Thread* thread, Frame* frame, word nargs) {
   });
 }
 
-RawObject METH(int, __floor__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __floor__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, __invert__)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+RawObject METH(int, __invert__)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread* t, const Int& self) {
     return t->runtime()->intInvert(t, self);
   });
 }
 
-RawObject METH(int, __floordiv__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __floordiv__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+      thread, args, [](Thread* t, const Int& left, const Int& right) {
         HandleScope scope(t);
         Object quotient(&scope, NoneType::object());
         if (!t->runtime()->intDivideModulo(t, left, right, &quotient,
@@ -436,8 +430,7 @@ static RawObject formatIntCodePoint(Thread* thread, const Int& value,
   return formatStr(thread, code_point, format);
 }
 
-RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(int, __format__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -516,56 +509,55 @@ RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
-RawObject METH(int, __hash__)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs,
-                    [](Thread*, const Int& self) -> RawObject {
-                      return SmallInt::fromWord(intHash(*self));
-                    });
+RawObject METH(int, __hash__)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread*, const Int& self) -> RawObject {
+    return SmallInt::fromWord(intHash(*self));
+  });
 }
 
-RawObject METH(int, __index__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __index__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, __int__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __int__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, __le__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __le__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) <= 0);
       });
 }
 
-RawObject METH(int, __lt__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __lt__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) < 0);
       });
 }
 
-RawObject METH(int, __ge__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __ge__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) >= 0);
       });
 }
 
-RawObject METH(int, __gt__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __gt__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) > 0);
       });
 }
 
-RawObject METH(int, __mod__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __mod__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+      thread, args, [](Thread* t, const Int& left, const Int& right) {
         HandleScope scope(t);
         Object remainder(&scope, NoneType::object());
         if (!t->runtime()->intDivideModulo(t, left, right, nullptr,
@@ -577,30 +569,30 @@ RawObject METH(int, __mod__)(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject METH(int, __mul__)(Thread* thread, Frame* frame, word nargs) {
-  return intBinaryOp(thread, frame, nargs,
+RawObject METH(int, __mul__)(Thread* thread, Arguments args) {
+  return intBinaryOp(thread, args,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intMultiply(t, left, right);
                      });
 }
 
-RawObject METH(int, __ne__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __ne__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs,
+      thread, args,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) != 0);
       });
 }
 
-RawObject METH(int, __neg__)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+RawObject METH(int, __neg__)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread* t, const Int& self) {
     return t->runtime()->intNegate(t, self);
   });
 }
 
-RawObject METH(int, __rshift__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __rshift__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+      thread, args, [](Thread* t, const Int& left, const Int& right) {
         if (right.isNegative()) {
           return t->raiseWithFmt(LayoutId::kValueError, "negative shift count");
         }
@@ -608,20 +600,20 @@ RawObject METH(int, __rshift__)(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject METH(int, __str__)(Thread* thread, Frame* frame, word nargs) {
-  return asStr(thread, frame, nargs);
+RawObject METH(int, __str__)(Thread* thread, Arguments args) {
+  return asStr(thread, args);
 }
 
-RawObject METH(int, __sub__)(Thread* thread, Frame* frame, word nargs) {
-  return intBinaryOp(thread, frame, nargs,
+RawObject METH(int, __sub__)(Thread* thread, Arguments args) {
+  return intBinaryOp(thread, args,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intSubtract(t, left, right);
                      });
 }
 
-RawObject METH(int, __truediv__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __truediv__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+      thread, args, [](Thread* t, const Int& left, const Int& right) {
         if (right.isZero()) {
           return t->raiseWithFmt(LayoutId::kZeroDivisionError,
                                  "division by zero");
@@ -634,27 +626,27 @@ RawObject METH(int, __truediv__)(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject METH(int, __trunc__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __trunc__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, __xor__)(Thread* thread, Frame* frame, word nargs) {
-  return intBinaryOp(thread, frame, nargs,
+RawObject METH(int, __xor__)(Thread* thread, Arguments args) {
+  return intBinaryOp(thread, args,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intBinaryXor(t, left, right);
                      });
 }
 
-RawObject METH(int, __or__)(Thread* thread, Frame* frame, word nargs) {
-  return intBinaryOp(thread, frame, nargs,
+RawObject METH(int, __or__)(Thread* thread, Arguments args) {
+  return intBinaryOp(thread, args,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intBinaryOr(t, left, right);
                      });
 }
 
-RawObject METH(int, __lshift__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __lshift__)(Thread* thread, Arguments args) {
   return intBinaryOp(
-      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+      thread, args, [](Thread* t, const Int& left, const Int& right) {
         if (right.isNegative()) {
           return t->raiseWithFmt(LayoutId::kValueError, "negative shift count");
         }
@@ -662,26 +654,26 @@ RawObject METH(int, __lshift__)(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject METH(int, __pos__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __pos__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, __repr__)(Thread* thread, Frame* frame, word nargs) {
-  return asStr(thread, frame, nargs);
+RawObject METH(int, __repr__)(Thread* thread, Arguments args) {
+  return asStr(thread, args);
 }
 
-RawObject METH(int, __round__)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, __round__)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
-RawObject METH(int, bit_length)(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+RawObject METH(int, bit_length)(Thread* thread, Arguments args) {
+  return intUnaryOp(thread, args, [](Thread* t, const Int& self) {
     return t->runtime()->newInt(self.bitLength());
   });
 }
 
-RawObject METH(int, conjugate)(Thread* thread, Frame* frame, word nargs) {
-  return asInt(thread, frame, nargs);
+RawObject METH(int, conjugate)(Thread* thread, Arguments args) {
+  return asInt(thread, args);
 }
 
 static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
@@ -743,9 +735,8 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   return runtime->intToBytes(thread, self, length, endianness);
 }
 
-RawObject METH(int, to_bytes)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, to_bytes)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object length(&scope, args.get(1));
   Object byteorder(&scope, args.get(2));
@@ -756,9 +747,8 @@ RawObject METH(int, to_bytes)(Thread* thread, Frame* frame, word nargs) {
                      Bool::cast(args.get(3)).value());
 }
 
-RawObject METH(bool, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bool, __new__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*type_obj)) {
@@ -777,9 +767,8 @@ RawObject METH(bool, __new__)(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::isTrue(thread, args.get(1));
 }
 
-static RawObject boolOrImpl(Thread* thread, Frame* frame, word nargs) {
+static RawObject boolOrImpl(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isBool()) {
@@ -791,7 +780,7 @@ static RawObject boolOrImpl(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(self.value() || Bool::cast(*other_obj).value());
   }
   if (runtime->isInstanceOfInt(*other_obj)) {
-    return intBinaryOp(thread, frame, nargs,
+    return intBinaryOp(thread, args,
                        [](Thread* t, const Int& left, const Int& right) {
                          return t->runtime()->intBinaryOr(t, left, right);
                        });
@@ -799,9 +788,8 @@ static RawObject boolOrImpl(Thread* thread, Frame* frame, word nargs) {
   return NotImplementedType::object();
 }
 
-static RawObject boolXorImpl(Thread* thread, Frame* frame, word nargs) {
+static RawObject boolXorImpl(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isBool()) {
@@ -813,7 +801,7 @@ static RawObject boolXorImpl(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(self.value() ^ Bool::cast(*other_obj).value());
   }
   if (runtime->isInstanceOfInt(*other_obj)) {
-    return intBinaryOp(thread, frame, nargs,
+    return intBinaryOp(thread, args,
                        [](Thread* t, const Int& left, const Int& right) {
                          return t->runtime()->intBinaryXor(t, left, right);
                        });
@@ -821,20 +809,20 @@ static RawObject boolXorImpl(Thread* thread, Frame* frame, word nargs) {
   return NotImplementedType::object();
 }
 
-RawObject METH(bool, __or__)(Thread* thread, Frame* frame, word nargs) {
-  return boolOrImpl(thread, frame, nargs);
+RawObject METH(bool, __or__)(Thread* thread, Arguments args) {
+  return boolOrImpl(thread, args);
 }
 
-RawObject METH(bool, __ror__)(Thread* thread, Frame* frame, word nargs) {
-  return boolOrImpl(thread, frame, nargs);
+RawObject METH(bool, __ror__)(Thread* thread, Arguments args) {
+  return boolOrImpl(thread, args);
 }
 
-RawObject METH(bool, __xor__)(Thread* thread, Frame* frame, word nargs) {
-  return boolXorImpl(thread, frame, nargs);
+RawObject METH(bool, __xor__)(Thread* thread, Arguments args) {
+  return boolXorImpl(thread, args);
 }
 
-RawObject METH(bool, __rxor__)(Thread* thread, Frame* frame, word nargs) {
-  return boolXorImpl(thread, frame, nargs);
+RawObject METH(bool, __rxor__)(Thread* thread, Arguments args) {
+  return boolXorImpl(thread, args);
 }
 
 enum RoundingDirection {

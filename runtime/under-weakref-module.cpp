@@ -7,9 +7,7 @@
 
 namespace py {
 
-RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -20,9 +18,7 @@ RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Frame* frame,
   return self.hash();
 }
 
-RawObject FUNC(_weakref, _weakref_set_hash)(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_weakref, _weakref_set_hash)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   WeakRef self(&scope, args.get(0));
   self.setHash(args.get(1));

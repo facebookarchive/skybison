@@ -264,8 +264,7 @@ void initializeListTypes(Thread* thread) {
                  ListIterator::kSize, /*basetype=*/false);
 }
 
-RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -283,8 +282,7 @@ RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(list, __add__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, __add__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -320,8 +318,7 @@ RawObject listContains(Thread* thread, const List& list, const Object& key) {
   return Bool::falseObj();
 }
 
-RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, __contains__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
@@ -332,9 +329,8 @@ RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs) {
   return listContains(thread, self, key);
 }
 
-RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->raiseRequiresType(self, ID(list));
@@ -344,9 +340,8 @@ RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(list, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->raiseRequiresType(self, ID(list));
@@ -355,8 +350,7 @@ RawObject METH(list, __len__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(list.numItems());
 }
 
-RawObject METH(list, insert)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, insert)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
@@ -377,8 +371,7 @@ RawObject METH(list, insert)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(list, __mul__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, __mul__)(Thread* thread, Arguments args) {
   RawObject other = args.get(1);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -396,8 +389,7 @@ RawObject METH(list, __mul__)(Thread* thread, Frame* frame, word nargs) {
                               "can't multiply list by non-int");
 }
 
-RawObject METH(list, pop)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, pop)(Thread* thread, Arguments args) {
   if (!args.get(1).isUnbound() && !args.get(1).isSmallInt()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
@@ -427,8 +419,7 @@ RawObject METH(list, pop)(Thread* thread, Frame* frame, word nargs) {
   return listPop(thread, list, index);
 }
 
-RawObject METH(list, remove)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, remove)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
@@ -459,8 +450,7 @@ RawObject METH(list, remove)(Thread* thread, Frame* frame, word nargs) {
                               "list.remove(x) x not in list");
 }
 
-RawObject METH(list, __imul__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, __imul__)(Thread* thread, Arguments args) {
   RawObject other = args.get(1);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -503,8 +493,7 @@ RawObject METH(list, __imul__)(Thread* thread, Frame* frame, word nargs) {
   return *list;
 }
 
-RawObject METH(list, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
@@ -513,9 +502,7 @@ RawObject METH(list, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newListIterator(self);
 }
 
-RawObject METH(list_iterator, __iter__)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isListIterator()) {
@@ -524,9 +511,7 @@ RawObject METH(list_iterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(list_iterator, __next__)(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isListIterator()) {
@@ -540,9 +525,7 @@ RawObject METH(list_iterator, __next__)(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject METH(list_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(list_iterator, __length_hint__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isListIterator()) {

@@ -1235,9 +1235,8 @@ void initializeTypeTypes(Thread* thread) {
                  TypeProxy::kSize, /*basetype=*/false);
 }
 
-RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(type, __base__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(type));
@@ -1250,9 +1249,8 @@ RawObject METH(type, __base__)(Thread* thread, Frame* frame, word nargs) {
   return computeFixedAttributeBase(thread, bases);
 }
 
-RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(type, __basicsize__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -1267,9 +1265,8 @@ RawObject METH(type, __basicsize__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newIntFromUnsigned(basicsize);
 }
 
-RawObject METH(type, __flags__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(type, __flags__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -1280,9 +1277,7 @@ RawObject METH(type, __flags__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newIntFromUnsigned(cpython_flags);
 }
 
-RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(type, __getattribute__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1303,8 +1298,7 @@ RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject METH(type, __setattr__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(type, __setattr__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -1319,8 +1313,7 @@ RawObject METH(type, __setattr__)(Thread* thread, Frame* frame, word nargs) {
   return typeSetAttr(thread, self, name, value);
 }
 
-RawObject METH(type, __subclasses__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(type, __subclasses__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();

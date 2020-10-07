@@ -40,9 +40,7 @@ void initializeUnderContextvarsTypes(Thread* thread) {
 }
 
 RawObject FUNC(_contextvars, _ContextVar_default_value)(Thread* thread,
-                                                        Frame* frame,
-                                                        word nargs) {
-  Arguments args(frame, nargs);
+                                                        Arguments args) {
   HandleScope scope(thread);
   Object ctxvar_obj(&scope, args.get(0));
   if (!ctxvar_obj.isContextVar()) {
@@ -56,9 +54,7 @@ RawObject FUNC(_contextvars, _ContextVar_default_value)(Thread* thread,
   return ctxvar.defaultValue();
 }
 
-RawObject FUNC(_contextvars, _ContextVar_name)(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_contextvars, _ContextVar_name)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object ctxvar_obj(&scope, args.get(0));
   if (!ctxvar_obj.isContextVar()) {
@@ -72,9 +68,7 @@ RawObject FUNC(_contextvars, _ContextVar_name)(Thread* thread, Frame* frame,
   return ctxvar.name();
 }
 
-RawObject FUNC(_contextvars, _Token_used)(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_contextvars, _Token_used)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object token_obj(&scope, args.get(0));
   if (!token_obj.isToken()) {
@@ -87,9 +81,7 @@ RawObject FUNC(_contextvars, _Token_used)(Thread* thread, Frame* frame,
   return Bool::fromBool(token.used());
 }
 
-RawObject FUNC(_contextvars, _Token_var)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_contextvars, _Token_var)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object token_obj(&scope, args.get(0));
   if (!token_obj.isToken()) {
@@ -115,13 +107,12 @@ static RawObject contextForThread(Thread* thread) {
   return *ctx_obj;
 }
 
-RawObject FUNC(_contextvars, _thread_context)(Thread* thread, Frame*, word) {
+RawObject FUNC(_contextvars, _thread_context)(Thread* thread, Arguments) {
   return contextForThread(thread);
 }
 
-static RawObject dataDictFromContext(Thread* thread, Frame* frame, word nargs) {
+static RawObject dataDictFromContext(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isContext()) {
     return thread->raiseRequiresType(self_obj, ID(Context));
@@ -130,16 +121,15 @@ static RawObject dataDictFromContext(Thread* thread, Frame* frame, word nargs) {
   return self.data();
 }
 
-static RawObject lookupVarInContext(Thread* thread, Frame* frame, word nargs,
+static RawObject lookupVarInContext(Thread* thread, Arguments args,
                                     bool contains_mode) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object var_obj(&scope, args.get(1));
   if (!var_obj.isContextVar()) {
     return thread->raiseRequiresType(var_obj, ID(ContextVar));
   }
   ContextVar var(&scope, *var_obj);
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
   Object var_hash_obj(&scope, Interpreter::hash(thread, var));
@@ -149,19 +139,16 @@ static RawObject lookupVarInContext(Thread* thread, Frame* frame, word nargs,
                        : dictAt(thread, data, var, var_hash);
 }
 
-RawObject METH(Context, __contains__)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  return lookupVarInContext(thread, frame, nargs, true);
+RawObject METH(Context, __contains__)(Thread* thread, Arguments args) {
+  return lookupVarInContext(thread, args, true);
 }
 
-RawObject METH(Context, __eq__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, __eq__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
 
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
-
-  Arguments args(frame, nargs);
   Object other_ctx_obj(&scope, args.get(1));
   if (!other_ctx_obj.isContext()) {
     return NotImplementedType::object();
@@ -172,22 +159,21 @@ RawObject METH(Context, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return dictEq(thread, data, other_data);
 }
 
-RawObject METH(Context, __getitem__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, __getitem__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object result(&scope, lookupVarInContext(thread, frame, nargs, false));
+  Object result(&scope, lookupVarInContext(thread, args, false));
   if (result.isErrorNotFound()) {
     return thread->raise(LayoutId::kKeyError, NoneType::object());
   }
   return *result;
 }
 
-RawObject METH(Context, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  return METH(Context, keys)(thread, frame, nargs);
+RawObject METH(Context, __iter__)(Thread* thread, Arguments args) {
+  return METH(Context, keys)(thread, args);
 }
 
-RawObject METH(Context, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (args.get(0) != runtime->typeAt(LayoutId::kContext)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -198,51 +184,49 @@ RawObject METH(Context, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *ctx;
 }
 
-RawObject METH(Context, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
   return SmallInt::fromWord(data.numItems());
 }
 
-RawObject METH(Context, copy)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, copy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
   return thread->runtime()->newContext(data);
 }
 
-RawObject METH(Context, get)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object val(&scope, lookupVarInContext(thread, frame, nargs, false));
+  Object val(&scope, lookupVarInContext(thread, args, false));
   if (val.isErrorNotFound()) {
     return args.get(2);
   }
   return *val;
 }
 
-RawObject METH(Context, items)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, items)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
   return thread->runtime()->newDictItemIterator(thread, data);
 }
 
-RawObject METH(Context, keys)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, keys)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
   return thread->runtime()->newDictKeyIterator(thread, data);
 }
 
-RawObject METH(Context, run)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, run)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isContext()) {
     return thread->raiseRequiresType(self_obj, ID(Context));
@@ -275,17 +259,16 @@ RawObject METH(Context, run)(Thread* thread, Frame* frame, word nargs) {
   return *call_result;
 }
 
-RawObject METH(Context, values)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(Context, values)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object data_obj(&scope, dataDictFromContext(thread, frame, nargs));
+  Object data_obj(&scope, dataDictFromContext(thread, args));
   if (data_obj.isError()) return *data_obj;
   Dict data(&scope, *data_obj);
   return thread->runtime()->newDictValueIterator(thread, data);
 }
 
-RawObject METH(ContextVar, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(ContextVar, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (args.get(0) != runtime->typeAt(LayoutId::kContextVar)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -304,9 +287,8 @@ RawObject METH(ContextVar, __new__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newContextVar(name, default_value);
 }
 
-RawObject METH(ContextVar, get)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(ContextVar, get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isContextVar()) {
     return thread->raiseRequiresType(self_obj, ID(ContextVar));
@@ -339,9 +321,8 @@ RawObject METH(ContextVar, get)(Thread* thread, Frame* frame, word nargs) {
   return thread->raise(LayoutId::kLookupError, NoneType::object());
 }
 
-RawObject METH(ContextVar, reset)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(ContextVar, reset)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isContextVar()) {
     return thread->raiseRequiresType(self_obj, ID(ContextVar));
@@ -394,9 +375,8 @@ RawObject METH(ContextVar, reset)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(ContextVar, set)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(ContextVar, set)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isContextVar()) {
     return thread->raiseRequiresType(self_obj, ID(ContextVar));

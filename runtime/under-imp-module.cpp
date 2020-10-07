@@ -41,9 +41,7 @@ bool importReleaseLock(Thread* thread) {
   return true;
 }
 
-RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, args.get(0));
@@ -62,13 +60,12 @@ RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Frame* frame,
   return moduleLoadDynamicExtension(thread, name, path);
 }
 
-RawObject FUNC(_imp, acquire_lock)(Thread* thread, Frame*, word) {
+RawObject FUNC(_imp, acquire_lock)(Thread* thread, Arguments) {
   importAcquireLock(thread);
   return NoneType::object();
 }
 
-RawObject FUNC(_imp, create_builtin)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_imp, create_builtin)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object spec(&scope, args.get(0));
@@ -91,8 +88,7 @@ RawObject FUNC(_imp, create_builtin)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject FUNC(_imp, exec_builtin)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_imp, exec_builtin)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object module_obj(&scope, args.get(0));
@@ -118,8 +114,7 @@ RawObject FUNC(_imp, exec_builtin)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(execDef(thread, module, def));
 }
 
-RawObject FUNC(_imp, is_builtin)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_imp, is_builtin)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, args.get(0));
@@ -132,8 +127,7 @@ RawObject FUNC(_imp, is_builtin)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(result ? 1 : 0);
 }
 
-RawObject FUNC(_imp, is_frozen)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_imp, is_frozen)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object name(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*name)) {
@@ -144,11 +138,11 @@ RawObject FUNC(_imp, is_frozen)(Thread* thread, Frame* frame, word nargs) {
   return RawBool::falseObj();
 }
 
-RawObject FUNC(_imp, lock_held)(Thread*, Frame*, word) {
+RawObject FUNC(_imp, lock_held)(Thread*, Arguments) {
   return Bool::fromBool(import_lock_holder != nullptr);
 }
 
-RawObject FUNC(_imp, release_lock)(Thread* thread, Frame*, word) {
+RawObject FUNC(_imp, release_lock)(Thread* thread, Arguments) {
   if (!importReleaseLock(thread)) {
     return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                 "not holding the import lock");
@@ -156,8 +150,7 @@ RawObject FUNC(_imp, release_lock)(Thread* thread, Frame*, word) {
   return RawNoneType::object();
 }
 
-RawObject FUNC(_imp, source_hash)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_imp, source_hash)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object key_obj(&scope, args.get(0));

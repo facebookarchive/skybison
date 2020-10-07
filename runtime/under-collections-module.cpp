@@ -39,10 +39,8 @@ void initializeUnderCollectionsTypes(Thread* thread) {
                  DequeIterator::kSize, /*basetype=*/false);
 }
 
-RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDeque(*self_obj)) {
@@ -68,10 +66,9 @@ RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Frame* frame,
   return deque.at(deque_index);
 }
 
-RawObject FUNC(_collections, _deque_set_maxlen)(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_collections, _deque_set_maxlen)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Deque deque(&scope, args.get(0));
   Object maxlen_obj(&scope, args.get(1));
   if (maxlen_obj.isNoneType()) {
@@ -94,10 +91,9 @@ RawObject FUNC(_collections, _deque_set_maxlen)(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject METH(_deque_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject METH(_deque_iterator, __length_hint__)(Thread* thread,
+                                                 Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isDequeIterator()) {
     return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
@@ -107,10 +103,8 @@ RawObject METH(_deque_iterator, __length_hint__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(deque.numItems() - self.index());
 }
 
-RawObject METH(_deque_iterator, __new__)(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject METH(_deque_iterator, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object cls(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*cls)) {
@@ -154,10 +148,8 @@ RawObject METH(_deque_iterator, __new__)(Thread* thread, Frame* frame,
   return runtime->newDequeIterator(deque, index);
 }
 
-RawObject METH(_deque_iterator, __next__)(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject METH(_deque_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isDequeIterator()) {
     return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
@@ -186,10 +178,8 @@ RawObject METH(_deque_iterator, __next__)(Thread* thread, Frame* frame,
   return deque.at(index - capacity);
 }
 
-RawObject METH(_deque_iterator, __reduce__)(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(_deque_iterator, __reduce__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isDequeIterator()) {
     return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
@@ -339,9 +329,8 @@ static RawObject dequePopLeft(Thread* thread, const Deque& deque) {
   return *result;
 }
 
-RawObject METH(deque, __iter__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(deque, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDeque(*self)) {
@@ -351,9 +340,8 @@ RawObject METH(deque, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDequeIterator(deque, 0);
 }
 
-RawObject METH(deque, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(deque, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDeque(*self)) {
     return thread->raiseRequiresType(self, ID(deque));
@@ -362,8 +350,7 @@ RawObject METH(deque, __len__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(deque.numItems());
 }
 
-RawObject METH(deque, __new__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(deque, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -383,9 +370,8 @@ RawObject METH(deque, __new__)(Thread* thread, Frame* frame, word nargs) {
   return *deque;
 }
 
-RawObject METH(deque, append)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(deque, append)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDeque(*self)) {
@@ -398,9 +384,8 @@ RawObject METH(deque, append)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(deque, appendleft)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(deque, appendleft)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDeque(*self)) {
     return thread->raiseRequiresType(self, ID(deque));
@@ -412,9 +397,8 @@ RawObject METH(deque, appendleft)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(deque, clear)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(deque, clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDeque(*self)) {
     return thread->raiseRequiresType(self, ID(deque));
@@ -425,8 +409,7 @@ RawObject METH(deque, clear)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject METH(deque, pop)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(deque, pop)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDeque(*self)) {
@@ -440,8 +423,7 @@ RawObject METH(deque, pop)(Thread* thread, Frame* frame, word nargs) {
   return dequePop(thread, deque);
 }
 
-RawObject METH(deque, popleft)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(deque, popleft)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDeque(*self)) {

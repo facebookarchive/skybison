@@ -533,9 +533,8 @@ static word pow2_remainder(word dividend, word divisor) {
   return dividend & mask;
 }
 
-RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(memoryview, cast)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -574,9 +573,8 @@ RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject METH(memoryview, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(memoryview, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
     return thread->raiseRequiresType(self_obj, ID(memoryview));
@@ -591,9 +589,8 @@ RawObject METH(memoryview, __len__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(self.length() / item_size);
 }
 
-RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(memoryview, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (args.get(0) != runtime->typeAt(LayoutId::kMemoryView)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,

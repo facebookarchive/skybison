@@ -14,8 +14,7 @@
 
 namespace py {
 
-RawObject FUNC(_os, access)(Thread* /* thread */, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, access)(Thread*, Arguments args) {
   CHECK(args.get(0).isStr(), "path must be str");
   unique_c_ptr<char> path(Str::cast(args.get(0)).toCStr());
   CHECK(args.get(1).isSmallInt(), "mode must be int");
@@ -23,8 +22,7 @@ RawObject FUNC(_os, access)(Thread* /* thread */, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject FUNC(_os, close)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, close)(Thread* thread, Arguments args) {
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
   int result = File::close(fd);
@@ -32,8 +30,7 @@ RawObject FUNC(_os, close)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject FUNC(_os, fstat_size)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, fstat_size)(Thread* thread, Arguments args) {
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
   int64_t result = File::size(fd);
@@ -41,8 +38,7 @@ RawObject FUNC(_os, fstat_size)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(result);
 }
 
-RawObject FUNC(_os, ftruncate)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, ftruncate)(Thread* thread, Arguments args) {
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
   CHECK(args.get(1).isSmallInt(), "size must be small int");
@@ -52,16 +48,14 @@ RawObject FUNC(_os, ftruncate)(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject FUNC(_os, isatty)(Thread*, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, isatty)(Thread*, Arguments args) {
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
   int result = File::isatty(fd);
   return Bool::fromBool(result < 0 ? false : result);
 }
 
-RawObject FUNC(_os, isdir)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, isdir)(Thread* thread, Arguments args) {
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
   int result = File::isDirectory(fd);
@@ -69,8 +63,7 @@ RawObject FUNC(_os, isdir)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject FUNC(_os, lseek)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, lseek)(Thread* thread, Arguments args) {
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
   CHECK(args.get(1).isInt(), "offset must be int");
@@ -82,8 +75,7 @@ RawObject FUNC(_os, lseek)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(result);
 }
 
-RawObject FUNC(_os, open)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, open)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object flags_obj(&scope, args.get(1));
   CHECK(flags_obj.isSmallInt(), "flags must be small int");
@@ -147,15 +139,13 @@ static word flagsFromMode(const Str& mode) {
   return flags;
 }
 
-RawObject FUNC(_os, parse_mode)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, parse_mode)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Str mode(&scope, args.get(0));
   return thread->runtime()->newInt(flagsFromMode(mode));
 }
 
-RawObject FUNC(_os, read)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, read)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object fd_obj(&scope, args.get(0));
   CHECK(fd_obj.isSmallInt(), "fd must be small int");
@@ -170,9 +160,7 @@ RawObject FUNC(_os, read)(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newBytesWithAll(View<byte>(buffer.get(), result));
 }
 
-RawObject FUNC(_os, set_noinheritable)(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
+RawObject FUNC(_os, set_noinheritable)(Thread* thread, Arguments args) {
   int fd = SmallInt::cast(args.get(0)).value();
   int result = File::setNoInheritable(fd);
   if (result < 0) return thread->raiseOSErrorFromErrno(-result);

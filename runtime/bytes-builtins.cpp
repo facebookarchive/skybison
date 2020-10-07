@@ -480,10 +480,9 @@ void initializeBytesTypes(Thread* thread) {
                  BytesIterator::kSize, /*basetype=*/false);
 }
 
-RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __add__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -504,10 +503,9 @@ RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
                               &other_obj);
 }
 
-RawObject METH(bytes, __eq__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __eq__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -521,10 +519,9 @@ RawObject METH(bytes, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) == 0);
 }
 
-RawObject METH(bytes, __ge__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __ge__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -538,10 +535,9 @@ RawObject METH(bytes, __ge__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) >= 0);
 }
 
-RawObject METH(bytes, __gt__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __gt__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -555,8 +551,7 @@ RawObject METH(bytes, __gt__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) > 0);
 }
 
-RawObject METH(bytes, __hash__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(bytes, __hash__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
@@ -566,8 +561,7 @@ RawObject METH(bytes, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(bytesHash(thread, *self));
 }
 
-RawObject METH(bytes, __iter__)(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(bytes, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
@@ -578,10 +572,9 @@ RawObject METH(bytes, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->newBytesIterator(thread, self);
 }
 
-RawObject METH(bytes, __le__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __le__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -595,10 +588,9 @@ RawObject METH(bytes, __le__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) <= 0);
 }
 
-RawObject METH(bytes, __len__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __len__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -608,10 +600,9 @@ RawObject METH(bytes, __len__)(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(self.length());
 }
 
-RawObject METH(bytes, __lt__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __lt__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -625,10 +616,9 @@ RawObject METH(bytes, __lt__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) < 0);
 }
 
-RawObject METH(bytes, __mul__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __mul__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -659,10 +649,9 @@ RawObject METH(bytes, __mul__)(Thread* thread, Frame* frame, word nargs) {
   return runtime->bytesRepeat(thread, self, length, count);
 }
 
-RawObject METH(bytes, __ne__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __ne__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -676,10 +665,9 @@ RawObject METH(bytes, __ne__)(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) != 0);
 }
 
-RawObject METH(bytes, __repr__)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __repr__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
@@ -688,9 +676,8 @@ RawObject METH(bytes, __repr__)(Thread* thread, Frame* frame, word nargs) {
   return bytesReprSmartQuotes(thread, self);
 }
 
-RawObject METH(bytes, hex)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, hex)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytes(*obj)) {
     return thread->raiseRequiresType(obj, ID(bytes));
@@ -699,9 +686,8 @@ RawObject METH(bytes, hex)(Thread* thread, Frame* frame, word nargs) {
   return bytesHex(thread, self, self.length());
 }
 
-RawObject METH(bytes, lower)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, lower)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self)) {
@@ -727,9 +713,8 @@ RawObject METH(bytes, lower)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeImmutable();
 }
 
-RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, lstrip)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
@@ -756,9 +741,8 @@ RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
                               &chars_obj);
 }
 
-RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, rstrip)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
@@ -785,9 +769,8 @@ RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs) {
                               &chars_obj);
 }
 
-RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, strip)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
@@ -814,9 +797,8 @@ RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
                               &chars_obj);
 }
 
-RawObject METH(bytes, splitlines)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, splitlines)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   Object keepends_obj(&scope, args.get(1));
@@ -831,9 +813,8 @@ RawObject METH(bytes, splitlines)(Thread* thread, Frame* frame, word nargs) {
   return bytesSplitLines(thread, self, self.length(), keepends);
 }
 
-RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, translate)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
@@ -882,9 +863,8 @@ RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
       LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &del);
 }
 
-RawObject METH(bytes, upper)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, upper)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self)) {
@@ -910,9 +890,7 @@ RawObject METH(bytes, upper)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeImmutable();
 }
 
-RawObject METH(bytes_iterator, __iter__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(bytes_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isBytesIterator()) {
@@ -921,9 +899,7 @@ RawObject METH(bytes_iterator, __iter__)(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject METH(bytes_iterator, __next__)(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(bytes_iterator, __next__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isBytesIterator()) {
@@ -939,9 +915,8 @@ RawObject METH(bytes_iterator, __next__)(Thread* thread, Frame* frame,
   return SmallInt::fromWord(underlying.byteAt(index));
 }
 
-RawObject METH(bytes_iterator, __length_hint__)(Thread* thread, Frame* frame,
-                                                word nargs) {
-  Arguments args(frame, nargs);
+RawObject METH(bytes_iterator, __length_hint__)(Thread* thread,
+                                                Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isBytesIterator()) {

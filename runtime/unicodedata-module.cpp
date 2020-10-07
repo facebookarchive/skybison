@@ -35,10 +35,8 @@ static int32_t getCodePoint(const Str& src) {
   return (length == char_length) ? result : -1;
 }
 
-RawObject FUNC(unicodedata, bidirectional)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(unicodedata, bidirectional)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*obj)) {
@@ -54,10 +52,8 @@ RawObject FUNC(unicodedata, bidirectional)(Thread* thread, Frame* frame,
   return kBidirectionalNames[databaseRecord(code_point)->bidirectional];
 }
 
-RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(unicodedata, category)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*obj)) {
@@ -73,9 +69,8 @@ RawObject FUNC(unicodedata, category)(Thread* thread, Frame* frame,
   return kCategoryNames[databaseRecord(code_point)->category];
 }
 
-RawObject FUNC(unicodedata, decimal)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(unicodedata, decimal)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*obj)) {
@@ -117,10 +112,8 @@ static void writeDecomposition(UnicodeDecomposition decomp,
   DCHECK(i == out.length(), "expected %d bytes, wrote %d", out.length(), i);
 }
 
-RawObject FUNC(unicodedata, decomposition)(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(unicodedata, decomposition)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*obj)) {
@@ -147,9 +140,8 @@ RawObject FUNC(unicodedata, decomposition)(Thread* thread, Frame* frame,
   return result.becomeStr();
 }
 
-RawObject FUNC(unicodedata, digit)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(unicodedata, digit)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*obj)) {
@@ -204,9 +196,8 @@ static RawObject copyName(Thread* thread, const Object& name_obj, byte* buffer,
                               &name_obj);
 }
 
-RawObject FUNC(unicodedata, lookup)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(unicodedata, lookup)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Object name(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
 
@@ -410,10 +401,8 @@ static RawObject compose(Thread* thread, const StrArray& decomposition) {
   return runtime->strFromStrArray(result);
 }
 
-RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(unicodedata, normalize)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object form_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*form_obj)) {
@@ -476,9 +465,8 @@ RawObject FUNC(unicodedata, normalize)(Thread* thread, Frame* frame,
   return compose(thread, buffer);
 }
 
-RawObject FUNC(unicodedata, numeric)(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(unicodedata, numeric)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*obj)) {
@@ -504,9 +492,8 @@ RawObject FUNC(unicodedata, numeric)(Thread* thread, Frame* frame, word nargs) {
   return *default_value;
 }
 
-RawObject METH(UCD, bidirectional)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(UCD, bidirectional)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   Type self_type(&scope, runtime->typeOf(*self));
@@ -536,9 +523,8 @@ RawObject METH(UCD, bidirectional)(Thread* thread, Frame* frame, word nargs) {
   return kBidirectionalNames[databaseRecord(code_point)->bidirectional];
 }
 
-RawObject METH(UCD, category)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(UCD, category)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   Type self_type(&scope, runtime->typeOf(*self));
@@ -565,9 +551,8 @@ RawObject METH(UCD, category)(Thread* thread, Frame* frame, word nargs) {
   return kCategoryNames[databaseRecord(code_point)->category];
 }
 
-RawObject METH(UCD, decomposition)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(UCD, decomposition)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   Type self_type(&scope, runtime->typeOf(*self));
@@ -605,9 +590,8 @@ RawObject METH(UCD, decomposition)(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject METH(UCD, decimal)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(UCD, decimal)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   Type self_type(&scope, runtime->typeOf(*self));
@@ -648,9 +632,8 @@ RawObject METH(UCD, decimal)(Thread* thread, Frame* frame, word nargs) {
   return *default_value;
 }
 
-RawObject METH(UCD, digit)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(UCD, digit)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   Type self_type(&scope, runtime->typeOf(*self));
@@ -682,9 +665,8 @@ RawObject METH(UCD, digit)(Thread* thread, Frame* frame, word nargs) {
   return *default_value;
 }
 
-RawObject METH(UCD, normalize)(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(UCD, normalize)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
 
   Object self(&scope, args.get(0));
