@@ -47,5 +47,22 @@ except Exception as e:
 )");
 }
 
+TEST_F(TracebackExtensionApiTest, TracebackAddSetsTraceback) {
+  CaptureStdStreams streams;
+  _PyTraceback_Add("foo", "bar", 42);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObject *exc, *val, *tb;
+  PyErr_Fetch(&exc, &val, &tb);
+  PyObject* file = PySys_GetObject("stderr");
+  ASSERT_EQ(PyTraceBack_Print(tb, file), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  EXPECT_EQ(streams.out(), "");
+  EXPECT_EQ(streams.err(), R"(Traceback (most recent call last):
+  File "bar", line 42, in foo
+)");
+}
+
 }  // namespace testing
 }  // namespace py
