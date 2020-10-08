@@ -46,9 +46,12 @@ static RawObject sourceLine(Thread* thread, const Object& filename,
   Runtime* runtime = thread->runtime();
   Object linecache(&scope, runtime->symbols()->at(ID(linecache)));
   if (runtime->findModule(linecache).isErrorNotFound()) {
-    CHECK(!thread->invokeFunction1(ID(builtins), ID(__import__), linecache)
-               .isErrorException(),
-          "unable to import linecache");
+    linecache =
+        thread->invokeFunction1(ID(builtins), ID(__import__), linecache);
+    if (linecache.isErrorException()) {
+      thread->clearPendingException();
+      return NoneType::object();
+    }
   }
   Object line_obj(&scope, thread->invokeFunction2(ID(linecache), ID(getline),
                                                   filename, lineno_obj));
