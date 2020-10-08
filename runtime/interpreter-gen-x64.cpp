@@ -368,6 +368,28 @@ void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
   __ bind(&done);
 }
 
+void emitJumpIfNotHeapObjectWithLayoutId(EmitEnv* env, Register r_obj,
+                                         Register r_scratch, LayoutId layout_id,
+                                         Label* target) {
+  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
+  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
+  __ leal(r_scratch,
+          Address(r_obj, (-Object::kHeapObjectTag) & Object::kPrimaryTagMask));
+  __ testl(r_scratch, Immediate(Object::kPrimaryTagMask));
+  __ jcc(NOT_ZERO, target, Assembler::kNearJump);
+
+  // It is a HeapObject.
+  static_assert(RawHeader::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
+                "expected layout id in lower 32 bits");
+  __ movl(r_scratch,
+          Address(r_obj, heapObjectDisp(RawHeapObject::kHeaderOffset)));
+  __ andl(r_scratch,
+          Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
+  __ cmpl(r_scratch, Immediate(static_cast<word>(layout_id)
+                               << RawHeader::kLayoutIdOffset));
+  __ jcc(NOT_EQUAL, target, Assembler::kNearJump);
+}
+
 // Convert the given register from a SmallInt to an int.
 void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
   __ sarq(reg, Immediate(Object::kSmallIntTagBits));
@@ -615,6 +637,48 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCall<Interpreter::Continue (*)(Thread*, word)>(
       env, Interpreter::binaryOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
+void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
+  Register r_container = RAX;
+  Register r_key = R8;
+  Register r_layout_id = RDI;
+  Label slow_path;
+  __ popq(r_key);
+  __ popq(r_container);
+  // if (container.isList() && key.isSmallInt()) {
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_container, r_layout_id,
+                                      LayoutId::kList, &slow_path);
+  emitJumpIfNotSmallInt(env, r_key, &slow_path);
+
+  // if (0 <= index && index < length) {
+  // length >= 0 always holds. Therefore, ABOVE_EQUAL == NOT_CARRY if r_key
+  // contains a negative value (sign bit == 1) or r_key >= r_list_length.
+  __ cmpq(r_key,
+          Address(r_container, heapObjectDisp(0) + List::kNumItemsOffset));
+  __ jcc(ABOVE_EQUAL, &slow_path, Assembler::kNearJump);
+
+  // list.at(index)
+  __ movq(r_container,
+          Address(r_container, heapObjectDisp(0) + List::kItemsOffset));
+  // r_key is a SmallInt, so r_key already stores the index value * 2.
+  // Therefore, applying TIMES_4 will compute index * 8.
+  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
+  static_assert(Object::kSmallIntTagBits == 1, "unexpected tag for SmallInt");
+  __ pushq(Address(r_container, r_key, TIMES_4, heapObjectDisp(0)));
+
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_container);
+  __ pushq(r_key);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::binarySubscrUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 

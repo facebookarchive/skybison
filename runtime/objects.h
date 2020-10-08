@@ -2840,9 +2840,9 @@ class RawFrozenSet : public RawSetBase {
 //
 // RawLayout:
 //
-//   [Header]
-//   [Length] - Number of elements currently in the list
-//   [Elems ] - Pointer to an RawTuple that contains list elements
+//   [Header  ]
+//   [Items   ] - Pointer to an RawTuple that contains list elements
+//   [NumItems] - Number of elements currently in the list
 class RawList : public RawInstance {
  public:
   // Getters and setters.

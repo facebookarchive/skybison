@@ -792,7 +792,32 @@ reference = int.__and__
                       arg_l);
 }
 
-TEST_F(InterpreterTest, BinarySubscrWithList) {
+TEST_F(InterpreterTest, BinarySubscrWithListAndSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+l = [1,2,3]
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  List l(&scope, mainModuleAt(runtime_, "l"));
+  SmallInt zero(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, zero), 1));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+
+  SmallInt one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, one), 2));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+}
+
+TEST_F(
+    InterpreterTest,
+    BinarySubscrListRevertsBackToBinarySubscrMonomorphicWhenNonListObserved) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(l, i):
@@ -814,6 +839,60 @@ d = {1: -1}
   // Revert back to caching __getitem__ when a non-list is observed.
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), -1));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+}
+
+TEST_F(
+    InterpreterTest,
+    BinarySubscrListRevertsBackToBinarySubscrMonomorphicWhenNonSmallIntKeyObserved) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+l = [1,2,3]
+large_int = 2**64
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  List l(&scope, mainModuleAt(runtime_, "l"));
+  SmallInt key(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+
+  // Revert back to caching __getitem__ when the key is not SmallInt.
+  LargeInt large_int(&scope, mainModuleAt(runtime_, "large_int"));
+  EXPECT_TRUE(Interpreter::call2(thread_, foo, l, large_int).isError());
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+}
+
+TEST_F(
+    InterpreterTest,
+    BinarySubscrListRevertsBackToBinarySubscrMonomorphicWhenNegativeKeyObserved) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+l = [1,2,3]
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  List l(&scope, mainModuleAt(runtime_, "l"));
+  SmallInt key(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+
+  // Revert back to caching __getitem__ when the key is negative.
+  SmallInt negative(&scope, SmallInt::fromWord(-1));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call2(thread_, foo, l, negative), 3));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
 }
 
