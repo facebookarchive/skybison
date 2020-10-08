@@ -36,6 +36,7 @@ python_library(
 python_library(
     name = "run",
     srcs = [
+        "_compile_tool.py",
         "_display_results.py",
         "_time_tool.py",
         "_tools.py",
