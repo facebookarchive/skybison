@@ -37,9 +37,7 @@ static RawObject throwDoRaise(Thread* thread, const GeneratorBase& gen,
   Object value(&scope, value_in.isUnbound() ? NoneType::object() : *value_in);
   Object tb(&scope, tb_in.isUnbound() ? NoneType::object() : *tb_in);
 
-  // TODO(T39919701): Until we have proper traceback support, we sometimes pass
-  // around a string as an exception's traceback.
-  if (!tb.isNoneType() && !tb.isTraceback() && !tb.isStr()) {
+  if (!tb.isNoneType() && !tb.isTraceback()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
         "throw() third argument must be a traceback object");

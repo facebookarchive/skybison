@@ -261,7 +261,7 @@ TEST_F(PythonrunExtensionApiTest, PyErrDisplayPrintsException) {
 }
 
 TEST_F(PythonrunExtensionApiTest, PyErrDisplayPrintsExceptionChain) {
-  // TODO(T39919701): Don't clear __traceback__ below.
+  // TODO(T77279778): Don't clear __traceback__ below.
   ASSERT_EQ(PyRun_SimpleString(R"(
 try:
   try:
@@ -433,7 +433,7 @@ static void checkSysVars() {
   PyObjectPtr tb(moduleGet("sys", "last_traceback"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_NE(tb, nullptr);
-  // TODO(T39919701): Check for a real traceback once we have tracebacks.
+  EXPECT_EQ(tb, Py_None);
 }
 
 TEST_F(PythonrunExtensionApiTest, PyErrPrintExWithArgSetsSysVars) {
@@ -487,12 +487,14 @@ sys.excepthook = my_hook
 
   CaptureStdStreams streams;
   PyErr_PrintEx(0);
-  // TODO(T39919701): Check the whole string once we have tracebacks.
-  std::string err = streams.err();
-  ASSERT_THAT(err, ::testing::StartsWith("Error in sys.excepthook:\n"));
-  ASSERT_THAT(err,
-              ::testing::EndsWith("RuntimeError: I'd rather not\n\nOriginal "
-                                  "exception was:\nTypeError: bad type\n"));
+  ASSERT_EQ(streams.err(), R"(Error in sys.excepthook:
+Traceback (most recent call last):
+  File "<string>", line 4, in my_hook
+RuntimeError: I'd rather not
+
+Original exception was:
+TypeError: bad type
+)");
   EXPECT_EQ(streams.out(), "");
 }
 
@@ -612,8 +614,10 @@ TEST_F(PythonrunExtensionApiTest,
   int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
   EXPECT_EQ(returncode, -1);
   EXPECT_EQ(streams.out(), "");
-  // TODO(T39919701): Check the whole string once we have tracebacks.
-  EXPECT_NE(streams.err().find("RuntimeError: boom\n"), std::string::npos);
+  EXPECT_EQ(streams.err(), R"(Traceback (most recent call last):
+  File "test.py", line 1, in <module>
+RuntimeError: boom
+)");
 }
 
 }  // namespace testing
