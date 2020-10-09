@@ -913,16 +913,21 @@ class SyntaxError(Exception, bootstrap=True):
     def __str__(self):
         have_filename = _str_check(self.filename)
         have_lineno = _int_check_exact(self.lineno)
-        # TODO(T52652299): Take basename of filename. See implementation of
-        # function my_basename in exceptions.c
-        if not have_filename and not have_lineno:
-            return str(self.msg)
-        if have_filename and have_lineno:
-            return f"{self.msg!s} ({self.filename}, line {self.lineno})"
-        elif have_filename:
-            return f"{self.msg!s} ({self.filename})"
-        else:  # have_lineno
+
+        if have_filename:
+            import os
+
+            #   determine where basename starts
+            offset = _str_rfind(self.filename, os.sep, None, None) + 1
+
+            if have_lineno:
+                return f"{self.msg!s} ({self.filename[offset:]}, line {self.lineno})"
+            return f"{self.msg!s} ({self.filename[offset:]})"
+
+        if have_lineno:
             return f"{self.msg!s} (line {self.lineno})"
+        else:
+            return str(self.msg)
 
 
 class ValueError(Exception, bootstrap=True):

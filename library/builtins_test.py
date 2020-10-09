@@ -10476,6 +10476,16 @@ class SyntaxErrorTests(unittest.TestCase):
         result = obj.__str__()
         self.assertEqual(result, "msg (filename)")
 
+    def test_dunder_str_with_str_filename_and_int_lineno(self):
+        obj = SyntaxError("msg", ("path/to/foo.py", 5, "offset", "text"))
+        result = obj.__str__()
+        self.assertEqual(result, "msg (foo.py, line 5)")
+
+    def test_dunder_str_with_str_filename_and_non_int_lineno(self):
+        obj = SyntaxError("msg", ("path/to/foo.py", "lineno", "offset", "test"))
+        result = obj.__str__()
+        self.assertEqual(result, "msg (foo.py)")
+
 
 class TupleTests(unittest.TestCase):
     def test_dunder_repr_with_single_element(self):
