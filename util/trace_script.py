@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import _frozen_importlib
 import argparse
 import importlib
 import inspect
 import modulefinder
 import sys
+
+import _frozen_importlib
 
 
 class FunctionEvent:
@@ -49,9 +50,7 @@ def get_func_in_mro(obj, code):
         return None
     if isinstance(val, (classmethod, staticmethod)):
         cand = val.__func__
-    elif (
-        isinstance(val, property) and (val.fset is None) and (val.fdel is None)
-    ):
+    elif isinstance(val, property) and (val.fset is None) and (val.fdel is None):
         cand = val.fget
     else:
         cand = val
@@ -119,9 +118,7 @@ class CallRecorder:
 
     def __call__(self, frame, event, arg):
         func = self.get_func(frame, event, arg)
-        self.event_log.append(
-            self.EVENT_CLASS[event](self.EVENT_TYP[event], func)
-        )
+        self.event_log.append(self.EVENT_CLASS[event](self.EVENT_TYP[event], func))
 
 
 class Node:
@@ -131,9 +128,7 @@ class Node:
         self.children = children or []
         self.opening_tag = f"<{self.name}>"
         if attrs:
-            attrstr = " ".join(
-                f'{name}="{val}"' for name, val in self.attrs.items()
-            )
+            attrstr = " ".join(f'{name}="{val}"' for name, val in self.attrs.items())
             self.opening_tag = f"<{self.name} {attrstr}>"
         self.closing_tag = f"</{self.name}>"
 
@@ -192,9 +187,7 @@ class Document:
         if isinstance(node, Node):
             if len(node.children) == 1 and isinstance(node.children[0], Text):
                 self.append(
-                    node.opening_tag
-                    + node.children[0].content
-                    + node.closing_tag
+                    node.opening_tag + node.children[0].content + node.closing_tag
                 )
             else:
                 self.append(node.opening_tag)
@@ -217,10 +210,7 @@ def toggle(node):
     node_id = node.attrs["id"]
     return Node(
         "a",
-        attrs={
-            "href": "#",
-            "onClick": f"$('#{node_id}').toggle(); return false;",
-        },
+        attrs={"href": "#", "onClick": f"$('#{node_id}').toggle(); return false;"},
         children=[Text("+/-")],
     )
 
@@ -260,9 +250,7 @@ def called_function_section(called_funcs, kind):
     for mod, funcs in sorted(
         called_funcs.items(), key=lambda kv: len(kv[1]), reverse=True
     ):
-        mod_bar, mod_funcs = toggle_bar_and_container(
-            Text(f"{mod} ({len(funcs)})")
-        )
+        mod_bar, mod_funcs = toggle_bar_and_container(Text(f"{mod} ({len(funcs)})"))
         for func in sorted(funcs):
             mod_funcs.append(Node("div", children=[Text(func)]))
         all_funcs.append(mod_bar)
@@ -274,23 +262,13 @@ def call_node(event):
     node = Node(
         "span",
         children=[
-            Node(
-                "span",
-                attrs={"class": "fn"},
-                children=[Text(event.function_name)],
-            ),
+            Node("span", attrs={"class": "fn"}, children=[Text(event.function_name)]),
             Text(" in "),
-            Node(
-                "span",
-                attrs={"class": "mn"},
-                children=[Text(event.module_name)],
-            ),
+            Node("span", attrs={"class": "mn"}, children=[Text(event.module_name)]),
         ],
     )
     if event.kind == FunctionEvent.BUILTIN:
-        node.append(
-            Node("span", attrs={"class": "fk"}, children=[Text(event.kind)])
-        )
+        node.append(Node("span", attrs={"class": "fk"}, children=[Text(event.kind)]))
     return node
 
 
@@ -351,7 +329,7 @@ class ImportTracer(modulefinder.ModuleFinder):
         scanner = self.scan_opcodes
         for what, args in scanner(co):
             if what == "store":
-                name, = args
+                (name,) = args
                 m.globalnames[name] = 1
             elif what == "absolute_import":
                 fromlist, name = args
@@ -386,18 +364,14 @@ class ImportTracer(modulefinder.ModuleFinder):
                     self._safe_import_hook(name, m, fromlist, level=level)
                 else:
                     parent = self.determine_parent(m, level=level)
-                    self._safe_import_hook(
-                        parent.__name__, None, fromlist, level=0
-                    )
+                    self._safe_import_hook(parent.__name__, None, fromlist, level=0)
             else:
                 # We don't expect anything else from the generator.
                 raise RuntimeError(what)
 
 
 def imported_modules_section(imports):
-    bar, mod_list = toggle_bar_and_container(
-        Text(f"Imported {len(imports)} modules")
-    )
+    bar, mod_list = toggle_bar_and_container(Text(f"Imported {len(imports)} modules"))
     for name in sorted(imports):
         mod_list.append(Node("div", children=[Text(name)]))
     return Node("div", children=[bar, mod_list])
@@ -443,9 +417,7 @@ def render_summary(path, source, event_log):
             Node("h2", children=[Text("Summary stats:")]),
             imported_modules_section(imported_modules),
             called_function_section(called_builtins, FunctionEvent.BUILTIN),
-            called_function_section(
-                called_interpreted, FunctionEvent.INTERPRETED
-            ),
+            called_function_section(called_interpreted, FunctionEvent.INTERPRETED),
             Node("h2", children=[Text("Import Trace:")]),
             import_trace_section(traces, called_builtins),
             Node("h2", children=[Text("Call Trace:")]),
