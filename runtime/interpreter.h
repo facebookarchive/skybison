@@ -413,6 +413,7 @@ class Interpreter {
   static Continue doInplacePower(Thread* thread, word arg);
   static Continue doInplaceRshift(Thread* thread, word arg);
   static Continue doInplaceSubtract(Thread* thread, word arg);
+  static Continue doInplaceSubSmallInt(Thread* thread, word arg);
   static Continue doInplaceTrueDivide(Thread* thread, word arg);
   static Continue doInplaceXor(Thread* thread, word arg);
   static Continue doInvalidBytecode(Thread* thread, word arg);

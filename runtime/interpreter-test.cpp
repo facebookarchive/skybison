@@ -1284,7 +1284,7 @@ v3 = MyIntSub(4)
       249));
 }
 
-TEST_F(InterpreterTest, DoInplaceOpWithSmallIntsRewritesOpcode) {
+TEST_F(InterpreterTest, InplaceAddWithSmallIntsRewritesOpcode) {
   HandleScope scope(thread_);
 
   word left = 7;
@@ -1316,7 +1316,7 @@ TEST_F(InterpreterTest, DoInplaceOpWithSmallIntsRewritesOpcode) {
       isIntEqualsWord(Interpreter::call0(thread_, function), left + right));
 }
 
-TEST_F(InterpreterTest, InplaceOpWithSmallInts) {
+TEST_F(InterpreterTest, InplaceAddSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b):
@@ -1339,7 +1339,7 @@ def foo(a, b):
       isIntEqualsWord(Interpreter::call2(thread_, function, left, right), -6));
 }
 
-TEST_F(InterpreterTest, InplaceOpWithSmallIntsRevertsBackToInplaceOp) {
+TEST_F(InterpreterTest, InplaceAddSmallIntRevertsBackToInplaceOp) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b):
@@ -1359,6 +1359,84 @@ def foo(a, b):
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
                       SmallInt::kMaxValue + 1 + 13));
+  EXPECT_EQ(rewritten.byteAt(4), INPLACE_OP_MONOMORPHIC);
+}
+
+TEST_F(InterpreterTest, InplaceSubtractWithSmallIntsRewritesOpcode) {
+  HandleScope scope(thread_);
+
+  word left = 7;
+  word right = -13;
+  Code code(&scope, newEmptyCode());
+  Object left_obj(&scope, runtime_->newInt(left));
+  Object right_obj(&scope, runtime_->newInt(right));
+  Tuple consts(&scope, runtime_->newTupleWith2(left_obj, right_obj));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, INPLACE_SUBTRACT, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), INPLACE_SUB_SMALLINT);
+
+  // Updated opcode returns the same value.
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
+}
+
+TEST_F(InterpreterTest, InplaceSubtractSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(a, b):
+    a -= b
+    return a
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, function.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), INPLACE_OP_ANAMORPHIC);
+
+  SmallInt left(&scope, SmallInt::fromWord(7));
+  SmallInt right(&scope, SmallInt::fromWord(-13));
+
+  rewritten.byteAtPut(4, INPLACE_SUB_SMALLINT);
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(-13);
+  // 7 - (-13)
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right), 20));
+}
+
+TEST_F(InterpreterTest, InplaceSubSmallIntRevertsBackToInplaceOp) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(a, b):
+    a -= b
+    return a
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, function.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), INPLACE_OP_ANAMORPHIC);
+
+  LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
+  SmallInt right(&scope, SmallInt::fromWord(13));
+
+  rewritten.byteAtPut(4, INPLACE_SUB_SMALLINT);
+  // LARGE_SMALL_INT -= SMALL_INT
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
+                      SmallInt::kMaxValue + 1 - 13));
   EXPECT_EQ(rewritten.byteAt(4), INPLACE_OP_MONOMORPHIC);
 }
 

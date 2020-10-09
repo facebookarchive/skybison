@@ -5423,6 +5423,23 @@ Continue Interpreter::doInplaceAddSmallInt(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE
+Continue Interpreter::doInplaceSubSmallInt(Thread* thread, word arg) {
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    word result_value = left_value - right_value;
+    if (SmallInt::isValid(result_value)) {
+      thread->stackDrop(1);
+      thread->stackSetTop(SmallInt::fromWord(result_value));
+      return Continue::NEXT;
+    }
+  }
+  return inplaceOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   if (thread->stackPeek(0).isSmallInt() && thread->stackPeek(1).isSmallInt()) {
@@ -5430,6 +5447,9 @@ Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
       case BinaryOp::ADD:
         rewriteCurrentBytecode(frame, INPLACE_ADD_SMALLINT);
         return doInplaceAddSmallInt(thread, arg);
+      case BinaryOp::SUB:
+        rewriteCurrentBytecode(frame, INPLACE_SUB_SMALLINT);
+        return doInplaceSubSmallInt(thread, arg);
       default:
         return inplaceOpUpdateCache(thread, arg);
     }
