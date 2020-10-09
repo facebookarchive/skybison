@@ -1494,6 +1494,24 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
   return binarySubscrUpdateCache(thread, arg);
 }
 
+HANDLER_INLINE Continue Interpreter::doBinarySubscrTuple(Thread* thread,
+                                                         word arg) {
+  RawObject container = thread->stackPeek(1);
+  RawObject key = thread->stackPeek(0);
+  if (container.isTuple() && key.isSmallInt()) {
+    word index = SmallInt::cast(key).value();
+    RawTuple tuple = Tuple::cast(container);
+    word length = tuple.length();
+    if (0 <= index && index < length) {
+      thread->stackPop();
+      thread->stackSetTop(tuple.at(index));
+      return Continue::NEXT;
+    }
+  }
+  EVENT_CACHE(BINARY_SUBSCR_TUPLE);
+  return binarySubscrUpdateCache(thread, arg);
+}
+
 HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
                                                                word arg) {
   Frame* frame = thread->currentFrame();
@@ -1535,6 +1553,12 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
       if (key.isSmallInt()) {
         rewriteCurrentBytecode(frame, BINARY_SUBSCR_LIST);
         return doBinarySubscrList(thread, arg);
+      }
+      break;
+    case LayoutId::kTuple:
+      if (key.isSmallInt()) {
+        rewriteCurrentBytecode(frame, BINARY_SUBSCR_TUPLE);
+        return doBinarySubscrTuple(thread, arg);
       }
       break;
     default:
