@@ -2511,25 +2511,25 @@ class bytes(bootstrap=True):
         return result
 
     def isalnum(self):
-        _unimplemented()
+        _builtin()
 
     def isalpha(self):
-        _unimplemented()
+        _builtin()
 
     def isdigit(self):
-        _unimplemented()
+        _builtin()
 
     def islower(self):
-        _unimplemented()
+        _builtin()
 
     def isspace(self):
-        _unimplemented()
+        _builtin()
 
     def istitle(self):
-        _unimplemented()
+        _builtin()
 
     def isupper(self):
-        _unimplemented()
+        _builtin()
 
     def join(self, iterable) -> bytes:
         result = _bytes_join(self, iterable)

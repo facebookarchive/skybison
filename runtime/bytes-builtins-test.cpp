@@ -1449,6 +1449,192 @@ self = Foo(b"*\x01a\x92")
   EXPECT_TRUE(isStrEqualsCStr(*repr, "2a016192"));
 }
 
+TEST_F(BytesBuiltinsTest, IsalnumWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, isalnum), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsalnumWithAllAlnumReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {'A', '1', 'a', '2', 'B'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isalnum), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsalnumWithOneNonAlnumReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'A', '1', ' ', '2', 'b'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isalnum), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsalphaWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, isalpha), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsalphaWithAllAlphaReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {'A', 'a', 'Z', 'z'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isalpha), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsAlphaWithOneDigitReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'A', 'a', '1'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isalpha), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsdigitWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, isdigit), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsdigitAllDigitsReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {'2', '0', '2', '0'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isdigit), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsdigitOneAlphaReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'4', '0', '1', 'k'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isdigit), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsLowerWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, islower), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IslowerWithAllLowercaseReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {'a', 'b', 'c'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, islower), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IslowerWithOneUppercaseReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'F', 'o', 'o'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, islower), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IslowerWithOneDigitReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'f', '8'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, islower), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsspaceWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, isspace), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsspaceWithAllWhitespaceReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {' ', '\n', '\t', '\r'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isspace), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsspaceWithNonSpaceReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'\t', '.', ' ', '\n'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isspace), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IstitleWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, istitle), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IstitleWithTitlecaseWordsReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {'H', 'e', 'l', 'l', 'o', ' ',
+                       'W', 'o', 'r', 'l', 'd', '!'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, istitle), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IstitleWithLowercaseWordStartReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'F', 'o', 'o', '1', 'b', 'a', 'r'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, istitle), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IstitleWithUppercaseMiddleReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'F', 'o', 'O'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, istitle), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsupperWithEmptyBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytes self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(METH(bytes, isupper), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsupperWithAllUppercaseReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte view[] = {'F', 'O', 'O', 'B', 'A', 'R'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isupper), self));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsupperWithOneLowercaseReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'F', 'O', 'O', 'B', 'a', 'R'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isupper), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(BytesBuiltinsTest, IsupperWithOneDigitReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte view[] = {'F', '8'};
+  Bytes self(&scope, runtime_->newBytesWithAll(view));
+  Object result(&scope, runBuiltin(METH(bytes, isupper), self));
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
 TEST_F(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "b''.join(0)"),
                             LayoutId::kTypeError,

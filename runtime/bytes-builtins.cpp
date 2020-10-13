@@ -686,6 +686,152 @@ RawObject METH(bytes, hex)(Thread* thread, Arguments args) {
   return bytesHex(thread, self, self.length());
 }
 
+RawObject METH(bytes, isalnum)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+  if (length == 0) {
+    return Bool::falseObj();
+  }
+  for (word i = 0; i < length; i++) {
+    if (!ASCII::isAlnum(self.byteAt(i))) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject METH(bytes, isalpha)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+  if (length == 0) {
+    return Bool::falseObj();
+  }
+  for (word i = 0; i < length; i++) {
+    if (!ASCII::isAlpha(self.byteAt(i))) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject METH(bytes, isdigit)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+  if (length == 0) {
+    return Bool::falseObj();
+  }
+  for (word i = 0; i < length; i++) {
+    if (!ASCII::isDigit(self.byteAt(i))) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject METH(bytes, islower)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+  if (length == 0) {
+    return Bool::falseObj();
+  }
+  for (word i = 0; i < length; i++) {
+    if (!ASCII::isLower(self.byteAt(i))) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject METH(bytes, isspace)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+  if (length == 0) {
+    return Bool::falseObj();
+  }
+  for (word i = 0; i < length; i++) {
+    if (!ASCII::isSpace(self.byteAt(i))) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject METH(bytes, istitle)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+
+  bool cased = false;
+  bool previous_is_cased = false;
+  for (word i = 0; i < length; i++) {
+    byte b = self.byteAt(i);
+    if (ASCII::isUpper(b)) {
+      if (previous_is_cased) {
+        return Bool::falseObj();
+      }
+      cased = true;
+      previous_is_cased = true;
+    } else if (ASCII::isLower(b)) {
+      if (!previous_is_cased) {
+        return Bool::falseObj();
+      }
+      cased = true;
+      previous_is_cased = true;
+    } else {
+      previous_is_cased = false;
+    }
+  }
+  return Bool::fromBool(cased);
+}
+
+RawObject METH(bytes, isupper)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(bytes));
+  }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word length = self.length();
+  if (length == 0) {
+    return Bool::falseObj();
+  }
+  for (word i = 0; i < length; i++) {
+    if (!ASCII::isUpper(self.byteAt(i))) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
 RawObject METH(bytes, lower)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
