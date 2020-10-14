@@ -105,7 +105,7 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
 static const int kListInsertionSortSize = 8;
 
 static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
-                                   SymbolId compare_method, word start,
+                                   const Object& compare_func, word start,
                                    word end) {
   HandleScope scope(thread);
   Object item_i(&scope, NoneType::object());
@@ -116,8 +116,7 @@ static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
     word j = i - 1;
     for (; j >= start; j--) {
       item_j = data.at(j);
-      compare_result = thread->invokeFunction2(ID(_builtins), compare_method,
-                                               item_i, item_j);
+      compare_result = Interpreter::call2(thread, compare_func, item_i, item_j);
       if (compare_result.isError()) {
         return *compare_result;
       }
@@ -138,8 +137,9 @@ static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
 // Merge 2 sublists, input[left: right], input[right: end] into
 // output[left: end].
 static RawObject listMerge(Thread* thread, const MutableTuple& input,
-                           const MutableTuple& output, SymbolId compare_method,
-                           word left, word right, word end) {
+                           const MutableTuple& output,
+                           const Object& compare_func, word left, word right,
+                           word end) {
   HandleScope scope(thread);
   Object item_i(&scope, NoneType::object());
   Object item_j(&scope, NoneType::object());
@@ -150,8 +150,7 @@ static RawObject listMerge(Thread* thread, const MutableTuple& input,
   while (i < right && j < end) {
     item_i = input.at(i);
     item_j = input.at(j);
-    compare_result =
-        thread->invokeFunction2(ID(_builtins), compare_method, item_j, item_i);
+    compare_result = Interpreter::call2(thread, compare_func, item_j, item_i);
     if (compare_result.isError()) {
       return *compare_result;
     }
@@ -195,12 +194,16 @@ RawObject listSortWithCompareMethod(Thread* thread, const List& list,
     return NoneType::object();
   }
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object compare_func(&scope, runtime->lookupNameInModule(thread, ID(_builtins),
+                                                          compare_method));
+  if (compare_func.isError()) return *compare_func;
   MutableTuple input(&scope, list.items());
   Object compare_result(&scope, NoneType::object());
   for (word left = 0; left < num_items; left += kListInsertionSortSize) {
     word right = Utils::minimum(left + kListInsertionSortSize, num_items);
     compare_result =
-        listInsertionSort(thread, input, compare_method, left, right);
+        listInsertionSort(thread, input, compare_func, left, right);
     if (compare_result.isError()) {
       return *compare_result;
     }
@@ -209,7 +212,6 @@ RawObject listSortWithCompareMethod(Thread* thread, const List& list,
     // The input list is small enough to be sorted by insertion sort.
     return NoneType::object();
   }
-  Runtime* runtime = thread->runtime();
   MutableTuple output(&scope, runtime->newMutableTuple(input.length()));
   Object tmp(&scope, NoneType::object());
   for (word width = kListInsertionSortSize; width < num_items; width *= 2) {
@@ -217,7 +219,7 @@ RawObject listSortWithCompareMethod(Thread* thread, const List& list,
       word right = Utils::minimum(num_items, left + width);
       word end = Utils::minimum(num_items, left + width * 2);
       compare_result =
-          listMerge(thread, input, output, compare_method, left, right, end);
+          listMerge(thread, input, output, compare_func, left, right, end);
       if (compare_result.isError()) {
         return *compare_result;
       }
