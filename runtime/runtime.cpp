@@ -1797,6 +1797,16 @@ void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
     return;  // already initialized
   }
 
+  signal_stack_ = std::malloc(SIGSTKSZ);
+  CHECK(signal_stack_ != nullptr, "out of memory");
+
+  stack_t altstack;
+  altstack.ss_sp = signal_stack_;
+  altstack.ss_size = SIGSTKSZ;
+  altstack.ss_flags = 0;
+  CHECK(::sigaltstack(&altstack, nullptr) == 0,
+        "unable to create signal-handling stack");
+
   HandleScope scope(thread);
   MutableTuple callbacks(&scope, newMutableTuple(OS::kNumSignals));
 
@@ -1823,6 +1833,9 @@ void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
 
 void Runtime::finalizeSignals(Thread* thread) {
   if (signal_callbacks_.isNoneType()) return;
+
+  std::free(signal_stack_);
+
   HandleScope scope(thread);
   MutableTuple callbacks(&scope, signal_callbacks_);
   Object callback(&scope, NoneType::object());

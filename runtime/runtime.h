@@ -1065,6 +1065,8 @@ class Runtime {
   // or a Python object to be called when handling the signal.
   RawObject signal_callbacks_ = NoneType::object();
 
+  void* signal_stack_ = nullptr;
+
   // File descriptor for writing when a signal is received.
   int wakeup_fd_ = -1;
 

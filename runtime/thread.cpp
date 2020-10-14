@@ -49,21 +49,11 @@ Thread::Thread(word size)
       asyncgen_hooks_finalizer_(NoneType::object()),
       contextvars_context_(NoneType::object()) {
   CHECK(size % kPointerSize == 0, "size must be a multiple of kPointerSize");
-  start_ = new byte[size + SIGSTKSZ]();  // Zero-initialize the stack
+  start_ = new byte[size]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
   limit_ = start_;
   stack_pointer_ = reinterpret_cast<RawObject*>(end_);
-
-  stack_t altstack;
-  altstack.ss_sp = end_;
-  altstack.ss_size = SIGSTKSZ;
-  altstack.ss_flags = 0;
-  if (UNLIKELY(::sigaltstack(&altstack, nullptr) != 0)) {
-    std::perror("unable to create signal-handling stack");
-    std::abort();
-  }
-
   current_frame_ = pushInitialFrame();
 }
 
