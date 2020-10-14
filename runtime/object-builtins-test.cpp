@@ -21,7 +21,7 @@ TEST_F(ObjectBuiltinsTest, DunderEqWithIdenticalObjectsReturnsTrue) {
 result = object.__eq__(None, None)
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, Bool::trueObj());
 }
@@ -32,13 +32,13 @@ TEST_F(ObjectBuiltinsTest,
 result = object.__eq__(object(), object())
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST_F(ObjectBuiltinsTest, DunderGetattributeReturnsAttribute) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 i = C()
@@ -52,7 +52,7 @@ i.foo = 79
 }
 
 TEST_F(ObjectBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object object(&scope, NoneType::object());
   Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
@@ -62,7 +62,7 @@ TEST_F(ObjectBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
 
 TEST_F(ObjectBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object object(&scope, NoneType::object());
   Object name(&scope, runtime_->newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
@@ -89,7 +89,7 @@ i = C()
 }
 
 TEST_F(ObjectBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object object(&scope, NoneType::object());
   Object name(&scope, runtime_->newInt(0));
   Object value(&scope, runtime_->newInt(1));
@@ -110,14 +110,14 @@ TEST_F(ObjectBuiltinsTest, DunderSetattrOnBuiltinTypeRaisesAttributeError) {
 
 TEST_F(ObjectBuiltinsTest,
        DunderSizeofWithNonHeapObjectReturnsSizeofRawObject) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object small_int(&scope, SmallInt::fromWord(6));
   Object result(&scope, runBuiltin(METH(object, __sizeof__), small_int));
   EXPECT_TRUE(isIntEqualsWord(*result, kPointerSize));
 }
 
 TEST_F(ObjectBuiltinsTest, DunderSizeofWithLargeStrReturnsSizeofHeapObject) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   HeapObject large_str(&scope, runtime_->createLargeStr(40));
   Object result(&scope, runBuiltin(METH(object, __sizeof__), large_str));
   EXPECT_TRUE(isIntEqualsWord(*result, large_str.size()));
@@ -196,7 +196,7 @@ a = object.__str__(f)
 b = object.__repr__(f)
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
   EXPECT_TRUE(isStrEquals(a, b));
@@ -212,7 +212,7 @@ a = object.__str__(f)
 b = f.__str__()
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object a(&scope, mainModuleAt(runtime_, "a"));
   Object b(&scope, mainModuleAt(runtime_, "b"));
   EXPECT_TRUE(isStrEquals(a, b));
@@ -279,7 +279,7 @@ Foo()
 }
 
 TEST_F(NoneBuiltinsTest, NewReturnsNone) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Type type(&scope, runtime_->typeAt(LayoutId::kNoneType));
   EXPECT_TRUE(runBuiltin(METH(NoneType, __new__), type).isNoneType());
 }
@@ -292,20 +292,20 @@ TEST_F(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {
 
 TEST_F(NoneBuiltinsTest, DunderReprIsBoundMethod) {
   ASSERT_FALSE(runFromCStr(runtime_, "a = None.__repr__").isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object a(&scope, mainModuleAt(runtime_, "a"));
   EXPECT_TRUE(a.isBoundMethod());
 }
 
 TEST_F(NoneBuiltinsTest, DunderReprReturnsNone) {
   ASSERT_FALSE(runFromCStr(runtime_, "a = None.__repr__()").isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object a(&scope, mainModuleAt(runtime_, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "None"));
 }
 
 TEST_F(NoneBuiltinsTest, BuiltinBaseIsNone) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Type none_type(&scope, runtime_->typeAt(LayoutId::kNoneType));
   EXPECT_EQ(none_type.builtinBase(), LayoutId::kNoneType);
 }

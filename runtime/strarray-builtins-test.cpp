@@ -44,7 +44,7 @@ TEST_F(StrArrayBuiltinsTest, DunderStrWithNonStrArrayRaisesTypeError) {
 }
 
 TEST_F(StrArrayBuiltinsTest, DunderStrWithEmptyStrArrayReturnsEmptyStr) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   StrArray self(&scope, runtime_->newStrArray());
   Object repr(&scope, runBuiltin(METH(_str_array, __str__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, ""));

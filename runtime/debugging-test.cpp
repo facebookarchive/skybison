@@ -16,7 +16,7 @@ using DebuggingTests = RuntimeFixture;
 
 static RawObject makeTestCode(Thread* thread) {
   Runtime* runtime = thread->runtime();
-  HandleScope scope;
+  HandleScope scope(thread);
   const byte bytes_array[] = {LOAD_CONST, 0, LOAD_ATTR, 0, RETURN_VALUE, 0};
   Bytes bytes(&scope, runtime->newBytesWithAll(bytes_array));
   Object const0(&scope, runtime->newStrFromCStr("const0"));

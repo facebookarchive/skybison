@@ -30,7 +30,7 @@ TEST_F(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
 }
 
 TEST_F(ScavengerTest, ClearWeakReference) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Object none(&scope, NoneType::object());
   Object ref(&scope, *none);
   {

@@ -275,7 +275,7 @@ TEST_F(TypeBuiltinsTest, DunderBasesOnBuiltinTypeReturnsTuple) {
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallType) {
-  HandleScope scope;
+  HandleScope scope(thread_);
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
@@ -294,7 +294,7 @@ c = C()
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallTypeWithInit) {
-  HandleScope scope;
+  HandleScope scope(thread_);
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -313,7 +313,7 @@ C()
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallTypeWithInitAndArgs) {
-  HandleScope scope;
+  HandleScope scope(thread_);
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -339,7 +339,7 @@ TEST_F(TypeBuiltinsTest, DunderCallWithNonTypeRaisesTypeError) {
 
 TEST_F(TypeBuiltinsTest,
        DunderCallWithNonTypeDudnerNewResultReturnsWithoutCallingDunderInit) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __new__(self, *args):
@@ -354,7 +354,7 @@ result = type.__call__(C, "C", (), {})
 }
 
 TEST_F(TypeBuiltinsTest, DunderDirReturnsList) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   x = 42
@@ -395,7 +395,7 @@ class C:
 }
 
 TEST_F(TypeBuiltinsTest, DunderGetattributeReturnsAttribute) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   foo = -13
@@ -408,7 +408,7 @@ class C:
 }
 
 TEST_F(TypeBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   pass
@@ -423,7 +423,7 @@ class C:
 
 TEST_F(TypeBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   pass
@@ -455,7 +455,7 @@ result = type.__repr__(Foo)
 }
 
 TEST_F(TypeBuiltinsTest, DunderNewWithOneArgReturnsTypeOfArg) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
@@ -469,7 +469,7 @@ b = type.__new__(type, "hello");
 }
 
 TEST_F(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo(type):
   pass
@@ -871,7 +871,7 @@ class C(ExtType):
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = str.__class__.__mro__").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
@@ -879,7 +879,7 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = str.__class__.__name__").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
@@ -887,7 +887,7 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = str.__class__.__dict__").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
@@ -981,7 +981,7 @@ class C:
 result = C(*(1,2,3)).num_args()
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
@@ -1005,7 +1005,7 @@ class Foo:
 result = Foo.foo(*(1,2,3))
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
@@ -1016,7 +1016,7 @@ ty = type.__new__(type, *("foo", (object,), {'a': 1}))
 name = ty.__name__
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object name(&scope, mainModuleAt(runtime_, "name"));
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
 }

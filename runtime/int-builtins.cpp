@@ -679,7 +679,7 @@ RawObject METH(int, conjugate)(Thread* thread, Arguments args) {
 static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
                              const Object& length_obj,
                              const Object& byteorder_obj, bool is_signed) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(int));

@@ -73,7 +73,7 @@ class C(UnicodeDecodeError, LookupError):
   pass
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object c(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(c.isType());
   EXPECT_EQ(Type::cast(*c).builtinBase(), LayoutId::kUnicodeDecodeError);
@@ -222,7 +222,7 @@ class BuiltinTypeIdsTest : public ::testing::TestWithParam<LayoutId> {};
 // object points to a layout with the same layout ID as the built-in class.
 TEST_P(BuiltinTypeIdsTest, HasTypeObject) {
   std::unique_ptr<Runtime> runtime(createTestRuntime());
-  HandleScope scope;
+  HandleScope scope(Thread::current());
 
   LayoutId id = GetParam();
   ASSERT_EQ(runtime->layoutAt(id).layoutId(), LayoutId::kLayout)
@@ -1457,7 +1457,7 @@ TEST_F(RuntimeTest, HashCodeSizeCheck) {
   // Verify that large-magnitude random numbers are properly
   // truncated to something which fits in a SmallInt
   runtime_->setRandomState(seed);
-  HandleScope scope;
+  HandleScope scope(thread_);
   Layout layout(&scope, runtime_->layoutAt(LayoutId::kObject));
   Object object(&scope, runtime_->newInstance(layout));
   EXPECT_EQ(runtime_->hash(*object), 1);

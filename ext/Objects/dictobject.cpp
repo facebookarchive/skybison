@@ -58,7 +58,7 @@ PY_EXPORT int PyDict_Check_Func(PyObject* obj) {
 }
 
 PY_EXPORT Py_ssize_t PyDict_GET_SIZE_Func(PyObject* dict) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Dict dict_obj(&scope, ApiHandle::fromPyObject(dict)->asObject());
   return dict_obj.numItems();
 }

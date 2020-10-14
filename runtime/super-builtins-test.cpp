@@ -21,7 +21,7 @@ class C(metaclass=M): pass
 s = C.get_super()
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   Object m(&scope, mainModuleAt(runtime_, "M"));
   Object c(&scope, mainModuleAt(runtime_, "C"));
@@ -65,7 +65,7 @@ class B(A):
 result = B().getsuper().x
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }

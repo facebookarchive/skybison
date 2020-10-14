@@ -60,7 +60,7 @@ static void dumpCodeFlags(std::ostream& os, word flags) {
 
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Code code(&scope, value);
   os << "code " << code.name() << ":\n" << indent << "  flags:";
   dumpCodeFlags(os, code.flags());
@@ -92,7 +92,7 @@ static std::ostream& operator<<(std::ostream& os, SymbolId value) {
 }
 
 std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Function function(&scope, value);
   os << "function " << function.name() << ":\n"
      << "  qualname: " << function.qualname() << '\n'
@@ -402,7 +402,7 @@ std::ostream& operator<<(std::ostream& os, RawInt value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawLargeInt value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   LargeInt large_int(&scope, value);
 
   os << "largeint([";
@@ -422,7 +422,7 @@ std::ostream& operator<<(std::ostream& os, RawLargeInt value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawLargeStr value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Str str(&scope, value);
   unique_c_ptr<char[]> data(str.toCStr());
   os << '"';
@@ -434,7 +434,7 @@ std::ostream& operator<<(std::ostream& os, RawLayout value) {
   Thread* thread = Thread::current();
   os << "<layout " << static_cast<word>(value.id());
   if (thread->runtime()->isInstanceOfType(value.describedType())) {
-    HandleScope scope;
+    HandleScope scope(Thread::current());
     Type type(&scope, value.describedType());
     os << " (" << type.name() << ')';
   }
@@ -442,7 +442,7 @@ std::ostream& operator<<(std::ostream& os, RawLayout value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawList value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   List list(&scope, value);
   os << '[';
   for (word i = 0, num_itesm = list.numItems(); i < num_itesm; i++) {
@@ -469,7 +469,7 @@ std::ostream& operator<<(std::ostream& os, RawSmallInt value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawSmallStr value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Str str(&scope, value);
   byte buffer[RawSmallStr::kMaxLength];
   word length = str.length();
@@ -486,7 +486,7 @@ std::ostream& operator<<(std::ostream& os, RawStr value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawTuple value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Tuple tuple(&scope, value);
   os << '(';
   word length = tuple.length();
@@ -499,7 +499,7 @@ std::ostream& operator<<(std::ostream& os, RawTuple value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawMutableTuple value) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   MutableTuple tuple(&scope, value);
   os << "mutabletuple(";
   word length = tuple.length();

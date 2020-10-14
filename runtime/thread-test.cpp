@@ -993,9 +993,9 @@ TEST_F(ThreadTest, UnaryNotWithFalsey) {
   EXPECT_EQ(runCode(code), Bool::trueObj());
 }
 
-static RawDict getMainModuleDict(Runtime* runtime) {
-  HandleScope scope;
-  Module mod(&scope, findMainModule(runtime));
+static RawDict getMainModuleDict(Thread* thread) {
+  HandleScope scope(thread);
+  Module mod(&scope, findMainModule(thread->runtime()));
   EXPECT_TRUE(mod.isModule());
 
   Dict dict(&scope, mod.dict());
@@ -1012,7 +1012,7 @@ class C:
 )")
                    .isError());
 
-  Dict dict(&scope, getMainModuleDict(runtime_));
+  Dict dict(&scope, getMainModuleDict(thread_));
 
   Str name(&scope, runtime_->newStrFromCStr("C"));
   Object value(&scope, dictAtByStr(thread_, dict, name));
@@ -1152,19 +1152,19 @@ TEST_F(ThreadTest,
 // MRO tests
 
 static RawStr className(RawObject obj) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Type cls(&scope, obj);
   Str name(&scope, cls.name());
   return *name;
 }
 
-static RawObject getMro(Runtime* runtime, const char* src,
+static RawObject getMro(Thread* thread, const char* src,
                         const char* desired_class) {
-  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   static_cast<void>(runFromCStr(runtime, src).isError());
 
-  Dict mod_dict(&scope, getMainModuleDict(runtime));
+  Dict mod_dict(&scope, getMainModuleDict(thread));
   Str class_name(&scope, runtime->newStrFromCStr(desired_class));
 
   Object value(&scope, dictAtByStr(thread, mod_dict, class_name));
@@ -1182,7 +1182,7 @@ class B: pass
 class C(A,B): pass
 )";
 
-  Tuple mro(&scope, getMro(runtime_, src, "C"));
+  Tuple mro(&scope, getMro(thread_, src, "C"));
   EXPECT_EQ(mro.length(), 4);
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "C"));
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "A"));
@@ -1199,7 +1199,7 @@ class B(A): pass
 class C(B): pass
 )";
 
-  Tuple mro(&scope, getMro(runtime_, src, "C"));
+  Tuple mro(&scope, getMro(thread_, src, "C"));
   EXPECT_EQ(mro.length(), 4);
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "C"));
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
@@ -1217,7 +1217,7 @@ class C: pass
 class D(B,C): pass
 )";
 
-  Tuple mro(&scope, getMro(runtime_, src, "D"));
+  Tuple mro(&scope, getMro(thread_, src, "D"));
   EXPECT_EQ(mro.length(), 5);
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "D"));
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
@@ -1236,7 +1236,7 @@ class C(A): pass
 class D(B,C): pass
 )";
 
-  Tuple mro(&scope, getMro(runtime_, src, "D"));
+  Tuple mro(&scope, getMro(thread_, src, "D"));
   EXPECT_EQ(mro.length(), 5);
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "D"));
   EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));

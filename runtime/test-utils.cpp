@@ -253,7 +253,7 @@ void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value) {
 }
 
 static RawObject findModuleByCStr(Runtime* runtime, const char* name) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Object key(&scope, runtime->newStrFromCStr(name));
   return runtime->findModule(key);
 }

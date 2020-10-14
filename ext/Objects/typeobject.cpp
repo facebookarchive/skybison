@@ -45,7 +45,7 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
   CHECK(ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj)),
         "Type is unmanaged. Please initialize using PyType_FromSpec");
 
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   if (type.isBuiltin()) return Py_TPFLAGS_DEFAULT;
 
@@ -1868,13 +1868,13 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
 }
 
 PY_EXPORT Py_ssize_t _PyObject_SIZE_Func(PyObject* obj) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
   return typeSlotUWordAt(type, kSlotBasicSize);
 }
 
 PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyObject* obj, Py_ssize_t nitems) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
   uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
   uword item_size = typeSlotUWordAt(type, kSlotItemSize);

@@ -8,8 +8,6 @@ namespace py {
 
 class WARN_UNUSED HandleScope {
  public:
-  explicit HandleScope() : HandleScope(Thread::current()) {}
-
   explicit HandleScope(Thread* thread) : handles_(thread->handles()) {}
 
   Handles* handles() const { return handles_; }

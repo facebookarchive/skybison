@@ -19,7 +19,7 @@ import _warnings
 
 TEST_F(UnderWarningsModuleTest, WarnDoesNothing) {
   // TODO(T39431178): _warnings.warn() should actually do things.
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _warnings
 result = _warnings.warn("something went wrong")

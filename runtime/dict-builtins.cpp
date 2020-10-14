@@ -608,7 +608,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     return dictMergeDict(thread, dict, mapping, do_override);
   }
 
-  HandleScope scope;
+  HandleScope scope(thread);
   Object key(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
   Object value(&scope, NoneType::object());

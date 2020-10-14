@@ -1157,7 +1157,7 @@ result = f(container, 0)
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
@@ -1197,7 +1197,7 @@ result = f(container, "hi")
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hi"));
 
@@ -1308,7 +1308,7 @@ result = f(container)
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
@@ -1344,7 +1344,7 @@ result = f(container)
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 

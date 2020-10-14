@@ -74,7 +74,7 @@ TEST_F(BytearrayBuiltinsTest, DunderAddWithBytearrayOtherReturnsNewBytearray) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderAddWithBytesOtherReturnsNewBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   Bytes other(&scope, runtime_->newBytes(4, '1'));
   Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
@@ -89,7 +89,7 @@ class Foo(bytes): pass
 other = Foo(b"1234")
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, mainModuleAt(runtime_, "other"));
   Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
@@ -116,7 +116,7 @@ TEST_F(BytearrayBuiltinsTest, DunderEqWithNonBytearraySelfRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __eq__), self, other));
@@ -124,7 +124,7 @@ TEST_F(BytearrayBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderEqWithEmptyBytearraysReturnsTrue) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, runtime_->newBytearray());
   EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::trueObj());
@@ -176,7 +176,7 @@ TEST_F(BytearrayBuiltinsTest, DunderGeWithNonBytearraySelfRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __ge__), self, other));
@@ -184,7 +184,7 @@ TEST_F(BytearrayBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderGeWithEmptyBytearraysReturnsTrue) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, runtime_->newBytearray());
   EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::trueObj());
@@ -255,7 +255,7 @@ TEST_F(BytearrayBuiltinsTest, DunderGtWithNonBytearraySelfRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __gt__), self, other));
@@ -263,7 +263,7 @@ TEST_F(BytearrayBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderGtWithEmptyBytearraysReturnsFalse) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, runtime_->newBytearray());
   EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
@@ -355,7 +355,7 @@ TEST_F(BytearrayBuiltinsTest, DunderIaddWithBytearrayOtherConcatenatesToSelf) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   const byte bytes[] = {'1', '2', '3'};
   Bytes other(&scope, runtime_->newBytesWithAll(bytes));
@@ -371,7 +371,7 @@ class Foo(bytes): pass
 other = Foo(b"1234")
 )")
                    .isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, mainModuleAt(runtime_, "other"));
   Object result(&scope, runBuiltin(METH(bytearray, __iadd__), self, other));
@@ -387,7 +387,7 @@ TEST_F(BytearrayBuiltinsTest, DunderImulWithNonBytearrayRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object count(&scope, runtime_->newList());
   EXPECT_TRUE(raisedWithStr(
@@ -426,7 +426,7 @@ count = C()
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulWithBadDunderIndexRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -442,7 +442,7 @@ count = C()
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulPropagatesDunderIndexError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -457,7 +457,7 @@ count = C()
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   const uword digits[] = {1, 1};
   Object count(&scope, runtime_->newIntWithDigits(digits));
@@ -478,7 +478,7 @@ TEST_F(BytearrayBuiltinsTest, DunderImulWithOverflowRaisesMemoryError) {
 
 TEST_F(BytearrayBuiltinsTest,
        DunderImulWithEmptyBytearrayReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object count(&scope, SmallInt::fromWord(5));
   Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
@@ -486,7 +486,7 @@ TEST_F(BytearrayBuiltinsTest,
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
@@ -496,7 +496,7 @@ TEST_F(BytearrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyBytearray) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulWithZeroReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
@@ -533,7 +533,7 @@ TEST_F(BytearrayBuiltinsTest, DunderLeWithNonBytearraySelfRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __le__), self, other));
@@ -541,7 +541,7 @@ TEST_F(BytearrayBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderLeWithEmptyBytearraysReturnsTrue) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, runtime_->newBytearray());
   EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
@@ -611,7 +611,7 @@ TEST_F(BytearrayBuiltinsTest, DunderLenWithNonBytearrayRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderLenWithEmptyBytearrayReturnsZero) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   Object result(&scope, runBuiltin(METH(bytearray, __len__), self));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
@@ -639,7 +639,7 @@ TEST_F(BytearrayBuiltinsTest, DunderLtWithNonBytearraySelfRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __lt__), self, other));
@@ -647,7 +647,7 @@ TEST_F(BytearrayBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderLtWithEmptyBytearraysReturnsFalse) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, runtime_->newBytearray());
   EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::falseObj());
@@ -717,7 +717,7 @@ TEST_F(BytearrayBuiltinsTest, DunderMulWithNonBytearrayRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object count(&scope, runtime_->newList());
   EXPECT_TRUE(raisedWithStr(
@@ -757,7 +757,7 @@ count = C()
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -773,7 +773,7 @@ count = C()
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulPropagatesDunderIndexError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -788,7 +788,7 @@ count = C()
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   const uword digits[] = {1, 1};
   Object count(&scope, runtime_->newIntWithDigits(digits));
@@ -809,7 +809,7 @@ TEST_F(BytearrayBuiltinsTest, DunderMulWithOverflowRaisesMemoryError) {
 
 TEST_F(BytearrayBuiltinsTest,
        DunderMulWithEmptyBytearrayReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object count(&scope, SmallInt::fromWord(5));
   Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
@@ -817,7 +817,7 @@ TEST_F(BytearrayBuiltinsTest,
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
@@ -827,7 +827,7 @@ TEST_F(BytearrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyBytearray) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulWithZeroReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   self.setItems(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
@@ -864,7 +864,7 @@ TEST_F(BytearrayBuiltinsTest, DunderNeWithNonBytearraySelfRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(METH(bytearray, __ne__), self, other));
@@ -872,7 +872,7 @@ TEST_F(BytearrayBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderNeWithEmptyBytearraysReturnsFalse) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object other(&scope, runtime_->newBytearray());
   EXPECT_EQ(runBuiltin(METH(bytearray, __ne__), self, other), Bool::falseObj());
@@ -928,7 +928,7 @@ TEST_F(BytearrayBuiltinsTest, DunderNewWithNonBytearrayRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderNewReturnsEmptyBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Type cls(&scope, runtime_->typeAt(LayoutId::kBytearray));
   Object self(&scope, runBuiltin(METH(bytearray, __new__), cls));
   EXPECT_TRUE(isBytearrayEqualsCStr(self, ""));
@@ -949,7 +949,7 @@ TEST_F(BytearrayBuiltinsTest, DunderReprWithNonBytearrayRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderReprWithEmptyBytearrayReturnsEmptyRepr) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "bytearray(b'')"));
@@ -1025,7 +1025,7 @@ obj = C(b'hello world')
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderRmulCallsDunderMul) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = 3 * bytearray(b'123')").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
@@ -1039,7 +1039,7 @@ TEST_F(BytearrayBuiltinsTest, HexWithNonBytearrayRaisesTypeError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, HexWithEmptyBytearrayReturnsEmptyString) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object result(&scope, runBuiltin(METH(bytearray, hex), self));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
@@ -1098,7 +1098,7 @@ TEST_F(BytearrayBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = bytearray.maketrans(bytearray(), b'')")
           .isError());
@@ -1111,7 +1111,7 @@ TEST_F(BytearrayBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
 }
 
 TEST_F(BytearrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_,
                   "result = bytearray.maketrans(bytearray(b'abc'), b'123')")
@@ -1150,7 +1150,7 @@ TEST_F(BytearrayBuiltinsTest, TranslateWithShortTableRaisesValueError) {
 }
 
 TEST_F(BytearrayBuiltinsTest, TranslateWithEmptyBytearrayReturnsNewBytearray) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
   Object table(&scope, NoneType::object());
   Object del(&scope, runtime_->newBytearray());
@@ -1219,7 +1219,7 @@ TEST_F(BytearrayBuiltinsTest, TranslateDeletesAllBytes) {
 TEST_F(BytearrayBuiltinsTest, DunderIterReturnsBytearrayIterator) {
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = type(bytearray().__iter__())").isError());
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, runtime_->typeAt(LayoutId::kBytearrayIterator));
 }

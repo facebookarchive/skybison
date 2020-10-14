@@ -402,7 +402,7 @@ void ApiHandle::disposeHandles(Thread* thread, IdentityDict* api_handles) {
 
 void ApiHandle::visitReferences(IdentityDict* handles,
                                 PointerVisitor* visitor) {
-  HandleScope scope;
+  HandleScope scope(Thread::current());
 
   // TODO(bsimmers): Since we're reading an object mid-collection, approximate a
   // read barrier until we have a more principled solution in place.

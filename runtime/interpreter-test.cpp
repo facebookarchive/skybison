@@ -4495,7 +4495,7 @@ b = getattr(baz, '__module__')
 }
 
 TEST_F(InterpreterTest, MakeFunctionSetsDunderQualname) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo():
     def bar(): pass
@@ -4513,7 +4513,7 @@ b = getattr(baz, '__qualname__')
 }
 
 TEST_F(InterpreterTest, MakeFunctionSetsDunderDoc) {
-  HandleScope scope;
+  HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo():
     """This is a docstring"""
@@ -4605,7 +4605,7 @@ for i in range(5):
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object l_obj(&scope, testing::mainModuleAt(runtime_, "l"));
   ASSERT_TRUE(l_obj.isList());
   List l(&scope, *l_obj);
@@ -4654,7 +4654,7 @@ except:
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object n(&scope, testing::mainModuleAt(runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
@@ -4677,7 +4677,7 @@ except:
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object n(&scope, testing::mainModuleAt(runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
@@ -4694,7 +4694,7 @@ except Exception as e:
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object exc_obj(&scope, testing::mainModuleAt(runtime_, "exc"));
   ASSERT_EQ(exc_obj.layoutId(), LayoutId::kTypeError);
   BaseException exc(&scope, *exc_obj);
@@ -4713,7 +4713,7 @@ except RuntimeError:
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object n(&scope, testing::mainModuleAt(runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
@@ -4730,7 +4730,7 @@ except (StopIteration, RuntimeError, ImportError):
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object n(&scope, testing::mainModuleAt(runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
@@ -4778,7 +4778,7 @@ except Exception as exc:
 )")
                    .isError());
 
-  HandleScope scope;
+  HandleScope scope(thread_);
   Object my_error(&scope, testing::mainModuleAt(runtime_, "MyError"));
   EXPECT_EQ(runtime_->typeOf(*my_error), runtime_->typeAt(LayoutId::kType));
   Object inner(&scope, testing::mainModuleAt(runtime_, "inner"));

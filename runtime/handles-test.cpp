@@ -116,7 +116,7 @@ TEST_F(HandlesTest, VisitObjectInNestedScope) {
 
   RawObject object{0xFEEDFACEL};
   {
-    HandleScope s1;
+    HandleScope s1(thread_);
     USE(s1);
     {
       // No handles have been created so s1 should be empty.
@@ -126,7 +126,7 @@ TEST_F(HandlesTest, VisitObjectInNestedScope) {
       EXPECT_FALSE(visitor.hasVisited(object));
     }
     {
-      HandleScope s2;
+      HandleScope s2(thread_);
       Object handle(&s2, object);
       USE(handle);
       {
@@ -155,14 +155,14 @@ TEST_F(HandlesTest, VisitObjectInNestedScope) {
 }
 
 TEST_F(HandlesTest, NestedScopes) {
-  Handles* handles = Thread::current()->handles();
+  Handles* handles = thread_->handles();
 
   RawObject o1{0xDECAF1L};
   RawObject o2{0xDECAF2L};
   RawObject o3{0xDECAF3L};
 
   {
-    HandleScope s1;
+    HandleScope s1(thread_);
     Object h1(&s1, o1);
     USE(h1);
     {
@@ -176,7 +176,7 @@ TEST_F(HandlesTest, NestedScopes) {
     }
     {
       // Push scope 2.
-      HandleScope s2;
+      HandleScope s2(thread_);
       Object h2(&s2, o2);
       USE(h2);
       {
@@ -192,7 +192,7 @@ TEST_F(HandlesTest, NestedScopes) {
     // (Scope 2 is now popped.)
     {
       // Push scope 3 (at the depth previously occupied by s2).
-      HandleScope s3;
+      HandleScope s3(thread_);
       Object h3(&s3, o3);
       USE(h3);
       {
