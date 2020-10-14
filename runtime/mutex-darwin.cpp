@@ -9,29 +9,33 @@
 namespace py {
 
 Mutex::Mutex() {
-  pthread_mutex_t* lock = new pthread_mutex_t;
+  static_assert(sizeof(Mutex::Data) >= sizeof(pthread_mutex_t),
+                "Mutex::Data too small for pthread_mutex_t");
+  static_assert(alignof(Mutex::Data) >= alignof(pthread_mutex_t),
+                "Mutex::Data alignment too small for pthread_mutex_t");
+
+  pthread_mutex_t* lock = reinterpret_cast<pthread_mutex_t*>(mutex());
   DCHECK(lock != nullptr, "lock should not be null");
   int result = pthread_mutex_init(lock, nullptr);
   CHECK(result == 0, "lock creation failed");
-  lock_ = lock;
 }
 
 Mutex::~Mutex() {
-  pthread_mutex_t* lock = static_cast<pthread_mutex_t*>(lock_);
+  pthread_mutex_t* lock = reinterpret_cast<pthread_mutex_t*>(mutex());
   int result = pthread_mutex_destroy(lock);
   DCHECK(result != EBUSY, "cannot destroy locked lock");
   CHECK(result == 0, "could not destroy lock");
-  delete lock;
-  lock_ = nullptr;
 }
 
 void Mutex::lock() {
-  int result = pthread_mutex_lock(static_cast<pthread_mutex_t*>(lock_));
+  pthread_mutex_t* lock = reinterpret_cast<pthread_mutex_t*>(mutex());
+  int result = pthread_mutex_lock(lock);
   DCHECK(result == 0, "failed to lock mutex with error code of %d", result);
 }
 
 bool Mutex::tryLock() {
-  int result = pthread_mutex_trylock(static_cast<pthread_mutex_t*>(lock_));
+  pthread_mutex_t* lock = reinterpret_cast<pthread_mutex_t*>(mutex());
+  int result = pthread_mutex_trylock(lock);
   if (result == EBUSY) {
     return false;
   }
@@ -40,7 +44,8 @@ bool Mutex::tryLock() {
 }
 
 void Mutex::unlock() {
-  int result = pthread_mutex_unlock(static_cast<pthread_mutex_t*>(lock_));
+  pthread_mutex_t* lock = reinterpret_cast<pthread_mutex_t*>(mutex());
+  int result = pthread_mutex_unlock(lock);
   DCHECK(result == 0, "failed to unlock mutex with error code of %d", result);
 }
 
