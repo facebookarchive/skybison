@@ -12,19 +12,6 @@ namespace testing {
 using HeapProfilerTest = RuntimeFixture;
 using HeapProfilerDeathTest = RuntimeFixture;
 
-TEST_F(HeapProfilerTest, SerialStartsFromZero) {
-  Serial set;
-  EXPECT_EQ(0, set.serialFromWord(100));
-}
-
-TEST_F(HeapProfilerTest, SerialReturnsSameId) {
-  Serial set;
-  EXPECT_EQ(0, set.serialFromWord(100));
-  EXPECT_EQ(1, set.serialFromWord(300));
-  EXPECT_EQ(0, set.serialFromWord(100));
-  EXPECT_EQ(1, set.serialFromWord(300));
-}
-
 TEST_F(HeapProfilerTest, ConstructorCreatesEmptyBuffer) {
   HeapProfiler::Buffer buffer;
   EXPECT_EQ(buffer.size(), 0);

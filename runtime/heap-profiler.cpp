@@ -102,6 +102,7 @@ void HeapProfiler::writeFakeStackTrace() {
   // stack trace serial number
   record.write32(0);
   // thread serial number
+  // TODO(T70833159): Support multiple threads in heap dumper.
   record.write32(0);
   // number of frames
   record.write32(0);
@@ -474,6 +475,7 @@ void HeapProfiler::writeStackRoot(RawObject obj) {
   // object ID
   sub.writeObjectId(objectId(obj));
   // thread serial number
+  // TODO(T70833159): Support multiple threads in heap dumper.
   sub.write32(0);
   // frame number in stack trace
   sub.write32(-1);
@@ -492,8 +494,8 @@ void HeapProfiler::writeThreadRoot(Thread* thread) {
   // object ID
   sub.writeObjectId(reinterpret_cast<uword>(thread));
   // thread serial number
-  int32_t id = threads_.serialFromWord(thread->id());
-  sub.write32(id);
+  // TODO(T70833159): Support multiple threads in heap dumper.
+  sub.write32(0);
   // stack trace serial number
   sub.write32(0);
 }
@@ -540,9 +542,8 @@ void HeapProfiler::writeHandleRoot(RawObject obj) {
   // object ID
   sub.writeObjectId(objectId(obj));
   // thread serial number
-  // TODO(emacs): Write an ID from the thread the handle belongs to
-  int32_t id = threads_.serialFromWord(thread_->id());
-  sub.write32(id);
+  // TODO(T70833159): Support multiple threads in heap dumper.
+  sub.write32(0);
 }
 
 // STRING IN UTF8 - 0x01

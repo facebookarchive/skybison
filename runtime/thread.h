@@ -360,8 +360,6 @@ class Thread {
     contextvars_context_ = context;
   }
 
-  uint64_t id() { return OS::threadID(); }
-
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }
