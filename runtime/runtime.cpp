@@ -1834,6 +1834,11 @@ void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
 void Runtime::finalizeSignals(Thread* thread) {
   if (signal_callbacks_.isNoneType()) return;
 
+  stack_t altstack;
+  altstack.ss_size = SIGSTKSZ;
+  altstack.ss_flags = SS_DISABLE;
+  CHECK(::sigaltstack(&altstack, nullptr) == 0,
+        "unable to disable signal-handling stack");
   std::free(signal_stack_);
 
   HandleScope scope(thread);
