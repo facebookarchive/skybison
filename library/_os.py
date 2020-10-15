@@ -26,7 +26,7 @@ def close(fd):
 
 def fstat_size(fd):
     """Equivalent to os.stat(fd).st_size, but without having to reflect the
-stat struct into Python."""
+    stat struct into Python."""
     _builtin()
 
 

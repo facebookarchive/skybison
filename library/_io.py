@@ -327,8 +327,7 @@ class _IOBase(bootstrap=True):
         return False
 
     def _checkSeekable(self, msg=None):
-        """Internal: raise UnsupportedOperation if file is not seekable
-        """
+        """Internal: raise UnsupportedOperation if file is not seekable"""
         if not self.seekable():
             raise UnsupportedOperation(
                 "File or stream is not seekable." if msg is None else msg
@@ -342,8 +341,7 @@ class _IOBase(bootstrap=True):
         return False
 
     def _checkReadable(self, msg=None):
-        """Internal: raise UnsupportedOperation if file is not readable
-        """
+        """Internal: raise UnsupportedOperation if file is not readable"""
         if not self.readable():
             raise UnsupportedOperation(
                 "File or stream is not readable." if msg is None else msg
@@ -357,8 +355,7 @@ class _IOBase(bootstrap=True):
         return False
 
     def _checkWritable(self, msg=None):
-        """Internal: raise UnsupportedOperation if file is not writable
-        """
+        """Internal: raise UnsupportedOperation if file is not writable"""
         if not self.writable():
             raise UnsupportedOperation(
                 "File or stream is not writable." if msg is None else msg
@@ -373,8 +370,7 @@ class _IOBase(bootstrap=True):
         return self._closed
 
     def _checkClosed(self, msg=None):
-        """Internal: raise a ValueError if file is closed
-        """
+        """Internal: raise a ValueError if file is closed"""
         if self.closed:
             raise ValueError("I/O operation on closed file." if msg is None else msg)
 
@@ -1087,13 +1083,11 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         # return (self.getvalue(), self._pos, self.__dict__.copy())
 
     def getvalue(self):
-        """Return the bytes value (contents) of the buffer
-        """
+        """Return the bytes value (contents) of the buffer"""
         _builtin()
 
     def getbuffer(self):
-        """Return a readable and writable view of the buffer.
-        """
+        """Return a readable and writable view of the buffer."""
         _BytesIO_closed_guard(self)
         return memoryview(self._buffer)
 

@@ -746,7 +746,7 @@ def _object_keys(self):
 
 def _object_type_getattr(obj, name):
     """Looks up the named attribute on the object's type, resolving descriptors.
-Behaves like _PyObject_LookupSpecial."""
+    Behaves like _PyObject_LookupSpecial."""
     _builtin()
 
 

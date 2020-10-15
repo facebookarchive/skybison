@@ -538,8 +538,7 @@ class UnicodeData:
 
 
 def getsize(data):
-    """Return the smallest possible integer size for the given array.
-    """
+    """Return the smallest possible integer size for the given array."""
     maxdata = max(data)
     if maxdata < (1 << 8):
         return 1
@@ -725,8 +724,7 @@ class TypeRecord:
 
 
 class CodePointArray:
-    """Arrays of code points, printed as hex.
-    """
+    """Arrays of code points, printed as hex."""
 
     def __init__(self, name, data):
         self.name = name
@@ -766,8 +764,7 @@ class SmallStrArray:
 
 
 class StructArray:
-    """Store an array for writing to a generated C/C++ file.
-    """
+    """Store an array for writing to a generated C/C++ file."""
 
     def __init__(self, ctype, name, data, comment=None):
         self.type = ctype
@@ -789,8 +786,7 @@ class StructArray:
 
 
 class UIntArray:
-    """Unsigned integer arrays, printed as hex.
-    """
+    """Unsigned integer arrays, printed as hex."""
 
     def __init__(self, name, data):
         self.name = name
@@ -862,8 +858,7 @@ SIZES = [
 
 class Hash:
     def __init__(self, data):
-        """Turn a (key, value) list into a static hash table structure.
-        """
+        """Turn a (key, value) list into a static hash table structure."""
 
         # determine table size
         for size, poly in SIZES:
@@ -922,8 +917,7 @@ static const int32_t kCodePoly = {self.poly};
 
 
 def write_header(unicode, header):
-    """Writes type declarations to the database header file.
-    """
+    """Writes type declarations to the database header file."""
 
     header.write("// @")
     header.write(
@@ -1071,8 +1065,7 @@ const UnicodeTypeRecord* typeRecord(int32_t code_point);
 
 
 def write_db_prelude(db):
-    """Writes required include directives to the database file.
-    """
+    """Writes required include directives to the database file."""
 
     db.write("// @")
     db.write(
@@ -1400,8 +1393,7 @@ static const int kPhrasebookMask = (1 << kPhrasebookShift) - 1;
 
 
 def write_type_data(unicode, db, trace):  # noqa: C901
-    """Writes Unicode character type tables to the database file.
-    """
+    """Writes Unicode character type tables to the database file."""
 
     # extract unicode types
     dummy = TypeRecord(0, 0, 0, 0, 0, 0)
