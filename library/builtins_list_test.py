@@ -1010,6 +1010,16 @@ class ListTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_sort_with_small_integers(self):
+        ls = [6, 5, 4, 3, 2, 1]
+        ls.sort()
+        self.assertEqual(ls, [1, 2, 3, 4, 5, 6])
+
+    def test_sort_with_non_integers(self):
+        ls = ["world", "hello", "magnificent"]
+        ls.sort()
+        self.assertEqual(ls, ["hello", "magnificent", "world"])
+
     def test_sort_with_key(self):
         ls = [1, 2, 3, 4, 5, 6]
         ls.sort(key=lambda x: -x)

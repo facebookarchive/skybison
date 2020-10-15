@@ -104,6 +104,16 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
 // TODO(T63900795): Investigate this threshold on a realistic benchmark.
 static const int kListInsertionSortSize = 8;
 
+static RawObject objectLessThan(Thread* thread, const Object& left,
+                                const Object& right,
+                                const Object& compare_func) {
+  if (left.isSmallInt() && right.isSmallInt()) {
+    return Bool::fromBool(SmallInt::cast(*left).value() <
+                          SmallInt::cast(*right).value());
+  }
+  return Interpreter::call2(thread, compare_func, left, right);
+}
+
 static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
                                    const Object& compare_func, word start,
                                    word end) {
@@ -116,7 +126,7 @@ static RawObject listInsertionSort(Thread* thread, const MutableTuple& data,
     word j = i - 1;
     for (; j >= start; j--) {
       item_j = data.at(j);
-      compare_result = Interpreter::call2(thread, compare_func, item_i, item_j);
+      compare_result = objectLessThan(thread, item_i, item_j, compare_func);
       if (compare_result.isError()) {
         return *compare_result;
       }
@@ -150,7 +160,7 @@ static RawObject listMerge(Thread* thread, const MutableTuple& input,
   while (i < right && j < end) {
     item_i = input.at(i);
     item_j = input.at(j);
-    compare_result = Interpreter::call2(thread, compare_func, item_j, item_i);
+    compare_result = objectLessThan(thread, item_j, item_i, compare_func);
     if (compare_result.isError()) {
       return *compare_result;
     }
