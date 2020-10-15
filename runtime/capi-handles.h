@@ -52,6 +52,8 @@ class IdentityDict {
 
   RawObject remove(Thread* thread, const Object& key, word hash);
 
+  void shrink(Thread* thread);
+
  private:
   word capacity_;
   word num_items_;

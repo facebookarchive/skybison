@@ -1956,6 +1956,7 @@ void Runtime::collectGarbage() {
   EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
   RawObject cb = scavenge(this);
+  apiHandles()->shrink(Thread::current());
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();

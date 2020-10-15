@@ -12,6 +12,7 @@
 namespace py {
 
 static const int kIdentityDictGrowthFactor = 2;
+static const int kIdentityDictShrinkFactor = 4;
 
 namespace {
 
@@ -140,22 +141,12 @@ static void identityDictInsertNoUpdate(const MutableTuple& data,
   }
 }
 
-static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
-  DCHECK(dict->capacity() > 0 && Utils::isPowerOfTwo(dict->capacity()),
-         "tabl capacity must be power of two, greater than zero");
-  if (dict->numUsableItems() > 0) {
-    return;
-  }
-  // If at least half the space taken up in the dict is tombstones, removing
-  // them will free up enough space. Otherwise, the dict must be grown.
-  word growth_factor = (dict->numItems() < dict->numTombstones())
-                           ? 1
-                           : kIdentityDictGrowthFactor;
-  // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict->capacity() * growth_factor;
+static void identityDictChangeSize(Thread* thread, IdentityDict* dict,
+                                   word new_capacity) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   MutableTuple data(&scope, dict->data());
+  // TODO(T44247845): Handle overflow here.
   MutableTuple new_data(
       &scope, runtime->newMutableTuple(new_capacity * Bucket::kNumPointers));
   // Re-insert items
@@ -172,6 +163,22 @@ static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
   // Reset the usable items to 2/3 of the full capacity to guarantee low
   // collision rate.
   dict->setNumUsableItems((dict->capacity() * 2) / 3 - dict->numItems());
+}
+
+static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
+  DCHECK(dict->capacity() > 0 && Utils::isPowerOfTwo(dict->capacity()),
+         "table capacity must be power of two, greater than zero");
+  if (dict->numUsableItems() > 0) {
+    return;
+  }
+  // If at least half the space taken up in the dict is tombstones, removing
+  // them will free up enough space. Otherwise, the dict must be grown.
+  word growth_factor = (dict->numItems() < dict->numTombstones())
+                           ? 1
+                           : kIdentityDictGrowthFactor;
+  // TODO(T44247845): Handle overflow here.
+  word new_capacity = dict->capacity() * growth_factor;
+  identityDictChangeSize(thread, dict, new_capacity);
 }
 
 // TODO(T44244793): Remove these 2 functions when handles have their own
@@ -269,6 +276,16 @@ RawObject IdentityDict::remove(Thread* thread, const Object& key, word hash) {
     setNumItems(numItems() - 1);
   }
   return *result;
+}
+
+void IdentityDict::shrink(Thread* thread) {
+  if (numItems() < capacity() / kIdentityDictShrinkFactor) {
+    // TODO(T44247845): Handle overflow here.
+    // Ensure numItems is no more than 2/3 of available slots (ensure capacity
+    // is at least 3/2 numItems).
+    word new_capacity = Utils::nextPowerOfTwo((numItems() * 3) / 2 + 1);
+    identityDictChangeSize(thread, this, new_capacity);
+  }
 }
 
 ApiHandle* ApiHandle::atIndex(Runtime* runtime, word index) {

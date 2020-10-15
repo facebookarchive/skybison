@@ -34,6 +34,7 @@ class Heap {
 
 // Left in the header for inling into Runtime::newXXX functions.
 inline bool Heap::allocate(word size, word offset, uword* address) {
+  DCHECK(space_ != nullptr, "garbage collection is disabled");
   DCHECK(size >= RawHeapObject::kMinimumSize, "allocation %ld too small", size);
   DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
   // Try allocating.  If the allocation fails, invoke the garbage collector and
