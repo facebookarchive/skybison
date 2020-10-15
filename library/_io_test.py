@@ -1518,6 +1518,12 @@ class FileIOTests(unittest.TestCase):
         self.assertIsInstance(result, bytes)
         self.assertEqual(result, b"hello")
 
+    @unittest.skipIf(sys.platform != "linux", "needs /proc filesystem")
+    def test_readall_on_unseekable_file_reads_all(self):
+        with open("/proc/self/statm", "rb", buffering=False) as f:
+            result = f.readall()
+        self.assertGreater(len(result), 1)
+
     def test_readall_with_more_than_default_buffer_size_returns_all_bytes(self):
         r, w = os.pipe()
         w = os.fdopen(w, "w")

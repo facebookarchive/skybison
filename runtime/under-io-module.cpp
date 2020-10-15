@@ -1227,7 +1227,7 @@ RawObject METH(FileIO, readall)(Thread* thread, Arguments args) {
   word end = File::size(fd);
   word buffer_size = kDefaultBufferSize;
 
-  if (pos >= 0 && end >= pos) {
+  if (end > 0 && pos >= 0 && end >= pos) {
     buffer_size = end - pos + 1;
     std::unique_ptr<byte[]> buffer(new byte[buffer_size]{0});
     word result = File::read(fd, buffer.get(), buffer_size);
