@@ -44,13 +44,13 @@ class IdentityDict {
     visitor->visitPointer(&data_, PointerKind::kRuntime);
   }
 
-  RawObject at(Thread* thread, const Object& key, word hash);
+  RawObject at(Thread* thread, const Object& key);
 
-  bool includes(Thread* thread, const Object& key, word hash);
+  bool includes(Thread* thread, const Object& key);
 
-  void atPut(Thread* thread, const Object& key, word hash, const Object& value);
+  void atPut(Thread* thread, const Object& key, const Object& value);
 
-  RawObject remove(Thread* thread, const Object& key, word hash);
+  RawObject remove(Thread* thread, const Object& key);
 
   void shrink(Thread* thread);
 

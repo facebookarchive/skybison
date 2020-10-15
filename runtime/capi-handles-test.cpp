@@ -62,8 +62,8 @@ TEST_F(CApiHandlesTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_FALSE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = runtime_->apiHandles();
-  EXPECT_TRUE(isIntEqualsWord(dict->at(thread_, obj, runtime_->hash(*obj)),
-                              reinterpret_cast<word>(handle)));
+  EXPECT_TRUE(
+      isIntEqualsWord(dict->at(thread_, obj), reinterpret_cast<word>(handle)));
   handle->decref();
 }
 
@@ -74,7 +74,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = runtime_->apiHandles();
-  EXPECT_TRUE(dict->at(thread_, obj, runtime_->hash(*obj)).isErrorNotFound());
+  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
 
@@ -85,7 +85,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = runtime_->apiHandles();
-  EXPECT_TRUE(dict->at(thread_, obj, runtime_->hash(*obj)).isErrorNotFound());
+  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
 
@@ -96,7 +96,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = runtime_->apiHandles();
-  EXPECT_TRUE(dict->at(thread_, obj, runtime_->hash(*obj)).isErrorNotFound());
+  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
 
@@ -108,7 +108,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = runtime_->apiHandles();
-  EXPECT_TRUE(dict->at(thread_, obj, runtime_->hash(*obj)).isErrorNotFound());
+  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
 
@@ -120,7 +120,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = runtime_->apiHandles();
-  EXPECT_TRUE(dict->at(thread_, obj, runtime_->hash(*obj)).isErrorNotFound());
+  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
 
@@ -138,13 +138,12 @@ TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
 
   IdentityDict* dict = runtime_->apiHandles();
   Object obj(&scope, runtime_->newList());
-  word hash = runtime_->hash(*obj);
-  ASSERT_FALSE(dict->includes(thread_, obj, hash));
+  ASSERT_FALSE(dict->includes(thread_, obj));
 
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(dict->includes(thread_, obj, hash));
+  EXPECT_TRUE(dict->includes(thread_, obj));
 }
 
 TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
@@ -258,10 +257,9 @@ TEST_F(CApiHandlesTest, Cache) {
   EXPECT_EQ(handle2->cache(), buffer1);
 
   Object key(&scope, handle1->asObject());
-  word hash = runtime_->hash(*key);
   handle1->dispose();
   IdentityDict* caches = runtime_->apiCaches();
-  EXPECT_FALSE(caches->includes(thread_, key, hash));
+  EXPECT_FALSE(caches->includes(thread_, key));
   EXPECT_EQ(handle2->cache(), buffer1);
 }
 

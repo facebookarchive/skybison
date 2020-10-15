@@ -892,6 +892,8 @@ class Runtime {
 
   Thread* mainThread() { return main_thread_; }
 
+  static word immediateHash(RawObject object);
+
  private:
   Runtime(word heap_size);
 
@@ -909,7 +911,6 @@ class Runtime {
   void visitThreadRoots(PointerVisitor* visitor);
 
   word identityHash(RawObject object);
-  word immediateHash(RawObject object);
 
   word siphash24(View<byte> array);
 

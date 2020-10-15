@@ -5,13 +5,16 @@
 
 namespace py {
 
+const int kObjectAlignmentLog2 = 4;  // bits
+const int kObjectAlignment = word{1} << kObjectAlignmentLog2;
+
 class Space {
  public:
   explicit Space(word size);
   ~Space();
 
   static word roundAllocationSize(word size) {
-    return Utils::roundUp(size, kPointerSize * 2);
+    return Utils::roundUp(size, kObjectAlignment);
   }
 
   uword allocate(word size) {
