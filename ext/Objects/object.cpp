@@ -98,7 +98,10 @@ PY_EXPORT Py_ssize_t* Py_SIZE_Func(PyVarObject* obj) {
 
 PY_EXPORT int PyCallable_Check(PyObject* obj) {
   if (obj == nullptr) return 0;
-  return PyObject_HasAttrString(obj, "__call__");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  return thread->runtime()->isCallable(thread, object);
 }
 
 PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
