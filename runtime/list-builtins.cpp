@@ -111,6 +111,9 @@ static RawObject objectLessThan(Thread* thread, const Object& left,
     return Bool::fromBool(SmallInt::cast(*left).value() <
                           SmallInt::cast(*right).value());
   }
+  if (left.isStr() && right.isStr()) {
+    return Bool::fromBool(Str::cast(*left).compare(Str::cast(*right)) < 0);
+  }
   return Interpreter::call2(thread, compare_func, left, right);
 }
 
