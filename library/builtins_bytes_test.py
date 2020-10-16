@@ -355,6 +355,12 @@ class BytesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             haystack.find(needle)
 
+    def test_find_with_int_returns_index(self):
+        haystack = b"123"
+        self.assertEqual(haystack.find(ord("1")), 0)
+        self.assertEqual(haystack.find(ord("2")), 1)
+        self.assertEqual(haystack.find(ord("3")), 2)
+
     def test_find_with_string_raises_type_error(self):
         haystack = b""
         needle = "133"

@@ -1423,27 +1423,28 @@ RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
 RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  word sub = intUnderlying(args.get(1)).asWordSaturated();
-  if (sub < 0 || sub > kMaxByte) {
+  word needle = intUnderlying(args.get(1)).asWordSaturated();
+  if (needle < 0 || needle > kMaxByte) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "byte must be in range(0, 256)");
   }
-  Bytes needle(&scope, runtime->newBytes(1, sub));
   Object self_obj(&scope, args.get(0));
   word start = intUnderlying(args.get(2)).asWordSaturated();
   word end = intUnderlying(args.get(3)).asWordSaturated();
+  Bytes haystack(&scope, Bytes::empty());
+  word length;
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes haystack(&scope, bytesUnderlying(*self_obj));
-    return SmallInt::fromWord(bytesFind(haystack, haystack.length(), needle,
-                                        needle.length(), start, end));
-  }
-  if (runtime->isInstanceOfBytearray(*self_obj)) {
+    haystack = bytesUnderlying(*self_obj);
+    length = haystack.length();
+  } else if (runtime->isInstanceOfBytearray(*self_obj)) {
     Bytearray self(&scope, *self_obj);
-    Bytes haystack(&scope, self.items());
-    return SmallInt::fromWord(bytesFind(haystack, self.numItems(), needle,
-                                        needle.length(), start, end));
+    haystack = self.items();
+    length = self.numItems();
+  } else {
+    UNIMPLEMENTED("bytes-like other than bytes, bytearray");
   }
-  UNIMPLEMENTED("bytes-like other than bytes, bytearray");
+  Slice::adjustSearchIndices(&start, &end, length);
+  return SmallInt::fromWord(haystack.findByte(needle, start, end - start));
 }
 
 RawObject FUNC(_builtins, _byteslike_guard)(Thread* thread, Arguments args) {
