@@ -107,6 +107,10 @@ class Thread {
                                        const Dict& dict);
 
   Thread* next() { return next_; }
+  void setNext(Thread* next) { next_ = next; }
+
+  Thread* prev() { return prev_; }
+  void setPrev(Thread* prev) { prev_ = prev; }
 
   Handles* handles() { return &handles_; }
 
@@ -381,29 +385,30 @@ class Thread {
   RawObject* stack_pointer_;
 
   // Has the runtime requested a thread interruption? (e.g. signals, GC)
-  bool is_interrupted_;
+  bool is_interrupted_ = false;
 
   // current_frame_ always points to the top-most frame on the stack.
   Frame* current_frame_;
-  Thread* next_;
-  Runtime* runtime_;
+  Thread* next_ = nullptr;
+  Thread* prev_ = nullptr;
+  Runtime* runtime_ = nullptr;
   InterpreterFunc interpreter_func_ = uninitializedInterpreterFunc;
 
   // State of the pending exception.
-  RawObject pending_exc_type_;
-  RawObject pending_exc_value_;
-  RawObject pending_exc_traceback_;
+  RawObject pending_exc_type_ = RawNoneType::object();
+  RawObject pending_exc_value_ = RawNoneType::object();
+  RawObject pending_exc_traceback_ = RawNoneType::object();
 
   // Stack of ExceptionStates for the current caught exception. Generators push
   // their private state onto this stack before resuming, and pop it after
   // suspending.
-  RawObject caught_exc_stack_;
+  RawObject caught_exc_stack_ = RawNoneType::object();
 
-  RawObject api_repr_list_;
+  RawObject api_repr_list_ = RawNoneType::object();
 
-  RawObject asyncgen_hooks_first_iter_;
-  RawObject asyncgen_hooks_finalizer_;
-  RawObject contextvars_context_;
+  RawObject asyncgen_hooks_first_iter_ = RawNoneType::object();
+  RawObject asyncgen_hooks_finalizer_ = RawNoneType::object();
+  RawObject contextvars_context_ = RawNoneType::object();
 
   // C-API current recursion depth used via _PyThreadState_GetRecursionDepth
   int recursion_depth_ = 0;

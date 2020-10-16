@@ -47,6 +47,7 @@
 #include "module-builtins.h"
 #include "module-proxy-builtins.h"
 #include "modules.h"
+#include "mutex.h"
 #include "object-builtins.h"
 #include "os.h"
 #include "range-builtins.h"
@@ -189,8 +190,8 @@ Runtime::~Runtime() {
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple
   // runtimes created and destroyed by a single thread.
   if (Thread::current() == nullptr) {
-    CHECK(threads_ != nullptr, "the runtime does not have any threads");
-    Thread::setCurrentThread(threads_);
+    CHECK(main_thread_ != nullptr, "the runtime does not have any threads");
+    Thread::setCurrentThread(main_thread_);
   }
   callAtExit();
   flushStdFiles();
@@ -198,18 +199,16 @@ Runtime::~Runtime() {
   clearHandleScopes();
   finalizeCAPI();
   freeApiHandles();
-  for (Thread* thread = threads_; thread != nullptr;) {
-    if (thread == Thread::current()) {
-      Thread::setCurrentThread(nullptr);
-    } else {
-      UNIMPLEMENTED("threading");
+  {
+    MutexGuard lock(&threads_mutex_);
+    Thread* thread = main_thread_;
+    Thread::setCurrentThread(nullptr);
+    main_thread_ = nullptr;
+    for (Thread* next; thread != nullptr; thread = next) {
+      next = thread->next();
+      delete thread;
     }
-    auto prev = thread;
-    thread = thread->next();
-    delete prev;
   }
-  main_thread_ = nullptr;
-  threads_ = nullptr;
   delete symbols_;
 }
 
@@ -2116,7 +2115,6 @@ void Runtime::initializeThreads() {
   main_thread_->setRuntime(this);
   interpreter_->setupThread(main_thread_);
   Thread::setCurrentThread(main_thread_);
-  threads_ = main_thread_;
 }
 
 void Runtime::initializePrimitiveInstances() {
@@ -2266,7 +2264,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 }
 
 void Runtime::visitThreadRoots(PointerVisitor* visitor) {
-  for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
+  MutexGuard lock(&threads_mutex_);
+  for (Thread* thread = main_thread_; thread != nullptr;
+       thread = thread->next()) {
     thread->visitRoots(visitor);
   }
 }
@@ -3800,7 +3800,9 @@ void Runtime::layoutSetTupleOverflow(RawLayout layout) {
 }
 
 void Runtime::clearHandleScopes() {
-  for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
+  MutexGuard lock(&threads_mutex_);
+  for (Thread* thread = main_thread_; thread != nullptr;
+       thread = thread->next()) {
     Handles* handles = thread->handles();
     Object* handle = handles->head();
     while (handle != nullptr) {

@@ -8,6 +8,7 @@
 #include "interpreter.h"
 #include "layout.h"
 #include "modules.h"
+#include "mutex.h"
 #include "symbols.h"
 #include "view.h"
 
@@ -1072,7 +1073,7 @@ class Runtime {
   int wakeup_fd_ = -1;
 
   Thread* main_thread_;
-  Thread* threads_;
+  Mutex threads_mutex_;
 
   RandomState random_state_;
 
