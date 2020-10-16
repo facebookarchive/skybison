@@ -682,6 +682,53 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
+template <>
+void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
+  Register r_container = RAX;
+  Register r_key = R8;
+  Register r_layout_id = RDI;
+  Label slow_path_non_list, slow_path;
+  __ popq(r_key);
+  __ popq(r_container);
+  // if (container.isList() && key.isSmallInt()) {
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_container, r_layout_id,
+                                      LayoutId::kList, &slow_path_non_list);
+  emitJumpIfNotSmallInt(env, r_key, &slow_path);
+
+  // Re-use r_layout_id to store the value (right hand side).
+  __ popq(r_layout_id);
+
+  // if (0 <= index && index < length) {
+  // length >= 0 always holds. Therefore, ABOVE_EQUAL == NOT_CARRY if r_key
+  // contains a negative value (sign bit == 1) or r_key >= r_list_length.
+  __ cmpq(r_key,
+          Address(r_container, heapObjectDisp(0) + List::kNumItemsOffset));
+  __ jcc(ABOVE_EQUAL, &slow_path, Assembler::kNearJump);
+
+  // &list.at(index)
+  __ movq(r_container,
+          Address(r_container, heapObjectDisp(0) + List::kItemsOffset));
+  // r_key is a SmallInt, so r_key already stores the index value * 2.
+  // Therefore, applying TIMES_4 will compute index * 8.
+  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
+  static_assert(Object::kSmallIntTagBits == 1, "unexpected tag for SmallInt");
+  __ movq(Address(r_container, r_key, TIMES_4, heapObjectDisp(0)), r_layout_id);
+
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_layout_id);
+  __ bind(&slow_path_non_list);
+  __ pushq(r_container);
+  __ pushq(r_key);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::storeSubscrUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
 // TODO(T59397957): Split this into two opcodes.
 template <>
 void emitHandler<LOAD_ATTR_INSTANCE>(EmitEnv* env) {

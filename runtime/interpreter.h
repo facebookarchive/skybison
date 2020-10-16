@@ -211,6 +211,11 @@ class Interpreter {
   // passing a negative index.
   static Continue binarySubscrUpdateCache(Thread* thread, word index);
 
+  // Slow path for the STORE_SUBSCR opcode that updates the cache at the given
+  // index when appropriate. May also be used as a non-caching slow path by
+  // passing a negative index.
+  static Continue storeSubscrUpdateCache(Thread* thread, word arg);
+
   static Continue compareInUpdateCache(Thread* thread, word arg);
 
   static RawObject inplaceOperation(Thread* thread, BinaryOp op,
@@ -616,7 +621,6 @@ class Interpreter {
   static Continue retryLoadAttrCached(Thread* thread, word arg);
   static Continue loadAttrUpdateCache(Thread* thread, word arg);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
-  static Continue storeSubscrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscr(Thread* thread, RawObject set_item_method);
 
   static Continue loadMethodUpdateCache(Thread* thread, word arg);
