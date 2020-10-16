@@ -383,7 +383,7 @@ PY_EXPORT PyObject* PyErr_SetImportErrorSubclass(PyObject* /* n */,
   UNIMPLEMENTED("PyErr_SetImportErrorSubclass");
 }
 
-PY_EXPORT void PyErr_SetNone(PyObject* type) { PyErr_SetObject(type, Py_None); }
+PY_EXPORT void PyErr_SetNone(PyObject* type) { PyErr_SetObject(type, nullptr); }
 
 PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
   Thread* thread = Thread::current();
@@ -395,7 +395,6 @@ PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
 
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
-  Object val_obj(&scope, ApiHandle::fromPyObject(val)->asObject());
 
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*exc_obj) ||
@@ -409,6 +408,9 @@ PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
     return;
   }
 
+  Object val_obj(&scope, val == nullptr
+                             ? NoneType::object()
+                             : ApiHandle::fromPyObject(val)->asObject());
   thread->raiseWithType(*exc_obj, *val_obj);
   if (runtime->isInstanceOfBaseException(*val_obj)) {
     thread->setPendingExceptionTraceback(

@@ -627,6 +627,28 @@ TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithFilenameObjectsSetsError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ChildProcessError));
 }
 
+TEST_F(ErrorsExtensionApiTest, SetNoneCreatesExceptionWithNoArgs) {
+  PyErr_SetNone(PyExc_Exception);
+
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_Exception));
+  PyObject* type = nullptr;
+  PyObject* value = nullptr;
+  PyObject* traceback = nullptr;
+  // Fetch the non-normalized error
+  PyErr_Fetch(&type, &value, &traceback);
+  EXPECT_EQ(type, PyExc_Exception);
+  ASSERT_EQ(value, nullptr);
+  // Normalize the exception
+  PyErr_NormalizeException(&type, &value, &traceback);
+  EXPECT_EQ(type, PyExc_Exception);
+  PyObjectPtr args(PyObject_GetAttrString(value, "args"));
+  ASSERT_TRUE(PyTuple_CheckExact(args));
+  ASSERT_EQ(PyTuple_Size(args), 0);
+  Py_DECREF(type);
+  Py_DECREF(value);
+}
+
 TEST_F(ErrorsExtensionApiTest, SetStringSetsValue) {
   PyErr_SetString(PyExc_Exception, "An exception occured");
   PyObject* type = nullptr;
