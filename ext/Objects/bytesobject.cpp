@@ -26,6 +26,16 @@ PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
+static char* bytesAsString(ApiHandle* handle, const Bytes& bytes) {
+  if (void* cache = handle->cache()) return static_cast<char*>(cache);
+  word len = bytes.length();
+  auto cache = static_cast<byte*>(std::malloc(len + 1));
+  bytes.copyTo(cache, len);
+  cache[len] = '\0';
+  handle->setCache(cache);
+  return reinterpret_cast<char*>(cache);
+}
+
 PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -36,29 +46,33 @@ PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
     thread->raiseBadArgument();
     return nullptr;
   }
-  if (void* cache = handle->cache()) return static_cast<char*>(cache);
   Bytes bytes(&scope, bytesUnderlying(*obj));
-  word len = bytes.length();
-  auto cache = static_cast<byte*>(std::malloc(len + 1));
-  bytes.copyTo(cache, len);
-  cache[len] = '\0';
-  handle->setCache(cache);
-  return reinterpret_cast<char*>(cache);
+  return bytesAsString(handle, bytes);
 }
 
 PY_EXPORT int PyBytes_AsStringAndSize(PyObject* pybytes, char** buffer,
                                       Py_ssize_t* length) {
+  Thread* thread = Thread::current();
   if (buffer == nullptr) {
-    PyErr_BadInternalCall();
+    thread->raiseBadInternalCall();
     return -1;
   }
-  char* str = PyBytes_AsString(pybytes);
-  if (str == nullptr) return -1;
-  Py_ssize_t len = PyBytes_Size(pybytes);
+
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pybytes);
+  Object obj(&scope, handle->asObject());
+  if (!thread->runtime()->isInstanceOfBytes(*obj)) {
+    thread->raiseBadArgument();
+    return -1;
+  }
+
+  Bytes bytes(&scope, bytesUnderlying(*obj));
+  char* str = bytesAsString(handle, bytes);
+
   if (length != nullptr) {
-    *length = len;
-  } else if (std::strlen(str) != static_cast<size_t>(len)) {
-    PyErr_SetString(PyExc_ValueError, "embedded null byte");
+    *length = bytes.length();
+  } else if (std::strlen(str) != static_cast<size_t>(bytes.length())) {
+    thread->raiseWithFmt(LayoutId::kValueError, "embedded null byte");
     return -1;
   }
   *buffer = str;
