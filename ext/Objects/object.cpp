@@ -369,14 +369,14 @@ PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
 }
 
 PY_EXPORT int PyObject_HasAttrString(PyObject* pyobj, const char* name) {
-  PyObject* pyname = PyUnicode_FromString(name);
-  if (pyname == nullptr) {
-    PyErr_Clear();
-    return 0;
-  }
-  int result = PyObject_HasAttr(pyobj, pyname);
-  Py_DECREF(pyname);
-  return result;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object name_str(&scope, Runtime::internStrFromCStr(thread, name));
+  Object result(&scope, thread->runtime()->attributeAt(thread, obj, name_str));
+  if (!result.isErrorException()) return true;
+  thread->clearPendingException();
+  return false;
 }
 
 PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
