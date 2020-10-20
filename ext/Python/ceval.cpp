@@ -198,22 +198,42 @@ PY_EXPORT PyObject* PyEval_CallObjectWithKeywords(PyObject* callable,
   // PyEval_CallObjectWithKeywords() must not be called with an exception
   // set. It raises a new exception if parameters are invalid or if
   // PyTuple_New() fails, and so the original exception is lost.
-  DCHECK(!PyErr_Occurred(), "must not be called with an exception set");
+  Thread* thread = Thread::current();
+  DCHECK(!thread->hasPendingException(),
+         "must not be called with an exception set");
 
-  if (args != nullptr && !PyTuple_Check(args)) {
-    PyErr_SetString(PyExc_TypeError, "argument list must be a tuple");
-    return nullptr;
+  HandleScope scope(thread);
+  word flags = 0;
+  thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
+
+  Runtime* runtime = thread->runtime();
+  if (args != nullptr) {
+    Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
+    if (!runtime->isInstanceOfTuple(*args_obj)) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "argument list must be a tuple");
+      return nullptr;
+    }
+    thread->stackPush(*args_obj);
+  } else {
+    thread->stackPush(runtime->emptyTuple());
   }
 
-  if (kwargs != nullptr && !PyDict_Check(kwargs)) {
-    PyErr_SetString(PyExc_TypeError, "keyword list must be a dictionary");
-    return nullptr;
+  if (kwargs != nullptr) {
+    Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
+    if (!runtime->isInstanceOfDict(*kwargs_obj)) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "keyword list must be a dictionary");
+      return nullptr;
+    }
+    thread->stackPush(*kwargs_obj);
+    flags |= CallFunctionExFlag::VAR_KEYWORDS;
   }
 
-  if (args == nullptr) {
-    return _PyObject_FastCallDict(callable, nullptr, 0, kwargs);
-  }
-  return PyObject_Call(callable, args, kwargs);
+  // TODO(T30925218): Protect against native stack overflow.
+  Object result(&scope, Interpreter::callEx(thread, flags));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* _PyEval_EvalFrameDefault(PyFrameObject* /* f */,
