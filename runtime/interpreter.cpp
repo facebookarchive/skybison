@@ -4452,7 +4452,8 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object mgr(&scope, thread->stackTop());
-  Object enter(&scope, lookupMethod(thread, mgr, ID(__enter__)));
+  Type mgr_type(&scope, runtime->typeOf(*mgr));
+  Object enter(&scope, typeLookupInMroById(thread, *mgr_type, ID(__enter__)));
   if (enter.isError()) {
     if (enter.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
@@ -4463,7 +4464,8 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
     }
     return Continue::UNWIND;
   }
-  Object exit(&scope, lookupMethod(thread, mgr, ID(__exit__)));
+
+  Object exit(&scope, typeLookupInMroById(thread, *mgr_type, ID(__exit__)));
   if (exit.isError()) {
     if (exit.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
@@ -4474,9 +4476,19 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
     }
     return Continue::UNWIND;
   }
-  Object exit_bound(&scope, runtime->newBoundMethod(exit, mgr));
+  Object exit_bound(&scope,
+                    exit.isFunction()
+                        ? runtime->newBoundMethod(exit, mgr)
+                        : resolveDescriptorGet(thread, exit, mgr, mgr_type));
   thread->stackSetTop(*exit_bound);
-  Object result(&scope, callMethod1(thread, enter, mgr));
+
+  Object result(&scope, NoneType::object());
+  if (enter.isFunction()) {
+    result = callMethod1(thread, enter, mgr);
+  } else {
+    thread->stackPush(resolveDescriptorGet(thread, enter, mgr, mgr_type));
+    result = call(thread, 0);
+  }
   if (result.isErrorException()) return Continue::UNWIND;
 
   word stack_depth = thread->valueStackBase() - thread->stackPointer();

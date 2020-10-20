@@ -2588,6 +2588,41 @@ with Foo():
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
 }
 
+TEST_F(InterpreterTest, ContextManagerCallEnterExitOfNotFunctionType) {
+  const char* src = R"(
+class MyFunction:
+  def __init__(self, fn):
+    self.fn = fn
+
+  def __get__(self, instance, instance_type):
+    return self.fn
+
+a = 1
+
+def my_enter():
+  global a
+  a = 2
+
+def my_exit(e, t, b):
+  global a
+  a = 3
+
+class Foo:
+  __enter__ = MyFunction(my_enter)
+  __exit__ = MyFunction(my_exit)
+
+b = 0
+with Foo():
+  b = a
+)";
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, src).isError());
+  Object a(&scope, mainModuleAt(runtime_, "a"));
+  EXPECT_TRUE(isIntEqualsWord(*a, 3));
+  Object b(&scope, mainModuleAt(runtime_, "b"));
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
+}
+
 TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   // Build the following function
   //    def foo(a=1, b=2):
