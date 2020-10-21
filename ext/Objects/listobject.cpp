@@ -17,19 +17,21 @@ PY_EXPORT PyTypeObject* PyListIter_Type_Ptr() {
 }
 
 PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
+  Thread* thread = Thread::current();
   if (size < 0) {
+    thread->raiseBadInternalCall();
     return nullptr;
   }
 
-  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  List list(&scope, runtime->newList());
-  if (size > 0) {
-    list.setItems(runtime->newMutableTuple(size));
-    list.setNumItems(size);
+  if (size == 0) {
+    return ApiHandle::newReference(thread, runtime->newList());
   }
+
+  HandleScope scope(thread);
+  List list(&scope, runtime->newList());
+  list.setItems(runtime->newMutableTuple(size));
+  list.setNumItems(size);
   return ApiHandle::newReference(thread, *list);
 }
 
@@ -62,11 +64,13 @@ PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
     return nullptr;
   }
   List list(&scope, *list_obj);
-  Tuple tuple(&scope, runtime->newTuple(list.numItems()));
-  for (Py_ssize_t i = 0; i < list.numItems(); i++) {
-    tuple.atPut(i, list.at(i));
+  word length = list.numItems();
+  if (length == 0) {
+    return ApiHandle::newReference(thread, runtime->emptyTuple());
   }
-  return ApiHandle::newReference(thread, *tuple);
+  MutableTuple result(&scope, runtime->newMutableTuple(length));
+  result.replaceFromWith(0, Tuple::cast(list.items()), length);
+  return ApiHandle::newReference(thread, result.becomeImmutable());
 }
 
 PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
@@ -84,8 +88,7 @@ PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
                          "index out of bounds in PyList_GetItem");
     return nullptr;
   }
-  Object value(&scope, list.at(i));
-  return ApiHandle::borrowedReference(thread, *value);
+  return ApiHandle::borrowedReference(thread, list.at(i));
 }
 
 PY_EXPORT int PyList_Reverse(PyObject* pylist) {
@@ -175,18 +178,18 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
     return nullptr;
   }
   List list(&scope, *list_obj);
+  word length = list.numItems();
   if (low < 0) {
     low = 0;
-  } else if (low > list.numItems()) {
-    low = list.numItems();
+  } else if (low > length) {
+    low = length;
   }
   if (high < low) {
     high = low;
-  } else if (high > list.numItems()) {
-    high = list.numItems();
+  } else if (high > length) {
+    high = length;
   }
-  Object result(&scope, listSlice(thread, list, low, high, 1));
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread, listSlice(thread, list, low, high, 1));
 }
 
 PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,

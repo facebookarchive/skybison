@@ -567,11 +567,8 @@ PY_EXPORT int PyUnicode_Check_Func(PyObject* obj) {
 
 PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object value(&scope, runtime->newStrFromCStr(c_string));
-  return ApiHandle::newReference(thread, *value);
+  return ApiHandle::newReference(thread,
+                                 thread->runtime()->newStrFromCStr(c_string));
 }
 
 // Look for a surrogate codepoint in str[start:]. Note that start is a byte
@@ -652,11 +649,9 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
     // TODO(T36562134): Implement _PyUnicode_New
     UNIMPLEMENTED("_PyUnicode_New");
   }
-  HandleScope scope(thread);
   const byte* data = reinterpret_cast<const byte*>(u);
-  Object value(&scope,
-               thread->runtime()->newStrWithAll(View<byte>(data, size)));
-  return ApiHandle::newReference(thread, *value);
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newStrWithAll(View<byte>(data, size)));
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* unicode) {
@@ -1980,9 +1975,9 @@ PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
   Str str_str(&scope, strUnderlying(*str_obj));
   Str substr_str(&scope, strUnderlying(*substr_obj));
   Str replstr_str(&scope, strUnderlying(*replstr_obj));
-  Object result(&scope, runtime->strReplace(thread, str_str, substr_str,
-                                            replstr_str, maxcount));
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(
+      thread,
+      runtime->strReplace(thread, str_str, substr_str, replstr_str, maxcount));
 }
 
 PY_EXPORT int PyUnicode_Resize(PyObject** /* p_unicode */, Py_ssize_t /* h */) {

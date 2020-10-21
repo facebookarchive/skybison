@@ -131,11 +131,7 @@ PY_EXPORT PyTypeObject* PyDict_Type_Ptr() {
 
 PY_EXPORT PyObject* PyDict_New() {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object value(&scope, runtime->newDict());
-  return ApiHandle::newReference(thread, *value);
+  return ApiHandle::newReference(thread, thread->runtime()->newDict());
 }
 
 static PyObject* getItem(Thread* thread, const Object& dict_obj,
@@ -301,21 +297,19 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   }
   Dict dict(&scope, *dict_obj);
   word len = dict.numItems();
-  List result(&scope, runtime->newList());
-  if (len > 0) {
-    MutableTuple items(&scope, runtime->newMutableTuple(len));
-    word num_items = 0;
-    Object key(&scope, NoneType::object());
-    Object value(&scope, NoneType::object());
-    for (word i = 0; dictNextItem(dict, &i, &key, &value);) {
-      Tuple kvpair(&scope, runtime->newTuple(2));
-      kvpair.atPut(0, *key);
-      kvpair.atPut(1, *value);
-      items.atPut(num_items++, *kvpair);
-    }
-    result.setItems(*items);
-    result.setNumItems(len);
+  if (len == 0) {
+    return ApiHandle::newReference(thread, runtime->newList());
   }
+
+  List result(&scope, runtime->newList());
+  MutableTuple items(&scope, runtime->newMutableTuple(len));
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  for (word i = 0, j = 0; dictNextItem(dict, &i, &key, &value);) {
+    items.atPut(j++, runtime->newTupleWith2(key, value));
+  }
+  result.setItems(*items);
+  result.setNumItems(len);
   return ApiHandle::newReference(thread, *result);
 }
 
@@ -423,17 +417,18 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   }
   Dict dict(&scope, *dict_obj);
   word len = dict.numItems();
-  List result(&scope, runtime->newList());
-  if (len > 0) {
-    MutableTuple values(&scope, runtime->newMutableTuple(len));
-    word num_values = 0;
-    Object value(&scope, NoneType::object());
-    for (word i = 0; dictNextValue(dict, &i, &value);) {
-      values.atPut(num_values++, *value);
-    }
-    result.setItems(*values);
-    result.setNumItems(len);
+  if (len == 0) {
+    return ApiHandle::newReference(thread, runtime->newList());
   }
+
+  List result(&scope, runtime->newList());
+  MutableTuple values(&scope, runtime->newMutableTuple(len));
+  Object value(&scope, NoneType::object());
+  for (word i = 0, j = 0; dictNextValue(dict, &i, &value);) {
+    values.atPut(j++, *value);
+  }
+  result.setItems(*values);
+  result.setNumItems(len);
   return ApiHandle::newReference(thread, *result);
 }
 

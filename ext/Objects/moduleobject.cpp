@@ -211,8 +211,8 @@ PY_EXPORT PyObject* PyModule_NewObject(PyObject* name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object module_obj(&scope, thread->runtime()->newModule(name_obj));
-  return ApiHandle::newReference(thread, *module_obj);
+  return ApiHandle::newReference(thread,
+                                 thread->runtime()->newModule(name_obj));
 }
 
 PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {

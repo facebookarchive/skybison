@@ -40,9 +40,8 @@ PY_EXPORT PyObject* PyMethod_New(PyObject* callable, PyObject* self) {
   HandleScope scope(thread);
   Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
   Object self_obj(&scope, ApiHandle::fromPyObject(self)->asObject());
-  Object result(&scope,
-                thread->runtime()->newBoundMethod(callable_obj, self_obj));
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newBoundMethod(callable_obj, self_obj));
 }
 
 PY_EXPORT PyObject* PyMethod_Self(PyObject* obj) {

@@ -20,10 +20,10 @@ PY_EXPORT int PyFrozenSet_CheckExact_Func(PyObject* obj) {
 PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
   if (iterable == nullptr) {
     return ApiHandle::newReference(thread, runtime->emptyFrozenSet());
   }
+  HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
   FrozenSet set(&scope, runtime->newFrozenSet());
   Object result(&scope, setUpdate(thread, set, obj));
@@ -154,12 +154,11 @@ PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
 PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
   if (iterable == nullptr) {
     return ApiHandle::newReference(thread, runtime->newSet());
   }
 
+  HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
   Set set(&scope, runtime->newSet());
 

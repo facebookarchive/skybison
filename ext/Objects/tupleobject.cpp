@@ -17,11 +17,7 @@ PY_EXPORT PyTypeObject* PyTupleIter_Type_Ptr() {
 
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Tuple tuple(&scope, runtime->newTuple(length));
-  return ApiHandle::newReference(thread, *tuple);
+  return ApiHandle::newReference(thread, thread->runtime()->newTuple(length));
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {

@@ -105,8 +105,8 @@ PY_EXPORT void PyBytes_Concat(PyObject** pyobj, PyObject* newpart) {
 
   Bytes self(&scope, bytesUnderlying(*obj));
   Bytes other(&scope, bytesUnderlying(*newpart_obj));
-  Bytes result(&scope, runtime->bytesConcat(thread, self, other));
-  *pyobj = ApiHandle::newReference(thread, *result);
+  *pyobj = ApiHandle::newReference(thread,
+                                   runtime->bytesConcat(thread, self, other));
   obj_handle->decref();
 }
 

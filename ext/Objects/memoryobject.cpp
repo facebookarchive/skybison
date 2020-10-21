@@ -18,11 +18,11 @@ PY_EXPORT PyObject* PyMemoryView_FromMemory(char* memory, Py_ssize_t size,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object none(&scope, NoneType::object());
-  MemoryView view(&scope, runtime->newMemoryViewFromCPtr(
-                              thread, none, memory, size,
-                              flags == PyBUF_READ ? ReadOnly::ReadOnly
-                                                  : ReadOnly::ReadWrite));
-  return ApiHandle::newReference(thread, *view);
+  return ApiHandle::newReference(
+      thread,
+      runtime->newMemoryViewFromCPtr(
+          thread, none, memory, size,
+          flags == PyBUF_READ ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
 }
 
 PY_EXPORT PyObject* PyMemoryView_FromObject(PyObject* obj) {

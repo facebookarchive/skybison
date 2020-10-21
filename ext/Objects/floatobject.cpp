@@ -15,10 +15,7 @@ namespace py {
 
 PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object flt(&scope, runtime->newFloat(fval));
-  return ApiHandle::newReference(thread, *flt);
+  return ApiHandle::newReference(thread, thread->runtime()->newFloat(fval));
 }
 
 PY_EXPORT double PyFloat_AsDouble(PyObject* op) {

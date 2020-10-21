@@ -68,19 +68,21 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
         "Negative size passed to PyByteArray_FromStringAndSize");
     return nullptr;
   }
-  HandleScope scope(thread);
+
   Runtime* runtime = thread->runtime();
-  Bytearray result(&scope, runtime->newBytearray());
-  if (size <= 0) {
-    return ApiHandle::newReference(thread, *result);
+  if (size == 0) {
+    return ApiHandle::newReference(thread, runtime->newBytearray());
   }
+
+  HandleScope scope(thread);
+  Bytearray result(&scope, runtime->newBytearray());
   if (str == nullptr) {
     runtime->bytearrayEnsureCapacity(thread, result, size);
+    result.setNumItems(size);
   } else {
     runtime->bytearrayExtend(thread, result,
                              {reinterpret_cast<const byte*>(str), size});
   }
-  result.setNumItems(size);
   return ApiHandle::newReference(thread, *result);
 }
 

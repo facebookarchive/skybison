@@ -124,7 +124,7 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
   Runtime* runtime = thread->runtime();
   if (pyobj == nullptr) {
     static const byte value[] = "<NULL>";
-    return ApiHandle::newReference(thread, runtime->newBytesWithAll(value));
+    return ApiHandle::newReference(thread, SmallBytes::fromBytes(value));
   }
 
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
