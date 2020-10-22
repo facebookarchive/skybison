@@ -1253,6 +1253,10 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
   Object new_traceback(&scope, NoneType::object());
+  Object caught_exc_state(&scope, NoneType::object());
+  Object type(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Object traceback(&scope, NoneType::object());
   for (;;) {
     new_traceback = runtime->newTraceback();
     Traceback::cast(*new_traceback).setFunction(frame->function());
@@ -1281,23 +1285,21 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
       // Push a handler block and save the current caught exception, if any.
       stack->push(
           TryBlock{TryBlock::kExceptHandler, 0, thread->valueStackSize()});
-      Object caught_exc_state_obj(&scope,
-                                  thread->topmostCaughtExceptionState());
-      if (caught_exc_state_obj.isNoneType()) {
+      caught_exc_state = thread->topmostCaughtExceptionState();
+      if (caught_exc_state.isNoneType()) {
         thread->stackPush(NoneType::object());
         thread->stackPush(NoneType::object());
         thread->stackPush(NoneType::object());
       } else {
-        ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
-        thread->stackPush(caught_exc_state.traceback());
-        thread->stackPush(caught_exc_state.value());
-        thread->stackPush(caught_exc_state.type());
+        thread->stackPush(ExceptionState::cast(*caught_exc_state).traceback());
+        thread->stackPush(ExceptionState::cast(*caught_exc_state).value());
+        thread->stackPush(ExceptionState::cast(*caught_exc_state).type());
       }
 
       // Load and normalize the pending exception.
-      Object type(&scope, thread->pendingExceptionType());
-      Object value(&scope, thread->pendingExceptionValue());
-      Object traceback(&scope, thread->pendingExceptionTraceback());
+      type = thread->pendingExceptionType();
+      value = thread->pendingExceptionValue();
+      traceback = thread->pendingExceptionTraceback();
       thread->clearPendingException();
       normalizeException(thread, &type, &value, &traceback);
       BaseException(&scope, *value).setTraceback(*traceback);
