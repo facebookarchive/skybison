@@ -46,6 +46,7 @@ struct FullCasing {
 class UTF8 {
  public:
   static const word kMaxLength = 4;
+  static const byte kSurrogateLeadByte = 0xED;
 
   // Predicates
   static bool isLeadByte(byte b);

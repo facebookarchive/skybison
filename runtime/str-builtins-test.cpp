@@ -484,6 +484,58 @@ TEST_F(StrBuiltinsTest, HasPrefixWithEmptyNeedleReturnsTrue) {
   EXPECT_FALSE(strHasPrefix(haystack, empty, 6));
 }
 
+TEST_F(StrBuiltinsTest, HasSurrogateWithNonSurrogateReturnsFalse) {
+  HandleScope scope(thread_);
+  Str s1(&scope, SmallStr::fromCStr(""));
+  EXPECT_FALSE(strHasSurrogate(s1));
+
+  Str s2(&scope, SmallStr::fromCStr("a"));
+  EXPECT_FALSE(strHasSurrogate(s2));
+
+  Str s3(&scope, SmallStr::fromCStr("b10\x04-U."));
+  EXPECT_FALSE(strHasSurrogate(s3));
+
+  Str s4(&scope, SmallStr::fromCStr("pav\u00e9"));
+  EXPECT_FALSE(strHasSurrogate(s4));
+
+  Str s5(&scope, runtime_->newStrFromCStr("Hello world!"));
+  EXPECT_FALSE(strHasSurrogate(s5));
+
+  Str s6(&scope, runtime_->newStrFromCStr("1234567890"));
+  EXPECT_FALSE(strHasSurrogate(s6));
+
+  Str s7(&scope, runtime_->newStrFromCStr("\u00c9tudes Op. 10"));
+  EXPECT_FALSE(strHasSurrogate(s7));
+}
+
+TEST_F(StrBuiltinsTest, HasSurrogateWithSurrogateReturnsTrue) {
+  HandleScope scope(thread_);
+  Str s1(&scope, SmallStr::fromCodePoint(0xD800));
+  EXPECT_TRUE(strHasSurrogate(s1));
+
+  Str s2(&scope, SmallStr::fromCodePoint(0xDFFF));
+  EXPECT_TRUE(strHasSurrogate(s2));
+
+  Str s3(&scope, SmallStr::fromCodePoint(0xD1E9));
+  EXPECT_TRUE(strHasSurrogate(s3));
+
+  const int32_t view4[] = {'p', 'a', 'd', 'd', 'i', 'n', 'g', 0xD800};
+  Str s4(&scope, runtime_->newStrFromUTF32(view4));
+  EXPECT_TRUE(strHasSurrogate(s4));
+
+  const int32_t view5[] = {'p', 'a', 'd', 'd', 'i', 'n', 'g', 0xDC81};
+  Str s5(&scope, runtime_->newStrFromUTF32(view5));
+  EXPECT_TRUE(strHasSurrogate(s5));
+
+  const int32_t view6[] = {'p', 'a', 'd', 0xD800, 0xDFFF};
+  Str s6(&scope, runtime_->newStrFromUTF32(view6));
+  EXPECT_TRUE(strHasSurrogate(s6));
+
+  const int32_t view7[] = {'p', 'a', 'd', 0xDC00, 0xD910};
+  Str s7(&scope, runtime_->newStrFromUTF32(view7));
+  EXPECT_TRUE(strHasSurrogate(s7));
+}
+
 TEST_F(StrBuiltinsTest, InternStringsInTupleInternsItems) {
   HandleScope scope(thread_);
   Str str0(&scope, runtime_->newStrFromCStr("a"));

@@ -2381,10 +2381,17 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
-  if (!runtime->isInstanceOfStr(*str)) {
+  Object obj(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!runtime->isInstanceOfStr(*obj)) {
     thread->raiseBadArgument();
     return nullptr;
+  }
+  Str str(&scope, strUnderlying(*obj));
+  if (!strHasSurrogate(str)) {
+    word length = str.length();
+    MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+    result.replaceFromWithStr(0, *str, length);
+    return ApiHandle::newReference(thread, result.becomeImmutable());
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object tuple_obj(&scope, thread->invokeFunction2(

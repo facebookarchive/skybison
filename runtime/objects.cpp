@@ -37,6 +37,19 @@ RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
                        kSmallBytesTag);
 }
 
+static uword hasZeroByte(uword value) {
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  return (value - mask_0) & ~value & mask_7;
+}
+
+bool RawSmallBytes::includesByte(byte b) const {
+  DCHECK(b != 0, "Due to padding bytes, cannot check for 0.");
+  uword block = raw() >> kBitsPerByte;
+  uword surrogate_mask = (~uword{0} / 0xFF) * b;
+  return hasZeroByte(block ^ surrogate_mask);
+}
+
 bool RawSmallBytes::isASCII() const {
   uword block = raw() >> kBitsPerByte;
   uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
@@ -129,6 +142,13 @@ RawSmallStr RawSmallStr::fromCodePoint(int32_t code_point) {
 RawSmallStr RawSmallStr::fromCStr(const char* value) {
   word len = std::strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
+}
+
+bool RawSmallStr::includesByte(byte b) const {
+  DCHECK(b != 0, "Due to padding bytes, cannot check for 0.");
+  uword block = raw() >> kBitsPerByte;
+  uword surrogate_mask = (~uword{0} / 0xFF) * b;
+  return hasZeroByte(block ^ surrogate_mask);
 }
 
 bool RawSmallStr::includes(RawObject that) const {
@@ -309,6 +329,21 @@ word RawDataArray::findByte(byte value, word start, word length) const {
   return result;
 }
 
+bool RawDataArray::includesByte(byte b) const {
+  DCHECK(b != 0, "Due to padding bytes, cannot check for 0.");
+  word length = this->length();
+  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
+  const uword* data = reinterpret_cast<const uword*>(address());
+  uword mask = (~uword{0} / 0xFF) * b;
+  for (word i = 0; i < size_in_words; i++) {
+    uword block = data[i];
+    if (hasZeroByte(block ^ mask)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool RawDataArray::isASCII() const {
   // Depends on invariants specified in RawLargeStr::codePointLength
   word length = this->length();
@@ -403,12 +438,6 @@ bool RawLargeStr::equals(RawObject that) const {
   auto s1 = reinterpret_cast<void*>(address());
   auto s2 = reinterpret_cast<void*>(that_str.address());
   return std::memcmp(s1, s2, length()) == 0;
-}
-
-static uword hasZeroByte(uword value) {
-  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
-  uword mask_7 = mask_0 << 7;       // 0x808080...
-  return (value - mask_0) & ~value & mask_7;
 }
 
 static bool includes1(const byte* haystack, word haystack_len, byte needle) {

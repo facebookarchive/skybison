@@ -527,6 +527,9 @@ class RawBytes : public RawObject {
   // including end), or -1 if not found.
   word findByte(byte value, word start, word length) const;
 
+  // Check for the presence of a non-zero byte.
+  bool includesByte(byte b) const;
+
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr() const;
@@ -591,6 +594,9 @@ class RawStr : public RawObject {
   bool equalsCStr(const char* c_str) const;
 
   bool includes(RawObject that) const;
+
+  // Check for the presence of a non-zero byte.
+  bool includesByte(byte b) const;
 
   // Codepoints
   int32_t codePointAt(word char_index, word* char_length) const;
@@ -756,6 +762,9 @@ class RawSmallBytes : public RawObject {
   // including end), or -1 if not found.
   word findByte(byte value, word start, word length) const;
 
+  // Check for the presence of a non-zero byte.
+  bool includesByte(byte b) const;
+
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr() const;
@@ -789,6 +798,9 @@ class RawSmallStr : public RawObject {
   word compare(RawObject that) const;
 
   bool includes(RawObject that) const;
+
+  // Check for the presence of a non-zero byte.
+  bool includesByte(byte b) const;
 
   // Codepoints
   word codePointLength() const;
@@ -1364,6 +1376,9 @@ class RawDataArray : public RawHeapObject {
   // Returns the index at which value is found in this[start:start+length] (not
   // including end), or -1 if not found.
   word findByte(byte value, word start, word length) const;
+
+  // Check for the presence of a non-zero byte.
+  bool includesByte(byte b) const;
 
   bool isASCII() const;
 
@@ -4431,6 +4446,13 @@ inline void RawBytes::copyToStartAt(byte* dst, word length, word index) const {
   RawLargeBytes::cast(*this).copyToStartAt(dst, length, index);
 }
 
+inline bool RawBytes::includesByte(byte b) const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallBytes::cast(*this).includesByte(b);
+  }
+  return RawLargeBytes::cast(*this).includesByte(b);
+}
+
 inline bool RawBytes::isASCII() const {
   if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).isASCII();
@@ -6940,6 +6962,13 @@ inline bool RawStr::includes(RawObject that) const {
     return RawSmallStr::cast(*this).includes(that);
   }
   return RawLargeStr::cast(*this).includes(that);
+}
+
+inline bool RawStr::includesByte(byte b) const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallStr::cast(*this).includesByte(b);
+  }
+  return RawLargeStr::cast(*this).includesByte(b);
 }
 
 inline bool RawStr::isASCII() const {

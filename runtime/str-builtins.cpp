@@ -784,6 +784,10 @@ bool strHasPrefix(const Str& str, const Str& prefix, word start) {
   return true;
 }
 
+bool strHasSurrogate(const Str& str) {
+  return str.includesByte(UTF8::kSurrogateLeadByte);
+}
+
 word strRFind(const Str& haystack, const Str& needle, word start, word end) {
   // Haystack slice is empty; fast early return
   if (start > end) return -1;

@@ -51,6 +51,9 @@ word strFindFirstNonWhitespace(const Str& str);
 // not a code point offset.
 bool strHasPrefix(const Str& str, const Str& prefix, word start);
 
+// Checks if the string contains a surrogate half.
+bool strHasSurrogate(const Str& str);
+
 word strHash(Thread* thread, RawObject object);
 
 // Intern strings in place in a tuple of strings
