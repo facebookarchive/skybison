@@ -429,6 +429,14 @@ bound_method = C().foo
   EXPECT_EQ(ss.str(), "<bound_method \"C.foo\", <\"C\" object>>");
 }
 
+TEST_F(DebuggingTests, FormatBytes) {
+  std::stringstream ss;
+  const byte bytes[] = {'h',  'e', 'l',  'l',  'o',  0,    'w', '2',
+                        0xa4, '"', '\'', '\t', '\r', '\n', '\\'};
+  ss << runtime_->newBytesWithAll(bytes);
+  EXPECT_EQ(ss.str(), R"(b'hello\x00w2\xa4"\'\t\r\n\\')");
+}
+
 TEST_F(DebuggingTests, FormatBytearray) {
   ASSERT_FALSE(runFromCStr(runtime_, "ba = bytearray(b\"foo'\")").isError());
   HandleScope scope(thread_);
@@ -436,7 +444,7 @@ TEST_F(DebuggingTests, FormatBytearray) {
   ASSERT_TRUE(bytearray.isBytearray());
   std::stringstream ss;
   ss << bytearray;
-  EXPECT_EQ(ss.str(), R"(bytearray(b"foo\'"))");
+  EXPECT_EQ(ss.str(), R"(bytearray(b'foo\''))");
 }
 
 TEST_F(DebuggingTests, FormatCode) {

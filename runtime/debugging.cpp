@@ -11,6 +11,7 @@
 #include "frame.h"
 #include "handles.h"
 #include "runtime.h"
+#include "unicode.h"
 #include "vector.h"
 
 namespace py {
@@ -322,24 +323,50 @@ std::ostream& operator<<(std::ostream& os, RawBoundMethod value) {
             << ", " << value.self() << '>';
 }
 
+static void dumpBytes(std::ostream& os, RawBytes bytes, word length) {
+  os << "b\'";
+  for (word i = 0; i < length; i++) {
+    byte b = bytes.byteAt(i);
+    switch (b) {
+      case '\'':
+        os << "\\\'";
+        break;
+      case '\t':
+        os << "\\t";
+        break;
+      case '\n':
+        os << "\\n";
+        break;
+      case '\r':
+        os << "\\r";
+        break;
+      case '\\':
+        os << "\\\\";
+        break;
+      default:
+        if (ASCII::isPrintable(b)) {
+          os << static_cast<char>(b);
+        } else {
+          std::ios_base::fmtflags saved_flags = os.flags();
+          char saved_fill = os.fill('0');
+          os << "\\x" << std::setw(2) << std::hex << static_cast<unsigned>(b);
+          os.fill(saved_fill);
+          os.flags(saved_flags);
+        }
+    }
+  }
+  os << '\'';
+}
+
 std::ostream& operator<<(std::ostream& os, RawBytearray value) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Bytearray self(&scope, value);
-  Object repr_obj(&scope, bytearrayRepr(thread, self));
-  if (repr_obj.isError()) return os << "<ERROR: An exception occurred.>";
-  Str repr(&scope, *repr_obj);
-  unique_c_ptr<char[]> data(repr.toCStr());
-  return os.write(data.get(), repr.length());
+  os << "bytearray(";
+  dumpBytes(os, Bytes::cast(value.items()), value.numItems());
+  return os << ')';
 }
 
 std::ostream& operator<<(std::ostream& os, RawBytes value) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Bytes self(&scope, value);
-  Str repr(&scope, bytesReprSmartQuotes(thread, self));
-  unique_c_ptr<char[]> data(repr.toCStr());
-  return os.write(data.get(), repr.length());
+  dumpBytes(os, value, value.length());
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os, RawCode value) {
@@ -349,17 +376,13 @@ std::ostream& operator<<(std::ostream& os, RawCode value) {
 std::ostream& operator<<(std::ostream& os, RawDict value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Dict dict(&scope, value);
-  Object iter_obj(&scope, runtime->newDictItemIterator(thread, dict));
-  if (!iter_obj.isDictItemIterator()) return os;
   os << '{';
-  DictItemIterator iter(&scope, *iter_obj);
+  Object key(&scope, NoneType::object());
+  Object value_obj(&scope, NoneType::object());
   const char* delimiter = "";
-  for (Object key_value_obj(&scope, NoneType::object());
-       !(key_value_obj = dictItemIteratorNext(thread, iter)).isError();) {
-    Tuple key_value(&scope, *key_value_obj);
-    os << delimiter << key_value.at(0) << ": " << key_value.at(1);
+  for (word i = 0; dictNextItem(dict, &i, &key, &value_obj);) {
+    os << delimiter << key << ": " << value_obj;
     delimiter = ", ";
   }
   return os << '}';
