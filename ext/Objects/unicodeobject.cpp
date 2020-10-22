@@ -532,11 +532,10 @@ PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
                                             const char* c_str) {
   DCHECK(unicode, "nullptr argument");
   DCHECK(c_str, "nullptr argument");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object obj(&scope, ApiHandle::fromPyObject(unicode)->asObject());
-  Str str(&scope, strUnderlying(*obj));
-  return str.equalsCStr(c_str);
+  RawObject obj = ApiHandle::fromPyObject(unicode)->asObject();
+  DCHECK(Thread::current()->runtime()->isInstanceOfStr(obj),
+         "non-str argument");
+  return strUnderlying(obj).equalsCStr(c_str);
 }
 
 PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {

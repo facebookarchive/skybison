@@ -796,6 +796,7 @@ class RawSmallStr : public RawObject {
 
   // Comparison
   word compare(RawObject that) const;
+  word equalsCStr(const char* c_str) const;
 
   bool includes(RawObject that) const;
 
@@ -1418,6 +1419,7 @@ class RawLargeStr : public RawDataArray {
   // Equality checks.
   word compare(RawObject that) const;
   bool equals(RawObject that) const;
+  bool equalsCStr(const char* c_str) const;
 
   bool includes(RawObject that) const;
 
@@ -6954,6 +6956,13 @@ inline bool RawStr::equals(RawObject that) const {
   if (*this == that) return true;
   if (isImmediateObjectNotSmallInt()) return false;
   return RawLargeStr::cast(*this).equals(that);
+}
+
+inline bool RawStr::equalsCStr(const char* c_str) const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallStr::cast(*this).equalsCStr(c_str);
+  }
+  return RawLargeStr::cast(*this).equalsCStr(c_str);
 }
 
 inline bool RawStr::includes(RawObject that) const {

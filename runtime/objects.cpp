@@ -90,6 +90,18 @@ word RawSmallStr::compare(RawObject that) const {
   return -1;
 }
 
+word RawSmallStr::equalsCStr(const char* c_str) const {
+  const char* cp = c_str;
+  const word len = length();
+  for (word i = 0; i < len; i++, cp++) {
+    byte ch = static_cast<byte>(*cp);
+    if (ch == '\0' || ch != byteAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
+}
+
 RawSmallStr RawSmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
@@ -438,6 +450,18 @@ bool RawLargeStr::equals(RawObject that) const {
   auto s1 = reinterpret_cast<void*>(address());
   auto s2 = reinterpret_cast<void*>(that_str.address());
   return std::memcmp(s1, s2, length()) == 0;
+}
+
+bool RawLargeStr::equalsCStr(const char* c_str) const {
+  const char* cp = c_str;
+  const word len = length();
+  for (word i = 0; i < len; i++, cp++) {
+    byte ch = static_cast<byte>(*cp);
+    if (ch == '\0' || ch != byteAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
 }
 
 static bool includes1(const byte* haystack, word haystack_len, byte needle) {
@@ -933,18 +957,6 @@ static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
 
 int32_t RawStr::codePointAt(word index, word* char_length) const {
   return decodeCodePoint(this, &RawStr::byteAt, length(), index, char_length);
-}
-
-bool RawStr::equalsCStr(const char* c_str) const {
-  const char* cp = c_str;
-  const word len = length();
-  for (word i = 0; i < len; i++, cp++) {
-    byte ch = static_cast<byte>(*cp);
-    if (ch == '\0' || ch != byteAt(i)) {
-      return false;
-    }
-  }
-  return *cp == '\0';
 }
 
 // RawStrArray
