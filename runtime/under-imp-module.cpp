@@ -129,13 +129,14 @@ RawObject FUNC(_imp, is_builtin)(Thread* thread, Arguments args) {
 
 RawObject FUNC(_imp, is_frozen)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Object name(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStr(*name)) {
+  Object name_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "is_frozen requires a str object");
   }
-  // Always return False
-  return RawBool::falseObj();
+  Str name(&scope, strUnderlying(*name_obj));
+  name = Runtime::internStr(thread, name);
+  return Bool::fromBool(isFrozenModule(name));
 }
 
 RawObject FUNC(_imp, lock_held)(Thread*, Arguments) {

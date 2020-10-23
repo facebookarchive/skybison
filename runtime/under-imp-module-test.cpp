@@ -184,7 +184,15 @@ TEST_F(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
-TEST_F(ImportBuiltinsTest, IsFrozenReturnsFalse) {
+TEST_F(ImportBuiltinsTest, IsFrozenOnFrozenModuleReturnsTrue) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("zipimport"));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_frozen), module_name));
+  ASSERT_TRUE(result.isBool());
+  EXPECT_TRUE(Bool::cast(*result).value());
+}
+
+TEST_F(ImportBuiltinsTest, IsFrozenOnNewModuleReturnsFalse) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(FUNC(_imp, is_frozen), module_name));
