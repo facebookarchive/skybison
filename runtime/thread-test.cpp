@@ -2266,7 +2266,7 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
   Module module(&scope, runtime_->findOrCreateMainModule());
   Object none(&scope, NoneType::object());
 
-  thread_->exec(code, module, none);
+  ASSERT_TRUE(thread_->exec(code, module, none).isNoneType());
 
   Object builtins_module(&scope, runtime_->findModuleById(ID(builtins)));
   EXPECT_EQ(moduleAtById(thread_, module, ID(__builtins__)), builtins_module);

@@ -274,7 +274,8 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Arguments args) {
     }
 
     Dict type_dict(&scope, runtime->newDict());
-    Object result(&scope, thread->runClassFunction(body, type_dict));
+    Object result(&scope,
+                  thread->callFunctionWithImplicitGlobals(body, type_dict));
     if (result.isError()) return *result;
     CHECK(!typeAssignFromDict(thread, type, type_dict).isErrorException(),
           "error while assigning bootstrap type dict");
@@ -376,7 +377,8 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Arguments args) {
   // backtraces to work correctly.  The key to doing that would be to put some
   // state on the stack in between the the incoming arguments from the builtin
   // caller and the on-stack state for the class body function call.
-  Object body_result(&scope, thread->runClassFunction(body, type_dict));
+  Object body_result(&scope,
+                     thread->callFunctionWithImplicitGlobals(body, type_dict));
   if (body_result.isError()) return *body_result;
 
   if (bases != orig_bases) {

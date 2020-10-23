@@ -54,7 +54,6 @@ class Thread {
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
   Frame* pushGeneratorFrame(const GeneratorFrame& generator_frame);
-  Frame* pushClassFunctionFrame(const Function& function);
 
   Frame* popFrame();
   Frame* popFrameToGeneratorFrame(const GeneratorFrame& generator_frame);
@@ -99,12 +98,11 @@ class Thread {
   RawObject stackTop();
 
   // Runs a code object on the current thread.
-  RawObject exec(const Code& code, const Module& module,
-                 const Object& implicit_globals);
+  NODISCARD RawObject exec(const Code& code, const Module& module,
+                           const Object& implicit_globals);
 
-  // Runs a class body function on the current thread.
-  NODISCARD RawObject runClassFunction(const Function& function,
-                                       const Dict& dict);
+  NODISCARD RawObject callFunctionWithImplicitGlobals(
+      const Function& function, const Object& implicit_globals);
 
   Thread* next() { return next_; }
   void setNext(Thread* next) { next_ = next; }

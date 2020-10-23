@@ -250,33 +250,6 @@ Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
   return result;
 }
 
-Frame* Thread::pushClassFunctionFrame(const Function& function) {
-  HandleScope scope(this);
-  Frame* result = pushCallFrame(*function);
-  if (UNLIKELY(result == nullptr)) {
-    return nullptr;
-  }
-  Code code(&scope, function.code());
-
-  word num_locals = code.nlocals();
-  word num_cellvars = code.numCellvars();
-  DCHECK(code.cell2arg().isNoneType(), "class body cannot have cell2arg.");
-  for (word i = 0; i < code.numCellvars(); i++) {
-    result->setLocal(num_locals + i, runtime()->newCell());
-  }
-
-  // initialize free vars
-  DCHECK(code.numFreevars() == 0 ||
-             code.numFreevars() ==
-                 Tuple::cast(Function::cast(*function).closure()).length(),
-         "Number of freevars is different than the closure.");
-  for (word i = 0; i < code.numFreevars(); i++) {
-    result->setLocal(num_locals + num_cellvars + i,
-                     Tuple::cast(Function::cast(*function).closure()).at(i));
-  }
-  return result;
-}
-
 Frame* Thread::pushInitialFrame() {
   byte* sp = end_ - Frame::kSize;
   CHECK(sp > start_, "no space for initial frame");
@@ -326,34 +299,28 @@ RawObject Thread::exec(const Code& code, const Module& module,
   }
   Function function(&scope,
                     runtime->newFunctionWithCode(this, qualname, code, module));
-  // Push implicit globals.
-  stackPush(*implicit_globals);
-  // Push function to be available from frame.function().
-  stackPush(*function);
-  if (UNLIKELY(pushCallFrame(*function) == nullptr)) {
-    return Error::exception();
-  }
-  Object result(&scope, Interpreter::execute(this));
-  DCHECK(stackTop() == *implicit_globals, "stack mismatch");
-  stackDrop(1);
-  return *result;
+  return callFunctionWithImplicitGlobals(function, implicit_globals);
 }
 
-RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
+RawObject Thread::callFunctionWithImplicitGlobals(
+    const Function& function, const Object& implicit_globals) {
   CHECK(!function.hasOptimizedOrNewlocals(),
-        "runClassFunction() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
+        "function must not have CO_OPTIMIZED or CO_NEWLOCALS");
 
-  HandleScope scope(this);
   // Push implicit globals and function.
-  stackPush(*dict);
+  stackPush(*implicit_globals);
   stackPush(*function);
-  if (UNLIKELY(pushClassFunctionFrame(function) == nullptr)) {
+  Frame* frame = pushCallFrame(*function);
+  if (frame == nullptr) {
     return Error::exception();
   }
-  Object result(&scope, Interpreter::execute(this));
-  DCHECK(stackTop() == *dict, "stack mismatch");
+  if (function.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(this, frame);
+  }
+  RawObject result = Interpreter::execute(this);
+  DCHECK(stackTop() == *implicit_globals, "stack mismatch");
   stackDrop(1);
-  return *result;
+  return result;
 }
 
 RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {
