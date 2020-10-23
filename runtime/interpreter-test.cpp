@@ -2838,6 +2838,32 @@ f(*c)
                             LayoutId::kUserWarning, "foo"));
 }
 
+TEST_F(InterpreterTest, CallFunctionWithInterruptSetReturnsErrorException) {
+  auto set_pending_signal = [](Thread* thread, Arguments) -> RawObject {
+    thread->runtime()->setPendingSignal(thread, SIGINT);
+    return NoneType::object();
+  };
+  addBuiltin("set_pending_signal", set_pending_signal, {nullptr, 0}, 0);
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+executed = False
+def foo():
+  global executed
+  executed = True
+
+def bar():
+  set_pending_signal()
+  foo()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object bar(&scope, mainModuleAt(runtime_, "bar"));
+  thread_->stackPush(*bar);
+  EXPECT_TRUE(
+      raised(Interpreter::call0(thread_, bar), LayoutId::kKeyboardInterrupt));
+  Object executed(&scope, mainModuleAt(runtime_, "executed"));
+  EXPECT_EQ(executed, Bool::falseObj());
+}
+
 TEST_F(InterpreterTest, CallingUncallableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "(1)()"),
                             LayoutId::kTypeError,

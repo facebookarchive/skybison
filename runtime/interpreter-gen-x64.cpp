@@ -939,7 +939,7 @@ void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
 
 static void emitPushCallFrame(EmitEnv* env, Register r_callable,
                               Label* stack_overflow) {
-  Register r_total_vars = RSI;
+  Register r_total_vars = R8;
   Register r_initial_size = R9;
   Register r_max_size = RAX;
 
@@ -960,7 +960,7 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   Register r_scratch = r_max_size;
   __ negq(r_scratch);
   __ addq(r_scratch, RSP);
-  __ cmpq(r_scratch, Address(kThreadReg, Thread::startOffset()));
+  __ cmpq(r_scratch, Address(kThreadReg, Thread::limitOffset()));
   __ jcc(BELOW, stack_overflow, Assembler::kFarJump);
 
   __ subq(RSP, r_initial_size);

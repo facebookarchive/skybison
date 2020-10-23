@@ -368,7 +368,7 @@ class Thread {
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }
 
-  static int startOffset() { return offsetof(Thread, start_); }
+  static int limitOffset() { return offsetof(Thread, limit_); }
 
   static int stackPointerOffset() { return offsetof(Thread, stack_pointer_); }
 

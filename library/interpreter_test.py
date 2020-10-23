@@ -551,6 +551,13 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(bar(), ("a", "b"))
         self.assertEqual(bar(), ("a", "b"))
 
+    def test_call_raises_recursion_error(self):
+        def foo(x):
+            return foo(x)
+
+        with self.assertRaisesRegex(RecursionError, "maximum recursion depth exceeded"):
+            foo(1)
+
     def test_cache_misses_after_dunder_class_update(self):
         class C:
             def foo(self):
