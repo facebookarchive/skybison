@@ -147,8 +147,7 @@ PY_EXPORT void PyErr_GetExcInfo(PyObject** p_type, PyObject** p_value,
   ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
   *p_type = ApiHandle::newReference(thread, caught_exc_state.type());
   *p_value = ApiHandle::newReference(thread, caught_exc_state.value());
-  // TODO(T42241510): Pass caughtExeptionTraceback() when it becomes available.
-  *p_traceback = nullptr;
+  *p_traceback = ApiHandle::newReference(thread, caught_exc_state.traceback());
 }
 
 PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {

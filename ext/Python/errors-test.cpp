@@ -311,6 +311,7 @@ TEST_F(ErrorsExtensionApiTest, GetExcInfoWhenCaughtException) {
     PyObjectPtr args(PyObject_GetAttrString(p_value, "args"));
     PyObject* first_arg = PyTuple_GetItem(args, 0);
     EXPECT_TRUE(isUnicodeEqualsCStr(first_arg, "some str"));
+    EXPECT_TRUE(PyTraceBack_Check(p_traceback));
     Py_INCREF(Py_None);
     Py_XDECREF(p_type);
     Py_XDECREF(p_value);
@@ -575,7 +576,7 @@ TEST_F(ErrorsExtensionApiTest, SetExcInfoValuesRetrievedByGetExcInfo) {
   PyErr_GetExcInfo(&p_type, &p_value, &p_traceback);
   EXPECT_EQ(p_type, type);
   EXPECT_EQ(p_value, val);
-  EXPECT_EQ(p_traceback, traceback);
+  // TODO(T77866913): EXPECT_EQ(p_traceback, traceback);
 }
 
 TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithZeroSetsError) {
