@@ -26,6 +26,7 @@ _str_mod.py
 _string.py
 _string_test.py
 _thread.py
+_thread_test.py
 _valgrind.py
 _warnings.py
 _weakref.py

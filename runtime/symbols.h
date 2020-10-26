@@ -350,6 +350,7 @@ class Runtime;
   V(_dict_value_iterator__iterable)                                            \
   V(_dict_value_iterator__num_found)                                           \
   V(_dict_values__dict)                                                        \
+  V(_enable_threads)                                                           \
   V(_encoder)                                                                  \
   V(_encoding)                                                                 \
   V(_err_program_text)                                                         \
@@ -537,6 +538,7 @@ class Runtime;
   V(_structseq_new)                                                            \
   V(_structseq_repr)                                                           \
   V(_telling)                                                                  \
+  V(_thread)                                                                   \
   V(_traceback__function)                                                      \
   V(_traceback__lineno)                                                        \
   V(_token__context)                                                           \

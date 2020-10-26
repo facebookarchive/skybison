@@ -326,6 +326,12 @@ class Runtime {
 
   void collectGarbage();
 
+  // Creates a new thread and adds it to the runtime.
+  Thread* newThread();
+
+  // Removes the specified thread from the runtime and deletes it.
+  void deleteThread(Thread* thread);
+
   // Compute hash value suitable for `RawObject::operator==` (aka `a is b`)
   // equality tests.
   word hash(RawObject object);
@@ -905,7 +911,6 @@ class Runtime {
   void initializeModules(Thread* thread);
   void initializePrimitiveInstances();
   void initializeSymbols(Thread* thread);
-  void initializeThreads();
   void initializeTypes(Thread* thread);
 
   void visitRuntimeRoots(PointerVisitor* visitor);
@@ -1072,7 +1077,7 @@ class Runtime {
   // File descriptor for writing when a signal is received.
   int wakeup_fd_ = -1;
 
-  Thread* main_thread_;
+  Thread* main_thread_ = nullptr;
   Mutex threads_mutex_;
 
   RandomState random_state_;

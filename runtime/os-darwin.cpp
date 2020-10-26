@@ -37,6 +37,12 @@ const OS::Signal OS::kPlatformSignals[] = {
 #undef V
 // clang-format on
 
+void OS::createThread(ThreadFunction func, void* arg) {
+  pthread_t thread;
+  pthread_create(&thread, nullptr, func, arg);
+  pthread_detach(thread);
+}
+
 char* OS::executablePath() {
   uint32_t buf_len = 0;
   int res = _NSGetExecutablePath(nullptr, &buf_len);
@@ -93,12 +99,6 @@ word OS::sharedObjectSymbolName(void* addr, char* buf, word size) {
     return std::snprintf(buf, size, "%s", info.dli_sname);
   }
   return -1;
-}
-
-uint64_t OS::threadID() {
-  uint64_t tid;
-  pthread_threadid_np(nullptr, &tid);
-  return tid;
 }
 
 }  // namespace py

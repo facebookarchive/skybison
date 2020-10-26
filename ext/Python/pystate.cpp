@@ -9,7 +9,7 @@ namespace py {
 
 PY_EXPORT int PyGILState_Check() {
   // TODO(T44861733): Make this do something intelligent
-  CHECK(Thread::current()->next() == nullptr,
+  CHECK(Thread::current()->runtime()->mainThread()->next() == nullptr,
         "PyGILState_Check doesn't currently work with more than one thread");
   return 1;
 }

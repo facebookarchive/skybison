@@ -165,8 +165,8 @@ RandomState randomStateFromSeed(uint64_t seed) {
 Runtime::Runtime(word heap_size, Interpreter* interpreter,
                  RandomState random_seed)
     : heap_(heap_size), interpreter_(interpreter), random_state_(random_seed) {
-  initializeThreads();
-  Thread* thread = Thread::current();
+  Thread* thread = newThread();
+  thread->begin();
   // This must be called before initializeTypes is called. Methods in
   // initializeTypes rely on instances that are created in this method.
   initializePrimitiveInstances();
@@ -1970,6 +1970,38 @@ void Runtime::collectGarbage() {
   }
 }
 
+Thread* Runtime::newThread() {
+  Thread* thread = new Thread(Thread::kDefaultStackSize);
+  thread->setRuntime(this);
+  {
+    MutexGuard lock(&threads_mutex_);
+    if (main_thread_ == nullptr) {
+      main_thread_ = thread;
+    } else {
+      Thread* next = main_thread_->next();
+      main_thread_->setNext(thread);
+      thread->setNext(next);
+      thread->setPrev(main_thread_);
+      if (next != nullptr) {
+        next->setPrev(thread);
+      }
+    }
+  }
+  return thread;
+}
+
+void Runtime::deleteThread(Thread* thread) {
+  CHECK(thread != main_thread_, "cannot delete main thread");
+  MutexGuard lock(&threads_mutex_);
+  Thread* prev = thread->prev();
+  Thread* next = thread->next();
+  prev->setNext(next);
+  if (next != nullptr) {
+    next->setPrev(prev);
+  }
+  delete thread;
+}
+
 void Runtime::processCallbacks() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -2106,15 +2138,6 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
   }
 
   return NoneType::object();
-}
-
-void Runtime::initializeThreads() {
-  main_thread_ = new Thread(Thread::kDefaultStackSize);
-  main_thread_->setCaughtExceptionState(
-      createInstance<RawExceptionState>(this));
-  main_thread_->setRuntime(this);
-  interpreter_->setupThread(main_thread_);
-  Thread::setCurrentThread(main_thread_);
 }
 
 void Runtime::initializePrimitiveInstances() {

@@ -1,6 +1,7 @@
 #include "os.h"
 
 #include <dlfcn.h>
+#include <pthread.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -38,6 +39,12 @@ const OS::Signal OS::kPlatformSignals[] = {
 };
 #undef V
 // clang-format on
+
+void OS::createThread(ThreadFunction func, void* arg) {
+  pthread_t thread;
+  pthread_create(&thread, nullptr, func, arg);
+  pthread_detach(thread);
+}
 
 char* OS::executablePath() {
   char* buffer = readLink("/proc/self/exe");
@@ -89,7 +96,5 @@ word OS::sharedObjectSymbolName(void* addr, char* buf, word size) {
   }
   return -1;
 }
-
-uint64_t OS::threadID() { return syscall(SYS_gettid); }
 
 }  // namespace py

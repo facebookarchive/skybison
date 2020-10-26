@@ -46,6 +46,8 @@ class Thread {
   explicit Thread(word size);
   ~Thread();
 
+  void begin();
+
   static Thread* current();
   static void setCurrentThread(Thread* thread);
 

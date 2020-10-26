@@ -7,6 +7,7 @@
 namespace py {
 
 typedef void (*SignalHandler)(int);
+typedef void* (*ThreadFunction)(void*);
 
 class OS {
  public:
@@ -37,6 +38,9 @@ class OS {
   // readable, writable, or executable).
   static bool access(const char* path, int mode);
 
+  // Starts a new thread, calling the given function with the given argument.
+  static void createThread(ThreadFunction func, void* arg);
+
   // Returns an absolute path to the current executable. The path may contain
   // unresolved symlinks.
   static char* executablePath();
@@ -54,8 +58,6 @@ class OS {
   static SignalHandler signalHandler(int signum);
 
   static char* readFile(FILE* fp, word* len_out);
-
-  static uint64_t threadID();
 
   static const char* name();
 

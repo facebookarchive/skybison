@@ -48,6 +48,12 @@ Thread::Thread(word size) {
 
 Thread::~Thread() { delete[] start_; }
 
+void Thread::begin() {
+  Thread::setCurrentThread(this);
+  setCaughtExceptionState(runtime_->newExceptionState());
+  runtime_->interpreter()->setupThread(this);
+}
+
 void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);

@@ -92,8 +92,9 @@ def stack_size(size=0):
 
 
 def start_new(function, args, kwargs=_Unbound):
-    _unimplemented()
+    """Obsolete synonym of start_new_thread"""
+    _builtin()
 
 
 def start_new_thread(function, args, kwargs=_Unbound):
-    _unimplemented()
+    _builtin()
