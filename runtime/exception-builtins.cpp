@@ -594,14 +594,16 @@ static RawObject printSingleException(Thread* thread, const Object& file,
   }
 
   MAY_RAISE(fileWriteObjectStr(thread, file, type_name));
-  MAY_RAISE(fileWriteString(thread, file, ": "));
   Object str_obj(&scope, thread->invokeFunction1(ID(builtins), ID(str), value));
   if (str_obj.isError()) {
     thread->clearPendingException();
-    MAY_RAISE(fileWriteString(thread, file, "<exception str() failed>"));
+    MAY_RAISE(fileWriteString(thread, file, ": <exception str() failed>"));
   } else {
-    Str str(&scope, *str_obj);
-    MAY_RAISE(fileWriteObjectStr(thread, file, str));
+    Str str(&scope, strUnderlying(*str_obj));
+    if (str != Str::empty()) {
+      MAY_RAISE(fileWriteString(thread, file, ": "));
+      MAY_RAISE(fileWriteObjectStr(thread, file, str));
+    }
   }
 
   MAY_RAISE(fileWriteString(thread, file, "\n"));
