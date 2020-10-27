@@ -74,7 +74,7 @@ def _fix_co_filename(code, path):
 
 
 def get_frozen_object(name):
-    _unimplemented()
+    _builtin()
 
 
 def init_frozen(name):

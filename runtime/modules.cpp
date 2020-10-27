@@ -105,4 +105,12 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
 
 bool isFrozenModule(const Str& name) { return builtinModuleIndex(name) >= 0; }
 
+const FrozenModule* frozenModuleByName(const Str& name) {
+  word index = builtinModuleIndex(name);
+  if (index < 0) {
+    return nullptr;
+  }
+  return &kFrozenModules[index];
+}
+
 }  // namespace py

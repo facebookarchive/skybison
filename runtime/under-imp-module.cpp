@@ -6,6 +6,7 @@
 #include "capi.h"
 #include "frame.h"
 #include "globals.h"
+#include "marshal.h"
 #include "module-builtins.h"
 #include "modules.h"
 #include "objects.h"
@@ -112,6 +113,30 @@ RawObject FUNC(_imp, exec_builtin)(Thread* thread, Arguments args) {
     return runtime->newInt(0);
   }
   return runtime->newInt(execDef(thread, module, def));
+}
+
+RawObject FUNC(_imp, get_frozen_object)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*name_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "get_frozen_object requires a str object");
+  }
+  Str name(&scope, strUnderlying(*name_obj));
+  const FrozenModule* frozen_module = frozenModuleByName(name);
+  if (frozen_module == nullptr) {
+    return thread->raiseWithFmt(LayoutId::kImportError,
+                                "No such frozen object named '%S'", &name);
+  }
+  DCHECK(frozen_module->marshalled_code != nullptr,
+         "null code in frozen module");
+  word size = frozen_module->marshalled_code_length;
+  Marshal::Reader reader(&scope, thread,
+                         View<byte>(frozen_module->marshalled_code, size));
+  Object header_result(&scope, reader.readPycHeader(name));
+  CHECK(header_result.isNoneType(), "Could not read header of frozen object");
+  return reader.readObject();
 }
 
 RawObject FUNC(_imp, is_builtin)(Thread* thread, Arguments args) {

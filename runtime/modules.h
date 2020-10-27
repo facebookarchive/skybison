@@ -53,4 +53,8 @@ NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
 // Returns `true` if there is a frozen module with name `name`.
 bool isFrozenModule(const Str& name);
 
+// Return the FrozenModule with the given name.
+// If there is no such frozen module, return nullptr.
+const FrozenModule* frozenModuleByName(const Str& name);
+
 }  // namespace py

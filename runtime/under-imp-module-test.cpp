@@ -200,6 +200,30 @@ TEST_F(ImportBuiltinsTest, IsFrozenOnNewModuleReturnsFalse) {
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
+TEST_F(ImportBuiltinsTest, GetFrozenObjectWithNonStrRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object non_str(&scope, runtime_->newInt(5));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_imp, get_frozen_object), non_str),
+                            LayoutId::kTypeError,
+                            "get_frozen_object requires a str object"));
+}
+
+TEST_F(ImportBuiltinsTest,
+       GetFrozenObjectWithNonFrozenModuleRaisesImportError) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("nonexistent"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FUNC(_imp, get_frozen_object), module_name),
+      LayoutId::kImportError, "No such frozen object named 'nonexistent'"));
+}
+
+TEST_F(ImportBuiltinsTest, GetFrozenObjectWithFrozenModuleReturnsCode) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("zipimport"));
+  Object result(&scope, runBuiltin(FUNC(_imp, get_frozen_object), module_name));
+  ASSERT_TRUE(result.isCode());
+}
+
 TEST_F(ImportBuiltinsTest, LockHeldReturnsFalseInitially) {
   EXPECT_EQ(runBuiltin(FUNC(_imp, lock_held)), Bool::falseObj());
 }
