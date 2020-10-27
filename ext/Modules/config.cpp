@@ -13,6 +13,7 @@ extern "C" PyObject* PyInit__hashlib();
 extern "C" PyObject* PyInit__locale();
 extern "C" PyObject* PyInit__lzma();
 extern "C" PyObject* PyInit__multiprocessing();
+extern "C" PyObject* PyInit__parser();
 extern "C" PyObject* PyInit__posixsubprocess();
 extern "C" PyObject* PyInit__random();
 extern "C" PyObject* PyInit__socket();
@@ -65,6 +66,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_locale", PyInit__locale},
     {"_lzma", PyInit__lzma},
     {"_multiprocessing", PyInit__multiprocessing},
+    {"_parser", PyInit__parser},
     {"_posixsubprocess", PyInit__posixsubprocess},
     {"_random", PyInit__random},
     {"_socket", PyInit__socket},

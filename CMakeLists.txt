@@ -870,6 +870,7 @@ add_library(
   ext/Modules/_compile/symtable.h
   ext/Modules/_compile/wordcode_helpers.h
   ext/Modules/_datetimemodule.cpp
+  ext/Modules/_parsermodule.cpp
   ext/Modules/_sre/_sre.cpp
   ext/Modules/gcmodule.cpp
   ext/Modules/getbuildinfo.cpp
