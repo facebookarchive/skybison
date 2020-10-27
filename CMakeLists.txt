@@ -1256,6 +1256,7 @@ if (ENABLE_CPYTHON_TESTS)
   target_link_libraries(
     cpython-tests
     PRIVATE
+    -pthread
     benchmark
     dl
     gmock
