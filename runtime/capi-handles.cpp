@@ -464,15 +464,6 @@ ApiHandle* ApiHandle::castFromObject(RawObject value) {
   return static_cast<ApiHandle*>(Int::cast(value).asCPtr());
 }
 
-RawObject ApiHandle::asObject() {
-  if (isImmediate(this)) {
-    return RawObject(reinterpret_cast<uword>(this) ^ kImmediateTag);
-  }
-  DCHECK(reference_ != 0 || isManaged(this),
-         "A handle or native instance must point back to a heap instance");
-  return RawObject{reference_};
-}
-
 RawNativeProxy ApiHandle::asNativeProxy() {
   DCHECK(!isImmediate(this) && reference_ != 0,
          "expected extension object handle");

@@ -109,10 +109,15 @@ class ApiHandle : public PyObject {
   // Visit all reference_ members of live ApiHandles.
   static void visitReferences(IdentityDict* handles, PointerVisitor* visitor);
 
-  // Get the object from the handle's reference pointer. If non-existent
-  // Either search the object in the runtime's extension types dictionary
-  // or build a new extension instance.
-  RawObject asObject();
+  // Get the object from the handle's reference pointer.
+  inline RawObject asObject() {
+    if (isImmediate(this)) {
+      return RawObject{reinterpret_cast<uword>(this) ^ kImmediateTag};
+    }
+    DCHECK(reference_ != 0 || isManaged(this),
+           "A handle or native instance must point back to a heap instance");
+    return RawObject{reference_};
+  }
 
   // Return native proxy belonging to an extension object.
   RawNativeProxy asNativeProxy();
