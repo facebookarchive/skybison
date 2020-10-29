@@ -148,6 +148,7 @@ RawObject FUNC(_imp, is_builtin)(Thread* thread, Arguments args) {
   }
   Str name(&scope, strUnderlying(*name_obj));
   name = Runtime::internStr(thread, name);
+  if (isFrozenPackage(name)) return SmallInt::fromWord(0);
   bool result = isFrozenModule(name) || isBuiltinExtensionModule(name);
   return SmallInt::fromWord(result ? 1 : 0);
 }

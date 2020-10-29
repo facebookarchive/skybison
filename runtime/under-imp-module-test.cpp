@@ -184,7 +184,14 @@ TEST_F(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
-TEST_F(ImportBuiltinsTest, IsFrozenOnFrozenModuleReturnsTrue) {
+TEST_F(ImportBuiltinsTest, IsBuiltinWithFrozenPackageReturnsZero) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("compiler"));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_builtin), module_name));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+}
+
+TEST_F(ImportBuiltinsTest, IsFrozenWithFrozenModuleReturnsTrue) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("zipimport"));
   Object result(&scope, runBuiltin(FUNC(_imp, is_frozen), module_name));
@@ -192,7 +199,7 @@ TEST_F(ImportBuiltinsTest, IsFrozenOnFrozenModuleReturnsTrue) {
   EXPECT_TRUE(Bool::cast(*result).value());
 }
 
-TEST_F(ImportBuiltinsTest, IsFrozenOnNewModuleReturnsFalse) {
+TEST_F(ImportBuiltinsTest, IsFrozenWithNewModuleReturnsFalse) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(FUNC(_imp, is_frozen), module_name));
@@ -200,7 +207,7 @@ TEST_F(ImportBuiltinsTest, IsFrozenOnNewModuleReturnsFalse) {
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
-TEST_F(ImportBuiltinsTest, IsFrozenPackageOnNotFrozenModuleReturnsFalse) {
+TEST_F(ImportBuiltinsTest, IsFrozenPackageWithNotFrozenModuleReturnsFalse) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(FUNC(_imp, is_frozen_package), module_name));
@@ -209,7 +216,7 @@ TEST_F(ImportBuiltinsTest, IsFrozenPackageOnNotFrozenModuleReturnsFalse) {
 }
 
 TEST_F(ImportBuiltinsTest,
-       IsFrozenPackageOnFrozenModuleNotAPackageReturnsFalse) {
+       IsFrozenPackageWithFrozenModuleNotAPackageReturnsFalse) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("array"));
   Object result(&scope, runBuiltin(FUNC(_imp, is_frozen_package), module_name));
@@ -217,7 +224,7 @@ TEST_F(ImportBuiltinsTest,
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
-TEST_F(ImportBuiltinsTest, IsFrozenPackageOnFrozenPackageReturnsTrue) {
+TEST_F(ImportBuiltinsTest, IsFrozenPackageWithFrozenPackageReturnsTrue) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("compiler"));
   Object result(&scope, runBuiltin(FUNC(_imp, is_frozen_package), module_name));
