@@ -291,7 +291,7 @@ class deque(bootstrap=True):
             deque.rotate(self, i)
 
     def reverse(self):
-        _unimplemented()
+        _builtin()
 
     def rotate(self, n=1):
         _deque_guard(self)

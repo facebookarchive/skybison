@@ -250,6 +250,36 @@ class DequeTests(unittest.TestCase):
         result.popleft()
         self.assertEqual(len(result), 2)
 
+    def test_reverse_with_empty_deque_is_noop(self):
+        d = deque()
+        self.assertIsNone(d.reverse())
+        self.assertEqual(list(d), [])
+
+    def test_reverse_from_range_reverses_deque(self):
+        d = deque(range(5))
+        self.assertIsNone(d.reverse())
+        self.assertEqual(list(d), list(range(4, -1, -1)))
+
+    def test_reverse_with_longer_left_reverses_deque(self):
+        d = deque()
+        d.append(2)
+        d.append(1)
+        d.appendleft(3)
+        d.appendleft(4)
+        d.appendleft(5)
+        self.assertIsNone(d.reverse())
+        self.assertEqual(list(d), list(range(1, 6)))
+
+    def test_reverse_with_longer_right_reverses_deque(self):
+        d = deque()
+        d.append(3)
+        d.append(2)
+        d.append(1)
+        d.appendleft(4)
+        d.appendleft(5)
+        self.assertIsNone(d.reverse())
+        self.assertEqual(list(d), list(range(1, 6)))
+
 
 if __name__ == "__main__":
     unittest.main()

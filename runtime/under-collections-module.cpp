@@ -437,4 +437,45 @@ RawObject METH(deque, popleft)(Thread* thread, Arguments args) {
   return dequePopLeft(thread, deque);
 }
 
+RawObject METH(deque, reverse)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfDeque(*self)) {
+    return thread->raiseRequiresType(self, ID(deque));
+  }
+
+  Deque deque(&scope, *self);
+  word length = deque.numItems();
+  if (length == 0) {
+    return NoneType::object();
+  }
+
+  MutableTuple items(&scope, deque.items());
+  word left = deque.left();
+  word capacity = items.length();
+  word right = left + length;
+
+  word prefix = right - capacity;
+  word suffix = capacity - left;
+  if (prefix > suffix) {
+    for (right = prefix - 1; left < capacity; left++, right--) {
+      items.swap(left, right);
+    }
+    left = 0;
+  } else if (prefix > 0) {
+    for (right = prefix - 1; right >= 0; left++, right--) {
+      items.swap(left, right);
+    }
+    right += capacity;
+  } else {
+    right--;
+  }
+
+  for (; left < right; left++, right--) {
+    items.swap(left, right);
+  }
+
+  return NoneType::object();
+}
+
 }  // namespace py
