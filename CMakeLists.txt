@@ -345,6 +345,20 @@ set(
   library/_weakref.py
   library/array.py
   library/builtins.py
+  library/compiler/config.py
+  library/compiler/consts.py
+  library/compiler/future.py
+  library/compiler/__init__.py
+  library/compiler/__main__.py
+  library/compiler/misc.py
+  library/compiler/optimizer.py
+  library/compiler/peephole.py
+  library/compiler/pyassem.py
+  library/compiler/pycodegen.py
+  library/compiler/static.py
+  library/compiler/symbols.py
+  library/compiler/unparse.py
+  library/compiler/visitor.py
   library/faulthandler.py
   library/marshal.py
   library/mmap.py
