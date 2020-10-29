@@ -127,11 +127,30 @@ def to_char_array(byte_array):
     return f"{{{members}}}"
 
 
-ModuleData = namedtuple("ModuleData", ("name", "initializer", "builtin_init"))
+ModuleData = namedtuple(
+    "ModuleData", ("name", "initializer", "builtin_init", "is_package")
+)
+
+
+def get_module_name(filename):
+    path = Path(filename)
+    module_name = path.name
+    assert module_name.endswith(".py")
+    module_name = module_name[:-3]
+    for parent in path.parents:
+        if not os.path.exists(Path(parent, "__init__.py")):
+            break
+        module_name = f"{parent.name}.{module_name}"
+    return module_name
 
 
 def process_module(filename, builtins):
-    name = os.path.splitext(os.path.basename(filename))[0]
+    fullname = get_module_name(filename)
+    if fullname.endswith(".__init__"):
+        fullname = fullname[:-9]
+        is_package = True
+    else:
+        is_package = False
     with open(filename) as fp:
         source = fp.read()
     builtin_init = "$builtin-init-module$" in source
@@ -139,10 +158,10 @@ def process_module(filename, builtins):
     module_code = compile(
         source, filename, "exec", flags=flags, dont_inherit=True, optimize=0
     )
-    marked_code = mark_native_functions(module_code, builtins, name)
+    marked_code = mark_native_functions(module_code, builtins, fullname)
     bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(marked_code)
     initializer = to_char_array(bytecode)
-    return ModuleData(name, initializer, builtin_init)
+    return ModuleData(fullname, initializer, builtin_init, is_package)
 
 
 def gen_frozen_modules_cpp(modules):
@@ -157,8 +176,9 @@ namespace py {{
 """
 
     for module in modules:
+        module_ident = module.name.replace(".", "_")
         result += f"""
-static const byte kData_{module.name}[] = {module.initializer};
+static const byte kData_{module_ident}[] = {module.initializer};
 """
 
     result += f"""
@@ -166,10 +186,15 @@ const FrozenModule kFrozenModules[] = {{
 """
 
     for module in modules:
-        name = module.name
-        init = f"FUNC({name}, {INIT_MODULE_NAME})" if module.builtin_init else "nullptr"
+        module_ident = module.name.replace(".", "_")
+        is_package = "true" if module.is_package else "false"
+        init = (
+            f"FUNC({module.name}, {INIT_MODULE_NAME})"
+            if module.builtin_init
+            else "nullptr"
+        )
         result += f"""\
-    {{"{name}", ARRAYSIZE(kData_{name}), kData_{name}, {init}}},
+    {{"{module.name}", ARRAYSIZE(kData_{module_ident}), kData_{module_ident}, {init}, {is_package}}},
 """
 
     result += f"""\

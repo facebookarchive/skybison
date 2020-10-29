@@ -30,6 +30,7 @@ struct FrozenModule {
   word marshalled_code_length;
   const byte* marshalled_code;
   ModuleInitFunc init;
+  bool is_package;
 };
 
 RawObject ensureBuiltinModule(Thread* thread, const Str& name);
