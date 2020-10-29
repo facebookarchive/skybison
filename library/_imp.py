@@ -90,7 +90,7 @@ def is_frozen(name):
 
 
 def is_frozen_package(name):
-    _unimplemented()
+    _builtin()
 
 
 def lock_held():

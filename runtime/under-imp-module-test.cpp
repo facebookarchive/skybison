@@ -200,6 +200,31 @@ TEST_F(ImportBuiltinsTest, IsFrozenOnNewModuleReturnsFalse) {
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
+TEST_F(ImportBuiltinsTest, IsFrozenPackageOnNotFrozenModuleReturnsFalse) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_frozen_package), module_name));
+  ASSERT_TRUE(result.isBool());
+  EXPECT_FALSE(Bool::cast(*result).value());
+}
+
+TEST_F(ImportBuiltinsTest,
+       IsFrozenPackageOnFrozenModuleNotAPackageReturnsFalse) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("array"));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_frozen_package), module_name));
+  ASSERT_TRUE(result.isBool());
+  EXPECT_FALSE(Bool::cast(*result).value());
+}
+
+TEST_F(ImportBuiltinsTest, IsFrozenPackageOnFrozenPackageReturnsTrue) {
+  HandleScope scope(thread_);
+  Object module_name(&scope, runtime_->newStrFromCStr("compiler"));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_frozen_package), module_name));
+  ASSERT_TRUE(result.isBool());
+  EXPECT_TRUE(Bool::cast(*result).value());
+}
+
 TEST_F(ImportBuiltinsTest, GetFrozenObjectWithNonStrRaisesTypeError) {
   HandleScope scope(thread_);
   Object non_str(&scope, runtime_->newInt(5));

@@ -164,6 +164,18 @@ RawObject FUNC(_imp, is_frozen)(Thread* thread, Arguments args) {
   return Bool::fromBool(isFrozenModule(name));
 }
 
+RawObject FUNC(_imp, is_frozen_package)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object name_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "is_frozen requires a str object");
+  }
+  Str name(&scope, strUnderlying(*name_obj));
+  name = Runtime::internStr(thread, name);
+  return Bool::fromBool(isFrozenPackage(name));
+}
+
 RawObject FUNC(_imp, lock_held)(Thread*, Arguments) {
   return Bool::fromBool(import_lock_holder != nullptr);
 }

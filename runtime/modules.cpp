@@ -105,6 +105,15 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
 
 bool isFrozenModule(const Str& name) { return builtinModuleIndex(name) >= 0; }
 
+bool isFrozenPackage(const Str& name) {
+  word index = builtinModuleIndex(name);
+  if (index < 0) {
+    return false;
+  }
+  const FrozenModule* frozen_module = &kFrozenModules[index];
+  return frozen_module->is_package;
+}
+
 const FrozenModule* frozenModuleByName(const Str& name) {
   word index = builtinModuleIndex(name);
   if (index < 0) {
