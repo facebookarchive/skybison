@@ -938,6 +938,12 @@ void* defaultSlot(int slot_id) {
 
 }  // namespace
 
+int emptyClear(PyObject*) { return 0; }
+
+int emptyTraverse(PyObject*, visitproc, void*) { return 0; }
+
+void emptyDealloc(PyObject*) { return; }
+
 PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
   Thread* thread = Thread::current();
   if (slot_id < 0) {
@@ -955,6 +961,15 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
   if (!type.isCPythonHeaptype()) {
     if (slot_id == Py_tp_new) {
       return reinterpret_cast<void*>(&superclassTpNew);
+    }
+    if (slot_id == Py_tp_clear) {
+      return reinterpret_cast<void*>(&emptyClear);
+    }
+    if (slot_id == Py_tp_traverse) {
+      return reinterpret_cast<void*>(&emptyTraverse);
+    }
+    if (slot_id == Py_tp_dealloc) {
+      return reinterpret_cast<void*>(&emptyDealloc);
     }
     thread->raiseBadInternalCall();
     return nullptr;

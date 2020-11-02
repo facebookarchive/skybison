@@ -2999,6 +2999,33 @@ TEST_F(TypeExtensionApiTest, GetSlotFromTypeWithTpNewReturnsConstructorPyro) {
                                &PyType_Type));
 }
 
+TEST_F(TypeExtensionApiTest, GetDestructorSlotsFromExceptionReturnsNoOpsPyro) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "Subclass", Py_tp_new, &emptyBinaryFunc, PyExc_Exception));
+  PyObject* subclass = mainModuleGet("Subclass");
+  PyTypeObject* exception = reinterpret_cast<PyTypeObject*>(PyExc_Exception);
+
+  inquiry tp_clear =
+      reinterpret_cast<inquiry>(PyType_GetSlot(exception, Py_tp_clear));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(tp_clear, nullptr);
+  EXPECT_EQ(tp_clear(subclass), 0);
+
+  destructor tp_dealloc =
+      reinterpret_cast<destructor>(PyType_GetSlot(exception, Py_tp_dealloc));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(tp_dealloc, nullptr);
+  tp_dealloc(subclass);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  traverseproc tp_traverse =
+      reinterpret_cast<traverseproc>(PyType_GetSlot(exception, Py_tp_traverse));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(tp_traverse, nullptr);
+  EXPECT_EQ(tp_traverse(subclass, [](PyObject*, void*) { return 0; }, nullptr),
+            0);
+}
+
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesSetsBaseSlots) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
