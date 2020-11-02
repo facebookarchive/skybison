@@ -11,6 +11,7 @@
 #include "list-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
+#include "object-utils.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "type-builtins.h"
@@ -394,6 +395,22 @@ PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
   return -1;
 }
 
+PyObject* initializeNativeProxy(Thread* thread, PyObject* obj,
+                                PyTypeObject* typeobj, const Object& instance) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  NativeProxy proxy(&scope, *instance);
+  proxy.setNative(runtime->newIntFromCPtr(obj));
+  runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
+
+  // Initialize the native object
+  obj->reference_ = proxy.raw();
+  Py_INCREF(typeobj);
+  obj->ob_refcnt = 2;
+  return obj;
+}
+
 PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   if (obj == nullptr) return PyErr_NoMemory();
 
@@ -403,15 +420,8 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   HandleScope scope(thread);
   Type type_obj(&scope, ApiHandle::fromPyTypeObject(typeobj)->asObject());
   Layout layout(&scope, type_obj.instanceLayout());
-  NativeProxy proxy(&scope, runtime->newInstance(layout));
-  proxy.setNative(runtime->newIntFromCPtr(obj));
-  runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
-
-  // Initialize the native object
-  obj->reference_ = proxy.raw();
-  Py_INCREF(typeobj);
-  obj->ob_refcnt = 2;
-  return obj;
+  Object instance(&scope, runtime->newInstance(layout));
+  return initializeNativeProxy(thread, obj, typeobj, instance);
 }
 
 PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* obj, PyTypeObject* type,

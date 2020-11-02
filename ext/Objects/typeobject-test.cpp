@@ -115,8 +115,6 @@ TEST_F(TypeExtensionApiTest,
   PyRun_SimpleString(R"(class D: pass)");
   PyObjectPtr managed_type(mainModuleGet("D"));
   ASSERT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new), nullptr);
-  EXPECT_EQ(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new),
-            PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
 
   // Instances of `ext_type` does not cause any memory leak.
   auto new_slot = reinterpret_cast<newfunc>(
@@ -305,7 +303,7 @@ TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeRaisesSystemError) {
       PyType_CheckExact(reinterpret_cast<PyTypeObject*>(pylong_type.get())));
 
   EXPECT_EQ(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(pylong_type.get()),
-                           Py_tp_new),
+                           Py_tp_init),
             nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -2913,6 +2911,94 @@ static PyObject* emptyTernaryFunc(PyObject*, PyObject*, PyObject*) {
 
 static PyObject* emptyUnaryFunc(PyObject*) { return Py_None; }
 
+TEST_F(TypeExtensionApiTest,
+       GetSlotFromExceptionWithTpNewReturnsConstructorPyro) {
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "Subclass", Py_tp_init, &emptyUnaryFunc, PyExc_Exception));
+  PyObjectPtr subclass(mainModuleGet("Subclass"));
+  ASSERT_NE(subclass, nullptr);
+  newfunc dunder_new = reinterpret_cast<newfunc>(PyType_GetSlot(
+      reinterpret_cast<PyTypeObject*>(PyExc_Exception), Py_tp_new));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(dunder_new, nullptr);
+  PyObjectPtr instance(dunder_new(
+      reinterpret_cast<PyTypeObject*>(subclass.get()), nullptr, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(instance, subclass));
+}
+
+TEST_F(TypeExtensionApiTest,
+       GetSlotFromExceptionWithNonZeroSizeWithTpNewReturnsConstructorPyro) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Foo", sizeof(PyObject), 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, PyExc_Exception));
+  PyObjectPtr subclass(PyType_FromSpecWithBases(&spec, bases));
+
+  ASSERT_NE(subclass, nullptr);
+  newfunc dunder_new = reinterpret_cast<newfunc>(PyType_GetSlot(
+      reinterpret_cast<PyTypeObject*>(PyExc_Exception), Py_tp_new));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(dunder_new, nullptr);
+  PyObjectPtr instance(dunder_new(
+      reinterpret_cast<PyTypeObject*>(subclass.get()), nullptr, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(instance, subclass));
+}
+
+TEST_F(TypeExtensionApiTest,
+       ExceptionSubclassWithNonZeroConstructorCreatesExceptionSubclass) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Foo", sizeof(PyObject), 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, PyExc_Exception));
+  PyObjectPtr subclass(PyType_FromSpecWithBases(&spec, bases));
+
+  ASSERT_NE(subclass, nullptr);
+  newfunc dunder_new = reinterpret_cast<newfunc>(PyType_GetSlot(
+      reinterpret_cast<PyTypeObject*>(subclass.get()), Py_tp_new));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(dunder_new, nullptr);
+  PyObjectPtr empty_tuple(PyTuple_New(0));
+  PyObjectPtr instance(dunder_new(
+      reinterpret_cast<PyTypeObject*>(subclass.get()), empty_tuple, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(instance, subclass));
+}
+
+TEST_F(TypeExtensionApiTest, GetSlotFromTypeWithTpNewReturnsConstructorPyro) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlotAndBase("Subclass", Py_tp_init, &emptyUnaryFunc,
+                                reinterpret_cast<PyObject*>(&PyType_Type)));
+  PyObjectPtr subclass(mainModuleGet("Subclass"));
+  ASSERT_NE(subclass, nullptr);
+  newfunc dunder_new =
+      reinterpret_cast<newfunc>(PyType_GetSlot(&PyType_Type, Py_tp_new));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(dunder_new, nullptr);
+
+  PyObjectPtr args(PyTuple_New(3));
+  ASSERT_EQ(PyTuple_SetItem(args, 0, PyUnicode_FromString("Subclass")), 0);
+  ASSERT_EQ(PyTuple_SetItem(args, 1, PyTuple_Pack(1, &PyType_Type)), 0);
+  ASSERT_EQ(PyTuple_SetItem(args, 2, PyDict_New()), 0);
+
+  PyObjectPtr instance(dunder_new(
+      reinterpret_cast<PyTypeObject*>(subclass.get()), args, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_TRUE(PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(instance.get()),
+                               &PyType_Type));
+}
+
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesSetsBaseSlots) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
@@ -2986,28 +3072,6 @@ TEST_F(TypeExtensionApiTest,
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   PyErr_Clear();
-}
-
-TEST_F(
-    TypeExtensionApiTest,
-    FromSpecWithBasesWithBuiltinTypeAndZeroBasicSizeAndItemSetsTpNewOfManagedTypePyro) {
-  PyType_Slot slots[] = {
-      {0, nullptr},
-  };
-  static PyType_Spec spec;
-  spec = {
-      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
-  };
-  PyObjectPtr bases(PyTuple_Pack(1, &PyType_Type));
-  PyObjectPtr ext_type(PyType_FromSpecWithBases(&spec, bases));
-  ASSERT_NE(ext_type, nullptr);
-  ASSERT_TRUE(PyType_CheckExact(ext_type));
-
-  PyRun_SimpleString(R"(class D: pass)");
-  PyObjectPtr managed_type(mainModuleGet("D"));
-  ASSERT_NE(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new), nullptr);
-  EXPECT_EQ(PyType_GetSlot(managed_type.asTypeObject(), Py_tp_new),
-            PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
 }
 
 TEST_F(

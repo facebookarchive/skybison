@@ -16,6 +16,7 @@
 #include "handles.h"
 #include "int-builtins.h"
 #include "mro.h"
+#include "object-utils.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -809,6 +810,79 @@ RawObject addOperators(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
+PyObject* allocatePyObject(const Type& type, Py_ssize_t nitems) {
+  uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
+  uword item_size = typeSlotUWordAt(type, kSlotItemSize);
+  Py_ssize_t size = Utils::roundUp(nitems * item_size + basic_size, kWordSize);
+
+  PyObject* result = nullptr;
+  if (type.hasFlag(Type::Flag::kHasCycleGC)) {
+    result = static_cast<PyObject*>(_PyObject_GC_Calloc(size));
+  } else {
+    result = static_cast<PyObject*>(PyObject_Calloc(1, size));
+  }
+  // Track object in native GC queue
+  if (type.hasFlag(Type::Flag::kHasCycleGC)) {
+    PyObject_GC_Track(result);
+  }
+  return result;
+}
+
+PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
+                          PyObject* kwargs) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Type type(&scope, ApiHandle::fromPyTypeObject(typeobj)->asObject());
+  Object args_obj(&scope, args == nullptr
+                              ? runtime->emptyTuple()
+                              : ApiHandle::fromPyObject(args)->asObject());
+  DCHECK(runtime->isInstanceOfTuple(*args_obj),
+         "Slot __new__ expected tuple args");
+  Object kwargs_obj(&scope, kwargs == nullptr
+                                ? NoneType::object()
+                                : ApiHandle::fromPyObject(kwargs)->asObject());
+  DCHECK(kwargs == nullptr || runtime->isInstanceOfDict(*kwargs_obj),
+         "Slot __new__ expected nullptr or dict kwargs");
+
+  Tuple type_mro(&scope, type.mro());
+  word i = 0;
+  Type superclass(&scope, type_mro.at(i++));
+  while (typeHasSlots(superclass) &&
+         typeSlotAt(superclass, Py_tp_new) ==
+             reinterpret_cast<void*>(&superclassTpNew)) {
+    superclass = type_mro.at(i++);
+  }
+  Object dunder_new(&scope,
+                    typeLookupInMroById(thread, *superclass, ID(__new__)));
+  Object none(&scope, NoneType::object());
+  dunder_new = resolveDescriptorGet(thread, dunder_new, none, type);
+  dunder_new = runtime->newBoundMethod(dunder_new, type);
+  thread->stackPush(*dunder_new);
+  thread->stackPush(*args_obj);
+  word flags = 0;
+  if (kwargs != nullptr) {
+    thread->stackPush(*kwargs_obj);
+    flags = CallFunctionExFlag::VAR_KEYWORDS;
+  }
+  Object instance(&scope, Interpreter::callEx(thread, flags));
+  if (instance.isErrorException()) return nullptr;
+
+  // If the type doesn't require NativeData, we don't need to allocate or
+  // create a NativeProxy for the instance
+  if (!type.hasNativeData()) {
+    return ApiHandle::newReference(thread, *instance);
+  }
+
+  PyObject* result = allocatePyObject(type, 0);
+  if (result == nullptr) {
+    thread->raiseMemoryError();
+    return nullptr;
+  }
+  return initializeNativeProxy(thread, result, typeobj, instance);
+}
+
 // tp_new slot implementation that delegates to a Type's __new__ attribute.
 PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   Thread* thread = Thread::current();
@@ -878,7 +952,10 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
 
   HandleScope scope(thread);
   Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
-  if (type.isBuiltin()) {
+  if (!type.isCPythonHeaptype()) {
+    if (slot_id == Py_tp_new) {
+      return reinterpret_cast<void*>(&superclassTpNew);
+    }
     thread->raiseBadInternalCall();
     return nullptr;
   }
@@ -1623,33 +1700,25 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
 
   // tp_new -> PyType_GenericNew
   if (typeSlotAt(type, Py_tp_new) == nullptr) {
-    if (!type.hasNativeData()) {
-      // Delegate object allocation to `__new__` via `defaultSlot()` if type
-      // doesn't have any native data.
-      typeSlotAtPut(thread, type, Py_tp_new,
-                    reinterpret_cast<void*>(&slotTpNew));
-    } else {
-      typeSlotAtPut(thread, type, Py_tp_new,
-                    reinterpret_cast<void*>(&PyType_GenericNew));
+    void* new_func = reinterpret_cast<void*>(&superclassTpNew);
+    typeSlotAtPut(thread, type, Py_tp_new, new_func);
 
-      Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
-      Str qualname(&scope, runtime->newStrFromFmt("%S.%S", &type_name,
-                                                  &dunder_new_name));
-      Code code(
-          &scope,
-          newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
-                     ARRAYSIZE(kParamsTypeArgsKwargs),
-                     Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
-                     wrapTpNew, reinterpret_cast<void*>(&PyType_GenericNew)));
-      Object globals(&scope, NoneType::object());
-      Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
-                                                         globals));
-      slotWrapperFunctionSetType(func, type);
-      Object func_obj(&scope, thread->invokeFunction1(ID(builtins),
-                                                      ID(staticmethod), func));
-      if (func_obj.isError()) return *func;
-      typeAtPutById(thread, type, ID(__new__), func_obj);
-    }
+    Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
+    Str qualname(&scope,
+                 runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
+    Code code(&scope,
+              newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
+                         ARRAYSIZE(kParamsTypeArgsKwargs),
+                         Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
+                         wrapTpNew, new_func));
+    Object globals(&scope, NoneType::object());
+    Function func(
+        &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+    slotWrapperFunctionSetType(func, type);
+    Object func_obj(
+        &scope, thread->invokeFunction1(ID(builtins), ID(staticmethod), func));
+    if (func_obj.isError()) return *func;
+    typeAtPutById(thread, type, ID(__new__), func_obj);
   }
 
   // tp_free.
@@ -1836,32 +1905,17 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   DCHECK(typeHasSlots(type),
          "GenericAlloc from types initialized through Python code");
 
-  // Allocate a new instance
-  uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
-  uword item_size = typeSlotUWordAt(type, kSlotItemSize);
-  Py_ssize_t size = Utils::roundUp(nitems * item_size + basic_size, kWordSize);
-
-  PyObject* result = nullptr;
-  if (type.hasFlag(Type::Flag::kHasCycleGC)) {
-    result = static_cast<PyObject*>(_PyObject_GC_Calloc(size));
-  } else {
-    result = static_cast<PyObject*>(PyObject_Calloc(1, size));
-  }
+  PyObject* result = allocatePyObject(type, nitems);
   if (result == nullptr) {
     thread->raiseMemoryError();
     return nullptr;
   }
 
   // Initialize the newly-allocated instance
-  if (item_size == 0) {
+  if (typeSlotUWordAt(type, kSlotItemSize) == 0) {
     PyObject_Init(result, type_obj);
   } else {
     PyObject_InitVar(reinterpret_cast<PyVarObject*>(result), type_obj, nitems);
-  }
-
-  // Track object in native GC queue
-  if (type.hasFlag(Type::Flag::kHasCycleGC)) {
-    PyObject_GC_Track(result);
   }
 
   return result;
