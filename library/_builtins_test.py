@@ -188,6 +188,18 @@ class UnderBuiltinsTests(unittest.TestCase):
             _Unbound,
         )
 
+    def test_traceback_next_set_with_none_modifies_traceback(self):
+        def foo():
+            raise RuntimeError()
+
+        try:
+            foo()
+        except Exception as e:
+            tb = e.__traceback__
+            self.assertIsNotNone(tb.tb_next)
+            tb.tb_next = None
+            self.assertIsNone(tb.tb_next)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1051,7 +1051,7 @@ def _traceback_next_get(self):
     _builtin()
 
 
-def _traceback_next_set(self):
+def _traceback_next_set(self, new_next):
     _builtin()
 
 
