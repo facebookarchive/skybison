@@ -80,7 +80,6 @@ typedef struct _longobject PyLongObject;
 typedef struct _typeobject PyTypeObject;
 typedef struct _PyWeakReference PyWeakReference;
 typedef struct _structsequence PyStructSequence;
-typedef struct PyBaseExceptionObject PyBaseExceptionObject;
 
 struct PyMemberDef;
 
@@ -100,6 +99,16 @@ typedef struct _object {
   _PyObject_HEAD_EXTRA
   Py_ssize_t ob_refcnt;
 } PyObject;
+
+typedef struct {
+  PyObject_HEAD
+  // no additional fields necessary, all data is in managed heap!
+} PyBaseExceptionObject;
+
+typedef struct {
+  PyObject_HEAD
+  // no additional fields necessary, all data is in managed heap!
+} PyHeapTypeObject;
 
 typedef struct {
   PyObject ob_base;
