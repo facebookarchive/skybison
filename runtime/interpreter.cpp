@@ -413,15 +413,17 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread,
 
 RawObject Interpreter::lookupMethod(Thread* thread, const Object& receiver,
                                     SymbolId selector) {
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*receiver));
-  Object method(&scope, typeLookupInMroById(thread, *type, selector));
-  if (method.isFunction() || method.isErrorNotFound()) {
+  RawType raw_type = runtime->typeOf(*receiver).rawCast<RawType>();
+  RawObject raw_method = typeLookupInMroById(thread, raw_type, selector);
+  if (raw_method.isFunction() || raw_method.isErrorNotFound()) {
     // Do not create a short-lived bound method object, and propagate
     // exceptions.
-    return *method;
+    return raw_method;
   }
+  HandleScope scope(thread);
+  Type type(&scope, raw_type);
+  Object method(&scope, raw_method);
   return resolveDescriptorGet(thread, method, receiver, type);
 }
 
