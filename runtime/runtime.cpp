@@ -2012,8 +2012,8 @@ void Runtime::processCallbacks() {
 
   while (callbacks_ != NoneType::object()) {
     Object weak(&scope, WeakRef::dequeue(&callbacks_));
-    Object callback(&scope, WeakRef::cast(*weak).callback());
-    Interpreter::callMethod1(thread, callback, weak);
+    BoundMethod callback(&scope, WeakRef::cast(*weak).callback());
+    Interpreter::call0(thread, callback);
     thread->ignorePendingException();
     WeakRef::cast(*weak).setCallback(NoneType::object());
   }
@@ -3168,12 +3168,10 @@ RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
   return *link;
 }
 
-RawObject Runtime::newWeakRef(Thread* thread, const Object& referent,
-                              const Object& callback) {
+RawObject Runtime::newWeakRef(Thread* thread, const Object& referent) {
   HandleScope scope(thread);
   WeakRef ref(&scope, createInstance<RawWeakRef>(this));
   ref.setReferent(*referent);
-  ref.setCallback(*callback);
   return *ref;
 }
 

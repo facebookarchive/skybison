@@ -290,7 +290,6 @@ TEST_F(LayoutTest, TransitionTableHoldsWeakRefToLayouts) {
   // Transitioning the type will result in a new layout
   Object to_ref(&scope, NoneType::object());
   Object target_ref(&scope, NoneType::object());
-  Object none(&scope, NoneType::object());
   {
     ASSERT_FALSE(testing::runFromCStr(runtime_, R"(
 class A:
@@ -302,13 +301,13 @@ class A:
 del A
 )")
                      .isError());
-    WeakRef to_ref_inner(&scope, runtime_->newWeakRef(thread_, to_type, none));
+    WeakRef to_ref_inner(&scope, runtime_->newWeakRef(thread_, to_type));
     to_ref = *to_ref_inner;
 
     Layout target_layout(&scope, runtime_->layoutSetDescribedType(
                                      thread_, from_layout, to_type));
-    WeakRef target_ref_inner(
-        &scope, runtime_->newWeakRef(thread_, target_layout, none));
+    WeakRef target_ref_inner(&scope,
+                             runtime_->newWeakRef(thread_, target_layout));
     EXPECT_NE(*from_layout, *target_layout);
     target_ref = *target_ref_inner;
 

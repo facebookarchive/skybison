@@ -62,14 +62,23 @@ RawObject METH(weakref, __new__)(Thread* thread, Arguments args) {
   }
   Object referent(&scope, args.get(1));
   Object callback(&scope, args.get(2));
-  WeakRef result(&scope, runtime->newWeakRef(thread, referent, callback));
+  WeakRef result(&scope, runtime->newWeakRef(thread, referent));
   if (type.isBuiltin()) {
+    if (callback.isNoneType()) {
+      result.setCallback(*callback);
+      return *result;
+    }
+    result.setCallback(runtime->newBoundMethod(callback, result));
     return *result;
   }
   Layout layout(&scope, type.instanceLayout());
   UserWeakRefBase instance(&scope, runtime->newInstance(layout));
   instance.setValue(*result);
+  if (callback.isNoneType()) {
+    result.setCallback(*callback);
+    return *instance;
+  }
+  result.setCallback(runtime->newBoundMethod(callback, instance));
   return *instance;
 }
-
 }  // namespace py

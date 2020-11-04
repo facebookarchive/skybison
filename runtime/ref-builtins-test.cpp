@@ -42,19 +42,25 @@ TEST_F(RefBuiltinsTest, CallbackTest) {
 from _weakref import ref
 class Foo: pass
 a = Foo()
-b = 1
+b = None
 def f(ref):
     global b
-    b = 2
+    b = ref
 weak = ref(a, f)
+callback = weak.__callback__
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, src).isError());
   RawObject a = mainModuleAt(runtime_, "a");
   RawObject b = mainModuleAt(runtime_, "b");
+  RawObject f = mainModuleAt(runtime_, "f");
+  RawObject cb = mainModuleAt(runtime_, "callback");
   RawObject weak = mainModuleAt(runtime_, "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
-  EXPECT_TRUE(isIntEqualsWord(b, 1));
+  EXPECT_EQ(b, NoneType::object());
+  EXPECT_TRUE(WeakRef::cast(weak).callback().isBoundMethod());
+  EXPECT_EQ(BoundMethod::cast(WeakRef::cast(weak).callback()).self(), weak);
+  EXPECT_EQ(f, cb);
 
   Module main(&scope, findMainModule(runtime_));
   Dict globals(&scope, main.dict());
@@ -64,16 +70,35 @@ weak = ref(a, f)
   runtime_->collectGarbage();
   weak = mainModuleAt(runtime_, "weak");
   b = mainModuleAt(runtime_, "b");
-  EXPECT_TRUE(isIntEqualsWord(b, 2));
+  EXPECT_EQ(b, weak);
   EXPECT_EQ(WeakRef::cast(weak).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());
+}
+
+TEST_F(RefBuiltinsTest, DunderCallbackWithNoBoundMethodReturnsBoundMethod) {
+  const char* src = R"(
+from _weakref import ref
+class Foo: pass
+class Bar:
+  def method(self, wr):
+    pass
+
+a = Foo()
+b = Bar()
+original_callback = b.method
+weak = ref(a, original_callback)
+callback = weak.__callback__
+)";
+  ASSERT_FALSE(runFromCStr(runtime_, src).isError());
+  RawObject original_callback = mainModuleAt(runtime_, "original_callback");
+  RawObject callback = mainModuleAt(runtime_, "callback");
+  EXPECT_EQ(callback, original_callback);
 }
 
 TEST_F(RefBuiltinsTest, DunderCallReturnsObject) {
   HandleScope scope(thread_);
   Object obj(&scope, Str::empty());
-  Object callback(&scope, NoneType::object());
-  WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj, callback));
+  WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj));
   Object result(&scope, runBuiltin(METH(weakref, __call__), ref));
   EXPECT_EQ(result, obj);
 }

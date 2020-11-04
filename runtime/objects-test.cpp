@@ -1605,8 +1605,7 @@ TEST_F(WeakRefTest, EnqueueAndDequeue) {
   RawObject list = NoneType::object();
   for (int i = 0; i < 3; i++) {
     Object obj(&scope, SmallInt::fromWord(i));
-    Object none(&scope, NoneType::object());
-    WeakRef weak(&scope, runtime_->newWeakRef(thread_, obj, none));
+    WeakRef weak(&scope, runtime_->newWeakRef(thread_, obj));
     WeakRef::enqueue(*weak, &list);
   }
   WeakRef weak(&scope, WeakRef::dequeue(&list));
@@ -1628,19 +1627,19 @@ TEST_F(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(WeakRef::spliceQueue(list1, list2), NoneType::object());
 
   Object none(&scope, NoneType::object());
-  RawObject list3 = runtime_->newWeakRef(thread_, none, none);
+  RawObject list3 = runtime_->newWeakRef(thread_, none);
   WeakRef::cast(list3).setLink(list3);
   EXPECT_EQ(WeakRef::spliceQueue(list1, list3), list3);
   EXPECT_EQ(WeakRef::spliceQueue(list3, list2), list3);
 
   for (int i = 0; i < 2; i++) {
     Object obj1(&scope, SmallInt::fromWord(i));
-    WeakRef weak1(&scope, runtime_->newWeakRef(thread_, obj1, none));
+    WeakRef weak1(&scope, runtime_->newWeakRef(thread_, obj1));
     weak1.setReferent(SmallInt::fromWord(i));
     WeakRef::enqueue(*weak1, &list1);
 
     Object obj2(&scope, SmallInt::fromWord(i + 2));
-    WeakRef weak2(&scope, runtime_->newWeakRef(thread_, obj2, none));
+    WeakRef weak2(&scope, runtime_->newWeakRef(thread_, obj2));
     WeakRef::enqueue(*weak2, &list2);
   }
   RawObject list = WeakRef::spliceQueue(list1, list2);

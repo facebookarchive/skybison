@@ -352,6 +352,15 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
   return *result;
 }
 
+RawObject newWeakRefWithCallback(Runtime* runtime, Thread* thread,
+                                 const Object& referent,
+                                 const Object& callback) {
+  HandleScope scope(thread);
+  WeakRef ref(&scope, runtime->newWeakRef(thread, referent));
+  ref.setCallback(runtime->newBoundMethod(callback, ref));
+  return *ref;
+}
+
 RawObject setFromRange(word start, word stop) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

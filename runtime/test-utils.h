@@ -142,6 +142,11 @@ RawCode newEmptyCode();
 
 RawFunction newEmptyFunction();
 
+// Helper for creating weakrefs with the callback as a BoundMethod.
+RawObject newWeakRefWithCallback(Runtime* runtime, Thread* thread,
+                                 const Object& referent,
+                                 const Object& callback);
+
 // Helper to allow construction from initializer list, like
 // newIntFromDigits(runtime, {-1, 1})
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits);

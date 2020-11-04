@@ -1061,9 +1061,8 @@ l = [C()]
   List list(&scope, mainModuleAt(runtime_, "l"));
   Object ref_obj(&scope, NoneType::object());
   {
-    Object none(&scope, NoneType::object());
     Object c(&scope, list.at(0));
-    ref_obj = runtime_->newWeakRef(thread_, c, none);
+    ref_obj = runtime_->newWeakRef(thread_, c);
   }
   WeakRef ref(&scope, *ref_obj);
   EXPECT_NE(ref.referent(), NoneType::object());

@@ -37,8 +37,8 @@ def _proxy_unwrap(object):
     )
 
 
-def _remove_dead_weakref(object):
-    _unimplemented()
+def _remove_dead_weakref(data, key):
+    data.pop(key, None)
 
 
 def _weakref_hash(self):

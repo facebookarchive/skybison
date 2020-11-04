@@ -613,8 +613,7 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
     base.setSubclasses(runtime->newList());
   }
   List subclasses(&scope, base.subclasses());
-  Object none(&scope, NoneType::object());
-  Object value(&scope, runtime->newWeakRef(thread, type, none));
+  Object value(&scope, runtime->newWeakRef(thread, type));
   runtime->listAdd(thread, subclasses, value);
 }
 

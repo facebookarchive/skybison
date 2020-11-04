@@ -36,6 +36,40 @@ class WeakRefTests(unittest.TestCase):
         ref = weakref.ref(obj)
         self.assertIsNone(ref.__callback__)
 
+    def test_dunder_callback_with_subtype_returns_callback(self):
+        class SubRef(weakref.ref):
+            pass
+
+        class C:
+            pass
+
+        def callback(wr):
+            pass
+
+        obj = C()
+        ref = SubRef(obj, callback)
+        self.assertIs(ref.__callback__, callback)
+
+    def test_dunder_callback_with_subtype_passes_subtype(self):
+        class SubRef(weakref.ref):
+            pass
+
+        class C:
+            pass
+
+        def callback(wr):
+            wr.callback_arg = wr
+
+        ref = SubRef(C(), callback)
+        try:
+            from _builtins import _gc
+
+            _gc()
+        except ImportError:
+            pass
+
+        self.assertIs(ref.callback_arg, ref)
+
     def test_ref_dunder_call_with_non_ref_raises_type_error(self):
         with self.assertRaisesRegex(
             TypeError, "'__call__' requires a 'weakref' object but received a 'str'"

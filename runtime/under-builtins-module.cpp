@@ -5424,8 +5424,12 @@ RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Arguments args) {
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(weakref));
   }
-  WeakRef self(&scope, *self_obj);
-  return self.callback();
+  WeakRef self(&scope, weakRefUnderlying(*self_obj));
+  Object callback(&scope, self.callback());
+  if (callback.isNoneType()) {
+    return *callback;
+  }
+  return BoundMethod::cast(*callback).function();
 }
 
 RawObject FUNC(_builtins, _weakref_check)(Thread* thread, Arguments args) {

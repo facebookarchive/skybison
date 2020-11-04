@@ -345,10 +345,9 @@ d = {'a': C()}
   Dict dict(&scope, mainModuleAt(runtime_, "d"));
   Object ref_obj(&scope, NoneType::object());
   {
-    Object none(&scope, NoneType::object());
     Str key(&scope, runtime_->newStrFromCStr("a"));
     Object c(&scope, dictAtByStr(thread_, dict, key));
-    ref_obj = runtime_->newWeakRef(thread_, c, none);
+    ref_obj = runtime_->newWeakRef(thread_, c);
   }
   WeakRef ref(&scope, *ref_obj);
   EXPECT_NE(ref.referent(), NoneType::object());

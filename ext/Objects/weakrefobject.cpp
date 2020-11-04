@@ -62,9 +62,14 @@ PY_EXPORT PyObject* PyWeakref_NewRef(PyObject* obj, PyObject* callback) {
     callback_obj = ApiHandle::fromPyObject(callback)->asObject();
   }
   Runtime* runtime = thread->runtime();
-  if (callback_obj.isNoneType() || runtime->isCallable(thread, callback_obj)) {
-    return ApiHandle::newReference(
-        thread, runtime->newWeakRef(thread, referent, callback_obj));
+  WeakRef ref(&scope, runtime->newWeakRef(thread, referent));
+  if (callback_obj.isNoneType()) {
+    ref.setCallback(*callback_obj);
+    return ApiHandle::newReference(thread, *ref);
+  }
+  if (runtime->isCallable(thread, callback_obj)) {
+    ref.setCallback(runtime->newBoundMethod(callback_obj, ref));
+    return ApiHandle::newReference(thread, *ref);
   }
   thread->raiseWithFmt(LayoutId::kTypeError, "callback is not callable");
   return nullptr;

@@ -14,8 +14,7 @@ using ScavengerTest = RuntimeFixture;
 TEST_F(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   HandleScope scope(thread_);
   Tuple array(&scope, runtime_->newTuple(10));
-  Object none(&scope, NoneType::object());
-  WeakRef ref(&scope, runtime_->newWeakRef(thread_, array, none));
+  WeakRef ref(&scope, runtime_->newWeakRef(thread_, array));
   runtime_->collectGarbage();
   EXPECT_EQ(ref.referent(), *array);
 }
@@ -23,8 +22,7 @@ TEST_F(ScavengerTest, PreserveWeakReferenceHeapReferent) {
 TEST_F(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
   HandleScope scope(thread_);
   Int obj(&scope, SmallInt::fromWord(1234));
-  Object none(&scope, NoneType::object());
-  WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj, none));
+  WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj));
   runtime_->collectGarbage();
   EXPECT_EQ(ref.referent(), SmallInt::fromWord(1234));
 }
@@ -35,8 +33,7 @@ TEST_F(ScavengerTest, ClearWeakReference) {
   Object ref(&scope, *none);
   {
     Tuple array(&scope, runtime_->newTuple(10));
-    WeakRef ref_inner(&scope,
-                      runtime_->newWeakRef(Thread::current(), array, none));
+    WeakRef ref_inner(&scope, runtime_->newWeakRef(Thread::current(), array));
     ref = *ref_inner;
     runtime_->collectGarbage();
     EXPECT_EQ(ref_inner.referent(), *array);
@@ -94,8 +91,7 @@ TEST_F(ScavengerTest, PreserveSomeClearSomeReferents) {
   MutableTuple weakrefs(&scope, runtime_->newMutableTuple(4));
   for (word i = 0; i < weakrefs.length(); i++) {
     Object obj(&scope, strongrefs.at(i));
-    Object none(&scope, NoneType::object());
-    WeakRef elt(&scope, runtime_->newWeakRef(thread_, obj, none));
+    WeakRef elt(&scope, runtime_->newWeakRef(thread_, obj));
     weakrefs.atPut(i, *elt);
   }
 
@@ -163,12 +159,14 @@ def g(ref, c=4):
   {
     Tuple array1(&scope, runtime_->newTuple(10));
     Function func_f(&scope, mainModuleAt(runtime_, "f"));
-    WeakRef ref1_inner(&scope, runtime_->newWeakRef(thread_, array1, func_f));
+    WeakRef ref1_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array1, func_f));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime_->newTuple(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
-    WeakRef ref2_inner(&scope, runtime_->newWeakRef(thread_, array2, func_g));
+    WeakRef ref2_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime_->collectGarbage();
@@ -208,12 +206,14 @@ def g(ref, c=4):
 
   Tuple array1(&scope, runtime_->newTuple(10));
   Function func_f(&scope, mainModuleAt(runtime_, "f"));
-  WeakRef ref1(&scope, runtime_->newWeakRef(thread_, array1, func_f));
+  WeakRef ref1(&scope,
+               newWeakRefWithCallback(runtime_, thread_, array1, func_f));
   Object ref2(&scope, NoneType::object());
   {
     Tuple array2(&scope, runtime_->newTuple(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
-    WeakRef ref2_inner(&scope, runtime_->newWeakRef(thread_, array2, func_g));
+    WeakRef ref2_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime_->collectGarbage();
@@ -228,7 +228,7 @@ def g(ref, c=4):
   runtime_->collectGarbage();
 
   EXPECT_EQ(ref1.referent(), *array1);
-  EXPECT_EQ(ref1.callback(), *func_f);
+  EXPECT_EQ(BoundMethod::cast(ref1.callback()).function(), *func_f);
   EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, mainModuleAt(runtime_, "a"));
@@ -266,12 +266,14 @@ def g(ref, b=2):
     Function collect(
         &scope, runtime_->newFunctionWithCode(thread_, name, code, module));
 
-    WeakRef ref1_inner(&scope, runtime_->newWeakRef(thread_, array1, collect));
+    WeakRef ref1_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array1, collect));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime_->newTuple(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
-    WeakRef ref2_inner(&scope, runtime_->newWeakRef(thread_, array2, func_g));
+    WeakRef ref2_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime_->collectGarbage();
@@ -314,12 +316,14 @@ def g(ref, c=4):
   {
     Tuple array1(&scope, runtime_->newTuple(10));
     Function func_f(&scope, mainModuleAt(runtime_, "f"));
-    WeakRef ref1_inner(&scope, runtime_->newWeakRef(thread_, array1, func_f));
+    WeakRef ref1_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array1, func_f));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime_->newTuple(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
-    WeakRef ref2_inner(&scope, runtime_->newWeakRef(thread_, array2, func_g));
+    WeakRef ref2_inner(
+        &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime_->collectGarbage();
@@ -366,7 +370,8 @@ class C:
   // Create an instance C and a weak reference with callback to it.
   Layout layout(&scope, c.instanceLayout());
   Object instance(&scope, runtime_->newInstance(layout));
-  WeakRef ref(&scope, runtime_->newWeakRef(thread_, instance, callback));
+  WeakRef ref(&scope,
+              newWeakRefWithCallback(runtime_, thread_, instance, callback));
   instance = NoneType::object();
 
   thread_->raise(LayoutId::kUserWarning, runtime_->newInt(99));
