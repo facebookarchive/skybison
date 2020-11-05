@@ -327,6 +327,7 @@ set(
   FROZEN_MODULE_INPUT
   ${SYSCONFIGDATA}
   library/_builtins.py
+  library/_bytecode_utils.py
   library/_codecs.py
   library/_collections.py
   library/_contextvars.py
@@ -345,27 +346,66 @@ set(
   library/_weakref.py
   library/array.py
   library/builtins.py
+  library/collections/__init__.py
   library/compiler/config.py
   library/compiler/consts.py
   library/compiler/future.py
   library/compiler/__init__.py
-  library/compiler/__main__.py
   library/compiler/misc.py
   library/compiler/optimizer.py
   library/compiler/peephole.py
   library/compiler/pyassem.py
   library/compiler/pycodegen.py
-  library/compiler/static.py
   library/compiler/symbols.py
   library/compiler/unparse.py
   library/compiler/visitor.py
   library/faulthandler.py
+  library/inspect.py
+  library/itertools.py
   library/marshal.py
   library/mmap.py
   library/operator.py
   library/sys.py
+  library/types.py
+  library/typing.py
   library/unicodedata.py
+  third-party/cpython/Lib/_collections_abc.py
+  third-party/cpython/Lib/_py_abc.py
+  third-party/cpython/Lib/_weakrefset.py
+  third-party/cpython/Lib/__future__.py
+  third-party/cpython/Lib/abc.py
+  third-party/cpython/Lib/ast.py
+  third-party/cpython/Lib/codecs.py
+  third-party/cpython/Lib/collections/abc.py
+  third-party/cpython/Lib/contextlib.py
+  third-party/cpython/Lib/copyreg.py
+  third-party/cpython/Lib/dis.py
+  third-party/cpython/Lib/enum.py
+  third-party/cpython/Lib/functools.py
+  third-party/cpython/Lib/genericpath.py
+  third-party/cpython/Lib/heapq.py
+  third-party/cpython/Lib/imp.py
+  third-party/cpython/Lib/importlib/__init__.py
+  third-party/cpython/Lib/importlib/abc.py
+  third-party/cpython/Lib/importlib/machinery.py
+  third-party/cpython/Lib/importlib/resources.py
+  third-party/cpython/Lib/importlib/util.py
+  third-party/cpython/Lib/io.py
+  third-party/cpython/Lib/keyword.py
+  third-party/cpython/Lib/opcode.py
+  third-party/cpython/Lib/os.py
+  third-party/cpython/Lib/posixpath.py
+  third-party/cpython/Lib/re.py
+  third-party/cpython/Lib/reprlib.py
+  third-party/cpython/Lib/runpy.py
+  third-party/cpython/Lib/sre_compile.py
+  third-party/cpython/Lib/sre_constants.py
+  third-party/cpython/Lib/sre_parse.py
+  third-party/cpython/Lib/stat.py
+  third-party/cpython/Lib/token.py
+  third-party/cpython/Lib/tokenize.py
   third-party/cpython/Lib/warnings.py
+  third-party/cpython/Lib/weakref.py
   third-party/cpython/Lib/zipimport.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
