@@ -2244,6 +2244,10 @@ class RawCode : public RawInstance {
   RawObject varnames() const;
   void setVarnames(RawObject value) const;
 
+  // Returns nullptr if the function cannot be executed without a frame.
+  void* intrinsic() const;
+  void setIntrinsic(void* fp) const;
+
   // Layout.
   static const int kArgcountOffset = RawHeapObject::kSize;
   static const int kPosonlyargcountOffset = kArgcountOffset + kPointerSize;
@@ -2263,7 +2267,8 @@ class RawCode : public RawInstance {
   static const int kFilenameOffset = kCell2argOffset + kPointerSize;
   static const int kNameOffset = kFilenameOffset + kPointerSize;
   static const int kLnotabOffset = kNameOffset + kPointerSize;
-  static const int kSize = kLnotabOffset + kPointerSize;
+  static const int kIntrinsicOffset = kLnotabOffset + kPointerSize;
+  static const int kSize = kIntrinsicOffset + kPointerSize;
 
   static const word kCompileFlagsMask =
       Flags::kFutureDivision | Flags::kFutureAbsoluteImport |
@@ -5754,6 +5759,15 @@ inline bool RawCode::hasOptimizedOrNewlocals() const {
 }
 
 inline bool RawCode::isNative() const { return code().isInt(); }
+
+inline void* RawCode::intrinsic() const {
+  return RawSmallInt::cast(instanceVariableAt(kIntrinsicOffset))
+      .asAlignedCPtr();
+}
+
+inline void RawCode::setIntrinsic(void* fp) const {
+  instanceVariableAtPut(kIntrinsicOffset, RawSmallInt::fromAlignedCPtr(fp));
+}
 
 // RawLargeInt
 

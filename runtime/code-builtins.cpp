@@ -26,6 +26,7 @@ static const BuiltinAttribute kCodeAttributes[] = {
     {ID(co_filename), RawCode::kFilenameOffset, AttributeFlags::kReadOnly},
     {ID(co_name), RawCode::kNameOffset, AttributeFlags::kReadOnly},
     {ID(co_lnotab), RawCode::kLnotabOffset, AttributeFlags::kReadOnly},
+    {ID(_code__intrinsic), RawCode::kIntrinsicOffset, AttributeFlags::kHidden},
 };
 
 void initializeCodeType(Thread* thread) {

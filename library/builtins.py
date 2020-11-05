@@ -1386,6 +1386,7 @@ def _int_format_octal(value):
 
 
 def _index(obj) -> int:
+    "$intrinsic$"
     # equivalent to PyNumber_Index
     if _int_check(obj):
         return obj
@@ -1608,6 +1609,7 @@ def _new_member_set_readonly_strings(name):
 
 
 def _number_check(obj) -> bool:
+    "$intrinsic$"
     # equivalent to PyNumber_Check()
     return _object_type_hasattr(obj, "__int__") or _object_type_hasattr(
         obj, "__float__"
@@ -1639,6 +1641,7 @@ def _sequence_repr(left, seq, right) -> str:
 
 
 def _slice_index(num) -> int:
+    "$intrinsic$"
     if num is None or _int_check(num):
         return num
     if _object_type_hasattr(num, "__index__"):
@@ -1649,6 +1652,7 @@ def _slice_index(num) -> int:
 
 
 def _slice_index_not_none(num) -> int:
+    "$intrinsic$"
     if _int_check(num):
         return num
     if _object_type_hasattr(num, "__index__"):
@@ -4532,6 +4536,7 @@ class bool(int, bootstrap=True):
 
 
 def isinstance(obj, type_or_tuple) -> bool:
+    "$intrinsic$"
     ty = _type(obj)
     if ty is type_or_tuple:
         return True
@@ -4615,6 +4620,7 @@ class iterator(bootstrap=True):
 
 
 def len(seq):
+    "$intrinsic$"
     dunder_len = _object_type_getattr(seq, "__len__")
     if dunder_len is _Unbound:
         raise TypeError(f"object of type '{_type(seq).__name__}' has no len()")

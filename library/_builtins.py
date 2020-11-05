@@ -42,10 +42,12 @@ def _async_generator_op_iter_get_state(obj):
 
 
 def _bool_check(self):
+    "$intrinsic$"
     _builtin()
 
 
 def _bool_guard(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -69,6 +71,7 @@ def _bytearray_append(obj, item):
 
 
 def _bytearray_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -101,6 +104,7 @@ def _bytearray_getslice(self, start, stop, step):
 
 
 def _bytearray_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -109,6 +113,7 @@ def _bytearray_join(self, iterable):
 
 
 def _bytearray_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -129,6 +134,7 @@ def _bytearray_setslice(self, start, stop, step, value):
 
 
 def _bytes_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -165,6 +171,7 @@ def _bytes_getslice(self, start, stop, step):
 
 
 def _bytes_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -173,6 +180,7 @@ def _bytes_join(self, iterable):
 
 
 def _bytes_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -201,6 +209,7 @@ def _bytes_split_whitespace(self, maxsplit):
 
 
 def _byteslike_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -225,6 +234,7 @@ def _byteslike_find_int(self, sub, start, end):
 
 
 def _byteslike_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -295,6 +305,7 @@ def _code_set_posonlyargcount(code, value):
 
 
 def _complex_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -319,14 +330,17 @@ def _compute_mro(type):
 
 
 def _deque_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _dict_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _dict_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -336,6 +350,7 @@ def _dict_get(self, key, default=None):
 
 
 def _dict_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -348,6 +363,7 @@ def _dict_keys_guard(self):
 
 
 def _dict_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -370,10 +386,12 @@ def _exec(code, module, implicit_globals):
 
 
 def _float_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _float_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -388,6 +406,7 @@ def _float_format(
 
 
 def _float_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -408,10 +427,12 @@ def _float_signbit(value):
 
 
 def _frozenset_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _frozenset_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -432,6 +453,7 @@ def _function_globals(obj):
 
 
 def _function_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -548,10 +570,12 @@ def _instance_setattr(obj, name, value):
 
 
 def _int_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _int_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -560,6 +584,7 @@ def _int_from_bytes(cls, bytes, byteorder_big, signed):
 
 
 def _int_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -584,10 +609,12 @@ def _list_append(self, item):
 
 
 def _list_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _list_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -604,6 +631,7 @@ def _list_extend(self, other):
 
 
 def _list_getitem(self, key):
+    "$intrinsic$"
     _builtin()
 
 
@@ -612,10 +640,12 @@ def _list_getslice(self, start, stop, step):
 
 
 def _list_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _list_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -624,6 +654,7 @@ def _list_new(size, fill=None):
 
 
 def _list_setitem(self, key, value):
+    "$intrinsic$"
     _builtin()
 
 
@@ -677,6 +708,7 @@ def _memoryview_getslice(self, start, stop, step):
 
 
 def _memoryview_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -776,10 +808,12 @@ def _pyobject_offset(instance, offset):
 
 
 def _range_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _range_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -800,22 +834,27 @@ def _repr_leave(obj):
 
 
 def _seq_index(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _seq_iterable(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _seq_set_index(obj, index):
+    "$intrinsic$"
     _builtin()
 
 
 def _seq_set_iterable(obj, iterable):
+    "$intrinsic$"
     _builtin()
 
 
 def _set_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -824,10 +863,12 @@ def _set_function_flag_iterable_coroutine(code):
 
 
 def _set_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _set_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -852,10 +893,12 @@ def _set_member_pyobject(addr, value):
 
 
 def _slice_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _slice_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -912,10 +955,12 @@ def _str_center(self, width, fillchar):
 
 
 def _str_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _str_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -952,6 +997,7 @@ def _str_getslice(self, start, stop, step):
 
 
 def _str_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -980,6 +1026,7 @@ def _str_from_str(cls, value):
 
 
 def _str_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1056,14 +1103,17 @@ def _traceback_next_set(self, new_next):
 
 
 def _tuple_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _tuple_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _tuple_getitem(self, index):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1072,10 +1122,12 @@ def _tuple_getslice(self, start, stop, step):
 
 
 def _tuple_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _tuple_len(self):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1084,6 +1136,7 @@ def _tuple_new(cls, old_tuple):
 
 
 def _type(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1112,10 +1165,12 @@ def _type_bases_set(self, value):
 
 
 def _type_check(obj):
+    "$intrinsic$"
     _builtin()
 
 
 def _type_check_exact(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1124,6 +1179,7 @@ def _type_dunder_call(self, *args, **kwargs):
 
 
 def _type_guard(obj):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1188,6 +1244,7 @@ def _type_qualname_set(self, value):
 
 
 def _type_subclass_guard(subclass, superclass):
+    "$intrinsic$"
     _builtin()
 
 
@@ -1206,10 +1263,12 @@ def _weakref_callback(self):
 
 
 def _weakref_check(self):
+    "$intrinsic$"
     _builtin()
 
 
 def _weakref_guard(self):
+    "$intrinsic$"
     _builtin()
 
 

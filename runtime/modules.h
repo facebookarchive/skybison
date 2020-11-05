@@ -23,11 +23,6 @@ using IntrinsicFunction = bool (*)(Thread* thread);
 using ModuleInitFunc = void (*)(Thread* thread, const Module& module,
                                 View<byte> bytecode);
 
-struct IntrinsicEntry {
-  SymbolId name;
-  IntrinsicFunction func;
-};
-
 struct BuiltinType {
   SymbolId name;
   LayoutId type;

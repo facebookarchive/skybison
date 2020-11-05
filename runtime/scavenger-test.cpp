@@ -258,10 +258,10 @@ def g(ref, b=2):
     Str name(&scope, runtime_->newStrFromCStr("collect"));
     Object empty_tuple(&scope, runtime_->emptyTuple());
     Code code(&scope,
-              runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                       /*kwonlyargcount=*/0, /*flags=*/0,
-                                       doGarbageCollection,
-                                       /*parameter_names=*/empty_tuple, name));
+              runtime_->newBuiltinCode(
+                  /*argcount=*/0, /*posonlyargcount=*/0,
+                  /*kwonlyargcount=*/0, /*flags=*/0, doGarbageCollection,
+                  /*parameter_names=*/empty_tuple, name));
     Module module(&scope, runtime_->findOrCreateMainModule());
     Function collect(
         &scope, runtime_->newFunctionWithCode(thread_, name, code, module));

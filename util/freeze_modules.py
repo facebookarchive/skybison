@@ -30,7 +30,33 @@ def builtin_function_template_with_docu():
     _builtin()  # noqa: F821
 
 
-def mark_native_functions(code, builtins, module_name, fqname=()):
+def marked_with_intrinsic(code):
+    consts = code.co_consts
+    return (
+        consts
+        and isinstance(consts, tuple)
+        and isinstance(consts[0], str)
+        and consts[0].startswith("$intrinsic$")
+    )
+
+
+def builtin_cpp_id(module_name, fqname, suffix=""):
+    if len(fqname) == 1:
+        return f"FUNC({module_name}, {fqname[0]}{suffix})"
+    if len(fqname) == 2:
+        return f"METH({fqname[0]}, {fqname[1]}{suffix})"
+    raise Exception(f"Don't know how to create C++ name for {fqname}")
+
+
+def builtin_intrinsic_id(module_name, fqname):
+    if len(fqname) == 1:
+        return f"FUNC({module_name}, {fqname[0]}_intrinsic)"
+    if len(fqname) == 2:
+        return f"METH({fqname[0]}, {fqname[1]}_intrinsic)"
+    raise Exception(f"Don't know how to create C++ name for {fqname}")
+
+
+def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
     """Checks whether the code object or recursively any code objects in the
     constants tuple only contains a `_builtin()` call and should be marked
     as a native function. If so an entry is appended to the `builtins` list
@@ -45,19 +71,23 @@ def mark_native_functions(code, builtins, module_name, fqname=()):
         # INIT_MODULE_NAME is magic and should not be used.
         assert code.co_name != INIT_MODULE_NAME
 
-        if len(fqname) == 1:
-            builtin_cpp_id = f"FUNC({module_name}, {fqname[0]})"
-        elif len(fqname) == 2:
-            builtin_cpp_id = f"METH({fqname[0]}, {fqname[1]})"
-        else:
-            raise Exception(f"Don't know how to create C++ name for {fqname}")
+        builtin_id = builtin_cpp_id(module_name, fqname)
         builtin_num = len(builtins)
-        builtins.append(builtin_cpp_id)
+        builtins.append(builtin_id)
+
+        stacksize = builtin_num
+        if marked_with_intrinsic(code):
+            intrinsic_id = builtin_intrinsic_id(module_name, fqname)
+            # The intrinsic IDs are biased by 1 so that 0 means no intrinsic
+            stacksize |= (len(intrinsics) + 1) << 16
+            intrinsics.append(intrinsic_id)
 
         # We abuse the stacksize field to store the index of the builtin
-        # function. This way we do not need to invent a new marshaling type
-        # just for this.
-        stacksize = builtin_num
+        # function and its intrinsic. This way we do not need to invent a new
+        # marshaling type just for this.
+        #
+        # stacksize is 32 bits in the marshaled code. We use the upper 16 bits
+        # for an intrinsic id and the lower 16 bits for the builtin id.
         flags = code.co_flags | CO_BUILTIN
         bytecode = b""
         constants = ()
@@ -86,6 +116,17 @@ def mark_native_functions(code, builtins, module_name, fqname=()):
         )
         return new_code
 
+    stacksize = code.co_stacksize
+    if stacksize > 0xFFFF:
+        raise Exception(
+            "stacksize greater than expected and overflows into intrinsic space"
+        )
+    if marked_with_intrinsic(code):
+        intrinsic_id = builtin_intrinsic_id(module_name, fqname)
+        # The intrinsic IDs are biased by 1 so that 0 means no intrinsic
+        stacksize |= (len(intrinsics) + 1) << 16
+        intrinsics.append(intrinsic_id)
+
     # Recursively transform code objects in the constants tuple.
     new_consts = []
     changed = False
@@ -93,7 +134,9 @@ def mark_native_functions(code, builtins, module_name, fqname=()):
         if isinstance(c, CodeType):
             assert c.co_name != "<module>"
             sub_name = fqname + (c.co_name,)
-            new_c = mark_native_functions(c, builtins, module_name, sub_name)
+            new_c = mark_native_functions(
+                c, builtins, intrinsics, module_name, sub_name
+            )
         else:
             new_c = c
         changed |= new_c is c
@@ -106,7 +149,7 @@ def mark_native_functions(code, builtins, module_name, fqname=()):
         code.co_argcount,
         code.co_kwonlyargcount,
         code.co_nlocals,
-        code.co_stacksize,
+        stacksize,
         code.co_flags,
         code.co_code,
         new_consts,
@@ -144,7 +187,7 @@ def get_module_name(filename):
     return module_name
 
 
-def process_module(filename, builtins):
+def process_module(filename, builtins, intrinsics):
     fullname = get_module_name(filename)
     if fullname.endswith(".__init__"):
         fullname = fullname[:-9]
@@ -158,7 +201,7 @@ def process_module(filename, builtins):
     module_code = compile(
         source, filename, "exec", flags=flags, dont_inherit=True, optimize=0
     )
-    marked_code = mark_native_functions(module_code, builtins, fullname)
+    marked_code = mark_native_functions(module_code, builtins, intrinsics, fullname)
     bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(marked_code)
     initializer = to_char_array(bytecode)
     return ModuleData(fullname, initializer, builtin_init, is_package)
@@ -219,7 +262,7 @@ extern const word kNumFrozenModules;
 """
 
 
-def gen_builtins_cpp(builtins):
+def gen_builtins_cpp(builtins, intrinsics):
     result = f"""\
 #include "builtins.h"
 
@@ -233,15 +276,26 @@ const BuiltinFunction kBuiltinFunctions[] = {{
     {builtin},
 """
 
-    result += f"""
-}};
+    result += """\
+};
+
+const IntrinsicFunction kIntrinsicFunctions[] = {
+"""
+    for intrinsic in intrinsics:
+        result += f"""\
+    {intrinsic},
+"""
+
+    result += """\
+};
 const word kNumBuiltinFunctions = ARRAYSIZE(kBuiltinFunctions);
-}}  // namespace py
+const word kNumIntrinsicFunctions = ARRAYSIZE(kIntrinsicFunctions);
+}  // namespace py
 """
     return result
 
 
-def gen_builtins_h(modules, builtins):
+def gen_builtins_h(modules, builtins, intrinsics):
     result = f"""\
 #include "globals.h"
 #include "handles-decl.h"
@@ -253,13 +307,20 @@ namespace py {{
 class Thread;
 
 extern const BuiltinFunction kBuiltinFunctions[];
+extern const IntrinsicFunction kIntrinsicFunctions[];
 extern const word kNumBuiltinFunctions;
+extern const word kNumIntrinsicFunctions;
 
 """
 
     for builtin in builtins:
         result += f"""\
 RawObject {builtin}(Thread* thread, Arguments args);
+"""
+    result += "\n"
+    for intrinsic in intrinsics:
+        result += f"""\
+bool {intrinsic}(Thread* thread);
 """
     result += "\n"
     for module in modules:
@@ -292,10 +353,17 @@ def main(argv):
     args = parser.parse_args(argv[1:])
     os.makedirs(args.dir, exist_ok=True)
     builtins = []
-    modules = [process_module(filename, builtins) for filename in args.files]
+    intrinsics = []
+    modules = [
+        process_module(filename, builtins, intrinsics) for filename in args.files
+    ]
     modules.sort(key=lambda x: x.name)
-    write_if_different(Path(args.dir, "builtins.cpp"), gen_builtins_cpp(builtins))
-    write_if_different(Path(args.dir, "builtins.h"), gen_builtins_h(modules, builtins))
+    write_if_different(
+        Path(args.dir, "builtins.cpp"), gen_builtins_cpp(builtins, intrinsics)
+    )
+    write_if_different(
+        Path(args.dir, "builtins.h"), gen_builtins_h(modules, builtins, intrinsics)
+    )
     write_if_different(
         Path(args.dir, "frozen-modules.cpp"), gen_frozen_modules_cpp(modules)
     )

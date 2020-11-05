@@ -277,8 +277,6 @@ class Runtime;
   V(_async_generator_athrow__state)                                            \
   V(_async_generator_wrapped_value__value)                                     \
   V(_b2cratio)                                                                 \
-  V(_bool_check)                                                               \
-  V(_bool_guard)                                                               \
   V(_buffer)                                                                   \
   V(_buffer_num_bytes)                                                         \
   V(_buffer_size)                                                              \
@@ -286,28 +284,20 @@ class Runtime;
   V(_builtins)                                                                 \
   V(_bytearray__bytes)                                                         \
   V(_bytearray__num_items)                                                     \
-  V(_bytearray_check)                                                          \
-  V(_bytearray_guard)                                                          \
   V(_bytearray_iterator__index)                                                \
   V(_bytearray_iterator__iterable)                                             \
-  V(_bytearray_len)                                                            \
-  V(_bytes_check)                                                              \
-  V(_bytes_guard)                                                              \
   V(_bytes_iterator__index)                                                    \
   V(_bytes_iterator__iterable)                                                 \
-  V(_bytes_len)                                                                \
   V(_bytes_new)                                                                \
-  V(_byteslike_check)                                                          \
-  V(_byteslike_guard)                                                          \
   V(_calculate_path)                                                           \
   V(_cast_addr)                                                                \
   V(_closed)                                                                   \
   V(_closefd)                                                                  \
   V(_code__cell2arg)                                                           \
+  V(_code__intrinsic)                                                          \
   V(_codecs)                                                                   \
   V(_compile)                                                                  \
   V(_compile_flags_mask)                                                       \
-  V(_complex_check)                                                            \
   V(_context__data)                                                            \
   V(_context__prev_context)                                                    \
   V(_context_var__default_value)                                               \
@@ -324,7 +314,6 @@ class Runtime;
   V(_deque__left)                                                              \
   V(_deque__num_items)                                                         \
   V(_deque__state)                                                             \
-  V(_deque_guard)                                                              \
   V(_deque_iterator)                                                           \
   V(_deque_iterator__index)                                                    \
   V(_deque_iterator__iterable)                                                 \
@@ -334,9 +323,6 @@ class Runtime;
   V(_dict__first_empty_item_index)                                             \
   V(_dict__num_items)                                                          \
   V(_dict__sparse)                                                             \
-  V(_dict_check)                                                               \
-  V(_dict_check_exact)                                                         \
-  V(_dict_guard)                                                               \
   V(_dict_item_iterator__index)                                                \
   V(_dict_item_iterator__iterable)                                             \
   V(_dict_item_iterator__num_found)                                            \
@@ -345,7 +331,6 @@ class Runtime;
   V(_dict_key_iterator__iterable)                                              \
   V(_dict_key_iterator__num_found)                                             \
   V(_dict_keys__dict)                                                          \
-  V(_dict_len)                                                                 \
   V(_dict_value_iterator__index)                                               \
   V(_dict_value_iterator__iterable)                                            \
   V(_dict_value_iterator__num_found)                                           \
@@ -363,16 +348,11 @@ class Runtime;
   V(_exception_state__value)                                                   \
   V(_fd)                                                                       \
   V(_float)                                                                    \
-  V(_float_check)                                                              \
-  V(_float_check_exact)                                                        \
-  V(_float_guard)                                                              \
   V(_frozen_importlib)                                                         \
   V(_frozen_importlib_external)                                                \
   V(_frozenset__data)                                                          \
   V(_frozenset__num_filled)                                                    \
   V(_frozenset__num_items)                                                     \
-  V(_frozenset_check)                                                          \
-  V(_frozenset_guard)                                                          \
   V(_fspath)                                                                   \
   V(_function)                                                                 \
   V(_function__annotations)                                                    \
@@ -392,20 +372,15 @@ class Runtime;
   V(_function__total_args)                                                     \
   V(_function__total_vars)                                                     \
   V(_function__intrinsic)                                                      \
-  V(_function_guard)                                                           \
   V(_generator__exception_state)                                               \
   V(_generator__frame)                                                         \
   V(_generator__yield_from)                                                    \
   V(_has_read1)                                                                \
   V(_import_all_from)                                                          \
-  V(_index)                                                                    \
   V(_init)                                                                     \
   V(_instance)                                                                 \
   V(_instance_dunder_dict_set)                                                 \
   V(_int)                                                                      \
-  V(_int_check)                                                                \
-  V(_int_check_exact)                                                          \
-  V(_int_guard)                                                                \
   V(_int_new_from_str)                                                         \
   V(_io)                                                                       \
   V(_iterator__index)                                                          \
@@ -419,14 +394,8 @@ class Runtime;
   V(_line_buffering)                                                           \
   V(_list__items)                                                              \
   V(_list__num_items)                                                          \
-  V(_list_check)                                                               \
-  V(_list_check_exact)                                                         \
-  V(_list_getitem)                                                             \
-  V(_list_guard)                                                               \
   V(_list_iterator__index)                                                     \
   V(_list_iterator__iterable)                                                  \
-  V(_list_len)                                                                 \
-  V(_list_setitem)                                                             \
   V(_longrange_iterator__next)                                                 \
   V(_longrange_iterator__step)                                                 \
   V(_longrange_iterator__stop)                                                 \
@@ -438,7 +407,6 @@ class Runtime;
   V(_memoryview__buffer)                                                       \
   V(_memoryview__length)                                                       \
   V(_memoryview__start)                                                        \
-  V(_memoryview_guard)                                                         \
   V(_memset_addr)                                                              \
   V(_mmap__access)                                                             \
   V(_mmap__data)                                                               \
@@ -473,14 +441,11 @@ class Runtime;
   V(_new_member_set_pyobject)                                                  \
   V(_new_member_set_readonly)                                                  \
   V(_new_member_set_readonly_strings)                                          \
-  V(_number_check)                                                             \
   V(_pendingcr)                                                                \
   V(_pointer)                                                                  \
   V(_pointer__cptr)                                                            \
   V(_pointer__length)                                                          \
   V(_pos)                                                                      \
-  V(_range_check)                                                              \
-  V(_range_guard)                                                              \
   V(_range_iterator__length)                                                   \
   V(_range_iterator__next)                                                     \
   V(_range_iterator__step)                                                     \
@@ -498,24 +463,14 @@ class Runtime;
   V(_run_module_as_main)                                                       \
   V(_seekable)                                                                 \
   V(_seennl)                                                                   \
-  V(_seq_index)                                                                \
-  V(_seq_iterable)                                                             \
-  V(_seq_set_index)                                                            \
-  V(_seq_set_iterable)                                                         \
   V(_set__data)                                                                \
   V(_set__num_items)                                                           \
   V(_set__num_filled)                                                          \
-  V(_set_check)                                                                \
-  V(_set_guard)                                                                \
   V(_set_iterator__consumed_count)                                             \
   V(_set_iterator__index)                                                      \
   V(_set_iterator__iterable)                                                   \
-  V(_set_len)                                                                  \
   V(_signal)                                                                   \
-  V(_slice_check)                                                              \
-  V(_slice_guard)                                                              \
   V(_slice_index)                                                              \
-  V(_slice_index_not_none)                                                     \
   V(_slot_descriptor__offset)                                                  \
   V(_snapshot)                                                                 \
   V(_stderr_fd)                                                                \
@@ -526,13 +481,9 @@ class Runtime;
   V(_str_array__items)                                                         \
   V(_str_array__num_items)                                                     \
   V(_str_array_ctor)                                                           \
-  V(_str_check)                                                                \
-  V(_str_check_exact)                                                          \
   V(_str_ctor)                                                                 \
-  V(_str_guard)                                                                \
   V(_str_iterator__index)                                                      \
   V(_str_iterator__iterable)                                                   \
-  V(_str_len)                                                                  \
   V(_string_at_addr)                                                           \
   V(_structseq_field)                                                          \
   V(_structseq_field_names)                                                    \
@@ -547,15 +498,10 @@ class Runtime;
   V(_traceback__next)                                                          \
   V(_translate)                                                                \
   V(_try_run_package)                                                          \
-  V(_tuple_check)                                                              \
-  V(_tuple_check_exact)                                                        \
-  V(_tuple_getitem)                                                            \
-  V(_tuple_guard)                                                              \
   V(_tuple_iterator__index)                                                    \
   V(_tuple_iterator__iterable)                                                 \
   V(_tuple_iterator__length)                                                   \
   V(_tuple_len)                                                                \
-  V(_type)                                                                     \
   V(_type__abstract_methods)                                                   \
   V(_type__attributes)                                                         \
   V(_type__attributes_remaining)                                               \
@@ -569,20 +515,14 @@ class Runtime;
   V(_type__qualname)                                                           \
   V(_type__slots)                                                              \
   V(_type__subclasses)                                                         \
-  V(_type_check)                                                               \
-  V(_type_check_exact)                                                         \
   V(_type_dunder_call)                                                         \
-  V(_type_guard)                                                               \
   V(_type_proxy__type)                                                         \
-  V(_type_subclass_guard)                                                      \
   V(_unicode_escape_decode_stateful)                                           \
   V(_valuecell__dependency_link)                                               \
   V(_valuecell__value)                                                         \
   V(_version_releaselevel)                                                     \
   V(_weaklink)                                                                 \
   V(_weakref)                                                                  \
-  V(_weakref_check)                                                            \
-  V(_weakref_guard)                                                            \
   V(_writable)                                                                 \
   V(_write_buf)                                                                \
   V(_write_lock)                                                               \

@@ -70,7 +70,7 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
   return NoneType::object();
 }
 
-ALIGN_16 static bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
+ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   if (thread->runtime()->isInstanceOfInt(value)) {
     thread->stackPop();
@@ -80,7 +80,7 @@ ALIGN_16 static bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 static bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
+ALIGN_16 bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
   Runtime* runtime = thread->runtime();
   RawObject arg = thread->stackTop();
   if (runtime->isInstanceOfInt(arg) || runtime->isInstanceOfFloat(arg)) {
@@ -91,7 +91,7 @@ ALIGN_16 static bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 static bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
+ALIGN_16 bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
   RawObject value = thread->stackPeek(0);
   if (value.isNoneType() || thread->runtime()->isInstanceOfInt(value)) {
     thread->stackPop();
@@ -101,8 +101,7 @@ ALIGN_16 static bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 static bool FUNC(builtins,
-                          _slice_index_not_none_intrinsic)(Thread* thread) {
+ALIGN_16 bool FUNC(builtins, _slice_index_not_none_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   if (thread->runtime()->isInstanceOfInt(value)) {
     thread->stackPop();
@@ -112,7 +111,7 @@ ALIGN_16 static bool FUNC(builtins,
   return false;
 }
 
-ALIGN_16 static bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
+ALIGN_16 bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
   if (thread->runtime()->typeOf(thread->stackPeek(1)) == thread->stackPeek(0)) {
     thread->stackDrop(2);
     thread->stackSetTop(Bool::trueObj());
@@ -121,7 +120,7 @@ ALIGN_16 static bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 static bool FUNC(builtins, len_intrinsic)(Thread* thread) {
+ALIGN_16 bool FUNC(builtins, len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackTop();
   word length;
   switch (arg.layoutId()) {
@@ -163,17 +162,6 @@ ALIGN_16 static bool FUNC(builtins, len_intrinsic)(Thread* thread) {
   return true;
 }
 
-// clang-format off
-static const IntrinsicEntry kBuiltinsIntrinsicIds[] = {
-    {ID(_index), FUNC(builtins, _index_intrinsic)},
-    {ID(_number_check), FUNC(builtins, _number_check_intrinsic)},
-    {ID(_slice_index), FUNC(builtins, _slice_index_intrinsic)},
-    {ID(_slice_index_not_none), FUNC(builtins, _slice_index_not_none_intrinsic)},
-    {ID(isinstance), FUNC(builtins, isinstance_intrinsic)},
-    {ID(len), FUNC(builtins, len_intrinsic)},
-};
-// clang-format on
-
 void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
                                      View<byte> bytecode) {
   Runtime* runtime = thread->runtime();
@@ -200,12 +188,6 @@ void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
   }
 
   executeFrozenModule(thread, module, bytecode);
-
-  // Mark functions that have an intrinsic implementation.
-  for (IntrinsicEntry thing : kBuiltinsIntrinsicIds) {
-    Function::cast(moduleAtById(thread, module, thing.name))
-        .setIntrinsic(reinterpret_cast<void*>(thing.func));
-  }
 }
 
 static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,

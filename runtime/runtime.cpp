@@ -613,6 +613,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   result.setName(*name);
   result.setFirstlineno(firstlineno);
   result.setLnotab(*lnotab);
+  result.setIntrinsic(nullptr);
 
   Tuple varnames_tuple(&scope, tupleUnderlying(*varnames));
   if (argcount > varnames_tuple.length() ||
@@ -758,6 +759,7 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   Function function(&scope, newFunction(thread, name, code, flags,
                                         code.argcount(), total_args, total_vars,
                                         stacksize, entry, entry_kw, entry_ex));
+  function.setIntrinsic(code.intrinsic());
 
   if (isInstanceOfStr(*qualname)) {
     function.setQualname(*qualname);

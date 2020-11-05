@@ -1074,10 +1074,10 @@ TEST_F(ThreadTest, NativeExceptions) {
 
   Object name(&scope, runtime_->newStrFromCStr("fn"));
   Object empty_tuple(&scope, runtime_->emptyTuple());
-  Code fn_code(
-      &scope, runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                       /*kwonlyargcount=*/0, /*flags=*/0,
-                                       nativeExceptionTest, empty_tuple, name));
+  Code fn_code(&scope, runtime_->newBuiltinCode(
+                           /*argcount=*/0, /*posonlyargcount=*/0,
+                           /*kwonlyargcount=*/0, /*flags=*/0,
+                           nativeExceptionTest, empty_tuple, name));
   Module module(&scope, runtime_->findOrCreateMainModule());
   Function fn(&scope,
               runtime_->newFunctionWithCode(thread_, name, fn_code, module));

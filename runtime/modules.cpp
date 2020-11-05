@@ -72,7 +72,8 @@ void executeFrozenModule(Thread* thread, const Module& module,
                          View<byte> bytecode) {
   HandleScope scope(thread);
   Marshal::Reader reader(&scope, thread, bytecode);
-  reader.setBuiltinFunctions(kBuiltinFunctions, kNumBuiltinFunctions);
+  reader.setBuiltinFunctions(kBuiltinFunctions, kNumBuiltinFunctions,
+                             kIntrinsicFunctions, kNumIntrinsicFunctions);
   Str filename(&scope, module.name());
   CHECK(!reader.readPycHeader(filename).isErrorException(),
         "Failed to read %s module data", filename.toCStr());

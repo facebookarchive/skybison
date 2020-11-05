@@ -95,9 +95,13 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
 }
 
 void Marshal::Reader::setBuiltinFunctions(
-    const BuiltinFunction* builtin_functions, word num_builtin_functions) {
+    const BuiltinFunction* builtin_functions, word num_builtin_functions,
+    const IntrinsicFunction* intrinsic_functions,
+    word num_intrinsic_functions) {
   builtin_functions_ = builtin_functions;
   num_builtin_functions_ = num_builtin_functions;
+  intrinsic_functions_ = intrinsic_functions;
+  num_intrinsic_functions_ = num_intrinsic_functions;
 }
 
 const byte* Marshal::Reader::readBytes(int length) {
@@ -415,7 +419,7 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t posonlyargcount = 0;
   int32_t kwonlyargcount = readLong();
   int32_t nlocals = readLong();
-  int32_t stacksize = readLong();
+  uint32_t stacksize = readLong();
   int32_t flags = readLong();
   CHECK(flags <= (Code::Flags::kLast << 1) - 1, "unknown flags in code object");
   Object code(&scope, readObject());
@@ -429,9 +433,16 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t firstlineno = readLong();
   Object lnotab(&scope, readObject());
 
+  word intrinsic_index = (stacksize & 0xffff0000) >> (2 * kBitsPerByte);
+  IntrinsicFunction intrinsic = nullptr;
+  if (intrinsic_functions_ != nullptr && intrinsic_index != 0) {
+    CHECK_INDEX(intrinsic_index - 1, num_intrinsic_functions_);
+    // The intrinsic IDs are biased by 1 so that 0 means no intrinsic
+    intrinsic = intrinsic_functions_[intrinsic_index - 1];
+  }
   Object result(&scope, NoneType::object());
   if (flags & Code::Flags::kBuiltin) {
-    word function_index = stacksize;
+    word function_index = stacksize & 0xffff;
     CHECK(code.isBytes() && Bytes::cast(*code).length() == 0,
           "must not have bytecode in native code");
     CHECK(consts.isTuple() && Tuple::cast(*consts).length() == 0,
@@ -448,10 +459,11 @@ RawObject Marshal::Reader::readTypeCode() {
     Code::cast(*result).setFirstlineno(firstlineno);
   } else {
     result = runtime_->newCode(argcount, posonlyargcount, kwonlyargcount,
-                               nlocals, stacksize, flags, code, consts, names,
-                               varnames, freevars, cellvars, filename, name,
-                               firstlineno, lnotab);
+                               nlocals, stacksize & 0xffff, flags, code, consts,
+                               names, varnames, freevars, cellvars, filename,
+                               name, firstlineno, lnotab);
   }
+  Code::cast(*result).setIntrinsic(reinterpret_cast<void*>(intrinsic));
   if (index >= 0) {
     setRef(index, *result);
   }
