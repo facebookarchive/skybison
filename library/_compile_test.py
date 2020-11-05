@@ -19,6 +19,7 @@ def dis_str(code):
 
 
 @pyro_only
+@unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
 class PrintfTransformTests(unittest.TestCase):
     def test_simple(self):
         code = _compile.compile("'foo' % ()", "", "eval")
