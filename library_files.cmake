@@ -43,6 +43,7 @@ builtins_int_test.py
 builtins_list_test.py
 builtins_str_test.py
 builtins_test.py
+collections/__init__.py
 collections_test.py
 command_test.py
 compiler/__init__.py

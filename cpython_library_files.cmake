@@ -64,7 +64,6 @@ cmd.py
 code.py
 codecs.py
 codeop.py
-collections/__init__.py
 collections/abc.py
 colorsys.py
 compileall.py
