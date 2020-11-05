@@ -2399,10 +2399,9 @@ class RawFunction : public RawInstance {
   bool isInterpreted() const;
   void setIsInterpreted(bool interpreted) const;
 
-  // Returns as a word the SymbolId that corresponds to the name of the function
-  // if the function can be executed without pushing a frame, or -1 if it can't.
-  word intrinsicId() const;
-  void setIntrinsicId(word id) const;
+  // Returns nullptr if the function cannot be executed without a frame.
+  void* intrinsic() const;
+  void setIntrinsic(void* fp) const;
 
   // A dict containing defaults for keyword-only parameters
   RawObject kwDefaults() const;
@@ -2482,18 +2481,10 @@ class RawFunction : public RawInstance {
   static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
   static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
   static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
-  static const int kSize = kDictOffset + kPointerSize;
-
-  // The intrinsic ID is stored in the high flag bits.
-  static const int kFlagsBits = 31;
-  static const int kIntrinsicIdOffset = kFlagsBits;
-  static const word kFlagsMask = (word{1} << kFlagsBits) - 1;
-  static_assert(Flags::kLast < kFlagsMask, "flags overflow");
+  static const int kIntrinsicOffset = kDictOffset + kPointerSize;
+  static const int kSize = kIntrinsicOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function);
-
- private:
-  void setFlagsAndIntrinsicId(word flags, word id) const;
 };
 
 class RawMappingProxy : public RawInstance {
@@ -6437,22 +6428,11 @@ inline void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
 }
 
 inline word RawFunction::flags() const {
-  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value() &
-         kFlagsMask;
-}
-
-inline void RawFunction::setFlagsAndIntrinsicId(word flags, word id) const {
-  instanceVariableAtPut(
-      kFlagsOffset,
-      RawSmallInt::fromWord(id << kIntrinsicIdOffset | (flags & kFlagsMask)));
+  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value();
 }
 
 inline void RawFunction::setFlags(word flags) const {
-  RawObject old_flags = instanceVariableAt(kFlagsOffset);
-  setFlagsAndIntrinsicId(
-      flags, old_flags.isNoneType()
-                 ? -1
-                 : RawSmallInt::cast(old_flags).value() >> kIntrinsicIdOffset);
+  instanceVariableAtPut(kFlagsOffset, RawSmallInt::fromWord(flags));
 }
 
 inline bool RawFunction::isAsyncGenerator() const {
@@ -6509,18 +6489,17 @@ inline bool RawFunction::isInterpreted() const {
 }
 
 inline void RawFunction::setIsInterpreted(bool interpreted) const {
-  setFlagsAndIntrinsicId(interpreted ? flags() | Flags::kInterpreted
-                                     : flags() & ~Flags::kInterpreted,
-                         intrinsicId());
+  setFlags(interpreted ? flags() | Flags::kInterpreted
+                       : flags() & ~Flags::kInterpreted);
 }
 
-inline word RawFunction::intrinsicId() const {
-  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value() >>
-         kIntrinsicIdOffset;
+inline void* RawFunction::intrinsic() const {
+  return RawSmallInt::cast(instanceVariableAt(kIntrinsicOffset))
+      .asAlignedCPtr();
 }
 
-inline void RawFunction::setIntrinsicId(word id) const {
-  setFlagsAndIntrinsicId(flags(), id);
+inline void RawFunction::setIntrinsic(void* fp) const {
+  instanceVariableAtPut(kIntrinsicOffset, RawSmallInt::fromAlignedCPtr(fp));
 }
 
 inline RawObject RawFunction::kwDefaults() const {

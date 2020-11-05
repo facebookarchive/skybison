@@ -50,6 +50,8 @@ static const BuiltinAttribute kFunctionAttributes[] = {
     {ID(_function__original_arguments), RawFunction::kOriginalArgumentsOffset,
      AttributeFlags::kHidden},
     {ID(_function__dict), RawFunction::kDictOffset, AttributeFlags::kHidden},
+    {ID(_function__intrinsic), RawFunction::kIntrinsicOffset,
+     AttributeFlags::kHidden},
 };
 
 static const BuiltinAttribute kBoundMethodAttributes[] = {

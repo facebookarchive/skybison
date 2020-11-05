@@ -17,8 +17,16 @@ class Thread;
 // Function pointer stored in RawCode::code() for builtin functions.
 using BuiltinFunction = RawObject (*)(Thread* thread, Arguments args);
 
+// Function pointer stored in RawFunction::intrinsic() for intrinsic functions.
+using IntrinsicFunction = bool (*)(Thread* thread);
+
 using ModuleInitFunc = void (*)(Thread* thread, const Module& module,
                                 View<byte> bytecode);
+
+struct IntrinsicEntry {
+  SymbolId name;
+  IntrinsicFunction func;
+};
 
 struct BuiltinType {
   SymbolId name;

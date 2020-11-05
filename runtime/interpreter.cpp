@@ -16,7 +16,6 @@
 #include "ic.h"
 #include "int-builtins.h"
 #include "interpreter-gen.h"
-#include "intrinsic.h"
 #include "list-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
@@ -4281,10 +4280,17 @@ HANDLER_INLINE Continue Interpreter::handleCall(
   }
   RawFunction function = RawFunction::cast(prepare_result.function);
 
-  SymbolId name = static_cast<SymbolId>(function.intrinsicId());
-  if (name != SymbolId::kInvalid && doIntrinsic(thread, name)) {
-    DCHECK(thread->stackPointer() == post_call_sp - 1, "stack not cleaned");
-    return Continue::NEXT;
+  IntrinsicFunction intrinsic =
+      reinterpret_cast<IntrinsicFunction>(function.intrinsic());
+  if (intrinsic != nullptr) {
+    // Executes the function at the given symbol without pushing a new frame.
+    // If the call succeeds, pops the arguments off of the caller's frame, sets
+    // the top value to the result, and returns true. If the call fails, leaves
+    // the stack unchanged and returns false.
+    if ((*intrinsic)(thread)) {
+      DCHECK(thread->stackPointer() == post_call_sp - 1, "stack not cleaned");
+      return Continue::NEXT;
+    }
   }
 
   if (!function.isInterpreted()) {

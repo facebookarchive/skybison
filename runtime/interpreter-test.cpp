@@ -9,7 +9,6 @@
 #include "dict-builtins.h"
 #include "handles.h"
 #include "ic.h"
-#include "intrinsic.h"
 #include "list-builtins.h"
 #include "module-builtins.h"
 #include "modules.h"
@@ -6456,11 +6455,17 @@ function_that_caches_attr_lookup(a, b, c)
   EXPECT_TRUE(foo_in_c.dependencyLink().isNoneType());
 }
 
-TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
+TEST_F(InterpreterTest, IntrinsicWithSlowPathDoesNotAlterStack) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
   thread_->stackPush(*obj);
-  ASSERT_FALSE(doIntrinsic(thread_, ID(_tuple_len)));
+  Module module(&scope, runtime_->findModuleById(ID(_builtins)));
+  Function tuple_len_func(&scope,
+                          moduleAtById(thread_, module, ID(_tuple_len)));
+  IntrinsicFunction function =
+      reinterpret_cast<IntrinsicFunction>(tuple_len_func.intrinsic());
+  ASSERT_NE(function, nullptr);
+  ASSERT_FALSE(function(thread_));
   EXPECT_EQ(thread_->stackPeek(0), *obj);
 }
 

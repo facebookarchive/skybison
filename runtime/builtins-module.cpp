@@ -70,14 +70,107 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
   return NoneType::object();
 }
 
+ALIGN_16 static bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackTop();
+  if (thread->runtime()->isInstanceOfInt(value)) {
+    thread->stackPop();
+    thread->stackSetTop(value);
+    return true;
+  }
+  return false;
+}
+
+ALIGN_16 static bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  RawObject arg = thread->stackTop();
+  if (runtime->isInstanceOfInt(arg) || runtime->isInstanceOfFloat(arg)) {
+    thread->stackPop();
+    thread->stackSetTop(Bool::trueObj());
+    return true;
+  }
+  return false;
+}
+
+ALIGN_16 static bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackPeek(0);
+  if (value.isNoneType() || thread->runtime()->isInstanceOfInt(value)) {
+    thread->stackPop();
+    thread->stackSetTop(value);
+    return true;
+  }
+  return false;
+}
+
+ALIGN_16 static bool FUNC(builtins,
+                          _slice_index_not_none_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackTop();
+  if (thread->runtime()->isInstanceOfInt(value)) {
+    thread->stackPop();
+    thread->stackSetTop(value);
+    return true;
+  }
+  return false;
+}
+
+ALIGN_16 static bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
+  if (thread->runtime()->typeOf(thread->stackPeek(1)) == thread->stackPeek(0)) {
+    thread->stackDrop(2);
+    thread->stackSetTop(Bool::trueObj());
+    return true;
+  }
+  return false;
+}
+
+ALIGN_16 static bool FUNC(builtins, len_intrinsic)(Thread* thread) {
+  RawObject arg = thread->stackTop();
+  word length;
+  switch (arg.layoutId()) {
+    case LayoutId::kBytearray:
+      length = Bytearray::cast(arg).numItems();
+      break;
+    case LayoutId::kDict:
+      length = Dict::cast(arg).numItems();
+      break;
+    case LayoutId::kFrozenSet:
+      length = FrozenSet::cast(arg).numItems();
+      break;
+    case LayoutId::kLargeBytes:
+      length = LargeBytes::cast(arg).length();
+      break;
+    case LayoutId::kLargeStr:
+      length = LargeStr::cast(arg).codePointLength();
+      break;
+    case LayoutId::kList:
+      length = List::cast(arg).numItems();
+      break;
+    case LayoutId::kSet:
+      length = Set::cast(arg).numItems();
+      break;
+    case LayoutId::kSmallBytes:
+      length = SmallBytes::cast(arg).length();
+      break;
+    case LayoutId::kSmallStr:
+      length = SmallStr::cast(arg).codePointLength();
+      break;
+    case LayoutId::kTuple:
+      length = Tuple::cast(arg).length();
+      break;
+    default:
+      return false;
+  }
+  thread->stackPop();
+  thread->stackSetTop(SmallInt::fromWord(length));
+  return true;
+}
+
 // clang-format off
-static const SymbolId kBuiltinsIntrinsicIds[] = {
-    ID(_index),
-    ID(_number_check),
-    ID(_slice_index),
-    ID(_slice_index_not_none),
-    ID(isinstance),
-    ID(len),
+static const IntrinsicEntry kBuiltinsIntrinsicIds[] = {
+    {ID(_index), FUNC(builtins, _index_intrinsic)},
+    {ID(_number_check), FUNC(builtins, _number_check_intrinsic)},
+    {ID(_slice_index), FUNC(builtins, _slice_index_intrinsic)},
+    {ID(_slice_index_not_none), FUNC(builtins, _slice_index_not_none_intrinsic)},
+    {ID(isinstance), FUNC(builtins, isinstance_intrinsic)},
+    {ID(len), FUNC(builtins, len_intrinsic)},
 };
 // clang-format on
 
@@ -109,9 +202,9 @@ void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 
   // Mark functions that have an intrinsic implementation.
-  for (SymbolId intrinsic_id : kBuiltinsIntrinsicIds) {
-    Function::cast(moduleAtById(thread, module, intrinsic_id))
-        .setIntrinsicId(static_cast<word>(intrinsic_id));
+  for (IntrinsicEntry thing : kBuiltinsIntrinsicIds) {
+    Function::cast(moduleAtById(thread, module, thing.name))
+        .setIntrinsic(reinterpret_cast<void*>(thing.func));
   }
 }
 

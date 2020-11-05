@@ -549,8 +549,6 @@ add_library(
   runtime/interpreter-gen.h
   runtime/interpreter.cpp
   runtime/interpreter.h
-  runtime/intrinsic.cpp
-  runtime/intrinsic.h
   runtime/iterator-builtins.cpp
   runtime/iterator-builtins.h
   runtime/layout-builtins.cpp

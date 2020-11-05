@@ -690,6 +690,7 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
   function.setEntry(entry);
   function.setEntryKw(entry_kw);
   function.setEntryEx(entry_ex);
+  function.setIntrinsic(nullptr);
   return *function;
 }
 

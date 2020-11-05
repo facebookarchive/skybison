@@ -77,7 +77,7 @@ static RawObject makeTestFunction(Thread* thread) {
   Object num(&scope, runtime->newInt(-9));
   Tuple defaults(&scope, runtime->newTupleWith1(num));
   func.setDefaults(*defaults);
-  func.setIntrinsicId(static_cast<word>(ID(list)));
+  func.setIntrinsic(reinterpret_cast<void*>(0x12340));
   func.setModuleName(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
   Dict attrs(&scope, runtime->newDict());
@@ -127,7 +127,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
   closure: ()
   defaults: (-9,)
   kwdefaults: {"name0": None}
-  intrinsic_id: list
+  intrinsic: 0x12340
   dict: {"funcattr0": 4}
   flags: optimized newlocals varargs varkeyargs nested interpreted
   code: code "name0":
@@ -212,6 +212,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "_function__caches" = mutabletuple(None, None, None, None)
   (in-object) "_function__original_arguments" = (None, 0)
   (in-object) "_function__dict" = {"funcattr0": 4}
+  (in-object) "_function__intrinsic" = 37280
   overflow dict: {"funcattr0": 4}
 )";
   EXPECT_EQ(ss.str(), expected.str());

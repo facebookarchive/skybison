@@ -391,6 +391,7 @@ class Runtime;
   V(_function__stack_size)                                                     \
   V(_function__total_args)                                                     \
   V(_function__total_vars)                                                     \
+  V(_function__intrinsic)                                                      \
   V(_function_guard)                                                           \
   V(_generator__exception_state)                                               \
   V(_generator__frame)                                                         \

@@ -10,7 +10,6 @@
 #include "frame.h"
 #include "ic.h"
 #include "interpreter.h"
-#include "intrinsic.h"
 #include "memory-region.h"
 #include "os.h"
 #include "runtime.h"
@@ -1133,7 +1132,7 @@ void emitCallFunctionNoIntrinsicHandler(EmitEnv* env, Register r_callable,
 
 void emitCallHandler(EmitEnv* env) {
   const Register r_callable = RDI;
-  const Register r_intrinsic_id = RDX;
+  const Register r_intrinsic = RDX;
 
   // Check callable.
   __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
@@ -1158,23 +1157,21 @@ void emitCallHandler(EmitEnv* env) {
   Label prepared;
   __ bind(&prepared);
 
-  // Check whether we have intrinsic code for the function.
-  static_assert(
-      RawFunction::kIntrinsicIdOffset + SmallInt::kSmallIntTagBits == 32,
-      "unexpected intrinsic id offset");
-  __ movl(r_intrinsic_id,
-          Address(r_callable, heapObjectDisp(RawFunction::kFlagsOffset) + 4));
-  __ cmpl(r_intrinsic_id, Immediate(static_cast<word>(SymbolId::kInvalid)));
+  // if (function.intrinsic() != nullptr)
+  __ movq(r_intrinsic,
+          Address(r_callable, heapObjectDisp(RawFunction::kIntrinsicOffset)));
+  __ testq(r_intrinsic, r_intrinsic);
   Label no_intrinsic;
-  __ jcc(EQUAL, &no_intrinsic, Assembler::kNearJump);
+  __ jcc(ZERO, &no_intrinsic, Assembler::kNearJump);
 
-  // if (doIntrinsic(thread, id)) return Continue::NEXT;
+  // if (r_intrinsic(thread)) return Continue::NEXT;
+  static_assert(std::is_same<IntrinsicFunction, bool (*)(Thread*)>(),
+                "type mismatch");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ pushq(r_callable);
   __ pushq(kOpargReg);
   __ movq(kArgRegs[0], kThreadReg);
-  __ movq(kArgRegs[1], r_intrinsic_id);
-  emitCall<bool (*)(Thread*, SymbolId)>(env, doIntrinsic);
+  __ call(r_intrinsic);
   __ popq(kOpargReg);
   __ popq(r_callable);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
