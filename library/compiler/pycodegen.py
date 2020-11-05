@@ -39,6 +39,14 @@ from .unparse import to_expr
 from .visitor import ASTVisitor, walk
 
 
+try:
+    import _parser
+except ImportError:
+    parse_callable = builtin_compile
+else:
+    parse_callable = _parser.parse
+
+
 callfunc_opcode_info = {
     # (Have *args, Have **args) : opcode
     (0, 0): "CALL_FUNCTION",
@@ -99,7 +107,7 @@ def compile(
 
 
 def parse(source, filename, mode, flags):
-    return builtin_compile(source, filename, mode, (flags & PyCF_MASK) | PyCF_ONLY_AST)
+    return parse_callable(source, filename, mode, (flags & PyCF_MASK) | PyCF_ONLY_AST)
 
 
 def make_compiler(
