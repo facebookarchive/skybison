@@ -430,6 +430,39 @@ TEST_F(TypeExtensionApiDeathTest,
                "'__basicsize__' for type 'Bar'");
 }
 
+TEST_F(TypeExtensionApiTest, MemberDescriptorTypeMatchesPyTpMembers) {
+  struct BarObject {
+    PyObject_HEAD
+    int value;
+  };
+
+  static PyMemberDef members[2];
+  members[0] = {"value", T_INT, offsetof(BarObject, value)};
+  members[1] = {nullptr};
+
+  static const PyType_Slot slots[] = {
+      {Py_tp_members, const_cast<PyMemberDef*>(members)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec = {
+      "__main__.Bar",
+      sizeof(BarObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      const_cast<PyType_Slot*>(slots),
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  testing::moduleSet("__main__", "Bar", type);
+  PyRun_SimpleString(R"(
+import types
+descrType = types.MemberDescriptorType
+tpType = type(Bar.__dict__['value'])
+)");
+  PyObjectPtr descr_type(testing::mainModuleGet("descrType"));
+  PyObjectPtr tp_type(testing::mainModuleGet("tpType"));
+  ASSERT_EQ(descr_type, tp_type);
+}
+
 // METH_NOARGS and CALL_FUNCTION
 
 TEST_F(TypeExtensionApiTest, MethodsMethNoargsPosCall) {

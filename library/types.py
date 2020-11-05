@@ -58,7 +58,7 @@ except TypeError:
 # For Jython, the following two types are identical
 # TODO(T42626925)
 #GetSetDescriptorType = type(FunctionType.__code__)
-#MemberDescriptorType = type(FunctionType.__globals__)
+MemberDescriptorType = property
 
 del sys, _f, _g, _C, _c, _ag  # Not for export
 
