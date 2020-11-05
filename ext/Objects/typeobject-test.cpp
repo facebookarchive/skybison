@@ -336,6 +336,45 @@ class Foo: pass
       "Unsupported default slot");
 }
 
+TEST_F(TypeExtensionApiTest, GetSetDescriptorTypeMatchesPyTpGetSet) {
+  struct BarObject {
+    PyObject_HEAD
+    long attribute;
+  };
+
+  getter attribute_getter = [](PyObject* self, void*) {
+    return PyLong_FromLong(reinterpret_cast<BarObject*>(self)->attribute);
+  };
+
+  setter attribute_setter = [](PyObject* self, PyObject* value, void*) {
+    reinterpret_cast<BarObject*>(self)->attribute = PyLong_AsLong(value);
+    return 0;
+  };
+
+  static PyGetSetDef getsets[2];
+  getsets[0] = {"attribute", attribute_getter, attribute_setter};
+  getsets[1] = {nullptr};
+
+  static PyType_Slot slots[2];
+  slots[0] = {Py_tp_getset, reinterpret_cast<void*>(getsets)};
+  slots[1] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  ASSERT_EQ(moduleSet("__main__", "Bar", type), 0);
+  PyRun_SimpleString(R"(
+import types
+descrType = types.GetSetDescriptorType
+tpType = type(Bar.__dict__['attribute'])
+)");
+  PyObjectPtr descr_type(testing::mainModuleGet("descrType"));
+  PyObjectPtr tp_type(testing::mainModuleGet("tpType"));
+  ASSERT_EQ(descr_type, tp_type);
+}
+
 TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotRaisesSystemError) {
   PyRun_SimpleString(R"(
 class Foo: pass

@@ -55,9 +55,7 @@ except TypeError:
     FrameType = type(tb.tb_frame)
     tb = None; del tb
 
-# For Jython, the following two types are identical
-# TODO(T42626925)
-#GetSetDescriptorType = type(FunctionType.__code__)
+GetSetDescriptorType = property
 MemberDescriptorType = property
 
 del sys, _f, _g, _C, _c, _ag  # Not for export
