@@ -28,6 +28,7 @@ from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
+from _bytecode_utils import _make_dunder_new
 from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from reprlib import recursive_repr as _recursive_repr
@@ -397,12 +398,10 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     # Create all the named tuple methods to be added to the class namespace
 
-    s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
-    namespace = {'_tuple_new': tuple_new, '__name__': f'namedtuple_{typename}'}
-    # Note: exec() has the side-effect of interning the field names
-    exec(s, namespace)
-    __new__ = namespace['__new__']
-    __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
+    module_name = f"namedtuple_{typename}"
+    __new__ = _make_dunder_new(module_name, "__new__", field_names, tuple.__new__)
+    globals = {"__name__": module_name}  # noqa: F841
+    __new__.__doc__ = f"Create new instance of {typename}({arg_list})"
     if defaults is not None:
         __new__.__defaults__ = defaults
 

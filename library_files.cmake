@@ -2,6 +2,7 @@
 set(LIBRARY_FILES
 _builtins.py
 _builtins_test.py
+_bytecode_utils.py
 _codecs.py
 _codecs_test.py
 _collections.py
