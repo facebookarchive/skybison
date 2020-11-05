@@ -58,8 +58,7 @@ TYPE_TRUE = b"T"
 TYPE_TUPLE = b"("
 TYPE_UNICODE = b"u"
 TYPE_UNKNOWN = b"?"
-FLAG_NO = b"\x00"
-FLAG_REF = b"\x80"
+FLAG_REF = 0x80
 
 _INT32_MAX = 0x7FFFFFFF
 _INT32_MIN = -0x7FFFFFFF - 1
@@ -86,7 +85,7 @@ class ReferenceData:
 
 def _get_indirect_ref(obj, indirect_reference_table):
     for i in range(len(indirect_reference_table)):
-        if indirect_reference_table[i] == obj:
+        if indirect_reference_table[i] is obj:
             return i
 
     indirect_reference_table.append(obj)
@@ -176,10 +175,10 @@ def _count_references_code(obj, reference_data):
 
 
 def _apply_flag(type, flag):
-    return bytes([type[0] | flag[0]])
+    return bytes((type[0] | flag,))
 
 
-def _dump(obj, f, version=2, reference_data=None):  # noqa: C901
+def _dump(obj, f, version, reference_data):  # noqa: C901
     if obj is None:
         return f.write(TYPE_NONE)
     if obj is StopIteration:
@@ -191,10 +190,20 @@ def _dump(obj, f, version=2, reference_data=None):  # noqa: C901
     if obj is True:
         return f.write(TYPE_TRUE)
 
-    result, flag = _dump_ref(obj, f, version, reference_data)
+    flag = 0
+    if version >= 3:
+        obj_id = _get_indirect_ref(obj, reference_data.indirect_reference_table)
+        result = _dump_ref(obj_id, f, version, reference_data)
+        if result:
+            return result
 
-    if result:
-        return result
+        num_references = reference_data.reference_count.get(obj_id, 0)
+        if num_references > 1:
+            ref_address = len(reference_data.reference_table.keys())
+            if ref_address >= 0x7FFFFFFF:
+                raise ValueError("Out of addresses...")
+            reference_data.reference_table[obj_id] = ref_address
+            flag = FLAG_REF
 
     ty = _type(obj)
     if ty is int:
@@ -222,33 +231,14 @@ def _dump(obj, f, version=2, reference_data=None):  # noqa: C901
     raise ValueError("unmarshallable object")
 
 
-def _dump_ref(obj, f, version, reference_data):
-    obj_id = _get_indirect_ref(obj, reference_data.indirect_reference_table)
+def _dump_ref(obj_id, f, version, reference_data):
+    ref = reference_data.reference_table.get(obj_id, None)
+    if ref is None:
+        return 0
 
-    result = 0
-
-    if version < 3:
-        return result, FLAG_NO
-    elif (
-        obj_id not in reference_data.reference_count
-        or reference_data.reference_count[obj_id] == 1
-    ):
-        return result, FLAG_NO
-    else:
-        if obj_id not in reference_data.reference_table.keys():
-            ref_address = len(reference_data.reference_table.keys())
-
-            if ref_address >= 0x7FFFFFFF:
-                raise ValueError("Out of addresses...")
-
-            reference_data.reference_table[obj_id] = ref_address
-            return result, FLAG_REF
-        else:
-            result += f.write(TYPE_REF)
-            result += _w_long(reference_data.reference_table[obj_id], f)
-            return result, FLAG_NO
-
-        return result, FLAG_NO
+    result = f.write(TYPE_REF)
+    result += _w_long(reference_data.reference_table[obj_id], f)
+    return result
 
 
 def _dump_int(obj, f, flag):
@@ -286,7 +276,7 @@ def _dump_complex(obj, f, flag):
 
 
 def _dump_bytes(obj, f, flag):
-    result = f.write(TYPE_STRING)
+    result = f.write(_apply_flag(TYPE_STRING, flag))
     result += _w_long(len(obj), f)
     result += f.write(obj)
     return result
