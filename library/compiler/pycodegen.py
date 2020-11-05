@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import imp
-import linecache
 import marshal
 import os
 import sys
@@ -713,10 +712,14 @@ class CodeGenerator(ASTVisitor):
             )
 
     def syntax_error_position(self, node):
+        import linecache
+
         source_line = linecache.getline(self.graph.filename, node.lineno)
         return self.graph.filename, node.lineno, node.col_offset, source_line or None
 
     def syntax_error(self, msg, node):
+        import linecache
+
         source_line = linecache.getline(self.graph.filename, node.lineno)
         return SyntaxError(
             msg,
