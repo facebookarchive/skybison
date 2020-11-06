@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cmath>
+#include <csignal>
 
 #include "builtins.h"
 #include "bytes-builtins.h"
@@ -598,6 +599,17 @@ RawObject FUNC(builtins, __import__)(Thread* thread, Arguments args) {
                                 &name);
   }
   return *module;
+}
+
+RawObject FUNC(builtins, _debug_break)(Thread*, Arguments) {
+#if __has_builtin(__builtin_debugtrap)
+  __builtin_debugtrap();
+#elif defined(__i386__) || defined(__x86_64__)
+  __asm__ volatile("int $0x03");
+#else
+  std::raise(SIGTRAP);
+#endif
+  return NoneType::object();
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)

@@ -1268,6 +1268,10 @@ def _bytes_new(source) -> bytes:
     return _bytes_from_ints([_index(x) for x in iterator])
 
 
+def _debug_break():
+    _builtin()
+
+
 class _descrclassmethod(metaclass=_non_heaptype):
     def __init__(self, cls, fn):
         self.cls = cls
