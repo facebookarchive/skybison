@@ -390,6 +390,35 @@ RawObject Interpreter::callDescriptorGet(Thread* thread,
                                          const Object& receiver,
                                          const Object& receiver_type) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  switch (descriptor.layoutId()) {
+    case LayoutId::kClassMethod: {
+      Object method(&scope, ClassMethod::cast(*descriptor).function());
+      return runtime->newBoundMethod(method, receiver_type);
+    }
+    case LayoutId::kFunction: {
+      if (receiver.isNoneType()) {
+        if (receiver_type.rawCast<RawType>().builtinBase() !=
+            LayoutId::kNoneType) {
+          // Type lookup.
+          return *descriptor;
+        }
+      }
+      return runtime->newBoundMethod(descriptor, receiver);
+    }
+    case LayoutId::kProperty: {
+      Object getter(&scope, Property::cast(*descriptor).getter());
+      if (getter.isNoneType()) break;
+      if (receiver.isNoneType()) {
+        return *descriptor;
+      }
+      return Interpreter::call1(thread, getter, receiver);
+    }
+    case LayoutId::kStaticMethod:
+      return StaticMethod::cast(*descriptor).function();
+    default:
+      break;
+  }
   Object method(
       &scope, typeLookupInMroById(
                   thread, thread->runtime()->typeOf(*descriptor), ID(__get__)));

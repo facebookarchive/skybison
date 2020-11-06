@@ -1557,6 +1557,78 @@ TEST_F(InterpreterDeathTest, InvalidOpcode) {
                "bytecode 'UNUSED_BYTECODE_6'");
 }
 
+TEST_F(InterpreterTest, CallDescriptorGetWithBuiltinTypeDescriptors) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+
+def class_method_func(self): pass
+
+def static_method_func(cls): pass
+
+class C:
+    class_method = classmethod(class_method_func)
+
+    static_method = staticmethod(static_method_func)
+
+    @property
+    def property_field(self): return "property"
+
+    def function_field(self): pass
+
+i = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Type type(&scope, runtime_->typeOf(*c));
+  Object i(&scope, mainModuleAt(runtime_, "i"));
+
+  Object class_method_name(&scope,
+                           Runtime::internStrFromCStr(thread_, "class_method"));
+  Object class_method(&scope, typeAt(c, class_method_name));
+  BoundMethod class_method_result(
+      &scope, Interpreter::callDescriptorGet(thread_, class_method, i, c));
+  EXPECT_EQ(class_method_result.self(), *c);
+  EXPECT_EQ(class_method_result.function(),
+            mainModuleAt(runtime_, "class_method_func"));
+
+  Object static_method_name(
+      &scope, Runtime::internStrFromCStr(thread_, "static_method"));
+  Object static_method(&scope, typeAt(c, static_method_name));
+  Function static_method_result(
+      &scope, Interpreter::callDescriptorGet(thread_, static_method, c, type));
+  EXPECT_EQ(*static_method_result,
+            mainModuleAt(runtime_, "static_method_func"));
+
+  Object property_field_name(
+      &scope, Runtime::internStrFromCStr(thread_, "property_field"));
+  Object property_field(&scope, typeAt(c, property_field_name));
+  Object property_field_result(
+      &scope, Interpreter::callDescriptorGet(thread_, property_field, i, c));
+  EXPECT_TRUE(isStrEqualsCStr(*property_field_result, "property"));
+
+  Object function_field_name(
+      &scope, Runtime::internStrFromCStr(thread_, "function_field"));
+  Object function_field(&scope, typeAt(c, function_field_name));
+  BoundMethod function_field_result(
+      &scope, Interpreter::callDescriptorGet(thread_, function_field, i, c));
+  EXPECT_EQ(function_field_result.self(), *i);
+  EXPECT_EQ(function_field_result.function(), *function_field);
+
+  Object none(&scope, NoneType::object());
+  Function function_field_result_from_none_instance(
+      &scope, Interpreter::callDescriptorGet(thread_, function_field, none, c));
+  EXPECT_EQ(function_field_result_from_none_instance, *function_field);
+
+  Type none_type(&scope, runtime_->typeAt(LayoutId::kNoneType));
+  BoundMethod function_field_result_from_none_instance_of_none_type(
+      &scope,
+      Interpreter::callDescriptorGet(thread_, function_field, none, none_type));
+  EXPECT_EQ(function_field_result_from_none_instance_of_none_type.self(),
+            *none);
+  EXPECT_EQ(function_field_result_from_none_instance_of_none_type.function(),
+            *function_field);
+}
+
 TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
