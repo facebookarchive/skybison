@@ -89,6 +89,8 @@ class TimeTool(SequentialPerformanceTool):
             [
                 *interpreter.interpreter_cmd,
                 f"{SCRIPT_DIR}/_time_tool.py",
+                # The time tool imports the module, which will use the bytecode
+                # cache. Pass the source file instead of the bytecode file.
                 benchmark.filepath(),
             ]
         )
@@ -145,7 +147,10 @@ class PerfStat(SequentialPerformanceTool):
             full_command = command + ["--event", events.pop(0)]
             if events:
                 full_command += ["--event", events.pop(0)]
-            full_command += [*interpreter.interpreter_cmd, benchmark.filepath()]
+            full_command += [
+                *interpreter.interpreter_cmd,
+                benchmark.bytecodepath(interpreter),
+            ]
             completed_process = run(full_command, stderr=subprocess.PIPE)
             perfstat_output = completed_process.stderr.strip()
             results.update(self.parse_perfstat(perfstat_output))
@@ -198,7 +203,7 @@ class Callgrind(ParallelPerformanceTool):
                     "--trace-children=yes",
                     f"--callgrind-out-file={temp_file.name}",
                     *interpreter.interpreter_cmd,
-                    benchmark.filepath(),
+                    benchmark.bytecodepath(interpreter),
                 ]
             )
 
@@ -297,7 +302,8 @@ def compile_bytecode(interpreter, benchmark):
         f"{SCRIPT_DIR}/_compile_tool.py",
         benchmark.filepath(),
     ]
-    run(command)
+    result = run(command, stdout=subprocess.PIPE)
+    return result.stdout.lstrip().rstrip()  # remove '\n'
 
 
 # Use this to register any new tools
