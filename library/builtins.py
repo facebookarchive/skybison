@@ -1356,39 +1356,6 @@ def _import_all_from(globals, obj):
         globals[name] = getattr(obj, name)
 
 
-def _int_format_hexadecimal(value):
-    assert value >= 0
-    if value == 0:
-        return "0"
-    result = ""
-    while value > 0:
-        result += "0123456789abcdef"[value & 15]
-        value >>= 4
-    return result[::-1]
-
-
-def _int_format_hexadecimal_upcase(value):
-    assert value >= 0
-    if value == 0:
-        return "0"
-    result = ""
-    while value > 0:
-        result += "0123456789ABCDEF"[value & 15]
-        value >>= 4
-    return result[::-1]
-
-
-def _int_format_octal(value):
-    assert value >= 0
-    if value == 0:
-        return "0"
-    result = ""
-    while value > 0:
-        result += "01234567"[value & 7]
-        value >>= 3
-    return result[::-1]
-
-
 def _index(obj) -> int:
     "$intrinsic$"
     # equivalent to PyNumber_Index

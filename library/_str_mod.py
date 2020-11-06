@@ -4,9 +4,6 @@
 from builtins import (
     _float,
     _index,
-    _int_format_hexadecimal,
-    _int_format_hexadecimal_upcase,
-    _int_format_octal,
     _mapping_check,
     _number_check,
     _str_array,
@@ -87,6 +84,9 @@ def _format_number(result, flags, width, precision, sign, prefix, fragment):
     _str_array_iadd(result, fragment)
     if padding_len > 0:
         _str_array_iadd(result, " " * padding_len)
+
+
+_int_format = int.__format__
 
 
 def format(string: str, args) -> str:  # noqa: C901
@@ -255,8 +255,8 @@ def format(string: str, args) -> str:  # noqa: C901
                     except ValueError:
                         import sys
 
-                        max_hex = _int_format_hexadecimal(sys.maxunicode + 1)
-                        raise OverflowError(f"%c arg not in range(0x{max_hex})")
+                        m = sys.maxunicode + 1
+                        raise OverflowError(f"%c arg not in range({m:#x})")
                     except Exception:
                         raise TypeError("%c requires int or char")
                 _format_string(result, flags, width, precision, fragment)
@@ -289,7 +289,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 else:
                     sign = positive_sign
                 prefix = "0x" if use_alt_formatting else ""
-                fragment = _int_format_hexadecimal(value)
+                fragment = _int_format(value, "x")
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c is "X":  # noqa: F632
                 try:
@@ -305,7 +305,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 else:
                     sign = positive_sign
                 prefix = "0X" if use_alt_formatting else ""
-                fragment = _int_format_hexadecimal_upcase(value)
+                fragment = _int_format(value, "X")
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c is "o":  # noqa: F632
                 try:
@@ -321,7 +321,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 else:
                     sign = positive_sign
                 prefix = "0o" if use_alt_formatting else ""
-                fragment = _int_format_octal(value)
+                fragment = _int_format(value, "o")
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c in "eEfFgG":
                 value = _float(arg)
@@ -338,9 +338,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 _format_number(result, flags, width, 0, sign, "", fragment)
             else:
                 raise ValueError(
-                    f"unsupported format character '{c}' "
-                    f"(0x{_int_format_hexadecimal(ord(c))}) "
-                    f"at index {idx}"
+                    f"unsupported format character '{c}' ({ord(c):#x}) at index {idx}"
                 )
 
             begin = idx + 1
