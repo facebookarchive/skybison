@@ -6,6 +6,7 @@
 #include "builtins-module.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "list-builtins.h"
@@ -51,11 +52,17 @@ PY_EXPORT PyObject* PyNotImplemented_Ptr() {
                                       NotImplementedType::object());
 }
 
-PY_EXPORT void _Py_Dealloc(PyObject*) {
+PY_EXPORT void _Py_Dealloc(PyObject* pyobj) {
   // Do nothing, since this function is only relevant for functions that define
   // their own memory allocation. Right now we don't support this and all
   // object memory is tracked by the GC.
-  UNIMPLEMENTED("_Py_Dealloc");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Type obj_type(&scope, thread->runtime()->typeOf(*obj));
+  if (typeHasSlots(obj_type)) {
+    UNIMPLEMENTED("_Py_Dealloc with type with slots");
+  }
 }
 
 PY_EXPORT void _Py_NewReference(PyObject*) {
