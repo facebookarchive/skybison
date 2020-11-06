@@ -3,6 +3,7 @@ import ast
 import builtins
 import contextlib
 import errno
+import math
 import sys
 import types
 import unittest
@@ -49,6 +50,13 @@ class AbsTests(unittest.TestCase):
         instance = C()
         with self.assertRaisesRegex(TypeError, "'NoneType' object is not callable"):
             abs(instance)
+
+    def test_abs_with_nan_returns_nan(self):
+        nan = float("nan")
+        result = abs(nan)
+        self.assertIsNot(result, nan)
+        self.assertNotEqual(result, nan)
+        self.assertTrue(math.isnan(result))
 
 
 class AsyncGeneratorTests(unittest.TestCase):

@@ -1,6 +1,7 @@
 #include "builtins-module.h"
 
 #include <cerrno>
+#include <cmath>
 
 #include "builtins.h"
 #include "bytes-builtins.h"
@@ -68,6 +69,26 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
       &scope, thread->invokeMethod3(object, ID(__setattr__), interned, value));
   if (result.isErrorException()) return *result;
   return NoneType::object();
+}
+
+ALIGN_16 bool FUNC(builtins, abs_intrinsic)(Thread* thread) {
+  RawObject obj = thread->stackTop();
+  if (obj.isSmallInt()) {
+    thread->stackPop();
+    word value = SmallInt::cast(obj).value();
+    if (value < 0) {
+      obj = SmallInt::fromWord(-value);
+    }
+    thread->stackSetTop(obj);
+    return true;
+  }
+  if (obj.isFloat()) {
+    thread->stackPop();
+    double value = Float::cast(obj).value();
+    thread->stackSetTop(thread->runtime()->newFloat(std::fabs(value)));
+    return true;
+  }
+  return false;
 }
 
 ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {

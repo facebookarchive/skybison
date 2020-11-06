@@ -1768,7 +1768,8 @@ def _type_name(cls):
 
 
 def abs(x):
-    "Same as a.__abs__()."
+    """$intrinsic$
+    Same as a.__abs__()."""
     dunder_abs = _object_type_getattr(x, "__abs__")
     if dunder_abs is _Unbound:
         raise TypeError(f"bad operand type for abs(): '{type(x).__name__}'")
