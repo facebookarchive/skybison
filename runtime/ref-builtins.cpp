@@ -28,10 +28,27 @@ static const BuiltinAttribute kWeakLinkAttributes[] = {
     {ID(__weaklink__prev), RawWeakLink::kPrevOffset, AttributeFlags::kHidden},
 };
 
+static const BuiltinAttribute kWeakCallableProxyAttributes[] = {
+    {ID(ref_obj), RawWeakCallableProxy::kReferentOffset},
+};
+
+static const BuiltinAttribute kWeakProxyAttributes[] = {
+    {ID(ref_obj), RawWeakProxy::kReferentOffset},
+};
+
 void initializeRefTypes(Thread* thread) {
   addBuiltinType(thread, ID(weakref), LayoutId::kWeakRef,
                  /*superclass_id=*/LayoutId::kObject, kRefAttributes,
                  WeakRef::kSize, /*basetype=*/true);
+
+  addBuiltinType(thread, ID(weakcallableproxy), LayoutId::kWeakCallableProxy,
+                 /*superclass_id=*/LayoutId::kObject,
+                 kWeakCallableProxyAttributes, WeakCallableProxy::kSize,
+                 /*basetype=*/false);
+
+  addBuiltinType(thread, ID(weakproxy), LayoutId::kWeakProxy,
+                 /*superclass_id=*/LayoutId::kObject, kWeakProxyAttributes,
+                 WeakProxy::kSize, /*basetype=*/false);
 
   addBuiltinType(thread, ID(_weaklink), LayoutId::kWeakLink,
                  /*superclass_id=*/LayoutId::kObject, kWeakLinkAttributes,

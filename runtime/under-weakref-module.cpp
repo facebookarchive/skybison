@@ -7,6 +7,12 @@
 
 namespace py {
 
+RawObject FUNC(_weakref, _proxy_check)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(0));
+  return Bool::fromBool(obj.isWeakProxy() || obj.isWeakCallableProxy());
+}
+
 RawObject FUNC(_weakref, _weakref_hash)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));

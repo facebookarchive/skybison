@@ -17,9 +17,8 @@ from _builtins import (
 __all__ = ["CallableProxyType", "ProxyType", "ReferenceType", "ref", "proxy"]
 
 
-# TODO(djang): Define these in native code.
 def _proxy_check(object):
-    return isinstance(object, (weakproxy, weakcallableproxy))
+    _builtin()
 
 
 def _proxy_referent(proxy_obj):
@@ -30,11 +29,7 @@ def _proxy_referent(proxy_obj):
 
 
 def _proxy_unwrap(object):
-    return (
-        _proxy_referent(object)
-        if isinstance(object, (weakproxy, weakcallableproxy))
-        else object
-    )
+    return _proxy_referent(object) if _proxy_check(object) else object
 
 
 def _remove_dead_weakref(data, key):
@@ -125,7 +120,7 @@ class weakref(bootstrap=True):
         return result
 
 
-class weakcallableproxy:
+class weakcallableproxy(bootstrap=True):
     __hash__ = None
 
     def __init__(self, ref_obj):
@@ -265,7 +260,7 @@ class weakcallableproxy:
         return _proxy_unwrap(self) ^ _proxy_unwrap(other)
 
 
-class weakproxy:
+class weakproxy(bootstrap=True):
     __hash__ = None
 
     def __init__(self, ref_obj):

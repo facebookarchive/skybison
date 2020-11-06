@@ -130,6 +130,8 @@ class Thread;
   V(UnderRawIOBase)                                                            \
   V(UnderTextIOBase)                                                           \
   V(ValueCell)                                                                 \
+  V(WeakCallableProxy)                                                         \
+  V(WeakProxy)                                                                 \
   V(WeakLink)                                                                  \
   V(WeakRef)
 
@@ -422,6 +424,8 @@ class RawObject {
   bool isUnicodeErrorBase() const;
   bool isUnicodeTranslateError() const;
   bool isValueCell() const;
+  bool isWeakCallableProxy() const;
+  bool isWeakProxy() const;
   bool isWeakLink() const;
   bool isWeakRef() const;
 
@@ -2996,6 +3000,38 @@ class RawUserWeakRefBase : public RawInstance {
 
 RawWeakRef weakRefUnderlying(RawObject object);
 
+class RawWeakProxy : public RawInstance {
+ public:
+  // Getters and setters
+
+  // The object weakly-referenced by this instance.  Set to None by the garbage
+  // collector when the referent is being collected.
+  RawObject referent() const;
+  void setReferent(RawObject referent) const;
+
+  // Layout.
+  static const int kReferentOffset = RawHeapObject::kSize;
+  static const int kSize = kReferentOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(WeakProxy);
+};
+
+class RawWeakCallableProxy : public RawInstance {
+ public:
+  // Getters and setters
+
+  // The object weakly-referenced by this instance.  Set to None by the garbage
+  // collector when the referent is being collected.
+  RawObject referent() const;
+  void setReferent(RawObject referent) const;
+
+  // Layout.
+  static const int kReferentOffset = RawHeapObject::kSize;
+  static const int kSize = kReferentOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(WeakCallableProxy);
+};
+
 // RawWeakLink objects are used to form double linked lists where the elements
 // can still be garbage collected.
 //
@@ -4353,6 +4389,14 @@ inline bool RawObject::isUnicodeTranslateError() const {
 
 inline bool RawObject::isValueCell() const {
   return isHeapObjectWithLayout(LayoutId::kValueCell);
+}
+
+inline bool RawObject::isWeakCallableProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kWeakCallableProxy);
+}
+
+inline bool RawObject::isWeakProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kWeakProxy);
 }
 
 inline bool RawObject::isWeakLink() const {

@@ -715,6 +715,7 @@ class Runtime;
   V(readonly)                                                                  \
   V(real)                                                                      \
   V(reason)                                                                    \
+  V(ref_obj)                                                                   \
   V(replace)                                                                   \
   V(repr)                                                                      \
   V(reset)                                                                     \
@@ -779,6 +780,8 @@ class Runtime;
   V(warn_explicit)                                                             \
   V(warnings)                                                                  \
   V(weakref)                                                                   \
+  V(weakcallableproxy)                                                         \
+  V(weakproxy)                                                                 \
   V(write)                                                                     \
   V(xor)
 

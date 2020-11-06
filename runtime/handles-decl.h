@@ -99,6 +99,8 @@ class Handle;
   V(UnderIOBase)                                                               \
   V(UnderRawIOBase)                                                            \
   V(ValueCell)                                                                 \
+  V(WeakCallableProxy)                                                         \
+  V(WeakProxy)                                                                 \
   V(WeakLink)                                                                  \
   V(WeakRef)
 
