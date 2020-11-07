@@ -143,13 +143,14 @@ class PerfStat(SequentialPerformanceTool):
         # To avoid event multiplexing, we only run two events at a time
         results = {}
         events = [event for event in self.events]
+        bytecode_path = compile_bytecode(interpreter, benchmark)
         while events:
             full_command = command + ["--event", events.pop(0)]
             if events:
                 full_command += ["--event", events.pop(0)]
             full_command += [
                 *interpreter.interpreter_cmd,
-                benchmark.bytecodepath(interpreter),
+                bytecode_path,
             ]
             completed_process = run(full_command, stderr=subprocess.PIPE)
             perfstat_output = completed_process.stderr.strip()
@@ -195,6 +196,7 @@ class Callgrind(ParallelPerformanceTool):
 
     def _worker(self, interpreter, benchmark):
         with tempfile.NamedTemporaryFile(prefix="callgrind_") as temp_file:
+            bytecode_path = compile_bytecode(interpreter, benchmark)
             run(
                 [
                     "valgrind",
@@ -203,7 +205,7 @@ class Callgrind(ParallelPerformanceTool):
                     "--trace-children=yes",
                     f"--callgrind-out-file={temp_file.name}",
                     *interpreter.interpreter_cmd,
-                    benchmark.bytecodepath(interpreter),
+                    bytecode_path,
                 ]
             )
 
@@ -297,6 +299,7 @@ def add_tools_arguments(parser):
 
 
 def compile_bytecode(interpreter, benchmark):
+    log.info(f"Compiling benchmark for {interpreter.name}: {benchmark.name}")
     command = [
         *interpreter.interpreter_cmd,
         f"{SCRIPT_DIR}/_compile_tool.py",
