@@ -2733,7 +2733,7 @@ class code(bootstrap=True):
 
 
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
-    from _compile import compile
+    from compiler import compile
 
     if not dont_inherit:
         try:
@@ -2746,7 +2746,7 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     elif optimize < 0 or optimize > 2:
         raise ValueError("compile(): invalid optimize value")
 
-    return compile(source, filename, mode, flags, optimize)
+    return compile(source, filename, mode, flags, None, optimize)
 
 
 def _complex_str_parts(s):  # noqa: C901
@@ -3430,11 +3430,11 @@ def eval(source, globals=None, locals=None):
             flags = caller.__code__.co_flags & _compile_flags_mask
         except ValueError:
             flags = 0  # May have been called on a fresh stackframe.
-        from _compile import compile
+        from compiler import compile
 
         if _str_check(source) or _byteslike_check(source):
             source = source.lstrip()
-        code = compile(source, "<string>", "eval", flags, _sys.flags.optimize)
+        code = compile(source, "<string>", "eval", flags, None, _sys.flags.optimize)
     if code.co_freevars:
         raise TypeError("'eval' code may not contain free variables")
     res = _exec(code, mod, locals)
@@ -3475,9 +3475,9 @@ def exec(source, globals=None, locals=None):
             flags = caller.__code__.co_flags & _compile_flags_mask
         except ValueError:
             flags = 0  # May have been called on a fresh stackframe.
-        from _compile import compile
+        from compiler import compile
 
-        code = compile(source, "<string>", "exec", flags, _sys.flags.optimize)
+        code = compile(source, "<string>", "exec", flags, None, _sys.flags.optimize)
     if code.co_freevars:
         raise TypeError("'exec' code may not contain free variables")
     _exec(code, mod, locals)

@@ -523,10 +523,17 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
   Object mode_str(&scope, runtime->symbols()->at(mode));
   Object flags_int(&scope, runtime->newInt(flags));
   Object optimize_int(&scope, SmallInt::fromWord(optimize));
-  Object import_result(&scope, ensureBuiltinModuleById(thread, ID(_compile)));
+
+  Object dunder_import(&scope, runtime->lookupNameInModule(thread, ID(builtins),
+                                                           ID(__import__)));
+  if (dunder_import.isErrorException()) return *dunder_import;
+  Object compiler_name(&scope, runtime->symbols()->at(ID(compiler)));
+  Object import_result(
+      &scope, Interpreter::call1(thread, dunder_import, compiler_name));
   if (import_result.isErrorException()) return *import_result;
-  return thread->invokeFunction5(ID(_compile), ID(compile), source, filename,
-                                 mode_str, flags_int, optimize_int);
+  Object none(&scope, NoneType::object());
+  return thread->invokeFunction6(ID(compiler), ID(compile), source, filename,
+                                 mode_str, flags_int, none, optimize_int);
 }
 
 RawObject FUNC(builtins, id)(Thread* thread, Arguments args) {

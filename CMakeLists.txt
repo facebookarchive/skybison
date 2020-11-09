@@ -910,17 +910,6 @@ target_link_libraries(
 add_library(
   extension
   OBJECT
-  ext/Modules/_compile/Python-ast.h
-  ext/Modules/_compile/asdl.h
-  ext/Modules/_compile/ast.h
-  ext/Modules/_compile/compile.cpp
-  ext/Modules/_compile/compile.h
-  ext/Modules/_compile/module.cpp
-  ext/Modules/_compile/node.h
-  ext/Modules/_compile/opcode.h
-  ext/Modules/_compile/peephole.cpp
-  ext/Modules/_compile/symtable.h
-  ext/Modules/_compile/wordcode_helpers.h
   ext/Modules/_datetimemodule.cpp
   ext/Modules/_parsermodule.cpp
   ext/Modules/_sre/_sre.cpp

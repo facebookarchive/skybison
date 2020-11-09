@@ -7,7 +7,7 @@ from test_support import pyro_only
 
 
 try:
-    import _compile
+    import compiler as _compile
 except ImportError:
     pass
 
