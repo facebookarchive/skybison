@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "capi-state.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "int-builtins.h"

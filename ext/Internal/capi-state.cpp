@@ -16,14 +16,6 @@ namespace py {
 static const word kInitialCachesCapacity = 128;
 static const word kInitialHandlesCapacity = 256;
 
-IdentityDict* capiCaches(Runtime* runtime) {
-  return &runtime->capiState()->caches_;
-}
-
-IdentityDict* capiHandles(Runtime* runtime) {
-  return &runtime->capiState()->handles_;
-}
-
 void capiStateVisit(CAPIState* state, PointerVisitor* visitor) {
   state->handles_.visit(visitor);
   ApiHandle::visitReferences(&state->handles_, visitor);

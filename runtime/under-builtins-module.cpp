@@ -6,7 +6,6 @@
 #include "builtins.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
@@ -2722,16 +2721,7 @@ RawObject FUNC(_builtins, _get_member_long)(Thread* thread, Arguments args) {
 
 RawObject FUNC(_builtins, _get_member_pyobject)(Thread* thread,
                                                 Arguments args) {
-  ApiHandle* value =
-      *reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
-  if (value == nullptr) {
-    if (args.get(1).isNoneType()) return NoneType::object();
-    HandleScope scope(thread);
-    Str name(&scope, args.get(1));
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "Object attribute '%S' is nullptr", &name);
-  }
-  return value->asObject();
+  return objectGetMember(thread, args.get(0), args.get(1));
 }
 
 RawObject FUNC(_builtins, _get_member_short)(Thread* thread, Arguments args) {
@@ -4107,11 +4097,7 @@ RawObject FUNC(_builtins, _set_member_integral_unsigned)(Thread*,
 
 RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread,
                                                 Arguments args) {
-  ApiHandle* newvalue = ApiHandle::newReference(thread, args.get(1));
-  ApiHandle** oldvalue =
-      reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
-  (*oldvalue)->decref();
-  *oldvalue = newvalue;
+  objectSetMember(thread, args.get(0), args.get(1));
   return NoneType::object();
 }
 

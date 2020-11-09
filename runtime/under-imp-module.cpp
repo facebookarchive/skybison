@@ -2,7 +2,6 @@
 
 #include "builtins-module.h"
 #include "builtins.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "frame.h"
 #include "globals.h"
@@ -108,11 +107,10 @@ RawObject FUNC(_imp, exec_builtin)(Thread* thread, Arguments args) {
   if (def == nullptr) {
     return runtime->newInt(0);
   }
-  ApiHandle* mod_handle = ApiHandle::borrowedReference(thread, *module);
-  if (mod_handle->cache() != nullptr) {
+  if (objectHasHandleCache(thread, *module)) {
     return runtime->newInt(0);
   }
-  return runtime->newInt(execDef(thread, module, def));
+  return runtime->newInt(moduleExecDef(thread, module, def));
 }
 
 RawObject FUNC(_imp, get_frozen_object)(Thread* thread, Arguments args) {

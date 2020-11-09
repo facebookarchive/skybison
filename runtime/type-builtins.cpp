@@ -4,7 +4,6 @@
 
 #include "builtins.h"
 #include "bytecode.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"

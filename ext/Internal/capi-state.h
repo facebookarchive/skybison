@@ -2,6 +2,7 @@
 
 #include "capi-handles.h"
 #include "capi.h"
+#include "runtime.h"
 
 namespace py {
 
@@ -16,5 +17,13 @@ struct CAPIState {
 };
 
 static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");
+
+inline IdentityDict* capiCaches(Runtime* runtime) {
+  return &runtime->capiState()->caches_;
+}
+
+inline IdentityDict* capiHandles(Runtime* runtime) {
+  return &runtime->capiState()->handles_;
+}
 
 }  // namespace py

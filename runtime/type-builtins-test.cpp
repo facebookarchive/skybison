@@ -1,5 +1,6 @@
 #include "type-builtins.h"
 
+#include "cpython-types.h"
 #include "gtest/gtest.h"
 
 #include "builtins.h"

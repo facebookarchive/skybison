@@ -4,10 +4,12 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
+#include "capi-state.h"
 #include "capi.h"
 #include "event.h"
 #include "object-builtins.h"
 #include "runtime.h"
+#include "thread.h"
 #include "visitor.h"
 
 namespace py {
@@ -389,10 +391,8 @@ static void rehashReferences(Thread* thread, IdentityDict* dict, uword* array) {
   dict->setNumUsableItems(dict->numUsableItems() + dict->numTombstones());
 }
 
-void ApiHandle::clearNotReferencedHandles(Thread* thread) {
-  Runtime* runtime = thread->runtime();
-  IdentityDict* caches = capiCaches(runtime);
-  IdentityDict* handles = capiHandles(runtime);
+void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
+                                          IdentityDict* caches) {
   word handles_length = handles->numItems() * Bucket::kNumPointers;
   // Allocate array off-heap because this step happens in the middle of the GC,
   // where managed heap allocation is disabled.
@@ -518,6 +518,63 @@ void ApiHandle::dispose() {
   if (!cache.isError()) std::free(Int::cast(*cache).asCPtr());
 
   std::free(this);
+}
+
+RawObject capiHandleAsObject(void* handle) {
+  return reinterpret_cast<ApiHandle*>(handle)->asObject();
+}
+
+bool capiHandleFinalizableReference(void* handle, RawObject** out) {
+  ApiHandle* api_handle = reinterpret_cast<ApiHandle*>(handle);
+  *out = reinterpret_cast<RawObject*>(&api_handle->reference_);
+  return api_handle->refcnt() > 1 ||
+         HeapObject::cast(api_handle->asObject()).isForwarding();
+}
+
+void capiHandlesClearNotReferenced(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  ApiHandle::clearNotReferencedHandles(thread, capiHandles(runtime),
+                                       capiCaches(runtime));
+}
+
+void capiHandlesDispose(Thread* thread) {
+  ApiHandle::disposeHandles(thread, capiHandles(thread->runtime()));
+}
+
+void capiHandlesShrink(Thread* thread) {
+  capiHandles(thread->runtime())->shrink(thread);
+}
+
+void* objectBorrowedReference(Thread* thread, RawObject obj) {
+  return ApiHandle::borrowedReference(thread, obj);
+}
+
+RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name) {
+  ApiHandle* value = *reinterpret_cast<ApiHandle**>(Int::cast(ptr).asCPtr());
+  if (value != nullptr) {
+    return value->asObject();
+  }
+  if (name.isNoneType()) {
+    return NoneType::object();
+  }
+  HandleScope scope(thread);
+  Str name_str(&scope, name);
+  return thread->raiseWithFmt(LayoutId::kAttributeError,
+                              "Object attribute '%S' is nullptr", &name_str);
+}
+
+bool objectHasHandleCache(Thread* thread, RawObject obj) {
+  return ApiHandle::borrowedReference(thread, obj)->cache() != nullptr;
+}
+
+void* objectNewReference(Thread* thread, RawObject obj) {
+  return ApiHandle::newReference(thread, obj);
+}
+
+void objectSetMember(Thread* thread, RawObject old_ptr, RawObject new_val) {
+  ApiHandle** old = reinterpret_cast<ApiHandle**>(Int::cast(old_ptr).asCPtr());
+  (*old)->decref();
+  *old = ApiHandle::newReference(thread, new_val);
 }
 
 }  // namespace py

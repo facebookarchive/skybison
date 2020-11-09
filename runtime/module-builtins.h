@@ -1,7 +1,5 @@
 #pragma once
 
-#include "cpython-types.h"
-
 #include "globals.h"
 #include "handles-decl.h"
 #include "objects.h"
@@ -62,9 +60,6 @@ RawObject moduleRaiseAttributeError(Thread* thread, const Module& module,
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
                         const Object& name, const Object& value);
-
-// Runs the executable functions found in the PyModuleDef
-int execDef(Thread* thread, const Module& module, PyModuleDef* def);
 
 void initializeModuleType(Thread* thread);
 

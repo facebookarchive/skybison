@@ -1,9 +1,9 @@
 #include "under-imp-module.h"
 
+#include "cpython-types.h"
 #include "gtest/gtest.h"
 
 #include "builtins.h"
-#include "capi-handles.h"
 #include "runtime.h"
 #include "test-utils.h"
 

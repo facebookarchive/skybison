@@ -2,7 +2,6 @@
 
 #include <cerrno>
 
-#include "capi-handles.h"
 #include "file.h"
 #include "handles.h"
 #include "os.h"
@@ -514,7 +513,7 @@ void HeapProfiler::writeApiHandleRoot(RawObject obj) {
   // ApiHandle address
   // TODO(emacs): Propagate the ApiHandle pointer through to this function
   // instead of looking it up again.
-  ApiHandle* handle = ApiHandle::borrowedReference(thread_, obj);
+  void* handle = objectBorrowedReference(thread_, obj);
   sub.writeObjectId(reinterpret_cast<uword>(handle));
 }
 

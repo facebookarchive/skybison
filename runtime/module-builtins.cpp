@@ -1,7 +1,6 @@
 #include "module-builtins.h"
 
 #include "builtins.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"
@@ -234,69 +233,6 @@ RawObject moduleSetAttr(Thread* thread, const Module& module,
                         const Object& name, const Object& value) {
   moduleAtPut(thread, module, name, value);
   return NoneType::object();
-}
-
-int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object name_obj(&scope, moduleAtById(thread, module, ID(__name__)));
-  if (!runtime->isInstanceOfStr(*name_obj)) {
-    thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
-    return -1;
-  }
-
-  ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
-  if (def->m_size >= 0) {
-    if (handle->cache() == nullptr) {
-      handle->setCache(std::calloc(def->m_size, 1));
-      if (!handle->cache()) {
-        thread->raiseMemoryError();
-        return -1;
-      }
-    }
-  }
-
-  if (def->m_slots == nullptr) {
-    return 0;
-  }
-
-  Str name_str(&scope, *name_obj);
-  for (PyModuleDef_Slot* cur_slot = def->m_slots;
-       cur_slot != nullptr && cur_slot->slot != 0; cur_slot++) {
-    switch (cur_slot->slot) {
-      case Py_mod_create:
-        break;
-      case Py_mod_exec: {
-        typedef int (*slot_func)(PyObject*);
-        slot_func thunk = reinterpret_cast<slot_func>(cur_slot->value);
-        if ((*thunk)(handle) != 0) {
-          if (!thread->hasPendingException()) {
-            thread->raiseWithFmt(
-                LayoutId::kSystemError,
-                "execution of module %S failed without setting an exception",
-                &name_str);
-          }
-          return -1;
-        }
-        if (thread->hasPendingException()) {
-          thread->clearPendingException();
-          thread->raiseWithFmt(
-              LayoutId::kSystemError,
-              "execution of module %S failed without setting an exception",
-              &name_str);
-          return -1;
-        }
-        break;
-      }
-      default: {
-        thread->raiseWithFmt(LayoutId::kSystemError,
-                             "module %S initialized with unknown slot %d",
-                             &name_str, cur_slot->slot);
-        return -1;
-      }
-    }
-  }
-  return 0;
 }
 
 RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {

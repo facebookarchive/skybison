@@ -18,7 +18,6 @@
 #include "bytearray-builtins.h"
 #include "bytecode.h"
 #include "bytes-builtins.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "code-builtins.h"
 #include "complex-builtins.h"
@@ -1965,7 +1964,7 @@ void Runtime::collectGarbage() {
   EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
   RawObject cb = scavenge(this);
-  capiHandles(this)->shrink(Thread::current());
+  capiHandlesShrink(Thread::current());
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();
@@ -3866,7 +3865,7 @@ void Runtime::freeApiHandles() {
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
-  ApiHandle::disposeHandles(thread, capiHandles(this));
+  capiHandlesDispose(thread);
   while (tracked_native_objects_ != nullptr) {
     auto entry = static_cast<ListEntry*>(tracked_native_objects_);
     untrackNativeObject(entry);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "handles-decl.h"
+#include "objects.h"
 
 // This file contains all of the functions and data needed from the runtime to
 // poke at C-extension internals. Ideally, the extension layer would sit on top
@@ -17,6 +18,8 @@ extern "C" const unsigned char _PyLong_DigitValue[];  // NOLINT
 // from Include/pyctype.h
 extern "C" const unsigned int _Py_ctype_table[];  // NOLINT
 
+struct PyModuleDef;
+
 // TODO(T67311848): Remove this. This is a temporary workaround until we fork
 // the readline module into the runtime.
 extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
@@ -25,9 +28,9 @@ namespace py {
 
 struct CAPIState;
 
-class IdentityDict;
-
 class PointerVisitor;
+
+class Thread;
 
 class Runtime;
 
@@ -35,8 +38,23 @@ static const word kCAPIStateSize = 128;
 
 extern struct _inittab _PyImport_Inittab[];
 
-IdentityDict* capiCaches(Runtime* runtime);
-IdentityDict* capiHandles(Runtime* runtime);
+// Return the object referenced by the handle.
+// WARNING: This function should be called by the garbage collector.
+RawObject capiHandleAsObject(void* handle);
+
+// Return true if the extension object at the given handle is being kept alive
+// by a reference from another extension object or by a managed reference.
+// WARNING: This function should be called by the garbage collector.
+bool capiHandleFinalizableReference(void* handle, RawObject** out);
+
+// WARNING: This function should be called by the garbage collector.
+void capiHandlesClearNotReferenced(Thread* thread);
+
+// WARNING: This function should be called for shutdown.
+void capiHandlesDispose(Thread* thread);
+
+// WARNING: This function should be called during garbage collection.
+void capiHandlesShrink(Thread* thread);
 
 void capiStateVisit(CAPIState* state, PointerVisitor* visitor);
 
@@ -76,6 +94,9 @@ RawObject methodTrampolineFastWithKeywordsKw(Thread* thread,
 RawObject methodTrampolineFastWithKeywordsEx(Thread* thread,
                                              word flags) ALIGN_16;
 
+// Runs the executable functions found in the PyModuleDef
+word moduleExecDef(Thread* thread, const Module& module, PyModuleDef* def);
+
 // Initialize built-in extension module `name` if it exists, otherwise
 // return `nullptr`.
 RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name);
@@ -85,6 +106,21 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
                                      const Str& path);
 
 word numTrackedApiHandles(Runtime* runtime);
+
+// Return a borrowed reference to the object.
+void* objectBorrowedReference(Thread* thread, RawObject obj);
+
+RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name);
+
+// Check if a borrowed reference to the object has a non-null cache.
+// WARNING: This function should only be used in the GC.
+bool objectHasHandleCache(Thread* thread, RawObject obj);
+
+// Pin a handle for the object until the runtime exits.
+// WARNING: This function should only be used in builtins.id()
+void* objectNewReference(Thread* thread, RawObject obj);
+
+void objectSetMember(Thread* thread, RawObject old_ptr, RawObject new_val);
 
 // Return the type's tp_basicsize. Use only with extension types.
 uword typeGetBasicSize(const Type& type);

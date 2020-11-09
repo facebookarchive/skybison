@@ -506,8 +506,6 @@ add_library(
   runtime/bytes-builtins.cpp
   runtime/bytes-builtins.h
   runtime/capi.h
-  runtime/capi-handles.cpp
-  runtime/capi-handles.h
   runtime/code-builtins.cpp
   runtime/code-builtins.h
   runtime/complex-builtins.cpp
@@ -910,6 +908,8 @@ target_link_libraries(
 add_library(
   extension
   OBJECT
+  ext/Internal/capi-handles.cpp
+  ext/Internal/capi-handles.h
   ext/Internal/capi-state.cpp
   ext/Internal/capi-state.h
   ext/Internal/trampolines.cpp
@@ -992,7 +992,14 @@ target_include_directories(
   $<TARGET_PROPERTY:capi-headers,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
+  ext/Internal
   runtime)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  target_link_libraries(
+    extension
+    PRIVATE
+    systemtap)
+endif()
 
 include(${CMAKE_SOURCE_DIR}/cpython_library_files.cmake)
 include(${CMAKE_SOURCE_DIR}/library_files.cmake)
@@ -1099,6 +1106,7 @@ target_include_directories(
 add_library(
   runtime-tests
   OBJECT
+  ext/Internal/capi-handles-test.cpp
   ext/Internal/trampolines-test.cpp
   runtime/array-module-test.cpp
   runtime/assembler-x64-test.cpp
@@ -1106,7 +1114,6 @@ add_library(
   runtime/bytearray-builtins-test.cpp
   runtime/bytecode-test.cpp
   runtime/bytes-builtins-test.cpp
-  runtime/capi-handles-test.cpp
   runtime/code-builtins-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp
@@ -1173,6 +1180,7 @@ target_compile_options(
 target_include_directories(
   runtime-tests
   PRIVATE
+  ext/Internal
   $<TARGET_PROPERTY:benchmark,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>

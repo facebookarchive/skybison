@@ -94,7 +94,8 @@ class ApiHandle : public PyObject {
   // WARNING: This function should be called by the garbage collector.
   // Clear out handles which are not referenced by managed objects or by an
   // extension object.
-  static void clearNotReferencedHandles(Thread* thread);
+  static void clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
+                                        IdentityDict* caches);
 
   // WARNING: This function should be called for shutdown.
   // Dispose all handles, without trying to cleanly deallocate the object for

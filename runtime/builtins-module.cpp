@@ -6,7 +6,7 @@
 
 #include "builtins.h"
 #include "bytes-builtins.h"
-#include "capi-handles.h"
+#include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "formatter.h"
@@ -563,7 +563,7 @@ RawObject FUNC(builtins, id)(Thread* thread, Arguments args) {
   // does not matter or add a section to the GC to clean up handles created by
   // id().
   return thread->runtime()->newIntFromCPtr(
-      ApiHandle::newReference(thread, args.get(0)));
+      objectNewReference(thread, args.get(0)));
 }
 
 RawObject FUNC(builtins, oct)(Thread* thread, Arguments args) {

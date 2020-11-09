@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "capi-handles.h"
+#include "capi.h"
 #include "runtime.h"
 
 namespace py {
@@ -62,7 +62,7 @@ RawObject Scavenger::scavenge() {
   runtime_->heap()->setSpace(nullptr);
   processRoots();
   processGrayObjects();
-  ApiHandle::clearNotReferencedHandles(Thread::current());
+  capiHandlesClearNotReferenced(Thread::current());
   processFinalizableReferences();
   processGrayObjects();
   processDelayedReferences();
@@ -279,22 +279,17 @@ void Scavenger::processFinalizableReferences() {
   ListEntry* entry = runtime_->trackedNativeObjects();
   for (ListEntry* next; entry != nullptr; entry = next) {
     next = entry->next;
-    ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
-    RawObject native_proxy = native_instance->asObject();
-    if (native_instance->refcnt() > 1 ||
-        HeapObject::cast(native_proxy).isForwarding()) {
-      // The extension object is being kept alive by a reference from an
-      // extension object or by a managed reference. Blacken the reference.
-      scavengePointer(
-          reinterpret_cast<RawObject*>(&native_instance->reference_));
-      continue;
-    }
+    void* native_instance = entry + 1;
+    RawObject* ptr;
+    bool alive = capiHandleFinalizableReference(native_instance, &ptr);
+    scavengePointer(ptr);
 
     // TODO(T58548736): Run safe dealloc slots here when possible rather than
     // putting everything on the queue.
-    scavengePointer(reinterpret_cast<RawObject*>(&native_instance->reference_));
-    RawNativeProxy::enqueue(native_instance->asObject(),
-                            runtime_->finalizableReferences());
+    if (!alive) {
+      NativeProxy::enqueue(capiHandleAsObject(native_instance),
+                           runtime_->finalizableReferences());
+    }
   }
 }
 
