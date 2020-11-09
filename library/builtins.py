@@ -5352,6 +5352,10 @@ class module_proxy(bootstrap=True):
 
 
 def next(iterator, default=_Unbound):
+    """$intrinsic$
+    Same as iterator.__next__(), if a default value is passed in it will be
+    returned if __next__ would have raised a StopIteration."""
+
     dunder_next = _object_type_getattr(iterator, "__next__")
     if dunder_next is _Unbound:
         raise TypeError(f"'{_type(iterator).__name__}' object is not iterable")

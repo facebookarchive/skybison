@@ -7910,6 +7910,22 @@ class NextTests(unittest.TestCase):
             next(foo)
         self.assertEqual(str(context.exception), "failed")
 
+    def test_next_with_tuple_iterater_returns_next_item(self):
+        t = (1,)
+        tuple_iter = iter(t)
+        self.assertEqual(next(tuple_iter), 1)
+
+    def test_next_with_empty_tuple_iterator_returns_default(self):
+        t = ()
+        tuple_iter = iter(t)
+        self.assertEqual(next(tuple_iter, None), None)
+
+    def test_next_with_empty_tuple_iterator_raises_stop_iteration(self):
+        t = ()
+        tuple_iter = iter(t)
+        with self.assertRaises(StopIteration):
+            next(tuple_iter)
+
 
 class NoneTests(unittest.TestCase):
     def test_dunder_class_returns_type_of_none(self):

@@ -19,6 +19,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "tuple-builtins.h"
 #include "type-builtins.h"
 
 namespace py {
@@ -100,6 +101,26 @@ ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
     return true;
   }
   return false;
+}
+
+ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackTop();
+  switch (value.layoutId()) {
+    case LayoutId::kTupleIterator: {
+      HandleScope scope(thread);
+      RawObject result =
+          tupleIteratorNext(thread, TupleIterator(&scope, value));
+      if (result.isErrorNoMoreItems()) {
+        return false;
+      }
+      thread->stackPop();
+      thread->stackSetTop(result);
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
 }
 
 ALIGN_16 bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
