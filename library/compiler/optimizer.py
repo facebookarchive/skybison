@@ -155,6 +155,15 @@ class AstOptimizer(ASTRewriter):
                 # Rewrite "%s" % (x,) to f"{x!s}"
                 formatted = ast.FormattedValue(value, ord(ch), None)
                 strings.append(formatted)
+            elif ch in "diu":
+                # Rewrite "%d" % (x,) to f"{''._mod_convert_number(x)}".
+                # Calling a method on the empty string is a hack to access a
+                # well-known function regardless of the surrounding
+                # environment.
+                method = ast.Attribute(ast.Str(""), "_mod_convert_number", ast.Load())
+                converted = ast.Call(method, args=[value], keywords=[])
+                formatted = ast.FormattedValue(converted, -1, None)
+                strings.append(formatted)
             else:
                 return None
             # Begin next segment after specifier

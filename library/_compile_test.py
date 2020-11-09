@@ -126,7 +126,6 @@ class PrintfTransformTests(unittest.TestCase):
         self.assertEqual(eval(code1), str.__mod__("%i", (-13,)))  # noqa: P204
         self.assertEqual(eval(code2), str.__mod__("%u", (-13,)))  # noqa: P204
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_percent_d_i_u(self):
         expected = """\
   1           0 LOAD_CONST               0 ('')
@@ -152,7 +151,6 @@ class PrintfTransformTests(unittest.TestCase):
             eval(code2, locals={"x": -13}), str.__mod__("%u", (-13,))  # noqa: P204
         )
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_percent_d_calls_dunder_int(self):
         class C:
             def __int__(self):
@@ -161,6 +159,15 @@ class PrintfTransformTests(unittest.TestCase):
         code = compile("'%d' % (x,)", "", "eval")
         self.assertNotIn("BINARY_MOD", dis_str(code))
         self.assertEqual(eval(code, None, {"x": C()}), "7")  # noqa: P204
+
+    def test_percent_d_raises_type_error(self):
+        class C:
+            pass
+
+        code = compile("'%d' % (x,)", "", "eval")
+        self.assertNotIn("BINARY_MOD", dis_str(code))
+        with self.assertRaisesRegex(TypeError, "format requires a number, not C"):
+            eval(code, None, {"x": C()})  # noqa: P204
 
     def test_percent_s_with_width_constant_folded(self):
         code = compile("'%13s' % (42,)", "", "eval")
