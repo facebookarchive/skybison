@@ -140,6 +140,36 @@ class AstOptimizer(ASTRewriter):
             ch = format_string[i]
             i += 1
 
+            # Parse flags and width
+            spec_begin = i - 1
+            have_width = False
+            while True:
+                if ch == "0":
+                    # TODO(matthiasb): Support ' ', '+', '#', etc
+                    # They mostly have the same meaning. However they can
+                    # appear in any order here but must follow stricter
+                    # conventions in f-strings.
+                    if i >= length:
+                        return None
+                    ch = format_string[i]
+                    i += 1
+                    continue
+                break
+            if "1" <= ch <= "9":
+                have_width = True
+                if i >= length:
+                    return None
+                ch = format_string[i]
+                i += 1
+                while "0" <= ch <= "9":
+                    if i >= length:
+                        return None
+                    ch = format_string[i]
+                    i += 1
+            spec_str = None
+            if i - 1 - spec_begin > 0:
+                spec_str = format_string[spec_begin : i - 1]
+
             if ch == "%":
                 # Handle '%%'
                 segment_begin = i - 1
@@ -153,7 +183,12 @@ class AstOptimizer(ASTRewriter):
 
             if ch in "sra":
                 # Rewrite "%s" % (x,) to f"{x!s}"
-                formatted = ast.FormattedValue(value, ord(ch), None)
+                if have_width:
+                    # Need to explicitly specify alignment because `%5s`
+                    # aligns right, while `f"{x:5}"` aligns left.
+                    spec_str = ">" + spec_str
+                format_spec = ast.Str(spec_str) if spec_str is not None else None
+                formatted = ast.FormattedValue(value, ord(ch), format_spec)
                 strings.append(formatted)
             elif ch in "diu":
                 # Rewrite "%d" % (x,) to f"{''._mod_convert_number(x)}".
@@ -162,7 +197,8 @@ class AstOptimizer(ASTRewriter):
                 # environment.
                 method = ast.Attribute(ast.Str(""), "_mod_convert_number", ast.Load())
                 converted = ast.Call(method, args=[value], keywords=[])
-                formatted = ast.FormattedValue(converted, -1, None)
+                format_spec = ast.Str(spec_str) if spec_str is not None else None
+                formatted = ast.FormattedValue(converted, -1, format_spec)
                 strings.append(formatted)
             else:
                 return None

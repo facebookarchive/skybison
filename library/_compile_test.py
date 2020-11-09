@@ -180,7 +180,6 @@ class PrintfTransformTests(unittest.TestCase):
         )
         self.assertEqual(eval(code), str.__mod__("%13s", (42,)))  # noqa: P204
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_percent_s_with_width(self):
         code = compile("'%13s' % (x,)", "", "eval")
         self.assertEqual(
@@ -207,7 +206,6 @@ class PrintfTransformTests(unittest.TestCase):
         )
         self.assertEqual(eval(code), str.__mod__("%05d", (-5,)))  # noqa: P204
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_percent_d_with_width_and_flags(self):
         code = compile("'%05d' % (x,)", "", "eval")
         self.assertEqual(
