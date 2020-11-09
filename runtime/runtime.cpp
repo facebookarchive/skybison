@@ -321,7 +321,7 @@ void Runtime::appendBuiltinAttributes(Thread* thread,
 }
 
 template <typename T>
-static RawObject createInstance(Runtime* runtime) {
+static inline RawObject createInstance(Runtime* runtime) {
   return runtime->newInstanceWithSize(ObjectLayoutId<T>::value, T::kSize);
 }
 
@@ -890,7 +890,8 @@ RawObject Runtime::newInstance(const Layout& layout) {
   return instance;
 }
 
-RawObject Runtime::newInstanceWithSize(LayoutId layout_id, word object_size) {
+inline USED RawObject Runtime::newInstanceWithSize(LayoutId layout_id,
+                                                   word object_size) {
   word num_attributes = object_size / kPointerSize;
   word allocation_size = Instance::allocationSize(num_attributes);
   uword address;
