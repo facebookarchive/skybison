@@ -912,6 +912,7 @@ add_library(
   OBJECT
   ext/Internal/capi-state.cpp
   ext/Internal/capi-state.h
+  ext/Internal/trampolines.cpp
   ext/Modules/_datetimemodule.cpp
   ext/Modules/_parsermodule.cpp
   ext/Modules/_sre/_sre.cpp
@@ -1098,6 +1099,7 @@ target_include_directories(
 add_library(
   runtime-tests
   OBJECT
+  ext/Internal/trampolines-test.cpp
   runtime/array-module-test.cpp
   runtime/assembler-x64-test.cpp
   runtime/builtins-module-test.cpp
