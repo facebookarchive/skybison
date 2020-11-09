@@ -29,6 +29,7 @@ from .consts import (
     PyCF_MASK,
     PyCF_MASK_OBSOLETE,
     PyCF_ONLY_AST,
+    PyCF_OPTIMIZATION_MASK,
     PyCF_SOURCE_IS_UTF8,
 )
 from .optimizer import AstOptimizer
@@ -116,7 +117,11 @@ def make_compiler(
         raise ValueError("compile() mode must be 'exec', 'eval' or 'single'")
 
     if flags & ~(
-        PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST
+        PyCF_MASK
+        | PyCF_MASK_OBSOLETE
+        | PyCF_DONT_IMPLY_DEDENT
+        | PyCF_ONLY_AST
+        | PyCF_OPTIMIZATION_MASK
     ):
         raise ValueError("compile(): unrecognised flags")
 
@@ -2118,7 +2123,7 @@ class Python37CodeGenerator(CodeGenerator):
     def make_code_gen(
         cls, name: str, tree: ast.AST, filename: str, flags: int, optimize: int
     ):
-        tree = AstOptimizer(optimize=optimize > 0).visit(tree)
+        tree = AstOptimizer(optimize > 0, flags & PyCF_OPTIMIZATION_MASK).visit(tree)
         s = symbols.SymbolVisitor()
         walk(tree, s)
 

@@ -3,6 +3,7 @@ import operator
 from ast import Bytes, Constant, Ellipsis, NameConstant, Num, Str, cmpop, copy_location
 from typing import Dict, Iterable, Optional, Type
 
+from .consts import PyCF_REWRITE_PRINTF
 from .peephole import safe_lshift, safe_mod, safe_multiply, safe_power
 from .visitor import ASTRewriter
 
@@ -61,9 +62,10 @@ BIN_OPS = {
 
 
 class AstOptimizer(ASTRewriter):
-    def __init__(self, optimize: bool = False):
+    def __init__(self, optimize: bool = False, flags: int = 0):
         super().__init__()
         self.optimize = optimize
+        self.flags = flags
 
     def visitUnaryOp(self, node: ast.UnaryOp) -> ast.expr:
         op = self.visit(node.operand)
@@ -86,6 +88,88 @@ class AstOptimizer(ASTRewriter):
 
         return self.update_node(node, operand=op)
 
+    def should_rewrite_printf(self, node):
+        lhs = node.left
+        if not isinstance(lhs, ast.Str) or not isinstance(node.op, ast.Mod):
+            return False
+        format_string = lhs.s
+        if format_string.endswith("%"):
+            # Invalid format string that ends with "%"
+            return False
+        if "%(" in format_string:
+            # We don't support dict lookups and may get confused from inner
+            # '%' chars
+            return False
+        return True
+
+    def rewrite_str_mod(self, node):
+        if isinstance(node.right, ast.Constant):
+            return self.try_constant_fold_mod(node)
+        if not isinstance(node.right, ast.Tuple):
+            return None
+        lhs = node.left
+        format_string = lhs.s
+        const_tuple = self.makeConstTuple(node.right.elts)
+        if const_tuple:
+            # Try and collapse the whole expression into a string
+            try:
+                return ast.Str(format_string.__mod__(const_tuple.value))
+            except Exception:
+                pass
+        rhs_values = node.right.elts
+        num_values = len(rhs_values)
+        length = len(format_string)
+        i = 0
+        value_idx = 0
+        segment_begin = 0
+        strings = []
+        while i < length:
+            i = format_string.find("%", i)
+            if i == -1:
+                break
+            ch = format_string[i]
+            i += 1
+
+            segment_end = i - 1
+            if segment_end - segment_begin > 0:
+                substr = format_string[segment_begin:segment_end]
+                strings.append(ast.Str(substr))
+
+            if i >= length:
+                return None
+            ch = format_string[i]
+            i += 1
+
+            if ch == "%":
+                # Handle '%%'
+                segment_begin = i - 1
+                continue
+
+            # Handle remaining supported cases that use a value from RHS
+            if value_idx >= num_values:
+                return None
+            value = rhs_values[value_idx]
+            value_idx += 1
+
+            if ch in "sra":
+                # Rewrite "%s" % (x,) to f"{x!s}"
+                formatted = ast.FormattedValue(value, ord(ch), None)
+                strings.append(formatted)
+            else:
+                return None
+            # Begin next segment after specifier
+            segment_begin = i
+
+        if value_idx != num_values:
+            return None
+
+        segment_end = length
+        if segment_end - segment_begin > 0:
+            substr = format_string[segment_begin:segment_end]
+            strings.append(ast.Str(substr))
+
+        return ast.JoinedStr(strings)
+
     def visitBinOp(self, node: ast.BinOp) -> ast.expr:
         left_node = self.visit(node.left)
         right_node = self.visit(node.right)
@@ -99,6 +183,11 @@ class AstOptimizer(ASTRewriter):
                     return copy_location(Constant(handler(lval, rval)), node)
                 except Exception:
                     pass
+
+        if self.flags & PyCF_REWRITE_PRINTF and self.should_rewrite_printf(node):
+            result = self.rewrite_str_mod(node)
+            if result:
+                return self.visit(result)
 
         return self.update_node(node, left=left_node, right=right_node)
 

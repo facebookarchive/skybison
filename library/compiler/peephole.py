@@ -155,7 +155,7 @@ def safe_power(left, right, limits=DefaultLimits):
 
 
 def safe_mod(left, right, limits=DefaultLimits):
-    if isinstance(left, (str, bytes)):
+    if isinstance(left, bytes):
         raise OverflowError()
 
     return left % right

@@ -2734,6 +2734,7 @@ class code(bootstrap=True):
 
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     from compiler import compile
+    from compiler.consts import PyCF_REWRITE_PRINTF
 
     if not dont_inherit:
         try:
@@ -2746,6 +2747,7 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     elif optimize < 0 or optimize > 2:
         raise ValueError("compile(): invalid optimize value")
 
+    flags |= PyCF_REWRITE_PRINTF
     return compile(source, filename, mode, flags, None, optimize)
 
 
