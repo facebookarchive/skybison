@@ -89,36 +89,60 @@ class AstOptimizer(ASTRewriter):
         return self.update_node(node, operand=op)
 
     def should_rewrite_printf(self, node):
-        lhs = node.left
-        if not isinstance(lhs, ast.Str) or not isinstance(node.op, ast.Mod):
-            return False
-        format_string = lhs.s
-        if format_string.endswith("%"):
-            # Invalid format string that ends with "%"
-            return False
-        if "%(" in format_string:
-            # We don't support dict lookups and may get confused from inner
-            # '%' chars
-            return False
-        return True
+        return isinstance(node.left, ast.Str) and isinstance(node.op, ast.Mod)
+
+    def create_conversion_call(self, name, value):
+        method = ast.Attribute(ast.Str(""), name, ast.Load())
+        return ast.Call(method, args=[value], keywords=[])
 
     def rewrite_str_mod(self, node):
         if isinstance(node.right, ast.Constant):
             return self.try_constant_fold_mod(node)
-        if not isinstance(node.right, ast.Tuple):
-            return None
-        lhs = node.left
-        format_string = lhs.s
-        const_tuple = self.makeConstTuple(node.right.elts)
-        if const_tuple:
+        format_string = node.left.s
+        try:
             # Try and collapse the whole expression into a string
-            try:
+            const_tuple = self.makeConstTuple(node.right.elts)
+            if const_tuple:
                 return ast.Str(format_string.__mod__(const_tuple.value))
-            except Exception:
-                pass
-        rhs_values = node.right.elts
-        num_values = len(rhs_values)
+        except Exception:
+            pass
+        n_specifiers = 0
+        i = 0
         length = len(format_string)
+        while i < length:
+            i = format_string.find("%", i)
+            if i == -1:
+                break
+            ch = format_string[i]
+            i += 1
+
+            if i >= length:
+                # Invalid format string ending in a single percent
+                return None
+            ch = format_string[i]
+            i += 1
+            if ch == "%":
+                # Break the string apart at '%'
+                continue
+            elif ch == "(":
+                # We don't support dict lookups and may get confused from
+                # inner '%' chars
+                return None
+            n_specifiers += 1
+
+        rhs = node.right
+        if isinstance(node.right, ast.Tuple):
+            rhs_values = rhs.elts
+            num_values = len(rhs_values)
+        else:
+            # If RHS is not a tuple constructor, then we only support the
+            # situation with a single format specifier in the string, by
+            # normalizing `rhs` to a one-element tuple:
+            # `_mod_check_single_arg(rhs)[0]`
+            rhs_values = None
+            if n_specifiers != 1:
+                return None
+            num_values = 1
         i = 0
         value_idx = 0
         segment_begin = 0
@@ -176,9 +200,15 @@ class AstOptimizer(ASTRewriter):
                 continue
 
             # Handle remaining supported cases that use a value from RHS
-            if value_idx >= num_values:
-                return None
-            value = rhs_values[value_idx]
+            if rhs_values is not None:
+                if value_idx >= num_values:
+                    return None
+                value = rhs_values[value_idx]
+            else:
+                # We have a situation like `"%s" % x` without tuple on RHS.
+                # Transform to: f"{''._mod_check_single_arg(x)[0]}"
+                converted = self.create_conversion_call("_mod_check_single_arg", rhs)
+                value = ast.Subscript(converted, ast.Index(ast.Num(0)), ast.Load())
             value_idx += 1
 
             if ch in "sra":
@@ -195,8 +225,7 @@ class AstOptimizer(ASTRewriter):
                 # Calling a method on the empty string is a hack to access a
                 # well-known function regardless of the surrounding
                 # environment.
-                method = ast.Attribute(ast.Str(""), "_mod_convert_number", ast.Load())
-                converted = ast.Call(method, args=[value], keywords=[])
+                converted = self.create_conversion_call("_mod_convert_number", value)
                 format_spec = ast.Str(spec_str) if spec_str is not None else None
                 formatted = ast.FormattedValue(converted, -1, format_spec)
                 strings.append(formatted)

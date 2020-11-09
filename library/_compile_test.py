@@ -284,7 +284,6 @@ class PrintfTransformTests(unittest.TestCase):
         )
         self.assertEqual(eval(code), str.__mod__("%s", 5.5))  # noqa: P204
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_without_tuple(self):
         code = compile("'%s' % x", "", "eval")
         self.assertEqual(
@@ -304,7 +303,6 @@ class PrintfTransformTests(unittest.TestCase):
             eval(code, locals={"x": 5.5}), str.__mod__("%s", 5.5)  # noqa: P204
         )
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_without_tuple_formats_value(self):
         code = compile("'%s' % x", "", "eval")
         self.assertNotIn("BINARY_MODULO", dis_str(code))
@@ -315,7 +313,6 @@ class PrintfTransformTests(unittest.TestCase):
             eval(code, None, {"x": (True,)}), str.__mod__("%s", (True,))  # noqa: P204
         )
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
     def test_without_tuple_raises_type_error(self):
         code = compile("'%s' % x", "", "eval")
         self.assertNotIn("BINARY_MODULO", dis_str(code))
