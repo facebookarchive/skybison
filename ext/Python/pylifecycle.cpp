@@ -229,7 +229,7 @@ PY_EXPORT void Py_Finalize() { Py_FinalizeEx(); }
   V(_PyLong_One)                                                               \
   V(_PyLong_Zero)
 
-void finalizeCAPI() {
+void finalizeCAPIModules() {
 #define DECREF(ptr) Py_DECREF(&ptr);
   FOREACH_STATICTYPE(DECREF);
 #undef DECREF
@@ -238,7 +238,7 @@ void finalizeCAPI() {
 #undef DECREF
 }
 
-void initializeCAPI() {
+void initializeCAPIModules() {
   CHECK(_PyCapsule_Init() == 0, "Failed to initialize PyCapsule");
   CHECK(_PySTEntry_Init() == 0, "Failed to initialize PySTEntry");
   // Even though our runtime keeps objects like the `dict` type alive, the

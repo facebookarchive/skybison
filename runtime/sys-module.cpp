@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "cpython-types.h"
+
 #include "builtins-module.h"
 #include "builtins.h"
 #include "bytes-builtins.h"

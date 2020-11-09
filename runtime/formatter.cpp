@@ -1,5 +1,7 @@
 #include "formatter.h"
 
+#include <climits>
+
 #include "float-builtins.h"
 #include "float-conversion.h"
 #include "globals.h"

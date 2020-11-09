@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bytecode.h"
-#include "capi-handles.h"
+#include "capi.h"
 #include "handles.h"
 #include "heap.h"
 #include "interpreter-gen.h"
@@ -442,9 +442,7 @@ class Runtime {
   // Returns modules mapping (aka `sys.modules`).
   RawObject modules() { return modules_; }
 
-  IdentityDict* apiHandles() { return &api_handles_; }
-
-  IdentityDict* apiCaches() { return &api_caches_; }
+  CAPIState* capiState() { return reinterpret_cast<CAPIState*>(capi_state_); }
 
   void setAtExit(AtExitFn func, void* ctx) {
     DCHECK(at_exit_ == nullptr,
@@ -749,9 +747,6 @@ class Runtime {
 
   static const word kInitialLayoutTupleCapacity = 1024;
 
-  static const word kInitialApiHandlesCapacity = 256;
-  static const word kInitialApiCachesCapacity = 128;
-
   void setRandomState(RandomState random_state) {
     random_state_ = random_state;
   }
@@ -903,7 +898,6 @@ class Runtime {
  private:
   Runtime(word heap_size);
 
-  void initializeApiData();
   void initializeHeapTypes(Thread* thread);
   void initializeInterned(Thread* thread);
   void initializeLayouts();
@@ -968,8 +962,6 @@ class Runtime {
 
   // Removes an entry from the linked list
   static bool listEntryRemove(ListEntry* entry, ListEntry** root);
-
-  word numTrackedApiHandles() { return api_handles_.numItems(); }
 
   word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 
@@ -1053,13 +1045,8 @@ class Runtime {
   RawObject modules_ = NoneType::object();
   RawObject modules_by_index_ = NoneType::object();
 
-  // ApiHandles
-  IdentityDict api_handles_;
-
-  // Some API functions promise to cache their return value and return the same
-  // value for repeated invocations on a specific PyObject. Those value are
-  // cached here.
-  IdentityDict api_caches_;
+  // C-API State
+  char capi_state_[kCAPIStateSize];
 
   // Weak reference callback list
   RawObject callbacks_ = NoneType::object();
@@ -1093,8 +1080,6 @@ class Runtime {
   static wchar_t module_search_path_[];
   static wchar_t prefix_[];
   static wchar_t program_name_[];
-
-  friend class ApiHandle;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

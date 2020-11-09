@@ -23,14 +23,31 @@ extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
 
 namespace py {
 
+struct CAPIState;
+
+class IdentityDict;
+
+class PointerVisitor;
+
+class Runtime;
+
+static const word kCAPIStateSize = 128;
+
 extern struct _inittab _PyImport_Inittab[];
 
-void finalizeCAPI();
+IdentityDict* capiCaches(Runtime* runtime);
+IdentityDict* capiHandles(Runtime* runtime);
+
+void capiStateVisit(CAPIState* state, PointerVisitor* visitor);
+
+void finalizeCAPIModules();
+void finalizeCAPIState(Runtime* runtime);
 
 // Returns `true` if there is a built-in extension module with name `name`.
 bool isBuiltinExtensionModule(const Str& name);
 
-void initializeCAPI();
+void initializeCAPIModules();
+void initializeCAPIState(Runtime* runtime);
 
 // Initialize built-in extension module `name` if it exists, otherwise
 // return `nullptr`.
@@ -39,6 +56,8 @@ RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name);
 // Load extension module `name` from dynamic library in file `path`.
 RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
                                      const Str& path);
+
+word numTrackedApiHandles(Runtime* runtime);
 
 // Return the type's tp_basicsize. Use only with extension types.
 uword typeGetBasicSize(const Type& type);

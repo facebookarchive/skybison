@@ -4,6 +4,7 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
+#include "capi.h"
 #include "event.h"
 #include "object-builtins.h"
 #include "runtime.h"
@@ -276,7 +277,7 @@ void IdentityDict::shrink(Thread* thread) {
 
 ApiHandle* ApiHandle::atIndex(Runtime* runtime, word index) {
   return castFromObject(
-      Bucket::value(MutableTuple::cast(runtime->apiHandles()->data()), index));
+      Bucket::value(MutableTuple::cast(capiHandles(runtime)->data()), index));
 }
 
 ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
@@ -292,7 +293,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   HandleScope scope(thread);
   Object key(&scope, obj);
-  Object value(&scope, runtime->apiHandles()->at(thread, key));
+  Object value(&scope, capiHandles(runtime)->at(thread, key));
 
   // Get the handle of a builtin instance
   if (!value.isError()) {
@@ -307,7 +308,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   handle->reference_ = NoneType::object().raw();
   handle->ob_refcnt = 1 | kManagedBit;
-  runtime->apiHandles()->atPut(thread, key, object);
+  capiHandles(runtime)->atPut(thread, key, object);
   handle->reference_ = key.raw();
   return handle;
 }
@@ -388,8 +389,10 @@ static void rehashReferences(Thread* thread, IdentityDict* dict, uword* array) {
   dict->setNumUsableItems(dict->numUsableItems() + dict->numTombstones());
 }
 
-void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
-                                          IdentityDict* caches) {
+void ApiHandle::clearNotReferencedHandles(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  IdentityDict* caches = capiCaches(runtime);
+  IdentityDict* handles = capiHandles(runtime);
   word handles_length = handles->numItems() * Bucket::kNumPointers;
   // Allocate array off-heap because this step happens in the middle of the GC,
   // where managed heap allocation is disabled.
@@ -480,7 +483,7 @@ void* ApiHandle::cache() {
   HandleScope scope(thread);
 
   Object key(&scope, asObject());
-  IdentityDict* caches = runtime->apiCaches();
+  IdentityDict* caches = capiCaches(runtime);
   Object cache(&scope, caches->at(thread, key));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
   if (!cache.isError()) return Int::cast(*cache).asCPtr();
@@ -493,7 +496,7 @@ void ApiHandle::setCache(void* value) {
   HandleScope scope(thread);
 
   Object key(&scope, asObject());
-  IdentityDict* caches = runtime->apiCaches();
+  IdentityDict* caches = capiCaches(runtime);
   Int cache(&scope, runtime->newIntFromCPtr(value));
   caches->atPut(thread, key, cache);
 }
@@ -508,9 +511,9 @@ void ApiHandle::dispose() {
   // a weakref to call the module's m_free once's the module is collected
 
   Object key(&scope, asObject());
-  runtime->apiHandles()->remove(thread, key);
+  capiHandles(runtime)->remove(thread, key);
 
-  Object cache(&scope, runtime->apiCaches()->remove(thread, key));
+  Object cache(&scope, capiCaches(runtime)->remove(thread, key));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
   if (!cache.isError()) std::free(Int::cast(*cache).asCPtr());
 

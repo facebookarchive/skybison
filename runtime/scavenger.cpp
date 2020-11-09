@@ -62,8 +62,7 @@ RawObject Scavenger::scavenge() {
   runtime_->heap()->setSpace(nullptr);
   processRoots();
   processGrayObjects();
-  ApiHandle::clearNotReferencedHandles(
-      Thread::current(), runtime_->apiHandles(), runtime_->apiCaches());
+  ApiHandle::clearNotReferencedHandles(Thread::current());
   processFinalizableReferences();
   processGrayObjects();
   processDelayedReferences();

@@ -76,8 +76,8 @@ class ApiHandle : public PyObject {
   // of the handle.
   static ApiHandle* borrowedReference(Thread* thread, RawObject obj);
 
-  // Returns the handle in Runtime::apiHandles() at index `index`. This is
-  // useful when iterating over all of `apiHandles()`.
+  // Returns the handle in capiHandles(runtime) at index `index`. This is
+  // useful when iterating over all of `capiHandles()`.
   static ApiHandle* atIndex(Runtime* runtime, word index);
 
   // Returns the managed object associated with the handle.  Decrements the
@@ -94,8 +94,7 @@ class ApiHandle : public PyObject {
   // WARNING: This function should be called by the garbage collector.
   // Clear out handles which are not referenced by managed objects or by an
   // extension object.
-  static void clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
-                                        IdentityDict* cache);
+  static void clearNotReferencedHandles(Thread* thread);
 
   // WARNING: This function should be called for shutdown.
   // Dispose all handles, without trying to cleanly deallocate the object for

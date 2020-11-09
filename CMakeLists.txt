@@ -910,6 +910,8 @@ target_link_libraries(
 add_library(
   extension
   OBJECT
+  ext/Internal/capi-state.cpp
+  ext/Internal/capi-state.h
   ext/Modules/_datetimemodule.cpp
   ext/Modules/_parsermodule.cpp
   ext/Modules/_sre/_sre.cpp

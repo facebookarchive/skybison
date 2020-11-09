@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "capi.h"
 #include "dict-builtins.h"
 #include "int-builtins.h"
 #include "object-builtins.h"
@@ -61,7 +62,7 @@ TEST_F(CApiHandlesTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_FALSE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   EXPECT_TRUE(
       isIntEqualsWord(dict->at(thread_, obj), reinterpret_cast<word>(handle)));
   handle->decref();
@@ -73,7 +74,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
@@ -84,7 +85,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
@@ -95,7 +96,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
@@ -107,7 +108,7 @@ TEST_F(CApiHandlesTest,
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
@@ -119,7 +120,7 @@ TEST_F(CApiHandlesTest,
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
   handle->decref();
 }
@@ -136,7 +137,7 @@ TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
 TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
   HandleScope scope(thread_);
 
-  IdentityDict* dict = runtime_->apiHandles();
+  IdentityDict* dict = capiHandles(runtime_);
   Object obj(&scope, runtime_->newList());
   ASSERT_FALSE(dict->includes(thread_, obj));
 
@@ -258,7 +259,7 @@ TEST_F(CApiHandlesTest, Cache) {
 
   Object key(&scope, handle1->asObject());
   handle1->dispose();
-  IdentityDict* caches = runtime_->apiCaches();
+  IdentityDict* caches = capiCaches(runtime_);
   EXPECT_FALSE(caches->includes(thread_, key));
   EXPECT_EQ(handle2->cache(), buffer1);
 }
@@ -272,7 +273,7 @@ TEST_F(CApiHandlesTest, VisitReferences) {
   ApiHandle::newReference(thread_, *obj2);
 
   RememberingVisitor visitor;
-  ApiHandle::visitReferences(runtime_->apiHandles(), &visitor);
+  ApiHandle::visitReferences(capiHandles(runtime_), &visitor);
 
   // We should've visited obj2, but not obj1 since it is a SmallInt.
   EXPECT_FALSE(visitor.hasVisited(*obj1));

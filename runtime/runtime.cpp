@@ -174,9 +174,9 @@ Runtime::Runtime(word heap_size, Interpreter* interpreter,
   initializeSymbols(thread);
   initializeLayouts();
   initializeTypes(thread);
-  initializeApiData();
+  initializeCAPIState(this);
   initializeModules(thread);
-  initializeCAPI();
+  initializeCAPIModules();
 
   // This creates a reference that prevents the linker from garbage collecting
   // all of the symbols in debugging.cpp.  This is a temporary workaround until
@@ -197,8 +197,9 @@ Runtime::~Runtime() {
   flushStdFiles();
   finalizeSignals(Thread::current());
   clearHandleScopes();
-  finalizeCAPI();
+  finalizeCAPIModules();
   freeApiHandles();
+  finalizeCAPIState(this);
   {
     MutexGuard lock(&threads_mutex_);
     Thread* thread = main_thread_;
@@ -1964,7 +1965,7 @@ void Runtime::collectGarbage() {
   EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
   RawObject cb = scavenge(this);
-  apiHandles()->shrink(Thread::current());
+  capiHandles(this)->shrink(Thread::current());
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();
@@ -2273,9 +2274,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&modules_by_index_, PointerKind::kRuntime);
 
   // Visit C-API data.
-  api_handles_.visit(visitor);
-  ApiHandle::visitReferences(apiHandles(), visitor);
-  api_caches_.visit(visitor);
+  capiStateVisit(capiState(), visitor);
 
   // Visit symbols
   symbols_->visit(visitor);
@@ -2366,11 +2365,6 @@ void Runtime::initializeModules(Thread* thread) {
 
 RawObject Runtime::initialize(Thread* thread) {
   return thread->invokeFunction0(ID(builtins), ID(_init));
-}
-
-void Runtime::initializeApiData() {
-  api_handles_.initialize(this, kInitialApiHandlesCapacity);
-  api_caches_.initialize(this, kInitialApiCachesCapacity);
 }
 
 RawObject Runtime::concreteTypeAt(LayoutId layout_id) {
@@ -3859,9 +3853,9 @@ void Runtime::freeApiHandles() {
 
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {
-    word before = numTrackedNativeObjects() + numTrackedApiHandles();
+    word before = numTrackedNativeObjects() + numTrackedApiHandles(this);
     collectGarbage();
-    word after = numTrackedNativeObjects() + numTrackedApiHandles();
+    word after = numTrackedNativeObjects() + numTrackedApiHandles(this);
     word num_handles_collected = before - after;
     if (num_handles_collected == 0) {
       // Fixpoint: no change in tracking
@@ -3872,7 +3866,7 @@ void Runtime::freeApiHandles() {
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
-  ApiHandle::disposeHandles(thread, apiHandles());
+  ApiHandle::disposeHandles(thread, capiHandles(this));
   while (tracked_native_objects_ != nullptr) {
     auto entry = static_cast<ListEntry*>(tracked_native_objects_);
     untrackNativeObject(entry);
