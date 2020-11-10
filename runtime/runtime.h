@@ -360,11 +360,8 @@ class Runtime {
 
   void visitRoots(PointerVisitor* visitor);
 
-  bool moduleListAtPut(Thread* thread, const Module& module, word index);
-
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
-  RawObject moduleListAt(Thread* thread, word index);
   RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
                                SymbolId name);
 
@@ -952,8 +949,6 @@ class Runtime {
   // parent and contains no outgoing edges.
   RawObject layoutCreateChild(Thread* thread, const Layout& layout);
 
-  RawObject modulesByIndex() { return modules_by_index_; }
-
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(Thread* thread, const Type& type, SymbolId name);
 
@@ -1043,7 +1038,6 @@ class Runtime {
 
   // Modules
   RawObject modules_ = NoneType::object();
-  RawObject modules_by_index_ = NoneType::object();
 
   // C-API State
   char capi_state_[kCAPIStateSize];

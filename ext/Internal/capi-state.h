@@ -1,8 +1,11 @@
 #pragma once
 
+#include "cpython-types.h"
+
 #include "capi-handles.h"
 #include "capi.h"
 #include "runtime.h"
+#include "vector.h"
 
 namespace py {
 
@@ -14,6 +17,8 @@ struct CAPIState {
 
   // C-API object handles
   IdentityDict handles_;
+
+  Vector<PyObject*> modules_;
 };
 
 static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");
@@ -24,6 +29,10 @@ inline IdentityDict* capiCaches(Runtime* runtime) {
 
 inline IdentityDict* capiHandles(Runtime* runtime) {
   return &runtime->capiState()->handles_;
+}
+
+inline Vector<PyObject*>* capiModules(Runtime* runtime) {
+  return &runtime->capiState()->modules_;
 }
 
 }  // namespace py

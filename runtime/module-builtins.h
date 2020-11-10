@@ -9,8 +9,6 @@ namespace py {
 
 class Thread;
 
-void freeExtensionModule(Thread* thread, const Module& module);
-
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
 RawObject moduleAt(Thread* thread, const Module& module, const Object& name);

@@ -2270,7 +2270,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit modules
   visitor->visitPointer(&modules_, PointerKind::kRuntime);
-  visitor->visitPointer(&modules_by_index_, PointerKind::kRuntime);
 
   // Visit C-API data.
   capiStateVisit(capiState(), visitor);
@@ -2294,29 +2293,6 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
        thread = thread->next()) {
     thread->visitRoots(visitor);
   }
-}
-
-bool Runtime::moduleListAtPut(Thread* thread, const Module& module,
-                              word index) {
-  HandleScope scope(thread);
-  List module_list(&scope, modulesByIndex());
-  Object none(&scope, NoneType::object());
-  for (int i = index - module_list.numItems(); i >= 0; i--) {
-    listAdd(thread, module_list, none);
-  }
-  module_list.atPut(index, *module);
-  return true;
-}
-
-RawObject Runtime::moduleListAt(Thread* thread, word index) {
-  HandleScope scope(thread);
-  List module_list(&scope, modulesByIndex());
-
-  if (index >= module_list.numItems()) {
-    return Error::notFound();
-  }
-  Object item(&scope, module_list.at(index));
-  return item.isNoneType() ? Error::notFound() : *item;
 }
 
 RawObject Runtime::findModule(const Object& name) {
@@ -2354,7 +2330,6 @@ void Runtime::initializeModules(Thread* thread) {
   // PYTHONPATH, sys.flags, ...)
 
   modules_ = newDict();
-  modules_by_index_ = newList();
   for (SymbolId id : kRequiredModules) {
     CHECK(!ensureBuiltinModuleById(thread, id).isErrorException(),
           "failed to initialize built-in module %s",
@@ -3840,15 +3815,7 @@ void Runtime::freeApiHandles() {
   dictClear(thread, modules);
 
   // Dealloc modules referenced by modules_by_index.
-  List modules_list(&scope, modules_by_index_);
-  for (int i = 0; i < modules_list.numItems(); ++i) {
-    Object module_obj(&scope, modules_list.at(i));
-    if (!isInstanceOfModule(*module_obj)) continue;
-    Module module(&scope, *module_obj);
-    if (module.hasDef()) {
-      freeExtensionModule(thread, module);
-    }
-  }
+  freeExtensionModules(thread);
 
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {

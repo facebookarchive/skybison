@@ -1,6 +1,7 @@
 #include "cpython-func.h"
 
 #include "capi-handles.h"
+#include "capi-state.h"
 #include "module-builtins.h"
 #include "modules.h"
 #include "runtime.h"
@@ -35,11 +36,25 @@ PY_EXPORT void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Delete");
 }
 
-static int moduleListAdd(Thread* thread, PyObject* module, PyModuleDef* def) {
-  if (def == nullptr) {
-    DCHECK(PyErr_Occurred() != nullptr, "expected raised error");
-    return -1;
+static PyObject* moduleListAt(Runtime* runtime, word index) {
+  Vector<PyObject*>* modules = capiModules(runtime);
+  if (index >= modules->size()) {
+    return nullptr;
   }
+  return (*modules)[index];
+}
+
+static void moduleListAtPut(Runtime* runtime, word index, PyObject* module) {
+  Vector<PyObject*>* modules = capiModules(runtime);
+  modules->reserve(index + 1);
+  for (int i = index - modules->size(); i >= 0; i--) {
+    modules->push_back(nullptr);
+  }
+  (*modules)[index] = module;
+  Py_INCREF(module);
+}
+
+static int moduleListAdd(Thread* thread, PyObject* module, PyModuleDef* def) {
   if (def->m_slots != nullptr) {
     thread->raiseWithFmt(LayoutId::kSystemError,
                          "PyState_AddModule called on module with slots");
@@ -49,8 +64,8 @@ static int moduleListAdd(Thread* thread, PyObject* module, PyModuleDef* def) {
   Runtime* runtime = thread->runtime();
   Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   module_obj.setDef(runtime->newIntFromCPtr(def));
-  return runtime->moduleListAtPut(thread, module_obj, def->m_base.m_index) ? 0
-                                                                           : -1;
+  moduleListAtPut(runtime, def->m_base.m_index, module);
+  return 0;
 }
 
 PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
@@ -61,7 +76,7 @@ PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
   }
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  if (!runtime->moduleListAt(thread, def->m_base.m_index).isErrorNotFound()) {
+  if (moduleListAt(runtime, def->m_base.m_index) != nullptr) {
     Py_FatalError("PyState_AddModule: Module already added!");
     return -1;
   }
@@ -72,18 +87,7 @@ PY_EXPORT PyObject* PyState_FindModule(PyModuleDef* def) {
   if (def->m_slots != nullptr) {
     return nullptr;
   }
-  Py_ssize_t index = def->m_base.m_index;
-  if (index == 0) {
-    return nullptr;
-  }
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object module_obj(&scope, runtime->moduleListAt(thread, index));
-  if (module_obj.isErrorNotFound()) {
-    return nullptr;
-  }
-  return ApiHandle::borrowedReference(thread, *module_obj);
+  return moduleListAt(Thread::current()->runtime(), def->m_base.m_index);
 }
 
 PY_EXPORT int PyState_RemoveModule(PyModuleDef* /* f */) {
@@ -133,6 +137,10 @@ PY_EXPORT void _PyGILState_Reinit() {
 
 PY_EXPORT int _PyState_AddModule(PyObject* module, PyModuleDef* def) {
   Thread* thread = Thread::current();
+  if (def == nullptr) {
+    DCHECK(thread->hasPendingException(), "expected raised error");
+    return -1;
+  }
   return moduleListAdd(thread, module, def);
 }
 

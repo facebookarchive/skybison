@@ -61,6 +61,8 @@ void capiStateVisit(CAPIState* state, PointerVisitor* visitor);
 void finalizeCAPIModules();
 void finalizeCAPIState(Runtime* runtime);
 
+void freeExtensionModules(Thread* thread);
+
 // Returns `true` if there is a built-in extension module with name `name`.
 bool isBuiltinExtensionModule(const Str& name);
 

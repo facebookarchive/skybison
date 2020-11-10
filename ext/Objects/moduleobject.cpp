@@ -301,19 +301,6 @@ PY_EXPORT PyTypeObject* PyModule_Type_Ptr() {
       thread, thread->runtime()->typeAt(LayoutId::kModule)));
 }
 
-void freeExtensionModule(Thread* thread, const Module& module) {
-  PyModuleDef* def =
-      reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
-  if (def->m_free != nullptr) {
-    def->m_free(ApiHandle::borrowedReference(thread, *module));
-  }
-  module.setDef(SmallInt::fromWord(0));
-  if (module.hasState()) {
-    std::free(Int::cast(module.state()).asCPtr());
-    module.setState(SmallInt::fromWord(0));
-  }
-}
-
 static RawObject initializeModule(Thread* thread, ExtensionModuleInitFunc init,
                                   const Str& name) {
   PyObject* module_or_def = (*init)();
