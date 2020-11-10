@@ -618,6 +618,10 @@ def _list_check_exact(obj):
     _builtin()
 
 
+def _list_ctor(cls, iterable=()):
+    _builtin()
+
+
 def _list_delitem(self, key):
     _builtin()
 

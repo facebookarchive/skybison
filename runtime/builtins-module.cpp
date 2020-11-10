@@ -317,20 +317,35 @@ static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
   Object ctor(&scope, NoneType::object());
   LayoutId layout_id = type.instanceLayoutId();
   Runtime* runtime = thread->runtime();
-  if (layout_id == LayoutId::kStr) {
-    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
-    ctor = moduleAtById(thread, under_builtins, ID(_str_ctor));
-  } else if (layout_id == LayoutId::kStopIteration) {
-    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
-    ctor = moduleAtById(thread, under_builtins, ID(_stop_iteration_ctor));
-  } else if (layout_id == LayoutId::kStrArray) {
-    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
-    ctor = moduleAtById(thread, under_builtins, ID(_str_array_ctor));
-  } else if (typeAtById(thread, type, ID(__init__)).isErrorNotFound()) {
-    // Use __new__ as _ctor if __init__ is undefined.
-    Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
-    if (!dunder_new.isErrorNotFound()) {
-      ctor = StaticMethod::cast(*dunder_new).function();
+  switch (layout_id) {
+    case LayoutId::kList: {
+      Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+      ctor = moduleAtById(thread, under_builtins, ID(_list_ctor));
+      break;
+    }
+    case LayoutId::kStr: {
+      Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+      ctor = moduleAtById(thread, under_builtins, ID(_str_ctor));
+      break;
+    }
+    case LayoutId::kStopIteration: {
+      Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+      ctor = moduleAtById(thread, under_builtins, ID(_stop_iteration_ctor));
+      break;
+    }
+    case LayoutId::kStrArray: {
+      Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+      ctor = moduleAtById(thread, under_builtins, ID(_str_array_ctor));
+      break;
+    }
+    default: {
+      if (typeAtById(thread, type, ID(__init__)).isErrorNotFound()) {
+        // Use __new__ as _ctor if __init__ is undefined.
+        Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
+        if (!dunder_new.isErrorNotFound()) {
+          ctor = StaticMethod::cast(*dunder_new).function();
+        }
+      }
     }
   }
   if (ctor.isNoneType()) {

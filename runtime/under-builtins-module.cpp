@@ -243,6 +243,33 @@ ALIGN_16 bool FUNC(_builtins, _list_check_exact_intrinsic)(Thread* thread) {
   return true;
 }
 
+RawObject FUNC(_builtins, _list_ctor)(Thread* thread, Arguments args) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kList), "unexpected cls");
+  RawObject iterable_raw = args.get(1);
+  if (iterable_raw == runtime->emptyTuple()) {
+    return runtime->newList();
+  }
+  HandleScope scope(thread);
+  Object iterable(&scope, iterable_raw);
+  List self(&scope, runtime->newList());
+  word src_length;
+  Tuple src(&scope, runtime->emptyTuple());
+  if (iterable.isList()) {
+    src = List::cast(*iterable).items();
+    src_length = List::cast(*iterable).numItems();
+  } else if (iterable.isTuple()) {
+    src = *iterable;
+    src_length = src.length();
+  } else {
+    Object result(&scope, thread->invokeMethod2(self, ID(extend), iterable));
+    if (result.isError()) return *result;
+    return *self;
+  }
+  listExtend(thread, self, src, src_length);
+  return *self;
+}
+
 ALIGN_16 bool FUNC(_builtins, _list_getitem_intrinsic)(Thread* thread) {
   RawObject arg0 = thread->stackPeek(1);
   if (!arg0.isList()) {

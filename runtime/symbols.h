@@ -394,6 +394,7 @@ class Runtime;
   V(_list__items)                                                              \
   V(_list__num_items)                                                          \
   V(_list_iterator__index)                                                     \
+  V(_list_ctor)                                                                \
   V(_list_iterator__iterable)                                                  \
   V(_longrange_iterator__next)                                                 \
   V(_longrange_iterator__step)                                                 \

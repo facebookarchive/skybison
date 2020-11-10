@@ -6709,6 +6709,24 @@ class LenTests(unittest.TestCase):
         self.assertRaises(TypeError, len, 1)
 
 
+class ListTests(unittest.TestCase):
+    def test_list_with_empty_iterable(self):
+        actual = list()  # noqa: C408
+        self.assertEqual(actual, [])
+
+    def test_list_with_iterable_as_list(self):
+        actual = list([1, 2, 3])  # noqa: C410
+        self.assertEqual(actual, [1, 2, 3])
+
+    def test_list_with_iterable_as_tuple(self):
+        actual = list((1, 2, 3))  # noqa: C410
+        self.assertEqual(actual, [1, 2, 3])
+
+    def test_list_with_general_iterable(self):
+        actual = list({1: -1, 2: -1, 3: -1})  # noqa: C410
+        self.assertEqual(actual, [1, 2, 3])
+
+
 class LocalsTests(unittest.TestCase):
     def test_returns_local_vars(self):
         def foo():
