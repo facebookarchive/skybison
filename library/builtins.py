@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # $builtin-init-module$
-# isort:skip_file
 """Built-in classes, functions, and constants."""
 
 

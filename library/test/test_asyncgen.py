@@ -3,7 +3,6 @@
 #
 # flake8: noqa
 # fmt: off
-# isort:skip_file
 
 import inspect
 import sys

@@ -3,7 +3,6 @@
 # from the upstream style so updating to newer cpython versions stays easy.
 # flake8: noqa
 # fmt: off
-# isort:skip_file
 """Access to Python's configuration information."""
 
 import os

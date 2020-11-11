@@ -3,7 +3,6 @@
 # from the upstream style so updating to newer cpython versions stays easy.
 # flake8: noqa
 # fmt: off
-# isort:skip_file
 """Provide access to Python's configuration information.  The specific
 configuration variables available depend heavily on the platform and
 configuration.  The values may be retrieved using

@@ -3,7 +3,6 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
-# isort:skip_file
 
 # Wrapper module for _socket, providing some additional facilities
 # implemented in Python.

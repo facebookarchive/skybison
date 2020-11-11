@@ -3,7 +3,6 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
-# isort:skip_file
 # Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its

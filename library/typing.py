@@ -3,7 +3,6 @@
 # facilitate bringup. Please file a task for anything you change!
 # flake8: noqa
 # fmt: off
-# isort:skip_file
 """
 The typing module: Support for gradual typing as defined by PEP 484.
 

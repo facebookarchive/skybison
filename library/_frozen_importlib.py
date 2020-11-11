@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# isort:skip_file
 """Core implementation of import.
 
 This module is NOT meant to be directly imported! It has been designed such
