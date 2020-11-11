@@ -5882,6 +5882,7 @@ class CppInterpreter : public Interpreter {
  public:
   ~CppInterpreter() override;
   void setupThread(Thread* thread) override;
+  void* entryAsm(const Function& function) override;
 
  private:
   static RawObject interpreterLoop(Thread* thread);
@@ -5892,6 +5893,8 @@ CppInterpreter::~CppInterpreter() {}
 void CppInterpreter::setupThread(Thread* thread) {
   thread->setInterpreterFunc(interpreterLoop);
 }
+
+void* CppInterpreter::entryAsm(const Function&) { return nullptr; }
 
 RawObject CppInterpreter::interpreterLoop(Thread* thread) {
   // Silence warnings about computed goto

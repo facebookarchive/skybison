@@ -2362,6 +2362,10 @@ class RawFunction : public RawInstance {
   Entry entryEx() const;
   void setEntryEx(Entry thunk) const;
 
+  // Returns the entry to be used when the function is invoked in assembly.
+  void* entryAsm() const;
+  void setEntryAsm(void* thunk) const;
+
   // Returns the function flags.
   word flags() const;
   void setFlags(word flags) const;
@@ -2486,7 +2490,8 @@ class RawFunction : public RawInstance {
   static const int kEntryOffset = kClosureOffset + kPointerSize;
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
   static const int kEntryExOffset = kEntryKwOffset + kPointerSize;
-  static const int kRewrittenBytecodeOffset = kEntryExOffset + kPointerSize;
+  static const int kEntryAsmOffset = kEntryExOffset + kPointerSize;
+  static const int kRewrittenBytecodeOffset = kEntryAsmOffset + kPointerSize;
   static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
   static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
   static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
@@ -6483,6 +6488,16 @@ inline void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
   RawObject object =
       RawSmallInt::fromAlignedCPtr(reinterpret_cast<void*>(thunk));
   instanceVariableAtPut(kEntryExOffset, object);
+}
+
+inline void* RawFunction::entryAsm() const {
+  RawObject object = instanceVariableAt(kEntryAsmOffset);
+  return reinterpret_cast<void*>(RawSmallInt::cast(object).asAlignedCPtr());
+}
+
+inline void RawFunction::setEntryAsm(void* thunk) const {
+  RawObject object = RawSmallInt::fromAlignedCPtr(thunk);
+  instanceVariableAtPut(kEntryAsmOffset, object);
 }
 
 inline word RawFunction::flags() const {

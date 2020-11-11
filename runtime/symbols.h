@@ -361,6 +361,7 @@ class Runtime;
   V(_function__defaults)                                                       \
   V(_function__dict)                                                           \
   V(_function__entry)                                                          \
+  V(_function__entry_asm)                                                      \
   V(_function__entry_ex)                                                       \
   V(_function__entry_kw)                                                       \
   V(_function__flags)                                                          \

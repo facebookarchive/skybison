@@ -80,6 +80,8 @@ class Interpreter {
   // before the interpreter can execute code on it.
   virtual void setupThread(Thread* thread) = 0;
 
+  virtual void* entryAsm(const Function& function) = 0;
+
   static RawObject execute(Thread* thread);
   static RawObject resumeGenerator(Thread* thread,
                                    const GeneratorBase& generator,

@@ -43,6 +43,8 @@ static const BuiltinAttribute kFunctionAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_function__entry_ex), RawFunction::kEntryExOffset,
      AttributeFlags::kHidden},
+    {ID(_function__entry_asm), RawFunction::kEntryAsmOffset,
+     AttributeFlags::kHidden},
     {ID(_function__rewritten_bytecode), RawFunction::kRewrittenBytecodeOffset,
      AttributeFlags::kHidden},
     {ID(_function__caches), RawFunction::kCachesOffset,

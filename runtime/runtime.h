@@ -890,6 +890,8 @@ class Runtime {
 
   Thread* mainThread() { return main_thread_; }
 
+  void populateEntryAsm(const Function& function);
+
   static word immediateHash(RawObject object);
 
  private:

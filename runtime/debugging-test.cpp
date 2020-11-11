@@ -187,6 +187,9 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   word raw_flags =
       SmallInt::cast(func.instanceVariableAt(RawFunction::kFlagsOffset))
           .value();
+  word entry_asm =
+      SmallInt::cast(func.instanceVariableAt(RawFunction::kEntryAsmOffset))
+          .value();
   expected << "heap object with layout " << static_cast<word>(func.layoutId())
            << R"( (<type "function">):
   (in-object) "__code__" = <code "name0">
@@ -208,6 +211,8 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "_function__entry" = 50
   (in-object) "_function__entry_kw" = 150
   (in-object) "_function__entry_ex" = 100
+  (in-object) "_function__entry_asm" = )"
+           << entry_asm << R"(
   (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
   (in-object) "_function__caches" = mutabletuple(None, None, None, None)
   (in-object) "_function__original_arguments" = (None, 0)

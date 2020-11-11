@@ -692,6 +692,7 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
   function.setEntryKw(entry_kw);
   function.setEntryEx(entry_ex);
   function.setIntrinsic(nullptr);
+  populateEntryAsm(function);
   return *function;
 }
 
@@ -760,6 +761,7 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
                                         code.argcount(), total_args, total_vars,
                                         stacksize, entry, entry_kw, entry_ex));
   function.setIntrinsic(code.intrinsic());
+  populateEntryAsm(function);
 
   if (isInstanceOfStr(*qualname)) {
     function.setQualname(*qualname);
@@ -1878,6 +1880,10 @@ RawObject Runtime::setSignalCallback(word signum, const Object& callback) {
 
 RawObject Runtime::signalCallback(word signum) {
   return Tuple::cast(signal_callbacks_).at(signum);
+}
+
+void Runtime::populateEntryAsm(const Function& function) {
+  function.setEntryAsm(interpreter_->entryAsm(function));
 }
 
 void Runtime::initializeLayouts() {
