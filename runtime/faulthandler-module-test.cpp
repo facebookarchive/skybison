@@ -44,7 +44,7 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
 
   word length;
   FILE* fp = std::fopen(temp_file.c_str(), "r");
-  std::unique_ptr<char[]> actual(OS::readFile(fp, &length));
+  unique_c_ptr<byte> actual(OS::readFile(fp, &length));
   std::fclose(fp);
   char expected[] = R"(Stack (most recent call first):
   File "", line ??? in <anonymous>

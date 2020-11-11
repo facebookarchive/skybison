@@ -57,7 +57,7 @@ class OS {
   static SignalHandler setSignalHandler(int signum, SignalHandler handler);
   static SignalHandler signalHandler(int signum);
 
-  static char* readFile(FILE* fp, word* len_out);
+  static byte* readFile(FILE* fp, word* len_out);
 
   static const char* name();
 

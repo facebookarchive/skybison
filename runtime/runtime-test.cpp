@@ -3590,11 +3590,10 @@ static RawObject testPrintTraceback(Thread* thread, Arguments) {
 
   word length;
   FILE* fp = std::fopen(temp.c_str(), "r");
-  std::unique_ptr<char[]> traceback(OS::readFile(fp, &length));
+  unique_c_ptr<byte> traceback(OS::readFile(fp, &length));
   std::fclose(fp);
 
-  return thread->runtime()->newStrWithAll(
-      {reinterpret_cast<byte*>(traceback.get()), length});
+  return thread->runtime()->newStrWithAll(View<byte>(traceback.get(), length));
 }
 
 TEST_F(RuntimeTest, PrintTracebackPrintsToFileDescriptor) {

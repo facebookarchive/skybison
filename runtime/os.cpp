@@ -130,24 +130,31 @@ bool OS::secureRandom(byte* ptr, word size) {
   return size == 0;
 }
 
-char* OS::readFile(FILE* fp, word* len_out) {
+byte* OS::readFile(FILE* fp, word* len_out) {
   std::fseek(fp, 0, SEEK_END);
   word length = std::ftell(fp);
-  CHECK(length != -1, "fseek failure");
   std::fseek(fp, 0, SEEK_SET);
-  std::unique_ptr<char[]> buffer(new char[length]);
-  {
-    word result;
-    do {
-      result = std::fread(buffer.get(), 1, length, fp);
-    } while (result == EOF && errno == EINTR);
-    if (result != length) {
-      fprintf(stderr, "file read error: %s\n", std::strerror(errno));
-      return nullptr;
+
+  word capacity = length <= 0 ? 4096 : length;
+  byte* buffer = reinterpret_cast<byte*>(std::malloc(capacity));
+  CHECK(buffer != nullptr, "out of memory");
+
+  length = 0;
+  do {
+    if (length == capacity) {
+      capacity *= 2;
+      buffer = reinterpret_cast<byte*>(std::realloc(buffer, capacity));
+      CHECK(buffer != nullptr, "out of memory");
     }
+    length += std::fread(buffer + length, 1, capacity - length, fp);
+  } while (capacity > 0 && length >= capacity);
+  if (ferror(fp)) {
+    fprintf(stderr, "file read error: %s\n", std::strerror(errno));
+    std::free(buffer);
+    return nullptr;
   }
   *len_out = length;
-  return buffer.release();
+  return buffer;
 }
 
 bool OS::dirExists(const char* dir) {

@@ -85,7 +85,7 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
   HandleScope scope(thread);
 
   word file_len;
-  std::unique_ptr<char[]> buffer(OS::readFile(fp, &file_len));
+  unique_c_ptr<byte> buffer(OS::readFile(fp, &file_len));
   if (buffer == nullptr) {
     std::fprintf(stderr, "Could not read file '%s'\n", filename);
     std::fclose(fp);
@@ -93,8 +93,7 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
   }
 
   Object code_obj(&scope, NoneType::object());
-  View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
-  Marshal::Reader reader(&scope, thread, data);
+  Marshal::Reader reader(&scope, thread, View<byte>(buffer.get(), file_len));
   Str filename_str(&scope, runtime->newStrFromCStr(filename));
   if (reader.readPycHeader(filename_str).isErrorException()) {
     return nullptr;
@@ -373,7 +372,7 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
                                       PyObject* locals, int closeit,
                                       PyCompilerFlags* flags) {
   word file_len;
-  std::unique_ptr<char[]> buffer(OS::readFile(fp, &file_len));
+  unique_c_ptr<byte> buffer(OS::readFile(fp, &file_len));
   if (closeit) std::fclose(fp);
 
   Thread* thread = Thread::current();
@@ -384,7 +383,7 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   // C-API uses this flag but it's an error for managed to pass it in
   iflags &= ~PyCF_SOURCE_IS_UTF8;
 
-  View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
+  View<byte> data(buffer.get(), file_len);
   Object source(&scope, runtime->newStrWithAll(data));
   Str filename(&scope, runtime->newStrFromCStr(filename_cstr));
   SymbolId mode_id;

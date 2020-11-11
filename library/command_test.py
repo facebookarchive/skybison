@@ -174,77 +174,6 @@ class OptionsTest(unittest.TestCase):
         )
         self.assertIn(b"", result.stdout)
 
-    def test_filename_option_executes_code(self):
-        with TemporaryDirectory() as tempdir:
-            tempfile = os.path.join(tempdir, "foo.py")
-            tempfile = os.path.abspath(tempfile)
-            with open(tempfile, "w") as fp:
-                fp.write("print('test fi' + 'le executed')\n")
-                fp.write("import sys\n")
-                fp.write("print('argv: ' + str(sys.argv))\n")
-            result = subprocess.run(
-                [sys.executable, tempfile, "arg0", "arg1 with spaces"],
-                check=True,
-                capture_output=True,
-                encoding="utf-8",
-            )
-            self.assertEqual(result.returncode, 0)
-            self.assertIn("test file executed", result.stdout)
-            self.assertIn(
-                f"argv: ['{tempfile}', 'arg0', 'arg1 with spaces']", result.stdout
-            )
-
-    def test_directoryname_executes_code(self):
-        with TemporaryDirectory() as tempdir:
-            tempfile = os.path.join(tempdir, "__main__.py")
-            tempfile = os.path.abspath(tempfile)
-            with open(tempfile, "w") as fp:
-                fp.write("print('test directory executed')\n")
-            result = subprocess.run(
-                [sys.executable, tempdir],
-                check=True,
-                capture_output=True,
-                encoding="utf-8",
-            )
-            self.assertEqual(result.returncode, 0)
-            self.assertIn("test directory executed", result.stdout)
-
-    def test_directoryname_executes_code_fail(self):
-        with TemporaryDirectory() as tempdir:
-            tempfile = os.path.join(tempdir, "sample.py")
-            tempfile = os.path.abspath(tempfile)
-            with open(tempfile, "w") as fp:
-                fp.write("print('test file executed')\n")
-            result = subprocess.run([sys.executable, tempdir], capture_output=True)
-            self.assertIn(b"can't find '__main__' module in ", result.stderr)
-            self.assertEqual(1, result.returncode)
-
-    def test_zipfile_executes_code(self):
-        with TemporaryDirectory() as tempdir:
-            tempzipfile = os.path.join(tempdir, "test.zip")
-            tempzipfile = os.path.abspath(tempzipfile)
-            with zipfile.ZipFile(tempzipfile, "w") as myzip:
-                myzip.writestr("__main__.py", "print('test zip file executed')\n")
-            result = subprocess.run(
-                [sys.executable, tempzipfile],
-                check=True,
-                capture_output=True,
-                encoding="utf-8",
-            )
-            self.assertIn("test zip file executed", result.stdout)
-
-    def test_zipfile_executes_code_fail(self):
-        with TemporaryDirectory() as tempdir:
-            tempzipfile = os.path.join(tempdir, "test.zip")
-            tempzipfile = os.path.abspath(tempzipfile)
-            with zipfile.ZipFile(tempzipfile, "w") as myzip:
-                myzip.writestr("test.py", "print('test zip file executed')\n")
-            result = subprocess.run(
-                [sys.executable, tempzipfile], capture_output=True, encoding="utf-8"
-            )
-            self.assertIn("can't find '__main__' module in", result.stderr)
-            self.assertEqual(1, result.returncode)
-
     def test_i_option_sets_inspect_interactive_flags(self):
         result = subprocess.run(
             [sys.executable, "-i", "-c", "import sys;print(sys.flags);sys.ps1='TTT:'"],
@@ -313,6 +242,96 @@ class OptionsTest(unittest.TestCase):
             capture_output=True,
         )
         self.assertIn(b"quiet=1", result.stdout)
+
+
+class RunTest(unittest.TestCase):
+    def test_with_directory_executes_code(self):
+        with TemporaryDirectory() as tempdir:
+            tempfile = os.path.join(tempdir, "__main__.py")
+            tempfile = os.path.abspath(tempfile)
+            with open(tempfile, "w") as fp:
+                fp.write("print('test directory executed')\n")
+            result = subprocess.run(
+                [sys.executable, tempdir],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("test directory executed", result.stdout)
+
+    def test_with_directory_reports_cant_find_dunder_main(self):
+        with TemporaryDirectory() as tempdir:
+            tempfile = os.path.join(tempdir, "sample.py")
+            tempfile = os.path.abspath(tempfile)
+            with open(tempfile, "w") as fp:
+                fp.write("print('test file executed')\n")
+            result = subprocess.run([sys.executable, tempdir], capture_output=True)
+            self.assertIn(b"can't find '__main__' module in ", result.stderr)
+            self.assertEqual(1, result.returncode)
+
+    def test_with_fifo_executes_code(self):
+        with TemporaryDirectory() as tempdir:
+            fifoname = f"{tempdir}/fifo"
+            os.mkfifo(fifoname)
+            proc = subprocess.Popen(
+                [sys.executable, fifoname],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            with open(fifoname, "w") as fp:
+                fp.write(f"# l{'o' * 10000}ng comment\n")
+                fp.write("print('testing 1,2,3')\n")
+            stdout, stderr = proc.communicate()
+            self.assertEqual(proc.returncode, 0)
+            self.assertEqual(stderr, b"")
+            self.assertEqual(stdout, b"testing 1,2,3\n")
+
+    def test_with_file_executes_code(self):
+        with TemporaryDirectory() as tempdir:
+            tempfile = os.path.join(tempdir, "foo.py")
+            tempfile = os.path.abspath(tempfile)
+            with open(tempfile, "w") as fp:
+                fp.write("print('test fi' + 'le executed')\n")
+                fp.write("import sys\n")
+                fp.write("print('argv: ' + str(sys.argv))\n")
+            result = subprocess.run(
+                [sys.executable, tempfile, "arg0", "arg1 with spaces"],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("test file executed", result.stdout)
+            self.assertIn(
+                f"argv: ['{tempfile}', 'arg0', 'arg1 with spaces']", result.stdout
+            )
+
+    def test_with_zipfile_executes_code(self):
+        with TemporaryDirectory() as tempdir:
+            tempzipfile = os.path.join(tempdir, "test.zip")
+            tempzipfile = os.path.abspath(tempzipfile)
+            with zipfile.ZipFile(tempzipfile, "w") as myzip:
+                myzip.writestr("__main__.py", "print('test zip file executed')\n")
+            result = subprocess.run(
+                [sys.executable, tempzipfile],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertIn("test zip file executed", result.stdout)
+
+    def test_with_zipfile_reports_cant_find_dunder_main(self):
+        with TemporaryDirectory() as tempdir:
+            tempzipfile = os.path.join(tempdir, "test.zip")
+            tempzipfile = os.path.abspath(tempzipfile)
+            with zipfile.ZipFile(tempzipfile, "w") as myzip:
+                myzip.writestr("test.py", "print('test zip file executed')\n")
+            result = subprocess.run(
+                [sys.executable, tempzipfile], capture_output=True, encoding="utf-8"
+            )
+            self.assertIn("can't find '__main__' module in", result.stderr)
+            self.assertEqual(1, result.returncode)
 
 
 if __name__ == "__main__":
