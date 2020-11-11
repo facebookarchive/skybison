@@ -8,6 +8,11 @@ such it requires the injection of specific modules and attributes in order to
 work. One should use importlib as the public-facing version of this module.
 
 """
+import _imp
+import _thread
+import _warnings
+import _weakref
+
 #
 # IMPORTANT: Whenever making changes to this module, be sure to run
 # a top-level make in order to get the frozen version of the module
@@ -26,10 +31,6 @@ work. One should use importlib as the public-facing version of this module.
 
 import sys
 
-import _imp
-import _thread
-import _warnings
-import _weakref
 from _builtins import _address
 
 

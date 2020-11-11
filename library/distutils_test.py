@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import _imp
 import distutils.sysconfig
 import importlib.machinery
 import os
@@ -7,8 +8,6 @@ import unittest
 from distutils.core import setup
 from distutils.dist import Distribution
 from distutils.extension import Extension
-
-import _imp
 
 
 class DistutilsModuleTest(unittest.TestCase):

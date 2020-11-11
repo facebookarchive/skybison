@@ -24,14 +24,15 @@ __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
             'UserString', 'Counter', 'OrderedDict', 'ChainMap']
 
 import _collections_abc
-from operator import itemgetter as _itemgetter, eq as _eq
-from keyword import iskeyword as _iskeyword
-import sys as _sys
 import heapq as _heapq
-from _bytecode_utils import _make_dunder_new
+import sys as _sys
 from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
+from keyword import iskeyword as _iskeyword
+from operator import itemgetter as _itemgetter, eq as _eq
 from reprlib import recursive_repr as _recursive_repr
+
+from _bytecode_utils import _make_dunder_new
 
 try:
     from _collections import deque

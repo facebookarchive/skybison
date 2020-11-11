@@ -6,17 +6,17 @@
 # isort:skip_file
 """Test case implementation"""
 
-import sys
-import functools
+import collections
+import contextlib
 import difflib
+import functools
 import logging
 import pprint
 import re
+import sys
 # TODO(T42595911): traceback module
 # import traceback
 import warnings
-import collections
-import contextlib
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,

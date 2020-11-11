@@ -173,8 +173,9 @@ class CtypesTests(unittest.TestCase):
     @unittest.skip("Disable until our inline caches store weakrefs")
     @pyro_only
     def test_ctypes_array_creation_cache_cleared_when_type_gced(self):
-        from _builtins import _gc
         from _ctypes import _array_from_ctype_cache
+
+        from _builtins import _gc
 
         ctypes.c_ubyte * 2
         self.assertGreater(len(_array_from_ctype_cache), 0)

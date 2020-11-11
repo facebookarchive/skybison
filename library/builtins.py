@@ -6789,10 +6789,11 @@ class zip(metaclass=_non_heaptype):
         _unimplemented()
 
 
-from _codecs import decode as _decode, encode as _encode
-from _io import open
-from _str_mod import format as _str_mod_format
 import _frozen_importlib
 import _frozen_importlib_external
 import sys as _sys
 import zipimport as _zipimport
+from _codecs import decode as _decode, encode as _encode
+from _io import open
+
+from _str_mod import format as _str_mod_format

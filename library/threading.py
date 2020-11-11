@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from _builtins import _Unbound, _unimplemented
 from _thread import RLock as _RLock, allocate_lock as _allocate_lock
+
+from _builtins import _Unbound, _unimplemented
 
 
 class Barrier:

@@ -7,6 +7,11 @@ such it requires the injection of specific modules and attributes in order to
 work. One should use importlib as the public-facing version of this module.
 
 """
+import _frozen_importlib as _bootstrap
+import _imp
+import _io
+import _warnings
+
 # IMPORTANT: Whenever making changes to this module, be sure to run a top-level
 # `make regen-importlib` followed by `make` in order to get the frozen version
 # of the module updated. Not doing so will result in the Makefile to fail for
@@ -25,10 +30,6 @@ work. One should use importlib as the public-facing version of this module.
 import marshal
 import sys
 
-import _frozen_importlib as _bootstrap
-import _imp
-import _io
-import _warnings
 from _builtins import _address
 
 
@@ -40,8 +41,9 @@ try:
     path_sep = "/"
 except ImportError:
     try:
-        import nt as _os
         import _winreg
+
+        import nt as _os
 
         _builtin_os = "nt"
         path_separators = "\\/"

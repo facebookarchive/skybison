@@ -26,6 +26,11 @@ Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments."""
 
 import builtins
+from _codecs import (
+    getincrementaldecoder as _codecs_getincrementaldecoder,
+    getincrementalencoder as _codecs_getincrementalencoder,
+)
+from _thread import LockType as _thread_Lock
 from builtins import BlockingIOError, _index, _int, _non_heaptype, _type_name
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
@@ -51,10 +56,6 @@ from _builtins import (
     _unimplemented,
     _warn,
 )
-from _codecs import (
-    getincrementaldecoder as _codecs_getincrementaldecoder,
-    getincrementalencoder as _codecs_getincrementalencoder,
-)
 from _os import (
     close as _os_close,
     fstat_size as _os_fstat_size,
@@ -68,7 +69,6 @@ from _os import (
     read as _os_read,
     set_noinheritable as _os_set_noinheritable,
 )
-from _thread import LockType as _thread_Lock
 
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes

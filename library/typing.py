@@ -25,7 +25,6 @@ At large scale, the structure of the module is following:
 """
 
 import abc
-from abc import abstractmethod, abstractproperty
 import collections
 import collections.abc
 import contextlib
@@ -34,6 +33,7 @@ import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
+from abc import abstractmethod, abstractproperty
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [

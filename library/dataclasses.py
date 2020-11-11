@@ -5,15 +5,15 @@
 # fmt: off
 # isort:skip_file
 
-import re
-import sys
+import _thread
+import builtins
 import copy
-import types
+import functools
 import inspect
 import keyword
-import builtins
-import functools
-import _thread
+import re
+import sys
+import types
 
 
 __all__ = ['dataclass',

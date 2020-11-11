@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import unittest
-
 from _string import formatter_field_name_split, formatter_parser
 
 

@@ -200,8 +200,8 @@ class DynamicClassAttribute:
         return result
 
 
-import functools as _functools
 import collections.abc as _collections_abc
+import functools as _functools
 
 class _GeneratorWrapper:
     # TODO: Implement this in C.

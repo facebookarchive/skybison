@@ -27,10 +27,10 @@ load() -- read value from a file
 dumps() -- marshal value as a bytes object
 loads() -- read value from a bytes-like object"""
 
+import _io
 import _struct
 from builtins import code as CodeType
 
-import _io
 from _builtins import _builtin, _byteslike_check, _type, _unimplemented
 
 

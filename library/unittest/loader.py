@@ -6,15 +6,14 @@
 # isort:skip_file
 """Loading unittests."""
 
+import functools
 import os
 import re
 import sys
 # TODO(T42595911): traceback module
 # import traceback
 import types
-import functools
 import warnings
-
 from fnmatch import fnmatch, fnmatchcase
 
 from . import case, suite, util

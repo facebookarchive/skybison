@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import unittest
-
 from _collections import _deque_iterator, deque
 
 

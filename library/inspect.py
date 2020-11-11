@@ -38,23 +38,23 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import abc
-import dis
+import builtins
 import collections.abc
+import dis
 import enum
+import functools
 import importlib.machinery
 import itertools
 import linecache
 import os
 import re
 import sys
-import tokenize
 import token
+import tokenize
 import types
 import warnings
-import functools
-import builtins
-from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from operator import attrgetter
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication

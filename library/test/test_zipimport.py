@@ -4,25 +4,22 @@
 # flake8: noqa
 # fmt: off
 # isort:skip_file
-import sys
-import os
-import marshal
+import doctest
 import importlib
 import importlib.util
-import struct
-import time
-import unittest
-
-from test import support
-
-from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
-
-import zipimport
-import linecache
-import doctest
 import inspect
 import io
+import linecache
+import marshal
+import os
+import struct
+import sys
+import time
+import unittest
+import zipimport
+from test import support
 from traceback import extract_tb, extract_stack, print_tb
+from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 try:
     import zlib
 except ImportError:

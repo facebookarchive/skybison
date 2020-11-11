@@ -99,6 +99,7 @@ __all__ = [
 ]
 
 import __future__
+
 import difflib
 import inspect
 import linecache
@@ -108,8 +109,8 @@ import re
 import sys
 import traceback
 import unittest
-from io import StringIO
 from collections import namedtuple
+from io import StringIO
 
 # TODO(T65304353) Remove this
 try:

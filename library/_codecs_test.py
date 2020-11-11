@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+import _codecs
 import unittest
 
-import _codecs
 from test_support import pyro_only
 
 

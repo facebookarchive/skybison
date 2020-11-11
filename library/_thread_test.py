@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
+import _io
+import _thread
 import contextlib
 import time
 import unittest
-
-import _io
-import _thread
 
 
 _thread._enable_threads = True

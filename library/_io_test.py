@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import _io
 import array
 import mmap
 import os
@@ -8,7 +9,6 @@ import unittest
 import unittest.mock
 from unittest.mock import Mock
 
-import _io
 from test_support import pyro_only
 
 

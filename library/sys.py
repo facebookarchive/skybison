@@ -3,7 +3,6 @@
 
 from builtins import SimpleNamespace as _SimpleNamespace
 
-from _builtins import maxunicode  # noqa: F401
 from _builtins import (
     _builtin,
     _get_asyncgen_hooks,
@@ -11,6 +10,7 @@ from _builtins import (
     _structseq_new_type,
     _Unbound,
 )
+from _builtins import maxunicode  # noqa: F401
 from _path import dirname as _dirname, join as _join
 
 

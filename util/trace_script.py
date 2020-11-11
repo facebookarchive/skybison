@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
+import _frozen_importlib
 import argparse
 import importlib
 import inspect
 import modulefinder
 import sys
-
-import _frozen_importlib
 
 
 class FunctionEvent:

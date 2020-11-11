@@ -2,8 +2,8 @@
 import contextlib
 import sys
 import unittest
-
 from _io import StringIO, TextIOWrapper
+
 from test_support import pyro_only
 
 

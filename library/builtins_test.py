@@ -30,6 +30,7 @@ Py_TPFLAGS_TYPE_SUBCLASS = 1 << 31
 
 try:
     from builtins import _number_check, instance_proxy, _non_heaptype
+
     from _builtins import _async_generator_op_iter_get_state, _gc
 except ImportError:
     pass
@@ -2826,8 +2827,8 @@ class CompileTests(unittest.TestCase):
         exec(code)  # should not raise
 
     def test_exec_mode_returns_code(self):
-        from types import ModuleType
         from types import CodeType
+        from types import ModuleType
 
         code = compile("result = 42", "", "exec", 0, True, -1)
         self.assertIsInstance(code, CodeType)
@@ -2836,8 +2837,8 @@ class CompileTests(unittest.TestCase):
         self.assertEqual(module.result, 42)
 
     def test_single_returns_code(self):
-        from types import ModuleType
         from types import CodeType
+        from types import ModuleType
 
         code = compile("result = 8", "", "exec", 0, True, -1)
         self.assertIsInstance(code, CodeType)
@@ -2853,8 +2854,9 @@ class CompileTests(unittest.TestCase):
         self.assertEqual(eval(code), 63)  # noqa: P204
 
     def test_with_flags_returns_code(self):
-        from types import CodeType
         import __future__
+
+        from types import CodeType
 
         code = compile(
             "7 <> 9", "", "eval", __future__.CO_FUTURE_BARRY_AS_BDFL, True, -1
@@ -2862,8 +2864,9 @@ class CompileTests(unittest.TestCase):
         self.assertIsInstance(code, CodeType)
 
     def test_inherits_compile_flags(self):
-        from types import CodeType
         import __future__
+
+        from types import CodeType
 
         code = compile(
             "compile('7 <> 9', '', 'eval')",
@@ -4626,8 +4629,9 @@ class EvalTests(unittest.TestCase):
 
     @unittest.skipIf(True, "TODO(T78726269): Investigate why this test fails")
     def test_inherits_compile_flags(self):
-        from types import CodeType
         import __future__
+
+        from types import CodeType
 
         code = compile(
             "eval('8 <> 9')", "", "eval", __future__.CO_FUTURE_BARRY_AS_BDFL, True, -1
@@ -4735,8 +4739,8 @@ class ExecTests(unittest.TestCase):
         self.assertEqual(module.result, 7)
 
     def test_code_source(self):
-        from types import ModuleType
         from types import CodeType
+        from types import ModuleType
 
         code = compile("result = foo", "", "exec", 0, True, -1)
         self.assertIsInstance(code, CodeType)
@@ -4746,9 +4750,10 @@ class ExecTests(unittest.TestCase):
         self.assertEqual(module.result, 99)
 
     def test_inherits_compile_flags(self):
-        from types import ModuleType
-        from types import CodeType
         import __future__
+
+        from types import CodeType
+        from types import ModuleType
 
         code = compile(
             "result0 = 4 <> 4\nexec('result1 = 8 <> 9')",

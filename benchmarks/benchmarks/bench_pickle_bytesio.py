@@ -9,11 +9,10 @@ this isn't equivalent to dumping the dict 10000 times: pickle uses a
 highly-efficient encoding for the n-1 following copies.
 """
 
+import _io
 import datetime
 import random
 import sys
-
-import _io
 
 
 __author__ = "collinwinter@google.com (Collin Winter)"

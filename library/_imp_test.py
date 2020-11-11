@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import _imp
 import os
 import sys
 import tempfile
@@ -7,7 +8,6 @@ from distutils.core import setup
 from distutils.dist import Distribution
 from distutils.extension import Extension
 
-import _imp
 from test_support import pyro_only
 
 

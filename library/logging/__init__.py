@@ -30,7 +30,6 @@ To use, simply 'import logging' and log away!
 """
 
 import sys, os, time, io, traceback, warnings, weakref, collections.abc
-
 from string import Template
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
