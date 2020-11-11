@@ -108,9 +108,20 @@ ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
   switch (value.layoutId()) {
     case LayoutId::kTupleIterator: {
       HandleScope scope(thread);
-      RawObject result =
-          tupleIteratorNext(thread, TupleIterator(&scope, value));
+      TupleIterator tuple_iterator(&scope, value);
+      RawObject result = tupleIteratorNext(thread, tuple_iterator);
       if (result.isErrorNoMoreItems()) {
+        return false;
+      }
+      thread->stackPop();
+      thread->stackSetTop(result);
+      return true;
+    }
+    case LayoutId::kListIterator: {
+      HandleScope scope(thread);
+      ListIterator list_iterator(&scope, value);
+      RawObject result = listIteratorNext(thread, list_iterator);
+      if (result.isErrorOutOfBounds()) {
         return false;
       }
       thread->stackPop();

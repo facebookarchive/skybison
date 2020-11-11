@@ -7944,6 +7944,22 @@ class NextTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(tuple_iter)
 
+    def test_next_with_list_iterater_returns_next_item(self):
+        li = [1]
+        list_iter = iter(li)
+        self.assertEqual(next(list_iter), 1)
+
+    def test_next_with_empty_list_iterator_returns_default(self):
+        li = []
+        list_iter = iter(li)
+        self.assertEqual(next(list_iter, None), None)
+
+    def test_next_with_empty_list_iterator_raises_stop_iteration(self):
+        li = []
+        list_iter = iter(li)
+        with self.assertRaises(StopIteration):
+            next(list_iter)
+
 
 class NoneTests(unittest.TestCase):
     def test_dunder_class_returns_type_of_none(self):
