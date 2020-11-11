@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 import unittest
-from collections import defaultdict, deque, namedtuple
+from collections import OrderedDict, defaultdict, deque, namedtuple
+
+
+class OrderedDictTests(unittest.TestCase):
+    def test_dunder_repr(self):
+        d = OrderedDict({5: 1, 6: 0})
+        actual = str(d)
+        self.assertEqual(actual, "OrderedDict([(5, 1), (6, 0)])")
+
+    def test_move_to_end(self):
+        d = OrderedDict({"d": 2, "b": 1, "z": 0})
+        d.move_to_end("b")
+        k, v = d.popitem()
+        self.assertEqual((k, v), ("b", 1))
 
 
 class DefaultdictTests(unittest.TestCase):

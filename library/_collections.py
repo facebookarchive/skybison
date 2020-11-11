@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-from builtins import _index
+from builtins import (
+    _index,
+    _sequence_repr,
+)
 
 from _builtins import (
     _builtin,
@@ -17,6 +20,22 @@ from _builtins import (
 
 
 _Unbound = _Unbound  # noqa: F821
+
+
+class OrderedDict(dict):
+    "Dictionary that remembers insertion order"
+    # NOTE: This OrderedDict implementation deviates from CPython's: instaed of keeping
+    # the ordering as a linked list, this implementation harnesses the ordering
+    # maintained by `dict`.
+
+    def move_to_end(self, key, last=True):
+        value = self.pop(key)
+        if not last:
+            _unimplemented()
+        self[key] = value
+
+    def __repr__(self):
+        return _sequence_repr(f"{self.__class__.__name__}([", self.items(), "])")
 
 
 class _deque_iterator(bootstrap=True):
