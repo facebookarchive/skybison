@@ -13,7 +13,7 @@ const char* Frame::isInvalid() {
   if (!at(kPreviousFrameOffset).isSmallInt()) {
     return "bad previousFrame field";
   }
-  if (!isSentinel() && !(locals() + 1)->isFunction()) {
+  if (!isSentinel() && !(locals() + kFunctionOffsetFromLocals)->isFunction()) {
     return "bad function";
   }
   return nullptr;

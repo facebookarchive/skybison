@@ -1140,8 +1140,8 @@ RawObject RawGeneratorFrame::popValue() const {
   return frame()->stashedPopValue();
 }
 
-void RawGeneratorFrame::stashInternalPointers(Thread* thread) const {
-  frame()->stashInternalPointers(thread);
+void RawGeneratorFrame::setStackSize(word size) const {
+  frame()->stashStackSize(size);
 }
 
 }  // namespace py

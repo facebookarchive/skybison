@@ -3326,7 +3326,7 @@ class RawGeneratorFrame : public RawInstance {
   RawObject* valueStackTop() const;
   word virtualPC() const;
 
-  void stashInternalPointers(Thread* thread) const;
+  void setStackSize(word size) const;
 
   // Sizing.
   static word numAttributes(word extra_words);

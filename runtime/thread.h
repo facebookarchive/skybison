@@ -374,7 +374,7 @@ class Thread {
 
  private:
   Frame* pushInitialFrame();
-  Frame* openAndLinkFrame(word size, word total_locals);
+  Frame* openAndLinkFrame(word size, word locals_offset);
 
   Handles handles_;
 

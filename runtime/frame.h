@@ -178,8 +178,6 @@ class BlockStack {
 // object for this case and avoid the extra indirection.
 class Frame {
  public:
-  void init(word total_locals);
-
   // Returns true if this frame is for a built-in or extension function. This
   // means no bytecode exists and functions like virtualPC() or caches() must
   // not be used.
@@ -199,6 +197,9 @@ class Frame {
   // Index in the bytecode array of the next instruction to be executed.
   word virtualPC();
   void setVirtualPC(word pc);
+
+  word localsOffset();
+  void setLocalsOffset(word locals_offset);
 
   // Index in the bytecode array of the instruction currently being executed.
   word currentPC();
@@ -224,25 +225,19 @@ class Frame {
   RawObject* frameEnd() {
     // The locals() pointer points at the first local, so we need + 1 to skip
     // the first local and another +1 to skip the function reference before.
-    return locals() + 2;
+    return locals() + kFunctionOffsetFromLocals + 1;
   }
 
   bool isSentinel();
 
   // Versions of valueStackTop() and popValue() for a Frame that's had
-  // stashInternalPointers() called on it.
+  // stashStackSize() called on it.
   RawObject* stashedValueStackTop();
   RawObject stashedPopValue();
 
-  // Adjust and/or save the values of internal pointers after copying this Frame
-  // from the stack to the heap.
-  void stashInternalPointers(Thread* thread);
-
-  // Adjust and/or restore internal pointers after copying this Frame from the
-  // heap to the stack.
-  // The parameter is the function belonging to the frame. This is necessary
-  // because `function()` does not work on a frame that is stashed away.
-  void unstashInternalPointers(Thread* thread, RawFunction function);
+  // Encode value stack size into the "previous frame" field. This
+  // representation is used for paused GeneratorFrame objects on the heap.
+  void stashStackSize(word size);
 
   // Compute the total space required for a frame object
   static word allocationSize(RawObject code);
@@ -255,25 +250,25 @@ class Frame {
   static const int kPreviousFrameOffset = kCachesOffset + kPointerSize;
   static const int kVirtualPCOffset = kPreviousFrameOffset + kPointerSize;
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
-  static const int kLocalsOffset = kBlockStackOffset + BlockStack::kSize;
-  static const int kSize = kLocalsOffset + kPointerSize;
+  static const int kLocalsOffsetOffset = kBlockStackOffset + BlockStack::kSize;
+  static const int kSize = kLocalsOffsetOffset + kPointerSize;
 
-  static const int kFunctionOffsetFromLocals = 1;
-  static const int kImplicitGlobalsOffsetFromLocals = 2;
+  static const int kFunctionOffsetFromLocals = 0;
+  static const int kImplicitGlobalsOffsetFromLocals = 1;
 
   // A large PC value represents finished generators. It must be an even number
   // to fit the constraints of `setVirtualPC()`/`virtualPD()`.
   static const word kFinishedGeneratorPC = RawSmallInt::kMaxValue - 1;
 
+  // Returns a pointer to the "begin" of where the arguments + locals are stored
+  // on the stack. For example local 0 can be found at `locals()[-1]` local 1
+  // at `locals()[-2]`.
   RawObject* locals();
 
  private:
   uword address();
   RawObject at(int offset);
   void atPut(int offset, RawObject value);
-
-  // Re-compute the locals pointer based on this and num_locals.
-  void resetLocals(word num_locals);
 
   DISALLOW_COPY_AND_ASSIGN(Frame);
 };
@@ -288,18 +283,13 @@ class Arguments {
  public:
   Arguments(Frame* frame) : locals_(frame->locals()) {}
 
-  RawObject get(word n) const { return *(locals_ - n); }
+  RawObject get(word n) const { return *(locals_ - n - 1); }
 
  protected:
   RawObject* locals_;
 };
 
 RawObject frameLocals(Thread* thread, Frame* frame);
-
-inline void Frame::init(word total_locals) {
-  resetLocals(total_locals);
-  blockStack()->setDepth(0);
-}
 
 inline bool Frame::isNative() {
   return !code().isCode() || Code::cast(code()).isNative();
@@ -334,6 +324,14 @@ inline void Frame::setVirtualPC(word pc) {
   atPut(kVirtualPCOffset, SmallInt::fromReinterpretedWord(pc));
 }
 
+inline word Frame::localsOffset() {
+  return SmallInt::cast(at(kLocalsOffsetOffset)).asReinterpretedWord();
+}
+
+inline void Frame::setLocalsOffset(word locals_offset) {
+  atPut(kLocalsOffsetOffset, SmallInt::fromReinterpretedWord(locals_offset));
+}
+
 inline word Frame::currentPC() {
   return SmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord() -
          kCodeUnitSize;
@@ -350,13 +348,13 @@ inline RawObject Frame::implicitGlobals() {
 inline RawObject Frame::code() { return function().code(); }
 
 inline RawObject* Frame::locals() {
-  return static_cast<RawObject*>(
-      SmallInt::cast(at(kLocalsOffset)).asAlignedCPtr());
+  return reinterpret_cast<RawObject*>(reinterpret_cast<char*>(this) +
+                                      localsOffset());
 }
 
 inline RawObject Frame::local(word idx) {
   DCHECK_INDEX(idx, function().totalLocals());
-  return *(locals() - idx);
+  return *(locals() - idx - 1);
 }
 
 inline RawObject Frame::localWithReverseIndex(word reverse_idx) {
@@ -367,20 +365,13 @@ inline RawObject Frame::localWithReverseIndex(word reverse_idx) {
 
 inline void Frame::setLocal(word idx, RawObject value) {
   DCHECK_INDEX(idx, function().totalLocals());
-  *(locals() - idx) = value;
+  *(locals() - idx - 1) = value;
 }
 
 inline void Frame::setLocalWithReverseIndex(word reverse_idx, RawObject value) {
   DCHECK_INDEX(reverse_idx, function().totalLocals());
   RawObject* locals_end = reinterpret_cast<RawObject*>(address() + kSize);
   locals_end[reverse_idx] = value;
-}
-
-inline void Frame::resetLocals(word num_locals) {
-  // Bias locals by 1 word to avoid doing so during {get,set}Local
-  RawObject* locals = reinterpret_cast<RawObject*>(
-      address() + Frame::kSize + ((num_locals - 1) * kPointerSize));
-  atPut(kLocalsOffset, SmallInt::fromAlignedCPtr(locals));
 }
 
 inline RawObject Frame::caches() { return at(kCachesOffset); }
@@ -425,17 +416,8 @@ inline RawObject Frame::stashedPopValue() {
   return result;
 }
 
-inline void Frame::stashInternalPointers(Thread* thread) {
-  // Replace ValueStackTop with the stack depth while this Frame is on the heap,
-  // to survive being moved by the GC.
-  word depth = thread->valueStackSize();
-  atPut(kPreviousFrameOffset, SmallInt::fromWord(depth));
-}
-
-inline void Frame::unstashInternalPointers(Thread* thread,
-                                           RawFunction function) {
-  thread->setStackPointer(stashedValueStackTop());
-  resetLocals(function.totalLocals());
+inline void Frame::stashStackSize(word size) {
+  atPut(kPreviousFrameOffset, SmallInt::fromWord(size));
 }
 
 inline RawObject TryBlock::asSmallInt() const {

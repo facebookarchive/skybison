@@ -811,9 +811,9 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
 template <>
 void emitHandler<LOAD_CONST>(EmitEnv* env) {
   Register r_scratch = RAX;
-  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffset));
-  __ movq(r_scratch,
-          Address(r_scratch, Frame::kFunctionOffsetFromLocals * kPointerSize));
+  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ movq(r_scratch, Address(kFrameReg, r_scratch, TIMES_1,
+                             Frame::kFunctionOffsetFromLocals * kPointerSize));
   __ movq(r_scratch,
           Address(r_scratch, heapObjectDisp(RawFunction::kCodeOffset)));
   __ movq(r_scratch,
@@ -971,16 +971,14 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
 
   // Setup the new frame:
 
-  // total_locals = total_vars - total_args
+  // locals_offset = initial_size + (function.totalArgs() * kPointerSize)
   // Note that the involved registers contain smallints.
-  Register r_total_locals = r_total_vars;
+  Register r_locals_offset = r_total_vars;
   __ movq(r_scratch,
           Address(kCallableReg, heapObjectDisp(RawFunction::kTotalArgsOffset)));
-  __ addq(r_total_locals, r_scratch);
-  // new_frame.setLocalsOffset(sp + kSize + (total_locals - 1) * kPointerSize)
-  __ leaq(r_scratch,
-          Address(RSP, r_total_locals, TIMES_4, Frame::kSize - kPointerSize));
-  __ movq(Address(RSP, Frame::kLocalsOffset), r_scratch);
+  __ leaq(r_locals_offset, Address(r_initial_size, r_scratch, TIMES_4, 0));
+  // new_frame.setLocalsOffset(locals_offset)
+  __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
   // new_frame.blockStack()->setDepth(0)
   __ movq(Address(RSP, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
           Immediate(0));
@@ -1548,8 +1546,9 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(RAX);
   // RSP = frame->frameEnd(); ( = locals() + 2)
-  __ movq(RSP, Address(kFrameReg, Frame::kLocalsOffset));
-  __ addq(RSP, Immediate(2 * kPointerSize));
+  __ addq(RSP, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ addq(RSP,
+          Immediate((Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
   __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   __ pushq(RAX);

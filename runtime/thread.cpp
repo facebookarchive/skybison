@@ -195,12 +195,12 @@ void Thread::linkFrame(Frame* frame) {
   current_frame_ = frame;
 }
 
-inline Frame* Thread::openAndLinkFrame(word size, word total_locals) {
+inline Frame* Thread::openAndLinkFrame(word size, word locals_offset) {
   // Initialize the frame.
   byte* new_sp = reinterpret_cast<byte*>(stack_pointer_) - size;
   stack_pointer_ = reinterpret_cast<RawObject*>(new_sp);
   Frame* frame = reinterpret_cast<Frame*>(new_sp);
-  frame->init(total_locals);
+  frame->setLocalsOffset(locals_offset);
 
   // return a pointer to the base of the frame
   linkFrame(frame);
@@ -213,26 +213,25 @@ Frame* Thread::pushNativeFrame(word nargs) {
     return nullptr;
   }
 
-  Frame* result = openAndLinkFrame(Frame::kSize, nargs);
+  word locals_offset = Frame::kSize + nargs * kPointerSize;
+  Frame* result = openAndLinkFrame(Frame::kSize, locals_offset);
   DCHECK(result->function().totalLocals() == nargs, "local counts mismatch");
   return result;
 }
 
 Frame* Thread::pushCallFrame(RawFunction function) {
-  word total_vars = function.totalVars();
-  word initial_size = Frame::kSize + total_vars * kPointerSize;
+  word initial_size = Frame::kSize + function.totalVars() * kPointerSize;
   word max_size = initial_size + function.stacksize() * kPointerSize;
   if (UNLIKELY(wouldStackOverflow(max_size))) {
     return nullptr;
   }
 
-  word total_locals = function.totalArgs() + total_vars;
-  Frame* result = openAndLinkFrame(initial_size, total_locals);
+  word locals_offset = initial_size + function.totalArgs() * kPointerSize;
+  Frame* result = openAndLinkFrame(initial_size, locals_offset);
+  result->blockStack()->setDepth(0);
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
   result->setCaches(function.caches());
   result->setVirtualPC(0);
-  DCHECK(result->function().totalLocals() == total_locals,
-         "local counts mismatch");
   return result;
 }
 
@@ -249,8 +248,7 @@ Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
   std::memcpy(dest, src, num_frame_words * kPointerSize);
   word value_stack_size = generator_frame.maxStackSize() * kPointerSize;
   Frame* result = reinterpret_cast<Frame*>(dest + value_stack_size);
-  result->unstashInternalPointers(this,
-                                  Function::cast(generator_frame.function()));
+  setStackPointer(result->stashedValueStackTop());
   linkFrame(result);
   DCHECK(result->isInvalid() == nullptr, "invalid frame");
   return result;
@@ -260,7 +258,7 @@ Frame* Thread::pushInitialFrame() {
   byte* sp = end_ - Frame::kSize;
   CHECK(sp > start_, "no space for initial frame");
   Frame* frame = reinterpret_cast<Frame*>(sp);
-  frame->init(0);
+  frame->setLocalsOffset(Frame::kSize);
   stack_pointer_ = reinterpret_cast<RawObject*>(sp);
   frame->setPreviousFrame(nullptr);
   return frame;
@@ -282,7 +280,7 @@ Frame* Thread::popFrameToGeneratorFrame(const GeneratorFrame& generator_frame) {
   byte* src = reinterpret_cast<byte*>(valueStackBase() -
                                       generator_frame.maxStackSize());
   std::memcpy(dest, src, generator_frame.numFrameWords() * kPointerSize);
-  generator_frame.stashInternalPointers(this);
+  generator_frame.setStackSize(valueStackSize());
   return popFrame();
 }
 
