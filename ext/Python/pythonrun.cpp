@@ -384,7 +384,7 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   iflags &= ~PyCF_SOURCE_IS_UTF8;
 
   View<byte> data(buffer.get(), file_len);
-  Object source(&scope, runtime->newStrWithAll(data));
+  Object source(&scope, runtime->newBytesWithAll(data));
   Str filename(&scope, runtime->newStrFromCStr(filename_cstr));
   SymbolId mode_id;
   if (start == Py_single_input) {

@@ -307,6 +307,19 @@ class RunTest(unittest.TestCase):
                 f"argv: ['{tempfile}', 'arg0', 'arg1 with spaces']", result.stdout
             )
 
+    def test_with_file_invalid_utf8_raises_syntax_error(self):
+        with TemporaryDirectory() as tempdir:
+            tempfile = os.path.join(tempdir, "bad_utf8.py")
+            with open(tempfile, "wb") as fp:
+                fp.write(b"print('Bad UTF8: \xf8\xa1\xa1\xa1\xa1'\n")
+            result = subprocess.run(
+                [sys.executable, tempfile],
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertIn("SyntaxError:", result.stderr)
+            self.assertEqual(result.returncode, 1)
+
     def test_with_zipfile_executes_code(self):
         with TemporaryDirectory() as tempdir:
             tempzipfile = os.path.join(tempdir, "test.zip")
