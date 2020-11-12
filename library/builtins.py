@@ -3066,9 +3066,8 @@ def delattr(obj, name):
 
 
 class dict(bootstrap=True):
-    def __contains__(self, key) -> bool:
-        _dict_guard(self)
-        return _dict_get(self, key, _Unbound) is not _Unbound  # noqa: T484
+    def __contains__(self, key):
+        _builtin()
 
     def __delitem__(self, key):
         _builtin()

@@ -1082,6 +1082,23 @@ RawObject METH(dict, __new__)(Thread* thread, Arguments args) {
   return *result;
 }
 
+RawObject METH(dict, __contains__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseRequiresType(self, ID(dict));
+  }
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) {
+    return *hash_obj;
+  }
+  Dict dict(&scope, *self);
+  word hash = SmallInt::cast(*hash_obj).value();
+  return dictIncludes(thread, dict, key, hash);
+}
+
 // TODO(T35787656): Instead of re-writing everything for every class, make a
 // helper function that takes a member function (type check) and string for the
 // Python symbol name
