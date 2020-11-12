@@ -1769,7 +1769,7 @@ const byte* Runtime::hashSecret(size_t size) {
 }
 
 RawObject Runtime::handlePendingSignals(Thread* thread) {
-  thread->clearInterrupt();
+  thread->clearInterrupt(Thread::kSignal);
   if (!is_signal_pending_ || !thread->isMainThread()) {
     return NoneType::object();
   }
@@ -1862,7 +1862,7 @@ void Runtime::setPendingSignal(Thread* thread, int signum) {
 
   OS::pending_signals_[signum] = true;
   is_signal_pending_ = true;
-  thread->interrupt();
+  thread->interrupt(Thread::kSignal);
 
   if (wakeup_fd_ < 0) return;
 

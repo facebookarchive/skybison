@@ -165,29 +165,40 @@ void Thread::setCurrentThread(Thread* thread) {
   Thread::current_thread_ = thread;
 }
 
-void Thread::clearInterrupt() {
-  is_interrupted_ = false;
-  limit_ = start_;
-}
-
-void Thread::interrupt() {
-  limit_ = end_;
-  is_interrupted_ = true;
-}
-
-bool Thread::wouldStackOverflow(word max_size) {
-  // Check that there is sufficient space on the stack
-  // TODO(T36407214): Grow stack
-  byte* sp = reinterpret_cast<byte*>(stack_pointer_);
-  if (LIKELY(sp - max_size >= limit_)) {
-    return false;
+void Thread::clearInterrupt(InterruptKind kind) {
+  interrupt_flags_ &= ~kind;
+  if (interrupt_flags_ == 0) {
+    limit_ = start_;
   }
-  if (is_interrupted_) {
-    runtime_->handlePendingSignals(this);
+}
+
+void Thread::interrupt(InterruptKind kind) {
+  interrupt_flags_ |= kind;
+  limit_ = end_;
+}
+
+bool Thread::handleInterrupt(word max_stack_size) {
+  // Is it a real stack overflow?
+  if (reinterpret_cast<byte*>(stackPointer()) - max_stack_size < start_) {
+    raiseWithFmt(LayoutId::kRecursionError, "maximum recursion depth exceeded");
     return true;
   }
-  raiseWithFmt(LayoutId::kRecursionError, "maximum recursion depth exceeded");
-  return true;
+  uint8_t interrupt_flags = interrupt_flags_;
+  if ((interrupt_flags & kSignal) != 0 &&
+      !runtime_->handlePendingSignals(this).isNoneType()) {
+    return true;
+  }
+  return false;
+}
+
+void Thread::handleInterruptWithFrame() {
+  // We will add interrupt handling code here that requires a valid call-frame.
+  // Profiling code will use this.
+}
+
+bool Thread::wouldStackOverflow(word size) {
+  // Check that there is sufficient space on the stack
+  return reinterpret_cast<byte*>(stack_pointer_) - size < limit_;
 }
 
 void Thread::linkFrame(Frame* frame) {
@@ -208,26 +219,31 @@ inline Frame* Thread::openAndLinkFrame(word size, word locals_offset) {
   return frame;
 }
 
-Frame* Thread::pushNativeFrame(word nargs) {
-  if (UNLIKELY(wouldStackOverflow(Frame::kSize))) {
+ALWAYS_INLINE Frame* Thread::pushNativeFrameImpl(word locals_offset) {
+  return openAndLinkFrame(Frame::kSize, locals_offset);
+}
+
+NEVER_INLINE Frame* Thread::handleInterruptPushNativeFrame(word locals_offset) {
+  if (handleInterrupt(Frame::kSize)) {
     return nullptr;
   }
-
-  word locals_offset = Frame::kSize + nargs * kPointerSize;
-  Frame* result = openAndLinkFrame(Frame::kSize, locals_offset);
-  DCHECK(result->function().totalLocals() == nargs, "local counts mismatch");
+  Frame* result = pushNativeFrameImpl(locals_offset);
+  handleInterruptWithFrame();
   return result;
 }
 
-Frame* Thread::pushCallFrame(RawFunction function) {
-  word initial_size = Frame::kSize + function.totalVars() * kPointerSize;
-  word max_size = initial_size + function.stacksize() * kPointerSize;
-  if (UNLIKELY(wouldStackOverflow(max_size))) {
-    return nullptr;
+Frame* Thread::pushNativeFrame(word nargs) {
+  word locals_offset = Frame::kSize + nargs * kPointerSize;
+  if (UNLIKELY(wouldStackOverflow(Frame::kSize))) {
+    return handleInterruptPushNativeFrame(locals_offset);
   }
+  return pushNativeFrameImpl(locals_offset);
+}
 
-  word locals_offset = initial_size + function.totalArgs() * kPointerSize;
-  Frame* result = openAndLinkFrame(initial_size, locals_offset);
+ALWAYS_INLINE Frame* Thread::pushCallFrameImpl(RawFunction function,
+                                               word stack_size,
+                                               word locals_offset) {
+  Frame* result = openAndLinkFrame(stack_size, locals_offset);
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
   result->setCaches(function.caches());
   result->setVirtualPC(0);
@@ -235,23 +251,61 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   return result;
 }
 
-Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
-  word num_frame_words = generator_frame.numFrameWords();
-  word size = num_frame_words * kPointerSize;
-  if (UNLIKELY(wouldStackOverflow(size))) {
+NEVER_INLINE Frame* Thread::handleInterruptPushCallFrame(
+    RawFunction function, word max_stack_size, word initial_stack_size,
+    word locals_offset) {
+  if (handleInterrupt(max_stack_size)) {
     return nullptr;
   }
+  Frame* result =
+      pushCallFrameImpl(function, initial_stack_size, locals_offset);
+  handleInterruptWithFrame();
+  return result;
+}
 
+Frame* Thread::pushCallFrame(RawFunction function) {
+  word initial_stack_size = Frame::kSize + function.totalVars() * kPointerSize;
+  word max_stack_size =
+      initial_stack_size + function.stacksize() * kPointerSize;
+  word locals_offset = initial_stack_size + function.totalArgs() * kPointerSize;
+  if (UNLIKELY(wouldStackOverflow(max_stack_size))) {
+    return handleInterruptPushCallFrame(function, max_stack_size,
+                                        initial_stack_size, locals_offset);
+  }
+  return pushCallFrameImpl(function, initial_stack_size, locals_offset);
+}
+
+ALWAYS_INLINE Frame* Thread::pushGeneratorFrameImpl(
+    const GeneratorFrame& generator_frame, word size) {
   byte* src = reinterpret_cast<byte*>(generator_frame.address() +
                                       RawGeneratorFrame::kFrameOffset);
   byte* dest = reinterpret_cast<byte*>(stack_pointer_) - size;
-  std::memcpy(dest, src, num_frame_words * kPointerSize);
+  std::memcpy(dest, src, size);
   word value_stack_size = generator_frame.maxStackSize() * kPointerSize;
   Frame* result = reinterpret_cast<Frame*>(dest + value_stack_size);
   setStackPointer(result->stashedValueStackTop());
   linkFrame(result);
   DCHECK(result->isInvalid() == nullptr, "invalid frame");
   return result;
+}
+
+NEVER_INLINE Frame* Thread::handleInterruptPushGeneratorFrame(
+    const GeneratorFrame& generator_frame, word size) {
+  if (handleInterrupt(size)) {
+    return nullptr;
+  }
+  Frame* result = pushGeneratorFrameImpl(generator_frame, size);
+  handleInterruptWithFrame();
+  return result;
+}
+
+Frame* Thread::pushGeneratorFrame(const GeneratorFrame& generator_frame) {
+  word num_frame_words = generator_frame.numFrameWords();
+  word size = num_frame_words * kPointerSize;
+  if (UNLIKELY(wouldStackOverflow(size))) {
+    return handleInterruptPushGeneratorFrame(generator_frame, size);
+  }
+  return pushGeneratorFrameImpl(generator_frame, size);
 }
 
 Frame* Thread::pushInitialFrame() {

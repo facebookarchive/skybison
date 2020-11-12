@@ -43,6 +43,10 @@ class Thread {
  public:
   static const int kDefaultStackSize = 1 * kMiB;
 
+  enum InterruptKind {
+    kSignal = 1 << 0,
+  };
+
   explicit Thread(word size);
   ~Thread();
 
@@ -125,9 +129,8 @@ class Thread {
   InterpreterFunc interpreterFunc() { return interpreter_func_; }
   void setInterpreterFunc(InterpreterFunc func) { interpreter_func_ = func; }
 
-  void clearInterrupt();
-  void interrupt();
-  bool isInterrupted() { return is_interrupted_; }
+  void clearInterrupt(InterruptKind kind);
+  void interrupt(InterruptKind kind);
 
   bool isMainThread();
 
@@ -376,6 +379,20 @@ class Thread {
   Frame* pushInitialFrame();
   Frame* openAndLinkFrame(word size, word locals_offset);
 
+  bool handleInterrupt(word max_stack_size);
+  void handleInterruptWithFrame();
+  Frame* handleInterruptPushCallFrame(RawFunction function, word max_stack_size,
+                                      word initial_stack_size,
+                                      word locals_offset);
+  Frame* handleInterruptPushGeneratorFrame(
+      const GeneratorFrame& generator_frame, word size);
+  Frame* handleInterruptPushNativeFrame(word locals_offset);
+  Frame* pushCallFrameImpl(RawFunction function, word stack_size,
+                           word locals_offset);
+  Frame* pushGeneratorFrameImpl(const GeneratorFrame& generator_frame,
+                                word size);
+  Frame* pushNativeFrameImpl(word locals_offset);
+
   Handles handles_;
 
   byte* start_;  // base address of the stack
@@ -385,7 +402,7 @@ class Thread {
   RawObject* stack_pointer_;
 
   // Has the runtime requested a thread interruption? (e.g. signals, GC)
-  bool is_interrupted_ = false;
+  uint8_t interrupt_flags_ = 0;
 
   // current_frame_ always points to the top-most frame on the stack.
   Frame* current_frame_;
@@ -418,7 +435,7 @@ class Thread {
 
   static thread_local Thread* current_thread_;
 
-  bool wouldStackOverflow(word max_size);
+  bool wouldStackOverflow(word size);
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
