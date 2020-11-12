@@ -3154,13 +3154,7 @@ class dict(bootstrap=True):
         _builtin()
 
     def pop(self, key, default=_Unbound):
-        _dict_guard(self)
-        value = _dict_get(self, key, default)
-        if value is _Unbound:
-            raise KeyError(key)
-        if key in self:
-            dict.__delitem__(self, key)
-        return value
+        _builtin()
 
     def popitem(self):
         _builtin()
