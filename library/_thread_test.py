@@ -16,7 +16,7 @@ class UnderThreadTest(unittest.TestCase):
 
         current_id = _thread.get_ident()
         new_id = _thread.start_new_thread(bootstrap, ())
-        time.sleep(0.1)  # TODO(T66337218): remove when we can join on threads
+        time.sleep(1.0)  # TODO(T66337218): remove when we can join on threads
 
         self.assertIsInstance(new_id, int)
         self.assertNotEqual(new_id, current_id)
@@ -27,7 +27,7 @@ class UnderThreadTest(unittest.TestCase):
 
         with _io.StringIO() as stderr, contextlib.redirect_stderr(stderr):
             _thread.start_new_thread(bootstrap, ())
-            time.sleep(0.1)  # TODO(T66337218): remove when we can join on threads
+            time.sleep(1.0)  # TODO(T66337218): remove when we can join on threads
 
             self.maxDiff = 10000
             self.assertRegex(
