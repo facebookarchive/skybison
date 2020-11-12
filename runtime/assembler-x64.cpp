@@ -128,6 +128,16 @@ void Assembler::movl(Register dst, Immediate imm) {
   emitImmediate(imm);
 }
 
+void Assembler::movl(Address dst, Immediate imm) {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  Operand operand(dst);
+  emitOperandREX(0, dst, REX_NONE);
+  emitUint8(0xc7);
+  emitOperand(0, dst);
+  DCHECK(imm.isInt32(), "assert()");
+  emitImmediate(imm);
+}
+
 void Assembler::movb(Address dst, Immediate imm) {
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
   emitOperandREX(0, dst, REX_NONE);
