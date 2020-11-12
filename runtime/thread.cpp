@@ -231,7 +231,7 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
   result->setCaches(function.caches());
   result->setVirtualPC(0);
-  result->setBlockStackDepth(0);
+  result->setBlockStackDepthReturnMode(0);
   return result;
 }
 

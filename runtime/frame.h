@@ -111,7 +111,7 @@ class TryBlock {
 //     || .              | |           |                      |
 //     || . entries      | | growth    |                      |
 //     |+----------------+             |                      |
-//     | Block Stack Depth             |                      |
+//     | Blockstack Depth/Return Mode  |                      |
 //     | Locals Offset ----------------|----------------------+
 //     | Virtual PC                    |
 //     | Previous frame ptr            |<-+ <--Frame pointer
@@ -147,6 +147,11 @@ class TryBlock {
 // object for this case and avoid the extra indirection.
 class Frame {
  public:
+  enum ReturnMode {
+    kNormal = 0,
+    kExitRecursiveInterpreter = 1 << 0,
+  };
+
   // Returns true if this frame is for a built-in or extension function. This
   // means no bytecode exists and functions like virtualPC() or caches() must
   // not be used.
@@ -161,12 +166,16 @@ class Frame {
 
   RawFunction function();
 
-  word blockStackDepth();
-  void setBlockStackDepth(word depth);
+  word blockStackDepthReturnMode();
+  void setBlockStackDepthReturnMode(word value);
 
+  bool blockStackEmpty();
   TryBlock blockStackPeek();
   TryBlock blockStackPop();
   void blockStackPush(TryBlock block);
+
+  void addReturnMode(word mode);
+  word returnMode();
 
   // Index in the bytecode array of the next instruction to be executed.
   word virtualPC();
@@ -226,8 +235,10 @@ class Frame {
   static const int kPreviousFrameOffset = kCachesOffset + kPointerSize;
   static const int kVirtualPCOffset = kPreviousFrameOffset + kPointerSize;
   static const int kLocalsOffsetOffset = kVirtualPCOffset + kPointerSize;
-  static const int kBlockStackDepthOffset = kLocalsOffsetOffset + kPointerSize;
-  static const int kBlockStackOffset = kBlockStackDepthOffset + kPointerSize;
+  static const int kBlockStackDepthReturnModeOffset =
+      kLocalsOffsetOffset + kPointerSize;
+  static const int kBlockStackOffset =
+      kBlockStackDepthReturnModeOffset + kPointerSize;
   static const int kSize =
       kBlockStackOffset + (kMaxBlockStackDepth * kPointerSize);
 
@@ -237,6 +248,11 @@ class Frame {
   // A large PC value represents finished generators. It must be an even number
   // to fit the constraints of `setVirtualPC()`/`virtualPD()`.
   static const word kFinishedGeneratorPC = RawSmallInt::kMaxValue - 1;
+
+  static const int kBlockStackDepthBits = 32;
+  static const word kBlockStackDepthMask =
+      (word{1} << kBlockStackDepthBits) - 1;
+  static const word kReturnModeOffset = 32;
 
   // Returns a pointer to the "begin" of where the arguments + locals are stored
   // on the stack. For example local 0 can be found at `locals()[-1]` local 1
@@ -283,33 +299,53 @@ inline void Frame::atPut(int offset, RawObject value) {
   *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
-inline word Frame::blockStackDepth() {
-  return SmallInt::cast(at(kBlockStackDepthOffset)).asReinterpretedWord();
+inline word Frame::blockStackDepthReturnMode() {
+  return SmallInt::cast(at(kBlockStackDepthReturnModeOffset))
+      .asReinterpretedWord();
 }
 
-inline void Frame::setBlockStackDepth(word depth) {
-  atPut(kBlockStackDepthOffset, SmallInt::fromReinterpretedWord(depth));
+inline void Frame::setBlockStackDepthReturnMode(word value) {
+  atPut(kBlockStackDepthReturnModeOffset,
+        SmallInt::fromReinterpretedWord(value));
+}
+
+inline bool Frame::blockStackEmpty() {
+  return (blockStackDepthReturnMode() & kBlockStackDepthMask) == 0;
 }
 
 inline TryBlock Frame::blockStackPeek() {
-  word depth = blockStackDepth();
+  word depth = blockStackDepthReturnMode() & kBlockStackDepthMask;
   DCHECK(depth > 0, "cannot peek into empty blockstack");
   return TryBlock(at(kBlockStackOffset + depth - kPointerSize));
 }
 
 inline TryBlock Frame::blockStackPop() {
-  word new_depth = blockStackDepth() - kPointerSize;
+  word new_depth_return_mode = blockStackDepthReturnMode() - kPointerSize;
+  word new_depth = new_depth_return_mode & kBlockStackDepthMask;
   DCHECK(new_depth >= 0, "block stack underflow");
   TryBlock result(at(kBlockStackOffset + new_depth));
-  setBlockStackDepth(new_depth);
+  setBlockStackDepthReturnMode(new_depth_return_mode);
   return result;
 }
 
 inline void Frame::blockStackPush(TryBlock block) {
-  word depth = blockStackDepth();
+  word depth_return_mode = blockStackDepthReturnMode();
+  word depth = depth_return_mode & kBlockStackDepthMask;
   DCHECK(depth < kMaxBlockStackDepth * kPointerSize, "block stack overflow");
   atPut(kBlockStackOffset + depth, block.asSmallInt());
-  setBlockStackDepth(depth + kPointerSize);
+  setBlockStackDepthReturnMode(depth_return_mode + kPointerSize);
+}
+
+inline void Frame::addReturnMode(word mode) {
+  DCHECK(!isNative(), "Cannot set return mode on native frames");
+  word blockstack_depth_return_mode = blockStackDepthReturnMode();
+  setBlockStackDepthReturnMode(blockstack_depth_return_mode |
+                               (mode << kReturnModeOffset));
+}
+
+inline word Frame::returnMode() {
+  return static_cast<ReturnMode>(blockStackDepthReturnMode() >>
+                                 kReturnModeOffset);
 }
 
 inline RawFunction Frame::function() {

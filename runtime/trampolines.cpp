@@ -548,6 +548,7 @@ static RawObject createGenerator(Thread* thread, const Function& function) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   GeneratorFrame generator_frame(&scope, runtime->newGeneratorFrame(function));
+  thread->currentFrame()->addReturnMode(Frame::kExitRecursiveInterpreter);
   thread->popFrameToGeneratorFrame(generator_frame);
   GeneratorBase gen_base(&scope, createGeneratorObject(thread, function));
   gen_base.setGeneratorFrame(*generator_frame);

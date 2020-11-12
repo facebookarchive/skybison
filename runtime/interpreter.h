@@ -278,12 +278,10 @@ class Interpreter {
   static void storeAttrWithLocation(Thread* thread, RawObject receiver,
                                     RawObject location, RawObject value);
 
-  // Unwind the stack for a pending exception.
-  //
-  // Returns true if the exception escaped frames owned by the current
-  // Interpreter instance, indicating that an Error should be returned to the
-  // caller.
-  static bool unwind(Thread* thread, Frame* entry_frame);
+  // Unwind the stack for a pending exception. A return value that is not
+  // `Error::error()` indicates that we should exit the interpreter loop and
+  // return that value.
+  static RawObject unwind(Thread* thread);
 
   // Unwind an ExceptHandler from the stack, restoring the previous handler
   // state.
@@ -306,7 +304,7 @@ class Interpreter {
   // Pop from the block stack until a handler that cares about 'return' is
   // found, or the stack is emptied. A return value that is not `Error::error()`
   // indicates that we should exit the interpreter loop and return that value.
-  static RawObject handleReturn(Thread* thread, Frame* entry_frame);
+  static RawObject handleReturn(Thread* thread);
 
   // Pop from the block stack until a handler that cares about 'break' or
   // 'continue' is found.

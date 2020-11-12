@@ -1245,22 +1245,37 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
   return true;
 }
 
-RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
+NEVER_INLINE static bool handleReturnModes(Thread* thread, word return_mode,
+                                           RawObject* retval_ptr) {
+  HandleScope scope(thread);
+  Object retval(&scope, *retval_ptr);
+
+  // Handling for additional return modes will be added here.
+
+  thread->popFrame();
+  *retval_ptr = *retval;
+  return (return_mode & Frame::kExitRecursiveInterpreter) != 0;
+}
+
+RawObject Interpreter::handleReturn(Thread* thread) {
   Frame* frame = thread->currentFrame();
   RawObject retval = thread->stackPop();
-  while (frame->blockStackDepth() > 0) {
+  while (!frame->blockStackEmpty()) {
     if (popBlock(thread, TryBlock::Why::kReturn, retval)) {
       return Error::error();  // continue interpreter loop.
     }
   }
 
   // Check whether we should exit the interpreter loop.
-  if (frame == entry_frame) {
+  word return_mode = frame->returnMode();
+  if (return_mode == 0) {
+    thread->popFrame();
+  } else if (return_mode == Frame::kExitRecursiveInterpreter) {
     thread->popFrame();
     return retval;
+  } else if (handleReturnModes(thread, return_mode, &retval)) {
+    return retval;
   }
-
-  thread->popFrame();
   thread->stackPush(retval);
   return Error::error();  // continue interpreter loop.
 }
@@ -1273,7 +1288,7 @@ HANDLER_INLINE void Interpreter::handleLoopExit(Thread* thread,
   }
 }
 
-bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
+RawObject Interpreter::unwind(Thread* thread) {
   DCHECK(thread->hasPendingException(),
          "unwind() called without a pending exception");
   HandleScope scope(thread);
@@ -1296,7 +1311,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
         .setNext(thread->pendingExceptionTraceback());
     thread->setPendingExceptionTraceback(*new_traceback);
 
-    while (frame->blockStackDepth() > 0) {
+    while (!frame->blockStackEmpty()) {
       TryBlock block = frame->blockStackPop();
       if (block.kind() == TryBlock::kExceptHandler) {
         unwindExceptHandler(thread, block);
@@ -1340,15 +1355,22 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
       thread->stackPush(*value);
       thread->stackPush(*type);
       frame->setVirtualPC(block.handler());
-      return false;  // continue interpreter loop.
+      return Error::error();  // continue interpreter loop.
     }
 
-    if (frame == entry_frame) break;
-    frame = thread->popFrame();
+    word return_mode = frame->returnMode();
+    RawObject retval = Error::exception();
+    if (return_mode == 0) {
+      frame = thread->popFrame();
+    } else if (return_mode == Frame::kExitRecursiveInterpreter) {
+      thread->popFrame();
+      return Error::exception();
+    } else if (handleReturnModes(thread, return_mode, &retval)) {
+      return retval;
+    } else {
+      frame = thread->currentFrame();
+    }
   }
-
-  thread->popFrame();
-  return true;
 }
 
 static Bytecode currentBytecode(Thread* thread) {
@@ -5729,6 +5751,8 @@ static RawObject resumeGeneratorImpl(Thread* thread,
                                      const ExceptionState& exc_state) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
+  DCHECK((frame->returnMode() & Frame::kExitRecursiveInterpreter) != 0,
+         "expected kExitRecursiveInterpreter return mode");
   generator.setRunning(Bool::trueObj());
   Object result(&scope, Interpreter::execute(thread));
   generator.setRunning(Bool::falseObj());
@@ -5840,7 +5864,11 @@ RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
   thread->setPendingExceptionType(*type);
   thread->setPendingExceptionValue(*value);
   thread->setPendingExceptionTraceback(*traceback);
-  if (unwind(thread, frame)) {
+  DCHECK((frame->returnMode() & Frame::kExitRecursiveInterpreter) != 0,
+         "expected kExitRecursiveInterpreter return mode");
+  RawObject result = Interpreter::unwind(thread);
+  if (!result.isErrorError()) {
+    // Exception was not caught; stop generator.
     thread->setCaughtExceptionState(exc_state.previous());
     exc_state.setPrevious(NoneType::object());
     if (thread->currentFrame() != frame) {
@@ -5900,7 +5928,9 @@ RawObject CppInterpreter::interpreterLoop(Thread* thread) {
 #undef OP
   };
 
-  Frame* entry_frame = thread->currentFrame();
+  Frame* frame = thread->currentFrame();
+  frame->addReturnMode(Frame::kExitRecursiveInterpreter);
+
   Bytecode bc;
   int32_t arg;
   Continue cont;
@@ -5940,11 +5970,12 @@ extendedArg:
 
 handle_return_or_unwind:
   if (cont == Continue::UNWIND) {
-    if (unwind(thread, entry_frame)) {
-      return Error::exception();
+    RawObject result = unwind(thread);
+    if (!result.isErrorError()) {
+      return result;
     }
   } else if (cont == Continue::RETURN) {
-    RawObject result = handleReturn(thread, entry_frame);
+    RawObject result = handleReturn(thread);
     if (!result.isErrorError()) {
       return result;
     }

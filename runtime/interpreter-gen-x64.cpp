@@ -71,14 +71,13 @@ const Register kCallableReg = RDI;
 // | ...         |
 // | ...         | <- callee-saved registers
 // | ...         |
-// | entry_frame |
 // | padding     | <- native %rsp, when materialized for a C++ call
 // +-------------+
 constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14};
 const word kNumCalleeSavedRegs = ARRAYSIZE(kUsedCalleeSavedRegs);
-const word kEntryFrameOffset = -(kNumCalleeSavedRegs + 1) * kPointerSize;
-const word kPaddingBytes = (kEntryFrameOffset % 16) == 0 ? 0 : kPointerSize;
-const word kNativeStackFrameSize = -kEntryFrameOffset + kPaddingBytes;
+const word kFrameOffset = -kNumCalleeSavedRegs * kPointerSize;
+const word kPaddingBytes = (kFrameOffset % 16) == 0 ? 0 : kPointerSize;
+const word kNativeStackFrameSize = -kFrameOffset + kPaddingBytes;
 static_assert(kNativeStackFrameSize % 16 == 0,
               "native frame size must be multiple of 16");
 
@@ -980,7 +979,7 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
   // new_frame.setLocalsOffset(locals_offset)
   __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
   // new_frame.setBlockStackDepth(0)
-  __ movq(Address(RSP, Frame::kBlockStackDepthOffset), Immediate(0));
+  __ movq(Address(RSP, Frame::kBlockStackDepthReturnModeOffset), Immediate(0));
   // new_frame.setPreviousFrame(kFrameReg)
   __ movq(Address(RSP, Frame::kPreviousFrameOffset), kFrameReg);
   // kBCReg = callable.rewritteBytecode(); new_frame.setBytecode(kBCReg);
@@ -1534,12 +1533,11 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Register r_return_value = RAX;
   Register r_scratch = RDX;
 
-  // Go to slow_path if frame == entry_frame...
-  __ cmpq(kFrameReg, Address(RBP, kEntryFrameOffset));
-  __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
-
-  // or frame->blockStack()->depth() != 0...
-  __ cmpq(Address(kFrameReg, Frame::kBlockStackDepthOffset), Immediate(0));
+  // Go to slow_path if frame->blockStackDepthReturnMode() != 0.
+  // This is equivalent to
+  // `!frame->blockStackEmpty() || frame->returnMode() != Frame::kNormal`.
+  __ cmpq(Address(kFrameReg, Frame::kBlockStackDepthReturnModeOffset),
+          Immediate(0));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
 
   // Fast path: pop return value, restore caller frame, push return value.
@@ -1571,11 +1569,13 @@ void emitHandler<POP_BLOCK>(EmitEnv* env) {
   Register r_block = R9;
 
   // frame->blockstack()->pop()
-  __ movl(r_depth, Address(kFrameReg, Frame::kBlockStackDepthOffset));
+  static_assert(Frame::kBlockStackDepthMask == 0xffffffff,
+                "exepcted blockstackdepth to be low 32 bits");
+  __ movl(r_depth, Address(kFrameReg, Frame::kBlockStackDepthReturnModeOffset));
   __ subl(r_depth, Immediate(kPointerSize));
   __ movq(r_block,
           Address(kFrameReg, r_depth, TIMES_1, Frame::kBlockStackOffset));
-  __ movl(Address(kFrameReg, Frame::kBlockStackDepthOffset), r_depth);
+  __ movl(Address(kFrameReg, Frame::kBlockStackDepthReturnModeOffset), r_depth);
 
   // thread->setStackPointer(thread->valueStackBase() - block.level());
   // =>   RSP = kFrameReg - (block.level() * kPointerSize)
@@ -1601,7 +1601,11 @@ void emitInterpreter(EmitEnv* env) {
 
   __ movq(kThreadReg, kArgRegs[0]);
   __ movq(kFrameReg, Address(kThreadReg, Thread::currentFrameOffset()));
-  __ pushq(kFrameReg);  // entry_frame
+
+  // frame->addReturnMode(Frame::kExitRecursiveInterpreter)
+  __ orl(Address(kFrameReg, Frame::kBlockStackDepthReturnModeOffset +
+                                (Frame::kReturnModeOffset / kBitsPerByte)),
+         Immediate(static_cast<word>(Frame::kExitRecursiveInterpreter)));
 
   // Materialize the handler base address into a register. The offset will be
   // patched right before emitting the first handler.
@@ -1612,10 +1616,6 @@ void emitInterpreter(EmitEnv* env) {
   // Load VM state into registers and jump to the first opcode handler.
   emitRestoreInterpreterState(env, kAllState);
   emitNextOpcode(env);
-
-  Label return_with_error_exception;
-  __ bind(&return_with_error_exception);
-  __ movq(RAX, Immediate(Error::exception().raw()));
 
   Label do_return;
   __ bind(&do_return);
@@ -1636,11 +1636,13 @@ void emitInterpreter(EmitEnv* env) {
     HandlerSizer sizer(env, kHandlerSize);
     __ bind(&env->unwind_handler);
     __ movq(kArgRegs[0], kThreadReg);
-    __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
 
-    emitCall<bool (*)(Thread*, Frame*)>(env, Interpreter::unwind);
-    __ testb(RAX, RAX);
-    __ jcc(NOT_ZERO, &return_with_error_exception, Assembler::kFarJump);
+    emitCall<RawObject (*)(Thread*)>(env, Interpreter::unwind);
+    // Check RAX.isErrorError()
+    static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                  "tag should fit a byte for cmpb");
+    __ cmpb(RAX, Immediate(Error::error().raw()));
+    __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcode(env);
   }
@@ -1652,8 +1654,7 @@ void emitInterpreter(EmitEnv* env) {
     env->current_handler = "RETURN pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], kThreadReg);
-    __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
-    emitCall<RawObject (*)(Thread*, Frame*)>(env, Interpreter::handleReturn);
+    emitCall<RawObject (*)(Thread*)>(env, Interpreter::handleReturn);
     // Check RAX.isErrorError()
     static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                   "tag should fit a byte for cmpb");
