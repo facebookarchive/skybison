@@ -1,0 +1,10 @@
+#!/bin/sh
+# This script produces histograms from its input on stdin. This is useful if
+# your program outputs regular-looking output that you can then uniq on.
+sort |
+uniq -c |
+sort -n |
+sed 's/^ *//' |
+awk 'BEGIN { OFS="\t"} { sum += $1; print sum, $1, substr($0, 1 + index($0, " ")) }' |
+sort -n -r |
+awk 'BEGIN { IFS=OFS="\t"; print "cum", "pct", "freq" }$1 > max { max = $1 }{ print int($1/max*100), int($2/max*100), $2, $3 }'
