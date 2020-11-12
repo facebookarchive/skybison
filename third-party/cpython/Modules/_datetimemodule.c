@@ -1477,7 +1477,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_ssize_t flen;            /* length of input format */
     char ch;                    /* next char in input format */
 
-    PyObject *newfmt = NULL;            /* py string, the output format */
+    char *newfmt = NULL;            /* the output format */
     char *pnew;         /* pointer to available byte in output format */
     size_t totalnew;            /* number bytes total in output format buffer,
                                exclusive of trailing \0 */
@@ -1503,9 +1503,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     }
 
     totalnew = flen + 1;        /* realistic if no %z/%Z */
-    newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
+    newfmt = PyMem_Malloc(totalnew);
     if (newfmt == NULL) goto Done;
-    pnew = PyBytes_AsString(newfmt);
+    pnew = newfmt;
     usednew = 0;
 
     while ((ch = *pin++) != '\0') {
@@ -1514,8 +1514,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'. 
-         * 
+        /* Null byte follows %, copy only '%'.
+         *
          * Back the pin up one char so that we catch the null check
          * the next time through the loop.*/
             pin--;
@@ -1596,25 +1596,24 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 goto Done;
             }
             totalnew <<= 1;
-            if (_PyBytes_Resize(&newfmt, totalnew) < 0)
+            if (!(pnew = PyMem_Realloc(newfmt, totalnew)))
                 goto Done;
-            pnew = PyBytes_AsString(newfmt) + usednew;
+            newfmt = pnew;
+            pnew += usednew;
         }
         memcpy(pnew, ptoappend, ntoappend);
         pnew += ntoappend;
         usednew += ntoappend;
         assert(usednew <= totalnew);
     }  /* end while() */
-    
-    if (_PyBytes_Resize(&newfmt, usednew) < 0)
-        goto Done;
+
     {
         PyObject *format;
         PyObject *time = PyImport_ImportModuleNoBlock("time");
 
         if (time == NULL)
             goto Done;
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        format = PyUnicode_FromStringAndSize(newfmt, usednew);
         if (format != NULL) {
             result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
                                                    format, timetuple, NULL);
@@ -1626,7 +1625,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
     Py_XDECREF(Zreplacement);
-    Py_XDECREF(newfmt);
+    PyMem_Free(newfmt);
     return result;
 }
 
@@ -4399,15 +4398,17 @@ invalid_string_error:
 static PyObject *
 time_getstate(PyDateTime_Time *self, int proto)
 {
+    char buf[_PyDateTime_TIME_DATASIZE];
     PyObject *basestate;
     PyObject *result = NULL;
 
-    basestate =  PyBytes_FromStringAndSize((char *)self->data,
-                                            _PyDateTime_TIME_DATASIZE);
+    memcpy(buf, self->data, _PyDateTime_TIME_DATASIZE);
+    if (proto > 3 && TIME_GET_FOLD(self))
+        /* Set the first bit of the first byte */
+        buf[0] |= (1 << 7);
+
+    basestate = PyBytes_FromStringAndSize(buf, _PyDateTime_TIME_DATASIZE);
     if (basestate != NULL) {
-        if (proto > 3 && TIME_GET_FOLD(self))
-            /* Set the first bit of the first byte */
-            PyBytes_AS_STRING(basestate)[0] |= (1 << 7);
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
@@ -6051,15 +6052,17 @@ datetime_utctimetuple(PyDateTime_DateTime *self)
 static PyObject *
 datetime_getstate(PyDateTime_DateTime *self, int proto)
 {
+    char buf[_PyDateTime_DATETIME_DATASIZE];
     PyObject *basestate;
     PyObject *result = NULL;
 
-    basestate = PyBytes_FromStringAndSize((char *)self->data,
-                                           _PyDateTime_DATETIME_DATASIZE);
+    memcpy(buf, self->data, _PyDateTime_DATETIME_DATASIZE);
+    if (proto > 3 && DATE_GET_FOLD(self))
+        /* Set the first bit of the third byte */
+        buf[2] |= (1 << 7);
+
+    basestate = PyBytes_FromStringAndSize(buf, _PyDateTime_DATETIME_DATASIZE);
     if (basestate != NULL) {
-        if (proto > 3 && DATE_GET_FOLD(self))
-            /* Set the first bit of the third byte */
-            PyBytes_AS_STRING(basestate)[2] |= (1 << 7);
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
