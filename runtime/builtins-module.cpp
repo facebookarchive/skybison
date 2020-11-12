@@ -166,10 +166,41 @@ ALIGN_16 bool FUNC(builtins, _slice_index_not_none_intrinsic)(Thread* thread) {
 }
 
 ALIGN_16 bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
-  if (thread->runtime()->typeOf(thread->stackPeek(1)) == thread->stackPeek(0)) {
+  RawObject obj = thread->stackPeek(1);
+  RawObject type = thread->stackPeek(0);
+  Runtime* runtime = thread->runtime();
+  RawType obj_type = runtime->typeOf(obj);
+  if (obj_type == type) {
     thread->stackDrop(2);
     thread->stackSetTop(Bool::trueObj());
     return true;
+  }
+  if (type.isType()) {
+    HandleScope scope(thread);
+    Type obj_type_handle(&scope, obj_type);
+    Type type_handle(&scope, type);
+    if (typeIsSubclass(obj_type_handle, type_handle)) {
+      thread->stackDrop(2);
+      thread->stackSetTop(Bool::trueObj());
+      return true;
+    }
+  }
+  if (type.isTuple()) {
+    HandleScope scope(thread);
+    Type obj_type_handle(&scope, obj_type);
+    Tuple types(&scope, type);
+    Type type_handle(&scope, obj_type);
+    for (word i = 0; i < types.length(); i++) {
+      if (!types.at(i).isType()) {
+        return false;
+      }
+      type_handle = types.at(i);
+      if (typeIsSubclass(obj_type_handle, type_handle)) {
+        thread->stackDrop(2);
+        thread->stackSetTop(Bool::trueObj());
+        return true;
+      }
+    }
   }
   return false;
 }
