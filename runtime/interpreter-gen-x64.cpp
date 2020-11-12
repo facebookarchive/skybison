@@ -979,9 +979,8 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
   __ leaq(r_locals_offset, Address(r_initial_size, r_scratch, TIMES_4, 0));
   // new_frame.setLocalsOffset(locals_offset)
   __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
-  // new_frame.blockStack()->setDepth(0)
-  __ movq(Address(RSP, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
-          Immediate(0));
+  // new_frame.setBlockStackDepth(0)
+  __ movq(Address(RSP, Frame::kBlockStackDepthOffset), Immediate(0));
   // new_frame.setPreviousFrame(kFrameReg)
   __ movq(Address(RSP, Frame::kPreviousFrameOffset), kFrameReg);
   // kBCReg = callable.rewritteBytecode(); new_frame.setBytecode(kBCReg);
@@ -1532,26 +1531,28 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
 template <>
 void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Label slow_path;
+  Register r_return_value = RAX;
+  Register r_scratch = RDX;
 
   // Go to slow_path if frame == entry_frame...
   __ cmpq(kFrameReg, Address(RBP, kEntryFrameOffset));
   __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
 
   // or frame->blockStack()->depth() != 0...
-  __ cmpq(
-      Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
-      smallIntImmediate(0));
+  __ cmpq(Address(kFrameReg, Frame::kBlockStackDepthOffset), Immediate(0));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
 
   // Fast path: pop return value, restore caller frame, push return value.
-  __ popq(RAX);
-  // RSP = frame->frameEnd(); ( = locals() + 2)
-  __ addq(RSP, Address(kFrameReg, Frame::kLocalsOffsetOffset));
-  __ addq(RSP,
-          Immediate((Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
+  __ popq(r_return_value);
+  // RSP = frame->frameEnd();
+  // ( = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
+
+  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ leaq(RSP, Address(kFrameReg, r_scratch, TIMES_1,
+                       (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
   __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
-  __ pushq(RAX);
+  __ pushq(r_return_value);
   emitNextOpcode(env);
 
   __ bind(&slow_path);
@@ -1570,15 +1571,11 @@ void emitHandler<POP_BLOCK>(EmitEnv* env) {
   Register r_block = R9;
 
   // frame->blockstack()->pop()
-  __ movl(r_depth, Address(kFrameReg, Frame::kBlockStackOffset +
-                                          BlockStack::kDepthOffset));
-  __ subl(r_depth, Immediate(2));
+  __ movl(r_depth, Address(kFrameReg, Frame::kBlockStackDepthOffset));
+  __ subl(r_depth, Immediate(kPointerSize));
   __ movq(r_block,
-          Address(kFrameReg, r_depth, TIMES_4,
-                  Frame::kBlockStackOffset + BlockStack::kStackOffset));
-  __ movl(
-      Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
-      r_depth);
+          Address(kFrameReg, r_depth, TIMES_1, Frame::kBlockStackOffset));
+  __ movl(Address(kFrameReg, Frame::kBlockStackDepthOffset), r_depth);
 
   // thread->setStackPointer(thread->valueStackBase() - block.level());
   // =>   RSP = kFrameReg - (block.level() * kPointerSize)

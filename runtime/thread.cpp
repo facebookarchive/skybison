@@ -228,10 +228,10 @@ Frame* Thread::pushCallFrame(RawFunction function) {
 
   word locals_offset = initial_size + function.totalArgs() * kPointerSize;
   Frame* result = openAndLinkFrame(initial_size, locals_offset);
-  result->blockStack()->setDepth(0);
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
   result->setCaches(function.caches());
   result->setVirtualPC(0);
+  result->setBlockStackDepth(0);
   return result;
 }
 

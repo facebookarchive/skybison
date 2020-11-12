@@ -1207,17 +1207,15 @@ HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread,
 
 bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
   Frame* frame = thread->currentFrame();
-  DCHECK(frame->blockStack()->depth() > 0,
-         "Tried to pop from empty blockstack");
   DCHECK(why != TryBlock::Why::kException, "Unsupported Why");
 
-  TryBlock block = frame->blockStack()->peek();
+  TryBlock block = frame->blockStackPeek();
   if (block.kind() == TryBlock::kLoop && why == TryBlock::Why::kContinue) {
     frame->setVirtualPC(SmallInt::cast(value).value());
     return true;
   }
 
-  frame->blockStack()->pop();
+  frame->blockStackPop();
   if (block.kind() == TryBlock::kExceptHandler) {
     unwindExceptHandler(thread, block);
     return false;
@@ -1250,7 +1248,7 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
 RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
   Frame* frame = thread->currentFrame();
   RawObject retval = thread->stackPop();
-  while (frame->blockStack()->depth() > 0) {
+  while (frame->blockStackDepth() > 0) {
     if (popBlock(thread, TryBlock::Why::kReturn, retval)) {
       return Error::error();  // continue interpreter loop.
     }
@@ -1297,10 +1295,9 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
     Traceback::cast(*new_traceback)
         .setNext(thread->pendingExceptionTraceback());
     thread->setPendingExceptionTraceback(*new_traceback);
-    BlockStack* stack = frame->blockStack();
 
-    while (stack->depth() > 0) {
-      TryBlock block = stack->pop();
+    while (frame->blockStackDepth() > 0) {
+      TryBlock block = frame->blockStackPop();
       if (block.kind() == TryBlock::kExceptHandler) {
         unwindExceptHandler(thread, block);
         continue;
@@ -1313,7 +1310,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
              "Unexpected TryBlock::Kind");
 
       // Push a handler block and save the current caught exception, if any.
-      stack->push(
+      frame->blockStackPush(
           TryBlock{TryBlock::kExceptHandler, 0, thread->valueStackSize()});
       caught_exc_state = thread->topmostCaughtExceptionState();
       if (caught_exc_state.isNoneType()) {
@@ -2217,10 +2214,10 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
 
     // We popped __exit__ out from under the depth recorded by the top
     // ExceptHandler block, so adjust it.
-    TryBlock block = frame->blockStack()->pop();
+    TryBlock block = frame->blockStackPop();
     DCHECK(block.kind() == TryBlock::kExceptHandler,
            "Unexpected TryBlock Kind");
-    frame->blockStack()->push(
+    frame->blockStackPush(
         TryBlock(block.kind(), block.handler(), block.level() - 1));
   }
 
@@ -2429,7 +2426,7 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doPopBlock(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
-  TryBlock block = frame->blockStack()->pop();
+  TryBlock block = frame->blockStackPop();
   thread->setStackPointer(thread->valueStackBase() - block.level());
   return Continue::NEXT;
 }
@@ -2453,7 +2450,7 @@ HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
         handleLoopExit(thread, why, NoneType::object());
         return Continue::NEXT;
       case TryBlock::Why::kSilenced:
-        unwindExceptHandler(thread, frame->blockStack()->pop());
+        unwindExceptHandler(thread, frame->blockStackPop());
         return Continue::NEXT;
     }
     UNIMPLEMENTED("unexpected why value");
@@ -2477,7 +2474,7 @@ HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doPopExcept(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
 
-  TryBlock block = frame->blockStack()->pop();
+  TryBlock block = frame->blockStackPop();
   if (block.kind() != TryBlock::kExceptHandler) {
     thread->raiseWithFmt(LayoutId::kSystemError,
                          "popped block is not an except handler");
@@ -4078,27 +4075,24 @@ HANDLER_INLINE Continue Interpreter::doContinueLoop(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doSetupLoop(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word stack_depth = thread->valueStackBase() - thread->stackPointer();
-  BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
-  block_stack->push(TryBlock(TryBlock::kLoop, handler_pc, stack_depth));
+  frame->blockStackPush(TryBlock(TryBlock::kLoop, handler_pc, stack_depth));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doSetupExcept(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word stack_depth = thread->valueStackSize();
-  BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
-  block_stack->push(TryBlock(TryBlock::kExcept, handler_pc, stack_depth));
+  frame->blockStackPush(TryBlock(TryBlock::kExcept, handler_pc, stack_depth));
   return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doSetupFinally(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word stack_depth = thread->valueStackBase() - thread->stackPointer();
-  BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
-  block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
+  frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   return Continue::NEXT;
 }
 
@@ -4532,9 +4526,8 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
 
   word stack_depth = thread->valueStackBase() - thread->stackPointer();
   Frame* frame = thread->currentFrame();
-  BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
-  block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
+  frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   thread->stackPush(*result);
   return Continue::NEXT;
 }
@@ -4730,9 +4723,8 @@ HANDLER_INLINE Continue Interpreter::doSetupAsyncWith(Thread* thread,
   HandleScope scope(thread);
   Object result(&scope, thread->stackPop());
   word stack_depth = thread->valueStackSize();
-  BlockStack* block_stack = frame->blockStack();
   word handler_pc = frame->virtualPC() + arg;
-  block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
+  frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   thread->stackPush(*result);
   return Continue::NEXT;
 }

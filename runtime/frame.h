@@ -81,36 +81,6 @@ class TryBlock {
   uword value_;
 };
 
-// TODO(mpage): Determine maximum block stack depth when the code object is
-// loaded and dynamically allocate the minimum amount of space for the block
-// stack.
-const int kMaxBlockStackDepth = 20;
-
-class BlockStack {
- public:
-  void push(const TryBlock& block);
-
-  word depth();
-
-  TryBlock pop();
-
-  TryBlock peek();
-
-  void setDepth(word new_depth);
-
-  static const int kStackOffset = 0;
-  static const int kDepthOffset =
-      kStackOffset + kMaxBlockStackDepth * kPointerSize;
-  static const int kSize = kDepthOffset + kPointerSize;
-
- private:
-  uword address();
-  RawObject at(int offset);
-  void atPut(int offset, RawObject value);
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
-};
-
 // A stack frame.
 //
 // Prior to a function call, the stack will look like
@@ -135,16 +105,15 @@ class BlockStack {
 //     ...                                                    |
 //     Locals N                                               |
 //     +-------------------------------+ Frame (fixed size)   |
-//     | Locals -----------------------|----------------------+
-//     | Num locals                    |
-//     |+----------------+ BlockStack  |
-//     || Blockstack top |             |
-//     || .              | ^           |
-//     || .              | |           |
-//     || . entries      | | growth    |
-//     |+----------------+             |
+//     |+----------------+ BlockStack  |                      |
+//     || Blockstack top |             |                      |
+//     || .              | ^           |                      |
+//     || .              | |           |                      |
+//     || . entries      | | growth    |                      |
+//     |+----------------+             |                      |
+//     | Block Stack Depth             |                      |
+//     | Locals Offset ----------------|----------------------+
 //     | Virtual PC                    |
-//     | Value stack top --------------|--+
 //     | Previous frame ptr            |<-+ <--Frame pointer
 //     +-------------------------------+
 //     .                               .
@@ -192,7 +161,12 @@ class Frame {
 
   RawFunction function();
 
-  BlockStack* blockStack();
+  word blockStackDepth();
+  void setBlockStackDepth(word depth);
+
+  TryBlock blockStackPeek();
+  TryBlock blockStackPop();
+  void blockStackPush(TryBlock block);
 
   // Index in the bytecode array of the next instruction to be executed.
   word virtualPC();
@@ -245,13 +219,17 @@ class Frame {
   // Returns nullptr if the frame is well formed, otherwise an error message.
   const char* isInvalid();
 
+  static const int kMaxBlockStackDepth = 20;
+
   static const int kBytecodeOffset = 0;
   static const int kCachesOffset = kBytecodeOffset + kPointerSize;
   static const int kPreviousFrameOffset = kCachesOffset + kPointerSize;
   static const int kVirtualPCOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
-  static const int kLocalsOffsetOffset = kBlockStackOffset + BlockStack::kSize;
-  static const int kSize = kLocalsOffsetOffset + kPointerSize;
+  static const int kLocalsOffsetOffset = kVirtualPCOffset + kPointerSize;
+  static const int kBlockStackDepthOffset = kLocalsOffsetOffset + kPointerSize;
+  static const int kBlockStackOffset = kBlockStackDepthOffset + kPointerSize;
+  static const int kSize =
+      kBlockStackOffset + (kMaxBlockStackDepth * kPointerSize);
 
   static const int kFunctionOffsetFromLocals = 0;
   static const int kImplicitGlobalsOffsetFromLocals = 1;
@@ -305,8 +283,33 @@ inline void Frame::atPut(int offset, RawObject value) {
   *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
-inline BlockStack* Frame::blockStack() {
-  return reinterpret_cast<BlockStack*>(address() + kBlockStackOffset);
+inline word Frame::blockStackDepth() {
+  return SmallInt::cast(at(kBlockStackDepthOffset)).asReinterpretedWord();
+}
+
+inline void Frame::setBlockStackDepth(word depth) {
+  atPut(kBlockStackDepthOffset, SmallInt::fromReinterpretedWord(depth));
+}
+
+inline TryBlock Frame::blockStackPeek() {
+  word depth = blockStackDepth();
+  DCHECK(depth > 0, "cannot peek into empty blockstack");
+  return TryBlock(at(kBlockStackOffset + depth - kPointerSize));
+}
+
+inline TryBlock Frame::blockStackPop() {
+  word new_depth = blockStackDepth() - kPointerSize;
+  DCHECK(new_depth >= 0, "block stack underflow");
+  TryBlock result(at(kBlockStackOffset + new_depth));
+  setBlockStackDepth(new_depth);
+  return result;
+}
+
+inline void Frame::blockStackPush(TryBlock block) {
+  word depth = blockStackDepth();
+  DCHECK(depth < kMaxBlockStackDepth * kPointerSize, "block stack overflow");
+  atPut(kBlockStackOffset + depth, block.asSmallInt());
+  setBlockStackDepth(depth + kPointerSize);
 }
 
 inline RawFunction Frame::function() {
@@ -436,46 +439,6 @@ inline word TryBlock::handler() const {
 
 inline word TryBlock::level() const {
   return (value_ >> kLevelOffset) & kLevelMask;
-}
-
-inline uword BlockStack::address() { return reinterpret_cast<uword>(this); }
-
-inline RawObject BlockStack::at(int offset) {
-  return *reinterpret_cast<RawObject*>(address() + offset);
-}
-
-inline void BlockStack::atPut(int offset, RawObject value) {
-  *reinterpret_cast<RawObject*>(address() + offset) = value;
-}
-
-inline word BlockStack::depth() {
-  return SmallInt::cast(at(kDepthOffset)).value();
-}
-
-inline void BlockStack::setDepth(word new_depth) {
-  DCHECK_INDEX(new_depth, kMaxBlockStackDepth);
-  atPut(kDepthOffset, SmallInt::fromWord(new_depth));
-}
-
-inline TryBlock BlockStack::peek() {
-  word stack_top = depth() - 1;
-  DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
-  RawObject block = at(kStackOffset + stack_top * kPointerSize);
-  return TryBlock(block);
-}
-
-inline void BlockStack::push(const TryBlock& block) {
-  word stack_top = depth();
-  atPut(kStackOffset + stack_top * kPointerSize, block.asSmallInt());
-  setDepth(stack_top + 1);
-}
-
-inline TryBlock BlockStack::pop() {
-  word stack_top = depth() - 1;
-  DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
-  RawObject block = at(kStackOffset + stack_top * kPointerSize);
-  setDepth(stack_top);
-  return TryBlock(block);
 }
 
 }  // namespace py

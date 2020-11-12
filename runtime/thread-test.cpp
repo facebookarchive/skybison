@@ -323,20 +323,19 @@ TEST_F(ThreadTest, ManipulateValueStack) {
 
 TEST_F(ThreadTest, ManipulateBlockStack) {
   Frame* frame = thread_->currentFrame();
-  BlockStack* block_stack = frame->blockStack();
 
   TryBlock pushed1(TryBlock::kLoop, 100, 10);
-  block_stack->push(pushed1);
+  frame->blockStackPush(pushed1);
 
   TryBlock pushed2(TryBlock::kExcept, 200, 20);
-  block_stack->push(pushed2);
+  frame->blockStackPush(pushed2);
 
-  TryBlock popped2 = block_stack->pop();
+  TryBlock popped2 = frame->blockStackPop();
   EXPECT_EQ(popped2.kind(), pushed2.kind());
   EXPECT_EQ(popped2.handler(), pushed2.handler());
   EXPECT_EQ(popped2.level(), pushed2.level());
 
-  TryBlock popped1 = block_stack->pop();
+  TryBlock popped1 = frame->blockStackPop();
   EXPECT_EQ(popped1.kind(), pushed1.kind());
   EXPECT_EQ(popped1.handler(), pushed1.handler());
   EXPECT_EQ(popped1.level(), pushed1.level());
@@ -772,8 +771,7 @@ TEST_F(ThreadTest, BuildSet) {
 
 static RawObject inspect_block(Thread* thread, Arguments) {
   // SETUP_LOOP should have pushed an entry onto the block stack.
-  TryBlock block =
-      thread->currentFrame()->previousFrame()->blockStack()->peek();
+  TryBlock block = thread->currentFrame()->previousFrame()->blockStackPeek();
   EXPECT_EQ(block.kind(), TryBlock::kLoop);
   EXPECT_EQ(block.handler(), 4 + 6);  // offset after SETUP_LOOP + loop size
   EXPECT_EQ(block.level(), 1);
