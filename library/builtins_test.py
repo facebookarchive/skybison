@@ -7965,6 +7965,22 @@ class NextTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(list_iter)
 
+    def test_next_with_range_iterater_returns_next_item(self):
+        ran = range(1)
+        range_iter = iter(ran)
+        self.assertEqual(next(range_iter), 0)
+
+    def test_next_with_empty_range_iterator_returns_default(self):
+        ran = range(0)
+        range_iter = iter(ran)
+        self.assertEqual(next(range_iter, None), None)
+
+    def test_next_with_empty_range_iterator_raises_stop_iteration(self):
+        ran = range(0)
+        range_iter = iter(ran)
+        with self.assertRaises(StopIteration):
+            next(range_iter)
+
 
 class NoneTests(unittest.TestCase):
     def test_dunder_class_returns_type_of_none(self):

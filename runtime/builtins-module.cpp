@@ -17,6 +17,7 @@
 #include "modules.h"
 #include "object-builtins.h"
 #include "objects.h"
+#include "range-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "tuple-builtins.h"
@@ -106,10 +107,21 @@ ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
 ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   switch (value.layoutId()) {
-    case LayoutId::kTupleIterator: {
+    case LayoutId::kListIterator: {
       HandleScope scope(thread);
-      TupleIterator tuple_iterator(&scope, value);
-      RawObject result = tupleIteratorNext(thread, tuple_iterator);
+      ListIterator list_iterator(&scope, value);
+      RawObject result = listIteratorNext(thread, list_iterator);
+      if (result.isErrorOutOfBounds()) {
+        return false;
+      }
+      thread->stackPop();
+      thread->stackSetTop(result);
+      return true;
+    }
+    case LayoutId::kRangeIterator: {
+      HandleScope scope(thread);
+      RangeIterator iter(&scope, value);
+      RawObject result = rangeIteratorNext(iter);
       if (result.isErrorNoMoreItems()) {
         return false;
       }
@@ -117,11 +129,11 @@ ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
       thread->stackSetTop(result);
       return true;
     }
-    case LayoutId::kListIterator: {
+    case LayoutId::kTupleIterator: {
       HandleScope scope(thread);
-      ListIterator list_iterator(&scope, value);
-      RawObject result = listIteratorNext(thread, list_iterator);
-      if (result.isErrorOutOfBounds()) {
+      TupleIterator tuple_iterator(&scope, value);
+      RawObject result = tupleIteratorNext(thread, tuple_iterator);
+      if (result.isErrorNoMoreItems()) {
         return false;
       }
       thread->stackPop();

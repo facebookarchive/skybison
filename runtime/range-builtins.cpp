@@ -49,6 +49,20 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
   return SmallInt::fromWord(0);
 }
 
+RawObject rangeIteratorNext(const RangeIterator& iter) {
+  word length = iter.length();
+  if (length == 0) {
+    return Error::noMoreItems();
+  }
+  iter.setLength(length - 1);
+  word next = iter.next();
+  if (length > 1) {
+    word step = iter.step();
+    iter.setNext(next + step);
+  }
+  return SmallInt::fromWord(next);
+}
+
 RawObject METH(longrange_iterator, __iter__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -256,17 +270,11 @@ RawObject METH(range_iterator, __next__)(Thread* thread, Arguments args) {
     return thread->raiseRequiresType(self, ID(range_iterator));
   }
   RangeIterator iter(&scope, *self);
-  word length = iter.length();
-  if (length == 0) {
+  RawObject result = rangeIteratorNext(iter);
+  if (result.isErrorNoMoreItems()) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
-  iter.setLength(length - 1);
-  word next = iter.next();
-  if (length > 1) {
-    word step = iter.step();
-    iter.setNext(next + step);
-  }
-  return SmallInt::fromWord(next);
+  return result;
 }
 
 }  // namespace py
