@@ -111,6 +111,8 @@ const Interpreter::OpcodeHandler kCppHandlers[] = {
 #undef OP
 };
 
+static const int kMaxNargs = 8;
+
 // Environment shared by all emit functions.
 struct EmitEnv {
   Assembler as;
@@ -123,6 +125,9 @@ struct EmitEnv {
 
   Label function_entry_with_intrinsic_handler;
   Label function_entry_with_no_intrinsic_handler;
+  Label call_interpreted_slow_path;
+
+  Label function_entry_simple_interpreted_handler[kMaxNargs];
 };
 
 // This macro helps instruction-emitting code stand out while staying compact.
@@ -1073,6 +1078,20 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   __ jmp(Address(kCallableReg, heapObjectDisp(Function::kEntryAsmOffset)));
 }
 
+static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
+                                                      word nargs) {
+  CHECK(nargs < kMaxNargs, "only support up to %ld arguments", kMaxNargs);
+
+  // Check that we received the right number of arguments.
+  __ cmpl(kOpargReg, Immediate(nargs));
+  __ jcc(NOT_EQUAL, &env->call_interpreted_slow_path, Assembler::kFarJump);
+
+  emitPushCallFrame(env, /*stack_overflow=*/&env->call_interpreted_slow_path);
+  emitNextOpcode(env);
+
+  __ jmp(&env->call_interpreted_slow_path, Assembler::kFarJump);
+}
+
 void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
   const Register r_scratch = RAX;
   const Register r_flags = RDX;
@@ -1086,19 +1105,18 @@ void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
 
   // We do not support freevar/cellvar setup in the assembly interpreter.
   __ testl(r_flags, smallIntImmediate(Function::Flags::kNofree));
-  Label call_interpreted_slow_path;
-  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
+  __ jcc(ZERO, &env->call_interpreted_slow_path, Assembler::kFarJump);
 
   // prepareDefaultArgs.
   __ movl(r_scratch,
           Address(kCallableReg, heapObjectDisp(RawFunction::kArgcountOffset)));
   __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
   __ cmpl(r_scratch, kOpargReg);
-  __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
+  __ jcc(NOT_EQUAL, &env->call_interpreted_slow_path, Assembler::kFarJump);
   __ testl(r_flags, smallIntImmediate(Function::Flags::kSimpleCall));
-  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
+  __ jcc(ZERO, &env->call_interpreted_slow_path, Assembler::kFarJump);
 
-  emitPushCallFrame(env, &call_interpreted_slow_path);
+  emitPushCallFrame(env, &env->call_interpreted_slow_path);
 
   __ bind(next_opcode);
   emitNextOpcode(env);
@@ -1122,8 +1140,11 @@ void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
   __ pushq(kReturnRegs[0]);
   emitNextOpcode(env);
 
+  __ jmp(&env->call_interpreted_slow_path, Assembler::kFarJump);
+}
+
+static void emitCallInterpretedSlowPath(EmitEnv* env) {
   // Interpreter::callInterpreted(thread, nargs, function)
-  __ bind(&call_interpreted_slow_path);
   __ movq(kArgRegs[2], kCallableReg);
   __ movq(kArgRegs[0], kThreadReg);
   static_assert(kArgRegs[1] == kOpargReg, "reg mismatch");
@@ -1717,10 +1738,19 @@ void emitInterpreter(EmitEnv* env) {
     __ bind(&env->function_entry_with_no_intrinsic_handler);
     Label next_opcode;
     emitFunctionEntryWithNoIntrinsicHandler(env, &next_opcode);
+
+    for (word i = 0; i < kMaxNargs; i++) {
+      __ align(16);
+      __ bind(&env->function_entry_simple_interpreted_handler[i]);
+      emitFunctionEntrySimpleInterpretedHandler(env, /*nargs=*/i);
+    }
   }
 
   // Emit the generic handler stubs at the end, out of the way of the
   // interesting code.
+  __ bind(&env->call_interpreted_slow_path);
+  emitCallInterpretedSlowPath(env);
+
   for (word i = 0; i < 256; ++i) {
     __ bind(&env->opcode_handlers[i]);
     emitGenericHandler(env, static_cast<Bytecode>(i));
@@ -1740,6 +1770,7 @@ class X64Interpreter : public Interpreter {
 
   void* function_entry_with_intrinsic_;
   void* function_entry_with_no_intrinsic_;
+  void* function_entry_simple_interpreted_[kMaxNargs];
 };
 
 X64Interpreter::X64Interpreter() {
@@ -1757,6 +1788,10 @@ X64Interpreter::X64Interpreter() {
       code_ + env.function_entry_with_intrinsic_handler.position();
   function_entry_with_no_intrinsic_ =
       code_ + env.function_entry_with_no_intrinsic_handler.position();
+  for (word i = 0; i < kMaxNargs; i++) {
+    function_entry_simple_interpreted_[i] =
+        code_ + env.function_entry_simple_interpreted_handler[i].position();
+  }
 }
 
 X64Interpreter::~X64Interpreter() { OS::freeMemory(code_, size_); }
@@ -1768,6 +1803,12 @@ void X64Interpreter::setupThread(Thread* thread) {
 void* X64Interpreter::entryAsm(const Function& function) {
   if (function.intrinsic() != nullptr) {
     return function_entry_with_intrinsic_;
+  }
+  word argcount = function.argcount();
+  if (function.hasSimpleCall() && function.isInterpreted() &&
+      argcount < kMaxNargs) {
+    CHECK(argcount >= 0, "can't have negative argcount");
+    return function_entry_simple_interpreted_[argcount];
   }
   return function_entry_with_no_intrinsic_;
 }
