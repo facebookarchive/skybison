@@ -7933,21 +7933,21 @@ class NextTests(unittest.TestCase):
             next(foo)
         self.assertEqual(str(context.exception), "failed")
 
-    def test_next_with_tuple_iterater_returns_next_item(self):
-        t = (1,)
-        tuple_iter = iter(t)
-        self.assertEqual(next(tuple_iter), 1)
+    def test_next_with_dict_keyiterater_returns_next_item(self):
+        d = {"a": 0}
+        dict_keyiter = iter(d.keys())
+        self.assertEqual(next(dict_keyiter), "a")
 
-    def test_next_with_empty_tuple_iterator_returns_default(self):
-        t = ()
-        tuple_iter = iter(t)
-        self.assertEqual(next(tuple_iter, None), None)
+    def test_next_with_empty_dict_keyiterator_returns_default(self):
+        d = {}
+        dict_keyiter = iter(d.keys())
+        self.assertEqual(next(dict_keyiter, None), None)
 
-    def test_next_with_empty_tuple_iterator_raises_stop_iteration(self):
-        t = ()
-        tuple_iter = iter(t)
+    def test_next_with_empty_dict_keyiterator_raises_stop_iteration(self):
+        d = {}
+        dict_keyiter = iter(d.keys())
         with self.assertRaises(StopIteration):
-            next(tuple_iter)
+            next(dict_keyiter)
 
     def test_next_with_list_iterater_returns_next_item(self):
         li = [1]
@@ -7980,6 +7980,22 @@ class NextTests(unittest.TestCase):
         range_iter = iter(ran)
         with self.assertRaises(StopIteration):
             next(range_iter)
+
+    def test_next_with_tuple_iterater_returns_next_item(self):
+        t = (1,)
+        tuple_iter = iter(t)
+        self.assertEqual(next(tuple_iter), 1)
+
+    def test_next_with_empty_tuple_iterator_returns_default(self):
+        t = ()
+        tuple_iter = iter(t)
+        self.assertEqual(next(tuple_iter, None), None)
+
+    def test_next_with_empty_tuple_iterator_raises_stop_iteration(self):
+        t = ()
+        tuple_iter = iter(t)
+        with self.assertRaises(StopIteration):
+            next(tuple_iter)
 
 
 class NoneTests(unittest.TestCase):

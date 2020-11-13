@@ -107,6 +107,17 @@ ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
 ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   switch (value.layoutId()) {
+    case LayoutId::kDictKeyIterator: {
+      HandleScope scope(thread);
+      DictKeyIterator iter(&scope, value);
+      RawObject result = dictKeyIteratorNext(thread, iter);
+      if (result.isErrorNoMoreItems()) {
+        return false;
+      }
+      thread->stackPop();
+      thread->stackSetTop(result);
+      return true;
+    }
     case LayoutId::kListIterator: {
       HandleScope scope(thread);
       ListIterator list_iterator(&scope, value);
