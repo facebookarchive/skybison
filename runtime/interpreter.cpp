@@ -4352,6 +4352,18 @@ ALWAYS_INLINE Continue Interpreter::tailcallFunction(Thread* thread, word nargs,
   DCHECK(function_obj == thread->stackPeek(nargs),
          "thread->stackPeek(nargs) is expected to be the given function");
   RawFunction function = Function::cast(function_obj);
+  IntrinsicFunction intrinsic =
+      reinterpret_cast<IntrinsicFunction>(function.intrinsic());
+  if (intrinsic != nullptr) {
+    // Executes the function at the given symbol without pushing a new frame.
+    // If the call succeeds, pops the arguments off of the caller's frame, sets
+    // the top value to the result, and returns true. If the call fails, leaves
+    // the stack unchanged and returns false.
+    if ((*intrinsic)(thread)) {
+      DCHECK(thread->stackPointer() == post_call_sp - 1, "stack not cleaned");
+      return Continue::NEXT;
+    }
+  }
   if (!function.isInterpreted()) {
     return callTrampoline(thread, function.entry(), nargs, post_call_sp);
   }

@@ -1214,21 +1214,17 @@ void emitHandler<CALL_FUNCTION>(EmitEnv* env) {
 
 template <>
 void emitHandler<CALL_METHOD>(EmitEnv* env) {
-  Register r_scratch = RAX;
   Label remove_value_and_call;
 
   // if (thread->stackPeek(arg + 1).isUnbound()) goto remove_value_and_call;
-  __ movl(r_scratch, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
-  __ cmpl(r_scratch, Immediate(Unbound::object().raw()));
+  __ movq(kCallableReg, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
+  __ cmpq(kCallableReg, Immediate(Unbound::object().raw()));
   __ jcc(EQUAL, &remove_value_and_call, Assembler::kNearJump);
 
-  // Increment argument count by 1 and jump into a call handler .
-  // Since CALL_METHOD always calls a function object from attribute lookups,
-  // the function is guaranteed to be a function object without an intrinsic
-  // since Pyro currently does not support to attach intrinsics to  a type
-  // attribute.
+  // Increment argument count by 1 and jump into a call handler.
   __ incl(kOpargReg);
-  __ jmp(&env->call_function_no_intrinsic_handler, Assembler::kFarJump);
+  // Jump to the function's specialized entry point.
+  __ jmp(Address(kCallableReg, heapObjectDisp(Function::kEntryAsmOffset)));
 
   // thread->removeValueAt(arg + 1)
   __ bind(&remove_value_and_call);
