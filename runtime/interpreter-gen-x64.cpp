@@ -338,17 +338,23 @@ static void emitJumpIfNotBothSmallInt(EmitEnv* env, Register value0,
   emitJumpIfNotSmallInt(env, scratch, target);
 }
 
+static void emitJumpIfImmediate(EmitEnv* env, Register r_scratch, Register obj,
+                                Label* target, bool is_near_jump) {
+  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
+  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
+  __ leal(r_scratch,
+          Address(obj, (-Object::kHeapObjectTag) & Object::kPrimaryTagMask));
+  __ testl(r_scratch, Immediate(Object::kPrimaryTagMask));
+  __ jcc(NOT_ZERO, target, is_near_jump);
+}
+
 // Load the LayoutId of the RawObject in r_obj into r_dst as a SmallInt.
 //
 // Writes to r_dst.
 void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
-  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
-  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
-  __ leal(r_dst,
-          Address(r_obj, (-Object::kHeapObjectTag) & Object::kPrimaryTagMask));
-  __ testl(r_dst, Immediate(Object::kPrimaryTagMask));
   Label not_heap_object;
-  __ jcc(NOT_ZERO, &not_heap_object, Assembler::kNearJump);
+  emitJumpIfImmediate(env, r_dst, r_obj, &not_heap_object,
+                      Assembler::kNearJump);
 
   // It is a HeapObject.
   static_assert(RawHeader::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
@@ -380,12 +386,7 @@ void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
 void emitJumpIfNotHeapObjectWithLayoutId(EmitEnv* env, Register r_obj,
                                          Register r_scratch, LayoutId layout_id,
                                          Label* target) {
-  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
-  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
-  __ leal(r_scratch,
-          Address(r_obj, (-Object::kHeapObjectTag) & Object::kPrimaryTagMask));
-  __ testl(r_scratch, Immediate(Object::kPrimaryTagMask));
-  __ jcc(NOT_ZERO, target, Assembler::kNearJump);
+  emitJumpIfImmediate(env, r_scratch, r_obj, target, Assembler::kNearJump);
 
   // It is a HeapObject.
   static_assert(RawHeader::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
@@ -1036,13 +1037,8 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
                   heapObjectDisp(RawBoundMethod::kFunctionOffset)));
   __ movq(Address(RSP, kOpargReg, TIMES_8, 0), kCallableReg);
   // Check whether bound_method.function() is a heap object.
-  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
-  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
-  __ leal(r_scratch, Address(kCallableReg, (-Object::kHeapObjectTag) &
-                                               Object::kPrimaryTagMask));
-  __ testl(r_scratch, Immediate(Object::kPrimaryTagMask));
-  // If it is an immediate, jump to the slow path, which raises an exception.
-  __ jcc(NOT_ZERO, prepare_callable_immediate, Assembler::kFarJump);
+  emitJumpIfImmediate(env, r_scratch, kCallableReg, prepare_callable_immediate,
+                      Assembler::kNearJump);
   // Check whether bound_method.function() is a function.
   static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
   __ movl(r_scratch,
@@ -1184,11 +1180,9 @@ void emitCallHandler(EmitEnv* env) {
   // Check whether callable is a heap object.
   static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
   Register r_layout_id = RAX;
-  __ movl(r_layout_id, kCallableReg);
-  __ andl(r_layout_id, Immediate(Object::kPrimaryTagMask));
-  __ cmpl(r_layout_id, Immediate(Object::kHeapObjectTag));
   Label prepare_callable_immediate;
-  __ jcc(NOT_EQUAL, &prepare_callable_immediate, Assembler::kFarJump);
+  emitJumpIfImmediate(env, r_layout_id, kCallableReg,
+                      &prepare_callable_immediate, Assembler::kFarJump);
   // Check whether callable is a function.
   static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
   __ movl(r_layout_id,
