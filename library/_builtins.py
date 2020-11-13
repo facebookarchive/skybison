@@ -579,6 +579,10 @@ def _int_check_exact(obj):
     _builtin()
 
 
+def _int_ctor(cls, x=_Unbound, base=_Unbound):
+    _builtin()
+
+
 def _int_from_bytes(cls, bytes, byteorder_big, signed):
     _builtin()
 

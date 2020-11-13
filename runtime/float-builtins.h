@@ -14,6 +14,8 @@ word floatHash(RawObject value);
 
 void initializeFloatType(Thread* thread);
 
+RawObject intFromDouble(Thread* thread, double value);
+
 void decodeDouble(double value, bool* is_neg, int* exp, int64_t* mantissa);
 
 inline word floatHash(RawObject value) {

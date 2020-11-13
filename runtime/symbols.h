@@ -381,6 +381,7 @@ class Runtime;
   V(_instance)                                                                 \
   V(_instance_dunder_dict_set)                                                 \
   V(_int)                                                                      \
+  V(_int_ctor)                                                                 \
   V(_int_new_from_str)                                                         \
   V(_io)                                                                       \
   V(_iterator__index)                                                          \

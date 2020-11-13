@@ -208,7 +208,7 @@ void decodeDouble(double value, bool* is_neg, int* exp, int64_t* mantissa) {
   *mantissa = value_bits & man_mask;
 }
 
-static RawObject intFromDouble(Thread* thread, double value) {
+RawObject intFromDouble(Thread* thread, double value) {
   bool is_neg;
   int exp;
   int64_t man;

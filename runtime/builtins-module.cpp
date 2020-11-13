@@ -383,6 +383,11 @@ static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
   LayoutId layout_id = type.instanceLayoutId();
   Runtime* runtime = thread->runtime();
   switch (layout_id) {
+    case LayoutId::kInt: {
+      Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+      ctor = moduleAtById(thread, under_builtins, ID(_int_ctor));
+      break;
+    }
     case LayoutId::kList: {
       Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
       ctor = moduleAtById(thread, under_builtins, ID(_list_ctor));

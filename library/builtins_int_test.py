@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 import unittest
 
+from test_support import pyro_only
+
+try:
+    from _builtins import _int_ctor
+except ImportError:
+    pass
+
 
 class IntTests(unittest.TestCase):
     def test_dunder_hash_with_small_number_returns_self(self):
@@ -57,7 +64,7 @@ class IntTests(unittest.TestCase):
 
         foo = Foo()
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(int(foo), 42)
+            self.assertEqual(int.__new__(int, foo), 42)
 
     def test_dunder_new_uses_type_dunder_int(self):
         class Foo:
@@ -66,7 +73,7 @@ class IntTests(unittest.TestCase):
 
         foo = Foo()
         foo.__int__ = "not callable"
-        self.assertEqual(int(foo), 0)
+        self.assertEqual(int.__new__(int, foo), 0)
 
     def test_dunder_new_uses_type_dunder_trunc(self):
         class Foo:
@@ -75,7 +82,7 @@ class IntTests(unittest.TestCase):
 
         foo = Foo()
         foo.__trunc__ = "not callable"
-        self.assertEqual(int(foo), 0)
+        self.assertEqual(int.__new__(int, foo), 0)
 
     def test_dunder_new_with_raising_trunc_propagates_error(self):
         class Desc:
@@ -87,35 +94,35 @@ class IntTests(unittest.TestCase):
 
         foo = Foo()
         with self.assertRaises(AttributeError) as context:
-            int(foo)
+            int.__new__(int, foo)
         self.assertEqual(str(context.exception), "failed")
 
     def test_dunder_new_with_base_without_str_raises_type_error(self):
         with self.assertRaises(TypeError):
-            int(base=8)
+            int.__new__(int, base=8)
 
     def test_dunder_new_with_bool_returns_int(self):
-        self.assertIs(int(False), 0)
-        self.assertIs(int(True), 1)
+        self.assertIs(int.__new__(int, False), 0)
+        self.assertIs(int.__new__(int, True), 1)
 
     def test_dunder_new_with_bytearray_returns_int(self):
-        self.assertEqual(int(bytearray(b"23")), 23)
-        self.assertEqual(int(bytearray(b"-23"), 8), -0o23)
-        self.assertEqual(int(bytearray(b"abc"), 16), 0xABC)
-        self.assertEqual(int(bytearray(b"0xabc"), 0), 0xABC)
+        self.assertEqual(int.__new__(int, bytearray(b"23")), 23)
+        self.assertEqual(int.__new__(int, bytearray(b"-23"), 8), -0o23)
+        self.assertEqual(int.__new__(int, bytearray(b"abc"), 16), 0xABC)
+        self.assertEqual(int.__new__(int, bytearray(b"0xabc"), 0), 0xABC)
 
     def test_dunder_new_with_bytes_returns_int(self):
-        self.assertEqual(int(b"-23"), -23)
-        self.assertEqual(int(b"23", 8), 0o23)
-        self.assertEqual(int(b"abc", 16), 0xABC)
-        self.assertEqual(int(b"0xabc", 0), 0xABC)
+        self.assertEqual(int.__new__(int, b"-23"), -23)
+        self.assertEqual(int.__new__(int, b"23", 8), 0o23)
+        self.assertEqual(int.__new__(int, b"abc", 16), 0xABC)
+        self.assertEqual(int.__new__(int, b"0xabc", 0), 0xABC)
 
     def test_dunder_new_strips_whitespace(self):
-        self.assertEqual(int(" \t\n123\n\t "), 123)
-        self.assertEqual(int(" \t\n123\n\t ", 10), 123)
-        self.assertEqual(int(b" \t\n123\n\t "), 123)
-        self.assertEqual(int(b" \t\n123\n\t ", 10), 123)
-        self.assertEqual(int(bytearray(b" \t\n123\n\t "), 10), 123)
+        self.assertEqual(int.__new__(int, " \t\n123\n\t "), 123)
+        self.assertEqual(int.__new__(int, " \t\n123\n\t ", 10), 123)
+        self.assertEqual(int.__new__(int, b" \t\n123\n\t "), 123)
+        self.assertEqual(int.__new__(int, b" \t\n123\n\t ", 10), 123)
+        self.assertEqual(int.__new__(int, bytearray(b" \t\n123\n\t "), 10), 123)
 
     def test_dunder_new_with_non_space_after_whitespace_raises_value_error(self):
         self.assertRaises(ValueError, int, " \t\n123\n\t 1")
@@ -127,43 +134,43 @@ class IntTests(unittest.TestCase):
 
     def test_dunder_new_with_empty_bytearray_raises_value_error(self):
         with self.assertRaises(ValueError):
-            int(bytearray())
+            int.__new__(int, bytearray())
 
     def test_dunder_new_with_empty_bytes_raises_value_error(self):
         with self.assertRaises(ValueError):
-            int(b"")
+            int.__new__(int, b"")
 
     def test_dunder_new_with_empty_str_raises_value_error(self):
         with self.assertRaises(ValueError):
-            int("")
+            int.__new__(int, "")
 
     def test_dunder_new_with_int_returns_int(self):
-        self.assertEqual(int(23), 23)
+        self.assertEqual(int.__new__(int, 23), 23)
 
     def test_dunder_new_with_int_and_base_raises_type_error(self):
         with self.assertRaises(TypeError):
-            int(4, 5)
+            int.__new__(int, 4, 5)
 
     def test_dunder_new_with_invalid_base_raises_value_error(self):
         with self.assertRaises(ValueError):
-            int("0", 1)
+            int.__new__(int, "0", 1)
 
     def test_dunder_new_with_invalid_chars_raises_value_error(self):
         with self.assertRaises(ValueError):
-            int("&2*")
+            int.__new__(int, "&2*")
 
     def test_dunder_new_with_invalid_digits_raises_value_error(self):
         with self.assertRaises(ValueError):
-            int(b"789", 6)
+            int.__new__(int, b"789", 6)
 
     def test_dunder_new_with_str_returns_int(self):
-        self.assertEqual(int("23"), 23)
-        self.assertEqual(int("-23", 8), -0o23)
-        self.assertEqual(int("-abc", 16), -0xABC)
-        self.assertEqual(int("0xabc", 0), 0xABC)
+        self.assertEqual(int.__new__(int, "23"), 23)
+        self.assertEqual(int.__new__(int, "-23", 8), -0o23)
+        self.assertEqual(int.__new__(int, "-abc", 16), -0xABC)
+        self.assertEqual(int.__new__(int, "0xabc", 0), 0xABC)
 
     def test_dunder_new_with_zero_args_returns_zero(self):
-        self.assertIs(int(), 0)
+        self.assertIs(int.__new__(int), 0)
 
     def test_dunder_pow_with_zero_returns_one(self):
         self.assertEqual(int.__pow__(4, 0), 1)
@@ -509,6 +516,56 @@ class IntDunderFormatTests(unittest.TestCase):
             int.__format__("not an int", "")
         self.assertIn("'__format__' requires a 'int' object", str(context.exception))
         self.assertIn("'str'", str(context.exception))
+
+    @pyro_only
+    def test_under_int_ctor_with_small_int_returns_int(self):
+        actual = _int_ctor(int, 4)
+        self.assertEqual(actual, 4)
+
+    @pyro_only
+    def test_under_int_ctor_with_bool_true_returns_int(self):
+        actual = _int_ctor(int, True)
+        self.assertEqual(actual, 1)
+
+    @pyro_only
+    def test_under_int_ctor_with_bool_false_returns_int(self):
+        actual = _int_ctor(int, False)
+        self.assertEqual(actual, 0)
+
+    @pyro_only
+    def test_under_int_ctor_with_float_returns_int(self):
+        actual = _int_ctor(int, 3.14)
+        self.assertEqual(actual, 3)
+
+    @pyro_only
+    def test_under_int_ctor_with_empty_small_str_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            _int_ctor(int, "")
+
+    @pyro_only
+    def test_under_int_ctor_with_small_str_for_positive_number_returns_int(self):
+        actual = _int_ctor(int, "213")
+        self.assertEqual(actual, 213)
+
+    @pyro_only
+    def test_under_int_ctor_with_small_str_for_negative_number_returns_int(self):
+        actual = _int_ctor(int, "-213")
+        self.assertEqual(actual, -213)
+
+    @pyro_only
+    def test_under_int_ctor_with_no_argument_returns_int(self):
+        actual = _int_ctor(int)
+        self.assertEqual(actual, 0)
+
+    @pyro_only
+    def test_under_int_ctor_with_arguments_with_dunder_int_returns_int(self):
+        class D:
+            def __int__(self):
+                return 12341234123412341234
+
+        d = D()
+        actual = _int_ctor(int, d)
+        self.assertEqual(actual, 12341234123412341234)
 
 
 if __name__ == "__main__":

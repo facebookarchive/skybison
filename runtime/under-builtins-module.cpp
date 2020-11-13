@@ -2899,6 +2899,60 @@ RawObject FUNC(_builtins, _int_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(arg.isSmallInt() || arg.isLargeInt());
 }
 
+static RawObject positiveIntFromSmallStrWithBase10(RawSmallStr str) {
+  word length = str.length();
+  if (length == 0) {
+    return NoneType::object();
+  }
+  word result = 0;
+  for (word i = 0; i < length; i++) {
+    byte b = str.byteAt(i);
+    if ('0' <= b && b <= '9') {
+      result *= 10;
+      result += b - '0';
+    } else {
+      return NoneType::object();
+    }
+  }
+  return SmallInt::fromWord(result);
+}
+
+RawObject FUNC(_builtins, _int_ctor)(Thread* thread, Arguments args) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kInt), "unexpected cls");
+  RawObject x_raw = args.get(1);
+  RawObject base_raw = args.get(2);
+  LayoutId x_layout_id = x_raw.layoutId();
+  if (base_raw.isUnbound()) {
+    switch (x_layout_id) {
+      case LayoutId::kSmallInt:
+        return x_raw;
+      case LayoutId::kBool:
+        return SmallInt::fromWord(Bool::cast(x_raw).value());
+      case LayoutId::kFloat:
+        return intFromDouble(thread, Float::cast(x_raw).value());
+      case LayoutId::kSmallStr: {
+        RawObject result =
+            positiveIntFromSmallStrWithBase10(SmallStr::cast(x_raw));
+        if (!result.isNoneType()) {
+          return result;
+        }
+        break;
+      }
+      case LayoutId::kUnbound:
+        return SmallInt::fromWord(0);
+      default:
+        break;
+    }
+  }
+  HandleScope scope(thread);
+  Type cls(&scope, args.get(0));
+  Object x(&scope, x_raw);
+  Object base(&scope, base_raw);
+  return thread->invokeFunction3(ID(_builtins), ID(_type_dunder_call), cls, x,
+                                 base);
+}
+
 static RawObject intOrUserSubclass(Thread* thread, const Type& type,
                                    const Object& value) {
   DCHECK(value.isSmallInt() || value.isLargeInt(),
