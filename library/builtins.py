@@ -3356,6 +3356,9 @@ class dict_values(bootstrap=True):
     def __len__(self):
         _builtin()
 
+    def __reversed__(self):
+        return reversed(list(self.__iter__()))
+
 
 def dir(obj=_Unbound):
     if obj is _Unbound:

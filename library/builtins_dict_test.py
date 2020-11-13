@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import collections
 import unittest
 from unittest.mock import Mock, call
 
@@ -1081,6 +1082,13 @@ class DictValuesTests(unittest.TestCase):
         self.assertEqual(values.__len__(), 2)
         mapping["szechuan"] = "broccoli"
         self.assertEqual(values.__len__(), 3)
+
+    def test_dunder_reversed_returns_reversed_values(self):
+        # TODO(T79658566): When upgrading to 3.8, substitute `dict' for
+        # `OrderedDict'
+        mapping = collections.OrderedDict({"hello": "world", "foo": "bar"})
+        reversed_values = reversed(mapping.values())
+        self.assertEqual(list(reversed_values), ["bar", "world"])
 
 
 if __name__ == "__main__":
