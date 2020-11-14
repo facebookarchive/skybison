@@ -7981,6 +7981,27 @@ class NextTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(range_iter)
 
+    def test_next_with_set_iterater_returns_next_item(self):
+        s = {0}
+        set_iter = iter(s)
+        self.assertEqual(next(set_iter), 0)
+
+    def test_next_with_empty_set_iterator_returns_default(self):
+        set_iter = iter(set())
+        self.assertEqual(next(set_iter, None), None)
+
+    def test_next_with_empty_set_iterator_raises_stop_iteration(self):
+        set_iter = iter(set())
+        with self.assertRaises(StopIteration):
+            next(set_iter)
+
+    def test_next_with_set_iterator_raises_stop_iteration(self):
+        s = {0}
+        set_iter = iter(s)
+        self.assertEqual(next(set_iter), 0)
+        with self.assertRaises(StopIteration):
+            next(set_iter)
+
     def test_next_with_str_iterater_returns_next_item(self):
         str = "a"
         str_iter = iter(str)

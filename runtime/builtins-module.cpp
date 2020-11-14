@@ -19,6 +19,7 @@
 #include "objects.h"
 #include "range-builtins.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "str-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
@@ -133,6 +134,17 @@ ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
       HandleScope scope(thread);
       RangeIterator iter(&scope, value);
       RawObject result = rangeIteratorNext(iter);
+      if (result.isErrorNoMoreItems()) {
+        return false;
+      }
+      thread->stackPop();
+      thread->stackSetTop(result);
+      return true;
+    }
+    case LayoutId::kSetIterator: {
+      HandleScope scope(thread);
+      SetIterator set_iterator(&scope, value);
+      RawObject result = setIteratorNext(thread, set_iterator);
       if (result.isErrorNoMoreItems()) {
         return false;
       }
