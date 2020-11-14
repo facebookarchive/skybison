@@ -140,6 +140,17 @@ ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
       thread->stackSetTop(result);
       return true;
     }
+    case LayoutId::kStrIterator: {
+      HandleScope scope(thread);
+      StrIterator str_iterator(&scope, value);
+      RawObject result = strIteratorNext(thread, str_iterator);
+      if (result.isErrorNoMoreItems()) {
+        return false;
+      }
+      thread->stackPop();
+      thread->stackSetTop(result);
+      return true;
+    }
     case LayoutId::kTupleIterator: {
       HandleScope scope(thread);
       TupleIterator tuple_iterator(&scope, value);
