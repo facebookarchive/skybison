@@ -892,8 +892,6 @@ class Runtime {
 
   void populateEntryAsm(const Function& function);
 
-  static word immediateHash(RawObject object);
-
  private:
   Runtime(word heap_size);
 
@@ -959,6 +957,8 @@ class Runtime {
 
   // Removes an entry from the linked list
   static bool listEntryRemove(ListEntry* entry, ListEntry** root);
+
+  static word immediateHash(RawObject object);
 
   word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 

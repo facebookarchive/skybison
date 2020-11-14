@@ -25,7 +25,7 @@ static word handleHash(RawObject obj) {
   if (obj.isHeapObject()) {
     return HeapObject::cast(obj).address() >> kObjectAlignmentLog2;
   }
-  return Runtime::immediateHash(obj);
+  return static_cast<word>(obj.raw());
 }
 
 // Helper class for manipulating buckets in the RawTuple that backs
@@ -37,7 +37,6 @@ class Bucket {
     const word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     DCHECK(nbuckets > 0, "bucket size <= 0");
-    DCHECK(RawSmallInt::isValid(hash), "hash out of range");
     *perturb = static_cast<uword>(hash);
     *bucket_mask = nbuckets - 1;
     return *bucket_mask & hash;
