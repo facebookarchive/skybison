@@ -7646,6 +7646,30 @@ foo()
             self.module_proxy.__delitem__("x")
         self.assertIn("'x'", str(context.exception))
 
+    def test_clear_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.module_proxy.clear(None)
+
+    def test_clear_deletes_module_variables_and_raises_attribute_error(self):
+        module_code = """
+x = 40
+def foo():
+    return x
+foo()
+        """
+        exec(module_code, self.module_proxy)
+        self.assertEqual(self.module.foo(), 40)
+
+        self.module_proxy.clear()
+
+        self.assertEqual(len(self.module_proxy), 0)
+        self.assertNotIn("x", self.module_proxy)
+        self.assertNotIn("foo", self.module_proxy)
+
+        with self.assertRaises(AttributeError) as context:
+            self.module.foo()
+        self.assertIn("has no attribute 'foo'", str(context.exception))
+
     def test_dunder_getitem_with_non_module_proxy_raises_type_error(self):
         with self.assertRaises(TypeError):
             type(self.module_proxy).__getitem__(None, None)

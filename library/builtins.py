@@ -5293,7 +5293,9 @@ class module_proxy(bootstrap=True):
         _module_proxy_setitem(self, key, value)
 
     def clear(self):
-        _unimplemented()
+        keys = _module_proxy_keys(self)
+        for key in keys:
+            del self[key]
 
     def copy(self):
         # TODO(T50379702): Return an iterable to avoid materializing the list of items.
