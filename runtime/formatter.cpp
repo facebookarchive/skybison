@@ -165,16 +165,16 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
       break;
   }
 
+  if (cp == '#') {
+    result->alternate = true;
+    cp = nextCodePoint(spec, length, &index);
+  }
+
   if (!fill_char_specified && cp == '0') {
     result->fill_char = '0';
     if (!alignment_specified) {
       result->alignment = '=';
     }
-  }
-
-  if (cp == '#') {
-    result->alternate = true;
-    cp = nextCodePoint(spec, length, &index);
   }
 
   if ('0' <= cp && cp <= '9') {

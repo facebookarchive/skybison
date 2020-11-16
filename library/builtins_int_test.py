@@ -399,6 +399,13 @@ class IntDunderFormatTests(unittest.TestCase):
             int.__format__(-42, "\U0001f40d^6o"), "\U0001f40d-52\U0001f40d\U0001f40d"
         )
 
+    def test_with_alternate_and_zero_returns_str(self):
+        self.assertEqual(int.__format__(100, "#012b"), "0b0001100100")
+        self.assertEqual(int.__format__(-42, "#08d"), "-0000042")
+        self.assertEqual(int.__format__(88, "#013o"), "0o00000000130")
+        self.assertEqual(int.__format__(99, "+#07x"), "+0x0063")
+        self.assertEqual(int.__format__(33, "+#014X"), "+0X00000000021")
+
     def test_c_format_with_alignment_returns_str(self):
         self.assertEqual(int.__format__(65, ".^12c"), ".....A......")
         self.assertEqual(int.__format__(128013, ".^12c"), ".....\U0001f40d......")
