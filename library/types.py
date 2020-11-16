@@ -8,7 +8,7 @@ Define names for built-in types that aren't directly accessible as a builtin.
 """
 import sys
 
-from _builtins import _set_function_flag_iterable_coroutine
+from _builtins import _set_function_flag_iterable_coroutine, _unimplemented
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
@@ -294,6 +294,11 @@ def coroutine(func):
         return coro
 
     return wrapped
+
+
+class Union:
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
 
 
 __all__ = [n for n in globals() if n[:1] != '_']
