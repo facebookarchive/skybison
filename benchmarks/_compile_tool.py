@@ -17,9 +17,17 @@ def pyc_file(filename):
 def main():
     main_file = sys.argv[1]
     runpy.run_path(main_file)
+    pyc = pyc_file(main_file)
+    try:
+        # There's no good cache invalidation mechanism that takes into account
+        # both the interpreter running and the benchmark running. Remove the
+        # cached bytecode just in case.
+        os.remove(pyc)
+    except FileNotFoundError:
+        pass
     # The tool that runs _compile_tool uses the stdout of this process to
     # determine where the result .pyc is located.
-    print(py_compile.compile(main_file, pyc_file(main_file)))
+    print(py_compile.compile(main_file, pyc))
 
 
 if __name__ == "__main__":
