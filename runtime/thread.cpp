@@ -196,11 +196,6 @@ void Thread::handleInterruptWithFrame() {
   // Profiling code will use this.
 }
 
-bool Thread::wouldStackOverflow(word size) {
-  // Check that there is sufficient space on the stack
-  return reinterpret_cast<byte*>(stack_pointer_) - size < limit_;
-}
-
 void Thread::linkFrame(Frame* frame) {
   frame->setPreviousFrame(current_frame_);
   current_frame_ = frame;

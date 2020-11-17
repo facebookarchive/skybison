@@ -2935,6 +2935,37 @@ def bar():
   EXPECT_EQ(executed, Bool::falseObj());
 }
 
+TEST_F(InterpreterTest, CallFunctionWithBuiltinRaisesRecursionError) {
+  auto abort_builtin = [](Thread*, Arguments) -> RawObject {
+    // Should never get here.
+    abort();
+  };
+  addBuiltin("abort", abort_builtin, {nullptr, 0}, 0);
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+x = None
+def foo():
+  global x
+  x = 1
+  abort()
+  x = 2
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Object foo(&scope, mainModuleAt(runtime_, "foo"));
+
+  // Fill stack until we can fit exactly 1 function call.
+  RawObject* saved_sp = thread_->stackPointer();
+  while (!thread_->wouldStackOverflow(Frame::kSize * 2)) {
+    thread_->stackPush(NoneType::object());
+  }
+  EXPECT_TRUE(
+      raised(Interpreter::call0(thread_, foo), LayoutId::kRecursionError));
+  Object x(&scope, mainModuleAt(runtime_, "x"));
+  EXPECT_TRUE(isIntEqualsWord(*x, 1));
+  thread_->setStackPointer(saved_sp);
+}
+
 TEST_F(InterpreterTest, CallingUncallableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "(1)()"),
                             LayoutId::kTypeError,

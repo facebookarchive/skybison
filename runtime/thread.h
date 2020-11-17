@@ -367,6 +367,8 @@ class Thread {
     contextvars_context_ = context;
   }
 
+  bool wouldStackOverflow(word size);
+
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }
@@ -435,8 +437,6 @@ class Thread {
 
   static thread_local Thread* current_thread_;
 
-  bool wouldStackOverflow(word size);
-
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
@@ -497,6 +497,11 @@ inline void Thread::stackSetTop(RawObject value) {
 inline RawObject Thread::stackTop() {
   DCHECK(stack_pointer_ < valueStackBase(), "stack underflow");
   return *stack_pointer_;
+}
+
+inline bool Thread::wouldStackOverflow(word size) {
+  // Check that there is sufficient space on the stack
+  return reinterpret_cast<byte*>(stack_pointer_) - size < limit_;
 }
 
 }  // namespace py

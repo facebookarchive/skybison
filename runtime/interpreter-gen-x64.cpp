@@ -121,13 +121,14 @@ struct EmitEnv {
   Label opcode_handlers[kNumBytecodes];
   Label call_function_no_intrinsic_handler;
   Label call_handler;
+  Label call_interpreted_slow_path;
+  Label call_trampoline;
   Label unwind_handler;
 
   Label function_entry_with_intrinsic_handler;
   Label function_entry_with_no_intrinsic_handler;
-  Label call_interpreted_slow_path;
-
   Label function_entry_simple_interpreted_handler[kMaxNargs];
+  Label function_entry_simple_builtin;
 };
 
 // This macro helps instruction-emitting code stand out while staying compact.
@@ -1088,6 +1089,27 @@ static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
   __ jmp(&env->call_interpreted_slow_path, Assembler::kFarJump);
 }
 
+void emitCallTrampoline(EmitEnv* env) {
+  Register r_scratch = RAX;
+  // Function::cast(callable).entry()(thread, nargs);
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  __ movq(r_scratch,
+          Address(kCallableReg, heapObjectDisp(RawFunction::kEntryOffset)));
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kArgRegs[1] == kOpargReg, "register mismatch");
+  static_assert(std::is_same<Function::Entry, RawObject (*)(Thread*, word)>(),
+                "type mismatch");
+  __ call(r_scratch);
+  // if (kReturnRegs[0].isErrorException()) return UNWIND;
+  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                "tag should fit a byte for cmpb");
+  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
+  emitRestoreInterpreterState(env, kVMStack | kBytecode);
+  __ pushq(kReturnRegs[0]);
+  emitNextOpcode(env);
+}
+
 void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
   const Register r_scratch = RAX;
   const Register r_flags = RDX;
@@ -1096,8 +1118,7 @@ void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
   __ movl(r_flags,
           Address(kCallableReg, heapObjectDisp(RawFunction::kFlagsOffset)));
   __ testl(r_flags, smallIntImmediate(Function::Flags::kInterpreted));
-  Label call_trampoline;
-  __ jcc(ZERO, &call_trampoline, Assembler::kFarJump);
+  __ jcc(ZERO, &env->call_trampoline, Assembler::kFarJump);
 
   // We do not support freevar/cellvar setup in the assembly interpreter.
   __ testl(r_flags, smallIntImmediate(Function::Flags::kNofree));
@@ -1116,27 +1137,6 @@ void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
 
   __ bind(next_opcode);
   emitNextOpcode(env);
-
-  // Function::cast(callable).entry()(thread, nargs);
-  __ bind(&call_trampoline);
-  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  __ movq(r_scratch,
-          Address(kCallableReg, heapObjectDisp(RawFunction::kEntryOffset)));
-  __ movq(kArgRegs[0], kThreadReg);
-  static_assert(kArgRegs[1] == kOpargReg, "register mismatch");
-  static_assert(std::is_same<Function::Entry, RawObject (*)(Thread*, word)>(),
-                "type mismatch");
-  __ call(r_scratch);
-  // if (kReturnRegs[0].isErrorException()) return UNWIND;
-  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                "tag should fit a byte for cmpb");
-  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
-  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
-  emitRestoreInterpreterState(env, kVMStack | kBytecode);
-  __ pushq(kReturnRegs[0]);
-  emitNextOpcode(env);
-
-  __ jmp(&env->call_interpreted_slow_path, Assembler::kFarJump);
 }
 
 static void emitCallInterpretedSlowPath(EmitEnv* env) {
@@ -1172,6 +1172,89 @@ void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
   __ jcc(NOT_ZERO, &next_opcode, Assembler::kFarJump);
 
   emitFunctionEntryWithNoIntrinsicHandler(env, &next_opcode);
+}
+
+void emitPopFrame(EmitEnv* env, Register r_scratch) {
+  // RSP = frame->frameEnd()
+  //     = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
+  // (The +1 is because we have to point behind the field)
+
+  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ leaq(RSP, Address(kFrameReg, r_scratch, TIMES_1,
+                       (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
+  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+}
+
+void emitFunctionEntryBuiltin(EmitEnv* env) {
+  Register r_scratch = RAX;
+  Register r_locals_offset = RDX;
+  Register r_code = RCX;
+  Label stack_overflow;
+  Label unwind;
+
+  // prepareDefaultArgs.
+  __ movl(r_scratch,
+          Address(kCallableReg, heapObjectDisp(RawFunction::kArgcountOffset)));
+  __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
+  __ cmpl(r_scratch, kOpargReg);
+  __ jcc(NOT_EQUAL, &env->call_trampoline, Assembler::kFarJump);
+
+  // Thread::pushNativeFrame()   (roughly)
+  {
+    // RSP -= Frame::kSize;
+    // if (RSP >= thread->start_) { goto stack_overflow; }
+    __ subq(RSP, Immediate(Frame::kSize));
+    __ cmpq(RSP, Address(kThreadReg, Thread::limitOffset()));
+    __ jcc(BELOW, &stack_overflow, Assembler::kFarJump);
+
+    emitSaveInterpreterState(env, kVMPC);
+
+    // locals_offset = Frame::kSize + nargs * kPointerSize
+    __ leaq(r_locals_offset, Address(kOpargReg, TIMES_8, Frame::kSize));
+    // new_frame.setPreviousFrame(kFrameReg)
+    __ movq(Address(RSP, Frame::kPreviousFrameOffset), kFrameReg);
+    // new_frame.setLocalsOffset(locals_offset)
+    __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
+    __ movq(kFrameReg, RSP);
+  }
+
+  // r_code = Function::cast(callable).code().code().asCPtr()
+  __ movq(r_code,
+          Address(kCallableReg, heapObjectDisp(RawFunction::kCodeOffset)));
+  __ movq(r_code, Address(r_code, heapObjectDisp(RawCode::kCodeOffset)));
+  emitConvertFromSmallInt(env, r_code);
+
+  // ((BuiltinFunction)scratch) (thread, Arguments(frame->locals()));
+  emitSaveInterpreterState(env, kVMStack | kVMFrame);
+  static_assert(sizeof(Arguments) == kPointerSize, "Arguments changed");
+  static_assert(
+      std::is_same<BuiltinFunction, RawObject (*)(Thread*, Arguments)>(),
+      "type mismatch");
+  __ movq(kArgRegs[0], kThreadReg);
+  __ leaq(kArgRegs[1], Address(kFrameReg, r_locals_offset, TIMES_1, 0));
+  __ call(r_code);
+
+  // if (kReturnRegs[0].isErrorException()) return UNWIND;
+  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                "tag should fit a byte for cmpb");
+  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ jcc(EQUAL, &unwind, Assembler::kFarJump);
+
+  // thread->popFrame()
+  emitPopFrame(env, r_locals_offset);
+  emitRestoreInterpreterState(env, kBytecode | kVMPC);
+  // thread->stackPush(result)
+  __ pushq(kReturnRegs[0]);
+  emitNextOpcode(env);
+
+  __ bind(&unwind);
+  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+  emitSaveInterpreterState(env, kVMFrame);
+  __ jmp(&env->unwind_handler, Assembler::kFarJump);
+
+  __ bind(&stack_overflow);
+  __ addq(RSP, Immediate(Frame::kSize));
+  __ jmp(&env->call_trampoline, Assembler::kFarJump);
 }
 
 void emitCallHandler(EmitEnv* env) {
@@ -1553,13 +1636,8 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
 
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(r_return_value);
-  // RSP = frame->frameEnd();
-  // ( = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
 
-  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
-  __ leaq(RSP, Address(kFrameReg, r_scratch, TIMES_1,
-                       (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
-  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+  emitPopFrame(env, r_scratch);
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   __ pushq(r_return_value);
   emitNextOpcode(env);
@@ -1734,13 +1812,20 @@ void emitInterpreter(EmitEnv* env) {
       __ bind(&env->function_entry_simple_interpreted_handler[i]);
       emitFunctionEntrySimpleInterpretedHandler(env, /*nargs=*/i);
     }
+
+    __ align(16);
+    __ bind(&env->function_entry_simple_builtin);
+    emitFunctionEntryBuiltin(env);
   }
 
-  // Emit the generic handler stubs at the end, out of the way of the
-  // interesting code.
   __ bind(&env->call_interpreted_slow_path);
   emitCallInterpretedSlowPath(env);
 
+  __ bind(&env->call_trampoline);
+  emitCallTrampoline(env);
+
+  // Emit the generic handler stubs at the end, out of the way of the
+  // interesting code.
   for (word i = 0; i < 256; ++i) {
     __ bind(&env->opcode_handlers[i]);
     emitGenericHandler(env, static_cast<Bytecode>(i));
@@ -1761,6 +1846,7 @@ class X64Interpreter : public Interpreter {
   void* function_entry_with_intrinsic_;
   void* function_entry_with_no_intrinsic_;
   void* function_entry_simple_interpreted_[kMaxNargs];
+  void* function_entry_simple_builtin_;
 };
 
 X64Interpreter::X64Interpreter() {
@@ -1782,6 +1868,8 @@ X64Interpreter::X64Interpreter() {
     function_entry_simple_interpreted_[i] =
         code_ + env.function_entry_simple_interpreted_handler[i].position();
   }
+  function_entry_simple_builtin_ =
+      code_ + env.function_entry_simple_builtin.position();
 }
 
 X64Interpreter::~X64Interpreter() { OS::freeMemory(code_, size_); }
@@ -1799,6 +1887,12 @@ void* X64Interpreter::entryAsm(const Function& function) {
       argcount < kMaxNargs) {
     CHECK(argcount >= 0, "can't have negative argcount");
     return function_entry_simple_interpreted_[argcount];
+  }
+  if (function.entry() == builtinTrampoline && function.hasSimpleCall()) {
+    DCHECK(function.intrinsic() == nullptr, "expected no intrinsic");
+    CHECK(Code::cast(function.code()).code().isSmallInt(),
+          "expected SmallInt code");
+    return function_entry_simple_builtin_;
   }
   return function_entry_with_no_intrinsic_;
 }
