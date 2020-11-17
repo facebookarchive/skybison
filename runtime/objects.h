@@ -1433,9 +1433,6 @@ class RawLargeStr : public RawDataArray {
 
   word occurrencesOf(RawObject that) const;
 
-  // Layout
-  static const int kDataOffset = RawHeapObject::kSize;
-
   // Sizing. Sizing should only be done by the Runtime.
   static word allocationSize(word length);
 

@@ -374,15 +374,16 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   }
 
   HandleScope scope(thread);
-  LargeStr result(&scope, thread->runtime()->createLargeStr(new_len));
-  word offset = RawLargeStr::kDataOffset;
+  MutableBytes result(&scope,
+                      thread->runtime()->newMutableBytesUninitialized(new_len));
+  word offset = 0;
   for (word i = num - 1; i >= 0; i--) {
     RawStr str = Str::cast(sp[i]);
     word len = str.length();
-    str.copyTo(reinterpret_cast<byte*>(result.address() + offset), len);
+    result.replaceFromWithStr(offset, str, len);
     offset += len;
   }
-  return *result;
+  return result.becomeStr();
 }
 
 RawObject Interpreter::callDescriptorGet(Thread* thread,
