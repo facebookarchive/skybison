@@ -845,7 +845,7 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
         return NULL;
     }
 
-    self = (PyDateTime_Date *)(type->tp_alloc(type, 0));
+    self = (PyDateTime_Date *)(PyType_GenericNew(type, NULL, NULL));
     if (self != NULL)
         set_date_fields(self, year, month, day);
     return (PyObject *)self;
@@ -1021,7 +1021,7 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
     if (check_delta_day_range(days) < 0)
         return NULL;
 
-    self = (PyDateTime_Delta *) (type->tp_alloc(type, 0));
+    self = (PyDateTime_Delta *) (PyType_GenericNew(type, NULL, NULL));
     if (self != NULL) {
         self->hashcode = -1;
         SET_TD_DAYS(self, days);
@@ -1061,7 +1061,7 @@ create_timezone(PyObject *offset, PyObject *name)
     assert(PyDelta_Check(offset));
     assert(name == NULL || PyUnicode_Check(name));
 
-    self = (PyDateTime_TimeZone *)(type->tp_alloc(type, 0));
+    self = (PyDateTime_TimeZone *)(PyType_GenericNew(type, NULL, NULL));
     if (self == NULL) {
         return NULL;
     }
@@ -1112,7 +1112,7 @@ check_tzinfo_subclass(PyObject *p)
     PyErr_Format(PyExc_TypeError,
                  "tzinfo argument must be None or of a tzinfo subclass, "
                  "not type '%s'",
-                 Py_TYPE(p)->tp_name);
+                 _PyType_Name(Py_TYPE(p)));
     return -1;
 }
 
@@ -1168,7 +1168,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
         PyErr_Format(PyExc_TypeError,
                      "tzinfo.%s() must return None or "
                      "timedelta, not '%.200s'",
-                     name, Py_TYPE(offset)->tp_name);
+                     name, _PyType_Name(Py_TYPE(offset)));
         Py_DECREF(offset);
         return NULL;
     }
@@ -1232,7 +1232,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
     if (!PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
                      "return None or a string, not '%s'",
-                     Py_TYPE(result)->tp_name);
+                     _PyType_Name(Py_TYPE(result)));
         Py_DECREF(result);
         result = NULL;
     }
@@ -1705,7 +1705,7 @@ cmperror(PyObject *a, PyObject *b)
 {
     PyErr_Format(PyExc_TypeError,
                  "can't compare %s to %s",
-                 Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                 _PyType_Name(Py_TYPE(a)), _PyType_Name(Py_TYPE(b)));
     return NULL;
 }
 
@@ -1912,7 +1912,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
         PyErr_Format(PyExc_TypeError,
                      "unexpected return type from as_integer_ratio(): "
                      "expected tuple, got '%.200s'",
-                     Py_TYPE(ratio)->tp_name);
+                     _PyType_Name(Py_TYPE(ratio)));
         Py_DECREF(ratio);
         return NULL;
     }
@@ -2395,7 +2395,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 
     PyErr_Format(PyExc_TypeError,
                  "unsupported type for timedelta %s component: %s",
-                 tag, Py_TYPE(num)->tp_name);
+                 tag, _PyType_Name(Py_TYPE(num)));
     return NULL;
 }
 
@@ -2563,7 +2563,7 @@ delta_repr(PyDateTime_Delta *self)
         }
     }
 
-    PyObject *repr = PyUnicode_FromFormat("%s(%S)", Py_TYPE(self)->tp_name,
+    PyObject *repr = PyUnicode_FromFormat("%s(%S)", _PyType_Name(Py_TYPE(self)),
                                           args);
     Py_DECREF(args);
     return repr;
@@ -2781,7 +2781,7 @@ date_from_pickle(PyTypeObject *type, PyObject *state)
 {
     PyDateTime_Date *me;
 
-    me = (PyDateTime_Date *) (type->tp_alloc(type, 0));
+    me = (PyDateTime_Date *) (PyType_GenericNew(type, NULL, NULL));
     if (me != NULL) {
         const char *pdata = PyBytes_AS_STRING(state);
         memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
@@ -3048,7 +3048,7 @@ static PyObject *
 date_repr(PyDateTime_Date *self)
 {
     return PyUnicode_FromFormat("%s(%d, %d, %d)",
-                                Py_TYPE(self)->tp_name,
+                                _PyType_Name(Py_TYPE(self)),
                                 GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
@@ -3668,7 +3668,7 @@ _timezone_check_argument(PyObject *dt, const char *meth)
     if (dt == Py_None || PyDateTime_Check(dt))
         return 0;
     PyErr_Format(PyExc_TypeError, "%s(dt) argument must be a datetime instance"
-                 " or None, not %.200s", meth, Py_TYPE(dt)->tp_name);
+                 " or None, not %.200s", meth, _PyType_Name(Py_TYPE(dt)));
     return -1;
 }
 
@@ -3676,8 +3676,8 @@ static PyObject *
 timezone_repr(PyDateTime_TimeZone *self)
 {
     /* Note that although timezone is not subclassable, it is convenient
-       to use Py_TYPE(self)->tp_name here. */
-    const char *type_name = Py_TYPE(self)->tp_name;
+       to use _PyType_Name(Py_TYPE(self)) here. */
+    const char *type_name = _PyType_Name(Py_TYPE(self));
 
     if (((PyObject *)self) == PyDateTime_TimeZone_UTC)
         return PyUnicode_FromFormat("%s.utc", type_name);
@@ -4048,7 +4048,7 @@ time_tzname(PyDateTime_Time *self, PyObject *unused) {
 static PyObject *
 time_repr(PyDateTime_Time *self)
 {
-    const char *type_name = Py_TYPE(self)->tp_name;
+    const char *type_name = _PyType_Name(Py_TYPE(self));
     int h = TIME_GET_HOUR(self);
     int m = TIME_GET_MINUTE(self);
     int s = TIME_GET_SECOND(self);
@@ -5269,7 +5269,7 @@ datetime_subtract(PyObject *left, PyObject *right)
 static PyObject *
 datetime_repr(PyDateTime_DateTime *self)
 {
-    const char *type_name = Py_TYPE(self)->tp_name;
+    const char *type_name = _PyType_Name(Py_TYPE(self));
     PyObject *baserepr;
 
     if (DATE_GET_MICROSECOND(self)) {
@@ -5808,7 +5808,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     else if (!PyDelta_Check(offset)) {
         Py_DECREF(offset);
         PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
-                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
+                     " expected timedelta or None", _PyType_Name(Py_TYPE(offset)));
         return NULL;
     }
     /* result = self - offset */
