@@ -334,6 +334,7 @@ set(
   library/_ctypes.py
   library/_frozen_importlib.py
   library/_frozen_importlib_external.py
+  library/_functools.py
   library/_imp.py
   library/_io.py
   library/_os.py
