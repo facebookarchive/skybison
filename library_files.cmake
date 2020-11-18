@@ -23,6 +23,8 @@ _os.py
 _parser_test.py
 _path.py
 _path_test.py
+_profiler.py
+_profiler_test.py
 _signal.py
 _str_mod.py
 _string.py
