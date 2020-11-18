@@ -321,7 +321,7 @@ RawFunction newEmptyFunction() {
   Runtime* runtime = thread->runtime();
   Code code(&scope, newEmptyCode());
   Object qualname(&scope, Str::empty());
-  Module main(&scope, runtime->findOrCreateMainModule());
+  Module main(&scope, findMainModule(runtime));
   return Function::cast(
       runtime->newFunctionWithCode(thread, qualname, code, main));
 }
@@ -403,7 +403,7 @@ RawObject runBuiltinImpl(BuiltinFunction function,
                                             /*kwonlyargcount=*/0,
                                             /*flags=*/0, function,
                                             parameter_names, name));
-  Module main(&scope, runtime->findOrCreateMainModule());
+  Module main(&scope, findMainModule(runtime));
   Function function_obj(&scope,
                         runtime->newFunctionWithCode(thread, name, code, main));
 
@@ -423,7 +423,7 @@ RawObject runCode(const Code& code) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Module main(&scope, runtime->findOrCreateMainModule());
+  Module main(&scope, findMainModule(runtime));
   Object qualname(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, qualname, code, main));
@@ -434,7 +434,7 @@ RawObject runCodeNoBytecodeRewriting(const Code& code) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Module main(&scope, runtime->findOrCreateMainModule());
+  Module main(&scope, findMainModule(runtime));
   Object qualname(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Bytes bytecode(&scope, code.code());
   code.setCode(runtime->newBytes(0, 0));
@@ -455,7 +455,7 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Object filename(&scope, runtime->newStrFromCStr("<test string>"));
   Code code(&scope, compile(thread, str, filename, ID(exec), /*flags=*/0,
                             /*optimize=*/0));
-  Module main_module(&scope, runtime->findOrCreateMainModule());
+  Module main_module(&scope, findMainModule(runtime));
   Object result(&scope, executeModule(thread, code, main_module));
 
   // Barebones emulation of the top-level SystemExit handling, to allow for
@@ -473,7 +473,7 @@ void addBuiltin(const char* name_cstr, BuiltinFunction function,
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Module main(&scope, runtime->findOrCreateMainModule());
+  Module main(&scope, findMainModule(runtime));
   word num_parameters = parameter_names.length();
   Object parameter_names_tuple(&scope, NoneType::object());
   if (num_parameters > 0) {

@@ -245,6 +245,12 @@ class OptionsTest(unittest.TestCase):
 
 
 class RunTest(unittest.TestCase):
+    def test_builtins_of_dunder_main_is_module(self):
+        from types import ModuleType
+
+        main = sys.modules["__main__"]
+        self.assertIsInstance(main.__builtins__, ModuleType)
+
     def test_with_directory_executes_code(self):
         with TemporaryDirectory() as tempdir:
             tempfile = os.path.join(tempdir, "__main__.py")

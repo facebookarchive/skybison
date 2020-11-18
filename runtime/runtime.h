@@ -853,10 +853,6 @@ class Runtime {
 
   static word nextModuleIndex();
 
-  // If the main module has already been initialized and added, return it.
-  // Else, create and add it to the runtime.
-  RawObject findOrCreateMainModule();
-
   static int heapOffset() { return OFFSETOF(Runtime, heap_); }
 
   static int layoutsOffset() { return OFFSETOF(Runtime, layouts_); }

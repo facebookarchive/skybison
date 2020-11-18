@@ -57,7 +57,7 @@ RawObject makeTestFunction() {
   Tuple consts(&scope, runtime->newTupleWith1(obj));
   code.setConsts(*consts);
   Object qualname(&scope, runtime->newStrFromCStr("foo"));
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime));
   return runtime->newFunctionWithCode(thread, qualname, code, module);
 }
 

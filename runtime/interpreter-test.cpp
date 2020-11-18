@@ -576,7 +576,7 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -620,7 +620,7 @@ v1 = 7
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -654,7 +654,7 @@ TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1406,7 +1406,7 @@ TEST_F(InterpreterTest, InplaceAddWithSmallIntsRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1484,7 +1484,7 @@ TEST_F(InterpreterTest, InplaceSubtractWithSmallIntsRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1642,7 +1642,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1671,7 +1671,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1698,7 +1698,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1728,7 +1728,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithListRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1895,7 +1895,7 @@ TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -1928,7 +1928,7 @@ TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -2721,7 +2721,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function callee(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -2769,7 +2769,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function callee(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
@@ -2824,7 +2824,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function callee(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
   Object default1(&scope, SmallInt::fromWord(1));
@@ -3952,7 +3952,7 @@ b = baz()
   Object str(&scope, runtime_->newStrFromCStr(main_src));
   Code main_code(&scope, compile(thread_, str, filename, ID(exec),
                                  /*flags=*/0, /*optimize=*/0));
-  Module main_module(&scope, runtime_->findOrCreateMainModule());
+  Module main_module(&scope, findMainModule(runtime_));
   Dict implicit_globals(&scope, runtime_->newDict());
   Object result(&scope,
                 thread_->exec(main_code, main_module, implicit_globals));
@@ -3996,7 +3996,7 @@ b = baz()
   Object str(&scope, runtime_->newStrFromCStr(main_src));
   Code main_code(&scope, compile(thread_, str, filename, ID(exec),
                                  /*flags=*/0, /*optimize=*/0));
-  Module main_module(&scope, runtime_->findOrCreateMainModule());
+  Module main_module(&scope, findMainModule(runtime_));
   Type implicit_globals_type(&scope, mainModuleAt(runtime_, "C"));
   Object implicit_globals(
       &scope, thread_->invokeMethod1(implicit_globals_type, ID(__call__)));
@@ -5796,7 +5796,7 @@ TEST_F(InterpreterTest,
        LoadGlobalCachedReturnsBuiltinDictValueAndSetsPlaceholder) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__["a"] = 400
+__builtins__.a = 400
 
 def foo():
   return a + a
@@ -5823,13 +5823,13 @@ result = foo()
 TEST_F(InterpreterTest, StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__["a"] = 400
+__builtins__.a = 400
 
 def foo():
   return a + a
 
 def bar():
-  # Shadowing `__builtins__["a"]`.
+  # Shadowing `__builtins__.a`.
   global a
   a = 123
 
@@ -5869,7 +5869,7 @@ bar()
 TEST_F(InterpreterTest, StoreNameInvalidatesCachedBuiltinToBeShadowed) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__["a"] = 400
+__builtins__.a = 400
 
 def foo():
   return a + a

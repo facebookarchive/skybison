@@ -122,7 +122,7 @@ static RawModule createTestingModule(Thread* thread) {
   dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
                             builtins_module);
 
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime));
   module.setDict(*module_dict);
   return *module;
 }
@@ -209,7 +209,7 @@ foo()
 TEST_F(ModuleBuiltinsTest, ModuleAtPutInvalidatesCachedBuiltinsValueCell) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__["a"] = 4
+__builtins__.a = 4
 
 def foo():
   return a

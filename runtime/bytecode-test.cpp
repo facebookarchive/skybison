@@ -76,7 +76,7 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   Tuple names(&scope, runtime_->newTuple(global_names_length));
   code.setNames(*names);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
@@ -98,7 +98,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
       EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -147,7 +147,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
                                                &obj5, &obj6, &obj7));
   code.setConsts(*consts);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
@@ -174,7 +174,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
       EXTENDED_ARG, 3,           LOAD_METHOD,  4,    LOAD_METHOD,  77,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -220,7 +220,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {STORE_ATTR, 48};
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -265,7 +265,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
       0,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -343,7 +343,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
       0,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -401,7 +401,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP, CompareOp::EXC_MATCH,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -451,7 +451,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setNames(runtime_->newTuple(12));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -515,7 +515,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
                               /*firstlineno=*/0, lnotab));
   code.setFlags(code.flags() | Code::Flags::kOptimized);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
                                                           code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -561,7 +561,7 @@ TEST_F(BytecodeTest,
                               /*firstlineno=*/0, lnotab));
   code.setFlags(code.flags() | Code::Flags::kOptimized);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
                                                           code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -609,7 +609,7 @@ TEST_F(
                               /*firstlineno=*/0, lnotab));
   code.setFlags(code.flags() | Code::Flags::kOptimized);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
                                                           code, module));
   // newFunctionWithCode() calls rewriteBytecode().
@@ -638,7 +638,7 @@ TEST_F(BytecodeTest,
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(code.flags() & ~Code::Flags::kOptimized &
                 ~Code::Flags::kNewlocals);
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 

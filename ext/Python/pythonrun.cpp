@@ -8,6 +8,7 @@
 #include "marshal.h"
 #include "module-builtins.h"
 #include "modules.h"
+#include "object-builtins.h"
 #include "os.h"
 #include "runtime.h"
 #include "sys-module.h"
@@ -261,7 +262,15 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Object module_obj(&scope, runtime->findModuleById(ID(__main__)));
+  if (module_obj.isErrorNotFound()) {
+    Object name(&scope, runtime->symbols()->at(ID(__main__)));
+    module_obj = runtime->newModule(name);
+    Object modules(&scope, runtime->modules());
+    objectSetItem(thread, modules, name, module_obj);
+  }
+  Module module(&scope, *module_obj);
+
   RawObject dunder_file = moduleAtById(thread, module, ID(__file__));
   if (dunder_file.isErrorNotFound()) {
     Str filename_str(&scope, runtime->newStrFromCStr(filename));

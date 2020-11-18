@@ -195,7 +195,7 @@ TEST_F(ThreadTest, OverlappingFrames) {
   caller_code.setCode(Bytes::empty());
   caller_code.setStacksize(3);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function caller(&scope, runtime_->newFunctionWithCode(thread_, name,
                                                         caller_code, module));
 
@@ -245,7 +245,7 @@ TEST_F(ThreadTest, PushPopFrame) {
   code.setCode(Bytes::empty());
   code.setNlocals(2);
   code.setStacksize(3);
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
@@ -272,7 +272,7 @@ TEST_F(ThreadTest, PushFrameWithNoCellVars) {
   code.setCode(Bytes::empty());
   code.setCellvars(NoneType::object());
   code.setFreevars(runtime_->emptyTuple());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   thread_->stackPush(*function);
@@ -291,7 +291,7 @@ TEST_F(ThreadTest, PushFrameWithNoFreeVars) {
   code.setCode(Bytes::empty());
   code.setFreevars(NoneType::object());
   code.setCellvars(runtime_->emptyTuple());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   thread_->stackPush(*function);
@@ -360,7 +360,7 @@ TEST_F(ThreadTest, CallFunction) {
 
   // Create the function object and bind it to the code object
   Object qualname(&scope, Str::empty());
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function callee(&scope, runtime_->newFunctionWithCode(thread_, qualname,
                                                         callee_code, module));
 
@@ -523,7 +523,7 @@ TEST_F(ThreadTest, LoadGlobal) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Object value(&scope, runtime_->newInt(1234));
   moduleAtPut(thread_, module, name, value);
 
@@ -549,7 +549,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Dict globals(&scope, module.dict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 42));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 42));
@@ -573,7 +573,7 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Object value(&scope, runtime_->newInt(99));
   moduleAtPut(thread_, module, name, value);
   Object none(&scope, NoneType::object());
@@ -596,7 +596,7 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   Object builtins_name(&scope, runtime_->symbols()->at(ID(builtins)));
   Module builtins(&scope, runtime_->newModule(builtins_name));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   moduleAtPutById(thread_, module, ID(__builtins__), builtins);
   Object value(&scope, runtime_->newInt(123));
   moduleAtPut(thread_, builtins, name, value);
@@ -617,7 +617,7 @@ TEST_F(ThreadTest, LoadNameFromGlobals) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Object value(&scope, runtime_->newInt(321));
   moduleAtPut(thread_, module, name, value);
   Dict locals(&scope, runtime_->newDict());
@@ -638,7 +638,7 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Object globals_value(&scope, runtime_->newInt(456));
   moduleAtPut(thread_, module, name, globals_value);
   Dict locals(&scope, runtime_->newDict());
@@ -672,7 +672,7 @@ TEST_F(ThreadTest, MakeFunction) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(0);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Dict locals(&scope, runtime_->newDict());
   ASSERT_TRUE(thread_->exec(code, module, locals).isNoneType());
 
@@ -788,7 +788,7 @@ TEST_F(ThreadTest, SetupLoopAndPopBlock) {
                                        /*kwonlyargcount=*/0,
                                        /*flags=*/0, inspect_block,
                                        /*parameter_names=*/empty_tuple, name));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function inspect_block_func(&scope, runtime_->newFunctionWithCode(
                                           thread_, name, inspect_code, module));
 
@@ -1076,7 +1076,7 @@ TEST_F(ThreadTest, NativeExceptions) {
                            /*argcount=*/0, /*posonlyargcount=*/0,
                            /*kwonlyargcount=*/0, /*flags=*/0,
                            nativeExceptionTest, empty_tuple, name));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function fn(&scope,
               runtime_->newFunctionWithCode(thread_, name, fn_code, module));
 
@@ -1869,7 +1869,7 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Dict locals(&scope, runtime_->newDict());
   ASSERT_TRUE(thread_->exec(code, module, locals).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, locals, name), 3));
@@ -2230,7 +2230,7 @@ TEST_F(ThreadTest, LoadTypeDerefFromLocal) {
   code.setStacksize(2);
   code.setFlags(Code::Flags::kNofree);
 
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Dict locals(&scope, runtime_->newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, locals), 1111));
 }
@@ -2242,7 +2242,7 @@ TEST_F(ThreadTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
   code.setNames(runtime_->emptyTuple());
 
   Object qualname(&scope, runtime_->newStrFromCStr("<anonymous>"));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function function(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 

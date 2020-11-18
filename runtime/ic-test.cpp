@@ -691,7 +691,7 @@ static RawObject testingFunctionCachingAttributes(
   rewritten_bytecode.byteAtPut(0, LOAD_ATTR_ANAMORPHIC);
   rewritten_bytecode.byteAtPut(1, 1);
 
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime));
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
@@ -1372,7 +1372,7 @@ static RawObject testingFunction(Thread* thread) {
   rewritten_bytecode.byteAtPut(6, STORE_GLOBAL);
   rewritten_bytecode.byteAtPut(7, 1);
 
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime));
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);

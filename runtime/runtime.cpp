@@ -2051,23 +2051,6 @@ void Runtime::processFinalizers() {
   thread->setPendingExceptionTraceback(*saved_traceback);
 }
 
-RawObject Runtime::findOrCreateMainModule() {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object maybe_main(&scope, findModuleById(ID(__main__)));
-  if (!maybe_main.isErrorNotFound()) {
-    return *maybe_main;
-  }
-
-  Object name(&scope, symbols()->at(ID(__main__)));
-  Module main(&scope, newModule(name));
-  Object modules(&scope, this->modules());
-  Object result(&scope, objectSetItem(thread, modules, name, main));
-  if (result.isErrorException()) return *result;
-  // TODO(T67704743) Fill in __main__...
-  return *main;
-}
-
 static void writeCStr(word fd, const char* str) {
   File::write(fd, str, std::strlen(str));
 }

@@ -291,6 +291,13 @@ def _init():
     global _module_repr
     _module_repr = _frozen_importlib._module_repr
 
+    main = module("__main__")
+    main.__annotations__ = {}
+    main.__builtins__ = _sys.modules["builtins"]
+    main.__loader__ = _frozen_importlib.BuiltinImporter
+    assert "__main__" not in _sys.modules
+    _sys.modules["__main__"] = main
+
     if not _sys.flags.no_site:
         import site  # noqa: F401
 

@@ -719,7 +719,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   Object qualname(&scope, runtime_->newStrFromCStr("foo"));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function foo(&scope,
                runtime_->newFunctionWithCode(thread_, qualname, code, module));
   Object obj(&scope, runtime_->newInt(99));
@@ -779,7 +779,7 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
                              /*cellvars=*/empty_tuple,
                              /*filename=*/empty_str, name,
                              /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime));
   return runtime->newFunctionWithCode(thread, name, code, module);
 }
 
@@ -849,7 +849,7 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
                         /*cellvars=*/empty_tuple,
                         /*filename=*/empty_str, name,
                         /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function foo(&scope,
                runtime_->newFunctionWithCode(thread_, name, code, module));
   Object seven(&scope, runtime_->newInt(7));

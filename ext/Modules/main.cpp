@@ -90,7 +90,6 @@ static int runModule(const char* modname_cstr, bool set_argv0) {
     return -1;
   }
 
-  runtime->findOrCreateMainModule();
   Str modname(&scope, runtime->newStrFromCStr(modname_cstr));
   Bool alter_argv(&scope, Bool::fromBool(set_argv0));
   result = thread->invokeFunction2(ID(runpy), ID(_run_module_as_main), modname,
@@ -105,7 +104,6 @@ static int runModule(const char* modname_cstr, bool set_argv0) {
 static int tryRunPackage(Thread* thread, const char* path_cst) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  runtime->findOrCreateMainModule();
   Str path(&scope, runtime->newStrFromCStr(path_cst));
   Object result(&scope, thread->invokeFunction1(ID(builtins),
                                                 ID(_try_run_package), path));

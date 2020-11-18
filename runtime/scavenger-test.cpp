@@ -262,7 +262,7 @@ def g(ref, b=2):
                   /*argcount=*/0, /*posonlyargcount=*/0,
                   /*kwonlyargcount=*/0, /*flags=*/0, doGarbageCollection,
                   /*parameter_names=*/empty_tuple, name));
-    Module module(&scope, runtime_->findOrCreateMainModule());
+    Module module(&scope, findMainModule(runtime_));
     Function collect(
         &scope, runtime_->newFunctionWithCode(thread_, name, code, module));
 

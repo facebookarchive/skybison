@@ -57,7 +57,7 @@ static RawObject makeTestFunction(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object qualname(&scope, runtime->newStrFromCStr("footype.baz"));
   Code code(&scope, makeTestCode(thread));
-  Module module(&scope, runtime->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime));
   Function func(&scope,
                 runtime->newFunctionWithCode(thread, qualname, code, module));
   func.setEntry(reinterpret_cast<Function::Entry>(100));
@@ -747,7 +747,7 @@ def func(arg0, arg1):
                                      /*flags=*/0, /*function=*/nullptr,
                                      /*parameter_names=*/empty_tuple, name));
   Str qualname(&scope, runtime_->newStrFromCStr("test._bytearray_check"));
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Module module(&scope, findMainModule(runtime_));
   Function builtin(
       &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
