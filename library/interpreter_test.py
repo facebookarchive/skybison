@@ -309,6 +309,52 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
 
+    def test_load_global_returns_global(self):
+        globals = {
+            "foo": 42,
+            "__builtins__": {"foo": 8},
+        }
+        locals = {"foo": 3}
+        self.assertIs(
+            exec("def get_foo(): global foo; return foo", globals, locals), None
+        )
+        self.assertEqual(locals["get_foo"](), 42)
+
+    def test_load_global_returns_builtin(self):
+        globals = {
+            "foo": 42,
+            "__builtins__": {"bar": 8},
+        }
+        locals = {"bar": 3}
+        self.assertIs(
+            exec("def get_bar(): global bar; return bar", globals, locals), None
+        )
+        self.assertEqual(locals["get_bar"](), 8)
+
+    def test_load_global_does_not_cache_builtin(self):
+        builtins = {"bar": -8}
+        globals = {"foo": 42, "__builtins__": builtins}
+        locals = {"bar": 3}
+        self.assertIs(
+            exec("def get_bar(): global bar; return bar", globals, locals), None
+        )
+        self.assertEqual(locals["get_bar"](), -8)
+        builtins["bar"] = 9
+        self.assertEqual(locals["get_bar"](), 9)
+
+    def test_load_global_calls_builtins_getitem(self):
+        class C:
+            def __getitem__(self, key):
+                return (self, key)
+
+        builtins = C()
+        globals = {"foo": 42, "__builtins__": builtins}
+        locals = {"bar": 3}
+        self.assertIs(
+            exec("def get_bar(): global bar; return bar", globals, locals), None
+        )
+        self.assertEqual(locals["get_bar"](), (builtins, "bar"))
+
     def test_delete_attr_calls_dunder_delete(self):
         class Descriptor:
             def __delete__(self, *args):

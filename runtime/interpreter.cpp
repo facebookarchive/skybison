@@ -2679,50 +2679,30 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   return Continue::NEXT;
 }
 
-static RawObject builtinsModule(Thread* thread, const Module& module) {
+static RawObject builtinsAt(Thread* thread, const Module& module,
+                            const Object& name) {
   HandleScope scope(thread);
-  Object builtins_obj(&scope, moduleAtById(thread, module, ID(__builtins__)));
-  if (builtins_obj.isErrorNotFound()) {
+  Object builtins(&scope, moduleAtById(thread, module, ID(__builtins__)));
+  Module builtins_module(&scope, *module);
+  if (builtins.isModuleProxy()) {
+    builtins_module = ModuleProxy::cast(*builtins).module();
+  } else if (builtins.isModule()) {
+    builtins_module = *builtins;
+  } else if (builtins.isErrorNotFound()) {
     return Error::notFound();
+  } else {
+    return objectGetItem(thread, builtins, name);
   }
-  CHECK(thread->runtime()->isInstanceOfModule(*builtins_obj),
-        "expected builtins to be a module");
-  return *builtins_obj;
+  return moduleAt(thread, builtins_module, name);
 }
 
-RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
-                                 const Object& name, const Function& function,
-                                 word cache_index) {
-  HandleScope scope(thread);
-  Object module_result(&scope, moduleValueCellAt(thread, module, name));
-  if (module_result.isValueCell()) {
-    ValueCell value_cell(&scope, *module_result);
-    icUpdateGlobalVar(thread, function, cache_index, value_cell);
-    return value_cell.value();
+static RawObject globalsAt(Thread* thread, const Module& module,
+                           const Object& name) {
+  RawObject result = moduleValueCellAt(thread, module, name);
+  if (!result.isErrorNotFound() && !ValueCell::cast(result).isPlaceholder()) {
+    return ValueCell::cast(result).value();
   }
-  Module builtins(&scope, builtinsModule(thread, module));
-  Object builtins_result(&scope, moduleValueCellAt(thread, builtins, name));
-  if (builtins_result.isValueCell()) {
-    ValueCell value_cell(&scope, *builtins_result);
-    icUpdateGlobalVar(thread, function, cache_index, value_cell);
-    // Set up a placeholder in module to signify that a builtin entry under
-    // the same name is cached.
-    Dict module_dict(&scope, module.dict());
-    NoneType none(&scope, NoneType::object());
-    ValueCell module_value_cell(
-        &scope, dictAtPutInValueCellByStr(thread, module_dict, name, none));
-    module_value_cell.makePlaceholder();
-    return value_cell.value();
-  }
-  return Error::notFound();
-}
-
-void Interpreter::globalsAtPut(Thread* thread, const Module& module,
-                               const Object& name, const Object& value,
-                               const Function& function, word cache_index) {
-  HandleScope scope(thread);
-  ValueCell module_result(&scope, moduleAtPut(thread, module, name, value));
-  icUpdateGlobalVar(thread, function, cache_index, module_result);
+  return builtinsAt(thread, module, name);
 }
 
 ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
@@ -3284,11 +3264,12 @@ HANDLER_INLINE Continue Interpreter::doStoreGlobal(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
-  Str key(&scope, names.at(arg));
+  Str name(&scope, names.at(arg));
   Object value(&scope, thread->stackPop());
   Module module(&scope, frame->function().moduleObject());
   Function function(&scope, frame->function());
-  globalsAtPut(thread, module, key, value, function, arg);
+  ValueCell module_result(&scope, moduleAtPut(thread, module, name, value));
+  icUpdateGlobalVar(thread, function, arg, module_result);
   return Continue::NEXT;
 }
 
@@ -3357,18 +3338,14 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
     }
   }
   Module module(&scope, frame->function().moduleObject());
-  Object module_result(&scope, moduleAt(thread, module, name));
-  if (!module_result.isErrorNotFound()) {
-    thread->stackPush(*module_result);
-    return Continue::NEXT;
+  Object result(&scope, globalsAt(thread, module, name));
+  if (result.isError()) {
+    if (result.isErrorNotFound()) return raiseUndefinedName(thread, name);
+    DCHECK(result.isErrorException(), "Expected ErrorException");
+    return Continue::UNWIND;
   }
-  Module builtins(&scope, builtinsModule(thread, module));
-  Object builtins_result(&scope, moduleAt(thread, builtins, name));
-  if (!builtins_result.isErrorNotFound()) {
-    thread->stackPush(*builtins_result);
-    return Continue::NEXT;
-  }
-  return raiseUndefinedName(thread, name);
+  thread->stackPush(*result);
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildTuple(Thread* thread, word arg) {
@@ -3902,8 +3879,9 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   Object locals(&scope, NoneType::object());
 
   // Call __builtins__.__import__(name, globals, locals, fromlist, level).
-  Module builtins(&scope, builtinsModule(thread, module));
-  Object dunder_import(&scope, moduleAtById(thread, builtins, ID(__import__)));
+  Runtime* runtime = thread->runtime();
+  Object dunder_import_name(&scope, runtime->symbols()->at(ID(__import__)));
+  Object dunder_import(&scope, builtinsAt(thread, module, dunder_import_name));
   if (dunder_import.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kImportError, "__import__ not found");
     return Continue::UNWIND;
@@ -4070,14 +4048,50 @@ HANDLER_INLINE Continue Interpreter::doLoadGlobal(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
-  Str key(&scope, names.at(arg));
-  Module module(&scope, frame->function().moduleObject());
+  Str name(&scope, names.at(arg));
   Function function(&scope, frame->function());
-  Object result(&scope, globalsAt(thread, module, key, function, arg));
-  if (result.isErrorNotFound()) {
-    return raiseUndefinedName(thread, key);
+  Module module(&scope, function.moduleObject());
+
+  Object module_result(&scope, moduleValueCellAt(thread, module, name));
+  if (!module_result.isErrorNotFound() &&
+      !ValueCell::cast(*module_result).isPlaceholder()) {
+    ValueCell value_cell(&scope, *module_result);
+    icUpdateGlobalVar(thread, function, arg, value_cell);
+    thread->stackPush(value_cell.value());
+    return Continue::NEXT;
   }
-  thread->stackPush(*result);
+  Object builtins(&scope, moduleAtById(thread, module, ID(__builtins__)));
+  Module builtins_module(&scope, *module);
+  if (builtins.isModuleProxy()) {
+    builtins_module = ModuleProxy::cast(*builtins).module();
+  } else if (builtins.isModule()) {
+    builtins_module = *builtins;
+  } else if (builtins.isErrorNotFound()) {
+    return raiseUndefinedName(thread, name);
+  } else {
+    Object result(&scope, objectGetItem(thread, builtins, name));
+    if (result.isErrorException()) return Continue::UNWIND;
+    thread->stackPush(*result);
+    return Continue::NEXT;
+  }
+  Object builtins_result(&scope,
+                         moduleValueCellAt(thread, builtins_module, name));
+  if (builtins_result.isErrorNotFound()) {
+    return raiseUndefinedName(thread, name);
+  }
+  ValueCell value_cell(&scope, *builtins_result);
+  if (value_cell.isPlaceholder()) {
+    return raiseUndefinedName(thread, name);
+  }
+  icUpdateGlobalVar(thread, function, arg, value_cell);
+  // Set up a placeholder in module to signify that a builtin entry under
+  // the same name is cached.
+  Dict module_dict(&scope, module.dict());
+  NoneType none(&scope, NoneType::object());
+  ValueCell module_value_cell(
+      &scope, dictAtPutInValueCellByStr(thread, module_dict, name, none));
+  module_value_cell.makePlaceholder();
+  thread->stackPush(value_cell.value());
   return Continue::NEXT;
 }
 

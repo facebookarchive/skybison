@@ -553,22 +553,6 @@ class Interpreter {
   static Continue forIterUpdateCache(Thread* thread, word arg, word index);
   static Continue forIter(Thread* thread, RawObject next_method, word arg);
 
-  // Look up the value of ValueCell associcate with `name` first in module_dict
-  // and then in module_dict["__builtins__"] if `name` is not found in
-  // module_dict.
-  // This lookup is done considering placeholders created for caching. If a
-  // lookup succeeds, the found value is cached in function's cache at
-  // cache_index. Returns Error::notFound() if both lookups are failed.
-  static RawObject globalsAt(Thread* thread, const Module& module,
-                             const Object& name, const Function& function,
-                             word cache_index);
-
-  // Asssocicate `name` with value in module_dict, and update function's cache
-  // at cache_index.
-  static void globalsAtPut(Thread* thread, const Module& module,
-                           const Object& name, const Object& value,
-                           const Function& function, word cache_index);
-
   // Slow path for isTrue check. Does a __bool__ method call, etc.
   static RawObject isTrueSlowPath(Thread* thread, RawObject value_obj);
 
