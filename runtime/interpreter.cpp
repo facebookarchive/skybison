@@ -5916,6 +5916,7 @@ class CppInterpreter : public Interpreter {
   ~CppInterpreter() override;
   void setupThread(Thread* thread) override;
   void* entryAsm(const Function& function) override;
+  void setOpcodeCounting(bool) override;
 
  private:
   static RawObject interpreterLoop(Thread* thread);
@@ -5928,6 +5929,10 @@ void CppInterpreter::setupThread(Thread* thread) {
 }
 
 void* CppInterpreter::entryAsm(const Function&) { return nullptr; }
+
+void CppInterpreter::setOpcodeCounting(bool) {
+  UNIMPLEMENTED("opcode counting not supported by C++ interpreter");
+}
 
 RawObject CppInterpreter::interpreterLoop(Thread* thread) {
   // Silence warnings about computed goto

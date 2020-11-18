@@ -4803,6 +4803,91 @@ def bar(): pass
   EXPECT_TRUE(bar_docstring.isNoneType());
 }
 
+TEST_F(InterpreterTest, OpcodesAreCounted) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def a(a, b):
+  return a + b
+def func():
+  return a(7, 88)
+)")
+                   .isError());
+  Object func(&scope, mainModuleAt(runtime_, "func"));
+  EXPECT_EQ(thread_->opcodeCount(), 0);
+  ASSERT_FALSE(Interpreter::call0(thread_, func).isError());
+  EXPECT_EQ(thread_->opcodeCount(), 0);
+
+  runtime_->interpreter()->setOpcodeCounting(true);
+  runtime_->reinitInterpreter();
+
+  word count_before = thread_->opcodeCount();
+  ASSERT_FALSE(Interpreter::call0(thread_, func).isError());
+  EXPECT_EQ(thread_->opcodeCount() - count_before, 9);
+
+  runtime_->interpreter()->setOpcodeCounting(false);
+  runtime_->reinitInterpreter();
+
+  count_before = thread_->opcodeCount();
+  ASSERT_FALSE(Interpreter::call0(thread_, func).isError());
+  EXPECT_EQ(thread_->opcodeCount() - count_before, 0);
+}
+
+static RawObject startCounting(Thread* thread, Arguments) {
+  thread->runtime()->interpreter()->setOpcodeCounting(true);
+  thread->runtime()->reinitInterpreter();
+  return NoneType::object();
+}
+
+static RawObject stopCounting(Thread* thread, Arguments) {
+  thread->runtime()->interpreter()->setOpcodeCounting(false);
+  thread->runtime()->reinitInterpreter();
+  return NoneType::object();
+}
+
+TEST_F(InterpreterTest, ReinitInterpreterEnablesOpcodeCounting) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+
+  addBuiltin("start_counting", startCounting, {nullptr, 0}, 0);
+  addBuiltin("stop_counting", stopCounting, {nullptr, 0}, 0);
+
+  EXPECT_EQ(thread_->opcodeCount(), 0);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def bar():
+  start_counting()
+def func():
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  x = 5
+  return 5
+func()
+bar()
+func()
+stop_counting()
+func()
+)")
+                   .isError());
+  // I do not want to hardcode opcode counts for the calls here (since that
+  // may change in the future). So this just checks that we have at least
+  // 10*2 = 20 opcodes for a `func()` call, but no more than double that amount
+  // to make sure we did not consider the `foo()` call before and after
+  // counting was enabled.
+  word count = thread_->opcodeCount();
+  EXPECT_TRUE(20 < count && count < 40);
+}
+
 TEST_F(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   HandleScope scope(thread_);
   Str not_a_func(&scope, Str::empty());

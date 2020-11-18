@@ -82,6 +82,8 @@ class Interpreter {
 
   virtual void* entryAsm(const Function& function) = 0;
 
+  virtual void setOpcodeCounting(bool enabled) = 0;
+
   static RawObject execute(Thread* thread);
   static RawObject resumeGenerator(Thread* thread,
                                    const GeneratorBase& generator,

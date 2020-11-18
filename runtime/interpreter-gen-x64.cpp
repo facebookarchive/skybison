@@ -123,12 +123,17 @@ struct EmitEnv {
   Label call_handler;
   Label call_interpreted_slow_path;
   Label call_trampoline;
+  Label do_return;
   Label unwind_handler;
 
   Label function_entry_with_intrinsic_handler;
   Label function_entry_with_no_intrinsic_handler;
   Label function_entry_simple_interpreted_handler[kMaxNargs];
   Label function_entry_simple_builtin;
+
+  word handler_offset;
+  word counting_handler_offset;
+  bool count_opcodes;
 };
 
 // This macro helps instruction-emitting code stand out while staying compact.
@@ -188,15 +193,11 @@ enum SaveRestoreFlags {
   kVMFrame = 1 << 1,
   kBytecode = 1 << 2,
   kVMPC = 1 << 3,
-  kAllState = kVMStack | kVMFrame | kBytecode | kVMPC,
+  kHandlerBase = 1 << 4,
+  kAllState = kVMStack | kVMFrame | kBytecode | kVMPC | kHandlerBase,
 };
 
-SaveRestoreFlags operator|(SaveRestoreFlags a, SaveRestoreFlags b) {
-  return static_cast<SaveRestoreFlags>(static_cast<int>(a) |
-                                       static_cast<int>(b));
-}
-
-void emitSaveInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
+void emitSaveInterpreterState(EmitEnv* env, word flags) {
   if (flags & kVMFrame) {
     __ movq(Address(kThreadReg, Thread::currentFrameOffset()), kFrameReg);
   }
@@ -208,9 +209,10 @@ void emitSaveInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
   if (flags & kVMPC) {
     __ movq(Address(kFrameReg, Frame::kVirtualPCOffset), kPCReg);
   }
+  DCHECK((flags & kHandlerBase) == 0, "Storing handlerbase not supported");
 }
 
-void emitRestoreInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
+void emitRestoreInterpreterState(EmitEnv* env, word flags) {
   if (flags & kVMFrame) {
     __ movq(kFrameReg, Address(kThreadReg, Thread::currentFrameOffset()));
   }
@@ -222,6 +224,10 @@ void emitRestoreInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
   }
   if (flags & kVMPC) {
     __ movl(kPCReg, Address(kFrameReg, Frame::kVirtualPCOffset));
+  }
+  if (flags & kHandlerBase) {
+    __ movq(kHandlersBaseReg,
+            Address(kThreadReg, Thread::interpreterDataOffset()));
   }
 }
 
@@ -275,8 +281,12 @@ void emitHandleContinue(EmitEnv* env, bool may_change_frame_pc) {
   __ testl(r_result, r_result);
   __ jcc(NOT_ZERO, &handle_flow, Assembler::kNearJump);
 
-  emitRestoreInterpreterState(
-      env, may_change_frame_pc ? kAllState : (kVMStack | kBytecode));
+  // Note that we do not restore the `kHandlerBase` for now. That saves some
+  // cycles but fail to cleanly switch interpreter handlers for stackframes that
+  // are already active at the time the handlers are switched.
+  emitRestoreInterpreterState(env, may_change_frame_pc
+                                       ? (kAllState & ~kHandlerBase)
+                                       : (kVMStack | kBytecode));
   emitNextOpcode(env);
 
   __ bind(&handle_flow);
@@ -1147,6 +1157,7 @@ static void emitCallInterpretedSlowPath(EmitEnv* env) {
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCall<Interpreter::Continue (*)(Thread*, word, RawFunction)>(
       env, Interpreter::callInterpreted);
+  emitRestoreInterpreterState(env, kHandlerBase);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
@@ -1680,6 +1691,9 @@ void writeBytes(void* addr, T value) {
   std::memcpy(addr, &value, sizeof(value));
 }
 
+word emitHandlerTable(EmitEnv* env);
+void emitSharedCode(EmitEnv* env);
+
 void emitInterpreter(EmitEnv* env) {
   // Set up a frame and save callee-saved registers we'll use.
   __ pushq(RBP);
@@ -1696,18 +1710,11 @@ void emitInterpreter(EmitEnv* env) {
                                 (Frame::kReturnModeOffset / kBitsPerByte)),
          Immediate(static_cast<word>(Frame::kExitRecursiveInterpreter)));
 
-  // Materialize the handler base address into a register. The offset will be
-  // patched right before emitting the first handler.
-  const int32_t dummy_offset = 0xdeadbeef;
-  __ leaq(kHandlersBaseReg, Address::addressRIPRelative(dummy_offset));
-  word post_lea_size = env->as.codeSize();
-
   // Load VM state into registers and jump to the first opcode handler.
   emitRestoreInterpreterState(env, kAllState);
   emitNextOpcode(env);
 
-  Label do_return;
-  __ bind(&do_return);
+  __ bind(&env->do_return);
   __ leaq(RSP, Address(RBP, -kNumCalleeSavedRegs * int{kPointerSize}));
   for (word i = kNumCalleeSavedRegs - 1; i >= 0; --i) {
     __ popq(kUsedCalleeSavedRegs[i]);
@@ -1717,13 +1724,31 @@ void emitInterpreter(EmitEnv* env) {
 
   __ align(kInstructionCacheLineSize);
 
+  env->count_opcodes = false;
+  env->handler_offset = emitHandlerTable(env);
+
+  env->count_opcodes = true;
+  env->counting_handler_offset = emitHandlerTable(env);
+
+  emitSharedCode(env);
+}
+
+void emitBeforeHandler(EmitEnv* env) {
+  if (env->count_opcodes) {
+    __ incq(Address(kThreadReg, Thread::opcodeCountOffset()));
+  }
+}
+
+word emitHandlerTable(EmitEnv* env) {
   // UNWIND pseudo-handler
   static_assert(static_cast<int>(Interpreter::Continue::UNWIND) == 1,
                 "Unexpected UNWIND value");
   {
     env->current_handler = "UNWIND pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
-    __ bind(&env->unwind_handler);
+    if (!env->unwind_handler.isBound()) {
+      __ bind(&env->unwind_handler);
+    }
     __ movq(kArgRegs[0], kThreadReg);
 
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::unwind);
@@ -1731,8 +1756,8 @@ void emitInterpreter(EmitEnv* env) {
     static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                   "tag should fit a byte for cmpb");
     __ cmpb(RAX, Immediate(Error::error().raw()));
-    __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
-    emitRestoreInterpreterState(env, kAllState);
+    __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
+    emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
     emitNextOpcode(env);
   }
 
@@ -1748,8 +1773,8 @@ void emitInterpreter(EmitEnv* env) {
     static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                   "tag should fit a byte for cmpb");
     __ cmpb(RAX, Immediate(Error::error().raw()));
-    __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
-    emitRestoreInterpreterState(env, kAllState);
+    __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
+    emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
     emitNextOpcode(env);
   }
 
@@ -1766,26 +1791,26 @@ void emitInterpreter(EmitEnv* env) {
     __ addq(r_scratch_top, Immediate(kPointerSize));
     __ movq(Address(kThreadReg, Thread::stackPointerOffset()), r_scratch_top);
 
-    __ jmp(&do_return, Assembler::kFarJump);
+    __ jmp(&env->do_return, Assembler::kFarJump);
   }
 
-  // Mark the beginning of the opcode handlers and emit them at regular
-  // intervals.
-  char* lea_offset_addr = reinterpret_cast<char*>(
-      env->as.codeAddress(post_lea_size - sizeof(int32_t)));
-  CHECK(Utils::readBytes<int32_t>(lea_offset_addr) == dummy_offset,
-        "Unexpected leaq encoding");
-  writeBytes<int32_t>(lea_offset_addr, env->as.codeSize() - post_lea_size);
+  word offset_0 = env->as.codeSize();
+
 #define BC(name, i, handler)                                                   \
   {                                                                            \
     env->current_op = name;                                                    \
     env->current_handler = #name;                                              \
     HandlerSizer sizer(env, kHandlerSize);                                     \
+    emitBeforeHandler(env);                                                    \
     emitHandler<name>(env);                                                    \
   }
   FOREACH_BYTECODE(BC)
 #undef BC
 
+  return offset_0;
+}
+
+void emitSharedCode(EmitEnv* env) {
   __ bind(&env->call_function_no_intrinsic_handler);
   {
     Label next_opcode;
@@ -1838,6 +1863,7 @@ class X64Interpreter : public Interpreter {
   ~X64Interpreter() override;
   void setupThread(Thread* thread) override;
   void* entryAsm(const Function& function) override;
+  void setOpcodeCounting(bool enabled) override;
 
  private:
   byte* code_;
@@ -1847,6 +1873,10 @@ class X64Interpreter : public Interpreter {
   void* function_entry_with_no_intrinsic_;
   void* function_entry_simple_interpreted_[kMaxNargs];
   void* function_entry_simple_builtin_;
+
+  void* default_handler_table_ = nullptr;
+  void* counting_handler_table_ = nullptr;
+  bool count_opcodes_ = false;
 };
 
 X64Interpreter::X64Interpreter() {
@@ -1870,12 +1900,21 @@ X64Interpreter::X64Interpreter() {
   }
   function_entry_simple_builtin_ =
       code_ + env.function_entry_simple_builtin.position();
+
+  default_handler_table_ = code_ + env.handler_offset;
+  counting_handler_table_ = code_ + env.counting_handler_offset;
 }
 
 X64Interpreter::~X64Interpreter() { OS::freeMemory(code_, size_); }
 
 void X64Interpreter::setupThread(Thread* thread) {
   thread->setInterpreterFunc(reinterpret_cast<Thread::InterpreterFunc>(code_));
+  thread->setInterpreterData(count_opcodes_ ? counting_handler_table_
+                                            : default_handler_table_);
+}
+
+void X64Interpreter::setOpcodeCounting(bool enabled) {
+  count_opcodes_ = enabled;
 }
 
 void* X64Interpreter::entryAsm(const Function& function) {

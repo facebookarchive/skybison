@@ -188,6 +188,9 @@ bool Thread::handleInterrupt(word max_stack_size) {
       !runtime_->handlePendingSignals(this).isNoneType()) {
     return true;
   }
+  if (interrupt_flags & kReinitInterpreter) {
+    runtime_->interpreter()->setupThread(this);
+  }
   return false;
 }
 

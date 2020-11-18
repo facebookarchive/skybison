@@ -45,6 +45,7 @@ class Thread {
 
   enum InterruptKind {
     kSignal = 1 << 0,
+    kReinitInterpreter = 1 << 1,
   };
 
   explicit Thread(word size);
@@ -128,6 +129,9 @@ class Thread {
 
   InterpreterFunc interpreterFunc() { return interpreter_func_; }
   void setInterpreterFunc(InterpreterFunc func) { interpreter_func_ = func; }
+
+  void* interpreterData() { return interpreter_data_; }
+  void setInterpreterData(void* data) { interpreter_data_ = data; }
 
   void clearInterrupt(InterruptKind kind);
   void interrupt(InterruptKind kind);
@@ -367,9 +371,20 @@ class Thread {
     contextvars_context_ = context;
   }
 
+  void countOpcodes(word count) { opcode_count_ += count; }
+  // Returns number of opcodes executed in this thread. This is only guaranteed
+  // to be accurate when `Runtime::supportProfiling()` is enabled.
+  word opcodeCount() { return opcode_count_; }
+
   bool wouldStackOverflow(word size);
 
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
+
+  static int interpreterDataOffset() {
+    return offsetof(Thread, interpreter_data_);
+  }
+
+  static int opcodeCountOffset() { return offsetof(Thread, opcode_count_); }
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }
 
@@ -406,12 +421,16 @@ class Thread {
   // Has the runtime requested a thread interruption? (e.g. signals, GC)
   uint8_t interrupt_flags_ = 0;
 
+  // Number of opcodes executed in the thread while opcode counting was enabled.
+  word opcode_count_ = 0;
+
   // current_frame_ always points to the top-most frame on the stack.
   Frame* current_frame_;
   Thread* next_ = nullptr;
   Thread* prev_ = nullptr;
   Runtime* runtime_ = nullptr;
   InterpreterFunc interpreter_func_ = uninitializedInterpreterFunc;
+  void* interpreter_data_ = nullptr;
 
   // State of the pending exception.
   RawObject pending_exc_type_ = RawNoneType::object();

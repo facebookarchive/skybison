@@ -32,6 +32,8 @@ namespace testing {
 
 Runtime* createTestRuntime();
 
+bool useCppInterpreter();
+
 class RuntimeFixture : public ::testing::Test {
  protected:
   void SetUp() override {

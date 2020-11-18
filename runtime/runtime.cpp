@@ -2378,6 +2378,16 @@ void Runtime::setSmallIntType(const Type& type) { small_int_ = *type; }
 
 void Runtime::setSmallStrType(const Type& type) { small_str_ = *type; }
 
+void Runtime::reinitInterpreter() {
+  // TODO(T79826701) We should interrupt/sync all threads here.
+
+  MutexGuard lock(&threads_mutex_);
+  for (Thread* thread = main_thread_; thread != nullptr;
+       thread = thread->next()) {
+    thread->interrupt(Thread::kReinitInterpreter);
+  }
+}
+
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
   MutableTuple::cast(layouts_).atPut(static_cast<word>(layout_id), object);
 }

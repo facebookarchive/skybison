@@ -309,6 +309,8 @@ class Runtime {
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
+  void reinitInterpreter();
+
   void builtinTypeCreated(Thread* thread, const Type& type);
 
   void cacheBuildClass(Thread* thread, const Module& builtins);

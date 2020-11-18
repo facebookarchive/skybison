@@ -67,10 +67,14 @@ static RawObject initializeSysWithDefaults(Thread* thread) {
                        warnoptions);
 }
 
-Runtime* createTestRuntime() {
+bool useCppInterpreter() {
   const char* pyro_cpp_interpreter = std::getenv("PYRO_CPP_INTERPRETER");
-  bool use_cpp_interpreter = pyro_cpp_interpreter != nullptr &&
-                             ::strcmp(pyro_cpp_interpreter, "1") == 0;
+  return pyro_cpp_interpreter != nullptr &&
+         ::strcmp(pyro_cpp_interpreter, "1") == 0;
+}
+
+Runtime* createTestRuntime() {
+  bool use_cpp_interpreter = useCppInterpreter();
   word heap_size = 128 * kMiB;
   Interpreter* interpreter =
       use_cpp_interpreter ? createCppInterpreter() : createAsmInterpreter();
