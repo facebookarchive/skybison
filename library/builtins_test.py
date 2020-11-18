@@ -4590,6 +4590,14 @@ class EvalTests(unittest.TestCase):
         self.assertIs(eval_globals, module.__dict__)
         self.assertIs(eval_locals, module.__dict__)
 
+    def test_builtins_is_added(self):
+        import builtins
+
+        globals = {}
+        exec("", globals, globals)
+        self.assertIn("__builtins__", globals)
+        self.assertIs(globals["__builtins__"], builtins.__dict__)
+
     def test_bytes_source(self):
         self.assertEqual(eval(b"4 * 5"), 20)  # noqa: P204
 

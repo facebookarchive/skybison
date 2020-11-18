@@ -12,7 +12,7 @@ This is the pure Python implementation of the module.
 The Pyro runtime and C-API can delegate to this module to do some heavy lifting.
 """
 
-from builtins import _sequence_repr, _type_name
+from builtins import _sequence_repr, _type_name, abs
 
 from _builtins import _divmod, _int_check, _lt as lt, _str_check
 
@@ -127,10 +127,6 @@ def is_not(a, b):
 
 
 # Mathematical/Bitwise Operations *********************************************#
-
-
-def abs(x):
-    return __builtins__.abs(x)
 
 
 def add(a, b):

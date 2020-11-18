@@ -70,16 +70,22 @@ static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same name, so invalidate its caches.
-    Module builtins_module(&scope,
-                           moduleAtById(thread, module, ID(__builtins__)));
-    Dict builtins_dict(&scope, builtins_module.dict());
-    Object builtins_result(&scope, filterPlaceholderValueCell(dictAtByStr(
-                                       thread, builtins_dict, name)));
-    DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
-    ValueCell builtins_value_cell(&scope, *builtins_result);
-    DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
-           "the builtin valuecell must have a dependent");
-    icInvalidateGlobalVar(thread, builtins_value_cell);
+    Object builtins(&scope, moduleAtById(thread, module, ID(__builtins__)));
+    Module builtins_module(&scope, *module);
+    if (builtins.isModuleProxy()) {
+      builtins = ModuleProxy::cast(*builtins).module();
+    }
+    if (thread->runtime()->isInstanceOfModule(*builtins)) {
+      builtins_module = *builtins;
+      Dict builtins_dict(&scope, builtins_module.dict());
+      Object builtins_result(&scope, filterPlaceholderValueCell(dictAtByStr(
+                                         thread, builtins_dict, name)));
+      DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
+      ValueCell builtins_value_cell(&scope, *builtins_result);
+      DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
+             "the builtin valuecell must have a dependent");
+      icInvalidateGlobalVar(thread, builtins_value_cell);
+    }
   }
   return dictAtPutInValueCellByStr(thread, module_dict, name, value);
 }

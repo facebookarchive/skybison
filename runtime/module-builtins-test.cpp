@@ -209,7 +209,7 @@ foo()
 TEST_F(ModuleBuiltinsTest, ModuleAtPutInvalidatesCachedBuiltinsValueCell) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__.a = 4
+__builtins__["a"] = 4
 
 def foo():
   return a
@@ -218,7 +218,7 @@ foo()
 )")
                    .isError());
   Module module(&scope, findMainModule(runtime_));
-  Module builtins(&scope, moduleAtById(thread_, module, ID(__builtins__)));
+  Module builtins(&scope, runtime_->findModuleById(ID(builtins)));
   Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
   Str new_value(&scope, runtime_->newStrFromCStr("value"));
   ValueCell value_cell_a(&scope, moduleValueCellAt(thread_, builtins, a));

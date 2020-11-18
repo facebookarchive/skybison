@@ -3918,7 +3918,10 @@ def hash(obj) -> int:
 class frame(bootstrap=True):
     @_property
     def f_builtins(self):
-        return self._function.__module_object__.__builtins__.__dict__
+        builtins = self._function.__module_object__.__builtins__
+        if isinstance(builtins, module):
+            builtins = builtins.__dict__
+        return builtins
 
     # TODO(T63894279): Once self._function.__code__ becomes a mutable attribute,
     # this should be populated in the native object directly.

@@ -2261,13 +2261,15 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
-  Module module(&scope, runtime_->findOrCreateMainModule());
+  Object name(&scope, runtime_->newStrFromCStr("<test module>"));
+  Module module(&scope, runtime_->newModule(name));
   Object none(&scope, NoneType::object());
 
   ASSERT_TRUE(thread_->exec(code, module, none).isNoneType());
 
-  Object builtins_module(&scope, runtime_->findModuleById(ID(builtins)));
-  EXPECT_EQ(moduleAtById(thread_, module, ID(__builtins__)), builtins_module);
+  Module builtins_module(&scope, runtime_->findModuleById(ID(builtins)));
+  Object proxy(&scope, builtins_module.moduleProxy());
+  EXPECT_EQ(moduleAtById(thread_, module, ID(__builtins__)), proxy);
 }
 
 TEST_F(ThreadTest, CallFunctionInDifferentModule) {

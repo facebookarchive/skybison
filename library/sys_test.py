@@ -394,11 +394,15 @@ class SysTests(unittest.TestCase):
         self.assertEqual(sys.stdout.buffer.fileno(), sys._stdout_fd)
 
     def test_under_getframe_returns_frame(self):
+        from types import ModuleType
+
         frame = sys._getframe(0)
         self.assertTrue(frame.f_globals is not None)
         self.assertEqual(frame.f_globals["__name__"], "__main__")
-        self.assertTrue(frame.f_builtins is not None)
-        self.assertEqual(frame.f_builtins["__name__"], "builtins")
+        builtins = __builtins__
+        if isinstance(builtins, ModuleType):
+            builtins = builtins.__dict__
+        self.assertIs(frame.f_builtins, builtins)
         self.assertTrue(frame.f_code is not None)
 
     def test_under_getframe_with_noninteger_raises_typeerror(self):

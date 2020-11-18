@@ -352,9 +352,10 @@ RawObject Thread::exec(const Code& code, const Module& module,
   Object builtins_module_obj(&scope,
                              moduleAtById(this, module, ID(__builtins__)));
   if (builtins_module_obj.isErrorNotFound()) {
-    builtins_module_obj = runtime->findModuleById(ID(builtins));
-    DCHECK(!builtins_module_obj.isErrorNotFound(), "invalid builtins module");
-    moduleAtPutById(this, module, ID(__builtins__), builtins_module_obj);
+    Module builtins(&scope, runtime->findModuleById(ID(builtins)));
+    DCHECK(!builtins.isErrorNotFound(), "invalid builtins module");
+    Object proxy(&scope, builtins.moduleProxy());
+    moduleAtPutById(this, module, ID(__builtins__), proxy);
   }
   Function function(&scope,
                     runtime->newFunctionWithCode(this, qualname, code, module));

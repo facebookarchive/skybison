@@ -5796,7 +5796,7 @@ TEST_F(InterpreterTest,
        LoadGlobalCachedReturnsBuiltinDictValueAndSetsPlaceholder) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__.a = 400
+__builtins__["a"] = 400
 
 def foo():
   return a + a
@@ -5823,13 +5823,13 @@ result = foo()
 TEST_F(InterpreterTest, StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__.a = 400
+__builtins__["a"] = 400
 
 def foo():
   return a + a
 
 def bar():
-  # Shadowing __builtins__.a.
+  # Shadowing `__builtins__["a"]`.
   global a
   a = 123
 
@@ -5869,7 +5869,7 @@ bar()
 TEST_F(InterpreterTest, StoreNameInvalidatesCachedBuiltinToBeShadowed) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
-__builtins__.a = 400
+__builtins__["a"] = 400
 
 def foo():
   return a + a
