@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import ast
-import imp
 import marshal
 import os
 import sys
 from ast import ClassDef
 from builtins import compile as builtin_compile
+from importlib.util import MAGIC_NUMBER
 from typing import Optional
 
 from . import future, misc, pyassem, symbols
@@ -80,7 +80,7 @@ def compileFile(filename, display=0, compiler=None, modname="<module>"):
     code = compile(buf, filename, "exec", compiler=compiler, modname=modname)
     f = open(filename + "c", "wb")  # noqa: P201
     hdr = make_header(int(fileinfo.st_mtime), fileinfo.st_size)
-    f.write(imp.get_magic())
+    f.write(MAGIC_NUMBER)
     f.write(hdr)
     marshal.dump(code, f)
     f.close()

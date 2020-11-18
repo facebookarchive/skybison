@@ -385,7 +385,6 @@ set(
   third-party/cpython/Lib/functools.py
   third-party/cpython/Lib/genericpath.py
   third-party/cpython/Lib/heapq.py
-  third-party/cpython/Lib/imp.py
   third-party/cpython/Lib/importlib/__init__.py
   third-party/cpython/Lib/importlib/abc.py
   third-party/cpython/Lib/importlib/machinery.py

@@ -1,8 +1,8 @@
 import argparse
-import imp
 import marshal
 import os
 import re
+from importlib.util import MAGIC_NUMBER
 from test.test_compiler.dis_stable import Disassembler  # pyre-ignore
 
 from . import pycodegen, static
@@ -68,7 +68,7 @@ if args.c:
     name = args.input.rsplit(".", 1)[0] + ".pyc"
     with open(name, "wb") as f:
         hdr = pycodegen.make_header(int(fileinfo.st_mtime), fileinfo.st_size)
-        f.write(imp.get_magic())
+        f.write(MAGIC_NUMBER)
         f.write(hdr)
         marshal.dump(codeobj, f)
 else:
