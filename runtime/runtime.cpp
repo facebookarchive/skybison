@@ -2289,6 +2289,10 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit signal callbacks
   visitor->visitPointer(&signal_callbacks_, PointerKind::kRuntime);
 
+  visitor->visitPointer(&profiling_new_thread_, PointerKind::kRuntime);
+  visitor->visitPointer(&profiling_call_, PointerKind::kRuntime);
+  visitor->visitPointer(&profiling_return_, PointerKind::kRuntime);
+
   // Visit finalizable native instances
   visitor->visitPointer(&finalizable_references_, PointerKind::kRuntime);
 }
@@ -2386,6 +2390,13 @@ void Runtime::reinitInterpreter() {
        thread = thread->next()) {
     thread->interrupt(Thread::kReinitInterpreter);
   }
+}
+
+void Runtime::setProfiling(const Object& new_thread_func,
+                           const Object& call_func, const Object& return_func) {
+  profiling_new_thread_ = *new_thread_func;
+  profiling_call_ = *call_func;
+  profiling_return_ = *return_func;
 }
 
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {

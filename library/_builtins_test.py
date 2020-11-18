@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import builtins
+import os
 import unittest
+import warnings
 
 from test_support import pyro_only
 
@@ -199,6 +201,73 @@ class UnderBuiltinsTests(unittest.TestCase):
             self.assertIsNotNone(tb.tb_next)
             tb.tb_next = None
             self.assertIsNone(tb.tb_next)
+
+
+@pyro_only
+@unittest.skipIf(
+    "PYRO_CPP_INTERPRETER" in os.environ,
+    "opcode counting/profiling not support in C++ interpreter",
+)
+class ProfilerTests(unittest.TestCase):
+    def test_runtime_calls_hooks(self):
+        data = None
+        calls = []
+        opcode_counts = []
+
+        def _new_thread():
+            nonlocal data
+            data = "tdata"
+            return data
+
+        def _call(data, from_function, to_function, opcodes):
+            nonlocal calls
+            calls.append(("_call", data, from_function, to_function))
+            nonlocal opcode_counts
+            opcode_counts.append(opcodes)
+
+        def _return(data, from_function, to_function, opcodes):
+            nonlocal calls
+            calls.append(("_return", data, from_function, to_function))
+            nonlocal opcode_counts
+            opcode_counts.append(opcodes)
+
+        def foo(x):
+            if x == 1:
+                foo(2)
+            elif x == 2:
+                bar(2)
+
+        def bar(x):
+            if x == 0:
+                foo(1)
+
+        warnings.filterwarnings(
+            action="ignore",
+            category=RuntimeWarning,
+            message="Interpreter switching .*",
+            module="_builtins",
+        )
+        _builtins._profiler_install(_new_thread, _call, _return)
+        bar(0)
+        _builtins._profiler_install(None, None, None)
+        this_function = ProfilerTests.__dict__["test_runtime_calls_hooks"]
+        self.assertEqual(
+            calls,
+            [
+                ("_call", data, this_function, bar),
+                ("_call", data, bar, foo),
+                ("_call", data, foo, foo),
+                ("_call", data, foo, bar),
+                ("_return", data, bar, foo),
+                ("_return", data, foo, foo),
+                ("_return", data, foo, bar),
+                ("_return", data, bar, this_function),
+                ("_call", data, this_function, _builtins._profiler_install),
+            ],
+        )
+        # Make sure the opcode counter monotonically increased for each event.
+        for i in range(0, len(opcode_counts) - 1):
+            self.assertTrue(opcode_counts[i] < opcode_counts[i + 1])
 
 
 if __name__ == "__main__":

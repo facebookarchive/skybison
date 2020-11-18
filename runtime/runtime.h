@@ -309,6 +309,13 @@ class Runtime {
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
+  RawObject profilingNewThread() { return profiling_new_thread_; }
+  RawObject profilingCall() { return profiling_call_; }
+  RawObject profilingReturn() { return profiling_return_; }
+
+  void setProfiling(const Object& new_thread_func, const Object& call_func,
+                    const Object& return_func);
+
   void reinitInterpreter();
 
   void builtinTypeCreated(Thread* thread, const Type& type);
@@ -1035,6 +1042,10 @@ class Runtime {
   RawObject sys_stdin_ = NoneType::object();
   RawObject sys_stdout_ = NoneType::object();
   RawObject type_dunder_getattribute_ = NoneType::object();
+
+  RawObject profiling_new_thread_ = NoneType::object();
+  RawObject profiling_call_ = NoneType::object();
+  RawObject profiling_return_ = NoneType::object();
 
   // Interned strings
   RawObject interned_ = NoneType::object();

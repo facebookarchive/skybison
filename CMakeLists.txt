@@ -579,6 +579,8 @@ add_library(
   runtime/objects.h
   runtime/os.cpp
   runtime/os.h
+  runtime/profiling.cpp
+  runtime/profiling.h
   runtime/range-builtins.cpp
   runtime/range-builtins.h
   runtime/ref-builtins.cpp

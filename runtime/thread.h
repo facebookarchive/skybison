@@ -46,6 +46,7 @@ class Thread {
   enum InterruptKind {
     kSignal = 1 << 0,
     kReinitInterpreter = 1 << 1,
+    kProfile = 1 << 2,
   };
 
   explicit Thread(word size);
@@ -376,6 +377,13 @@ class Thread {
   // to be accurate when `Runtime::supportProfiling()` is enabled.
   word opcodeCount() { return opcode_count_; }
 
+  bool profilingEnabled();
+  void enableProfiling();
+  void disableProfiling();
+
+  RawObject profilingData() { return profiling_data_; }
+  void setProfilingData(RawObject data) { profiling_data_ = data; }
+
   bool wouldStackOverflow(word size);
 
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
@@ -448,6 +456,8 @@ class Thread {
   RawObject asyncgen_hooks_finalizer_ = RawNoneType::object();
   RawObject contextvars_context_ = RawNoneType::object();
 
+  RawObject profiling_data_ = RawNoneType::object();
+
   // C-API current recursion depth used via _PyThreadState_GetRecursionDepth
   int recursion_depth_ = 0;
 
@@ -517,6 +527,8 @@ inline RawObject Thread::stackTop() {
   DCHECK(stack_pointer_ < valueStackBase(), "stack underflow");
   return *stack_pointer_;
 }
+
+inline bool Thread::profilingEnabled() { return interrupt_flags_ & kProfile; }
 
 inline bool Thread::wouldStackOverflow(word size) {
   // Check that there is sufficient space on the stack

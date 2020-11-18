@@ -16,6 +16,7 @@
 #include "interpreter.h"
 #include "module-builtins.h"
 #include "objects.h"
+#include "profiling.h"
 #include "runtime.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
@@ -58,13 +59,14 @@ void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);
   visitor->visitPointer(&api_repr_list_, PointerKind::kThread);
-  visitor->visitPointer(&asyncgen_hooks_first_iter_, PointerKind::kThread);
   visitor->visitPointer(&asyncgen_hooks_finalizer_, PointerKind::kThread);
-  visitor->visitPointer(&pending_exc_type_, PointerKind::kThread);
-  visitor->visitPointer(&pending_exc_value_, PointerKind::kThread);
-  visitor->visitPointer(&pending_exc_traceback_, PointerKind::kThread);
+  visitor->visitPointer(&asyncgen_hooks_first_iter_, PointerKind::kThread);
   visitor->visitPointer(&caught_exc_stack_, PointerKind::kThread);
   visitor->visitPointer(&contextvars_context_, PointerKind::kThread);
+  visitor->visitPointer(&pending_exc_traceback_, PointerKind::kThread);
+  visitor->visitPointer(&pending_exc_type_, PointerKind::kThread);
+  visitor->visitPointer(&pending_exc_value_, PointerKind::kThread);
+  visitor->visitPointer(&profiling_data_, PointerKind::kThread);
 }
 
 void Thread::visitStackRoots(PointerVisitor* visitor) {
@@ -195,8 +197,9 @@ bool Thread::handleInterrupt(word max_stack_size) {
 }
 
 void Thread::handleInterruptWithFrame() {
-  // We will add interrupt handling code here that requires a valid call-frame.
-  // Profiling code will use this.
+  if ((interrupt_flags_ & kProfile) != 0) {
+    profiling_call(this);
+  }
 }
 
 void Thread::linkFrame(Frame* frame) {
@@ -812,6 +815,10 @@ void Thread::visitFrames(FrameVisitor* visitor) {
     frame = frame->previousFrame();
   }
 }
+
+void Thread::enableProfiling() { interrupt(kProfile); }
+
+void Thread::disableProfiling() { clearInterrupt(kProfile); }
 
 RawObject Thread::reprEnter(const Object& obj) {
   HandleScope scope(this);

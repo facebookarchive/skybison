@@ -20,6 +20,7 @@
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "objects.h"
+#include "profiling.h"
 #include "runtime.h"
 #include "set-builtins.h"
 #include "str-builtins.h"
@@ -1251,7 +1252,9 @@ NEVER_INLINE static bool handleReturnModes(Thread* thread, word return_mode,
   HandleScope scope(thread);
   Object retval(&scope, *retval_ptr);
 
-  // Handling for additional return modes will be added here.
+  if (return_mode & Frame::kProfilerReturn) {
+    profiling_return(thread);
+  }
 
   thread->popFrame();
   *retval_ptr = *retval;

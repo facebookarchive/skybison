@@ -802,6 +802,16 @@ def _os_error_subclass_from_errno(errno):
     _builtin()
 
 
+def _profiler_install(new_thread_func, call_func, return_func):
+    _builtin()
+
+
+def _profiler_exclude(callable):
+    """Call `callable` and disable opcode counting in the current thread for the
+    duration of the call."""
+    _builtin()
+
+
 def _property(fget=None, fset=None, fdel=None, doc=None):
     """Has the same effect as property(), but can be used for bootstrapping."""
     _builtin()

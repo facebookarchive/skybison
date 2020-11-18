@@ -3970,6 +3970,101 @@ RawObject FUNC(_builtins, _os_error_subclass_from_errno)(Thread* thread,
   return thread->runtime()->typeAt(subclass);
 }
 
+RawObject FUNC(_builtins, _profiler_exclude)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object callable(&scope, args.get(0));
+
+  word opcodes_begin = thread->opcodeCount();
+  bool enabled = thread->profilingEnabled();
+  thread->disableProfiling();
+  Object result(&scope, Interpreter::call0(thread, callable));
+
+  word slack = thread->opcodeCount() - opcodes_begin;
+  thread->countOpcodes(-slack);
+  if (enabled) {
+    thread->enableProfiling();
+  }
+  return *result;
+}
+
+static void warnImpreciseCounting(Thread* thread) {
+  // The interpreter switching mechanism is currently only applied in a
+  // lightweight fashion meaning that recursive interpreter instances further
+  // up the stackframe won't actually switch to a counting interpreter.
+  bool should_warn = false;
+  for (Frame* frame = thread->currentFrame()->previousFrame();
+       !frame->isSentinel() && !frame->previousFrame()->isSentinel();
+       frame = frame->previousFrame()) {
+    if (frame->isNative() ||
+        (frame->returnMode() & Frame::kExitRecursiveInterpreter) != 0) {
+      should_warn = true;
+      break;
+    }
+  }
+  if (should_warn) {
+    HandleScope scope(thread);
+    Runtime* runtime = thread->runtime();
+    Object message(&scope, runtime->newStrFromCStr(
+                               "Interpreter switching to count opcodes does "
+                               "not affect outer stackframes yet."));
+    Object category(&scope, runtime->typeAt(LayoutId::kRuntimeWarning));
+    if (ensureBuiltinModuleById(thread, ID(warnings)).isErrorException() ||
+        thread->invokeFunction2(ID(warnings), ID(warn), message, category)
+            .isErrorException()) {
+      thread->ignorePendingException();
+    }
+  }
+}
+
+RawObject FUNC(_builtins, _profiler_install)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object new_thread_func(&scope, args.get(0));
+  if (!new_thread_func.isNoneType() &&
+      !runtime->isCallable(thread, new_thread_func)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "'_install_profiler' requires a callable or None but got '%T'",
+        &new_thread_func);
+  }
+  Object call_func(&scope, args.get(1));
+  Object return_func(&scope, args.get(2));
+  if (!call_func.isNoneType() || !return_func.isNoneType()) {
+    if (!runtime->isCallable(thread, call_func)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "'_install_profiler' requires a callable but got '%T'", &call_func);
+    }
+    if (!runtime->isCallable(thread, return_func)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "'_install_profiler' requires a callable but got '%T'", &return_func);
+    }
+  }
+  if (new_thread_func != runtime->profilingNewThread()) {
+    if (!new_thread_func.isNoneType()) {
+      Object thread_data(&scope, Interpreter::call0(thread, new_thread_func));
+      if (thread_data.isErrorException()) return *thread_data;
+      thread->setProfilingData(*thread_data);
+    } else {
+      thread->setProfilingData(NoneType::object());
+    }
+  }
+
+  runtime->setProfiling(new_thread_func, call_func, return_func);
+  if (call_func.isNoneType()) {
+    runtime->interpreter()->setOpcodeCounting(false);
+    runtime->reinitInterpreter();
+    thread->disableProfiling();
+  } else {
+    warnImpreciseCounting(thread);
+    runtime->interpreter()->setOpcodeCounting(true);
+    runtime->reinitInterpreter();
+    thread->enableProfiling();
+  }
+  return NoneType::object();
+}
+
 RawObject FUNC(_builtins, _property)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object getter(&scope, args.get(0));
