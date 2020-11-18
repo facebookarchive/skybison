@@ -308,9 +308,145 @@ FLAT = "FLAT"
 CONV = "CONV"
 DONE = "DONE"
 
+STACK_EFFECTS = dict(  # noqa: C408
+    POP_TOP=-1,
+    ROT_TWO=0,
+    ROT_THREE=0,
+    DUP_TOP=1,
+    DUP_TOP_TWO=2,
+    UNARY_POSITIVE=0,
+    UNARY_NEGATIVE=0,
+    UNARY_NOT=0,
+    UNARY_INVERT=0,
+    SET_ADD=-1,
+    LIST_APPEND=-1,
+    MAP_ADD=-2,
+    BINARY_POWER=-1,
+    BINARY_MULTIPLY=-1,
+    BINARY_MATRIX_MULTIPLY=-1,
+    BINARY_MODULO=-1,
+    BINARY_ADD=-1,
+    BINARY_SUBTRACT=-1,
+    BINARY_SUBSCR=-1,
+    BINARY_FLOOR_DIVIDE=-1,
+    BINARY_TRUE_DIVIDE=-1,
+    INPLACE_FLOOR_DIVIDE=-1,
+    INPLACE_TRUE_DIVIDE=-1,
+    INPLACE_ADD=-1,
+    INPLACE_SUBTRACT=-1,
+    INPLACE_MULTIPLY=-1,
+    INPLACE_MATRIX_MULTIPLY=-1,
+    INPLACE_MODULO=-1,
+    STORE_SUBSCR=-3,
+    DELETE_SUBSCR=-2,
+    BINARY_LSHIFT=-1,
+    BINARY_RSHIFT=-1,
+    BINARY_AND=-1,
+    BINARY_XOR=-1,
+    BINARY_OR=-1,
+    INPLACE_POWER=-1,
+    GET_ITER=0,
+    PRINT_EXPR=-1,
+    LOAD_BUILD_CLASS=1,
+    INPLACE_LSHIFT=-1,
+    INPLACE_RSHIFT=-1,
+    INPLACE_AND=-1,
+    INPLACE_XOR=-1,
+    INPLACE_OR=-1,
+    BREAK_LOOP=0,
+    SETUP_WITH=7,
+    WITH_CLEANUP_START=1,
+    WITH_CLEANUP_FINISH=-1,  # XXX Sometimes more
+    RETURN_VALUE=-1,
+    IMPORT_STAR=-1,
+    SETUP_ANNOTATIONS=0,
+    YIELD_VALUE=0,
+    YIELD_FROM=-1,
+    POP_BLOCK=0,
+    POP_EXCEPT=0,  #  -3 except if bad bytecode
+    END_FINALLY=-1,  # or -2 or -3 if exception occurred
+    STORE_NAME=-1,
+    DELETE_NAME=0,
+    UNPACK_SEQUENCE=lambda oparg, jmp=0: oparg - 1,
+    UNPACK_EX=lambda oparg, jmp=0: (oparg & 0xFF) + (oparg >> 8),
+    FOR_ITER=1,  # or -1, at end of iterator
+    STORE_ATTR=-2,
+    DELETE_ATTR=-1,
+    STORE_GLOBAL=-1,
+    DELETE_GLOBAL=0,
+    LOAD_CONST=1,
+    LOAD_NAME=1,
+    BUILD_TUPLE=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_LIST=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_SET=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_STRING=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_LIST_UNPACK=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_TUPLE_UNPACK=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_TUPLE_UNPACK_WITH_CALL=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_SET_UNPACK=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_MAP_UNPACK=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_MAP_UNPACK_WITH_CALL=lambda oparg, jmp=0: 1 - oparg,
+    BUILD_MAP=lambda oparg, jmp=0: 1 - 2 * oparg,
+    BUILD_CONST_KEY_MAP=lambda oparg, jmp=0: -oparg,
+    LOAD_ATTR=0,
+    COMPARE_OP=-1,
+    IMPORT_NAME=-1,
+    IMPORT_FROM=1,
+    JUMP_FORWARD=0,
+    JUMP_IF_TRUE_OR_POP=0,  # -1 if jump not taken
+    JUMP_IF_FALSE_OR_POP=0,  # ""
+    JUMP_ABSOLUTE=0,
+    POP_JUMP_IF_FALSE=-1,
+    POP_JUMP_IF_TRUE=-1,
+    LOAD_GLOBAL=1,
+    CONTINUE_LOOP=0,
+    SETUP_LOOP=0,
+    # close enough...
+    SETUP_EXCEPT=6,
+    SETUP_FINALLY=6,  # can push 3 values for the new exception
+    # + 3 others for the previous exception state
+    LOAD_FAST=1,
+    STORE_FAST=-1,
+    DELETE_FAST=0,
+    STORE_ANNOTATION=-1,
+    RAISE_VARARGS=lambda oparg, jmp=0: -oparg,
+    CALL_FUNCTION=lambda oparg, jmp=0: -oparg,
+    CALL_FUNCTION_KW=lambda oparg, jmp=0: -oparg - 1,
+    CALL_FUNCTION_EX=lambda oparg, jmp=0: -1 - ((oparg & 0x01) != 0),
+    MAKE_FUNCTION=lambda oparg, jmp=0: -1
+    - ((oparg & 0x01) != 0)
+    - ((oparg & 0x02) != 0)
+    - ((oparg & 0x04) != 0)
+    - ((oparg & 0x08) != 0),
+    BUILD_SLICE=lambda oparg, jmp=0: -2 if oparg == 3 else -1,
+    LOAD_CLOSURE=1,
+    LOAD_DEREF=1,
+    LOAD_CLASSDEREF=1,
+    STORE_DEREF=-1,
+    DELETE_DEREF=0,
+    GET_AWAITABLE=0,
+    SETUP_ASYNC_WITH=6,
+    BEFORE_ASYNC_WITH=1,
+    GET_AITER=0,
+    GET_ANEXT=1,
+    GET_YIELD_FROM_ITER=0,
+    # If there's a fmt_spec on the stack, we go from 2->1,
+    # else 1->1.
+    FORMAT_VALUE=lambda oparg, jmp=0: -1 if (oparg & FVS_MASK) == FVS_HAVE_SPEC else 0,
+    SET_LINENO=0,
+    LOAD_METHOD=1,
+    CALL_METHOD=lambda oparg, jmp=0: -oparg - 1,
+    EXTENDED_ARG=0,
+    LOAD_ITERABLE_ARG=1,
+    LOAD_MAPPING_ARG=lambda oparg, jmp=0: -1 if oparg == 2 else 1,
+    INVOKE_FUNCTION=lambda oparg, jmp=0: -oparg,
+    FAST_LEN=0,
+)
+
 
 class PyFlowGraph(FlowGraph):
     super_init = FlowGraph.__init__
+    EFFECTS = STACK_EFFECTS
 
     def __init__(
         self,
@@ -419,7 +555,7 @@ class PyFlowGraph(FlowGraph):
         block.seen = True
         block.startdepth = depth
         for instr in block.getInstructions():
-            effect = STACK_EFFECTS.get(instr.opname)
+            effect = self.EFFECTS.get(instr.opname)
             if effect is None:
                 raise ValueError(
                     f"Error, opcode {instr.opname} was not found, please update STACK_EFFECTS"
@@ -729,7 +865,47 @@ class PyFlowGraph(FlowGraph):
         return tuple(const[1] for const in self.consts)
 
 
+STACK_EFFECTS_37 = dict(
+    STACK_EFFECTS,
+    SETUP_WITH=lambda oparg, jmp=0: 6 if jmp else 1,
+    WITH_CLEANUP_START=2,  # or 1, depending on TOS
+    WITH_CLEANUP_FINISH=-3,
+    POP_EXCEPT=-3,
+    END_FINALLY=-6,
+    FOR_ITER=lambda oparg, jmp=0: -1 if jmp > 0 else 1,
+    JUMP_IF_TRUE_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
+    JUMP_IF_FALSE_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
+    SETUP_EXCEPT=lambda oparg, jmp: 6 if jmp else 0,
+    SETUP_FINALLY=lambda oparg, jmp: 6 if jmp else 0,
+    CALL_METHOD=lambda oparg, jmp: -oparg - 1,
+    SETUP_ASYNC_WITH=lambda oparg, jmp: (-1 + 6) if jmp else 0,
+    LOAD_METHOD=1,
+    INT_LOAD_CONST=1,
+    LOAD_LOCAL=1,
+    STORE_LOCAL=-1,
+    INT_BOX=0,
+    INT_UNBOX=0,
+    INT_DUP_TOP_TWO=2,
+    POP_JUMP_IF_NONZERO=-1,
+    POP_JUMP_IF_ZERO=-1,
+    INVOKE_METHOD=lambda oparg, jmp: -oparg[1],
+    STORE_FIELD=-2,
+    LOAD_FIELD=0,
+    RAISE_IF_NONE=0,
+    CAST=0,
+    INT_BINARY_OP=lambda oparg, jmp: -1,
+    INT_COMPARE_OP=lambda oparg, jmp: -1,
+    INT_UNARY_OP=lambda oparg, jmp: 0,
+    JUMP_IF_NONZERO_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
+    JUMP_IF_ZERO_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
+    CONVERT_PRIMITIVE=0,
+    CHECK_ARGS=0,
+)
+
+
 class PyFlowGraph37(PyFlowGraph):
+    EFFECTS = STACK_EFFECTS_37
+
     def push_block(self, worklist: List[Block], block: Block, depth: int):
         assert (
             block.startdepth < 0 or block.startdepth >= depth
@@ -752,7 +928,7 @@ class PyFlowGraph37(PyFlowGraph):
                 if instr.opname == "SET_LINENO":
                     continue
 
-                effect = STACK_EFFECTS_37.get(instr.opname)
+                effect = self.EFFECTS.get(instr.opname)
                 if effect is None:
                     raise ValueError(
                         f"Error, opcode {instr.opname} was not found, please update STACK_EFFECTS"
@@ -868,7 +1044,7 @@ class LineAddrTable:
                 else:
                     k = 127
                     ncodes = line_delta // 127
-                line_delta -= ncodes * k
+                line_delta -= ncodes * 127
                 push(addr_delta)
                 push(cast_signed_byte_to_unsigned(k))
                 addr_delta = 0
@@ -876,7 +1052,6 @@ class LineAddrTable:
                     push(0)
                     push(cast_signed_byte_to_unsigned(k))
 
-            assert -128 <= line_delta and line_delta <= 127
             push(addr_delta)
             push(cast_signed_byte_to_unsigned(line_delta))
 
@@ -888,176 +1063,3 @@ class LineAddrTable:
 
     def getTable(self):
         return bytes(self.lnotab)
-
-
-STACK_EFFECTS = dict(  # noqa: C408
-    POP_TOP=-1,
-    ROT_TWO=0,
-    ROT_THREE=0,
-    DUP_TOP=1,
-    DUP_TOP_TWO=2,
-    UNARY_POSITIVE=0,
-    UNARY_NEGATIVE=0,
-    UNARY_NOT=0,
-    UNARY_INVERT=0,
-    SET_ADD=-1,
-    LIST_APPEND=-1,
-    MAP_ADD=-2,
-    BINARY_POWER=-1,
-    BINARY_MULTIPLY=-1,
-    BINARY_MATRIX_MULTIPLY=-1,
-    BINARY_MODULO=-1,
-    BINARY_ADD=-1,
-    BINARY_SUBTRACT=-1,
-    BINARY_SUBSCR=-1,
-    BINARY_FLOOR_DIVIDE=-1,
-    BINARY_TRUE_DIVIDE=-1,
-    INPLACE_FLOOR_DIVIDE=-1,
-    INPLACE_TRUE_DIVIDE=-1,
-    INPLACE_ADD=-1,
-    INPLACE_SUBTRACT=-1,
-    INPLACE_MULTIPLY=-1,
-    INPLACE_MATRIX_MULTIPLY=-1,
-    INPLACE_MODULO=-1,
-    STORE_SUBSCR=-3,
-    DELETE_SUBSCR=-2,
-    BINARY_LSHIFT=-1,
-    BINARY_RSHIFT=-1,
-    BINARY_AND=-1,
-    BINARY_XOR=-1,
-    BINARY_OR=-1,
-    INPLACE_POWER=-1,
-    GET_ITER=0,
-    PRINT_EXPR=-1,
-    LOAD_BUILD_CLASS=1,
-    INPLACE_LSHIFT=-1,
-    INPLACE_RSHIFT=-1,
-    INPLACE_AND=-1,
-    INPLACE_XOR=-1,
-    INPLACE_OR=-1,
-    BREAK_LOOP=0,
-    SETUP_WITH=7,
-    WITH_CLEANUP_START=1,
-    WITH_CLEANUP_FINISH=-1,  # XXX Sometimes more
-    RETURN_VALUE=-1,
-    IMPORT_STAR=-1,
-    SETUP_ANNOTATIONS=0,
-    YIELD_VALUE=0,
-    YIELD_FROM=-1,
-    POP_BLOCK=0,
-    POP_EXCEPT=0,  #  -3 except if bad bytecode
-    END_FINALLY=-1,  # or -2 or -3 if exception occurred
-    STORE_NAME=-1,
-    DELETE_NAME=0,
-    UNPACK_SEQUENCE=lambda oparg, jmp=0: oparg - 1,
-    UNPACK_EX=lambda oparg, jmp=0: (oparg & 0xFF) + (oparg >> 8),
-    FOR_ITER=1,  # or -1, at end of iterator
-    STORE_ATTR=-2,
-    DELETE_ATTR=-1,
-    STORE_GLOBAL=-1,
-    DELETE_GLOBAL=0,
-    LOAD_CONST=1,
-    LOAD_NAME=1,
-    BUILD_TUPLE=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_LIST=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_SET=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_STRING=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_LIST_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_TUPLE_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_TUPLE_UNPACK_WITH_CALL=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_SET_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_MAP_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_MAP_UNPACK_WITH_CALL=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_MAP=lambda oparg, jmp=0: 1 - 2 * oparg,
-    BUILD_CONST_KEY_MAP=lambda oparg, jmp=0: -oparg,
-    LOAD_ATTR=0,
-    COMPARE_OP=-1,
-    IMPORT_NAME=-1,
-    IMPORT_FROM=1,
-    JUMP_FORWARD=0,
-    JUMP_IF_TRUE_OR_POP=0,  # -1 if jump not taken
-    JUMP_IF_FALSE_OR_POP=0,  # ""
-    JUMP_ABSOLUTE=0,
-    POP_JUMP_IF_FALSE=-1,
-    POP_JUMP_IF_TRUE=-1,
-    LOAD_GLOBAL=1,
-    CONTINUE_LOOP=0,
-    SETUP_LOOP=0,
-    # close enough...
-    SETUP_EXCEPT=6,
-    SETUP_FINALLY=6,  # can push 3 values for the new exception
-    # + 3 others for the previous exception state
-    LOAD_FAST=1,
-    STORE_FAST=-1,
-    DELETE_FAST=0,
-    STORE_ANNOTATION=-1,
-    RAISE_VARARGS=lambda oparg, jmp=0: -oparg,
-    CALL_FUNCTION=lambda oparg, jmp=0: -oparg,
-    CALL_FUNCTION_KW=lambda oparg, jmp=0: -oparg - 1,
-    CALL_FUNCTION_EX=lambda oparg, jmp=0: -1 - ((oparg & 0x01) != 0),
-    MAKE_FUNCTION=lambda oparg, jmp=0: -1
-    - ((oparg & 0x01) != 0)
-    - ((oparg & 0x02) != 0)
-    - ((oparg & 0x04) != 0)
-    - ((oparg & 0x08) != 0),
-    BUILD_SLICE=lambda oparg, jmp=0: -2 if oparg == 3 else -1,
-    LOAD_CLOSURE=1,
-    LOAD_DEREF=1,
-    LOAD_CLASSDEREF=1,
-    STORE_DEREF=-1,
-    DELETE_DEREF=0,
-    GET_AWAITABLE=0,
-    SETUP_ASYNC_WITH=6,
-    BEFORE_ASYNC_WITH=1,
-    GET_AITER=0,
-    GET_ANEXT=1,
-    GET_YIELD_FROM_ITER=0,
-    # If there's a fmt_spec on the stack, we go from 2->1,
-    # else 1->1.
-    FORMAT_VALUE=lambda oparg, jmp=0: -1 if (oparg & FVS_MASK) == FVS_HAVE_SPEC else 0,
-    SET_LINENO=0,
-    LOAD_METHOD=1,
-    CALL_METHOD=lambda oparg, jmp=0: -oparg - 1,
-    EXTENDED_ARG=0,
-    LOAD_ITERABLE_ARG=1,
-    LOAD_MAPPING_ARG=lambda oparg, jmp=0: -1 if oparg == 2 else 1,
-    INVOKE_FUNCTION=lambda oparg, jmp=0: -oparg,
-    FAST_LEN=0,
-)
-
-STACK_EFFECTS_37 = dict(
-    STACK_EFFECTS,
-    SETUP_WITH=lambda oparg, jmp=0: 6 if jmp else 1,
-    WITH_CLEANUP_START=2,  # or 1, depending on TOS
-    WITH_CLEANUP_FINISH=-3,
-    POP_EXCEPT=-3,
-    END_FINALLY=-6,
-    FOR_ITER=lambda oparg, jmp=0: -1 if jmp > 0 else 1,
-    JUMP_IF_TRUE_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    JUMP_IF_FALSE_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    SETUP_EXCEPT=lambda oparg, jmp: 6 if jmp else 0,
-    SETUP_FINALLY=lambda oparg, jmp: 6 if jmp else 0,
-    CALL_METHOD=lambda oparg, jmp: -oparg - 1,
-    SETUP_ASYNC_WITH=lambda oparg, jmp: (-1 + 6) if jmp else 0,
-    LOAD_METHOD=1,
-    INT_LOAD_CONST=1,
-    LOAD_LOCAL=1,
-    STORE_LOCAL=-1,
-    INT_BOX=0,
-    INT_UNBOX=0,
-    INT_DUP_TOP_TWO=2,
-    POP_JUMP_IF_NONZERO=-1,
-    POP_JUMP_IF_ZERO=-1,
-    INVOKE_METHOD=lambda oparg, jmp: -oparg[1],
-    STORE_FIELD=-2,
-    LOAD_FIELD=0,
-    RAISE_IF_NONE=0,
-    CAST=0,
-    INT_BINARY_OP=lambda oparg, jmp: -1,
-    INT_COMPARE_OP=lambda oparg, jmp: -1,
-    INT_UNARY_OP=lambda oparg, jmp: 0,
-    JUMP_IF_NONZERO_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    JUMP_IF_ZERO_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    CONVERT_PRIMITIVE=0,
-    CHECK_ARGS=0,
-)
