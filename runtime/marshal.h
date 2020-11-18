@@ -67,10 +67,10 @@ class Marshal {
     Thread* thread_;
     Runtime* runtime_;
     List refs_;
-    const BuiltinFunction* builtin_functions_;
-    word num_builtin_functions_;
-    const IntrinsicFunction* intrinsic_functions_;
-    word num_intrinsic_functions_;
+    const BuiltinFunction* builtin_functions_ = nullptr;
+    word num_builtin_functions_ = 0;
+    const IntrinsicFunction* intrinsic_functions_ = nullptr;
+    word num_intrinsic_functions_ = 0;
     bool isRef_;
 
     const byte* start_;
