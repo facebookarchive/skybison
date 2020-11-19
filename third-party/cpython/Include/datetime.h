@@ -179,24 +179,63 @@ typedef struct {
 
 #define PyDateTime_CAPSULE_NAME "datetime.datetime_CAPI"
 
+typedef struct {
+    PyTypeObject *TimeZoneType;
+
+    /* The interned Epoch datetime instance */
+    PyObject *Epoch;
+
+    /* Conversion factors */
+    PyObject *us_per_ms;       /* 1000 */
+    PyObject *us_per_second;   /* 1000000 */
+    PyObject *us_per_minute;   /* 1e6 * 60 */
+    PyObject *us_per_hour;     /* 1e6 * 3600 */
+    PyObject *us_per_day;      /* 1e6 * 3600 * 24 */
+    PyObject *us_per_week;     /* 1e6 * 3600 * 24 * 7 */
+    PyObject *seconds_per_day; /* 3600 * 24 */
+
+    /* Identifiers */
+    PyObject *__getinitargs__;
+    PyObject *__getstate__;
+    PyObject *_strptime_datetime;
+    PyObject *as_integer_ratio;
+    PyObject *fromtimestamp;
+    PyObject *fromutc;
+    PyObject *isoformat;
+    PyObject *strftime;
+    PyObject *struct_time;
+    PyObject *time;
+    PyObject *timetuple;
+    PyObject *tzname;
+
+    /* C API. Clients get at this via PyDateTime_IMPORT. */
+    PyDateTime_CAPI CAPI;
+} datetime_state;
+
+extern struct PyModuleDef datetimemodule;
+
+#define datetime_state(o) ((datetime_state *)PyModule_GetState(o))
+#define datetime_global(x) \
+    (datetime_state(PyState_FindModule(&datetimemodule))->x)
+
 
 #ifdef Py_BUILD_CORE
 
 /* Macros for type checking when building the Python core. */
-#define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
-#define PyDate_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateType)
+#define PyDate_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DateType))
+#define PyDate_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DateType))
 
-#define PyDateTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateTimeType)
-#define PyDateTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateTimeType)
+#define PyDateTime_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DateTimeType))
+#define PyDateTime_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DateTimeType))
 
-#define PyTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeType)
-#define PyTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TimeType)
+#define PyTime_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.TimeType))
+#define PyTime_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.TimeType))
 
-#define PyDelta_Check(op) PyObject_TypeCheck(op, &PyDateTime_DeltaType)
-#define PyDelta_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DeltaType)
+#define PyDelta_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DeltaType))
+#define PyDelta_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DeltaType))
 
-#define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
-#define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
+#define PyTZInfo_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.TZInfoType))
+#define PyTZInfo_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.TZInfoType))
 
 #else
 
