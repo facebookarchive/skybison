@@ -153,7 +153,7 @@ RawObject FUNC(_os, read)(Thread* thread, Arguments args) {
   CHECK(count_obj.isSmallInt(), "count must be small int");
   CHECK(!Int::cast(*count_obj).isNegative(), "count must be non-negative");
   size_t count = SmallInt::cast(*count_obj).value();
-  std::unique_ptr<byte[]> buffer(new byte[count]{0});
+  std::unique_ptr<byte[]> buffer(new byte[count]);
   int fd = SmallInt::cast(*fd_obj).value();
   ssize_t result = File::read(fd, buffer.get(), count);
   if (result < 0) return thread->raiseOSErrorFromErrno(-result);

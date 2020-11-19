@@ -434,6 +434,17 @@ TEST_F(UnderOsModuleTest,
   ::close(fd);
 }
 
+TEST_F(UnderOsModuleTest, ReadWithZeroCountReturnsEmptyBytes) {
+  HandleScope scope(thread_);
+  int fd;
+  ASSERT_NO_FATAL_FAILURE(createDummyFdWithContents("hello, world!", &fd));
+  Object fd_obj(&scope, SmallInt::fromWord(fd));
+  Object size(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(FUNC(_os, read), fd_obj, size));
+  EXPECT_TRUE(isBytesEqualsCStr(result, ""));
+  ::close(fd);
+}
+
 TEST_F(UnderOsModuleTest, ReadReadsSizeBytes) {
   HandleScope scope(thread_);
   int fd;
