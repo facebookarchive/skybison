@@ -5182,6 +5182,9 @@ class memoryview(bootstrap=True):
         # Do nothing.
         pass
 
+    def tobytes(self):
+        _unimplemented()
+
     def tolist(self):
         _memoryview_guard(self)
         return [*self]
