@@ -1,4 +1,5 @@
 from _thread import RLock
+from types import MethodType
 
 ################################################################################
 ### LRU Cache function decorator
@@ -101,9 +102,9 @@ class _infinite_lru_cache_wrapper(_lru_cache_wrapper_base):
 
     def cache_clear(self):
         """Clear the cache and cache statistics"""
-        with self._lock:
-            self._cache.clear()
-            self._hits = self._misses = 0
+        self._cache.clear()
+        self._hits = 0
+        self._misses = 0
 
     def __call__(self, *args, **kwds):
         # Simple caching without ordering or size limit
@@ -132,6 +133,11 @@ class _bounded_lru_cache_wrapper(_lru_cache_wrapper_base):
             None,
             None,
         ]  # initialize by pointing to self
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return MethodType(self, instance)
 
     def cache_info(self):
         return super().cache_info(self._maxsize, self._cache_len())
