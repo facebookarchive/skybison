@@ -1044,7 +1044,7 @@ class LineAddrTable:
                 else:
                     k = 127
                     ncodes = line_delta // 127
-                line_delta -= ncodes * 127
+                line_delta -= ncodes * k
                 push(addr_delta)
                 push(cast_signed_byte_to_unsigned(k))
                 addr_delta = 0
@@ -1052,6 +1052,7 @@ class LineAddrTable:
                     push(0)
                     push(cast_signed_byte_to_unsigned(k))
 
+            assert -128 <= line_delta and line_delta <= 127
             push(addr_delta)
             push(cast_signed_byte_to_unsigned(line_delta))
 
