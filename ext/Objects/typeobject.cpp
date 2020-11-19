@@ -265,20 +265,23 @@ RawObject wrapNext(Thread* thread, Arguments args) {
 
 RawObject wrapDescrGet(Thread* thread, Arguments args) {
   auto func = getNativeFunc<descrgetfunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* self = ApiHandle::newReference(thread, args.get(0));
   PyObject* obj = nullptr;
   if (!args.get(1).isNoneType()) {
-    obj = ApiHandle::borrowedReference(thread, args.get(1));
+    obj = ApiHandle::newReference(thread, args.get(1));
   }
   PyObject* type = nullptr;
   if (!args.get(2).isNoneType()) {
-    type = ApiHandle::borrowedReference(thread, args.get(2));
+    type = ApiHandle::newReference(thread, args.get(2));
   }
   if (obj == nullptr && type == nullptr) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__get__(None, None), is invalid");
   }
   PyObject* result = (*func)(self, obj, type);
+  Py_DECREF(self);
+  Py_XDECREF(obj);
+  Py_XDECREF(type);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
