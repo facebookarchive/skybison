@@ -59,6 +59,17 @@ class FunctoolsLRUCacheWrapperTests(unittest.TestCase):
         result = c.foo(1, "two", bar="baz")
         self.assertEqual(result, ((c, 1, "two"), {"bar": "baz"}))
 
+    def test_lru_cache_unbounded_in_class_binds_self(self):
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        class C:
+            foo = _functools._lru_cache_wrapper(func, None, False, _CacheInfo)
+
+        c = C()
+        result = c.foo(1, "two", bar="baz")
+        self.assertEqual(result, ((c, 1, "two"), {"bar": "baz"}))
+
     def test_cache_clean_with_uncached_cleans_cache(self):
         wrapper = _functools._lru_cache_wrapper(pow, 0, False, _CacheInfo)
 

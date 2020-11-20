@@ -73,6 +73,11 @@ class _lru_cache_wrapper_base:
         """Report cache statistics"""
         return self._CacheInfo(self._hits, self._misses, maxsize, cache_len)
 
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return MethodType(self, instance)
+
 
 class _uncached_lru_cache_wrapper(_lru_cache_wrapper_base):
     def __init__(self, user_function, typed, _CacheInfo):
@@ -133,11 +138,6 @@ class _bounded_lru_cache_wrapper(_lru_cache_wrapper_base):
             None,
             None,
         ]  # initialize by pointing to self
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        return MethodType(self, instance)
 
     def cache_info(self):
         return super().cache_info(self._maxsize, self._cache_len())
