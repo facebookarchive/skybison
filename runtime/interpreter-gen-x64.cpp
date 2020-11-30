@@ -1046,20 +1046,10 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
           Address(r_saved_callable,
                   heapObjectDisp(RawBoundMethod::kFunctionOffset)));
   __ movq(Address(RSP, kOpargReg, TIMES_8, 0), kCallableReg);
-  // Check whether bound_method.function() is a heap object.
-  emitJumpIfImmediate(env, r_scratch, kCallableReg, prepare_callable_immediate,
-                      Assembler::kNearJump);
-  // Check whether bound_method.function() is a function.
-  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
-  __ movl(r_scratch,
-          Address(kCallableReg, heapObjectDisp(RawHeapObject::kHeaderOffset)));
-  __ andl(r_scratch,
-          Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
-  __ cmpl(r_scratch, Immediate(static_cast<word>(LayoutId::kFunction)
-                               << RawHeader::kLayoutIdOffset));
-  // If it is a function, jump to the fast path.
-  Label prepared;
-  __ jcc(EQUAL, &prepared, Assembler::kNearJump);
+
+  emitJumpIfNotHeapObjectWithLayoutId(env, kCallableReg, r_scratch,
+                                      LayoutId::kFunction, &slow_path);
+  __ jmp(Address(kCallableReg, heapObjectDisp(Function::kEntryAsmOffset)));
 
   // res = Interpreter::prepareCallableDunderCall(thread, nargs, nargs)
   // callable = res.function
@@ -1080,7 +1070,6 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   __ movq(kCallableReg, kReturnRegs[0]);
   __ movq(kOpargReg, kReturnRegs[1]);
 
-  __ bind(&prepared);
   __ jmp(Address(kCallableReg, heapObjectDisp(Function::kEntryAsmOffset)));
 }
 
