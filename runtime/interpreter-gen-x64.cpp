@@ -119,7 +119,6 @@ struct EmitEnv {
   Bytecode current_op;
   const char* current_handler;
   Label opcode_handlers[kNumBytecodes];
-  Label call_function_no_intrinsic_handler;
   Label call_handler;
   Label call_interpreted_slow_path;
   Label call_trampoline;
@@ -1811,13 +1810,6 @@ word emitHandlerTable(EmitEnv* env) {
 }
 
 void emitSharedCode(EmitEnv* env) {
-  __ bind(&env->call_function_no_intrinsic_handler);
-  {
-    Label next_opcode;
-    __ movq(kCallableReg, Address(RSP, kOpargReg, TIMES_8, 0));
-    emitFunctionEntryWithNoIntrinsicHandler(env, &next_opcode);
-  }
-
   {
     // This register is shared between the following three functions.
     __ bind(&env->call_handler);
