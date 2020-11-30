@@ -1534,5 +1534,20 @@ TEST_F(DictExtensionApiTest, UpdateOverwritesKeys) {
   EXPECT_EQ(PyDict_GetItem(lhs, three), four);
 }
 
+TEST_F(DictExtensionApiTest,
+       ObjectGenericGetDictWithInstanceRaisesAttributeError) {
+  PyObjectPtr obj(PyLong_FromLong(0));
+  ASSERT_EQ(PyObject_GenericGetDict(obj, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
+TEST_F(DictExtensionApiTest, ObjectGenericGetDictWithTypeReturnsTypeDict) {
+  PyObject* obj = reinterpret_cast<PyObject*>(&PyLong_Type);
+  PyObjectPtr dict(PyObject_GenericGetDict(obj, nullptr));
+  ASSERT_TRUE(PyMapping_Check(dict));
+  EXPECT_GT(PyMapping_Length(dict), 0);
+}
+
 }  // namespace testing
 }  // namespace py

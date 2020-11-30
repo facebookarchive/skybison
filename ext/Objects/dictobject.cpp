@@ -6,6 +6,7 @@
 #include "dict-builtins.h"
 #include "handles.h"
 #include "int-builtins.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -432,8 +433,19 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* /* j */, void* /* t */) {
-  UNIMPLEMENTED("PyObject_GenericGetDict");
+PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* obj, void*) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Runtime* runtime = thread->runtime();
+  Object name(&scope, runtime->symbols()->at(ID(__dict__)));
+  Object dict(&scope, objectGetAttribute(thread, object, name));
+  if (dict.isError()) {
+    thread->raiseWithFmt(LayoutId::kAttributeError,
+                         "This object has no __dict__");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *dict);
 }
 
 }  // namespace py
