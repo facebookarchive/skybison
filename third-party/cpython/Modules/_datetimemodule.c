@@ -3422,14 +3422,14 @@ tzinfo_reduce(PyObject *self)
         }
     }
     else {
-        PyObject **dictptr;
         PyErr_Clear();
-        state = Py_None;
-        dictptr = _PyObject_GetDictPtr(self);
-        if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
-            state = *dictptr;
+        state = PyObject_GenericGetDict(self, NULL);
+        if (!state || PyMapping_Size(state) == 0) {
+            PyErr_Clear();
+            Py_XDECREF(state);
+            state = Py_None;
+            Py_INCREF(state);
         }
-        Py_INCREF(state);
     }
 
     if (state == Py_None) {
@@ -4822,16 +4822,14 @@ _sanitize_isoformat_str(PyObject *dtstr)
         return dtstr;
     }
 
-    PyObject *str_out = _PyUnicode_Copy(dtstr);
-    if (str_out == NULL) {
+    Py_UCS4 *data = PyUnicode_AsUCS4Copy(dtstr);
+    if (data == NULL) {
         return NULL;
     }
 
-    if (PyUnicode_WriteChar(str_out, 10, (Py_UCS4)'T')) {
-        Py_DECREF(str_out);
-        return NULL;
-    }
-
+    data[10] = (Py_UCS4)'T';
+    PyObject *str_out = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, data, len);
+    PyMem_Free(data);
     return str_out;
 }
 
