@@ -44,12 +44,12 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Arguments args,
                               &function_name, expected_type, &obj);
 }
 
-ALIGN_16 bool FUNC(_builtins, _bool_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bool_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isBool()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bool_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bool_guard_intrinsic)(Thread* thread) {
   if (thread->stackTop().isBool()) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -58,13 +58,13 @@ ALIGN_16 bool FUNC(_builtins, _bool_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bytearray_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bytearray_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(
       thread->runtime()->isInstanceOfBytearray(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bytearray_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bytearray_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfBytearray(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -73,7 +73,7 @@ ALIGN_16 bool FUNC(_builtins, _bytearray_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bytearray_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bytearray_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPop();
   if (arg.isBytearray()) {
     thread->stackSetTop(SmallInt::fromWord(Bytearray::cast(arg).numItems()));
@@ -82,13 +82,13 @@ ALIGN_16 bool FUNC(_builtins, _bytearray_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bytes_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bytes_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfBytes(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bytes_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bytes_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfBytes(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -97,7 +97,7 @@ ALIGN_16 bool FUNC(_builtins, _bytes_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _bytes_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _bytes_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPeek(0);
   if (arg.isBytes()) {
     thread->stackPop();
@@ -107,13 +107,13 @@ ALIGN_16 bool FUNC(_builtins, _bytes_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _byteslike_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _byteslike_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isByteslike(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _byteslike_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _byteslike_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isByteslike(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -122,13 +122,13 @@ ALIGN_16 bool FUNC(_builtins, _byteslike_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _complex_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _complex_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(
       thread->runtime()->isInstanceOfComplex(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _deque_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _deque_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfDeque(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -137,18 +137,18 @@ ALIGN_16 bool FUNC(_builtins, _deque_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _dict_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _dict_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfDict(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _dict_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _dict_check_exact_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isDict()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _dict_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _dict_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfDict(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -157,7 +157,7 @@ ALIGN_16 bool FUNC(_builtins, _dict_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _dict_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _dict_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPeek(0);
   if (arg.isDict()) {
     thread->stackPop();
@@ -167,18 +167,18 @@ ALIGN_16 bool FUNC(_builtins, _dict_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _float_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _float_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfFloat(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _float_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _float_check_exact_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isFloat()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _float_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _float_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfFloat(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -187,13 +187,13 @@ ALIGN_16 bool FUNC(_builtins, _float_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _frozenset_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _frozenset_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(
       thread->runtime()->isInstanceOfFrozenSet(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _frozenset_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _frozenset_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfFrozenSet(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -202,7 +202,7 @@ ALIGN_16 bool FUNC(_builtins, _frozenset_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _function_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _function_guard_intrinsic)(Thread* thread) {
   if (thread->stackTop().isFunction()) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -211,19 +211,19 @@ ALIGN_16 bool FUNC(_builtins, _function_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _int_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _int_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfInt(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _int_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _int_check_exact_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPop();
   thread->stackSetTop(Bool::fromBool(arg.isSmallInt() || arg.isLargeInt()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _int_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _int_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfInt(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -232,13 +232,13 @@ ALIGN_16 bool FUNC(_builtins, _int_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _list_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _list_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfList(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _list_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _list_check_exact_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isList()));
   return true;
 }
@@ -270,7 +270,7 @@ RawObject FUNC(_builtins, _list_ctor)(Thread* thread, Arguments args) {
   return *self;
 }
 
-ALIGN_16 bool FUNC(_builtins, _list_getitem_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _list_getitem_intrinsic)(Thread* thread) {
   RawObject arg0 = thread->stackPeek(1);
   if (!arg0.isList()) {
     return false;
@@ -293,7 +293,7 @@ ALIGN_16 bool FUNC(_builtins, _list_getitem_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _list_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _list_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfList(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -302,7 +302,7 @@ ALIGN_16 bool FUNC(_builtins, _list_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _list_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _list_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPeek(0);
   if (arg.isList()) {
     thread->stackPop();
@@ -312,7 +312,7 @@ ALIGN_16 bool FUNC(_builtins, _list_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _list_setitem_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _list_setitem_intrinsic)(Thread* thread) {
   RawObject arg0 = thread->stackPeek(2);
   if (!arg0.isList()) {
     return false;
@@ -336,7 +336,7 @@ ALIGN_16 bool FUNC(_builtins, _list_setitem_intrinsic)(Thread* thread) {
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _memoryview_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _memoryview_guard_intrinsic)(Thread* thread) {
   if (thread->stackTop().isMemoryView()) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -345,12 +345,12 @@ ALIGN_16 bool FUNC(_builtins, _memoryview_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _range_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _range_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isRange()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _range_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _range_guard_intrinsic)(Thread* thread) {
   if (thread->stackTop().isRange()) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -359,38 +359,38 @@ ALIGN_16 bool FUNC(_builtins, _range_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _seq_index_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _seq_index_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       SmallInt::fromWord(SeqIterator::cast(thread->stackPop()).index()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _seq_iterable_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _seq_iterable_intrinsic)(Thread* thread) {
   thread->stackSetTop(SeqIterator::cast(thread->stackPop()).iterable());
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _seq_set_index_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _seq_set_index_intrinsic)(Thread* thread) {
   RawObject index = thread->stackPop();
   RawObject seq_iter = thread->stackPop();
   SeqIterator::cast(seq_iter).setIndex(Int::cast(index).asWord());
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _seq_set_iterable_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _seq_set_iterable_intrinsic)(Thread* thread) {
   RawObject iterable = thread->stackPop();
   RawObject seq_iter = thread->stackPop();
   SeqIterator::cast(seq_iter).setIterable(iterable);
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _set_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _set_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfSet(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _set_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _set_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfSet(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -399,7 +399,7 @@ ALIGN_16 bool FUNC(_builtins, _set_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _set_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _set_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPeek(0);
   if (arg.isSet()) {
     thread->stackPop();
@@ -409,12 +409,12 @@ ALIGN_16 bool FUNC(_builtins, _set_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _slice_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _slice_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isSlice()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _slice_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _slice_guard_intrinsic)(Thread* thread) {
   if (thread->stackTop().isSlice()) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -423,18 +423,18 @@ ALIGN_16 bool FUNC(_builtins, _slice_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _str_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _str_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfStr(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _str_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _str_check_exact_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isStr()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _str_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _str_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfStr(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -443,7 +443,7 @@ ALIGN_16 bool FUNC(_builtins, _str_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _str_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _str_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPeek(0);
   if (arg.isStr()) {
     thread->stackPop();
@@ -453,18 +453,18 @@ ALIGN_16 bool FUNC(_builtins, _str_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _tuple_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _tuple_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfTuple(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _tuple_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _tuple_check_exact_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isTuple()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _tuple_getitem_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _tuple_getitem_intrinsic)(Thread* thread) {
   RawObject arg0 = thread->stackPeek(1);
   if (!arg0.isTuple()) {
     return false;
@@ -487,7 +487,7 @@ ALIGN_16 bool FUNC(_builtins, _tuple_getitem_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _tuple_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _tuple_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfTuple(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -496,7 +496,7 @@ ALIGN_16 bool FUNC(_builtins, _tuple_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _tuple_len_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _tuple_len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackPeek(0);
   if (arg.isTuple()) {
     thread->stackPop();
@@ -506,23 +506,23 @@ ALIGN_16 bool FUNC(_builtins, _tuple_len_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _type_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _type_intrinsic)(Thread* thread) {
   thread->stackSetTop(thread->runtime()->typeOf(thread->stackPop()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _type_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _type_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfType(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _type_check_exact_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _type_check_exact_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(thread->stackPop().isType()));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _type_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _type_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfType(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());
@@ -531,7 +531,7 @@ ALIGN_16 bool FUNC(_builtins, _type_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _type_subclass_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _type_subclass_guard_intrinsic)(Thread* thread) {
   RawObject subclass = thread->stackPeek(0);
   RawObject superclass = thread->stackPeek(1);
   if (subclass == superclass && subclass.isType()) {
@@ -542,13 +542,13 @@ ALIGN_16 bool FUNC(_builtins, _type_subclass_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(_builtins, _weakref_check_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _weakref_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(Bool::fromBool(
       thread->runtime()->isInstanceOfWeakRef(thread->stackPop())));
   return true;
 }
 
-ALIGN_16 bool FUNC(_builtins, _weakref_guard_intrinsic)(Thread* thread) {
+bool FUNC(_builtins, _weakref_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfWeakRef(thread->stackTop())) {
     thread->stackPop();
     thread->stackSetTop(NoneType::object());

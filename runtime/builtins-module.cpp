@@ -75,7 +75,7 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
   return NoneType::object();
 }
 
-ALIGN_16 bool FUNC(builtins, abs_intrinsic)(Thread* thread) {
+bool FUNC(builtins, abs_intrinsic)(Thread* thread) {
   RawObject obj = thread->stackTop();
   if (obj.isSmallInt()) {
     thread->stackPop();
@@ -95,7 +95,7 @@ ALIGN_16 bool FUNC(builtins, abs_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
+bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   if (thread->runtime()->isInstanceOfInt(value)) {
     thread->stackPop();
@@ -105,7 +105,7 @@ ALIGN_16 bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
+bool FUNC(builtins, next_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   switch (value.layoutId()) {
     case LayoutId::kDictKeyIterator: {
@@ -180,7 +180,7 @@ ALIGN_16 bool FUNC(builtins, next_intrinsic)(Thread* thread) {
   }
 }
 
-ALIGN_16 bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
+bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
   Runtime* runtime = thread->runtime();
   RawObject arg = thread->stackTop();
   if (runtime->isInstanceOfInt(arg) || runtime->isInstanceOfFloat(arg)) {
@@ -191,7 +191,7 @@ ALIGN_16 bool FUNC(builtins, _number_check_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
+bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
   RawObject value = thread->stackPeek(0);
   if (value.isNoneType() || thread->runtime()->isInstanceOfInt(value)) {
     thread->stackPop();
@@ -201,7 +201,7 @@ ALIGN_16 bool FUNC(builtins, _slice_index_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(builtins, _slice_index_not_none_intrinsic)(Thread* thread) {
+bool FUNC(builtins, _slice_index_not_none_intrinsic)(Thread* thread) {
   RawObject value = thread->stackTop();
   if (thread->runtime()->isInstanceOfInt(value)) {
     thread->stackPop();
@@ -211,7 +211,7 @@ ALIGN_16 bool FUNC(builtins, _slice_index_not_none_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
+bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
   RawObject obj = thread->stackPeek(1);
   RawObject type = thread->stackPeek(0);
   Runtime* runtime = thread->runtime();
@@ -251,7 +251,7 @@ ALIGN_16 bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
   return false;
 }
 
-ALIGN_16 bool FUNC(builtins, len_intrinsic)(Thread* thread) {
+bool FUNC(builtins, len_intrinsic)(Thread* thread) {
   RawObject arg = thread->stackTop();
   word length;
   switch (arg.layoutId()) {

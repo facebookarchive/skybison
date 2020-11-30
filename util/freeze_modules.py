@@ -320,7 +320,7 @@ RawObject {builtin}(Thread* thread, Arguments args);
     result += "\n"
     for intrinsic in intrinsics:
         result += f"""\
-bool {intrinsic}(Thread* thread);
+bool {intrinsic}(Thread* thread) ALIGN_16;
 """
     result += "\n"
     for module in modules:
