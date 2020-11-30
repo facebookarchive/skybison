@@ -3088,7 +3088,6 @@ class dict(bootstrap=True):
     __getattribute__ = object.__getattribute__
 
     def __getitem__(self, key):
-        _dict_guard(self)
         result = _dict_get(self, key, _Unbound)
         if result is _Unbound:
             if not _dict_check_exact(self):
