@@ -1858,7 +1858,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   // We allocate a heap object in the C heap space only when 1) we need to
   // execute a custom finalizer with it or 2) the type explicitly uses non-zero
   // sizes to store a user-specified structure.
-  if (!has_default_dealloc || spec->basicsize > 0 || spec->itemsize > 0) {
+  if (!has_default_dealloc ||
+      static_cast<size_t>(spec->basicsize) > sizeof(PyObject) ||
+      spec->itemsize > 0) {
     flags |= Type::Flag::kHasNativeData;
   }
   if (spec->flags & Py_TPFLAGS_HAVE_GC) {

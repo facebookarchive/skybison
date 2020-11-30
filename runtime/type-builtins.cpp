@@ -1256,6 +1256,15 @@ RawObject METH(type, __basicsize__)(Thread* thread, Arguments args) {
   }
   Type self(&scope, *self_obj);
   if (!self.hasNativeData()) {
+    if (self.isCPythonHeaptype()) {
+      // If self is a heap type here, there are two possibiliities:
+      // It either had a __basicsize__ of 0, which means we've already set a
+      // default __basicsize__ of sizeof(PyObject)
+      // Or someone created a heap type with just enough space for a
+      // PyObject_HEAD and no additional data.
+      // It should be safe to return sizeof(PyObject) in both cases.
+      return runtime->newInt(sizeof(PyObject));
+    }
     Str name(&scope, strUnderlying(self.name()));
     UNIMPLEMENTED("'__basicsize__' for type '%s'", name.toCStr());
   }

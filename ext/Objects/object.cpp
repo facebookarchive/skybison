@@ -644,6 +644,17 @@ PY_EXPORT int _PyObject_HasAttrId(PyObject* /* v */, _Py_Identifier* /* e */) {
 }
 
 PY_EXPORT PyObject* _PyObject_New(PyTypeObject* type) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type_obj(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
+  if (!type_obj.hasNativeData()) {
+    // Since the type will be pointed to by the layout as long as there are any
+    // objects of its type, we don't need to INCREF the type object if it
+    // doesn't have NativeData.
+    Layout layout(&scope, type_obj.instanceLayout());
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->newInstance(layout));
+  }
   PyObject* obj = static_cast<PyObject*>(PyObject_MALLOC(_PyObject_SIZE(type)));
   if (obj == nullptr) return PyErr_NoMemory();
   return PyObject_INIT(obj, type);

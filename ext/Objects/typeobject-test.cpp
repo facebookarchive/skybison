@@ -454,8 +454,8 @@ TEST_F(TypeExtensionApiTest, DunderBasicsizeWithExtensionTypeReturnsBasicsize) {
   EXPECT_TRUE(isLongEqualsLong(basicsize, size));
 }
 
-TEST_F(TypeExtensionApiDeathTest,
-       DunderBasicsizeExtensionTypeWithZeroSizeReturnsBasicsizePyro) {
+TEST_F(TypeExtensionApiTest,
+       DunderBasicsizeExtensionTypeWithZeroSizeReturnsBasicsize) {
   PyType_Slot slots[] = {
       {0, nullptr},
   };
@@ -465,8 +465,25 @@ TEST_F(TypeExtensionApiDeathTest,
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   ASSERT_NE(type, nullptr);
-  EXPECT_DEATH(PyObject_GetAttrString(type, "__basicsize__"),
-               "'__basicsize__' for type 'Bar'");
+  PyObjectPtr basicsize(PyObject_GetAttrString(type, "__basicsize__"));
+  ASSERT_NE(basicsize, nullptr);
+  EXPECT_TRUE(isLongEqualsLong(basicsize, sizeof(PyObject)));
+}
+
+TEST_F(TypeExtensionApiTest,
+       DunderBasicsizeExtensionTypeWithHeadSizeReturnsBasicsize) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", sizeof(PyObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  PyObjectPtr basicsize(PyObject_GetAttrString(type, "__basicsize__"));
+  ASSERT_NE(basicsize, nullptr);
+  EXPECT_TRUE(isLongEqualsLong(basicsize, sizeof(PyObject)));
 }
 
 TEST_F(TypeExtensionApiTest, MemberDescriptorTypeMatchesPyTpMembers) {
@@ -3860,6 +3877,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutNewInheritsDefaultNew) {
 TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
   struct FooObject {
     PyObject_HEAD
+    int native_data;
   };
   static PyType_Slot slots[1];
   slots[0] = {0, nullptr};
@@ -3987,6 +4005,7 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
   struct FooObject {
     PyObject_HEAD
+    int native_data;
   };
   struct FooSubclassObject {
     FooObject base;
