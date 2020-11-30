@@ -79,7 +79,8 @@ def RLock(*args, **kwargs):
 
 class Semaphore:
     def __init__(self, *args, **kwargs):
-        _unimplemented()
+        # TODO(T76412433): Implement Semaphores
+        pass
 
 
 class Thread:
