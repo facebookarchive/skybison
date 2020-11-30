@@ -331,6 +331,32 @@ PY_EXPORT PyTypeObject* PyLong_Type_Ptr() {
       thread, thread->runtime()->typeAt(LayoutId::kInt)));
 }
 
+PY_EXPORT PyObject* _PyLong_DivmodNear(PyObject* a, PyObject* b) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object dividend_obj(&scope, ApiHandle::fromPyObject(a)->asObject());
+  Object divisor_obj(&scope, ApiHandle::fromPyObject(b)->asObject());
+  if (!runtime->isInstanceOfInt(*dividend_obj) ||
+      !runtime->isInstanceOfInt(*divisor_obj)) {
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "non-integer arguments in division");
+    return nullptr;
+  }
+
+  Int dividend(&scope, intUnderlying(*dividend_obj));
+  Int divisor(&scope, intUnderlying(*divisor_obj));
+  Object quotient(&scope, NoneType::object());
+  Object remainder(&scope, NoneType::object());
+  if (!intDivmodNear(thread, dividend, divisor, &quotient, &remainder)) {
+    thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                         "integer division or modulo by zero");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread,
+                                 runtime->newTupleWith2(quotient, remainder));
+}
+
 PY_EXPORT double _PyLong_Frexp(PyLongObject*, Py_ssize_t*) {
   UNIMPLEMENTED("_PyLong_Frexp");
 }

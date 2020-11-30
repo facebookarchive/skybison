@@ -563,7 +563,9 @@ class RawInt : public RawObject {
 
   word bitLength() const;
 
+  bool isEven() const;
   bool isNegative() const;
+  bool isOdd() const;
   bool isPositive() const;
   bool isZero() const;
 
@@ -1647,6 +1649,7 @@ class RawLargeInt : public RawHeapObject {
   uword digitAt(word index) const;
   void digitAtPut(word index, uword digit) const;
 
+  bool isEven() const;
   bool isNegative() const;
   bool isPositive() const;
 
@@ -4576,14 +4579,14 @@ inline word RawInt::bitLength() const {
   return RawLargeInt::cast(*this).bitLength();
 }
 
-inline bool RawInt::isPositive() const {
+inline bool RawInt::isEven() const {
   if (isSmallInt()) {
-    return RawSmallInt::cast(*this).value() > 0;
+    return (RawSmallInt::cast(*this).value() & 1) == 0;
   }
   if (isBool()) {
-    return RawBool::cast(*this) == RawBool::trueObj();
+    return *this == RawBool::falseObj();
   }
-  return RawLargeInt::cast(*this).isPositive();
+  return RawLargeInt::cast(*this).isEven();
 }
 
 inline bool RawInt::isNegative() const {
@@ -4594,6 +4597,26 @@ inline bool RawInt::isNegative() const {
     return false;
   }
   return RawLargeInt::cast(*this).isNegative();
+}
+
+inline bool RawInt::isOdd() const {
+  if (isSmallInt()) {
+    return (RawSmallInt::cast(*this).value() & 1) != 0;
+  }
+  if (isBool()) {
+    return *this == RawBool::trueObj();
+  }
+  return !RawLargeInt::cast(*this).isEven();
+}
+
+inline bool RawInt::isPositive() const {
+  if (isSmallInt()) {
+    return RawSmallInt::cast(*this).value() > 0;
+  }
+  if (isBool()) {
+    return RawBool::cast(*this) == RawBool::trueObj();
+  }
+  return RawLargeInt::cast(*this).isPositive();
 }
 
 inline bool RawInt::isZero() const {
@@ -5856,6 +5879,11 @@ if_unsigned_t<T, OptInt<T>> RawLargeInt::asInt() const {
   }
   // No T accepted by this function needs more than one digit.
   return OptInt<T>::valid(digitAt(0));
+}
+
+inline bool RawLargeInt::isEven() const {
+  word lowest_digit = digitAt(0);
+  return (lowest_digit & 1) == 0;
 }
 
 inline bool RawLargeInt::isNegative() const {

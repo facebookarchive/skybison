@@ -677,6 +677,94 @@ x = X(0xface)
   EXPECT_EQ(dst[2], 0xce);
 }
 
+TEST_F(LongExtensionApiTest, DivmodNearWithNonIntDividendRaisesTypeError) {
+  PyObjectPtr a(PyUnicode_FromString("not an int"));
+  PyObjectPtr b(PyLong_FromLong(0));
+  ASSERT_EQ(_PyLong_DivmodNear(a, b), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, DivmodNearWithNonIntDivisorRaisesTypeError) {
+  PyObjectPtr a(PyLong_FromLong(0));
+  PyObjectPtr b(PyUnicode_FromString("not an int"));
+  ASSERT_EQ(_PyLong_DivmodNear(a, b), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, DivmodNearWithZeroDivisorRaisesZeroDivisionError) {
+  PyObjectPtr a(PyLong_FromLong(0));
+  PyObjectPtr b(PyLong_FromLong(0));
+  ASSERT_EQ(_PyLong_DivmodNear(a, b), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ZeroDivisionError));
+}
+
+TEST_F(LongExtensionApiTest, DivmodNearRoundsToEven) {
+  PyObjectPtr a(PyLong_FromLong(44));
+  PyObjectPtr b(PyLong_FromLong(8));
+  PyObjectPtr result(_PyLong_DivmodNear(a, b));
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+
+  PyObject* quotient = PyTuple_GetItem(result, 0);
+  ASSERT_TRUE(PyLong_CheckExact(quotient));
+  EXPECT_EQ(PyLong_AsLong(quotient), 6);
+
+  PyObject* remainder = PyTuple_GetItem(result, 1);
+  ASSERT_TRUE(PyLong_CheckExact(remainder));
+  EXPECT_EQ(PyLong_AsLong(remainder), -4);
+}
+
+TEST_F(LongExtensionApiTest, DivmodNearWithNegativeDividendReturnsTuple) {
+  PyObjectPtr a(PyLong_FromLong(-43));
+  PyObjectPtr b(PyLong_FromLong(5));
+  PyObjectPtr result(_PyLong_DivmodNear(a, b));
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+
+  PyObject* quotient = PyTuple_GetItem(result, 0);
+  ASSERT_TRUE(PyLong_CheckExact(quotient));
+  EXPECT_EQ(PyLong_AsLong(quotient), -9);
+
+  PyObject* remainder = PyTuple_GetItem(result, 1);
+  ASSERT_TRUE(PyLong_CheckExact(remainder));
+  EXPECT_EQ(PyLong_AsLong(remainder), 2);
+}
+
+TEST_F(LongExtensionApiTest, DivmodNearWithNegativeDivisorReturnsTuple) {
+  PyObjectPtr a(PyLong_FromLong(43));
+  PyObjectPtr b(PyLong_FromLong(-5));
+  PyObjectPtr result(_PyLong_DivmodNear(a, b));
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+
+  PyObject* quotient = PyTuple_GetItem(result, 0);
+  ASSERT_TRUE(PyLong_CheckExact(quotient));
+  EXPECT_EQ(PyLong_AsLong(quotient), -9);
+
+  PyObject* remainder = PyTuple_GetItem(result, 1);
+  ASSERT_TRUE(PyLong_CheckExact(remainder));
+  EXPECT_EQ(PyLong_AsLong(remainder), -2);
+}
+
+TEST_F(LongExtensionApiTest, DivmodNearWithNegativesReturnsTuple) {
+  PyObjectPtr a(PyLong_FromLong(-43));
+  PyObjectPtr b(PyLong_FromLong(-5));
+  PyObjectPtr result(_PyLong_DivmodNear(a, b));
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+
+  PyObject* quotient = PyTuple_GetItem(result, 0);
+  ASSERT_TRUE(PyLong_CheckExact(quotient));
+  EXPECT_EQ(PyLong_AsLong(quotient), 9);
+
+  PyObject* remainder = PyTuple_GetItem(result, 1);
+  ASSERT_TRUE(PyLong_CheckExact(remainder));
+  EXPECT_EQ(PyLong_AsLong(remainder), 2);
+}
+
 TEST_F(LongExtensionApiTest, FromByteArrayWithZeroSizeReturnsZero) {
   PyObjectPtr num(_PyLong_FromByteArray(nullptr, 0, false, false));
   ASSERT_EQ(PyErr_Occurred(), nullptr);

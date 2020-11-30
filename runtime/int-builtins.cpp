@@ -16,6 +16,30 @@
 
 namespace py {
 
+bool intDivmodNear(Thread* thread, const Int& dividend, const Int& divisor,
+                   Object* quotient, Object* remainder) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->intDivideModulo(thread, dividend, divisor, quotient,
+                                remainder)) {
+    return false;
+  }
+
+  HandleScope scope(thread);
+  Int quotient_int(&scope, **quotient);
+  Int remainder_int(&scope, **remainder);
+  Int one(&scope, SmallInt::fromWord(1));
+  Int twice_remainder(&scope,
+                      runtime->intBinaryLshift(thread, remainder_int, one));
+  word cmp = twice_remainder.compare(*divisor);
+
+  if ((divisor.isNegative() ? cmp < 0 : cmp > 0) ||
+      (cmp == 0 && quotient_int.isOdd())) {
+    *quotient = runtime->intAdd(thread, quotient_int, one);
+    *remainder = runtime->intSubtract(thread, remainder_int, divisor);
+  }
+  return true;
+}
+
 word largeIntHash(RawLargeInt value) {
   const word bits_per_half = kBitsPerWord / 2;
 

@@ -1204,6 +1204,7 @@ PyAPI_FUNC_DECL(int _PyLong_AsByteArray(PyLongObject*, unsigned char*, size_t,
                                         int, int));
 PyAPI_FUNC_DECL(int _PyLong_AsInt(PyObject*));
 PyAPI_FUNC_DECL(time_t _PyLong_AsTime_t(PyObject*));
+PyAPI_FUNC_DECL(PyObject* _PyLong_DivmodNear(PyObject*, PyObject*));
 PyAPI_FUNC_DECL(double _PyLong_Frexp(PyLongObject*, Py_ssize_t*));
 PyAPI_FUNC_DECL(PyObject* _PyLong_FromByteArray(const unsigned char*, size_t,
                                                 int, int));
