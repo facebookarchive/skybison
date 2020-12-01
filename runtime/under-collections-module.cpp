@@ -30,6 +30,15 @@ static const BuiltinAttribute kDequeIteratorAttributes[] = {
      AttributeFlags::kHidden},
 };
 
+static const BuiltinAttribute kDequeReverseIteratorAttributes[] = {
+    {ID(_deque_reverse_iterator__iterable),
+     RawDequeReverseIterator::kIterableOffset, AttributeFlags::kHidden},
+    {ID(_deque_reverse_iterator__index), RawDequeReverseIterator::kIndexOffset,
+     AttributeFlags::kHidden},
+    {ID(_deque_reverse_iterator__state), RawDequeReverseIterator::kStateOffset,
+     AttributeFlags::kHidden},
+};
+
 void initializeUnderCollectionsTypes(Thread* thread) {
   addBuiltinType(thread, ID(deque), LayoutId::kDeque,
                  /*superclass_id=*/LayoutId::kObject, kDequeAttributes,
@@ -37,6 +46,10 @@ void initializeUnderCollectionsTypes(Thread* thread) {
   addBuiltinType(thread, ID(_deque_iterator), LayoutId::kDequeIterator,
                  /*superclass_id=*/LayoutId::kObject, kDequeIteratorAttributes,
                  DequeIterator::kSize, /*basetype=*/false);
+  addBuiltinType(
+      thread, ID(_deque_reverse_iterator), LayoutId::kDequeReverseIterator,
+      /*superclass_id=*/LayoutId::kObject, kDequeReverseIteratorAttributes,
+      DequeReverseIterator::kSize, /*basetype=*/false);
 }
 
 RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Arguments args) {
@@ -187,6 +200,112 @@ RawObject METH(_deque_iterator, __reduce__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   DequeIterator self(&scope, *self_obj);
   Object type(&scope, runtime->typeAt(LayoutId::kDequeIterator));
+  Object deque(&scope, self.iterable());
+  Object index(&scope, SmallInt::fromWord(self.index()));
+  Object tuple(&scope, runtime->newTupleWith2(deque, index));
+  return runtime->newTupleWith2(type, tuple);
+}
+
+RawObject METH(_deque_reverse_iterator, __length_hint__)(Thread* thread,
+                                                         Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isDequeReverseIterator()) {
+    return thread->raiseRequiresType(self_obj, ID(_deque_reverse_iterator));
+  }
+  DequeReverseIterator self(&scope, *self_obj);
+  Deque deque(&scope, self.iterable());
+  return SmallInt::fromWord(deque.numItems() - self.index());
+}
+
+RawObject METH(_deque_reverse_iterator, __new__)(Thread* thread,
+                                                 Arguments args) {
+  HandleScope scope(thread);
+  Object cls(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*cls)) {
+    return thread->raiseRequiresType(cls, ID(type));
+  }
+  if (cls != runtime->typeAt(LayoutId::kDequeReverseIterator)) {
+    Type type(&scope, *cls);
+    Str name(&scope, type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "_collections._deque_reverse_iterator.__new__(%S): "
+        "%S is not a subtype of _collections._deque_reverse_iterator",
+        &name, &name);
+  }
+
+  Object iterable(&scope, args.get(1));
+  if (!runtime->isInstanceOfDeque(*iterable)) {
+    return thread->raiseRequiresType(iterable, ID(deque));
+  }
+  Deque deque(&scope, *iterable);
+
+  Object index_obj(&scope, args.get(2));
+  index_obj = intFromIndex(thread, index_obj);
+  if (index_obj.isErrorException()) {
+    return *index_obj;
+  }
+  Int index_int(&scope, intUnderlying(*index_obj));
+  if (index_int.numDigits() > 1) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+  word index = index_int.asWord();
+  if (index < 0) {
+    index = 0;
+  } else {
+    word length = deque.numItems();
+    if (index > length) {
+      index = length;
+    }
+  }
+  return runtime->newDequeReverseIterator(deque, index);
+}
+
+RawObject METH(_deque_reverse_iterator, __next__)(Thread* thread,
+                                                  Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isDequeReverseIterator()) {
+    return thread->raiseRequiresType(self_obj, ID(_deque_reverse_iterator));
+  }
+
+  DequeReverseIterator self(&scope, *self_obj);
+  Deque deque(&scope, self.iterable());
+  if (deque.state() != self.state()) {
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "deque mutated during iteration");
+  }
+
+  word index = self.index();
+  word length = deque.numItems();
+  DCHECK_BOUND(index, length);
+  if (index == length) {
+    return thread->raiseStopIteration();
+  }
+
+  index += 1;
+  self.setIndex(index);
+  index = deque.left() + deque.numItems() - index;
+  word capacity = deque.capacity();
+  if (index < capacity) {
+    return deque.at(index);
+  }
+  return deque.at(index - capacity);
+}
+
+RawObject METH(_deque_reverse_iterator, __reduce__)(Thread* thread,
+                                                    Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isDequeIterator()) {
+    return thread->raiseRequiresType(self_obj, ID(_deque_iterator));
+  }
+  Runtime* runtime = thread->runtime();
+  DequeReverseIterator self(&scope, *self_obj);
+  Object type(&scope, runtime->typeAt(LayoutId::kDequeReverseIterator));
   Object deque(&scope, self.iterable());
   Object index(&scope, SmallInt::fromWord(self.index()));
   Object tuple(&scope, runtime->newTupleWith2(deque, index));
@@ -368,6 +487,17 @@ RawObject METH(deque, __new__)(Thread* thread, Arguments args) {
   deque.setNumItems(0);
   deque.setState(0);
   return *deque;
+}
+
+RawObject METH(deque, __reversed__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDeque(*self)) {
+    return thread->raiseRequiresType(self, ID(deque));
+  }
+  Deque deque(&scope, *self);
+  return runtime->newDequeReverseIterator(deque, 0);
 }
 
 RawObject METH(deque, append)(Thread* thread, Arguments args) {

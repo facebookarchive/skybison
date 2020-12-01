@@ -930,6 +930,16 @@ RawObject Runtime::newDequeIterator(const Deque& deque, word index) {
   return *iter;
 }
 
+RawObject Runtime::newDequeReverseIterator(const Deque& deque, word index) {
+  HandleScope scope(Thread::current());
+  DequeReverseIterator iter(&scope,
+                            createInstance<RawDequeReverseIterator>(this));
+  iter.setIndex(index);
+  iter.setIterable(*deque);
+  iter.setState(deque.state());
+  return *iter;
+}
+
 RawObject Runtime::newList() {
   HandleScope scope(Thread::current());
   List result(&scope, createInstance<RawList>(this));

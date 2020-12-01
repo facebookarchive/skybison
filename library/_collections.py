@@ -56,6 +56,24 @@ class _deque_iterator(bootstrap=True):
         _builtin()
 
 
+class _deque_reverse_iterator(bootstrap=True):
+    def __iter__(self):
+        return self
+
+    def __length_hint__(self):
+        _builtin()
+
+    @staticmethod
+    def __new__(cls, deq, index=0):
+        _builtin()
+
+    def __next__(self):
+        _builtin()
+
+    def __reduce__(self):
+        _builtin()
+
+
 def _deque_getitem(self, index):
     _builtin()
 
@@ -235,20 +253,13 @@ class deque(bootstrap=True):
         return result
 
     def __reversed__(self):
-        _deque_guard(self)
-        return _deque_iterator(self, self._reversed_impl)
+        _builtin()
 
     def __rmul__(self, n):
         _unimplemented()
 
     # TODO(T69992771): Implement deque.__setitem__
     def __setitem__(self, index, value):
-        _unimplemented()
-
-    def _iter_impl(self, original_state, giveup):
-        _unimplemented()
-
-    def _reversed_impl(self, original_state, giveup):
         _unimplemented()
 
     def append(self, x):

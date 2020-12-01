@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import unittest
-from _collections import _deque_iterator, deque
+from _collections import _deque_iterator, _deque_reverse_iterator, deque
 
 
 class DequeIteratorTests(unittest.TestCase):
@@ -70,6 +70,82 @@ class DequeIteratorTests(unittest.TestCase):
     def test_next_after_deque_pop_raises_runtime_error(self):
         d = deque(range(10))
         it = _deque_iterator(d)
+        d.pop()
+        self.assertRaises(RuntimeError, next, it)
+
+
+class DequeReverseIteratorTests(unittest.TestCase):
+    def test_dunder_length_hint_returns_remaining(self):
+        d = deque(range(10))
+
+        it = _deque_reverse_iterator(d)
+        self.assertEqual(it.__length_hint__(), 10)
+        next(it)
+        self.assertEqual(it.__length_hint__(), 9)
+
+        it = _deque_reverse_iterator(d, 6)
+        self.assertEqual(it.__length_hint__(), 4)
+
+    def test_dunder_new_with_bad_args_raises_type_error(self):
+        d = deque()
+        self.assertRaises(TypeError, _deque_reverse_iterator.__new__, 1)
+        self.assertRaises(TypeError, _deque_reverse_iterator.__new__, int)
+        self.assertRaises(
+            TypeError, _deque_reverse_iterator.__new__, _deque_reverse_iterator, []
+        )
+        self.assertRaises(
+            TypeError, _deque_reverse_iterator.__new__, _deque_reverse_iterator, d, ""
+        )
+
+    def test_dunder_new_without_index_sets_index_zero(self):
+        d = deque(range(10))
+        it = _deque_reverse_iterator(d)
+        self.assertEqual(list(it), list(range(9, -1, -1)))
+
+    def test_dunder_new_with_index_truncates_to_deque_len(self):
+        d = deque(range(10))
+        rev = list(range(9, -1, -1))
+
+        it = _deque_reverse_iterator(d, -(2 ** 63))
+        self.assertEqual(list(it), rev)
+
+        it = _deque_reverse_iterator(d, -1)
+        self.assertEqual(list(it), rev)
+
+        it = _deque_reverse_iterator(d, 0)
+        self.assertEqual(list(it), rev)
+
+        it = _deque_reverse_iterator(d, 3)
+        self.assertEqual(list(it), rev[3:])
+
+        it = _deque_reverse_iterator(d, 10)
+        self.assertEqual(list(it), [])
+
+        it = _deque_reverse_iterator(d, 12)
+        self.assertEqual(list(it), [])
+
+        it = _deque_reverse_iterator(d, 2 ** 63 - 1)
+        self.assertEqual(list(it), [])
+
+    def test_dunder_new_with_large_int_index_raises_overflow_error(self):
+        d = deque(range(10))
+        self.assertRaises(OverflowError, _deque_reverse_iterator, d, 2 ** 63)
+        self.assertRaises(OverflowError, _deque_reverse_iterator, d, -(2 ** 63) - 1)
+
+    def test_iter_returns_self(self):
+        d = deque(range(10))
+        it = _deque_reverse_iterator(d)
+        self.assertIs(iter(it), it)
+
+    def test_next_after_deque_append_raises_runtime_error(self):
+        d = deque(range(10))
+        it = _deque_reverse_iterator(d)
+        d.append(10)
+        self.assertRaises(RuntimeError, next, it)
+
+    def test_next_after_deque_pop_raises_runtime_error(self):
+        d = deque(range(10))
+        it = _deque_reverse_iterator(d)
         d.pop()
         self.assertRaises(RuntimeError, next, it)
 
@@ -167,6 +243,10 @@ class DequeTests(unittest.TestCase):
         result = deque.__new__(deque)
         self.assertTrue(isinstance(result, deque))
         self.assertEqual(result.maxlen, None)
+
+    def test_dunder_reversed_returns_deque__reverse_iterator(self):
+        d = deque(range(10))
+        self.assertIsInstance(d.__reversed__(), _deque_reverse_iterator)
 
     def test_append_adds_elements(self):
         result = deque()

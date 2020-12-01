@@ -77,6 +77,7 @@ class Thread;
   V(CoroutineWrapper)                                                          \
   V(Deque)                                                                     \
   V(DequeIterator)                                                             \
+  V(DequeReverseIterator)                                                      \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
@@ -346,6 +347,7 @@ class RawObject {
   bool isDataArray() const;
   bool isDeque() const;
   bool isDequeIterator() const;
+  bool isDequeReverseIterator() const;
   bool isDict() const;
   bool isDictItemIterator() const;
   bool isDictItems() const;
@@ -2030,6 +2032,19 @@ class RawDequeIterator : public RawIteratorBase {
   static const int kSize = kStateOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(DequeIterator);
+};
+
+class RawDequeReverseIterator : public RawIteratorBase {
+ public:
+  // Getters and setters.
+  word state() const;
+  void setState(word state) const;
+
+  // Layout.
+  static const int kStateOffset = RawIteratorBase::kSize;
+  static const int kSize = kStateOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(DequeReverseIterator);
 };
 
 class RawDictIteratorBase : public RawIteratorBase {
@@ -4101,6 +4116,10 @@ inline bool RawObject::isDeque() const {
 
 inline bool RawObject::isDequeIterator() const {
   return isHeapObjectWithLayout(LayoutId::kDequeIterator);
+}
+
+inline bool RawObject::isDequeReverseIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kDequeReverseIterator);
 }
 
 inline bool RawObject::isDict() const {
@@ -6356,13 +6375,23 @@ inline void RawDeque::setState(word state) const {
   instanceVariableAtPut(kStateOffset, RawSmallInt::fromWord(state));
 }
 
-// RawDeque
+// RawDequeIterator
 
 inline word RawDequeIterator::state() const {
   return RawSmallInt::cast(instanceVariableAt(kStateOffset)).value();
 }
 
 inline void RawDequeIterator::setState(word state) const {
+  instanceVariableAtPut(kStateOffset, RawSmallInt::fromWord(state));
+}
+
+// RawDequeReverseIterator
+
+inline word RawDequeReverseIterator::state() const {
+  return RawSmallInt::cast(instanceVariableAt(kStateOffset)).value();
+}
+
+inline void RawDequeReverseIterator::setState(word state) const {
   instanceVariableAtPut(kStateOffset, RawSmallInt::fromWord(state));
 }
 
