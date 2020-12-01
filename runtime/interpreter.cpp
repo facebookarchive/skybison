@@ -1531,6 +1531,37 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
   return binarySubscrUpdateCache(thread, -1);
 }
 
+HANDLER_INLINE Continue Interpreter::doBinarySubscrDict(Thread* thread,
+                                                        word arg) {
+  RawObject container = thread->stackPeek(1);
+  if (!container.isDict()) {
+    EVENT_CACHE(BINARY_SUBSCR_DICT);
+    return binarySubscrUpdateCache(thread, arg);
+  }
+  HandleScope scope(thread);
+  Dict dict(&scope, container);
+  Object key(&scope, thread->stackPeek(0));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) {
+    return Continue::UNWIND;
+  }
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, dictAt(thread, dict, key, hash));
+  if (result.isError()) {
+    if (result.isErrorNotFound()) {
+      thread->raise(LayoutId::kKeyError, *key);
+      return Continue::UNWIND;
+    }
+    if (result.isErrorException()) {
+      return Continue::UNWIND;
+    }
+    UNREACHABLE("error should be either notFound or errorException");
+  }
+  thread->stackPop();
+  thread->stackSetTop(*result);
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
                                                         word arg) {
   RawObject container = thread->stackPeek(1);
@@ -1604,6 +1635,9 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
   RawObject container = thread->stackPeek(1);
   RawObject key = thread->stackPeek(0);
   switch (container.layoutId()) {
+    case LayoutId::kDict:
+      rewriteCurrentBytecode(frame, BINARY_SUBSCR_DICT);
+      return doBinarySubscrDict(thread, arg);
     case LayoutId::kList:
       if (key.isSmallInt()) {
         rewriteCurrentBytecode(frame, BINARY_SUBSCR_LIST);

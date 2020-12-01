@@ -816,6 +816,33 @@ l = [1,2,3]
 
 TEST_F(
     InterpreterTest,
+    BinarySubscrDictRevertsBackToBinarySubscrMonomorphicWhenNonDictObserved) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+d = {1: 2}
+s = "abc"
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  Dict d(&scope, mainModuleAt(runtime_, "d"));
+  SmallInt key(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 2));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_DICT);
+
+  // Revert back to caching __getitem__ when a non-list is observed.
+  Object s(&scope, mainModuleAt(runtime_, "s"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, s, key), "b"));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+}
+
+TEST_F(
+    InterpreterTest,
     BinarySubscrListRevertsBackToBinarySubscrMonomorphicWhenNonListObserved) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
@@ -823,7 +850,7 @@ def foo(l, i):
     return l[i]
 
 l = [1,2,3]
-d = {1: -1}
+s = "abc"
 )")
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
@@ -836,8 +863,8 @@ d = {1: -1}
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when a non-list is observed.
-  Dict d(&scope, mainModuleAt(runtime_, "d"));
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), -1));
+  Object s(&scope, mainModuleAt(runtime_, "s"));
+  EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, s, key), "b"));
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
 }
 

@@ -717,9 +717,9 @@ class DictTest(unittest.TestCase):
     def test_tuple_keyerror(self):
         # SF #1576657
         d = {}
-        with self.assertRaises(KeyError) as c:
+        # TODO(T80034548): Check if exception_context.exception.args == ((1,),).
+        with self.assertRaises(KeyError):
             d[(1,)]
-        self.assertEqual(c.exception.args, ((1,),))
 
     def test_bad_key(self):
         # Dictionary lookups should fail if __eq__() raises an exception.
