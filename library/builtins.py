@@ -1724,7 +1724,7 @@ def _structseq_repr(self):
             if name is not None:
                 break
         value = _tuple_getitem(self, i)
-        value_strings.append(f"{name}={value!r}")
+        _list_append(value_strings, f"{name}={value!r}")
     _repr_leave(self)
     return f"{fullname}({', '.join(value_strings)})"
 
@@ -3852,7 +3852,7 @@ class frozenset(bootstrap=True):
             diff = []
             for item in result:
                 if item not in other:
-                    diff.append(item)
+                    _list_append(diff, item)
             result = diff
         return frozenset(result)
 
@@ -4119,7 +4119,7 @@ class instance_proxy(bootstrap=True):
         for key in self.keys():
             value = _instance_getattr(instance, key)
             assert value is not _Unbound
-            result.append((key, value))
+            _list_append(result, (key, value))
         return result
 
     def keys(self):
@@ -4933,7 +4933,7 @@ class map(metaclass=_non_heaptype):
         self.func = func
         iters = []
         for iterable in iterables:
-            iters.append(iter(iterable))
+            _list_append(iters, iter(iterable))
         self.iters = (*iters,)
         self.len_iters = len(self.iters)
 
@@ -4946,7 +4946,7 @@ class map(metaclass=_non_heaptype):
             return func(next(self.iters[0]))
         result = []
         for iter in self.iters:
-            result.append(next(iter))
+            _list_append(result, next(iter))
         return func(*result)
 
     def __reduce__(self):
@@ -5783,7 +5783,7 @@ class set(bootstrap=True):
             diff = []
             for item in result:
                 if item not in other:
-                    diff.append(item)
+                    _list_append(diff, item)
             result = diff
         return set(result)
 
@@ -6778,7 +6778,7 @@ class zip(metaclass=_non_heaptype):
         else:
             iterators = []
             for it in iterables:
-                iterators.append(iter(it))
+                _list_append(iterators, iter(it))
         self._iterators = iterators
 
     def __iter__(self):
