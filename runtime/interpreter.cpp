@@ -5720,6 +5720,24 @@ Continue Interpreter::doBinaryAndSmallInt(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE
+Continue Interpreter::doBinaryMulSmallInt(Thread* thread, word arg) {
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word result;
+    if (!__builtin_mul_overflow(SmallInt::cast(left).value(),
+                                SmallInt::cast(right).value(), &result) &&
+        SmallInt::isValid(result)) {
+      thread->stackDrop(1);
+      thread->stackSetTop(SmallInt::fromWord(result));
+      return Continue::NEXT;
+    }
+  }
+  EVENT_CACHE(BINARY_MUL_SMALLINT);
+  return binaryOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
   RawObject left = thread->stackPeek(1);
   RawObject right = thread->stackPeek(0);
@@ -5788,6 +5806,9 @@ Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
       case BinaryOp::AND:
         rewriteCurrentBytecode(frame, BINARY_AND_SMALLINT);
         return doBinaryAndSmallInt(thread, arg);
+      case BinaryOp::MUL:
+        rewriteCurrentBytecode(frame, BINARY_MUL_SMALLINT);
+        return doBinaryMulSmallInt(thread, arg);
       case BinaryOp::FLOORDIV:
         rewriteCurrentBytecode(frame, BINARY_FLOORDIV_SMALLINT);
         return doBinaryFloordivSmallInt(thread, arg);

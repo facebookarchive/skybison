@@ -337,6 +337,7 @@ class Interpreter {
   static Continue doBinaryOpPolymorphic(Thread* thread, word arg);
   static Continue doBinaryAddSmallInt(Thread* thread, word arg);
   static Continue doBinaryAndSmallInt(Thread* thread, word arg);
+  static Continue doBinaryMulSmallInt(Thread* thread, word arg);
   static Continue doBinaryFloordivSmallInt(Thread* thread, word arg);
   static Continue doBinarySubSmallInt(Thread* thread, word arg);
   static Continue doBinaryOrSmallInt(Thread* thread, word arg);

@@ -7,6 +7,27 @@ from unittest.mock import Mock
 
 
 class IntepreterTest(unittest.TestCase):
+    def test_binary_mul_smallint_returns_large_int(self):
+        def mul(a, b):
+            return a * b
+
+        # Rewrite mul() to use BINARY_MUL_SMALLINT.
+        self.assertEqual(mul(5, 6), 30)
+
+        small_int = 1 << 62
+        self.assertEqual(mul(small_int, small_int), small_int * small_int)
+
+    def test_binary_mul_smallint_with_operand_zero_returns_zero(self):
+        def mul(a, b):
+            return a * b
+
+        # Rewrite mul() to use BINARY_MUL_SMALLINT.
+        self.assertEqual(mul(5, 6), 30)
+
+        small_int = 1 << 62
+        self.assertEqual(mul(small_int, 0), 0)
+        self.assertEqual(mul(0, small_int), 0)
+
     @skipIf(
         sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
         "requires at least CPython 3.7",

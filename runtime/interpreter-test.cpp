@@ -737,6 +737,24 @@ reference = int.__add__
                       arg_l);
 }
 
+TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinaryMulSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def function(a, b):
+    return a * b
+reference = int.__mul__
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "function"));
+  Function reference(&scope, mainModuleAt(runtime_, "reference"));
+  Object arg0(&scope, SmallInt::fromWord(34));
+  Object arg1(&scope, SmallInt::fromWord(12));
+  const uword digits2[] = {0x12345678, 0xabcdef};
+  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  testBinaryOpRewrite(function, reference, BINARY_MUL_SMALLINT, arg0, arg1,
+                      arg_l);
+}
+
 TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinarySubSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
