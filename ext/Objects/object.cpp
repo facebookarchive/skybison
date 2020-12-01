@@ -53,15 +53,15 @@ PY_EXPORT PyObject* PyNotImplemented_Ptr() {
 }
 
 PY_EXPORT void _Py_Dealloc(PyObject* pyobj) {
-  // Do nothing, since this function is only relevant for functions that define
-  // their own memory allocation. Right now we don't support this and all
-  // object memory is tracked by the GC.
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Type obj_type(&scope, thread->runtime()->typeOf(*obj));
+  // Do nothing for builtin types since we have our own GC to deallocate objects
   if (typeHasSlots(obj_type)) {
-    UNIMPLEMENTED("_Py_Dealloc with type with slots");
+    destructor dealloc =
+        reinterpret_cast<destructor>(typeSlotAt(obj_type, Py_tp_dealloc));
+    (dealloc)(pyobj);
   }
 }
 

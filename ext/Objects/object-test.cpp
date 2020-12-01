@@ -818,6 +818,35 @@ TEST_F(
   EXPECT_GE(Py_REFCNT(obj), 1);
 }
 
+TEST_F(ObjectExtensionApiTest, PyDeallocCallsDeallocTypeSlot) {
+  static bool dealloc_called;
+  dealloc_called = false;
+  destructor dealloc_func = [](PyObject* self) {
+    dealloc_called = true;
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(type);
+  };
+  PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  allocfunc func = reinterpret_cast<allocfunc>(
+      PyType_GetSlot(type.asTypeObject(), Py_tp_alloc));
+  ASSERT_NE(func, nullptr);
+  PyObject* obj = (*func)(type.asTypeObject(), 0);
+  ASSERT_NE(obj, nullptr);
+  EXPECT_GE(Py_REFCNT(obj), 1);
+  _Py_Dealloc(obj);
+  EXPECT_TRUE(dealloc_called);
+}
+
 TEST_F(ObjectExtensionApiTest, GenericGetAttrFindsCorrectlySetValue) {
   ASSERT_EQ(PyRun_SimpleString(R"(
 class C: pass
