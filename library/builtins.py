@@ -696,6 +696,7 @@ class object(bootstrap=True):  # noqa: E999
         return attrs
 
     def __eq__(self, other):
+        "$intrinsic$"
         if self is other:
             return True
         return NotImplemented

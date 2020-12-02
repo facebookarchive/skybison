@@ -423,6 +423,16 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
   return *result;
 }
 
+bool METH(object, __eq___intrinsic)(Thread* thread) {
+  RawObject result = Bool::trueObj();
+  if (thread->stackTop() != thread->stackPeek(1)) {
+    result = NotImplementedType::object();
+  }
+  thread->stackDrop(2);
+  thread->stackSetTop(result);
+  return true;
+}
+
 RawObject METH(object, __getattribute__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
