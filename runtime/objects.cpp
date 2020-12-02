@@ -11,19 +11,49 @@
 
 namespace py {
 
-// RawSmallBytes
+// RawSmallData
 
-RawObject RawSmallBytes::becomeStr() const {
-  return RawObject{raw() ^ kSmallBytesTag ^ kSmallStrTag};
-}
-
-word RawSmallBytes::findByte(byte value, word start, word length) const {
+word RawSmallData::findByte(byte value, word start, word length) const {
   DCHECK_BOUND(start, this->length());
   DCHECK_BOUND(start + length, this->length());
   for (word i = 0; i < length; i++) {
     if (byteAt(start + i) == value) return start + i;
   }
   return -1;
+}
+
+static uword hasZeroByte(uword value) {
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  return (value - mask_0) & ~value & mask_7;
+}
+
+bool RawSmallData::includesByte(byte b) const {
+  DCHECK(b != 0, "Due to padding bytes, cannot check for 0.");
+  uword block = raw() >> kBitsPerByte;
+  uword surrogate_mask = (~uword{0} / 0xFF) * b;
+  return hasZeroByte(block ^ surrogate_mask);
+}
+
+bool RawSmallData::isASCII() const {
+  uword block = raw() >> kBitsPerByte;
+  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
+  return (block & non_ascii_mask) == 0;
+}
+
+char* RawSmallData::toCStr() const {
+  word length = this->length();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  CHECK(result != nullptr, "out of memory");
+  copyTo(result, length);
+  result[length] = '\0';
+  return reinterpret_cast<char*>(result);
+}
+
+// RawSmallBytes
+
+RawObject RawSmallBytes::becomeStr() const {
+  return RawObject{raw() ^ kSmallBytesTag ^ kSmallStrTag};
 }
 
 RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
@@ -35,34 +65,6 @@ RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
   }
   return RawSmallBytes(result << kBitsPerByte | length << kImmediateTagBits |
                        kSmallBytesTag);
-}
-
-static uword hasZeroByte(uword value) {
-  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
-  uword mask_7 = mask_0 << 7;       // 0x808080...
-  return (value - mask_0) & ~value & mask_7;
-}
-
-bool RawSmallBytes::includesByte(byte b) const {
-  DCHECK(b != 0, "Due to padding bytes, cannot check for 0.");
-  uword block = raw() >> kBitsPerByte;
-  uword surrogate_mask = (~uword{0} / 0xFF) * b;
-  return hasZeroByte(block ^ surrogate_mask);
-}
-
-bool RawSmallBytes::isASCII() const {
-  uword block = raw() >> kBitsPerByte;
-  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
-  return (block & non_ascii_mask) == 0;
-}
-
-char* RawSmallBytes::toCStr() const {
-  word length = this->length();
-  byte* result = static_cast<byte*>(std::malloc(length + 1));
-  CHECK(result != nullptr, "out of memory");
-  copyTo(result, length);
-  result[length] = '\0';
-  return reinterpret_cast<char*>(result);
 }
 
 // RawSmallStr
@@ -185,12 +187,6 @@ bool RawSmallStr::includes(RawObject that) const {
   return false;
 }
 
-bool RawSmallStr::isASCII() const {
-  uword block = raw() >> kBitsPerByte;
-  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
-  return (block & non_ascii_mask) == 0;
-}
-
 template <typename T, typename F>
 static inline word offset(T src, F at, word len, word index, word count) {
   if (count >= 0) {
@@ -237,15 +233,6 @@ word RawSmallStr::occurrencesOf(RawObject that) const {
     haystack >>= kBitsPerByte;
   }
   return result;
-}
-
-char* RawSmallStr::toCStr() const {
-  word length = this->length();
-  byte* result = static_cast<byte*>(std::malloc(length + 1));
-  CHECK(result != nullptr, "out of memory");
-  copyTo(result, length);
-  result[length] = '\0';
-  return reinterpret_cast<char*>(result);
 }
 
 // RawSmallInt

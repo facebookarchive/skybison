@@ -746,12 +746,8 @@ class RawHeader : public RawObject {
   RAW_OBJECT_COMMON(Header);
 };
 
-class RawSmallBytes : public RawObject {
+class RawSmallData : public RawObject {
  public:
-  // Construction.
-  static RawSmallBytes fromBytes(View<byte> data);
-  static RawSmallBytes empty();
-
   // Getters and setters.
   word length() const;
   byte byteAt(word index) const;
@@ -763,8 +759,6 @@ class RawSmallBytes : public RawObject {
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
-  // Rewrite the tag byte to make UTF-8 conformant bytes look like a Str
-  RawObject becomeStr() const;
 
   // Returns the index at which value is found in this[start:start+length] (not
   // including end), or -1 if not found.
@@ -782,25 +776,32 @@ class RawSmallBytes : public RawObject {
   // Constants.
   static const word kMaxLength = kWordSize - 1;
 
+ protected:
+  explicit RawSmallData(uword raw);
+};
+
+class RawSmallBytes : public RawSmallData {
+ public:
+  // Construction.
+  static RawSmallBytes fromBytes(View<byte> data);
+  static RawSmallBytes empty();
+
+  // Rewrite the tag byte to make UTF-8 conformant bytes look like a Str
+  RawObject becomeStr() const;
+
   RAW_OBJECT_COMMON(SmallBytes);
 
  private:
   explicit RawSmallBytes(uword raw);
 };
 
-class RawSmallStr : public RawObject {
+class RawSmallStr : public RawSmallData {
  public:
   // Construction.
   static RawSmallStr fromCodePoint(int32_t code_point);
   static RawSmallStr fromCStr(const char* value);
   static RawSmallStr fromBytes(View<byte> data);
   static RawSmallStr empty();
-
-  // Getters and setters.
-  byte byteAt(word index) const;
-  word length() const;
-  void copyTo(byte* dst, word char_length) const;
-  void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Comparison
   word compare(RawObject that) const;
@@ -813,18 +814,11 @@ class RawSmallStr : public RawObject {
 
   // Codepoints
   word codePointLength() const;
-  bool isASCII() const;
   word offsetByCodePoints(word index, word count) const;
 
   word occurrencesOf(RawObject that) const;
 
-  // Conversion to an unescaped C string.  The underlying memory is allocated
-  // with malloc and must be freed by the caller.
-  char* toCStr() const;
-
   RawObject becomeBytes() const;
-
-  word hash() const;
 
   // Constants.
   static const word kMaxLength = kWordSize - 1;
@@ -4818,39 +4812,35 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
   return cast(RawObject{result});
 }
 
-// RawSmallBytes
+// RawSmallData
 
-inline RawSmallBytes::RawSmallBytes(uword raw) : RawObject(raw) {}
+inline RawSmallData::RawSmallData(uword raw) : RawObject(raw) {}
 
-inline RawSmallBytes RawSmallBytes::empty() {
-  return RawSmallBytes(kSmallBytesTag);
-}
-
-inline word RawSmallBytes::length() const {
+inline word RawSmallData::length() const {
   return (raw() >> kImmediateTagBits) & kMaxLength;
 }
 
-inline byte RawSmallBytes::byteAt(word index) const {
+inline byte RawSmallData::byteAt(word index) const {
   DCHECK_INDEX(index, length());
   return raw() >> (kBitsPerByte * (index + 1));
 }
 
-inline void RawSmallBytes::copyTo(byte* dst, word length) const {
+inline void RawSmallData::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   for (word i = 0; i < length; i++) {
     *dst++ = byteAt(i);
   }
 }
 
-inline void RawSmallBytes::copyToStartAt(byte* dst, word length,
-                                         word index) const {
+inline void RawSmallData::copyToStartAt(byte* dst, word length,
+                                        word index) const {
   DCHECK_BOUND(index + length, this->length());
   for (word i = index; i < length + index; i++) {
     *dst++ = byteAt(i);
   }
 }
 
-inline uint16_t RawSmallBytes::uint16At(word index) const {
+inline uint16_t RawSmallData::uint16At(word index) const {
   uint16_t result;
   DCHECK_INDEX(index, length() - word{sizeof(result) - 1});
   const byte buffer[] = {byteAt(index), byteAt(index + 1)};
@@ -4858,7 +4848,7 @@ inline uint16_t RawSmallBytes::uint16At(word index) const {
   return result;
 }
 
-inline uint32_t RawSmallBytes::uint32At(word index) const {
+inline uint32_t RawSmallData::uint32At(word index) const {
   uint32_t result;
   DCHECK(kMaxLength >= sizeof(result), "SmallBytes cannot fit uint32_t");
   DCHECK_INDEX(index, length() - word{sizeof(result) - 1});
@@ -4868,45 +4858,23 @@ inline uint32_t RawSmallBytes::uint32At(word index) const {
   return result;
 }
 
-inline word RawSmallBytes::hash() const {
+inline word RawSmallData::hash() const {
   return static_cast<word>(raw() >> RawObject::kImmediateTagBits);
+}
+
+// RawSmallBytes
+
+inline RawSmallBytes::RawSmallBytes(uword raw) : RawSmallData(raw) {}
+
+inline RawSmallBytes RawSmallBytes::empty() {
+  return RawSmallBytes(kSmallBytesTag);
 }
 
 // RawSmallStr
 
-inline RawSmallStr::RawSmallStr(uword raw) : RawObject(raw) {}
-
-inline word RawSmallStr::length() const {
-  return (raw() >> kImmediateTagBits) & kMaxLength;
-}
-
-inline byte RawSmallStr::byteAt(word index) const {
-  DCHECK_INDEX(index, length());
-  return raw() >> (kBitsPerByte * (index + 1));
-}
-
-inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
-  DCHECK_BOUND(char_length, length());
-  for (word i = 0; i < char_length; ++i) {
-    *dst++ = byteAt(i);
-  }
-}
-
-inline void RawSmallStr::copyToStartAt(byte* dst, word char_length,
-                                       word char_start) const {
-  DCHECK_BOUND(char_start, length());
-  word char_end = char_start + char_length;
-  DCHECK_BOUND(char_end, length());
-  for (word i = char_start; i < char_end; ++i) {
-    *dst++ = byteAt(i);
-  }
-}
+inline RawSmallStr::RawSmallStr(uword raw) : RawSmallData(raw) {}
 
 inline RawSmallStr RawSmallStr::empty() { return RawSmallStr(kSmallStrTag); }
-
-inline word RawSmallStr::hash() const {
-  return static_cast<word>(raw() >> RawObject::kImmediateTagBits);
-}
 
 // RawError
 
