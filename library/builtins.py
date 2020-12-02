@@ -526,10 +526,14 @@ class type(bootstrap=True):
 
     @_staticmethod
     def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound, **kwargs):
-        if cls is type and bases is _Unbound and dict is _Unbound:
-            # If the first argument is exactly type, and there are no other
-            # arguments, then this call returns the type of the argument.
-            return _type(name_or_object)
+        # If the first argument is exactly type, and there are no other
+        # arguments, then this call returns the type of the argument.
+        if bases is _Unbound:
+            if cls is type:
+                if kwargs:
+                    raise TypeError("type() takes 1 or 3 arguments")
+                return _type(name_or_object)
+            raise TypeError("type.__new__() takes exactly 3 arguments (1 given)")
         _type_guard(cls)
         _str_guard(name_or_object)
         _tuple_guard(bases)
