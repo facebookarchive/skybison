@@ -10347,10 +10347,17 @@ class SimpleNamespaceTests(unittest.TestCase):
         from types import SimpleNamespace
 
         s = SimpleNamespace(foo=42, bar="baz")
-        r = SimpleNamespace.__repr__(s)
-        self.assertTrue(
-            r == "namespace(foo=42, bar='baz')" or r == "namespace(bar='baz', foo=42)"
-        )
+        self.assertEqual(SimpleNamespace.__repr__(s), "namespace(bar='baz', foo=42)")
+
+    def test_dunder_repr_sorts_elements_and_returns_str(self):
+        from types import SimpleNamespace
+
+        s = SimpleNamespace(x=1, y=2, w=3)
+        self.assertEqual(list(s.__dict__.items()), [("x", 1), ("y", 2), ("w", 3)])
+        self.assertEqual(SimpleNamespace.__repr__(s), "namespace(w=3, x=1, y=2)")
+        s = SimpleNamespace(w=3, y=2, x=1)
+        self.assertEqual(list(s.__dict__.items()), [("w", 3), ("y", 2), ("x", 1)])
+        self.assertEqual(SimpleNamespace.__repr__(s), "namespace(w=3, x=1, y=2)")
 
     def test_simple_namespace_is_non_heaptype(self):
         from types import SimpleNamespace
