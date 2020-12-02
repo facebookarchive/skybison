@@ -1159,7 +1159,7 @@ class SimpleNamespace(metaclass=_non_heaptype):
 
     def __repr__(self):
         if _repr_enter(self):
-            return "{...}"
+            return "namespace(...)"
         proxy = instance_proxy(self)
         kwpairs = [f"{key}={value!r}" for key, value in sorted(proxy.items())]
         _repr_leave(self)

@@ -10359,6 +10359,26 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(list(s.__dict__.items()), [("w", 3), ("y", 2), ("x", 1)])
         self.assertEqual(SimpleNamespace.__repr__(s), "namespace(w=3, x=1, y=2)")
 
+    def test_dunder_repr_recursive_returns_str(self):
+        from types import SimpleNamespace
+
+        ns0 = SimpleNamespace()
+        ns0.n = ns0
+        self.assertEqual(SimpleNamespace.__repr__(ns0), "namespace(n=namespace(...))")
+
+        ns1 = SimpleNamespace()
+        ns2 = SimpleNamespace()
+        ns1.foo = ns2
+        ns2.bar = ns1
+        self.assertEqual(
+            SimpleNamespace.__repr__(ns1),
+            "namespace(foo=namespace(bar=namespace(...)))",
+        )
+        self.assertEqual(
+            SimpleNamespace.__repr__(ns2),
+            "namespace(bar=namespace(foo=namespace(...)))",
+        )
+
     def test_simple_namespace_is_non_heaptype(self):
         from types import SimpleNamespace
 
