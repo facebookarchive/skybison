@@ -66,6 +66,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderCsvReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderDatetimeReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_datetime"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderHashlibReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_hashlib"));
   ASSERT_NE(module, nullptr);

@@ -727,6 +727,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/_bz2module.c
   ${CPYTHON_DIR}/Modules/_cursesmodule.c
   ${CPYTHON_DIR}/Modules/_csv.c
+  ${CPYTHON_DIR}/Modules/_datetimemodule.c
   ${CPYTHON_DIR}/Modules/_hashopenssl.c
   ${CPYTHON_DIR}/Modules/_localemodule.c
   ${CPYTHON_DIR}/Modules/_lzmamodule.c
@@ -991,6 +992,7 @@ target_compile_options(
 target_include_directories(
   extension
   PRIVATE
+  capi/cpython-internal
   $<TARGET_PROPERTY:capi-headers,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gmock,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>

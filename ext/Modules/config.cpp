@@ -8,6 +8,7 @@ extern "C" PyObject* PyInit__blake2();
 extern "C" PyObject* PyInit__bz2();
 extern "C" PyObject* PyInit__curses();
 extern "C" PyObject* PyInit__csv();
+extern "C" PyObject* PyInit__datetime();
 extern "C" PyObject* PyInit__hashlib();
 extern "C" PyObject* PyInit__locale();
 extern "C" PyObject* PyInit__lzma();
@@ -59,6 +60,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_bz2", PyInit__bz2},
     {"_curses", PyInit__curses},
     {"_csv", PyInit__csv},
+    {"_datetime", PyInit__datetime},
     {"_empty", PyInit__empty},
     {"_hashlib", PyInit__hashlib},
     {"_locale", PyInit__locale},
