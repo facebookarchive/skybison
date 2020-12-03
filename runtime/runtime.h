@@ -613,6 +613,12 @@ class Runtime {
   static bool layoutFindAttribute(RawLayout layout, const Object& name,
                                   AttributeInfo* info);
 
+  // Creates a copy of a layout with a new layout id.
+  //
+  // The new layout shares the in-object and overflow attributes and contains
+  // no outgoing edges.
+  RawObject layoutCreateCopy(Thread* thread, const Layout& layout);
+
   // Add the attribute to the overflow array.
   //
   // This returns a new layout by either following a pre-existing edge or
@@ -948,12 +954,6 @@ class Runtime {
   void appendBuiltinAttributes(Thread* thread,
                                View<BuiltinAttribute> attributes,
                                const MutableTuple& dst, word start_index);
-
-  // Creates a new layout that will be a child layout of the supplied parent.
-  //
-  // The new layout shares the in-object and overflow attributes with the
-  // parent and contains no outgoing edges.
-  RawObject layoutCreateChild(Thread* thread, const Layout& layout);
 
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(Thread* thread, const Type& type, SymbolId name);

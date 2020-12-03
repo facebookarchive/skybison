@@ -780,13 +780,24 @@ class M(type):
   pass
 class C(metaclass=M):
   pass
-C.__class__ = type
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, runtime_->typeAt(LayoutId::kType));
   Type c(&scope, mainModuleAt(runtime_, "C"));
-  EXPECT_EQ(type.instanceLayoutId(), c.instanceLayoutId());
+  Layout previous_layout(&scope, c.instanceLayout());
+  EXPECT_EQ(previous_layout.id(), c.instanceLayoutId());
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+C.__class__ = type
+C_instance = C()
+)")
+                   .isError());
+  EXPECT_NE(c.instanceLayout(), previous_layout);
+  EXPECT_NE(c.instanceLayoutId(), previous_layout.id());
+  EXPECT_EQ(Layout::cast(c.instanceLayout()).id(), c.instanceLayoutId());
+
+  EXPECT_EQ(runtime_->typeOf(*c), runtime_->typeAt(LayoutId::kType));
+  Object c_inst(&scope, mainModuleAt(runtime_, "C_instance"));
+  EXPECT_EQ(runtime_->typeOf(*c_inst), c);
 }
 
 // TODO(T64924852): Once module.__setattr__ is fixed, write death test for

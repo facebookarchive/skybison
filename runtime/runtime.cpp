@@ -3624,7 +3624,7 @@ bool Runtime::layoutFindAttribute(RawLayout layout, const Object& name,
   return false;
 }
 
-RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
+RawObject Runtime::layoutCreateCopy(Thread* thread, const Layout& layout) {
   HandleScope scope(thread);
   LayoutId id = reserveLayoutId(thread);
   Layout new_layout(&scope, newLayout(id));
@@ -3671,7 +3671,7 @@ RawObject Runtime::typeDictOnlyLayout(Thread* thread, const Type& type,
       }
     }
   }
-  Layout new_layout(&scope, layoutCreateChild(thread, type_instance_layout));
+  Layout new_layout(&scope, layoutCreateCopy(thread, type_instance_layout));
   // This annotates `new_layout` to return it when requested next time.
   new_layout.setNumInObjectAttributes(num_in_object_attr);
   new_layout.setInObjectAttributes(emptyTuple());
@@ -3695,7 +3695,7 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
 
   // Create a new layout and figure out where to place the attribute
   HandleScope scope(thread);
-  Layout new_layout(&scope, layoutCreateChild(thread, layout));
+  Layout new_layout(&scope, layoutCreateCopy(thread, layout));
   Tuple inobject(&scope, layout.inObjectAttributes());
   if (inobject.length() < layout.numInObjectAttributes()) {
     *info = AttributeInfo(inobject.length() * kPointerSize,
@@ -3737,7 +3737,7 @@ RawObject Runtime::layoutSetDescribedType(Thread* thread, const Layout& from,
   }
 
   // Make a new layout and transition the type
-  Layout result(&scope, layoutCreateChild(thread, from));
+  Layout result(&scope, layoutCreateCopy(thread, from));
   result.setDescribedType(*to);
 
   // If needed, grow the table
@@ -3792,7 +3792,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 
   // No edge was found, create a new layout and add an edge
   HandleScope scope(thread);
-  Layout new_layout(&scope, layoutCreateChild(thread, layout));
+  Layout new_layout(&scope, layoutCreateCopy(thread, layout));
   if (info.isInObject()) {
     new_layout.setInObjectAttributes(
         markEntryDeleted(thread, layout.inObjectAttributes(), name));

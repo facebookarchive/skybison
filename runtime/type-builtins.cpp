@@ -1174,11 +1174,16 @@ RawObject typeSetDunderClass(Thread* thread, const Object& self,
         &type_name);
   }
 
-  // Change the cache key for LOAD_ATTR_TYPE
+  // LOAD_ATTR_TYPE caches attributes based on the instance layout id of the
+  // type. Create a copy of the layout with a new id, to avoid incorrectly
+  // hitting the cache.
   if (runtime->isInstanceOfType(*self)) {
     Type type(&scope, *self);
-    type.setInstanceLayout(new_type.instanceLayout());
-    type.setInstanceLayoutId(new_type.instanceLayoutId());
+    Layout instance_layout(&scope, type.instanceLayout());
+    Layout new_layout(&scope,
+                      runtime->layoutCreateCopy(thread, instance_layout));
+    type.setInstanceLayout(*new_layout);
+    type.setInstanceLayoutId(new_layout.id());
   }
 
   // Transition the layout
