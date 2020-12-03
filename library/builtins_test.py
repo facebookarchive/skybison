@@ -3335,6 +3335,25 @@ class ComplexTests(unittest.TestCase):
         self.assertTrue(math.isnan(res.real))
         self.assertTrue(math.isnan(res.imag))
 
+    def test_dunder_rmul_complex_with_nan_returns_nan_complex(self):
+        import math
+
+        res = complex(1, 2).__rmul__(complex(2, float("nan")))
+        self.assertTrue(math.isnan(res.real))
+        self.assertTrue(math.isnan(res.imag))
+
+    def test_dunder_rmul_complex_with_int_returns_complex(self):
+        self.assertEqual(complex(1, 2).__rmul__(4), complex(4, 8))
+
+    def test_dunder_rmul_complex_with_float_returns_complex(self):
+        self.assertEqual(complex(1, 2).__rmul__(4.9), complex(4.9, 9.8))
+
+    def test_dunder_rmul_complex_with_str_returns_notimplemented(self):
+        self.assertIs(complex(1, 2).__rmul__("ciao"), NotImplemented)
+
+    def test_dunder_rmul_complex_with_list_returns_notimplemented(self):
+        self.assertIs(complex(1, 2).__rmul__([4]), NotImplemented)
+
     def test_dunder_div_complex_returns_complex(self):
         self.assertEqual(complex(1, 2).__truediv__(complex(1, 1)), complex(1.5, 0.5))
         self.assertEqual(

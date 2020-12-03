@@ -3004,8 +3004,7 @@ class complex(bootstrap=True):
     def __rmod__(self, other):
         _unimplemented()
 
-    def __rmul__(self, other):
-        _unimplemented()
+    __rmul__ = __mul__
 
     def __rpow__(self, other):
         _unimplemented()
