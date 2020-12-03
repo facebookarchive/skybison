@@ -940,6 +940,57 @@ l = [1,2,3]
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
 }
 
+TEST_F(InterpreterTest, StoreSubscrWithDictRewritesToStoreSubscrDict) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(d, i):
+    d[i] = 5
+    return d[i]
+
+d = {}
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+
+  Dict d(&scope, mainModuleAt(runtime_, "d"));
+  SmallInt zero(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, zero), 5));
+  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_DICT);
+
+  SmallInt one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, one), 5));
+  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_DICT);
+}
+
+TEST_F(InterpreterTest,
+       StoreSubscrDictRevertsBackToStoreSubscrMonomorphicWhenNonDictObserved) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(d, i):
+    d[i] = 5
+    return d[i]
+
+d = {1: -1}
+b = bytearray(b"0000")
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+
+  Dict d(&scope, mainModuleAt(runtime_, "d"));
+  SmallInt key(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 5));
+  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_DICT);
+
+  // Revert back to caching __getitem__ when a non-dict is observed.
+  Object b(&scope, mainModuleAt(runtime_, "b"));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, b, key), 5));
+  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+}
+
 TEST_F(InterpreterTest, StoreSubscrWithListAndSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

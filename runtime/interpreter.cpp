@@ -1809,6 +1809,28 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread,
   return storeSubscrUpdateCache(thread, arg);
 }
 
+HANDLER_INLINE Continue Interpreter::doStoreSubscrDict(Thread* thread,
+                                                       word arg) {
+  RawObject container = thread->stackPeek(1);
+  if (!container.isDict()) {
+    return storeSubscrUpdateCache(thread, arg);
+  }
+  HandleScope scope(thread);
+  Dict dict(&scope, container);
+  Object key(&scope, thread->stackPeek(0));
+  Object value(&scope, thread->stackPeek(2));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) {
+    return Continue::UNWIND;
+  }
+  word hash = SmallInt::cast(*hash_obj).value();
+  if (dictAtPut(thread, dict, key, hash, value).isErrorException()) {
+    return Continue::UNWIND;
+  }
+  thread->stackDrop(3);
+  return Continue::NEXT;
+}
+
 NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                                           word arg) {
   HandleScope scope(thread);
@@ -1905,6 +1927,9 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
   RawObject container = thread->stackPeek(1);
   RawObject key = thread->stackPeek(0);
   switch (container.layoutId()) {
+    case LayoutId::kDict:
+      rewriteCurrentBytecode(thread->currentFrame(), STORE_SUBSCR_DICT);
+      return doStoreSubscrDict(thread, arg);
     case LayoutId::kList:
       if (key.isSmallInt()) {
         rewriteCurrentBytecode(thread->currentFrame(), STORE_SUBSCR_LIST);

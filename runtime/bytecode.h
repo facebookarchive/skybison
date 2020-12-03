@@ -196,7 +196,7 @@ namespace py {
   V(UNUSED_BYTECODE_177, 177, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_178, 178, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_179, 179, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_180, 180, doInvalidBytecode)                               \
+  V(STORE_SUBSCR_DICT, 180, doStoreSubscrDict)                                 \
   V(BINARY_MUL_SMALLINT, 181, doBinaryMulSmallInt)                             \
   V(BINARY_SUBSCR_DICT, 182, doBinarySubscrDict)                               \
   V(BINARY_SUBSCR_TUPLE, 183, doBinarySubscrTuple)                             \
