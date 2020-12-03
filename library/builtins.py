@@ -1310,7 +1310,8 @@ class _descrclassmethod(metaclass=_non_heaptype):
 
 def _dunder_bases_tuple_check(obj, msg) -> None:
     try:
-        if not _tuple_check(obj.__bases__):
+        is_tuple = hasattr(obj, "__bases__") and _tuple_check(obj.__bases__)
+        if not is_tuple and not isinstance(obj, Union):
             raise TypeError(msg)
     except AttributeError:
         raise TypeError(msg)
@@ -4544,7 +4545,7 @@ def isinstance(obj, type_or_tuple) -> bool:
     if _type_check(type_or_tuple):
         return _isinstance_type(obj, ty, type_or_tuple)
     _dunder_bases_tuple_check(
-        type_or_tuple, "isinstance() arg 2 must be a type or tuple of types"
+        type_or_tuple, "isinstance() arg 2 must be a type, a tuple of types or a union"
     )
     subclass = getattr(obj, "__class__", None)
     return subclass and _issubclass_recursive(subclass, type_or_tuple)
@@ -6881,6 +6882,14 @@ class Union(metaclass=_non_heaptype):
 
     def __ror__(self, right):
         return Union(self, right)
+
+    def __instancecheck__(self, right):
+        for a in self._arguments:
+            if a is None and right is None:
+                return True
+            elif a is not None and isinstance(right, a):
+                return True
+        return False
 
 
 from _io import open  # usort:skip

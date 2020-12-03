@@ -46,6 +46,10 @@ class Forward:
     pass
 
 
+class Super:
+    pass
+
+
 class AbsTests(unittest.TestCase):
     def test_abs_calls_dunder_abs(self):
         class C:
@@ -6393,6 +6397,13 @@ class InstanceTests(unittest.TestCase):
 
 
 class IsInstanceTests(unittest.TestCase):
+    @staticmethod
+    def get_isinstance_error_message():
+        if sys.implementation.name == "cpython" and sys.version_info < (3, 8):
+            return "isinstance() arg 2 must be a type or tuple of types"
+        else:
+            return "isinstance() arg 2 must be a type, a tuple of types or a union"
+
     def test_isinstance_with_same_types_returns_true(self):
         self.assertIs(isinstance(1, int), True)
 
@@ -6425,7 +6436,7 @@ class IsInstanceTests(unittest.TestCase):
             isinstance(4, "bad - not a type")
         self.assertEqual(
             str(context.exception),
-            "isinstance() arg 2 must be a type or tuple of types",
+            self.get_isinstance_error_message(),
         )
 
     def test_isinstance_with_non_type_in_tuple_raises_type_error(self):
@@ -6433,7 +6444,7 @@ class IsInstanceTests(unittest.TestCase):
             isinstance(5, ("bad - not a type", int))
         self.assertEqual(
             str(context.exception),
-            "isinstance() arg 2 must be a type or tuple of types",
+            self.get_isinstance_error_message(),
         )
 
     def test_isinstance_with_multiple_inheritance_returns_true(self):
@@ -6501,7 +6512,7 @@ class IsInstanceTests(unittest.TestCase):
             isinstance(5, A())
         self.assertEqual(
             str(context.exception),
-            "isinstance() arg 2 must be a type or tuple of types",
+            self.get_isinstance_error_message(),
         )
 
     def test_isinstance_calls_custom_instancecheck_true(self):
@@ -12386,6 +12397,22 @@ class UnionTests(unittest.TestCase):
 
     def test_or_type_repr(self):
         self.assertEqual(repr(int | None), "int | None")
+
+    def test_isinstance_with_or_union(self):
+        self.assertTrue(isinstance(Super(), Super | int))
+        self.assertFalse(isinstance(None, str | int))
+        self.assertTrue(isinstance(3, str | int))
+        self.assertTrue(isinstance("", str | int))
+        self.assertTrue(isinstance(None, int | None))
+        self.assertFalse(isinstance(3.14, int | str))
+
+    def test_isinstance_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(2, list[int])
+        with self.assertRaises(TypeError):
+            isinstance(2, list[int] | int)
+        with self.assertRaises(TypeError):
+            isinstance(2, int | str | list[int] | float)
 
 
 class ZipTests(unittest.TestCase):
