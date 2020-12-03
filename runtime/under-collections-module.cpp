@@ -52,6 +52,51 @@ void initializeUnderCollectionsTypes(Thread* thread) {
       DequeReverseIterator::kSize, /*basetype=*/false);
 }
 
+RawObject FUNC(_collections, _deque_delitem)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDeque(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(deque));
+  }
+  Object key(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*key)) {
+    return Unbound::object();
+  }
+
+  word index = intUnderlying(*key).asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key);
+  }
+  Deque deque(&scope, *self_obj);
+  word deque_index = dequeIndex(deque, index);
+  if (deque_index == -1) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "deque index out of range");
+  }
+
+  MutableTuple items(&scope, deque.items());
+  word left = deque.left();
+  word num_items = deque.numItems();
+  if (deque_index < left) {
+    // shift (deque_index, right] one to the left
+    word right = left + num_items - items.length() - 1;
+    items.replaceFromWithStartAt(deque_index, *items, right - deque_index,
+                                 deque_index + 1);
+    items.atPut(right, NoneType::object());
+  } else {
+    // shift [left, deque_index) one to the right
+    items.replaceFromWithStartAt(left + 1, *items, deque_index - left, left);
+    items.atPut(left, NoneType::object());
+    word new_left = left + 1;
+    deque.setLeft(new_left < items.length() ? new_left : 0);
+  }
+  deque.setNumItems(num_items - 1);
+  return NoneType::object();
+}
+
 RawObject FUNC(_collections, _deque_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -101,6 +146,34 @@ RawObject FUNC(_collections, _deque_set_maxlen)(Thread* thread,
                                 "maxlen must be non-negative");
   }
   deque.setMaxlen(SmallInt::fromWord(maxlen));
+  return NoneType::object();
+}
+
+RawObject FUNC(_collections, _deque_setitem)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDeque(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(deque));
+  }
+  Object key(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*key)) {
+    return Unbound::object();
+  }
+
+  word index = intUnderlying(*key).asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key);
+  }
+  Deque deque(&scope, *self_obj);
+  word deque_index = dequeIndex(deque, index);
+  if (deque_index == -1) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "deque index out of range");
+  }
+  deque.atPut(deque_index, args.get(2));
   return NoneType::object();
 }
 

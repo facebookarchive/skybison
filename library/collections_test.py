@@ -224,11 +224,8 @@ class DequeTests(unittest.TestCase):
 
     def test_dunder_delitem_with_non_int_raises_type_error(self):
         result = deque([1, 2, 3])
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(TypeError):
             result.__delitem__("3")
-        self.assertEqual(
-            str(context.exception), "'str' object cannot be interpreted as an integer"
-        )
 
     def test_dunder_delitem_with_dunder_index_calls_dunder_index(self):
         class C:

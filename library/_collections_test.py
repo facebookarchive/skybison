@@ -151,6 +151,38 @@ class DequeReverseIteratorTests(unittest.TestCase):
 
 
 class DequeTests(unittest.TestCase):
+    def test_dunder_delitem_sets_item_at_index(self):
+        result = deque([1, 2, 3])
+        self.assertIsNone(result.__delitem__(1))
+        self.assertEqual(list(result), [1, 3])
+
+    def test_dunder_delitem_with_index_too_small_raises_index_error(self):
+        result = deque()
+        with self.assertRaises(IndexError) as context:
+            result.__delitem__(-1)
+        self.assertEqual(str(context.exception), "deque index out of range")
+
+    def test_dunder_delitem_with_index_too_large_raises_index_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(IndexError) as context:
+            result.__delitem__(3)
+        self.assertEqual(str(context.exception), "deque index out of range")
+
+    def test_dunder_delitem_with_negative_index_indexes_from_end(self):
+        result = deque([1, 2, 3])
+        self.assertIsNone(result.__delitem__(-1))
+        self.assertEqual(list(result), [1, 2])
+
+    def test_dunder_delitem_with_non_int_raises_type_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(TypeError):
+            result.__delitem__("3")
+
+    def test_dunder_delitem_with_slice_raises_type_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(TypeError):
+            result.__delitem__(slice(0, 2))
+
     def test_dunder_getitem_returns_item_at_index(self):
         result = deque()
         result.append(1)
@@ -247,6 +279,40 @@ class DequeTests(unittest.TestCase):
     def test_dunder_reversed_returns_deque__reverse_iterator(self):
         d = deque(range(10))
         self.assertIsInstance(d.__reversed__(), _deque_reverse_iterator)
+
+    def test_dunder_setitem_sets_item_at_index(self):
+        result = deque([1, 2, 3])
+        self.assertIsNone(result.__setitem__(0, 4))
+        self.assertIsNone(result.__setitem__(1, 5))
+        self.assertIsNone(result.__setitem__(2, 6))
+        self.assertEqual(list(result), [4, 5, 6])
+
+    def test_dunder_setitem_with_index_too_small_raises_index_error(self):
+        result = deque()
+        with self.assertRaises(IndexError) as context:
+            result.__setitem__(-1, None)
+        self.assertEqual(str(context.exception), "deque index out of range")
+
+    def test_dunder_setitem_with_index_too_large_raises_index_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(IndexError) as context:
+            result.__setitem__(3, None)
+        self.assertEqual(str(context.exception), "deque index out of range")
+
+    def test_dunder_setitem_with_negative_index_indexes_from_end(self):
+        result = deque([1, 2, 3])
+        self.assertIsNone(result.__setitem__(-1, 0))
+        self.assertEqual(list(result), [1, 2, 0])
+
+    def test_dunder_setitem_with_non_int_raises_type_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(TypeError):
+            result.__setitem__("3", None)
+
+    def test_dunder_setitem_with_slice_raises_type_error(self):
+        result = deque([1, 2, 3])
+        with self.assertRaises(TypeError):
+            result.__setitem__(slice(0, 2), None)
 
     def test_append_adds_elements(self):
         result = deque()

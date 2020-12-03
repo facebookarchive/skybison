@@ -74,11 +74,19 @@ class _deque_reverse_iterator(bootstrap=True):
         _builtin()
 
 
+def _deque_delitem(self, index):
+    _builtin()
+
+
 def _deque_getitem(self, index):
     _builtin()
 
 
 def _deque_set_maxlen(self, maxlen):
+    _builtin()
+
+
+def _deque_setitem(self, index, value):
     _builtin()
 
 
@@ -137,23 +145,14 @@ class deque(bootstrap=True):
         return self.__class__(self, self.maxlen)
 
     def __delitem__(self, index):
-        _deque_guard(self)
-        if not _int_check(index):
-            index = _index(index)
-        length = len(self)
-        if index >= 0:
-            if index >= length:
-                raise IndexError("deque index out of range")
-            deque.rotate(self, -index)
-            deque.popleft(self)
-            deque.rotate(self, index)
-        else:
-            index = ~index
-            if index >= length:
-                raise IndexError("deque index out of range")
-            deque.rotate(self, index)
-            deque.pop(self)
-            deque.rotate(self, -index)
+        result = _deque_delitem(self, index)
+        if result is not _Unbound:
+            return result
+        if _object_type_hasattr(index, "__index__"):
+            return _deque_delitem(self, _index(index))
+        raise TypeError(
+            f"sequence index must be integer, not '{_type(index).__name__}'"
+        )
 
     # TODO(emacs): Make comparison more efficient, perhaps by checking length
     # first.
@@ -258,9 +257,15 @@ class deque(bootstrap=True):
     def __rmul__(self, n):
         _unimplemented()
 
-    # TODO(T69992771): Implement deque.__setitem__
     def __setitem__(self, index, value):
-        _unimplemented()
+        result = _deque_setitem(self, index, value)
+        if result is not _Unbound:
+            return result
+        if _object_type_hasattr(index, "__index__"):
+            return _deque_setitem(self, _index(index), value)
+        raise TypeError(
+            f"sequence index must be integer, not '{_type(index).__name__}'"
+        )
 
     def append(self, x):
         _builtin()
