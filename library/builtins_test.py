@@ -6,8 +6,10 @@ import errno
 import math
 import sys
 import types
+import typing
 import unittest
 import warnings
+from collections import namedtuple
 from unittest.mock import Mock
 
 from test_support import pyro_only
@@ -33,6 +35,14 @@ try:
 
     from _builtins import _async_generator_op_iter_get_state, _gc
 except ImportError:
+    pass
+
+
+class Example:
+    pass
+
+
+class Forward:
     pass
 
 
@@ -12282,6 +12292,100 @@ class UnderNumberCheckTests(unittest.TestCase):
 
         self.assertTrue(_number_check(FloatLike()))
         self.assertTrue(_number_check(IntLike()))
+
+
+@unittest.skipIf(
+    sys.implementation.name == "cpython" and sys.version_info < (3, 10),
+    "requires at least CPython 3.10",
+)
+class UnionTests(unittest.TestCase):
+    def test_or_type_operator(self):
+        self.assertEqual(int | str, typing.Union[int, str])
+        self.assertNotEqual(int | list, typing.Union[int, str])
+        self.assertEqual(str | int, typing.Union[int, str])
+        self.assertEqual(int | None, typing.Union[int, None])
+        self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(int | str | list, typing.Union[int, str, list])
+        self.assertEqual(int | (str | list), typing.Union[int, str, list])
+        self.assertEqual(str | (int | list), typing.Union[int, str, list])
+        self.assertEqual(
+            typing.List | typing.Tuple, typing.Union[typing.List, typing.Tuple]
+        )
+        self.assertEqual(
+            typing.List[int] | typing.Tuple[int],
+            typing.Union[typing.List[int], typing.Tuple[int]],
+        )
+        self.assertEqual(typing.List[int] | None, typing.Union[typing.List[int], None])
+        self.assertEqual(None | typing.List[int], typing.Union[None, typing.List[int]])
+        self.assertEqual(
+            str | float | int | complex | int, (int | str) | (float | complex)
+        )
+        self.assertEqual(
+            typing.Union[str, int, typing.List[int]], str | int | typing.List[int]
+        )
+        self.assertEqual(
+            typing.Union[str, int, float, complex], (int | str) | (float | complex)
+        )
+        self.assertEqual(int | int, int)
+        self.assertEqual(
+            BaseException | bool | bytes | complex | float | int | list | map | set,
+            typing.Union[
+                BaseException,
+                bool,
+                bytes,
+                complex,
+                float,
+                int,
+                list,
+                map,
+                set,
+            ],
+        )
+        with self.assertRaises(TypeError):
+            int | 3
+        with self.assertRaises(TypeError):
+            3 | int
+        with self.assertRaises(TypeError):
+            Example() | int
+        with self.assertRaises(TypeError):
+            (int | str) < typing.Union[str, int]
+        with self.assertRaises(TypeError):
+            (int | str) < (int | bool)
+        with self.assertRaises(TypeError):
+            (int | str) <= (int | str)
+
+    def test_or_type_operator_with_Alias(self):
+        self.assertEqual(list | str, typing.Union[list, str])
+        self.assertEqual(typing.List | str, typing.Union[typing.List, str])
+
+    def test_or_type_operator_with_IO(self):
+        self.assertEqual(typing.IO | str, typing.Union[typing.IO, str])
+
+    def test_or_type_operator_with_NamedTuple(self):
+        NT = namedtuple("A", ["B", "C", "D"])
+        self.assertEqual(NT | str, typing.Union[NT, str])
+
+    def test_or_type_operator_with_NewType(self):
+        UserId = typing.NewType("UserId", int)
+        self.assertEqual(UserId | str, typing.Union[UserId, str])
+
+    def test_or_type_operator_with_SpecialForm(self):
+        self.assertEqual(typing.Any | str, typing.Union[typing.Any, str])
+        self.assertEqual(typing.NoReturn | str, typing.Union[typing.NoReturn, str])
+        self.assertEqual(
+            typing.Optional[int] | str, typing.Union[typing.Optional[int], str]
+        )
+        self.assertEqual(typing.Optional[int] | str, typing.Union[int, str, None])
+        self.assertEqual(typing.Union[int, bool] | str, typing.Union[int, bool, str])
+        self.assertNotEqual(str | int, typing.Tuple[str, int])
+
+    def test_or_type_operator_with_TypeVar(self):
+        TV = typing.TypeVar("T")
+        self.assertEqual(TV | str, typing.Union[TV, str])
+        self.assertEqual(str | TV, typing.Union[str, TV])
+
+    def test_or_type_repr(self):
+        self.assertEqual(repr(int | None), "int | None")
 
 
 class ZipTests(unittest.TestCase):

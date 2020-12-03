@@ -46,6 +46,8 @@ BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 
 ModuleType = type(sys)
 
+Union = type(int | str)
+
 try:
     raise TypeError
 except TypeError:

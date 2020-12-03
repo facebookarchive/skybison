@@ -137,7 +137,7 @@ def _type_check(arg, msg, is_argument=True):
     if (isinstance(arg, _SpecialForm) and arg not in (Any, NoReturn) or
             arg in (Generic, _Protocol)):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -217,7 +217,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, _GenericAlias) and p.__origin__ is Union:
+        if (isinstance(p, _GenericAlias) and p.__origin__ is Union) or isinstance(p, types.Union):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
@@ -552,6 +552,9 @@ class TypeVar(_Final, _Immutable, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __or__(self, right):
+        return Union[self, right]
+
     def __repr__(self):
         if self.__covariant__:
             prefix = '+'
@@ -563,6 +566,10 @@ class TypeVar(_Final, _Immutable, _root=True):
 
     def __reduce__(self):
         return self.__name__
+
+
+    def __ror__(self, right):
+        return Union[self, right]
 
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
@@ -702,6 +709,10 @@ class _GenericAlias(_Final, _root=True):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
 
+    def __or__(self, right):
+        return Union[self, right]
+
+
     def __setattr__(self, attr, val):
         if _is_dunder(attr) or attr in ('_name', '_inst', '_special'):
             super().__setattr__(attr, val)
@@ -736,6 +747,10 @@ class _GenericAlias(_Final, _root=True):
             if len(args) == 1 and not isinstance(args[0], tuple):
                 args, = args
         return operator.getitem, (origin, args)
+
+
+    def __ror__(self, right):
+        return Union[self, right]
 
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):

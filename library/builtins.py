@@ -557,6 +557,10 @@ class type(bootstrap=True):
         _super(new_type).__init_subclass__(**kwargs)
         return new_type
 
+    def __or__(self, right):
+        _type_guard(self)
+        return Union(self, right)
+
     @_classmethod
     def __prepare__(self, *args, **kwargs):
         return {}
@@ -569,6 +573,10 @@ class type(bootstrap=True):
         if mod and mod != "builtins":
             return f"<class '{mod}.{self.__qualname__}'>"
         return f"<class '{self.__name__}'>"
+
+    def __ror__(self, right):
+        _type_guard(self)
+        return Union(self, right)
 
     def __setattr__(self, name, value):
         _builtin()
@@ -6800,6 +6808,79 @@ class zip(metaclass=_non_heaptype):
 
     def __reduce__(self):
         _unimplemented()
+
+
+class Union(metaclass=_non_heaptype):
+    @_property
+    def __args__(self):
+        return self._arguments
+
+    @classmethod
+    def _is_unionable(cls, obj):
+        def _get_class_name(obj):
+            obj_type = _type(obj)
+            return getattr(obj_type, "__name__", None)
+
+        if obj is None or _type(obj) is Union:
+            return True
+
+        # Check for NewType
+        if _type(obj) is function and obj.__module__ == "typing":
+            return True
+
+        # Check for _SpecialForm
+        class_name = _get_class_name(obj)
+        if class_name in [
+            "_SpecialForm",
+            "TypeVar",
+            "_GenericAlias",
+            "_VariadicGenericAlias",
+        ]:
+            return True
+
+        return isinstance(obj, type)
+
+    def __eq__(self, right):
+        if (
+            hasattr(right, "__origin__")
+            and getattr(right.__origin__, "_name", None) == "Union"
+        ):
+            arguments = {type(None) if a is None else a for a in self._arguments}
+            return arguments == set(right.__args__)
+
+        if isinstance(right, Union):
+            return set(self._arguments) == set(right._arguments)
+
+        return set(self._arguments) == {right}
+
+    def __init__(self, left, right):
+        arguments = set()
+
+        if not Union._is_unionable(left) or not Union._is_unionable(right):
+            raise TypeError
+
+        if _type(right) is Union:
+            arguments = arguments.union(right._arguments)
+        else:
+            arguments.add(right)
+
+        if _type(left) is Union:
+            arguments = arguments.union(left._arguments)
+        else:
+            arguments.add(left)
+
+        self._arguments = tuple(arguments)
+
+    def __or__(self, right):
+        return Union(self, right)
+
+    def __repr__(self):
+        return " | ".join(
+            [a.__name__ if a is not None else str(a) for a in self._arguments]
+        )
+
+    def __ror__(self, right):
+        return Union(self, right)
 
 
 from _io import open  # usort:skip
