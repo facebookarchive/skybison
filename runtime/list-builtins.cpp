@@ -44,8 +44,10 @@ RawObject listPop(Thread* thread, const List& list, word index) {
   Object popped(&scope, list.at(index));
   list.atPut(index, NoneType::object());
   word last_index = list.numItems() - 1;
-  list.replaceFromWithStartAt(index, *list, last_index - index, index + 1);
-  list.setNumItems(list.numItems() - 1);
+  if (index < last_index) {
+    list.replaceFromWithStartAt(index, *list, last_index - index, index + 1);
+  }
+  list.setNumItems(last_index);
   return *popped;
 }
 
