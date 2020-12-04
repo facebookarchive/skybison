@@ -6891,6 +6891,12 @@ class Union(metaclass=_non_heaptype):
                 return True
         return False
 
+    def __subclasscheck__(self, subclass) -> bool:
+        for a in self._arguments:
+            if _issubclass(subclass, a):
+                return True
+        return False
+
 
 from _io import open  # usort:skip
 

@@ -50,6 +50,10 @@ class Super:
     pass
 
 
+class Child(Super):
+    pass
+
+
 class AbsTests(unittest.TestCase):
     def test_abs_calls_dunder_abs(self):
         class C:
@@ -12413,6 +12417,16 @@ class UnionTests(unittest.TestCase):
             isinstance(2, list[int] | int)
         with self.assertRaises(TypeError):
             isinstance(2, int | str | list[int] | float)
+
+    def test_subclass_with_union(self):
+        self.assertTrue(issubclass(int, int | float | int))
+        self.assertTrue(issubclass(str, str | Child | str))
+        self.assertFalse(issubclass(dict, float | str))
+        self.assertFalse(issubclass(object, float | str))
+        with self.assertRaises(TypeError):
+            issubclass(2, Child | Super)
+        with self.assertRaises(TypeError):
+            issubclass(int, list[int] | Child)
 
 
 class ZipTests(unittest.TestCase):
