@@ -991,6 +991,7 @@ def _str_count(self, sub, start, end):
 
 
 def _str_ctor(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):
+    "$intrinsic$"
     _builtin()
 
 

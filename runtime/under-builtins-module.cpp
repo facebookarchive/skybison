@@ -434,6 +434,32 @@ bool FUNC(_builtins, _str_check_exact_intrinsic)(Thread* thread) {
   return true;
 }
 
+bool FUNC(_builtins, _str_ctor_intrinsic)(Thread* thread) {
+  // The type signature of _str_ctor is
+  //   def _str_ctor(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):
+  //
+  // `_str_ctor` is available internally so locating it in the stack tells us
+  // how many arguments are given in the presence of optional arguments.
+  RawObject callee =
+      Type::cast(thread->runtime()->typeAt(LayoutId::kStr)).ctor();
+  if (callee == thread->stackPeek(1)) {
+    // Only `cls` is given: `str()` is executed.
+    thread->stackDrop(1);
+    thread->stackSetTop(Str::empty());
+    return true;
+  }
+  if (callee == thread->stackPeek(2)) {
+    // `cls` and `obj` are given: `str(s)` is executed.
+    RawObject obj = thread->stackPeek(0);
+    if (obj.isStr()) {
+      thread->stackSetAt(2, obj);
+      thread->stackDrop(2);
+      return true;
+    }
+  }
+  return false;
+}
+
 bool FUNC(_builtins, _str_guard_intrinsic)(Thread* thread) {
   if (thread->runtime()->isInstanceOfStr(thread->stackTop())) {
     thread->stackPop();
@@ -4737,26 +4763,23 @@ RawObject FUNC(_builtins, _str_count)(Thread* thread, Arguments args) {
 }
 
 RawObject FUNC(_builtins, _str_ctor)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object cls(&scope, args.get(0));
+  Object obj(&scope, args.get(1));
+  Object encoding(&scope, args.get(2));
+  Object errors(&scope, args.get(3));
   Runtime* runtime = thread->runtime();
-  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStr), "unexpected cls");
-  RawObject obj_raw = args.get(1);
-  if (obj_raw.isUnbound()) {
+  DCHECK(*cls == runtime->typeAt(LayoutId::kStr), "unexpected cls");
+  if (obj.isUnbound()) {
     return Str::empty();
   }
-  RawObject encoding_raw = args.get(2);
-  RawObject errors_raw = args.get(3);
-  if (encoding_raw.isUnbound() && errors_raw.isUnbound() && obj_raw.isStr()) {
-    return obj_raw;
+  if (encoding.isUnbound() && errors.isUnbound() && obj.isStr()) {
+    return *obj;
   }
-  HandleScope scope(thread);
   Type str_type(&scope, runtime->typeAt(LayoutId::kStr));
   Object dunder_new(&scope, runtime->symbols()->at(ID(__new__)));
   Function str_dunder_new(&scope,
                           typeGetAttribute(thread, str_type, dunder_new));
-  Object cls(&scope, args.get(0));
-  Object obj(&scope, obj_raw);
-  Object encoding(&scope, encoding_raw);
-  Object errors(&scope, errors_raw);
   // TODO(T76654356): Use Thread::invokeMethodStatic.
   return Interpreter::call4(thread, str_dunder_new, cls, obj, encoding, errors);
 }
