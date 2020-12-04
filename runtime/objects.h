@@ -2446,8 +2446,8 @@ class RawFunction : public RawInstance {
   void setQualname(RawObject qualname) const;
 
   // Maximum stack size used by the bytecode.
-  word stacksize() const;
-  void setStacksize(word value) const;
+  RawObject stacksizeOrBuiltin() const;
+  void setStacksizeOrBuiltin(RawObject stacksize_or_builtin) const;
 
   // Returns the number of parameters. This includes `code.argcount()`,
   // `code.kwonlyargcount()`, and an extra parameter for varargs and for
@@ -2486,8 +2486,8 @@ class RawFunction : public RawInstance {
   static const int kArgcountOffset = kFlagsOffset + kPointerSize;
   static const int kTotalArgsOffset = kArgcountOffset + kPointerSize;
   static const int kTotalVarsOffset = kTotalArgsOffset + kPointerSize;
-  static const int kStacksizeOffset = kTotalVarsOffset + kPointerSize;
-  static const int kDocOffset = kStacksizeOffset + kPointerSize;
+  static const int kStacksizeOrBuiltinOffset = kTotalVarsOffset + kPointerSize;
+  static const int kDocOffset = kStacksizeOrBuiltinOffset + kPointerSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
   static const int kQualnameOffset = kNameOffset + kPointerSize;
   static const int kModuleNameOffset = kQualnameOffset + kPointerSize;
@@ -6658,12 +6658,13 @@ inline word RawFunction::totalLocals() const {
   return totalArgs() + totalVars();
 }
 
-inline word RawFunction::stacksize() const {
-  return RawSmallInt::cast(instanceVariableAt(kStacksizeOffset)).value();
+inline RawObject RawFunction::stacksizeOrBuiltin() const {
+  return instanceVariableAt(kStacksizeOrBuiltinOffset);
 }
 
-inline void RawFunction::setStacksize(word value) const {
-  instanceVariableAtPut(kStacksizeOffset, RawSmallInt::fromWord(value));
+inline void RawFunction::setStacksizeOrBuiltin(
+    RawObject stacksize_or_builtin) const {
+  instanceVariableAtPut(kStacksizeOrBuiltinOffset, stacksize_or_builtin);
 }
 
 inline RawObject RawFunction::rewrittenBytecode() const {

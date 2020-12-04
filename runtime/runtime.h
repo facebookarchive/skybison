@@ -930,8 +930,9 @@ class Runtime {
 
   RawObject newFunction(Thread* thread, const Object& name, const Object& code,
                         word flags, word argcount, word total_args,
-                        word total_vars, word stacksize, Function::Entry entry,
-                        Function::Entry entry_kw, Function::Entry entry_ex);
+                        word total_vars, const Object& stacksize_or_builtin,
+                        Function::Entry entry, Function::Entry entry_kw,
+                        Function::Entry entry_ex);
 
   // Generic attribute deletion code used for class objects
   // TODO(T55871582): Remove code paths that can raise from the Runtime

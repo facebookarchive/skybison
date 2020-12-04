@@ -315,7 +315,7 @@ extern const word kNumIntrinsicFunctions;
 
     for builtin in builtins:
         result += f"""\
-RawObject {builtin}(Thread* thread, Arguments args);
+RawObject {builtin}(Thread* thread, Arguments args) ALIGN_16;
 """
     result += "\n"
     for intrinsic in intrinsics:

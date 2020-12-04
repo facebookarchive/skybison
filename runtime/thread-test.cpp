@@ -769,7 +769,7 @@ TEST_F(ThreadTest, BuildSet) {
   EXPECT_TRUE(setIncludes(thread_, result, none));
 }
 
-static RawObject inspect_block(Thread* thread, Arguments) {
+static RawObject ALIGN_16 inspect_block(Thread* thread, Arguments) {
   // SETUP_LOOP should have pushed an entry onto the block stack.
   TryBlock block = thread->currentFrame()->previousFrame()->blockStackPeek();
   EXPECT_EQ(block.kind(), TryBlock::kLoop);
@@ -1060,7 +1060,7 @@ class C:
   EXPECT_TRUE(value.isFunction());
 }
 
-static RawObject nativeExceptionTest(Thread* thread, Arguments) {
+static ALIGN_16 RawObject nativeExceptionTest(Thread* thread, Arguments) {
   HandleScope scope(thread);
   Str msg(&scope,
           Str::cast(thread->runtime()->newStrFromCStr("test exception")));

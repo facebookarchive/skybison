@@ -57,8 +57,6 @@ RawObject objectGetItem(Thread* thread, const Object& object,
 RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
                         const Object& value);
 
-RawObject METH(object, __getattribute__)(Thread* thread, Arguments args);
-
 void initializeObjectTypes(Thread* thread);
 
 }  // namespace py

@@ -666,7 +666,7 @@ foo(3, 4);
   EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
-static RawObject builtinReturnSecondArg(Thread*, Arguments args) {
+static ALIGN_16 RawObject builtinReturnSecondArg(Thread*, Arguments args) {
   return args.get(1);
 }
 
@@ -898,7 +898,7 @@ result = foo(**{})
   EXPECT_EQ(result, SmallInt::fromWord(10));
 }
 
-static RawObject numArgs(Thread* thread, Arguments) {
+static ALIGN_16 RawObject numArgs(Thread* thread, Arguments) {
   return SmallInt::fromWord(thread->currentFrame()->function().totalArgs());
 }
 

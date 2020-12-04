@@ -237,7 +237,7 @@ def g(ref, c=4):
   EXPECT_EQ(b.value(), 4);
 }
 
-static RawObject doGarbageCollection(Thread* thread, Arguments) {
+static ALIGN_16 RawObject doGarbageCollection(Thread* thread, Arguments) {
   thread->runtime()->collectGarbage();
   return NoneType::object();
 }

@@ -3005,12 +3005,13 @@ f(*c)
                             LayoutId::kUserWarning, "foo"));
 }
 
+static RawObject ALIGN_16 setPendingSignal(Thread* thread, Arguments) {
+  thread->runtime()->setPendingSignal(thread, SIGINT);
+  return NoneType::object();
+}
+
 TEST_F(InterpreterTest, CallFunctionWithInterruptSetReturnsErrorException) {
-  auto set_pending_signal = [](Thread* thread, Arguments) -> RawObject {
-    thread->runtime()->setPendingSignal(thread, SIGINT);
-    return NoneType::object();
-  };
-  addBuiltin("set_pending_signal", set_pending_signal, {nullptr, 0}, 0);
+  addBuiltin("set_pending_signal", setPendingSignal, {nullptr, 0}, 0);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
 executed = False
 def foo():
@@ -3031,12 +3032,10 @@ def bar():
   EXPECT_EQ(executed, Bool::falseObj());
 }
 
+static RawObject ALIGN_16 abortBuiltin(Thread*, Arguments) { abort(); }
+
 TEST_F(InterpreterTest, CallFunctionWithBuiltinRaisesRecursionError) {
-  auto abort_builtin = [](Thread*, Arguments) -> RawObject {
-    // Should never get here.
-    abort();
-  };
-  addBuiltin("abort", abort_builtin, {nullptr, 0}, 0);
+  addBuiltin("abort", abortBuiltin, {nullptr, 0}, 0);
   EXPECT_FALSE(runFromCStr(runtime_, R"(
 x = None
 def foo():
@@ -4932,13 +4931,13 @@ def func():
   EXPECT_EQ(thread_->opcodeCount() - count_before, 0);
 }
 
-static RawObject startCounting(Thread* thread, Arguments) {
+static ALIGN_16 RawObject startCounting(Thread* thread, Arguments) {
   thread->runtime()->interpreter()->setOpcodeCounting(true);
   thread->runtime()->reinitInterpreter();
   return NoneType::object();
 }
 
-static RawObject stopCounting(Thread* thread, Arguments) {
+static ALIGN_16 RawObject stopCounting(Thread* thread, Arguments) {
   thread->runtime()->interpreter()->setOpcodeCounting(false);
   thread->runtime()->reinitInterpreter();
   return NoneType::object();

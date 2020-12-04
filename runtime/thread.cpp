@@ -266,8 +266,8 @@ NEVER_INLINE Frame* Thread::handleInterruptPushCallFrame(
 
 Frame* Thread::pushCallFrame(RawFunction function) {
   word initial_stack_size = Frame::kSize + function.totalVars() * kPointerSize;
-  word max_stack_size =
-      initial_stack_size + function.stacksize() * kPointerSize;
+  word stack_size = SmallInt::cast(function.stacksizeOrBuiltin()).value();
+  word max_stack_size = initial_stack_size + stack_size * kPointerSize;
   word locals_offset = initial_stack_size + function.totalArgs() * kPointerSize;
   if (UNLIKELY(wouldStackOverflow(max_stack_size))) {
     return handleInterruptPushCallFrame(function, max_stack_size,

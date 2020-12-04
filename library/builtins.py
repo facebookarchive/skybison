@@ -721,7 +721,8 @@ class object(bootstrap=True):  # noqa: E999
     def __ge__(self, other):
         return NotImplemented
 
-    # __getattribute__ is defined in C++ code.
+    def __getattribute__(self, name):
+        _builtin()
 
     def __gt__(self, other):
         return NotImplemented

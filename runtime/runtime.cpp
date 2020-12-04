@@ -653,6 +653,10 @@ RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
                                   BuiltinFunction function,
                                   const Object& parameter_names,
                                   const Object& name_str) {
+  void* function_ptr = bit_cast<void*>(function);
+  DCHECK((reinterpret_cast<uword>(function_ptr) &
+          (1 << Object::kSmallIntTagBits)) == 0,
+         "function must be aligned");
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple empty_tuple(&scope, emptyTuple());
@@ -662,9 +666,9 @@ RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
                  ((flags & Code::Flags::kVarargs) != 0) +
                  ((flags & Code::Flags::kVarkeyargs) != 0);
   flags |= Code::Flags::kOptimized | Code::Flags::kNewlocals;
-  Object function_ptr(&scope, newIntFromCPtr(bit_cast<void*>(function)));
+  Object function_int(&scope, SmallInt::fromAlignedCPtr(function_ptr));
   return newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
-                 /*stacksize=*/0, flags, /*code=*/function_ptr,
+                 /*stacksize=*/0, flags, /*code=*/function_int,
                  /*consts=*/empty_tuple, /*names=*/empty_tuple,
                  /*varnames=*/parameter_names, /*freevars=*/empty_tuple,
                  /*cellvars=*/empty_tuple, /*filename=*/empty_string, name_str,
@@ -673,7 +677,8 @@ RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
 
 RawObject Runtime::newFunction(Thread* thread, const Object& name,
                                const Object& code, word flags, word argcount,
-                               word total_args, word total_vars, word stacksize,
+                               word total_args, word total_vars,
+                               const Object& stacksize_or_builtin,
                                Function::Entry entry, Function::Entry entry_kw,
                                Function::Entry entry_ex) {
   DCHECK(isInstanceOfStr(*name), "expected str");
@@ -685,7 +690,7 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
   function.setArgcount(argcount);
   function.setTotalArgs(total_args);
   function.setTotalVars(total_vars);
-  function.setStacksize(stacksize);
+  function.setStacksizeOrBuiltin(*stacksize_or_builtin);
   function.setName(*name);
   function.setQualname(*name);
   function.setEntry(entry);
@@ -713,16 +718,19 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     flags |= Function::Flags::kSimpleCall;
   }
   word stacksize = code.stacksize();
+  Object stacksize_or_builtin(&scope, NoneType::object());
   if (!code.hasOptimizedAndNewlocals()) {
     // We do not support calling non-optimized functions directly. We only allow
     // them in Thread::exec() and Thread::runClassFunction().
     entry = unimplementedTrampoline;
     entry_kw = unimplementedTrampoline;
     entry_ex = unimplementedTrampoline;
+    stacksize_or_builtin = SmallInt::fromWord(stacksize);
   } else if (code.isNative()) {
     entry = builtinTrampoline;
     entry_kw = builtinTrampolineKw;
     entry_ex = builtinTrampolineEx;
+    stacksize_or_builtin = code.code();
     DCHECK(stacksize == 0, "expected zero stacksize");
   } else if (code.isGeneratorLike()) {
     if (code.hasFreevarsOrCellvars()) {
@@ -737,6 +745,7 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     // HACK: Reserve one extra stack slot for the case where we need to unwrap a
     // bound method.
     stacksize++;
+    stacksize_or_builtin = SmallInt::fromWord(stacksize);
   } else {
     if (code.hasFreevarsOrCellvars()) {
       entry = interpreterClosureTrampoline;
@@ -751,15 +760,17 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     // HACK: Reserve one extra stack slot for the case where we need to unwrap a
     // bound method.
     stacksize++;
+    stacksize_or_builtin = SmallInt::fromWord(stacksize);
   }
   Object name(&scope, code.name());
   word total_args = code.totalArgs();
   word total_vars =
       code.nlocals() - total_args + code.numCellvars() + code.numFreevars();
 
-  Function function(&scope, newFunction(thread, name, code, flags,
-                                        code.argcount(), total_args, total_vars,
-                                        stacksize, entry, entry_kw, entry_ex));
+  Function function(
+      &scope,
+      newFunction(thread, name, code, flags, code.argcount(), total_args,
+                  total_vars, stacksize_or_builtin, entry, entry_kw, entry_ex));
   function.setIntrinsic(code.intrinsic());
   populateEntryAsm(function);
 
@@ -841,10 +852,11 @@ RawObject Runtime::newExtensionFunction(Thread* thread, const Object& name,
       UNIMPLEMENTED("Unsupported MethodDef type");
   }
   Object code(&scope, newIntFromCPtr(function));
+  Object none(&scope, NoneType::object());
   word flags = Function::Flags::kExtension;
   return newFunction(thread, name, code, flags, /*argcount=*/-1,
-                     /*total_args=*/-1, /*total_vars=*/-1, /*stacksize=*/-1,
-                     entry, entry_kw, entry_ex);
+                     /*total_args=*/-1, /*total_vars=*/-1,
+                     /*stacksize_or_builtin=*/none, entry, entry_kw, entry_ex);
 }
 
 RawObject Runtime::newExceptionState() {
@@ -870,7 +882,7 @@ RawObject Runtime::newGeneratorFrame(const Function& function) {
   HandleScope scope(Thread::current());
   word num_args = function.totalArgs();
   word num_vars = function.totalVars();
-  word stacksize = function.stacksize();
+  word stacksize = SmallInt::cast(function.stacksizeOrBuiltin()).value();
   // +1 for the function pointer.
   word extra_words = num_args + num_vars + stacksize + 1;
   GeneratorFrame frame(

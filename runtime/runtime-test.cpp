@@ -3037,7 +3037,8 @@ def gen():
   Object frame_obj(&scope, runtime_->newGeneratorFrame(gen));
   ASSERT_TRUE(frame_obj.isGeneratorFrame());
   GeneratorFrame generator_frame(&scope, *frame_obj);
-  EXPECT_EQ(generator_frame.maxStackSize(), gen.stacksize());
+  EXPECT_EQ(generator_frame.maxStackSize(),
+            SmallInt::cast(gen.stacksizeOrBuiltin()).value());
 }
 
 TEST_F(RuntimeModuleTest, ImportModuleFromInitTab) {
@@ -3579,7 +3580,7 @@ TEST_F(RuntimeTest, ObjectEqualsWithIntAndBoolReturnsBool) {
       Bool::falseObj());
 }
 
-static RawObject testPrintTraceback(Thread* thread, Arguments) {
+static ALIGN_16 RawObject testPrintTraceback(Thread* thread, Arguments) {
   TemporaryDirectory tempdir;
   std::string temp = tempdir.path + "traceback";
   int fd = File::open(temp.c_str(), File::kCreate | File::kWriteOnly, 0777);

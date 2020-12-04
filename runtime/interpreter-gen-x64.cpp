@@ -971,7 +971,8 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
   //    <=> r_total_vars * 4!
   __ leaq(r_initial_size, Address(r_total_vars, TIMES_4, Frame::kSize));
   __ movq(r_max_size,
-          Address(kCallableReg, heapObjectDisp(RawFunction::kStacksizeOffset)));
+          Address(kCallableReg,
+                  heapObjectDisp(RawFunction::kStacksizeOrBuiltinOffset)));
   // Same reasoning as above.
   __ leaq(r_max_size, Address(r_initial_size, r_max_size, TIMES_4, 0));
 
@@ -1217,13 +1218,12 @@ void emitFunctionEntryBuiltin(EmitEnv* env) {
     __ movq(kFrameReg, RSP);
   }
 
-  // r_code = Function::cast(callable).code().code().asCPtr()
   __ movq(r_code,
-          Address(kCallableReg, heapObjectDisp(RawFunction::kCodeOffset)));
-  __ movq(r_code, Address(r_code, heapObjectDisp(RawCode::kCodeOffset)));
-  emitConvertFromSmallInt(env, r_code);
+          Address(kCallableReg,
+                  heapObjectDisp(RawFunction::kStacksizeOrBuiltinOffset)));
 
-  // ((BuiltinFunction)scratch) (thread, Arguments(frame->locals()));
+  // function = Function::cast(callable).stacksizeOrBuiltin().asAlignedCPtr()
+  // ((BuiltinFunction)function) (thread, Arguments(frame->locals()));
   emitSaveInterpreterState(env, kVMStack | kVMFrame);
   static_assert(sizeof(Arguments) == kPointerSize, "Arguments changed");
   static_assert(

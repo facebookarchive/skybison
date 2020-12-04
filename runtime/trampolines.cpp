@@ -781,13 +781,8 @@ static inline RawObject builtinTrampolineImpl(Thread* thread, word arg,
 
   RawObject result = NoneType::object();
   {
-    DCHECK(!function_obj.code().isNoneType(),
-           "builtin functions should have annotated code objects");
-    RawCode code = Code::cast(function_obj.code());
-    DCHECK(code.code().isSmallInt(),
-           "builtin functions should contain entrypoint in code.code");
-    BuiltinFunction function =
-        bit_cast<BuiltinFunction>(SmallInt::cast(code.code()).asCPtr());
+    BuiltinFunction function = bit_cast<BuiltinFunction>(
+        SmallInt::cast(function_obj.stacksizeOrBuiltin()).asAlignedCPtr());
 
     word nargs = function_obj.totalArgs();
     Frame* callee_frame = thread->pushNativeFrame(nargs);

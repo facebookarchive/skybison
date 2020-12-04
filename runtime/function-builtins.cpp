@@ -23,7 +23,7 @@ static const BuiltinAttribute kFunctionAttributes[] = {
      AttributeFlags::kHidden},
     {ID(_function__total_vars), RawFunction::kTotalVarsOffset,
      AttributeFlags::kHidden},
-    {ID(_function__stack_size), RawFunction::kStacksizeOffset,
+    {ID(_function__stack_size), RawFunction::kStacksizeOrBuiltinOffset,
      AttributeFlags::kHidden},
     {ID(__doc__), RawFunction::kDocOffset},
     {ID(__name__), RawFunction::kNameOffset},
