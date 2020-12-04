@@ -128,7 +128,7 @@ struct EmitEnv {
   Label function_entry_with_intrinsic_handler;
   Label function_entry_with_no_intrinsic_handler;
   Label function_entry_simple_interpreted_handler[kMaxNargs];
-  Label function_entry_simple_builtin;
+  Label function_entry_simple_builtin[kMaxNargs];
 
   word handler_offset;
   word counting_handler_offset;
@@ -1174,32 +1174,17 @@ void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
   emitFunctionEntryWithNoIntrinsicHandler(env, &next_opcode);
 }
 
-void emitPopFrame(EmitEnv* env, Register r_scratch) {
-  // RSP = frame->frameEnd()
-  //     = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
-  // (The +1 is because we have to point behind the field)
-
-  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
-  __ leaq(RSP, Address(kFrameReg, r_scratch, TIMES_1,
-                       (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
-  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
-}
-
-void emitFunctionEntryBuiltin(EmitEnv* env) {
-  Register r_scratch = RAX;
-  Register r_locals_offset = RDX;
+void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
   Register r_code = RCX;
   Label stack_overflow;
   Label unwind;
 
   // prepareDefaultArgs.
-  __ movl(r_scratch,
-          Address(kCallableReg, heapObjectDisp(RawFunction::kArgcountOffset)));
-  __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
-  __ cmpl(r_scratch, kOpargReg);
+  __ cmpl(kOpargReg, Immediate(nargs));
   __ jcc(NOT_EQUAL, &env->call_trampoline, Assembler::kFarJump);
 
   // Thread::pushNativeFrame()   (roughly)
+  word locals_offset = Frame::kSize + nargs * kPointerSize;
   {
     // RSP -= Frame::kSize;
     // if (RSP >= thread->start_) { goto stack_overflow; }
@@ -1209,12 +1194,10 @@ void emitFunctionEntryBuiltin(EmitEnv* env) {
 
     emitSaveInterpreterState(env, kVMPC);
 
-    // locals_offset = Frame::kSize + nargs * kPointerSize
-    __ leaq(r_locals_offset, Address(kOpargReg, TIMES_8, Frame::kSize));
     // new_frame.setPreviousFrame(kFrameReg)
     __ movq(Address(RSP, Frame::kPreviousFrameOffset), kFrameReg);
     // new_frame.setLocalsOffset(locals_offset)
-    __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
+    __ movq(Address(RSP, Frame::kLocalsOffsetOffset), Immediate(locals_offset));
     __ movq(kFrameReg, RSP);
   }
 
@@ -1230,7 +1213,7 @@ void emitFunctionEntryBuiltin(EmitEnv* env) {
       std::is_same<BuiltinFunction, RawObject (*)(Thread*, Arguments)>(),
       "type mismatch");
   __ movq(kArgRegs[0], kThreadReg);
-  __ leaq(kArgRegs[1], Address(kFrameReg, r_locals_offset, TIMES_1, 0));
+  __ leaq(kArgRegs[1], Address(kFrameReg, locals_offset));
   __ call(r_code);
 
   // if (kReturnRegs[0].isErrorException()) return UNWIND;
@@ -1240,7 +1223,11 @@ void emitFunctionEntryBuiltin(EmitEnv* env) {
   __ jcc(EQUAL, &unwind, Assembler::kFarJump);
 
   // thread->popFrame()
-  emitPopFrame(env, r_locals_offset);
+  __ leaq(RSP, Address(kFrameReg,
+                       locals_offset + (Frame::kFunctionOffsetFromLocals + 1) *
+                                           kPointerSize));
+  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   // thread->stackPush(result)
   __ pushq(kReturnRegs[0]);
@@ -1636,7 +1623,14 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(r_return_value);
 
-  emitPopFrame(env, r_scratch);
+  // RSP = frame->frameEnd()
+  //     = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
+  // (The +1 is because we have to point behind the field)
+  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ leaq(RSP, Address(kFrameReg, r_scratch, TIMES_1,
+                       (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
+  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   __ pushq(r_return_value);
   emitNextOpcode(env);
@@ -1819,9 +1813,11 @@ void emitSharedCode(EmitEnv* env) {
       emitFunctionEntrySimpleInterpretedHandler(env, /*nargs=*/i);
     }
 
-    __ align(16);
-    __ bind(&env->function_entry_simple_builtin);
-    emitFunctionEntryBuiltin(env);
+    for (word i = 0; i < kMaxNargs; i++) {
+      __ align(16);
+      __ bind(&env->function_entry_simple_builtin[i]);
+      emitFunctionEntryBuiltin(env, /*nargs=*/i);
+    }
   }
 
   __ bind(&env->call_interpreted_slow_path);
@@ -1853,7 +1849,7 @@ class X64Interpreter : public Interpreter {
   void* function_entry_with_intrinsic_;
   void* function_entry_with_no_intrinsic_;
   void* function_entry_simple_interpreted_[kMaxNargs];
-  void* function_entry_simple_builtin_;
+  void* function_entry_simple_builtin_[kMaxNargs];
 
   void* default_handler_table_ = nullptr;
   void* counting_handler_table_ = nullptr;
@@ -1879,8 +1875,10 @@ X64Interpreter::X64Interpreter() {
     function_entry_simple_interpreted_[i] =
         code_ + env.function_entry_simple_interpreted_handler[i].position();
   }
-  function_entry_simple_builtin_ =
-      code_ + env.function_entry_simple_builtin.position();
+  for (word i = 0; i < kMaxNargs; i++) {
+    function_entry_simple_builtin_[i] =
+        code_ + env.function_entry_simple_builtin[i].position();
+  }
 
   default_handler_table_ = code_ + env.handler_offset;
   counting_handler_table_ = code_ + env.counting_handler_offset;
@@ -1908,11 +1906,12 @@ void* X64Interpreter::entryAsm(const Function& function) {
     CHECK(argcount >= 0, "can't have negative argcount");
     return function_entry_simple_interpreted_[argcount];
   }
-  if (function.entry() == builtinTrampoline && function.hasSimpleCall()) {
+  if (function.entry() == builtinTrampoline && function.hasSimpleCall() &&
+      argcount < kMaxNargs) {
     DCHECK(function.intrinsic() == nullptr, "expected no intrinsic");
     CHECK(Code::cast(function.code()).code().isSmallInt(),
           "expected SmallInt code");
-    return function_entry_simple_builtin_;
+    return function_entry_simple_builtin_[argcount];
   }
   return function_entry_with_no_intrinsic_;
 }
