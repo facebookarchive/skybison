@@ -1174,6 +1174,16 @@ class SimpleNamespace(metaclass=_non_heaptype):
         _repr_leave(self)
         return "namespace(" + ", ".join(kwpairs) + ")"
 
+    def __eq__(self, other):
+        if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+            return self.__dict__ != other.__dict__
+        return NotImplemented
+
 
 class StopAsyncIteration(Exception, bootstrap=True):
     pass

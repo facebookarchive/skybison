@@ -10,6 +10,7 @@ import typing
 import unittest
 import warnings
 from collections import namedtuple
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 from test_support import pyro_only
@@ -10380,22 +10381,63 @@ class SetTests(unittest.TestCase):
 
 
 class SimpleNamespaceTests(unittest.TestCase):
+    def test_dunder_eq_returns_false(self):
+        sn0 = SimpleNamespace(foo=42, bar="baz")
+        self.assertIs(SimpleNamespace.__eq__(sn0, SimpleNamespace()), False)
+        self.assertIs(SimpleNamespace.__eq__(SimpleNamespace(), sn0), False)
+        sn1 = SimpleNamespace(foo=42)
+        self.assertIs(SimpleNamespace.__eq__(sn0, sn1), False)
+        self.assertIs(SimpleNamespace.__eq__(sn1, sn0), False)
+        sn2 = SimpleNamespace(foo=42, bar="baz", bam=None)
+        self.assertIs(SimpleNamespace.__eq__(sn0, sn2), False)
+        self.assertIs(SimpleNamespace.__eq__(sn2, sn0), False)
+
+    def test_dunder_eq_returns_true(self):
+        self.assertIs(
+            SimpleNamespace.__eq__(SimpleNamespace(), SimpleNamespace()), True
+        )
+        sn0 = SimpleNamespace(foo=42, bar="baz")
+        sn1 = SimpleNamespace(bar="baz", foo=42)
+        self.assertIs(SimpleNamespace.__eq__(sn0, sn1), True)
+        self.assertIs(SimpleNamespace.__eq__(sn1, sn0), True)
+
+    def test_dunder_eq_returns_notimplemented(self):
+        self.assertIs(SimpleNamespace.__eq__(SimpleNamespace(), {}), NotImplemented)
+
     def test_dunder_init_returns_simple_namespace(self):
-        from types import SimpleNamespace
 
         s = SimpleNamespace(foo=42, bar="baz")
         self.assertEqual(s.foo, 42)
         self.assertEqual(s.bar, "baz")
 
-    def test_dunder_repr_returns_str(self):
-        from types import SimpleNamespace
+    def test_dunder_ne_returns_false(self):
+        self.assertIs(
+            SimpleNamespace.__ne__(SimpleNamespace(), SimpleNamespace()), False
+        )
+        sn0 = SimpleNamespace(foo=42, bar="baz")
+        sn1 = SimpleNamespace(bar="baz", foo=42)
+        self.assertIs(SimpleNamespace.__ne__(sn0, sn1), False)
+        self.assertIs(SimpleNamespace.__ne__(sn1, sn0), False)
 
+    def test_dunder_ne_returns_true(self):
+        sn0 = SimpleNamespace(foo=42, bar="baz")
+        self.assertIs(SimpleNamespace.__ne__(sn0, SimpleNamespace()), True)
+        self.assertIs(SimpleNamespace.__ne__(SimpleNamespace(), sn0), True)
+        sn1 = SimpleNamespace(foo=42)
+        self.assertIs(SimpleNamespace.__ne__(sn0, sn1), True)
+        self.assertIs(SimpleNamespace.__ne__(sn1, sn0), True)
+        sn2 = SimpleNamespace(foo=42, bar="baz", bam=None)
+        self.assertIs(SimpleNamespace.__ne__(sn0, sn2), True)
+        self.assertIs(SimpleNamespace.__ne__(sn2, sn0), True)
+
+    def test_dunder_ne_returns_notimplemented(self):
+        self.assertIs(SimpleNamespace.__ne__(SimpleNamespace(), {}), NotImplemented)
+
+    def test_dunder_repr_returns_str(self):
         s = SimpleNamespace(foo=42, bar="baz")
         self.assertEqual(SimpleNamespace.__repr__(s), "namespace(bar='baz', foo=42)")
 
     def test_dunder_repr_sorts_elements_and_returns_str(self):
-        from types import SimpleNamespace
-
         s = SimpleNamespace(x=1, y=2, w=3)
         self.assertEqual(list(s.__dict__.items()), [("x", 1), ("y", 2), ("w", 3)])
         self.assertEqual(SimpleNamespace.__repr__(s), "namespace(w=3, x=1, y=2)")
@@ -10404,8 +10446,6 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(SimpleNamespace.__repr__(s), "namespace(w=3, x=1, y=2)")
 
     def test_dunder_repr_recursive_returns_str(self):
-        from types import SimpleNamespace
-
         ns0 = SimpleNamespace()
         ns0.n = ns0
         self.assertEqual(SimpleNamespace.__repr__(ns0), "namespace(n=namespace(...))")
@@ -10424,8 +10464,6 @@ class SimpleNamespaceTests(unittest.TestCase):
         )
 
     def test_simple_namespace_is_non_heaptype(self):
-        from types import SimpleNamespace
-
         self.assertFalse(SimpleNamespace.__flags__ & Py_TPFLAGS_HEAPTYPE)
 
 
