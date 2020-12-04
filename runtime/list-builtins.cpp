@@ -346,6 +346,41 @@ RawObject METH(list, __contains__)(Thread* thread, Arguments args) {
   return listContains(thread, self, key);
 }
 
+RawObject METH(list, __eq__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfList(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(list));
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfList(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  if (self_obj == other_obj) {
+    return Bool::trueObj();
+  }
+  List self(&scope, *self_obj);
+  List other(&scope, *other_obj);
+  word num_items = self.numItems();
+  if (num_items != other.numItems()) {
+    return Bool::falseObj();
+  }
+  Tuple self_items(&scope, self.items());
+  Tuple other_items(&scope, other.items());
+  for (word i = 0; i < num_items; i++) {
+    RawObject self_item = self_items.at(i);
+    RawObject other_item = other_items.at(i);
+    if (self_item != other_item) {
+      RawObject equals = Runtime::objectEquals(thread, self_item, other_item);
+      if (equals != Bool::trueObj()) {
+        return equals;
+      }
+    }
+  }
+  return Bool::trueObj();
+}
+
 RawObject METH(list, clear)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

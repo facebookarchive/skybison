@@ -29,6 +29,14 @@ class ListTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_dunder_eq_propagates_error(self):
+        class C:
+            def __eq__(self, other):
+                raise ValueError
+
+        with self.assertRaises(ValueError):
+            list.__eq__([C()], [C()])
+
     def test_dunder_iadd_with_list_subclass_uses_iter(self):
         class C(list):
             def __iter__(self):

@@ -4641,23 +4641,7 @@ class list(bootstrap=True):
         raise TypeError("list indices must be integers or slices")
 
     def __eq__(self, other):
-        _list_guard(self)
-        if not _list_check(other):
-            return NotImplemented
-
-        if self is other:
-            return True
-        length = _list_len(self)
-        if length != _list_len(other):
-            return False
-        i = 0
-        while i < length:
-            lhs = _list_getitem(self, i)
-            rhs = _list_getitem(other, i)
-            if lhs is not rhs and not (lhs == rhs):
-                return False
-            i += 1
-        return True
+        _builtin()
 
     def __ge__(self, other):
         _list_guard(self)
