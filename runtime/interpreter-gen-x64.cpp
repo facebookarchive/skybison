@@ -1346,26 +1346,6 @@ void emitHandler<LOAD_GLOBAL_CACHED>(EmitEnv* env) {
   emitNextOpcode(env);
 }
 
-void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
-  Label next;
-  Label slow_path;
-  Register r_scratch = RAX;
-
-  // Handle RawBools directly; fall back to C++ for other types.
-  __ popq(r_scratch);
-  __ cmpb(r_scratch, boolImmediate(!jump_value));
-  __ jcc(EQUAL, &next, Assembler::kNearJump);
-  __ cmpb(r_scratch, boolImmediate(jump_value));
-  __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
-  __ movq(kPCReg, kOpargReg);
-  __ bind(&next);
-  emitNextOpcode(env);
-
-  __ bind(&slow_path);
-  __ pushq(r_scratch);
-  emitJumpToGenericHandler(env);
-}
-
 template <>
 void emitHandler<UNARY_NOT>(EmitEnv* env) {
   Label slow_path;
@@ -1390,6 +1370,33 @@ void emitHandler<UNARY_NOT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_scratch);
   emitGenericHandler(env, UNARY_NOT);
+}
+
+static void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
+  Label jump;
+  Label next;
+  Register r_scratch = RAX;
+
+  Label* true_target = jump_value ? &jump : &next;
+  Label* false_target = jump_value ? &next : &jump;
+  __ popq(r_scratch);
+
+  __ cmpb(r_scratch, boolImmediate(true));
+  __ jcc(EQUAL, true_target, Assembler::kNearJump);
+  __ cmpb(r_scratch, boolImmediate(false));
+  __ jcc(EQUAL, false_target, Assembler::kNearJump);
+  __ cmpq(r_scratch, smallIntImmediate(0));
+  __ jcc(EQUAL, false_target, Assembler::kNearJump);
+  __ cmpb(r_scratch, Immediate(NoneType::object().raw()));
+  __ jcc(EQUAL, false_target, Assembler::kNearJump);
+  // Fall back to C++ for other types.
+  __ pushq(r_scratch);
+  emitJumpToGenericHandler(env);
+
+  __ bind(&jump);
+  __ movq(kPCReg, kOpargReg);
+  __ bind(&next);
+  emitNextOpcode(env);
 }
 
 template <>
