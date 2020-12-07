@@ -469,8 +469,9 @@ PY_EXPORT int PyObject_Print(PyObject* obj, FILE* fp, int flags) {
         flags & Py_PRINT_RAW ? PyObject_Str(obj) : PyObject_Repr(obj);
     if (str == nullptr) return -1;
     if (!PyUnicode_Check(str)) {
-      PyErr_Format(PyExc_TypeError, "str() or repr() returned '%.100s'",
-                   _PyType_Name(Py_TYPE(str)));
+      Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                      "str() or repr() returned '%s'",
+                                      _PyType_Name(Py_TYPE(str)));
       Py_DECREF(str);
       return -1;
     }

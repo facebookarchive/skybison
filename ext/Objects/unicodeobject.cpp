@@ -869,7 +869,8 @@ PY_EXPORT Py_UCS4* PyUnicode_AsUCS4(PyObject* u, Py_UCS4* buffer,
   word num_codepoints = str.codePointLength();
   word target_buflen = copy_null ? num_codepoints + 1 : num_codepoints;
   if (buflen < target_buflen) {
-    PyErr_Format(PyExc_SystemError, "string is longer than the buffer");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "string is longer than the buffer");
     if (copy_null != 0 && 0 < buflen) {
       buffer[0] = 0;
     }
@@ -1205,10 +1206,11 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
   } else if (std::strcmp(errors, "surrogateescape") == 0) {
     surrogateescape = 1;
   } else {
-    PyErr_Format(PyExc_ValueError,
-                 "only 'strict' and 'surrogateescape' error handlers "
-                 "are supported, not '%s'",
-                 errors);
+    Thread::current()->raiseWithFmt(
+        LayoutId::kValueError,
+        "only 'strict' and 'surrogateescape' error handlers "
+        "are supported, not '%s'",
+        errors);
     return nullptr;
   }
 
@@ -1417,10 +1419,11 @@ PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* unicode,
   } else if (std::strcmp(errors, "surrogateescape") == 0) {
     surrogateescape = 1;
   } else {
-    PyErr_Format(PyExc_ValueError,
-                 "only 'strict' and 'surrogateescape' error handlers "
-                 "are supported, not '%s'",
-                 errors);
+    Thread::current()->raiseWithFmt(
+        LayoutId::kValueError,
+        "only 'strict' and 'surrogateescape' error handlers "
+        "are supported, not '%s'",
+        errors);
     return nullptr;
   }
   Py_ssize_t wlen;
@@ -1614,9 +1617,10 @@ PY_EXPORT int PyUnicode_FSDecoder(PyObject* arg, void* addr) {
     Py_DECREF(path_bytes);
     if (!output) return 0;
   } else {
-    PyErr_Format(PyExc_TypeError,
-                 "path should be string, bytes, or os.PathLike, not %.200s",
-                 PyObject_TypeName(arg));
+    Thread::current()->raiseWithFmt(
+        LayoutId::kTypeError,
+        "path should be string, bytes, or os.PathLike, not %s",
+        PyObject_TypeName(arg));
     Py_DECREF(path);
     return 0;
   }
@@ -1683,8 +1687,8 @@ PY_EXPORT PyObject* PyUnicode_Format(PyObject* format, PyObject* args) {
     return nullptr;
   }
   if (!PyUnicode_Check(format)) {
-    PyErr_Format(PyExc_TypeError, "must be str, not %.100s",
-                 _PyType_Name(Py_TYPE(format)));
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError, "must be str, not %s",
+                                    _PyType_Name(Py_TYPE(format)));
     return nullptr;
   }
   return PyNumber_Remainder(format, args);

@@ -3,6 +3,7 @@
 #include "cpython-types.h"
 
 #include "os.h"
+#include "runtime.h"
 
 namespace py {
 
@@ -14,7 +15,8 @@ PY_EXPORT int _PyOS_URandom(void* buffer, Py_ssize_t size) {
 
 PY_EXPORT int _PyOS_URandomNonblock(void* buffer, Py_ssize_t size) {
   if (size < 0) {
-    PyErr_Format(PyExc_ValueError, "negative argument not allowed");
+    Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                    "negative argument not allowed");
     return -1;
   }
   bool success = OS::secureRandom(static_cast<byte*>(buffer), size);

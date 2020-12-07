@@ -400,11 +400,13 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
 PY_EXPORT PyObject* PyUnicodeDecodeError_GetEncoding(PyObject* exc) {
   PyObject* encoding = PyObject_GetAttrString(exc, "encoding");
   if (encoding == nullptr) {
-    PyErr_Format(PyExc_TypeError, "encoding attribute not set");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "encoding attribute not set");
     return nullptr;
   }
   if (!PyUnicode_Check(encoding)) {
-    PyErr_Format(PyExc_TypeError, "encoding attribute must be unicode");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "encoding attribute must be unicode");
     Py_DECREF(encoding);
     return nullptr;
   }
@@ -443,11 +445,13 @@ PY_EXPORT int PyUnicodeDecodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
 PY_EXPORT PyObject* PyUnicodeDecodeError_GetObject(PyObject* exc) {
   PyObject* object = PyObject_GetAttrString(exc, "object");
   if (object == nullptr) {
-    PyErr_Format(PyExc_TypeError, "object attribute not set");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "object attribute not set");
     return nullptr;
   }
   if (!PyBytes_Check(object)) {
-    PyErr_Format(PyExc_TypeError, "object attribute must be bytes");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "object attribute must be bytes");
     Py_DECREF(object);
     return nullptr;
   }
@@ -457,11 +461,13 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_GetObject(PyObject* exc) {
 PY_EXPORT PyObject* PyUnicodeDecodeError_GetReason(PyObject* exc) {
   PyObject* reason = PyObject_GetAttrString(exc, "reason");
   if (reason == nullptr) {
-    PyErr_Format(PyExc_TypeError, "reason attribute not set");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "reason attribute not set");
     return nullptr;
   }
   if (!PyUnicode_Check(reason)) {
-    PyErr_Format(PyExc_TypeError, "reason attribute must be unicode");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "reason attribute must be unicode");
     Py_DECREF(reason);
     return nullptr;
   }
@@ -579,11 +585,13 @@ PY_EXPORT int PyUnicodeEncodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
 PY_EXPORT PyObject* PyUnicodeEncodeError_GetObject(PyObject* exc) {
   PyObject* object = PyObject_GetAttrString(exc, "object");
   if (object == nullptr) {
-    PyErr_Format(PyExc_TypeError, "object attribute not set");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "object attribute not set");
     return nullptr;
   }
   if (!PyUnicode_Check(object)) {
-    PyErr_Format(PyExc_TypeError, "object attribute must be str");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "object attribute must be str");
     Py_DECREF(object);
     return nullptr;
   }
