@@ -272,7 +272,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
     f++;
     while (Py_ISDIGIT(static_cast<unsigned>(*f))) {
       if (width > (kMaxWord - (static_cast<int>(*f) - '0')) / 10) {
-        PyErr_SetString(PyExc_ValueError, "width too big");
+        Thread::current()->raiseWithFmt(LayoutId::kValueError, "width too big");
         return nullptr;
       }
       width = (width * 10) + (*f - '0');
@@ -287,7 +287,8 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
       f++;
       while (Py_ISDIGIT(static_cast<unsigned>(*f))) {
         if (precision > (kMaxWord - (static_cast<int>(*f) - '0')) / 10) {
-          PyErr_SetString(PyExc_ValueError, "precision too big");
+          Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                          "precision too big");
           return nullptr;
         }
         precision = (precision * 10) + (*f - '0');
@@ -329,8 +330,9 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
     case 'c': {
       int ordinal = va_arg(*vargs, int);
       if (ordinal < 0 || ordinal > kMaxUnicode) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "character argument not in range(0x110000)");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kOverflowError,
+            "character argument not in range(0x110000)");
         return nullptr;
       }
       if (_PyUnicodeWriter_WriteCharInline(writer, ordinal) < 0) return nullptr;
@@ -1211,7 +1213,8 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
   }
 
   if (str[len] != '\0' || static_cast<size_t>(len) != std::strlen(str)) {
-    PyErr_SetString(PyExc_ValueError, "embedded null byte");
+    Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                    "embedded null byte");
     return nullptr;
   }
 
@@ -1427,7 +1430,8 @@ PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* unicode,
   }
 
   if (static_cast<size_t>(wlen) != std::wcslen(wstr)) {
-    PyErr_SetString(PyExc_ValueError, "embedded null character");
+    Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                    "embedded null character");
     PyMem_Free(wstr);
     return nullptr;
   }
@@ -1621,7 +1625,7 @@ PY_EXPORT int PyUnicode_FSDecoder(PyObject* arg, void* addr) {
   HandleScope scope(thread);
   Str output_str(&scope, ApiHandle::fromPyObject(output)->asObject());
   if (strFindAsciiChar(output_str, '\0') >= 0) {
-    PyErr_SetString(PyExc_ValueError, "embedded null character");
+    thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
     Py_DECREF(output);
     return 0;
   }

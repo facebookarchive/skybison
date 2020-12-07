@@ -95,7 +95,8 @@ PY_EXPORT int _PyFloat_Pack2(double x, unsigned char* p, int little_endian) {
 
     double f = std::frexp(x, &e);
     if (f < 0.5 || f >= 1.0) {
-      PyErr_SetString(PyExc_SystemError, "std::frexp() result out of range");
+      Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                      "std::frexp() result out of range");
       return -1;
     }
 
@@ -104,8 +105,8 @@ PY_EXPORT int _PyFloat_Pack2(double x, unsigned char* p, int little_endian) {
     e--;
 
     if (e >= 16) {
-      PyErr_SetString(PyExc_OverflowError,
-                      "float too large to pack with e format");
+      Thread::current()->raiseWithFmt(LayoutId::kOverflowError,
+                                      "float too large to pack with e format");
       return -1;
     }
 
@@ -134,8 +135,9 @@ PY_EXPORT int _PyFloat_Pack2(double x, unsigned char* p, int little_endian) {
         bits = 0;
         ++e;
         if (e == 31) {
-          PyErr_SetString(PyExc_OverflowError,
-                          "float too large to pack with e format");
+          Thread::current()->raiseWithFmt(
+              LayoutId::kOverflowError,
+              "float too large to pack with e format");
           return -1;
         }
       }
@@ -164,8 +166,8 @@ PY_EXPORT int _PyFloat_Pack4(double x, unsigned char* p, int little_endian) {
   // Assumes float format is ieee_little_endian_format
   float y = static_cast<float>(x);
   if (std::isinf(y) && !std::isinf(x)) {
-    PyErr_SetString(PyExc_OverflowError,
-                    "float too large to pack with f format");
+    Thread::current()->raiseWithFmt(LayoutId::kOverflowError,
+                                    "float too large to pack with f format");
     return -1;
   }
 

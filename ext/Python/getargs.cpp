@@ -289,8 +289,8 @@ static int vGetArgs1Impl(PyObject* compat_args, PyObject* const* stack,
       seterror(levels[0], msg, levels + 1, fname, message);
       return cleanreturn(0, &freelist);
     }
-    PyErr_SetString(PyExc_SystemError,
-                    "old style getargs format uses new features");
+    Thread::current()->raiseWithFmt(
+        LayoutId::kSystemError, "old style getargs format uses new features");
     return cleanreturn(0, &freelist);
   }
 
@@ -303,7 +303,7 @@ static int vGetArgs1Impl(PyObject* compat_args, PyObject* const* stack,
           nargs < min ? min : max, (nargs < min ? min : max) == 1 ? "" : "s",
           nargs);
     } else {
-      PyErr_SetString(PyExc_TypeError, message);
+      Thread::current()->raiseWithFmt(LayoutId::kTypeError, message);
     }
     return cleanreturn(0, &freelist);
   }
@@ -335,8 +335,9 @@ static int vgetargs1(PyObject* args, const char* format, va_list* p_va,
   DCHECK(args != nullptr, "args must be non-NULL");
 
   if (!PyTuple_Check(args)) {
-    PyErr_SetString(PyExc_SystemError,
-                    "new style getargs format but argument is not a tuple");
+    Thread::current()->raiseWithFmt(
+        LayoutId::kSystemError,
+        "new style getargs format but argument is not a tuple");
     return 0;
   }
 
@@ -384,9 +385,9 @@ static void seterror(Py_ssize_t iarg, const char* msg, int* levels,
     message = buf;
   }
   if (msg[0] == '(') {
-    PyErr_SetString(PyExc_SystemError, message);
+    Thread::current()->raiseWithFmt(LayoutId::kSystemError, message);
   } else {
-    PyErr_SetString(PyExc_TypeError, message);
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError, message);
   }
 }
 
@@ -523,7 +524,8 @@ static const char* converterr(const char* expected, PyObject* arg, char* msgbuf,
 // Return 1 for error, 0 if ok.
 static int float_argument_error(PyObject* arg) {
   if (PyFloat_Check(arg)) {
-    PyErr_SetString(PyExc_TypeError, "integer argument expected, got float");
+    Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                    "integer argument expected, got float");
     return 1;
   }
   return 0;
@@ -552,7 +554,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
     *q2 = s;                                                                   \
   else {                                                                       \
     if (INT_MAX < s) {                                                         \
-      PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");     \
+      Thread::current()->raiseWithFmt(LayoutId::kOverflowError,                \
+                                      "size does not fit in an int");          \
       return converterr("", arg, msgbuf, bufsize);                             \
     }                                                                          \
     *q = (int)s;                                                               \
@@ -573,13 +576,15 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         RETURN_ERR_OCCURRED;
       }
       if (ival < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "unsigned byte integer is less than minimum");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kOverflowError,
+            "unsigned byte integer is less than minimum");
         RETURN_ERR_OCCURRED;
       }
       if (ival > UCHAR_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "unsigned byte integer is greater than maximum");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kOverflowError,
+            "unsigned byte integer is greater than maximum");
         RETURN_ERR_OCCURRED;
       }
       *p = static_cast<unsigned char>(ival);
@@ -608,13 +613,15 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         RETURN_ERR_OCCURRED;
       }
       if (ival < SHRT_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is less than minimum");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kOverflowError,
+            "signed short integer is less than minimum");
         RETURN_ERR_OCCURRED;
       }
       if (ival > SHRT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is greater than maximum");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kOverflowError,
+            "signed short integer is greater than maximum");
         RETURN_ERR_OCCURRED;
       }
       *p = static_cast<short>(ival);
@@ -643,13 +650,13 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         RETURN_ERR_OCCURRED;
       }
       if (ival > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "signed integer is greater than maximum");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kOverflowError, "signed integer is greater than maximum");
         RETURN_ERR_OCCURRED;
       }
       if (ival < INT_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "signed integer is less than minimum");
+        Thread::current()->raiseWithFmt(LayoutId::kOverflowError,
+                                        "signed integer is less than minimum");
         RETURN_ERR_OCCURRED;
       }
       *p = ival;
@@ -832,7 +839,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
       } else {
         if (std::strlen(static_cast<const char*>(*p)) !=
             static_cast<size_t>(count)) {
-          PyErr_SetString(PyExc_ValueError, "embedded null byte");
+          Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                          "embedded null byte");
           RETURN_ERR_OCCURRED;
         }
       }
@@ -905,7 +913,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
             return converterr(CONV_UNICODE, arg, msgbuf, bufsize);
           }
           if (std::strlen(sarg) != static_cast<size_t>(len)) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                            "embedded null character");
             RETURN_ERR_OCCURRED;
           }
           *p = sarg;
@@ -948,7 +957,8 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
           *p = PyUnicode_AsUnicodeAndSize(arg, &len);
           if (*p == nullptr) RETURN_ERR_OCCURRED;
           if (Py_UNICODE_strlen(*p) != static_cast<size_t>(len)) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            Thread::current()->raiseWithFmt(LayoutId::kValueError,
+                                            "embedded null character");
             RETURN_ERR_OCCURRED;
           }
         } else {
@@ -1554,7 +1564,8 @@ static int vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
       Py_ssize_t pos1 = 0;
       while (PyDict_Next(keywords, &pos1, &key, &value)) {
         if (!PyUnicode_Check(key)) {
-          PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+          Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                          "keywords must be strings");
           return cleanreturn(0, &freelist);
         }
         if (!isValidKeyword(parser, keyword_count, key)) {
@@ -1570,7 +1581,8 @@ static int vGetArgsKeywordsFastImpl(PyObject* const* args, Py_ssize_t nargs,
       for (Py_ssize_t j = 0; j < num_kwargs; j++) {
         PyObject* key = PyTuple_GET_ITEM(kwnames, j);
         if (!PyUnicode_Check(key)) {
-          PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+          Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                          "keywords must be strings");
           return cleanreturn(0, &freelist);
         }
         if (!isValidKeyword(parser, keyword_count, key)) {
@@ -1627,7 +1639,8 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
   // scan kwlist and get greatest possible nbr of args
   for (len = pos; kwlist[len]; len++) {
     if (!*kwlist[len]) {
-      PyErr_SetString(PyExc_SystemError, "Empty keyword parameter name");
+      Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                      "Empty keyword parameter name");
       return cleanreturn(0, &freelist);
     }
   }
@@ -1657,8 +1670,9 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
     keyword = kwlist[i];
     if (*format == '|') {
       if (min != INT_MAX) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Invalid format string (| specified twice)");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kSystemError,
+            "Invalid format string (| specified twice)");
         return cleanreturn(0, &freelist);
       }
 
@@ -1666,15 +1680,16 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
       format++;
 
       if (max != INT_MAX) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Invalid format string ($ before |)");
+        Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                        "Invalid format string ($ before |)");
         return cleanreturn(0, &freelist);
       }
     }
     if (*format == '$') {
       if (max != INT_MAX) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Invalid format string ($ specified twice)");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kSystemError,
+            "Invalid format string ($ specified twice)");
         return cleanreturn(0, &freelist);
       }
 
@@ -1682,7 +1697,8 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
       format++;
 
       if (max < pos) {
-        PyErr_SetString(PyExc_SystemError, "Empty parameter name after $");
+        Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                        "Empty parameter name after $");
         return cleanreturn(0, &freelist);
       }
       if (skip) {
@@ -1799,7 +1815,8 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
     while (PyDict_Next(keywords, &iter_pos, &key, &value)) {
       int match = 0;
       if (!PyUnicode_Check(key)) {
-        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+        Thread::current()->raiseWithFmt(LayoutId::kTypeError,
+                                        "keywords must be strings");
         return cleanreturn(0, &freelist);
       }
       for (i = 0; i < len; i++) {
@@ -1846,7 +1863,8 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
   int len = parser->pos;
   for (; keywords[len] != nullptr; len++) {
     if (*keywords[len] == '\0') {
-      PyErr_SetString(PyExc_SystemError, "Empty keyword parameter name");
+      Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                      "Empty keyword parameter name");
       return false;
     }
   }
@@ -1857,13 +1875,14 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
   for (int i = 0; i < len; i++) {
     if (*format == '|') {
       if (min != INT_MAX) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Invalid format string (| specified twice)");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kSystemError,
+            "Invalid format string (| specified twice)");
         return false;
       }
       if (max != INT_MAX) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Invalid format string ($ before |)");
+        Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                        "Invalid format string ($ before |)");
         return false;
       }
       min = i;
@@ -1871,12 +1890,14 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
     }
     if (*format == '$') {
       if (max != INT_MAX) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Invalid format string ($ specified twice)");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kSystemError,
+            "Invalid format string ($ specified twice)");
         return false;
       }
       if (i < parser->pos) {
-        PyErr_SetString(PyExc_SystemError, "Empty parameter name after $");
+        Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                        "Empty parameter name after $");
         return false;
       }
       max = i;
@@ -2061,8 +2082,9 @@ PY_EXPORT int PyArg_UnpackTuple(PyObject* args, const char* name,
   assert(min >= 0);
   assert(min <= max);
   if (!PyTuple_Check(args)) {
-    PyErr_SetString(PyExc_SystemError,
-                    "PyArg_UnpackTuple() argument list is not a tuple");
+    Thread::current()->raiseWithFmt(
+        LayoutId::kSystemError,
+        "PyArg_UnpackTuple() argument list is not a tuple");
     return 0;
   }
   l = PyTuple_GET_SIZE(args);

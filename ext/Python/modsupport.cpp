@@ -78,7 +78,8 @@ static void doIgnore(const char** p_format, std::va_list* p_va, char endchar,
   }
   Py_XDECREF(v);
   if (**p_format != endchar) {
-    PyErr_SetString(PyExc_SystemError, "Unmatched paren in format");
+    Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                    "Unmatched paren in format");
     return;
   }
   if (endchar != '\0') {
@@ -92,7 +93,7 @@ static PyObject* doMakeDict(const char** p_format, std::va_list* p_va,
     return nullptr;
   }
   if (n % 2) {
-    PyErr_SetString(PyExc_SystemError, "Bad dict format");
+    Thread::current()->raiseWithFmt(LayoutId::kSystemError, "Bad dict format");
     doIgnore(p_format, p_va, endchar, n, flags);
     return nullptr;
   }
@@ -123,7 +124,8 @@ static PyObject* doMakeDict(const char** p_format, std::va_list* p_va,
   }
   if (**p_format != endchar) {
     Py_DECREF(d);
-    PyErr_SetString(PyExc_SystemError, "Unmatched paren in format");
+    Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                    "Unmatched paren in format");
     return nullptr;
   }
   if (endchar != '\0') {
@@ -155,7 +157,8 @@ static PyObject* doMakeList(const char** p_format, std::va_list* p_va,
   }
   if (**p_format != endchar) {
     Py_DECREF(v);
-    PyErr_SetString(PyExc_SystemError, "Unmatched paren in format");
+    Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                    "Unmatched paren in format");
     return nullptr;
   }
   if (endchar != '\0') {
@@ -187,7 +190,8 @@ static PyObject* doMakeTuple(const char** p_format, std::va_list* p_va,
   }
   if (**p_format != endchar) {
     Py_DECREF(v);
-    PyErr_SetString(PyExc_SystemError, "Unmatched paren in format");
+    Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                    "Unmatched paren in format");
     return nullptr;
   }
   if (endchar != '\0') {
@@ -203,7 +207,8 @@ Py_ssize_t countFormat(const char* format, char endchar) {
     switch (*format) {
       case '\0':
         // Premature end
-        PyErr_SetString(PyExc_SystemError, "unmatched paren in format");
+        Thread::current()->raiseWithFmt(LayoutId::kSystemError,
+                                        "unmatched paren in format");
         return -1;
       case '(':
       case '[':
@@ -345,8 +350,9 @@ PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
           if (n < 0) {
             size_t m = std::strlen(str);
             if (m > kMaxWord) {
-              PyErr_SetString(PyExc_OverflowError,
-                              "string too long for Python string");
+              Thread::current()->raiseWithFmt(
+                  LayoutId::kOverflowError,
+                  "string too long for Python string");
               return nullptr;
             }
             n = static_cast<Py_ssize_t>(m);
@@ -377,8 +383,8 @@ PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
           if (n < 0) {
             size_t m = std::strlen(str);
             if (m > kMaxWord) {
-              PyErr_SetString(PyExc_OverflowError,
-                              "string too long for Python bytes");
+              Thread::current()->raiseWithFmt(
+                  LayoutId::kOverflowError, "string too long for Python bytes");
               return nullptr;
             }
             n = static_cast<Py_ssize_t>(m);
@@ -406,8 +412,8 @@ PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
             // a value failed, that's OK, and we pass the error on; but if no
             // error occurred it's not clear that the caller knew what she was
             // doing.
-            PyErr_SetString(PyExc_SystemError,
-                            "NULL object passed to Py_BuildValue");
+            Thread::current()->raiseWithFmt(
+                LayoutId::kSystemError, "NULL object passed to Py_BuildValue");
           }
           return v;
         }
@@ -419,8 +425,8 @@ PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
         break;
 
       default:
-        PyErr_SetString(PyExc_SystemError,
-                        "bad format char passed to Py_BuildValue");
+        Thread::current()->raiseWithFmt(
+            LayoutId::kSystemError, "bad format char passed to Py_BuildValue");
         return nullptr;
     }
   }
