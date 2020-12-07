@@ -1029,8 +1029,11 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   // frame->insertValueAt(callable_idx, BoundMethod::cast(callable).function());
   Register r_oparg_saved = R8;
   Register r_saved_callable = R9;
+  Register r_saved_bc = R10;
   __ movl(r_oparg_saved, kOpargReg);
   __ movq(r_saved_callable, kCallableReg);
+  __ movq(r_saved_bc, kBCReg);
+  static_assert(kBCReg == RCX, "rcx used as arg to repmovsq");
   // Use `rep movsq` to copy RCX words from RSI to RDI.
   __ movl(RCX, kOpargReg);
   __ movq(RSI, RSP);
@@ -1293,8 +1296,11 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ bind(&remove_value_and_call);
   Register r_saved_rdi = R8;
   Register r_saved_rsi = R9;
+  Register r_saved_bc = R10;
   __ movq(r_saved_rdi, RDI);
   __ movq(r_saved_rsi, RSI);
+  __ movq(r_saved_bc, kBCReg);
+  static_assert(kBCReg == RCX, "rcx used as arg to repmovsq");
   // Use `rep movsq` to copy RCX words from RSI to RDI.
   __ std();
   __ leaq(RCX, Address(kOpargReg, 1));
@@ -1305,6 +1311,7 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ addq(RSP, Immediate(kPointerSize));
   __ movq(RDI, r_saved_rdi);
   __ movq(RSI, r_saved_rsi);
+  __ movq(kBCReg, r_saved_bc);
   __ jmp(&env->call_handler, Assembler::kFarJump);
 }
 
@@ -1774,7 +1781,7 @@ word emitHandlerTable(EmitEnv* env) {
     env->current_handler = "YIELD pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
     // RAX = thread->stackPop()
-    Register r_scratch_top = RCX;
+    Register r_scratch_top = R8;
     __ movq(r_scratch_top, Address(kThreadReg, Thread::stackPointerOffset()));
     __ movq(RAX, Address(r_scratch_top, 0));
     __ addq(r_scratch_top, Immediate(kPointerSize));
