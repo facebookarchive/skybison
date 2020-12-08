@@ -824,6 +824,30 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_function = RDI;
+  Register r_scratch = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_function, r_layout_id, r_caches,
+                          kOpargReg, r_scratch);
+  // Call getter(receiver)
+  __ pushq(r_function);
+  __ pushq(r_base);
+  __ movq(kOpargReg, Immediate(1));
+  __ jmp(Address(r_function, heapObjectDisp(Function::kEntryAsmOffset)));
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
 void emitHandler<LOAD_CONST>(EmitEnv* env) {
   Register r_scratch = RAX;
   __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
