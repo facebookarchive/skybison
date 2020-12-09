@@ -20,6 +20,17 @@
 
 namespace py {
 
+word adjustedStrIndex(const Str& str, word index) {
+  word len = str.length();
+  if (index >= 0) {
+    return str.offsetByCodePoints(0, index);
+  }
+  if (-len < index) {
+    return Utils::maximum(0l, str.offsetByCodePoints(len, index));
+  }
+  return 0;
+}
+
 RawObject newStrFromWideChar(Thread* thread, const wchar_t* wc_str) {
   return newStrFromWideCharWithLength(thread, wc_str, std::wcslen(wc_str));
 }

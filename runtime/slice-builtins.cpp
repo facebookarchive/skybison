@@ -21,6 +21,37 @@ void initializeSliceType(Thread* thread) {
                  Slice::kSize, /*basetype=*/false);
 }
 
+bool tryUnpackSlice(const RawObject& key, word* start, word* stop) {
+  if (!key.isSlice()) {
+    return false;
+  }
+
+  RawSlice slice = Slice::cast(key);
+  if (!slice.step().isNoneType()) {
+    return false;
+  }
+
+  RawObject start_obj = slice.start();
+  if (start_obj.isNoneType()) {
+    *start = 0;
+  } else if (start_obj.isSmallInt()) {
+    *start = SmallInt::cast(start_obj).value();
+  } else {
+    return false;
+  }
+
+  RawObject stop_obj = slice.stop();
+  if (stop_obj.isNoneType()) {
+    *stop = kMaxWord;
+  } else if (stop_obj.isSmallInt()) {
+    *stop = SmallInt::cast(stop_obj).value();
+  } else {
+    return false;
+  }
+
+  return true;
+}
+
 RawObject METH(slice, __new__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));

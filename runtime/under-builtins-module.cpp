@@ -21,6 +21,7 @@
 #include "mro.h"
 #include "object-builtins.h"
 #include "range-builtins.h"
+#include "slice-builtins.h"
 #include "str-builtins.h"
 #include "strarray-builtins.h"
 #include "structseq-builtins.h"
@@ -603,41 +604,6 @@ void FUNC(_builtins, __init_module__)(Thread* thread, const Module& module,
   executeFrozenModule(thread, module, bytecode);
 }
 
-// Attempts to unpack a possibly-slice key. Returns true and sets start, stop if
-// key is a slice with None step and None/SmallInt start and stop. The start and
-// stop values must still be adjusted for the container's length. Returns false
-// if key is not a slice or if the slice bounds are not the common types.
-static bool trySlice(const Object& key, word* start, word* stop) {
-  if (!key.isSlice()) {
-    return false;
-  }
-
-  RawSlice slice = Slice::cast(*key);
-  if (!slice.step().isNoneType()) {
-    return false;
-  }
-
-  RawObject start_obj = slice.start();
-  if (start_obj.isNoneType()) {
-    *start = 0;
-  } else if (start_obj.isSmallInt()) {
-    *start = SmallInt::cast(start_obj).value();
-  } else {
-    return false;
-  }
-
-  RawObject stop_obj = slice.stop();
-  if (stop_obj.isNoneType()) {
-    *stop = kMaxWord;
-  } else if (stop_obj.isSmallInt()) {
-    *stop = SmallInt::cast(stop_obj).value();
-  } else {
-    return false;
-  }
-
-  return true;
-}
-
 RawObject FUNC(_builtins, _ContextVar_guard)(Thread* thread, Arguments args) {
   if (args.get(0).isContextVar()) {
     return NoneType::object();
@@ -903,7 +869,7 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Arguments args) {
   }
 
   word start, stop;
-  if (!trySlice(key, &start, &stop)) {
+  if (!tryUnpackSlice(key, &start, &stop)) {
     return Unbound::object();
   }
 
@@ -1348,7 +1314,7 @@ RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Arguments args) {
   }
 
   word start, stop;
-  if (!trySlice(key, &start, &stop)) {
+  if (!tryUnpackSlice(key, &start, &stop)) {
     return Unbound::object();
   }
 
@@ -3396,7 +3362,7 @@ RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Arguments args) {
   }
 
   word start, stop;
-  if (!trySlice(key, &start, &stop)) {
+  if (!tryUnpackSlice(key, &start, &stop)) {
     return Unbound::object();
   }
 
@@ -3562,7 +3528,7 @@ RawObject FUNC(_builtins, _list_setitem)(Thread* thread, Arguments args) {
   }
 
   word start, stop;
-  if (!trySlice(key, &start, &stop)) {
+  if (!tryUnpackSlice(key, &start, &stop)) {
     return Unbound::object();
   }
 
@@ -4866,17 +4832,6 @@ RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Arguments args) {
   return *instance;
 }
 
-static word adjustedStrIndex(const Str& str, word index) {
-  word len = str.length();
-  if (index >= 0) {
-    return str.offsetByCodePoints(0, index);
-  }
-  if (-len < index) {
-    return Utils::maximum(0l, str.offsetByCodePoints(str.length(), index));
-  }
-  return 0;
-}
-
 RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -4908,7 +4863,7 @@ RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Arguments args) {
   }
 
   word start, stop;
-  if (!trySlice(key, &start, &stop)) {
+  if (!tryUnpackSlice(key, &start, &stop)) {
     return Unbound::object();
   }
 
@@ -5531,7 +5486,7 @@ RawObject FUNC(_builtins, _tuple_getitem)(Thread* thread, Arguments args) {
   }
 
   word start, stop;
-  if (!trySlice(key, &start, &stop)) {
+  if (!tryUnpackSlice(key, &start, &stop)) {
     return Unbound::object();
   }
 
