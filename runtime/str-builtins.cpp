@@ -602,6 +602,60 @@ RawObject METH(str, __ge__)(Thread* thread, Arguments args) {
   return Bool::fromBool(self.compare(*other) >= 0);
 }
 
+bool METH(str, __getitem___intrinsic)(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(1);
+  if (!arg0.isStr()) {
+    return false;
+  }
+  RawObject arg1 = thread->stackPeek(0);
+  word idx;
+  if (arg1.isSmallInt()) {
+    idx = RawSmallInt::cast(arg1).value();
+  } else if (arg1.isBool()) {
+    idx = RawBool::cast(arg1).value();
+  } else {
+    word start, stop;
+    if (!tryUnpackSlice(arg1, &start, &stop)) {
+      return false;
+    }
+    {
+      // Manually adjust slice bounds to avoid an extra call to codePointLength
+      HandleScope scope(thread);
+      Str self(&scope, arg0);
+      word start_index = adjustedStrIndex(self, start);
+      word stop_index = adjustedStrIndex(self, stop);
+
+      thread->stackDrop(2);
+      thread->stackSetTop(thread->runtime()->strSubstr(
+          thread, self, start_index, stop_index - start_index));
+    }
+    return true;
+  }
+  RawStr self = Str::cast(arg0);
+  word len = self.length();
+  if (0 <= idx && idx < len) {
+    word offset = self.offsetByCodePoints(0, idx);
+    if (offset < len) {
+      word ignored;
+      thread->stackDrop(2);
+      thread->stackSetTop(
+          RawSmallStr::fromCodePoint(self.codePointAt(offset, &ignored)));
+      return true;
+    }
+  }
+  if (0 > idx) {
+    word offset = self.offsetByCodePoints(len, idx);
+    if (offset < len && offset != -1) {
+      word ignored;
+      thread->stackDrop(2);
+      thread->stackSetTop(
+          RawSmallStr::fromCodePoint(self.codePointAt(offset, &ignored)));
+      return true;
+    }
+  }
+  return false;
+}
+
 RawObject METH(str, __gt__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));

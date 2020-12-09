@@ -5972,9 +5972,8 @@ class str(bootstrap=True):
     __getattribute__ = object.__getattribute__
 
     def __getitem__(self, key):
-        result = _str_getitem(self, key)
-        if result is not _Unbound:
-            return result
+        "$intrinsic$"
+        _str_guard(self)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _str_len(self)
