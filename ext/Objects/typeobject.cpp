@@ -1926,6 +1926,14 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   DCHECK(typeHasSlots(type),
          "GenericAlloc from types initialized through Python code");
 
+  if (!type.hasNativeData()) {
+    // Since the type will be pointed to by the layout as long as there are any
+    // objects of its type, we don't need to INCREF the type object if it
+    // doesn't have NativeData.
+    Layout layout(&scope, type.instanceLayout());
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->newInstance(layout));
+  }
   PyObject* result = allocatePyObject(type, nitems);
   if (result == nullptr) {
     thread->raiseMemoryError();

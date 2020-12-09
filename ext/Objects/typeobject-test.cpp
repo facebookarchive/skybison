@@ -31,6 +31,41 @@ TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
   EXPECT_TRUE(PyType_CheckExact(pylong_type));
 }
 
+TEST_F(TypeExtensionApiTest,
+       PyTypeGenericNewWithTypeWithoutNativeDataReturnsPyObject) {
+  PyType_Slot slots[] = {
+      {Py_tp_new, reinterpret_cast<void*>(PyType_GenericNew)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, slots,
+  };
+  PyObjectPtr ext_type(PyType_FromSpec(&spec));
+  ASSERT_NE(ext_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(ext_type));
+  EXPECT_EQ(PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new),
+            reinterpret_cast<void*>(PyType_GenericNew));
+  auto new_slot = reinterpret_cast<newfunc>(
+      PyType_GetSlot(ext_type.asTypeObject(), Py_tp_new));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr result(new_slot(ext_type.asTypeObject(), args, kwargs));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyObject_IsInstance(result, ext_type), 1);
+
+  // Ensure that a managed subtype of the native type can be created
+  // via its __new__ function.
+  testing::moduleSet("__main__", "Bar", ext_type);
+  EXPECT_EQ(PyRun_SimpleString(R"(
+class SubBar(Bar):
+  pass
+
+s = SubBar()
+)"),
+            0);
+}
+
 TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedTypePyro) {
   PyRun_SimpleString(R"(class Foo: pass)");
   PyObjectPtr foo_type(testing::mainModuleGet("Foo"));
