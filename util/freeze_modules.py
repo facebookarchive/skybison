@@ -2,13 +2,20 @@
 
 import __future__
 
+# Add library directory so we can import the compiler.
+import os
+import sys
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(SCRIPT_DIR, "..", "library"))
+
 import argparse
 import marshal
-import os
 import re
-import sys
 import tempfile
 from collections import namedtuple
+from compiler import compile as compiler_compile
+from compiler.consts import PyCF_REWRITE_PRINTF
 from pathlib import Path
 from types import CodeType
 
@@ -197,9 +204,11 @@ def process_module(filename, builtins, intrinsics):
     with open(filename) as fp:
         source = fp.read()
     builtin_init = "$builtin-init-module$" in source
-    flags = __future__.CO_FUTURE_ANNOTATIONS
-    module_code = compile(
-        source, filename, "exec", flags=flags, dont_inherit=True, optimize=0
+    flags = __future__.CO_FUTURE_ANNOTATIONS | PyCF_REWRITE_PRINTF
+    # TODO(emacs): Specify PyRo compiler directly instead of specifying
+    # PyCF_REWRITE_PRINTF manually
+    module_code = compiler_compile(
+        source, filename, "exec", flags, dont_inherit=None, optimize=0
     )
     marked_code = mark_native_functions(module_code, builtins, intrinsics, fullname)
     # We don't write pyc headers because it would make bootstrapping tricky.
