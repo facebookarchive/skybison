@@ -3,12 +3,26 @@
 #include "frame.h"
 #include "globals.h"
 #include "marshal.h"
+#include "module-builtins.h"
 #include "modules.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
 
 namespace py {
+
+void FUNC(marshal, __init_module__)(Thread* thread, const Module& module,
+                                    View<byte> bytecode) {
+  HandleScope scope(thread);
+
+  // Add module variables
+  {
+    Object magic_number(&scope, SmallInt::fromWord(kPycMagic37b5));
+    moduleAtPutById(thread, module, ID(magic_number), magic_number);
+  }
+
+  executeFrozenModule(thread, module, bytecode);
+}
 
 RawObject FUNC(marshal, loads)(Thread* thread, Arguments args) {
   HandleScope scope(thread);

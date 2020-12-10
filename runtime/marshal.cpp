@@ -13,10 +13,6 @@
 
 namespace py {
 
-// Magic number from `importlib/_bootstrap_external.py`.
-const int32_t kPycMagic37b5 =
-    3394 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
-
 enum {
   FLAG_REF = '\x80',  // with a type, add obj to index
   TYPE_ASCII = 'a',

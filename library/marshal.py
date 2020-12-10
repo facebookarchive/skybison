@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# $builtin-init-module$
 """This module contains functions that can read and write Python values in
 a binary format. The format is specific to Python, but independent of
 machine architecture issues.

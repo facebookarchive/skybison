@@ -296,8 +296,8 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3394).to_bytes(2, "little") + b"\r\n"
-_RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, "little")  # For import.c
+_RAW_MAGIC_NUMBER = marshal.magic_number  # For import.c
+MAGIC_NUMBER = _RAW_MAGIC_NUMBER.to_bytes(4, "little")
 
 _PYCACHE = "__pycache__"
 _OPT = "opt-"

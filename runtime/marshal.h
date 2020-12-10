@@ -6,6 +6,10 @@
 
 namespace py {
 
+// Magic number also used by `library/_frozen_importlib_external.py`.
+const int32_t kPycMagic37b5 =
+    3394 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
+
 class RawList;
 class RawObject;
 class Runtime;

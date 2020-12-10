@@ -679,6 +679,7 @@ class Runtime;
   V(little)                                                                    \
   V(longrange_iterator)                                                        \
   V(lshift)                                                                    \
+  V(magic_number)                                                              \
   V(mappingproxy)                                                              \
   V(matmul)                                                                    \
   V(maxlen)                                                                    \
