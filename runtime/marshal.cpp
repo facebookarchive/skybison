@@ -13,9 +13,7 @@
 
 namespace py {
 
-// Magic numbers from `importlib/_bootstrap_external.py`.
-const int32_t kPycMagic36rc1 =
-    3379 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
+// Magic number from `importlib/_bootstrap_external.py`.
 const int32_t kPycMagic37b5 =
     3394 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
 
@@ -78,15 +76,6 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
     readLong();  // read source timestamp.
     readLong();  // read source length.
     DCHECK(pos_ == 16, "size mismatch");
-  } else if (magic == kPycMagic36rc1) {
-    if (length_ - pos_ < 8) {
-      return thread_->raiseWithFmt(
-          LayoutId::kEOFError,
-          "reached end of file while reading header of '%S'", &filename);
-    }
-    readLong();  // read source timestamp.
-    readLong();  // read source length.
-    DCHECK(pos_ == 12, "size mismatch");
   } else {
     return thread_->raiseWithFmt(LayoutId::kImportError,
                                  "unsupported magic number in '%S'", &filename);
