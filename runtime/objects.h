@@ -879,10 +879,10 @@ class RawError : public RawObject {
   // Kind.
   ErrorKind kind() const;
 
-  // Layout.
-  static const int kKindOffset = kImmediateTagBits;
+  // Bit Layout.
+  static const int kTagMask = (1 << kBitsPerByte) - 1;
+  static const int kKindOffset = kBitsPerByte;
   static const int kKindBits = 3;
-  static const uword kKindMask = (1U << kKindBits) - 1;
 
   RAW_OBJECT_COMMON(Error);
 
@@ -912,6 +912,10 @@ class RawBool : public RawObject {
   static RawBool fromBool(bool value);
 
   static RawBool negate(RawObject value);
+
+  // Bit Layout.
+  static const int kTagMask = (1 << kBitsPerByte) - 1;
+  static const int kValueOffset = kBitsPerByte;
 
   RAW_OBJECT_COMMON(Bool);
 };
@@ -3913,11 +3917,11 @@ inline LayoutId RawObject::layoutId() const {
 }
 
 inline bool RawObject::isBool() const {
-  return (raw() & kImmediateTagMask) == kBoolTag;
+  return (raw() & RawBool::kTagMask) == kBoolTag;
 }
 
 inline bool RawObject::isError() const {
-  return (raw() & kImmediateTagMask) == kErrorTag;
+  return (raw() & RawError::kTagMask) == kErrorTag;
 }
 
 inline bool RawObject::isErrorError() const {
@@ -3949,11 +3953,11 @@ inline bool RawObject::isHeader() const {
 }
 
 inline bool RawObject::isNoneType() const {
-  return (raw() & kImmediateTagMask) == kNoneTag;
+  return *this == RawNoneType::object();
 }
 
 inline bool RawObject::isNotImplementedType() const {
-  return (raw() & kImmediateTagMask) == kNotImplementedTag;
+  return *this == RawNotImplementedType::object();
 }
 
 inline bool RawObject::isSmallBytes() const {
@@ -3969,7 +3973,7 @@ inline bool RawObject::isSmallStr() const {
 }
 
 inline bool RawObject::isUnbound() const {
-  return (raw() & kImmediateTagMask) == kUnboundTag;
+  return *this == RawUnbound::object();
 }
 
 inline bool RawObject::isHeapObject() const {
@@ -4902,7 +4906,7 @@ inline RawError RawError::outOfBounds() {
 }
 
 inline ErrorKind RawError::kind() const {
-  return static_cast<ErrorKind>((raw() >> kKindOffset) & kKindMask);
+  return static_cast<ErrorKind>(raw() >> kKindOffset);
 }
 
 // RawBool
@@ -4920,11 +4924,11 @@ inline RawBool RawBool::negate(RawObject value) {
 
 inline RawBool RawBool::fromBool(bool value) {
   return cast(
-      RawObject{(static_cast<uword>(value) << kImmediateTagBits) | kBoolTag});
+      RawObject{(static_cast<uword>(value) << kValueOffset) | kBoolTag});
 }
 
 inline bool RawBool::value() const {
-  return (raw() >> kImmediateTagBits) ? true : false;
+  return static_cast<byte>(raw() >> kValueOffset) ? true : false;
 }
 
 // RawNotImplementedType

@@ -39,9 +39,6 @@ TEST_F(BytecodeTest, NextBytecodeOpReturnsNextBytecodeOpPair) {
 TEST_F(BytecodeTest, OpargFromObject) {
   EXPECT_EQ(NoneType::object(),
             objectFromOparg(opargFromObject(NoneType::object())));
-  EXPECT_EQ(Bool::trueObj(), objectFromOparg(opargFromObject(Bool::trueObj())));
-  EXPECT_EQ(Bool::falseObj(),
-            objectFromOparg(opargFromObject(Bool::falseObj())));
   EXPECT_EQ(SmallInt::fromWord(-1),
             objectFromOparg(opargFromObject(SmallInt::fromWord(-1))));
   EXPECT_EQ(SmallInt::fromWord(-64),
@@ -127,24 +124,20 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST, 2, LOAD_CONST, 3,
-      LOAD_CONST, 4, LOAD_CONST, 5, LOAD_CONST, 6,
-  };
+  byte bytecode[] = {LOAD_CONST, 0,          LOAD_CONST, 1,          LOAD_CONST,
+                     2,          LOAD_CONST, 3,          LOAD_CONST, 4};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   // Immediate objects.
-  Object obj1(&scope, NoneType::object());
-  Object obj2(&scope, Bool::trueObj());
-  Object obj3(&scope, Bool::falseObj());
-  Object obj4(&scope, SmallInt::fromWord(0));
-  Object obj5(&scope, Str::empty());
+  Object obj0(&scope, NoneType::object());
+  Object obj1(&scope, SmallInt::fromWord(0));
+  Object obj2(&scope, Str::empty());
   // Not immediate since it doesn't fit in byte.
-  Object obj6(&scope, SmallInt::fromWord(64));
+  Object obj3(&scope, SmallInt::fromWord(64));
   // Not immediate since it's a heap object.
-  Object obj7(&scope, runtime_->newTuple(4));
-  Tuple consts(&scope, runtime_->newTupleWithN(7, &obj1, &obj2, &obj3, &obj4,
-                                               &obj5, &obj6, &obj7));
+  Object obj4(&scope, runtime_->newTuple(4));
+  Tuple consts(&scope,
+               runtime_->newTupleWithN(5, &obj0, &obj1, &obj2, &obj3, &obj4));
   code.setConsts(*consts);
 
   Module module(&scope, findMainModule(runtime_));
@@ -153,12 +146,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
 
   byte expected[] = {
       LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(NoneType::object())),
-      LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(Bool::trueObj())),
-      LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(Bool::falseObj())),
       LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(SmallInt::fromWord(0))),
       LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(Str::empty())),
-      LOAD_CONST,     5,
-      LOAD_CONST,     6,
+      LOAD_CONST,     3,
+      LOAD_CONST,     4,
   };
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));

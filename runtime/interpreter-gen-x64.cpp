@@ -1090,9 +1090,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   __ movq(kArgRegs[2], kOpargReg);
   emitCall<Interpreter::PrepareCallableResult (*)(Thread*, word, word)>(
       env, Interpreter::prepareCallableCallDunderCall);
-  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                "tag should fit a byte for cmpb");
-  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
   __ movq(kCallableReg, kReturnRegs[0]);
@@ -1127,9 +1125,7 @@ void emitCallTrampoline(EmitEnv* env) {
                 "type mismatch");
   __ call(r_scratch);
   // if (kReturnRegs[0].isErrorException()) return UNWIND;
-  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                "tag should fit a byte for cmpb");
-  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
   __ pushq(kReturnRegs[0]);
@@ -1244,9 +1240,7 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
   __ call(r_code);
 
   // if (kReturnRegs[0].isErrorException()) return UNWIND;
-  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                "tag should fit a byte for cmpb");
-  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &unwind, Assembler::kFarJump);
 
   // thread->popFrame()
@@ -1344,7 +1338,7 @@ void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
   Register r_scratch = RAX;
 
   __ movq(r_scratch, Address(kFrameReg, kOpargReg, TIMES_8, Frame::kSize));
-  __ cmpb(r_scratch, Immediate(Error::notFound().raw()));
+  __ cmpl(r_scratch, Immediate(Error::notFound().raw()));
   __ jcc(EQUAL, genericHandlerLabel(env), Assembler::kFarJump);
   __ pushq(r_scratch);
   emitNextOpcode(env);
@@ -1381,15 +1375,11 @@ template <>
 void emitHandler<UNARY_NOT>(EmitEnv* env) {
   Label slow_path;
   Register r_scratch = RAX;
-  Register r_scratch2 = RDX;
 
   // Handle RawBools directly; fall back to C++ for other types
   __ popq(r_scratch);
-  // Add (-kBoolTag) & kImmediateTagMask. This will set the lowest
-  // kImmediateTagBits to 0 iff they were kBoolTag before.
-  __ leal(r_scratch2, Address(r_scratch, (-RawObject::kBoolTag) &
-                                             (RawObject::kImmediateTagMask)));
-  __ testl(r_scratch2, Immediate(RawObject::kImmediateTagMask));
+  static_assert(Bool::kTagMask == 0xff, "expected full byte tag");
+  __ cmpb(r_scratch, Immediate(RawObject::kBoolTag));
   // If it had kBoolTag, then negate and push.
   __ jcc(NOT_ZERO, &slow_path, Assembler::kNearJump);
   __ xorl(r_scratch,
@@ -1412,9 +1402,9 @@ static void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
   Label* false_target = jump_value ? &next : &jump;
   __ popq(r_scratch);
 
-  __ cmpb(r_scratch, boolImmediate(true));
+  __ cmpl(r_scratch, boolImmediate(true));
   __ jcc(EQUAL, true_target, Assembler::kNearJump);
-  __ cmpb(r_scratch, boolImmediate(false));
+  __ cmpl(r_scratch, boolImmediate(false));
   __ jcc(EQUAL, false_target, Assembler::kNearJump);
   __ cmpq(r_scratch, smallIntImmediate(0));
   __ jcc(EQUAL, false_target, Assembler::kNearJump);
@@ -1447,9 +1437,9 @@ void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
 
   // Handle RawBools directly; fall back to C++ for other types.
   __ popq(r_scratch);
-  __ cmpb(r_scratch, boolImmediate(!jump_value));
+  __ cmpl(r_scratch, boolImmediate(!jump_value));
   __ jcc(EQUAL, &next, Assembler::kNearJump);
-  __ cmpb(r_scratch, boolImmediate(jump_value));
+  __ cmpl(r_scratch, boolImmediate(jump_value));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
   __ pushq(r_scratch);
   __ movl(kPCReg, kOpargReg);
@@ -1773,9 +1763,7 @@ word emitHandlerTable(EmitEnv* env) {
 
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::unwind);
     // Check RAX.isErrorError()
-    static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                  "tag should fit a byte for cmpb");
-    __ cmpb(RAX, Immediate(Error::error().raw()));
+    __ cmpl(RAX, Immediate(Error::error().raw()));
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
     emitNextOpcode(env);
@@ -1790,9 +1778,7 @@ word emitHandlerTable(EmitEnv* env) {
     __ movq(kArgRegs[0], kThreadReg);
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::handleReturn);
     // Check RAX.isErrorError()
-    static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
-                  "tag should fit a byte for cmpb");
-    __ cmpb(RAX, Immediate(Error::error().raw()));
+    __ cmpl(RAX, Immediate(Error::error().raw()));
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
     emitNextOpcode(env);
