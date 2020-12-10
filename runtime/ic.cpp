@@ -344,7 +344,7 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type cached_type(&scope, runtime->typeAt(cached_layout_id));
-  if (!typeIsSubclass(cached_type, updated_type)) {
+  if (!typeIsSubclass(*cached_type, *updated_type)) {
     return false;
   }
   Tuple mro(&scope, cached_type.mro());

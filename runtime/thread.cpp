@@ -769,10 +769,7 @@ void Thread::clearPendingException() {
 }
 
 bool Thread::pendingExceptionMatches(LayoutId type) {
-  HandleScope scope(this);
-  Type exc(&scope, pendingExceptionType());
-  Type parent(&scope, runtime()->typeAt(type));
-  return typeIsSubclass(exc, parent);
+  return typeIsSubclass(pendingExceptionType(), runtime()->typeAt(type));
 }
 
 void Thread::setCaughtExceptionType(RawObject type) {

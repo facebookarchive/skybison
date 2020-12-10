@@ -107,7 +107,7 @@ RawObject METH(super, __init__)(Thread* thread, Arguments args) {
     return thread->raiseRequiresType(self_obj, ID(super));
   }
   Super super(&scope, *self_obj);
-  Object type_obj(&scope, NoneType::object());
+  Object type(&scope, NoneType::object());
   Object obj(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   if (args.get(1).isUnbound()) {
@@ -145,7 +145,7 @@ RawObject METH(super, __init__)(Thread* thread, Arguments args) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): __class__ cell not found");
     }
-    type_obj = Cell::cast(cell).value();
+    type = Cell::cast(cell).value();
     obj = caller_frame->local(0);
     // The parameter value may have been moved into a value cell.
     if (obj.isNoneType() && !code.cell2arg().isNoneType()) {
@@ -162,26 +162,21 @@ RawObject METH(super, __init__)(Thread* thread, Arguments args) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "super() expected 2 arguments");
     }
-    type_obj = args.get(1);
+    type = args.get(1);
     obj = args.get(2);
   }
-  if (!runtime->isInstanceOfType(*type_obj)) {
+  if (!runtime->isInstanceOfType(*type)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "super() argument 1 must be type");
   }
-  super.setType(*type_obj);
+  super.setType(*type);
   super.setObject(*obj);
   Object obj_type_obj(&scope, NoneType::object());
-  Type type(&scope, *type_obj);
-  if (runtime->isInstanceOfType(*obj)) {
-    Type obj_type(&scope, *obj);
-    if (typeIsSubclass(obj_type, type)) {
-      obj_type_obj = *obj;
-    }
-  }
-  if (obj_type_obj.isNoneType()) {
+  if (runtime->isInstanceOfType(*obj) && typeIsSubclass(*obj, *type)) {
+    obj_type_obj = *obj;
+  } else {
     Type obj_type(&scope, runtime->typeOf(*obj));
-    if (typeIsSubclass(obj_type, type)) {
+    if (typeIsSubclass(*obj_type, *type)) {
       obj_type_obj = *obj_type;
     } else {
       return thread->raiseWithFmt(LayoutId::kTypeError,

@@ -222,26 +222,21 @@ bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
     return true;
   }
   if (type.isType()) {
-    HandleScope scope(thread);
-    Type obj_type_handle(&scope, obj_type);
-    Type type_handle(&scope, type);
-    if (typeIsSubclass(obj_type_handle, type_handle)) {
+    if (typeIsSubclass(obj_type, type)) {
       thread->stackDrop(2);
       thread->stackSetTop(Bool::trueObj());
       return true;
     }
   }
   if (type.isTuple()) {
-    HandleScope scope(thread);
-    Type obj_type_handle(&scope, obj_type);
-    Tuple types(&scope, type);
-    Type type_handle(&scope, obj_type);
-    for (word i = 0; i < types.length(); i++) {
-      if (!types.at(i).isType()) {
+    RawTuple types = Tuple::cast(type);
+    word length = types.length();
+    for (word i = 0; i < length; i++) {
+      RawObject item = types.at(i);
+      if (!item.isType()) {
         return false;
       }
-      type_handle = types.at(i);
-      if (typeIsSubclass(obj_type_handle, type_handle)) {
+      if (typeIsSubclass(obj_type, item)) {
         thread->stackDrop(2);
         thread->stackSetTop(Bool::trueObj());
         return true;
@@ -323,13 +318,12 @@ void FUNC(builtins, __init_module__)(Thread* thread, const Module& module,
 
 static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
                                     const Tuple& bases) {
-  HandleScope scope(thread);
-  Type result(&scope, *metaclass_type);
   Runtime* runtime = thread->runtime();
+  RawObject result = *metaclass_type;
   for (word i = 0, num_bases = bases.length(); i < num_bases; i++) {
-    Type base_type(&scope, runtime->typeOf(bases.at(i)));
+    RawObject base_type = runtime->typeOf(bases.at(i));
     if (typeIsSubclass(base_type, result)) {
-      result = *base_type;
+      result = base_type;
     } else if (!typeIsSubclass(result, base_type)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
@@ -337,7 +331,7 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
           "(non-strict) subclass of the metaclasses of all its bases");
     }
   }
-  return *result;
+  return result;
 }
 
 RawObject FUNC(builtins, bin)(Thread* thread, Arguments args) {

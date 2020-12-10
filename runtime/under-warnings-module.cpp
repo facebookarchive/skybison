@@ -17,13 +17,13 @@ RawObject getCategory(Thread* thread, const Object& message,
   Type result(&scope, runtime->typeOf(*message));
   Type warning(&scope, runtime->typeAt(LayoutId::kWarning));
   // TODO(bsimmers): Use our equivalent of PyObject_IsInstance once we have it.
-  if (!typeIsSubclass(result, warning)) {
+  if (!typeIsSubclass(*result, *warning)) {
     if (category.isNoneType()) {
       result = *warning;
     } else if (runtime->isInstanceOfType(*category)) {
       result = *category;
     }
-    if (!typeIsSubclass(result, warning)) {
+    if (!typeIsSubclass(*result, *warning)) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "category must be a Warning subclass");
     }

@@ -779,7 +779,7 @@ RawObject layoutCreateEmpty(Thread* thread) {
 
   Type expected_type(&scope, runtime->typeAt(layout_id));
   Type exception_type(&scope, thread->pendingExceptionType());
-  if (!typeIsSubclass(exception_type, expected_type)) {
+  if (!typeIsSubclass(*exception_type, *expected_type)) {
     Str expected_name(&scope, expected_type.name());
     Str actual_name(&scope, exception_type.name());
     return ::testing::AssertionFailure()

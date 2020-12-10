@@ -171,10 +171,9 @@ ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
                                 "'__new__' requires 'type' but got '%T'",
                                 &self_obj);
   }
-  Type self_type(&scope, *self_obj);
   Function function(&scope, thread->currentFrame()->function());
   Type expected_type(&scope, slotWrapperFunctionType(function));
-  if (!typeIsSubclass(self_type, expected_type)) {
+  if (!typeIsSubclass(*self_obj, *expected_type)) {
     Str expected_type_name(&scope, strUnderlying(expected_type.name()));
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'__new__' requires '%S' but got '%T'",
@@ -191,11 +190,9 @@ ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
 
 bool checkSelfWithSlotType(Thread* thread, const Object& self) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type self_type(&scope, runtime->typeOf(*self));
   Function function(&scope, thread->currentFrame()->function());
   Type expected_type(&scope, slotWrapperFunctionType(function));
-  if (!typeIsSubclass(self_type, expected_type)) {
+  if (!typeIsSubclass(thread->runtime()->typeOf(*self), *expected_type)) {
     Str slot_name(&scope, function.name());
     Str expected_type_name(&scope, strUnderlying(expected_type.name()));
     thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1751,8 +1748,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
   // tp_setattro
   if (typeSlotAt(type, Py_tp_setattr) == nullptr &&
       typeSlotAt(type, Py_tp_setattro) == nullptr) {
-    Type type_type(&scope, runtime->typeAt(LayoutId::kType));
-    if (typeIsSubclass(base, type_type)) {
+    if (typeIsSubclass(*base, runtime->typeAt(LayoutId::kType))) {
       typeSlotAtPut(thread, type, Py_tp_setattro,
                     reinterpret_cast<void*>(typeSetattro));
     }
@@ -1983,12 +1979,10 @@ PY_EXPORT int PyObject_TypeCheck_Func(PyObject* obj, PyTypeObject* type) {
 }
 
 PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
-  if (a == b) return 1;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Type a_obj(&scope, ApiHandle::fromPyTypeObject(a)->asObject());
-  Type b_obj(&scope, ApiHandle::fromPyTypeObject(b)->asObject());
-  return typeIsSubclass(a_obj, b_obj) ? 1 : 0;
+  return a == b || typeIsSubclass(ApiHandle::fromPyTypeObject(a)->asObject(),
+                                  ApiHandle::fromPyTypeObject(b)->asObject())
+             ? 1
+             : 0;
 }
 
 PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {

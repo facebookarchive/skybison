@@ -537,7 +537,7 @@ static RawObject fileWriteCStrUnraisable(Thread* thread, const Object& file,
 PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object exc_obj(&scope, thread->pendingExceptionType());
+  Object exc(&scope, thread->pendingExceptionType());
   Object val(&scope, thread->pendingExceptionValue());
   Object tb(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
@@ -568,15 +568,14 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
     DCHECK(!err.isErrorException(), "failed to write traceback");
   }
 
-  if (exc_obj.isNoneType()) {
+  if (exc.isNoneType()) {
     thread->clearPendingException();
     return;
   }
 
-  DCHECK(runtime->isInstanceOfType(*exc_obj), "exc must be a type");
-  Type exc_type(&scope, *exc_obj);
-  Type base_exception(&scope, runtime->typeAt(LayoutId::kBaseException));
-  DCHECK(typeIsSubclass(exc_type, base_exception),
+  DCHECK(runtime->isInstanceOfType(*exc), "exc must be a type");
+  Type exc_type(&scope, *exc);
+  DCHECK(exc_type.isBaseExceptionSubclass(),
          "exc must be a subclass of BaseException");
   // TODO(T42602623): If exc_type.name() is None, Remove dotted components of
   // name, eg A.B.C => C

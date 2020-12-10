@@ -5693,8 +5693,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Arguments args) {
       call_args_obj = *call_args;
     }
     if (instance.isErrorException()) return *instance;
-    Type type(&scope, runtime->typeOf(*instance));
-    if (!typeIsSubclass(type, self)) {
+    if (!typeIsSubclass(runtime->typeOf(*instance), *self)) {
       return *instance;
     }
   }
@@ -5748,11 +5747,8 @@ RawObject FUNC(_builtins, _type_guard)(Thread* thread, Arguments args) {
   return raiseRequiresFromCaller(thread, args, ID(type));
 }
 
-RawObject FUNC(_builtins, _type_issubclass)(Thread* thread, Arguments args) {
-  HandleScope scope(thread);
-  Type subclass(&scope, args.get(0));
-  Type superclass(&scope, args.get(1));
-  return Bool::fromBool(typeIsSubclass(subclass, superclass));
+RawObject FUNC(_builtins, _type_issubclass)(Thread*, Arguments args) {
+  return Bool::fromBool(typeIsSubclass(args.get(0), args.get(1)));
 }
 
 RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Arguments args) {
@@ -5932,15 +5928,17 @@ RawObject FUNC(_builtins, _type_qualname_set)(Thread* thread, Arguments args) {
 
 RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread,
                                                 Arguments args) {
-  HandleScope scope(thread);
-  if (!thread->runtime()->isInstanceOfType(args.get(0))) {
+  RawObject subclass_obj = args.get(0);
+  if (!thread->runtime()->isInstanceOfType(subclass_obj)) {
     return raiseRequiresFromCaller(thread, args, ID(type));
   }
-  Type subclass(&scope, args.get(0));
-  Type superclass(&scope, args.get(1));
-  if (typeIsSubclass(subclass, superclass)) {
+  RawObject superclass_obj = args.get(1);
+  if (typeIsSubclass(subclass_obj, superclass_obj)) {
     return NoneType::object();
   }
+  HandleScope scope(thread);
+  Type subclass(&scope, subclass_obj);
+  Type superclass(&scope, superclass_obj);
   Function function(&scope,
                     thread->currentFrame()->previousFrame()->function());
   Str function_name(&scope, function.name());

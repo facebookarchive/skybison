@@ -117,10 +117,9 @@ RawObject slotDescriptorGet(Thread* thread,
                             const SlotDescriptor& slot_descriptor,
                             const Object& instance_obj) {
   HandleScope scope(thread);
-  Type slot_descriptor_type(&scope, slot_descriptor.type());
   Type instance_type(&scope,
                      thread->runtime()->typeAt(instance_obj.layoutId()));
-  if (!typeIsSubclass(instance_type, slot_descriptor_type)) {
+  if (!typeIsSubclass(*instance_type, slot_descriptor.type())) {
     return slotDescriptorRaiseTypeError(thread, slot_descriptor, instance_obj);
   }
   DCHECK(instance_type.hasFlag(Type::Flag::kHasSlots),
@@ -161,10 +160,9 @@ RawObject slotDescriptorSet(Thread* thread,
                             const SlotDescriptor& slot_descriptor,
                             const Object& instance_obj, const Object& value) {
   HandleScope scope(thread);
-  Type slot_descriptor_type(&scope, slot_descriptor.type());
   Type instance_type(&scope,
                      thread->runtime()->typeAt(instance_obj.layoutId()));
-  if (!typeIsSubclass(instance_type, slot_descriptor_type)) {
+  if (!typeIsSubclass(*instance_type, slot_descriptor.type())) {
     return slotDescriptorRaiseTypeError(thread, slot_descriptor, instance_obj);
   }
   DCHECK(instance_type.hasFlag(Type::Flag::kHasSlots),

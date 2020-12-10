@@ -664,10 +664,10 @@ static RawObject computeFixedAttributeBaseImpl(Thread* thread,
     }
 
     fixed_attr_base = fixedAttributeBaseOfType(thread, base);
-    if (typeIsSubclass(result_fixed_attr_base, fixed_attr_base)) {
+    if (typeIsSubclass(*result_fixed_attr_base, *fixed_attr_base)) {
       continue;
     }
-    if (typeIsSubclass(fixed_attr_base, result_fixed_attr_base)) {
+    if (typeIsSubclass(*fixed_attr_base, *result_fixed_attr_base)) {
       result = *base;
       result_fixed_attr_base = *fixed_attr_base;
     } else {

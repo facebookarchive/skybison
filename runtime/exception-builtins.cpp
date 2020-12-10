@@ -257,7 +257,7 @@ bool givenExceptionMatches(Thread* thread, const Object& given,
     Type supertype(&scope, *exc);
     if (subtype.isBaseExceptionSubclass() &&
         supertype.isBaseExceptionSubclass()) {
-      return typeIsSubclass(subtype, supertype);
+      return typeIsSubclass(*subtype, *supertype);
     }
   }
   return *given_type == *exc;
@@ -295,7 +295,7 @@ void normalizeException(Thread* thread, Object* exc, Object* val,
 
     // TODO(bsimmers): Extend this to support all the weird cases allowed by
     // PyObject_IsSubclass.
-    if (!typeIsSubclass(value_type, type)) {
+    if (!typeIsSubclass(*value_type, *type)) {
       // value isn't an instance of type. Replace it with type(value).
       value = createException(thread, type, value);
       if (value.isError()) return false;

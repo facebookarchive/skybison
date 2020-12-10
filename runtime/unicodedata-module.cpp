@@ -496,10 +496,9 @@ RawObject METH(UCD, bidirectional)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type ucd_type(&scope,
-                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
-  if (!typeIsSubclass(self_type, ucd_type)) {
+  if (!typeIsSubclass(
+          runtime->typeOf(*self),
+          runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)))) {
     return thread->raiseRequiresType(self, ID(UCD));
   }
   Object obj(&scope, args.get(1));
@@ -527,10 +526,9 @@ RawObject METH(UCD, category)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type ucd_type(&scope,
-                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
-  if (!typeIsSubclass(self_type, ucd_type)) {
+  if (!typeIsSubclass(
+          runtime->typeOf(*self),
+          runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)))) {
     return thread->raiseRequiresType(self, ID(UCD));
   }
   Object obj(&scope, args.get(1));
@@ -555,10 +553,9 @@ RawObject METH(UCD, decomposition)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type ucd_type(&scope,
-                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
-  if (!typeIsSubclass(self_type, ucd_type)) {
+  if (!typeIsSubclass(
+          runtime->typeOf(*self),
+          runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)))) {
     return thread->raiseRequiresType(self, ID(UCD));
   }
   Object obj(&scope, args.get(1));
@@ -594,10 +591,9 @@ RawObject METH(UCD, decimal)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type ucd_type(&scope,
-                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
-  if (!typeIsSubclass(self_type, ucd_type)) {
+  if (!typeIsSubclass(
+          runtime->typeOf(*self),
+          runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)))) {
     return thread->raiseRequiresType(self, ID(UCD));
   }
   Object obj(&scope, args.get(1));
@@ -636,10 +632,9 @@ RawObject METH(UCD, digit)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type ucd_type(&scope,
-                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
-  if (!typeIsSubclass(self_type, ucd_type)) {
+  if (!typeIsSubclass(
+          runtime->typeOf(*self),
+          runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)))) {
     return thread->raiseRequiresType(self, ID(UCD));
   }
   Object obj(&scope, args.get(1));
@@ -670,10 +665,9 @@ RawObject METH(UCD, normalize)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
 
   Object self(&scope, args.get(0));
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type ucd_type(&scope,
-                runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)));
-  if (!typeIsSubclass(self_type, ucd_type)) {
+  if (!typeIsSubclass(
+          runtime->typeOf(*self),
+          runtime->lookupNameInModule(thread, ID(unicodedata), ID(UCD)))) {
     return thread->raiseRequiresType(self, ID(UCD));
   }
   Object form_obj(&scope, args.get(1));

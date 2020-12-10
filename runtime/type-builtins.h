@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "layout.h"
 #include "objects.h"
+#include "runtime.h"
 #include "thread.h"
 
 namespace py {
@@ -29,7 +30,7 @@ RawObject findBuiltinTypeWithName(Thread* thread, const Object& name);
 
 RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type);
 
-bool typeIsSubclass(const Type& subclass, const Type& superclass);
+bool typeIsSubclass(RawObject subclass, RawObject superclass);
 
 void typeAddDocstring(Thread* thread, const Type& type);
 
@@ -130,10 +131,18 @@ RawObject typeValueCellAtPut(Thread* thread, const Type& type,
 
 void initializeTypeTypes(Thread* thread);
 
-inline bool typeIsSubclass(const Type& subclass, const Type& superclass) {
-  DCHECK(Tuple::cast(subclass.mro()).at(0) == subclass, "unexpected mro");
+inline bool typeIsSubclass(RawObject subclass, RawObject superclass) {
+  if (DCHECK_IS_ON()) {
+    Runtime* runtime = Thread::current()->runtime();
+    DCHECK(runtime->isInstanceOfType(subclass),
+           "typeIsSubclass subclass must be a type object");
+    DCHECK(runtime->isInstanceOfType(superclass),
+           "typeIsSubclass superclass must be a type object");
+    DCHECK(Tuple::cast(subclass.rawCast<RawType>().mro()).at(0) == subclass,
+           "unexpected mro");
+  }
   if (subclass == superclass) return true;
-  RawTuple mro = Tuple::cast(subclass.mro());
+  RawTuple mro = Tuple::cast(subclass.rawCast<RawType>().mro());
   word length = mro.length();
   for (word i = 1; i < length; i++) {
     if (mro.at(i) == superclass) {
