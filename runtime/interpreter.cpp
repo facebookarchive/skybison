@@ -3859,6 +3859,12 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
   return retryLoadAttrCached(thread, arg);
 }
 
+HANDLER_INLINE Continue Interpreter::doLoadBool(Thread* thread, word arg) {
+  DCHECK(arg == 0x80 || arg == 0, "unexpected arg");
+  thread->stackPush(Bool::fromBool(arg));
+  return Continue::NEXT;
+}
+
 static RawObject excMatch(Thread* thread, const Object& left,
                           const Object& right) {
   Runtime* runtime = thread->runtime();

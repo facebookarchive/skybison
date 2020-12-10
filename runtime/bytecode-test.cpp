@@ -155,6 +155,33 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 }
 
+TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstToLoadBool) {
+  HandleScope scope(thread_);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  // Immediate objects.
+  Object obj0(&scope, Bool::trueObj());
+  Object obj1(&scope, Bool::falseObj());
+  Tuple consts(&scope, runtime_->newTupleWith2(obj0, obj1));
+  code.setConsts(*consts);
+
+  Module module(&scope, findMainModule(runtime_));
+  Function function(&scope,
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
+
+  byte expected[] = {
+      LOAD_BOOL,
+      0x80,
+      LOAD_BOOL,
+      0,
+  };
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+}
+
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());

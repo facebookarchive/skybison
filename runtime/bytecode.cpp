@@ -154,12 +154,21 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
     case LOAD_CONST: {
       RawObject arg_obj =
           Tuple::cast(Code::cast(function.code()).consts()).at(op.arg);
-      if (!arg_obj.isHeapObject() &&
-          // This condition is true only the object fits in a byte. Some
-          // immediate values of SmallInt and SmallStr do not satify this
-          // condition.
-          arg_obj == objectFromOparg(opargFromObject(arg_obj))) {
-        return RewrittenOp{LOAD_IMMEDIATE, opargFromObject(arg_obj), false};
+      if (!arg_obj.isHeapObject()) {
+        if (arg_obj.isBool()) {
+          // We encode true/false not as 1/0 but as 0x80/0 to save an x86
+          // assembly instruction; moving the value to the 2nd byte can be done
+          // with a multiplication by 2 as part of an address expression rather
+          // than needing a separate shift by 8 in the 1/0 variant.
+          return RewrittenOp{LOAD_BOOL, Bool::cast(arg_obj).value() ? 0x80 : 0,
+                             false};
+        }
+        // This condition is true only the object fits in a byte. Some
+        // immediate values of SmallInt and SmallStr do not satify this
+        // condition.
+        if (arg_obj == objectFromOparg(opargFromObject(arg_obj))) {
+          return RewrittenOp{LOAD_IMMEDIATE, opargFromObject(arg_obj), false};
+        }
       }
     } break;
     case BINARY_OP_ANAMORPHIC:

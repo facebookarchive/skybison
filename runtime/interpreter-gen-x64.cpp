@@ -1334,6 +1334,15 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<LOAD_BOOL>(EmitEnv* env) {
+  Register r_scratch = RAX;
+
+  __ leaq(r_scratch, Address(kOpargReg, TIMES_2, Bool::kBoolTag));
+  __ pushq(r_scratch);
+  emitNextOpcode(env);
+}
+
+template <>
 void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
   Register r_scratch = RAX;
 

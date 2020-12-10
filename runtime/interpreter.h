@@ -437,6 +437,7 @@ class Interpreter {
   static Continue doLoadAttrModule(Thread* thread, word arg);
   static Continue doLoadAttrPolymorphic(Thread* thread, word arg);
   static Continue doLoadAttrType(Thread* thread, word arg);
+  static Continue doLoadBool(Thread* thread, word arg);
   static Continue doLoadDeref(Thread* thread, word arg);
   static Continue doLoadFast(Thread* thread, word arg);
   static Continue doLoadFastReverse(Thread* thread, word arg);

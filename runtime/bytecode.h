@@ -64,7 +64,7 @@ namespace py {
   V(UNUSED_BYTECODE_45, 45, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_46, 46, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_47, 47, doInvalidBytecode)                                 \
-  V(UNUSED_BYTECODE_48, 48, doInvalidBytecode)                                 \
+  V(LOAD_BOOL, 48, doLoadBool)                                                 \
   V(LOAD_FAST_REVERSE_UNCHECKED, 49, doLoadFastReverseUnchecked)               \
   V(GET_AITER, 50, doGetAiter)                                                 \
   V(GET_ANEXT, 51, doGetAnext)                                                 \
