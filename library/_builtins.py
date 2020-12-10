@@ -1203,6 +1203,7 @@ def _type_guard(obj):
 
 
 def _type_issubclass(subclass, superclass):
+    "$intrinsic$"
     _builtin()
 
 

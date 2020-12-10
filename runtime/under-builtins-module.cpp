@@ -5751,6 +5751,14 @@ RawObject FUNC(_builtins, _type_issubclass)(Thread*, Arguments args) {
   return Bool::fromBool(typeIsSubclass(args.get(0), args.get(1)));
 }
 
+bool FUNC(_builtins, _type_issubclass_intrinsic)(Thread* thread) {
+  RawObject subclass = thread->stackPeek(1);
+  RawObject superclass = thread->stackPeek(0);
+  thread->stackDrop(2);
+  thread->stackSetTop(Bool::fromBool(typeIsSubclass(subclass, superclass)));
+  return true;
+}
+
 RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
