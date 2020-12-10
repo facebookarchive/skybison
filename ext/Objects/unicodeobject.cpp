@@ -187,9 +187,9 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Str src(&scope, strUnderlying(*obj));
-  word start_index = src.offsetByCodePoints(0, start);
+  word start_index = thread->strOffset(src, start);
   DCHECK_BOUND(start_index, src.length());
-  word end_index = src.offsetByCodePoints(start_index, len);
+  word end_index = thread->strOffset(src, end);
   DCHECK_BOUND(end_index, src.length());
   Py_UCS4* data = static_cast<Py_UCS4*>(writer->data);
   for (word i = start_index, cp_len; i < end_index; i += cp_len) {
@@ -1945,7 +1945,7 @@ PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* obj, Py_ssize_t index) {
   Str str(&scope, strUnderlying(*str_obj));
   word byte_offset;
   if (index < 0 ||
-      (byte_offset = str.offsetByCodePoints(0, index)) >= str.length()) {
+      (byte_offset = thread->strOffset(str, index)) >= str.length()) {
     thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
     return -1;
   }
@@ -2039,6 +2039,9 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
     thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
     return nullptr;
   }
+  if (end <= start) {
+    return ApiHandle::newReference(thread, Str::empty());
+  }
   HandleScope scope(thread);
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
   Object obj(&scope, handle->asObject());
@@ -2047,11 +2050,11 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
          "PyUnicode_Substring requires a 'str' instance");
   Str self(&scope, strUnderlying(*obj));
   word len = self.length();
-  word start_index = self.offsetByCodePoints(0, start);
-  if (start_index == len || end <= start) {
+  word start_index = thread->strOffset(self, start);
+  if (start_index == len) {
     return ApiHandle::newReference(thread, Str::empty());
   }
-  word end_index = self.offsetByCodePoints(start_index, end - start);
+  word end_index = thread->strOffset(self, end);
   if (end_index == len) {
     if (start_index == 0) {
       handle->incref();
@@ -2225,7 +2228,7 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject* obj, Py_ssize_t index) {
   DCHECK(thread->runtime()->isInstanceOfStr(*str_obj),
          "PyUnicode_READ_CHAR must receive a unicode object");
   Str str(&scope, strUnderlying(*str_obj));
-  word byte_offset = str.offsetByCodePoints(0, index);
+  word byte_offset = thread->strOffset(str, index);
   if (byte_offset == str.length()) return Py_UCS4{0};
   word num_bytes;
   return static_cast<Py_UCS4>(str.codePointAt(byte_offset, &num_bytes));

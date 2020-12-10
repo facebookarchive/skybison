@@ -2303,5 +2303,45 @@ TEST_F(ThreadTest, RaiseOSErrorFromErrnoPicksOSErrorSubclass) {
                      LayoutId::kPermissionError));
 }
 
+TEST_F(ThreadTest, StrOffsetWithNegativeReturnsNegativeOne) {
+  HandleScope scope(thread_);
+  Str str(&scope, SmallStr::fromCStr("foo"));
+  EXPECT_EQ(thread_->strOffset(str, -10), -1);
+}
+
+TEST_F(ThreadTest, StrOffsetWithLargeNumberReturnsLength) {
+  HandleScope scope(thread_);
+  Str str(&scope, SmallStr::fromCStr("foo"));
+  EXPECT_EQ(thread_->strOffset(str, 5), 3);
+}
+
+TEST_F(ThreadTest, StrOffsetWithIndexReturnsOffset) {
+  HandleScope scope(thread_);
+  Str str(&scope, SmallStr::fromCStr("\u00e9tude"));
+  EXPECT_EQ(thread_->strOffset(str, 2), 3);
+}
+
+TEST_F(ThreadTest, StrOffsetWithCacheHitReturnsCorrectOffsets) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_->newStrFromCStr("\u00e9l\u00e9gie"));
+  EXPECT_EQ(thread_->strOffset(str, 2), 3);
+  EXPECT_EQ(thread_->strOffset(str, 4), 6);
+  EXPECT_EQ(thread_->strOffset(str, 1), 2);
+}
+
+TEST_F(ThreadTest, StrOffsetWithCacheMissReturnsCorrectOffsets) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_->newStrFromCStr("\u00e9l\u00e9gie"));
+  EXPECT_EQ(thread_->strOffset(str, 2), 3);
+
+  // out of bounds
+  EXPECT_EQ(thread_->strOffset(str, 10), 8);
+  EXPECT_EQ(thread_->strOffset(str, 1), 2);
+
+  // new string
+  str = runtime_->newStrFromCStr("foo");
+  EXPECT_EQ(thread_->strOffset(str, 2), 2);
+}
+
 }  // namespace testing
 }  // namespace py

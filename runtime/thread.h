@@ -384,6 +384,8 @@ class Thread {
   RawObject profilingData() { return profiling_data_; }
   void setProfilingData(RawObject data) { profiling_data_ = data; }
 
+  word strOffset(const Str& str, word index);
+
   bool wouldStackOverflow(word size);
 
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
@@ -457,6 +459,10 @@ class Thread {
   RawObject contextvars_context_ = RawNoneType::object();
 
   RawObject profiling_data_ = RawNoneType::object();
+
+  RawObject str_offset_str_ = RawNoneType::object();
+  word str_offset_index_;
+  word str_offset_offset_;
 
   // C-API current recursion depth used via _PyThreadState_GetRecursionDepth
   int recursion_depth_ = 0;

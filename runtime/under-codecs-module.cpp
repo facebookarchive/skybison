@@ -131,7 +131,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Arguments args) {
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   // TODO(T43252439): Optimize this by first checking whether the entire string
   // is ASCII, and just memcpy into a string if so
-  for (word byte_offset = data.offsetByCodePoints(0, i);
+  for (word byte_offset = thread->strOffset(data, i);
        byte_offset < data.length(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -372,7 +372,7 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Arguments args) {
   Bytearray output(&scope, *output_obj);
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
-  for (word byte_offset = data.offsetByCodePoints(0, i);
+  for (word byte_offset = thread->strOffset(data, i);
        byte_offset < data.length(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -891,7 +891,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Arguments args) {
   Bytearray output(&scope, *output_obj);
 
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
-  for (word byte_offset = data.offsetByCodePoints(0, index);
+  for (word byte_offset = thread->strOffset(data, index);
        byte_offset < data.length(); index++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -977,7 +977,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
   }
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
-  for (word byte_offset = data.offsetByCodePoints(0, index);
+  for (word byte_offset = thread->strOffset(data, index);
        byte_offset < data.length(); index++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
@@ -1058,7 +1058,7 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Arguments args) {
   }
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
-  for (word byte_offset = data.offsetByCodePoints(0, index);
+  for (word byte_offset = thread->strOffset(data, index);
        byte_offset < data.length(); index++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;

@@ -67,6 +67,7 @@ void Thread::visitRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&pending_exc_type_, PointerKind::kThread);
   visitor->visitPointer(&pending_exc_value_, PointerKind::kThread);
   visitor->visitPointer(&profiling_data_, PointerKind::kThread);
+  visitor->visitPointer(&str_offset_str_, PointerKind::kThread);
 }
 
 void Thread::visitStackRoots(PointerVisitor* visitor) {
@@ -846,6 +847,22 @@ void Thread::reprLeave(const Object& obj) {
       break;
     }
   }
+}
+
+word Thread::strOffset(const Str& str, word index) {
+  if (str != str_offset_str_) {
+    str_offset_str_ = *str;
+    str_offset_index_ = index;
+    str_offset_offset_ = str.offsetByCodePoints(0, index);
+    return str_offset_offset_;
+  }
+  word index_diff = index - str_offset_index_;
+  word offset = str.offsetByCodePoints(str_offset_offset_, index_diff);
+  if (0 <= offset && offset < str.length()) {
+    str_offset_index_ = index;
+    str_offset_offset_ = offset;
+  }
+  return offset;
 }
 
 }  // namespace py

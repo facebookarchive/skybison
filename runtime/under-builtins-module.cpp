@@ -4774,7 +4774,7 @@ RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Arguments args) {
   if (start + suffix_len > end) {
     return Bool::falseObj();
   }
-  word start_offset = self.offsetByCodePoints(0, end - suffix_len);
+  word start_offset = thread->strOffset(self, end - suffix_len);
   word suffix_chars = suffix.length();
   for (word i = start_offset, j = 0; j < suffix_chars; i++, j++) {
     if (self.byteAt(i) != suffix.byteAt(j)) {
@@ -4852,7 +4852,7 @@ RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Arguments args) {
       index += self.codePointLength();
     }
     if (index >= 0) {
-      word offset = self.offsetByCodePoints(0, index);
+      word offset = thread->strOffset(self, index);
       if (offset < self.length()) {
         word ignored;
         return SmallStr::fromCodePoint(self.codePointAt(offset, &ignored));
@@ -5335,7 +5335,7 @@ RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Arguments args) {
   if (start + prefix.codePointLength() > end) {
     return Bool::falseObj();
   }
-  word start_offset = self.offsetByCodePoints(0, start);
+  word start_offset = thread->strOffset(self, start);
   word prefix_chars = prefix.length();
   for (word i = start_offset, j = 0; j < prefix_chars; i++, j++) {
     if (self.byteAt(i) != prefix.byteAt(j)) {
