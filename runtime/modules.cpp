@@ -75,8 +75,8 @@ void executeFrozenModule(Thread* thread, const Module& module,
   reader.setBuiltinFunctions(kBuiltinFunctions, kNumBuiltinFunctions,
                              kIntrinsicFunctions, kNumIntrinsicFunctions);
   Str filename(&scope, module.name());
-  CHECK(!reader.readPycHeader(filename).isErrorException(),
-        "Failed to read %s module data", filename.toCStr());
+  // We don't write pyc headers for frozen modules because it would make
+  // bootstrapping tricky. Don't read the pyc header.
   Code code(&scope, reader.readObject());
   Object result(&scope, executeModule(thread, code, module));
   CHECK(!result.isErrorException(), "Failed to execute %s module",

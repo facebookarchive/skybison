@@ -132,8 +132,8 @@ RawObject FUNC(_imp, get_frozen_object)(Thread* thread, Arguments args) {
   word size = frozen_module->marshalled_code_length;
   Marshal::Reader reader(&scope, thread,
                          View<byte>(frozen_module->marshalled_code, size));
-  Object header_result(&scope, reader.readPycHeader(name));
-  CHECK(header_result.isNoneType(), "Could not read header of frozen object");
+  // We don't write pyc headers for frozen modules because it would make
+  // bootstrapping tricky. Don't read the pyc header.
   return reader.readObject();
 }
 

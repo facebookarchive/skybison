@@ -3,7 +3,7 @@
 import __future__
 
 import argparse
-import importlib
+import marshal
 import os
 import re
 import sys
@@ -202,7 +202,8 @@ def process_module(filename, builtins, intrinsics):
         source, filename, "exec", flags=flags, dont_inherit=True, optimize=0
     )
     marked_code = mark_native_functions(module_code, builtins, intrinsics, fullname)
-    bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(marked_code)
+    # We don't write pyc headers because it would make bootstrapping tricky.
+    bytecode = marshal.dumps(marked_code)
     initializer = to_char_array(bytecode)
     return ModuleData(fullname, initializer, builtin_init, is_package)
 
