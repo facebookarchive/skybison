@@ -233,6 +233,23 @@ bool FUNC(_builtins, _int_guard_intrinsic)(Thread* thread) {
   return false;
 }
 
+bool FUNC(_builtins, _list_append_intrinsic)(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(1);
+  if (!thread->runtime()->isInstanceOfList(arg0)) {
+    return false;
+  }
+  RawList self = arg0.rawCast<RawList>();
+  word num_items = self.numItems();
+  if (self.capacity() > num_items) {
+    self.setNumItems(num_items + 1);
+    self.atPut(num_items, thread->stackPeek(0));
+    thread->stackDrop(2);
+    thread->stackSetTop(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 bool FUNC(_builtins, _list_check_intrinsic)(Thread* thread) {
   thread->stackSetTop(
       Bool::fromBool(thread->runtime()->isInstanceOfList(thread->stackPop())));

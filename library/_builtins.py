@@ -609,6 +609,7 @@ def _int_new_from_str(cls, x, base):
 
 
 def _list_append(self, item):
+    "$intrinsic$"
     _builtin()
 
 
