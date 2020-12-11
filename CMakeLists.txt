@@ -416,17 +416,15 @@ set(
   ${FROZEN_MODULE_OUTPUT_DIR}/builtins.h
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.cpp
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.h)
-# TODO(T68981062) At some point we would like to get rid of the cpython build
-# embedded in the cmake build and should not depend on ${CPYTHON_EXECUTABLE}.
 add_custom_command(
   OUTPUT
   ${FROZEN_MODULE_OUTPUT}
   COMMAND
-  ${CPYTHON_EXECUTABLE} util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
+  util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
     ${FROZEN_MODULE_INPUT}
   WORKING_DIRECTORY
   ${CMAKE_SOURCE_DIR}
-  DEPENDS cpython util/freeze_modules.py ${FROZEN_MODULE_INPUT})
+  DEPENDS util/freeze_modules.py ${FROZEN_MODULE_INPUT})
 # This target is built in util/run_clang_tidy.py:create_compile_commands() to
 # ensure all generated files are present when clang-tidy runs.
 add_custom_target(
