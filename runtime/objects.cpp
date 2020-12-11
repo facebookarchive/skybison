@@ -11,7 +11,70 @@
 
 namespace py {
 
+template <typename T, typename F>
+static inline word offset(T src, F at, word len, word index, word count) {
+  if (count >= 0) {
+    while (count-- && index < len) {
+      index += UTF8::numChars((src->*at)(index));
+    }
+    return Utils::minimum(index, len);
+  }
+  while (count < 0) {
+    index--;
+    if (index < 0) return -1;
+    if (UTF8::isLeadByte((src->*at)(index))) count++;
+  }
+  return index;
+}
+
+template <typename T, typename F>
+static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
+                                      word* char_length) {
+  DCHECK_INDEX(index, src_length);
+  byte b0 = (src->*at)(index);
+  if (b0 <= kMaxASCII) {
+    *char_length = 1;
+    return b0;
+  }
+  DCHECK_INDEX(index + 1, src_length);
+  byte b1 = (src->*at)(index + 1) & byte{0x3F};
+  // 0b110xxxxx begins a sequence with one continuation byte.
+  if (b0 < 0xE0) {
+    DCHECK(b0 >= 0xC, "unexpected continuation byte");
+    *char_length = 2;
+    return ((b0 & 0x1F) << 6) | b1;
+  }
+  DCHECK_INDEX(index + 2, src_length);
+  byte b2 = (src->*at)(index + 2) & byte{0x3F};
+  // 0b1110xxxx starts a sequence with two continuation bytes.
+  if (b0 < 0xF0) {
+    *char_length = 3;
+    return ((b0 & 0xF) << 12) | (b1 << 6) | b2;
+  }
+  // 0b11110xxx starts a sequence with three continuation bytes.
+  DCHECK((b0 & 0xF8) == 0xF0, "invalid code unit");
+  DCHECK_INDEX(index + 2, src_length);
+  byte b3 = (src->*at)(index + 3) & byte{0x3F};
+  *char_length = 4;
+  return ((b0 & 0x7) << 18) | (b1 << 12) | (b2 << 6) | b3;
+}
+
 // RawSmallData
+
+int32_t RawSmallData::codePointAt(word index, word* char_length) const {
+  return decodeCodePoint(this, &RawSmallData::byteAt, length(), index,
+                         char_length);
+}
+
+word RawSmallData::codePointLength() const {
+  uword block = raw() >> kBitsPerByte;
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  block = ((block & mask_7) >> 7) & ((~block) >> 6);
+  // TODO(cshapiro): evaluate using popcount instead of multiplication
+  word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
+  return length() - num_trailing;
+}
 
 word RawSmallData::findByte(byte value, word start, word length) const {
   DCHECK_BOUND(start, this->length());
@@ -39,6 +102,11 @@ bool RawSmallData::isASCII() const {
   uword block = raw() >> kBitsPerByte;
   uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
   return (block & non_ascii_mask) == 0;
+}
+
+word RawSmallData::offsetByCodePoints(word index, word count) const {
+  // TODO(T64961042): operate directly on the word
+  return offset(this, &RawSmallData::byteAt, length(), index, count);
 }
 
 char* RawSmallData::toCStr() const {
@@ -71,16 +139,6 @@ RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
 
 RawObject RawSmallStr::becomeBytes() const {
   return RawObject{raw() ^ kSmallStrTag ^ kSmallBytesTag};
-}
-
-word RawSmallStr::codePointLength() const {
-  uword block = raw() >> kBitsPerByte;
-  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
-  uword mask_7 = mask_0 << 7;       // 0x808080...
-  block = ((block & mask_7) >> 7) & ((~block) >> 6);
-  // TODO(cshapiro): evaluate using popcount instead of multiplication
-  word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
-  return length() - num_trailing;
 }
 
 word RawSmallStr::compare(RawObject that) const {
@@ -187,27 +245,6 @@ bool RawSmallStr::includes(RawObject that) const {
   return false;
 }
 
-template <typename T, typename F>
-static inline word offset(T src, F at, word len, word index, word count) {
-  if (count >= 0) {
-    while (count-- && index < len) {
-      index += UTF8::numChars((src->*at)(index));
-    }
-    return Utils::minimum(index, len);
-  }
-  while (count < 0) {
-    index--;
-    if (index < 0) return -1;
-    if (UTF8::isLeadByte((src->*at)(index))) count++;
-  }
-  return index;
-}
-
-word RawSmallStr::offsetByCodePoints(word index, word count) const {
-  // TODO(T64961042): operate directly on the word
-  return offset(this, &RawSmallStr::byteAt, length(), index, count);
-}
-
 word RawSmallStr::occurrencesOf(RawObject that) const {
   DCHECK(that.isStr(), "must be searching for a Str object");
   if (!that.isSmallStr()) {
@@ -310,6 +347,51 @@ word RawCode::offsetToLineNum(word offset) const {
 
 // RawDataArray
 
+int32_t RawDataArray::codePointAt(word index, word* char_length) const {
+  return decodeCodePoint(this, &RawDataArray::byteAt, length(), index,
+                         char_length);
+}
+
+word RawDataArray::codePointLength() const {
+  // This is a vectorized loop for processing code units in groups the size of a
+  // machine word.  The garbage collector ensures the following invariants that
+  // simplify the algorithm, eliminating the need for a scalar pre-loop or a
+  // scalar-post loop:
+  //
+  //   1) The base address of instance data is always word aligned
+  //   2) The allocation sizes are always rounded-up to the next word
+  //   3) Unused bytes at the end of an allocation are always zero
+  //
+  // This algorithm works by counting the number of UTF-8 trailing bytes found
+  // in the string from the total number of byte in the string.  Because the
+  // unused bytes at the end of a string are zero they are conveniently ignored
+  // by the counting.
+  word length = this->length();
+  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
+  word result = length;
+  const uword* data = reinterpret_cast<const uword*>(address());
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  for (word i = 0; i < size_in_words; i++) {
+    // Read an entire word of code units.
+    uword block = data[i];
+    // The bit pattern 0b10xxxxxx identifies a UTF-8 trailing byte.  For each
+    // byte in a word, we isolate bit 6 and 7 and logically and the complement
+    // of bit 6 with bit 7.  That leaves one set bit for each trailing byte in a
+    // word.
+    block = ((block & mask_7) >> 7) & ((~block) >> 6);
+    // Count the number of bits leftover in the word.  That is equal to the
+    // number of trailing bytes.
+    // TODO(cshapiro): evaluate using popcount instead of multiplication
+    word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
+    // Finally, subtract the number of trailing bytes from the number of bytes
+    // in the string leaving just the number of ASCII code points and UTF-8
+    // leading bytes in the count.
+    result -= num_trailing;
+  }
+  return result;
+}
+
 bool RawDataArray::equalsBytes(View<byte> bytes) const {
   word length = this->length();
   if (bytes.length() != length) {
@@ -357,6 +439,10 @@ bool RawDataArray::isASCII() const {
   return true;
 }
 
+word RawDataArray::offsetByCodePoints(word index, word count) const {
+  return offset(this, &RawDataArray::byteAt, length(), index, count);
+}
+
 char* RawDataArray::toCStr() const {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
@@ -375,46 +461,6 @@ RawObject RawLargeBytes::becomeStr() const {
 }
 
 // RawLargeStr
-
-word RawLargeStr::codePointLength() const {
-  // This is a vectorized loop for processing code units in groups the size of a
-  // machine word.  The garbage collector ensures the following invariants that
-  // simplify the algorithm, eliminating the need for a scalar pre-loop or a
-  // scalar-post loop:
-  //
-  //   1) The base address of instance data is always word aligned
-  //   2) The allocation sizes are always rounded-up to the next word
-  //   3) Unused bytes at the end of an allocation are always zero
-  //
-  // This algorithm works by counting the number of UTF-8 trailing bytes found
-  // in the string from the total number of byte in the string.  Because the
-  // unused bytes at the end of a string are zero they are conveniently ignored
-  // by the counting.
-  word length = this->length();
-  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
-  word result = length;
-  const uword* data = reinterpret_cast<const uword*>(address());
-  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
-  uword mask_7 = mask_0 << 7;       // 0x808080...
-  for (word i = 0; i < size_in_words; i++) {
-    // Read an entire word of code units.
-    uword block = data[i];
-    // The bit pattern 0b10xxxxxx identifies a UTF-8 trailing byte.  For each
-    // byte in a word, we isolate bit 6 and 7 and logically and the complement
-    // of bit 6 with bit 7.  That leaves one set bit for each trailing byte in a
-    // word.
-    block = ((block & mask_7) >> 7) & ((~block) >> 6);
-    // Count the number of bits leftover in the word.  That is equal to the
-    // number of trailing bytes.
-    // TODO(cshapiro): evaluate using popcount instead of multiplication
-    word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
-    // Finally, subtract the number of trailing bytes from the number of bytes
-    // in the string leaving just the number of ASCII code points and UTF-8
-    // leading bytes in the count.
-    result -= num_trailing;
-  }
-  return result;
-}
 
 word RawLargeStr::compare(RawObject that) const {
   word this_length = length();
@@ -532,10 +578,6 @@ bool RawLargeStr::includes(RawObject that) const {
     }
   }
   return false;
-}
-
-word RawLargeStr::offsetByCodePoints(word index, word count) const {
-  return offset(this, &RawLargeStr::byteAt, length(), index, count);
 }
 
 word RawLargeStr::occurrencesOf(RawObject that) const {
@@ -908,42 +950,6 @@ word RawStr::compareCStr(const char* c_str) const {
   }
   word diff = this->length() - c_length;
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
-}
-
-template <typename T, typename F>
-static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
-                                      word* char_length) {
-  DCHECK_INDEX(index, src_length);
-  byte b0 = (src->*at)(index);
-  if (b0 <= kMaxASCII) {
-    *char_length = 1;
-    return b0;
-  }
-  DCHECK_INDEX(index + 1, src_length);
-  byte b1 = (src->*at)(index + 1) & byte{0x3F};
-  // 0b110xxxxx begins a sequence with one continuation byte.
-  if (b0 < 0xE0) {
-    DCHECK(b0 >= 0xC, "unexpected continuation byte");
-    *char_length = 2;
-    return ((b0 & 0x1F) << 6) | b1;
-  }
-  DCHECK_INDEX(index + 2, src_length);
-  byte b2 = (src->*at)(index + 2) & byte{0x3F};
-  // 0b1110xxxx starts a sequence with two continuation bytes.
-  if (b0 < 0xF0) {
-    *char_length = 3;
-    return ((b0 & 0xF) << 12) | (b1 << 6) | b2;
-  }
-  // 0b11110xxx starts a sequence with three continuation bytes.
-  DCHECK((b0 & 0xF8) == 0xF0, "invalid code unit");
-  DCHECK_INDEX(index + 2, src_length);
-  byte b3 = (src->*at)(index + 3) & byte{0x3F};
-  *char_length = 4;
-  return ((b0 & 0x7) << 18) | (b1 << 12) | (b2 << 6) | b3;
-}
-
-int32_t RawStr::codePointAt(word index, word* char_length) const {
-  return decodeCodePoint(this, &RawStr::byteAt, length(), index, char_length);
 }
 
 // RawStrArray

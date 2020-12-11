@@ -767,6 +767,11 @@ class RawSmallData : public RawObject {
   // Check for the presence of a non-zero byte.
   bool includesByte(byte b) const;
 
+  // Codepoints
+  int32_t codePointAt(word char_index, word* char_length) const;
+  word codePointLength() const;
+  word offsetByCodePoints(word index, word count) const;
+
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr() const;
@@ -811,10 +816,6 @@ class RawSmallStr : public RawSmallData {
 
   // Check for the presence of a non-zero byte.
   bool includesByte(byte b) const;
-
-  // Codepoints
-  word codePointLength() const;
-  word offsetByCodePoints(word index, word count) const;
 
   word occurrencesOf(RawObject that) const;
 
@@ -1374,6 +1375,10 @@ class RawDataArray : public RawHeapObject {
  public:
   byte byteAt(word index) const;
 
+  int32_t codePointAt(word char_index, word* char_length) const;
+  word codePointLength() const;
+  word offsetByCodePoints(word index, word count) const;
+
   void copyTo(byte* dst, word length) const;
   // Copy length bytes from this to dst, starting at the given index
   void copyToStartAt(byte* dst, word length, word index) const;
@@ -1428,10 +1433,6 @@ class RawLargeStr : public RawDataArray {
   bool equalsCStr(const char* c_str) const;
 
   bool includes(RawObject that) const;
-
-  // Codepoints
-  word codePointLength() const;
-  word offsetByCodePoints(word index, word count) const;
 
   word occurrencesOf(RawObject that) const;
 
@@ -6976,6 +6977,13 @@ inline byte RawStr::byteAt(word index) const {
     return RawSmallStr::cast(*this).byteAt(index);
   }
   return RawLargeStr::cast(*this).byteAt(index);
+}
+
+inline int32_t RawStr::codePointAt(word index, word* char_length) const {
+  if (isImmediateObjectNotSmallInt()) {
+    return RawSmallStr::cast(*this).codePointAt(index, char_length);
+  }
+  return RawLargeStr::cast(*this).codePointAt(index, char_length);
 }
 
 inline word RawStr::length() const {
