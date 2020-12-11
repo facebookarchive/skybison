@@ -832,6 +832,34 @@ l = [1,2,3]
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
 }
 
+TEST_F(InterpreterTest,
+       BinarySubscrAnamorphicRewritesToBinarySubscrMonomorphic) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+class L:
+    def __getitem__(self,  i): return i * 2
+
+L__getitem__ = L.__getitem__
+l = L()
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  Object l(&scope, mainModuleAt(runtime_, "l"));
+  SmallInt key(&scope, SmallInt::fromWord(12));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 24));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+
+  SmallInt key2(&scope, SmallInt::fromWord(13));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key2), 26));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+}
+
 TEST_F(
     InterpreterTest,
     BinarySubscrDictRevertsBackToBinarySubscrMonomorphicWhenNonDictObserved) {

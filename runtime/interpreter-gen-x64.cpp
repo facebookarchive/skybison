@@ -703,6 +703,35 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
+  Register r_receiver = RAX;
+  Register r_layout_id = R8;
+  Register r_function = RDI;
+  Register r_key = R10;
+  Register r_scratch = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_key);
+  __ popq(r_receiver);
+  emitGetLayoutId(env, r_layout_id, r_receiver);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_function, r_layout_id, r_caches,
+                          kOpargReg, r_scratch);
+
+  // Call __getitem__(receiver, key)
+  __ pushq(r_function);
+  __ pushq(r_receiver);
+  __ pushq(r_key);
+  __ movq(kOpargReg, Immediate(2));
+  __ jmp(Address(r_function, heapObjectDisp(Function::kEntryAsmOffset)));
+
+  __ bind(&slow_path);
+  __ pushq(r_receiver);
+  __ pushq(r_key);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
 void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
   Register r_container = RAX;
   Register r_key = R8;
