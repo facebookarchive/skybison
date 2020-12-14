@@ -2,6 +2,7 @@
 
 from builtins import (
     _index,
+    _non_heaptype,
     _sequence_repr,
 )
 
@@ -14,6 +15,8 @@ from _builtins import (
     _object_type_hasattr,
     _repr_enter,
     _repr_leave,
+    _tuple_check,
+    _tuple_getitem,
     _type,
     _unimplemented,
 )
@@ -88,6 +91,34 @@ def _deque_set_maxlen(self, maxlen):
 
 def _deque_setitem(self, index, value):
     _builtin()
+
+
+class _tuplegetter(metaclass=_non_heaptype):
+    __slots__ = ("_index", "_doc")
+
+    @property
+    def __doc__(self):
+        return self._doc
+
+    @__doc__.setter
+    def __doc__(self, value):
+        self._doc = value
+
+    def __get__(self, instance, owner):
+        if not _tuple_check(instance):
+            if instance is None:
+                return self
+            raise TypeError(
+                f"descriptor for index '{self._index}' for tuple subclasses doesn't apply to '{_type(instance).__name__}' object"
+            )
+        return _tuple_getitem(instance, self._index)
+
+    @staticmethod
+    def __new__(cls, index, doc):
+        result = super().__new__(cls)
+        result._index = _index(index)
+        result._doc = doc
+        return result
 
 
 class defaultdict(dict):
