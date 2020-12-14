@@ -860,6 +860,38 @@ l = L()
   EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
 }
 
+TEST_F(InterpreterTest,
+       BinarySubscrMonomorphicRewritesToBinarySubscrPolymorphic) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(l, i):
+    return l[i]
+
+class A:
+    def __getitem__(self,  i): return i * 2
+
+class B:
+    def __getitem__(self,  i): return i * 3
+
+a = A()
+b = B()
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+
+  Object a(&scope, mainModuleAt(runtime_, "a"));
+  SmallInt key_a(&scope, SmallInt::fromWord(6));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, a, key_a), 12));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+
+  Object b(&scope, mainModuleAt(runtime_, "b"));
+  SmallInt key_b(&scope, SmallInt::fromWord(12));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, b, key_b), 36));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_POLYMORPHIC);
+}
+
 TEST_F(
     InterpreterTest,
     BinarySubscrDictRevertsBackToBinarySubscrMonomorphicWhenNonDictObserved) {
