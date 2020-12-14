@@ -69,6 +69,8 @@ class Runtime {
   // `initializeSys`.
   RawObject initialize(Thread* thread);
 
+  bool initialized() { return initialized_; }
+
   // TODO(T75349221): Make createXXX functions private or remove them
   RawObject createLargeInt(word num_digits);
   RawObject createLargeStr(word length);
@@ -1080,6 +1082,8 @@ class Runtime {
   // atexit thunk (to be passed into pylifecycle and called with atexit module)
   AtExitFn at_exit_ = nullptr;
   void* at_exit_context_ = nullptr;
+
+  bool initialized_ = false;
 
   static word next_module_index_;
 

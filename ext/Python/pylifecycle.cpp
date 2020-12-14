@@ -385,7 +385,15 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
         "Failed to initialize runtime");
 }
 
-PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }
+PY_EXPORT int Py_IsInitialized() {
+  Thread* thread = Thread::current();
+  if (thread == nullptr) {
+    return 0;
+  }
+  Runtime* runtime = thread->runtime();
+  CHECK(runtime != nullptr, "runtime is expected not to be null");
+  return runtime->initialized();
+}
 
 PY_EXPORT PyThreadState* Py_NewInterpreter() {
   UNIMPLEMENTED("Py_NewInterpreter");

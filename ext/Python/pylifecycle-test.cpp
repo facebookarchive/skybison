@@ -109,6 +109,15 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
   Py_FinalizeEx();
 }
 
+TEST(PylifecycleExtensionApiTestNoFixture, IsInitialized) {
+  EXPECT_FALSE(Py_IsInitialized());
+
+  Py_Initialize();
+
+  EXPECT_TRUE(Py_IsInitialized());
+  Py_FinalizeEx();
+}
+
 TEST_F(PylifecycleExtensionApiTest, SetsigSetsSignalHandler) {
   PyOS_sighandler_t saved = PyOS_getsig(SIGUSR1);
   PyOS_sighandler_t handler = [](int) { PyRun_SimpleString("handled = True"); };

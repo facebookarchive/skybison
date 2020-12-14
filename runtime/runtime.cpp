@@ -2353,7 +2353,9 @@ void Runtime::initializeModules(Thread* thread) {
 }
 
 RawObject Runtime::initialize(Thread* thread) {
-  return thread->invokeFunction0(ID(builtins), ID(_init));
+  RawObject result = thread->invokeFunction0(ID(builtins), ID(_init));
+  initialized_ = true;
+  return result;
 }
 
 RawObject Runtime::concreteTypeAt(LayoutId layout_id) {
