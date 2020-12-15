@@ -327,6 +327,7 @@ class RawObject {
   bool isAsyncGeneratorAthrow() const;
   bool isAsyncGeneratorOpIterBase() const;
   bool isAsyncGeneratorWrappedValue() const;
+  bool isAttributeDict() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
   bool isBufferedRandom() const;
@@ -1182,7 +1183,23 @@ class RawUnicodeTranslateError : public RawUnicodeErrorBase {
   RAW_OBJECT_COMMON(UnicodeTranslateError);
 };
 
-class RawType : public RawInstance {
+class RawAttributeDict : public RawInstance {
+ public:
+  RawObject attributes() const;
+  void setAttributes(RawObject mutable_tuple) const;
+
+  word attributesRemaining() const;
+  void setAttributesRemaining(word free) const;
+
+  static const int kAttributesOffset = RawInstance::kSize;
+  static const int kAttributesRemainingOffset =
+      kAttributesOffset + kPointerSize;
+  static const int kSize = kAttributesRemainingOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(AttributeDict);
+};
+
+class RawType : public RawAttributeDict {
  public:
   enum Flag : word {
     kNone = 0,
@@ -1259,12 +1276,6 @@ class RawType : public RawInstance {
   void setFlagsAndBuiltinBase(Flag value, LayoutId base) const;
   void setBuiltinBase(LayoutId base) const;
 
-  RawObject attributes() const;
-  void setAttributes(RawObject mutable_tuple) const;
-
-  word attributesRemaining() const;
-  void setAttributesRemaining(word free) const;
-
   bool isBuiltin() const;
 
   bool hasCustomDict() const;
@@ -1300,7 +1311,7 @@ class RawType : public RawInstance {
   bool hasMutableDict() const;
 
   // Layout.
-  static const int kMroOffset = RawHeapObject::kSize;
+  static const int kMroOffset = RawAttributeDict::kSize;
   static const int kBasesOffset = kMroOffset + kPointerSize;
   static const int kInstanceLayoutOffset = kBasesOffset + kPointerSize;
   static const int kInstanceLayoutIdOffset =
@@ -1308,10 +1319,7 @@ class RawType : public RawInstance {
   static const int kNameOffset = kInstanceLayoutIdOffset + kPointerSize;
   static const int kDocOffset = kNameOffset + kPointerSize;
   static const int kFlagsOffset = kDocOffset + kPointerSize;
-  static const int kAttributesOffset = kFlagsOffset + kPointerSize;
-  static const int kAttributesRemainingOffset =
-      kAttributesOffset + kPointerSize;
-  static const int kSlotsOffset = kAttributesRemainingOffset + kPointerSize;
+  static const int kSlotsOffset = kFlagsOffset + kPointerSize;
   static const int kAbstractMethodsOffset = kSlotsOffset + kPointerSize;
   static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;
   static const int kProxyOffset = kSubclassesOffset + kPointerSize;
@@ -4029,6 +4037,8 @@ inline bool RawObject::isAsyncGeneratorWrappedValue() const {
   return isHeapObjectWithLayout(LayoutId::kAsyncGeneratorWrappedValue);
 }
 
+inline bool RawObject::isAttributeDict() const { return isType(); }
+
 inline bool RawObject::isBaseException() const {
   return isHeapObjectWithLayout(LayoutId::kBaseException);
 }
@@ -5179,6 +5189,26 @@ inline void RawImportError::setPath(RawObject path) const {
   instanceVariableAtPut(kPathOffset, path);
 }
 
+// RawAttributeDict
+
+inline RawObject RawAttributeDict::attributes() const {
+  return instanceVariableAt(kAttributesOffset);
+}
+
+inline void RawAttributeDict::setAttributes(RawObject mutable_tuple) const {
+  instanceVariableAtPut(kAttributesOffset, mutable_tuple);
+}
+
+inline word RawAttributeDict::attributesRemaining() const {
+  return RawSmallInt::cast(instanceVariableAt(kAttributesRemainingOffset))
+      .value();
+}
+
+inline void RawAttributeDict::setAttributesRemaining(word free) const {
+  instanceVariableAtPut(kAttributesRemainingOffset,
+                        RawSmallInt::fromWord(free));
+}
+
 // RawType
 
 inline RawObject RawType::bases() const {
@@ -5253,24 +5283,6 @@ inline bool RawType::hasFlag(Flag bit) const { return (flags() & bit) != 0; }
 
 inline LayoutId RawType::builtinBase() const {
   return static_cast<LayoutId>(flags() & kBuiltinBaseMask);
-}
-
-inline RawObject RawType::attributes() const {
-  return instanceVariableAt(kAttributesOffset);
-}
-
-inline void RawType::setAttributes(RawObject mutable_tuple) const {
-  instanceVariableAtPut(kAttributesOffset, mutable_tuple);
-}
-
-inline word RawType::attributesRemaining() const {
-  return RawSmallInt::cast(instanceVariableAt(kAttributesRemainingOffset))
-      .value();
-}
-
-inline void RawType::setAttributesRemaining(word free) const {
-  instanceVariableAtPut(kAttributesRemainingOffset,
-                        RawSmallInt::fromWord(free));
 }
 
 inline bool RawType::hasCustomDict() const {

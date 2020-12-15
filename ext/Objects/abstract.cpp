@@ -4,6 +4,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "attributedict.h"
 #include "capi-handles.h"
 #include "capi.h"
 #include "exception-builtins.h"

@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "array-module.h"
+#include "attributedict.h"
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytecode.h"
@@ -432,8 +433,8 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type result(&scope, newInstanceWithSize(metaclass_id, Type::kSize));
+  attributeDictInit(thread, result);
   result.setFlagsAndBuiltinBase(Type::Flag::kNone, LayoutId::kObject);
-  typeInitAttributes(thread, result);
   result.setDoc(NoneType::object());
   result.setAbstractMethods(Unbound::object());
   return *result;

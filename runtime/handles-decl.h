@@ -16,6 +16,7 @@ class Handle;
   V(AsyncGeneratorAthrow)                                                      \
   V(AsyncGeneratorOpIterBase)                                                  \
   V(AsyncGeneratorWrappedValue)                                                \
+  V(AttributeDict)                                                             \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \

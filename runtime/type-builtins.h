@@ -41,7 +41,7 @@ RawObject typeAssignFromDict(Thread* thread, const Type& type,
 
 RawObject typeAt(const Type& type, const Object& name);
 
-RawObject typeAtSetLocation(const Type& type, const Object& name, word hash,
+RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
                             Object* location);
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
@@ -58,7 +58,7 @@ RawObject typeRemoveById(Thread* thread, const Type& type, SymbolId id);
 
 RawObject typeKeys(Thread* thread, const Type& type);
 
-RawObject typeLen(Thread* thread, const Type& type);
+word typeLen(Thread* thread, const Type& type);
 
 RawObject typeValues(Thread* thread, const Type& type);
 
@@ -80,7 +80,8 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance,
                                const Object& instance_type);
 
-void typeInitAttributes(Thread* thread, const Type& type);
+RawObject typeInit(Thread* thread, const Type& type, const Str& name,
+                   const Dict& dict, const Tuple& mro);
 
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
@@ -111,23 +112,6 @@ RawObject typeSetDunderClass(Thread* thread, const Object& self,
 void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
                                                        const Type& type,
                                                        const Object& attr_name);
-
-// Look-up underlying value-cell to a name.
-// WARNING: This is a low-level access circumventing cache invalidation logic,
-// do not use except for tests and ic.cpp!
-RawObject typeValueCellAt(const Type& type, const Object& name);
-
-// Look-up underlying value-cell to a name.
-// WARNING: This is a low-level access circumventing cache invalidation logic,
-// do not use except for tests and ic.cpp!
-RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
-                                  word hash);
-
-// Look-up or insert a value-cell for a given name.
-// WARNING: This is a low-level access circumventing cache invalidation logic,
-// do not use except for tests and ic.cpp!
-RawObject typeValueCellAtPut(Thread* thread, const Type& type,
-                             const Object& name);
 
 void initializeTypeTypes(Thread* thread);
 

@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <sstream>
 
+#include "attributedict.h"
 #include "builtins-module.h"
 #include "bytes-builtins.h"
 #include "complex-builtins.h"

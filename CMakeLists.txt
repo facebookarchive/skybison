@@ -495,6 +495,8 @@ add_library(
   runtime/assembler-x64.h
   runtime/asserts.cpp
   runtime/asserts.h
+  runtime/attributedict.cpp
+  runtime/attributedict.h
   runtime/builtins-module.cpp
   runtime/builtins-module.h
   runtime/bytearray-builtins.cpp

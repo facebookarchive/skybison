@@ -4,6 +4,7 @@
 #include <cmath>
 #include <csignal>
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "capi.h"

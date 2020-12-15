@@ -3,6 +3,7 @@
 #include "cpython-types.h"
 #include "gtest/gtest.h"
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "dict-builtins.h"
 #include "handles.h"
@@ -114,7 +115,7 @@ TEST_F(TypeBuiltinsTest, TypeAtPutDoesNotGrowOnTombstones) {
   Object name(&scope, NoneType::object());
   for (word i = 0; i < static_cast<word>(SymbolId::kMaxId); i++) {
     name = runtime_->symbols()->at(static_cast<SymbolId>(i));
-    typeValueCellAtPut(thread_, type, name);
+    attributeValueCellAtPut(thread_, type, name);
     typeRemove(thread_, type, name);
   }
   EXPECT_EQ(Tuple::cast(type.attributes()).length(), initial_capacity);
@@ -183,7 +184,7 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, value);
   typeAtPut(thread_, type, baz, value);
 
-  ValueCell::cast(typeValueCellAt(type, bar)).makePlaceholder();
+  ValueCell::cast(attributeValueCellAt(*type, *bar)).makePlaceholder();
 
   List keys(&scope, typeKeys(thread_, type));
   EXPECT_EQ(keys.numItems(), 2);
@@ -204,12 +205,12 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
   typeAtPut(thread_, type, bar, value);
   typeAtPut(thread_, type, baz, value);
 
-  SmallInt previous_len(&scope, typeLen(thread_, type));
+  word previous_len = typeLen(thread_, type);
 
-  ValueCell::cast(typeValueCellAt(type, bar)).makePlaceholder();
+  ValueCell::cast(attributeValueCellAt(*type, *bar)).makePlaceholder();
 
-  SmallInt after_len(&scope, typeLen(thread_, type));
-  EXPECT_EQ(previous_len.value(), after_len.value() + 1);
+  word after_len = typeLen(thread_, type);
+  EXPECT_EQ(previous_len, after_len + 1);
 }
 
 TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
@@ -227,7 +228,7 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, bar_value);
   typeAtPut(thread_, type, baz, baz_value);
 
-  ValueCell::cast(typeValueCellAt(type, bar)).makePlaceholder();
+  ValueCell::cast(attributeValueCellAt(*type, *bar)).makePlaceholder();
 
   List values(&scope, typeValues(thread_, type));
   EXPECT_TRUE(listContains(values, foo_value));

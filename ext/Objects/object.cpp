@@ -3,6 +3,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "attributedict.h"
 #include "builtins-module.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"

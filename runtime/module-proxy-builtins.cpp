@@ -1,5 +1,6 @@
 #include "module-proxy-builtins.h"
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "module-builtins.h"
 #include "type-builtins.h"

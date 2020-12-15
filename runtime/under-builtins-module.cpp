@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cmath>
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
@@ -5905,7 +5906,7 @@ RawObject FUNC(_builtins, _type_proxy_len)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
   Type type(&scope, self.type());
-  return typeLen(thread, type);
+  return SmallInt::fromWord(typeLen(thread, type));
 }
 
 RawObject FUNC(_builtins, _type_proxy_values)(Thread* thread, Arguments args) {

@@ -1,5 +1,6 @@
 #include "ic.h"
 
+#include "attributedict.h"
 #include "bytecode.h"
 #include "dict-builtins.h"
 #include "interpreter.h"
@@ -38,7 +39,8 @@ static void insertDependencyForTypeLookupInMro(Thread* thread,
   for (word i = 0; i < mro.length(); i++) {
     mro_type = mro.at(i);
     if (!mro_type.hasMutableDict()) return;
-    ValueCell value_cell(&scope, typeValueCellAtPut(thread, mro_type, name));
+    ValueCell value_cell(&scope,
+                         attributeValueCellAtPut(thread, mro_type, name));
     icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
     if (!value_cell.isPlaceholder()) {
       // Attribute lookup terminates here. Therefore, no dependency tracking is
@@ -296,8 +298,8 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
     // If a mro_type's dict is not mutable, its parents must be not imutable.
     // Therefore, we can stop the MRO search here.
     if (!mro_type.hasMutableDict()) break;
-    ValueCell value_cell(&scope,
-                         typeValueCellAtWithHash(mro_type, attr_name, hash));
+    ValueCell value_cell(
+        &scope, attributeValueCellAtWithHash(*mro_type, *attr_name, hash));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
     if (mro_type == new_defining_type) {
       // This can be a placeholder for some caching opcodes that depend on not
@@ -325,7 +327,8 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
     if (!mro_type.hasMutableDict()) {
       break;
     }
-    if (typeValueCellAtWithHash(mro_type, attr_name, hash).isErrorNotFound() ||
+    if (attributeValueCellAtWithHash(*mro_type, *attr_name, hash)
+            .isErrorNotFound() ||
         icIsAttrCachedInDependent(thread, mro_type, attr_name, dependent)) {
       break;
     }
@@ -356,7 +359,7 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
     // If a mro_type's dict is not mutable, its parents must be not immutable.
     // Therefore, we can stop the MRO search here.
     if (!mro_type.hasMutableDict()) break;
-    result = typeValueCellAtWithHash(mro_type, attribute_name, hash);
+    result = attributeValueCellAtWithHash(*mro_type, *attribute_name, hash);
     if (mro_type == updated_type) {
       // The current type in MRO is the searched type, and the searched
       // attribute is unfound in MRO so far, so type[attribute_name] is the one

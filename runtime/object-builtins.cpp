@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"

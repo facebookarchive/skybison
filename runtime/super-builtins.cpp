@@ -1,5 +1,6 @@
 #include "super-builtins.h"
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "frame.h"
 #include "globals.h"

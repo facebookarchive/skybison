@@ -1,5 +1,6 @@
 #include "module-builtins.h"
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "capi.h"
 #include "dict-builtins.h"

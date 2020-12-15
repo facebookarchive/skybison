@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "attributedict.h"
 #include "dict-builtins.h"
 #include "str-builtins.h"
 #include "test-utils.h"
@@ -165,17 +166,17 @@ c = C()
   icUpdateAttr(thread_, caches, 0, c.layoutId(), value, foo, dependent);
 
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
-  EXPECT_TRUE(typeValueCellAt(type_a, foo).isErrorNotFound());
+  EXPECT_TRUE(attributeValueCellAt(*type_a, *foo).isErrorNotFound());
 
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
-  ValueCell b_entry(&scope, typeValueCellAt(type_b, foo));
+  ValueCell b_entry(&scope, attributeValueCellAt(*type_b, *foo));
   EXPECT_FALSE(b_entry.isPlaceholder());
   WeakLink b_link(&scope, b_entry.dependencyLink());
   EXPECT_EQ(b_link.referent(), dependent);
   EXPECT_TRUE(b_link.next().isNoneType());
 
   Type type_c(&scope, mainModuleAt(runtime_, "C"));
-  ValueCell c_entry(&scope, typeValueCellAt(type_c, foo));
+  ValueCell c_entry(&scope, attributeValueCellAt(*type_c, *foo));
   EXPECT_TRUE(c_entry.isPlaceholder());
   WeakLink c_link(&scope, c_entry.dependencyLink());
   EXPECT_EQ(c_link.referent(), dependent);
@@ -193,7 +194,8 @@ TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
                dependent);
 
   Type type_str(&scope, runtime_->typeAt(LayoutId::kStr));
-  ValueCell dunder_add_entry(&scope, typeValueCellAt(type_str, dunder_add));
+  ValueCell dunder_add_entry(&scope,
+                             attributeValueCellAt(*type_str, *dunder_add));
   EXPECT_TRUE(dunder_add_entry.dependencyLink().isNoneType());
 }
 
@@ -202,7 +204,8 @@ static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
   HandleScope scope(thread);
   Object attribute_name_str(&scope,
                             Runtime::internStrFromCStr(thread, attribute_name));
-  ValueCell value_cell(&scope, typeValueCellAt(type, attribute_name_str));
+  ValueCell value_cell(&scope,
+                       attributeValueCellAt(*type, *attribute_name_str));
   return value_cell.dependencyLink();
 }
 
@@ -504,11 +507,11 @@ y(a)
   Function dependent_y(&scope, mainModuleAt(runtime_, "y"));
 
   // A.foo -> x
-  ValueCell foo_in_a(&scope, typeValueCellAt(type_a, foo_name));
+  ValueCell foo_in_a(&scope, attributeValueCellAt(*type_a, *foo_name));
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
 
   // A.bar -> y
-  ValueCell bar_in_a(&scope, typeValueCellAt(type_a, bar_name));
+  ValueCell bar_in_a(&scope, attributeValueCellAt(*type_a, *bar_name));
   ASSERT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
   LayoutId type_a_instance_layout_id = type_a.instanceLayoutId();
@@ -566,18 +569,18 @@ x(a)
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   // A.foo -> x
-  ValueCell foo_in_a(&scope, typeValueCellAt(a, foo_name));
+  ValueCell foo_in_a(&scope, attributeValueCellAt(*a, *foo_name));
   ASSERT_FALSE(foo_in_a.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
 
   // B.foo -> x
-  ValueCell foo_in_b(&scope, typeValueCellAt(b, foo_name));
+  ValueCell foo_in_b(&scope, attributeValueCellAt(*b, *foo_name));
   ASSERT_FALSE(foo_in_b.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(), *dependent_x);
 
   // C.foo -> x
   // Note that this dependency is a placeholder.
-  ValueCell foo_in_c(&scope, typeValueCellAt(c, foo_name));
+  ValueCell foo_in_c(&scope, attributeValueCellAt(*c, *foo_name));
   ASSERT_TRUE(foo_in_c.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(), *dependent_x);
 
@@ -669,7 +672,7 @@ x(c)
       thread_, type_c_instance_layout_id, foo_name, type_b));
 
   // Assign C.foo to a real value.
-  ValueCell foo_in_c(&scope, typeValueCellAt(type_c, foo_name));
+  ValueCell foo_in_c(&scope, attributeValueCellAt(*type_c, *foo_name));
   foo_in_c.setValue(NoneType::object());
   // Check if B.foo is not retrived from C.foo from now on.
   EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(
@@ -726,7 +729,7 @@ c = C()
                      testingFunctionCachingAttributes(thread_, foo_name));
 
   // foo -> dependent.
-  ValueCell foo(&scope, typeValueCellAtPut(thread_, type, foo_name));
+  ValueCell foo(&scope, attributeValueCellAtPut(thread_, type, foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
 
@@ -766,7 +769,7 @@ c = C()
                      testingFunctionCachingAttributes(thread_, foo_name));
 
   // foo -> dependent.
-  ValueCell foo(&scope, typeValueCellAtPut(thread_, type, foo_name));
+  ValueCell foo(&scope, attributeValueCellAtPut(thread_, type, foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
 
@@ -817,15 +820,15 @@ c = C()
 
   // The following lines simulate that dependent caches a.foo, b.foo, c.foo, and
   // x.foo. A.foo -> dependent.
-  ValueCell a_foo(&scope, typeValueCellAt(a_type, foo_name));
+  ValueCell a_foo(&scope, attributeValueCellAt(*a_type, *foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, a_foo));
   // B.foo -> dependent.
-  ValueCell b_foo(&scope, typeValueCellAt(b_type, foo_name));
+  ValueCell b_foo(&scope, attributeValueCellAt(*b_type, *foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, b_foo));
   // C.foo -> dependent.
-  ValueCell c_foo(&scope, typeValueCellAtPut(thread_, c_type, foo_name));
+  ValueCell c_foo(&scope, attributeValueCellAtPut(thread_, c_type, foo_name));
   // This is a placeholder since C.foo is resolved to B.foo.
   c_foo.makePlaceholder();
   ASSERT_TRUE(
@@ -891,13 +894,13 @@ c = C()
   Object data_descriptor(&scope, runtime_->newProperty(none, none, none));
 
   // foo -> dependent0.
-  ValueCell foo(&scope, typeValueCellAtPut(thread_, type, foo_name));
+  ValueCell foo(&scope, attributeValueCellAtPut(thread_, type, foo_name));
   foo.setValue(*data_descriptor);
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent0, foo));
 
   // bar -> dependent1.
-  ValueCell bar(&scope, typeValueCellAtPut(thread_, type, bar_name));
+  ValueCell bar(&scope, attributeValueCellAtPut(thread_, type, bar_name));
   bar.setValue(*data_descriptor);
 
   ASSERT_TRUE(
@@ -1102,13 +1105,13 @@ cache_compare_op(a, b)
   ASSERT_EQ(*cached, *type_a_dunder_ge);
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Object dunder_ge_name(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
-  ValueCell dunder_ge(&scope, typeValueCellAt(type_a, dunder_ge_name));
+  ValueCell dunder_ge(&scope, attributeValueCellAt(*type_a, *dunder_ge_name));
   WeakLink dunder_ge_link(&scope, dunder_ge.dependencyLink());
   // Precondition check that cache_compare_op is a dependent of A.__ge__.
   ASSERT_EQ(dunder_ge_link.referent(), *cache_compare_op);
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
   Object dunder_le_name(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
-  ValueCell dunder_le(&scope, typeValueCellAt(type_b, dunder_le_name));
+  ValueCell dunder_le(&scope, attributeValueCellAt(*type_b, *dunder_le_name));
   WeakLink dunder_le_link(&scope, dunder_le.dependencyLink());
   // Precondition check that cache_compare_op is a dependent of B.__le__.
   ASSERT_EQ(dunder_le_link.referent(), *cache_compare_op);

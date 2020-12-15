@@ -2,6 +2,7 @@
 
 #include "cpython-data.h"
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "bytecode.h"
 #include "capi.h"
@@ -20,67 +21,6 @@
 #include "typeslots.h"
 
 namespace py {
-
-static const int kBucketNumWords = 2;
-static const int kBucketKeyOffset = 0;
-static const int kBucketValueOffset = 1;
-static const RawObject kEmptyKey = NoneType::object();
-static const RawObject kTombstoneKey = Unbound::object();
-static const word kInitialCapacity = 16;
-
-RawObject attributeName(Thread* thread, const Object& name_obj) {
-  if (name_obj.isSmallStr()) {
-    return *name_obj;
-  }
-  if (name_obj.isLargeStr()) {
-    return Runtime::internLargeStr(thread, name_obj);
-  }
-
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "attribute name must be string, not '%T'",
-                                &name_obj);
-  }
-  HandleScope scope(thread);
-  Type type(&scope, runtime->typeOf(*name_obj));
-  if (typeLookupInMroById(thread, *type, ID(__eq__)) !=
-          runtime->strDunderEq() ||
-      typeLookupInMroById(thread, *type, ID(__hash__)) !=
-          runtime->strDunderHash()) {
-    UNIMPLEMENTED(
-        "str subclasses with __eq__ or __hash__ not supported as attribute "
-        "name");
-  }
-  Str name_str(&scope, strUnderlying(*name_obj));
-  return Runtime::internStr(thread, name_str);
-}
-
-RawObject attributeNameNoException(Thread* thread, const Object& name_obj) {
-  if (name_obj.isSmallStr()) {
-    return *name_obj;
-  }
-  if (name_obj.isLargeStr()) {
-    return Runtime::internLargeStr(thread, name_obj);
-  }
-
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name_obj)) {
-    return Error::error();
-  }
-  HandleScope scope(thread);
-  Type type(&scope, runtime->typeOf(*name_obj));
-  if (typeLookupInMroById(thread, *type, ID(__eq__)) !=
-          runtime->strDunderEq() ||
-      typeLookupInMroById(thread, *type, ID(__hash__)) !=
-          runtime->strDunderHash()) {
-    UNIMPLEMENTED(
-        "str subclasses with __eq__ or __hash__ not supported as attribute "
-        "name");
-  }
-  Str name_str(&scope, strUnderlying(*name_obj));
-  return Runtime::internStr(thread, name_str);
-}
 
 static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
                                           SymbolId name, LayoutId builtin_base,
@@ -151,6 +91,50 @@ RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type) {
       "can't set attributes of built-in/extension type '%S'", &type_name);
 }
 
+RawObject typeAt(const Type& type, const Object& name) {
+  word hash = internedStrHash(*name);
+  return attributeAtWithHash(*type, *name, hash);
+}
+
+RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
+  RawObject name = thread->runtime()->symbols()->at(id);
+  return attributeAt(*type, name);
+}
+
+RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
+                    const Object& value) {
+  DCHECK(thread->runtime()->isInternedStr(thread, name),
+         "name should be an interned str");
+  RawValueCell value_cell =
+      ValueCell::cast(attributeValueCellAtPut(thread, type, name));
+  value_cell.setValue(*value);
+  if (!value_cell.dependencyLink().isNoneType()) {
+    HandleScope scope(thread);
+    ValueCell value_cell_obj(&scope, value_cell);
+    icInvalidateAttr(thread, type, name, value_cell_obj);
+    return *value_cell_obj;
+  }
+  return value_cell;
+}
+
+RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
+                        const Object& value) {
+  HandleScope scope(thread);
+  Object name(&scope, thread->runtime()->symbols()->at(id));
+  return typeAtPut(thread, type, name, value);
+}
+
+RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
+                            Object* location) {
+  RawObject result = attributeValueCellAtWithHash(type, name, hash);
+  if (result.isErrorNotFound()) return result;
+  if (ValueCell::cast(result).isPlaceholder()) return Error::notFound();
+  if (location != nullptr) {
+    *location = result;
+  }
+  return ValueCell::cast(result).value();
+}
+
 bool typeIsDataDescriptor(Thread* thread, RawType type) {
   if (type.isBuiltin()) {
     LayoutId layout_id = type.instanceLayoutId();
@@ -187,27 +171,6 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
   return Interpreter::callDescriptorGet(thread, descr, instance, instance_type);
 }
 
-static inline RawObject lookupCell(RawMutableTuple data, RawObject name,
-                                   word hash, bool return_placeholder) {
-  word mask = (data.length() - 1) >> 1;
-  for (word bucket = hash & mask, num_probes = 0;;
-       bucket = (bucket + ++num_probes) & mask) {
-    word idx = bucket * kBucketNumWords;
-    RawObject key = data.at(idx + kBucketKeyOffset);
-    if (key == name) {
-      RawValueCell cell = ValueCell::cast(data.at(idx + kBucketValueOffset));
-      if (!return_placeholder && cell.isPlaceholder()) {
-        return Error::notFound();
-      }
-      return cell;
-    }
-    if (key == kEmptyKey) {
-      return Error::notFound();
-    }
-    // Remaining cases are either a key that does not match or tombstone.
-  }
-}
-
 RawObject typeAssignFromDict(Thread* thread, const Type& type,
                              const Dict& dict) {
   HandleScope scope(thread);
@@ -221,178 +184,6 @@ RawObject typeAssignFromDict(Thread* thread, const Type& type,
     typeAtPut(thread, type, key, value);
   }
   return NoneType::object();
-}
-
-static RawObject typeAtWithHash(RawType type, RawObject name, word hash) {
-  RawObject result =
-      lookupCell(MutableTuple::cast(type.attributes()), name, hash, false);
-  if (result.isErrorNotFound()) return result;
-  return ValueCell::cast(result).value();
-}
-
-static word internedStrHash(RawObject name) {
-  if (name.isSmallStr()) {
-    return SmallStr::cast(name).hash();
-  }
-  word hash = LargeStr::cast(name).header().hashCode();
-  DCHECK(hash != Header::kUninitializedHash,
-         "hash has not been computed (string not interned?)");
-  return hash;
-}
-
-RawObject typeAt(const Type& type, const Object& name) {
-  word hash = internedStrHash(*name);
-  return typeAtWithHash(*type, *name, hash);
-}
-
-RawObject typeValueCellAt(const Type& type, const Object& name) {
-  word hash = internedStrHash(*name);
-  return typeValueCellAtWithHash(type, name, hash);
-}
-
-RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
-                                  word hash) {
-  return lookupCell(MutableTuple::cast(type.attributes()), *name, hash, true);
-}
-
-static RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
-                                   Object* location) {
-  RawObject result =
-      lookupCell(MutableTuple::cast(type.attributes()), name, hash, false);
-  if (result.isErrorNotFound()) return result;
-  if (location != nullptr) {
-    *location = result;
-  }
-  return ValueCell::cast(result).value();
-}
-
-RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
-  RawObject str = thread->runtime()->symbols()->at(id);
-  word hash = internedStrHash(str);
-  return typeAtWithHash(*type, str, hash);
-}
-
-RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
-                    const Object& value) {
-  DCHECK(thread->runtime()->isInternedStr(thread, name),
-         "name should be an interned str");
-  RawValueCell value_cell =
-      ValueCell::cast(typeValueCellAtPut(thread, type, name));
-  value_cell.setValue(*value);
-  if (!value_cell.dependencyLink().isNoneType()) {
-    HandleScope scope(thread);
-    ValueCell value_cell_obj(&scope, value_cell);
-    icInvalidateAttr(thread, type, name, value_cell_obj);
-  }
-  return value_cell;
-}
-
-RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
-                        const Object& value) {
-  HandleScope scope(thread);
-  Object name(&scope, thread->runtime()->symbols()->at(id));
-  return typeAtPut(thread, type, name, value);
-}
-
-static NEVER_INLINE void typeGrowAttributes(Thread* thread, const Type& type) {
-  HandleScope scope(thread);
-  Tuple old_data(&scope, type.attributes());
-
-  // Count the number of filled buckets that are not tombstones.
-  word old_capacity = old_data.length();
-  word num_items = 0;
-  for (word idx = 0; idx < old_capacity; idx += kBucketNumWords) {
-    RawObject key = old_data.at(idx + kBucketKeyOffset);
-    if (key != kEmptyKey && key != kTombstoneKey) {
-      num_items++;
-    }
-  }
-
-  // Grow if more than half of the buckets are filled, otherwise maintain size
-  // and just clean out the tombstones.
-  word old_num_buckets = old_capacity >> 1;
-  word new_capacity = old_capacity;
-  if (num_items > (old_num_buckets >> 1)) {
-    // Grow if more than half of the buckets are filled, otherwise just clean
-    // out the tombstones.
-    new_capacity *= 2;
-  }
-
-  // Allocate new tuple and re-hash.
-  MutableTuple new_data(&scope,
-                        thread->runtime()->newMutableTuple(new_capacity));
-  word num_buckets = new_capacity >> 1;
-  DCHECK(Utils::isPowerOfTwo(num_buckets), "must be power of two");
-  word new_remaining = (num_buckets * 2) / 3;
-  word mask = num_buckets - 1;
-  Object key(&scope, NoneType::object());
-  for (word old_idx = 0; old_idx < old_capacity; old_idx += kBucketNumWords) {
-    key = old_data.at(old_idx + kBucketKeyOffset);
-    if (key == kEmptyKey || key == kTombstoneKey) {
-      continue;
-    }
-    DCHECK(key.isStr(), "key must be None, _Unbound or str");
-    word hash = internedStrHash(*key);
-    word bucket = hash & mask;
-    word num_probes = 0;
-    while (new_data.at(bucket * kBucketNumWords + kBucketKeyOffset) !=
-           kEmptyKey) {
-      num_probes++;
-      bucket = (bucket + num_probes) & mask;
-    }
-    new_data.atPut(bucket * kBucketNumWords + kBucketKeyOffset, *key);
-    new_data.atPut(bucket * kBucketNumWords + kBucketValueOffset,
-                   old_data.at(old_idx + kBucketValueOffset));
-    new_remaining--;
-  }
-  DCHECK(new_remaining > 0, "must have remaining buckets");
-  type.setAttributes(*new_data);
-  type.setAttributesRemaining(new_remaining);
-}
-
-RawObject inline USED typeValueCellAtPut(Thread* thread, const Type& type,
-                                         const Object& name) {
-  HandleScope scope(thread);
-  MutableTuple data_obj(&scope, type.attributes());
-  RawMutableTuple data = *data_obj;
-  word hash = internedStrHash(*name);
-  word mask = (data.length() - 1) >> 1;
-  for (word bucket = hash & mask, num_probes = 0, last_tombstone = -1;;
-       bucket = (bucket + ++num_probes) & mask) {
-    word idx = bucket * kBucketNumWords;
-    RawObject key = data.at(idx + kBucketKeyOffset);
-    if (key == *name) {
-      return RawValueCell::cast(data.at(idx + kBucketValueOffset));
-    }
-    if (key == kEmptyKey) {
-      DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
-      RawValueCell cell = ValueCell::cast(thread->runtime()->newValueCell());
-      cell.makePlaceholder();
-      // newValueCell() may have triggered a GC; restore raw references.
-      data = *data_obj;
-      if (last_tombstone >= 0) {
-        // Overwrite an existing tombstone entry.
-        word last_tombstone_idx = last_tombstone * kBucketNumWords;
-        data.atPut(last_tombstone_idx + kBucketKeyOffset, *name);
-        data.atPut(last_tombstone_idx + kBucketValueOffset, cell);
-      } else {
-        // Use new bucket.
-        data.atPut(idx + kBucketKeyOffset, *name);
-        data.atPut(idx + kBucketValueOffset, cell);
-        word remaining = type.attributesRemaining() - 1;
-        type.setAttributesRemaining(remaining);
-        if (remaining == 0) {
-          ValueCell cell_obj(&scope, cell);
-          typeGrowAttributes(thread, type);
-          return *cell_obj;
-        }
-      }
-      return cell;
-    }
-    if (key == kTombstoneKey) {
-      last_tombstone = bucket;
-    }
-  }
 }
 
 RawObject typeLookupInMroSetLocation(Thread* thread, RawType type,
@@ -416,7 +207,7 @@ RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name) {
   for (word i = 0, length = mro.length(); i < length; i++) {
     DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
     RawType mro_type = mro.at(i).rawCast<RawType>();
-    RawObject result = typeAtWithHash(mro_type, name, hash);
+    RawObject result = attributeAtWithHash(mro_type, name, hash);
     if (!result.isErrorNotFound()) {
       return result;
     }
@@ -429,34 +220,18 @@ RawObject typeLookupInMroById(Thread* thread, RawType type, SymbolId id) {
 }
 
 RawObject typeRemove(Thread* thread, const Type& type, const Object& name) {
+  DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
   HandleScope scope(thread);
-  MutableTuple data(&scope, type.attributes());
-  word hash = internedStrHash(*name);
-  word mask = (data.length() - 1) >> 1;
-  Object key(&scope, NoneType::object());
-  for (word bucket = hash & mask, num_probes = 0;;
-       bucket = (bucket + ++num_probes) & mask) {
-    word idx = bucket * kBucketNumWords;
-    key = data.at(idx + kBucketKeyOffset);
-    if (key == name) {
-      // Set to tombstone and invalidate caches.
-      ValueCell value_cell(&scope, data.at(idx + kBucketValueOffset));
-      icInvalidateAttr(thread, type, name, value_cell);
-      DCHECK(
-          data == type.attributes() && data.at(idx + kBucketKeyOffset) == name,
-          "attributes changed?");
-      data.atPut(idx + kBucketKeyOffset, kTombstoneKey);
-      data.atPut(idx + kBucketValueOffset, NoneType::object());
-      if (value_cell.isPlaceholder()) {
-        return Error::notFound();
-      }
-      return value_cell.value();
-    }
-    if (key.isNoneType()) {
-      return Error::notFound();
-    }
-    // Remaining cases are either a key that does not match or tombstone.
+  word index;
+  Object value_cell_obj(&scope, NoneType::object());
+  if (!attributeFindForRemoval(type, name, &value_cell_obj, &index)) {
+    return Error::notFound();
   }
+  ValueCell value_cell(&scope, *value_cell_obj);
+  icInvalidateAttr(thread, type, name, value_cell);
+  attributeRemove(type, index);
+  if (value_cell.isPlaceholder()) return Error::notFound();
+  return value_cell.value();
 }
 
 RawObject typeRemoveById(Thread* thread, const Type& type, SymbolId id) {
@@ -466,69 +241,15 @@ RawObject typeRemoveById(Thread* thread, const Type& type, SymbolId id) {
 }
 
 RawObject typeKeys(Thread* thread, const Type& type) {
-  HandleScope scope(thread);
-  MutableTuple data(&scope, type.attributes());
-  Runtime* runtime = thread->runtime();
-  List keys(&scope, runtime->newList());
-  Object key(&scope, NoneType::object());
-  Object cell(&scope, NoneType::object());
-  for (word i = 0, length = data.length(); i < length; i += kBucketNumWords) {
-    key = data.at(i + kBucketKeyOffset);
-    if (key == kEmptyKey || key == kTombstoneKey) {
-      continue;
-    }
-    DCHECK(key.isStr(), "key must be a str");
-    cell = data.at(i + kBucketValueOffset);
-    if (ValueCell::cast(*cell).isPlaceholder()) {
-      continue;
-    }
-    runtime->listAdd(thread, keys, key);
-  }
-  return *keys;
+  return attributeKeys(thread, type);
 }
 
-RawObject typeLen(Thread* thread, const Type& type) {
-  HandleScope scope(thread);
-  MutableTuple data(&scope, type.attributes());
-  Object key(&scope, NoneType::object());
-  Object cell(&scope, NoneType::object());
-  word count = 0;
-  for (word i = 0, length = data.length(); i < length; i += kBucketNumWords) {
-    key = data.at(i + kBucketKeyOffset);
-    if (key == kEmptyKey || key == kTombstoneKey) {
-      continue;
-    }
-    DCHECK(key.isStr(), "key must be a str");
-    cell = data.at(i + kBucketValueOffset);
-    if (ValueCell::cast(*cell).isPlaceholder()) {
-      continue;
-    }
-    count++;
-  }
-  return SmallInt::fromWord(count);
+word typeLen(Thread* thread, const Type& type) {
+  return attributeLen(thread, type);
 }
 
 RawObject typeValues(Thread* thread, const Type& type) {
-  HandleScope scope(thread);
-  MutableTuple data(&scope, type.attributes());
-  Runtime* runtime = thread->runtime();
-  List values(&scope, runtime->newList());
-  Object key(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  for (word i = 0, length = data.length(); i < length; i += kBucketNumWords) {
-    key = data.at(i + kBucketKeyOffset);
-    if (key == kEmptyKey || key == kTombstoneKey) {
-      continue;
-    }
-    DCHECK(key.isStr(), "key must be a str");
-    value = data.at(i + kBucketValueOffset);
-    if (ValueCell::cast(*value).isPlaceholder()) {
-      continue;
-    }
-    value = ValueCell::cast(*value).value();
-    runtime->listAdd(thread, values, value);
-  }
-  return *values;
+  return attributeValues(thread, type);
 }
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
@@ -1075,12 +796,6 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
   return *type;
 }
 
-void typeInitAttributes(Thread* thread, const Type& type) {
-  type.setAttributes(thread->runtime()->newMutableTuple(kInitialCapacity));
-  word num_buckets = kInitialCapacity >> 1;
-  type.setAttributesRemaining((num_buckets * 2) / 3);
-}
-
 // NOTE: Keep the order of these type attributes same as the one from
 // rewriteOperation.
 static const SymbolId kUnimplementedTypeAttrUpdates[] = {
@@ -1091,11 +806,7 @@ static const SymbolId kUnimplementedTypeAttrUpdates[] = {
 
 void terminateIfUnimplementedTypeAttrCacheInvalidation(
     Thread* thread, const Type& type, const Object& attr_name) {
-  word hash = internedStrHash(*attr_name);
-  RawObject existing_attr =
-      lookupCell(MutableTuple::cast(type.attributes()), *attr_name, hash,
-                 /*return_placeholder=*/true);
-  if (!existing_attr.isValueCell()) {
+  if (attributeValueCellAt(*type, *attr_name).isErrorNotFound()) {
     // No need for cache invalidation due to the absence of the attribute.
     return;
   }
@@ -1196,6 +907,10 @@ RawObject typeSetDunderClass(Thread* thread, const Object& self,
 }
 
 static const BuiltinAttribute kTypeAttributes[] = {
+    {ID(_type__attributes), RawType::kAttributesOffset,
+     AttributeFlags::kHidden},
+    {ID(_type__attributes_remaining), RawType::kAttributesRemainingOffset,
+     AttributeFlags::kHidden},
     {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
     {ID(_type__bases), RawType::kBasesOffset, AttributeFlags::kHidden},
     {ID(_type__instance_layout), RawType::kInstanceLayoutOffset,
@@ -1205,10 +920,6 @@ static const BuiltinAttribute kTypeAttributes[] = {
     {ID(_type__name), RawType::kNameOffset, AttributeFlags::kHidden},
     {ID(__doc__), RawType::kDocOffset},
     {ID(_type__flags), RawType::kFlagsOffset, AttributeFlags::kHidden},
-    {ID(_type__attributes), RawType::kAttributesOffset,
-     AttributeFlags::kHidden},
-    {ID(_type__attributes_remaining), RawType::kAttributesRemainingOffset,
-     AttributeFlags::kHidden},
     {ID(_type__slots), RawType::kSlotsOffset, AttributeFlags::kHidden},
     {ID(_type__abstract_methods), RawType::kAbstractMethodsOffset,
      AttributeFlags::kHidden},
