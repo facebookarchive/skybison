@@ -284,8 +284,6 @@ class Runtime {
   RawObject strSlice(Thread* thread, const Str& str, word start, word stop,
                      word step);
 
-  RawObject strSubstr(Thread* thread, const Str& str, word start, word length);
-
   RawObject newValueCell();
 
   RawObject newWeakLink(Thread* thread, const Object& referent,

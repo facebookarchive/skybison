@@ -4888,8 +4888,9 @@ RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Arguments args) {
   Str self(&scope, strUnderlying(*self_obj));
   word start_index = adjustedStrIndex(self, start);
   word stop_index = adjustedStrIndex(self, stop);
-  return runtime->strSubstr(thread, self, start_index,
-                            stop_index - start_index);
+  word length = stop_index - start_index;
+  if (length <= 0) return Str::empty();
+  return strSubstr(thread, self, start_index, length);
 }
 
 RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Arguments args) {
@@ -5123,12 +5124,11 @@ RawObject FUNC(_builtins, _str_partition)(Thread* thread, Arguments args) {
   word prefix_len =
       strScan(haystack, haystack_len, needle, needle_len, Utils::memoryFind);
   if (prefix_len < 0) return result.becomeImmutable();
-  result.atPut(0, runtime->strSubstr(thread, haystack, 0, prefix_len));
+  result.atPut(0, strSubstr(thread, haystack, 0, prefix_len));
   result.atPut(1, *needle);
   word suffix_start = prefix_len + needle_len;
   word suffix_len = haystack_len - suffix_start;
-  result.atPut(2,
-               runtime->strSubstr(thread, haystack, suffix_start, suffix_len));
+  result.atPut(2, strSubstr(thread, haystack, suffix_start, suffix_len));
   return result.becomeImmutable();
 }
 
@@ -5244,12 +5244,11 @@ RawObject FUNC(_builtins, _str_rpartition)(Thread* thread, Arguments args) {
   word prefix_len = strScan(haystack, haystack_len, needle, needle_len,
                             Utils::memoryFindReverse);
   if (prefix_len < 0) return result.becomeImmutable();
-  result.atPut(0, runtime->strSubstr(thread, haystack, 0, prefix_len));
+  result.atPut(0, strSubstr(thread, haystack, 0, prefix_len));
   result.atPut(1, *needle);
   word suffix_start = prefix_len + needle_len;
   word suffix_len = haystack_len - suffix_start;
-  result.atPut(2,
-               runtime->strSubstr(thread, haystack, suffix_start, suffix_len));
+  result.atPut(2, strSubstr(thread, haystack, suffix_start, suffix_len));
   return result.becomeImmutable();
 }
 
@@ -5293,7 +5292,7 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
       }
       num_split += 1;
     }
-    substr = runtime->strSubstr(thread, self, i, j - i);
+    substr = strSubstr(thread, self, i, j - i);
     runtime->listAdd(thread, result, substr);
   }
   return *result;

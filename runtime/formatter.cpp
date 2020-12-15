@@ -8,6 +8,7 @@
 #include "handles-decl.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "unicode.h"
 
@@ -428,7 +429,7 @@ RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {
   Runtime* runtime = thread->runtime();
   word padding = width - codepoint_length;
   if (padding <= 0) {
-    return runtime->strSubstr(thread, str, 0, str_end_index);
+    return strSubstr(thread, str, 0, str_end_index);
   }
 
   // Construct result.

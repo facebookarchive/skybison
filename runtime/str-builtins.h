@@ -100,6 +100,8 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends);
 // points found in str. Analogous to the C string API function strspn().
 word strSpan(const Str& src, const Str& str);
 
+RawObject strSubstr(Thread* thread, const Str& str, word start, word length);
+
 // Returns the length of the maximum final span of src composed
 // of code points found in str. Right handed version of strSpan(). The rend
 // argument is the index at which to stop scanning left, and could be set to 0

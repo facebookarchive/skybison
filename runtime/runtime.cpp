@@ -3433,34 +3433,6 @@ RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
   return result.becomeStr();
 }
 
-RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
-                             word length) {
-  DCHECK(start >= 0, "from should be > 0");
-  if (length <= 0) {
-    return Str::empty();
-  }
-  word str_len = str.length();
-  DCHECK(start + length <= str_len, "overflow");
-  if (start == 0 && length == str_len) {
-    return *str;
-  }
-  // SmallStr result
-  if (length <= RawSmallStr::kMaxLength) {
-    byte buffer[RawSmallStr::kMaxLength];
-    for (word i = 0; i < length; i++) {
-      buffer[i] = str.byteAt(start + i);
-    }
-    return SmallStr::fromBytes(View<byte>(buffer, length));
-  }
-  // LargeStr result
-  HandleScope scope(thread);
-  LargeStr source(&scope, *str);
-  LargeStr result(&scope, createLargeStr(length));
-  std::memcpy(reinterpret_cast<void*>(result.address()),
-              reinterpret_cast<void*>(source.address() + start), length);
-  return *result;
-}
-
 // StrArray
 
 void Runtime::strArrayAddASCII(Thread* thread, const StrArray& array,

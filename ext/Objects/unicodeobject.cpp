@@ -2062,8 +2062,7 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
     }
   }
   return ApiHandle::newReference(
-      thread,
-      runtime->strSubstr(thread, self, start_index, end_index - start_index));
+      thread, strSubstr(thread, self, start_index, end_index - start_index));
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_Tailmatch(PyObject* str, PyObject* substr,

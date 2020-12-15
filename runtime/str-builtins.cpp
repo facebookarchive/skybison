@@ -188,6 +188,27 @@ word strSpan(const Str& src, const Str& str) {
   return first;
 }
 
+RawObject strSubstr(Thread* thread, const Str& str, word start, word length) {
+  word str_len = str.length();
+  DCHECK_BOUND(start, str_len);
+  DCHECK_BOUND(length, str_len - start);
+  if (length == str_len) {
+    return *str;
+  }
+  // SmallStr result
+  if (length <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    str.copyToStartAt(buffer, length, start);
+    return SmallStr::fromBytes(View<byte>(buffer, length));
+  }
+  // LargeStr result
+  HandleScope scope(thread);
+  MutableBytes result(&scope,
+                      thread->runtime()->newMutableBytesUninitialized(length));
+  result.replaceFromWithStartAt(0, LargeStr::cast(*str), length, start);
+  return result.becomeStr();
+}
+
 word strRSpan(const Str& src, const Str& str, word rend) {
   DCHECK(rend >= 0, "string index underflow");
   word length = src.length();
@@ -240,16 +261,16 @@ RawObject strSplit(Thread* thread, const Str& str, const Str& sep,
   word sep_len = sep.length();
   for (word i = 0, result_idx = 0; result_idx < num_splits;) {
     if (strHasPrefix(str, sep, i)) {
-      result_items.atPut(result_idx++, runtime->strSubstr(thread, str, last_idx,
-                                                          i - last_idx));
+      result_items.atPut(result_idx++,
+                         strSubstr(thread, str, last_idx, i - last_idx));
       i += sep_len;
       last_idx = i;
     } else {
       i = str.offsetByCodePoints(i, 1);
     }
   }
-  result_items.atPut(num_splits, runtime->strSubstr(thread, str, last_idx,
-                                                    str.length() - last_idx));
+  result_items.atPut(num_splits,
+                     strSubstr(thread, str, last_idx, str.length() - last_idx));
   List result(&scope, runtime->newList());
   result.setItems(*result_items);
   result.setNumItems(result_len);
@@ -290,7 +311,7 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
       return *result;
     }
 
-    Str substr(&scope, runtime->strSubstr(thread, str, j, eol_pos - j));
+    Str substr(&scope, strSubstr(thread, str, j, eol_pos - j));
     runtime->listAdd(thread, result, substr);
   }
 
@@ -324,7 +345,7 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
       break;
     }
   }
-  return thread->runtime()->strSubstr(thread, src, first, last - first);
+  return strSubstr(thread, src, first, last - first);
 }
 
 RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
@@ -344,7 +365,7 @@ RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
     }
     first += num_bytes;
   }
-  return thread->runtime()->strSubstr(thread, src, first, length - first);
+  return strSubstr(thread, src, first, length - first);
 }
 
 RawObject strStripSpaceRight(Thread* thread, const Str& src) {
@@ -365,7 +386,7 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
       break;
     }
   }
-  return thread->runtime()->strSubstr(thread, src, 0, last);
+  return strSubstr(thread, src, 0, last);
 }
 
 RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
@@ -375,8 +396,7 @@ RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
   }
   word first = strSpan(src, str);
   word last = strRSpan(src, str, first);
-  return thread->runtime()->strSubstr(thread, src, first,
-                                      length - first - last);
+  return strSubstr(thread, src, first, length - first - last);
 }
 
 RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
@@ -385,7 +405,7 @@ RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
     return *src;
   }
   word first = strSpan(src, str);
-  return thread->runtime()->strSubstr(thread, src, first, length - first);
+  return strSubstr(thread, src, first, length - first);
 }
 
 RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
@@ -395,7 +415,7 @@ RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
   }
   word first = 0;
   word last = strRSpan(src, str, first);
-  return thread->runtime()->strSubstr(thread, src, 0, length - last);
+  return strSubstr(thread, src, 0, length - last);
 }
 
 RawObject strTranslateASCII(Thread* thread, const Str& src, const Str& table) {
@@ -624,10 +644,12 @@ bool METH(str, __getitem___intrinsic)(Thread* thread) {
       Str self(&scope, arg0);
       word start_index = adjustedStrIndex(self, start);
       word stop_index = adjustedStrIndex(self, stop);
+      word length = stop_index - start_index;
 
       thread->stackDrop(2);
-      thread->stackSetTop(thread->runtime()->strSubstr(
-          thread, self, start_index, stop_index - start_index));
+      thread->stackSetTop(length <= 0
+                              ? Str::empty()
+                              : strSubstr(thread, self, start_index, length));
     }
     return true;
   }

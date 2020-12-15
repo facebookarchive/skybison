@@ -63,9 +63,8 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   Object module_name(&scope, NoneType::object());
   word dot = strRFindAsciiChar(name, '.');
   if (dot >= 0) {
-    module_name = runtime->strSubstr(thread, name, 0, dot);
-    type_name =
-        runtime->strSubstr(thread, name, dot + 1, name.length() - (dot + 1));
+    module_name = strSubstr(thread, name, 0, dot);
+    type_name = strSubstr(thread, name, dot + 1, name.length() - (dot + 1));
   } else {
     module_name = runtime->symbols()->at(ID(builtins));
   }
