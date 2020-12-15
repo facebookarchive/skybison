@@ -1674,6 +1674,33 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
+  Register r_right = RAX;
+  Register r_left = RDX;
+  Register r_result = RDI;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
+  // Preserve argument values in case of overflow.
+  __ movq(r_result, r_left);
+  __ subq(r_result, r_right);
+  __ jcc(YES_OVERFLOW, &slow_path, Assembler::kNearJump);
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::inplaceOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
 void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Label slow_path;
   Register r_return_value = RAX;
