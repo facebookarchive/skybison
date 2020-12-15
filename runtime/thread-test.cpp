@@ -527,8 +527,8 @@ TEST_F(ThreadTest, LoadGlobal) {
   Object value(&scope, runtime_->newInt(1234));
   moduleAtPut(thread_, module, name, value);
 
-  Dict globals(&scope, module.dict());
-  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 1234));
+  Object none(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, none), 1234));
 }
 
 TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
@@ -550,9 +550,9 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, findMainModule(runtime_));
-  Dict globals(&scope, module.dict());
-  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 42));
+  Object none(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, none), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(module, name), 42));
 }
 
 TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
@@ -578,7 +578,7 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   moduleAtPut(thread_, module, name, value);
   Object none(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, none), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(module, name), 42));
 }
 
 TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -991,16 +991,6 @@ TEST_F(ThreadTest, UnaryNotWithFalsey) {
   EXPECT_EQ(runCode(code), Bool::trueObj());
 }
 
-static RawDict getMainModuleDict(Thread* thread) {
-  HandleScope scope(thread);
-  Module mod(&scope, findMainModule(thread->runtime()));
-  EXPECT_TRUE(mod.isModule());
-
-  Dict dict(&scope, mod.dict());
-  EXPECT_TRUE(dict.isDict());
-  return *dict;
-}
-
 TEST_F(ThreadTest, LoadBuildTypeEmptyType) {
   HandleScope scope(thread_);
 
@@ -1010,13 +1000,7 @@ class C:
 )")
                    .isError());
 
-  Dict dict(&scope, getMainModuleDict(thread_));
-
-  Str name(&scope, runtime_->newStrFromCStr("C"));
-  Object value(&scope, dictAtByStr(thread_, dict, name));
-  ASSERT_TRUE(value.isValueCell());
-
-  Type cls(&scope, ValueCell::cast(*value).value());
+  Type cls(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(cls.name().isSmallStr());
   EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
@@ -1040,7 +1024,7 @@ class C:
   ASSERT_TRUE(mod.isModule());
 
   Str cls_name(&scope, Runtime::internStrFromCStr(thread_, "C"));
-  Object value(&scope, moduleAt(thread_, mod, cls_name));
+  Object value(&scope, moduleAt(mod, cls_name));
   ASSERT_TRUE(value.isType());
   Type cls(&scope, *value);
 
@@ -1149,98 +1133,98 @@ TEST_F(ThreadTest,
 
 // MRO tests
 
-static RawStr className(RawObject obj) {
-  HandleScope scope(Thread::current());
-  Type cls(&scope, obj);
-  Str name(&scope, cls.name());
-  return *name;
-}
-
-static RawObject getMro(Thread* thread, const char* src,
-                        const char* desired_class) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  static_cast<void>(runFromCStr(runtime, src).isError());
-
-  Dict mod_dict(&scope, getMainModuleDict(thread));
-  Str class_name(&scope, runtime->newStrFromCStr(desired_class));
-
-  Object value(&scope, dictAtByStr(thread, mod_dict, class_name));
-  Type cls(&scope, ValueCell::cast(*value).value());
-
-  return cls.mro();
-}
-
 TEST_F(ThreadTest, LoadBuildTypeVerifyMro) {
   HandleScope scope(thread_);
 
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B: pass
 class C(A,B): pass
-)";
+)")
+                   .isError());
 
-  Tuple mro(&scope, getMro(thread_, src, "C"));
-  EXPECT_EQ(mro.length(), 4);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "object"));
+  Object a(&scope, mainModuleAt(runtime_, "A"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Object object(&scope, moduleAtByCStr(runtime_, "builtins", "object"));
+  Tuple mro(&scope, c.mro());
+  ASSERT_EQ(mro.length(), 4);
+  EXPECT_EQ(mro.at(0), c);
+  EXPECT_EQ(mro.at(1), a);
+  EXPECT_EQ(mro.at(2), b);
+  EXPECT_EQ(mro.at(3), object);
 }
 
 TEST_F(ThreadTest, LoadBuildTypeVerifyMroInheritance) {
   HandleScope scope(thread_);
 
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B(A): pass
 class C(B): pass
-)";
+)")
+                   .isError());
 
-  Tuple mro(&scope, getMro(thread_, src, "C"));
-  EXPECT_EQ(mro.length(), 4);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "object"));
+  Object a(&scope, mainModuleAt(runtime_, "A"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Object object(&scope, moduleAtByCStr(runtime_, "builtins", "object"));
+  Tuple mro(&scope, c.mro());
+  ASSERT_EQ(mro.length(), 4);
+  EXPECT_EQ(mro.at(0), c);
+  EXPECT_EQ(mro.at(1), b);
+  EXPECT_EQ(mro.at(2), a);
+  EXPECT_EQ(mro.at(3), object);
 }
 
 TEST_F(ThreadTest, LoadBuildTypeVerifyMroMultiInheritance) {
   HandleScope scope(thread_);
 
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B(A): pass
 class C: pass
 class D(B,C): pass
-)";
+)")
+                   .isError());
 
-  Tuple mro(&scope, getMro(thread_, src, "D"));
-  EXPECT_EQ(mro.length(), 5);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "D"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(4)), "object"));
+  Object a(&scope, mainModuleAt(runtime_, "A"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
+  Type d(&scope, mainModuleAt(runtime_, "D"));
+  Object object(&scope, moduleAtByCStr(runtime_, "builtins", "object"));
+  Tuple mro(&scope, d.mro());
+  ASSERT_EQ(mro.length(), 5);
+  EXPECT_EQ(mro.at(0), d);
+  EXPECT_EQ(mro.at(1), b);
+  EXPECT_EQ(mro.at(2), a);
+  EXPECT_EQ(mro.at(3), c);
+  EXPECT_EQ(mro.at(4), object);
 }
 
 TEST_F(ThreadTest, LoadBuildTypeVerifyMroDiamond) {
   HandleScope scope(thread_);
 
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B(A): pass
 class C(A): pass
 class D(B,C): pass
-)";
+)")
+                   .isError());
 
-  Tuple mro(&scope, getMro(thread_, src, "D"));
-  EXPECT_EQ(mro.length(), 5);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "D"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(4)), "object"));
+  Object a(&scope, mainModuleAt(runtime_, "A"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
+  Type d(&scope, mainModuleAt(runtime_, "D"));
+  Object object(&scope, moduleAtByCStr(runtime_, "builtins", "object"));
+  Tuple mro(&scope, d.mro());
+  ASSERT_EQ(mro.length(), 5);
+  EXPECT_EQ(mro.at(0), d);
+  EXPECT_EQ(mro.at(1), b);
+  EXPECT_EQ(mro.at(2), c);
+  EXPECT_EQ(mro.at(3), a);
+  EXPECT_EQ(mro.at(4), object);
 }
 
 TEST_F(ThreadTest, LoadBuildTypeVerifyMroError) {

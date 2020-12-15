@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "attributedict.h"
 #include "builtins-module.h"
 #include "builtins.h"
 #include "bytearray-builtins.h"
@@ -2477,7 +2478,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   HandleScope scope(thread_);
   Str module_name(&scope, runtime_->newStrFromCStr("module"));
   Module module(&scope, runtime_->newModule(module_name));
-  module.setDict(runtime_->newDict());
+  attributeDictInit(thread_, module);
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));

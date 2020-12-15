@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "attributedict.h"
 #include "builtins.h"
 #include "dict-builtins.h"
 #include "ic.h"
@@ -78,7 +79,7 @@ TEST_F(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
   Object value(&scope, runtime_->newInt(0xf00d));
   EXPECT_TRUE(
       runBuiltin(METH(module, __setattr__), module, name, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 0xf00d));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(module, name), 0xf00d));
 }
 
 TEST_F(ModuleBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
@@ -108,22 +109,13 @@ static RawModule createTestingModule(Thread* thread) {
   Runtime* runtime = thread->runtime();
 
   // Create a builtins module.
-  Object name(&scope, runtime->symbols()->at(ID(builtins)));
-  Module builtins_module(&scope, runtime->newModule(name));
-  Object modules(&scope, runtime->modules());
-  EXPECT_FALSE(
-      objectSetItem(thread, modules, name, builtins_module).isErrorException());
-  Dict builtins_dict(&scope, runtime->newDict());
-  builtins_module.setDict(*builtins_dict);
+  Object builtins_name(&scope, runtime->symbols()->at(ID(builtins)));
+  Module builtins_module(&scope, runtime->newModule(builtins_name));
 
   // Create a module dict with builtins in it.
-  Dict module_dict(&scope, runtime->newDict());
-  Object dunder_builtins_name(&scope, runtime->symbols()->at(ID(__builtins__)));
-  dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
-                            builtins_module);
-
-  Module module(&scope, findMainModule(runtime));
-  module.setDict(*module_dict);
+  Object name(&scope, Runtime::internStrFromCStr(thread, "<test module>"));
+  Module module(&scope, runtime->newModule(name));
+  moduleAtPutById(thread, module, ID(__builtins__), builtins_module);
   return *module;
 }
 
@@ -135,7 +127,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtIgnoresBuiltinsEntry) {
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Str foo_in_builtins(&scope, runtime_->newStrFromCStr("foo_in_builtins"));
   moduleAtPut(thread_, builtins, foo, foo_in_builtins);
-  EXPECT_TRUE(moduleAt(thread_, module, foo).isErrorNotFound());
+  EXPECT_TRUE(moduleAt(module, foo).isErrorNotFound());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtReturnsValuePutByModuleAtPut) {
@@ -144,7 +136,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsValuePutByModuleAtPut) {
   Object name(&scope, Runtime::internStrFromCStr(thread_, "a"));
   Object value(&scope, runtime_->newStrFromCStr("a's value"));
   moduleAtPut(thread_, module, name, value);
-  EXPECT_EQ(moduleAt(thread_, module, name), *value);
+  EXPECT_EQ(moduleAt(module, name), *value);
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
@@ -154,10 +146,9 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
   Object value(&scope, runtime_->newStrFromCStr("a's value"));
   moduleAtPut(thread_, module, name, value);
 
-  Dict module_dict(&scope, module.dict());
-  ValueCell value_cell(&scope, dictAtByStr(thread_, module_dict, name));
+  ValueCell value_cell(&scope, attributeValueCellAt(*module, *name));
   value_cell.makePlaceholder();
-  EXPECT_TRUE(moduleAt(thread_, module, name).isErrorNotFound());
+  EXPECT_TRUE(moduleAt(module, name).isErrorNotFound());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
@@ -175,7 +166,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsValuePutByModuleAtPutByCStr) {
   const char* name_cstr = "a";
   moduleAtPutByCStr(thread_, module, name_cstr, value);
   Object name(&scope, Runtime::internStrFromCStr(thread_, name_cstr));
-  EXPECT_EQ(moduleAt(thread_, module, name), *value);
+  EXPECT_EQ(moduleAt(module, name), *value);
 }
 
 TEST_F(ModuleBuiltinsTest,
@@ -240,8 +231,7 @@ TEST_F(ModuleBuiltinsTest, ModuleKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Str name(&scope, Str::empty());
   Module module(&scope, runtime_->newModule(name));
-  Dict module_dict(&scope, runtime_->newDict());
-  module.setDict(*module_dict);
+  attributeDictInit(thread_, module);
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
@@ -274,14 +264,12 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
   moduleAtPut(thread_, module, bar, value);
   moduleAtPut(thread_, module, baz, value);
 
-  SmallInt previous_len(&scope, moduleLen(thread_, module));
+  word previous_len = moduleLen(thread_, module);
 
-  Dict module_dict(&scope, module.dict());
-  word hash = strHash(thread_, *bar);
-  ValueCell::cast(dictAt(thread_, module_dict, bar, hash)).makePlaceholder();
+  ValueCell::cast(attributeValueCellAt(*module, *bar)).makePlaceholder();
 
-  SmallInt after_len(&scope, moduleLen(thread_, module));
-  EXPECT_EQ(previous_len.value(), after_len.value() + 1);
+  word after_len = moduleLen(thread_, module);
+  EXPECT_EQ(previous_len, after_len + 1);
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleRemoveInvalidatesCachedModuleDictValueCell) {
@@ -305,8 +293,7 @@ foo()
   ASSERT_EQ(icLookupGlobalVar(*caches, 0),
             moduleValueCellAt(thread_, module, a));
 
-  word hash = strHash(thread_, *a);
-  EXPECT_FALSE(moduleRemove(thread_, module, a, hash).isError());
+  EXPECT_FALSE(moduleRemove(thread_, module, a).isError());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -326,8 +313,7 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   moduleAtPut(thread_, module, bar, bar_value);
   moduleAtPut(thread_, module, baz, baz_value);
 
-  Dict module_dict(&scope, module.dict());
-  ValueCell::cast(dictAtByStr(thread_, module_dict, bar)).makePlaceholder();
+  ValueCell::cast(attributeValueCellAt(*module, *bar)).makePlaceholder();
 
   List values(&scope, moduleValues(thread_, module));
   EXPECT_TRUE(listContains(values, foo_value));
@@ -359,7 +345,7 @@ TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_->newInt(-543));
   EXPECT_TRUE(moduleSetAttr(thread_, module, name, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), -543));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(module, name), -543));
 }
 
 TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {

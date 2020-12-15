@@ -593,7 +593,6 @@ TEST_F(ModulesTest, TestCreate) {
   Object name(&scope, runtime_->newStrFromCStr("mymodule"));
   Module module(&scope, runtime_->newModule(name));
   EXPECT_EQ(module.name(), *name);
-  EXPECT_TRUE(module.dict().isDict());
 }
 
 TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoSmallStr) {

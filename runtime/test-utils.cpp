@@ -280,7 +280,7 @@ RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
   }
   Module module(&scope, *mod_obj);
   Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
-  return moduleAt(thread, module, name_obj);
+  return moduleAt(module, name_obj);
 }
 
 std::string typeName(Runtime* runtime, RawObject obj) {

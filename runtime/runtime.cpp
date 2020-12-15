@@ -516,8 +516,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
 
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
-  word hash = strHash(thread, *name);
-  if (moduleRemove(thread, module, name, hash).isError()) {
+  if (moduleRemove(thread, module, name).isError()) {
     Str module_name(&scope, module.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",
@@ -981,7 +980,7 @@ RawObject Runtime::newModule(const Object& name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Module result(&scope, createInstance<RawModule>(this));
-  result.setDict(newDict());
+  attributeDictInit(thread, result);
   result.setDef(newIntFromCPtr(nullptr));
   result.setId(reserveModuleId());
   Object init_result(&scope, moduleInit(thread, result, name));

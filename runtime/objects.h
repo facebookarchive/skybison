@@ -2590,14 +2590,11 @@ class RawMemoryView : public RawInstance {
   RAW_OBJECT_COMMON(MemoryView);
 };
 
-class RawModule : public RawInstance {
+class RawModule : public RawAttributeDict {
  public:
   // Setters and getters.
   RawObject name() const;
   void setName(RawObject name) const;
-
-  RawObject dict() const;
-  void setDict(RawObject dict) const;
 
   // Contains the numeric address of mode definition object for C-API modules or
   // zero if the module was not defined through the C-API.
@@ -2620,9 +2617,8 @@ class RawModule : public RawInstance {
   void setId(word id) const;
 
   // Layout.
-  static const int kNameOffset = RawHeapObject::kSize;
-  static const int kDictOffset = kNameOffset + kPointerSize;
-  static const int kDefOffset = kDictOffset + kPointerSize;
+  static const int kNameOffset = RawAttributeDict::kSize;
+  static const int kDefOffset = kNameOffset + kPointerSize;
   static const int kStateOffset = kDefOffset + kPointerSize;
   static const int kModuleProxyOffset = kStateOffset + kPointerSize;
   static const int kSize = kModuleProxyOffset + kPointerSize;
@@ -4037,7 +4033,9 @@ inline bool RawObject::isAsyncGeneratorWrappedValue() const {
   return isHeapObjectWithLayout(LayoutId::kAsyncGeneratorWrappedValue);
 }
 
-inline bool RawObject::isAttributeDict() const { return isType(); }
+inline bool RawObject::isAttributeDict() const {
+  return isType() || isModule();
+}
 
 inline bool RawObject::isBaseException() const {
   return isHeapObjectWithLayout(LayoutId::kBaseException);
@@ -6915,14 +6913,6 @@ inline RawObject RawModule::name() const {
 
 inline void RawModule::setName(RawObject name) const {
   instanceVariableAtPut(kNameOffset, name);
-}
-
-inline RawObject RawModule::dict() const {
-  return instanceVariableAt(kDictOffset);
-}
-
-inline void RawModule::setDict(RawObject dict) const {
-  instanceVariableAtPut(kDictOffset, dict);
 }
 
 inline RawObject RawModule::def() const {

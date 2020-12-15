@@ -4,7 +4,9 @@
 
 #include "builtins.h"
 #include "dict-builtins.h"
+#include "module-builtins.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "super-builtins.h"
 #include "test-utils.h"
 
@@ -28,9 +30,8 @@ weak = ref(a)
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());
 
   Module main(&scope, findMainModule(runtime_));
-  Dict globals(&scope, main.dict());
-  Str name(&scope, runtime_->newStrFromCStr("a"));
-  dictRemoveByStr(thread_, globals, name);
+  Str name(&scope, Runtime::internStrFromCStr(thread_, "a"));
+  moduleRemove(thread_, main, name);
 
   runtime_->collectGarbage();
   weak = mainModuleAt(runtime_, "weak");
@@ -63,9 +64,8 @@ callback = weak.__callback__
   EXPECT_EQ(f, cb);
 
   Module main(&scope, findMainModule(runtime_));
-  Dict globals(&scope, main.dict());
-  Str name(&scope, runtime_->newStrFromCStr("a"));
-  dictRemoveByStr(thread_, globals, name);
+  Str name(&scope, Runtime::internStrFromCStr(thread_, "a"));
+  moduleRemove(thread_, main, name);
 
   runtime_->collectGarbage();
   weak = mainModuleAt(runtime_, "weak");

@@ -5970,8 +5970,7 @@ result = foo()
 
   Module module(&scope, function.moduleObject());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "a"));
-  Dict module_dict(&scope, module.dict());
-  Object module_entry(&scope, dictAtByStr(thread_, module_dict, name));
+  Object module_entry(&scope, attributeValueCellAt(*module, *name));
   ASSERT_TRUE(module_entry.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*module_entry).isPlaceholder());
 }

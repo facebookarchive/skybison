@@ -11,7 +11,7 @@ class Thread;
 
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
-RawObject moduleAt(Thread* thread, const Module& module, const Object& name);
+RawObject moduleAt(const Module& module, const Object& name);
 // Same as moduleAt but with SymbolId as key.
 RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id);
 // Same as moduleAtById but returns the underlying ValueCell.
@@ -37,11 +37,11 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name);
 RawObject moduleKeys(Thread* thread, const Module& module);
 
 // Returns the number of keys associated with non-placeholder ValueCells.
-RawObject moduleLen(Thread* thread, const Module& module);
+word moduleLen(Thread* thread, const Module& module);
 
 // Remove the ValueCell associcated with key in module_dict.
-RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
-                       word hash);
+RawObject moduleRemove(Thread* thread, const Module& module,
+                       const Object& name);
 
 // Returns the list of values contained in non-placeholder ValueCells.
 RawObject moduleValues(Thread* thread, const Module& module);

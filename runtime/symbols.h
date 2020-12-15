@@ -417,10 +417,11 @@ class Runtime;
   V(_mmap__access)                                                             \
   V(_mmap__data)                                                               \
   V(_mmap__fd)                                                                 \
+  V(_module__attributes)                                                       \
+  V(_module__attributes_remaining)                                             \
   V(_module__def)                                                              \
-  V(_module__dict)                                                             \
-  V(_module__proxy)                                                            \
   V(_module__name)                                                             \
+  V(_module__proxy)                                                            \
   V(_module__state)                                                            \
   V(_mutablebytes)                                                             \
   V(_mutabletuple)                                                             \

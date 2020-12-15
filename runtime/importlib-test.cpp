@@ -40,7 +40,7 @@ import bar
   Object doc(&scope, moduleAtById(thread_, foo, ID(__doc__)));
   EXPECT_TRUE(doc.isNoneType());
   Str str_x(&scope, runtime_->newStrFromCStr("x"));
-  Object x(&scope, moduleAt(thread_, foo, str_x));
+  Object x(&scope, moduleAt(foo, str_x));
   EXPECT_TRUE(isIntEqualsWord(*x, 42));
 }
 
@@ -81,7 +81,7 @@ import bar
   ASSERT_TRUE(bar_obj.isModule());
   Module bar(&scope, *bar_obj);
   Str str_y(&scope, runtime_->newStrFromCStr("y"));
-  Object y(&scope, moduleAt(thread_, bar, str_y));
+  Object y(&scope, moduleAt(bar, str_y));
   EXPECT_TRUE(isIntEqualsWord(*y, 13));
 }
 
@@ -104,12 +104,12 @@ import baz.blam
   ASSERT_TRUE(baz_obj.isModule());
   Module baz(&scope, *baz_obj);
   Str blam_str(&scope, runtime_->newStrFromCStr("blam"));
-  Object blam_obj(&scope, moduleAt(thread_, baz, blam_str));
+  Object blam_obj(&scope, moduleAt(baz, blam_str));
   ASSERT_TRUE(blam_obj.isModule());
   Module blam(&scope, *blam_obj);
 
   Str str_z(&scope, runtime_->newStrFromCStr("z"));
-  Object z(&scope, moduleAt(thread_, blam, str_z));
+  Object z(&scope, moduleAt(blam, str_z));
   EXPECT_TRUE(isIntEqualsWord(*z, 7));
 }
 

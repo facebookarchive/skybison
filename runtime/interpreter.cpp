@@ -2347,7 +2347,7 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
-    if (moduleAt(thread, module, dunder_annotations).isErrorNotFound()) {
+    if (moduleAt(module, dunder_annotations).isErrorNotFound()) {
       Object annotations(&scope, runtime->newDict());
       moduleAtPut(thread, module, dunder_annotations, annotations);
     }
@@ -2753,7 +2753,7 @@ static RawObject builtinsAt(Thread* thread, const Module& module,
   } else {
     return objectGetItem(thread, builtins, name);
   }
-  return moduleAt(thread, builtins_module, name);
+  return moduleAt(builtins_module, name);
 }
 
 static RawObject globalsAt(Thread* thread, const Module& module,
@@ -3348,8 +3348,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteGlobal(Thread* thread, word arg) {
   Module module(&scope, frame->function().moduleObject());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
-  word hash = strHash(thread, *name);
-  if (moduleRemove(thread, module, name, hash).isErrorNotFound()) {
+  if (moduleRemove(thread, module, name).isErrorNotFound()) {
     return raiseUndefinedName(thread, name);
   }
   return Continue::NEXT;
@@ -4152,11 +4151,7 @@ HANDLER_INLINE Continue Interpreter::doLoadGlobal(Thread* thread, word arg) {
   icUpdateGlobalVar(thread, function, arg, value_cell);
   // Set up a placeholder in module to signify that a builtin entry under
   // the same name is cached.
-  Dict module_dict(&scope, module.dict());
-  NoneType none(&scope, NoneType::object());
-  ValueCell module_value_cell(
-      &scope, dictAtPutInValueCellByStr(thread, module_dict, name, none));
-  module_value_cell.makePlaceholder();
+  attributeValueCellAtPut(thread, module, name);
   thread->stackPush(value_cell.value());
   return Continue::NEXT;
 }
@@ -4291,7 +4286,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
-    annotations = moduleAt(thread, module, dunder_annotations);
+    annotations = moduleAt(module, dunder_annotations);
   } else {
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());
@@ -4695,7 +4690,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
-    result = moduleAt(thread, module, name);
+    result = moduleAt(module, name);
   } else {
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());

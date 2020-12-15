@@ -29,7 +29,7 @@ RawObject METH(module_proxy, __contains__)(Thread* thread, Arguments args) {
   if (key.isErrorException()) return *key;
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object result(&scope, moduleAt(thread, module, key));
+  Object result(&scope, moduleAt(module, key));
   if (result.isErrorNotFound()) {
     return Bool::falseObj();
   }
@@ -43,16 +43,13 @@ RawObject METH(module_proxy, __delitem__)(Thread* thread, Arguments args) {
     return thread->raiseRequiresType(self, ID(module_proxy));
   }
   ModuleProxy module_proxy(&scope, *self);
-  Object key(&scope, args.get(1));
-  key = attributeName(thread, key);
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  Object hash_obj(&scope, Interpreter::hash(thread, key));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, moduleRemove(thread, module, key, hash));
+  Object result(&scope, moduleRemove(thread, module, name));
   if (result.isErrorNotFound()) {
-    return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &key);
+    return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &name);
   }
   return *result;
 }
@@ -69,7 +66,7 @@ RawObject METH(module_proxy, __getitem__)(Thread* thread, Arguments args) {
   if (name.isErrorException()) return *name;
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  Object result(&scope, moduleAt(thread, module, name));
+  Object result(&scope, moduleAt(module, name));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &name);
   }
@@ -85,7 +82,7 @@ RawObject METH(module_proxy, __len__)(Thread* thread, Arguments args) {
   ModuleProxy module_proxy(&scope, *self);
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  return moduleLen(thread, module);
+  return SmallInt::fromWord(moduleLen(thread, module));
 }
 
 RawObject METH(module_proxy, get)(Thread* thread, Arguments args) {
@@ -101,7 +98,7 @@ RawObject METH(module_proxy, get)(Thread* thread, Arguments args) {
   Object default_obj(&scope, args.get(2));
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  Object result(&scope, moduleAt(thread, module, name));
+  Object result(&scope, moduleAt(module, name));
   if (result.isError()) {
     return *default_obj;
   }
@@ -121,17 +118,14 @@ RawObject METH(module_proxy, pop)(Thread* thread, Arguments args) {
   Object default_obj(&scope, args.get(2));
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  Object result(&scope, moduleAt(thread, module, name));
+  Object result(&scope, moduleAt(module, name));
   if (result.isError()) {
     if (default_obj.isUnbound()) {
       return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &name);
     }
     return *default_obj;
   }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  return moduleRemove(thread, module, name, hash);
+  return moduleRemove(thread, module, name);
 }
 
 RawObject METH(module_proxy, setdefault)(Thread* thread, Arguments args) {
@@ -147,7 +141,7 @@ RawObject METH(module_proxy, setdefault)(Thread* thread, Arguments args) {
   Object default_obj(&scope, args.get(2));
   Module module(&scope, module_proxy.module());
   DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  Object value(&scope, moduleAt(thread, module, name));
+  Object value(&scope, moduleAt(module, name));
   if (value.isErrorNotFound()) {
     value = *default_obj;
     moduleAtPut(thread, module, name, value);

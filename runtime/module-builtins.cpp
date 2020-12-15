@@ -15,27 +15,13 @@
 
 namespace py {
 
-static RawObject unwrapValueCell(RawObject result) {
-  if (result.isErrorNotFound()) {
-    return result;
-  }
-  RawValueCell value_cell = ValueCell::cast(result);
-  if (value_cell.isPlaceholder()) {
-    return Error::notFound();
-  }
-  return value_cell.value();
-}
-
-RawObject moduleAt(Thread* thread, const Module& module, const Object& name) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return unwrapValueCell(dictAtByStr(thread, dict, name));
+RawObject moduleAt(const Module& module, const Object& name) {
+  return attributeAt(*module, *name);
 }
 
 RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return unwrapValueCell(dictAtById(thread, dict, id));
+  RawObject name = thread->runtime()->symbols()->at(id);
+  return attributeAt(*module, name);
 }
 
 static RawObject filterPlaceholderValueCell(RawObject result) {
@@ -51,24 +37,19 @@ static RawObject filterPlaceholderValueCell(RawObject result) {
 
 RawObject moduleValueCellAtById(Thread* thread, const Module& module,
                                 SymbolId id) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return filterPlaceholderValueCell(dictAtById(thread, dict, id));
+  RawObject name = thread->runtime()->symbols()->at(id);
+  return filterPlaceholderValueCell(attributeValueCellAt(*module, name));
 }
 
-RawObject moduleValueCellAt(Thread* thread, const Module& module,
-                            const Object& name) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return filterPlaceholderValueCell(dictAtByStr(thread, dict, name));
+RawObject moduleValueCellAt(Thread*, const Module& module, const Object& name) {
+  return filterPlaceholderValueCell(attributeValueCellAt(*module, *name));
 }
 
 static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
                                       const Object& name, const Object& value) {
   HandleScope scope(thread);
-  Dict module_dict(&scope, module.dict());
-  Object module_result(&scope, dictAtByStr(thread, module_dict, name));
-  if (module_result.isValueCell() &&
+  Object module_result(&scope, attributeValueCellAt(*module, *name));
+  if (!module_result.isErrorNotFound() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same name, so invalidate its caches.
     Object builtins(&scope, moduleAtById(thread, module, ID(__builtins__)));
@@ -78,17 +59,19 @@ static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
     }
     if (thread->runtime()->isInstanceOfModule(*builtins)) {
       builtins_module = *builtins;
-      Dict builtins_dict(&scope, builtins_module.dict());
-      Object builtins_result(&scope, filterPlaceholderValueCell(dictAtByStr(
-                                         thread, builtins_dict, name)));
-      DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
-      ValueCell builtins_value_cell(&scope, *builtins_result);
-      DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
-             "the builtin valuecell must have a dependent");
-      icInvalidateGlobalVar(thread, builtins_value_cell);
+      Object builtins_result(&scope,
+                             attributeValueCellAt(*builtins_module, *name));
+      if (!builtins_result.isErrorNotFound()) {
+        ValueCell builtins_value_cell(&scope, *builtins_result);
+        if (!builtins_value_cell.isPlaceholder()) {
+          DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
+                 "the builtin valuecell must have a dependent");
+          icInvalidateGlobalVar(thread, builtins_value_cell);
+        }
+      }
     }
   }
-  return dictAtPutInValueCellByStr(thread, module_dict, name, value);
+  return attributeAtPut(thread, module, name, value);
 }
 
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& name,
@@ -110,41 +93,12 @@ RawObject moduleAtPutByCStr(Thread* thread, const Module& module,
   return moduleValueCellAtPut(thread, module, name, value);
 }
 
-static bool moduleDictNextItem(const Dict& dict, word* index, Object* key_out,
-                               Object* value_out) {
-  // Iterate through until we find a non-placeholder item.
-  while (dictNextItem(dict, index, key_out, value_out)) {
-    if (!ValueCell::cast(**value_out).isPlaceholder()) {
-      // At this point, we have found a valid index in the buckets.
-      return true;
-    }
-  }
-  return false;
-}
-
 RawObject moduleKeys(Thread* thread, const Module& module) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Dict module_dict(&scope, module.dict());
-  List result(&scope, runtime->newList());
-  Object key(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  for (word i = 0; moduleDictNextItem(module_dict, &i, &key, &value);) {
-    runtime->listAdd(thread, result, key);
-  }
-  return *result;
+  return attributeKeys(thread, module);
 }
 
-RawObject moduleLen(Thread* thread, const Module& module) {
-  HandleScope scope(thread);
-  Dict module_dict(&scope, module.dict());
-  word count = 0;
-  Object key(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  for (word i = 0; moduleDictNextItem(module_dict, &i, &key, &value);) {
-    ++count;
-  }
-  return SmallInt::fromWord(count);
+word moduleLen(Thread* thread, const Module& module) {
+  return attributeLen(thread, module);
 }
 
 RawObject moduleRaiseAttributeError(Thread* thread, const Module& module,
@@ -160,33 +114,24 @@ RawObject moduleRaiseAttributeError(Thread* thread, const Module& module,
                               &name);
 }
 
-RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
-                       word hash) {
+RawObject moduleRemove(Thread* thread, const Module& module,
+                       const Object& name) {
+  DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
   HandleScope scope(thread);
-  Dict module_dict(&scope, module.dict());
-  Object result(&scope, dictRemove(thread, module_dict, key, hash));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "dictRemove must return either ErrorNotFound or ValueCell");
-  if (result.isErrorNotFound()) {
-    return *result;
+  word index;
+  Object value_cell_obj(&scope, NoneType::object());
+  if (!attributeFindForRemoval(module, name, &value_cell_obj, &index)) {
+    return Error::notFound();
   }
-  ValueCell value_cell(&scope, *result);
+  attributeRemove(module, index);
+  ValueCell value_cell(&scope, *value_cell_obj);
   icInvalidateGlobalVar(thread, value_cell);
+  if (value_cell.isPlaceholder()) return Error::notFound();
   return value_cell.value();
 }
 
 RawObject moduleValues(Thread* thread, const Module& module) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Dict module_dict(&scope, module.dict());
-  List result(&scope, runtime->newList());
-  Object key(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  for (word i = 0; moduleDictNextItem(module_dict, &i, &key, &value);) {
-    value = ValueCell::cast(*value).value();
-    runtime->listAdd(thread, result, value);
-  }
-  return *result;
+  return attributeValues(thread, module);
 }
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
@@ -262,8 +207,11 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
 }
 
 static const BuiltinAttribute kModuleAttributes[] = {
+    {ID(_module__attributes), RawModule::kAttributesOffset,
+     AttributeFlags::kHidden},
+    {ID(_module__attributes_remaining), RawModule::kAttributesRemainingOffset,
+     AttributeFlags::kHidden},
     {ID(_module__name), RawModule::kNameOffset, AttributeFlags::kHidden},
-    {ID(_module__dict), RawModule::kDictOffset, AttributeFlags::kHidden},
     {ID(_module__def), RawModule::kDefOffset, AttributeFlags::kHidden},
     {ID(_module__state), RawModule::kStateOffset, AttributeFlags::kHidden},
     {ID(_module__proxy), RawModule::kModuleProxyOffset,
@@ -321,11 +269,7 @@ RawObject METH(module, __new__)(Thread* thread, Arguments args) {
   }
   Layout layout(&scope, cls.instanceLayout());
   Module result(&scope, runtime->newInstance(layout));
-  // Note that this is different from cpython, which initializes `__dict__` to
-  // `None` and only sets it in `module.__init__()`. Setting a dictionary right
-  // has the having a dictionary there becomes an invariant, because the field
-  // is read-only otherwise, so we can generally skip type tests for it.
-  result.setDict(runtime->newDict());
+  attributeDictInit(thread, result);
   result.setDef(runtime->newIntFromCPtr(nullptr));
   result.setId(runtime->reserveModuleId());
   return *result;
