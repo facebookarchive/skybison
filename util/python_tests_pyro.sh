@@ -29,15 +29,20 @@ PYRO_TEST_FILTER="*_test.py"
 TEST_RUNNING_FILTER="*test*.py"
 CPYTHON_TESTS=(
   test___future__.py
+  test_abc.py
   test_augassign.py
   test_binhex.py
   test_binop.py
   test_bisect.py
+  test_c_locale_coercion.py
   test_cgi.py
+  test_cmd.py
   test_colorsys.py
+  test_copyreg.py
   test_crashers.py
   test_decorators.py
   test_dictcomps.py
+  test_dtrace.py
   test_dummy_thread.py
   test_dynamic.py
   test_dynamicclassattribute.py
@@ -57,18 +62,24 @@ CPYTHON_TESTS=(
   test_glob.py
   test_grp.py
   test_html.py
+  test_htmlparser.py
   test_int_literal.py
   test_linecache.py
   test_locale.py
   test_longexp.py
+  test_mailcap.py
+  test_mimetypes.py
   test_netrc.py
+  test_opcodes.py
   test_openpty.py
   test_osx_env.py
+  test_peepholer.py
   test_pipes.py
   test_pkg.py
   test_pkgimport.py
   test_pkgutil.py
   test_popen.py
+  test_smtpnet.py
   test_stat.py
   test_strftime.py
   test_stringprep.py
@@ -76,8 +87,14 @@ CPYTHON_TESTS=(
   test_textwrap.py
   test_typechecks.py
   test_unicode_file.py
+  test_unicode_identifiers.py
+  test_urllib_response.py
+  test_utf8source.py
+  test_uu.py
   test_webbrowser.py
   test_with.py
+  test_xmlrpc_net.py
+  test_zipimport.py
 )
 PYRO_PATCHED_CPYTHON_TESTS=(
   test_asyncgen.py
