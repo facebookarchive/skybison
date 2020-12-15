@@ -726,7 +726,7 @@ class Runtime {
   // BaseException must be handled specially because it has builtin subclasses
   // that are visible to managed code.
   bool isInstanceOfBaseException(RawObject obj) {
-    return Type::cast(typeOf(obj)).isBaseExceptionSubclass();
+    return typeOf(obj).rawCast<RawType>().isBaseExceptionSubclass();
   }
 
   // SetBase must also be handled specially because many builtin functions

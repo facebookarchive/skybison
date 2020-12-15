@@ -1889,6 +1889,31 @@ stop_iteration = StopIterationSub()
   EXPECT_FALSE(runtime_->isInstanceOfSystemExit(*stop_iteration));
 }
 
+TEST_F(RuntimeTest, IsInstanceOfBaseException) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class M(type):
+  pass
+
+class C(metaclass=M):
+  pass
+
+class D(Exception, metaclass=M):
+  pass
+
+class E(Exception):
+  pass
+
+c = C()
+d = D()
+e = E()
+)")
+                   .isError());
+  EXPECT_FALSE(
+      runtime_->isInstanceOfBaseException(mainModuleAt(runtime_, "c")));
+  EXPECT_TRUE(runtime_->isInstanceOfBaseException(mainModuleAt(runtime_, "d")));
+  EXPECT_TRUE(runtime_->isInstanceOfBaseException(mainModuleAt(runtime_, "e")));
+}
+
 TEST_F(RuntimeTest, IsInstanceOfSetBase) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class M(type):
