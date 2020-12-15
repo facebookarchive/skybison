@@ -1,5 +1,5 @@
 import opcode
-from dis import EXTENDED_ARG, opmap
+from opcode import EXTENDED_ARG, opmap
 from typing import Optional
 
 
