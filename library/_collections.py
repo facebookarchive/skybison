@@ -10,7 +10,6 @@ from _builtins import (
     _builtin,
     _deque_guard,
     _dict_guard,
-    _int_check,
     _int_guard,
     _object_type_hasattr,
     _repr_enter,
@@ -202,6 +201,7 @@ class deque(bootstrap=True):
             return NotImplemented
 
     def __getitem__(self, index):
+        "$intrinsic$"
         result = _deque_getitem(self, index)
         if result is not _Unbound:
             return result
@@ -289,6 +289,7 @@ class deque(bootstrap=True):
         _unimplemented()
 
     def __setitem__(self, index, value):
+        "$intrinsic$"
         result = _deque_setitem(self, index, value)
         if result is not _Unbound:
             return result

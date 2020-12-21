@@ -74,47 +74,6 @@ TEST_F(UnderCollectionsModuleTest, DequeClearRemovesElements) {
   EXPECT_EQ(self.at(2), NoneType::object());
 }
 
-TEST_F(UnderCollectionsModuleTest, DequeIndexWithInvalidIndexRaisedIndexError) {
-  HandleScope scope(thread_);
-  Deque self(&scope, runtime_->newDeque());
-  Object value(&scope, SmallInt::fromWord(0));
-  Object value1(&scope, SmallInt::fromWord(1));
-  Object value2(&scope, SmallInt::fromWord(2));
-  runBuiltin(METH(deque, append), self, value);
-  runBuiltin(METH(deque, append), self, value1);
-  runBuiltin(METH(deque, append), self, value2);
-  word index = 3;
-  EXPECT_EQ(dequeIndex(self, index), -1);
-}
-
-TEST_F(UnderCollectionsModuleTest, DequeIndexWithNegativeIndexReturnsIndex) {
-  HandleScope scope(thread_);
-  Deque self(&scope, runtime_->newDeque());
-  Object value(&scope, SmallInt::fromWord(0));
-  Object value1(&scope, SmallInt::fromWord(1));
-  Object value2(&scope, SmallInt::fromWord(2));
-  runBuiltin(METH(deque, append), self, value);
-  runBuiltin(METH(deque, append), self, value1);
-  runBuiltin(METH(deque, append), self, value2);
-  word index = -1;
-  word deque_index = dequeIndex(self, index);
-  ASSERT_EQ(deque_index, 2);
-}
-
-TEST_F(UnderCollectionsModuleTest, DequeIndexWithPositiveIndexReturnsIndex) {
-  HandleScope scope(thread_);
-  Deque self(&scope, runtime_->newDeque());
-  Object value(&scope, SmallInt::fromWord(0));
-  Object value1(&scope, SmallInt::fromWord(1));
-  Object value2(&scope, SmallInt::fromWord(2));
-  runBuiltin(METH(deque, appendleft), self, value);
-  runBuiltin(METH(deque, appendleft), self, value1);
-  runBuiltin(METH(deque, appendleft), self, value2);
-  word index = 0;
-  word deque_index = dequeIndex(self, index);
-  ASSERT_EQ(deque_index, 13);
-}
-
 TEST_F(UnderCollectionsModuleTest, DequePopRemovesItemFromRight) {
   HandleScope scope(thread_);
   Deque deque(&scope, runtime_->newDeque());

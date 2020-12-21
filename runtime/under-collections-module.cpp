@@ -52,6 +52,22 @@ void initializeUnderCollectionsTypes(Thread* thread) {
       DequeReverseIterator::kSize, /*basetype=*/false);
 }
 
+static word dequeIndex(const Deque& deque, word index) {
+  word num_items = deque.numItems();
+  if (index >= num_items || index < -num_items) {
+    return -1;
+  }
+  if (index < 0) {
+    index += num_items;
+  }
+  word deque_index = deque.left() + index;
+  word capacity = deque.capacity();
+  if (deque_index >= capacity) {
+    deque_index -= capacity;
+  }
+  return deque_index;
+}
+
 RawObject FUNC(_collections, _deque_delitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -472,22 +488,6 @@ static void dequeAppendLeft(Thread* thread, const Deque& deque,
   deque.setLeft(new_left);
 }
 
-word dequeIndex(const Deque& deque, word index) {
-  word num_items = deque.numItems();
-  if (index >= num_items || index < -num_items) {
-    return -1;
-  }
-  if (index < 0) {
-    index += num_items;
-  }
-  word deque_index = deque.left() + index;
-  word capacity = deque.capacity();
-  if (deque_index >= capacity) {
-    deque_index -= capacity;
-  }
-  return deque_index;
-}
-
 static RawObject dequePop(Thread* thread, const Deque& deque) {
   HandleScope scope(thread);
   word num_items = deque.numItems();
@@ -519,6 +519,42 @@ static RawObject dequePopLeft(Thread* thread, const Deque& deque) {
   deque.setNumItems(num_items - 1);
   deque.setLeft(new_head);
   return *result;
+}
+
+bool METH(deque, __getitem___intrinsic)(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(1);
+  if (!arg0.isDeque()) {
+    return false;
+  }
+
+  word index;
+  RawObject arg1 = thread->stackPeek(0);
+  if (arg1.isSmallInt()) {
+    index = SmallInt::cast(arg1).value();
+    if (index < 0) {
+      return false;
+    }
+  } else if (arg1.isBool()) {
+    index = Bool::cast(arg1).value();
+  } else {
+    return false;
+  }
+
+  RawDeque self = Deque::cast(arg0);
+  word num_items = self.numItems();
+  if (index >= num_items) {
+    return false;
+  }
+
+  word deque_index = self.left() + index;
+  word capacity = self.capacity();
+  if (deque_index >= capacity) {
+    deque_index -= capacity;
+  }
+
+  thread->stackDrop(2);
+  thread->stackSetTop(self.at(deque_index));
+  return true;
 }
 
 RawObject METH(deque, __iter__)(Thread* thread, Arguments args) {
@@ -571,6 +607,43 @@ RawObject METH(deque, __reversed__)(Thread* thread, Arguments args) {
   }
   Deque deque(&scope, *self);
   return runtime->newDequeReverseIterator(deque, 0);
+}
+
+bool METH(deque, __setitem___intrinsic)(Thread* thread) {
+  RawObject arg0 = thread->stackPeek(2);
+  if (!arg0.isDeque()) {
+    return false;
+  }
+
+  word index;
+  RawObject arg1 = thread->stackPeek(1);
+  if (arg1.isSmallInt()) {
+    index = SmallInt::cast(arg1).value();
+    if (index < 0) {
+      return false;
+    }
+  } else if (arg1.isBool()) {
+    index = Bool::cast(arg1).value();
+  } else {
+    return false;
+  }
+
+  RawDeque self = Deque::cast(arg0);
+  word num_items = self.numItems();
+  if (index >= num_items) {
+    return false;
+  }
+
+  word deque_index = self.left() + index;
+  word capacity = self.capacity();
+  if (deque_index >= capacity) {
+    deque_index -= capacity;
+  }
+
+  self.atPut(deque_index, thread->stackPeek(0));
+  thread->stackDrop(3);
+  thread->stackSetTop(NoneType::object());
+  return true;
 }
 
 RawObject METH(deque, append)(Thread* thread, Arguments args) {
