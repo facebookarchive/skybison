@@ -277,6 +277,28 @@ class IntepreterTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             m.foo
 
+    def test_load_deref_with_assigned_cell_returns_assigned_value(self):
+        def foo(x):
+            def bar():
+                return x
+
+            return bar
+
+        bar = foo(10)
+        self.assertEqual(bar(), 10)
+
+    def test_load_deref_with_delete_cell_raises_name_error(self):
+        def foo(x):
+            def bar():
+                return x  # noqa: F821
+
+            del x
+            return bar
+
+        bar = foo(10)
+        with self.assertRaises(NameError):
+            bar()
+
     def test_load_name_calls_dunder_getitem(self):
         class C:
             def __getitem__(self, key):

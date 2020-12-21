@@ -892,6 +892,50 @@ void emitHandler<LOAD_CONST>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<LOAD_DEREF>(EmitEnv* env) {
+  Register r_locals_offset = RAX;
+  Register r_n_locals = RDX;
+
+  // r_n_locals = frame->code()->nlocals();
+  __ movq(r_locals_offset, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ movq(r_n_locals, Address(kFrameReg, r_locals_offset, TIMES_1,
+                              Frame::kFunctionOffsetFromLocals * kPointerSize));
+  __ movq(r_n_locals,
+          Address(r_n_locals, heapObjectDisp(RawFunction::kCodeOffset)));
+  __ movq(r_n_locals,
+          Address(r_n_locals, heapObjectDisp(Code::kNlocalsOffset)));
+
+  // r_idx = code.nlocals() + arg;
+  static_assert(kPointerSize == 8, "kPointerSize is expected to be 8");
+  static_assert(Object::kSmallIntTagBits == 1,
+                "kSmallIntTagBits is expected to be 1");
+  // nlocals already shifted by 1 as a SmallInt, so nlocals << 2 makes it
+  // word-aligned.
+  __ shll(r_n_locals, Immediate(2));
+  Register r_idx = RDX;
+  __ leaq(r_idx, Address(r_n_locals, kOpargReg, TIMES_8, 0));
+
+  // cell = frame->local(r_idx) == *(locals() - r_idx - 1);
+  // See Frame::local.
+  Register r_cell_value = RDX;
+  __ subq(r_locals_offset, r_idx);
+  // Object value(&scope, cell.value());
+  __ movq(r_cell_value,
+          Address(kFrameReg, r_locals_offset, TIMES_1, -kPointerSize));
+  __ movq(r_cell_value,
+          Address(r_cell_value, heapObjectDisp(Cell::kValueOffset)));
+  __ cmpl(r_cell_value, Immediate(Unbound::object().raw()));
+  Label slow_path;
+  __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
+  __ pushq(r_cell_value);
+  emitNextOpcode(env);
+
+  // Handle unbound cells in the generic handler.
+  __ bind(&slow_path);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
 void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
