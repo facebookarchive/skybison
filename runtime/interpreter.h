@@ -392,6 +392,7 @@ class Interpreter {
   static Continue doForIter(Thread* thread, word arg);
   static Continue doForIterAnamorphic(Thread* thread, word arg);
   static Continue doForIterDict(Thread* thread, word arg);
+  static Continue doForIterGenerator(Thread* thread, word arg);
   static Continue doForIterList(Thread* thread, word arg);
   static Continue doForIterMonomorphic(Thread* thread, word arg);
   static Continue doForIterPolymorphic(Thread* thread, word arg);

@@ -2846,6 +2846,31 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
+HANDLER_INLINE Continue Interpreter::doForIterGenerator(Thread* thread,
+                                                        word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter_obj = thread->stackTop();
+  if (!iter_obj.isGenerator()) {
+    EVENT_CACHE(FOR_ITER_GENERATOR);
+    return retryForIterAnamorphic(thread, arg);
+  }
+  HandleScope scope(thread);
+  Generator gen(&scope, iter_obj);
+  Object value(&scope, NoneType::object());
+  Object result(&scope, resumeGenerator(thread, gen, value));
+  if (result.isErrorException()) {
+    if (thread->clearPendingStopIteration()) {
+      thread->stackPop();
+      frame->setVirtualPC(frame->virtualPC() +
+                          originalArg(frame->function(), arg));
+      return Continue::NEXT;
+    }
+    return Continue::UNWIND;
+  }
+  thread->stackPush(*result);
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter_obj = thread->stackTop();
@@ -2970,6 +2995,9 @@ HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
     case LayoutId::kStrIterator:
       rewriteCurrentBytecode(frame, FOR_ITER_STR);
       return doForIterStr(thread, arg);
+    case LayoutId::kGenerator:
+      rewriteCurrentBytecode(frame, FOR_ITER_GENERATOR);
+      return doForIterGenerator(thread, arg);
     default:
       break;
   }

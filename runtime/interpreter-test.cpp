@@ -5561,6 +5561,11 @@ tuple_obj = (4,5)
 range_obj = range(4,6)
 str_obj = "45"
 
+def gen():
+  yield 5
+  yield 7
+gen_obj = gen()
+
 class C:
   def __iter__(self):
     return D()
@@ -5602,6 +5607,10 @@ user_obj = C()
   Str s(&scope, runtime_->newStrFromCStr(""));
   EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, arg, s), "45"));
   EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_STR);
+
+  arg = mainModuleAt(runtime_, "gen_obj");
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 12));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_GENERATOR);
 
   // Resetting the opcode.
   arg = mainModuleAt(runtime_, "user_obj");
