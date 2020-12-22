@@ -2003,6 +2003,9 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
       iterator = runtime->newDictKeyIterator(thread, dict);
       break;
     }
+    case LayoutId::kGenerator:
+      iterator = *iterable;
+      break;
     case LayoutId::kTuple: {
       Tuple tuple(&scope, *iterable);
       iterator = runtime->newTupleIterator(tuple, tuple.length());
