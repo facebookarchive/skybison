@@ -3528,10 +3528,11 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
-  Object dunder_getattribute(
-      &scope, typeLookupInMroById(thread, *type, ID(__getattribute__)));
   *kind = LoadAttrKind::kUnknown;
-  if (dunder_getattribute == runtime->objectDunderGetattribute()) {
+  if (type.hasFlag(Type::Flag::kHasObjectDunderGetattribute)) {
+    DCHECK(typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
+               runtime->objectDunderGetattribute(),
+           "object.__getattribute__ is expected");
     Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
                                                         location_out, kind));
     if (result.isErrorNotFound()) {
@@ -3542,8 +3543,11 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
     }
     return *result;
   }
-  if (dunder_getattribute == runtime->moduleDunderGetattribute() &&
+  if (type.hasFlag(Type::Flag::kHasModuleDunderGetattribute) &&
       runtime->isInstanceOfModule(*receiver)) {
+    DCHECK(typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
+               runtime->moduleDunderGetattribute(),
+           "module.__getattribute__ is expected");
     Module module(&scope, *receiver);
     Object result(&scope, moduleGetAttributeSetLocation(thread, module, name,
                                                         location_out));
@@ -3559,8 +3563,11 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
     }
     return *result;
   }
-  if (dunder_getattribute == runtime->typeDunderGetattribute() &&
+  if (type.hasFlag(Type::Flag::kHasTypeDunderGetattribute) &&
       runtime->isInstanceOfType(*receiver)) {
+    DCHECK(typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
+               runtime->typeDunderGetattribute(),
+           "type.__getattribute__ is expected");
     Type object_as_type(&scope, *receiver);
     Object result(&scope, typeGetAttributeSetLocation(thread, object_as_type,
                                                       name, location_out));

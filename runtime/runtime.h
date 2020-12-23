@@ -597,6 +597,11 @@ class Runtime {
   // Implements `receiver.name`
   NODISCARD RawObject attributeAt(Thread* thread, const Object& object,
                                   const Object& name);
+  NODISCARD RawObject attributeAtSetLocation(Thread* thread,
+                                             const Object& object,
+                                             const Object& name,
+                                             Object* location_out,
+                                             LoadAttrKind* kind);
   NODISCARD RawObject attributeAtById(Thread* thread, const Object& receiver,
                                       SymbolId id);
   NODISCARD RawObject attributeAtByCStr(Thread* thread, const Object& receiver,

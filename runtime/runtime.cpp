@@ -3241,13 +3241,9 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
                                const Object& name) {
   DCHECK(isInternedStr(thread, name), "name must be an interned str");
   HandleScope scope(thread);
-  Object dunder_getattribute(
-      &scope, Interpreter::lookupMethod(thread, object, ID(__getattribute__)));
-  DCHECK(!dunder_getattribute.isErrorNotFound(),
-         "__getattribute__ is expected to be found");
-  if (UNLIKELY(dunder_getattribute.isError())) return *dunder_getattribute;
   Runtime* runtime = thread->runtime();
-  if (dunder_getattribute == runtime->objectDunderGetattribute()) {
+  Type type(&scope, runtime->typeOf(*object));
+  if (type.hasFlag(Type::Flag::kHasObjectDunderGetattribute)) {
     Object result(&scope, objectGetAttribute(thread, object, name));
     if (!result.isErrorNotFound()) {
       return *result;
@@ -3258,6 +3254,11 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
     }
     return objectRaiseAttributeError(thread, object, name);
   }
+  Object dunder_getattribute(
+      &scope, Interpreter::lookupMethod(thread, object, ID(__getattribute__)));
+  DCHECK(!dunder_getattribute.isErrorNotFound(),
+         "__getattribute__ is expected to be found");
+  if (UNLIKELY(dunder_getattribute.isError())) return *dunder_getattribute;
   Object result(&scope, Interpreter::callMethod2(thread, dunder_getattribute,
                                                  object, name));
   if (!result.isErrorException() ||
