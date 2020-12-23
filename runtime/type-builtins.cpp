@@ -101,6 +101,94 @@ RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   return attributeAt(*type, name);
 }
 
+// Returns type flags updated with the given attribute.
+static word computeAttributeTypeFlags(Thread* thread, const Type& type,
+                                      SymbolId name, word flags) {
+  Runtime* runtime = thread->runtime();
+  // Custom MROs can contain types that are not part of the subclass hierarchy
+  // which does not fit our cache invalidation strategy for the flags. Be safe
+  // and do not set any!
+  if (flags & Type::Flag::kHasCustomMro) {
+    return flags & ~(Type::Flag::kHasObjectDunderGetattribute |
+                     Type::Flag::kHasTypeDunderGetattribute |
+                     Type::Flag::kHasModuleDunderGetattribute |
+                     Type::Flag::kHasObjectDunderNew);
+  }
+  if (name == ID(__getattribute__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (value == runtime->objectDunderGetattribute()) {
+      flags |= Type::Flag::kHasObjectDunderGetattribute;
+    } else {
+      flags &= ~Type::Flag::kHasObjectDunderGetattribute;
+    }
+    if (value == runtime->typeDunderGetattribute()) {
+      flags |= Type::Flag::kHasTypeDunderGetattribute;
+    } else {
+      flags &= ~Type::Flag::kHasTypeDunderGetattribute;
+    }
+    if (value == runtime->moduleDunderGetattribute()) {
+      flags |= Type::Flag::kHasModuleDunderGetattribute;
+    } else {
+      flags &= ~Type::Flag::kHasModuleDunderGetattribute;
+    }
+    return flags;
+  }
+  if (name == ID(__new__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (value == runtime->objectDunderNew()) {
+      flags |= Type::Flag::kHasObjectDunderNew;
+    } else {
+      flags &= ~Type::Flag::kHasObjectDunderNew;
+    }
+    return flags;
+  }
+  return flags;
+}
+
+// Propagate attribute type flags through `type`'s descendents.
+static void typePropagateAttributeTypeFlag(Thread* thread, const Type& type,
+                                           SymbolId attr_name) {
+  Type::Flag new_flags = Type::Flag::kNone;
+  new_flags = static_cast<Type::Flag>(
+      computeAttributeTypeFlags(thread, type, attr_name, type.flags()));
+  if (new_flags == type.flags()) {
+    // Stop tree traversal since flags doesn't change for this type and its
+    // subclases.
+    return;
+  }
+  type.setFlags(new_flags);
+  if (type.subclasses().isNoneType()) {
+    return;
+  }
+  HandleScope scope(thread);
+  List subclasses(&scope, type.subclasses());
+  Type subclass(&scope, thread->runtime()->typeAt(LayoutId::kObject));
+  for (word i = 0, length = subclasses.numItems(); i < length; ++i) {
+    RawObject referent = WeakRef::cast(subclasses.at(i)).referent();
+    if (referent.isNoneType()) continue;
+    subclass = referent.rawCast<RawType>();
+    if (typeAtById(thread, subclass, attr_name).isErrorNotFound()) {
+      // subclass inherits the attribute for `attr_name`.
+      typePropagateAttributeTypeFlag(thread, subclass, attr_name);
+    }
+  }
+}
+
+static const SymbolId kAttributesForTypeFlags[] = {
+    ID(__getattribute__),
+    ID(__new__),
+};
+
+// Returns `SymbolId` for `attr_name` if given `attr_name` is marked in
+// Type::Flags. Returns `SymbolId::kInvalid` otherwise. See Type::Flags.
+static SymbolId attributeForTypeFlag(Thread* thread, const Object& attr_name) {
+  Symbols* symbols = thread->runtime()->symbols();
+  for (SymbolId id : kAttributesForTypeFlags) {
+    if (attr_name == symbols->at(id)) return id;
+  }
+  return SymbolId::kInvalid;
+}
+
 RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
                     const Object& value) {
   DCHECK(thread->runtime()->isInternedStr(thread, name),
@@ -113,6 +201,10 @@ RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
     ValueCell value_cell_obj(&scope, value_cell);
     icInvalidateAttr(thread, type, name, value_cell_obj);
     return *value_cell_obj;
+  }
+  SymbolId attr_name_for_type_flag = attributeForTypeFlag(thread, name);
+  if (attributeForTypeFlag(thread, name) != SymbolId::kInvalid) {
+    typePropagateAttributeTypeFlag(thread, type, attr_name_for_type_flag);
   }
   return value_cell;
 }
@@ -231,6 +323,10 @@ RawObject typeRemove(Thread* thread, const Type& type, const Object& name) {
   icInvalidateAttr(thread, type, name, value_cell);
   attributeRemove(type, index);
   if (value_cell.isPlaceholder()) return Error::notFound();
+  SymbolId attr_name_for_type_flag = attributeForTypeFlag(thread, name);
+  if (attributeForTypeFlag(thread, name) != SymbolId::kInvalid) {
+    typePropagateAttributeTypeFlag(thread, type, attr_name_for_type_flag);
+  }
   return value_cell.value();
 }
 
@@ -608,23 +704,36 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
   type.setName(*name);
   type.setBases(*bases);
 
-  Object mro_obj(&scope, NoneType::object());
-  if (metaclass_id == LayoutId::kType) {
-    mro_obj = computeMro(thread, type);
-    if (mro_obj.isErrorException()) return *mro_obj;
-  } else {
-    mro_obj = thread->invokeMethod1(type, ID(mro));
-    if (mro_obj.isErrorException()) return *mro_obj;
-    if (mro_obj.isErrorNotFound()) {
+  // Determine metaclass.mro method. Set `mro_method` to `None` if it is the
+  // default `type.mro`.
+  Object mro_method(&scope, Unbound::object());
+  if (metaclass_id != LayoutId::kType) {
+    mro_method = Interpreter::lookupMethod(thread, type, ID(mro));
+    if (mro_method.isErrorException()) return *mro_method;
+    if (mro_method.isErrorNotFound()) {
       Object mro_name(&scope, runtime->symbols()->at(ID(mro)));
       return objectRaiseAttributeError(thread, metaclass, mro_name);
     }
+    Type builtin_type(&scope, runtime->typeAt(LayoutId::kType));
+    if (mro_method == typeAtById(thread, builtin_type, ID(mro))) {
+      mro_method = Unbound::object();
+    }
+  }
+  Object mro_obj(&scope, NoneType::object());
+  if (mro_method.isUnbound()) {
+    mro_obj = computeMro(thread, type);
+    if (mro_obj.isErrorException()) return *mro_obj;
+  } else {
+    flags |= Type::Flag::kHasCustomMro;
+    mro_obj = Interpreter::callMethod1(thread, mro_method, type);
+    if (mro_obj.isErrorException()) return *mro_obj;
     if (!mro_obj.isTuple()) {
       mro_obj = thread->invokeFunction1(ID(builtins), ID(tuple), mro_obj);
       if (mro_obj.isErrorException()) return *mro_obj;
       CHECK(mro_obj.isTuple(), "Result of builtins.tuple should be tuple");
     }
   }
+
   Tuple mro(&scope, *mro_obj);
   type.setMro(*mro);
 
@@ -713,6 +822,12 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
   }
   if (bases_have_instance_dict) add_instance_dict = false;
   flags |= (bases_flags & Type::kInheritableFlags);
+  // Attribute flags are set explicitly here since `typeAssignFromDict` cannot
+  // compute it properly with a partially created type object:
+  // Computing this properly depends if Type::Flag::kHasCustomMro is set or not.
+  for (SymbolId id : kAttributesForTypeFlags) {
+    flags = computeAttributeTypeFlags(thread, type, id, flags);
+  }
   // TODO(T66646764): This is a hack to make `type` look finalized. Remove this.
   type.setFlags(static_cast<Type::Flag>(flags));
 

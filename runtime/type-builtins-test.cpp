@@ -107,8 +107,12 @@ cache_a_eq(a)
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutDoesNotGrowOnTombstones) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C: pass
+)")
+                   .isError());
   HandleScope scope(thread_);
-  Type type(&scope, runtime_->newType());
+  Type type(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(type.attributes().isTuple());
   word initial_capacity = Tuple::cast(type.attributes()).length();
   // Insert and remove symbols to fill the dictionary with tombstones.
@@ -1362,6 +1366,145 @@ class Meta(type): pass
   Type meta(&scope, mainModuleAt(runtime_, "Meta"));
   EXPECT_TRUE(meta.hasFlag(Type::Flag::kHasCustomDict));
   EXPECT_TRUE(Layout::cast(meta.instanceLayout()).isSealed());
+}
+
+TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
+  HandleScope scope(thread_);
+  Type object_type(&scope, runtime_->typeAt(LayoutId::kObject));
+  EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
+  EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
+  EXPECT_FALSE(type_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type module_type(&scope, runtime_->typeAt(LayoutId::kModule));
+  EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasModuleDunderGetattribute));
+  EXPECT_FALSE(module_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type property_type(&scope, runtime_->typeAt(LayoutId::kProperty));
+  EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(property_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type function_type(&scope, runtime_->typeAt(LayoutId::kFunction));
+  EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(function_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type int_type(&scope, runtime_->typeAt(LayoutId::kInt));
+  EXPECT_TRUE(int_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  // super.__getattribute__ is not same as object.__getattribute.
+  Type super_type(&scope, runtime_->typeAt(LayoutId::kSuper));
+  EXPECT_FALSE(super_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(super_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  // BaseException inherits object.__new__.
+  Type base_exception_type(&scope, runtime_->typeAt(LayoutId::kBaseException));
+  EXPECT_TRUE(
+      base_exception_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(base_exception_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+}
+
+TEST_F(TypeBuiltinsTest, UserTypesHaveAttributeTypeFlags) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C: pass
+
+class D(type): pass
+
+class E(module): pass
+
+class F:
+  def __new__(cls): return None
+)")
+                   .isError());
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type d(&scope, mainModuleAt(runtime_, "D"));
+  EXPECT_TRUE(d.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
+  EXPECT_FALSE(d.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type e(&scope, mainModuleAt(runtime_, "E"));
+  EXPECT_TRUE(e.hasFlag(Type::Flag::kHasModuleDunderGetattribute));
+  EXPECT_FALSE(e.hasFlag(Type::Flag::kHasObjectDunderNew));
+
+  Type f(&scope, mainModuleAt(runtime_, "F"));
+  EXPECT_TRUE(f.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(f.hasFlag(Type::Flag::kHasObjectDunderNew));
+}
+
+TEST_F(TypeBuiltinsTest, AttributeTypeFlagsPropagateThroughTypeHierarchy) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class A:
+  pass
+
+class B(A):
+  def __getattribute__(self, name): return name
+
+class C(B):
+  pass
+
+class X:
+  pass
+
+class D(X, C):
+  pass
+)")
+                   .isError());
+  Type a(&scope, mainModuleAt(runtime_, "A"));
+  EXPECT_TRUE(a.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  Type b(&scope, mainModuleAt(runtime_, "B"));
+  EXPECT_FALSE(b.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  EXPECT_FALSE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  Type d(&scope, mainModuleAt(runtime_, "D"));
+  EXPECT_FALSE(d.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+}
+
+TEST_F(TypeBuiltinsTest,
+       AttributeTypeFlagsForTypesWithMetaclassWithDefaultMro) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class MetaWithDefaultMro(type):
+  def foo(self): return 500
+
+class A(metaclass=MetaWithDefaultMro):
+  pass
+
+class B(A):
+  pass
+)")
+                   .isError());
+  Type a(&scope, mainModuleAt(runtime_, "A"));
+  EXPECT_FALSE(a.hasFlag(Type::Flag::kHasCustomMro));
+  EXPECT_TRUE(a.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  Type b(&scope, mainModuleAt(runtime_, "B"));
+  EXPECT_TRUE(b.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+}
+
+TEST_F(TypeBuiltinsTest, AttributeTypeFlagsForTypesWithMetaclassWithCustomMro) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class MetaWithCustomMro(type):
+  def mro(self):
+    return (self,)
+
+class A(metaclass=MetaWithCustomMro):
+  pass
+
+class B(A):
+  pass
+)")
+                   .isError());
+  Type a(&scope, mainModuleAt(runtime_, "A"));
+  EXPECT_TRUE(a.hasFlag(Type::Flag::kHasCustomMro));
+  EXPECT_FALSE(a.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  Type b(&scope, mainModuleAt(runtime_, "B"));
+  EXPECT_FALSE(b.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
 }
 
 }  // namespace testing

@@ -1651,17 +1651,27 @@ TEST_F(TypeExtensionApiTest, CallGetattroSlotFromManagedCode) {
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
-r = b.foo_bar
+r0 = b.foo_bar
+
+def foo(b):
+  return b.bar_baz
+r1 = foo(b)
 )"),
             0);
 
   PyObjectPtr b(mainModuleGet("b"));
   ASSERT_NE(b, nullptr);
-  PyObjectPtr r(mainModuleGet("r"));
-  ASSERT_NE(r, nullptr);
-  ASSERT_EQ(PyTuple_Check(r), 1);
-  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(r, 0), "foo_bar"));
-  EXPECT_EQ(PyTuple_GetItem(r, 1), b);
+  PyObjectPtr r0(mainModuleGet("r0"));
+  ASSERT_NE(r0, nullptr);
+  ASSERT_EQ(PyTuple_Check(r0), 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(r0, 0), "foo_bar"));
+  EXPECT_EQ(PyTuple_GetItem(r0, 1), b);
+
+  PyObjectPtr r1(mainModuleGet("r1"));
+  ASSERT_NE(r1, nullptr);
+  ASSERT_EQ(PyTuple_Check(r1), 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(r1, 0), "bar_baz"));
+  EXPECT_EQ(PyTuple_GetItem(r0, 1), b);
 }
 
 // Pyro-only due to
@@ -2132,15 +2142,23 @@ TEST_F(TypeExtensionApiTest, CallNewSlotFromManagedCode) {
   ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_new, new_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
-r = Bar.__new__(Bar, 1, 2, 3)
+r0 = Bar.__new__(Bar, 1, 2, 3)
+r1 = Bar(1, 2, 3)
 )"),
             0);
-  PyObjectPtr r(mainModuleGet("r"));
-  ASSERT_EQ(PyTuple_Check(r), 1);
-  ASSERT_EQ(PyTuple_Size(r), 3);
-  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r, 0), 1));
-  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r, 1), 2));
-  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r, 2), 3));
+  PyObjectPtr r0(mainModuleGet("r0"));
+  ASSERT_EQ(PyTuple_Check(r0), 1);
+  ASSERT_EQ(PyTuple_Size(r0), 3);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r0, 0), 1));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r0, 1), 2));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r0, 2), 3));
+
+  PyObjectPtr r1(mainModuleGet("r1"));
+  ASSERT_EQ(PyTuple_Check(r1), 1);
+  ASSERT_EQ(PyTuple_Size(r1), 3);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r1, 0), 1));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r1, 1), 2));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(r1, 2), 3));
 }
 
 TEST_F(TypeExtensionApiTest, NbAddSlotTakesPrecedenceOverSqConcatSlot) {

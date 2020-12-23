@@ -2047,5 +2047,72 @@ TEST_F(IcTest,
                   .isErrorNotFound());
 }
 
+TEST_F(
+    IcTest,
+    IcInvalidateAttrWithDunderFunctionsUpdatesCorrespondingAttributeTypeFlags) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class A:
+  pass
+
+class B(A):
+  pass
+
+class C(B):
+  pass
+
+class X:
+  pass
+
+class D(X, C):
+  pass
+
+class E(D):
+  pass
+
+def custom_getattribute(self, name):
+  return "bogus"
+
+object_getattribute = object.__getattribute__
+)")
+                   .isError());
+
+  Type a(&scope, mainModuleAt(runtime_, "A"));
+  Type b(&scope, mainModuleAt(runtime_, "B"));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Type d(&scope, mainModuleAt(runtime_, "D"));
+  Type e(&scope, mainModuleAt(runtime_, "E"));
+  Type x(&scope, mainModuleAt(runtime_, "X"));
+
+  ASSERT_TRUE(a.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  ASSERT_TRUE(b.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  ASSERT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  ASSERT_TRUE(d.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  ASSERT_TRUE(e.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  ASSERT_TRUE(x.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+
+  Object custom_getattribute(&scope,
+                             mainModuleAt(runtime_, "custom_getattribute"));
+  typeAtPutById(thread_, c, ID(__getattribute__), custom_getattribute);
+
+  EXPECT_TRUE(a.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(b.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(d.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(e.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(x.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+
+  Object object_getattribute(&scope,
+                             mainModuleAt(runtime_, "object_getattribute"));
+  typeAtPutById(thread_, c, ID(__getattribute__), object_getattribute);
+
+  EXPECT_TRUE(a.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(b.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(d.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(e.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(x.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+}
+
 }  // namespace testing
 }  // namespace py

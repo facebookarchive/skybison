@@ -2205,10 +2205,15 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
       object_dunder_init_ = typeAtById(thread, type, ID(__init__));
       object_dunder_new_ = typeAtById(thread, type, ID(__new__));
       object_dunder_setattr_ = typeAtById(thread, type, ID(__setattr__));
+      type.setFlags(static_cast<Type::Flag>(
+          type.flags() | Type::Flag::kHasObjectDunderGetattribute |
+          Type::Flag::kHasObjectDunderNew));
       break;
     case LayoutId::kModule:
       module_dunder_getattribute_ =
           typeAtById(thread, type, ID(__getattribute__));
+      type.setFlags(static_cast<Type::Flag>(
+          type.flags() | Type::Flag::kHasModuleDunderGetattribute));
       break;
     case LayoutId::kStr:
       str_dunder_eq_ = typeAtById(thread, type, ID(__eq__));
@@ -2217,9 +2222,27 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
     case LayoutId::kType:
       type_dunder_getattribute_ =
           typeAtById(thread, type, ID(__getattribute__));
+      type.setFlags(static_cast<Type::Flag>(
+          type.flags() | Type::Flag::kHasTypeDunderGetattribute));
       break;
     default:
       break;
+  }
+
+  HandleScope scope(thread);
+  Function dunder_getattribute(
+      &scope, typeLookupInMroById(thread, *type, ID(__getattribute__)));
+  if (Str::cast(dunder_getattribute.qualname())
+          .equalsCStr("object.__getattribute__")) {
+    type.setFlags(static_cast<Type::Flag>(
+        type.flags() | Type::Flag::kHasObjectDunderGetattribute));
+  }
+
+  Object dunder_new(&scope, typeLookupInMroById(thread, *type, ID(__new__)));
+  if (*dunder_new == object_dunder_new_ ||
+      (dunder_new.isErrorNotFound() && object_dunder_new_.isNoneType())) {
+    type.setFlags(static_cast<Type::Flag>(type.flags() |
+                                          Type::Flag::kHasObjectDunderNew));
   }
 }
 

@@ -1238,9 +1238,29 @@ class RawType : public RawAttributeDict {
     // Type may be used as a base class to create subclasses. A cleared basetype
     // is sometimes called "final class" in other languages.
     kIsBasetype = 1 << 16,
+
+    // This type is an instance of a metaclass that defined an `mro` method and
+    // potentially installed an irregular MRO.
+    kHasCustomMro = 1 << 17,
+
+    // this_type.__getattribute__ is object.__getattribute__.
+    kHasObjectDunderGetattribute = 1 << 18,
+
+    // this_type.__getattribute__ is type.__getattribute__.
+    kHasTypeDunderGetattribute = 1 << 19,
+
+    // this_type.__getattribute__ is module.__getattribute__.
+    kHasModuleDunderGetattribute = 1 << 20,
+
+    // this_type.__getattribute__ is object.__new__.
+    kHasObjectDunderNew = 1 << 21,
   };
-  static const word kInheritableFlags =
-      ~(Flag::kIsAbstract | Flag::kIsFixedAttributeBase | Flag::kIsBasetype);
+
+  static const word kUninheritableFlags =
+      Flag::kIsAbstract | Flag::kIsFixedAttributeBase | Flag::kIsBasetype |
+      Flag::kHasObjectDunderGetattribute | Flag::kHasTypeDunderGetattribute |
+      Flag::kHasModuleDunderGetattribute | Flag::kHasObjectDunderNew;
+  static const word kInheritableFlags = ~kUninheritableFlags;
 
   // Getters and setters.
   RawObject instanceLayout() const;
