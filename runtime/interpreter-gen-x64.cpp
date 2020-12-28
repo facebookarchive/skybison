@@ -660,6 +660,17 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
+// Push r_list[r_index_smallint] into the stack.
+static void emitPushListAt(EmitEnv* env, Register r_list,
+                           Register r_index_smallint, Register r_scratch) {
+  __ movq(r_scratch, Address(r_list, heapObjectDisp(List::kItemsOffset)));
+  // r_index is a SmallInt, so r_key already stores the index value * 2.
+  // Therefore, applying TIMES_4 will compute index * 8.
+  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
+  static_assert(Object::kSmallIntTagBits == 1, "unexpected tag for SmallInt");
+  __ pushq(Address(r_scratch, r_index_smallint, TIMES_4, heapObjectDisp(0)));
+}
+
 template <>
 void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   Register r_container = RAX;
@@ -680,15 +691,8 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
           Address(r_container, heapObjectDisp(0) + List::kNumItemsOffset));
   __ jcc(ABOVE_EQUAL, &slow_path, Assembler::kNearJump);
 
-  // list.at(index)
-  __ movq(r_container,
-          Address(r_container, heapObjectDisp(0) + List::kItemsOffset));
-  // r_key is a SmallInt, so r_key already stores the index value * 2.
-  // Therefore, applying TIMES_4 will compute index * 8.
-  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
-  static_assert(Object::kSmallIntTagBits == 1, "unexpected tag for SmallInt");
-  __ pushq(Address(r_container, r_key, TIMES_4, heapObjectDisp(0)));
-
+  // Push list.at(index)
+  emitPushListAt(env, r_container, r_key, /*r_scratch=*/r_container);
   emitNextOpcode(env);
 
   __ bind(&slow_path);
@@ -1404,6 +1408,60 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ movq(RSI, r_saved_rsi);
   __ movq(kBCReg, r_saved_bc);
   __ jmp(&env->call_handler, Assembler::kFarJump);
+}
+
+// Loads result of originalArg() (bytecode.h) in `r_output`.
+static void emitOriginalArg(EmitEnv* env, Register r_output) {
+  __ movq(r_output, Address(kFrameReg, Frame::kLocalsOffsetOffset));
+  __ movq(r_output, Address(kFrameReg, r_output, TIMES_1,
+                            Frame::kFunctionOffsetFromLocals * kPointerSize));
+  __ movq(
+      r_output,
+      Address(r_output, heapObjectDisp(Function::kOriginalArgumentsOffset)));
+  __ movq(r_output, Address(r_output, kOpargReg, TIMES_8, heapObjectDisp(0)));
+  emitConvertFromSmallInt(env, r_output);
+}
+
+template <>
+void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
+  Register r_iter = RAX;
+  Register r_scratch = RDX;
+  Register r_index = RDI;
+  Register r_container = R8;
+  Register r_num_items = R9;
+  Label slow_path;
+  __ popq(r_iter);
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_iter, r_scratch,
+                                      LayoutId::kListIterator, &slow_path);
+  __ movq(r_index, Address(r_iter, heapObjectDisp(ListIterator::kIndexOffset)));
+  __ movq(r_container,
+          Address(r_iter, heapObjectDisp(ListIterator::kIterableOffset)));
+  __ movq(r_num_items,
+          Address(r_container, heapObjectDisp(List::kNumItemsOffset)));
+  __ cmpq(r_index, r_num_items);
+  Label terminate;
+  __ jcc(GREATER_EQUAL, &terminate, Assembler::kNearJump);
+  // r_index < r_num_items.
+  __ pushq(r_iter);
+  // Push list.at(index).
+  emitPushListAt(env, r_container, r_index, r_scratch);
+  __ addq(r_index, smallIntImmediate(1));
+  __ movq(Address(r_iter, heapObjectDisp(ListIterator::kIndexOffset)), r_index);
+  Label next_opcode;
+  __ bind(&next_opcode);
+  emitNextOpcode(env);
+
+  __ bind(&terminate);
+  // r_index >= r_num_items.
+  // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(), arg))
+  Register r_original_arg = RAX;
+  emitOriginalArg(env, r_original_arg);
+  __ addq(kPCReg, r_original_arg);
+  __ jmp(&next_opcode, Assembler::kNearJump);
+
+  __ bind(&slow_path);
+  __ pushq(r_iter);
+  emitGenericHandler(env, FOR_ITER_ANAMORPHIC);
 }
 
 template <>
