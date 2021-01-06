@@ -192,10 +192,21 @@ class Callgrind(ParallelPerformanceTool):
     NAME = "callgrind"
 
     def __init__(self, args):
-        pass
+        self.callgrind_out_dir = args.get("callgrind_out_dir")
 
     def _worker(self, interpreter, benchmark):
-        with tempfile.NamedTemporaryFile(prefix="callgrind_") as temp_file:
+        delete = True
+        callgrind_out_dir = self.callgrind_out_dir
+        if callgrind_out_dir is not None:
+            callgrind_out_dir = os.path.abspath(callgrind_out_dir)
+            os.makedirs(callgrind_out_dir, exist_ok=True)
+            delete = False
+        with tempfile.NamedTemporaryFile(
+            dir=callgrind_out_dir,
+            prefix=f"{benchmark.name}_",
+            suffix=".cg",
+            delete=delete,
+        ) as temp_file:
             bytecode_path = compile_bytecode(interpreter, benchmark)
             run(
                 [
@@ -240,6 +251,11 @@ class Callgrind(ParallelPerformanceTool):
         return f"""
 '{cls.NAME}': Measure executed instructions with `valgrind`/`callgrind`.
 """
+
+    @staticmethod
+    def add_optional_arguments(parser):
+        parser.add_argument("--callgrind-out-dir", metavar="DIRECTORY")
+        return parser
 
 
 class Size(SequentialPerformanceTool):
