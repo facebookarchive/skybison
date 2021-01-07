@@ -2120,7 +2120,11 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   Object value(&scope, thread->stackPop());
   Object iterator(&scope, thread->stackTop());
   Object result(&scope, NoneType::object());
-  if (iterator.isGenerator() || iterator.isCoroutine() || !value.isNoneType()) {
+  if (iterator.isGenerator()) {
+    result = generatorSend(thread, iterator, value);
+  } else if (iterator.isCoroutine()) {
+    result = coroutineSend(thread, iterator, value);
+  } else if (!value.isNoneType()) {
     Object send_method(&scope, lookupMethod(thread, iterator, ID(send)));
     if (send_method.isError()) {
       if (send_method.isErrorException()) {

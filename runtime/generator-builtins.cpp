@@ -867,6 +867,11 @@ RawObject METH(generator, close)(Thread* thread, Arguments args) {
   return closeImpl(thread, gen);
 }
 
+RawObject generatorSend(Thread* thread, const Object& self_obj,
+                        const Object& value) {
+  return sendImpl<ID(generator), LayoutId::kGenerator>(thread, *self_obj,
+                                                       *value);
+}
 RawObject METH(generator, send)(Thread* thread, Arguments args) {
   return sendImpl<ID(generator), LayoutId::kGenerator>(thread, args.get(0),
                                                        args.get(1));
@@ -900,6 +905,11 @@ RawObject METH(coroutine, close)(Thread* thread, Arguments args) {
   }
   GeneratorBase gen(&scope, *self);
   return closeImpl(thread, gen);
+}
+
+RawObject coroutineSend(Thread* thread, const Object& self,
+                        const Object& value) {
+  return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, *self, *value);
 }
 
 RawObject METH(coroutine, send)(Thread* thread, Arguments args) {
