@@ -3237,30 +3237,92 @@ RawObject Runtime::classConstructor(const Type& type) {
   return typeAtById(thread, type, ID(__init__));
 }
 
-RawObject Runtime::attributeAt(Thread* thread, const Object& object,
+RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
                                const Object& name) {
+  return attributeAtSetLocation(thread, receiver, name, nullptr, nullptr);
+}
+
+RawObject Runtime::attributeAtSetLocation(Thread* thread,
+                                          const Object& receiver,
+                                          const Object& name,
+                                          LoadAttrKind* kind,
+                                          Object* location_out) {
   DCHECK(isInternedStr(thread, name), "name must be an interned str");
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*object));
+  Type type(&scope, runtime->typeOf(*receiver));
+  if (kind != nullptr) *kind = LoadAttrKind::kUnknown;
   if (type.hasFlag(Type::Flag::kHasObjectDunderGetattribute)) {
-    Object result(&scope, objectGetAttribute(thread, object, name));
+    DCHECK(objectDunderGetattribute().isNoneType() ||
+               typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
+                   objectDunderGetattribute(),
+           "object.__getattribute__ is expected");
+    Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
+                                                        location_out, kind));
     if (!result.isErrorNotFound()) {
       return *result;
     }
-    result = thread->invokeMethod2(object, ID(__getattr__), name);
+    result = thread->invokeMethod2(receiver, ID(__getattr__), name);
     if (!result.isErrorNotFound()) {
       return *result;
     }
-    return objectRaiseAttributeError(thread, object, name);
+    return objectRaiseAttributeError(thread, receiver, name);
+  }
+  if (type.hasFlag(Type::Flag::kHasModuleDunderGetattribute) &&
+      runtime->isInstanceOfModule(*receiver)) {
+    DCHECK(runtime->moduleDunderGetattribute().isNoneType() ||
+               typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
+                   runtime->moduleDunderGetattribute(),
+           "module.__getattribute__ is expected");
+    Module module(&scope, *receiver);
+    Object result(&scope, moduleGetAttributeSetLocation(thread, module, name,
+                                                        location_out));
+    if (!result.isErrorNotFound()) {
+      // We have a result that can be cached.
+      if (kind != nullptr) *kind = LoadAttrKind::kModule;
+      return *result;
+    }
+    // Try again
+    result = thread->invokeMethod2(receiver, ID(__getattr__), name);
+    if (!result.isErrorNotFound()) {
+      return *result;
+    }
+    return moduleRaiseAttributeError(thread, module, name);
+  }
+  if (type.hasFlag(Type::Flag::kHasTypeDunderGetattribute) &&
+      runtime->isInstanceOfType(*receiver)) {
+    DCHECK(runtime->typeDunderGetattribute().isNoneType() ||
+               typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
+                   runtime->typeDunderGetattribute(),
+           "type.__getattribute__ is expected");
+    Type object_as_type(&scope, *receiver);
+    Object result(&scope, typeGetAttributeSetLocation(thread, object_as_type,
+                                                      name, location_out));
+    if (!result.isErrorNotFound()) {
+      // We have a result that can be cached.
+      if (kind != nullptr && location_out->isValueCell()) {
+        *kind = LoadAttrKind::kType;
+      }
+      return *result;
+    }
+    // Try again
+    result = thread->invokeMethod2(receiver, ID(__getattr__), name);
+    if (!result.isErrorNotFound()) {
+      return *result;
+    }
+    Object type_name(&scope, object_as_type.name());
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "type object '%S' has no attribute '%S'",
+                                &type_name, &name);
   }
   Object dunder_getattribute(
-      &scope, Interpreter::lookupMethod(thread, object, ID(__getattribute__)));
+      &scope,
+      Interpreter::lookupMethod(thread, receiver, ID(__getattribute__)));
   DCHECK(!dunder_getattribute.isErrorNotFound(),
          "__getattribute__ is expected to be found");
   if (UNLIKELY(dunder_getattribute.isError())) return *dunder_getattribute;
   Object result(&scope, Interpreter::callMethod2(thread, dunder_getattribute,
-                                                 object, name));
+                                                 receiver, name));
   if (!result.isErrorException() ||
       !thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
     return *result;
@@ -3271,7 +3333,7 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   Object saved_value(&scope, thread->pendingExceptionValue());
   Object saved_traceback(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
-  result = thread->invokeMethod2(object, ID(__getattr__), name);
+  result = thread->invokeMethod2(receiver, ID(__getattr__), name);
   if (result.isErrorNotFound()) {
     thread->setPendingExceptionType(*saved_type);
     thread->setPendingExceptionValue(*saved_value);

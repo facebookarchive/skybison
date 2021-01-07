@@ -263,10 +263,6 @@ class Interpreter {
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
 
-  static RawObject loadAttrSetLocation(Thread* thread, const Object& receiver,
-                                       const Object& name, LoadAttrKind* kind,
-                                       Object* location_out);
-
   static RawObject importAllFrom(Thread* thread, Frame* frame,
                                  const Object& object);
 

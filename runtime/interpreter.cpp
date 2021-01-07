@@ -3520,74 +3520,6 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-RawObject Interpreter::loadAttrSetLocation(Thread* thread,
-                                           const Object& receiver,
-                                           const Object& name,
-                                           LoadAttrKind* kind,
-                                           Object* location_out) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*receiver));
-  *kind = LoadAttrKind::kUnknown;
-  if (type.hasFlag(Type::Flag::kHasObjectDunderGetattribute)) {
-    DCHECK(typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
-               runtime->objectDunderGetattribute(),
-           "object.__getattribute__ is expected");
-    Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
-                                                        location_out, kind));
-    if (result.isErrorNotFound()) {
-      result = thread->invokeMethod2(receiver, ID(__getattr__), name);
-      if (result.isErrorNotFound()) {
-        return objectRaiseAttributeError(thread, receiver, name);
-      }
-    }
-    return *result;
-  }
-  if (type.hasFlag(Type::Flag::kHasModuleDunderGetattribute) &&
-      runtime->isInstanceOfModule(*receiver)) {
-    DCHECK(typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
-               runtime->moduleDunderGetattribute(),
-           "module.__getattribute__ is expected");
-    Module module(&scope, *receiver);
-    Object result(&scope, moduleGetAttributeSetLocation(thread, module, name,
-                                                        location_out));
-    if (!result.isErrorNotFound()) {
-      // We have a result that can be cached.
-      *kind = LoadAttrKind::kModule;
-    } else {
-      // Try again
-      result = thread->invokeMethod2(receiver, ID(__getattr__), name);
-      if (result.isErrorNotFound()) {
-        return moduleRaiseAttributeError(thread, module, name);
-      }
-    }
-    return *result;
-  }
-  if (type.hasFlag(Type::Flag::kHasTypeDunderGetattribute) &&
-      runtime->isInstanceOfType(*receiver)) {
-    DCHECK(typeLookupInMroById(thread, *type, ID(__getattribute__)) ==
-               runtime->typeDunderGetattribute(),
-           "type.__getattribute__ is expected");
-    Type object_as_type(&scope, *receiver);
-    Object result(&scope, typeGetAttributeSetLocation(thread, object_as_type,
-                                                      name, location_out));
-    if (!result.isErrorNotFound()) {
-      // We have a result that can be cached.
-      if (location_out->isValueCell()) {
-        *kind = LoadAttrKind::kType;
-      }
-    } else {
-      // Try again
-      result = thread->invokeMethod2(receiver, ID(__getattr__), name);
-      if (result.isErrorNotFound()) {
-        return objectRaiseAttributeError(thread, receiver, name);
-      }
-    }
-    return *result;
-  }
-  return thread->runtime()->attributeAt(thread, receiver, name);
-}
-
 Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
@@ -3598,8 +3530,8 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
 
   Object location(&scope, NoneType::object());
   LoadAttrKind kind;
-  Object result(&scope,
-                loadAttrSetLocation(thread, receiver, name, &kind, &location));
+  Object result(&scope, thread->runtime()->attributeAtSetLocation(
+                            thread, receiver, name, &kind, &location));
   if (result.isErrorException()) return Continue::UNWIND;
   if (location.isNoneType()) {
     thread->stackSetTop(*result);
@@ -5003,8 +4935,8 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
 
   Object location(&scope, NoneType::object());
   LoadAttrKind kind;
-  Object result(&scope,
-                loadAttrSetLocation(thread, receiver, name, &kind, &location));
+  Object result(&scope, thread->runtime()->attributeAtSetLocation(
+                            thread, receiver, name, &kind, &location));
   if (result.isErrorException()) return Continue::UNWIND;
   if (kind != LoadAttrKind::kInstanceFunction) {
     thread->stackPush(*result);

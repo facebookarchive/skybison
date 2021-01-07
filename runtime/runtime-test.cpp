@@ -196,6 +196,173 @@ c = C()
       raised(runtime_->attributeAt(thread_, c, foo), LayoutId::kUserWarning));
 }
 
+TEST_F(RuntimeTest, AttributeAtSetLocationSetsLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+i = C()
+)")
+                   .isError());
+  Object i(&scope, mainModuleAt(runtime_, "i"));
+
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind = LoadAttrKind::kInstanceOffset;
+  EXPECT_TRUE(isIntEqualsWord(
+      runtime_->attributeAtSetLocation(thread_, i, name, &kind, &to_cache),
+      42));
+  EXPECT_EQ(kind, LoadAttrKind::kInstanceOffset);
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrWithLocation(thread_, *i, *to_cache), 42));
+}
+
+TEST_F(RuntimeTest, AttributeAtSetLocationSetsLocationToProprty) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+
+def foo(self): return "data descriptor"
+
+class C:
+    foo = property (foo)
+
+c = C()
+)")
+                   .isError());
+  Object c(&scope, mainModuleAt(runtime_, "c"));
+  Str name(&scope, runtime_->newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind = LoadAttrKind::kUnknown;
+  EXPECT_TRUE(isStrEqualsCStr(
+      runtime_->attributeAtSetLocation(thread_, c, name, &kind, &to_cache),
+      "data descriptor"));
+  EXPECT_EQ(kind, LoadAttrKind::kInstanceProperty);
+  EXPECT_EQ(to_cache, mainModuleAt(runtime_, "foo"));
+}
+
+TEST_F(
+    RuntimeTest,
+    AttributeAtSetLocationSetLocationToPropertyAsDataDescriptorWithNoneGetter) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+C_foo = property (fget=None, fset=lambda self,v: None, fdel=lambda self: None)
+class C:
+    foo = C_foo
+
+c = C()
+)")
+                   .isError());
+  Object c(&scope, mainModuleAt(runtime_, "c"));
+  Str name(&scope, runtime_->newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind = LoadAttrKind::kUnknown;
+  EXPECT_TRUE(
+      runtime_->attributeAtSetLocation(thread_, c, name, &kind, &to_cache)
+          .isError());
+  EXPECT_EQ(to_cache, mainModuleAt(runtime_, "C_foo"));
+  EXPECT_EQ(kind, LoadAttrKind::kInstanceTypeDescr);
+}
+
+TEST_F(RuntimeTest, LoadAttrWithModuleSetLocationSetsLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+a_global = 1234
+)")
+                   .isError());
+  Object mod(&scope, findMainModule(runtime_));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "a_global"));
+
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind;
+  ASSERT_TRUE(isIntEqualsWord(
+      runtime_->attributeAtSetLocation(thread_, mod, name, &kind, &to_cache),
+      1234));
+  EXPECT_EQ(kind, LoadAttrKind::kModule);
+  EXPECT_EQ(to_cache.layoutId(), LayoutId::kValueCell);
+}
+
+TEST_F(RuntimeTest, LoadAttrWithTypeSetLocationSetsLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  an_attribute = 1234
+)")
+                   .isError());
+  Object type(&scope, mainModuleAt(runtime_, "C"));
+
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "an_attribute"));
+
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind;
+  ASSERT_TRUE(isIntEqualsWord(
+      runtime_->attributeAtSetLocation(thread_, type, name, &kind, &to_cache),
+      1234));
+  EXPECT_EQ(kind, LoadAttrKind::kType);
+  EXPECT_EQ(to_cache.layoutId(), LayoutId::kValueCell);
+}
+
+TEST_F(RuntimeTest,
+       AttributeAtSetLocationWithCustomGetAttributeSetsNoLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __getattribute__(self, name):
+    return 11
+i = C()
+)")
+                   .isError());
+  Object i(&scope, mainModuleAt(runtime_, "i"));
+
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind;
+  EXPECT_TRUE(isIntEqualsWord(
+      runtime_->attributeAtSetLocation(thread_, i, name, &kind, &to_cache),
+      11));
+  EXPECT_EQ(kind, LoadAttrKind::kUnknown);
+  EXPECT_TRUE(to_cache.isNoneType());
+}
+
+TEST_F(RuntimeTest, AttributeAtSetLocationCallsDunderGetattr) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+  def __getattr__(self, name):
+    return 5
+i = C()
+)")
+                   .isError());
+  Object i(&scope, mainModuleAt(runtime_, "i"));
+
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind;
+
+  EXPECT_TRUE(isIntEqualsWord(
+      runtime_->attributeAtSetLocation(thread_, i, name, &kind, &to_cache), 5));
+  EXPECT_EQ(kind, LoadAttrKind::kUnknown);
+  EXPECT_TRUE(to_cache.isNoneType());
+}
+
+TEST_F(RuntimeTest, AttributeAtSetLocationWithNoAttributeRaisesAttributeError) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+obj = object()
+)")
+                   .isError());
+
+  Object obj(&scope, mainModuleAt(runtime_, "obj"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "nonexistent_attr"));
+  LoadAttrKind kind;
+  EXPECT_TRUE(raisedWithStr(
+      runtime_->attributeAtSetLocation(thread_, obj, name, &kind, nullptr),
+      LayoutId::kAttributeError,
+      "'object' object has no attribute 'nonexistent_attr'"));
+}
+
 // Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or
 // invalid LayoutIds.
 static const char* layoutIdName(LayoutId id) {
