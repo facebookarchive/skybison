@@ -5665,24 +5665,23 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Arguments args) {
   Type self(&scope, *self_obj);
 
   // `instance = self.__new__(...)`
-  Object dunder_new(&scope, Unbound::object());
-  Object dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
   Object instance(&scope, NoneType::object());
-
   Object call_args_obj(&scope, NoneType::object());
-
-  if (self.isType()) {
-    // Metaclass is "type" so we do not need to check for __new__ being a
-    // datadescriptor and we can look it up directly on the type
-    dunder_new = typeLookupInMro(thread, *self, *dunder_new_name);
-  }
-
-  if (dunder_new == runtime->objectDunderNew()) {
+  bool use_object_dunder_new =
+      self.isType() && self.hasFlag(Type::Flag::kHasObjectDunderNew);
+  if (use_object_dunder_new) {
     // Most common case `__new__` was not overridden and is just
     // `object.__new__`.
     instance = objectNew(thread, self);
     if (instance.isErrorException()) return *instance;
   } else {
+    Object dunder_new(&scope, Unbound::object());
+    Object dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
+    if (self.isType()) {
+      // Metaclass is "type" so we do not need to check for __new__ being a
+      // datadescriptor and we can look it up directly on the type.
+      dunder_new = typeLookupInMro(thread, *self, *dunder_new_name);
+    }
     if (dunder_new.isStaticMethod()) {
       // Next most common case `__new__` is overridden with a normal function
       dunder_new = StaticMethod::cast(*dunder_new).function();
@@ -5722,7 +5721,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Arguments args) {
   // The exception to the rule being `object.__init__` raising errors when
   // arguments are provided and nothing is overridden.
   if (dunder_init != runtime->objectDunderInit() ||
-      (dunder_new == runtime->objectDunderNew() &&
+      (use_object_dunder_new &&
        (pargs.length() != 0 || kwargs.numItems() != 0))) {
     CHECK(!dunder_init.isError(), "self must have __init__");
     Object result(&scope, NoneType::object());
