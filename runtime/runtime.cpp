@@ -3331,6 +3331,15 @@ RawObject Runtime::attributeAtSetLocation(Thread* thread,
                                 "type object '%S' has no attribute '%S'",
                                 &type_name, &name);
   }
+  if (receiver.isSuper()) {
+    Super object_as_super(&scope, *receiver);
+    Object result(&scope, superGetAttribute(thread, object_as_super, name));
+    if (!result.isErrorNotFound()) {
+      return *result;
+    }
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "super object has no attribute '%S'", &name);
+  }
   Object dunder_getattribute(
       &scope,
       Interpreter::lookupMethod(thread, receiver, ID(__getattribute__)));
