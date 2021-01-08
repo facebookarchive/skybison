@@ -2202,12 +2202,13 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
     case LayoutId::kObject:
       object_dunder_getattribute_ =
           typeAtById(thread, type, ID(__getattribute__));
+      object_dunder_hash_ = typeAtById(thread, type, ID(__hash__));
       object_dunder_init_ = typeAtById(thread, type, ID(__init__));
       object_dunder_new_ = typeAtById(thread, type, ID(__new__));
       object_dunder_setattr_ = typeAtById(thread, type, ID(__setattr__));
       type.setFlags(static_cast<Type::Flag>(
           type.flags() | Type::Flag::kHasObjectDunderGetattribute |
-          Type::Flag::kHasObjectDunderNew));
+          Type::Flag::kHasObjectDunderNew | Type::Flag::kHasObjectDunderHash));
       break;
     case LayoutId::kModule:
       module_dunder_getattribute_ =
@@ -2232,6 +2233,9 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Function dunder_getattribute(
       &scope, typeLookupInMroById(thread, *type, ID(__getattribute__)));
+  // This detects two instances of `object.__getattribute__`:
+  // 1) Manually created `object.__getattribute__` before initializing `object`.
+  // 2) Real `object.__getattribute__` after.
   if (Str::cast(dunder_getattribute.qualname())
           .equalsCStr("object.__getattribute__")) {
     type.setFlags(static_cast<Type::Flag>(
@@ -2240,9 +2244,20 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
 
   Object dunder_new(&scope, typeLookupInMroById(thread, *type, ID(__new__)));
   if (*dunder_new == object_dunder_new_ ||
+      // __new__ cannot be found in this type and this type is initialized
+      // before `object`.
       (dunder_new.isErrorNotFound() && object_dunder_new_.isNoneType())) {
     type.setFlags(static_cast<Type::Flag>(type.flags() |
                                           Type::Flag::kHasObjectDunderNew));
+  }
+
+  Object dunder_hash(&scope, typeLookupInMroById(thread, *type, ID(__hash__)));
+  if (*dunder_hash == object_dunder_hash_ ||
+      // __hash__ cannot be found in this type and this type is initialized
+      // before `object`.
+      (dunder_hash.isErrorNotFound() && object_dunder_hash_.isNoneType())) {
+    type.setFlags(static_cast<Type::Flag>(type.flags() |
+                                          Type::Flag::kHasObjectDunderHash));
   }
 }
 
@@ -2289,6 +2304,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_tuple_, PointerKind::kRuntime);
   visitor->visitPointer(&module_dunder_getattribute_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_getattribute_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_hash_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_init_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_new_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_setattr_, PointerKind::kRuntime);

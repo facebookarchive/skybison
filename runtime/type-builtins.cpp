@@ -109,10 +109,7 @@ static word computeAttributeTypeFlags(Thread* thread, const Type& type,
   // which does not fit our cache invalidation strategy for the flags. Be safe
   // and do not set any!
   if (flags & Type::Flag::kHasCustomMro) {
-    return flags & ~(Type::Flag::kHasObjectDunderGetattribute |
-                     Type::Flag::kHasTypeDunderGetattribute |
-                     Type::Flag::kHasModuleDunderGetattribute |
-                     Type::Flag::kHasObjectDunderNew);
+    return flags & ~Type::kAttributeFlags;
   }
   if (name == ID(__getattribute__)) {
     RawObject value = typeLookupInMroById(thread, *type, name);
@@ -139,6 +136,15 @@ static word computeAttributeTypeFlags(Thread* thread, const Type& type,
       flags |= Type::Flag::kHasObjectDunderNew;
     } else {
       flags &= ~Type::Flag::kHasObjectDunderNew;
+    }
+    return flags;
+  }
+  if (name == ID(__hash__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (value == runtime->objectDunderHash()) {
+      flags |= Type::Flag::kHasObjectDunderHash;
+    } else {
+      flags &= ~Type::Flag::kHasObjectDunderHash;
     }
     return flags;
   }
@@ -177,6 +183,7 @@ static void typePropagateAttributeTypeFlag(Thread* thread, const Type& type,
 static const SymbolId kAttributesForTypeFlags[] = {
     ID(__getattribute__),
     ID(__new__),
+    ID(__hash__),
 };
 
 // Returns `SymbolId` for `attr_name` if given `attr_name` is marked in

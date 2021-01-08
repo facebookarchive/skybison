@@ -1373,37 +1373,45 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   Type object_type(&scope, runtime_->typeAt(LayoutId::kObject));
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
   EXPECT_FALSE(type_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type module_type(&scope, runtime_->typeAt(LayoutId::kModule));
   EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasModuleDunderGetattribute));
   EXPECT_FALSE(module_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type property_type(&scope, runtime_->typeAt(LayoutId::kProperty));
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(property_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type function_type(&scope, runtime_->typeAt(LayoutId::kFunction));
   EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(function_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type int_type(&scope, runtime_->typeAt(LayoutId::kInt));
   EXPECT_TRUE(int_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   // super.__getattribute__ is not same as object.__getattribute.
   Type super_type(&scope, runtime_->typeAt(LayoutId::kSuper));
   EXPECT_FALSE(super_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(super_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(super_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   // BaseException inherits object.__new__.
   Type base_exception_type(&scope, runtime_->typeAt(LayoutId::kBaseException));
   EXPECT_TRUE(
       base_exception_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(base_exception_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(base_exception_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 }
 
 TEST_F(TypeBuiltinsTest, UserTypesHaveAttributeTypeFlags) {
@@ -1417,23 +1425,35 @@ class E(module): pass
 
 class F:
   def __new__(cls): return None
+
+class G:
+  def __hash__(self): return 10
 )")
                    .isError());
   Type c(&scope, mainModuleAt(runtime_, "C"));
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type d(&scope, mainModuleAt(runtime_, "D"));
   EXPECT_TRUE(d.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
   EXPECT_FALSE(d.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(d.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type e(&scope, mainModuleAt(runtime_, "E"));
   EXPECT_TRUE(e.hasFlag(Type::Flag::kHasModuleDunderGetattribute));
   EXPECT_FALSE(e.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(e.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type f(&scope, mainModuleAt(runtime_, "F"));
   EXPECT_TRUE(f.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(f.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_TRUE(f.hasFlag(Type::Flag::kHasObjectDunderHash));
+
+  Type g(&scope, mainModuleAt(runtime_, "G"));
+  EXPECT_TRUE(g.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_TRUE(g.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_FALSE(g.hasFlag(Type::Flag::kHasObjectDunderHash));
 }
 
 TEST_F(TypeBuiltinsTest, AttributeTypeFlagsPropagateThroughTypeHierarchy) {

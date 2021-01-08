@@ -1254,12 +1254,20 @@ class RawType : public RawAttributeDict {
 
     // this_type.__getattribute__ is object.__new__.
     kHasObjectDunderNew = 1 << 21,
+
+    // this_type.__hash__ is object.__hash__.
+    kHasObjectDunderHash = 1 << 22,
   };
 
-  static const word kUninheritableFlags =
-      Flag::kIsAbstract | Flag::kIsFixedAttributeBase | Flag::kIsBasetype |
+  static const word kAttributeFlags =
       Flag::kHasObjectDunderGetattribute | Flag::kHasTypeDunderGetattribute |
-      Flag::kHasModuleDunderGetattribute | Flag::kHasObjectDunderNew;
+      Flag::kHasModuleDunderGetattribute | Flag::kHasObjectDunderNew |
+      Flag::kHasObjectDunderHash;
+
+  static const word kUninheritableFlags = Flag::kIsAbstract |
+                                          Flag::kIsFixedAttributeBase |
+                                          Flag::kIsBasetype | kAttributeFlags;
+
   static const word kInheritableFlags = ~kUninheritableFlags;
 
   // Getters and setters.
