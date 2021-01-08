@@ -348,8 +348,14 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
     case LayoutId::kStopIteration:
       result = thread->runtime()->hash(*value);
       break;
-    default:
-      return callDunderHash(thread, value);
+    default: {
+      Runtime* runtime = thread->runtime();
+      if (!runtime->typeOf(*value).hasFlag(Type::Flag::kHasObjectDunderHash)) {
+        return callDunderHash(thread, value);
+      }
+      result = runtime->hash(*value);
+      break;
+    }
   }
   return SmallInt::fromWordTruncated(result);
 }
