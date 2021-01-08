@@ -3436,6 +3436,22 @@ class ComplexTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             complex.__repr__(None)
 
+    def test_dunder_lt_with_complex_returns_not_implemented(self):
+        self.assertIs(complex(1, 1).__lt__(complex(1, 1)), NotImplemented)
+        self.assertIs(complex(1, 1).__lt__(float(1)), NotImplemented)
+
+    def test_dunder_le_with_complex_returns_not_implemented(self):
+        self.assertIs(complex(1, 1).__le__(complex(1, 1)), NotImplemented)
+        self.assertIs(complex(1, 1).__le__(float(1)), NotImplemented)
+
+    def test_dunder_gt_with_complex_returns_not_implemented(self):
+        self.assertIs(complex(1, 1).__gt__(complex(1, 1)), NotImplemented)
+        self.assertIs(complex(1, 1).__gt__(float(1)), NotImplemented)
+
+    def test_dunder_ge_with_complex_returns_not_implemented(self):
+        self.assertIs(complex(1, 1).__ge__(complex(1, 1)), NotImplemented)
+        self.assertIs(complex(1, 1).__ge__(float(1)), NotImplemented)
+
 
 class CoroutineTests(unittest.TestCase):
     class MyError(Exception):

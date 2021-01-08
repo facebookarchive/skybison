@@ -2913,7 +2913,13 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __ge__(self, other):
-        _unimplemented()
+        if not _complex_check(self):
+            raise TypeError(
+                "'__ge__' requires a 'complex' object but "
+                f"received a '{type(self).__name__}'"
+            )
+
+        return NotImplemented
 
     __getattribute__ = object.__getattribute__
 
@@ -2921,7 +2927,13 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __gt__(self, other):
-        _unimplemented()
+        if not _complex_check(self):
+            raise TypeError(
+                "'__gt__' requires a 'complex' object but "
+                f"received a '{type(self).__name__}'"
+            )
+
+        return NotImplemented
 
     def __hash__(self) -> int:
         _builtin()
@@ -2930,10 +2942,22 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __le__(self, other):
-        _unimplemented()
+        if not _complex_check(self):
+            raise TypeError(
+                "'__le__' requires a 'complex' object but "
+                f"received a '{type(self).__name__}'"
+            )
+
+        return NotImplemented
 
     def __lt__(self, other):
-        _unimplemented()
+        if not _complex_check(self):
+            raise TypeError(
+                "'__lt__' requires a 'complex' object but "
+                f"received a '{type(self).__name__}'"
+            )
+
+        return NotImplemented
 
     def __mod__(self, other):
         _unimplemented()
