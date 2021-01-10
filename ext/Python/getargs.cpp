@@ -299,7 +299,9 @@ static int vGetArgs1Impl(PyObject* compat_args, PyObject* const* stack,
       PyErr_Format(
           PyExc_TypeError, "%.150s%s takes %s %d argument%s (%zd given)",
           fname == nullptr ? "function" : fname, fname == nullptr ? "" : "()",
-          min == max ? "exactly" : nargs < min ? "at least" : "at most",
+          min == max    ? "exactly"
+          : nargs < min ? "at least"
+                        : "at most",
           nargs < min ? min : max, (nargs < min ? min : max) == 1 ? "" : "s",
           nargs);
     } else {

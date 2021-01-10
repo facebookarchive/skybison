@@ -3164,7 +3164,8 @@ TEST_F(TypeExtensionApiTest, GetDestructorSlotsFromExceptionReturnsNoOpsPyro) {
       reinterpret_cast<traverseproc>(PyType_GetSlot(exception, Py_tp_traverse));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_NE(tp_traverse, nullptr);
-  EXPECT_EQ(tp_traverse(subclass, [](PyObject*, void*) { return 0; }, nullptr),
+  EXPECT_EQ(tp_traverse(
+                subclass, [](PyObject*, void*) { return 0; }, nullptr),
             0);
 }
 
