@@ -4701,17 +4701,35 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   return Continue::NEXT;
 }
 
+static RawObject listUnpack(Thread* thread, const List& list,
+                            const Object& iterable, Tuple* src_handle) {
+  word src_length;
+  if (iterable.isList()) {
+    *src_handle = List::cast(*iterable).items();
+    src_length = List::cast(*iterable).numItems();
+  } else if (iterable.isTuple()) {
+    *src_handle = *iterable;
+    src_length = src_handle->length();
+  } else {
+    return thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list,
+                                       iterable);
+  }
+  listExtend(thread, list, *src_handle, src_length);
+  return NoneType::object();
+}
+
 HANDLER_INLINE Continue Interpreter::doBuildListUnpack(Thread* thread,
                                                        word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   List list(&scope, runtime->newList());
-  Object obj(&scope, NoneType::object());
+  Object iterable(&scope, NoneType::object());
+  Tuple src_handle(&scope, runtime->emptyTuple());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = thread->stackPeek(i);
-    RawObject result =
-        thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list, obj);
-    if (result.isErrorException()) return Continue::UNWIND;
+    iterable = thread->stackPeek(i);
+    if (listUnpack(thread, list, iterable, &src_handle).isErrorException()) {
+      return Continue::UNWIND;
+    }
   }
   thread->stackDrop(arg - 1);
   thread->stackSetTop(*list);
@@ -4781,12 +4799,13 @@ HANDLER_INLINE Continue Interpreter::doBuildTupleUnpack(Thread* thread,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   List list(&scope, runtime->newList());
-  Object obj(&scope, NoneType::object());
+  Object iterable(&scope, NoneType::object());
+  Tuple src_handle(&scope, runtime->emptyTuple());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = thread->stackPeek(i);
-    RawObject result =
-        thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list, obj);
-    if (result.isErrorException()) return Continue::UNWIND;
+    iterable = thread->stackPeek(i);
+    if (listUnpack(thread, list, iterable, &src_handle).isErrorException()) {
+      return Continue::UNWIND;
+    }
   }
   Tuple items(&scope, list.items());
   Tuple tuple(&scope, runtime->tupleSubseq(thread, items, 0, list.numItems()));
