@@ -228,8 +228,14 @@ bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
       thread->stackSetTop(Bool::trueObj());
       return true;
     }
-  }
-  if (type.isTuple()) {
+    if (obj_type.isBuiltin()) {
+      // It's guaranteed that builtin_obj.__class__ is type(builtin_obj).
+      // See _object_class_set implementation.
+      thread->stackDrop(2);
+      thread->stackSetTop(Bool::falseObj());
+      return true;
+    }
+  } else if (type.isTuple()) {
     RawTuple types = Tuple::cast(type);
     word length = types.length();
     for (word i = 0; i < length; i++) {
