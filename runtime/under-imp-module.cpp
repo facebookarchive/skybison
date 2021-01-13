@@ -11,6 +11,7 @@
 #include "objects.h"
 #include "os.h"
 #include "runtime.h"
+#include "str-builtins.h"
 
 namespace py {
 
@@ -39,6 +40,77 @@ bool importReleaseLock(Thread* thread) {
     import_lock_holder = nullptr;
   }
   return true;
+}
+
+RawObject FUNC(_imp, _import_fastpath)(Thread* thread, Arguments args) {
+  // This functions attempts to shortcut the import mechanics for modules that
+  // have already been loaded. It is called directly from
+  // _frozen_import_lib.__import__ and reproduces the functionality for the
+  // case when the module is present in sys.modules.
+  HandleScope scope(thread);
+  Object level(&scope, args.get(2));
+  // Only handle top level imports to avoid doing import name resolution.
+  if (level != SmallInt::fromWord(0)) {
+    return NoneType::object();
+  }
+  Object name(&scope, args.get(0));
+  if (!name.isStr()) {
+    return NoneType::object();
+  }
+  Str name_str(&scope, *name);
+  Runtime* runtime = thread->runtime();
+
+  Object result(&scope, runtime->findModule(name_str));
+  if (!result.isModule()) {
+    return NoneType::object();
+  }
+
+  // For imports with the style `from module import x,y,z` we need to verify
+  // that x, y, and z have all been loaded. This is the same checks as in
+  // _frozen_importlib._handle_fromlist.
+  Object fromlist_obj(&scope, args.get(1));
+  if (!fromlist_obj.isNoneType()) {
+    word fromlist_length;
+    if (fromlist_obj.isList()) {
+      fromlist_length = List::cast(*fromlist_obj).numItems();
+      fromlist_obj = List::cast(*fromlist_obj).items();
+    } else if (fromlist_obj.isTuple()) {
+      fromlist_length = Tuple::cast(*fromlist_obj).length();
+    } else {
+      return NoneType::object();
+    }
+    Tuple fromlist(&scope, *fromlist_obj);
+
+    if (fromlist_length > 0) {
+      Module module(&scope, *result);
+      Object attribute_name(&scope, NoneType::object());
+      Object attribute(&scope, NoneType::object());
+      for (word i = 0; i < fromlist_length; i++) {
+        attribute_name = fromlist.at(i);
+        if (!attribute_name.isStr()) {
+          return NoneType::object();
+        }
+        attribute_name = Runtime::internStr(thread, attribute_name);
+        attribute = moduleAt(module, attribute_name);
+        if (attribute.isErrorNotFound()) {
+          return NoneType::object();
+        }
+      }
+      return *result;
+    }
+  }
+  // If fromlist is empty return the top level package.
+  // ie: `__import__("module.x")` will return `module`
+  word index = strFindAsciiChar(name_str, '.');
+  if (index == -1) {
+    return *result;
+  }
+  name = strSubstr(thread, name_str, 0, index);
+  result = runtime->findModule(name);
+  if (!result.isModule()) {
+    return NoneType::object();
+  }
+  return *result;
 }
 
 RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Arguments args) {

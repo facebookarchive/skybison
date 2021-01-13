@@ -64,6 +64,10 @@ def _code_update_filenames_recursive(code, old_name, new_name):
             _code_update_filenames_recursive(const, old_name, new_name)
 
 
+def _import_fastpath(name, fromlist, level):
+    _builtin()
+
+
 def _fix_co_filename(code, path):
     _code_guard(code)
     _str_guard(path)

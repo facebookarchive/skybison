@@ -29,6 +29,7 @@ import _weakref
 # Bootstrap-related code ######################################################
 
 import sys
+from _imp import _import_fastpath
 
 from _builtins import _address
 
@@ -1107,6 +1108,10 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     import (e.g. ``from ..pkg import mod`` would have a 'level' of 2).
 
     """
+    module = _import_fastpath(name, fromlist, level)
+    if module is not None:
+        return module
+
     if level == 0:
         module = _gcd_import(name)
     else:
