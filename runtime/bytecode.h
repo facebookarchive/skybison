@@ -194,7 +194,7 @@ namespace py {
   V(UNUSED_BYTECODE_175, 175, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_176, 176, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_177, 177, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_178, 178, doInvalidBytecode)                               \
+  V(COMPARE_NE_STR, 178, doCompareNeStr)                                       \
   V(FOR_ITER_GENERATOR, 179, doForIterGenerator)                               \
   V(STORE_SUBSCR_DICT, 180, doStoreSubscrDict)                                 \
   V(BINARY_MUL_SMALLINT, 181, doBinaryMulSmallInt)                             \

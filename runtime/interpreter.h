@@ -381,6 +381,7 @@ class Interpreter {
   static Continue doCompareNeSmallInt(Thread* thread, word arg);
   static Continue doCompareLeSmallInt(Thread* thread, word arg);
   static Continue doCompareEqStr(Thread* thread, word arg);
+  static Continue doCompareNeStr(Thread* thread, word arg);
   static Continue doCompareOpAnamorphic(Thread* thread, word arg);
   static Continue doDeleteAttr(Thread* thread, word arg);
   static Continue doDeleteSubscr(Thread* thread, word arg);

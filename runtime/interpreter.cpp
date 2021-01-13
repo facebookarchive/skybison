@@ -5394,6 +5394,19 @@ Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE
+Continue Interpreter::doCompareNeStr(Thread* thread, word arg) {
+  RawObject left = thread->stackPeek(1);
+  RawObject right = thread->stackPeek(0);
+  if (left.isStr() && right.isStr()) {
+    thread->stackDrop(1);
+    thread->stackSetTop(Bool::fromBool(!Str::cast(left).equals(right)));
+    return Continue::NEXT;
+  }
+  EVENT_CACHE(COMPARE_NE_STR);
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject left_raw = thread->stackPeek(1);
@@ -5460,11 +5473,17 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
         return compareOpUpdateCache(thread, arg);
     }
   }
-  if (left.isStr() && right.isStr() &&
-      static_cast<CompareOp>(originalArg(frame->function(), arg)) ==
-          CompareOp::EQ) {
-    rewriteCurrentBytecode(frame, COMPARE_EQ_STR);
-    return doCompareEqStr(thread, arg);
+  if (left.isStr() && right.isStr()) {
+    switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
+      case CompareOp::EQ:
+        rewriteCurrentBytecode(frame, COMPARE_EQ_STR);
+        return doCompareEqStr(thread, arg);
+      case CompareOp::NE:
+        rewriteCurrentBytecode(frame, COMPARE_NE_STR);
+        return doCompareNeStr(thread, arg);
+      default:
+        return compareOpUpdateCache(thread, arg);
+    }
   }
   return compareOpUpdateCache(thread, arg);
 }

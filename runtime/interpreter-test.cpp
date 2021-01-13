@@ -2066,6 +2066,43 @@ TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 }
 
+TEST_F(InterpreterTest, CompareOpWithNeOperatorWithStrsRewritesToCompareNeStr) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Object obj1(&scope, runtime_->newStrFromCStr("abc"));
+  Object obj2(&scope, runtime_->newStrFromCStr("def"));
+  Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST,   0,
+      LOAD_CONST,   1,
+      COMPARE_OP,   static_cast<byte>(CompareOp::NE),
+      RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  EXPECT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_NE_STR);
+
+  // Updated opcode returns the same value.
+  EXPECT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
+
+  // Revert the opcode back to COMPARE_OP_MONOMIRPHIC in case a non-str argument
+  // is observed by evaluating `str_obj` != `tuple_obj`.
+  consts.atPut(0, runtime_->emptyTuple());
+  EXPECT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_OP_MONOMORPHIC);
+}
+
 TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
   HandleScope scope(thread_);
 
