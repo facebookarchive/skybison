@@ -5005,5 +5005,51 @@ TEST_F(TypeExtensionApiTest, CallDunderIndexReturnsStr) {
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "<index 42 \xf0\x9f\x91\x8d>"));
 }
 
+struct TpSlotRefcntTestObject {
+  PyObject_HEAD
+  int initial_refcnt;
+};
+
+static PyObject* makeTestRefcntInstanceWithSlots(const PyType_Slot* slots) {
+  const PyType_Spec spec = {
+      "foo",
+      sizeof(TpSlotTestObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      const_cast<PyType_Slot*>(slots),
+  };
+  PyObjectPtr type(PyType_FromSpec(const_cast<PyType_Spec*>(&spec)));
+  if (type == nullptr) return nullptr;
+  PyObject* instance = PyObject_CallFunction(type, nullptr);
+  if (instance == nullptr) return nullptr;
+  reinterpret_cast<TpSlotRefcntTestObject*>(instance)->initial_refcnt =
+      Py_REFCNT(instance);
+  return instance;
+}
+
+TEST_F(TypeExtensionApiTest, UnarySlotOwnsReference) {
+  reprfunc func = [](PyObject* obj) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(obj),
+        reinterpret_cast<TpSlotRefcntTestObject*>(obj)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  // __repr__ is created as a unary slot
+  static const PyType_Slot slots[] = {
+      {Py_tp_repr, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__repr__", nullptr));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
 }  // namespace testing
 }  // namespace py
