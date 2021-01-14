@@ -5027,6 +5027,31 @@ static PyObject* makeTestRefcntInstanceWithSlots(const PyType_Slot* slots) {
   return instance;
 }
 
+TEST_F(TypeExtensionApiTest, IntegralSlotOwnsReference) {
+  lenfunc len_func = [](PyObject* self) -> Py_ssize_t {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    return 0xdeadbeef;
+  };
+  // __len__ is created as an integral slot
+  static const PyType_Slot slots[] = {
+      {Py_sq_length, reinterpret_cast<void*>(len_func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__len__", nullptr));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_TRUE(isLongEqualsLong(result, 0xdeadbeef));
+}
+
 TEST_F(TypeExtensionApiTest, UnarySlotOwnsReference) {
   reprfunc func = [](PyObject* obj) -> PyObject* {
     // We expect a refcount of 1 greater than the inital refcount since the

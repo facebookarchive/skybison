@@ -101,8 +101,9 @@ ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
 template <class cfunc, class RetFunc>
 RawObject wrapIntegralfunc(Thread* thread, Arguments args, RetFunc ret) {
   auto func = getNativeFunc<cfunc>(thread);
-  PyObject* o = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* o = ApiHandle::newReference(thread, args.get(0));
   auto result = func(o);
+  Py_DECREF(o);
   if (result == -1 && thread->hasPendingException()) return Error::exception();
   return ret(result);
 }
