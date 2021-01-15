@@ -356,7 +356,24 @@ PY_EXPORT PyObject* PyNumber_Absolute(PyObject* obj) {
   return doUnaryOp(ID(abs), obj);
 }
 
+static PyObject* smallIntAdd(PyObject* left, PyObject* right) {
+  RawObject left_obj = ApiHandle::fromPyObject(left)->asObject();
+  RawObject right_obj = ApiHandle::fromPyObject(right)->asObject();
+  if (left_obj.isSmallInt() && right_obj.isSmallInt()) {
+    Thread* thread = Thread::current();
+    return ApiHandle::newReference(
+        thread, thread->runtime()->newInt(SmallInt::cast(left_obj).value() +
+                                          SmallInt::cast(right_obj).value()));
+  }
+  return nullptr;
+}
+
 PY_EXPORT PyObject* PyNumber_Add(PyObject* left, PyObject* right) {
+  PyObject* result = smallIntAdd(left, right);
+  if (result != nullptr) {
+    // Fast path: smallint + smallint.
+    return result;
+  }
   return doBinaryOp(ID(add), left, right);
 }
 
@@ -437,6 +454,12 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* left, PyObject* right) {
+  PyObject* result = smallIntAdd(left, right);
+  if (result != nullptr) {
+    // Fast path: smallint + smallint.
+    // In case operands are SmallInts, InPlaceAdd doesn't mutate them.
+    return result;
+  }
   return doBinaryOp(ID(iadd), left, right);
 }
 
