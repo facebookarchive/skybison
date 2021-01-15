@@ -2219,6 +2219,8 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
     case LayoutId::kStr:
       str_dunder_eq_ = typeAtById(thread, type, ID(__eq__));
       str_dunder_hash_ = typeAtById(thread, type, ID(__hash__));
+      type.setFlags(static_cast<Type::Flag>(type.flags() |
+                                            Type::Flag::kHasStrDunderHash));
       break;
     case LayoutId::kType:
       type_dunder_getattribute_ =

@@ -1374,6 +1374,7 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasStrDunderHash));
 
   Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
@@ -1399,6 +1400,13 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_TRUE(int_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasStrDunderHash));
+
+  Type str_type(&scope, runtime_->typeAt(LayoutId::kStr));
+  EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(str_type.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_FALSE(str_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasStrDunderHash));
 
   // super.__getattribute__ is not same as object.__getattribute.
   Type super_type(&scope, runtime_->typeAt(LayoutId::kSuper));
@@ -1428,6 +1436,13 @@ class F:
 
 class G:
   def __hash__(self): return 10
+
+
+class Str(str): pass
+
+class Str2(Str):
+  def __hash__(self): return 10
+
 )")
                    .isError());
   Type c(&scope, mainModuleAt(runtime_, "C"));
@@ -1454,6 +1469,18 @@ class G:
   EXPECT_TRUE(g.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(g.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_FALSE(g.hasFlag(Type::Flag::kHasObjectDunderHash));
+
+  Type str(&scope, mainModuleAt(runtime_, "Str"));
+  EXPECT_TRUE(str.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(str.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_FALSE(str.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(str.hasFlag(Type::Flag::kHasStrDunderHash));
+
+  Type str2(&scope, mainModuleAt(runtime_, "Str2"));
+  EXPECT_TRUE(str2.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
+  EXPECT_FALSE(str2.hasFlag(Type::Flag::kHasObjectDunderNew));
+  EXPECT_FALSE(str2.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_FALSE(str2.hasFlag(Type::Flag::kHasStrDunderHash));
 }
 
 TEST_F(TypeBuiltinsTest, AttributeTypeFlagsPropagateThroughTypeHierarchy) {

@@ -350,10 +350,15 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
       break;
     default: {
       Runtime* runtime = thread->runtime();
-      if (!runtime->typeOf(*value).hasFlag(Type::Flag::kHasObjectDunderHash)) {
+      RawType value_type = runtime->typeOf(*value);
+      if (value_type.hasFlag(Type::Flag::kHasObjectDunderHash)) {
+        result = runtime->hash(*value);
+      } else if (value_type.hasFlag(Type::Flag::kHasStrDunderHash) &&
+                 runtime->isInstanceOfStr(*value)) {
+        result = strHash(thread, strUnderlying(*value));
+      } else {
         return callDunderHash(thread, value);
       }
-      result = runtime->hash(*value);
       break;
     }
   }

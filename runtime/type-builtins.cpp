@@ -143,8 +143,11 @@ static word computeAttributeTypeFlags(Thread* thread, const Type& type,
     RawObject value = typeLookupInMroById(thread, *type, name);
     if (value == runtime->objectDunderHash()) {
       flags |= Type::Flag::kHasObjectDunderHash;
+    } else if (value == runtime->strDunderHash()) {
+      flags |= Type::Flag::kHasStrDunderHash;
     } else {
-      flags &= ~Type::Flag::kHasObjectDunderHash;
+      flags &=
+          ~(Type::Flag::kHasObjectDunderHash | Type::Flag::kHasStrDunderHash);
     }
     return flags;
   }

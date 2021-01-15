@@ -1252,17 +1252,20 @@ class RawType : public RawAttributeDict {
     // this_type.__getattribute__ is module.__getattribute__.
     kHasModuleDunderGetattribute = 1 << 20,
 
-    // this_type.__getattribute__ is object.__new__.
+    // this_type.__new__ is object.__new__.
     kHasObjectDunderNew = 1 << 21,
 
     // this_type.__hash__ is object.__hash__.
     kHasObjectDunderHash = 1 << 22,
+
+    // this_type.__hash__ is str.__hash__.
+    kHasStrDunderHash = 1 << 23,
   };
 
   static const word kAttributeFlags =
       Flag::kHasObjectDunderGetattribute | Flag::kHasTypeDunderGetattribute |
       Flag::kHasModuleDunderGetattribute | Flag::kHasObjectDunderNew |
-      Flag::kHasObjectDunderHash;
+      Flag::kHasObjectDunderHash | Flag::kHasStrDunderHash;
 
   static const word kUninheritableFlags = Flag::kIsAbstract |
                                           Flag::kIsFixedAttributeBase |
