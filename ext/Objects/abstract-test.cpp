@@ -2859,6 +2859,31 @@ c = C()
   EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PySequenceGetItemWithTupleReturnsTupleElement) {
+  PyObjectPtr tuple(PyTuple_New(2));
+  ASSERT_EQ(PyTuple_SetItem(tuple, 0, PyUnicode_FromString("first")), 0);
+  ASSERT_EQ(PyTuple_SetItem(tuple, 1, PyUnicode_FromString("second")), 0);
+
+  PyObjectPtr result(PySequence_GetItem(tuple, 0));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "first"));
+
+  result = PySequence_GetItem(tuple, 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "second"));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceGetItemWithListReturnsListElement) {
+  PyObjectPtr list(PyList_New(2));
+  ASSERT_EQ(PyList_SetItem(list, 0, PyUnicode_FromString("first")), 0);
+  ASSERT_EQ(PyList_SetItem(list, 1, PyUnicode_FromString("second")), 0);
+
+  PyObjectPtr result(PySequence_GetItem(list, 0));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "first"));
+
+  result = PySequence_GetItem(list, 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "second"));
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceDelItemCallsDunderDelItem) {
   PyRun_SimpleString(R"(
 sideeffect = 0

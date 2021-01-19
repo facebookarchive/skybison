@@ -1370,6 +1370,19 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  if (seq_obj.isTuple()) {
+    // Fast path: return `tuple`'s element directly.
+    RawTuple tuple = Tuple::cast(*seq_obj);
+    if (0 <= idx && idx < tuple.length()) {
+      return ApiHandle::newReference(thread, tuple.at(idx));
+    }
+  } else if (seq_obj.isList()) {
+    // Fast path: return `list`'s element directly.
+    RawList list = List::cast(*seq_obj);
+    if (0 <= idx && idx < list.numItems()) {
+      return ApiHandle::newReference(thread, list.at(idx));
+    }
+  }
   Object idx_obj(&scope, thread->runtime()->newInt(idx));
   Object result(&scope,
                 thread->invokeMethod2(seq_obj, ID(__getitem__), idx_obj));
