@@ -14,5 +14,5 @@ compileFile(filename)
     Generates a .pyc file by compiling filename.
 """
 
-from .pycodegen import compile, compileFile  # noqa: F401
-from .visitor import walk  # noqa: F401
+from .pycodegen import compile, compileFile
+from .visitor import walk

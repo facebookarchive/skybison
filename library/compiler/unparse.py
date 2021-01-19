@@ -1,3 +1,4 @@
+# pyre-unsafe
 import ast
 from typing import Any, Callable, Dict, List, Optional, Type
 
@@ -96,7 +97,10 @@ def _format_str(node: ast.Str, level: int) -> str:
 
 def _format_attribute(node: ast.Attribute, level: int) -> str:
     value = to_expr(node.value, PR_ATOM)
-    if isinstance(node.value, (ast.Num, ast.Constant)):
+    const = node.value
+    if (isinstance(const, ast.Constant) and isinstance(const.value, int)) or type(
+        const
+    ) is ast.Num:
         value += " ."
     else:
         value += "."
@@ -177,7 +181,7 @@ def _format_subscript(node: ast.Subscript, level: int) -> str:
 
 
 def _format_index(node: ast.Index, level: int) -> str:
-    # pyre-ignore[16]: `Index` has no attribute `value`.
+    # pyre-fixme[16]: `Index` has no attribute `value`.
     return to_expr(node.value, PR_TUPLE)
 
 
@@ -371,6 +375,18 @@ def _format_slice(node: ast.Slice, level: int):
     return res
 
 
+def _format_extslice(node: ast.ExtSlice, level: int):
+    # pyre-fixme[16]: `ExtSlice` has no attribute `dims`.
+    return ", ".join(to_expr(d) for d in node.dims)
+
+
+def _format_constant(node: ast.Constant, level: int):
+    if node.value is Ellipsis:
+        return "..."
+
+    return repr(node.value)
+
+
 _FORMATTERS: Dict[Type, Callable[[Any, int], str]] = {
     ast.BoolOp: _format_boolop,
     ast.BinOp: _format_binaryop,
@@ -388,7 +404,7 @@ _FORMATTERS: Dict[Type, Callable[[Any, int], str]] = {
     ast.Await: _format_await,
     ast.Compare: _format_compare,
     ast.Call: _format_call,
-    ast.Constant: lambda node, level: repr(node.value),
+    ast.Constant: _format_constant,
     ast.Num: _format_num,
     ast.Str: _format_str,
     ast.JoinedStr: format_joinedstr,
@@ -403,6 +419,7 @@ _FORMATTERS: Dict[Type, Callable[[Any, int], str]] = {
     ast.List: _format_list,
     ast.Tuple: _format_tuple,
     ast.Slice: _format_slice,
+    ast.ExtSlice: _format_extslice,
     ast.Index: _format_index,
 }
 

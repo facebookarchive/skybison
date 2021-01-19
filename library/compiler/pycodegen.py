@@ -1,23 +1,35 @@
+# pyre-unsafe
 from __future__ import annotations
 
 import ast
+import importlib.util
+import itertools
 import marshal
 import os
 import sys
-from ast import ClassDef
+from ast import AST, ClassDef
 from builtins import compile as builtin_compile
-from importlib.util import MAGIC_NUMBER
-from typing import Optional
+from contextlib import contextmanager
+from io import StringIO
 
-from . import future, misc, pyassem, symbols
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import Iterable, List, Optional, Sequence, Union
+
+from . import config, future, misc, pyassem, symbols
 from .consts import (
     CO_ASYNC_GENERATOR,
     CO_COROUTINE,
+    CO_FUTURE_ABSOLUTE_IMPORT,
     CO_FUTURE_ANNOTATIONS,
     CO_FUTURE_BARRY_AS_BDFL,
+    CO_FUTURE_DIVISION,
     CO_FUTURE_GENERATOR_STOP,
+    CO_FUTURE_PRINT_FUNCTION,
+    CO_FUTURE_WITH_STATEMENT,
     CO_GENERATOR,
     CO_NESTED,
+    CO_NEWLOCALS,
     CO_VARARGS,
     CO_VARKEYWORDS,
     SC_CELL,
@@ -25,14 +37,14 @@ from .consts import (
     SC_GLOBAL_EXPLICIT,
     SC_GLOBAL_IMPLICIT,
     SC_LOCAL,
-    PyCF_DONT_IMPLY_DEDENT,
+    PyCF_COMPILE_MASK,
     PyCF_MASK,
     PyCF_MASK_OBSOLETE,
     PyCF_ONLY_AST,
-    PyCF_OPTIMIZATION_MASK,
     PyCF_SOURCE_IS_UTF8,
 )
 from .optimizer import AstOptimizer
+from .py38.optimizer import AstOptimizer38
 from .pyassem import PyFlowGraph
 from .symbols import SymbolVisitor
 from .unparse import to_expr
@@ -40,7 +52,7 @@ from .visitor import ASTVisitor, walk
 
 
 try:
-    import _parser
+    import _parser  # pyre-ignore[21]
 except ImportError:
     parse_callable = builtin_compile
 else:
@@ -55,19 +67,28 @@ callfunc_opcode_info = {
     (1, 1): "CALL_FUNCTION_VAR_KW",
 }
 
+# This is a super set of all Python versions
 LOOP = 1
 EXCEPT = 2
 TRY_FINALLY = 3
 END_FINALLY = 4
+WHILE_LOOP = 5
+FOR_LOOP = 6
+TRY_FINALLY_BREAK = 7
+WITH = 8
+ASYNC_WITH = 9
+HANDLER_CLEANUP = 10
 
 _ZERO = (0).to_bytes(4, "little")
+
+_DEFAULT_MODNAME = sys.intern("<module>")
 
 
 def make_header(mtime, size):
     return _ZERO + mtime.to_bytes(4, "little") + size.to_bytes(4, "little")
 
 
-def compileFile(filename, display=0, compiler=None, modname="<module>"):
+def compileFile(filename, display=0, compiler=None, modname=_DEFAULT_MODNAME):
     # compile.c uses marshal to write a long directly, with
     # calling the interface that would also generate a 1-byte code
     # to indicate the type of the value.  simplest way to get the
@@ -78,9 +99,9 @@ def compileFile(filename, display=0, compiler=None, modname="<module>"):
     buf = f.read()
     f.close()
     code = compile(buf, filename, "exec", compiler=compiler, modname=modname)
-    f = open(filename + "c", "wb")  # noqa: P201
+    f = open(filename + "c", "wb")
     hdr = make_header(int(fileinfo.st_mtime), fileinfo.st_size)
-    f.write(MAGIC_NUMBER)
+    f.write(importlib.util.MAGIC_NUMBER)
     f.write(hdr)
     marshal.dump(code, f)
     f.close()
@@ -94,7 +115,7 @@ def compile(
     dont_inherit=None,
     optimize=-1,
     compiler=None,
-    modname="<module>",
+    modname=_DEFAULT_MODNAME,
 ):
     """Replacement for builtin compile() function"""
     if dont_inherit is not None:
@@ -111,19 +132,21 @@ def parse(source, filename, mode, flags):
 
 
 def make_compiler(
-    source, filename, mode, flags=0, optimize=0, generator=None, modname="<module>"
+    source,
+    filename,
+    mode,
+    flags=0,
+    optimize=0,
+    generator=None,
+    modname=_DEFAULT_MODNAME,
+    peephole_enabled=True,
+    ast_optimizer_enabled=True,
 ):
     if mode not in ("single", "exec", "eval"):
         raise ValueError("compile() mode must be 'exec', 'eval' or 'single'")
 
-    if flags & ~(
-        PyCF_MASK
-        | PyCF_MASK_OBSOLETE
-        | PyCF_DONT_IMPLY_DEDENT
-        | PyCF_ONLY_AST
-        | PyCF_OPTIMIZATION_MASK
-    ):
-        raise ValueError("compile(): unrecognised flags")
+    if flags & ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK):
+        raise ValueError("compile(): unrecognised flags", hex(flags))
 
     flags |= PyCF_SOURCE_IS_UTF8
 
@@ -138,30 +161,24 @@ def make_compiler(
     if generator is None:
         generator = get_default_generator()
 
-    return generator.make_code_gen(modname, tree, filename, flags, optimize)
-
-
-def is_constant_false(node):
-    if isinstance(node, ast.Num):
-        if not node.n:
-            return 1
-    return 0
-
-
-def is_constant_true(node):
-    if isinstance(node, ast.Num):
-        if node.n:
-            return 1
-    return 0
+    return generator.make_code_gen(
+        modname,
+        tree,
+        filename,
+        flags,
+        optimize,
+        peephole_enabled=peephole_enabled,
+        ast_optimizer_enabled=ast_optimizer_enabled,
+    )
 
 
 def is_const(node):
-    # This is the Python 3.6 definition of constant
-    check_node = isinstance(
+    is_const_node = isinstance(
         node,
         (ast.Num, ast.Str, ast.Ellipsis, ast.Bytes, ast.NameConstant, ast.Constant),
     )
-    return check_node or (isinstance(node, ast.Name) and node.id == "__debug__")
+    is_debug = isinstance(node, ast.Name) and node.id == "__debug__"
+    return is_const_node or is_debug
 
 
 def all_items_const(seq, begin, end):
@@ -193,7 +210,7 @@ class CodeGenerator(ASTVisitor):
     def __init__(
         self,
         parent: Optional[CodeGenerator],
-        node: ast.AST,
+        node: AST,
         symbols: SymbolVisitor,
         graph: PyFlowGraph,
         flags=0,
@@ -211,8 +228,6 @@ class CodeGenerator(ASTVisitor):
         self.interactive = False
         self.graph.setFlag(self.module_gen.future_flags)
         self.scope = self.scopes[node]
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
         self.flags = flags
         self.optimization_lvl = optimization_lvl
         self.strip_docstrings = optimization_lvl == 2
@@ -227,6 +242,25 @@ class CodeGenerator(ASTVisitor):
     def getCode(self):
         """Return a code object"""
         return self.graph.getCode()
+
+    @contextmanager
+    def noEmit(self):
+        self.graph.do_not_emit_bytecode += 1
+        try:
+            yield
+        finally:
+            self.graph.do_not_emit_bytecode -= 1
+
+    @contextmanager
+    def noOp(self):
+        yield
+
+    def maybeEmit(self, test):
+        return self.noOp() if test else self.noEmit()
+
+    def skip_visit(self):
+        """On <3.8 if we aren't emitting bytecode we shouldn't even visit the nodes."""
+        return self.graph.do_not_emit_bytecode
 
     def mangle(self, name):
         if self.class_name is not None:
@@ -294,7 +328,7 @@ class CodeGenerator(ASTVisitor):
             self.graph.lineno_set = False
 
     def update_lineno(self, node):
-        if hasattr(node, "lineno") and node.lineno > self.graph.lineno:
+        if hasattr(node, "lineno") and node.lineno != self.graph.lineno:
             self.set_lineno(node)
 
     def get_docstring(self, node):
@@ -418,16 +452,19 @@ class CodeGenerator(ASTVisitor):
 
     skip_func_docstring = skip_docstring
 
-    def _visitFuncOrLambda(self, node, isLambda=0):  # noqa: C901
+    def _visitFuncOrLambda(self, node, isLambda=0):
         if not isLambda and node.decorator_list:
             for decorator in node.decorator_list:
                 self.visit(decorator)
             ndecorators = len(node.decorator_list)
+            first_lineno = node.decorator_list[0].lineno
         else:
             ndecorators = 0
+            first_lineno = node.lineno
         flags = 0
-        name = "<lambda>" if isLambda else node.name
-        gen = self.make_func_codegen(node, name)
+        name = sys.intern("<lambda>") if isLambda else node.name
+
+        gen = self.make_func_codegen(node, name, first_lineno)
         body = node.body
         if not isLambda:
             body = self.skip_func_docstring(body)
@@ -452,23 +489,7 @@ class CodeGenerator(ASTVisitor):
             self.emit("BUILD_CONST_KEY_MAP", len(kwdefaults))
             flags |= 0x02
 
-        ann_args = []
-        for arg in node.args.args:
-            if arg.annotation:
-                self._visitAnnotation(arg.annotation)
-                ann_args.append(self.mangle(arg.arg))
-        if node.args.vararg:
-            if node.args.vararg.annotation:
-                self._visitAnnotation(node.args.vararg.annotation)
-                ann_args.append(self.mangle(node.args.vararg.arg))
-        for arg in node.args.kwonlyargs:
-            if arg.annotation:
-                self._visitAnnotation(arg.annotation)
-                ann_args.append(self.mangle(arg.arg))
-        if node.args.kwarg:
-            if node.args.kwarg.annotation:
-                self._visitAnnotation(node.args.kwarg.annotation)
-                ann_args.append(self.mangle(node.args.kwarg.arg))
+        ann_args = self.annotate_args(node.args)
         # Cannot annotate return type for lambda
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.returns:
             self._visitAnnotation(node.returns)
@@ -480,15 +501,37 @@ class CodeGenerator(ASTVisitor):
 
         self._makeClosure(gen, flags)
 
-        for _i in range(ndecorators):
+        for i in range(ndecorators):
             self.emit("CALL_FUNCTION", 1)
+
+    def annotate_args(self, args: ast.arguments) -> List[str]:
+        ann_args = []
+        for arg in args.args:
+            self.annotate_arg(arg, ann_args)
+        if args.vararg:
+            # pyre-fixme[6]: Expected `arg` for 1st param but got `Optional[_ast.arg]`.
+            self.annotate_arg(args.vararg, ann_args)
+        for arg in args.kwonlyargs:
+            self.annotate_arg(arg, ann_args)
+        if args.kwarg:
+            # pyre-fixme[6]: Expected `arg` for 1st param but got `Optional[_ast.arg]`.
+            self.annotate_arg(args.kwarg, ann_args)
+        return ann_args
+
+    def annotate_arg(self, arg: ast.arg, ann_args: List[str]):
+        if arg.annotation:
+            self._visitAnnotation(arg.annotation)
+            ann_args.append(self.mangle(arg.arg))
 
     def visitClassDef(self, node):
         self.set_lineno(node)
+        first_lineno = None
         for decorator in node.decorator_list:
+            if first_lineno is None:
+                first_lineno = decorator.lineno
             self.visit(decorator)
 
-        gen = self.make_class_codegen(node)
+        gen = self.make_class_codegen(node, first_lineno or node.lineno)
         gen.emit("LOAD_NAME", "__name__")
         gen.storeName("__module__")
         gen.emit("LOAD_CONST", gen.get_qual_prefix(gen) + gen.name)
@@ -520,7 +563,7 @@ class CodeGenerator(ASTVisitor):
 
         self._call_helper(2, node.bases, node.keywords)
 
-        for _i in range(len(node.decorator_list)):
+        for i in range(len(node.decorator_list)):
             self.emit("CALL_FUNCTION", 1)
 
         self.storeName(node.name)
@@ -536,6 +579,11 @@ class CodeGenerator(ASTVisitor):
         self.set_lineno(node)
         test = node.test
         test_const = self.get_bool_const(test)
+
+        # Emulate co_firstlineno behavior of C compiler
+        if test_const == False and not node.orelse:
+            self.graph.maybeEmitSetLineno()
+
         end = self.newBlock("if_end")
         orelse = None
         if node.orelse:
@@ -544,14 +592,14 @@ class CodeGenerator(ASTVisitor):
         if test_const is None:
             self.compileJumpIf(test, orelse or end, False)
 
-        if test_const is not False:
+        with self.maybeEmit(test_const != False):
             self.nextBlock()
             self.visit(node.body)
 
         if node.orelse:
             if test_const is None:
                 self.emit("JUMP_FORWARD", end)
-            if test_const is not True:
+            with self.maybeEmit(test_const != True):
                 self.nextBlock(orelse)
                 self.visit(node.orelse)
 
@@ -582,7 +630,7 @@ class CodeGenerator(ASTVisitor):
         self.visit(node.body)
         self.emit("JUMP_ABSOLUTE", loop)
 
-        if not is_constant_true(node.test):
+        if not self.get_bool_const(node.test):
             self.nextBlock(else_ or after)  # or just the POPs if not else clause
 
         self.emit("POP_BLOCK")
@@ -591,14 +639,21 @@ class CodeGenerator(ASTVisitor):
             self.visit(node.orelse)
         self.nextBlock(after)
 
+    def push_loop(self, kind, start, end):
+        self.emit("SETUP_LOOP", end)
+        self.setups.push((LOOP, start))
+
+    def pop_loop(self):
+        self.emit("POP_BLOCK")
+        self.setups.pop()
+
     def visitFor(self, node):
         start = self.newBlock()
         anchor = self.newBlock()
         after = self.newBlock()
-        self.setups.push((LOOP, start))
 
         self.set_lineno(node)
-        self.emit("SETUP_LOOP", after)
+        self.push_loop(FOR_LOOP, start, after)
         self.visit(node.iter)
         self.emit("GET_ITER")
 
@@ -608,8 +663,8 @@ class CodeGenerator(ASTVisitor):
         self.visit(node.body)
         self.emit("JUMP_ABSOLUTE", start)
         self.nextBlock(anchor)
-        self.emit("POP_BLOCK")
-        self.setups.pop()
+        self.pop_loop()
+
         if node.orelse:
             self.visit(node.orelse)
         self.nextBlock(after)
@@ -844,7 +899,7 @@ class CodeGenerator(ASTVisitor):
         self.set_lineno(node)
         self.visit(node.targets)
 
-    def compile_comprehension(self, node, name, elt, val):
+    def compile_comprehension(self, node, name, elt, val, opcode, oparg=0):
         class Holder:
             pass
 
@@ -855,18 +910,13 @@ class CodeGenerator(ASTVisitor):
         node.args.kwonlyargs = ()
         node.args.vararg = None
         node.args.kwarg = None
+        node.args.posonlyargs = ()
         node.body = []
         self.update_lineno(node)
-        gen = self.make_func_codegen(node, name)
+        gen = self.make_func_codegen(node, name, node.lineno)
 
-        if isinstance(node, ast.ListComp):
-            gen.emit("BUILD_LIST")
-        elif isinstance(node, ast.SetComp):
-            gen.emit("BUILD_SET")
-        elif isinstance(node, ast.DictComp):
-            gen.emit("BUILD_MAP")
-        elif not isinstance(node, ast.GeneratorExp):
-            raise SystemError(f"Unknown comprehension type: {type(node).__name__}")
+        if opcode:
+            gen.emit(opcode, oparg)
 
         gen.compile_comrehension_generator(node.generators, 0, elt, val, type(node))
 
@@ -892,16 +942,22 @@ class CodeGenerator(ASTVisitor):
             self.emit("YIELD_FROM")
 
     def visitGeneratorExp(self, node):
-        self.compile_comprehension(node, "<genexpr>", node.elt, None)
+        self.compile_comprehension(node, sys.intern("<genexpr>"), node.elt, None, None)
 
     def visitListComp(self, node):
-        self.compile_comprehension(node, "<listcomp>", node.elt, None)
+        self.compile_comprehension(
+            node, sys.intern("<listcomp>"), node.elt, None, "BUILD_LIST"
+        )
 
     def visitSetComp(self, node):
-        self.compile_comprehension(node, "<setcomp>", node.elt, None)
+        self.compile_comprehension(
+            node, sys.intern("<setcomp>"), node.elt, None, "BUILD_SET"
+        )
 
     def visitDictComp(self, node):
-        self.compile_comprehension(node, "<dictcomp>", node.key, node.value)
+        self.compile_comprehension(
+            node, sys.intern("<dictcomp>"), node.key, node.value, "BUILD_MAP"
+        )
 
     def compile_comrehension_generator(self, generators, gen_index, elt, val, type):
         if generators[gen_index].is_async:
@@ -961,8 +1017,7 @@ class CodeGenerator(ASTVisitor):
             self.visit(elt)
             self.emit("SET_ADD", gen_index + 1)
         elif type is ast.DictComp:
-            self.visit(val)
-            self.visit(elt)
+            self.compile_dictcomp_element(elt, val)
             self.emit("MAP_ADD", gen_index + 1)
         else:
             raise NotImplementedError("unknown comprehension type")
@@ -1014,8 +1069,7 @@ class CodeGenerator(ASTVisitor):
                 self.visit(elt)
                 self.emit("SET_ADD", gen_index + 1)
             elif type is ast.DictComp:
-                self.visit(val)
-                self.visit(elt)
+                self.compile_dictcomp_element(elt, val)
                 self.emit("MAP_ADD", gen_index + 1)
             else:
                 raise NotImplementedError("unknown comprehension type")
@@ -1024,6 +1078,10 @@ class CodeGenerator(ASTVisitor):
         self.nextBlock(if_cleanup)
         self.emit("JUMP_ABSOLUTE", start)
         self.nextBlock(anchor)
+
+    def compile_dictcomp_element(self, elt, val):
+        self.visit(val)
+        self.visit(elt)
 
     # exception related
 
@@ -1065,12 +1123,15 @@ class CodeGenerator(ASTVisitor):
         if node.finalbody:
             if node.handlers:
                 self.emit_try_finally(
+                    node,
                     lambda: self.visitTryExcept(node),
                     lambda: self.visit(node.finalbody),
                 )
             else:
                 self.emit_try_finally(
-                    lambda: self.visit(node.body), lambda: self.visit(node.finalbody)
+                    node,
+                    lambda: self.visit(node.body),
+                    lambda: self.visit(node.finalbody),
                 )
             return
 
@@ -1125,7 +1186,7 @@ class CodeGenerator(ASTVisitor):
                     self.storeName(target)
                     self.delName(target)
 
-                self.emit_try_finally(lambda: self.visit(body), clear_name, True)
+                self.emit_try_finally(node, lambda: self.visit(body), clear_name, True)
             else:
                 # "block" param shouldn't matter, so just pass None
                 self.setups.push((EXCEPT, None))
@@ -1153,7 +1214,7 @@ class CodeGenerator(ASTVisitor):
             self.emit("POP_TOP")
         self.emit("POP_TOP")
 
-    def emit_try_finally(self, try_body, finalbody, except_protect=False):
+    def emit_try_finally(self, node, try_body, finalbody, except_protect=False):
         body = self.newBlock()
         final = self.newBlock()
         self.emit("SETUP_FINALLY", final)
@@ -1172,6 +1233,7 @@ class CodeGenerator(ASTVisitor):
         finalbody()
         self.emit("END_FINALLY")
         self.setups.pop()
+        self.nextBlock(end)
 
     def visitWith(self, node):
         self.set_lineno(node)
@@ -1551,7 +1613,7 @@ class CodeGenerator(ASTVisitor):
                 self.visit(kwargs[i].value)
             self.emit("BUILD_MAP", nkwargs)
 
-    def _call_helper(self, argcnt, args, kwargs):  # noqa: C901
+    def _call_helper(self, argcnt, args, kwargs):
         mustdictunpack = any(arg.arg is None for arg in kwargs)
         nelts = len(args)
         nkwelts = len(kwargs)
@@ -1633,7 +1695,7 @@ class CodeGenerator(ASTVisitor):
         else:
             self.emit("PRINT_NEWLINE")
 
-    def visitReturn(self, node):
+    def checkReturn(self, node):
         if not isinstance(self.tree, (ast.FunctionDef, ast.AsyncFunctionDef)):
             raise SyntaxError(
                 "'return' outside function", self.syntax_error_position(node)
@@ -1644,6 +1706,8 @@ class CodeGenerator(ASTVisitor):
                 self.syntax_error_position(node),
             )
 
+    def visitReturn(self, node):
+        self.checkReturn(node)
         self.set_lineno(node)
         if node.value:
             self.visit(node.value)
@@ -1697,7 +1761,6 @@ class CodeGenerator(ASTVisitor):
         self.update_lineno(node)
         self.visit(node.value)
         self.visit(node.slice)
-
         if isinstance(node.ctx, ast.Load):
             self.emit("BINARY_SUBSCR")
         elif isinstance(node.ctx, ast.Store):
@@ -1995,47 +2058,49 @@ class CodeGenerator(ASTVisitor):
             self.emit("LOAD_CONST", None)
         self.emit("RETURN_VALUE")
 
-    def make_child_codegen(self, tree: ast.AST, graph: PyFlowGraph) -> CodeGenerator:
+    def make_child_codegen(self, tree: AST, graph: PyFlowGraph) -> CodeGenerator:
         return type(self)(self, tree, self.symbols, graph, self.optimization_lvl)
 
-    def make_func_codegen(self, func, name):
+    def make_func_codegen(
+        self, func: AST, name: str, first_lineno: int
+    ) -> CodeGenerator:
         filename = self.graph.filename
         symbols = self.symbols
         class_name = self.class_name
 
         graph = self.make_function_graph(
-            func,
-            filename,
-            symbols.scopes,
-            class_name,
-            name,
-            optimization_lvl=self.optimization_lvl,
+            func, filename, symbols.scopes, class_name, name, first_lineno
         )
         res = self.make_child_codegen(func, graph)
         res.optimized = 1
         res.class_name = class_name
         return res
 
-    def make_class_codegen(self, klass):
+    def make_class_codegen(
+        self, klass: ast.ClassDef, first_lineno: int
+    ) -> CodeGenerator:
         filename = self.graph.filename
         symbols = self.symbols
 
         scope = symbols.scopes[klass]
-        graph = self.flow_graph(klass.name, filename, scope, optimized=0, klass=1)
-
-        doc = get_docstring(klass)
-        if not self.strip_docstrings and doc is not None:
-            graph.setDocstring(doc)
-        graph.firstline = klass.lineno
+        graph = self.flow_graph(
+            klass.name,
+            filename,
+            scope,
+            optimized=0,
+            klass=True,
+            docstring=self.get_docstring(klass),
+            firstline=first_lineno,
+            peephole_enabled=self.graph.peephole_enabled,
+        )
 
         res = self.make_child_codegen(klass, graph)
         res.class_name = klass.name
         return res
 
     def make_function_graph(
-        self, func, filename, scopes, class_name, name, optimization_lvl=0
-    ):
-        isLambda = isinstance(func, ast.Lambda)
+        self, func, filename: str, scopes, class_name: str, name: str, first_lineno: int
+    ) -> PyFlowGraph:
         args = [misc.mangle(elt.arg, class_name) for elt in func.args.args]
         kwonlyargs = [misc.mangle(elt.arg, class_name) for elt in func.args.kwonlyargs]
 
@@ -2050,70 +2115,63 @@ class CodeGenerator(ASTVisitor):
             name,
             filename,
             scope,
+            flags=self.get_graph_flags(func, scope),
             args=args,
             kwonlyargs=kwonlyargs,
             starargs=starargs,
             optimized=1,
+            docstring=self.get_docstring(func),
+            firstline=first_lineno,
+            peephole_enabled=self.graph.peephole_enabled,
         )
 
-        if not isLambda and not (optimization_lvl == 2):
+        return graph
+
+    def get_docstring(self, func) -> Optional[str]:
+        doc = None
+        isLambda = isinstance(func, ast.Lambda)
+        if not isLambda and not self.strip_docstrings:
             doc = get_docstring(func)
-            if doc is not None:
-                graph.setDocstring(doc)
+        return doc
+
+    def get_graph_flags(self, func, scope):
+        flags = 0
 
         if func.args.vararg:
-            graph.setFlag(CO_VARARGS)
+            flags = flags | CO_VARARGS
         if func.args.kwarg:
-            graph.setFlag(CO_VARKEYWORDS)
+            flags = flags | CO_VARKEYWORDS
         if scope.nested:
-            graph.setFlag(CO_NESTED)
+            flags = flags | CO_NESTED
         if scope.generator and not scope.coroutine:
-            graph.setFlag(CO_GENERATOR)
+            flags = flags | CO_GENERATOR
         if not scope.generator and scope.coroutine:
-            graph.setFlag(CO_COROUTINE)
+            flags = flags | CO_COROUTINE
         if scope.generator and scope.coroutine:
-            graph.setFlag(CO_ASYNC_GENERATOR)
+            flags = flags | CO_ASYNC_GENERATOR
 
-        graph.firstline = func.lineno
-        return graph
+        return flags
 
     @classmethod
     def make_code_gen(
-        cls, name: str, tree: ast.AST, filename: str, flags: int, optimize: int
+        cls,
+        name: str,
+        tree: AST,
+        filename: str,
+        flags: int,
+        optimize: int,
+        peephole_enabled: bool = True,
+        ast_optimizer_enabled: bool = True,
     ):
         s = symbols.SymbolVisitor()
         walk(tree, s)
 
-        graph = cls.flow_graph(name, filename, s.scopes[tree])
+        graph = cls.flow_graph(
+            name, filename, s.scopes[tree], peephole_enabled=peephole_enabled
+        )
         code_gen = cls(None, tree, s, graph, flags, optimize)
         walk(tree, code_gen)
         return code_gen
-
-
-class CodeGeneratorNoPeephole(CodeGenerator):
-    @classmethod
-    def flow_graph(
-        cls,
-        name,
-        filename,
-        scope,
-        args=(),
-        kwonlyargs=(),
-        starargs=(),
-        optimized=0,
-        klass=None,
-    ):
-        return pyassem.PyFlowGraph(
-            name,
-            filename,
-            scope,
-            args,
-            kwonlyargs,
-            starargs,
-            optimized,
-            klass,
-            peephole_enabled=False,
-        )
 
 
 class Python37CodeGenerator(CodeGenerator):
@@ -2121,16 +2179,30 @@ class Python37CodeGenerator(CodeGenerator):
 
     @classmethod
     def make_code_gen(
-        cls, name: str, tree: ast.AST, filename: str, flags: int, optimize: int
+        cls,
+        name: str,
+        tree: AST,
+        filename: str,
+        flags: int,
+        optimize: int,
+        peephole_enabled: bool = True,
+        ast_optimizer_enabled: bool = True,
     ):
-        tree = AstOptimizer(optimize > 0, flags & PyCF_OPTIMIZATION_MASK).visit(tree)
+        if ast_optimizer_enabled:
+            tree = cls.optimize_tree(optimize, tree)
         s = symbols.SymbolVisitor()
         walk(tree, s)
 
-        graph = cls.flow_graph(name, filename, s.scopes[tree])
+        graph = cls.flow_graph(
+            name, filename, s.scopes[tree], peephole_enabled=peephole_enabled
+        )
         code_gen = cls(None, tree, s, graph, flags, optimize)
         walk(tree, code_gen)
         return code_gen
+
+    @classmethod
+    def optimize_tree(self, optimize: int, tree: AST):
+        return AstOptimizer(optimize=optimize > 0).visit(tree)
 
     def visitCall(self, node):
         if (
@@ -2255,15 +2327,17 @@ class Python37CodeGenerator(CodeGenerator):
     def emitAsyncIterYieldFrom(self):
         pass
 
-    def visitAsyncWith(self, node):
+    def checkAsyncWith(self, node):
         if not self.scope.coroutine:
             raise SyntaxError(
                 "'async with' outside async function", self.syntax_error_position(node)
             )
 
+    def visitAsyncWith(self, node):
+        self.checkAsyncWith(node)
         return super().visitAsyncWith(node)
 
-    def emit_try_finally(self, try_body, finalbody, except_protect=False):
+    def emit_try_finally(self, node, try_body, finalbody, except_protect=False):
         body = self.newBlock()
         final = self.newBlock()
         self.emit("SETUP_FINALLY", final)
@@ -2289,7 +2363,480 @@ class Python37CodeGenerator(CodeGenerator):
             self.emit("BUILD_MAP_UNPACK", containers)
 
 
+class Entry:
+    kind: int
+    block: pyassem.Block
+    exit: Optional[pyassem.Block]
+
+    def __init__(self, kind, block, exit):
+        self.kind = kind
+        self.block = block
+        self.exit = exit
+
+
+class Python38CodeGenerator(Python37CodeGenerator):
+    flow_graph = pyassem.PyFlowGraph38
+
+    @classmethod
+    def optimize_tree(cls, optimize: int, tree: AST):
+        return AstOptimizer38(optimize=optimize > 0).visit(tree)
+
+    def make_function_graph(
+        self, func, filename: str, scopes, class_name: str, name: str, first_lineno: int
+    ) -> PyFlowGraph:
+        args = [
+            misc.mangle(elt.arg, class_name)
+            for elt in itertools.chain(func.args.posonlyargs, func.args.args)
+        ]
+        kwonlyargs = [misc.mangle(elt.arg, class_name) for elt in func.args.kwonlyargs]
+
+        starargs = []
+        if func.args.vararg:
+            starargs.append(func.args.vararg.arg)
+        if func.args.kwarg:
+            starargs.append(func.args.kwarg.arg)
+
+        scope = scopes[func]
+        graph = self.flow_graph(
+            name,
+            filename,
+            scope,
+            flags=self.get_graph_flags(func, scope),
+            args=args,
+            kwonlyargs=kwonlyargs,
+            starargs=starargs,
+            optimized=1,
+            docstring=self.get_docstring(func),
+            firstline=first_lineno,
+            peephole_enabled=self.graph.peephole_enabled,
+            posonlyargs=len(func.args.posonlyargs),
+        )
+
+        return graph
+
+    def visitWhile(self, node):
+        self.set_lineno(node)
+
+        test_const = self.get_bool_const(node.test)
+        loop = self.newBlock("while_loop")
+        else_ = self.newBlock("while_else")
+        after = self.newBlock("while_after")
+
+        self.push_loop(WHILE_LOOP, loop, after)
+
+        if test_const == False:
+            with self.noEmit() as emit:
+                self.visit(node.test)
+                self.visit(node.body)
+            self.pop_loop()
+            if node.orelse:
+                self.visit(node.orelse)
+            self.nextBlock(after)
+            return
+        elif test_const == True:
+            # emulate co_firstlineno behavior of C compiler
+            self.graph.maybeEmitSetLineno()
+
+        self.nextBlock(loop)
+
+        with self.maybeEmit(test_const != True):
+            self.compileJumpIf(node.test, else_ or after, False)
+
+        self.nextBlock(label="while_body")
+        self.visit(node.body)
+        self.emit("JUMP_ABSOLUTE", loop)
+
+        with self.maybeEmit(test_const != True):
+            self.nextBlock(else_ or after)  # or just the POPs if not else clause
+
+        self.pop_loop()
+        if node.orelse:
+            self.visit(node.orelse)
+        self.nextBlock(after)
+
+    def visitNamedExpr(self, node: ast.NamedExpr):
+        self.update_lineno(node)
+        self.visit(node.value)
+        self.emit("DUP_TOP")
+        self.visit(node.target)
+
+    def push_loop(self, kind, start, end):
+        self.setups.push(Entry(kind, start, end))
+
+    def pop_loop(self):
+        self.setups.pop()
+
+    def visitAsyncFor(self, node):
+        start = self.newBlock("async_for_try")
+        except_ = self.newBlock("except")
+        end = self.newBlock("end")
+
+        self.set_lineno(node)
+        self.visit(node.iter)
+        self.emit("GET_AITER")
+
+        self.nextBlock(start)
+
+        self.setups.push(Entry(FOR_LOOP, start, end))
+        self.emit("SETUP_FINALLY", except_)
+        self.emit("GET_ANEXT")
+        self.emit("LOAD_CONST", None)
+        self.emit("YIELD_FROM")
+        self.emit("POP_BLOCK")
+        self.visit(node.target)
+        self.visit(node.body)
+        self.emit("JUMP_ABSOLUTE", start)
+        self.setups.pop()
+
+        self.nextBlock(except_)
+        self.emit("END_ASYNC_FOR")
+        if node.orelse:
+            self.visit(node.orelse)
+        self.nextBlock(end)
+
+    def unwind_setup_entry(self, e: Entry, preserve_tos: int) -> None:
+        if e.kind == WHILE_LOOP:
+            return
+        if e.kind == END_FINALLY:
+            e.exit = None
+            self.emit("POP_FINALLY", preserve_tos)
+            if preserve_tos:
+                self.emit("ROT_TWO")
+            self.emit("POP_TOP")
+        elif e.kind == FOR_LOOP:
+            if preserve_tos:
+                self.emit("ROT_TWO")
+            self.emit("POP_TOP")
+        elif e.kind == EXCEPT:
+            self.emit("POP_BLOCK")
+        elif e.kind == TRY_FINALLY:
+            self.emit("POP_BLOCK")
+            self.emit("CALL_FINALLY", e.exit)
+        elif e.kind == TRY_FINALLY_BREAK:
+            self.emit("POP_BLOCK")
+            if preserve_tos:
+                self.emit("ROT_TWO")
+                self.emit("POP_TOP")
+                self.emit("CALL_FINALLY", e.exit)
+            else:
+                self.emit("CALL_FINALLY", e.exit)
+                self.emit("POP_TOP")
+        elif e.kind in (WITH, ASYNC_WITH):
+            self.emit("POP_BLOCK")
+            if preserve_tos:
+                self.emit("ROT_TWO")
+            self.emit("BEGIN_FINALLY")
+            self.emit("WITH_CLEANUP_START")
+            if e.kind == ASYNC_WITH:
+                self.emit("GET_AWAITABLE")
+                self.emit("LOAD_CONST", None)
+                self.emit("YIELD_FROM")
+            self.emit("WITH_CLEANUP_FINISH")
+            self.emit("POP_FINALLY", 0)
+        elif e.kind == HANDLER_CLEANUP:
+            if preserve_tos:
+                self.emit("ROT_FOUR")
+            if e.exit:
+                self.emit("POP_BLOCK")
+                self.emit("POP_EXCEPT")
+                self.emit("CALL_FINALLY", e.exit)
+            else:
+                self.emit("POP_EXCEPT")
+        else:
+            raise Exception(f"Unexpected kind {e.kind}")
+
+    def visitContinue(self, node):
+        self.set_lineno(node)
+
+        for e in reversed(self.setups):
+            if e.kind in (FOR_LOOP, WHILE_LOOP):
+                self.emit("JUMP_ABSOLUTE", e.block)
+                return
+            self.unwind_setup_entry(e, 0)
+        raise SyntaxError(
+            "'continue' not properly in loop", self.syntax_error_position(node)
+        )
+
+    def visitReturn(self, node):
+        self.checkReturn(node)
+
+        self.set_lineno(node)
+
+        preserve_tos = bool(node.value and not isinstance(node.value, ast.Constant))
+        if preserve_tos:
+            self.visit(node.value)
+        for e in reversed(self.setups):
+            self.unwind_setup_entry(e, preserve_tos)
+        if not node.value:
+            self.emit("LOAD_CONST", None)
+        elif not preserve_tos:
+            self.visit(node.value)
+
+        self.emit("RETURN_VALUE")
+
+    def compile_async_comprehension(self, generators, gen_index, elt, val, type):
+        start = self.newBlock("start")
+        except_ = self.newBlock("except")
+        if_cleanup = self.newBlock("if_cleanup")
+
+        gen = generators[gen_index]
+        if gen_index == 0:
+            self.loadName(".0")
+        else:
+            self.visit(gen.iter)
+            self.emit("GET_AITER")
+            self.emitAsyncIterYieldFrom()
+
+        self.nextBlock(start)
+        self.emit("SETUP_FINALLY", except_)
+        self.emit("GET_ANEXT")
+        self.emit("LOAD_CONST", None)
+        self.emit("YIELD_FROM")
+        self.emit("POP_BLOCK")
+        self.visit(gen.target)
+
+        for if_ in gen.ifs:
+            self.compileJumpIf(if_, if_cleanup, False)
+            self.newBlock()
+
+        gen_index += 1
+        if gen_index < len(generators):
+            self.compile_comrehension_generator(generators, gen_index, elt, val, type)
+        elif type is ast.GeneratorExp:
+            self.visit(elt)
+            self.emit("YIELD_VALUE")
+            self.emit("POP_TOP")
+        elif type is ast.ListComp:
+            self.visit(elt)
+            self.emit("LIST_APPEND", gen_index + 1)
+        elif type is ast.SetComp:
+            self.visit(elt)
+            self.emit("SET_ADD", gen_index + 1)
+        elif type is ast.DictComp:
+            self.compile_dictcomp_element(elt, val)
+            self.emit("MAP_ADD", gen_index + 1)
+        else:
+            raise NotImplementedError("unknown comprehension type")
+
+        self.nextBlock(if_cleanup)
+        self.emit("JUMP_ABSOLUTE", start)
+
+        self.nextBlock(except_)
+        self.emit("END_ASYNC_FOR")
+
+    def compile_dictcomp_element(self, elt, val):
+        # For Py38+, the order of evaluation was reversed.
+        self.visit(elt)
+        self.visit(val)
+
+    def visitTryExcept(self, node):
+        body = self.newBlock("try_body")
+        except_ = self.newBlock("try_handlers")
+        orElse = self.newBlock("try_else")
+        end = self.newBlock("try_end")
+
+        self.emit("SETUP_FINALLY", except_)
+        self.nextBlock(body)
+
+        self.setups.push(Entry(EXCEPT, body, None))
+        self.visit(node.body)
+        self.emit("POP_BLOCK")
+        self.setups.pop()
+
+        self.emit("JUMP_FORWARD", orElse)
+        self.nextBlock(except_)
+
+        last = len(node.handlers) - 1
+        for i in range(len(node.handlers)):
+            handler = node.handlers[i]
+            expr = handler.type
+            target = handler.name
+            body = handler.body
+            self.set_lineno(handler)
+            except_ = self.newBlock(f"try_except_{i}")
+            if expr:
+                self.emit("DUP_TOP")
+                self.visit(expr)
+                self.emit("COMPARE_OP", "exception match")
+                self.emit("POP_JUMP_IF_FALSE", except_)
+            elif i < last:
+                raise SyntaxError(
+                    "default 'except:' must be last",
+                    self.syntax_error_position(handler),
+                )
+            else:
+                self.set_lineno(handler)
+            self.emit("POP_TOP")
+            if target:
+                cleanup_end = self.newBlock(f"try_cleanup_end{i}")
+                cleanup_body = self.newBlock(f"try_cleanup_body{i}")
+                self.storeName(target)
+                self.emit("POP_TOP")
+                self.emit("SETUP_FINALLY", cleanup_end)
+                self.nextBlock(cleanup_body)
+                self.setups.push(Entry(HANDLER_CLEANUP, cleanup_body, cleanup_end))
+                self.visit(body)
+                self.emit("POP_BLOCK")
+                self.emit("BEGIN_FINALLY")
+                self.setups.pop()
+
+                self.nextBlock(cleanup_end)
+                self.setups.push(Entry(END_FINALLY, cleanup_end, None))
+                self.emit("LOAD_CONST", None)
+                self.storeName(target)
+                self.delName(target)
+                self.emit("END_FINALLY")
+                self.emit("POP_EXCEPT")
+                self.setups.pop()
+            else:
+                cleanup_body = self.newBlock(f"try_cleanup_body{i}")
+                self.emit("POP_TOP")
+                self.emit("POP_TOP")
+                self.nextBlock(cleanup_body)
+                self.setups.push(Entry(HANDLER_CLEANUP, cleanup_body, None))
+                self.visit(body)
+                self.emit("POP_EXCEPT")
+                self.setups.pop()
+            self.emit("JUMP_FORWARD", end)
+            self.nextBlock(except_)
+
+        self.emit("END_FINALLY")
+        self.nextBlock(orElse)
+        self.visit(node.orelse)
+        self.nextBlock(end)
+
+    def visitBreak(self, node):
+        self.set_lineno(node)
+        for b in reversed(self.setups):
+            self.unwind_setup_entry(b, 0)
+            if b.kind == WHILE_LOOP or b.kind == FOR_LOOP:
+                self.emit("JUMP_ABSOLUTE", b.exit)
+                return
+        raise SyntaxError("'break' outside loop", self.syntax_error_position(node))
+
+    def emit_try_finally(self, node, try_body, finalbody, except_protect=False):
+        body = self.newBlock("try_finally_body")
+        end = self.newBlock("try_finally_end")
+
+        self.set_lineno(node)
+        break_finally = True
+
+        # compile FINALLY_END out of order to match CPython
+        with self.graph.new_compile_scope() as compile_end_finally:
+            self.nextBlock(end)
+
+            self.setups.push(Entry(END_FINALLY, end, end))
+            finalbody()
+            self.emit("END_FINALLY")
+            break_finally = self.setups[-1].exit is None
+            if break_finally:
+                self.emit("POP_TOP")
+            self.setups.pop()
+
+        self.set_lineno(node)
+        if break_finally:
+            self.emit("LOAD_CONST", None)
+        self.emit("SETUP_FINALLY", end)
+        self.nextBlock(body)
+        self.setups.push(
+            Entry(TRY_FINALLY_BREAK if break_finally else TRY_FINALLY, body, end)
+        )
+        try_body()
+        self.emit("POP_BLOCK")
+        self.emit("BEGIN_FINALLY")
+        self.setups.pop()
+
+        self.graph.apply_from_scope(compile_end_finally)
+
+    def visitWith_(self, node, kind, pos=0):
+        item = node.items[pos]
+
+        block = self.newBlock("with_block")
+        finally_ = self.newBlock("with_finally")
+        self.visit(item.context_expr)
+        if kind == ASYNC_WITH:
+            self.emit("BEFORE_ASYNC_WITH")
+            self.emit("GET_AWAITABLE")
+            self.emit("LOAD_CONST", None)
+            self.emit("YIELD_FROM")
+            self.emit("SETUP_ASYNC_WITH", finally_)
+        else:
+            self.emit("SETUP_WITH", finally_)
+
+        self.nextBlock(block)
+        self.setups.push(Entry(kind, block, finally_))
+        if item.optional_vars:
+            self.visit(item.optional_vars)
+        else:
+            self.emit("POP_TOP")
+
+        if pos + 1 < len(node.items):
+            self.visitWith_(node, kind, pos + 1)
+        else:
+            self.visit(node.body)
+
+        self.emit("POP_BLOCK")
+        self.emit("BEGIN_FINALLY")
+        self.setups.pop()
+
+        self.nextBlock(finally_)
+
+        self.setups.push(Entry(END_FINALLY, finally_, None))
+        self.emit("WITH_CLEANUP_START")
+        if kind == ASYNC_WITH:
+            self.emit("GET_AWAITABLE")
+            self.emit("LOAD_CONST", None)
+            self.emit("YIELD_FROM")
+
+        self.emit("WITH_CLEANUP_FINISH")
+        self.emit("END_FINALLY")
+        self.setups.pop()
+
+    def visitWith(self, node):
+        self.set_lineno(node)
+        self.visitWith_(node, WITH, 0)
+
+    def visitAsyncWith(self, node, pos=0):
+        self.checkAsyncWith(node)
+        self.visitWith_(node, ASYNC_WITH, 0)
+
+    def annotate_args(self, args: ast.arguments) -> List[str]:
+        ann_args = []
+        for arg in args.args:
+            self.annotate_arg(arg, ann_args)
+        for arg in args.posonlyargs:
+            self.annotate_arg(arg, ann_args)
+        if args.vararg:
+            # pyre-fixme[6]: Expected `arg` for 1st param but got `Optional[_ast.arg]`.
+            self.annotate_arg(args.vararg, ann_args)
+        for arg in args.kwonlyargs:
+            self.annotate_arg(arg, ann_args)
+        if args.kwarg:
+            # pyre-fixme[6]: Expected `arg` for 1st param but got `Optional[_ast.arg]`.
+            self.annotate_arg(args.kwarg, ann_args)
+        return ann_args
+
+    def skip_visit(self):
+        """On Py38 we never want to skip visiting nodes."""
+        return False
+
+    def visit(self, node: Union[Sequence[AST], AST], *args):
+        # Note down the old line number
+        could_be_multiline_expr = isinstance(node, ast.expr)
+        old_lineno = self.graph.lineno if could_be_multiline_expr else None
+
+        ret = super().visit(node, *args)
+
+        if old_lineno is not None and old_lineno != self.graph.lineno:
+            self.graph.lineno = old_lineno
+            self.graph.lineno_set = False
+
+        return ret
+
+
 def get_default_generator():
+    if sys.version_info >= (3, 8):
+        return Python38CodeGenerator
     if sys.version_info >= (3, 7):
         return Python37CodeGenerator
 
@@ -2382,6 +2929,12 @@ wrapper = {
 
 def wrap_aug(node):
     return wrapper[node.__class__](node)
+
+
+if sys.version_info >= (3, 8):
+    PythonCodeGenerator = Python38CodeGenerator
+else:
+    PythonCodeGenerator = Python37CodeGenerator
 
 
 if __name__ == "__main__":

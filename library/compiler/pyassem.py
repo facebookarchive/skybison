@@ -1,23 +1,25 @@
+# pyre-unsafe
 """A flow graph representation for Python bytecode"""
 from __future__ import annotations
 
-import opcode
 import sys
+import types
+from contextlib import contextmanager
 from types import CodeType
-from typing import Any, List, Optional
+from typing import Any, Generator, List, Optional, Sequence
 
-from .consts import CO_NEWLOCALS, CO_OPTIMIZED
+from . import misc, opcode36, opcode37, opcode38
+from .consts import CO_NEWLOCALS, CO_OPTIMIZED, CO_VARARGS, CO_VARKEYWORDS
 from .peephole import Optimizer
+from .py38.peephole import Optimizer38
 
 
 try:
-    import cinder  # pyre-ignore  # noqa: F401
+    import cinder  # pyre-ignore
 
     MAX_BYTECODE_OPT_ITERS = 5
 except ImportError:
     MAX_BYTECODE_OPT_ITERS = 1
-
-EXTENDED_ARG = opcode.opname.index("EXTENDED_ARG")
 
 
 def sign(a):
@@ -53,35 +55,36 @@ FVC_ASCII = 0x3
 FVS_MASK = 0x4
 FVS_HAVE_SPEC = 0x4
 
-OPNAMES = list(opcode.opname)
-OPMAP = dict(opcode.opmap)
-
-if "LOAD_METHOD" not in OPMAP:
-    OPMAP["LOAD_METHOD"] = 160
-    OPNAMES[160] = "LOAD_METHOD"
-
-if "CALL_METHOD" not in OPMAP:
-    OPMAP["CALL_METHOD"] = 161
-    OPNAMES[161] = "CALL_METHOD"
-
-if "STORE_ANNOTATION" not in OPMAP:
-    OPMAP["STORE_ANNOTATION"] = 0
-    OPNAMES[0] = "STORE_ANNOTATION"
-
 
 class Instruction:
-    __slots__ = ("opname", "oparg", "target")
+    __slots__ = ("opname", "oparg", "target", "ioparg")
 
-    def __init__(self, opname: str, oparg: Any, target: Optional[Block] = None):
+    def __init__(
+        self,
+        opname: str,
+        oparg: object,
+        ioparg: int = 0,
+        target: Optional[Block] = None,
+    ):
         self.opname = opname
         self.oparg = oparg
+        self.ioparg = ioparg
         self.target = target
 
     def __repr__(self):
-        if self.target:
-            return f"Instruction({self.opname!r}, {self.oparg!r}, {self.target!r})"
+        args = [f"{self.opname!r}", f"{self.oparg!r}", f"{self.ioparg!r}"]
+        if self.target is not None:
+            args.append(f"{self.target!r}")
 
-        return f"Instruction({self.opname!r}, {self.oparg!r})"
+        return f"Instruction({', '.join(args)})"
+
+
+class CompileScope:
+    START_MARKER = "compile-scope-start-marker"
+    __slots__ = "blocks"
+
+    def __init__(self, blocks):
+        self.blocks = blocks
 
 
 class FlowGraph:
@@ -112,6 +115,33 @@ class FlowGraph:
         # Line number of first instruction output. Used to deduce .firstline
         # if it's not set explicitly.
         self.first_inst_lineno = 0
+        # If non-zero, do not emit bytecode
+        self.do_not_emit_bytecode = 0
+
+    @contextmanager
+    def new_compile_scope(self) -> Generator[CompileScope, None, None]:
+        prev_current = self.current
+        prev_ordered_blocks = self.ordered_blocks
+        prev_line_no = self.first_inst_lineno
+        try:
+            self.ordered_blocks = []
+            self.current = self.newBlock(CompileScope.START_MARKER)
+            yield CompileScope(self.ordered_blocks)
+        finally:
+            self.current = prev_current
+            self.ordered_blocks = prev_ordered_blocks
+            self.first_inst_lineno = prev_line_no
+
+    def apply_from_scope(self, scope: CompileScope):
+        # link current block with the block from out of order result
+        block: Block = scope.blocks[0]
+        assert block.prev is not None
+        assert block.prev.label == CompileScope.START_MARKER
+        block.prev = None
+
+        self.current.addNext(block)
+        self.ordered_blocks.extend(scope.blocks)
+        self.current = scope.blocks[-1]
 
     def startBlock(self, block):
         if self._debug:
@@ -131,6 +161,8 @@ class FlowGraph:
             self.ordered_blocks.append(block)
 
     def nextBlock(self, block=None, label=""):
+        if self.do_not_emit_bytecode:
+            return
         # XXX think we need to specify when there is implicit transfer
         # from one block to the next.  might be better to represent this
         # with explicit JUMP_ABSOLUTE instructions that are optimized
@@ -169,23 +201,32 @@ class FlowGraph:
     def _disable_debug(self):
         self._debug = 0
 
-    def emit(self, opcode, oparg=0):
-        if not self.lineno_set and self.lineno:
+    def emit(self, opcode: str, oparg: object = 0):
+        self.maybeEmitSetLineno()
+
+        if opcode != "SET_LINENO" and isinstance(oparg, Block):
+            if not self.do_not_emit_bytecode:
+                self.current.addOutEdge(oparg)
+                self.current.emit(Instruction(opcode, 0, 0, target=oparg))
+            return
+
+        ioparg = self.convertArg(opcode, oparg)
+
+        if not self.do_not_emit_bytecode:
+            self.current.emit(Instruction(opcode, oparg, ioparg))
+
+        if opcode == "SET_LINENO" and not self.first_inst_lineno:
+            self.first_inst_lineno = ioparg
+
+    def maybeEmitSetLineno(self):
+        if not self.do_not_emit_bytecode and not self.lineno_set and self.lineno:
             self.lineno_set = True
             self.emit("SET_LINENO", self.lineno)
 
-        if self._debug:
-            print("\t", inst)  # noqa: F821
-
-        if opcode != "SET_LINENO" and isinstance(oparg, Block):
-            self.current.addOutEdge(oparg)
-            self.current.emit(Instruction(opcode, 0, oparg))
-            return
-
-        self.current.emit(Instruction(opcode, oparg))
-
-        if opcode == "SET_LINENO" and not self.first_inst_lineno:
-            self.first_inst_lineno = oparg
+    def convertArg(self, opcode: str, oparg: object) -> int:
+        if isinstance(oparg, int):
+            return oparg
+        raise ValueError(f"invalid oparg {oparg!r} for {opcode!r}")
 
     def getBlocksInOrder(self):
         """Return the blocks in the order they should be output."""
@@ -201,10 +242,10 @@ class FlowGraph:
         return self.entry
 
     def getContainedGraphs(self):
-        graph_list = []
+        l = []
         for b in self.getBlocks():
-            graph_list.extend(b.getContainedGraphs())
-        return graph_list
+            l.extend(b.getContainedGraphs())
+        return l
 
 
 class Block:
@@ -233,9 +274,10 @@ class Block:
 
     def __str__(self):
         insts = map(str, self.insts)
-        return "<block %s %d:\n%s>" % (self.label, self.bid, "\n".join(insts))
+        insts = "\n".join(insts)
+        return f"<block label={self.label} bid={self.bid} startdepth={self.startdepth}: {insts}>"
 
-    def emit(self, instr):
+    def emit(self, instr: Instruction) -> None:
         if instr.opname == "RETURN_VALUE":
             self.returns = True
 
@@ -280,7 +322,7 @@ class Block:
         # Blocks that must be emitted *after* this one, because of
         # bytecode offsets (e.g. relative jumps) pointing to them.
         for inst in self.insts:
-            if inst[0] in PyFlowGraph.hasjrel:
+            if inst[0] in self.opcode.hasjrel:
                 followers.add(inst[1])
         return followers
 
@@ -303,145 +345,10 @@ class Block:
 # flags for code objects
 
 # the FlowGraph is transformed in place; it exists in one of these states
-RAW = "RAW"
-FLAT = "FLAT"
-CONV = "CONV"
+ACTIVE = "ACTIVE"  # accepting calls to .emit()
+CLOSED = "CLOSED"  # closed to new instructions, ready for codegen
+FLAT = "FLAT"  # flattened
 DONE = "DONE"
-
-STACK_EFFECTS = dict(  # noqa: C408
-    POP_TOP=-1,
-    ROT_TWO=0,
-    ROT_THREE=0,
-    DUP_TOP=1,
-    DUP_TOP_TWO=2,
-    UNARY_POSITIVE=0,
-    UNARY_NEGATIVE=0,
-    UNARY_NOT=0,
-    UNARY_INVERT=0,
-    SET_ADD=-1,
-    LIST_APPEND=-1,
-    MAP_ADD=-2,
-    BINARY_POWER=-1,
-    BINARY_MULTIPLY=-1,
-    BINARY_MATRIX_MULTIPLY=-1,
-    BINARY_MODULO=-1,
-    BINARY_ADD=-1,
-    BINARY_SUBTRACT=-1,
-    BINARY_SUBSCR=-1,
-    BINARY_FLOOR_DIVIDE=-1,
-    BINARY_TRUE_DIVIDE=-1,
-    INPLACE_FLOOR_DIVIDE=-1,
-    INPLACE_TRUE_DIVIDE=-1,
-    INPLACE_ADD=-1,
-    INPLACE_SUBTRACT=-1,
-    INPLACE_MULTIPLY=-1,
-    INPLACE_MATRIX_MULTIPLY=-1,
-    INPLACE_MODULO=-1,
-    STORE_SUBSCR=-3,
-    DELETE_SUBSCR=-2,
-    BINARY_LSHIFT=-1,
-    BINARY_RSHIFT=-1,
-    BINARY_AND=-1,
-    BINARY_XOR=-1,
-    BINARY_OR=-1,
-    INPLACE_POWER=-1,
-    GET_ITER=0,
-    PRINT_EXPR=-1,
-    LOAD_BUILD_CLASS=1,
-    INPLACE_LSHIFT=-1,
-    INPLACE_RSHIFT=-1,
-    INPLACE_AND=-1,
-    INPLACE_XOR=-1,
-    INPLACE_OR=-1,
-    BREAK_LOOP=0,
-    SETUP_WITH=7,
-    WITH_CLEANUP_START=1,
-    WITH_CLEANUP_FINISH=-1,  # XXX Sometimes more
-    RETURN_VALUE=-1,
-    IMPORT_STAR=-1,
-    SETUP_ANNOTATIONS=0,
-    YIELD_VALUE=0,
-    YIELD_FROM=-1,
-    POP_BLOCK=0,
-    POP_EXCEPT=0,  #  -3 except if bad bytecode
-    END_FINALLY=-1,  # or -2 or -3 if exception occurred
-    STORE_NAME=-1,
-    DELETE_NAME=0,
-    UNPACK_SEQUENCE=lambda oparg, jmp=0: oparg - 1,
-    UNPACK_EX=lambda oparg, jmp=0: (oparg & 0xFF) + (oparg >> 8),
-    FOR_ITER=1,  # or -1, at end of iterator
-    STORE_ATTR=-2,
-    DELETE_ATTR=-1,
-    STORE_GLOBAL=-1,
-    DELETE_GLOBAL=0,
-    LOAD_CONST=1,
-    LOAD_NAME=1,
-    BUILD_TUPLE=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_LIST=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_SET=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_STRING=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_LIST_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_TUPLE_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_TUPLE_UNPACK_WITH_CALL=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_SET_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_MAP_UNPACK=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_MAP_UNPACK_WITH_CALL=lambda oparg, jmp=0: 1 - oparg,
-    BUILD_MAP=lambda oparg, jmp=0: 1 - 2 * oparg,
-    BUILD_CONST_KEY_MAP=lambda oparg, jmp=0: -oparg,
-    LOAD_ATTR=0,
-    COMPARE_OP=-1,
-    IMPORT_NAME=-1,
-    IMPORT_FROM=1,
-    JUMP_FORWARD=0,
-    JUMP_IF_TRUE_OR_POP=0,  # -1 if jump not taken
-    JUMP_IF_FALSE_OR_POP=0,  # ""
-    JUMP_ABSOLUTE=0,
-    POP_JUMP_IF_FALSE=-1,
-    POP_JUMP_IF_TRUE=-1,
-    LOAD_GLOBAL=1,
-    CONTINUE_LOOP=0,
-    SETUP_LOOP=0,
-    # close enough...
-    SETUP_EXCEPT=6,
-    SETUP_FINALLY=6,  # can push 3 values for the new exception
-    # + 3 others for the previous exception state
-    LOAD_FAST=1,
-    STORE_FAST=-1,
-    DELETE_FAST=0,
-    STORE_ANNOTATION=-1,
-    RAISE_VARARGS=lambda oparg, jmp=0: -oparg,
-    CALL_FUNCTION=lambda oparg, jmp=0: -oparg,
-    CALL_FUNCTION_KW=lambda oparg, jmp=0: -oparg - 1,
-    CALL_FUNCTION_EX=lambda oparg, jmp=0: -1 - ((oparg & 0x01) != 0),
-    MAKE_FUNCTION=lambda oparg, jmp=0: -1
-    - ((oparg & 0x01) != 0)
-    - ((oparg & 0x02) != 0)
-    - ((oparg & 0x04) != 0)
-    - ((oparg & 0x08) != 0),
-    BUILD_SLICE=lambda oparg, jmp=0: -2 if oparg == 3 else -1,
-    LOAD_CLOSURE=1,
-    LOAD_DEREF=1,
-    LOAD_CLASSDEREF=1,
-    STORE_DEREF=-1,
-    DELETE_DEREF=0,
-    GET_AWAITABLE=0,
-    SETUP_ASYNC_WITH=6,
-    BEFORE_ASYNC_WITH=1,
-    GET_AITER=0,
-    GET_ANEXT=1,
-    GET_YIELD_FROM_ITER=0,
-    # If there's a fmt_spec on the stack, we go from 2->1,
-    # else 1->1.
-    FORMAT_VALUE=lambda oparg, jmp=0: -1 if (oparg & FVS_MASK) == FVS_HAVE_SPEC else 0,
-    SET_LINENO=0,
-    LOAD_METHOD=1,
-    CALL_METHOD=lambda oparg, jmp=0: -oparg - 1,
-    EXTENDED_ARG=0,
-    LOAD_ITERABLE_ARG=1,
-    LOAD_MAPPING_ARG=lambda oparg, jmp=0: -1 if oparg == 2 else 1,
-    INVOKE_FUNCTION=lambda oparg, jmp=0: -oparg,
-    FAST_LEN=0,
-)
 
 
 class IndexedSet:
@@ -479,23 +386,34 @@ class IndexedSet:
         self.keys[item] = idx
         return idx
 
+    def index(self, item):
+        assert type(item) is str
+        idx = self.keys.get(item)
+        if idx is not None:
+            return idx
+        raise ValueError()
+
 
 class PyFlowGraph(FlowGraph):
+
     super_init = FlowGraph.__init__
-    EFFECTS = STACK_EFFECTS
+    opcode = opcode36.opcode
 
     def __init__(
         self,
-        name,
-        filename,
+        name: str,
+        filename: str,
         scope,
+        flags: int = 0,
         args=(),
         kwonlyargs=(),
         starargs=(),
-        optimized=0,
-        klass=None,
-        peephole_enabled=True,
-    ):
+        optimized: int = 0,
+        klass: bool = False,
+        docstring: Optional[str] = None,
+        firstline: int = 0,
+        peephole_enabled: bool = True,
+    ) -> None:
         self.super_init()
         self.name = name
         self.filename = filename
@@ -505,58 +423,76 @@ class PyFlowGraph(FlowGraph):
         self.kwonlyargs = kwonlyargs
         self.starargs = starargs
         self.klass = klass
+        self.stacksize = 0
+        self.docstring = docstring
         self.peephole_enabled = peephole_enabled
+        self.flags = flags
         if optimized:
-            self.flags = CO_OPTIMIZED | CO_NEWLOCALS
-        else:
-            self.flags = 0
+            self.setFlag(CO_OPTIMIZED | CO_NEWLOCALS)
         self.consts = {}
-        self.names = IndexedSet()
+        self.names = []
         # Free variables found by the symbol table scan, including
         # variables used only in nested scopes, are included here.
-        self.freevars = IndexedSet()
-        self.cellvars = IndexedSet()
+        self.freevars = list(self.scope.get_free_vars())
+        self.cellvars = list(self.scope.get_cell_vars())
         # The closure list is used to track the order of cell
         # variables and free variables in the resulting code object.
         # The offsets used by LOAD_CLOSURE/LOAD_DEREF refer to both
         # kinds of variables.
-        self.closure = IndexedSet()
-        self.varnames = IndexedSet(list(args) + list(kwonlyargs) + list(starargs))
-        self.stage = RAW
+        self.closure = self.cellvars + self.freevars
+        self.varnames = list(args) + list(kwonlyargs) + list(starargs)
+        self.stage = ACTIVE
+        self.firstline = firstline
         self.first_inst_lineno = 0
         self.lineno_set = False
         self.lineno = 0
         # Add any extra consts that were requested to the const pool
         self.extra_consts = []
+        self.initializeConsts()
 
-    def setDocstring(self, doc):
-        self.docstring = doc
+    def setFlag(self, flag: int) -> None:
+        self.flags |= flag
 
-    def setFlag(self, flag):
-        self.flags = self.flags | flag
-
-    def checkFlag(self, flag):
+    def checkFlag(self, flag: int) -> Optional[int]:
         if self.flags & flag:
             return 1
 
-    def setFreeVars(self, names):
-        self.freevars = IndexedSet(names)
+    def initializeConsts(self) -> None:
+        # Docstring is first entry in co_consts for normal functions
+        # (Other types of code objects deal with docstrings in different
+        # manner, e.g. lambdas and comprehensions don't have docstrings,
+        # classes store them as __doc__ attribute.
+        if self.name == "<lambda>":
+            self.consts[self.get_const_key(None)] = 0
+        elif not self.name.startswith("<") and not self.klass:
+            if self.docstring is not None:
+                self.consts[self.get_const_key(self.docstring)] = 0
+            else:
+                self.consts[self.get_const_key(None)] = 0
 
-    def setCellVars(self, names):
-        self.cellvars = IndexedSet(names)
+    def convertArg(self, opcode: str, oparg: object) -> int:
+        assert self.stage == ACTIVE, self.stage
+
+        if self.do_not_emit_bytecode and opcode in self._quiet_opcodes:
+            # return -1 so this errors if it ever ends up in non-dead-code due
+            # to a bug.
+            return -1
+
+        conv = self._converters.get(opcode)
+        if conv is not None:
+            return conv(self, oparg)
+
+        return super().convertArg(opcode, oparg)
 
     def getCode(self):
         """Get a Python code object"""
-        assert self.stage == RAW
+        assert self.stage == ACTIVE, self.stage
+        self.stage = CLOSED
         self.computeStackDepth()
-        # We need to convert into numeric opargs before flattening so we
-        # know the sizes of our opargs
-        self.convertArgs()
-        assert self.stage == CONV
         self.flattenGraph()
-        assert self.stage == FLAT
+        assert self.stage == FLAT, self.stage
         self.makeByteCode()
-        assert self.stage == DONE
+        assert self.stage == DONE, self.stage
         code = self.newCodeObject()
         return code
 
@@ -584,22 +520,15 @@ class PyFlowGraph(FlowGraph):
         if io:
             sys.stdout = save
 
-    def stackdepth_walk(self, block, depth=0, maxdepth=0):  # noqa: C901
+    def stackdepth_walk(self, block, depth=0, maxdepth=0):
         assert block is not None
         if block.seen or block.startdepth >= depth:
             return maxdepth
         block.seen = True
         block.startdepth = depth
         for instr in block.getInstructions():
-            effect = self.EFFECTS.get(instr.opname)
-            if effect is None:
-                raise ValueError(
-                    f"Error, opcode {instr.opname} was not found, please update STACK_EFFECTS"
-                )
-            if isinstance(effect, int):
-                depth += effect
-            else:
-                depth += effect(instr.oparg)
+            effect = self.opcode.stack_effect_Raw(instr.opname, instr.oparg)
+            depth += effect
 
             assert depth >= 0
 
@@ -634,6 +563,7 @@ class PyFlowGraph(FlowGraph):
         Find the flow path that needs the largest stack.  We assume that
         cycles in the flow graph have no net effect on the stack depth.
         """
+        assert self.stage == CLOSED, self.stage
         for block in self.getBlocksInOrder():
             # We need to get to the first block which actually has instructions
             if block.getInstructions():
@@ -642,7 +572,7 @@ class PyFlowGraph(FlowGraph):
 
     def flattenGraph(self):
         """Arrange the blocks in order and resolve jumps"""
-        assert self.stage == CONV
+        assert self.stage == CLOSED, self.stage
         # This is an awful hack that could hurt performance, but
         # on the bright side it should work until we come up
         # with a better solution.
@@ -667,20 +597,21 @@ class PyFlowGraph(FlowGraph):
                 for inst in b.getInstructions():
                     insts.append(inst)
                     if inst.opname != "SET_LINENO":
-                        pc += instrsize(inst.oparg)
+                        pc += instrsize(inst.ioparg)
 
             pc = 0
             for inst in insts:
-                if inst.opname != "SET_LINENO":
-                    pc += instrsize(inst.oparg)
+                if inst.opname == "SET_LINENO":
+                    continue
 
-                opname = inst.opname
-                if opname in self.hasjrel or opname in self.hasjabs:
-                    oparg = inst.oparg
+                pc += instrsize(inst.ioparg)
+                op = self.opcode.opmap[inst.opname]
+                if self.opcode.has_jump(op):
+                    oparg = inst.ioparg
                     target = inst.target
 
                     offset = target.offset
-                    if opname in self.hasjrel:
+                    if op in self.opcode.hasjrel:
                         offset -= pc
 
                     offset *= 2
@@ -688,15 +619,8 @@ class PyFlowGraph(FlowGraph):
                         extended_arg_recompile = True
 
                     assert offset >= 0, "Offset value: %d" % offset
-                    inst.oparg = offset
+                    inst.ioparg = offset
         self.stage = FLAT
-
-    hasjrel = set()
-    for i in opcode.hasjrel:
-        hasjrel.add(OPNAMES[i])
-    hasjabs = set()
-    for i in opcode.hasjabs:
-        hasjabs.add(OPNAMES[i])
 
     def convertArgs(self):
         """Convert arguments from symbolic to concrete form"""
@@ -725,16 +649,34 @@ class PyFlowGraph(FlowGraph):
     def sort_cellvars(self):
         self.closure = self.cellvars + self.freevars
 
-    def _convert_LOAD_CONST(self, arg):
-        if hasattr(arg, "getCode"):
-            arg = arg.getCode()
+    def _lookupName(self, name, list):
+        """Return index of name in list, appending if necessary
+
+        This routine uses a list instead of a dictionary, because a
+        dictionary can't store two different keys if the keys have the
+        same value but different types, e.g. 2 and 2L.  The compiler
+        must treat these two separately, so it does an explicit type
+        comparison before comparing the values.
+        """
+        t = type(name)
+        for i in range(len(list)):
+            if t == type(list[i]) and list[i] == name:
+                return i
+        end = len(list)
+        list.append(name)
+        return end
+
+    def _convert_LOAD_CONST(self, arg: object) -> int:
+        getCode = getattr(arg, "getCode", None)
+        if getCode is not None:
+            arg = getCode()
         key = self.get_const_key(arg)
         res = self.consts.get(key, self)
         if res is self:
             res = self.consts[key] = len(self.consts)
         return res
 
-    def get_const_key(self, value):
+    def get_const_key(self, value: object):
         if isinstance(value, float):
             return type(value), value, sign(value)
         elif isinstance(value, complex):
@@ -748,40 +690,43 @@ class PyFlowGraph(FlowGraph):
 
         return type(value), value
 
-    def _convert_LOAD_FAST(self, arg):
-        return self.varnames.get_index(arg)
+    def _convert_LOAD_FAST(self, arg: object) -> int:
+        return self._lookupName(arg, self.varnames)
 
-    def _convert_LOAD_LOCAL(self, arg):
-        return self._convert_LOAD_CONST((self.varnames.get_index(arg[0]), arg[1]))
+    def _convert_LOAD_LOCAL(self, arg: object) -> int:
+        assert isinstance(arg, tuple), "invalid oparg {arg!r}"
+        return self._convert_LOAD_CONST(
+            (self._lookupName(arg[0], self.varnames), arg[1])
+        )
 
-    def _convert_NAME(self, arg):
-        return self.names.get_index(arg)
+    def _convert_NAME(self, arg: object) -> int:
+        return self._lookupName(arg, self.names)
 
-    def _convert_DEREF(self, arg):
+    def _convert_DEREF(self, arg: object) -> int:
         # Sometimes, both cellvars and freevars may contain the same var
         # (e.g., for class' __class__). In this case, prefer freevars.
         if arg in self.freevars:
-            return self.freevars.get_index(arg) + len(self.cellvars)
-        return self.closure.get_index(arg)
-
-    _cmp = list(opcode.cmp_op)
+            return self._lookupName(arg, self.freevars) + len(self.cellvars)
+        return self._lookupName(arg, self.closure)
 
     # similarly for other opcodes...
     _converters = {
         "LOAD_CONST": _convert_LOAD_CONST,
+        "INVOKE_FUNCTION": _convert_LOAD_CONST,
         "INVOKE_METHOD": _convert_LOAD_CONST,
         "LOAD_FIELD": _convert_LOAD_CONST,
         "STORE_FIELD": _convert_LOAD_CONST,
         "CAST": _convert_LOAD_CONST,
         "CHECK_ARGS": _convert_LOAD_CONST,
+        "BUILD_CHECKED_MAP": _convert_LOAD_CONST,
         "LOAD_FAST": _convert_LOAD_FAST,
         "STORE_FAST": _convert_LOAD_FAST,
         "DELETE_FAST": _convert_LOAD_FAST,
         "LOAD_LOCAL": _convert_LOAD_LOCAL,
         "STORE_LOCAL": _convert_LOAD_LOCAL,
         "LOAD_NAME": _convert_NAME,
-        "LOAD_CLOSURE": lambda self, arg: self.closure.get_index(arg),
-        "COMPARE_OP": lambda self, arg: self._cmp.index(arg),
+        "LOAD_CLOSURE": lambda self, arg: self._lookupName(arg, self.closure),
+        "COMPARE_OP": lambda self, arg: self.opcode.CMP_OP.index(arg),
         "LOAD_GLOBAL": _convert_NAME,
         "STORE_GLOBAL": _convert_NAME,
         "DELETE_GLOBAL": _convert_NAME,
@@ -802,8 +747,20 @@ class PyFlowGraph(FlowGraph):
         "LOAD_CLASSDEREF": _convert_DEREF,
     }
 
+    # Opcodes which do not add names to co_consts/co_names/co_varnames in dead code (self.do_not_emit_bytecode)
+    _quiet_opcodes = {
+        "LOAD_CONST",
+        "IMPORT_NAME",
+        "STORE_ATTR",
+        "LOAD_ATTR",
+        "DELETE_ATTR",
+        "LOAD_METHOD",
+        "STORE_FAST",
+        "LOAD_FAST",
+    }
+
     def makeByteCode(self):
-        assert self.stage == FLAT
+        assert self.stage == FLAT, self.stage
         self.lnotab = lnotab = LineAddrTable()
         lnotab.setFirstLine(self.firstline or self.first_inst_lineno or 1)
 
@@ -812,24 +769,19 @@ class PyFlowGraph(FlowGraph):
                 lnotab.nextLine(t.oparg)
                 continue
 
-            oparg = t.oparg
-            try:
-                assert 0 <= oparg <= 0xFFFFFFFF
-                if oparg > 0xFFFFFF:
-                    lnotab.addCode(EXTENDED_ARG, (oparg >> 24) & 0xFF)
-                if oparg > 0xFFFF:
-                    lnotab.addCode(EXTENDED_ARG, (oparg >> 16) & 0xFF)
-                if oparg > 0xFF:
-                    lnotab.addCode(EXTENDED_ARG, (oparg >> 8) & 0xFF)
-                lnotab.addCode(OPMAP[t.opname], oparg & 0xFF)
-            except ValueError:
-                print(t.opname, oparg)
-                print(OPMAP[t.opname], oparg)
-                raise
+            oparg = t.ioparg
+            assert 0 <= oparg <= 0xFFFFFFFF, oparg
+            if oparg > 0xFFFFFF:
+                lnotab.addCode(self.opcode.EXTENDED_ARG, (oparg >> 24) & 0xFF)
+            if oparg > 0xFFFF:
+                lnotab.addCode(self.opcode.EXTENDED_ARG, (oparg >> 16) & 0xFF)
+            if oparg > 0xFF:
+                lnotab.addCode(self.opcode.EXTENDED_ARG, (oparg >> 8) & 0xFF)
+            lnotab.addCode(self.opcode.opmap[t.opname], oparg & 0xFF)
         self.stage = DONE
 
     def newCodeObject(self):
-        assert self.stage == DONE
+        assert self.stage == DONE, self.stage
         if (self.flags & CO_NEWLOCALS) == 0:
             nlocals = 0
         else:
@@ -850,14 +802,19 @@ class PyFlowGraph(FlowGraph):
         lnotab = self.lnotab.getTable()
         if self.peephole_enabled:
             for _i in range(MAX_BYTECODE_OPT_ITERS):
-                opt = Optimizer(code, consts, lnotab).optimize()
+                opt = self.make_optimizer(code, consts, lnotab).optimize()
                 if opt is not None:
                     if code == opt.byte_code:
                         break
                     code, consts, lnotab = opt.byte_code, opt.consts, opt.lnotab
 
         consts = consts + tuple(self.extra_consts)
+        return self.make_code(nlocals, code, consts, firstline, lnotab)
 
+    def make_optimizer(self, code, consts, lnotab) -> Optimizer:
+        return Optimizer(code, consts, lnotab, self.opcode)
+
+    def make_code(self, nlocals, code, consts, firstline, lnotab):
         return CodeType(
             len(self.args),
             len(self.kwonlyargs),
@@ -878,50 +835,14 @@ class PyFlowGraph(FlowGraph):
 
     def getConsts(self):
         """Return a tuple for the const slot of the code object"""
-        # Just return the constant value, removing the type portion.
-        return tuple(const[1] for const in self.consts)
-
-
-STACK_EFFECTS_37 = dict(
-    STACK_EFFECTS,
-    SETUP_WITH=lambda oparg, jmp=0: 6 if jmp else 1,
-    WITH_CLEANUP_START=2,  # or 1, depending on TOS
-    WITH_CLEANUP_FINISH=-3,
-    POP_EXCEPT=-3,
-    END_FINALLY=-6,
-    FOR_ITER=lambda oparg, jmp=0: -1 if jmp > 0 else 1,
-    JUMP_IF_TRUE_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    JUMP_IF_FALSE_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    SETUP_EXCEPT=lambda oparg, jmp: 6 if jmp else 0,
-    SETUP_FINALLY=lambda oparg, jmp: 6 if jmp else 0,
-    CALL_METHOD=lambda oparg, jmp: -oparg - 1,
-    SETUP_ASYNC_WITH=lambda oparg, jmp: (-1 + 6) if jmp else 0,
-    LOAD_METHOD=1,
-    INT_LOAD_CONST=1,
-    LOAD_LOCAL=1,
-    STORE_LOCAL=-1,
-    INT_BOX=0,
-    INT_UNBOX=0,
-    INT_DUP_TOP_TWO=2,
-    POP_JUMP_IF_NONZERO=-1,
-    POP_JUMP_IF_ZERO=-1,
-    INVOKE_METHOD=lambda oparg, jmp: -oparg[1],
-    STORE_FIELD=-2,
-    LOAD_FIELD=0,
-    RAISE_IF_NONE=0,
-    CAST=0,
-    INT_BINARY_OP=lambda oparg, jmp: -1,
-    INT_COMPARE_OP=lambda oparg, jmp: -1,
-    INT_UNARY_OP=lambda oparg, jmp: 0,
-    JUMP_IF_NONZERO_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    JUMP_IF_ZERO_OR_POP=lambda oparg, jmp=0: 0 if jmp else -1,
-    CONVERT_PRIMITIVE=0,
-    CHECK_ARGS=0,
-)
+        # Just return the constant value, removing the type portion. Order by const index.
+        return tuple(
+            const[1] for const, idx in sorted(self.consts.items(), key=lambda o: o[1])
+        )
 
 
 class PyFlowGraph37(PyFlowGraph):
-    EFFECTS = STACK_EFFECTS_37
+    opcode = opcode37.opcode
 
     def push_block(self, worklist: List[Block], block: Block, depth: int):
         assert (
@@ -931,7 +852,7 @@ class PyFlowGraph37(PyFlowGraph):
             block.startdepth = depth
             worklist.append(block)
 
-    def stackdepth_walk(self, block):  # noqa: C901
+    def stackdepth_walk(self, block):
         maxdepth = 0
         worklist = []
         self.push_block(worklist, block, 0)
@@ -945,28 +866,18 @@ class PyFlowGraph37(PyFlowGraph):
                 if instr.opname == "SET_LINENO":
                     continue
 
-                effect = self.EFFECTS.get(instr.opname)
-                if effect is None:
-                    raise ValueError(
-                        f"Error, opcode {instr.opname} was not found, please update STACK_EFFECTS"
-                    )
-                if isinstance(effect, int):
-                    delta = effect
-                else:
-                    delta = effect(instr.oparg, 0)
-
+                delta = self.opcode.stack_effect_raw(instr.opname, instr.oparg, False)
                 new_depth = depth + delta
                 if new_depth > maxdepth:
                     maxdepth = new_depth
 
                 assert depth >= 0
 
-                op = OPMAP[instr.opname]
-                if op in opcode.hasjabs or op in opcode.hasjrel:
-                    if isinstance(effect, int):
-                        delta = effect
-                    else:
-                        delta = effect(instr.oparg, 1)
+                op = self.opcode.opmap[instr.opname]
+                if self.opcode.has_jump(op):
+                    delta = self.opcode.stack_effect_raw(
+                        instr.opname, instr.oparg, True
+                    )
 
                     target_depth = depth + delta
                     if target_depth > maxdepth:
@@ -1004,6 +915,65 @@ class PyFlowGraph37(PyFlowGraph):
                 self.push_block(worklist, next, depth)
 
         return maxdepth
+
+
+class PyFlowGraph38(PyFlowGraph37):
+    opcode = opcode38.opcode
+
+    def __init__(
+        self,
+        name: str,
+        filename: str,
+        scope,
+        flags: int = 0,
+        args=(),
+        kwonlyargs=(),
+        starargs=(),
+        optimized: int = 0,
+        klass: bool = False,
+        docstring: Optional[str] = None,
+        firstline: int = 0,
+        peephole_enabled: bool = True,
+        posonlyargs: int = 0,
+    ):
+        super().__init__(
+            name,
+            filename,
+            scope,
+            flags=flags,
+            args=args,
+            kwonlyargs=kwonlyargs,
+            starargs=starargs,
+            optimized=optimized,
+            klass=klass,
+            docstring=docstring,
+            firstline=firstline,
+            peephole_enabled=peephole_enabled,
+        )
+        self.posonlyargs = posonlyargs
+
+    def make_optimizer(self, code, consts, lnotab) -> Optimizer:
+        return Optimizer38(code, consts, lnotab, self.opcode)
+
+    def make_code(self, nlocals, code, consts, firstline, lnotab) -> CodeType:
+        return CodeType(
+            len(self.args),
+            self.posonlyargs,
+            len(self.kwonlyargs),
+            nlocals,
+            self.stacksize,
+            self.flags,
+            code,
+            consts,
+            tuple(self.names),
+            tuple(self.varnames),
+            self.filename,
+            self.name,
+            firstline,
+            lnotab,
+            tuple(self.freevars),
+            tuple(self.cellvars),
+        )
 
 
 class LineAddrTable:
@@ -1065,7 +1035,7 @@ class LineAddrTable:
                 push(addr_delta)
                 push(cast_signed_byte_to_unsigned(k))
                 addr_delta = 0
-                for _j in range(ncodes - 1):
+                for j in range(ncodes - 1):
                     push(0)
                     push(cast_signed_byte_to_unsigned(k))
 

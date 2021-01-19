@@ -330,6 +330,7 @@ set(
   library/_bytecode_utils.py
   library/_codecs.py
   library/_collections.py
+  library/_compiler.py
   library/_contextvars.py
   library/_ctypes.py
   library/_frozen_importlib.py
@@ -348,15 +349,26 @@ set(
   library/array.py
   library/builtins.py
   library/collections/__init__.py
+  library/compiler/__init__.py
+  library/compiler/__main__.py
   library/compiler/config.py
   library/compiler/consts.py
   library/compiler/future.py
-  library/compiler/__init__.py
   library/compiler/misc.py
+  library/compiler/opcode36.py
+  library/compiler/opcode37.py
+  library/compiler/opcode37static.py
+  library/compiler/opcode38.py
+  library/compiler/opcode38static.py
+  library/compiler/opcodebase.py
   library/compiler/optimizer.py
   library/compiler/peephole.py
+  library/compiler/py38/__init__.py
+  library/compiler/py38/optimizer.py
+  library/compiler/py38/peephole.py
   library/compiler/pyassem.py
   library/compiler/pycodegen.py
+  library/compiler/static.py
   library/compiler/symbols.py
   library/compiler/unparse.py
   library/compiler/visitor.py

@@ -1,12 +1,11 @@
+# pyre-unsafe
 import ast
 from ast import AST, copy_location
-from typing import Any, List, TypeVar, Union
+from typing import Any, Iterable, Sequence, TypeVar, Union
 
 
 # XXX should probably rename ASTVisitor to ASTWalker
 # XXX can it be made even more generic?
-
-TAst = TypeVar("TAst", bound=AST)
 
 
 class ASTVisitor:
@@ -39,7 +38,7 @@ class ASTVisitor:
                     self.visit(item, *args)
             return
 
-        for _field, value in ast.iter_fields(node):
+        for field, value in ast.iter_fields(node):
             if isinstance(value, list):
                 for item in value:
                     if isinstance(item, ast.AST):
@@ -47,12 +46,17 @@ class ASTVisitor:
             elif isinstance(value, ast.AST):
                 self.visit(value, *args)
 
-    def walk_list(self, nodes: List[TAst], *args):
+    def walk_list(self, nodes: Sequence[AST], *args):
         for item in nodes:
             if isinstance(item, ast.AST):
                 self.visit(item, *args)
 
-    def visit(self, node: Union[TAst, List[TAst]], *args):
+    def skip_visit(self):
+        return False
+
+    def visit(self, node: Union[AST, Sequence[AST]], *args):
+        if self.skip_visit():
+            return
         if isinstance(node, list):
             return self.walk_list(node, *args)
         self.node = node
@@ -62,14 +66,10 @@ class ASTVisitor:
             className = klass.__name__
             meth = getattr(self, "visit" + className, self.generic_visit)
             self._cache[klass] = meth
-        ##        if self.VERBOSE > 0:
-        ##            className = klass.__name__
-        ##            if self.VERBOSE == 1:
-        ##                if meth == 0:
-        ##                    print "visit", className
-        ##            else:
-        ##                print "visit", className, (meth and meth.__name__ or '')
         return meth(node, *args)
+
+
+TAst = TypeVar("TAst", bound=AST)
 
 
 class ASTRewriter(ASTVisitor):
@@ -102,7 +102,7 @@ class ASTRewriter(ASTVisitor):
         new = type(node)(*attrs)
         return copy_location(new, node)
 
-    def walk_list(self, nodes: List[TAst], *args) -> List[TAst]:
+    def walk_list(self, nodes: Sequence[TAst], *args) -> Sequence[TAst]:
         new_values = []
         changed = False
         for value in nodes:

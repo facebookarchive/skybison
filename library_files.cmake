@@ -8,6 +8,7 @@ _codecs_test.py
 _collections.py
 _collections_test.py
 _compile_test.py
+_compiler.py
 _contextvars.py
 _contextvars_test.py
 _ctypes.py
@@ -55,8 +56,17 @@ compiler/config.py
 compiler/consts.py
 compiler/future.py
 compiler/misc.py
+compiler/opcode36.py
+compiler/opcode37.py
+compiler/opcode37static.py
+compiler/opcode38.py
+compiler/opcode38static.py
+compiler/opcodebase.py
 compiler/optimizer.py
 compiler/peephole.py
+compiler/py38/__init__.py
+compiler/py38/optimizer.py
+compiler/py38/peephole.py
 compiler/pyassem.py
 compiler/pycodegen.py
 compiler/static.py

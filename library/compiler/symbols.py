@@ -1,8 +1,10 @@
+# pyre-unsafe
 """Module symbol-table generator"""
 from __future__ import print_function
 
 import ast
 import sys
+import types
 
 from .consts import (
     SC_CELL,
@@ -22,6 +24,9 @@ if VERSION >= 3:
 
 MANGLE_LEN = 256
 
+DEF_NORMAL = 1
+DEF_COMP_ITER = 2
+
 
 class Scope:
     # XXX how much information do I need about each name?
@@ -40,6 +45,7 @@ class Scope:
         self.children = []
         self.parent = None
         self.coroutine = False
+        self.comp_iter_target = self.comp_iter_expr = 0
         # nested is true if the class could contain free variables,
         # i.e. if it is nested within another function.
         self.nested = None
@@ -63,8 +69,9 @@ class Scope:
             return name
         return mangle(name, self.klass)
 
-    def add_def(self, name):
-        self.defs[self.mangle(name)] = 1
+    def add_def(self, name, kind=DEF_NORMAL):
+        mangled = self.mangle(name)
+        self.defs[mangled] = kind | self.defs.get(mangled, 1)
 
     def add_use(self, name):
         self.uses[self.mangle(name)] = 1
@@ -186,7 +193,7 @@ class Scope:
             if child.check_name(name) == SC_FREE:
                 child.force_global(name)
 
-    def add_frees(self, names):  # noqa: C901
+    def add_frees(self, names):
         """Process list of free vars from nested scope.
 
         Returns a list of names that are either 1) declared global in the
@@ -251,6 +258,7 @@ class GenExprScope(FunctionScope):
     __counter = 1
 
     def __init__(self, module, klass=None, name="<genexpr>", lineno=0):
+        i = self.__counter
         self.__counter += 1
         self.__super_init(name, module, klass, lineno=lineno)
         self.add_param(".0")
@@ -266,6 +274,7 @@ class LambdaScope(FunctionScope):
     __counter = 1
 
     def __init__(self, module, klass=None, lineno=0):
+        i = self.__counter
         self.__counter += 1
         self.__super_init("<lambda>", module, klass, lineno=lineno)
 
@@ -331,6 +340,12 @@ class SymbolVisitor(ASTVisitor):
             name=self._scope_names[type(node)],
             lineno=node.lineno,
         )
+        scope.parent = parent
+
+        # bpo-37757: For now, disallow *all* assignment expressions in the
+        # outermost iterator expression of a comprehension, even those inside
+        # a nested comprehension or a lambda expression.
+        scope.comp_iter_expr = parent.comp_iter_expr
         if isinstance(node, ast.GeneratorExp):
             scope.generator = True
 
@@ -341,19 +356,22 @@ class SymbolVisitor(ASTVisitor):
         ):
             scope.nested = 1
 
+        parent.comp_iter_expr += 1
         self.visit(node.generators[0].iter, parent)
+        parent.comp_iter_expr -= 1
+
+        self.visitcomprehension(node.generators[0], scope, True)
+
+        for comp in node.generators[1:]:
+            self.visit(comp, scope, False)
 
         if isinstance(node, ast.DictComp):
-            self.visit(node.key, scope)
             self.visit(node.value, scope)
+            self.visit(node.key, scope)
         else:
             self.visit(node.elt, scope)
 
         self.scopes[node] = scope
-        is_outmost = True
-        for comp in node.generators:
-            self.visit(comp, scope, is_outmost)
-            is_outmost = False
 
         self.handle_free_vars(scope, parent)
 
@@ -368,11 +386,15 @@ class SymbolVisitor(ASTVisitor):
         if node.is_async:
             scope.coroutine = True
 
+        scope.comp_iter_target = 1
         self.visit(node.target, scope)
+        scope.comp_iter_target = 0
         if is_outmost:
             scope.add_use(".0")
         else:
+            scope.comp_iter_expr += 1
             self.visit(node.iter, scope)
+            scope.comp_iter_expr -= 1
         for if_ in node.ifs:
             self.visit(if_, scope)
 
@@ -394,6 +416,10 @@ class SymbolVisitor(ASTVisitor):
     def visitLambda(self, node, parent):
         scope = LambdaScope(self.module, self.klass, lineno=node.lineno)
         scope.parent = parent
+        # bpo-37757: For now, disallow *all* assignment expressions in the
+        # outermost iterator expression of a comprehension, even those inside
+        # a nested comprehension or a lambda expression.
+        scope.comp_iter_expr = parent.comp_iter_expr
         if parent.nested or isinstance(parent, FunctionScope):
             scope.nested = 1
         self.scopes[node] = scope
@@ -409,6 +435,11 @@ class SymbolVisitor(ASTVisitor):
                 self.visit(n, scope.parent)
 
         for arg in args.args:
+            name = arg.arg
+            scope.add_param(name)
+            if arg.annotation:
+                self.visit(arg.annotation, scope.parent)
+        for arg in getattr(args, "posonlyargs", ()):
             name = arg.arg
             scope.add_param(name)
             if arg.annotation:
@@ -462,6 +493,17 @@ class SymbolVisitor(ASTVisitor):
 
     def visitName(self, node, scope):
         if isinstance(node.ctx, ast.Store):
+            if scope.comp_iter_target:
+                # This name is an iteration variable in a comprehension,
+                # so check for a binding conflict with any named expressions.
+                # Otherwise, mark it as an iteration variable so subsequent
+                # named expressions can check for conflicts.
+                if node.id in scope.nonlocals or node.id in scope.globals:
+                    raise SyntaxError(
+                        f"comprehension inner loop cannot rebind assignment expression target '{node.id}'"
+                    )
+                scope.add_def(node.id, DEF_COMP_ITER)
+
             scope.add_def(node.id)
         elif isinstance(node.ctx, ast.Del):
             # We do something to var, so even if we "undefine" it, it's a def.
@@ -481,6 +523,46 @@ class SymbolVisitor(ASTVisitor):
                 scope.add_use("__class__")
 
     # operations that bind new names
+
+    def visitNamedExpr(self, node, scope):
+        if scope.comp_iter_expr:
+            # Assignment isn't allowed in a comprehension iterable expression
+            raise SyntaxError(
+                "assignment expression cannot be used in a comprehension iterable expression"
+            )
+
+        name = node.target.id
+        if isinstance(scope, GenExprScope):
+            cur = scope
+            while cur:
+                if isinstance(cur, GenExprScope):
+                    if cur.defs.get(name, 0) & DEF_COMP_ITER:
+                        raise SyntaxError(
+                            f"assignment expression cannot rebind comprehension iteration variable '{name}'"
+                        )
+
+                elif isinstance(cur, FunctionScope):
+                    # If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL
+                    scope.frees[name] = 1
+                    if name not in cur.explicit_globals:
+                        scope.nonlocals[name] = 1
+                    else:
+                        scope.add_use(name)
+                    cur.add_def(name)
+                    break
+                elif isinstance(cur, ModuleScope):
+                    scope.globals[name] = 1
+                    scope.add_use(name)
+                    cur.add_def(name)
+                    break
+                elif isinstance(cur, ClassScope):
+                    raise SyntaxError(
+                        "assignment expression within a comprehension cannot be used in a class body"
+                    )
+                cur = cur.parent
+
+        self.visit(node.value, scope)
+        self.visit(node.target, scope)
 
     def visitFor(self, node, scope):
         self.visit(node.target, scope)

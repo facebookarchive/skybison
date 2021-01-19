@@ -1,3 +1,6 @@
+# pyre-unsafe
+
+
 class Set:
     def __init__(self):
         self.elts = {}

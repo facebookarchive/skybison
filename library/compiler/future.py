@@ -1,3 +1,4 @@
+# pyre-unsafe
 """Parser for future statements
 
 """

@@ -15,9 +15,10 @@ import re
 import tempfile
 from collections import namedtuple
 from compiler import compile as compiler_compile
-from compiler.consts import PyCF_REWRITE_PRINTF
 from pathlib import Path
 from types import CodeType
+
+from _compiler import PyroCodeGenerator
 
 
 INIT_MODULE_NAME = "__init_module__"
@@ -204,11 +205,15 @@ def process_module(filename, builtins, intrinsics):
     with open(filename) as fp:
         source = fp.read()
     builtin_init = "$builtin-init-module$" in source
-    flags = __future__.CO_FUTURE_ANNOTATIONS | PyCF_REWRITE_PRINTF
-    # TODO(emacs): Specify PyRo compiler directly instead of specifying
-    # PyCF_REWRITE_PRINTF manually
+    flags = __future__.CO_FUTURE_ANNOTATIONS
     module_code = compiler_compile(
-        source, filename, "exec", flags, dont_inherit=None, optimize=0
+        source,
+        filename,
+        "exec",
+        flags,
+        dont_inherit=None,
+        optimize=0,
+        compiler=PyroCodeGenerator,
     )
     marked_code = mark_native_functions(module_code, builtins, intrinsics, fullname)
     # We don't write pyc headers because it would make bootstrapping tricky.
