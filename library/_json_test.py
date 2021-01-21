@@ -494,6 +494,141 @@ class LoadsTests(unittest.TestCase):
         ):
             loads("[[]4.4]")
 
+    def test_dict_returns_dict(self):
+        result = loads('{"foo": "bar", "baz": 42}')
+        self.assertIs(type(result), dict)
+        self.assertEqual(list(result.keys()), ["foo", "baz"])
+        self.assertEqual(list(result.values()), ["bar", 42])
+
+    def test_dict_misc_returns_dict(self):
+        self.assertEqual(loads('{"": ""}'), {"": ""})
+        self.assertEqual(
+            loads(
+                '{\t"foo": [], "1"\n:\r2, "3"  :4.4,"4":\r\ntrue, "5":   Infinity\t}'
+            ),
+            {"foo": [], "1": 2, "3": 4.4, "4": True, "5": float("inf")},
+        )
+
+    def test_dict_with_repeatet_keys_returns_dict(self):
+        self.assertEqual(loads('{"a": [], "a": 7.7}'), {"a": 7.7})
+        self.assertEqual(
+            loads('{"a": 42, "b": 7, "c": 4, "a": -8, "b": 11}'),
+            {"a": -8, "b": 11, "c": 4},
+        )
+
+    def test_empty_dict_returns_dict(self):
+        self.assertEqual(loads("{}"), {})
+        self.assertEqual(loads(" {}"), {})
+        self.assertEqual(loads("{ }"), {})
+        self.assertEqual(loads("{} "), {})
+
+    def test_dict_with_non_string_key_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Expecting property name enclosed in double quotes: line 1 column 2 \(char 1\)",
+        ):
+            loads("{42:1}")
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Expecting property name enclosed in double quotes: line 1 column 2 \(char 1\)",
+        ):
+            loads("{[]:1}")
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Expecting property name enclosed in double quotes: line 1 column 2 \(char 1\)",
+        ):
+            loads("{{}:1}")
+
+    def test_dict_with_missing_colon_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ':' delimiter: line 1 column 4 \(char 3\)"
+        ):
+            loads('{""}')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ':' delimiter: line 1 column 19 \(char 18\)"
+        ):
+            loads('{"foo": 42, "bar" 5}')
+
+    def test_dict_with_extra_comma_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Expecting property name enclosed in double quotes: line 1 column 8 \(char 7\)",
+        ):
+            loads('{"": 4,}')
+
+    def test_dict_with_missing_comma_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ',' delimiter: line 1 column 8 \(char 7\)"
+        ):
+            loads('{"": 4 "a": 5}')
+
+    def test_dict_with_deep_nesting_raises_recursion_error(self):
+        with self.assertRaises(RecursionError):
+            loads('{"":' * 2000000 + "{" + "}" * 2000000)
+
+    def test_dict_calls_object_hook(self):
+        arg = None
+        marker = object()
+
+        def func(d):
+            nonlocal arg
+            arg = d
+            return marker
+
+        self.assertIs(loads("{}", object_hook=func), marker)
+        self.assertIs(type(arg), dict)
+        self.assertEqual(arg, {})
+
+        self.assertEqual(
+            loads('[4, {"foo": 4, "aa": -8}, false]', object_hook=func),
+            [4, marker, False],
+        )
+        self.assertIs(type(arg), dict)
+        self.assertEqual(list(arg.keys()), ["foo", "aa"])
+        self.assertEqual(list(arg.values()), [4, -8])
+
+    def test_dict_calls_object_pairs_hook(self):
+        arg = None
+        marker = object()
+
+        def func(pairs):
+            nonlocal arg
+            arg = pairs
+            return marker
+
+        self.assertIs(loads("{}", object_pairs_hook=func), marker)
+        self.assertIs(type(arg), list)
+        self.assertEqual(arg, [])
+
+        self.assertEqual(
+            loads('[4, {"b": 4, "a": -8, "c":null}, false]', object_pairs_hook=func),
+            [4, marker, False],
+        )
+        self.assertIs(type(arg), list)
+        self.assertIs(type(arg[0]), tuple)
+        self.assertEqual(arg, [("b", 4), ("a", -8), ("c", None)])
+
+    def test_dict_with_both_hooks_calls_object_pairs_hook(self):
+        arg0 = None
+        arg1 = None
+        marker = object()
+
+        def func0(d):
+            nonlocal arg0
+            arg0 = d
+            raise Exception("should not be called")
+
+        def func1(pairs):
+            nonlocal arg1
+            arg1 = pairs
+            return marker
+
+        self.assertIs(
+            loads('{"foo": "baz"}', object_hook=func0, object_pairs_hook=func1), marker
+        )
+        self.assertIs(arg0, None)
+        self.assertEqual(arg1, [("foo", "baz")])
+
     def test_unexpected_char_raises_json_decode_error(self):
         with self.assertRaisesRegex(
             JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"

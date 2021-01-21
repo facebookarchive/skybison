@@ -30,11 +30,31 @@ struct JSONParser {
   word next;
   word length;
   Arguments args;
+  bool has_object_hook;
+  bool has_object_pairs_hook;
   bool has_parse_constant;
   bool has_parse_float;
   bool has_parse_int;
   bool strict;
 };
+
+static NEVER_INLINE RawObject callObjectHook(Thread* thread, JSONParser* env,
+                                             const Object& dict) {
+  HandleScope scope(thread);
+  DCHECK(dict.isDict(), "expected dict");
+  if (env->has_object_pairs_hook) {
+    Object hook(&scope,
+                env->args.get(static_cast<word>(LoadsArg::kObjectPairsHook)));
+    Object items(&scope, thread->invokeMethod1(dict, ID(items)));
+    if (items.isErrorException()) return *items;
+    Object list_type(&scope, thread->runtime()->typeAt(LayoutId::kList));
+    Object list(&scope, Interpreter::call1(thread, list_type, items));
+    if (list.isErrorException()) return *list;
+    return Interpreter::call1(thread, hook, list);
+  }
+  Object hook(&scope, env->args.get(static_cast<word>(LoadsArg::kObjectHook)));
+  return Interpreter::call1(thread, hook, dict);
+}
 
 static NEVER_INLINE int callParseConstant(Thread* thread, JSONParser* env,
                                           const DataArray& data, word length,
@@ -589,6 +609,7 @@ static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
   Runtime* runtime = thread->runtime();
 
   Object container(&scope, NoneType::object());
+  Object dict_key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   byte b = nextNonWhitespace(thread, env, data);
   for (;;) {
@@ -613,7 +634,38 @@ static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
         b = nextNonWhitespace(thread, env, data);
         break;
       case '{':
-        UNIMPLEMENTED("dictionaries");
+        value = runtime->newDict();
+        b = nextNonWhitespace(thread, env, data);
+        if (b != '}') {
+          if (b != '"') {
+            return raiseJSONDecodeError(
+                thread, env, data, env->next - 1,
+                "Expecting property name enclosed in double quotes");
+          }
+          if (thread->wouldStackOverflow(2 * kPointerSize) &&
+              thread->handleInterrupt(2 * kPointerSize)) {
+            return Error::exception();
+          }
+          thread->stackPush(*container);
+          container = *value;
+
+          value = scanString(thread, env, data);
+          if (value.isErrorException()) return *value;
+          b = nextNonWhitespace(thread, env, data);
+          if (b != ':') {
+            return raiseJSONDecodeError(thread, env, data, env->next - 1,
+                                        "Expecting ':' delimiter");
+          }
+          b = nextNonWhitespace(thread, env, data);
+          thread->stackPush(*value);
+          continue;
+        }
+        if (env->has_object_hook) {
+          value = callObjectHook(thread, env, value);
+          if (value.isErrorException()) return *value;
+        }
+        b = nextNonWhitespace(thread, env, data);
+        break;
       default:
         DCHECK(value.isErrorException(), "expected error raised");
         return *value;
@@ -634,6 +686,43 @@ static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
           value = *container;
           container = thread->stackPop();
           b = nextNonWhitespace(thread, env, data);
+          continue;
+        }
+        return raiseJSONDecodeError(thread, env, data, env->next - 1,
+                                    "Expecting ',' delimiter");
+      }
+
+      if (container.isDict()) {
+        Dict dict(&scope, *container);
+        dict_key = thread->stackPop();
+        dictAtPutByStr(thread, dict, dict_key, value);
+        if (b == ',') {
+          b = nextNonWhitespace(thread, env, data);
+          if (b != '"') {
+            return raiseJSONDecodeError(
+                thread, env, data, env->next - 1,
+                "Expecting property name enclosed in double quotes");
+          }
+          value = scanString(thread, env, data);
+          if (value.isErrorException()) return *value;
+          thread->stackPush(*value);
+          b = nextNonWhitespace(thread, env, data);
+          if (b != ':') {
+            return raiseJSONDecodeError(thread, env, data, env->next - 1,
+                                        "Expecting ':' delimiter");
+          }
+          b = nextNonWhitespace(thread, env, data);
+          break;
+        }
+        if (b == '}') {
+          value = *container;
+          container = thread->stackPop();
+          b = nextNonWhitespace(thread, env, data);
+
+          if (env->has_object_hook) {
+            value = callObjectHook(thread, env, value);
+            if (value.isErrorException()) return *value;
+          }
           continue;
         }
         return raiseJSONDecodeError(thread, env, data, env->next - 1,
@@ -706,7 +795,7 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
   env.strict = strict;
 
   if (!args.get(static_cast<word>(LoadsArg::kObjectHook)).isNoneType()) {
-    UNIMPLEMENTED("object hook");
+    env.has_object_hook = true;
   }
   if (!args.get(static_cast<word>(LoadsArg::kParseFloat)).isNoneType()) {
     env.has_parse_float = true;
@@ -718,7 +807,8 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
     env.has_parse_constant = true;
   }
   if (!args.get(static_cast<word>(LoadsArg::kObjectPairsHook)).isNoneType()) {
-    UNIMPLEMENTED("object pairs hook");
+    env.has_object_hook = true;
+    env.has_object_pairs_hook = true;
   }
   return parse(thread, &env, data);
 }
