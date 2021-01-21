@@ -47,6 +47,7 @@ class Runtime;
   V(IndexError)                                                                \
   V(InterruptedError)                                                          \
   V(IsADirectoryError)                                                         \
+  V(JSONDecodeError)                                                           \
   V(KeyError)                                                                  \
   V(KeyboardInterrupt)                                                         \
   V(LookupError)                                                               \
@@ -390,6 +391,7 @@ class Runtime;
   V(_io)                                                                       \
   V(_iterator__index)                                                          \
   V(_iterator__iterable)                                                       \
+  V(_json)                                                                     \
   V(_layout__described_type)                                                   \
   V(_layout__in_object_attributes)                                             \
   V(_layout__overflow_attributes)                                              \

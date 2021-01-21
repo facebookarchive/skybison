@@ -39,6 +39,7 @@ const int kBitsPerDouble = kBitsPerByte * kDoubleSize;
 
 const int kDoubleMantissaBits = 52;
 const double kDoubleNaN = std::numeric_limits<double>::quiet_NaN();
+const double kDoubleInfinity = std::numeric_limits<double>::infinity();
 
 const int16_t kMaxInt16 = INT16_MAX;
 const int16_t kMinInt16 = INT16_MIN;

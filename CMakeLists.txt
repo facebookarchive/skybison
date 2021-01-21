@@ -338,6 +338,7 @@ set(
   library/_functools.py
   library/_imp.py
   library/_io.py
+  library/_json.py
   library/_os.py
   library/_path.py
   library/_signal.py
@@ -639,6 +640,7 @@ add_library(
   runtime/under-imp-module.h
   runtime/under-io-module.cpp
   runtime/under-io-module.h
+  runtime/under-json-module.cpp
   runtime/under-os-module.cpp
   runtime/under-path-module.cpp
   runtime/under-signal-module.cpp

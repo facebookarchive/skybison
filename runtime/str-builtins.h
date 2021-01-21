@@ -10,6 +10,9 @@ namespace py {
 
 word adjustedStrIndex(const Str& str, word index);
 
+RawObject dataArraySubstr(Thread* thread, const DataArray& data, word start,
+                          word length);
+
 RawObject newStrFromWideChar(Thread* thread, const wchar_t* wc_str);
 RawObject newStrFromWideCharWithLength(Thread* thread, const wchar_t* wc_str,
                                        word length);

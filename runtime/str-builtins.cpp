@@ -31,6 +31,25 @@ word adjustedStrIndex(const Str& str, word index) {
   return 0;
 }
 
+RawObject dataArraySubstr(Thread* thread, const DataArray& data, word start,
+                          word length) {
+  word data_len = data.length();
+  DCHECK_BOUND(start, data_len);
+  DCHECK_BOUND(start, data_len - length);
+  // SmallStr result
+  if (length <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    data.copyToStartAt(buffer, length, start);
+    return SmallStr::fromBytes(View<byte>(buffer, length));
+  }
+  // LargeStr result
+  HandleScope scope(thread);
+  MutableBytes result(&scope,
+                      thread->runtime()->newMutableBytesUninitialized(length));
+  result.replaceFromWithStartAt(0, *data, length, start);
+  return result.becomeStr();
+}
+
 RawObject newStrFromWideChar(Thread* thread, const wchar_t* wc_str) {
   return newStrFromWideCharWithLength(thread, wc_str, std::wcslen(wc_str));
 }

@@ -15,10 +15,14 @@ _ctypes.py
 _ctypes_test.py
 _frozen_importlib.py
 _frozen_importlib_external.py
+_functools.py
+_functools_test.py
 _imp.py
 _imp_test.py
 _io.py
 _io_test.py
+_json.py
+_json_test.py
 _operator.py
 _os.py
 _parser_test.py

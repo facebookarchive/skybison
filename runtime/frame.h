@@ -276,6 +276,7 @@ class FrameVisitor {
 
 class Arguments {
  public:
+  Arguments() = default;
   Arguments(Frame* frame) : locals_(frame->locals()) {}
 
   RawObject get(word n) const { return *(locals_ - n - 1); }
