@@ -5,12 +5,14 @@
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "str-intern.h"
 #include "thread.h"
 #include "unicode.h"
 #include "utils.h"
 
 namespace py {
 
+static const word kDictKeySetInitLength = 8;
 static const int kNumUEscapeChars = 4;
 
 enum class LoadsArg {
@@ -604,6 +606,39 @@ static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
   }
 }
 
+static inline RawObject scanDictKey(Thread* thread, JSONParser* env,
+                                    const DataArray& data, byte b,
+                                    MutableTuple* dict_key_set,
+                                    word* dict_key_set_remaining) {
+  if (b != '"') {
+    return raiseJSONDecodeError(
+        thread, env, data, env->next - 1,
+        "Expecting property name enclosed in double quotes");
+  }
+
+  HandleScope scope(thread);
+  Object dict_key(&scope, scanString(thread, env, data));
+  if (dict_key.isErrorException()) return *dict_key;
+
+  if (dict_key.isLargeStr()) {
+    RawObject str_key_interned = NoneType::object();
+    bool added =
+        internSetAdd(thread, **dict_key_set, dict_key, &str_key_interned);
+    dict_key = str_key_interned;
+    if (added && --(*dict_key_set_remaining) == 0) {
+      *dict_key_set =
+          internSetGrow(thread, **dict_key_set, dict_key_set_remaining);
+    }
+  }
+
+  b = nextNonWhitespace(thread, env, data);
+  if (b != ':') {
+    return raiseJSONDecodeError(thread, env, data, env->next - 1,
+                                "Expecting ':' delimiter");
+  }
+  return *dict_key;
+}
+
 static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -611,6 +646,10 @@ static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
   Object container(&scope, NoneType::object());
   Object dict_key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
+  MutableTuple dict_key_set(&scope,
+                            runtime->newMutableTuple(kDictKeySetInitLength));
+  word dict_key_set_remaining =
+      internSetComputeRemaining(kDictKeySetInitLength);
   byte b = nextNonWhitespace(thread, env, data);
   for (;;) {
     int scan_result = scan(thread, env, data, b, &value);
@@ -637,27 +676,17 @@ static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
         value = runtime->newDict();
         b = nextNonWhitespace(thread, env, data);
         if (b != '}') {
-          if (b != '"') {
-            return raiseJSONDecodeError(
-                thread, env, data, env->next - 1,
-                "Expecting property name enclosed in double quotes");
-          }
           if (thread->wouldStackOverflow(2 * kPointerSize) &&
               thread->handleInterrupt(2 * kPointerSize)) {
             return Error::exception();
           }
           thread->stackPush(*container);
           container = *value;
-
-          value = scanString(thread, env, data);
-          if (value.isErrorException()) return *value;
+          dict_key = scanDictKey(thread, env, data, b, &dict_key_set,
+                                 &dict_key_set_remaining);
+          if (dict_key.isErrorException()) return *dict_key;
           b = nextNonWhitespace(thread, env, data);
-          if (b != ':') {
-            return raiseJSONDecodeError(thread, env, data, env->next - 1,
-                                        "Expecting ':' delimiter");
-          }
-          b = nextNonWhitespace(thread, env, data);
-          thread->stackPush(*value);
+          thread->stackPush(*dict_key);
           continue;
         }
         if (env->has_object_hook) {
@@ -698,20 +727,11 @@ static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
         dictAtPutByStr(thread, dict, dict_key, value);
         if (b == ',') {
           b = nextNonWhitespace(thread, env, data);
-          if (b != '"') {
-            return raiseJSONDecodeError(
-                thread, env, data, env->next - 1,
-                "Expecting property name enclosed in double quotes");
-          }
-          value = scanString(thread, env, data);
-          if (value.isErrorException()) return *value;
-          thread->stackPush(*value);
+          dict_key = scanDictKey(thread, env, data, b, &dict_key_set,
+                                 &dict_key_set_remaining);
+          if (dict_key.isErrorException()) return *dict_key;
           b = nextNonWhitespace(thread, env, data);
-          if (b != ':') {
-            return raiseJSONDecodeError(thread, env, data, env->next - 1,
-                                        "Expecting ':' delimiter");
-          }
-          b = nextNonWhitespace(thread, env, data);
+          thread->stackPush(*dict_key);
           break;
         }
         if (b == '}') {

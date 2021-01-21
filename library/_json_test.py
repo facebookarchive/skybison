@@ -629,6 +629,26 @@ class LoadsTests(unittest.TestCase):
         self.assertIs(arg0, None)
         self.assertEqual(arg1, [("foo", "baz")])
 
+    def test_dict_keys_are_merged(self):
+        result = loads(
+            '[{"foo": 5, "bar": 8, "a very long key": 11}, [{"a very long key": 4, "foo": []}]]'
+        )
+        self.assertEqual(
+            result,
+            [
+                {"foo": 5, "bar": 8, "a very long key": 11},
+                [{"a very long key": 4, "foo": []}],
+            ],
+        )
+        d0 = result[0]
+        d1 = result[1][0]
+        d0_keys = list(d0.keys())
+        d1_keys = list(d1.keys())
+        self.assertEqual(d0_keys, ["foo", "bar", "a very long key"])
+        self.assertEqual(d1_keys, ["a very long key", "foo"])
+        self.assertIs(d0_keys[0], d1_keys[1])
+        self.assertIs(d0_keys[2], d1_keys[0])
+
     def test_unexpected_char_raises_json_decode_error(self):
         with self.assertRaisesRegex(
             JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
