@@ -6,6 +6,12 @@
 
 namespace py {
 
+constexpr byte UTF8::kBOM[];
+constexpr byte UTF16::kBOMLittleEndian[];
+constexpr byte UTF16::kBOMBigEndian[];
+constexpr byte UTF32::kBOMLittleEndian[];
+constexpr byte UTF32::kBOMBigEndian[];
+
 bool Unicode::isAlphaDB(int32_t code_point) {
   return (typeRecord(code_point)->flags & kAlphaMask) != 0;
 }

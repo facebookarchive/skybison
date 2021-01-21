@@ -48,6 +48,7 @@ class UTF8 {
  public:
   static const word kMaxLength = 4;
   static const byte kSurrogateLeadByte = 0xED;
+  static constexpr byte kBOM[] = {0xef, 0xbb, 0xbf};
 
   // Predicates
   static bool isLeadByte(byte b);
@@ -58,6 +59,18 @@ class UTF8 {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UTF8);
+};
+
+class UTF16 {
+ public:
+  static constexpr byte kBOMLittleEndian[] = {0xff, 0xfe};
+  static constexpr byte kBOMBigEndian[] = {0xfe, 0xff};
+};
+
+class UTF32 {
+ public:
+  static constexpr byte kBOMLittleEndian[] = {0xff, 0xfe, 0, 0};
+  static constexpr byte kBOMBigEndian[] = {0, 0, 0xfe, 0xff};
 };
 
 // Functions for Unicode code points.

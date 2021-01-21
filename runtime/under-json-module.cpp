@@ -130,6 +130,67 @@ static NEVER_INLINE RawObject raiseJSONDecodeError(Thread* thread,
   return thread->raiseWithType(*json_decode_error, *args);
 }
 
+// Given a bytes object, search for UTF byte order marks (BOMs). If there are
+// none apply heuristics to detect UTF-32, UTF-16 and UTF-8 encodings in big or
+// little endian. Inputs that are UTF-32 or UTF-16 are decoded and a `str`
+// object is returned; UTF-8 inputs are returned unchanged with `next` possibly
+// incremented to skip a BOM.
+static RawObject maybeDecode(Thread* thread, const Object& s,
+                             const Bytes& bytes, word length, word* next) {
+  // Cannot guess with just 0 or 1 bytes. Assume it's UTF-8.
+  if (length < 2) return *bytes;
+
+  // Search for BOM sequences. If there are none, search for `0` bytes which
+  // are a strong sign for the high bits of UTF-16/UTF-32 encodings, since
+  // legal JSON must start with an ASCII character with high byte(s) zero.
+  // The code looks at the first 2 bytes to detect UTF-16 and the first 4
+  // bytes to detect UTF-32.
+  const char* encoding;
+  byte b0 = bytes.byteAt(0);
+  byte b1 = bytes.byteAt(1);
+  if (b0 == UTF8::kBOM[0] && b1 == UTF8::kBOM[1] && length >= 3 &&
+      bytes.byteAt(2) == UTF8::kBOM[2]) {
+    *next += 3;
+    return *bytes;
+  }
+  if (b0 == UTF32::kBOMLittleEndian[0] && b1 == UTF32::kBOMLittleEndian[1] &&
+      length >= 4 && bytes.byteAt(2) == UTF32::kBOMLittleEndian[2] &&
+      bytes.byteAt(3) == UTF32::kBOMLittleEndian[3]) {
+    encoding = "utf-32";
+  } else if (b0 == UTF32::kBOMBigEndian[0] && b1 == UTF32::kBOMBigEndian[1] &&
+             length >= 4 && bytes.byteAt(2) == UTF32::kBOMBigEndian[2] &&
+             bytes.byteAt(3) == UTF32::kBOMBigEndian[3]) {
+    encoding = "utf-32";
+  } else if (b0 == UTF16::kBOMLittleEndian[0] &&
+             b1 == UTF16::kBOMLittleEndian[1]) {
+    encoding = "utf-16";
+  } else if (b0 == UTF16::kBOMBigEndian[0] && b1 == UTF16::kBOMBigEndian[1]) {
+    encoding = "utf-16";
+  } else if (b0 == 0) {
+    if (b1 == 0 && length >= 4) {
+      encoding = "utf-32-be";
+    } else {
+      encoding = "utf-16-be";
+    }
+  } else if (b1 == 0) {
+    DCHECK(b0 != 0, "Expected b0 != 0");
+    if (length >= 4 && bytes.byteAt(2) == 0 && bytes.byteAt(3) == 0) {
+      encoding = "utf-32-le";
+    } else {
+      encoding = "utf-16-le";
+    }
+  } else {
+    // Default to UTF-8 which the decoder handles naturally.
+    return *bytes;
+  }
+
+  HandleScope scope(thread);
+  Object encoding_str(&scope, Runtime::internStrFromCStr(thread, encoding));
+  Object errors(&scope, Runtime::internStrFromCStr(thread, "surrogatepass"));
+  return thread->invokeFunction3(ID(_codecs), ID(decode), s, encoding_str,
+                                 errors);
+}
+
 static RawObject scanEscapeSequence(Thread* thread, JSONParser* env,
                                     const DataArray& data, word begin) {
   word next = env->next;
@@ -600,6 +661,13 @@ static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
     }
     DCHECK(b != ' ' && b != '\t' && b != '\r' && b != '\n',
            "whitespace not skipped");
+    if (next == 1 && b == UTF8::kBOM[0] && length >= 3 &&
+        data.byteAt(1) == UTF8::kBOM[1] && data.byteAt(2) == UTF8::kBOM[2]) {
+      *value_out =
+          raiseJSONDecodeError(thread, env, data, next,
+                               "Unexpected UTF-8 BOM (decode using utf-8-sig)");
+      return -1;
+    }
     *value_out =
         raiseJSONDecodeError(thread, env, data, next - 1, "Expecting value");
     return -1;
@@ -769,9 +837,36 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
   if (runtime->isInstanceOfStr(*s)) {
     s = strUnderlying(*s);
     length = Str::cast(*s).length();
-  } else if (runtime->isInstanceOfBytes(*s) ||
-             runtime->isInstanceOfBytearray(*s)) {
-    UNIMPLEMENTED("bytes/bytearray");
+  } else if (runtime->isInstanceOfBytes(*s)) {
+    Bytes bytes(&scope, bytesUnderlying(*s));
+    length = bytes.length();
+    s = maybeDecode(thread, s, bytes, length, &next);
+    if (s.isErrorException()) return *s;
+    if (s == bytes) {
+      if (bytes.isSmallBytes()) {
+        MutableBytes copy(&scope,
+                          runtime->newMutableBytesUninitialized(length));
+        copy.replaceFromWithBytes(0, *bytes, length);
+        data = *copy;
+      } else {
+        data = LargeBytes::cast(*bytes);
+      }
+    } else {
+      CHECK(s.isStr(), "expected str return from decoder");
+      length = Str::cast(*s).length();
+    }
+  } else if (runtime->isInstanceOfBytearray(*s)) {
+    Bytearray array(&scope, *s);
+    Bytes items(&scope, array.items());
+    length = array.numItems();
+    s = maybeDecode(thread, s, items, length, &next);
+    if (s.isErrorException()) return *s;
+    if (s == items) {
+      data = MutableBytes::cast(*items);
+    } else {
+      CHECK(s.isStr(), "expected str return from decoder");
+      length = Str::cast(*s).length();
+    }
   } else {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,

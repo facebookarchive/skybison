@@ -10,6 +10,110 @@ else:
 
 
 class LoadsTests(unittest.TestCase):
+    def test_with_bytes_utf8_no_bom_returns_str(self):
+        self.assertEqual(loads(b'""'), "")
+        self.assertEqual(loads(b'"hello"'), "hello")
+        self.assertEqual(loads(b'"long string \\n blabla"'), "long string \n blabla")
+        self.assertEqual(
+            loads(b'"\xf0\x9f\x91\x8d\xf0\x9f\x90\x8d"'), "\U0001f44d\U0001f40d"
+        )
+
+    def test_with_bytes_utf8_bom_returns_str(self):
+        self.assertEqual(loads(b'\xef\xbb\xbf""'), "")
+        self.assertEqual(loads(b'\xef\xbb\xbf"hello"'), "hello")
+        self.assertEqual(
+            loads(b'\xef\xbb\xbf"long string \\n blabla"'), "long string \n blabla"
+        )
+        self.assertEqual(
+            loads(b'\xef\xbb\xbf"\xf0\x9f\x91\x8d\xf0\x9f\x90\x8d"'),
+            "\U0001f44d\U0001f40d",
+        )
+
+    def test_with_bytearray_utf8_returns_str(self):
+        self.assertEqual(loads(bytearray(b'""')), "")
+        self.assertEqual(loads(bytearray(b'"hello"')), "hello")
+        self.assertEqual(
+            loads(bytearray(b'"long string \\n blabla"')), "long string \n blabla"
+        )
+        self.assertEqual(
+            loads(bytearray(b'"\xf0\x9f\x91\x8d\xf0\x9f\x90\x8d"')),
+            "\U0001f44d\U0001f40d",
+        )
+        self.assertEqual(
+            loads(bytearray(b'\xef\xbb\xbf"\xf0\x9f\x91\x8d\xf0\x9f\x90\x8d"')),
+            "\U0001f44d\U0001f40d",
+        )
+
+    # TODO(T81477911) Implement UTF-16 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-16 decoding not supported")
+    def test_with_bytes_utf16_le_bom_returns_object(self):
+        self.assertEqual(loads(b"\xff\xfe1\x002\x003\x00"), 123)
+        self.assertEqual(loads(b'\xff\xfe"\x00\xaf!"\x00'), "\u21af")
+        self.assertEqual(loads(b'\xff\xfe"\x00<\xd8\x84\xdf"\x00'), "\U0001f384")
+        self.assertEqual(
+            loads(bytearray(b'\xff\xfe"\x00<\xd8\x84\xdf"\x00')), "\U0001f384"
+        )
+
+    # TODO(T81477911) Implement UTF-16 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-16 decoding not supported")
+    def test_with_bytes_utf16_le_no_bom_returns_object(self):
+        self.assertEqual(loads(b"1\x002\x003\x00"), 123)
+        self.assertEqual(loads(b'"\x00\xaf!"\x00'), "\u21af")
+        self.assertEqual(loads(b'"\x00<\xd8\x84\xdf"\x00'), "\U0001f384")
+        self.assertEqual(loads(bytearray(b'"\x00<\xd8\x84\xdf"\x00')), "\U0001f384")
+
+    # TODO(T81477911) Implement UTF-16 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-16 decoding not supported")
+    def test_with_bytes_utf16_be_bom_returns_object(self):
+        self.assertEqual(loads(b"\xfe\xff\x005\x004\x007"), 547)
+        self.assertEqual(loads(b'\xfe\xff\x00"!\xc4\x00"'), "\u21c4")
+        self.assertEqual(loads(b'\xfe\xff\x00"\xd8>\xdd]\x00"'), "\U0001f95d")
+        self.assertEqual(
+            loads(bytearray(b'\xfe\xff\x00"\xd8>\xdd]\x00"')), "\U0001f95d"
+        )
+
+    # TODO(T81477911) Implement UTF-16 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-16 decoding not supported")
+    def test_with_bytes_utf16_be_no_bom_returns_object(self):
+        self.assertEqual(loads(b"\x005\x004\x007"), 547)
+        self.assertEqual(loads(b'\x00"!\xc4\x00"'), "\u21c4")
+        self.assertEqual(loads(b'\x00"\xd8>\xdd]\x00"'), "\U0001f95d")
+        self.assertEqual(loads(bytearray(b'\x00"\xd8>\xdd]\x00"')), "\U0001f95d")
+
+    # TODO(T81478020) Implement UTF-32 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-32 decoding not supported")
+    def test_with_bytes_utf32_le_bom_returns_object(self):
+        self.assertEqual(loads(b"\xff\xfe\x00\x007\x00\x00\x006\x00\x00\x00"), 76)
+        self.assertEqual(
+            loads(b'\xff\xfe\x00\x00"\x00\x00\x00Q\xf9\x01\x00"\x00\x00\x00'),
+            "\U0001f951",
+        )
+
+    # TODO(T81478020) Implement UTF-32 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-32 decoding not supported")
+    def test_with_bytes_utf32_le_no_bom_returns_object(self):
+        self.assertEqual(loads(b"7\x00\x00\x006\x00\x00\x00"), 76)
+        self.assertEqual(
+            loads(b'"\x00\x00\x00Q\xf9\x01\x00"\x00\x00\x00'), "\U0001f951"
+        )
+
+    # TODO(T81478020) Implement UTF-32 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-32 decoding not supported")
+    def test_with_bytes_utf32_be_bom_returns_object(self):
+        self.assertEqual(loads(b"\x00\x00\xfe\xff\x00\x00\x00-\x00\x00\x005"), -5)
+        self.assertEqual(
+            loads(b'\x00\x00\xfe\xff\x00\x00\x00"\x00\x01\xf9W\x00\x00\x00"'),
+            "\U0001f957",
+        )
+
+    # TODO(T81478020) Implement UTF-32 decoding.
+    @unittest.skipIf(sys.implementation.name == "pyro", "utf-32 decoding not supported")
+    def test_with_bytes_utf32_be_no_bom_returns_object(self):
+        self.assertEqual(loads(b"\x00\x00\x00-\x00\x00\x005"), -5)
+        self.assertEqual(
+            loads(b'\x00\x00\x00"\x00\x01\xf9W\x00\x00\x00"'), "\U0001f957"
+        )
+
     def test_number_returns_int(self):
         self.assertEqual(loads("0"), 0)
         self.assertEqual(loads("1"), 1)
@@ -666,6 +770,12 @@ class LoadsTests(unittest.TestCase):
             JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
         ):
             loads("\U0001f480")
+
+    def test_utf8_bom_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Unexpected UTF-8 BOM \(decode using utf-8-sig\)"
+        ):
+            loads("\ufeff0")
 
     def test_json_raises_type_error(self):
         with self.assertRaisesRegex(
