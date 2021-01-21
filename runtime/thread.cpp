@@ -180,9 +180,9 @@ void Thread::interrupt(InterruptKind kind) {
   limit_ = end_;
 }
 
-bool Thread::handleInterrupt(word max_stack_size) {
+bool Thread::handleInterrupt(word size) {
   // Is it a real stack overflow?
-  if (reinterpret_cast<byte*>(stackPointer()) - max_stack_size < start_) {
+  if (reinterpret_cast<byte*>(stackPointer()) - size < start_) {
     raiseWithFmt(LayoutId::kRecursionError, "maximum recursion depth exceeded");
     return true;
   }

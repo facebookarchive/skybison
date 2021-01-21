@@ -586,28 +586,68 @@ static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
 
 static RawObject parse(Thread* thread, JSONParser* env, const DataArray& data) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
 
+  Object container(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   byte b = nextNonWhitespace(thread, env, data);
-  int scan_result = scan(thread, env, data, b, &value);
-  switch (scan_result) {
-    case 0:
-      // Already have a finished object.
-      b = nextNonWhitespace(thread, env, data);
-      break;
-    case '[':
-      UNIMPLEMENTED("lists");
-    case '{':
-      UNIMPLEMENTED("dictionaries");
-    default:
-      DCHECK(value.isErrorException(), "expected error raised");
-      return *value;
-  }
+  for (;;) {
+    int scan_result = scan(thread, env, data, b, &value);
+    switch (scan_result) {
+      case 0:
+        // Already have a finished object.
+        b = nextNonWhitespace(thread, env, data);
+        break;
+      case '[':
+        value = runtime->newList();
+        b = nextNonWhitespace(thread, env, data);
+        if (b != ']') {
+          if (thread->wouldStackOverflow(kPointerSize) &&
+              thread->handleInterrupt(kPointerSize)) {
+            return Error::exception();
+          }
+          thread->stackPush(*container);
+          container = *value;
+          continue;
+        }
+        b = nextNonWhitespace(thread, env, data);
+        break;
+      case '{':
+        UNIMPLEMENTED("dictionaries");
+      default:
+        DCHECK(value.isErrorException(), "expected error raised");
+        return *value;
+    }
 
-  if (env->next <= env->length) {
-    return raiseJSONDecodeError(thread, env, data, env->next - 1, "Extra data");
+    for (;;) {
+      // We finished reading the object `value`. Add it to the outer container
+      // or return if there is no container left.
+
+      if (container.isList()) {
+        List list(&scope, *container);
+        runtime->listAdd(thread, list, value);
+        if (b == ',') {
+          b = nextNonWhitespace(thread, env, data);
+          break;
+        }
+        if (b == ']') {
+          value = *container;
+          container = thread->stackPop();
+          b = nextNonWhitespace(thread, env, data);
+          continue;
+        }
+        return raiseJSONDecodeError(thread, env, data, env->next - 1,
+                                    "Expecting ',' delimiter");
+      }
+
+      DCHECK(container.isNoneType(), "expected no container");
+      if (env->next <= env->length) {
+        return raiseJSONDecodeError(thread, env, data, env->next - 1,
+                                    "Extra data");
+      }
+      return *value;
+    }
   }
-  return *value;
 }
 
 RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {

@@ -387,6 +387,7 @@ class Thread {
   word strOffset(const Str& str, word index);
 
   bool wouldStackOverflow(word size);
+  bool handleInterrupt(word size);
 
   static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
 
@@ -406,7 +407,6 @@ class Thread {
   Frame* pushInitialFrame();
   Frame* openAndLinkFrame(word size, word locals_offset);
 
-  bool handleInterrupt(word max_stack_size);
   void handleInterruptWithFrame();
   Frame* handleInterruptPushCallFrame(RawFunction function, word max_stack_size,
                                       word initial_stack_size,

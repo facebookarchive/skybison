@@ -429,6 +429,71 @@ class LoadsTests(unittest.TestCase):
         ):
             loads("")
 
+    def test_list_returns_list(self):
+        result = loads("[1,2,3]")
+        self.assertIs(type(result), list)
+        self.assertEqual(result, [1, 2, 3])
+
+    def test_list_misc_returns_list(self):
+        self.assertEqual(loads('[  "hello","world",\r\n42]'), ["hello", "world", 42])
+        self.assertEqual(
+            loads("[true, false, null, 13.13   \r]"), [True, False, None, 13.13]
+        )
+        self.assertEqual(
+            loads('\n[5,\r-Infinity,\t"",Infinity]'),
+            [5, float("-inf"), "", float("inf")],
+        )
+        result = loads("[13, NaN]")
+        self.assertEqual(result[0], 13)
+        self.assertEqual(str(result[1]), "nan")
+
+    def test_nested_lists_returns_list(self):
+        self.assertEqual(loads("[[]]"), [[]])
+        self.assertEqual(loads("[1, []  ]"), [1, []])
+        self.assertEqual(loads('[\t[], "test"]'), [[], "test"])
+        self.assertEqual(
+            loads('[[\r[[[]\t]\n], [-4.5, [[], ["a"] ]]]]'),
+            [[[[[]]], [-4.5, [[], ["a"]]]]],
+        )
+
+    def test_empty_list_returns_list(self):
+        self.assertEqual(loads("[]"), [])
+        self.assertEqual(loads(" []"), [])
+        self.assertEqual(loads("[ ]"), [])
+        self.assertEqual(loads("[] "), [])
+
+    def test_deep_list_nesting_raises_recursion_error(self):
+        with self.assertRaises(RecursionError):
+            loads("[" * 2000000 + "]" * 2000000)
+
+    def test_unbalanced_lists_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 2 \(char 1\)"
+        ):
+            loads("[")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ',' delimiter: line 1 column 4 \(char 3\)"
+        ):
+            loads("[[]")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ',' delimiter: line 1 column 14 \(char 13\)"
+        ):
+            loads("[[], [], [[]]")
+
+    def test_missing_list_delimiter_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ',' delimiter: line 1 column 4 \(char 3\)"
+        ):
+            loads("[1 2]")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ',' delimiter: line 1 column 4 \(char 3\)"
+        ):
+            loads('[""')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting ',' delimiter: line 1 column 4 \(char 3\)"
+        ):
+            loads("[[]4.4]")
+
     def test_unexpected_char_raises_json_decode_error(self):
         with self.assertRaisesRegex(
             JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
