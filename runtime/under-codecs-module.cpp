@@ -8,11 +8,10 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "unicode-db.h"
+#include "unicode.h"
 
 namespace py {
 
-const int32_t kLowSurrogateStart = 0xDC00;
-const int32_t kHighSurrogateStart = 0xD800;
 const char kASCIIReplacement = '?';
 
 static SymbolId lookupSymbolForErrorHandler(const Str& error) {
@@ -90,7 +89,8 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Arguments args) {
         break;
       }
       case ID(surrogateescape): {
-        Str temp(&scope, SmallStr::fromCodePoint(kLowSurrogateStart + c));
+        Str temp(&scope,
+                 SmallStr::fromCodePoint(Unicode::kLowSurrogateStart + c));
         runtime->strArrayAddStr(thread, dst, temp);
         ++outpos;
         break;
@@ -113,8 +113,8 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Arguments args) {
 // CPython encodes latin1 codepoints into the low-surrogate range, and is able
 // to recover the original codepoints from those decodable surrogate points.
 static bool isEscapedLatin1Surrogate(int32_t codepoint) {
-  return (kLowSurrogateStart + kMaxASCII) < codepoint &&
-         codepoint <= (kLowSurrogateStart + kMaxByte);
+  return (Unicode::kLowSurrogateStart + kMaxASCII) < codepoint &&
+         codepoint <= (Unicode::kLowSurrogateStart + kMaxByte);
 }
 
 RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Arguments args) {
@@ -148,7 +148,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Arguments args) {
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             bytearrayAdd(thread, runtime, output,
-                         codepoint - kLowSurrogateStart);
+                         codepoint - Unicode::kLowSurrogateStart);
             continue;
           }
           break;
@@ -389,7 +389,7 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Arguments args) {
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             bytearrayAdd(thread, runtime, output,
-                         codepoint - kLowSurrogateStart);
+                         codepoint - Unicode::kLowSurrogateStart);
             continue;
           }
           break;
@@ -653,8 +653,6 @@ RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread,
   return runtime->newTupleWith4(dst_obj, length_obj, message_obj, escape_obj);
 }
 
-static bool isContinuationByte(byte ch) { return kMaxASCII < ch && ch < 0xC0; }
-
 enum Utf8DecoderResult {
   k1Byte = 1,
   k2Byte = 2,
@@ -693,7 +691,7 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
     if (index + 1 >= length) {
       return kUnexpectedEndOfData;
     }
-    if (!isContinuationByte(bytes.byteAt(index + 1))) {
+    if (!UTF8::isTrailByte(bytes.byteAt(index + 1))) {
       return kInvalidContinuation1;
     }
     return k2Byte;
@@ -705,13 +703,13 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
         return kUnexpectedEndOfData;
       }
       byte ch2 = bytes.byteAt(index + 1);
-      if (!isContinuationByte(ch2) || (ch2 < 0xA0 ? ch == 0xE0 : ch == 0xED)) {
+      if (!UTF8::isTrailByte(ch2) || (ch2 < 0xA0 ? ch == 0xE0 : ch == 0xED)) {
         return kInvalidContinuation1;
       }
       return kUnexpectedEndOfData;
     }
     byte ch2 = bytes.byteAt(index + 1);
-    if (!isContinuationByte(ch2)) {
+    if (!UTF8::isTrailByte(ch2)) {
       return kInvalidContinuation1;
     }
     if (ch == 0xE0) {
@@ -728,7 +726,7 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
       // (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt
       return kInvalidContinuation1;
     }
-    if (!isContinuationByte(bytes.byteAt(index + 2))) {
+    if (!UTF8::isTrailByte(bytes.byteAt(index + 2))) {
       return kInvalidContinuation2;
     }
     return k3Byte;
@@ -740,19 +738,19 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
         return kUnexpectedEndOfData;
       }
       byte ch2 = bytes.byteAt(index + 1);
-      if (!isContinuationByte(ch2) || (ch2 < 0x90 ? ch == 0xF0 : ch == 0xF4)) {
+      if (!UTF8::isTrailByte(ch2) || (ch2 < 0x90 ? ch == 0xF0 : ch == 0xF4)) {
         return kInvalidContinuation1;
       }
       if (index + 2 >= length) {
         return kUnexpectedEndOfData;
       }
-      if (!isContinuationByte(bytes.byteAt(index + 2))) {
+      if (!UTF8::isTrailByte(bytes.byteAt(index + 2))) {
         return kInvalidContinuation2;
       }
       return kUnexpectedEndOfData;
     }
     byte ch2 = bytes.byteAt(index + 1);
-    if (!isContinuationByte(ch2)) {
+    if (!UTF8::isTrailByte(ch2)) {
       return kInvalidContinuation1;
     }
     if (ch == 0xF0) {
@@ -766,10 +764,10 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
       // \xF4\x90\x80\80- -- 110000- overflow
       return kInvalidContinuation1;
     }
-    if (!isContinuationByte(bytes.byteAt(index + 2))) {
+    if (!UTF8::isTrailByte(bytes.byteAt(index + 2))) {
       return kInvalidContinuation2;
     }
-    if (!isContinuationByte(bytes.byteAt(index + 3))) {
+    if (!UTF8::isTrailByte(bytes.byteAt(index + 3))) {
       return kInvalidContinuation3;
     }
     return k4Byte;
@@ -856,7 +854,7 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Arguments args) {
       }
       case ID(surrogateescape): {
         for (; i < error_end; ++i) {
-          Str temp(&scope, SmallStr::fromCodePoint(kLowSurrogateStart +
+          Str temp(&scope, SmallStr::fromCodePoint(Unicode::kLowSurrogateStart +
                                                    bytes.byteAt(i)));
           runtime->strArrayAddStr(thread, dst, temp);
         }
@@ -910,7 +908,7 @@ RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Arguments args) {
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             bytearrayAdd(thread, runtime, output,
-                         codepoint - kLowSurrogateStart);
+                         codepoint - Unicode::kLowSurrogateStart);
             continue;
           }
           break;
@@ -953,11 +951,11 @@ static void appendUtf16ToBytearray(Thread* thread, Runtime* runtime,
 }
 
 static int32_t highSurrogate(int32_t codepoint) {
-  return kHighSurrogateStart - (0x10000 >> 10) + (codepoint >> 10);
+  return Unicode::kHighSurrogateStart - (0x10000 >> 10) + (codepoint >> 10);
 }
 
 static int32_t lowSurrogate(int32_t codepoint) {
-  return kLowSurrogateStart + (codepoint & 0x3FF);
+  return Unicode::kLowSurrogateStart + (codepoint & 0x3FF);
 }
 
 RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
@@ -984,7 +982,7 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (!Unicode::isSurrogate(codepoint)) {
-      if (codepoint < kHighSurrogateStart) {
+      if (codepoint < Unicode::kHighSurrogateStart) {
         appendUtf16ToBytearray(thread, runtime, output, codepoint, endianness);
       } else {
         appendUtf16ToBytearray(thread, runtime, output,
@@ -1003,7 +1001,8 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             appendUtf16ToBytearray(thread, runtime, output,
-                                   codepoint - kLowSurrogateStart, endianness);
+                                   codepoint - Unicode::kLowSurrogateStart,
+                                   endianness);
             continue;
           }
           break;
@@ -1077,7 +1076,8 @@ RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Arguments args) {
         case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             appendUtf32ToBytearray(thread, runtime, output,
-                                   codepoint - kLowSurrogateStart, endianness);
+                                   codepoint - Unicode::kLowSurrogateStart,
+                                   endianness);
             continue;
           }
           break;

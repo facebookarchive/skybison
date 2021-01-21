@@ -65,13 +65,16 @@ class Unicode {
  public:
   // Constants
   static const int32_t kAliasStart = 0xf0000;
-  static const int32_t kHighSurrogateStart = 0xD800;
+  static const int32_t kHighSurrogateStart = 0xd800;
+  static const int32_t kHighSurrogateEnd = 0xdbff;
   static const int32_t kHangulSyllableStart = 0xac00;
   static const int32_t kHangulLeadStart = 0x1100;
   static const int32_t kHangulVowelStart = 0x1161;
   static const int32_t kHangulTrailStart = 0x11a7;
-  static const int32_t kLowSurrogateEnd = 0xDFFF;
+  static const int32_t kLowSurrogateStart = 0xdc00;
+  static const int32_t kLowSurrogateEnd = 0xdfff;
   static const int32_t kNamedSequenceStart = 0xf0200;
+  static const int32_t kSurrogateMask = 0x03ff;
 
   static const int kAliasCount = 468;
   static const int kHangulLeadCount = 19;
@@ -94,7 +97,9 @@ class Unicode {
   static bool isHangulSyllable(int32_t code_point);
   static bool isHangulTrail(int32_t code_point);
   static bool isHangulVowel(int32_t code_point);
+  static bool isHighSurrogate(int32_t code_point);
   static bool isLinebreak(int32_t code_point);
+  static bool isLowSurrogate(int32_t code_point);
   static bool isLower(int32_t code_point);
   static bool isNamedSequence(int32_t code_point);
   static bool isNumeric(int32_t code_point);
@@ -108,6 +113,8 @@ class Unicode {
   static bool isXidStart(int32_t code_point);
 
   // Conversion
+  static int32_t combineSurrogates(int32_t high_code_point,
+                                   int32_t low_code_point);
   static int8_t toDecimal(int32_t code_point);
   static int8_t toDigit(int32_t code_point);
   static FullCasing toFolded(int32_t code_point);
@@ -311,11 +318,20 @@ inline bool Unicode::isHangulVowel(int32_t code_point) {
          (code_point < kHangulVowelStart + kHangulVowelCount);
 }
 
+inline bool Unicode::isHighSurrogate(int32_t code_point) {
+  return (kHighSurrogateStart <= code_point) &&
+         (code_point <= kHighSurrogateEnd);
+}
+
 inline bool Unicode::isLinebreak(int32_t code_point) {
   if (isASCII(code_point)) {
     return ASCII::isLinebreak(code_point);
   }
   return isLinebreakDB(code_point);
+}
+
+inline bool Unicode::isLowSurrogate(int32_t code_point) {
+  return (kLowSurrogateStart <= code_point) && (code_point <= kLowSurrogateEnd);
 }
 
 inline bool Unicode::isLower(int32_t code_point) {
@@ -388,6 +404,17 @@ inline bool Unicode::isXidStart(int32_t code_point) {
     return ASCII::isXidStart(code_point);
   }
   return isXidStartDB(code_point);
+}
+
+inline int32_t Unicode::combineSurrogates(int32_t high_code_point,
+                                          int32_t low_code_point) {
+  DCHECK(Unicode::isHighSurrogate(high_code_point), "expected high surrogate");
+  DCHECK(Unicode::isLowSurrogate(low_code_point), "expected low surrogate");
+  int32_t result = (((high_code_point & kSurrogateMask)) << 10 |
+                    (low_code_point & kSurrogateMask)) +
+                   0x10000;
+  DCHECK(result <= kMaxUnicode, "result must be valid code point");
+  return result;
 }
 
 inline int8_t Unicode::toDecimal(int32_t code_point) {

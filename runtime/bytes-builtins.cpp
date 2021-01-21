@@ -319,10 +319,6 @@ RawObject bytesSubseq(Thread* thread, const Bytes& bytes, word start,
   return result.becomeImmutable();
 }
 
-static bool isUTF8Continuation(byte b) {
-  return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
-}
-
 static bool bytesIsValidUTF8Impl(RawBytes bytes, bool allow_surrogates) {
   for (word i = 0, length = bytes.length(); i < length;) {
     byte b0 = bytes.byteAt(i++);
@@ -344,7 +340,7 @@ static bool bytesIsValidUTF8Impl(RawBytes bytes, bool allow_surrogates) {
         return false;
       }
       byte b1 = bytes.byteAt(i++);
-      if (!isUTF8Continuation(b1)) {
+      if (!UTF8::isTrailByte(b1)) {
         return false;
       }
       if (DCHECK_IS_ON()) {
@@ -360,7 +356,7 @@ static bool bytesIsValidUTF8Impl(RawBytes bytes, bool allow_surrogates) {
       }
       byte b1 = bytes.byteAt(i++);
       byte b2 = bytes.byteAt(i++);
-      if (!isUTF8Continuation(b1) || !isUTF8Continuation(b2)) {
+      if (!UTF8::isTrailByte(b1) || !UTF8::isTrailByte(b2)) {
         return false;
       }
 
@@ -394,8 +390,8 @@ static bool bytesIsValidUTF8Impl(RawBytes bytes, bool allow_surrogates) {
       byte b1 = bytes.byteAt(i++);
       byte b2 = bytes.byteAt(i++);
       byte b3 = bytes.byteAt(i++);
-      if (!isUTF8Continuation(b1) || !isUTF8Continuation(b2) ||
-          !isUTF8Continuation(b3)) {
+      if (!UTF8::isTrailByte(b1) || !UTF8::isTrailByte(b2) ||
+          !UTF8::isTrailByte(b3)) {
         return false;
       }
       // Catch sequences that should have been encoded with 1-3 bytes instead.
