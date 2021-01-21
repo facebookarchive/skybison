@@ -51,6 +51,16 @@ class LoadsTests(unittest.TestCase):
         control_chars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
         self.assertEqual(loads(f'"{control_chars}"', strict=False), control_chars)
 
+    def test_string_with_escape_returns_str(self):
+        self.assertEqual(loads('"\\""'), '"')
+        self.assertEqual(loads('"\\\\"'), "\\")
+        self.assertEqual(loads('"\\/"'), "/")
+        self.assertEqual(loads('"\\b"'), "\b")
+        self.assertEqual(loads('"\\f"'), "\f")
+        self.assertEqual(loads('"\\n"'), "\n")
+        self.assertEqual(loads('"\\r"'), "\r")
+        self.assertEqual(loads('"\\t"'), "\t")
+
     def test_string_with_whitespace_returns_str(self):
         self.assertEqual(loads(' ""'), "")
         self.assertEqual(loads('"" '), "")
@@ -65,6 +75,23 @@ class LoadsTests(unittest.TestCase):
             JSONDecodeError, r"Extra data: line 1 column 7 \(char 6\)"
         ):
             loads('""    ""')
+
+    def test_string_with_unterminated_escape_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Unterminated string starting at: line 1 column 1 \(char 0\)",
+        ):
+            loads('"\\')
+
+    def test_string_with_invalid_escape_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid \\escape: line 1 column 2 \(char 1\)"
+        ):
+            loads('"\\x"')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid \\escape: line 1 column 2 \(char 1\)"
+        ):
+            loads('"\\\U0001f974"')
 
     def test_true_returns_bool(self):
         self.assertIs(loads("true"), True)

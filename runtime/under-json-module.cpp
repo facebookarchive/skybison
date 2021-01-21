@@ -86,10 +86,60 @@ static NEVER_INLINE RawObject raiseJSONDecodeError(Thread* thread,
   return thread->raiseWithType(*json_decode_error, *args);
 }
 
-static RawObject scanString(Thread* thread, JSONParser* env,
-                            const DataArray& data) {
+static RawObject scanEscapeSequence(Thread* thread, JSONParser* env,
+                                    const DataArray& data, word begin) {
   word next = env->next;
   word length = env->length;
+  if (next >= length) {
+    return raiseJSONDecodeError(thread, env, data, begin - 1,
+                                "Unterminated string starting at");
+  }
+  byte ascii_result;
+  byte b = data.byteAt(next++);
+  switch (b) {
+    case '"':
+    case '\\':
+    case '/':
+      ascii_result = b;
+      break;
+    case 'b':
+      ascii_result = '\b';
+      break;
+    case 'f':
+      ascii_result = '\f';
+      break;
+    case 'n':
+      ascii_result = '\n';
+      break;
+    case 'r':
+      ascii_result = '\r';
+      break;
+    case 't':
+      ascii_result = '\t';
+      break;
+    case 'u': {
+      UNIMPLEMENTED("unicode escape sequence");
+    }
+    default:
+      return raiseJSONDecodeError(thread, env, data, next - 2,
+                                  "Invalid \\escape");
+  }
+  env->next = next;
+  return SmallStr::fromCodePoint(ascii_result);
+}
+
+static RawObject scanString(Thread* thread, JSONParser* env,
+                            const DataArray& data) {
+  struct Segment {
+    int32_t begin_or_negative_length;
+    int32_t length_or_utf8;
+  };
+
+  Runtime* runtime = thread->runtime();
+  word next = env->next;
+  word length = env->length;
+  word result_length = 0;
+  Vector<Segment> segments;
   word begin = next;
   word segment_begin;
   word segment_length;
@@ -115,11 +165,59 @@ static RawObject scanString(Thread* thread, JSONParser* env,
     if (b == '"') {
       break;
     }
+
+    if (segment_length > 0) {
+      segments.push_back(Segment{static_cast<int32_t>(segment_begin),
+                                 static_cast<int32_t>(segment_length)});
+      result_length += segment_length;
+    }
+
     DCHECK(b == '\\', "Expected backslash");
-    UNIMPLEMENTED("escape sequences");
+    env->next = next;
+    RawObject escape_result = scanEscapeSequence(thread, env, data, begin);
+    if (escape_result.isErrorException()) return escape_result;
+    next = env->next;
+    RawSmallStr str = SmallStr::cast(escape_result);
+    word str_length = str.length();
+    Segment segment;
+    segment.begin_or_negative_length = -str_length;
+    segment.length_or_utf8 = 0;
+    DCHECK(str_length <= static_cast<word>(sizeof(segment.length_or_utf8)),
+           "encoded codepoint should fit in `length_or_utf8`");
+    str.copyTo(reinterpret_cast<byte*>(&segment.length_or_utf8), str_length);
+    result_length += str_length;
+    segments.push_back(segment);
   }
   env->next = next;
-  return dataArraySubstr(thread, data, segment_begin, segment_length);
+  if (segments.size() == 0) {
+    return dataArraySubstr(thread, data, segment_begin, segment_length);
+  }
+  if (segment_length > 0) {
+    segments.push_back(Segment{static_cast<int32_t>(segment_begin),
+                               static_cast<int32_t>(segment_length)});
+    result_length += segment_length;
+  }
+  HandleScope scope(thread);
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  word result_index = 0;
+  for (Segment segment : segments) {
+    word begin_or_negative_length = segment.begin_or_negative_length;
+    word length_or_utf8 = segment.length_or_utf8;
+    if (begin_or_negative_length >= 0) {
+      result.replaceFromWithStartAt(result_index, *data, length_or_utf8,
+                                    begin_or_negative_length);
+      result_index += length_or_utf8;
+    } else {
+      word utf8_length = -begin_or_negative_length;
+      result.replaceFromWithAll(
+          result_index,
+          View<byte>(reinterpret_cast<byte*>(&length_or_utf8), utf8_length));
+      result_index += utf8_length;
+    }
+  }
+  DCHECK(result_index == result_length, "index/length mismatch");
+  return result.becomeStr();
 }
 
 static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
