@@ -10,6 +10,104 @@ else:
 
 
 class LoadsTests(unittest.TestCase):
+    def test_number_returns_int(self):
+        self.assertEqual(loads("0"), 0)
+        self.assertEqual(loads("1"), 1)
+        self.assertEqual(loads("2"), 2)
+        self.assertEqual(loads("3"), 3)
+        self.assertEqual(loads("4"), 4)
+        self.assertEqual(loads("5"), 5)
+        self.assertEqual(loads("6"), 6)
+        self.assertEqual(loads("7"), 7)
+        self.assertEqual(loads("8"), 8)
+        self.assertEqual(loads("9"), 9)
+        self.assertEqual(loads("10"), 10)
+        self.assertEqual(loads("91284647"), 91284647)
+        self.assertEqual(loads("-1"), -1)
+        self.assertEqual(loads("-42"), -42)
+        self.assertEqual(loads("-0"), 0)
+        self.assertEqual(loads("1000000000000000000"), 1000000000000000000)
+        self.assertEqual(loads("-1000000000000000000"), -1000000000000000000)
+
+    def test_large_number_returns_int(self):
+        self.assertEqual(loads("10000000000000000000"), 10000000000000000000)
+        self.assertEqual(loads("-10000000000000000000"), -10000000000000000000)
+        self.assertEqual(
+            loads("123456789123456789123456789123456789123456789"),
+            123456789123456789123456789123456789123456789,
+        )
+        self.assertEqual(
+            loads("-666666666666666666666666666666"), -666666666666666666666666666666
+        )
+
+    def test_number_with_whitespace_returns_int(self):
+        self.assertEqual(loads("0 "), 0)
+        self.assertEqual(loads("\r0"), 0)
+        self.assertEqual(loads("-1\t"), -1)
+        self.assertEqual(loads("\n-1"), -1)
+        self.assertEqual(loads("99 "), 99)
+        self.assertEqual(loads("\t99"), 99)
+        self.assertEqual(loads(" \r\n\t-5700 "), -5700)
+        self.assertEqual(loads(" -5700\t\r \t\t \n"), -5700)
+
+    def test_number_calls_parse_int(self):
+        arg = None
+        marker = object()
+
+        def func(string):
+            nonlocal arg
+            arg = string
+            return marker
+
+        self.assertIs(loads("12", parse_int=func), marker)
+        self.assertEqual(arg, "12")
+        self.assertIs(loads(" 0\t", parse_int=func), marker)
+        self.assertEqual(arg, "0")
+        self.assertIs(loads("-712\r\n", parse_int=func), marker)
+        self.assertEqual(arg, "-712")
+        self.assertIs(
+            loads("   1234567890123456789012345687898239746924673564", parse_int=func),
+            marker,
+        )
+        self.assertEqual(arg, "1234567890123456789012345687898239746924673564")
+        self.assertIs(
+            loads("-12233344445555566666677777778888888999999999", parse_int=func),
+            marker,
+        )
+        self.assertEqual(arg, "-12233344445555566666677777778888888999999999")
+
+    def test_minus_without_digit_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
+        ):
+            loads("-")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
+        ):
+            loads("-a")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
+        ):
+            loads("- 5")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
+        ):
+            loads("- Infinity")
+
+    def test_leading_zeros_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("00")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("04")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("099")
+
     def test_string_returns_str(self):
         self.assertEqual(loads('""'), "")
         self.assertEqual(loads('" "'), " ")

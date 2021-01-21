@@ -671,6 +671,12 @@ class RawSmallInt : public RawObject {
   static const word kMinValue = -(word{1} << (kBits - 1));
   static const word kMaxValue = (word{1} << (kBits - 1)) - 1;
 
+  static const word kMaxDigits10 = 18;
+  static const word kMaxDigits10Pow = 1000000000000000000;
+  static_assert((kMaxDigits10Pow <= kMaxValue) &&
+                    (kMaxDigits10Pow > kMaxValue / 10),
+                "invalid max");
+
   RAW_OBJECT_COMMON(SmallInt);
 };
 

@@ -30,6 +30,7 @@ struct JSONParser {
   word length;
   Arguments args;
   bool has_parse_constant;
+  bool has_parse_int;
   bool strict;
 };
 
@@ -43,6 +44,14 @@ static NEVER_INLINE int callParseConstant(Thread* thread, JSONParser* env,
   *value_out = Interpreter::call1(thread, hook, string);
   if (value_out->isErrorException()) return -1;
   return 0;
+}
+
+static NEVER_INLINE RawObject callParseInt(Thread* thread, JSONParser* env,
+                                           const DataArray& data, word begin) {
+  HandleScope scope(thread);
+  Object hook(&scope, env->args.get(static_cast<word>(LoadsArg::kParseInt)));
+  Object str(&scope, dataArraySubstr(thread, data, begin, env->next - begin));
+  return Interpreter::call1(thread, hook, str);
 }
 
 static byte nextNonWhitespace(Thread*, JSONParser* env, const DataArray& data) {
@@ -177,6 +186,69 @@ static RawObject scanEscapeSequence(Thread* thread, JSONParser* env,
   return SmallStr::fromCodePoint(ascii_result);
 }
 
+static RawObject scanFloat(Thread*, JSONParser*, const DataArray&, byte, word) {
+  UNIMPLEMENTED("float parsing");
+}
+
+static RawObject scanLargeInt(Thread* thread, JSONParser* env,
+                              const DataArray& data, byte b, word begin,
+                              bool negative, word value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  word next = env->next;
+  word length = env->length;
+  Int result(&scope, SmallInt::fromWord(value));
+  Int factor(&scope, SmallInt::fromWord(SmallInt::kMaxDigits10Pow));
+  Int value_int(&scope, SmallInt::fromWord(0));
+
+  value = 0;
+  word digits = 0;
+  for (;;) {
+    value += b - '0';
+    if (next >= length) break;
+    b = data.byteAt(next++);
+    if ('0' <= b && b <= '9') {
+      digits++;
+      if (digits >= SmallInt::kMaxDigits10) {
+        value_int = Int::cast(SmallInt::fromWord(value));
+        result = runtime->intMultiply(thread, result, factor);
+        result = runtime->intAdd(thread, result, value_int);
+        digits = 0;
+        value = 0;
+      } else {
+        value *= 10;
+      }
+      continue;
+    }
+
+    if (b == '.' || b == 'e' || b == 'E') {
+      env->next = next;
+      return scanFloat(thread, env, data, b, begin);
+    }
+
+    next--;
+    break;
+  }
+  env->next = next;
+  if (env->has_parse_int) {
+    return callParseInt(thread, env, data, begin);
+  }
+
+  word f = negative ? -10 : 10;
+  for (word i = 0; i < digits; i++) {
+    f *= 10;
+  }
+  factor = Int::cast(SmallInt::fromWord(f));
+  result = runtime->intMultiply(thread, result, factor);
+  value_int = Int::cast(SmallInt::fromWord(value));
+  if (negative) {
+    result = runtime->intSubtract(thread, result, value_int);
+  } else {
+    result = runtime->intAdd(thread, result, value_int);
+  }
+  return *result;
+}
+
 static RawObject scanString(Thread* thread, JSONParser* env,
                             const DataArray& data) {
   struct Segment {
@@ -231,8 +303,8 @@ static RawObject scanString(Thread* thread, JSONParser* env,
     Segment segment;
     segment.begin_or_negative_length = -str_length;
     segment.length_or_utf8 = 0;
-    DCHECK(str_length <= static_cast<word>(sizeof(segment.length_or_utf8)),
-           "encoded codepoint should fit in `length_or_utf8`");
+    CHECK(str_length <= static_cast<word>(sizeof(segment.length_or_utf8)),
+          "encoded codepoint should fit in `length_or_utf8`");
     str.copyTo(reinterpret_cast<byte*>(&segment.length_or_utf8), str_length);
     result_length += str_length;
     segments.push_back(segment);
@@ -267,6 +339,67 @@ static RawObject scanString(Thread* thread, JSONParser* env,
   }
   DCHECK(result_index == result_length, "index/length mismatch");
   return result.becomeStr();
+}
+
+static RawObject scanNumber(Thread* thread, JSONParser* env,
+                            const DataArray& data, byte b) {
+  word begin = env->next - 1;
+  word next = env->next;
+  word length = env->length;
+  bool negative = (b == '-');
+  if (negative) {
+    if (next >= length) return Error::error();
+    negative = true;
+    b = data.byteAt(next++);
+    if (b < '0' || b > '9') {
+      return Error::error();
+    }
+  }
+  if (b == '0') {
+    if (next < length) {
+      b = data.byteAt(next++);
+      if (b == '.' || b == 'e' || b == 'E') {
+        env->next = next;
+        return scanFloat(thread, env, data, b, begin);
+      }
+      next--;
+    }
+    env->next = next;
+    if (env->has_parse_int) {
+      return callParseInt(thread, env, data, begin);
+    }
+    return SmallInt::fromWord(0);
+  }
+
+  word value = 0;
+  word digits_left = SmallInt::kMaxDigits10;
+  for (;;) {
+    value += b - '0';
+    if (next >= length) break;
+    b = data.byteAt(next++);
+    if ('0' <= b && b <= '9') {
+      digits_left--;
+      if (digits_left == 0) {
+        env->next = next;
+        return scanLargeInt(thread, env, data, b, begin, negative, value);
+      }
+      value *= 10;
+      continue;
+    }
+
+    if (b == '.' || b == 'e' || b == 'E') {
+      env->next = next;
+      return scanFloat(thread, env, data, b, begin);
+    }
+
+    next--;
+    break;
+  }
+  env->next = next;
+  if (env->has_parse_int) {
+    return callParseInt(thread, env, data, begin);
+  }
+  return SmallInt::fromWord(negative ? -value : value);
 }
 
 static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
@@ -309,8 +442,21 @@ static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
       case '6':
       case '7':
       case '8':
-      case '9':
-        UNIMPLEMENTED("scanNumber");
+      case '9': {
+        RawObject value = scanNumber(thread, env, data, b);
+        if (value.isError()) {
+          if (value.isErrorException()) {
+            *value_out = Error::exception();
+          } else {
+            *value_out = raiseJSONDecodeError(thread, env, data, next - 1,
+                                              "Expecting value");
+          }
+          return -1;
+        }
+        *value_out = value;
+        return 0;
+      }
+
       case 'n':  // `null`
         if (next <= length - 3 && data.byteAt(next) == 'u' &&
             data.byteAt(next + 1) == 'l' && data.byteAt(next + 2) == 'l') {
@@ -459,7 +605,7 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
     UNIMPLEMENTED("parse float hook");
   }
   if (!args.get(static_cast<word>(LoadsArg::kParseInt)).isNoneType()) {
-    UNIMPLEMENTED("parse int hook");
+    env.has_parse_int = true;
   }
   if (!args.get(static_cast<word>(LoadsArg::kParseConstant)).isNoneType()) {
     env.has_parse_constant = true;
