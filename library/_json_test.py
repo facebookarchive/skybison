@@ -61,6 +61,24 @@ class LoadsTests(unittest.TestCase):
         self.assertEqual(loads('"\\r"'), "\r")
         self.assertEqual(loads('"\\t"'), "\t")
 
+    def test_string_with_u_escape_returns_str(self):
+        self.assertEqual(loads('"\\u0059"'), "Y")
+        self.assertEqual(loads('"\\u1234"'), "\u1234")
+        self.assertEqual(loads('"\\ucafe"'), "\ucafe")
+        self.assertEqual(loads('"\\uCAFE"'), "\ucafe")
+        self.assertEqual(loads('"\\uCa00"'), "\uca00")
+        self.assertEqual(loads('"\\u99fE"'), "\u99fe")
+
+    def test_string_with_u_escape_combines_surrogates(self):
+        self.assertEqual(loads('"\\ud83e\\udd20"'), "\U0001f920")
+        self.assertEqual(loads('"\\udbff\\udfff"'), "\U0010ffff")
+
+    def test_string_with_lone_surrogates_returns_str(self):
+        self.assertEqual(loads('"\\ud83e"'), "\ud83e")
+        self.assertEqual(loads('"\\ud83e\\ud83e"'), "\ud83e\ud83e")
+        self.assertEqual(loads('"\\udd20"'), "\udd20")
+        self.assertEqual(loads('"\\udd20\\ud83e"'), "\udd20\ud83e")
+
     def test_string_with_whitespace_returns_str(self):
         self.assertEqual(loads(' ""'), "")
         self.assertEqual(loads('"" '), "")
@@ -92,6 +110,24 @@ class LoadsTests(unittest.TestCase):
             JSONDecodeError, r"Invalid \\escape: line 1 column 2 \(char 1\)"
         ):
             loads('"\\\U0001f974"')
+
+    def test_string_with_invalid_u_escape_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid \\uXXXX escape: line 1 column 3 \(char 2\)"
+        ):
+            loads('"\\u')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid \\uXXXX escape: line 1 column 3 \(char 2\)"
+        ):
+            loads('"\\u123')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid \\uXXXX escape: line 1 column 3 \(char 2\)"
+        ):
+            loads('"\\u000g')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid \\uXXXX escape: line 1 column 9 \(char 8\)"
+        ):
+            loads('"\\ud83e\\u5x"')
 
     def test_true_returns_bool(self):
         self.assertIs(loads("true"), True)

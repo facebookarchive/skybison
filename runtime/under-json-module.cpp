@@ -10,6 +10,8 @@
 
 namespace py {
 
+static const int kNumUEscapeChars = 4;
+
 enum class LoadsArg {
   kString = 0,
   kEncoding = 1,
@@ -118,7 +120,54 @@ static RawObject scanEscapeSequence(Thread* thread, JSONParser* env,
       ascii_result = '\t';
       break;
     case 'u': {
-      UNIMPLEMENTED("unicode escape sequence");
+      int32_t code_point;
+      if (next >= length - kNumUEscapeChars) {
+        return raiseJSONDecodeError(thread, env, data, next - 1,
+                                    "Invalid \\uXXXX escape");
+      }
+      code_point = 0;
+      word end = next + kNumUEscapeChars;
+      do {
+        b = data.byteAt(next++);
+        code_point <<= kBitsPerHexDigit;
+        if ('0' <= b && b <= '9') {
+          code_point |= b - '0';
+        } else if ('a' <= b && b <= 'f') {
+          code_point |= b - 'a' + 10;
+        } else if ('A' <= b && b <= 'F') {
+          code_point |= b - 'A' + 10;
+        } else {
+          return raiseJSONDecodeError(thread, env, data, end - kNumUEscapeChars,
+                                      "Invalid \\uXXXX escape");
+        }
+      } while (next < end);
+      if (Unicode::isHighSurrogate(code_point) &&
+          next < length - (kNumUEscapeChars + 2) && data.byteAt(next) == '\\' &&
+          data.byteAt(next + 1) == 'u') {
+        word next2 = next + 2;
+        int32_t code_point2 = 0;
+        word end2 = next2 + kNumUEscapeChars;
+        do {
+          byte b2 = data.byteAt(next2++);
+          code_point2 <<= kBitsPerHexDigit;
+          if ('0' <= b2 && b2 <= '9') {
+            code_point2 |= b2 - '0';
+          } else if ('a' <= b2 && b2 <= 'f') {
+            code_point2 |= b2 - 'a' + 10;
+          } else if ('A' <= b2 && b2 <= 'F') {
+            code_point2 |= b2 - 'A' + 10;
+          } else {
+            code_point2 = 0;
+            break;
+          }
+        } while (next2 < end2);
+        if (Unicode::isLowSurrogate(code_point2)) {
+          code_point = Unicode::combineSurrogates(code_point, code_point2);
+          next = end2;
+        }
+      }
+      env->next = next;
+      return SmallStr::fromCodePoint(code_point);
     }
     default:
       return raiseJSONDecodeError(thread, env, data, next - 2,
