@@ -12,6 +12,9 @@ word doubleHash(double value);
 
 word floatHash(RawObject value);
 
+// Read ASCII digits from str and make a float from those digits.
+RawObject floatFromDigits(Thread* thread, const char* str, word length);
+
 void initializeFloatType(Thread* thread);
 
 RawObject intFromDouble(Thread* thread, double value);

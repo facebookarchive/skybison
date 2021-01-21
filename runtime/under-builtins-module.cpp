@@ -2438,29 +2438,11 @@ static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
   return *instance;
 }
 
-// Read ASCII digits from str and make a float from those digits.
 static RawObject floatNewFromDigits(Thread* thread, const Type& type,
                                     const char* str, word length) {
-  // TODO(T57022841): follow full CPython conversion for strings
-  char* end = nullptr;
-  double result = std::strtod(str, &end);
-  // Overflow, return infinity or negative infinity.
-  Runtime* runtime = thread->runtime();
-  if (result == HUGE_VAL) {
-    return floatNew(thread, type,
-                    runtime->newFloat(std::numeric_limits<double>::infinity()));
-  }
-  if (result == -HUGE_VAL) {
-    return floatNew(
-        thread, type,
-        runtime->newFloat(-std::numeric_limits<double>::infinity()));
-  }
-  // Conversion was incomplete; the string was not a valid float.
-  if (length == 0 || end - str != length) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "could not convert string to float");
-  }
-  return floatNew(thread, type, runtime->newFloat(result));
+  RawObject float_obj = floatFromDigits(thread, str, length);
+  if (float_obj.isErrorException()) return float_obj;
+  return floatNew(thread, type, float_obj);
 }
 
 RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* thread,

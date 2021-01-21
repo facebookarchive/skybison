@@ -1,5 +1,6 @@
 #include "builtins.h"
 #include "dict-builtins.h"
+#include "float-builtins.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -30,6 +31,7 @@ struct JSONParser {
   word length;
   Arguments args;
   bool has_parse_constant;
+  bool has_parse_float;
   bool has_parse_int;
   bool strict;
 };
@@ -44,6 +46,15 @@ static NEVER_INLINE int callParseConstant(Thread* thread, JSONParser* env,
   *value_out = Interpreter::call1(thread, hook, string);
   if (value_out->isErrorException()) return -1;
   return 0;
+}
+
+static NEVER_INLINE RawObject callParseFloat(Thread* thread, JSONParser* env,
+                                             const DataArray& data, word begin,
+                                             word length) {
+  HandleScope scope(thread);
+  Object hook(&scope, env->args.get(static_cast<word>(LoadsArg::kParseFloat)));
+  Object str(&scope, dataArraySubstr(thread, data, begin, length));
+  return Interpreter::call1(thread, hook, str);
 }
 
 static NEVER_INLINE RawObject callParseInt(Thread* thread, JSONParser* env,
@@ -186,8 +197,68 @@ static RawObject scanEscapeSequence(Thread* thread, JSONParser* env,
   return SmallStr::fromCodePoint(ascii_result);
 }
 
-static RawObject scanFloat(Thread*, JSONParser*, const DataArray&, byte, word) {
-  UNIMPLEMENTED("float parsing");
+static RawObject scanFloat(Thread* thread, JSONParser* env,
+                           const DataArray& data, byte b, word begin) {
+  word next = env->next;
+  word length = env->length;
+  if (b == '.') {
+    // Need at least 1 digit.
+    if (next >= length) {
+      return raiseJSONDecodeError(thread, env, data, next - 1, "Extra data");
+    }
+    b = data.byteAt(next++);
+    if (b < '0' || b > '9') {
+      return raiseJSONDecodeError(thread, env, data, next - 2, "Extra data");
+    }
+    // Optionally followed by more digits.
+    do {
+      if (next >= length) {
+        b = 0;
+        next++;
+        break;
+      }
+      b = data.byteAt(next++);
+    } while ('0' <= b && b <= '9');
+  }
+  if (b == 'e' || b == 'E') {
+    word e_begin = next;
+    if (next >= length) {
+      return raiseJSONDecodeError(thread, env, data, e_begin - 1, "Extra data");
+    }
+    b = data.byteAt(next++);
+    if (b == '+' || b == '-') {
+      if (next >= length) {
+        return raiseJSONDecodeError(thread, env, data, e_begin - 1,
+                                    "Extra data");
+      }
+      b = data.byteAt(next++);
+    }
+    // Need at least 1 digit.
+    if (b < '0' || b > '9') {
+      return raiseJSONDecodeError(thread, env, data, e_begin - 1, "Extra data");
+    }
+    // Optionally followed by more digits.
+    do {
+      if (next >= length) {
+        b = 0;
+        next++;
+        break;
+      }
+      b = data.byteAt(next++);
+    } while ('0' <= b && b <= '9');
+  }
+  next--;
+  env->next = next;
+
+  word number_length = next - begin;
+  if (env->has_parse_float) {
+    return callParseFloat(thread, env, data, begin, number_length);
+  }
+  unique_c_ptr<byte> buf(static_cast<byte*>(std::malloc(number_length + 1)));
+  data.copyToStartAt(buf.get(), number_length, begin);
+  buf.get()[number_length] = '\0';
+  return floatFromDigits(thread, reinterpret_cast<char*>(buf.get()),
+                         number_length);
 }
 
 static RawObject scanLargeInt(Thread* thread, JSONParser* env,
@@ -348,11 +419,15 @@ static RawObject scanNumber(Thread* thread, JSONParser* env,
   word length = env->length;
   bool negative = (b == '-');
   if (negative) {
-    if (next >= length) return Error::error();
+    if (next >= length) {
+      return raiseJSONDecodeError(thread, env, data, length - 1,
+                                  "Expecting value");
+    }
     negative = true;
     b = data.byteAt(next++);
     if (b < '0' || b > '9') {
-      return Error::error();
+      return raiseJSONDecodeError(thread, env, data, next - 2,
+                                  "Expecting value");
     }
   }
   if (b == '0') {
@@ -444,16 +519,8 @@ static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
       case '8':
       case '9': {
         RawObject value = scanNumber(thread, env, data, b);
-        if (value.isError()) {
-          if (value.isErrorException()) {
-            *value_out = Error::exception();
-          } else {
-            *value_out = raiseJSONDecodeError(thread, env, data, next - 1,
-                                              "Expecting value");
-          }
-          return -1;
-        }
         *value_out = value;
+        if (value.isErrorException()) return -1;
         return 0;
       }
 
@@ -602,7 +669,7 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
     UNIMPLEMENTED("object hook");
   }
   if (!args.get(static_cast<word>(LoadsArg::kParseFloat)).isNoneType()) {
-    UNIMPLEMENTED("parse float hook");
+    env.has_parse_float = true;
   }
   if (!args.get(static_cast<word>(LoadsArg::kParseInt)).isNoneType()) {
     env.has_parse_int = true;

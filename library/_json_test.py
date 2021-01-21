@@ -108,6 +108,121 @@ class LoadsTests(unittest.TestCase):
         ):
             loads("099")
 
+    def test_number_returns_float(self):
+        self.assertEqual(str(loads("0.0")), "0.0")
+        self.assertEqual(str(loads("-0.0")), "-0.0")
+        self.assertEqual(str(loads("1.0")), "1.0")
+        self.assertEqual(str(loads("42.0")), "42.0")
+        self.assertEqual(str(loads("-312.0")), "-312.0")
+        self.assertEqual(
+            str(loads("987654321987654321987654321987654321.0")),
+            "9.876543219876544e+35",
+        )
+
+    def test_number_with_fraction_returns_float(self):
+        self.assertEqual(str(loads("0.5")), "0.5")
+        self.assertEqual(str(loads("-3.125")), "-3.125")
+        self.assertEqual(str(loads("99.987654321")), "99.987654321")
+        self.assertEqual(str(loads("-123456789.987654321")), "-123456789.98765433")
+        self.assertEqual(
+            str(loads("987654321.987654321987654321987654321987654321")),
+            "987654321.9876543",
+        )
+
+    def test_number_with_exponent_returns_flaot(self):
+        self.assertEqual(str(loads("0e0")), "0.0")
+        self.assertEqual(str(loads("0e+0")), "0.0")
+        self.assertEqual(str(loads("0e-0")), "0.0")
+        self.assertEqual(str(loads("0e000")), "0.0")
+        self.assertEqual(str(loads("0e-00")), "0.0")
+        self.assertEqual(str(loads("0e-0000")), "0.0")
+        self.assertEqual(str(loads("0e+1000")), "0.0")
+        self.assertEqual(str(loads("0e-1000")), "0.0")
+
+        self.assertEqual(str(loads("1e4")), "10000.0")
+        self.assertEqual(str(loads("5e+5")), "500000.0")
+        self.assertEqual(
+            str(loads("5e+0000000000000000000000000000000000005")), "500000.0"
+        )
+        self.assertEqual(str(loads("10e-6")), "1e-05")
+        self.assertEqual(str(loads("15e+77")), "1.5e+78")
+        self.assertEqual(str(loads("1234e-98")), "1.234e-95")
+
+    def test_number_returns_float_infinity(self):
+        self.assertEqual(loads("1e10000"), float("inf"))
+        self.assertEqual(loads("-3e10000"), float("-inf"))
+
+    def test_number_returns_zero(self):
+        self.assertEqual(str(loads("1e-10000")), "0.0")
+        self.assertEqual(str(loads("-1e-10000")), "-0.0")
+
+    def test_number_with_whitespace_returns_float(self):
+        self.assertEqual(str(loads(" 0.0")), "0.0")
+        self.assertEqual(str(loads("0.0 ")), "0.0")
+        self.assertEqual(str(loads(" 0.0 ")), "0.0")
+
+    def test_number_calls_parse_float(self):
+        arg = None
+        marker = object()
+
+        def func(string):
+            nonlocal arg
+            arg = string
+            return marker
+
+        self.assertIs(loads("1.1", parse_float=func), marker)
+        self.assertEqual(arg, "1.1")
+        self.assertIs(loads(" -4.0\r\n", parse_float=func), marker)
+        self.assertEqual(arg, "-4.0")
+        self.assertIs(loads("41e81  ", parse_float=func), marker)
+        self.assertEqual(arg, "41e81")
+        self.assertIs(loads("\t -3.4E-7", parse_float=func), marker)
+        self.assertEqual(arg, "-3.4E-7")
+
+    def test_dot_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
+        ):
+            loads(".")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"
+        ):
+            loads(".4")
+
+    def test_number_dot_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("1.")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("2.a")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("3e")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("4e-")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("5e+")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("6e+x")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 4 \(char 3\)"
+        ):
+            loads("6.2e")
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 2 \(char 1\)"
+        ):
+            loads("6ea")
+
     def test_string_returns_str(self):
         self.assertEqual(loads('""'), "")
         self.assertEqual(loads('" "'), " ")

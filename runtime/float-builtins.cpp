@@ -49,6 +49,23 @@ void initializeFloatType(Thread* thread) {
                  /*basetype=*/true);
 }
 
+RawObject floatFromDigits(Thread* thread, const char* str, word length) {
+  // TODO(T57022841): follow full CPython conversion for strings
+  char* end;
+  double result = std::strtod(str, &end);
+  // Overflow, return infinity or negative infinity.
+  if (result == HUGE_VAL) {
+    result = std::numeric_limits<double>::infinity();
+  } else if (result == -HUGE_VAL) {
+    result = -std::numeric_limits<double>::infinity();
+  } else if (length == 0 || end - str != length) {
+    // Conversion was incomplete; the string was not a valid float.
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "could not convert string to float");
+  }
+  return thread->runtime()->newFloat(result);
+}
+
 RawObject METH(float, __abs__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
