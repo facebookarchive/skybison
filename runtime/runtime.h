@@ -921,14 +921,14 @@ class Runtime {
   void initializeSymbols(Thread* thread);
   void initializeTypes(Thread* thread);
 
+  void internSetGrow(Thread* thread);
+
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
 
   word identityHash(RawObject object);
 
   word siphash24(View<byte> array);
-
-  void growInternSet(Thread* thread);
 
   RawObject createLargeBytes(word length);
   RawObject createMutableBytes(word length);

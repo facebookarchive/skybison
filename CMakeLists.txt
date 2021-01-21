@@ -610,6 +610,8 @@ add_library(
   runtime/space.h
   runtime/str-builtins.cpp
   runtime/str-builtins.h
+  runtime/str-intern.cpp
+  runtime/str-intern.h
   runtime/strarray-builtins.cpp
   runtime/strarray-builtins.h
   runtime/structseq-builtins.cpp
