@@ -606,11 +606,6 @@ importlib/resources.py
 importlib/util.py
 io.py
 ipaddress.py
-json/__init__.py
-json/decoder.py
-json/encoder.py
-json/scanner.py
-json/tool.py
 keyword.py
 lib2to3/Grammar.txt
 lib2to3/PatternGrammar.txt

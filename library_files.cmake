@@ -107,6 +107,11 @@ inspect_test.py
 interpreter_test.py
 itertools.py
 itertools_test.py
+json/__init__.py
+json/decoder.py
+json/encoder.py
+json/scanner.py
+json/tool.py
 logging/__init__.py
 marshal.py
 marshal_test.py
