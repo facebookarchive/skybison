@@ -109,6 +109,7 @@ __all__ = [
 __author__ = 'Bob Ippolito <bob@redivi.com>'
 
 import codecs
+from _json import loads
 
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
@@ -302,8 +303,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
 
 
-def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+loads.__doc__ = \
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
 
@@ -338,30 +338,3 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
 
     The ``encoding`` argument is ignored and deprecated.
     """
-    if isinstance(s, str):
-        if s.startswith('\ufeff'):
-            raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
-                                  s, 0)
-    else:
-        if not isinstance(s, (bytes, bytearray)):
-            raise TypeError(f'the JSON object must be str, bytes or bytearray, '
-                            f'not {s.__class__.__name__}')
-        s = s.decode(detect_encoding(s), 'surrogatepass')
-
-    if (cls is None and object_hook is None and
-            parse_int is None and parse_float is None and
-            parse_constant is None and object_pairs_hook is None and not kw):
-        return _default_decoder.decode(s)
-    if cls is None:
-        cls = JSONDecoder
-    if object_hook is not None:
-        kw['object_hook'] = object_hook
-    if object_pairs_hook is not None:
-        kw['object_pairs_hook'] = object_pairs_hook
-    if parse_float is not None:
-        kw['parse_float'] = parse_float
-    if parse_int is not None:
-        kw['parse_int'] = parse_int
-    if parse_constant is not None:
-        kw['parse_constant'] = parse_constant
-    return cls(**kw).decode(s)
