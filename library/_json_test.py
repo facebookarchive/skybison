@@ -10,6 +10,62 @@ else:
 
 
 class LoadsTests(unittest.TestCase):
+    def test_string_returns_str(self):
+        self.assertEqual(loads('""'), "")
+        self.assertEqual(loads('" "'), " ")
+        self.assertEqual(loads('"hello"'), "hello")
+        self.assertEqual(loads('"hello y\'all"'), "hello y'all")
+
+    def test_control_character_in_string_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid control character at: line 1 column 2 \(char 1\)"
+        ):
+            loads('"\x00"')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid control character at: line 1 column 7 \(char 6\)"
+        ):
+            loads('"hello\x01"')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid control character at: line 2 column 5 \(char 5\)"
+        ):
+            loads('\n"hel\x10lo"')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Invalid control character at: line 1 column 4 \(char 3\)"
+        ):
+            loads('\t "\x1fhello"')
+
+    def test_unterminated_string_raises_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Unterminated string starting at: line 1 column 1 \(char 0\)",
+        ):
+            loads('"')
+        with self.assertRaisesRegex(
+            JSONDecodeError,
+            r"Unterminated string starting at: line 2 column 1 \(char 2\)",
+        ):
+            loads('\t\n"he\nlo', strict=False)
+
+    def test_with_strict_false_returns_str(self):
+        self.assertEqual(loads('"he\x00llo"', strict=False), "he\x00llo")
+        control_chars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+        self.assertEqual(loads(f'"{control_chars}"', strict=False), control_chars)
+
+    def test_string_with_whitespace_returns_str(self):
+        self.assertEqual(loads(' ""'), "")
+        self.assertEqual(loads('"" '), "")
+        self.assertEqual(loads(' "" '), "")
+
+    def test_chars_after_string_raises_json_decode_error(self):
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 3 \(char 2\)"
+        ):
+            loads('""a')
+        with self.assertRaisesRegex(
+            JSONDecodeError, r"Extra data: line 1 column 7 \(char 6\)"
+        ):
+            loads('""    ""')
+
     def test_true_returns_bool(self):
         self.assertIs(loads("true"), True)
 

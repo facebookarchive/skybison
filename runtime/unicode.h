@@ -14,6 +14,7 @@ class ASCII {
   // Predicates
   static bool isAlnum(byte b);
   static bool isAlpha(byte b);
+  static bool isControlCharacter(byte b);
   static bool isDecimal(byte b);
   static bool isDigit(byte b);
   static bool isLinebreak(byte b);
@@ -148,6 +149,8 @@ class Unicode {
 inline bool ASCII::isAlnum(byte b) { return isDigit(b) || isAlpha(b); }
 
 inline bool ASCII::isAlpha(byte b) { return isUpper(b) || isLower(b); }
+
+inline bool ASCII::isControlCharacter(byte b) { return b <= 0x1f; }
 
 inline bool ASCII::isDecimal(byte b) { return isDigit(b); }
 

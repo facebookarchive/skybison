@@ -5,6 +5,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "unicode.h"
 #include "utils.h"
 
 namespace py {
@@ -27,6 +28,7 @@ struct JSONParser {
   word length;
   Arguments args;
   bool has_parse_constant;
+  bool strict;
 };
 
 static NEVER_INLINE int callParseConstant(Thread* thread, JSONParser* env,
@@ -84,6 +86,42 @@ static NEVER_INLINE RawObject raiseJSONDecodeError(Thread* thread,
   return thread->raiseWithType(*json_decode_error, *args);
 }
 
+static RawObject scanString(Thread* thread, JSONParser* env,
+                            const DataArray& data) {
+  word next = env->next;
+  word length = env->length;
+  word begin = next;
+  word segment_begin;
+  word segment_length;
+  for (;;) {
+    segment_begin = next;
+    byte b;
+    for (;;) {
+      if (next >= length) {
+        return raiseJSONDecodeError(thread, env, data, begin - 1,
+                                    "Unterminated string starting at");
+      }
+      b = data.byteAt(next++);
+      if (b == '"' || b == '\\') {
+        break;
+      }
+      if (ASCII::isControlCharacter(b) && env->strict) {
+        return raiseJSONDecodeError(thread, env, data, next - 1,
+                                    "Invalid control character at");
+      }
+    }
+    // Segment ends before the current `"` or `\` character.
+    segment_length = next - segment_begin - 1;
+    if (b == '"') {
+      break;
+    }
+    DCHECK(b == '\\', "Expected backslash");
+    UNIMPLEMENTED("escape sequences");
+  }
+  env->next = next;
+  return dataArraySubstr(thread, data, segment_begin, segment_length);
+}
+
 static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
                 Object* value_out) {
   for (;;) {
@@ -91,8 +129,11 @@ static int scan(Thread* thread, JSONParser* env, const DataArray& data, byte b,
     word length = env->length;
 
     switch (b) {
-      case '"':
-        UNIMPLEMENTED("scanString");
+      case '"': {
+        *value_out = scanString(thread, env, data);
+        if (value_out->isErrorException()) return -1;
+        return 0;
+      }
       case '{':
         return '{';
       case '[':
@@ -239,8 +280,21 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
   }
 
   Dict kw(&scope, args.get(static_cast<word>(LoadsArg::kKw)));
+  Object strict_obj(&scope, dictAtById(thread, kw, ID(strict)));
+  bool strict;
+  bool had_strict = false;
+  if (!strict_obj.isErrorNotFound()) {
+    if (!runtime->isInstanceOfInt(*strict_obj)) {
+      return thread->raiseRequiresType(strict_obj, ID(int));
+    }
+    had_strict = true;
+    strict = !intUnderlying(*strict_obj).isZero();
+  } else {
+    strict = true;
+  }
+
   Object cls(&scope, args.get(static_cast<word>(LoadsArg::kCls)));
-  if (!cls.isNoneType() || kw.numItems() > 0) {
+  if (!cls.isNoneType() || kw.numItems() > static_cast<word>(had_strict)) {
     UNIMPLEMENTED("custom cls");
   }
 
@@ -249,6 +303,7 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
   env.next = next;
   env.length = length;
   env.args = args;
+  env.strict = strict;
 
   if (!args.get(static_cast<word>(LoadsArg::kObjectHook)).isNoneType()) {
     UNIMPLEMENTED("object hook");
