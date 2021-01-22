@@ -42,6 +42,25 @@ TEST_F(UnderCollectionsModuleTest, DequeAppendInsertsElementToEnd) {
   }
 }
 
+TEST_F(UnderCollectionsModuleTest, DequeAppendAfterAppendleftResizesCorrectly) {
+  HandleScope scope(thread_);
+  Deque self(&scope, runtime_->newDeque());
+  // Test underlying array growth
+  Object value(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(METH(deque, appendleft), self, value));
+  EXPECT_EQ(*result, NoneType::object());
+  for (int i = 1; i < 30; i++) {
+    value = SmallInt::fromWord(i);
+    result = runBuiltin(METH(deque, append), self, value);
+    EXPECT_EQ(*result, NoneType::object());
+  }
+
+  EXPECT_EQ(self.numItems(), 30);
+  for (int i = 0; i < 30; i++) {
+    EXPECT_TRUE(isIntEqualsWord(self.at(i), i)) << i;
+  }
+}
+
 TEST_F(UnderCollectionsModuleTest, DequeAppendleftInsertsElementToFront) {
   HandleScope scope(thread_);
   Deque self(&scope, runtime_->newDeque());

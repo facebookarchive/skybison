@@ -423,7 +423,7 @@ static void dequeEnsureCapacity(Thread* thread, const Deque& deque,
     if (right >= curr_capacity) {
       right -= curr_capacity;
     }
-    if (right < left) {
+    if (right <= left) {
       word count = curr_capacity - left;
       new_array.replaceFromWithStartAt(0, *old_array, count, left);
       new_array.replaceFromWithStartAt(count, *old_array, right, 0);
