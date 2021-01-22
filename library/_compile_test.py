@@ -353,5 +353,16 @@ class PrintfTransformTests(unittest.TestCase):
         self.assertIn("BINARY_MODULO", dis_str(code))
 
 
+@pyro_only
+class CustomOpcodeTests(unittest.TestCase):
+    def test_is_generates_COMPARE_IS(self):
+        code = compile("a is b", "", "eval")
+        self.assertIn("COMPARE_IS", dis_str(code))
+
+    def test_is_not_generates_COMPARE_IS_NOT(self):
+        code = compile("a is not b", "", "eval")
+        self.assertIn("COMPARE_IS_NOT", dis_str(code))
+
+
 if __name__ == "__main__":
     unittest.main()

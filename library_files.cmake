@@ -165,6 +165,7 @@ test/test_coroutines.py
 test/test_dict.py
 test/test_hmac.py
 test/test_normalization.py
+test/test_peepholer.py
 test/test_range.py
 test/test_zipimport.py
 test_support.py

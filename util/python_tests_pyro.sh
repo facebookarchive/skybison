@@ -73,7 +73,6 @@ CPYTHON_TESTS=(
   test_opcodes.py
   test_openpty.py
   test_osx_env.py
-  test_peepholer.py
   test_pipes.py
   test_pkg.py
   test_pkgimport.py
@@ -101,6 +100,7 @@ PYRO_PATCHED_CPYTHON_TESTS=(
   test_coroutines.py
   test_dict.py
   test_hmac.py
+  test_peepholer.py
   test_range.py
   test_zipimport.py
 )

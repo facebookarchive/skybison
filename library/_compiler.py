@@ -203,3 +203,11 @@ class PyroCodeGenerator(Python37CodeGenerator):
     @classmethod
     def optimize_tree(cls, optimize: int, tree: ast.AST):
         return AstOptimizerPyro(optimize=optimize > 0).visit(tree)
+
+    def defaultEmitCompare(self, op):
+        if isinstance(op, ast.Is):
+            self.emit("COMPARE_IS")
+        elif isinstance(op, ast.IsNot):
+            self.emit("COMPARE_IS_NOT")
+        else:
+            self.emit("COMPARE_OP", self._cmp_opcode[type(op)])

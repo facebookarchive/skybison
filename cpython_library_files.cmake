@@ -1653,7 +1653,6 @@ test/test_osx_env.py
 test/test_parser.py
 test/test_pathlib.py
 test/test_pdb.py
-test/test_peepholer.py
 test/test_pickle.py
 test/test_pickletools.py
 test/test_pipes.py
