@@ -4,6 +4,8 @@ from compiler.optimizer import AstOptimizer, BIN_OPS, is_const, get_const_value
 from compiler.pyassem import PyFlowGraph37
 from compiler.pycodegen import Python37CodeGenerator
 
+import _compiler_opcode as opcodepyro
+
 
 def should_rewrite_printf(node):
     return isinstance(node.left, ast.Str) and isinstance(node.op, ast.Mod)
@@ -192,7 +194,7 @@ class AstOptimizerPyro(AstOptimizer):
 
 
 class PyroFlowGraph(PyFlowGraph37):
-    opcode = opcode37.opcode
+    opcode = opcodepyro.opcode
 
 
 class PyroCodeGenerator(Python37CodeGenerator):

@@ -331,6 +331,7 @@ set(
   library/_codecs.py
   library/_collections.py
   library/_compiler.py
+  library/_compiler_opcode.py
   library/_contextvars.py
   library/_ctypes.py
   library/_frozen_importlib.py
