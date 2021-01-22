@@ -379,15 +379,16 @@ set(
   library/itertools.py
   library/marshal.py
   library/mmap.py
+  library/opcode.py
   library/operator.py
   library/sys.py
   library/types.py
   library/typing.py
   library/unicodedata.py
+  third-party/cpython/Lib/__future__.py
   third-party/cpython/Lib/_collections_abc.py
   third-party/cpython/Lib/_py_abc.py
   third-party/cpython/Lib/_weakrefset.py
-  third-party/cpython/Lib/__future__.py
   third-party/cpython/Lib/abc.py
   third-party/cpython/Lib/ast.py
   third-party/cpython/Lib/codecs.py
@@ -406,7 +407,6 @@ set(
   third-party/cpython/Lib/importlib/util.py
   third-party/cpython/Lib/io.py
   third-party/cpython/Lib/keyword.py
-  third-party/cpython/Lib/opcode.py
   third-party/cpython/Lib/os.py
   third-party/cpython/Lib/posixpath.py
   third-party/cpython/Lib/re.py

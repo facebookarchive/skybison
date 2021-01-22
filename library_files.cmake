@@ -120,6 +120,7 @@ marshal_test.py
 mmap.py
 mmap_test.py
 multiprocessing_test.py
+opcode.py
 operator.py
 operator_test.py
 os_test.py

@@ -751,7 +751,6 @@ nntplib.py
 ntpath.py
 nturl2path.py
 numbers.py
-opcode.py
 optparse.py
 os.py
 pathlib.py
