@@ -10,6 +10,7 @@ _collections_test.py
 _compile_test.py
 _compiler.py
 _compiler_opcode.py
+_compiler_opcode_test.py
 _contextvars.py
 _contextvars_test.py
 _ctypes.py

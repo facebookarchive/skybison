@@ -633,6 +633,7 @@ add_library(
   runtime/tuple-builtins.h
   runtime/type-builtins.cpp
   runtime/under-builtins-module.cpp
+  runtime/under-bytecode-utils-module.cpp
   runtime/under-codecs-module.cpp
   runtime/under-collections-module.cpp
   runtime/under-collections-module.h

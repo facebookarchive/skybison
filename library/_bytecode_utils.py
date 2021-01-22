@@ -1,9 +1,14 @@
-from opcode import opmap
+#!/usr/bin/env python3
+# $builtin-init-module$
 
 
-CO_OPTIMIZED = 0x01
-CO_NEWLOCALS = 0x02
-CO_NOFREE = 0x40
+# These values are all injected by our boot process. flake8 has no knowledge
+# about their definitions and will complain without these lines.
+CO_NEWLOCALS = CO_NEWLOCALS  # noqa: F821
+CO_NOFREE = CO_NOFREE  # noqa: F821
+CO_OPTIMIZED = CO_OPTIMIZED  # noqa: F821
+opmap = opmap  # noqa: F821
+
 EXTENDED_ARG = opmap["EXTENDED_ARG"]
 LOAD_CONST = opmap["LOAD_CONST"]
 LOAD_FAST = opmap["LOAD_FAST"]
