@@ -1375,6 +1375,8 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderHash));
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasStrDunderHash));
+  EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderBool));
+  EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderLen));
 
   Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
@@ -1401,12 +1403,16 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderHash));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasStrDunderHash));
+  EXPECT_TRUE(int_type.hasFlag(Type::Flag::kHasDunderBool));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderLen));
 
   Type str_type(&scope, runtime_->typeAt(LayoutId::kStr));
   EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(str_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_FALSE(str_type.hasFlag(Type::Flag::kHasObjectDunderHash));
-  EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasStrDunderHash));
+  // TODO(T83275120): Flip the condition.
+  EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasDunderBool));
+  EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasDunderLen));
 
   // super.__getattribute__ is not same as object.__getattribute.
   Type super_type(&scope, runtime_->typeAt(LayoutId::kSuper));
@@ -1436,6 +1442,12 @@ class F:
 
 class G:
   def __hash__(self): return 10
+
+class H:
+  def __bool__(self): return False
+
+class I:
+  def __len__(self): return 10
 
 
 class Str(str): pass
@@ -1469,6 +1481,14 @@ class Str2(Str):
   EXPECT_TRUE(g.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(g.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_FALSE(g.hasFlag(Type::Flag::kHasObjectDunderHash));
+
+  Type h(&scope, mainModuleAt(runtime_, "H"));
+  EXPECT_TRUE(h.hasFlag(Type::Flag::kHasDunderBool));
+  EXPECT_FALSE(h.hasFlag(Type::Flag::kHasDunderLen));
+
+  Type i(&scope, mainModuleAt(runtime_, "I"));
+  EXPECT_FALSE(i.hasFlag(Type::Flag::kHasDunderBool));
+  EXPECT_TRUE(i.hasFlag(Type::Flag::kHasDunderLen));
 
   Type str(&scope, mainModuleAt(runtime_, "Str"));
   EXPECT_TRUE(str.hasFlag(Type::Flag::kHasObjectDunderGetattribute));

@@ -1266,12 +1266,19 @@ class RawType : public RawAttributeDict {
 
     // this_type.__hash__ is str.__hash__.
     kHasStrDunderHash = 1 << 23,
+
+    // this_type.__bool__ exists.
+    kHasDunderBool = 1 << 24,
+
+    // this_type.__len__ exists.
+    kHasDunderLen = 1 << 25,
   };
 
   static const word kAttributeFlags =
       Flag::kHasObjectDunderGetattribute | Flag::kHasTypeDunderGetattribute |
       Flag::kHasModuleDunderGetattribute | Flag::kHasObjectDunderNew |
-      Flag::kHasObjectDunderHash | Flag::kHasStrDunderHash;
+      Flag::kHasObjectDunderHash | Flag::kHasStrDunderHash |
+      Flag::kHasDunderBool | Flag::kHasDunderLen;
 
   static const word kUninheritableFlags = Flag::kIsAbstract |
                                           Flag::kIsFixedAttributeBase |

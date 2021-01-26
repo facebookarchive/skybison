@@ -2189,6 +2189,16 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
     type.setFlags(static_cast<Type::Flag>(type.flags() |
                                           Type::Flag::kHasObjectDunderHash));
   }
+
+  if (!typeLookupInMroById(thread, *type, ID(__bool__)).isErrorNotFound()) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderBool));
+  }
+
+  if (!typeLookupInMroById(thread, *type, ID(__len__)).isErrorNotFound()) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderLen));
+  }
 }
 
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {

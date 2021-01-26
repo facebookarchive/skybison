@@ -1112,21 +1112,28 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
     default:
       break;
   }
-  HandleScope scope(thread);
-  Object value(&scope, value_obj);
-  Object result(&scope, thread->invokeMethod1(value, ID(__bool__)));
-  if (!result.isError()) {
+  word type_flags =
+      thread->runtime()->typeOf(value_obj).rawCast<RawType>().flags();
+  if (type_flags & Type::Flag::kHasDunderBool) {
+    HandleScope scope(thread);
+    Object value(&scope, value_obj);
+    Object result(&scope, thread->invokeMethod1(value, ID(__bool__)));
+    DCHECK(!result.isErrorNotFound(), "__bool__ is expected to be found");
+    if (result.isErrorException()) {
+      return *result;
+    }
     if (result.isBool()) return *result;
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__bool__ should return bool");
   }
-  if (result.isErrorException()) {
-    return *result;
-  }
-  DCHECK(result.isErrorNotFound(), "expected error not found");
-
-  result = thread->invokeMethod1(value, ID(__len__));
-  if (!result.isError()) {
+  if (type_flags & Type::Flag::kHasDunderLen) {
+    HandleScope scope(thread);
+    Object value(&scope, value_obj);
+    Object result(&scope, thread->invokeMethod1(value, ID(__len__)));
+    DCHECK(!result.isErrorNotFound(), "__len__ is expected to be found");
+    if (result.isErrorException()) {
+      return *result;
+    }
     if (thread->runtime()->isInstanceOfInt(*result)) {
       Int integer(&scope, intUnderlying(*result));
       if (integer.isPositive()) return Bool::trueObj();
@@ -1137,10 +1144,6 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "object cannot be interpreted as an integer");
   }
-  if (result.isErrorException()) {
-    return *result;
-  }
-  DCHECK(result.isErrorNotFound(), "expected error not found");
   return Bool::trueObj();
 }
 
