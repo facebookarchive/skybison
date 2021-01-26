@@ -298,9 +298,4 @@ def coroutine(func):
     return wrapped
 
 
-class Union:
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-
 __all__ = [n for n in globals() if n[:1] != '_']
