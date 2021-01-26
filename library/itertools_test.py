@@ -4,6 +4,8 @@ import operator
 import unittest
 from unittest.mock import Mock
 
+from test_support import supports_38_feature
+
 
 class ChainTests(unittest.TestCase):
     def test_chain_with_no_iterables_returns_stoped_iterator(self):
@@ -431,6 +433,44 @@ class AccumulateTests(unittest.TestCase):
         self.assertTupleEqual(
             tuple(itertools.accumulate([1, 2, 3, 4], operator.mul)), (1, 2, 6, 24)
         )
+
+    @supports_38_feature
+    def test_accumulate_with_initial_arg_none_uses_addition(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate([1, 2, 3, 4], initial=None)), (1, 3, 6, 10)
+        )
+
+    @supports_38_feature
+    def test_accumulate_with_initial_arg_uses_initial(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate([1, 2, 3, 4], initial=100)),
+            (100, 101, 103, 106, 110),
+        )
+
+    @supports_38_feature
+    def test_accumulate_with_initial_arg_uses_initial_with_str(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate("ab", initial="c")),
+            ("c", "ca", "cab"),
+        )
+
+    @supports_38_feature
+    def test_accumulate_with_initial_arg_uses_initial_with_range(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate(range(3), initial=9)),
+            (9, 9, 10, 12),
+        )
+
+    @supports_38_feature
+    def test_accumulate_with_func_and_initial_args_uses_both(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate([1, 2, 3, 4], operator.mul, initial=10)),
+            (10, 10, 20, 60, 240),
+        )
+
+    @supports_38_feature
+    def test_accumulate_with_initial_arg_and_empty_list_uses_initial(self):
+        self.assertTupleEqual(tuple(itertools.accumulate([], initial=100)), (100,))
 
     def test_accumulate_with_empty_iterable_returns_stopped_iterator(self):
         iterator = itertools.accumulate([])

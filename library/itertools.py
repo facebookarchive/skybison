@@ -20,14 +20,21 @@ class accumulate:
     def __iter__(self):
         return self
 
-    def __new__(cls, iterable, func=None):
+    def __new__(cls, iterable, func=None, initial=None):
         result = object.__new__(cls)
         result._it = iter(iterable)
         result._func = operator.add if func is None else func
+        result._initial = initial
         result._accumulated = None
         return result
 
     def __next__(self):
+        initial = self._initial
+        if initial is not None:
+            self._accumulated = initial
+            self._initial = None
+            return initial
+
         result = self._accumulated
 
         if result is None:
