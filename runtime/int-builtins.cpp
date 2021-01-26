@@ -690,6 +690,18 @@ RawObject METH(int, __round__)(Thread* thread, Arguments args) {
   return asInt(thread, args);
 }
 
+RawObject METH(int, as_integer_ratio)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(int));
+  }
+  Object numerator(&scope, intUnderlying(*self_obj));
+  Object denominator(&scope, SmallInt::fromWord(1));
+  return runtime->newTupleWith2(numerator, denominator);
+}
+
 RawObject METH(int, bit_length)(Thread* thread, Arguments args) {
   return intUnaryOp(thread, args, [](Thread* t, const Int& self) {
     return t->runtime()->newInt(self.bitLength());

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
-from test_support import pyro_only
+from test_support import pyro_only, supports_38_feature
 
 try:
     from _builtins import _int_ctor
@@ -203,6 +203,46 @@ class IntTests(unittest.TestCase):
 
     def test_dunder_pow_with_non_int_power_returns_not_implemented(self):
         self.assertEqual(int.__pow__(1, None), NotImplemented)
+
+    @supports_38_feature
+    def test_as_integer_ratio_with_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as ctx:
+            int.as_integer_ratio("foo")
+        exception_text = str(ctx.exception)
+        self.assertIn("'as_integer_ratio'", exception_text)
+        self.assertIn("'int'", exception_text)
+        self.assertIn("'str'", exception_text)
+
+    @supports_38_feature
+    def test_as_integer_ratio_with_int_returns_tuple_with_same_object(self):
+        i = 5
+        result = i.as_integer_ratio()
+        self.assertIs(type(result), tuple)
+        self.assertEqual(len(result), 2)
+        self.assertIs(result[0], i)
+        self.assertEqual(result[1], 1)
+
+    @supports_38_feature
+    def test_as_integer_ratio_with_bool_returns_tuple_with_int(self):
+        i = True
+        result = i.as_integer_ratio()
+        self.assertIs(type(result), tuple)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], 1)
+        self.assertEqual(result[1], 1)
+
+    @supports_38_feature
+    def test_as_integer_ratio_with_int_subclass_returns_tuple_with_underlying_int(self):
+        class C(int):
+            pass
+
+        i = C(5)
+        result = i.as_integer_ratio()
+        self.assertIs(type(result), tuple)
+        self.assertEqual(len(result), 2)
+        self.assertIs(type(result[0]), int)
+        self.assertEqual(result[0], 5)
+        self.assertEqual(result[1], 1)
 
     def test_from_bytes_returns_int(self):
         self.assertEqual(int.from_bytes(b"\xca\xfe", "little"), 0xFECA)

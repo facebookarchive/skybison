@@ -4476,6 +4476,9 @@ class int(bootstrap=True):
     def __xor__(self, n: int) -> int:
         _builtin()
 
+    def as_integer_ratio(self):
+        _builtin()
+
     def bit_length(self) -> int:
         _builtin()
 
