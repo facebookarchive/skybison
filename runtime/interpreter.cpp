@@ -1426,6 +1426,15 @@ HANDLER_INLINE Continue Interpreter::doRotThree(Thread* thread, word) {
   return Continue::NEXT;
 }
 
+HANDLER_INLINE Continue Interpreter::doRotFour(Thread* thread, word) {
+  RawObject top = thread->stackTop();
+  thread->stackSetAt(0, thread->stackPeek(1));
+  thread->stackSetAt(1, thread->stackPeek(2));
+  thread->stackSetAt(2, thread->stackPeek(3));
+  thread->stackSetAt(3, top);
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doDupTop(Thread* thread, word) {
   thread->stackPush(thread->stackTop());
   return Continue::NEXT;

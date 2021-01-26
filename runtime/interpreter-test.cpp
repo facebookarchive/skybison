@@ -1707,11 +1707,11 @@ TEST_F(InterpreterDeathTest, InvalidOpcode) {
   HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_6, 17, NOP, 7};
+  const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_7, 17, NOP, 7};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   ASSERT_DEATH(static_cast<void>(runCode(code)),
-               "bytecode 'UNUSED_BYTECODE_6'");
+               "bytecode 'UNUSED_BYTECODE_7'");
 }
 
 TEST_F(InterpreterTest, CallDescriptorGetWithBuiltinTypeDescriptors) {

@@ -22,7 +22,7 @@ namespace py {
   V(ROT_THREE, 3, doRotThree)                                                  \
   V(DUP_TOP, 4, doDupTop)                                                      \
   V(DUP_TOP_TWO, 5, doDupTopTwo)                                               \
-  V(UNUSED_BYTECODE_6, 6, doInvalidBytecode)                                   \
+  V(ROT_FOUR, 6, doRotFour)                                                    \
   V(UNUSED_BYTECODE_7, 7, doInvalidBytecode)                                   \
   V(UNUSED_BYTECODE_8, 8, doInvalidBytecode)                                   \
   V(NOP, 9, doNop)                                                             \

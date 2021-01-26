@@ -508,6 +508,7 @@ class Interpreter {
   static Continue doPrintExpr(Thread* thread, word arg);
   static Continue doRotThree(Thread* thread, word arg);
   static Continue doRotTwo(Thread* thread, word arg);
+  static Continue doRotFour(Thread* thread, word arg);
   static Continue doSetAdd(Thread* thread, word arg);
   static Continue doSetupAnnotations(Thread* thread, word arg);
   static Continue doSetupAsyncWith(Thread* thread, word arg);

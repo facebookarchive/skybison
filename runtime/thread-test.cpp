@@ -464,6 +464,24 @@ TEST_F(ThreadTest, ExecuteRotThree) {
   EXPECT_TRUE(isIntEqualsWord(runCode(code), 2222));
 }
 
+TEST_F(ThreadTest, ExecuteRotFour) {
+  HandleScope scope(thread_);
+
+  Object obj1(&scope, SmallInt::fromWord(1111));
+  Object obj2(&scope, SmallInt::fromWord(2222));
+  Object obj3(&scope, SmallInt::fromWord(3333));
+  Object obj4(&scope, SmallInt::fromWord(4444));
+  Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
+  Code code(&scope, newEmptyCode());
+  code.setStacksize(4);
+  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
+                           LOAD_CONST, 3, ROT_FOUR,   0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(isIntEqualsWord(runCode(code), 3333));
+}
+
 TEST_F(ThreadTest, ExecuteJumpAbsolute) {
   HandleScope scope(thread_);
 
