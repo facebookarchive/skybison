@@ -13,7 +13,7 @@ from collections import namedtuple
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from test_support import pyro_only
+from test_support import pyro_only, supports_38_feature
 
 
 Py_TPFLAGS_HEAPTYPE = 1 << 9
@@ -2689,28 +2689,215 @@ class CodeTests(unittest.TestCase):
 
     def test_dunder_new_with_non_int_argcount_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            self.CodeType("not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+            self.CodeType(
+                "non_int",
+                1,
+                4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
         self.assertIn("an integer is required (got type str)", str(context.exception))
 
-    def test_dunder_new_with_non_int_posonlyargcount_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.CodeType(1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-        self.assertIn("an integer is required (got type str)", str(context.exception))
+    def test_dunder_new_with_negative_argcount_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            self.CodeType(
+                -1,
+                1,
+                4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("argcount must not be negative", str(context.exception))
 
     def test_dunder_new_with_non_int_kwonlyargcount_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            self.CodeType(1, 1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+            self.CodeType(
+                1,
+                "non_int",
+                4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
         self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_negative_kwonlyargcount_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            self.CodeType(
+                1,
+                -1,
+                4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("kwonlyargcount must not be negative", str(context.exception))
 
     def test_dunder_new_with_non_int_nlocals_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            self.CodeType(1, 1, 1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1, 1)
+            self.CodeType(
+                1,
+                1,
+                "non_int",
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
         self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    def test_dunder_new_with_negative_nlocals_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            self.CodeType(
+                1,
+                1,
+                -4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("nlocals must not be negative", str(context.exception))
 
     def test_dunder_new_with_non_int_stacksize_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            self.CodeType(1, 1, 1, 1, "not_int", 1, 1, 1, 1, 1, 1, 1, 1)
+            self.CodeType(
+                1,
+                1,
+                1,
+                "non_int",
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
         self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    @supports_38_feature
+    def test_dunder_new_with_negative_stacksize_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            self.CodeType(
+                1,
+                1,
+                4,
+                -1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("stacksize must not be negative", str(context.exception))
+
+    def test_dunder_new_with_non_int_flags_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.CodeType(
+                1,
+                1,
+                1,
+                1,
+                "non_int",
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    @supports_38_feature
+    def test_dunder_new_with_negative_flags_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            self.CodeType(
+                1,
+                1,
+                4,
+                1,
+                -1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("flags must not be negative", str(context.exception))
 
     def test_dunder_new_with_non_bytes_code_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
@@ -2751,9 +2938,45 @@ class CodeTests(unittest.TestCase):
     def test_dunder_new_with_non_int_firstlineno_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             self.CodeType(
-                1, 1, 1, 1, 1, b"", (), (), (), "filename", "name", "not_int", 1
+                1,
+                1,
+                4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                "non_int",
+                b"",
+                (),
+                (),
             )
         self.assertIn("an integer is required (got type str)", str(context.exception))
+
+    @supports_38_feature
+    def test_dunder_new_with_negative_firstlineno_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            self.CodeType(
+                1,
+                1,
+                4,
+                1,
+                1,
+                b"",
+                (),
+                (),
+                ("a", "b"),
+                "filename",
+                "name",
+                -1,
+                b"",
+                (),
+                (),
+            )
+        self.assertIn("firstlineno must not be negative", str(context.exception))
 
     def test_dunder_new_with_non_bytes_lnotab_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
