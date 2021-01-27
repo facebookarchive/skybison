@@ -178,7 +178,7 @@ void emitNextOpcode(EmitEnv* env) {
   Register r_scratch = RAX;
   __ movzbl(r_scratch, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(0)));
   __ movzbl(kOpargReg, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(1)));
-  __ addl(kPCReg, Immediate(2));
+  __ addl(kPCReg, Immediate(kCodeUnitSize));
   __ shll(r_scratch, Immediate(kHandlerSizeShift));
   __ addq(r_scratch, kHandlersBaseReg);
   __ jmp(r_scratch);
@@ -1640,7 +1640,7 @@ void emitHandler<EXTENDED_ARG>(EmitEnv* env) {
   __ movzbl(r_scratch, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(0)));
   __ movb(kOpargReg, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(1)));
   __ shll(r_scratch, Immediate(kHandlerSizeShift));
-  __ addl(kPCReg, Immediate(2));
+  __ addl(kPCReg, Immediate(kCodeUnitSize));
   __ addq(r_scratch, kHandlersBaseReg);
   __ jmp(r_scratch);
   // Hint to the branch predictor that the indirect jmp never falls through to
