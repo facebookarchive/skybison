@@ -1391,7 +1391,7 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   Type property_type(&scope, runtime_->typeAt(LayoutId::kProperty));
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(property_type.hasFlag(Type::Flag::kHasObjectDunderNew));
-  EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderHash));
 
   Type function_type(&scope, runtime_->typeAt(LayoutId::kFunction));
   EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
