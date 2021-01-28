@@ -2634,6 +2634,14 @@ HANDLER_INLINE Continue Interpreter::doPopFinally(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
+HANDLER_INLINE Continue Interpreter::doCallFinally(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  word next_pc = frame->virtualPC();
+  thread->stackPush(SmallInt::fromWord(next_pc));
+  frame->setVirtualPC(next_pc + arg);
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);

@@ -359,6 +359,7 @@ class Interpreter {
   static Continue doBuildSet(Thread* thread, word arg);
   static Continue doBuildSetUnpack(Thread* thread, word arg);
   static Continue doBuildTupleUnpack(Thread* thread, word arg);
+  static Continue doCallFinally(Thread* thread, word arg);
   static Continue doCallFunction(Thread* thread, word arg);
   static Continue doCallFunctionEx(Thread* thread, word arg);
   static Continue doCallFunctionKw(Thread* thread, word arg);

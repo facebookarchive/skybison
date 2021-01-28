@@ -3481,6 +3481,33 @@ TEST_F(InterpreterTest, BeginFinallyPushesNone) {
   EXPECT_TRUE(result.isNoneType());
 }
 
+TEST_F(InterpreterTest, CallFinallyPushesNextPC) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object obj(&scope, SmallInt::fromWord(123));
+  Tuple consts(&scope, runtime_->newTupleWith1(obj));
+  code.setConsts(*consts);
+  const byte bytecode[] = {CALL_FINALLY, 2, LOAD_CONST, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  // Address of LOAD_CONST
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+}
+
+TEST_F(InterpreterTest, CallFinallyJumpsWithArgDelta) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object obj(&scope, SmallInt::fromWord(123));
+  Tuple consts(&scope, runtime_->newTupleWith1(obj));
+  code.setConsts(*consts);
+  const byte bytecode[] = {CALL_FINALLY, 2, RETURN_VALUE, 0,
+                           LOAD_CONST,   0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  // Result of LOAD_CONST
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
+}
+
 TEST_F(InterpreterTest, PopFinallyWithNoneExcAndZeroArgPopsExc) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
