@@ -1377,6 +1377,7 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasStrDunderHash));
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderBool));
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderLen));
+  EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderClass));
 
   Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
@@ -1426,6 +1427,11 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
       base_exception_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(base_exception_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(base_exception_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+
+  // NoneType.__class__'s behavior is same as object.__class__ although
+  // they point to different objects.
+  Type none_type(&scope, runtime_->typeAt(LayoutId::kNoneType));
+  EXPECT_TRUE(none_type.hasFlag(Type::Flag::kHasObjectDunderClass));
 }
 
 TEST_F(TypeBuiltinsTest, UserTypesHaveAttributeTypeFlags) {
@@ -1449,6 +1455,9 @@ class H:
 class I:
   def __len__(self): return 10
 
+class J:
+  __class__ = None
+
 
 class Str(str): pass
 
@@ -1461,6 +1470,7 @@ class Str2(Str):
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderClass));
 
   Type d(&scope, mainModuleAt(runtime_, "D"));
   EXPECT_TRUE(d.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
@@ -1489,6 +1499,9 @@ class Str2(Str):
   Type i(&scope, mainModuleAt(runtime_, "I"));
   EXPECT_FALSE(i.hasFlag(Type::Flag::kHasDunderBool));
   EXPECT_TRUE(i.hasFlag(Type::Flag::kHasDunderLen));
+
+  Type j(&scope, mainModuleAt(runtime_, "J"));
+  EXPECT_FALSE(j.hasFlag(Type::Flag::kHasObjectDunderClass));
 
   Type str(&scope, mainModuleAt(runtime_, "Str"));
   EXPECT_TRUE(str.hasFlag(Type::Flag::kHasObjectDunderGetattribute));

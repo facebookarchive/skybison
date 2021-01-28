@@ -169,6 +169,15 @@ static word computeAttributeTypeFlags(Thread* thread, const Type& type,
     }
     return flags;
   }
+  if (name == ID(__class__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (value == runtime->objectDunderClass()) {
+      flags |= Type::Flag::kHasObjectDunderClass;
+    } else {
+      flags &= ~Type::Flag::kHasObjectDunderClass;
+    }
+    return flags;
+  }
   return flags;
 }
 
@@ -202,7 +211,8 @@ static void typePropagateAttributeTypeFlag(Thread* thread, const Type& type,
 }
 
 static const SymbolId kAttributesForTypeFlags[] = {
-    ID(__getattribute__), ID(__new__), ID(__hash__), ID(__bool__), ID(__len__),
+    ID(__getattribute__), ID(__new__), ID(__hash__),
+    ID(__bool__),         ID(__len__), ID(__class__),
 };
 
 // Returns `SymbolId` for `attr_name` if given `attr_name` is marked in

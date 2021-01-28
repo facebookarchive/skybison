@@ -228,9 +228,9 @@ bool FUNC(builtins, isinstance_intrinsic)(Thread* thread) {
       thread->stackSetTop(Bool::trueObj());
       return true;
     }
-    if (obj_type.isBuiltin()) {
-      // It's guaranteed that builtin_obj.__class__ is type(builtin_obj).
-      // See _object_class_set implementation.
+    if (obj_type.hasFlag(Type::Flag::kHasObjectDunderClass)) {
+      // obj_type.__class__ is object.__class__, so type(obj) is guaranteed to
+      // be obj_type. See _object_class_set implementation.
       thread->stackDrop(2);
       thread->stackSetTop(Bool::falseObj());
       return true;

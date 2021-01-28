@@ -2128,6 +2128,7 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
   LayoutId layout_id = type.instanceLayoutId();
   switch (layout_id) {
     case LayoutId::kObject:
+      object_dunder_class_ = typeAtById(thread, type, ID(__class__));
       object_dunder_getattribute_ =
           typeAtById(thread, type, ID(__getattribute__));
       object_dunder_hash_ = typeAtById(thread, type, ID(__hash__));
@@ -2143,6 +2144,14 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
           typeAtById(thread, type, ID(__getattribute__));
       type.setFlags(static_cast<Type::Flag>(
           type.flags() | Type::Flag::kHasModuleDunderGetattribute));
+      break;
+    case LayoutId::kNoneType:
+      // NoneType.__class__ does *not* point to the same object as
+      // object.__class_ to avoid descriptor resolution for NoneType, but their
+      // observable behaviors are same. See the definition of NoneType in
+      // builtins.py.
+      type.setFlags(static_cast<Type::Flag>(type.flags() |
+                                            Type::Flag::kHasObjectDunderClass));
       break;
     case LayoutId::kStr:
       str_dunder_eq_ = typeAtById(thread, type, ID(__eq__));
@@ -2199,6 +2208,16 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
     type.setFlags(
         static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderLen));
   }
+
+  Object dunder_class(&scope,
+                      typeLookupInMroById(thread, *type, ID(__class__)));
+  if (*dunder_class == object_dunder_class_ ||
+      // __class__ cannot be found in this type and this type is initialized
+      // before `object`.
+      (dunder_class.isErrorNotFound() && object_dunder_class_.isNoneType())) {
+    type.setFlags(static_cast<Type::Flag>(type.flags() |
+                                          Type::Flag::kHasObjectDunderClass));
+  }
 }
 
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
@@ -2243,6 +2262,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_slice_, PointerKind::kRuntime);
   visitor->visitPointer(&empty_tuple_, PointerKind::kRuntime);
   visitor->visitPointer(&module_dunder_getattribute_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_class_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_getattribute_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_hash_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_init_, PointerKind::kRuntime);

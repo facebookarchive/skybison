@@ -299,6 +299,7 @@ class Runtime {
   }
 
   RawObject moduleDunderGetattribute() { return module_dunder_getattribute_; }
+  RawObject objectDunderClass() { return object_dunder_class_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
   RawObject objectDunderHash() { return object_dunder_hash_; }
   RawObject objectDunderInit() { return object_dunder_init_; }
@@ -1036,6 +1037,7 @@ class Runtime {
   RawObject empty_slice_ = NoneType::object();
   RawObject empty_tuple_ = NoneType::object();
   RawObject module_dunder_getattribute_ = NoneType::object();
+  RawObject object_dunder_class_ = NoneType::object();
   RawObject object_dunder_getattribute_ = NoneType::object();
   RawObject object_dunder_hash_ = NoneType::object();
   RawObject object_dunder_init_ = NoneType::object();
