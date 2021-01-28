@@ -1749,6 +1749,11 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   return Continue::UNWIND;
 }
 
+HANDLER_INLINE Continue Interpreter::doBeginFinally(Thread* thread, word) {
+  thread->stackPush(NoneType::object());
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   HandleScope scope(thread);
   Object manager(&scope, thread->stackPop());

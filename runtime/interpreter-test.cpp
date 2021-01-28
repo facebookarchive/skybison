@@ -3470,6 +3470,17 @@ TEST_F(InterpreterTest, GetAiterOnNonIterable) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
+TEST_F(InterpreterTest, BeginFinallyPushesNone) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->emptyTuple());
+  code.setConsts(*consts);
+  const byte bytecode[] = {BEGIN_FINALLY, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  EXPECT_TRUE(result.isNoneType());
+}
+
 TEST_F(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

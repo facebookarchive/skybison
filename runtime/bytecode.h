@@ -69,7 +69,7 @@ namespace py {
   V(GET_AITER, 50, doGetAiter)                                                 \
   V(GET_ANEXT, 51, doGetAnext)                                                 \
   V(BEFORE_ASYNC_WITH, 52, doBeforeAsyncWith)                                  \
-  V(UNUSED_BYTECODE_53, 53, doInvalidBytecode)                                 \
+  V(BEGIN_FINALLY, 53, doBeginFinally)                                         \
   V(UNUSED_BYTECODE_54, 54, doInvalidBytecode)                                 \
   V(INPLACE_ADD, 55, doInplaceAdd)                                             \
   V(INPLACE_SUBTRACT, 56, doInplaceSubtract)                                   \

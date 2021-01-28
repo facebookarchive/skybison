@@ -322,6 +322,7 @@ class Interpreter {
   // A return value of false means execution should continue as normal in the
   // current Frame.
   static Continue doBeforeAsyncWith(Thread* thread, word arg);
+  static Continue doBeginFinally(Thread* thread, word arg);
   static Continue doBinaryAdd(Thread* thread, word arg);
   static Continue doBinaryAnd(Thread* thread, word arg);
   static Continue doBinaryFloorDivide(Thread* thread, word arg);
