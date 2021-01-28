@@ -187,6 +187,34 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
   return *str;
 }
 
+RawObject strJoinWithTupleOrList(Thread* thread, const Str& sep,
+                                 const Object& iterable) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime->emptyTuple());
+  word length = 0;
+  if (iterable.isTuple()) {
+    tuple = *iterable;
+    length = tuple.length();
+  } else if (iterable.isList()) {
+    tuple = List::cast(*iterable).items();
+    length = List::cast(*iterable).numItems();
+  } else {
+    // Slow path: collect items into list in Python and call again
+    return Unbound::object();
+  }
+  Object elt(&scope, NoneType::object());
+  for (word i = 0; i < length; i++) {
+    elt = tuple.at(i);
+    if (!runtime->isInstanceOfStr(*elt)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "sequence item %w: expected str instance, %T found", i, &elt);
+    }
+  }
+  return runtime->strJoin(thread, sep, tuple, length);
+}
+
 word strSpan(const Str& src, const Str& str) {
   word length = src.length();
   word str_length = str.length();

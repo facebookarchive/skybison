@@ -4934,28 +4934,7 @@ RawObject FUNC(_builtins, _str_join)(Thread* thread, Arguments args) {
   }
   Str sep(&scope, strUnderlying(*sep_obj));
   Object iterable(&scope, args.get(1));
-  Tuple tuple(&scope, runtime->emptyTuple());
-  word length = 0;
-  if (iterable.isTuple()) {
-    tuple = *iterable;
-    length = tuple.length();
-  } else if (iterable.isList()) {
-    tuple = List::cast(*iterable).items();
-    length = List::cast(*iterable).numItems();
-  } else {
-    // Slow path: collect items into list in Python and call again
-    return Unbound::object();
-  }
-  Object elt(&scope, NoneType::object());
-  for (word i = 0; i < length; i++) {
-    elt = tuple.at(i);
-    if (!runtime->isInstanceOfStr(*elt)) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "sequence item %w: expected str instance, %T found", i, &elt);
-    }
-  }
-  return runtime->strJoin(thread, sep, tuple, length);
+  return strJoinWithTupleOrList(thread, sep, iterable);
 }
 
 RawObject FUNC(_builtins, _str_len)(Thread* thread, Arguments args) {

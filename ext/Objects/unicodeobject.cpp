@@ -1861,9 +1861,24 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  // An optimization to rule out non-str values here to use the further
+  // optimization of `strJoinWithTupleOrList`.
+  if (!thread->runtime()->isInstanceOfStr(*sep_obj)) {
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "separator: expected str instance,"
+                         "'%T' found",
+                         &sep_obj);
+    return nullptr;
+  }
+  Str sep_str(&scope, strUnderlying(*sep_obj));
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object result(&scope, thread->invokeMethodStatic2(LayoutId::kStr, ID(join),
-                                                    sep_obj, seq_obj));
+  // An ad-hoc optimization for the case `seq_obj` is a `tuple` or `list`,
+  // that can be removed without changing the correctness of PyUnicode_Join.
+  Object result(&scope, strJoinWithTupleOrList(thread, sep_str, seq_obj));
+  if (result.isUnbound()) {
+    result =
+        thread->invokeMethodStatic2(LayoutId::kStr, ID(join), sep_str, seq_obj);
+  }
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.join");

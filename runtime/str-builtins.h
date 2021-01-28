@@ -70,6 +70,12 @@ bool strInternConstants(Thread* thread, const Object& items);
 // Returns true if `str` can be used as an identifier in Python.
 bool strIsIdentifier(const Str& str);
 
+// A shortcut for `str.join(sep, tuple_object or list_object)`.
+// Returns Unbound if the shortcut cannot be applied so that the caller
+// can take a general path to call `str.join`.
+RawObject strJoinWithTupleOrList(Thread* thread, const Str& sep,
+                                 const Object& iterable);
+
 // Look for needle in haystack in the range [start, end). Return the last
 // index found in that range, or -1 if needle was not found. Note that start
 // and end are code point offsets, not byte offsets.
