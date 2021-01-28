@@ -622,12 +622,25 @@ PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
          "may accidentally clear pending exception");
 
   HandleScope scope(thread);
-  word flags = 0;
-  thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
+  Runtime* runtime = thread->runtime();
+  Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
+  Type callable_type(&scope, runtime->typeOf(*callable_obj));
+  if (typeHasSlots(callable_type)) {
+    // Attempt to call tp_call directly for native types to avoid
+    // recursive interpreter calls.
+    void* tp_call_value = typeSlotAt(callable_type, Py_tp_call);
+    if (tp_call_value != nullptr) {
+      ternaryfunc call = reinterpret_cast<ternaryfunc>(tp_call_value);
+      return call(callable, args, kwargs);
+    }
+  }
+  thread->stackPush(*callable_obj);
+
   Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
-  DCHECK(thread->runtime()->isInstanceOfTuple(*args_obj),
-         "args mut be a tuple");
+  DCHECK(runtime->isInstanceOfTuple(*args_obj), "args mut be a tuple");
   thread->stackPush(*args_obj);
+
+  word flags = 0;
   if (kwargs != nullptr) {
     Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
     DCHECK(thread->runtime()->isInstanceOfDict(*kwargs_obj),

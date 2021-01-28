@@ -1543,6 +1543,34 @@ def func(*args, **kwargs):
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCallWithCallableOfNativeType) {
+  ternaryfunc meth = [](PyObject*, PyObject*, PyObject*) {
+    return PyUnicode_FromString("from_tp_call");
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_call, reinterpret_cast<void*>(meth)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec = {
+      "__main__.Bar",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+      const_cast<PyType_Slot*>(slots),
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  moduleSet("__main__", "Bar", type);
+
+  PyRun_SimpleString(R"(
+b = Bar()
+)");
+
+  PyObjectPtr func(mainModuleGet("b"));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr result(PyObject_Call(func, args, nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "from_tp_call"));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCallFunctionCalls) {
   PyRun_SimpleString(R"(
 def func(*args):
