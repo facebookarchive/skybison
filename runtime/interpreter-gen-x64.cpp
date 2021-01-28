@@ -1465,6 +1465,55 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
+  Register r_iter = RAX;
+  Register r_scratch = RDX;
+  Register r_length = RDI;
+  Register r_next = R8;
+  Label slow_path;
+  __ popq(r_iter);
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_iter, r_scratch,
+                                      LayoutId::kRangeIterator, &slow_path);
+  __ movq(r_length,
+          Address(r_iter, heapObjectDisp(RangeIterator::kLengthOffset)));
+  __ cmpq(r_length, smallIntImmediate(0));
+  Label terminate;
+  __ jcc(EQUAL, &terminate, Assembler::kNearJump);
+
+  // if length > 0, push iter back and the current value of next.
+  __ pushq(r_iter);
+  __ movq(r_next, Address(r_iter, heapObjectDisp(RangeIterator::kNextOffset)));
+  __ pushq(r_next);
+  // if length > 1 decrement next.
+  __ cmpq(r_length, smallIntImmediate(1));
+  Label dec_length;
+  __ jcc(EQUAL, &dec_length, Assembler::kNearJump);
+  // iter.setNext(next + step);
+  __ addq(r_next, Address(r_iter, heapObjectDisp(RangeIterator::kStepOffset)));
+  __ movq(Address(r_iter, heapObjectDisp(RangeIterator::kNextOffset)), r_next);
+  // iter.setLength(length - 1);
+  __ bind(&dec_length);
+  __ subq(r_length, smallIntImmediate(1));
+  __ movq(Address(r_iter, heapObjectDisp(RangeIterator::kLengthOffset)),
+          r_length);
+  Label next_opcode;
+  __ bind(&next_opcode);
+  emitNextOpcode(env);
+
+  __ bind(&terminate);
+  // length == 0.
+  // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(), arg))
+  Register r_original_arg = RAX;
+  emitOriginalArg(env, r_original_arg);
+  __ addq(kPCReg, r_original_arg);
+  __ jmp(&next_opcode, Assembler::kNearJump);
+
+  __ bind(&slow_path);
+  __ pushq(r_iter);
+  emitGenericHandler(env, FOR_ITER_ANAMORPHIC);
+}
+
+template <>
 void emitHandler<LOAD_BOOL>(EmitEnv* env) {
   Register r_scratch = RAX;
 
