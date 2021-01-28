@@ -447,6 +447,7 @@ class Interpreter {
   static Continue doLoadMethodPolymorphic(Thread* thread, word arg);
   static Continue doLoadName(Thread* thread, word arg);
   static Continue doPopExcept(Thread* thread, word arg);
+  static Continue doPopFinally(Thread* thread, word arg);
   static Continue doRaiseVarargs(Thread* thread, word arg);
   static Continue doReturnValue(Thread* thread, word arg);
   static Continue doSetupWith(Thread* thread, word arg);

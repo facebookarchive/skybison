@@ -2606,6 +2606,34 @@ HANDLER_INLINE Continue Interpreter::doPopExcept(Thread* thread, word) {
   return Continue::NEXT;
 }
 
+HANDLER_INLINE Continue Interpreter::doPopFinally(Thread* thread, word arg) {
+  HandleScope scope(thread);
+  Object res(&scope, NoneType::object());
+  if (arg != 0) {
+    res = thread->stackPop();
+  }
+  Object exc(&scope, thread->stackPop());
+  if (exc.isNoneType() || exc.isInt()) {
+  } else {
+    thread->stackPop();
+    thread->stackPop();
+    Frame* frame = thread->currentFrame();
+    TryBlock block = frame->blockStackPop();
+    if (block.kind() != TryBlock::Kind::kExceptHandler) {
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "popped block is not an except handler");
+      return Continue::UNWIND;
+    }
+    thread->setCaughtExceptionType(thread->stackPop());
+    thread->setCaughtExceptionValue(thread->stackPop());
+    thread->setCaughtExceptionTraceback(thread->stackPop());
+  }
+  if (arg != 0) {
+    thread->stackPush(*res);
+  }
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);

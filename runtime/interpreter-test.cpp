@@ -3481,6 +3481,122 @@ TEST_F(InterpreterTest, BeginFinallyPushesNone) {
   EXPECT_TRUE(result.isNoneType());
 }
 
+TEST_F(InterpreterTest, PopFinallyWithNoneExcAndZeroArgPopsExc) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object return_value(&scope, SmallInt::fromWord(123));
+  Object exc(&scope, NoneType::object());
+  Tuple consts(&scope, runtime_->newTupleWith2(return_value, exc));
+  code.setConsts(*consts);
+  const byte bytecode[] = {// Load return value
+                           LOAD_CONST, 0,
+                           // Load exc
+                           LOAD_CONST, 1,
+                           // 0 means don't pop from the stack
+                           POP_FINALLY, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
+}
+
+TEST_F(InterpreterTest, PopFinallyWithNoneExcAndNonzeroArgPopsExc) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object obj(&scope, SmallInt::fromWord(123));
+  Object exc(&scope, NoneType::object());
+  Object return_value(&scope, SmallInt::fromWord(456));
+  Tuple consts(&scope, runtime_->newTupleWith3(obj, exc, return_value));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      // Load some random stuff onto the stack
+      LOAD_CONST, 0,
+      // Load exc
+      LOAD_CONST, 1,
+      // Load return value
+      LOAD_CONST, 2,
+      // 1 means pop first before fetching exc, and then push after
+      POP_FINALLY, 1, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 456));
+}
+
+TEST_F(InterpreterTest, PopFinallyWithIntExcAndZeroArgPopsExc) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object return_value(&scope, SmallInt::fromWord(123));
+  Object exc(&scope, SmallInt::fromWord(456));
+  Tuple consts(&scope, runtime_->newTupleWith2(return_value, exc));
+  code.setConsts(*consts);
+  const byte bytecode[] = {// Load return value
+                           LOAD_CONST, 0,
+                           // Load exc
+                           LOAD_CONST, 1,
+                           // 0 means don't pop from the stack
+                           POP_FINALLY, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
+}
+
+TEST_F(InterpreterTest, PopFinallyWithIntExcAndNonzeroArgPopsExc) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object obj(&scope, SmallInt::fromWord(123));
+  Object exc(&scope, SmallInt::fromWord(456));
+  Object return_value(&scope, SmallInt::fromWord(789));
+  Tuple consts(&scope, runtime_->newTupleWith3(obj, exc, return_value));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      // Load some random stuff onto the stack
+      LOAD_CONST, 0,
+      // Load exc
+      LOAD_CONST, 1,
+      // Load return value
+      LOAD_CONST, 2,
+      // 1 means pop first before fetching exc, and then push after
+      POP_FINALLY, 1, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object result(&scope, runCode(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 789));
+}
+
+TEST_F(InterpreterTest, PopFinallyWithNonExceptHandlerRaisesSystemError) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object obj1(&scope, SmallInt::fromWord(1));
+  Object obj2(&scope, SmallInt::fromWord(2));
+  Object exc_type(&scope, SmallInt::fromWord(3));
+  Object exc_value(&scope, SmallInt::fromWord(4));
+  Object exc_tb(&scope, SmallInt::fromWord(5));
+  Object exc(&scope, SmallStr::fromCStr("exc"));
+  Object return_value(&scope, SmallInt::fromWord(7));
+  Tuple consts(&scope,
+               runtime_->newTupleWithN(7, &obj1, &obj2, &exc_type, &exc_value,
+                                       &exc_tb, &exc, &return_value));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      // Load return value
+      LOAD_CONST, 6,
+      // Load exc traceback
+      LOAD_CONST, 4,
+      // Load exc value
+      LOAD_CONST, 3,
+      // Load exc type
+      LOAD_CONST, 2,
+      // Load ignored object
+      LOAD_CONST, 0,
+      // Load ignored object
+      LOAD_CONST, 1,
+      // Load exc
+      LOAD_CONST, 5,
+      // Push a non-ExceptHandler TryBlock on the block stack
+      SETUP_EXCEPT, 0, POP_FINALLY, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kSystemError,
+                            "popped block is not an except handler"));
+}
+
 TEST_F(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
