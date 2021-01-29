@@ -297,6 +297,7 @@ class Runtime;
   V(_code__cell2arg)                                                           \
   V(_code__intrinsic)                                                          \
   V(_codecs)                                                                   \
+  V(_compiler)                                                                 \
   V(_compile_flags_mask)                                                       \
   V(_context__data)                                                            \
   V(_context__prev_context)                                                    \
@@ -584,7 +585,6 @@ class Runtime;
   V(co_varnames)                                                               \
   V(code)                                                                      \
   V(compile)                                                                   \
-  V(compiler)                                                                  \
   V(complex)                                                                   \
   V(contains)                                                                  \
   V(coroutine)                                                                 \

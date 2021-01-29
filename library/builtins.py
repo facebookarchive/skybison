@@ -2764,9 +2764,7 @@ class code(bootstrap=True):
 
 
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
-    from compiler import compile
-
-    from _compiler import PyroCodeGenerator
+    from _compiler import compile
 
     if not dont_inherit:
         try:
@@ -2779,7 +2777,7 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     elif optimize < 0 or optimize > 2:
         raise ValueError("compile(): invalid optimize value")
 
-    return compile(source, filename, mode, flags, None, optimize, PyroCodeGenerator)
+    return compile(source, filename, mode, flags, None, optimize)
 
 
 def _complex_str_parts(s):  # noqa: C901

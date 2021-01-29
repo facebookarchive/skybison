@@ -1,5 +1,5 @@
 import ast
-from compiler import opcode37
+from compiler import compile as compiler_compile
 from compiler.optimizer import AstOptimizer, BIN_OPS, is_const, get_const_value
 from compiler.pyassem import PyFlowGraph37
 from compiler.pycodegen import Python37CodeGenerator
@@ -211,3 +211,9 @@ class PyroCodeGenerator(Python37CodeGenerator):
             self.emit("COMPARE_IS_NOT")
         else:
             self.emit("COMPARE_OP", self._cmp_opcode[type(op)])
+
+
+def compile(source, filename, mode, flags, dont_inherit, optimize):
+    return compiler_compile(
+        source, filename, mode, flags, None, optimize, PyroCodeGenerator
+    )

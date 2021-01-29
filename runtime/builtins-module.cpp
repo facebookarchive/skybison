@@ -657,12 +657,12 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
   Object dunder_import(&scope, runtime->lookupNameInModule(thread, ID(builtins),
                                                            ID(__import__)));
   if (dunder_import.isErrorException()) return *dunder_import;
-  Object compiler_name(&scope, runtime->symbols()->at(ID(compiler)));
+  Object compiler_name(&scope, runtime->symbols()->at(ID(_compiler)));
   Object import_result(
       &scope, Interpreter::call1(thread, dunder_import, compiler_name));
   if (import_result.isErrorException()) return *import_result;
   Object none(&scope, NoneType::object());
-  return thread->invokeFunction6(ID(compiler), ID(compile), source, filename,
+  return thread->invokeFunction6(ID(_compiler), ID(compile), source, filename,
                                  mode_str, flags_int, none, optimize_int);
 }
 
