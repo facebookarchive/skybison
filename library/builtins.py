@@ -2709,6 +2709,7 @@ class code(bootstrap=True):
         freevars=(),
         cellvars=(),
     ):
+        # TODO(T83761884): Add posonlyargcount to args
         argcount = _int(argcount)
         posonlyargcount = 0
         kwonlyargcount = _int(kwonlyargcount)
@@ -2746,6 +2747,7 @@ class code(bootstrap=True):
         )
 
     def __hash__(self):
+        # TODO(T83761884): Add posonlyargcount to hash
         _code_guard(self)
         result = (
             hash(self.co_name)
@@ -2761,6 +2763,47 @@ class code(bootstrap=True):
             ^ self.co_flags
         )
         return result if result != -1 else -2
+
+    def replace(
+        self,
+        co_argcount=-1,
+        co_kwonlyargcount=-1,
+        co_nlocals=-1,
+        co_stacksize=-1,
+        co_flags=-1,
+        co_firstlineno=-1,
+        co_code=None,
+        co_consts=None,
+        co_names=None,
+        co_varnames=None,
+        co_freevars=None,
+        co_cellvars=None,
+        co_filename=None,
+        co_name=None,
+        co_lnotab=None,
+    ):
+        # TODO(T83761884): Add posonlyargcount to params of replace and args to
+        # __new__
+        return code.__new__(
+            code,
+            co_argcount if co_argcount is not -1 else self.co_argcount,
+            co_kwonlyargcount
+            if co_kwonlyargcount is not -1
+            else self.co_kwonlyargcount,
+            co_nlocals if co_nlocals is not -1 else self.co_nlocals,
+            co_stacksize if co_stacksize is not -1 else self.co_stacksize,
+            co_flags if co_flags is not -1 else self.co_flags,
+            co_code if co_code is not None else self.co_code,
+            co_consts if co_consts is not None else self.co_consts,
+            co_names if co_names is not None else self.co_names,
+            co_varnames if co_varnames is not None else self.co_varnames,
+            co_filename if co_filename is not None else self.co_filename,
+            co_name if co_name is not None else self.co_name,
+            co_firstlineno if co_firstlineno is not -1 else self.co_firstlineno,
+            co_lnotab if co_lnotab is not None else self.co_lnotab,
+            co_freevars if co_freevars is not None else self.co_freevars,
+            co_cellvars if co_cellvars is not None else self.co_cellvars,
+        )
 
 
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):

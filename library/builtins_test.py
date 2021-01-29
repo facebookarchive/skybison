@@ -2665,6 +2665,10 @@ class CodeTests(unittest.TestCase):
 
     CodeType = type(foo.__code__)
 
+    SAMPLE = CodeType(
+        1, 1, 4, 1, 1, b"", (), (), ("a", "b"), "filename", "name", 1, b"", (), ()
+    )
+
     def test_dunder_hash_with_non_code_object_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             self.CodeType.__hash__(None)
@@ -3021,6 +3025,201 @@ class CodeTests(unittest.TestCase):
             1, 1, 4, 1, 1, b"", (), (), ("a", "b"), "filename", "name", 1, b"", (), ()
         )
         self.assertIsInstance(result, self.CodeType)
+
+    @supports_38_feature
+    def test_replace_with_non_int_argcount_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_argcount="non_int")
+
+    @supports_38_feature
+    def test_replace_with_negative_argcount_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            self.SAMPLE.replace(co_argcount=-7)
+
+    @supports_38_feature
+    def test_replace_with_argcount_replaces_argcount(self):
+        self.assertNotEqual(self.SAMPLE.co_argcount, 0)
+        result = self.SAMPLE.replace(co_argcount=0)
+        self.assertEqual(result.co_argcount, 0)
+
+    @supports_38_feature
+    def test_replace_with_non_int_kwonlyargcount_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_kwonlyargcount="non_int")
+
+    @supports_38_feature
+    def test_replace_with_negative_kwonlyargcount_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            self.SAMPLE.replace(co_kwonlyargcount=-7)
+
+    @supports_38_feature
+    def test_replace_with_kwonlyargcount_replaces_kwonlyargcount(self):
+        self.assertNotEqual(self.SAMPLE.co_kwonlyargcount, 0)
+        result = self.SAMPLE.replace(co_kwonlyargcount=0)
+        self.assertEqual(result.co_kwonlyargcount, 0)
+
+    @supports_38_feature
+    def test_replace_with_non_int_nlocals_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_nlocals="non_int")
+
+    @supports_38_feature
+    def test_replace_with_negative_nlocals_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            self.SAMPLE.replace(co_nlocals=-7)
+
+    @supports_38_feature
+    def test_replace_with_nlocals_replaces_nlocals(self):
+        self.assertNotEqual(self.SAMPLE.co_nlocals, 5)
+        result = self.SAMPLE.replace(co_nlocals=5)
+        self.assertEqual(result.co_nlocals, 5)
+
+    @supports_38_feature
+    def test_replace_with_non_int_stacksize_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_stacksize="non_int")
+
+    @supports_38_feature
+    def test_replace_with_negative_stacksize_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            self.SAMPLE.replace(co_stacksize=-7)
+
+    @supports_38_feature
+    def test_replace_with_stacksize_replaces_stacksize(self):
+        self.assertNotEqual(self.SAMPLE.co_stacksize, 0)
+        result = self.SAMPLE.replace(co_stacksize=0)
+        self.assertEqual(result.co_stacksize, 0)
+
+    @supports_38_feature
+    def test_replace_with_non_int_flags_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_flags="non_int")
+
+    @supports_38_feature
+    def test_replace_with_negative_flags_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            self.SAMPLE.replace(co_flags=-7)
+
+    @supports_38_feature
+    def test_replace_with_flags_replaces_flags(self):
+        self.assertNotEqual(self.SAMPLE.co_flags, 64)
+        result = self.SAMPLE.replace(co_flags=64)
+        self.assertEqual(result.co_flags, 64)
+
+    @supports_38_feature
+    def test_replace_with_non_bytes_code_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_code="non_bytes")
+
+    @supports_38_feature
+    def test_replace_with_code_replaces_code(self):
+        self.assertNotEqual(self.SAMPLE.co_code, b"123")
+        result = self.SAMPLE.replace(co_code=b"123")
+        self.assertEqual(result.co_code, b"123")
+
+    @supports_38_feature
+    def test_replace_with_non_tuple_consts_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_consts="non_tuple")
+
+    @supports_38_feature
+    def test_replace_with_consts_replaces_consts(self):
+        self.assertNotEqual(self.SAMPLE.co_consts, (1, 2, 3))
+        result = self.SAMPLE.replace(co_consts=(1, 2, 3))
+        self.assertEqual(result.co_consts, (1, 2, 3))
+
+    @supports_38_feature
+    def test_replace_with_non_tuple_names_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_names="non_tuple")
+
+    @supports_38_feature
+    def test_replace_with_names_replaces_names(self):
+        self.assertNotEqual(self.SAMPLE.co_names, ("foo", "bar"))
+        result = self.SAMPLE.replace(co_names=("foo", "bar"))
+        self.assertEqual(result.co_names, ("foo", "bar"))
+
+    @supports_38_feature
+    def test_replace_with_non_tuple_varnames_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_varnames="non_tuple")
+
+    @supports_38_feature
+    def test_replace_with_varnames_replaces_varnames(self):
+        self.assertNotEqual(self.SAMPLE.co_varnames, ("foo", "bar"))
+        result = self.SAMPLE.replace(co_varnames=("foo", "bar"))
+        self.assertEqual(result.co_varnames, ("foo", "bar"))
+
+    @supports_38_feature
+    def test_replace_with_non_str_filename_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_filename=b"non_str")
+
+    @supports_38_feature
+    def test_replace_with_filename_replaces_filename(self):
+        self.assertNotEqual(self.SAMPLE.co_filename, "newfilename")
+        result = self.SAMPLE.replace(co_filename="newfilename")
+        self.assertEqual(result.co_filename, "newfilename")
+
+    @supports_38_feature
+    def test_replace_with_non_str_name_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_name=b"non_str")
+
+    @supports_38_feature
+    def test_replace_with_name_replaces_name(self):
+        self.assertNotEqual(self.SAMPLE.co_name, "newname")
+        result = self.SAMPLE.replace(co_name="newname")
+        self.assertEqual(result.co_name, "newname")
+
+    @supports_38_feature
+    def test_replace_with_non_int_firstlineno_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_firstlineno="non_int")
+
+    @supports_38_feature
+    def test_replace_with_negative_firstlineno_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            self.SAMPLE.replace(co_firstlineno=-7)
+
+    @supports_38_feature
+    def test_replace_with_firstlineno_replaces_firstlineno(self):
+        self.assertNotEqual(self.SAMPLE.co_firstlineno, 0)
+        result = self.SAMPLE.replace(co_firstlineno=0)
+        self.assertEqual(result.co_firstlineno, 0)
+
+    @supports_38_feature
+    def test_replace_with_non_bytes_lnotab_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_lnotab="non_bytes")
+
+    @supports_38_feature
+    def test_replace_with_lnotab_replaces_lnotab(self):
+        self.assertNotEqual(self.SAMPLE.co_lnotab, b"123")
+        result = self.SAMPLE.replace(co_lnotab=b"123")
+        self.assertEqual(result.co_lnotab, b"123")
+
+    @supports_38_feature
+    def test_replace_with_non_tuple_freevars_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_freevars="non_tuple")
+
+    @supports_38_feature
+    def test_replace_with_freevars_replaces_freevars(self):
+        self.assertNotEqual(self.SAMPLE.co_freevars, ("foo", "bar"))
+        result = self.SAMPLE.replace(co_freevars=("foo", "bar"))
+        self.assertEqual(result.co_freevars, ("foo", "bar"))
+
+    @supports_38_feature
+    def test_replace_with_non_tuple_cellvars_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.SAMPLE.replace(co_cellvars="non_tuple")
+
+    @supports_38_feature
+    def test_replace_with_cellvars_replaces_cellvars(self):
+        self.assertNotEqual(self.SAMPLE.co_cellvars, ("foo", "bar"))
+        result = self.SAMPLE.replace(co_cellvars=("foo", "bar"))
+        self.assertEqual(result.co_cellvars, ("foo", "bar"))
 
 
 class ContextManagerTests(unittest.TestCase):
