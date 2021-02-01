@@ -899,7 +899,21 @@ RawObject FUNC(_json, loads)(Thread* thread, Arguments args) {
 
   Object cls(&scope, args.get(static_cast<word>(LoadsArg::kCls)));
   if (!cls.isNoneType() || kw.numItems() > static_cast<word>(had_strict)) {
-    UNIMPLEMENTED("custom cls");
+    Object function(&scope, runtime->lookupNameInModule(thread, ID(_json),
+                                                        ID(_decode_with_cls)));
+    CHECK(!function.isErrorNotFound(), "missing function in internal module");
+    thread->stackPush(*function);
+    MutableTuple call_args(&scope, runtime->newMutableTuple(7));
+    call_args.atPut(0, *s);
+    call_args.atPut(1, *cls);
+    call_args.atPut(2, args.get(static_cast<word>(LoadsArg::kObjectHook)));
+    call_args.atPut(3, args.get(static_cast<word>(LoadsArg::kParseFloat)));
+    call_args.atPut(4, args.get(static_cast<word>(LoadsArg::kParseInt)));
+    call_args.atPut(5, args.get(static_cast<word>(LoadsArg::kParseConstant)));
+    call_args.atPut(6, args.get(static_cast<word>(LoadsArg::kObjectPairsHook)));
+    thread->stackPush(call_args.becomeImmutable());
+    thread->stackPush(*kw);
+    return Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
   }
 
   JSONParser env;

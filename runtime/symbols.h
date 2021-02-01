@@ -308,6 +308,7 @@ class Runtime;
   V(_coroutine__origin)                                                        \
   V(_coroutine_wrapper__cw_coroutine)                                          \
   V(_created)                                                                  \
+  V(_decode_with_cls)                                                          \
   V(_decoded_chars)                                                            \
   V(_decoded_chars_used)                                                       \
   V(_decoder)                                                                  \

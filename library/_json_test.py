@@ -753,6 +753,61 @@ class LoadsTests(unittest.TestCase):
         self.assertIs(d0_keys[0], d1_keys[1])
         self.assertIs(d0_keys[2], d1_keys[0])
 
+    def test_with_cls_calls_cls_and_calls_decode(self):
+        class C:
+            def decode(self, s):
+                return f"decode called on {s}"
+
+        func_args = None
+        func_kwargs = None
+
+        def func(*args, **kwargs):
+            nonlocal func_args
+            nonlocal func_kwargs
+            func_args = args
+            func_kwargs = kwargs
+            return C()
+
+        result = loads("<test input>", cls=func, foo=42, bar="hello")
+        self.assertEqual(func_args, ())
+        self.assertEqual(
+            func_kwargs,
+            {
+                "foo": 42,
+                "bar": "hello",
+            },
+        )
+        self.assertEqual(result, "decode called on <test input>")
+
+        func_args = None
+        func_kwargs = None
+        result = loads(
+            s="<test input>",
+            encoding="ignored",
+            cls=func,
+            object_hook=1,
+            parse_float=2,
+            parse_int=3,
+            parse_constant=4,
+            object_pairs_hook=5,
+            strict=6,
+            foobar=7,
+        )
+        self.assertEqual(func_args, ())
+        self.assertEqual(
+            func_kwargs,
+            {
+                "object_hook": 1,
+                "parse_float": 2,
+                "parse_int": 3,
+                "parse_constant": 4,
+                "object_pairs_hook": 5,
+                "strict": 6,
+                "foobar": 7,
+            },
+        )
+        self.assertEqual(result, "decode called on <test input>")
+
     def test_unexpected_char_raises_json_decode_error(self):
         with self.assertRaisesRegex(
             JSONDecodeError, r"Expecting value: line 1 column 1 \(char 0\)"

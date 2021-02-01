@@ -28,6 +28,24 @@ class JSONDecodeError(ValueError):
         return self.__class__, (self.msg, self.doc, self.pos)
 
 
+def _decode_with_cls(
+    s, cls, object_hook, parse_float, parse_int, parse_constant, object_pairs_hook, **kw
+):
+    if cls is None:
+        cls = _JSONDecoder
+    if object_hook is not None:
+        kw["object_hook"] = object_hook
+    if object_pairs_hook is not None:
+        kw["object_pairs_hook"] = object_pairs_hook
+    if parse_float is not None:
+        kw["parse_float"] = parse_float
+    if parse_int is not None:
+        kw["parse_int"] = parse_int
+    if parse_constant is not None:
+        kw["parse_constant"] = parse_constant
+    return cls(**kw).decode(s)
+
+
 def loads(
     s,
     *,
@@ -41,3 +59,6 @@ def loads(
     **kw,
 ):
     _builtin()
+
+
+from json.decoder import JSONDecoder as _JSONDecoder
