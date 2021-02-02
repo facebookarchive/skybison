@@ -13,26 +13,26 @@ struct CAPIState {
   // Some API functions promise to cache their return value and return the same
   // value for repeated invocations on a specific PyObject. Those value are
   // cached here.
-  IdentityDict caches_;
+  IdentityDict caches;
 
   // C-API object handles
-  IdentityDict handles_;
+  IdentityDict handles;
 
-  Vector<PyObject*> modules_;
+  Vector<PyObject*> modules;
 };
 
 static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");
 
 inline IdentityDict* capiCaches(Runtime* runtime) {
-  return &runtime->capiState()->caches_;
+  return &runtime->capiState()->caches;
 }
 
 inline IdentityDict* capiHandles(Runtime* runtime) {
-  return &runtime->capiState()->handles_;
+  return &runtime->capiState()->handles;
 }
 
 inline Vector<PyObject*>* capiModules(Runtime* runtime) {
-  return &runtime->capiState()->modules_;
+  return &runtime->capiState()->modules;
 }
 
 }  // namespace py

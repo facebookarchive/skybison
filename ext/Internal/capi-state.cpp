@@ -20,9 +20,9 @@ static const word kInitialCachesCapacity = 128;
 static const word kInitialHandlesCapacity = 256;
 
 void capiStateVisit(CAPIState* state, PointerVisitor* visitor) {
-  state->handles_.visit(visitor);
-  ApiHandle::visitReferences(&state->handles_, visitor);
-  state->caches_.visit(visitor);
+  state->handles.visit(visitor);
+  ApiHandle::visitReferences(&state->handles, visitor);
+  state->caches.visit(visitor);
 }
 
 void finalizeCAPIState(Runtime* runtime) { runtime->capiState()->~CAPIState(); }
@@ -62,8 +62,8 @@ void freeExtensionModules(Thread* thread) {
 
 void initializeCAPIState(CAPIState* state) {
   new (state) CAPIState;
-  state->caches_.initialize(kInitialCachesCapacity);
-  state->handles_.initialize(kInitialHandlesCapacity);
+  state->caches.initialize(kInitialCachesCapacity);
+  state->handles.initialize(kInitialHandlesCapacity);
 }
 
 word numTrackedApiHandles(Runtime* runtime) {
