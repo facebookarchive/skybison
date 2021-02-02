@@ -34,7 +34,7 @@ class Thread;
 
 class Runtime;
 
-static const word kCAPIStateSize = 128;
+static const word kCAPIStateSize = 256;
 
 extern struct _inittab _PyImport_Inittab[];
 

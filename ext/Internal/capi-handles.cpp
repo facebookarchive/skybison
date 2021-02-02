@@ -1,5 +1,7 @@
 #include "capi-handles.h"
 
+#include <cstdint>
+
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "cpython-types.h"
@@ -16,6 +18,9 @@
 
 namespace py {
 
+static const int32_t kEmptyIndex = -1;
+static const int32_t kTombstoneIndex = -2;
+
 struct IndexProbe {
   word index;
   word mask;
@@ -31,33 +36,50 @@ static uword handleHash(RawObject obj) {
   return obj.raw();
 }
 
-static void itemAtPut(RawObject* keys, void** values, word index, RawObject key,
-                      void* value) {
-  DCHECK(!key.isUnbound(), "Unbound represents tombstone");
-  DCHECK(!key.isNoneType(), "None represents empty");
+static int32_t indexAt(int32_t* indices, word index) { return indices[index]; }
+
+static void indexAtPut(int32_t* indices, word index, int32_t item_index) {
+  indices[index] = item_index;
+}
+
+static void indexAtPutTombstone(int32_t* indices, word index) {
+  indices[index] = kTombstoneIndex;
+}
+
+static void itemAtPut(RawObject* keys, void** values, int32_t index,
+                      RawObject key, void* value) {
+  DCHECK(!key.isNoneType(), "None represents empty and tombstone");
   DCHECK(value != nullptr, "key must be associated with a C-API handle");
   keys[index] = key;
   values[index] = value;
 }
 
-static void itemAtPutTombstone(RawObject* keys, void** values, word index) {
-  keys[index] = Unbound::object();
+static void itemAtPutTombstone(RawObject* keys, void** values, int32_t index) {
+  keys[index] = NoneType::object();
   values[index] = nullptr;
 }
 
-static bool itemIsEmpty(RawObject* keys, word index) {
-  return keys[index].isNoneType();
+static RawObject itemKeyAt(RawObject* keys, int32_t index) {
+  return keys[index];
 }
 
-static bool itemIsTombstone(RawObject* keys, word index) {
-  return keys[index].isUnbound();
+static void* itemValueAt(void** values, int32_t index) { return values[index]; }
+
+static int32_t maxCapacity(word num_indices) {
+  DCHECK(num_indices <= kMaxInt32, "cannot fit %ld indices into 4-byte int",
+         num_indices);
+  return static_cast<int32_t>((num_indices * 2) / 3);
 }
 
-static RawObject itemKeyAt(RawObject* keys, word index) { return keys[index]; }
+static int32_t* newIndices(word num_indices) {
+  word size = num_indices * sizeof(int32_t);
+  void* result = std::malloc(size);
+  DCHECK(result != nullptr, "malloc failed");
+  std::memset(result, -1, size);  // fill with kEmptyIndex
+  return reinterpret_cast<int32_t*>(result);
+}
 
-static void* itemValueAt(void** values, word index) { return values[index]; }
-
-static RawObject* newKeys(word capacity) {
+static RawObject* newKeys(int32_t capacity) {
   word size = capacity * sizeof(RawObject);
   void* result = std::malloc(size);
   DCHECK(result != nullptr, "malloc failed");
@@ -65,17 +87,17 @@ static RawObject* newKeys(word capacity) {
   return reinterpret_cast<RawObject*>(result);
 }
 
-static void** newValues(word capacity) {
+static void** newValues(int32_t capacity) {
   void* result = std::calloc(capacity, kPointerSize);
   DCHECK(result != nullptr, "calloc failed");
   return reinterpret_cast<void**>(result);
 }
 
-static bool nextItem(RawObject* keys, void** values, word* idx, word end,
+static bool nextItem(RawObject* keys, void** values, int32_t* idx, int32_t end,
                      RawObject* key_out, void** value_out) {
-  for (word i = *idx; i < end; i++) {
+  for (int32_t i = *idx; i < end; i++) {
     RawObject key = itemKeyAt(keys, i);
-    if (key.isNoneType() || key.isUnbound()) continue;
+    if (key.isNoneType()) continue;
     *key_out = key;
     *value_out = itemValueAt(values, i);
     *idx = i + 1;
@@ -102,8 +124,9 @@ static void probeNext(IndexProbe* probe) {
 
 void* IdentityDict::at(RawObject key) {
   word index;
-  if (lookup(key, &index)) {
-    return itemValueAt(values(), index);
+  int32_t item_index;
+  if (lookup(key, &index, &item_index)) {
+    return itemValueAt(values(), item_index);
   }
   return nullptr;
 }
@@ -113,141 +136,155 @@ void IdentityDict::atPut(RawObject key, void* value) {
   void** values = this->values();
 
   word index;
-  if (lookupForInsertion(key, &index)) {
-    itemAtPut(keys, values, index, key, value);
+  int32_t item_index;
+  if (lookupForInsertion(key, &index, &item_index)) {
+    itemAtPut(keys, values, item_index, key, value);
     return;
   }
 
-  bool empty_slot = itemIsEmpty(keys, index);
-  itemAtPut(keys, values, index, key, value);
+  item_index = nextIndex();
+  indexAtPut(indices(), index, item_index);
+  itemAtPut(keys, values, item_index, key, value);
   incrementNumItems();
-  if (empty_slot) {
-    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
-    decrementNumUsableItems();
-    DCHECK(capacity() > 0 && Utils::isPowerOfTwo(capacity()),
-           "table capacity must be power of two, greater than zero");
-    if (numUsableItems() > 0) {
-      return;
-    }
-    // If at least half the space taken up in the dict is tombstones, removing
-    // them will free up enough space. Otherwise, the dict must be grown.
-    word growth_factor = (numItems() < numTombstones()) ? 1 : kGrowthFactor;
-    // TODO(T44247845): Handle overflow here.
-    word new_capacity = capacity() * growth_factor;
-    rehash(new_capacity);
-    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
-  }
+  setNextIndex(item_index + 1);
+
+  // Maintain the invariant that we have space for at least one more item.
+  if (hasUsableItem()) return;
+
+  // If at least half of the items in the dense array are tombstones, removing
+  // them will free up plenty of space. Otherwise, the dict must be grown.
+  word growth_factor = (numItems() < capacity() / 2) ? 1 : kGrowthFactor;
+  word new_num_indices = numIndices() * growth_factor;
+  rehash(new_num_indices);
+  DCHECK(hasUsableItem(), "dict must have space for another item");
 }
 
 bool IdentityDict::includes(RawObject key) {
   word index;
-  return lookup(key, &index);
+  int32_t item_index;
+  return lookup(key, &index, &item_index);
 }
 
-void IdentityDict::initialize(word capacity) {
+void IdentityDict::initialize(word num_indices) {
+  setIndices(newIndices(num_indices));
+  setNumIndices(num_indices);
+
+  int32_t capacity = maxCapacity(num_indices);
   setCapacity(capacity);
   setKeys(newKeys(capacity));
-  setNumUsableItems((capacity * 2) / 3);
   setValues(newValues(capacity));
 }
 
-bool IdentityDict::lookup(RawObject key, word* index) {
-  word capacity = this->capacity();
+bool IdentityDict::lookup(RawObject key, word* sparse, int32_t* dense) {
   uword hash = handleHash(key);
+  int32_t* indices = this->indices();
   RawObject* keys = this->keys();
+  word num_indices = this->numIndices();
 
-  for (IndexProbe probe = probeBegin(capacity, hash);; probeNext(&probe)) {
-    RawObject current_key = itemKeyAt(keys, probe.index);
-    if (current_key == key) {
-      *index = probe.index;
-      return true;
+  for (IndexProbe probe = probeBegin(num_indices, hash);; probeNext(&probe)) {
+    int32_t item_index = indexAt(indices, probe.index);
+    if (item_index >= 0) {
+      if (itemKeyAt(keys, item_index) == key) {
+        *sparse = probe.index;
+        *dense = item_index;
+        return true;
+      }
+      continue;
     }
-    if (itemIsEmpty(keys, probe.index)) {
+    if (item_index == kEmptyIndex) {
       return false;
     }
   }
 }
 
-bool IdentityDict::lookupForInsertion(RawObject key, word* index) {
-  word capacity = this->capacity();
+bool IdentityDict::lookupForInsertion(RawObject key, word* sparse,
+                                      int32_t* dense) {
   uword hash = handleHash(key);
+  int32_t* indices = this->indices();
   RawObject* keys = this->keys();
+  word num_indices = this->numIndices();
 
   word next_free_index = -1;
-  for (IndexProbe probe = probeBegin(capacity, hash);; probeNext(&probe)) {
-    RawObject current_key = itemKeyAt(keys, probe.index);
-    if (current_key == key) {
-      *index = probe.index;
-      return true;
-    }
-    if (itemIsEmpty(keys, probe.index)) {
-      if (next_free_index == -1) {
-        next_free_index = probe.index;
+  for (IndexProbe probe = probeBegin(num_indices, hash);; probeNext(&probe)) {
+    int32_t item_index = indexAt(indices, probe.index);
+    if (item_index >= 0) {
+      if (itemKeyAt(keys, item_index) == key) {
+        *sparse = probe.index;
+        *dense = item_index;
+        return true;
       }
-      *index = next_free_index;
-      return false;
+      continue;
     }
-    if (itemIsTombstone(keys, probe.index) && next_free_index == -1) {
+    if (next_free_index == -1) {
       next_free_index = probe.index;
+    }
+    if (item_index == kEmptyIndex) {
+      *sparse = next_free_index;
+      return false;
     }
   }
 }
 
-void IdentityDict::rehash(word new_capacity) {
-  word capacity = this->capacity();
+void IdentityDict::rehash(word new_num_indices) {
+  int32_t end = nextIndex();
+  int32_t* indices = this->indices();
   RawObject* keys = this->keys();
   void** values = this->values();
 
+  int32_t new_capacity = maxCapacity(new_num_indices);
+  int32_t* new_indices = newIndices(new_num_indices);
   RawObject* new_keys = newKeys(new_capacity);
   void** new_values = newValues(new_capacity);
 
   // Re-insert items
   RawObject key = NoneType::object();
   void* value;
-  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+  for (int32_t i = 0, count = 0; nextItem(keys, values, &i, end, &key, &value);
+       count++) {
     uword hash = handleHash(key);
-    for (IndexProbe probe = probeBegin(new_capacity, hash);;
+    for (IndexProbe probe = probeBegin(new_num_indices, hash);;
          probeNext(&probe)) {
-      DCHECK(!itemIsTombstone(new_keys, probe.index),
-             "There should be no tombstones in a newly created dict");
-      if (itemIsEmpty(new_keys, probe.index)) {
-        itemAtPut(new_keys, new_values, probe.index, key, value);
+      if (indexAt(new_indices, probe.index) == kEmptyIndex) {
+        indexAtPut(new_indices, probe.index, count);
+        itemAtPut(new_keys, new_values, count, key, value);
         break;
       }
     }
   }
 
   setCapacity(new_capacity);
+  setIndices(new_indices);
   setKeys(new_keys);
-  // Reset the usable items to 2/3 of the full capacity to guarantee low
-  // collision rate.
-  setNumUsableItems((new_capacity * 2) / 3 - numItems());
+  setNextIndex(numItems());
+  setNumIndices(new_num_indices);
   setValues(new_values);
 
+  std::free(indices);
   std::free(keys);
   std::free(values);
 }
 
 void* IdentityDict::remove(RawObject key) {
   word index;
-  if (!lookup(key, &index)) {
+  int32_t item_index;
+  if (!lookup(key, &index, &item_index)) {
     return nullptr;
   }
 
   void** values = this->values();
-  void* result = itemValueAt(values, index);
-  itemAtPutTombstone(keys(), values, index);
+  void* result = itemValueAt(values, item_index);
+  indexAtPutTombstone(indices(), index);
+  itemAtPutTombstone(keys(), values, item_index);
   decrementNumItems();
   return result;
 }
 
 void IdentityDict::shrink() {
-  if (numItems() < capacity() / kShrinkFactor) {
-    // TODO(T44247845): Handle overflow here.
-    // Ensure numItems is no more than 2/3 of available slots (ensure capacity
-    // is at least 3/2 numItems).
-    word new_capacity = Utils::nextPowerOfTwo((numItems() * 3) / 2 + 1);
-    rehash(new_capacity);
+  int32_t num_items = numItems();
+  if (num_items < capacity() / kShrinkFactor) {
+    // Ensure that the indices array is large enough to limit collisions.
+    word new_num_indices = Utils::nextPowerOfTwo((num_items * 3) / 2 + 1);
+    rehash(new_num_indices);
   }
 }
 
@@ -346,10 +383,10 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
 void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
                                           IdentityDict* caches) {
   // Objects have moved; rehash the caches first to reflect new addresses
-  caches->rehash(caches->capacity());
+  caches->rehash(caches->numIndices());
 
   // Now caches can be removed with ->remove()
-  word capacity = handles->capacity();
+  int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
 
@@ -357,7 +394,7 @@ void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
   // referenced by managed objects or by an extension object.
   RawObject key = NoneType::object();
   void* value;
-  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+  for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = static_cast<ApiHandle*>(value);
     if (!ApiHandle::hasExtensionReference(handle)) {
       // TODO(T56760343): Remove the cache lookup. This should become simpler
@@ -365,23 +402,22 @@ void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
       // for caches is eliminated.
       void* cache = caches->remove(key);
       itemAtPutTombstone(keys, values, i - 1);
-      handles->decrementNumItems();
       std::free(handle);
       std::free(cache);
     }
   }
 
-  handles->rehash(handles->capacity());
+  handles->rehash(handles->numIndices());
 }
 
 void ApiHandle::disposeHandles(IdentityDict* handles) {
-  word capacity = handles->capacity();
+  int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
-
   RawObject key = NoneType::object();
   void* value;
-  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+
+  for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     handle->dispose();
   }
@@ -389,15 +425,13 @@ void ApiHandle::disposeHandles(IdentityDict* handles) {
 
 void ApiHandle::visitReferences(IdentityDict* handles,
                                 PointerVisitor* visitor) {
-  word capacity = handles->capacity();
+  int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
-
-  // TODO(bsimmers): Since we're reading an object mid-collection, approximate a
-  // read barrier until we have a more principled solution in place.
   RawObject key = NoneType::object();
   void* value;
-  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+
+  for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     if (ApiHandle::hasExtensionReference(handle)) {
       visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
