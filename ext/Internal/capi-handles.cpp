@@ -7,7 +7,9 @@
 #include "capi-state.h"
 #include "capi.h"
 #include "event.h"
+#include "globals.h"
 #include "object-builtins.h"
+#include "objects.h"
 #include "runtime.h"
 #include "thread.h"
 #include "visitor.h"
@@ -25,13 +27,26 @@ static word handleHash(RawObject obj) {
   return static_cast<word>(obj.raw());
 }
 
+static RawObject* newKeys(word capacity) {
+  word size = capacity * sizeof(RawObject);
+  void* result = std::malloc(size);
+  DCHECK(result != nullptr, "malloc failed");
+  std::memset(result, -1, size);  // fill with NoneType::object()
+  return reinterpret_cast<RawObject*>(result);
+}
+
+static void** newValues(word capacity) {
+  void* result = std::calloc(capacity, kPointerSize);
+  DCHECK(result != nullptr, "calloc failed");
+  return reinterpret_cast<void**>(result);
+}
+
 // Helper class for manipulating buckets in the RawTuple that backs
 // IdentityDict.
 class Bucket {
  public:
-  static word bucket(RawMutableTuple data, word hash, word* bucket_mask,
+  static word bucket(word nbuckets, word hash, word* bucket_mask,
                      uword* perturb) {
-    const word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     DCHECK(nbuckets > 0, "bucket size <= 0");
     *perturb = static_cast<uword>(hash);
@@ -49,58 +64,50 @@ class Bucket {
     return (current * 5 + 1 + *perturb) & bucket_mask;
   }
 
-  static bool isEmpty(RawMutableTuple data, word index) {
-    return key(data, index).isNoneType();
+  static bool isEmpty(RawObject* keys, word index) {
+    return key(keys, index).isNoneType();
   }
 
-  static bool isTombstone(RawMutableTuple data, word index) {
-    return key(data, index).isUnbound();
+  static bool isTombstone(RawObject* keys, word index) {
+    return key(keys, index).isUnbound();
   }
 
-  static RawObject key(RawMutableTuple data, word index) {
-    return data.at(index + kKeyOffset);
-  }
+  static RawObject key(RawObject* keys, word index) { return keys[index]; }
 
-  static void set(RawMutableTuple data, word index, RawObject key,
-                  RawObject value) {
+  static void set(RawObject* keys, void** values, word index, RawObject key,
+                  void* value) {
     DCHECK(!key.isUnbound(),
            "Unbound should be an immediate C-API handle and represents "
            "tombstones");
     DCHECK(!key.isNoneType(),
            "None should be an immediate C-API handle and represents empties");
-    data.atPut(index + kKeyOffset, key);
-    data.atPut(index + kValueOffset, value);
+    keys[index] = key;
+    values[index] = value;
   }
 
-  static void setTombstone(RawMutableTuple data, word index) {
-    data.atPut(index + kKeyOffset, Unbound::object());
-    data.atPut(index + kValueOffset, RawNoneType::object());
+  static void setTombstone(RawObject* keys, void** values, word index) {
+    keys[index] = Unbound::object();
+    values[index] = nullptr;
   }
 
-  static RawObject value(RawMutableTuple data, word index) {
-    return data.at(index + kValueOffset);
-  }
+  static void* value(void** values, word index) { return values[index]; }
 
-  static bool nextItem(RawMutableTuple data, word* idx) {
-    // Calling next on an invalid index should not advance that index.
-    if (*idx >= data.length()) {
-      return false;
+  static bool nextItem(RawObject* keys, word* idx, word end) {
+    for (word i = *idx + 1; i < end; i++) {
+      if (isEmptyOrTombstone(keys, i)) continue;
+      *idx = i;
+      return true;
     }
-    do {
-      *idx += kNumPointers;
-    } while (*idx < data.length() && isEmptyOrTombstone(data, *idx));
-    return *idx < data.length();
+    *idx = end;
+    return false;
   }
 
   // Layout.
-  static const word kKeyOffset = 0;
-  static const word kValueOffset = kKeyOffset + 1;
-  static const word kNumPointers = kValueOffset + 1;
-  static const word kFirst = -kNumPointers;
+  static const word kFirst = -1;
 
  private:
-  static bool isEmptyOrTombstone(RawMutableTuple data, word index) {
-    return isEmpty(data, index) || isTombstone(data, index);
+  static bool isEmptyOrTombstone(RawObject* keys, word index) {
+    return isEmpty(keys, index) || isTombstone(keys, index);
   }
 
   DISALLOW_HEAP_ALLOCATION();
@@ -108,47 +115,24 @@ class Bucket {
 
 }  // namespace
 
-// Insert `key`/`value` into dictionary assuming no bucket with an equivalent
-// key and no tombstones exist.
-void identityDictInsertNoUpdate(RawMutableTuple data, RawObject key,
-                                RawObject value) {
-  DCHECK(data.length() > 0, "table must not be empty");
-  uword perturb;
-  word bucket_mask;
-  word hash = handleHash(key);
-  for (word current = Bucket::bucket(data, hash, &bucket_mask, &perturb);;
-       current = Bucket::nextBucket(current, bucket_mask, &perturb)) {
-    word current_index = current * Bucket::kNumPointers;
-    DCHECK(!Bucket::isTombstone(data, current_index),
-           "There should be no tombstones in a newly created dict");
-    if (Bucket::isEmpty(data, current_index)) {
-      Bucket::set(data, current_index, key, value);
-      return;
-    }
-  }
-}
-
-RawObject IdentityDict::at(Thread* thread, const Object& key) {
-  HandleScope scope(thread);
-  MutableTuple data_tuple(&scope, data());
+void* IdentityDict::at(Thread*, const Object& key) {
   word index = -1;
   bool found = lookup(*key, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
-    return Bucket::value(*data_tuple, index);
+    return Bucket::value(values(), index);
   }
-  return Error::notFound();
+  return nullptr;
 }
 
-void IdentityDict::atPut(Thread* thread, const Object& key,
-                         const Object& value) {
-  HandleScope scope(thread);
-  MutableTuple data_tuple(&scope, data());
+void IdentityDict::atPut(Thread*, const Object& key, void* value) {
+  DCHECK(value != nullptr, "nullptr indicates not found");
   word index = -1;
   bool found = lookup(*key, &index);
   DCHECK(index != -1, "invalid index %ld", index);
-  bool empty_slot = Bucket::isEmpty(*data_tuple, index);
-  Bucket::set(*data_tuple, index, *key, *value);
+  RawObject* keys = this->keys();
+  bool empty_slot = Bucket::isEmpty(keys, index);
+  Bucket::set(keys, values(), index, *key, value);
   if (found) {
     return;
   }
@@ -166,24 +150,27 @@ void IdentityDict::atPut(Thread* thread, const Object& key,
     word growth_factor = (numItems() < numTombstones()) ? 1 : kGrowthFactor;
     // TODO(T44247845): Handle overflow here.
     word new_capacity = capacity() * growth_factor;
-    resize(thread, new_capacity);
+    rehash(new_capacity);
     DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
   }
 }
 
-bool IdentityDict::includes(Thread* thread, const Object& key) {
-  return !at(thread, key).isErrorNotFound();
+bool IdentityDict::includes(Thread*, const Object& key) {
+  word ignored;
+  return lookup(*key, &ignored);
 }
 
-void IdentityDict::initialize(Runtime* runtime, word capacity) {
+void IdentityDict::initialize(Runtime*, word capacity) {
   setCapacity(capacity);
-  setData(runtime->newMutableTuple(capacity * Bucket::kNumPointers));
+  setKeys(newKeys(capacity));
   setNumUsableItems((capacity * 2) / 3);
+  setValues(newValues(capacity));
 }
 
 bool IdentityDict::lookup(RawObject key, word* index) {
-  RawMutableTuple data = MutableTuple::cast(this->data());
-  if (data.length() == 0) {
+  word capacity = this->capacity();
+  RawObject* keys = this->keys();
+  if (capacity == 0) {
     *index = -1;
     return false;
   }
@@ -191,102 +178,100 @@ bool IdentityDict::lookup(RawObject key, word* index) {
   uword perturb;
   word bucket_mask;
   word hash = handleHash(key);
-  for (word current = Bucket::bucket(data, hash, &bucket_mask, &perturb);;
+  for (word current = Bucket::bucket(capacity, hash, &bucket_mask, &perturb);;
        current = Bucket::nextBucket(current, bucket_mask, &perturb)) {
-    word current_index = current * Bucket::kNumPointers;
-    RawObject current_key = Bucket::key(data, current_index);
+    RawObject current_key = Bucket::key(keys, current);
     if (handleHash(current_key) == hash) {
       if (current_key == key) {
-        *index = current_index;
+        *index = current;
         return true;
       }
       continue;
     }
-    if (Bucket::isEmpty(data, current_index)) {
+    if (Bucket::isEmpty(keys, current)) {
       if (next_free_index == -1) {
-        next_free_index = current_index;
+        next_free_index = current;
       }
       *index = next_free_index;
       return false;
     }
-    if (Bucket::isTombstone(data, current_index)) {
+    if (Bucket::isTombstone(keys, current)) {
       if (next_free_index == -1) {
-        next_free_index = current_index;
+        next_free_index = current;
       }
     }
   }
 }
 
-void IdentityDict::rehashReferences(Thread* thread, uword* array) {
-  HandleScope scope(thread);
-  MutableTuple data(&scope, this->data());
-  for (word data_idx = Bucket::kFirst, array_idx = 0;
-       Bucket::nextItem(*data, &data_idx); array_idx += Bucket::kNumPointers) {
-    RawObject key = Bucket::key(*data, data_idx);
-    RawObject value = Bucket::value(*data, data_idx);
-    array[array_idx + Bucket::kKeyOffset] = key.raw();
-    array[array_idx + Bucket::kValueOffset] = value.raw();
-  }
-  data.fill(NoneType::object());
-  word array_length = numItems() * Bucket::kNumPointers;
-  for (word i = 0; i < array_length; i += Bucket::kNumPointers) {
-    RawObject key = RawObject(array[i + Bucket::kKeyOffset]);
-    DCHECK(!key.isUnbound() && !key.isNoneType(),
-           "array should not contain empty or tombstone values");
-    RawObject value = RawObject(array[i + Bucket::kValueOffset]);
-    identityDictInsertNoUpdate(*data, key, value);
-  }
-  setNumUsableItems(numUsableItems() + numTombstones());
-}
+void IdentityDict::rehash(word new_capacity) {
+  word capacity = this->capacity();
+  RawObject* keys = this->keys();
+  void** values = this->values();
 
-RawObject IdentityDict::remove(Thread* thread, const Object& key) {
-  HandleScope scope(thread);
-  MutableTuple data_tuple(&scope, data());
-  word index = -1;
-  Object result(&scope, Error::notFound());
-  bool found = lookup(*key, &index);
-  if (found) {
-    DCHECK(index != -1, "unexpected index %ld", index);
-    result = Bucket::value(*data_tuple, index);
-    Bucket::setTombstone(*data_tuple, index);
-    decrementNumItems();
-  }
-  return *result;
-}
+  RawObject* new_keys = newKeys(new_capacity);
+  void** new_values = newValues(new_capacity);
 
-void IdentityDict::resize(Thread* thread, word new_capacity) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  MutableTuple data(&scope, this->data());
-  // TODO(T44247845): Handle overflow here.
-  MutableTuple new_data(
-      &scope, runtime->newMutableTuple(new_capacity * Bucket::kNumPointers));
   // Re-insert items
-  for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
-    RawObject key = Bucket::key(*data, i);
-    RawObject value = Bucket::value(*data, i);
-    identityDictInsertNoUpdate(*new_data, key, value);
+  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
+    RawObject key = Bucket::key(keys, i);
+    void* value = Bucket::value(values, i);
+
+    uword perturb;
+    word bucket_mask;
+    word hash = handleHash(key);
+    for (word j = Bucket::bucket(new_capacity, hash, &bucket_mask, &perturb);;
+         j = Bucket::nextBucket(j, bucket_mask, &perturb)) {
+      DCHECK(!Bucket::isTombstone(new_keys, j),
+             "There should be no tombstones in a newly created dict");
+      if (Bucket::isEmpty(new_keys, j)) {
+        Bucket::set(new_keys, new_values, j, key, value);
+        break;
+      }
+    }
   }
+
   setCapacity(new_capacity);
-  setData(*new_data);
+  setKeys(new_keys);
   // Reset the usable items to 2/3 of the full capacity to guarantee low
   // collision rate.
   setNumUsableItems((new_capacity * 2) / 3 - numItems());
+  setValues(new_values);
+
+  std::free(keys);
+  std::free(values);
 }
 
-void IdentityDict::shrink(Thread* thread) {
+void* IdentityDict::remove(Thread*, const Object& key) {
+  word index = -1;
+  void* result = nullptr;
+  bool found = lookup(*key, &index);
+  if (found) {
+    DCHECK(index != -1, "unexpected index %ld", index);
+    void** values = this->values();
+    result = Bucket::value(values, index);
+    Bucket::setTombstone(keys(), values, index);
+    decrementNumItems();
+  }
+  return result;
+}
+
+void IdentityDict::shrink(Thread*) {
   if (numItems() < capacity() / kShrinkFactor) {
     // TODO(T44247845): Handle overflow here.
     // Ensure numItems is no more than 2/3 of available slots (ensure capacity
     // is at least 3/2 numItems).
     word new_capacity = Utils::nextPowerOfTwo((numItems() * 3) / 2 + 1);
-    resize(thread, new_capacity);
+    rehash(new_capacity);
   }
 }
 
-ApiHandle* ApiHandle::atIndex(Runtime* runtime, word index) {
-  return castFromObject(
-      Bucket::value(MutableTuple::cast(capiHandles(runtime)->data()), index));
+void IdentityDict::visit(PointerVisitor* visitor) {
+  RawObject* keys = this->keys();
+  if (keys == nullptr) return;
+  word keys_length = capacity();
+  for (word i = 0; i < keys_length; i++) {
+    visitor->visitPointer(&keys[i], PointerKind::kRuntime);
+  }
 }
 
 ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
@@ -302,11 +287,11 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   HandleScope scope(thread);
   Object key(&scope, obj);
-  Object value(&scope, capiHandles(runtime)->at(thread, key));
+  void* value = capiHandles(runtime)->at(thread, key);
 
   // Get the handle of a builtin instance
-  if (!value.isError()) {
-    ApiHandle* result = castFromObject(*value);
+  if (value != nullptr) {
+    ApiHandle* result = reinterpret_cast<ApiHandle*>(value);
     result->incref();
     return result;
   }
@@ -314,10 +299,9 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   // Initialize an ApiHandle for a builtin object or runtime instance
   EVENT_ID(AllocateCAPIHandle, obj.layoutId());
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   handle->reference_ = NoneType::object().raw();
   handle->ob_refcnt = 1 | kManagedBit;
-  capiHandles(runtime)->atPut(thread, key, object);
+  capiHandles(runtime)->atPut(thread, key, handle);
   handle->reference_ = key.raw();
   return handle;
 }
@@ -376,78 +360,61 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
 
 void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
                                           IdentityDict* caches) {
-  word handles_length = handles->numItems() * Bucket::kNumPointers;
-  // Allocate array off-heap because this step happens in the middle of the GC,
-  // where managed heap allocation is disabled.
-  uword* array = new uword[handles_length];
-  caches->rehashReferences(thread, array);
+  // Objects have moved; rehash the caches first to reflect new addresses
+  caches->rehash(caches->capacity());
+
   // Now caches can be removed with ->remove()
   HandleScope scope(thread);
-  MutableTuple handle_data(&scope, handles->data());
+  word capacity = handles->capacity();
+  RawObject* keys = handles->keys();
+  void** values = handles->values();
   Object key(&scope, NoneType::object());
-  Object cache_value(&scope, NoneType::object());
   // Loops through the handle table clearing out handles which are not
   // referenced by managed objects or by an extension object.
-  for (word i = Bucket::kFirst; Bucket::nextItem(*handle_data, &i);) {
-    RawObject value = Bucket::value(*handle_data, i);
-    ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value).asCPtr());
+  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
+    ApiHandle* handle = static_cast<ApiHandle*>(Bucket::value(values, i));
     if (!ApiHandle::hasExtensionReference(handle)) {
-      key = Bucket::key(*handle_data, i);
+      key = Bucket::key(keys, i);
       // TODO(T56760343): Remove the cache lookup. This should become simpler
       // when it is easier to associate a cache with a handle or when the need
       // for caches is eliminated.
-      cache_value = caches->remove(thread, key);
-      if (!cache_value.isError()) {
-        std::free(Int::cast(*cache_value).asCPtr());
-      }
-      Bucket::setTombstone(*handle_data, i);
+      void* cache = caches->remove(thread, key);
+      Bucket::setTombstone(keys, values, i);
       handles->decrementNumItems();
       std::free(handle);
+      std::free(cache);
     }
   }
-  handles->rehashReferences(thread, array);
-  delete[] array;
+
+  handles->rehash(handles->capacity());
 }
 
-void ApiHandle::disposeHandles(Thread* thread, IdentityDict* api_handles) {
-  HandleScope scope(thread);
-  MutableTuple data(&scope, api_handles->data());
-  Runtime* runtime = thread->runtime();
-  for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
-    ApiHandle* handle = ApiHandle::atIndex(runtime, i);
+void ApiHandle::disposeHandles(Thread*, IdentityDict* handles) {
+  word capacity = handles->capacity();
+  RawObject* keys = handles->keys();
+  void** values = handles->values();
+  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
+    void* value = Bucket::value(values, i);
+    ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     handle->dispose();
   }
 }
 
 void ApiHandle::visitReferences(IdentityDict* handles,
                                 PointerVisitor* visitor) {
-  HandleScope scope(Thread::current());
+  word capacity = handles->capacity();
+  RawObject* keys = handles->keys();
+  void** values = handles->values();
 
   // TODO(bsimmers): Since we're reading an object mid-collection, approximate a
   // read barrier until we have a more principled solution in place.
-  HeapObject data_raw(&scope, handles->data());
-  if (data_raw.isForwarding()) data_raw = data_raw.forward();
-  MutableTuple data(&scope, *data_raw);
-
-  for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
-    Object value(&scope, Bucket::value(*data, i));
-    // Like above, check for forwarded objects. Most values in this
-    // IdentityDict will be SmallInts, but LargeInts are technically
-    // possible.
-    if (value.isHeapObject()) {
-      HeapObject heap_value(&scope, *value);
-      if (heap_value.isForwarding()) value = heap_value.forward();
-    }
-    ApiHandle* handle = castFromObject(*value);
+  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
+    ApiHandle* handle = reinterpret_cast<ApiHandle*>(Bucket::value(values, i));
     if (ApiHandle::hasExtensionReference(handle)) {
       visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
                             PointerKind::kApiHandle);
     }
   }
-}
-
-ApiHandle* ApiHandle::castFromObject(RawObject value) {
-  return static_cast<ApiHandle*>(Int::cast(value).asCPtr());
 }
 
 RawNativeProxy ApiHandle::asNativeProxy() {
@@ -467,10 +434,7 @@ void* ApiHandle::cache() {
 
   Object key(&scope, asObject());
   IdentityDict* caches = capiCaches(runtime);
-  Object cache(&scope, caches->at(thread, key));
-  DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
-  if (!cache.isError()) return Int::cast(*cache).asCPtr();
-  return nullptr;
+  return caches->at(thread, key);
 }
 
 void ApiHandle::setCache(void* value) {
@@ -480,8 +444,7 @@ void ApiHandle::setCache(void* value) {
 
   Object key(&scope, asObject());
   IdentityDict* caches = capiCaches(runtime);
-  Int cache(&scope, runtime->newIntFromCPtr(value));
-  caches->atPut(thread, key, cache);
+  caches->atPut(thread, key, value);
 }
 
 void ApiHandle::dispose() {
@@ -496,10 +459,8 @@ void ApiHandle::dispose() {
   Object key(&scope, asObject());
   capiHandles(runtime)->remove(thread, key);
 
-  Object cache(&scope, capiCaches(runtime)->remove(thread, key));
-  DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
-  if (!cache.isError()) std::free(Int::cast(*cache).asCPtr());
-
+  void* cache = capiCaches(runtime)->remove(thread, key);
+  std::free(cache);
   std::free(this);
 }
 

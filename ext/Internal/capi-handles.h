@@ -11,16 +11,19 @@ class PointerVisitor;
 
 class IdentityDict {
  public:
-  IdentityDict()
-      : capacity_(0),
-        num_items_(0),
-        num_usable_items_(0),
-        data_(NoneType::object()) {}
+  IdentityDict() {}
 
-  // Looks up the value associated with key, or Error::object() if not found.
-  RawObject at(Thread* thread, const Object& key);
+  ~IdentityDict() {
+    std::free(keys());
+    std::free(values());
+    setKeys(nullptr);
+    setValues(nullptr);
+  }
 
-  void atPut(Thread* thread, const Object& key, const Object& value);
+  // Looks up the value associated with key, or nullptr if not found.
+  void* at(Thread* thread, const Object& key);
+
+  void atPut(Thread* thread, const Object& key, void* value);
 
   bool includes(Thread* thread, const Object& key);
 
@@ -30,20 +33,18 @@ class IdentityDict {
     return (capacity() * 2) / 3 - numItems() - numUsableItems();
   }
 
-  RawObject remove(Thread* thread, const Object& key);
+  void* remove(Thread* thread, const Object& key);
 
   void shrink(Thread* thread);
 
-  void visit(PointerVisitor* visitor) {
-    visitor->visitPointer(&data_, PointerKind::kRuntime);
-  }
+  void visit(PointerVisitor* visitor);
 
   // Getters and setters
   word capacity() { return capacity_; }
   void setCapacity(word capacity) { capacity_ = capacity; }
 
-  RawObject data() { return data_; }
-  void setData(RawObject data) { data_ = data; }
+  RawObject* keys() { return keys_; }
+  void setKeys(RawObject* keys) { keys_ = keys; }
 
   word numItems() { return num_items_; }
   void decrementNumItems() { num_items_--; }
@@ -58,23 +59,23 @@ class IdentityDict {
     num_usable_items_--;
   }
 
+  void** values() { return values_; }
+  void setValues(void** values) { values_ = values; }
+
  private:
-  word capacity_;
-  word num_items_;
-  word num_usable_items_;
-  RawObject data_;
+  word capacity_ = 0;
+  RawObject* keys_ = nullptr;
+  word num_items_ = 0;
+  word num_usable_items_ = 0;
+  void** values_ = nullptr;
 
   static const int kGrowthFactor = 2;
   static const int kShrinkFactor = 4;
 
   bool lookup(RawObject key, word* index);
 
-  // Rehash the items in the dict, using array as temporary storage.
-  // Assumes the array is large enough to hold every item.
-  void rehashReferences(Thread* thread, uword* array);
-
-  // Grow or shrink the underlying storage to match the desired capacity.
-  void resize(Thread* thread, word new_capacity);
+  // Rehash the items into new storage with the given capacity.
+  void rehash(word new_capacity);
 
   DISALLOW_HEAP_ALLOCATION();
   DISALLOW_COPY_AND_ASSIGN(IdentityDict);
@@ -93,10 +94,6 @@ class ApiHandle : public PyObject {
   // Returns a handle for a managed object.  Does not affect the reference count
   // of the handle.
   static ApiHandle* borrowedReference(Thread* thread, RawObject obj);
-
-  // Returns the handle in capiHandles(runtime) at index `index`. This is
-  // useful when iterating over all of `capiHandles()`.
-  static ApiHandle* atIndex(Runtime* runtime, word index);
 
   // Returns the managed object associated with the handle.  Decrements the
   // reference count of handle.
@@ -162,9 +159,6 @@ class ApiHandle : public PyObject {
   // Returns an owned handle for a managed object. If a handle does not already
   // exist, a new handle is created.
   static ApiHandle* ensure(Thread* thread, RawObject obj);
-
-  // Cast RawObject to ApiHandle*
-  static ApiHandle* castFromObject(RawObject value);
 
   // Create a new runtime instance based on this ApiHandle
   RawObject asInstance(RawObject type);

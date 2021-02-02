@@ -64,8 +64,7 @@ TEST_F(CApiHandlesTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_FALSE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = capiHandles(runtime_);
-  EXPECT_TRUE(
-      isIntEqualsWord(dict->at(thread_, obj), reinterpret_cast<word>(handle)));
+  EXPECT_EQ(dict->at(thread_, obj), handle);
   handle->decref();
 }
 
@@ -76,7 +75,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = capiHandles(runtime_);
-  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
+  EXPECT_EQ(dict->at(thread_, obj), nullptr);
   handle->decref();
 }
 
@@ -87,7 +86,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = capiHandles(runtime_);
-  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
+  EXPECT_EQ(dict->at(thread_, obj), nullptr);
   handle->decref();
 }
 
@@ -98,7 +97,7 @@ TEST_F(CApiHandlesTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = capiHandles(runtime_);
-  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
+  EXPECT_EQ(dict->at(thread_, obj), nullptr);
   handle->decref();
 }
 
@@ -110,7 +109,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = capiHandles(runtime_);
-  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
+  EXPECT_EQ(dict->at(thread_, obj), nullptr);
   handle->decref();
 }
 
@@ -122,7 +121,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
   IdentityDict* dict = capiHandles(runtime_);
-  EXPECT_TRUE(dict->at(thread_, obj).isErrorNotFound());
+  EXPECT_EQ(dict->at(thread_, obj), nullptr);
   handle->decref();
 }
 
