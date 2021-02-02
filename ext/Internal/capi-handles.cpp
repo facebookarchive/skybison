@@ -14,9 +14,6 @@
 
 namespace py {
 
-static const int kIdentityDictGrowthFactor = 2;
-static const int kIdentityDictShrinkFactor = 4;
-
 namespace {
 
 // Compute hash value suitable for `RawObject::operator==` (aka `a is b`)
@@ -113,8 +110,8 @@ class Bucket {
 
 // Insert `key`/`value` into dictionary assuming no bucket with an equivalent
 // key and no tombstones exist.
-static void identityDictInsertNoUpdate(RawMutableTuple data, RawObject key,
-                                       RawObject value) {
+void identityDictInsertNoUpdate(RawMutableTuple data, RawObject key,
+                                RawObject value) {
   DCHECK(data.length() > 0, "table must not be empty");
   uword perturb;
   word bucket_mask;
@@ -131,47 +128,61 @@ static void identityDictInsertNoUpdate(RawMutableTuple data, RawObject key,
   }
 }
 
-static void identityDictChangeSize(Thread* thread, IdentityDict* dict,
-                                   word new_capacity) {
+RawObject IdentityDict::at(Thread* thread, const Object& key) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  MutableTuple data(&scope, dict->data());
-  // TODO(T44247845): Handle overflow here.
-  MutableTuple new_data(
-      &scope, runtime->newMutableTuple(new_capacity * Bucket::kNumPointers));
-  // Re-insert items
-  for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
-    RawObject key = Bucket::key(*data, i);
-    RawObject value = Bucket::value(*data, i);
-    identityDictInsertNoUpdate(*new_data, key, value);
+  MutableTuple data_tuple(&scope, data());
+  word index = -1;
+  bool found = lookup(*key, &index);
+  if (found) {
+    DCHECK(index != -1, "invalid index %ld", index);
+    return Bucket::value(*data_tuple, index);
   }
-  dict->setCapacity(new_capacity);
-  dict->setData(*new_data);
-  // Reset the usable items to 2/3 of the full capacity to guarantee low
-  // collision rate.
-  dict->setNumUsableItems((dict->capacity() * 2) / 3 - dict->numItems());
+  return Error::notFound();
 }
 
-static void identityDictEnsureCapacity(Thread* thread, IdentityDict* dict) {
-  DCHECK(dict->capacity() > 0 && Utils::isPowerOfTwo(dict->capacity()),
-         "table capacity must be power of two, greater than zero");
-  if (dict->numUsableItems() > 0) {
+void IdentityDict::atPut(Thread* thread, const Object& key,
+                         const Object& value) {
+  HandleScope scope(thread);
+  MutableTuple data_tuple(&scope, data());
+  word index = -1;
+  bool found = lookup(*key, &index);
+  DCHECK(index != -1, "invalid index %ld", index);
+  bool empty_slot = Bucket::isEmpty(*data_tuple, index);
+  Bucket::set(*data_tuple, index, *key, *value);
+  if (found) {
     return;
   }
-  // If at least half the space taken up in the dict is tombstones, removing
-  // them will free up enough space. Otherwise, the dict must be grown.
-  word growth_factor = (dict->numItems() < dict->numTombstones())
-                           ? 1
-                           : kIdentityDictGrowthFactor;
-  // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict->capacity() * growth_factor;
-  identityDictChangeSize(thread, dict, new_capacity);
+  incrementNumItems();
+  if (empty_slot) {
+    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
+    decrementNumUsableItems();
+    DCHECK(capacity() > 0 && Utils::isPowerOfTwo(capacity()),
+           "table capacity must be power of two, greater than zero");
+    if (numUsableItems() > 0) {
+      return;
+    }
+    // If at least half the space taken up in the dict is tombstones, removing
+    // them will free up enough space. Otherwise, the dict must be grown.
+    word growth_factor = (numItems() < numTombstones()) ? 1 : kGrowthFactor;
+    // TODO(T44247845): Handle overflow here.
+    word new_capacity = capacity() * growth_factor;
+    resize(thread, new_capacity);
+    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
+  }
 }
 
-// TODO(T44244793): Remove these 2 functions when handles have their own
-// specialized hash table.
-static bool identityDictLookup(RawMutableTuple data, RawObject key,
-                               word* index) {
+bool IdentityDict::includes(Thread* thread, const Object& key) {
+  return !at(thread, key).isErrorNotFound();
+}
+
+void IdentityDict::initialize(Runtime* runtime, word capacity) {
+  setCapacity(capacity);
+  setData(runtime->newMutableTuple(capacity * Bucket::kNumPointers));
+  setNumUsableItems((capacity * 2) / 3);
+}
+
+bool IdentityDict::lookup(RawObject key, word* index) {
+  RawMutableTuple data = MutableTuple::cast(this->data());
   if (data.length() == 0) {
     *index = -1;
     return false;
@@ -206,49 +217,26 @@ static bool identityDictLookup(RawMutableTuple data, RawObject key,
   }
 }
 
-void IdentityDict::initialize(Runtime* runtime, word capacity) {
-  setCapacity(capacity);
-  setData(runtime->newMutableTuple(capacity * Bucket::kNumPointers));
-  setNumUsableItems((capacity * 2) / 3);
-}
-
-// Look up the value associated with key. Checks for identity equality, not
-// structural equality. Returns Error::object() if the key was not found.
-RawObject IdentityDict::at(Thread* thread, const Object& key) {
+void IdentityDict::rehashReferences(Thread* thread, uword* array) {
   HandleScope scope(thread);
-  MutableTuple data_tuple(&scope, data());
-  word index = -1;
-  bool found = identityDictLookup(*data_tuple, *key, &index);
-  if (found) {
-    DCHECK(index != -1, "invalid index %ld", index);
-    return Bucket::value(*data_tuple, index);
+  MutableTuple data(&scope, this->data());
+  for (word data_idx = Bucket::kFirst, array_idx = 0;
+       Bucket::nextItem(*data, &data_idx); array_idx += Bucket::kNumPointers) {
+    RawObject key = Bucket::key(*data, data_idx);
+    RawObject value = Bucket::value(*data, data_idx);
+    array[array_idx + Bucket::kKeyOffset] = key.raw();
+    array[array_idx + Bucket::kValueOffset] = value.raw();
   }
-  return Error::notFound();
-}
-
-bool IdentityDict::includes(Thread* thread, const Object& key) {
-  return !at(thread, key).isErrorNotFound();
-}
-
-void IdentityDict::atPut(Thread* thread, const Object& key,
-                         const Object& value) {
-  HandleScope scope(thread);
-  MutableTuple data_tuple(&scope, data());
-  word index = -1;
-  bool found = identityDictLookup(*data_tuple, *key, &index);
-  DCHECK(index != -1, "invalid index %ld", index);
-  bool empty_slot = Bucket::isEmpty(*data_tuple, index);
-  Bucket::set(*data_tuple, index, *key, *value);
-  if (found) {
-    return;
+  data.fill(NoneType::object());
+  word array_length = numItems() * Bucket::kNumPointers;
+  for (word i = 0; i < array_length; i += Bucket::kNumPointers) {
+    RawObject key = RawObject(array[i + Bucket::kKeyOffset]);
+    DCHECK(!key.isUnbound() && !key.isNoneType(),
+           "array should not contain empty or tombstone values");
+    RawObject value = RawObject(array[i + Bucket::kValueOffset]);
+    identityDictInsertNoUpdate(*data, key, value);
   }
-  setNumItems(numItems() + 1);
-  if (empty_slot) {
-    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
-    decrementNumUsableItems();
-    identityDictEnsureCapacity(thread, this);
-    DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
-  }
+  setNumUsableItems(numUsableItems() + numTombstones());
 }
 
 RawObject IdentityDict::remove(Thread* thread, const Object& key) {
@@ -256,23 +244,43 @@ RawObject IdentityDict::remove(Thread* thread, const Object& key) {
   MutableTuple data_tuple(&scope, data());
   word index = -1;
   Object result(&scope, Error::notFound());
-  bool found = identityDictLookup(*data_tuple, *key, &index);
+  bool found = lookup(*key, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     result = Bucket::value(*data_tuple, index);
     Bucket::setTombstone(*data_tuple, index);
-    setNumItems(numItems() - 1);
+    decrementNumItems();
   }
   return *result;
 }
 
+void IdentityDict::resize(Thread* thread, word new_capacity) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  MutableTuple data(&scope, this->data());
+  // TODO(T44247845): Handle overflow here.
+  MutableTuple new_data(
+      &scope, runtime->newMutableTuple(new_capacity * Bucket::kNumPointers));
+  // Re-insert items
+  for (word i = Bucket::kFirst; Bucket::nextItem(*data, &i);) {
+    RawObject key = Bucket::key(*data, i);
+    RawObject value = Bucket::value(*data, i);
+    identityDictInsertNoUpdate(*new_data, key, value);
+  }
+  setCapacity(new_capacity);
+  setData(*new_data);
+  // Reset the usable items to 2/3 of the full capacity to guarantee low
+  // collision rate.
+  setNumUsableItems((new_capacity * 2) / 3 - numItems());
+}
+
 void IdentityDict::shrink(Thread* thread) {
-  if (numItems() < capacity() / kIdentityDictShrinkFactor) {
+  if (numItems() < capacity() / kShrinkFactor) {
     // TODO(T44247845): Handle overflow here.
     // Ensure numItems is no more than 2/3 of available slots (ensure capacity
     // is at least 3/2 numItems).
     word new_capacity = Utils::nextPowerOfTwo((numItems() * 3) / 2 + 1);
-    identityDictChangeSize(thread, this, new_capacity);
+    resize(thread, new_capacity);
   }
 }
 
@@ -366,37 +374,13 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
   return result_obj;
 }
 
-// array has been appropriately sized for handles, which is always at least as
-// long as caches.
-static void rehashReferences(Thread* thread, IdentityDict* dict, uword* array) {
-  HandleScope scope(thread);
-  MutableTuple data(&scope, dict->data());
-  for (word data_idx = Bucket::kFirst, array_idx = 0;
-       Bucket::nextItem(*data, &data_idx); array_idx += Bucket::kNumPointers) {
-    RawObject key = Bucket::key(*data, data_idx);
-    RawObject value = Bucket::value(*data, data_idx);
-    array[array_idx + Bucket::kKeyOffset] = key.raw();
-    array[array_idx + Bucket::kValueOffset] = value.raw();
-  }
-  data.fill(NoneType::object());
-  word array_length = dict->numItems() * Bucket::kNumPointers;
-  for (word i = 0; i < array_length; i += Bucket::kNumPointers) {
-    RawObject key = RawObject(array[i + Bucket::kKeyOffset]);
-    DCHECK(!key.isUnbound() && !key.isNoneType(),
-           "array should not contain empty or tombstone values");
-    RawObject value = RawObject(array[i + Bucket::kValueOffset]);
-    identityDictInsertNoUpdate(*data, key, value);
-  }
-  dict->setNumUsableItems(dict->numUsableItems() + dict->numTombstones());
-}
-
 void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
                                           IdentityDict* caches) {
   word handles_length = handles->numItems() * Bucket::kNumPointers;
   // Allocate array off-heap because this step happens in the middle of the GC,
   // where managed heap allocation is disabled.
   uword* array = new uword[handles_length];
-  rehashReferences(thread, caches, array);
+  caches->rehashReferences(thread, array);
   // Now caches can be removed with ->remove()
   HandleScope scope(thread);
   MutableTuple handle_data(&scope, handles->data());
@@ -417,11 +401,11 @@ void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
         std::free(Int::cast(*cache_value).asCPtr());
       }
       Bucket::setTombstone(*handle_data, i);
-      handles->setNumItems(handles->numItems() - 1);
+      handles->decrementNumItems();
       std::free(handle);
     }
   }
-  rehashReferences(thread, handles, array);
+  handles->rehashReferences(thread, array);
   delete[] array;
 }
 

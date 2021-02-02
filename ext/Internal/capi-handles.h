@@ -17,13 +17,37 @@ class IdentityDict {
         num_usable_items_(0),
         data_(NoneType::object()) {}
 
+  // Looks up the value associated with key, or Error::object() if not found.
+  RawObject at(Thread* thread, const Object& key);
+
+  void atPut(Thread* thread, const Object& key, const Object& value);
+
+  bool includes(Thread* thread, const Object& key);
+
   void initialize(Runtime* runtime, word capacity);
 
+  word numTombstones() {
+    return (capacity() * 2) / 3 - numItems() - numUsableItems();
+  }
+
+  RawObject remove(Thread* thread, const Object& key);
+
+  void shrink(Thread* thread);
+
+  void visit(PointerVisitor* visitor) {
+    visitor->visitPointer(&data_, PointerKind::kRuntime);
+  }
+
+  // Getters and setters
   word capacity() { return capacity_; }
   void setCapacity(word capacity) { capacity_ = capacity; }
 
+  RawObject data() { return data_; }
+  void setData(RawObject data) { data_ = data; }
+
   word numItems() { return num_items_; }
-  void setNumItems(word num_items) { num_items_ = num_items; }
+  void decrementNumItems() { num_items_--; }
+  void incrementNumItems() { num_items_++; }
 
   word numUsableItems() { return num_usable_items_; }
   void setNumUsableItems(word num_usable_items) {
@@ -33,26 +57,6 @@ class IdentityDict {
     DCHECK(num_usable_items_ > 0, "num_usable_items must be > 0");
     num_usable_items_--;
   }
-  word numTombstones() {
-    return (capacity() * 2) / 3 - numItems() - numUsableItems();
-  }
-
-  RawObject data() { return data_; }
-  void setData(RawObject data) { data_ = data; }
-
-  void visit(PointerVisitor* visitor) {
-    visitor->visitPointer(&data_, PointerKind::kRuntime);
-  }
-
-  RawObject at(Thread* thread, const Object& key);
-
-  bool includes(Thread* thread, const Object& key);
-
-  void atPut(Thread* thread, const Object& key, const Object& value);
-
-  RawObject remove(Thread* thread, const Object& key);
-
-  void shrink(Thread* thread);
 
  private:
   word capacity_;
@@ -60,8 +64,22 @@ class IdentityDict {
   word num_usable_items_;
   RawObject data_;
 
+  static const int kGrowthFactor = 2;
+  static const int kShrinkFactor = 4;
+
+  bool lookup(RawObject key, word* index);
+
+  // Rehash the items in the dict, using array as temporary storage.
+  // Assumes the array is large enough to hold every item.
+  void rehashReferences(Thread* thread, uword* array);
+
+  // Grow or shrink the underlying storage to match the desired capacity.
+  void resize(Thread* thread, word new_capacity);
+
   DISALLOW_HEAP_ALLOCATION();
   DISALLOW_COPY_AND_ASSIGN(IdentityDict);
+
+  friend class ApiHandle;
 };
 
 static const word kImmediateRefcnt = 1L << 30;
