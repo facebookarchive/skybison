@@ -21,21 +21,21 @@ class IdentityDict {
   }
 
   // Looks up the value associated with key, or nullptr if not found.
-  void* at(Thread* thread, const Object& key);
+  void* at(RawObject key);
 
-  void atPut(Thread* thread, const Object& key, void* value);
+  void atPut(RawObject key, void* value);
 
-  bool includes(Thread* thread, const Object& key);
+  bool includes(RawObject key);
 
-  void initialize(Runtime* runtime, word capacity);
+  void initialize(word capacity);
 
   word numTombstones() {
     return (capacity() * 2) / 3 - numItems() - numUsableItems();
   }
 
-  void* remove(Thread* thread, const Object& key);
+  void* remove(RawObject key);
 
-  void shrink(Thread* thread);
+  void shrink();
 
   void visit(PointerVisitor* visitor);
 
@@ -109,13 +109,13 @@ class ApiHandle : public PyObject {
   // WARNING: This function should be called by the garbage collector.
   // Clear out handles which are not referenced by managed objects or by an
   // extension object.
-  static void clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
+  static void clearNotReferencedHandles(IdentityDict* handles,
                                         IdentityDict* caches);
 
   // WARNING: This function should be called for shutdown.
   // Dispose all handles, without trying to cleanly deallocate the object for
   // runtime shutdown.
-  static void disposeHandles(Thread* thread, IdentityDict* api_handles);
+  static void disposeHandles(IdentityDict* api_handles);
 
   // Visit all reference_ members of live ApiHandles.
   static void visitReferences(IdentityDict* handles, PointerVisitor* visitor);

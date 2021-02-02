@@ -62,7 +62,7 @@ RawObject Scavenger::scavenge() {
   runtime_->heap()->setSpace(nullptr);
   processRoots();
   processGrayObjects();
-  capiHandlesClearNotReferenced(Thread::current());
+  capiHandlesClearNotReferenced(runtime_);
   processFinalizableReferences();
   processGrayObjects();
   processDelayedReferences();

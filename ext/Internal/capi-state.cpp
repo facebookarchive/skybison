@@ -60,11 +60,10 @@ void freeExtensionModules(Thread* thread) {
   }
 }
 
-void initializeCAPIState(Runtime* runtime) {
-  CAPIState* state = runtime->capiState();
+void initializeCAPIState(CAPIState* state) {
   new (state) CAPIState;
-  state->caches_.initialize(runtime, kInitialCachesCapacity);
-  state->handles_.initialize(runtime, kInitialHandlesCapacity);
+  state->caches_.initialize(kInitialCachesCapacity);
+  state->handles_.initialize(kInitialHandlesCapacity);
 }
 
 word numTrackedApiHandles(Runtime* runtime) {

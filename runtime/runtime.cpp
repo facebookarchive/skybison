@@ -175,7 +175,7 @@ Runtime::Runtime(word heap_size, Interpreter* interpreter,
   initializeSymbols(thread);
   initializeLayouts();
   initializeTypes(thread);
-  initializeCAPIState(this);
+  initializeCAPIState(capiState());
   initializeModules(thread);
   initializeCAPIModules();
 
@@ -1921,7 +1921,7 @@ void Runtime::collectGarbage() {
   EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
   RawObject cb = scavenge(this);
-  capiHandlesShrink(Thread::current());
+  capiHandlesShrink(this);
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();
@@ -3909,7 +3909,7 @@ void Runtime::freeApiHandles() {
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
-  capiHandlesDispose(thread);
+  capiHandlesDispose(this);
   while (tracked_native_objects_ != nullptr) {
     auto entry = static_cast<ListEntry*>(tracked_native_objects_);
     untrackNativeObject(entry);

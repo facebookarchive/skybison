@@ -115,9 +115,9 @@ class Bucket {
 
 }  // namespace
 
-void* IdentityDict::at(Thread*, const Object& key) {
+void* IdentityDict::at(RawObject key) {
   word index = -1;
-  bool found = lookup(*key, &index);
+  bool found = lookup(key, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
     return Bucket::value(values(), index);
@@ -125,14 +125,14 @@ void* IdentityDict::at(Thread*, const Object& key) {
   return nullptr;
 }
 
-void IdentityDict::atPut(Thread*, const Object& key, void* value) {
+void IdentityDict::atPut(RawObject key, void* value) {
   DCHECK(value != nullptr, "nullptr indicates not found");
   word index = -1;
-  bool found = lookup(*key, &index);
+  bool found = lookup(key, &index);
   DCHECK(index != -1, "invalid index %ld", index);
   RawObject* keys = this->keys();
   bool empty_slot = Bucket::isEmpty(keys, index);
-  Bucket::set(keys, values(), index, *key, value);
+  Bucket::set(keys, values(), index, key, value);
   if (found) {
     return;
   }
@@ -155,12 +155,12 @@ void IdentityDict::atPut(Thread*, const Object& key, void* value) {
   }
 }
 
-bool IdentityDict::includes(Thread*, const Object& key) {
+bool IdentityDict::includes(RawObject key) {
   word ignored;
-  return lookup(*key, &ignored);
+  return lookup(key, &ignored);
 }
 
-void IdentityDict::initialize(Runtime*, word capacity) {
+void IdentityDict::initialize(word capacity) {
   setCapacity(capacity);
   setKeys(newKeys(capacity));
   setNumUsableItems((capacity * 2) / 3);
@@ -241,10 +241,10 @@ void IdentityDict::rehash(word new_capacity) {
   std::free(values);
 }
 
-void* IdentityDict::remove(Thread*, const Object& key) {
+void* IdentityDict::remove(RawObject key) {
   word index = -1;
   void* result = nullptr;
-  bool found = lookup(*key, &index);
+  bool found = lookup(key, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     void** values = this->values();
@@ -255,7 +255,7 @@ void* IdentityDict::remove(Thread*, const Object& key) {
   return result;
 }
 
-void IdentityDict::shrink(Thread*) {
+void IdentityDict::shrink() {
   if (numItems() < capacity() / kShrinkFactor) {
     // TODO(T44247845): Handle overflow here.
     // Ensure numItems is no more than 2/3 of available slots (ensure capacity
@@ -285,11 +285,9 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
     return result;
   }
 
-  HandleScope scope(thread);
-  Object key(&scope, obj);
-  void* value = capiHandles(runtime)->at(thread, key);
-
   // Get the handle of a builtin instance
+  IdentityDict* handles = capiHandles(runtime);
+  void* value = handles->at(obj);
   if (value != nullptr) {
     ApiHandle* result = reinterpret_cast<ApiHandle*>(value);
     result->incref();
@@ -301,8 +299,9 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
   handle->reference_ = NoneType::object().raw();
   handle->ob_refcnt = 1 | kManagedBit;
-  capiHandles(runtime)->atPut(thread, key, handle);
-  handle->reference_ = key.raw();
+
+  handles->atPut(obj, handle);
+  handle->reference_ = obj.raw();
   return handle;
 }
 
@@ -358,27 +357,25 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
   return result_obj;
 }
 
-void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
+void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
                                           IdentityDict* caches) {
   // Objects have moved; rehash the caches first to reflect new addresses
   caches->rehash(caches->capacity());
 
   // Now caches can be removed with ->remove()
-  HandleScope scope(thread);
   word capacity = handles->capacity();
   RawObject* keys = handles->keys();
   void** values = handles->values();
-  Object key(&scope, NoneType::object());
   // Loops through the handle table clearing out handles which are not
   // referenced by managed objects or by an extension object.
   for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
     ApiHandle* handle = static_cast<ApiHandle*>(Bucket::value(values, i));
     if (!ApiHandle::hasExtensionReference(handle)) {
-      key = Bucket::key(keys, i);
+      RawObject key = Bucket::key(keys, i);
       // TODO(T56760343): Remove the cache lookup. This should become simpler
       // when it is easier to associate a cache with a handle or when the need
       // for caches is eliminated.
-      void* cache = caches->remove(thread, key);
+      void* cache = caches->remove(key);
       Bucket::setTombstone(keys, values, i);
       handles->decrementNumItems();
       std::free(handle);
@@ -389,7 +386,7 @@ void ApiHandle::clearNotReferencedHandles(Thread* thread, IdentityDict* handles,
   handles->rehash(handles->capacity());
 }
 
-void ApiHandle::disposeHandles(Thread*, IdentityDict* handles) {
+void ApiHandle::disposeHandles(IdentityDict* handles) {
   word capacity = handles->capacity();
   RawObject* keys = handles->keys();
   void** values = handles->values();
@@ -430,36 +427,31 @@ void* ApiHandle::cache() {
 
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object key(&scope, asObject());
   IdentityDict* caches = capiCaches(runtime);
-  return caches->at(thread, key);
+  RawObject obj = asObject();
+  return caches->at(obj);
 }
 
 void ApiHandle::setCache(void* value) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object key(&scope, asObject());
   IdentityDict* caches = capiCaches(runtime);
-  caches->atPut(thread, key, value);
+  RawObject obj = asObject();
+  caches->atPut(obj, value);
 }
 
 void ApiHandle::dispose() {
   DCHECK(isManaged(this), "Dispose should only be called on managed handles");
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
 
   // TODO(T46009838): If a module handle is being disposed, this should register
   // a weakref to call the module's m_free once's the module is collected
 
-  Object key(&scope, asObject());
-  capiHandles(runtime)->remove(thread, key);
+  RawObject obj = asObject();
+  capiHandles(runtime)->remove(obj);
 
-  void* cache = capiCaches(runtime)->remove(thread, key);
+  void* cache = capiCaches(runtime)->remove(obj);
   std::free(cache);
   std::free(this);
 }
@@ -475,19 +467,16 @@ bool capiHandleFinalizableReference(void* handle, RawObject** out) {
          HeapObject::cast(api_handle->asObject()).isForwarding();
 }
 
-void capiHandlesClearNotReferenced(Thread* thread) {
-  Runtime* runtime = thread->runtime();
-  ApiHandle::clearNotReferencedHandles(thread, capiHandles(runtime),
+void capiHandlesClearNotReferenced(Runtime* runtime) {
+  ApiHandle::clearNotReferencedHandles(capiHandles(runtime),
                                        capiCaches(runtime));
 }
 
-void capiHandlesDispose(Thread* thread) {
-  ApiHandle::disposeHandles(thread, capiHandles(thread->runtime()));
+void capiHandlesDispose(Runtime* runtime) {
+  ApiHandle::disposeHandles(capiHandles(runtime));
 }
 
-void capiHandlesShrink(Thread* thread) {
-  capiHandles(thread->runtime())->shrink(thread);
-}
+void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }
 
 void* objectBorrowedReference(Thread* thread, RawObject obj) {
   return ApiHandle::borrowedReference(thread, obj);

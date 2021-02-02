@@ -48,13 +48,13 @@ RawObject capiHandleAsObject(void* handle);
 bool capiHandleFinalizableReference(void* handle, RawObject** out);
 
 // WARNING: This function should be called by the garbage collector.
-void capiHandlesClearNotReferenced(Thread* thread);
+void capiHandlesClearNotReferenced(Runtime* runtime);
 
 // WARNING: This function should be called for shutdown.
-void capiHandlesDispose(Thread* thread);
+void capiHandlesDispose(Runtime* runtime);
 
 // WARNING: This function should be called during garbage collection.
-void capiHandlesShrink(Thread* thread);
+void capiHandlesShrink(Runtime* runtime);
 
 void capiStateVisit(CAPIState* state, PointerVisitor* visitor);
 
@@ -67,7 +67,7 @@ void freeExtensionModules(Thread* thread);
 bool isBuiltinExtensionModule(const Str& name);
 
 void initializeCAPIModules();
-void initializeCAPIState(Runtime* runtime);
+void initializeCAPIState(CAPIState* state);
 
 // Method trampolines
 RawObject methodTrampolineNoArgs(Thread* thread, word nargs) ALIGN_16;
