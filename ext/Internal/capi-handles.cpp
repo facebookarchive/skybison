@@ -297,6 +297,30 @@ void IdentityDict::visit(PointerVisitor* visitor) {
   }
 }
 
+// Reserves a new handle in the given runtime's handle buffer.
+static ApiHandle* allocateHandle(Runtime* runtime) {
+  FreeListNode** free_handles = capiFreeHandles(runtime);
+  ApiHandle* result = reinterpret_cast<ApiHandle*>(*free_handles);
+
+  FreeListNode* next = (*free_handles)->next;
+  if (next != nullptr) {
+    *free_handles = next;
+  } else {
+    // No handles left to recycle; advance the frontier
+    *free_handles = reinterpret_cast<FreeListNode*>(result + 1);
+  }
+
+  return result;
+}
+
+// Frees the handle for future re-use by the given runtime.
+static void freeHandle(Runtime* runtime, ApiHandle* handle) {
+  FreeListNode** free_handles = capiFreeHandles(runtime);
+  FreeListNode* node = reinterpret_cast<FreeListNode*>(handle);
+  node->next = *free_handles;
+  *free_handles = node;
+}
+
 ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Runtime* runtime = thread->runtime();
 
@@ -319,7 +343,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   // Initialize an ApiHandle for a builtin object or runtime instance
   EVENT_ID(AllocateCAPIHandle, obj.layoutId());
-  ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
+  ApiHandle* handle = allocateHandle(runtime);
   handle->reference_ = NoneType::object().raw();
   handle->ob_refcnt = 1 | kManagedBit;
 
@@ -380,7 +404,8 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
   return result_obj;
 }
 
-void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
+void ApiHandle::clearNotReferencedHandles(Runtime* runtime,
+                                          IdentityDict* handles,
                                           IdentityDict* caches) {
   // Objects have moved; rehash the caches first to reflect new addresses
   caches->rehash(caches->numIndices());
@@ -402,7 +427,7 @@ void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
       // for caches is eliminated.
       void* cache = caches->remove(key);
       itemAtPutTombstone(keys, values, i - 1);
-      std::free(handle);
+      freeHandle(runtime, handle);
       std::free(cache);
     }
   }
@@ -479,7 +504,7 @@ void ApiHandle::dispose() {
 
   void* cache = capiCaches(runtime)->remove(obj);
   std::free(cache);
-  std::free(this);
+  freeHandle(runtime, this);
 }
 
 RawObject capiHandleAsObject(void* handle) {
@@ -494,7 +519,7 @@ bool capiHandleFinalizableReference(void* handle, RawObject** out) {
 }
 
 void capiHandlesClearNotReferenced(Runtime* runtime) {
-  ApiHandle::clearNotReferencedHandles(capiHandles(runtime),
+  ApiHandle::clearNotReferencedHandles(runtime, capiHandles(runtime),
                                        capiCaches(runtime));
 }
 

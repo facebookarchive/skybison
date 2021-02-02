@@ -119,7 +119,7 @@ class ApiHandle : public PyObject {
   // WARNING: This function should be called by the garbage collector.
   // Clear out handles which are not referenced by managed objects or by an
   // extension object.
-  static void clearNotReferencedHandles(IdentityDict* handles,
+  static void clearNotReferencedHandles(Runtime* runtime, IdentityDict* handles,
                                         IdentityDict* caches);
 
   // WARNING: This function should be called for shutdown.
@@ -189,6 +189,13 @@ class ApiHandle : public PyObject {
 
 static_assert(sizeof(ApiHandle) == sizeof(PyObject),
               "ApiHandle must not add members to PyObject");
+
+struct FreeListNode {
+  FreeListNode* next;
+};
+
+static_assert(sizeof(FreeListNode) <= sizeof(ApiHandle),
+              "Free ApiHandle should be usable as a FreeListNode");
 
 inline ApiHandle* ApiHandle::fromPyObject(PyObject* py_obj) {
   return static_cast<ApiHandle*>(py_obj);

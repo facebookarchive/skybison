@@ -10,12 +10,14 @@
 #include "globals.h"
 #include "handles-decl.h"
 #include "handles.h"
+#include "os.h"
 #include "runtime.h"
 #include "thread.h"
 #include "visitor.h"
 
 namespace py {
 
+static const word kHandleBlockSize = word{4} * kGiB;
 static const word kInitialCachesCapacity = 128;
 static const word kInitialHandlesCapacity = 256;
 
@@ -25,7 +27,11 @@ void capiStateVisit(CAPIState* state, PointerVisitor* visitor) {
   state->caches.visit(visitor);
 }
 
-void finalizeCAPIState(Runtime* runtime) { runtime->capiState()->~CAPIState(); }
+void finalizeCAPIState(Runtime* runtime) {
+  CAPIState* state = runtime->capiState();
+  OS::freeMemory(state->handle_buffer, state->handle_buffer_size);
+  state->~CAPIState();
+}
 
 static void freeExtensionModule(PyObject* obj, const Module& module) {
   PyModuleDef* def =
@@ -64,6 +70,10 @@ void initializeCAPIState(CAPIState* state) {
   new (state) CAPIState;
   state->caches.initialize(kInitialCachesCapacity);
   state->handles.initialize(kInitialHandlesCapacity);
+
+  state->handle_buffer =
+      OS::allocateMemory(kHandleBlockSize, &state->handle_buffer_size);
+  state->free_handles = reinterpret_cast<FreeListNode*>(state->handle_buffer);
 }
 
 word numTrackedApiHandles(Runtime* runtime) {

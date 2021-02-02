@@ -15,6 +15,14 @@ struct CAPIState {
   // cached here.
   IdentityDict caches;
 
+  // A linked list of freed handles.
+  // The last node is the frontier of allocated handles.
+  FreeListNode* free_handles;
+
+  // The raw memory used to allocated handles.
+  byte* handle_buffer;
+  word handle_buffer_size;
+
   // C-API object handles
   IdentityDict handles;
 
@@ -25,6 +33,10 @@ static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");
 
 inline IdentityDict* capiCaches(Runtime* runtime) {
   return &runtime->capiState()->caches;
+}
+
+inline FreeListNode** capiFreeHandles(Runtime* runtime) {
+  return &runtime->capiState()->free_handles;
 }
 
 inline IdentityDict* capiHandles(Runtime* runtime) {
