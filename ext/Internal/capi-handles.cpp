@@ -101,26 +101,25 @@ static void probeNext(IndexProbe* probe) {
 }
 
 void* IdentityDict::at(RawObject key) {
-  word index = -1;
-  bool found = lookup(key, &index);
-  if (found) {
-    DCHECK(index != -1, "invalid index %ld", index);
+  word index;
+  if (lookup(key, &index)) {
     return itemValueAt(values(), index);
   }
   return nullptr;
 }
 
 void IdentityDict::atPut(RawObject key, void* value) {
-  DCHECK(value != nullptr, "nullptr indicates not found");
-  word index = -1;
-  bool found = lookup(key, &index);
-  DCHECK(index != -1, "invalid index %ld", index);
   RawObject* keys = this->keys();
-  bool empty_slot = itemIsEmpty(keys, index);
-  itemAtPut(keys, values(), index, key, value);
-  if (found) {
+  void** values = this->values();
+
+  word index;
+  if (lookupForInsertion(key, &index)) {
+    itemAtPut(keys, values, index, key, value);
     return;
   }
+
+  bool empty_slot = itemIsEmpty(keys, index);
+  itemAtPut(keys, values, index, key, value);
   incrementNumItems();
   if (empty_slot) {
     DCHECK(numUsableItems() > 0, "dict.numUsableItems() must be positive");
@@ -141,8 +140,8 @@ void IdentityDict::atPut(RawObject key, void* value) {
 }
 
 bool IdentityDict::includes(RawObject key) {
-  word ignored;
-  return lookup(key, &ignored);
+  word index;
+  return lookup(key, &index);
 }
 
 void IdentityDict::initialize(word capacity) {
@@ -154,21 +153,32 @@ void IdentityDict::initialize(word capacity) {
 
 bool IdentityDict::lookup(RawObject key, word* index) {
   word capacity = this->capacity();
-  RawObject* keys = this->keys();
-  if (capacity == 0) {
-    *index = -1;
-    return false;
-  }
-  word next_free_index = -1;
   uword hash = handleHash(key);
+  RawObject* keys = this->keys();
+
   for (IndexProbe probe = probeBegin(capacity, hash);; probeNext(&probe)) {
     RawObject current_key = itemKeyAt(keys, probe.index);
-    if (handleHash(current_key) == hash) {
-      if (current_key == key) {
-        *index = probe.index;
-        return true;
-      }
-      continue;
+    if (current_key == key) {
+      *index = probe.index;
+      return true;
+    }
+    if (itemIsEmpty(keys, probe.index)) {
+      return false;
+    }
+  }
+}
+
+bool IdentityDict::lookupForInsertion(RawObject key, word* index) {
+  word capacity = this->capacity();
+  uword hash = handleHash(key);
+  RawObject* keys = this->keys();
+
+  word next_free_index = -1;
+  for (IndexProbe probe = probeBegin(capacity, hash);; probeNext(&probe)) {
+    RawObject current_key = itemKeyAt(keys, probe.index);
+    if (current_key == key) {
+      *index = probe.index;
+      return true;
     }
     if (itemIsEmpty(keys, probe.index)) {
       if (next_free_index == -1) {
@@ -177,10 +187,8 @@ bool IdentityDict::lookup(RawObject key, word* index) {
       *index = next_free_index;
       return false;
     }
-    if (itemIsTombstone(keys, probe.index)) {
-      if (next_free_index == -1) {
-        next_free_index = probe.index;
-      }
+    if (itemIsTombstone(keys, probe.index) && next_free_index == -1) {
+      next_free_index = probe.index;
     }
   }
 }
@@ -221,16 +229,15 @@ void IdentityDict::rehash(word new_capacity) {
 }
 
 void* IdentityDict::remove(RawObject key) {
-  word index = -1;
-  void* result = nullptr;
-  bool found = lookup(key, &index);
-  if (found) {
-    DCHECK(index != -1, "unexpected index %ld", index);
-    void** values = this->values();
-    result = itemValueAt(values, index);
-    itemAtPutTombstone(keys(), values, index);
-    decrementNumItems();
+  word index;
+  if (!lookup(key, &index)) {
+    return nullptr;
   }
+
+  void** values = this->values();
+  void* result = itemValueAt(values, index);
+  itemAtPutTombstone(keys(), values, index);
+  decrementNumItems();
   return result;
 }
 

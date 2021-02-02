@@ -72,7 +72,12 @@ class IdentityDict {
   static const int kGrowthFactor = 2;
   static const int kShrinkFactor = 4;
 
+  // Returns true and sets index if the key was found.
   bool lookup(RawObject key, word* index);
+
+  // Returns true and sets the index if the key was found,
+  // or returns false and sets the index for insertion.
+  bool lookupForInsertion(RawObject key, word* index);
 
   // Rehash the items into new storage with the given capacity.
   void rehash(word new_capacity);
