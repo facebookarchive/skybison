@@ -16,16 +16,46 @@
 
 namespace py {
 
-namespace {
+struct IndexProbe {
+  word index;
+  word mask;
+  uword perturb;
+};
 
 // Compute hash value suitable for `RawObject::operator==` (aka `a is b`)
 // equality tests.
-static word handleHash(RawObject obj) {
+static uword handleHash(RawObject obj) {
   if (obj.isHeapObject()) {
     return HeapObject::cast(obj).address() >> kObjectAlignmentLog2;
   }
-  return static_cast<word>(obj.raw());
+  return obj.raw();
 }
+
+static void itemAtPut(RawObject* keys, void** values, word index, RawObject key,
+                      void* value) {
+  DCHECK(!key.isUnbound(), "Unbound represents tombstone");
+  DCHECK(!key.isNoneType(), "None represents empty");
+  DCHECK(value != nullptr, "key must be associated with a C-API handle");
+  keys[index] = key;
+  values[index] = value;
+}
+
+static void itemAtPutTombstone(RawObject* keys, void** values, word index) {
+  keys[index] = Unbound::object();
+  values[index] = nullptr;
+}
+
+static bool itemIsEmpty(RawObject* keys, word index) {
+  return keys[index].isNoneType();
+}
+
+static bool itemIsTombstone(RawObject* keys, word index) {
+  return keys[index].isUnbound();
+}
+
+static RawObject itemKeyAt(RawObject* keys, word index) { return keys[index]; }
+
+static void* itemValueAt(void** values, word index) { return values[index]; }
 
 static RawObject* newKeys(word capacity) {
   word size = capacity * sizeof(RawObject);
@@ -41,86 +71,41 @@ static void** newValues(word capacity) {
   return reinterpret_cast<void**>(result);
 }
 
-// Helper class for manipulating buckets in the RawTuple that backs
-// IdentityDict.
-class Bucket {
- public:
-  static word bucket(word nbuckets, word hash, word* bucket_mask,
-                     uword* perturb) {
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    DCHECK(nbuckets > 0, "bucket size <= 0");
-    *perturb = static_cast<uword>(hash);
-    *bucket_mask = nbuckets - 1;
-    return *bucket_mask & hash;
+static bool nextItem(RawObject* keys, void** values, word* idx, word end,
+                     RawObject* key_out, void** value_out) {
+  for (word i = *idx; i < end; i++) {
+    RawObject key = itemKeyAt(keys, i);
+    if (key.isNoneType() || key.isUnbound()) continue;
+    *key_out = key;
+    *value_out = itemValueAt(values, i);
+    *idx = i + 1;
+    return true;
   }
+  *idx = end;
+  return false;
+}
 
-  static word nextBucket(word current, word bucket_mask, uword* perturb) {
-    // Given that current stands for the index of a bucket, this advances
-    // current to (5 * bucket + 1 + perturb). Note that it's guaranteed that
-    // keeping calling this function returns a permutation of all indices when
-    // the number of the buckets is power of two. See
-    // https://en.wikipedia.org/wiki/Linear_congruential_generator#c_%E2%89%A0_0.
-    *perturb >>= 5;
-    return (current * 5 + 1 + *perturb) & bucket_mask;
-  }
+static IndexProbe probeBegin(word num_indices, uword hash) {
+  DCHECK(num_indices > 0 && Utils::isPowerOfTwo(num_indices),
+         "number of indices must be a power of two, got %ld", num_indices);
+  word mask = num_indices - 1;
+  return {static_cast<word>(hash) & mask, mask, hash};
+}
 
-  static bool isEmpty(RawObject* keys, word index) {
-    return key(keys, index).isNoneType();
-  }
-
-  static bool isTombstone(RawObject* keys, word index) {
-    return key(keys, index).isUnbound();
-  }
-
-  static RawObject key(RawObject* keys, word index) { return keys[index]; }
-
-  static void set(RawObject* keys, void** values, word index, RawObject key,
-                  void* value) {
-    DCHECK(!key.isUnbound(),
-           "Unbound should be an immediate C-API handle and represents "
-           "tombstones");
-    DCHECK(!key.isNoneType(),
-           "None should be an immediate C-API handle and represents empties");
-    keys[index] = key;
-    values[index] = value;
-  }
-
-  static void setTombstone(RawObject* keys, void** values, word index) {
-    keys[index] = Unbound::object();
-    values[index] = nullptr;
-  }
-
-  static void* value(void** values, word index) { return values[index]; }
-
-  static bool nextItem(RawObject* keys, word* idx, word end) {
-    for (word i = *idx + 1; i < end; i++) {
-      if (isEmptyOrTombstone(keys, i)) continue;
-      *idx = i;
-      return true;
-    }
-    *idx = end;
-    return false;
-  }
-
-  // Layout.
-  static const word kFirst = -1;
-
- private:
-  static bool isEmptyOrTombstone(RawObject* keys, word index) {
-    return isEmpty(keys, index) || isTombstone(keys, index);
-  }
-
-  DISALLOW_HEAP_ALLOCATION();
-};
-
-}  // namespace
+static void probeNext(IndexProbe* probe) {
+  // Note that repeated calls to this function guarantee a permutation of all
+  // indices when the number of indices is power of two. See
+  // https://en.wikipedia.org/wiki/Linear_congruential_generator#c_%E2%89%A0_0.
+  probe->perturb >>= 5;
+  probe->index = (probe->index * 5 + 1 + probe->perturb) & probe->mask;
+}
 
 void* IdentityDict::at(RawObject key) {
   word index = -1;
   bool found = lookup(key, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
-    return Bucket::value(values(), index);
+    return itemValueAt(values(), index);
   }
   return nullptr;
 }
@@ -131,8 +116,8 @@ void IdentityDict::atPut(RawObject key, void* value) {
   bool found = lookup(key, &index);
   DCHECK(index != -1, "invalid index %ld", index);
   RawObject* keys = this->keys();
-  bool empty_slot = Bucket::isEmpty(keys, index);
-  Bucket::set(keys, values(), index, key, value);
+  bool empty_slot = itemIsEmpty(keys, index);
+  itemAtPut(keys, values(), index, key, value);
   if (found) {
     return;
   }
@@ -175,29 +160,26 @@ bool IdentityDict::lookup(RawObject key, word* index) {
     return false;
   }
   word next_free_index = -1;
-  uword perturb;
-  word bucket_mask;
-  word hash = handleHash(key);
-  for (word current = Bucket::bucket(capacity, hash, &bucket_mask, &perturb);;
-       current = Bucket::nextBucket(current, bucket_mask, &perturb)) {
-    RawObject current_key = Bucket::key(keys, current);
+  uword hash = handleHash(key);
+  for (IndexProbe probe = probeBegin(capacity, hash);; probeNext(&probe)) {
+    RawObject current_key = itemKeyAt(keys, probe.index);
     if (handleHash(current_key) == hash) {
       if (current_key == key) {
-        *index = current;
+        *index = probe.index;
         return true;
       }
       continue;
     }
-    if (Bucket::isEmpty(keys, current)) {
+    if (itemIsEmpty(keys, probe.index)) {
       if (next_free_index == -1) {
-        next_free_index = current;
+        next_free_index = probe.index;
       }
       *index = next_free_index;
       return false;
     }
-    if (Bucket::isTombstone(keys, current)) {
+    if (itemIsTombstone(keys, probe.index)) {
       if (next_free_index == -1) {
-        next_free_index = current;
+        next_free_index = probe.index;
       }
     }
   }
@@ -212,19 +194,16 @@ void IdentityDict::rehash(word new_capacity) {
   void** new_values = newValues(new_capacity);
 
   // Re-insert items
-  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
-    RawObject key = Bucket::key(keys, i);
-    void* value = Bucket::value(values, i);
-
-    uword perturb;
-    word bucket_mask;
-    word hash = handleHash(key);
-    for (word j = Bucket::bucket(new_capacity, hash, &bucket_mask, &perturb);;
-         j = Bucket::nextBucket(j, bucket_mask, &perturb)) {
-      DCHECK(!Bucket::isTombstone(new_keys, j),
+  RawObject key = NoneType::object();
+  void* value;
+  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+    uword hash = handleHash(key);
+    for (IndexProbe probe = probeBegin(new_capacity, hash);;
+         probeNext(&probe)) {
+      DCHECK(!itemIsTombstone(new_keys, probe.index),
              "There should be no tombstones in a newly created dict");
-      if (Bucket::isEmpty(new_keys, j)) {
-        Bucket::set(new_keys, new_values, j, key, value);
+      if (itemIsEmpty(new_keys, probe.index)) {
+        itemAtPut(new_keys, new_values, probe.index, key, value);
         break;
       }
     }
@@ -248,8 +227,8 @@ void* IdentityDict::remove(RawObject key) {
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     void** values = this->values();
-    result = Bucket::value(values, index);
-    Bucket::setTombstone(keys(), values, index);
+    result = itemValueAt(values, index);
+    itemAtPutTombstone(keys(), values, index);
     decrementNumItems();
   }
   return result;
@@ -366,17 +345,19 @@ void ApiHandle::clearNotReferencedHandles(IdentityDict* handles,
   word capacity = handles->capacity();
   RawObject* keys = handles->keys();
   void** values = handles->values();
+
   // Loops through the handle table clearing out handles which are not
   // referenced by managed objects or by an extension object.
-  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
-    ApiHandle* handle = static_cast<ApiHandle*>(Bucket::value(values, i));
+  RawObject key = NoneType::object();
+  void* value;
+  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+    ApiHandle* handle = static_cast<ApiHandle*>(value);
     if (!ApiHandle::hasExtensionReference(handle)) {
-      RawObject key = Bucket::key(keys, i);
       // TODO(T56760343): Remove the cache lookup. This should become simpler
       // when it is easier to associate a cache with a handle or when the need
       // for caches is eliminated.
       void* cache = caches->remove(key);
-      Bucket::setTombstone(keys, values, i);
+      itemAtPutTombstone(keys, values, i - 1);
       handles->decrementNumItems();
       std::free(handle);
       std::free(cache);
@@ -390,8 +371,10 @@ void ApiHandle::disposeHandles(IdentityDict* handles) {
   word capacity = handles->capacity();
   RawObject* keys = handles->keys();
   void** values = handles->values();
-  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
-    void* value = Bucket::value(values, i);
+
+  RawObject key = NoneType::object();
+  void* value;
+  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     handle->dispose();
   }
@@ -405,8 +388,10 @@ void ApiHandle::visitReferences(IdentityDict* handles,
 
   // TODO(bsimmers): Since we're reading an object mid-collection, approximate a
   // read barrier until we have a more principled solution in place.
-  for (word i = Bucket::kFirst; Bucket::nextItem(keys, &i, capacity);) {
-    ApiHandle* handle = reinterpret_cast<ApiHandle*>(Bucket::value(values, i));
+  RawObject key = NoneType::object();
+  void* value;
+  for (word i = 0; nextItem(keys, values, &i, capacity, &key, &value);) {
+    ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     if (ApiHandle::hasExtensionReference(handle)) {
       visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
                             PointerKind::kApiHandle);
