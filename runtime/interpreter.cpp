@@ -5888,11 +5888,10 @@ Continue Interpreter::doBinaryOrSmallInt(Thread* thread, word arg) {
     word left_value = SmallInt::cast(left).value();
     word right_value = SmallInt::cast(right).value();
     word result_value = left_value | right_value;
-    if (SmallInt::isValid(result_value)) {
-      thread->stackDrop(1);
-      thread->stackSetTop(SmallInt::fromWord(result_value));
-      return Continue::NEXT;
-    }
+    DCHECK(SmallInt::isValid(result_value), "result should be a SmallInt");
+    thread->stackDrop(1);
+    thread->stackSetTop(SmallInt::fromWord(result_value));
+    return Continue::NEXT;
   }
   EVENT_CACHE(BINARY_OR_SMALLINT);
   return binaryOpUpdateCache(thread, arg);
