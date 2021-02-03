@@ -40,7 +40,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
       continue;
     }
     Type value_type(&scope, runtime->typeOf(*value));
-    if (!typeIsNonDataDescriptor(thread, *value_type)) {
+    if (!typeIsNonDataDescriptor(*value_type)) {
       return *value;
     }
     Object self(&scope, NoneType::object());

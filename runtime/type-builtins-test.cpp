@@ -1528,22 +1528,22 @@ class Str2(Str):
   EXPECT_TRUE(k.hasFlag(Type::Flag::kHasDunderGet));
   EXPECT_FALSE(k.hasFlag(Type::Flag::kHasDunderSet));
   EXPECT_FALSE(k.hasFlag(Type::Flag::kHasDunderDelete));
-  EXPECT_FALSE(typeIsDataDescriptor(thread_, *k));
-  EXPECT_TRUE(typeIsNonDataDescriptor(thread_, *k));
+  EXPECT_FALSE(typeIsDataDescriptor(*k));
+  EXPECT_TRUE(typeIsNonDataDescriptor(*k));
 
   Type l(&scope, mainModuleAt(runtime_, "L"));
   EXPECT_FALSE(l.hasFlag(Type::Flag::kHasDunderGet));
   EXPECT_TRUE(l.hasFlag(Type::Flag::kHasDunderSet));
   EXPECT_FALSE(l.hasFlag(Type::Flag::kHasDunderDelete));
-  EXPECT_TRUE(typeIsDataDescriptor(thread_, *l));
-  EXPECT_FALSE(typeIsNonDataDescriptor(thread_, *l));
+  EXPECT_TRUE(typeIsDataDescriptor(*l));
+  EXPECT_FALSE(typeIsNonDataDescriptor(*l));
 
   Type m(&scope, mainModuleAt(runtime_, "M"));
   EXPECT_FALSE(m.hasFlag(Type::Flag::kHasDunderGet));
   EXPECT_FALSE(m.hasFlag(Type::Flag::kHasDunderSet));
   EXPECT_TRUE(m.hasFlag(Type::Flag::kHasDunderDelete));
-  EXPECT_TRUE(typeIsDataDescriptor(thread_, *m));
-  EXPECT_FALSE(typeIsNonDataDescriptor(thread_, *m));
+  EXPECT_TRUE(typeIsDataDescriptor(*m));
+  EXPECT_FALSE(typeIsNonDataDescriptor(*m));
 
   Type str(&scope, mainModuleAt(runtime_, "Str"));
   EXPECT_TRUE(str.hasFlag(Type::Flag::kHasObjectDunderGetattribute));

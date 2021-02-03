@@ -629,7 +629,7 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
   // Delete caches for attr_name to be shadowed by the type[attr_name]
   // change in all dependents that depend on the attribute being updated.
   Type value_type(&scope, thread->runtime()->typeOf(value_cell.value()));
-  AttributeKind attribute_kind = typeIsDataDescriptor(thread, *value_type)
+  AttributeKind attribute_kind = typeIsDataDescriptor(*value_type)
                                      ? AttributeKind::kDataDescriptor
                                      : AttributeKind::kNotADataDescriptor;
   Object link(&scope, value_cell.dependencyLink());

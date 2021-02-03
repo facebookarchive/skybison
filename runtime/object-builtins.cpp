@@ -226,7 +226,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
       return *result;
     }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
-    if (typeIsDataDescriptor(thread, *type_attr_type)) {
+    if (typeIsDataDescriptor(*type_attr_type)) {
       if (location_out != nullptr) {
         *location_out = *type_attr;
         *kind = LoadAttrKind::kInstanceTypeDescr;
@@ -258,7 +258,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     }
 
     Type type_attr_type(&scope, thread->runtime()->typeOf(*type_attr));
-    if (!typeIsNonDataDescriptor(thread, *type_attr_type)) {
+    if (!typeIsNonDataDescriptor(*type_attr_type)) {
       if (location_out != nullptr) {
         *location_out = *type_attr;
         *kind = LoadAttrKind::kInstanceType;
@@ -343,7 +343,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
       return *result;
     }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
-    if (typeIsDataDescriptor(thread, *type_attr_type)) {
+    if (typeIsDataDescriptor(*type_attr_type)) {
       // Do not cache data descriptors.
       Object set_result(&scope, Interpreter::callDescriptorSet(
                                     thread, type_attr, object, value));

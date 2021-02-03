@@ -150,7 +150,7 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
   Object attr(&scope, typeLookupInMro(thread, *module_type, *name));
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
-    if (typeIsDataDescriptor(thread, *attr_type)) {
+    if (typeIsDataDescriptor(*attr_type)) {
       return Interpreter::callDescriptorGet(thread, attr, module, module_type);
     }
   }
@@ -167,7 +167,7 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
 
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
-    if (typeIsNonDataDescriptor(thread, *attr_type)) {
+    if (typeIsNonDataDescriptor(*attr_type)) {
       return Interpreter::callDescriptorGet(thread, attr, module, module_type);
     }
     return *attr;

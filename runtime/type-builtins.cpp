@@ -291,13 +291,13 @@ RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
   return ValueCell::cast(result).value();
 }
 
-bool typeIsDataDescriptor(Thread*, RawType type) {
+bool typeIsDataDescriptor(RawType type) {
   word flags = type.flags();
   return (flags & Type::Flag::kHasDunderSet) ||
          (flags & Type::Flag::kHasDunderDelete);
 }
 
-bool typeIsNonDataDescriptor(Thread*, RawType type) {
+bool typeIsNonDataDescriptor(RawType type) {
   word flags = type.flags();
   return flags & Type::Flag::kHasDunderGet;
 }
@@ -306,7 +306,7 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance,
                                const Object& instance_type) {
   if (!typeIsNonDataDescriptor(
-          thread, thread->runtime()->typeOf(*descr).rawCast<RawType>())) {
+          thread->runtime()->typeOf(*descr).rawCast<RawType>())) {
     return *descr;
   }
   return Interpreter::callDescriptorGet(thread, descr, instance, instance_type);
@@ -419,7 +419,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
       }
     }
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
-    if (typeIsDataDescriptor(thread, *meta_attr_type)) {
+    if (typeIsDataDescriptor(*meta_attr_type)) {
       return Interpreter::callDescriptorGet(thread, meta_attr, type, meta_type);
     }
   }
@@ -436,7 +436,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
       return *attr;
     }
     Type attr_type(&scope, runtime->typeOf(*attr));
-    if (typeIsNonDataDescriptor(thread, *attr_type)) {
+    if (typeIsNonDataDescriptor(*attr_type)) {
       // Unfortunately calling `__get__` for a lookup on `type(None)` will look
       // exactly the same as calling it for a lookup on the `None` object.
       // To solve the ambiguity we add a special case for `type(None)` here.
@@ -1001,7 +1001,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
   Object meta_attr(&scope, typeLookupInMro(thread, *metatype, *name));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
-    if (typeIsDataDescriptor(thread, *meta_attr_type)) {
+    if (typeIsDataDescriptor(*meta_attr_type)) {
       Object set_result(&scope, Interpreter::callDescriptorSet(
                                     thread, meta_attr, type, value));
       if (set_result.isError()) return *set_result;

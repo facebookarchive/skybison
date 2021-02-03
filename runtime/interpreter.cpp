@@ -97,7 +97,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Object* callable,
         return Bool::trueObj();
       }
       Type call_type(&scope, runtime->typeOf(*dunder_call));
-      if (typeIsNonDataDescriptor(thread, *call_type)) {
+      if (typeIsNonDataDescriptor(*call_type)) {
         *callable = callDescriptorGet(thread, dunder_call, *callable, type);
         if (callable->isErrorException()) return **callable;
         if (callable->isFunction()) return Bool::falseObj();

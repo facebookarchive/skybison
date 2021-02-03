@@ -69,10 +69,10 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
                                       const Object& name, Object* location_out);
 
 // Returns true if the type defines a __set__ method.
-bool typeIsDataDescriptor(Thread* thread, RawType type);
+bool typeIsDataDescriptor(RawType type);
 
 // Returns true if the type defines a __get__ method.
-bool typeIsNonDataDescriptor(Thread* thread, RawType type);
+bool typeIsNonDataDescriptor(RawType type);
 
 // If descr's Type has __get__(), call it with the appropriate arguments and
 // return the result. Otherwise, return descr.
