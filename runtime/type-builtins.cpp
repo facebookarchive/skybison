@@ -178,6 +178,33 @@ static word computeAttributeTypeFlags(Thread* thread, const Type& type,
     }
     return flags;
   }
+  if (name == ID(__get__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (!value.isErrorNotFound()) {
+      flags |= Type::Flag::kHasDunderGet;
+    } else {
+      flags &= ~Type::Flag::kHasDunderGet;
+    }
+    return flags;
+  }
+  if (name == ID(__set__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (!value.isErrorNotFound()) {
+      flags |= Type::Flag::kHasDunderSet;
+    } else {
+      flags &= ~Type::Flag::kHasDunderSet;
+    }
+    return flags;
+  }
+  if (name == ID(__delete__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (!value.isErrorNotFound()) {
+      flags |= Type::Flag::kHasDunderDelete;
+    } else {
+      flags &= ~Type::Flag::kHasDunderDelete;
+    }
+    return flags;
+  }
   return flags;
 }
 
@@ -213,6 +240,7 @@ static void typePropagateAttributeTypeFlag(Thread* thread, const Type& type,
 static const SymbolId kAttributesForTypeFlags[] = {
     ID(__getattribute__), ID(__new__), ID(__hash__),
     ID(__bool__),         ID(__len__), ID(__class__),
+    ID(__get__),          ID(__set__), ID(__delete__),
 };
 
 // Returns `SymbolId` for `attr_name` if given `attr_name` is marked in
@@ -263,30 +291,15 @@ RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
   return ValueCell::cast(result).value();
 }
 
-bool typeIsDataDescriptor(Thread* thread, RawType type) {
-  if (type.isBuiltin()) {
-    LayoutId layout_id = type.instanceLayoutId();
-    return layout_id == LayoutId::kProperty ||
-           layout_id == LayoutId::kSlotDescriptor;
-  }
-  // TODO(T25692962): Track "descriptorness" through a bit on the class
-  return !typeLookupInMroById(thread, type, ID(__set__)).isError();
+bool typeIsDataDescriptor(Thread*, RawType type) {
+  word flags = type.flags();
+  return (flags & Type::Flag::kHasDunderSet) ||
+         (flags & Type::Flag::kHasDunderDelete);
 }
 
-bool typeIsNonDataDescriptor(Thread* thread, RawType type) {
-  if (type.isBuiltin()) {
-    switch (type.instanceLayoutId()) {
-      case LayoutId::kClassMethod:
-      case LayoutId::kFunction:
-      case LayoutId::kProperty:
-      case LayoutId::kStaticMethod:
-        return true;
-      default:
-        return false;
-    }
-  }
-  // TODO(T25692962): Track "descriptorness" through a bit on the class
-  return !typeLookupInMroById(thread, type, ID(__get__)).isError();
+bool typeIsNonDataDescriptor(Thread*, RawType type) {
+  word flags = type.flags();
+  return flags & Type::Flag::kHasDunderGet;
 }
 
 RawObject resolveDescriptorGet(Thread* thread, const Object& descr,

@@ -2218,6 +2218,21 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
     type.setFlags(static_cast<Type::Flag>(type.flags() |
                                           Type::Flag::kHasObjectDunderClass));
   }
+
+  if (!typeLookupInMroById(thread, *type, ID(__get__)).isErrorNotFound()) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderGet));
+  }
+
+  if (!typeLookupInMroById(thread, *type, ID(__set__)).isErrorNotFound()) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderSet));
+  }
+
+  if (!typeLookupInMroById(thread, *type, ID(__delete__)).isErrorNotFound()) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderDelete));
+  }
 }
 
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {

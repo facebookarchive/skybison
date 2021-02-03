@@ -1378,6 +1378,9 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderBool));
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderLen));
   EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderClass));
+  EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderGet));
+  EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderSet));
+  EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderDelete));
 
   Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
@@ -1393,6 +1396,10 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(property_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasDunderGet));
+  EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasDunderSet));
+  EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasDunderDelete));
 
   Type function_type(&scope, runtime_->typeAt(LayoutId::kFunction));
   EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
@@ -1406,6 +1413,9 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasStrDunderHash));
   EXPECT_TRUE(int_type.hasFlag(Type::Flag::kHasDunderBool));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderLen));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderGet));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderSet));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderDelete));
 
   Type str_type(&scope, runtime_->typeAt(LayoutId::kStr));
   EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
@@ -1458,6 +1468,17 @@ class I:
 class J:
   __class__ = None
 
+class K:
+  def __get__(self, owner, type):
+    return None
+
+class L:
+  def __set__(self, owner, value):
+    return None
+
+class M:
+  def __delete__(self, obj):
+    return None
 
 class Str(str): pass
 
@@ -1502,6 +1523,27 @@ class Str2(Str):
 
   Type j(&scope, mainModuleAt(runtime_, "J"));
   EXPECT_FALSE(j.hasFlag(Type::Flag::kHasObjectDunderClass));
+
+  Type k(&scope, mainModuleAt(runtime_, "K"));
+  EXPECT_TRUE(k.hasFlag(Type::Flag::kHasDunderGet));
+  EXPECT_FALSE(k.hasFlag(Type::Flag::kHasDunderSet));
+  EXPECT_FALSE(k.hasFlag(Type::Flag::kHasDunderDelete));
+  EXPECT_FALSE(typeIsDataDescriptor(thread_, *k));
+  EXPECT_TRUE(typeIsNonDataDescriptor(thread_, *k));
+
+  Type l(&scope, mainModuleAt(runtime_, "L"));
+  EXPECT_FALSE(l.hasFlag(Type::Flag::kHasDunderGet));
+  EXPECT_TRUE(l.hasFlag(Type::Flag::kHasDunderSet));
+  EXPECT_FALSE(l.hasFlag(Type::Flag::kHasDunderDelete));
+  EXPECT_TRUE(typeIsDataDescriptor(thread_, *l));
+  EXPECT_FALSE(typeIsNonDataDescriptor(thread_, *l));
+
+  Type m(&scope, mainModuleAt(runtime_, "M"));
+  EXPECT_FALSE(m.hasFlag(Type::Flag::kHasDunderGet));
+  EXPECT_FALSE(m.hasFlag(Type::Flag::kHasDunderSet));
+  EXPECT_TRUE(m.hasFlag(Type::Flag::kHasDunderDelete));
+  EXPECT_TRUE(typeIsDataDescriptor(thread_, *m));
+  EXPECT_FALSE(typeIsNonDataDescriptor(thread_, *m));
 
   Type str(&scope, mainModuleAt(runtime_, "Str"));
   EXPECT_TRUE(str.hasFlag(Type::Flag::kHasObjectDunderGetattribute));

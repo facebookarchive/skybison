@@ -1275,13 +1275,23 @@ class RawType : public RawAttributeDict {
 
     // this_type.__class__ is object.__class.
     kHasObjectDunderClass = 1 << 26,
+
+    // this_type.__get__ exists.
+    kHasDunderGet = 1 << 27,
+
+    // this_type.__set__ exists.
+    kHasDunderSet = 1 << 28,
+
+    // this_type.__delete__ exists.
+    kHasDunderDelete = 1 << 29,
   };
 
   static const word kAttributeFlags =
       Flag::kHasObjectDunderGetattribute | Flag::kHasTypeDunderGetattribute |
       Flag::kHasModuleDunderGetattribute | Flag::kHasObjectDunderNew |
       Flag::kHasObjectDunderHash | Flag::kHasStrDunderHash |
-      Flag::kHasDunderBool | Flag::kHasDunderLen | Flag::kHasObjectDunderClass;
+      Flag::kHasDunderBool | Flag::kHasDunderLen | Flag::kHasObjectDunderClass |
+      Flag::kHasDunderGet | Flag::kHasDunderSet | Flag::kHasDunderDelete;
 
   static const word kUninheritableFlags = Flag::kIsAbstract |
                                           Flag::kIsFixedAttributeBase |
