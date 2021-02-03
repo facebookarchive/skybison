@@ -116,6 +116,10 @@ static RawObject slotDescriptorRaiseTypeError(
 RawObject slotDescriptorGet(Thread* thread,
                             const SlotDescriptor& slot_descriptor,
                             const Object& instance_obj) {
+  if (instance_obj.isNoneType()) {
+    // TODO(T84104305): If owner is none, raise TypeError
+    return *slot_descriptor;
+  }
   HandleScope scope(thread);
   Type instance_type(&scope,
                      thread->runtime()->typeAt(instance_obj.layoutId()));
@@ -139,6 +143,7 @@ RawObject METH(slot_descriptor, __delete__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   SlotDescriptor slot_descriptor(&scope, args.get(0));
   Object instance_obj(&scope, args.get(1));
+  // TODO(T84104305): Get owner parameter and pass to slotDescriptorGet
   Object existing_value(
       &scope, slotDescriptorGet(thread, slot_descriptor, instance_obj));
   if (existing_value.isErrorException()) {

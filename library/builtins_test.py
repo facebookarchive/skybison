@@ -4625,6 +4625,40 @@ class DunderSlotsTests(unittest.TestCase):
 
         self.assertIn("__dict__", C.__dict__)
 
+    # TODO(T84104305): Add test for descriptor.__get__(None, None)
+
+    def test_slot_descriptor_dunder_get_with_none_returns_type(self):
+        class C:
+            __slots__ = "a"
+
+        descriptor = C.__dict__["a"]
+        slot_descriptor_type = type(descriptor)
+        self.assertIs(descriptor.__get__(None, slot_descriptor_type), descriptor)
+
+    def test_slot_descriptor_dunder_get_with_instance_returns_attribute(self):
+        class C:
+            __slots__ = "a"
+
+            def __init__(self):
+                self.a = 10
+
+        descriptor = C.__dict__["a"]
+        instance = C()
+        self.assertEqual(descriptor.__get__(instance), 10)
+
+    def test_slot_descriptor_dunder_get_with_instance_and_none_owner_returns_attribute(
+        self,
+    ):
+        class C:
+            __slots__ = "a"
+
+            def __init__(self):
+                self.a = 10
+
+        descriptor = C.__dict__["a"]
+        instance = C()
+        self.assertEqual(descriptor.__get__(instance, None), 10)
+
     def test_dunder_slots_creates_type_attributes(self):
         class C:
             __slots__ = "a", "b", "c"
