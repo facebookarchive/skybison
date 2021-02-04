@@ -436,7 +436,7 @@ add_custom_command(
   OUTPUT
   ${FROZEN_MODULE_OUTPUT}
   COMMAND
-  util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
+  ${PYTHON} util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
     ${FROZEN_MODULE_INPUT}
   WORKING_DIRECTORY
   ${CMAKE_SOURCE_DIR}

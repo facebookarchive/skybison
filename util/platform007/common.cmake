@@ -42,6 +42,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${FLAGS_RELEASE}" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${FLAGS_RELEASE} -g3" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${FLAGS_RELEASE} -g3" CACHE STRING "" FORCE)
 
+set(PYTHON /usr/local/fbcode/platform009/bin/python3.8)
+
 # Used by third-party/benchmark; stop it from autodetecting the wrong path.
 set(LIBRT -lrt CACHE STRING "" FORCE)
 

@@ -321,6 +321,7 @@ def _dump_dict(obj, f, version, flag, reference_data):
 def _dump_code(obj, f, version, flag, reference_data):
     result = f.write(_apply_flag(TYPE_CODE, flag))
     result += _w_long(obj.co_argcount, f)
+    result += _w_long(obj.co_posonlyargcount, f)
     result += _w_long(obj.co_kwonlyargcount, f)
     result += _w_long(obj.co_nlocals, f)
     result += _w_long(obj.co_stacksize, f)

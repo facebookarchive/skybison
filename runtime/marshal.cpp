@@ -401,7 +401,7 @@ RawObject Marshal::Reader::readTypeCode() {
     index = addRef(none);
   }
   int32_t argcount = readLong();
-  int32_t posonlyargcount = 0;
+  int32_t posonlyargcount = readLong();
   int32_t kwonlyargcount = readLong();
   int32_t nlocals = readLong();
   uint32_t stacksize = readLong();

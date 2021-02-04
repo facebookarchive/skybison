@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import __future__
-
 # Add library directory so we can import the compiler.
 import os
 import sys
@@ -14,11 +12,18 @@ import marshal
 import re
 import tempfile
 from collections import namedtuple
-from compiler import compile as compiler_compile
+from importlib.util import MAGIC_NUMBER
 from pathlib import Path
 from types import CodeType
 
-from _compiler import PyroCodeGenerator
+from _compiler import PyroCodeGenerator, compile as compiler_compile
+
+
+# While we do use a project specific compiler here, we still use the marshal
+# module of the host runtime and need to make sure it matches our expectations.
+assert (
+    MAGIC_NUMBER == (3413).to_bytes(2, "little") + b"\r\n"
+), "unexpected marshalling format"
 
 
 INIT_MODULE_NAME = "__init_module__"
@@ -97,30 +102,17 @@ def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
         # stacksize is 32 bits in the marshaled code. We use the upper 16 bits
         # for an intrinsic id and the lower 16 bits for the builtin id.
         flags = code.co_flags | CO_BUILTIN
-        bytecode = b""
-        constants = ()
-        names = ()
-        filename = ""
-        firstlineno = 0
-        lnotab = b""
-        freevars = ()
-        cellvars = ()
-        new_code = CodeType(
-            code.co_argcount,
-            code.co_kwonlyargcount,
-            code.co_nlocals,
-            stacksize,
-            flags,
-            bytecode,
-            constants,
-            names,
-            code.co_varnames,
-            filename,
-            code.co_name,
-            firstlineno,
-            lnotab,
-            freevars,
-            cellvars,
+        new_code = code.replace(
+            co_stacksize=stacksize,
+            co_flags=flags,
+            co_code=b"",
+            co_consts=(),
+            co_names=(),
+            co_filename="",
+            co_firstlineno=0,
+            co_lnotab=b"",
+            co_freevars=(),
+            co_cellvars=(),
         )
         return new_code
 
@@ -153,23 +145,7 @@ def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
         return code
 
     new_consts = tuple(new_consts)
-    return CodeType(
-        code.co_argcount,
-        code.co_kwonlyargcount,
-        code.co_nlocals,
-        stacksize,
-        code.co_flags,
-        code.co_code,
-        new_consts,
-        code.co_names,
-        code.co_varnames,
-        code.co_filename,
-        code.co_name,
-        code.co_firstlineno,
-        code.co_lnotab,
-        code.co_freevars,
-        code.co_cellvars,
-    )
+    return code.replace(co_stacksize=stacksize, co_consts=new_consts)
 
 
 def to_char_array(byte_array):
@@ -205,7 +181,7 @@ def process_module(filename, builtins, intrinsics):
     with open(filename) as fp:
         source = fp.read()
     builtin_init = "$builtin-init-module$" in source
-    flags = __future__.CO_FUTURE_ANNOTATIONS
+    flags = PyroCodeGenerator.consts.CO_FUTURE_ANNOTATIONS
     module_code = compiler_compile(
         source,
         filename,
@@ -213,7 +189,6 @@ def process_module(filename, builtins, intrinsics):
         flags,
         dont_inherit=None,
         optimize=0,
-        compiler=PyroCodeGenerator,
     )
     marked_code = mark_native_functions(module_code, builtins, intrinsics, fullname)
     # We don't write pyc headers because it would make bootstrapping tricky.

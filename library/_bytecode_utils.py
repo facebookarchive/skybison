@@ -37,6 +37,7 @@ def _make_dunder_new(modulename, name, arg_list, target_func):
     CodeType = type(_make_dunder_new.__code__)
 
     argcount = len(arg_list) + 1
+    posonlyargcount = 0
     kwonlyargcount = 0
     nlocals = argcount + 1
     stacksize = nlocals + 1
@@ -57,6 +58,7 @@ def _make_dunder_new(modulename, name, arg_list, target_func):
     _emit_op(bytecode, RETURN_VALUE, 0)
     code = CodeType(
         argcount,
+        posonlyargcount,
         kwonlyargcount,
         nlocals,
         stacksize,

@@ -3,6 +3,7 @@ from compiler import compile as compiler_compile
 from compiler.optimizer import AstOptimizer, BIN_OPS, is_const, get_const_value
 from compiler.pyassem import PyFlowGraph37
 from compiler.pycodegen import Python37CodeGenerator
+from types import CodeType
 
 import _compiler_opcode as opcodepyro
 
@@ -195,6 +196,30 @@ class AstOptimizerPyro(AstOptimizer):
 
 class PyroFlowGraph(PyFlowGraph37):
     opcode = opcodepyro.opcode
+
+    def make_code(self, nlocals, code, consts, firstline, lnotab) -> CodeType:
+        # This function should be removed after we switched over to
+        # PyFlowGraph38 and have a real self.posonlyargcount.
+        assert not hasattr(self, "posonlyargcount")
+        posonlyargcount = 0
+        return CodeType(
+            len(self.args),
+            posonlyargcount,
+            len(self.kwonlyargs),
+            nlocals,
+            self.stacksize,
+            self.flags,
+            code,
+            consts,
+            tuple(self.names),
+            tuple(self.varnames),
+            self.filename,
+            self.name,
+            firstline,
+            lnotab,
+            tuple(self.freevars),
+            tuple(self.cellvars),
+        )
 
 
 class PyroCodeGenerator(Python37CodeGenerator):

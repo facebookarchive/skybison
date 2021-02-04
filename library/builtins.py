@@ -2694,6 +2694,7 @@ class code(bootstrap=True):
     def __new__(
         cls,
         argcount,
+        posonlyargcount,
         kwonlyargcount,
         nlocals,
         stacksize,
@@ -2709,9 +2710,8 @@ class code(bootstrap=True):
         freevars=(),
         cellvars=(),
     ):
-        # TODO(T83761884): Add posonlyargcount to args
         argcount = _int(argcount)
-        posonlyargcount = 0
+        posonlyargcount = _int(posonlyargcount)
         kwonlyargcount = _int(kwonlyargcount)
         nlocals = _int(nlocals)
         stacksize = _int(stacksize)
@@ -2747,7 +2747,6 @@ class code(bootstrap=True):
         )
 
     def __hash__(self):
-        # TODO(T83761884): Add posonlyargcount to hash
         _code_guard(self)
         result = (
             hash(self.co_name)
@@ -2758,6 +2757,7 @@ class code(bootstrap=True):
             ^ hash(self.co_freevars)
             ^ hash(self.co_cellvars)
             ^ self.co_argcount
+            ^ self.co_posonlyargcount
             ^ self.co_kwonlyargcount
             ^ self.co_nlocals
             ^ self.co_flags
@@ -2767,6 +2767,7 @@ class code(bootstrap=True):
     def replace(
         self,
         co_argcount=-1,
+        co_posonlyargcount=-1,
         co_kwonlyargcount=-1,
         co_nlocals=-1,
         co_stacksize=-1,
@@ -2782,11 +2783,12 @@ class code(bootstrap=True):
         co_name=None,
         co_lnotab=None,
     ):
-        # TODO(T83761884): Add posonlyargcount to params of replace and args to
-        # __new__
         return code.__new__(
             code,
             co_argcount if co_argcount is not -1 else self.co_argcount,
+            co_posonlyargcount
+            if co_posonlyargcount is not -1
+            else self.co_posonlyargcount,
             co_kwonlyargcount
             if co_kwonlyargcount is not -1
             else self.co_kwonlyargcount,
@@ -3522,7 +3524,7 @@ def eval(source, globals=None, locals=None):
             flags = caller.__code__.co_flags & _compile_flags_mask
         except ValueError:
             flags = 0  # May have been called on a fresh stackframe.
-        from compiler import compile
+        from _compiler import compile
 
         if _str_check(source) or _byteslike_check(source):
             source = source.lstrip()
@@ -3567,7 +3569,7 @@ def exec(source, globals=None, locals=None):
             flags = caller.__code__.co_flags & _compile_flags_mask
         except ValueError:
             flags = 0  # May have been called on a fresh stackframe.
-        from compiler import compile
+        from _compiler import compile
 
         code = compile(source, "<string>", "exec", flags, None, _sys.flags.optimize)
     if code.co_freevars:

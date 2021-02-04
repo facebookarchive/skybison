@@ -5,6 +5,8 @@ import sys
 import types
 import unittest
 
+from test_support import supports_38_feature
+
 
 class DumpTestV3(unittest.TestCase):
     def test_dump_with_none_returns_n(self):
@@ -212,6 +214,7 @@ class DumpTestV3(unittest.TestCase):
     def test_dump_with_code(self):
         code = types.CodeType(
             1,  # argcount
+            1,  # posonlyargcount
             2,  # kwonlyargcount
             8,  # nlocals
             4,  # stacksize
@@ -229,10 +232,10 @@ class DumpTestV3(unittest.TestCase):
         )
 
         with io.BytesIO() as f:
-            self.assertEqual(marshal.dump(code, f, 3), 160)
+            self.assertEqual(marshal.dump(code, f, 3), 164)
             self.assertEqual(
                 f.getvalue(),
-                b"c\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00"
+                b"c\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00"
                 b"\x00\x00\x05\x00\x00\x00s\x03\x00\x00\x00foo(\x02\x00\x00\x00"
                 b"i\x01\x00\x00\x00i\x02\x00\x00\x00(\x02\x00\x00\x00\xf5"
                 b"\x03\x00\x00\x00foou\x03\x00\x00\x00bar(\x04\x00\x00\x00\xf5"
@@ -542,6 +545,7 @@ class DumpsTestV3(unittest.TestCase):
     def test_dumps_with_code(self):
         code = types.CodeType(
             1,  # argcount
+            1,  # posonlyargcount
             2,  # kwonlyargcount
             8,  # nlocals
             4,  # stacksize
@@ -560,7 +564,7 @@ class DumpsTestV3(unittest.TestCase):
 
         self.assertEqual(
             marshal.dumps(code, 3),
-            b"c\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00"
+            b"c\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00"
             b"\x00\x00\x05\x00\x00\x00s\x03\x00\x00\x00foo(\x02\x00\x00\x00"
             b"i\x01\x00\x00\x00i\x02\x00\x00\x00(\x02\x00\x00\x00\xf5"
             b"\x03\x00\x00\x00foou\x03\x00\x00\x00bar(\x04\x00\x00\x00\xf5"
@@ -873,9 +877,11 @@ class DumpTest(unittest.TestCase):
             self.assertEqual(marshal.dump(frozenset({"hello"}), f, 2), 15)
             self.assertEqual(f.getvalue(), b">\x01\x00\x00\x00u\x05\x00\x00\x00hello")
 
+    @supports_38_feature
     def test_dump_with_code(self):
         code = types.CodeType(
             1,  # argcount
+            1,  # posonlyargcount
             2,  # kwonlyargcount
             8,  # nlocals
             4,  # stacksize
@@ -893,10 +899,10 @@ class DumpTest(unittest.TestCase):
         )
 
         with io.BytesIO() as f:
-            self.assertEqual(marshal.dump(code, f, 2), 173)
+            self.assertEqual(marshal.dump(code, f, 2), 177)
             self.assertEqual(
                 f.getvalue(),
-                b"c\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00\x00"
+                b"c\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00\x00"
                 b"\x00\x05\x00\x00\x00s\x03\x00\x00\x00foo(\x02\x00\x00\x00i\x01"
                 b"\x00\x00\x00i\x02\x00\x00\x00(\x02\x00\x00\x00u\x03\x00\x00\x00"
                 b"foou\x03\x00\x00\x00bar(\x04\x00\x00\x00u\x04\x00\x00\x00cellu"
@@ -1179,9 +1185,11 @@ class DumpsTest(unittest.TestCase):
             b">\x01\x00\x00\x00u\x05\x00\x00\x00hello",
         )
 
+    @supports_38_feature
     def test_dumps_with_code(self):
         code = types.CodeType(
             1,  # argcount
+            1,  # posonlyargcount
             2,  # kwonlyargcount
             8,  # nlocals
             4,  # stacksize
@@ -1200,7 +1208,7 @@ class DumpsTest(unittest.TestCase):
 
         self.assertEqual(
             marshal.dumps(code, 2),
-            b"c\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00\x00"
+            b"c\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x08\x00\x00\x00\x04\x00\x00"
             b"\x00\x05\x00\x00\x00s\x03\x00\x00\x00foo(\x02\x00\x00\x00i\x01"
             b"\x00\x00\x00i\x02\x00\x00\x00(\x02\x00\x00\x00u\x03\x00\x00\x00"
             b"foou\x03\x00\x00\x00bar(\x04\x00\x00\x00u\x04\x00\x00\x00cellu"
