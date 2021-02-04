@@ -17,7 +17,7 @@ void FUNC(marshal, __init_module__)(Thread* thread, const Module& module,
 
   // Add module variables
   {
-    Object magic_number(&scope, SmallInt::fromWord(kPycMagic37b5));
+    Object magic_number(&scope, SmallInt::fromWord(kPycMagic));
     moduleAtPutById(thread, module, ID(magic_number), magic_number);
   }
 

@@ -33,7 +33,11 @@ TEST_F(MarshalReaderTest, ReadBytes) {
 TEST_F(MarshalReaderTest, ReadPycHeaderReturnsNone) {
   HandleScope scope(thread_);
   byte bytes[] =
-      "\x42\x0d\x0d\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+      "\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+  bytes[0] = static_cast<byte>(kPycMagic >> 0);
+  bytes[1] = static_cast<byte>(kPycMagic >> 8);
+  bytes[2] = static_cast<byte>(kPycMagic >> 16);
+  bytes[3] = static_cast<byte>(kPycMagic >> 24);
   Marshal::Reader reader(&scope, thread_, bytes);
   Str filename(&scope, runtime_->newStrFromCStr(""));
   EXPECT_TRUE(reader.readPycHeader(filename).isNoneType());
@@ -41,7 +45,11 @@ TEST_F(MarshalReaderTest, ReadPycHeaderReturnsNone) {
 
 TEST_F(MarshalReaderTest, ReadPycHeaderRaisesEOFError) {
   HandleScope scope(thread_);
-  byte bytes[] = "\x42\x0d\x0d\x0a\x00\x00\x00\x00\x00\x00";
+  byte bytes[] = "\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00";
+  bytes[0] = static_cast<byte>(kPycMagic >> 0);
+  bytes[1] = static_cast<byte>(kPycMagic >> 8);
+  bytes[2] = static_cast<byte>(kPycMagic >> 16);
+  bytes[3] = static_cast<byte>(kPycMagic >> 24);
   Marshal::Reader reader(&scope, thread_, bytes);
   Str filename(&scope, runtime_->newStrFromCStr(""));
   EXPECT_TRUE(raised(reader.readPycHeader(filename), LayoutId::kEOFError));

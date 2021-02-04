@@ -62,7 +62,7 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
         &filename);
   }
   int32_t magic = readLong();
-  if (magic == kPycMagic37b5) {
+  if (magic == kPycMagic) {
     if (length_ - pos_ < 12) {
       return thread_->raiseWithFmt(
           LayoutId::kEOFError,
