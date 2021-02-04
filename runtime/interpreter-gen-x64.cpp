@@ -1857,9 +1857,8 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Register r_return_value = RAX;
   Register r_scratch = RDX;
 
-  // Go to slow_path if frame->blockStackDepthReturnMode() != 0.
-  // This is equivalent to
-  // `!frame->blockStackEmpty() || frame->returnMode() != Frame::kNormal`.
+  // Go to slow_path if frame->returnMode() != Frame::kNormal;
+  // frame->blockStackDepth() should always be 0 here.
   __ cmpq(Address(kFrameReg, Frame::kBlockStackDepthReturnModeOffset),
           Immediate(0));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
@@ -1903,12 +1902,6 @@ void emitHandler<POP_BLOCK>(EmitEnv* env) {
           Address(kFrameReg, r_depth, TIMES_1, Frame::kBlockStackOffset));
   __ movl(Address(kFrameReg, Frame::kBlockStackDepthReturnModeOffset), r_depth);
 
-  // thread->setStackPointer(thread->valueStackBase() - block.level());
-  // =>   RSP = kFrameReg - (block.level() * kPointerSize)
-  __ shrq(r_block, Immediate(TryBlock::kLevelOffset));
-  __ andl(r_block, Immediate(TryBlock::kLevelMask));
-  __ negq(r_block);
-  __ leaq(RSP, Address(kFrameReg, r_block, TIMES_8, 0));
   emitNextOpcode(env);
 }
 

@@ -1,9 +1,9 @@
 import ast
-from compiler import consts38, compile as compiler_compile
-from compiler.optimizer import AstOptimizer, BIN_OPS, is_const, get_const_value
-from compiler.pyassem import PyFlowGraph37
-from compiler.pycodegen import Python37CodeGenerator
-from types import CodeType
+from compiler import compile as compiler_compile
+from compiler.optimizer import BIN_OPS, is_const, get_const_value
+from compiler.py38.optimizer import AstOptimizer38
+from compiler.pyassem import PyFlowGraph38
+from compiler.pycodegen import Python38CodeGenerator
 
 import _compiler_opcode as opcodepyro
 
@@ -22,7 +22,7 @@ def try_constant_fold_mod(format_string, right):
     return ast.Str(format_string.__mod__(r))
 
 
-class AstOptimizerPyro(AstOptimizer):
+class AstOptimizerPyro(AstOptimizer38):
     def rewrite_str_mod(self, left, right):  # noqa: C901
         format_string = left.s
         try:
@@ -194,42 +194,12 @@ class AstOptimizerPyro(AstOptimizer):
         return self.update_node(node, left=left, right=right)
 
 
-class PyroFlowGraph(PyFlowGraph37):
+class PyroFlowGraph(PyFlowGraph38):
     opcode = opcodepyro.opcode
 
-    def make_code(self, nlocals, code, consts, firstline, lnotab) -> CodeType:
-        # This function should be removed after we switched over to
-        # PyFlowGraph38 and have a real self.posonlyargcount.
-        assert not hasattr(self, "posonlyargcount")
-        posonlyargcount = 0
-        return CodeType(
-            len(self.args),
-            posonlyargcount,
-            len(self.kwonlyargs),
-            nlocals,
-            self.stacksize,
-            self.flags,
-            code,
-            consts,
-            tuple(self.names),
-            tuple(self.varnames),
-            self.filename,
-            self.name,
-            firstline,
-            lnotab,
-            tuple(self.freevars),
-            tuple(self.cellvars),
-        )
 
-
-class PyroCodeGenerator(Python37CodeGenerator):
+class PyroCodeGenerator(Python38CodeGenerator):
     flow_graph = PyroFlowGraph
-    consts = consts38
-
-    def compile_dictcomp_element(self, elt, val):
-        # For Py38+, the order of evaluation was reversed.
-        self.visit(elt)
-        self.visit(val)
 
     @classmethod
     def optimize_tree(cls, optimize: int, tree: ast.AST):

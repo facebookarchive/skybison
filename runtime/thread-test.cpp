@@ -324,7 +324,7 @@ TEST_F(ThreadTest, ManipulateValueStack) {
 TEST_F(ThreadTest, ManipulateBlockStack) {
   Frame* frame = thread_->currentFrame();
 
-  TryBlock pushed1(TryBlock::kLoop, 100, 10);
+  TryBlock pushed1(TryBlock::kFinally, 100, 10);
   frame->blockStackPush(pushed1);
 
   TryBlock pushed2(TryBlock::kExcept, 200, 20);
@@ -785,42 +785,6 @@ TEST_F(ThreadTest, BuildSet) {
   EXPECT_TRUE(setIncludes(thread_, result, str));
   Object none(&scope, NoneType::object());
   EXPECT_TRUE(setIncludes(thread_, result, none));
-}
-
-static RawObject ALIGN_16 inspect_block(Thread* thread, Arguments) {
-  // SETUP_LOOP should have pushed an entry onto the block stack.
-  TryBlock block = thread->currentFrame()->previousFrame()->blockStackPeek();
-  EXPECT_EQ(block.kind(), TryBlock::kLoop);
-  EXPECT_EQ(block.handler(), 4 + 6);  // offset after SETUP_LOOP + loop size
-  EXPECT_EQ(block.level(), 1);
-  return NoneType::object();
-}
-
-TEST_F(ThreadTest, SetupLoopAndPopBlock) {
-  HandleScope scope(thread_);
-
-  Object name(&scope, runtime_->symbols()->at(ID(dummy)));
-  Object empty_tuple(&scope, runtime_->emptyTuple());
-  Code inspect_code(
-      &scope, runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                       /*kwonlyargcount=*/0,
-                                       /*flags=*/0, inspect_block,
-                                       /*parameter_names=*/empty_tuple, name));
-  Module module(&scope, findMainModule(runtime_));
-  Function inspect_block_func(&scope, runtime_->newFunctionWithCode(
-                                          thread_, name, inspect_code, module));
-
-  Object obj(&scope, runtime_->newInt(-55));
-  Tuple consts(&scope, runtime_->newTupleWith2(inspect_block_func, obj));
-  const byte bytecode[] = {LOAD_CONST,    1, SETUP_LOOP, 6, LOAD_CONST, 0,
-                           CALL_FUNCTION, 0, POP_TOP,    0, POP_BLOCK,  0,
-                           RETURN_VALUE,  0};
-  Code code(&scope, newEmptyCode());
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setConsts(*consts);
-  code.setStacksize(4);
-
-  EXPECT_TRUE(isIntEqualsWord(runCode(code), -55));
 }
 
 TEST_F(ThreadTest, PopJumpIfFalseWithTruthy) {
@@ -1840,43 +1804,6 @@ while 1:
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "a"), 3));
 }
 
-TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
-  HandleScope scope(thread_);
-
-  Code code(&scope, newEmptyCode());
-  Object obj1(&scope, SmallInt::fromWord(0));
-  Object obj2(&scope, SmallInt::fromWord(1));
-  Object obj3(&scope, SmallInt::fromWord(3));
-  Object obj4(&scope, NoneType::object());
-  Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
-  code.setConsts(*consts);
-
-  Str name(&scope, runtime_->newStrFromCStr("a"));
-  Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
-
-  // see python code in BreakLoop.whileLoop (sans print)
-  const byte bytecode[] = {LOAD_CONST,        0,                  // 0
-                           STORE_NAME,        0,                  // a
-                           SETUP_LOOP,        22, LOAD_NAME,  0,  // a
-                           LOAD_CONST,        1,                  // 1
-                           BINARY_ADD,        0,  STORE_NAME, 0,  // a
-                           LOAD_NAME,         0,                  // a
-                           LOAD_CONST,        2,                  // 3
-                           COMPARE_OP,        2,                  // ==
-                           POP_JUMP_IF_FALSE, 6,  BREAK_LOOP, 0,
-                           JUMP_ABSOLUTE,     6,  POP_BLOCK,  0,
-                           LOAD_CONST,        3,  // None
-                           RETURN_VALUE,      0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::kNofree);
-
-  Module module(&scope, findMainModule(runtime_));
-  Dict locals(&scope, runtime_->newDict());
-  ASSERT_TRUE(thread_->exec(code, module, locals).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, locals, name), 3));
-}
-
 TEST_F(ThreadTest, BreakLoopRangeLoop) {
   const char* src = R"(
 result = []
@@ -1915,70 +1842,6 @@ for x in range(4):
   EXPECT_EQ(list_l.at(0), SmallInt::fromWord(0));
   EXPECT_EQ(list_l.at(1), SmallInt::fromWord(1));
   EXPECT_EQ(list_l.at(2), SmallInt::fromWord(2));
-}
-
-TEST_F(ThreadTest, ContinueLoopRangeLoopByteCode) {
-  HandleScope scope(thread_);
-
-  Code code(&scope, newEmptyCode());
-  Object obj1(&scope, SmallInt::fromWord(0));
-  Object obj2(&scope, SmallInt::fromWord(4));
-  Object obj3(&scope, SmallInt::fromWord(1));
-  Object obj4(&scope, SmallInt::fromWord(3));
-  Object obj5(&scope, NoneType::object());
-  Tuple consts(&scope,
-               runtime_->newTupleWithN(5, &obj1, &obj2, &obj3, &obj4, &obj5));
-  code.setConsts(*consts);
-  code.setArgcount(0);
-  code.setNlocals(2);
-
-  Object key0(&scope, runtime_->newStrFromCStr("cnt"));
-  Object key1(&scope, runtime_->newStrFromCStr("s"));
-  Tuple names(&scope, runtime_->newTupleWith2(key0, key1));
-  code.setNames(*names);
-
-  //  # python code:
-  //  cnt = 0
-  //  s = 0
-  //  while cnt < 4:
-  //      cnt += 1
-  //      if cnt == 3:
-  //          continue
-  //      s += cnt
-  //  return s
-  const byte bytecode[] = {LOAD_CONST,        0,  // 0
-                           STORE_FAST,        0,  // (cnt)
-
-                           LOAD_CONST,        0,  // 0
-                           STORE_FAST,        1,  // s
-
-                           SETUP_LOOP,        38,  // (to 48)
-                           LOAD_FAST,         0,   // (cnt)
-                           LOAD_CONST,        1,   // (4)
-                           COMPARE_OP,        0,   // (<)
-                           POP_JUMP_IF_FALSE, 46,
-
-                           LOAD_FAST,         0,                    // (cnt)
-                           LOAD_CONST,        2,                    // (1)
-                           INPLACE_ADD,       0,  STORE_FAST,   0,  // (cnt)
-
-                           LOAD_FAST,         0,  // (cnt)
-                           LOAD_CONST,        3,  // (3)
-                           COMPARE_OP,        2,  // (==)
-                           POP_JUMP_IF_FALSE, 36,
-
-                           CONTINUE_LOOP,     10,
-
-                           LOAD_FAST,         1,                    // (s)
-                           LOAD_FAST,         0,                    // (cnt)
-                           INPLACE_ADD,       0,  STORE_FAST,   1,  // (s)
-                           JUMP_ABSOLUTE,     10, POP_BLOCK,    0,
-
-                           LOAD_FAST,         1,  RETURN_VALUE, 0};
-
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-
-  EXPECT_TRUE(isIntEqualsWord(runCode(code), 7));
 }
 
 TEST_F(ThreadTest, Func2TestPyStone) {  // mimic pystone.py Func2

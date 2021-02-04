@@ -285,29 +285,10 @@ class Interpreter {
   // state.
   static void unwindExceptHandler(Thread* thread, TryBlock block);
 
-  // Pop a block off of the block stack and act appropriately.
-  //
-  // `why` should indicate the reason for the pop, and must not be
-  // Why::kException (which is handled completely within unwind()). For
-  // Why::kContinue, `value` should be the opcode's arg as a SmallInt; for
-  // Why::kReturn, it should be the value to be returned. It is ignored for
-  // other Whys.
-  //
-  // Returns true if a handler was found and the calling opcode handler should
-  // return to the dispatch loop (the "handler" is either a loop for
-  // break/continue, or a finally block for break/continue/return). Returns
-  // false if the popped block was not relevant to the given Why.
-  static bool popBlock(Thread* thread, TryBlock::Why why, RawObject value);
-
   // Pop from the block stack until a handler that cares about 'return' is
   // found, or the stack is emptied. A return value that is not `Error::error()`
   // indicates that we should exit the interpreter loop and return that value.
   static RawObject handleReturn(Thread* thread);
-
-  // Pop from the block stack until a handler that cares about 'break' or
-  // 'continue' is found.
-  static void handleLoopExit(Thread* thread, TryBlock::Why why,
-                             RawObject retval);
 
   // Opcode handlers
   //
@@ -476,13 +457,11 @@ class Interpreter {
   static Continue doWithCleanupStart(Thread* thread, word arg);
   static Continue doYieldFrom(Thread* thread, word arg);
   static Continue doYieldValue(Thread* thread, word arg);
-  static Continue doBreakLoop(Thread* thread, word arg);
   static Continue doBuildConstKeyMap(Thread* thread, word arg);
   static Continue doBuildList(Thread* thread, word arg);
   static Continue doBuildSlice(Thread* thread, word arg);
   static Continue doBuildString(Thread* thread, word arg);
   static Continue doBuildTuple(Thread* thread, word arg);
-  static Continue doContinueLoop(Thread* thread, word arg);
   static Continue doDeleteDeref(Thread* thread, word arg);
   static Continue doDeleteFast(Thread* thread, word arg);
   static Continue doDeleteGlobal(Thread* thread, word arg);
@@ -516,9 +495,7 @@ class Interpreter {
   static Continue doSetAdd(Thread* thread, word arg);
   static Continue doSetupAnnotations(Thread* thread, word arg);
   static Continue doSetupAsyncWith(Thread* thread, word arg);
-  static Continue doSetupExcept(Thread* thread, word arg);
   static Continue doSetupFinally(Thread* thread, word arg);
-  static Continue doSetupLoop(Thread* thread, word arg);
   static Continue doStoreAnnotation(Thread* thread, word arg);
   static Continue doStoreDeref(Thread* thread, word arg);
   static Continue doStoreFast(Thread* thread, word arg);

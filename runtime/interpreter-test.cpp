@@ -3618,7 +3618,7 @@ TEST_F(InterpreterTest, PopFinallyWithNonExceptHandlerRaisesSystemError) {
       // Load exc
       LOAD_CONST, 5,
       // Push a non-ExceptHandler TryBlock on the block stack
-      SETUP_EXCEPT, 0, POP_FINALLY, 0, RETURN_VALUE, 0};
+      SETUP_FINALLY, 0, POP_FINALLY, 0, RETURN_VALUE, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kSystemError,
                             "popped block is not an except handler"));
@@ -3836,13 +3836,9 @@ TEST_F(InterpreterTest, SetupAsyncWithPushesBlock) {
 
   Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(42));
-  Object none(&scope, NoneType::object());
-  Tuple consts(&scope, runtime_->newTupleWith2(obj, none));
-  code.setConsts(*consts);
-  code.setNlocals(0);
+  code.setConsts(runtime_->newTupleWith1(obj));
   const byte bytecode[] = {
-      LOAD_CONST, 0, LOAD_CONST,   1, SETUP_ASYNC_WITH, 0,
-      POP_BLOCK,  0, RETURN_VALUE, 0,
+      LOAD_CONST, 0, SETUP_ASYNC_WITH, 0, POP_BLOCK, 0, RETURN_VALUE, 0,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
   EXPECT_EQ(runCode(code), SmallInt::fromWord(42));
@@ -5657,37 +5653,37 @@ user_obj = C()
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes bytecode(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(6), FOR_ITER_ANAMORPHIC);
+  ASSERT_EQ(bytecode.byteAt(4), FOR_ITER_ANAMORPHIC);
 
   Object arg(&scope, mainModuleAt(runtime_, "list_obj"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_LIST);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_LIST);
 
   arg = mainModuleAt(runtime_, "dict_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_DICT);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_DICT);
 
   arg = mainModuleAt(runtime_, "tuple_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_TUPLE);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_TUPLE);
 
   arg = mainModuleAt(runtime_, "range_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_RANGE);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_RANGE);
 
   arg = mainModuleAt(runtime_, "str_obj");
   Str s(&scope, runtime_->newStrFromCStr(""));
   EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, arg, s), "45"));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_STR);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_STR);
 
   arg = mainModuleAt(runtime_, "gen_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 12));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_GENERATOR);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_GENERATOR);
 
   // Resetting the opcode.
   arg = mainModuleAt(runtime_, "user_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 400));
-  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_MONOMORPHIC);
+  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, FormatValueCallsDunderStr) {

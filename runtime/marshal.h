@@ -8,7 +8,7 @@ namespace py {
 
 // Magic number also used by `library/_frozen_importlib_external.py`.
 // This uses a "Y\n" suffix to be different from the "\r\n" used in CPython.
-const int32_t kPycMagic = 1003 | (int32_t{'Y'} << 16) | (int32_t{'\n'} << 24);
+const int32_t kPycMagic = 1004 | (int32_t{'Y'} << 16) | (int32_t{'\n'} << 24);
 
 class RawList;
 class RawObject;

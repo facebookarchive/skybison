@@ -24,20 +24,9 @@ class TryBlock {
   // cpython stores the opcode that pushed the block as the block kind, but only
   // 4 opcodes actually push blocks. Store the same information with fewer bits.
   enum Kind {
-    kLoop,
     kExceptHandler,
     kExcept,
     kFinally,
-  };
-
-  // Reason code for entering a finally block.
-  enum class Why {
-    kException,
-    kReturn,
-    kBreak,
-    kContinue,
-    kYield,
-    kSilenced,
   };
 
   explicit TryBlock(RawObject value) {

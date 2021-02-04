@@ -1222,46 +1222,6 @@ HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread,
   thread->setCaughtExceptionTraceback(thread->stackPop());
 }
 
-bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
-  Frame* frame = thread->currentFrame();
-  DCHECK(why != TryBlock::Why::kException, "Unsupported Why");
-
-  TryBlock block = frame->blockStackPeek();
-  if (block.kind() == TryBlock::kLoop && why == TryBlock::Why::kContinue) {
-    frame->setVirtualPC(SmallInt::cast(value).value());
-    return true;
-  }
-
-  frame->blockStackPop();
-  if (block.kind() == TryBlock::kExceptHandler) {
-    unwindExceptHandler(thread, block);
-    return false;
-  }
-  thread->stackDrop(thread->valueStackSize() - block.level());
-
-  if (block.kind() == TryBlock::kLoop) {
-    if (why == TryBlock::Why::kBreak) {
-      frame->setVirtualPC(block.handler());
-      return true;
-    }
-    return false;
-  }
-
-  if (block.kind() == TryBlock::kExcept) {
-    // Exception unwinding is handled in Interpreter::unwind() and doesn't come
-    // through here. Ignore the Except block.
-    return false;
-  }
-
-  DCHECK(block.kind() == TryBlock::kFinally, "Unexpected TryBlock kind");
-  if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
-    thread->stackPush(value);
-  }
-  thread->stackPush(SmallInt::fromWord(static_cast<word>(why)));
-  frame->setVirtualPC(block.handler());
-  return true;
-}
-
 NEVER_INLINE static bool handleReturnModes(Thread* thread, word return_mode,
                                            RawObject* retval_ptr) {
   HandleScope scope(thread);
@@ -1279,11 +1239,7 @@ NEVER_INLINE static bool handleReturnModes(Thread* thread, word return_mode,
 RawObject Interpreter::handleReturn(Thread* thread) {
   Frame* frame = thread->currentFrame();
   RawObject retval = thread->stackPop();
-  while (!frame->blockStackEmpty()) {
-    if (popBlock(thread, TryBlock::Why::kReturn, retval)) {
-      return Error::error();  // continue interpreter loop.
-    }
-  }
+  DCHECK(frame->blockStackEmpty(), "block stack should be empty");
 
   // Check whether we should exit the interpreter loop.
   word return_mode = frame->returnMode();
@@ -1297,14 +1253,6 @@ RawObject Interpreter::handleReturn(Thread* thread) {
   }
   thread->stackPush(retval);
   return Error::error();  // continue interpreter loop.
-}
-
-HANDLER_INLINE void Interpreter::handleLoopExit(Thread* thread,
-                                                TryBlock::Why why,
-                                                RawObject retval) {
-  for (;;) {
-    if (popBlock(thread, why, retval)) return;
-  }
 }
 
 RawObject Interpreter::unwind(Thread* thread) {
@@ -1338,10 +1286,7 @@ RawObject Interpreter::unwind(Thread* thread) {
       }
       thread->stackDrop(thread->valueStackSize() - block.level());
 
-      if (block.kind() == TryBlock::kLoop) continue;
-      DCHECK(block.kind() == TryBlock::kExcept ||
-                 block.kind() == TryBlock::kFinally,
-             "Unexpected TryBlock::Kind");
+      if (block.kind() != TryBlock::kFinally) continue;
 
       // Push a handler block and save the current caught exception, if any.
       frame->blockStackPush(
@@ -2287,11 +2232,6 @@ HANDLER_INLINE Continue Interpreter::doInplaceOr(Thread* thread, word) {
   return doInplaceOperation(BinaryOp::OR, thread);
 }
 
-HANDLER_INLINE Continue Interpreter::doBreakLoop(Thread* thread, word) {
-  handleLoopExit(thread, TryBlock::Why::kBreak, NoneType::object());
-  return Continue::NEXT;
-}
-
 HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
@@ -2307,20 +2247,11 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   if (exc.isNoneType()) {
     // The with block exited normally. __exit__ is just below the None.
     exit = thread->stackTop();
-    thread->stackSetTop(*exc);
-  } else if (exc.isSmallInt()) {
-    // The with block exited for a return, continue, or break. __exit__ will be
-    // below 'why' and an optional return value (depending on 'why').
-    auto why = static_cast<TryBlock::Why>(SmallInt::cast(*exc).value());
-    if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
-      exit = thread->stackPeek(1);
-      thread->stackSetAt(1, thread->stackPeek(0));
-    } else {
-      exit = thread->stackTop();
-    }
-    thread->stackSetTop(*exc);
-    exc = NoneType::object();
+    thread->stackSetTop(NoneType::object());
   } else {
+    DCHECK(thread->runtime()->isInstanceOfType(*exc) &&
+               exc.rawCast<RawType>().isBaseExceptionSubclass(),
+           "expected BaseException subclass");
     // The stack contains the caught exception, the previous exception state,
     // then __exit__. Grab __exit__ then shift everything else down.
     exit = thread->stackPeek(5);
@@ -2358,15 +2289,17 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
   HandleScope scope(thread);
   Object result(&scope, thread->stackPop());
   Object exc(&scope, thread->stackPop());
-  if (!exc.isNoneType()) {
-    Object is_true(&scope, isTrue(thread, *result));
-    if (is_true.isErrorException()) return Continue::UNWIND;
-    if (*is_true == Bool::trueObj()) {
-      thread->stackPush(
-          SmallInt::fromWord(static_cast<int>(TryBlock::Why::kSilenced)));
-    }
-  }
+  if (exc.isNoneType()) return Continue::NEXT;
 
+  Object is_true(&scope, isTrue(thread, *result));
+  if (is_true.isErrorException()) return Continue::UNWIND;
+  if (*is_true == Bool::trueObj()) {
+    Frame* frame = thread->currentFrame();
+    TryBlock block = frame->blockStackPop();
+    DCHECK(block.kind() == TryBlock::kExceptHandler, "expected kExceptHandler");
+    unwindExceptHandler(thread, block);
+    thread->stackPush(NoneType::object());
+  }
   return Continue::NEXT;
 }
 
@@ -2547,8 +2480,7 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doPopBlock(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
-  TryBlock block = frame->blockStackPop();
-  thread->setStackPointer(thread->valueStackBase() - block.level());
+  frame->blockStackPop();
   return Continue::NEXT;
 }
 
@@ -2575,56 +2507,44 @@ HANDLER_INLINE Continue Interpreter::doEndAsyncFor(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  HandleScope scope(thread);
-
-  Object status(&scope, thread->stackPop());
-  if (status.isSmallInt()) {
-    auto why = static_cast<TryBlock::Why>(SmallInt::cast(*status).value());
-    switch (why) {
-      case TryBlock::Why::kReturn:
-        return Continue::RETURN;
-      case TryBlock::Why::kContinue:
-        handleLoopExit(thread, why, thread->stackPop());
-        return Continue::NEXT;
-      case TryBlock::Why::kBreak:
-      case TryBlock::Why::kYield:
-      case TryBlock::Why::kException:
-        handleLoopExit(thread, why, NoneType::object());
-        return Continue::NEXT;
-      case TryBlock::Why::kSilenced:
-        unwindExceptHandler(thread, frame->blockStackPop());
-        return Continue::NEXT;
+  RawObject top = thread->stackPop();
+  if (top.isNoneType()) {
+    return Continue::NEXT;
+  }
+  if (top.isSmallInt()) {
+    word value = SmallInt::cast(top).value();
+    if (value == -1 && thread->hasPendingException()) {
+      return Continue::UNWIND;
     }
-    UNIMPLEMENTED("unexpected why value");
+    Frame* frame = thread->currentFrame();
+    frame->setVirtualPC(value);
+    return Continue::NEXT;
   }
-  if (thread->runtime()->isInstanceOfType(*status) &&
-      Type(&scope, *status).isBaseExceptionSubclass()) {
-    thread->setPendingExceptionType(*status);
-    thread->setPendingExceptionValue(thread->stackPop());
-    thread->setPendingExceptionTraceback(thread->stackPop());
-    return Continue::UNWIND;
-  }
-  if (!status.isNoneType()) {
-    thread->raiseWithFmt(LayoutId::kSystemError,
-                         "Bad exception given to 'finally'");
-    return Continue::UNWIND;
-  }
-
-  return Continue::NEXT;
+  DCHECK(thread->runtime()->isInstanceOfType(top) &&
+             top.rawCast<RawType>().isBaseExceptionSubclass(),
+         "expected None, SmallInt or BaseException subclass");
+  thread->setPendingExceptionType(top);
+  thread->setPendingExceptionValue(thread->stackPop());
+  thread->setPendingExceptionTraceback(thread->stackPop());
+  return Continue::UNWIND;
 }
 
 HANDLER_INLINE Continue Interpreter::doPopExcept(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
 
   TryBlock block = frame->blockStackPop();
-  if (block.kind() != TryBlock::kExceptHandler) {
-    thread->raiseWithFmt(LayoutId::kSystemError,
-                         "popped block is not an except handler");
-    return Continue::UNWIND;
-  }
+  DCHECK(block.kind() == TryBlock::kExceptHandler,
+         "popped block is not an except handler");
+  word level = block.level();
+  word current_level = thread->valueStackSize();
+  // The only things left on the stack at this point should be the exc_type,
+  // exc_value, exc_traceback values and potentially a result value.
+  DCHECK(current_level == level + 3 || current_level == level + 4,
+         "unexpected level");
+  thread->setCaughtExceptionType(thread->stackPop());
+  thread->setCaughtExceptionValue(thread->stackPop());
+  thread->setCaughtExceptionTraceback(thread->stackPop());
 
-  unwindExceptHandler(thread, block);
   return Continue::NEXT;
 }
 
@@ -4225,27 +4145,6 @@ HANDLER_INLINE Continue Interpreter::doLoadGlobalCached(Thread* thread,
   DCHECK(!ValueCell::cast(cached).isPlaceholder(),
          "cached ValueCell must not be a placeholder");
   thread->stackPush(ValueCell::cast(cached).value());
-  return Continue::NEXT;
-}
-
-HANDLER_INLINE Continue Interpreter::doContinueLoop(Thread* thread, word arg) {
-  handleLoopExit(thread, TryBlock::Why::kContinue, SmallInt::fromWord(arg));
-  return Continue::NEXT;
-}
-
-HANDLER_INLINE Continue Interpreter::doSetupLoop(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  word stack_depth = thread->valueStackSize();
-  word handler_pc = frame->virtualPC() + arg;
-  frame->blockStackPush(TryBlock(TryBlock::kLoop, handler_pc, stack_depth));
-  return Continue::NEXT;
-}
-
-HANDLER_INLINE Continue Interpreter::doSetupExcept(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
-  word stack_depth = thread->valueStackSize();
-  word handler_pc = frame->virtualPC() + arg;
-  frame->blockStackPush(TryBlock(TryBlock::kExcept, handler_pc, stack_depth));
   return Continue::NEXT;
 }
 

@@ -96,7 +96,7 @@ namespace py {
   V(INPLACE_AND, 77, doInplaceAnd)                                             \
   V(INPLACE_XOR, 78, doInplaceXor)                                             \
   V(INPLACE_OR, 79, doInplaceOr)                                               \
-  V(BREAK_LOOP, 80, doBreakLoop)                                               \
+  V(UNUSED_BYTECODE_80, 80, doInvalidBytecode)                                 \
   V(WITH_CLEANUP_START, 81, doWithCleanupStart)                                \
   V(WITH_CLEANUP_FINISH, 82, doWithCleanupFinish)                              \
   V(RETURN_VALUE, 83, doReturnValue)                                           \
@@ -135,9 +135,9 @@ namespace py {
   V(LOAD_GLOBAL, 116, doLoadGlobal)                                            \
   V(UNUSED_BYTECODE_117, 117, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_118, 118, doInvalidBytecode)                               \
-  V(CONTINUE_LOOP, 119, doContinueLoop)                                        \
-  V(SETUP_LOOP, 120, doSetupLoop)                                              \
-  V(SETUP_EXCEPT, 121, doSetupExcept)                                          \
+  V(UNUSED_BYTECODE_119, 119, doInvalidBytecode)                               \
+  V(UNUSED_BYTECODE_120, 120, doInvalidBytecode)                               \
+  V(UNUSED_BYTECODE_121, 121, doInvalidBytecode)                               \
   V(SETUP_FINALLY, 122, doSetupFinally)                                        \
   V(UNUSED_BYTECODE_123, 123, doInvalidBytecode)                               \
   V(LOAD_FAST, 124, doLoadFast)                                                \

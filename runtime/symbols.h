@@ -604,7 +604,6 @@ class Runtime;
   V(dict_values)                                                               \
   V(displayhook)                                                               \
   V(divmod)                                                                    \
-  V(dummy)                                                                     \
   V(ellipsis)                                                                  \
   V(encode)                                                                    \
   V(encoding)                                                                  \
