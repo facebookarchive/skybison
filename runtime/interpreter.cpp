@@ -4213,7 +4213,7 @@ HANDLER_INLINE Continue Interpreter::doContinueLoop(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doSetupLoop(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  word stack_depth = thread->valueStackBase() - thread->stackPointer();
+  word stack_depth = thread->valueStackSize();
   word handler_pc = frame->virtualPC() + arg;
   frame->blockStackPush(TryBlock(TryBlock::kLoop, handler_pc, stack_depth));
   return Continue::NEXT;
@@ -4229,7 +4229,7 @@ HANDLER_INLINE Continue Interpreter::doSetupExcept(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doSetupFinally(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  word stack_depth = thread->valueStackBase() - thread->stackPointer();
+  word stack_depth = thread->valueStackSize();
   word handler_pc = frame->virtualPC() + arg;
   frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   return Continue::NEXT;
@@ -4675,7 +4675,7 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
   }
   if (result.isErrorException()) return Continue::UNWIND;
 
-  word stack_depth = thread->valueStackBase() - thread->stackPointer();
+  word stack_depth = thread->valueStackSize();
   Frame* frame = thread->currentFrame();
   word handler_pc = frame->virtualPC() + arg;
   frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
