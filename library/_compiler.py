@@ -1,5 +1,5 @@
 import ast
-from compiler import compile as compiler_compile
+from compiler import consts38, compile as compiler_compile
 from compiler.optimizer import AstOptimizer, BIN_OPS, is_const, get_const_value
 from compiler.pyassem import PyFlowGraph37
 from compiler.pycodegen import Python37CodeGenerator
@@ -224,6 +224,7 @@ class PyroFlowGraph(PyFlowGraph37):
 
 class PyroCodeGenerator(Python37CodeGenerator):
     flow_graph = PyroFlowGraph
+    consts = consts38
 
     def compile_dictcomp_element(self, elt, val):
         # For Py38+, the order of evaluation was reversed.

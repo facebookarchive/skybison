@@ -31,7 +31,7 @@ INIT_MODULE_NAME = "__init_module__"
 
 # Pyro specific flag to mark code objects for builtin functions.
 # (see also `runtime/objects.h`)
-CO_BUILTIN = 0x200000
+CO_BUILTIN = 0x2000000
 
 
 def builtin_function_template():
