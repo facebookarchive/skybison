@@ -3,7 +3,7 @@ from __future__ import annotations
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from typing import Callable, Dict, Optional, TypeVar, Tuple
+    from typing import Callable, Dict, Optional
 
     TOpcodeHandler = Callable[["Optimizer", int, int, int, int, int], Optional[int]]
 
@@ -45,70 +45,74 @@ def check_complexity(obj, limit):
     return limit
 
 
-def safe_multiply(l, r, limits=DefaultLimits):
-    if isinstance(l, int) and isinstance(r, int) and l and r:
-        lbits = l.bit_length()
-        rbits = r.bit_length()
+def safe_multiply(left, right, limits=DefaultLimits):
+    if isinstance(left, int) and isinstance(right, int) and left and right:
+        lbits = left.bit_length()
+        rbits = right.bit_length()
         if lbits + rbits > limits.MAX_INT_SIZE:
             raise OverflowError()
-    elif isinstance(l, int) and isinstance(r, (tuple, frozenset)):
-        rsize = len(r)
+    elif isinstance(left, int) and isinstance(right, (tuple, frozenset)):
+        rsize = len(right)
         if rsize:
-            if l < 0 or l > limits.MAX_COLLECTION_SIZE / rsize:
+            if left < 0 or left > limits.MAX_COLLECTION_SIZE / rsize:
                 raise OverflowError()
-            if l:
-                if check_complexity(r, limits.MAX_TOTAL_ITEMS / l) < 0:
+            if left:
+                if check_complexity(right, limits.MAX_TOTAL_ITEMS / left) < 0:
                     raise OverflowError()
-    elif isinstance(l, int) and isinstance(r, (str, bytes)):
-        rsize = len(r)
+    elif isinstance(left, int) and isinstance(right, (str, bytes)):
+        rsize = len(right)
         if rsize:
-            if l < 0 or l > limits.MAX_STR_SIZE / rsize:
+            if left < 0 or left > limits.MAX_STR_SIZE / rsize:
                 raise OverflowError()
-    elif isinstance(r, int) and isinstance(l, (tuple, frozenset, str, bytes)):
-        return safe_multiply(r, l, limits)
+    elif isinstance(right, int) and isinstance(left, (tuple, frozenset, str, bytes)):
+        return safe_multiply(right, left, limits)
 
-    return l * r
+    return left * right
 
 
-def safe_power(l, r, limits=DefaultLimits):
-    if isinstance(l, int) and isinstance(r, int) and l and r > 0:
-        lbits = l.bit_length()
-        if lbits > limits.MAX_INT_SIZE / r:
+def safe_power(left, right, limits=DefaultLimits):
+    if isinstance(left, int) and isinstance(right, int) and left and right > 0:
+        lbits = left.bit_length()
+        if lbits > limits.MAX_INT_SIZE / right:
             raise OverflowError()
 
-    return l ** r
+    return left ** right
 
 
-def safe_mod(l, r, limits=DefaultLimits):
-    if isinstance(l, bytes):
+def safe_mod(left, right, limits=DefaultLimits):
+    if isinstance(left, (str, bytes)):
         raise OverflowError()
 
-    return l % r
+    return left % right
 
 
-def safe_lshift(l, r, limits=DefaultLimits):
-    if isinstance(l, int) and isinstance(r, int) and l and r:
-        lbits = l.bit_length()
-        if r < 0 or r > limits.MAX_INT_SIZE or lbits > limits.MAX_INT_SIZE - r:
+def safe_lshift(left, right, limits=DefaultLimits):
+    if isinstance(left, int) and isinstance(right, int) and left and right:
+        lbits = left.bit_length()
+        if (
+            right < 0
+            or right > limits.MAX_INT_SIZE
+            or lbits > limits.MAX_INT_SIZE - right
+        ):
             raise OverflowError()
 
-    return l << r
+    return left << right
 
 
 BINARY_OPS: Dict[str, object] = {
     "BINARY_POWER": safe_power,
     "BINARY_MULTIPLY": safe_multiply,
-    "BINARY_TRUE_DIVIDE": lambda l, r: l / r,
-    "BINARY_FLOOR_DIVIDE": lambda l, r: l // r,
+    "BINARY_TRUE_DIVIDE": lambda left, right: left / right,
+    "BINARY_FLOOR_DIVIDE": lambda left, right: left // right,
     "BINARY_MODULO": safe_mod,
-    "BINARY_ADD": lambda l, r: l + r,
-    "BINARY_SUBTRACT": lambda l, r: l - r,
-    "BINARY_SUBSCR": lambda l, r: l[r],
+    "BINARY_ADD": lambda left, right: left + right,
+    "BINARY_SUBTRACT": lambda left, right: left - right,
+    "BINARY_SUBSCR": lambda left, right: left[right],
     "BINARY_LSHIFT": safe_lshift,
-    "BINARY_RSHIFT": lambda l, r: l >> r,
-    "BINARY_AND": lambda l, r: l & r,
-    "BINARY_XOR": lambda l, r: l ^ r,
-    "BINARY_OR": lambda l, r: l | r,
+    "BINARY_RSHIFT": lambda left, right: left >> right,
+    "BINARY_AND": lambda left, right: left & right,
+    "BINARY_XOR": lambda left, right: left ^ right,
+    "BINARY_OR": lambda left, right: left | right,
 }
 
 
@@ -159,7 +163,6 @@ class Optimizer:
         lnotab: bytes,
         opcode,
     ) -> None:
-        # TODO(emacs): CODEUNIT_SIZE
         assert len(codestr) % 2 == 0
         self.consts = list(consts)
         self.codestr = bytearray(codestr)
@@ -357,7 +360,6 @@ class Optimizer:
             block_end += 1
         if block_end > instr_index + 1:
             self.fill_nops(instr_index + 1, block_end)
-            nexti = self.find_op(block_end)
 
     @ophandler(*UNARY_OPS)
     def op_unary_constants(self, instr_index, opcode, op_start, nextop, nexti):
@@ -574,11 +576,11 @@ class Optimizer:
         )
 
     def fold_binops_on_constants(self, c_start, opcode_end, opcode):
-        l = self.const_stack[-2]
-        r = self.const_stack[-1]
+        left = self.const_stack[-2]
+        right = self.const_stack[-1]
         try:
             opname = self.opcode.opname[opcode]
-            v = BINARY_OPS[opname](l, r)
+            v = BINARY_OPS[opname](left, right)
         except Exception:
             return -1
 

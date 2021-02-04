@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import ast
 import sys
-import types
 
 from .consts import (
     SC_CELL,
@@ -258,7 +257,6 @@ class GenExprScope(FunctionScope):
     __counter = 1
 
     def __init__(self, module, klass=None, name="<genexpr>", lineno=0):
-        i = self.__counter
         self.__counter += 1
         self.__super_init(name, module, klass, lineno=lineno)
         self.add_param(".0")
@@ -274,7 +272,6 @@ class LambdaScope(FunctionScope):
     __counter = 1
 
     def __init__(self, module, klass=None, lineno=0):
-        i = self.__counter
         self.__counter += 1
         self.__super_init("<lambda>", module, klass, lineno=lineno)
 

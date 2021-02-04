@@ -76,7 +76,7 @@ class AstOptimizer(ASTRewriter):
             val = get_const_value(op)
             try:
                 return copy_location(Constant(conv(val)), node)
-            except:
+            except Exception:
                 pass
         elif (
             isinstance(node.op, ast.Not)
@@ -91,20 +91,20 @@ class AstOptimizer(ASTRewriter):
         return self.update_node(node, operand=op)
 
     def visitBinOp(self, node: ast.BinOp) -> ast.expr:
-        l = self.visit(node.left)
-        r = self.visit(node.right)
+        left = self.visit(node.left)
+        right = self.visit(node.right)
 
-        if is_const(l) and is_const(r):
+        if is_const(left) and is_const(right):
             handler = BIN_OPS.get(type(node.op))
             if handler is not None:
-                lval = get_const_value(l)
-                rval = get_const_value(r)
+                lval = get_const_value(left)
+                rval = get_const_value(right)
                 try:
                     return copy_location(Constant(handler(lval, rval)), node)
-                except:
+                except Exception:
                     pass
 
-        return self.update_node(node, left=l, right=r)
+        return self.update_node(node, left=left, right=right)
 
     def makeConstTuple(self, elts: Iterable[ast.expr]) -> Optional[Constant]:
         if all(is_const(elt) for elt in elts):
@@ -137,7 +137,7 @@ class AstOptimizer(ASTRewriter):
                 return copy_location(
                     Constant(get_const_value(value)[get_const_value(slice.value)]), node
                 )
-            except:
+            except Exception:
                 pass
 
         return self.update_node(node, value=value, slice=slice)

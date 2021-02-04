@@ -1,7 +1,7 @@
 # pyre-unsafe
 import ast
 from ast import AST, copy_location
-from typing import Any, Iterable, Sequence, TypeVar, Union
+from typing import Any, Sequence, TypeVar, Union
 
 
 # XXX should probably rename ASTVisitor to ASTWalker
@@ -38,7 +38,7 @@ class ASTVisitor:
                     self.visit(item, *args)
             return
 
-        for field, value in ast.iter_fields(node):
+        for _field, value in ast.iter_fields(node):
             if isinstance(value, list):
                 for item in value:
                     if isinstance(item, ast.AST):

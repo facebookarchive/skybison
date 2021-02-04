@@ -10,26 +10,13 @@ import sys
 from ast import AST, ClassDef
 from builtins import compile as builtin_compile
 from contextlib import contextmanager
-from io import StringIO
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    from typing import Iterable, List, Optional, Sequence, Union
-
-from . import config, future, misc, pyassem, symbols
+from . import consts36, consts38, future, misc, pyassem, symbols
 from .consts import (
     CO_ASYNC_GENERATOR,
     CO_COROUTINE,
-    CO_FUTURE_ABSOLUTE_IMPORT,
-    CO_FUTURE_ANNOTATIONS,
-    CO_FUTURE_BARRY_AS_BDFL,
-    CO_FUTURE_DIVISION,
-    CO_FUTURE_GENERATOR_STOP,
-    CO_FUTURE_PRINT_FUNCTION,
-    CO_FUTURE_WITH_STATEMENT,
     CO_GENERATOR,
     CO_NESTED,
-    CO_NEWLOCALS,
     CO_VARARGS,
     CO_VARKEYWORDS,
     SC_CELL,
@@ -37,8 +24,6 @@ from .consts import (
     SC_GLOBAL_EXPLICIT,
     SC_GLOBAL_IMPLICIT,
     SC_LOCAL,
-    PyCF_COMPILE_MASK,
-    PyCF_MASK,
     PyCF_MASK_OBSOLETE,
     PyCF_ONLY_AST,
     PyCF_SOURCE_IS_UTF8,
@@ -50,6 +35,9 @@ from .symbols import SymbolVisitor
 from .unparse import to_expr
 from .visitor import ASTVisitor, walk
 
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import List, Optional, Sequence, Union
 
 try:
     import _parser  # pyre-ignore[21]
@@ -95,16 +83,14 @@ def compileFile(filename, display=0, compiler=None, modname=_DEFAULT_MODNAME):
     # same effect is to call marshal and then skip the code.
     fileinfo = os.stat(filename)
 
-    f = open(filename, "U")
-    buf = f.read()
-    f.close()
+    with open(filename, "U") as f:
+        buf = f.read()
     code = compile(buf, filename, "exec", compiler=compiler, modname=modname)
-    f = open(filename + "c", "wb")
-    hdr = make_header(int(fileinfo.st_mtime), fileinfo.st_size)
-    f.write(importlib.util.MAGIC_NUMBER)
-    f.write(hdr)
-    marshal.dump(code, f)
-    f.close()
+    with open(filename + "c", "wb") as f:
+        hdr = make_header(int(fileinfo.st_mtime), fileinfo.st_size)
+        f.write(importlib.util.MAGIC_NUMBER)
+        f.write(hdr)
+        marshal.dump(code, f)
 
 
 def compile(
@@ -128,7 +114,7 @@ def compile(
 
 
 def parse(source, filename, mode, flags):
-    return parse_callable(source, filename, mode, (flags & PyCF_MASK) | PyCF_ONLY_AST)
+    return parse_callable(source, filename, mode, flags | PyCF_ONLY_AST)
 
 
 def make_compiler(
@@ -145,7 +131,11 @@ def make_compiler(
     if mode not in ("single", "exec", "eval"):
         raise ValueError("compile() mode must be 'exec', 'eval' or 'single'")
 
-    if flags & ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK):
+    if generator is None:
+        generator = get_default_generator()
+
+    consts = generator.consts
+    if flags & ~(consts.PyCF_MASK | PyCF_MASK_OBSOLETE | consts.PyCF_COMPILE_MASK):
         raise ValueError("compile(): unrecognised flags", hex(flags))
 
     flags |= PyCF_SOURCE_IS_UTF8
@@ -153,13 +143,10 @@ def make_compiler(
     if isinstance(source, ast.AST):
         tree = source
     else:
-        tree = parse(source, filename, mode, flags)
+        tree = parse(source, filename, mode, flags & consts.PyCF_MASK)
 
     if flags & PyCF_ONLY_AST:
         return tree
-
-    if generator is None:
-        generator = get_default_generator()
 
     return generator.make_code_gen(
         modname,
@@ -206,6 +193,7 @@ class CodeGenerator(ASTVisitor):
     class_name = None  # provide default for instance variable
     future_flags = 0
     flow_graph = pyassem.PyFlowGraph
+    consts = consts36
 
     def __init__(
         self,
@@ -331,15 +319,6 @@ class CodeGenerator(ASTVisitor):
         if hasattr(node, "lineno") and node.lineno != self.graph.lineno:
             self.set_lineno(node)
 
-    def get_docstring(self, node):
-        if (
-            not self.strip_docstrings
-            and node.body
-            and isinstance(node.body[0], ast.Expr)
-            and isinstance(node.body[0].value, ast.Str)
-        ):
-            return node.body[0].value.s
-
     def skip_docstring(self, body):
         """Given list of statements, representing body of a function, class,
         or module, skip docstring, if any.
@@ -363,12 +342,13 @@ class CodeGenerator(ASTVisitor):
         self.emit("RETURN_VALUE")
 
     def findFutures(self, node):
-        future_flags = self.flags & PyCF_MASK
+        consts = self.consts
+        future_flags = self.flags & consts.PyCF_MASK
         for feature in future.find_futures(node):
             if feature == "generator_stop":
-                future_flags |= CO_FUTURE_GENERATOR_STOP
+                future_flags |= consts.CO_FUTURE_GENERATOR_STOP
             elif feature == "barry_as_FLUFL":
-                future_flags |= CO_FUTURE_BARRY_AS_BDFL
+                future_flags |= consts.CO_FUTURE_BARRY_AS_BDFL
         return future_flags
 
     def visitModule(self, node):
@@ -501,7 +481,7 @@ class CodeGenerator(ASTVisitor):
 
         self._makeClosure(gen, flags)
 
-        for i in range(ndecorators):
+        for _ in range(ndecorators):
             self.emit("CALL_FUNCTION", 1)
 
     def annotate_args(self, args: ast.arguments) -> List[str]:
@@ -563,7 +543,7 @@ class CodeGenerator(ASTVisitor):
 
         self._call_helper(2, node.bases, node.keywords)
 
-        for i in range(len(node.decorator_list)):
+        for _ in range(len(node.decorator_list)):
             self.emit("CALL_FUNCTION", 1)
 
         self.storeName(node.name)
@@ -581,7 +561,7 @@ class CodeGenerator(ASTVisitor):
         test_const = self.get_bool_const(test)
 
         # Emulate co_firstlineno behavior of C compiler
-        if test_const == False and not node.orelse:
+        if test_const is False and not node.orelse:
             self.graph.maybeEmitSetLineno()
 
         end = self.newBlock("if_end")
@@ -592,14 +572,14 @@ class CodeGenerator(ASTVisitor):
         if test_const is None:
             self.compileJumpIf(test, orelse or end, False)
 
-        with self.maybeEmit(test_const != False):
+        with self.maybeEmit(test_const is not False):
             self.nextBlock()
             self.visit(node.body)
 
         if node.orelse:
             if test_const is None:
                 self.emit("JUMP_FORWARD", end)
-            with self.maybeEmit(test_const != True):
+            with self.maybeEmit(test_const is not True):
                 self.nextBlock(orelse)
                 self.visit(node.orelse)
 
@@ -1215,25 +1195,7 @@ class CodeGenerator(ASTVisitor):
         self.emit("POP_TOP")
 
     def emit_try_finally(self, node, try_body, finalbody, except_protect=False):
-        body = self.newBlock()
-        final = self.newBlock()
-        self.emit("SETUP_FINALLY", final)
-        self.nextBlock(body)
-        self.setups.push((TRY_FINALLY, body))
-
-        try_body()
-
-        self.emit("POP_BLOCK")
-        self.setups.pop()
-        if except_protect:
-            self.emit("POP_EXCEPT")
-        self.emit("LOAD_CONST", None)
-        self.nextBlock(final)
-        self.setups.push((END_FINALLY, final))
-        finalbody()
-        self.emit("END_FINALLY")
-        self.setups.pop()
-        self.nextBlock(end)
+        raise NotImplementedError("missing overridde")
 
     def visitWith(self, node):
         self.set_lineno(node)
@@ -1619,7 +1581,7 @@ class CodeGenerator(ASTVisitor):
         nkwelts = len(kwargs)
         # the number of tuples and dictionaries on the stack
         nsubkwargs = nsubargs = 0
-        nseen = argcnt  #  the number of positional arguments on the stack
+        nseen = argcnt  # the number of positional arguments on the stack
         for arg in args:
             if isinstance(arg, ast.Starred):
                 if nseen:
@@ -2222,16 +2184,18 @@ class Python37CodeGenerator(CodeGenerator):
         self.emit("CALL_METHOD", len(node.args))
 
     def findFutures(self, node):
-        future_flags = self.flags & PyCF_MASK
+        consts = self.consts
+        future_flags = self.flags & consts.PyCF_MASK
         for feature in future.find_futures(node):
             if feature == "barry_as_FLUFL":
-                future_flags |= CO_FUTURE_BARRY_AS_BDFL
+                future_flags |= consts.CO_FUTURE_BARRY_AS_BDFL
             elif feature == "annotations":
-                future_flags |= CO_FUTURE_ANNOTATIONS
+                future_flags |= consts.CO_FUTURE_ANNOTATIONS
         return future_flags
 
     def _visitAnnotation(self, node):
-        if self.module_gen.future_flags & CO_FUTURE_ANNOTATIONS:
+        consts = self.consts
+        if self.module_gen.future_flags & consts.CO_FUTURE_ANNOTATIONS:
             self.emit("LOAD_CONST", to_expr(node))
         else:
             self.visit(node)
@@ -2376,6 +2340,7 @@ class Entry:
 
 class Python38CodeGenerator(Python37CodeGenerator):
     flow_graph = pyassem.PyFlowGraph38
+    consts = consts38
 
     @classmethod
     def optimize_tree(cls, optimize: int, tree: AST):
@@ -2424,8 +2389,8 @@ class Python38CodeGenerator(Python37CodeGenerator):
 
         self.push_loop(WHILE_LOOP, loop, after)
 
-        if test_const == False:
-            with self.noEmit() as emit:
+        if test_const is False:
+            with self.noEmit():
                 self.visit(node.test)
                 self.visit(node.body)
             self.pop_loop()
@@ -2433,20 +2398,20 @@ class Python38CodeGenerator(Python37CodeGenerator):
                 self.visit(node.orelse)
             self.nextBlock(after)
             return
-        elif test_const == True:
+        elif test_const is True:
             # emulate co_firstlineno behavior of C compiler
             self.graph.maybeEmitSetLineno()
 
         self.nextBlock(loop)
 
-        with self.maybeEmit(test_const != True):
+        with self.maybeEmit(test_const is not True):
             self.compileJumpIf(node.test, else_ or after, False)
 
         self.nextBlock(label="while_body")
         self.visit(node.body)
         self.emit("JUMP_ABSOLUTE", loop)
 
-        with self.maybeEmit(test_const != True):
+        with self.maybeEmit(test_const is not True):
             self.nextBlock(else_ or after)  # or just the POPs if not else clause
 
         self.pop_loop()
@@ -2557,6 +2522,10 @@ class Python38CodeGenerator(Python37CodeGenerator):
             "'continue' not properly in loop", self.syntax_error_position(node)
         )
 
+    def unwind_setup_entries(self, preserve_tos: bool) -> None:
+        for e in reversed(self.setups):
+            self.unwind_setup_entry(e, preserve_tos)
+
     def visitReturn(self, node):
         self.checkReturn(node)
 
@@ -2565,8 +2534,7 @@ class Python38CodeGenerator(Python37CodeGenerator):
         preserve_tos = bool(node.value and not isinstance(node.value, ast.Constant))
         if preserve_tos:
             self.visit(node.value)
-        for e in reversed(self.setups):
-            self.unwind_setup_entry(e, preserve_tos)
+        self.unwind_setup_entries(preserve_tos)
         if not node.value:
             self.emit("LOAD_CONST", None)
         elif not preserve_tos:

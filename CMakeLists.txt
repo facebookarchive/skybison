@@ -355,6 +355,8 @@ set(
   library/compiler/__main__.py
   library/compiler/config.py
   library/compiler/consts.py
+  library/compiler/consts36.py
+  library/compiler/consts38.py
   library/compiler/future.py
   library/compiler/misc.py
   library/compiler/opcode36.py

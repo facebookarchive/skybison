@@ -4,9 +4,7 @@ import importlib.util
 import marshal
 import os
 import re
-import sys
-from os import path
-from test.test_compiler.dis_stable import Disassembler  # pyre-ignore
+from dis import dis
 
 from . import pycodegen, static
 
@@ -16,11 +14,11 @@ coding_re = re.compile(rb"^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
 
 def open_with_coding(fname):
     with open(fname, "rb") as f:
-        l = f.readline()
-        m = coding_re.match(l)
+        line = f.readline()
+        m = coding_re.match(line)
         if not m:
-            l = f.readline()
-            m = coding_re.match(l)
+            line = f.readline()
+            m = coding_re.match(line)
         encoding = "utf-8"
         if m:
             encoding = m.group(1).decode()
@@ -71,7 +69,7 @@ else:
     )
 
 if args.dis:
-    Disassembler().dump_code(codeobj, None)
+    dis(codeobj)
 
 if args.c:
     if args.output:

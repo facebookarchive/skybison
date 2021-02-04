@@ -16,3 +16,5 @@ compileFile(filename)
 
 from .pycodegen import compile, compileFile
 from .visitor import walk
+
+__all__ = ("compile", "compileFile", "walk")

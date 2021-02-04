@@ -53,7 +53,6 @@ class Optimizer38(Optimizer):
             block_end += 1
         if block_end > instr_index + 1:
             self.fill_nops(instr_index + 1, block_end)
-            nexti = self.find_op(block_end)
 
     op_fold_jumps_to_uncond_jumps = ophandler(
         "POP_JUMP_IF_FALSE",

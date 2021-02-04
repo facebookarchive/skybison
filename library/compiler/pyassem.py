@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import sys
-import types
 from contextlib import contextmanager
 from types import CodeType
-from typing import Any, Generator, List, Optional, Sequence
+from typing import Generator, List, Optional
 
-from . import misc, opcode36, opcode37, opcode38
-from .consts import CO_NEWLOCALS, CO_OPTIMIZED, CO_VARARGS, CO_VARKEYWORDS
+from . import opcode36, opcode37, opcode38
+from .consts import CO_NEWLOCALS, CO_OPTIMIZED
 from .peephole import Optimizer
 from .py38.peephole import Optimizer38
 
 
 try:
-    import cinder  # pyre-ignore
+    import cinder  # pyre-ignore # noqa: F401
 
     MAX_BYTECODE_OPT_ITERS = 5
 except ImportError:
@@ -242,10 +241,10 @@ class FlowGraph:
         return self.entry
 
     def getContainedGraphs(self):
-        l = []
+        result = []
         for b in self.getBlocks():
-            l.extend(b.getContainedGraphs())
-        return l
+            result.extend(b.getContainedGraphs())
+        return result
 
 
 class Block:
@@ -622,30 +621,6 @@ class PyFlowGraph(FlowGraph):
                     inst.ioparg = offset
         self.stage = FLAT
 
-    def convertArgs(self):
-        """Convert arguments from symbolic to concrete form"""
-        assert self.stage == RAW
-        # Docstring is first entry in co_consts for normal functions
-        # (Other types of code objects deal with docstrings in different
-        # manner, e.g. lambdas and comprehensions don't have docstrings,
-        # classes store them as __doc__ attribute.
-        if self.name == "<lambda>":
-            self.consts[self.get_const_key(None)] = 0
-        elif not self.name.startswith("<") and not self.klass:
-            if self.docstring is not None:
-                self.consts[self.get_const_key(self.docstring)] = 0
-            else:
-                self.consts[self.get_const_key(None)] = 0
-        self.sort_cellvars()
-
-        for b in self.getBlocksInOrder():
-            for instr in b.insts:
-                conv = self._converters.get(instr.opname)
-                if conv:
-                    instr.oparg = conv(self, instr.oparg)
-
-        self.stage = CONV
-
     def sort_cellvars(self):
         self.closure = self.cellvars + self.freevars
 
@@ -660,7 +635,7 @@ class PyFlowGraph(FlowGraph):
         """
         t = type(name)
         for i in range(len(list)):
-            if t == type(list[i]) and list[i] == name:
+            if t is type(list[i]) and list[i] == name:  # noqa: E721
                 return i
         end = len(list)
         list.append(name)
@@ -740,7 +715,6 @@ class PyFlowGraph(FlowGraph):
         "LOAD_ATTR": _convert_NAME,
         "DELETE_ATTR": _convert_NAME,
         "LOAD_METHOD": _convert_NAME,
-        "RAISE_IF_NONE": _convert_NAME,
         "LOAD_DEREF": _convert_DEREF,
         "STORE_DEREF": _convert_DEREF,
         "DELETE_DEREF": _convert_DEREF,
@@ -1035,7 +1009,7 @@ class LineAddrTable:
                 push(addr_delta)
                 push(cast_signed_byte_to_unsigned(k))
                 addr_delta = 0
-                for j in range(ncodes - 1):
+                for _ in range(ncodes - 1):
                     push(0)
                     push(cast_signed_byte_to_unsigned(k))
 

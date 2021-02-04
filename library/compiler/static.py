@@ -21,7 +21,6 @@ from ast import (
     ClassDef,
     Compare,
     Constant,
-    Dict as astDict,
     DictComp,
     Ellipsis,
     For,
@@ -37,14 +36,12 @@ from ast import (
     IsNot,
     JoinedStr,
     Lambda,
-    List,
     ListComp,
     Module,
     Name,
     NameConstant,
     Num,
     Return,
-    Set as astSet,
     SetComp,
     Slice,
     Starred,
@@ -58,9 +55,7 @@ from ast import (
     YieldFrom,
     cmpop,
     expr,
-    stmt,
 )
-from collections import OrderedDict
 from contextlib import contextmanager
 from types import CodeType, MethodDescriptorType
 from typing import (
@@ -84,17 +79,16 @@ from typing import (
 
 from __static__ import chkdict  # pyre-ignore[21]: unknown module
 
-from . import symbols, opcode37static, opcode38static
-from .consts import CO_STATICALLY_COMPILED, SC_LOCAL, CO_NO_FRAME, CO_TINY_FRAME
+from . import symbols, opcode38static
+from .consts import SC_LOCAL
 from .opcodebase import Opcode
 from .optimizer import AstOptimizer
-from .pyassem import Block, IndexedSet, PyFlowGraph, PyFlowGraph37, PyFlowGraph38
+from .pyassem import Block, PyFlowGraph, PyFlowGraph38
 from .pycodegen import (
     AugAttribute,
     AugName,
     AugSubscript,
     CodeGenerator,
-    Python37CodeGenerator,
     Python38CodeGenerator,
     compile,
     wrap_aug,
@@ -106,7 +100,7 @@ from .visitor import ASTVisitor
 
 try:
     from xxclassloader import spamobj  # pyre-ignore[21]: unknown module
-except:
+except ImportError:
     spamobj = None
 
 
@@ -119,15 +113,16 @@ def exec_static(
     code = compile(
         source, "<module>", "exec", compiler=StaticCodeGenerator, modname=modname
     )
-    exec(code, locals, globals)
+    exec(code, locals, globals)  # noqa: P204
 
 
-INT8_TYPE: IntType
-INT16_TYPE: IntType
-INT32_TYPE: IntType
-INT64_TYPE: IntType
-INT64_VALUE: IntInstance
-INT_TYPES: Sequence[IntType]
+CBOOL_TYPE: CIntType
+INT8_TYPE: CIntType
+INT16_TYPE: CIntType
+INT32_TYPE: CIntType
+INT64_TYPE: CIntType
+INT64_VALUE: CIntInstance
+SIGNED_CINT_TYPES: Sequence[CIntType]
 INT_TYPE: NumClass
 INT_EXACT_TYPE: NumClass
 FLOAT_TYPE: NumClass
@@ -152,7 +147,7 @@ TYPE_TYPE: Class
 ARG_TYPE: Class
 SLICE_TYPE: Class
 
-CHAR_TYPE: IntType
+CHAR_TYPE: CIntType
 DOUBLE_TYPE: DoubleType
 
 RESOLVED_OBJECT_TYPE: ResolvedTypeRef
@@ -316,6 +311,7 @@ class SymbolTable:
                 "box": BoxFunction(FUNCTION_TYPE),
                 "cast": CastFunction(FUNCTION_TYPE),
                 "size_t": INT64_TYPE,
+                "cbool": CBOOL_TYPE,
                 "int8": INT8_TYPE,
                 "int16": INT16_TYPE,
                 "int32": INT32_TYPE,
@@ -336,7 +332,7 @@ class SymbolTable:
         )
 
         if SPAM_OBJ is not None:
-            self.modules["xxclassloader"] = mt = ModuleTable(
+            self.modules["xxclassloader"] = ModuleTable(
                 "xxclassloader",
                 self,
                 {"spamobj": SPAM_OBJ},
@@ -378,7 +374,7 @@ class SymbolTable:
         graph = StaticCodeGenerator.flow_graph(
             name, filename, s.scopes[tree], peephole_enabled=True
         )
-        graph.setFlag(CO_STATICALLY_COMPILED)
+        graph.setFlag(StaticCodeGenerator.consts.CO_STATICALLY_COMPILED)
 
         code_gen = StaticCodeGenerator(None, tree, s, graph, self, name, optimize)
         code_gen.visit(tree)
@@ -540,10 +536,10 @@ class Value:
 
     def check_args_for_primitives(self, node: ast.Call, visitor: TypeBinder) -> None:
         for arg in node.args:
-            if isinstance(visitor.get_type(arg), Primitive):
+            if isinstance(visitor.get_type(arg), CInstance):
                 raise visitor.syntax_error("Call argument cannot be a primitive", arg)
         for arg in node.keywords:
-            if isinstance(visitor.get_type(arg.value), Primitive):
+            if isinstance(visitor.get_type(arg.value), CInstance):
                 raise visitor.syntax_error(
                     "Call argument cannot be a primitive", arg.value
                 )
@@ -564,21 +560,21 @@ class Value:
         raise visitor.syntax_error(f"cannot index {self.klass.name}", node)
 
     def emit_subscr(
-        self, node: ast.Subscript, aug_flag: bool, code_gen: Static37CodeGenerator
+        self, node: ast.Subscript, aug_flag: bool, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.defaultVisit(node, aug_flag)
 
     def emit_store_subscr(
-        self, node: ast.Subscript, code_gen: Static37CodeGenerator
+        self, node: ast.Subscript, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.emit("ROT_THREE")
         code_gen.emit("STORE_SUBSCR")
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         code_gen.defaultVisit(node)
 
     def emit_attr(
-        self, node: Union[ast.Attribute, AugAttribute], code_gen: Static37CodeGenerator
+        self, node: Union[ast.Attribute, AugAttribute], code_gen: Static38CodeGenerator
     ) -> None:
         if isinstance(node.ctx, ast.Store):
             code_gen.emit("STORE_ATTR", code_gen.mangle(node.attr))
@@ -609,7 +605,7 @@ class Value:
     ) -> bool:
         raise visitor.syntax_error(f"cannot reverse  with {self.klass.name}", node)
 
-    def emit_compare(self, op: cmpop, code_gen: Static37CodeGenerator) -> None:
+    def emit_compare(self, op: cmpop, code_gen: Static38CodeGenerator) -> None:
         code_gen.defaultEmitCompare(op)
 
     def bind_binop(
@@ -631,10 +627,10 @@ class Value:
             f"cannot reverse unary op with {self.klass.name}", node
         )
 
-    def emit_binop(self, node: ast.BinOp, code_gen: Static37CodeGenerator) -> None:
+    def emit_binop(self, node: ast.BinOp, code_gen: Static38CodeGenerator) -> None:
         code_gen.defaultVisit(node)
 
-    def emit_forloop(self, node: ast.For, code_gen: Static37CodeGenerator) -> None:
+    def emit_forloop(self, node: ast.For, code_gen: Static38CodeGenerator) -> None:
         start = code_gen.newBlock("default_forloop_start")
         anchor = code_gen.newBlock("default_forloop_anchor")
         after = code_gen.newBlock("default_forloop_after")
@@ -656,16 +652,16 @@ class Value:
             code_gen.visit(node.orelse)
         code_gen.nextBlock(after)
 
-    def emit_unaryop(self, node: ast.UnaryOp, code_gen: Static37CodeGenerator) -> None:
+    def emit_unaryop(self, node: ast.UnaryOp, code_gen: Static38CodeGenerator) -> None:
         code_gen.defaultVisit(node)
 
     def emit_augassign(
-        self, node: ast.AugAssign, code_gen: Static37CodeGenerator
+        self, node: ast.AugAssign, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.defaultVisit(node)
 
     def emit_augname(
-        self, node: AugName, code_gen: Static37CodeGenerator, mode: str
+        self, node: AugName, code_gen: Static38CodeGenerator, mode: str
     ) -> None:
         code_gen.defaultVisit(node, mode)
 
@@ -673,36 +669,36 @@ class Value:
         raise visitor.syntax_error(f"cannot constant with {self.klass.name}", node)
 
     def emit_constant(
-        self, node: ast.Constant, code_gen: Static37CodeGenerator
+        self, node: ast.Constant, code_gen: Static38CodeGenerator
     ) -> None:
         return code_gen.defaultVisit(node)
 
     def bind_num(self, node: ast.Num, visitor: TypeBinder) -> None:
         raise visitor.syntax_error(f"cannot num with {self.klass.name}", node)
 
-    def emit_num(self, node: ast.Num, code_gen: Static37CodeGenerator) -> None:
+    def emit_num(self, node: ast.Num, code_gen: Static38CodeGenerator) -> None:
         return code_gen.defaultVisit(node)
 
-    def emit_name(self, node: ast.Name, code_gen: Static37CodeGenerator) -> None:
+    def emit_name(self, node: ast.Name, code_gen: Static38CodeGenerator) -> None:
         return code_gen.defaultVisit(node)
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
         Python38CodeGenerator.compileJumpIf(code_gen, test, next, is_if_true)
 
     def emit_jumpif_pop(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
-        Python37CodeGenerator.compileJumpIfPop(code_gen, test, next, is_if_true)
+        Python38CodeGenerator.compileJumpIfPop(code_gen, test, next, is_if_true)
 
-    def emit_box(self, node: expr, code_gen: Static37CodeGenerator) -> None:
+    def emit_box(self, node: expr, code_gen: Static38CodeGenerator) -> None:
         raise RuntimeError(f"Unsupported box type: {code_gen.get_type(node)}")
 
-    def emit_unbox(self, node: expr, code_gen: Static37CodeGenerator) -> None:
+    def emit_unbox(self, node: expr, code_gen: Static38CodeGenerator) -> None:
         raise RuntimeError("Unsupported unbox type")
 
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         return self.emit_call(node, code_gen)
 
     def make_generic(
@@ -735,7 +731,7 @@ class Object(Value, Generic[TClass]):
         self.check_args_for_primitives(node, visitor)
         return NO_EFFECT
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         code_gen.defaultVisit(node)
 
     def bind_attr(
@@ -754,7 +750,7 @@ class Object(Value, Generic[TClass]):
             visitor.set_type(node, DYNAMIC)
 
     def emit_attr(
-        self, node: Union[ast.Attribute, AugAttribute], code_gen: Static37CodeGenerator
+        self, node: Union[ast.Attribute, AugAttribute], code_gen: Static38CodeGenerator
     ) -> None:
         for base in self.klass.mro:
             member = base.members.get(node.attr)
@@ -847,6 +843,9 @@ class Object(Value, Generic[TClass]):
         """returns the type that is produced when iterating over this value"""
         return DYNAMIC
 
+    def get_fast_len_type(self) -> int:
+        raise NotImplementedError()
+
     def __repr__(self) -> str:
         return f"<{self.klass.name} instance>"
 
@@ -938,9 +937,12 @@ class Class(Object["Class"]):
             rtype = visitor.get_type(node.right)
             if rtype is NONE_TYPE.instance:
                 rtype = NONE_TYPE
+            if rtype is DYNAMIC:
+                rtype = DYNAMIC_TYPE
             if not isinstance(rtype, Class):
-                raise TypedSyntaxError(
-                    f"unsupported operand type(s) for |: {self.klass.name} and {rtype.klass.name}"
+                raise visitor.syntax_error(
+                    f"unsupported operand type(s) for |: {self.klass.name} and {rtype.klass.name}",
+                    node,
                 )
             union = UNION_TYPE.make_generic_type(
                 (self, rtype), visitor.symtable.generic_types
@@ -982,9 +984,7 @@ class Class(Object["Class"]):
         implement a more efficient form of interface dispatch than doing the dictionary
         lookup for the member."""
         return src is self or (
-            not self.is_exact
-            and not isinstance(src, PrimitiveType)
-            and self.issubclass(src)
+            not self.is_exact and not isinstance(src, CType) and self.issubclass(src)
         )
 
     def __repr__(self) -> str:
@@ -1270,14 +1270,14 @@ class GenericParameter(Class):
         return name.args[self.index]
 
 
-class PrimitiveType(Class):
+class CType(Class):
     """base class for primitives that aren't heap allocated"""
 
     def __init__(
         self,
         type_name: TypeName,
         bases: Optional[List[TypeRef]] = None,
-        instance: Optional[Primitive[Class]] = None,
+        instance: Optional[CInstance[Class]] = None,
         klass: Optional[Class] = None,
         members: Optional[Dict[str, Value]] = None,
         is_exact: bool = True,
@@ -1328,7 +1328,7 @@ class DynamicClass(Class):
 
     def can_assign_from(self, src: Class) -> bool:
         # No automatic boxing to the dynamic type
-        return not isinstance(src, PrimitiveType)
+        return not isinstance(src, CType)
 
 
 class DynamicInstance(Object[DynamicClass]):
@@ -1389,6 +1389,7 @@ UNARY_SYMBOLS: Mapping[Type[ast.unaryop], str] = {
     ast.Invert: "~",
 }
 
+
 class NoneInstance(Object[NoneType]):
     def bind_attr(
         self, node: ast.Attribute, visitor: TypeBinder, type_ctx: Optional[Class]
@@ -1400,12 +1401,12 @@ class NoneInstance(Object[NoneType]):
     def bind_call(
         self, node: ast.Call, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> NarrowingEffect:
-        raise visitor.syntax_error(f"'NoneType' object is not callable", node)
+        raise visitor.syntax_error("'NoneType' object is not callable", node)
 
     def bind_subscr(
         self, node: ast.Subscript, type: Value, visitor: TypeBinder
     ) -> None:
-        raise visitor.syntax_error(f"'NoneType' object is not subscriptable", node)
+        raise visitor.syntax_error("'NoneType' object is not subscriptable", node)
 
     def bind_unaryop(
         self, node: ast.UnaryOp, visitor: TypeBinder, type_ctx: Optional[Class]
@@ -1424,6 +1425,7 @@ class NoneInstance(Object[NoneType]):
             return self.klass.bind_binop(node, visitor, type_ctx)
         else:
             return super().bind_binop(node, visitor, type_ctx)
+
 
 # https://www.python.org/download/releases/2.3/mro/
 def _merge(seqs: Iterable[List[Class]]) -> List[Class]:
@@ -1538,6 +1540,8 @@ class Callable(Object[TClass]):
         args: List[Parameter],
         args_by_name: Dict[str, Parameter],
         num_required_args: int,
+        vararg: Optional[Parameter],
+        kwarg: Optional[Parameter],
         return_type: TypeRef,
         type_descr: TypeDescr,
     ) -> None:
@@ -1546,6 +1550,8 @@ class Callable(Object[TClass]):
         self.args = args
         self.args_by_name = args_by_name
         self.num_required_args = num_required_args
+        self.vararg = vararg
+        self.kwarg = kwarg
         assert return_type is not None
         self.return_type = return_type
         self.type_descr: TypeDescr = type_descr
@@ -1553,6 +1559,9 @@ class Callable(Object[TClass]):
     def bind_call(
         self, node: ast.Call, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> NarrowingEffect:
+        if self.vararg or self.kwarg:
+            return super().bind_call(node, visitor, type_ctx)
+
         result = self.bind_call_self(node, visitor, type_ctx)
         self.check_args_for_primitives(node, visitor)
         return result
@@ -1657,10 +1666,10 @@ class Callable(Object[TClass]):
         return NO_EFFECT
 
     def _emit_kwarg_temps(
-        self, keywords: List[ast.keyword], code_gen: Static37CodeGenerator
+        self, keywords: List[ast.keyword], code_gen: Static38CodeGenerator
     ) -> Dict[str, str]:
         temporaries = {}
-        for idx, each in enumerate(keywords):
+        for each in keywords:
             name = each.arg
             if name is not None:
                 code_gen.visit(each.value)
@@ -1686,6 +1695,9 @@ class Callable(Object[TClass]):
         return provided_kwargs, variadic_idx
 
     def can_call_self(self, node: ast.Call, has_self: bool) -> bool:
+        if self.vararg or self.kwarg:
+            return False
+
         has_default_args = self.num_required_args < len(self.args)
         num_star_args = [isinstance(a, ast.Starred) for a in node.args].count(True)
         num_dstar_args = [(a.arg is None) for a in node.keywords].count(True)
@@ -1715,7 +1727,7 @@ class Callable(Object[TClass]):
     def emit_call_self(
         self,
         node: ast.Call,
-        code_gen: Static37CodeGenerator,
+        code_gen: Static38CodeGenerator,
         self_type: Optional[TypeName] = None,
     ) -> None:
         assert self.can_call_self(node, self_type is not None)
@@ -1772,8 +1784,7 @@ class Callable(Object[TClass]):
             # and then do the call
             temporaries = self._emit_kwarg_temps(node.keywords, code_gen)
 
-        # For all args that are not passed positionally, push NULL to signify which ones should use
-        # the defaults
+        # For all args that are not passed positionally, push the default value
         for idx in range(nseen, len(self.args)):
             if idx in provided_kwargs:
                 kwarg = node.keywords[provided_kwargs[idx]]
@@ -1846,6 +1857,8 @@ class Function(Callable[Class]):
             [],
             {},
             0,
+            None,
+            None,
             ret_type,
             type_descr,
         )
@@ -1856,7 +1869,7 @@ class Function(Callable[Class]):
     def name(self) -> str:
         return f"function {self.func_name}"
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if not self.can_call_self(node, False):
             return super().emit_call(node, code_gen)
 
@@ -1926,7 +1939,7 @@ class MethodType(Object[Class]):
         self.check_args_for_primitives(node, visitor)
         return result
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if not self.function.can_call_self(node, True):
             return super().emit_call(node, code_gen)
 
@@ -1979,6 +1992,8 @@ class BuiltinMethodDescriptor(Callable[Class]):
             args,
             {},
             0,
+            None,
+            None,
             return_type or ResolvedTypeRef(DYNAMIC_TYPE),
             decl_type.type_descr + (func_name,),
         )
@@ -2039,6 +2054,8 @@ class BuiltinMethod(Callable[Class]):
             desc.args,
             None,
             0,
+            None,
+            None,
             desc.return_type,
             desc.decl_type.type_descr + (desc.func_name,),
         )
@@ -2066,7 +2083,7 @@ class BuiltinMethod(Callable[Class]):
         self.check_args_for_primitives(node, visitor)
         return NO_EFFECT
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if node.keywords or (
             self.args is not None and not self.desc.can_call_self(node, True)
         ):
@@ -2168,9 +2185,15 @@ def process_function_args(
         func.register_arg(argument.arg, idx, ref, has_default, default_val, False)
 
     base_idx = idx
-    for idx, (argument, default) in enumerate(
-        zip(arguments.kwonlyargs, arguments.kw_defaults)
-    ):
+
+    vararg = arguments.vararg
+    if vararg:
+        base_idx += 1
+        func.vararg = Parameter(
+            vararg.arg, base_idx, TUPLE_EXACT_TYPE, False, None, False
+        )
+
+    for argument, default in zip(arguments.kwonlyargs, arguments.kw_defaults):
         annotation = argument.annotation
         default_val = None
         has_default = default is not None
@@ -2181,20 +2204,13 @@ def process_function_args(
             ref = TypeRef(visitor.module, annotation)
         else:
             ref = ResolvedTypeRef(DYNAMIC_TYPE)
-        func.register_arg(
-            argument.arg, base_idx + idx + 1, ref, has_default, default_val, True
-        )
+        base_idx += 1
+        func.register_arg(argument.arg, base_idx, ref, has_default, default_val, True)
 
     kwarg = arguments.kwarg
     if kwarg:
-        raise visitor.syntax_error(
-            f"Cannot support generic keyword arguments: **{kwarg.arg}", kwarg
-        )
-
-    vararg = arguments.vararg
-    if vararg:
-        raise visitor.syntax_error(
-            f"Cannot support generic varargs: *{vararg.arg}", vararg
+        func.kwarg = Parameter(
+            kwarg.arg, base_idx + 1, DICT_EXACT_TYPE, False, None, False
         )
 
 
@@ -2253,14 +2269,14 @@ class BoxFunction(Object[Class]):
 
         for arg in node.args:
             visitor.visit(arg)
-            if not isinstance(visitor.get_type(arg), Primitive):
+            if not isinstance(visitor.get_type(arg), CInstance):
                 raise visitor.syntax_error(
                     f"can't box non-primitive: {visitor.get_type(arg).name}", node
                 )
         visitor.set_type(node, DYNAMIC)
         return NO_EFFECT
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         code_gen.get_type(node.args[0]).emit_box(node.args[0], code_gen)
 
 
@@ -2277,7 +2293,7 @@ class UnboxFunction(Object[Class]):
         visitor.set_type(node, INT64_VALUE)
         return NO_EFFECT
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         code_gen.get_type(node).emit_unbox(node.args[0], code_gen)
 
 
@@ -2299,7 +2315,7 @@ class LenFunction(Object[Class]):
         visitor.set_type(node, INT_EXACT_TYPE.instance)
         return NO_EFFECT
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         code_gen.get_type(node.args[0]).emit_len(node, code_gen)
 
 
@@ -2316,7 +2332,7 @@ class ExtremumFunction(Object[Class]):
     def name(self) -> str:
         return f"{self._extremum} function"
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if (
             # We only specialize for two args
             len(node.args) != 2
@@ -2529,32 +2545,36 @@ def make_type_dict(klass: Class, t: Type[object]) -> Dict[str, Value]:
 
 
 def common_sequence_emit_len(
-    node: ast.Call, code_gen: Static37CodeGenerator, seq_type: str
+    node: ast.Call, code_gen: Static38CodeGenerator, oparg: int
 ) -> None:
     if len(node.args) != 1:
         raise code_gen.syntax_error(
-            f"Can only pass a single argument when checking {seq_type} length", node
+            f"Can only pass a single argument when checking sequence length", node
         )
     code_gen.visit(node.args[0])
-    code_gen.emit("FAST_LEN", FAST_LEN_COMMON_SEQUENCE)
+    code_gen.emit("FAST_LEN", oparg)
     signed = False
     code_gen.emit("INT_BOX", int(signed))
 
 
 def common_sequence_emit_jumpif(
-    test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+    test: AST,
+    next: Block,
+    is_if_true: bool,
+    code_gen: Static38CodeGenerator,
+    oparg: int,
 ) -> None:
     code_gen.visit(test)
-    code_gen.emit("FAST_LEN", FAST_LEN_COMMON_SEQUENCE)
+    code_gen.emit("FAST_LEN", oparg)
     code_gen.emit("POP_JUMP_IF_NONZERO" if is_if_true else "POP_JUMP_IF_ZERO", next)
 
 
 def common_sequence_emit_forloop(
-    node: ast.For, code_gen: Static37CodeGenerator, seq_type: str
+    node: ast.For, code_gen: Static38CodeGenerator, oparg: int
 ) -> None:
-    start = code_gen.newBlock(f"{seq_type}_forloop_start")
-    anchor = code_gen.newBlock(f"{seq_type}_forloop_anchor")
-    after = code_gen.newBlock(f"{seq_type}_forloop_after")
+    start = code_gen.newBlock(f"seq_forloop_start")
+    anchor = code_gen.newBlock(f"seq_forloop_anchor")
+    after = code_gen.newBlock(f"seq_forloop_after")
     with code_gen.new_loopidx() as loop_idx:
         code_gen.set_lineno(node)
         code_gen.push_loop(FOR_LOOP, start, after)
@@ -2563,15 +2583,15 @@ def common_sequence_emit_forloop(
         code_gen.emit("INT_LOAD_CONST", 0)
         code_gen.emit("STORE_LOCAL", (loop_idx, ("__static__", "int64")))
         code_gen.nextBlock(start)
-        code_gen.emit("DUP_TOP")  # used for LIST_GET
+        code_gen.emit("DUP_TOP")  # used for SEQUENCE_GET
         code_gen.emit("DUP_TOP")  # used for FAST_LEN
-        code_gen.emit("FAST_LEN", FAST_LEN_COMMON_SEQUENCE)
+        code_gen.emit("FAST_LEN", oparg)
         code_gen.emit("LOAD_LOCAL", (loop_idx, ("__static__", "int64")))
         code_gen.emit("INT_COMPARE_OP", PRIM_OP_GT)
         code_gen.emit("POP_JUMP_IF_ZERO", anchor)
         code_gen.emit("LOAD_LOCAL", (loop_idx, ("__static__", "int64")))
-        if seq_type == "list":
-            code_gen.emit("LIST_GET", 1)
+        if oparg == FAST_LEN_LIST:
+            code_gen.emit("SEQUENCE_GET", SEQ_LIST)
         else:
             # todo - we need to implement TUPLE_GET which supports primitive index
             code_gen.emit("INT_BOX", 1)  # 1 is for signed
@@ -2595,7 +2615,7 @@ def common_sequence_emit_forloop(
 
 class TupleClass(Class):
     def __init__(self, is_exact: bool = False) -> None:
-        instance = TupleExactInstance(self) if is_exact else Object(self)
+        instance = TupleExactInstance(self) if is_exact else TupleInstance(self)
         super().__init__(
             type_name=TypeName("builtins", "tuple"),
             bases=[RESOLVED_OBJECT_TYPE],
@@ -2605,57 +2625,66 @@ class TupleClass(Class):
         )
 
 
-class TupleExactInstance(Object[TupleClass]):
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
-        return common_sequence_emit_len(node, code_gen, "tuple")
+class TupleInstance(Object[TupleClass]):
+    def get_fast_len_type(self) -> int:
+        return FAST_LEN_TUPLE | ((not self.klass.is_exact) << 4)
+
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
+        return common_sequence_emit_len(node, code_gen, self.get_fast_len_type())
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
-        return common_sequence_emit_jumpif(test, next, is_if_true, code_gen)
+        return common_sequence_emit_jumpif(
+            test, next, is_if_true, code_gen, self.get_fast_len_type()
+        )
 
-    def emit_forloop(self, node: ast.For, code_gen: Static37CodeGenerator) -> None:
+
+class TupleExactInstance(TupleInstance):
+    def emit_forloop(self, node: ast.For, code_gen: Static38CodeGenerator) -> None:
         if not isinstance(node.target, ast.Name):
             # We don't yet support `for a, b in my_tuple: ...`
             return super().emit_forloop(node, code_gen)
 
-        return common_sequence_emit_forloop(node, code_gen, "tuple")
+        return common_sequence_emit_forloop(node, code_gen, FAST_LEN_TUPLE)
 
 
 class SetClass(Class):
     def __init__(self, is_exact: bool = False) -> None:
-        instance = SetExactInstance(self) if is_exact else Object(self)
         super().__init__(
             type_name=TypeName("builtins", "set"),
             bases=[RESOLVED_OBJECT_TYPE],
-            instance=instance,
+            instance=SetInstance(self),
             is_exact=is_exact,
             pytype=tuple,
         )
 
 
-class SetExactInstance(Object[SetClass]):
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+class SetInstance(Object[SetClass]):
+    def get_fast_len_type(self) -> int:
+        return FAST_LEN_SET | ((not self.klass.is_exact) << 4)
+
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if len(node.args) != 1:
             raise code_gen.syntax_error(
                 "Can only pass a single argument when checking set length", node
             )
         code_gen.visit(node.args[0])
-        code_gen.emit("FAST_LEN", FAST_LEN_SET)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         signed = False
         code_gen.emit("INT_BOX", int(signed))
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.visit(test)
-        code_gen.emit("FAST_LEN", FAST_LEN_SET)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         code_gen.emit("POP_JUMP_IF_NONZERO" if is_if_true else "POP_JUMP_IF_ZERO", next)
 
 
 class ListClass(Class):
     def __init__(self, is_exact: bool = False) -> None:
-        instance = ListExactInstance(self) if is_exact else Object(self)
+        instance = ListExactInstance(self) if is_exact else ListInstance(self)
         super().__init__(
             type_name=TypeName("builtins", "list"),
             bases=[RESOLVED_OBJECT_TYPE],
@@ -2665,15 +2694,22 @@ class ListClass(Class):
         )
 
 
-class ListExactInstance(Object[ListClass]):
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
-        return common_sequence_emit_len(node, code_gen, "list")
+class ListInstance(Object[ListClass]):
+    def get_fast_len_type(self) -> int:
+        return FAST_LEN_LIST | ((not self.klass.is_exact) << 4)
+
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
+        return common_sequence_emit_len(node, code_gen, self.get_fast_len_type())
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
-        return common_sequence_emit_jumpif(test, next, is_if_true, code_gen)
+        return common_sequence_emit_jumpif(
+            test, next, is_if_true, code_gen, self.get_fast_len_type()
+        )
 
+
+class ListExactInstance(ListInstance):
     def bind_binop(
         self, node: ast.BinOp, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> bool:
@@ -2697,63 +2733,65 @@ class ListExactInstance(Object[ListClass]):
     def bind_subscr(
         self, node: ast.Subscript, type: Value, visitor: TypeBinder
     ) -> None:
-        if type.klass not in INT_TYPES:
+        if type.klass not in SIGNED_CINT_TYPES:
             super().bind_subscr(node, type, visitor)
         visitor.set_type(node, DYNAMIC)
 
     def emit_subscr(
-        self, node: ast.Subscript, aug_flag: bool, code_gen: Static37CodeGenerator
+        self, node: ast.Subscript, aug_flag: bool, code_gen: Static38CodeGenerator
     ) -> None:
         index_type = code_gen.get_type(node.slice)
-        if index_type.klass not in INT_TYPES:
+        if index_type.klass not in SIGNED_CINT_TYPES:
             return super().emit_subscr(node, aug_flag, code_gen)
 
         code_gen.update_lineno(node)
         code_gen.visit(node.value)
         code_gen.visit(node.slice)
         if isinstance(node.ctx, ast.Load):
-            code_gen.emit("LIST_GET")
+            code_gen.emit("SEQUENCE_GET", SEQ_LIST)
         elif isinstance(node.ctx, ast.Store):
-            code_gen.emit("LIST_SET")
+            code_gen.emit("SEQUENCE_SET", SEQ_LIST)
         elif isinstance(node.ctx, ast.Del):
             code_gen.emit("LIST_DEL")
 
-    def emit_forloop(self, node: ast.For, code_gen: Static37CodeGenerator) -> None:
+    def emit_forloop(self, node: ast.For, code_gen: Static38CodeGenerator) -> None:
         if not isinstance(node.target, ast.Name):
             # We don't yet support `for a, b in my_list: ...`
             return super().emit_forloop(node, code_gen)
 
-        return common_sequence_emit_forloop(node, code_gen, "list")
+        return common_sequence_emit_forloop(node, code_gen, FAST_LEN_LIST)
 
 
 class DictClass(Class):
     def __init__(self, is_exact: bool = False) -> None:
-        instance = ListExactInstance(self) if is_exact else Object(self)
         super().__init__(
             type_name=TypeName("builtins", "dict"),
             bases=[RESOLVED_OBJECT_TYPE],
-            instance=instance,
+            instance=DictInstance(self),
             is_exact=is_exact,
-            pytype=list,
+            pytype=dict,
         )
 
 
-class DictExactInstance(Object[DictClass]):
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+class DictInstance(Object[DictClass]):
+    def get_fast_len_type(self) -> int:
+        return FAST_LEN_DICT | ((not self.klass.is_exact) << 4)
+
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if len(node.args) != 1:
             raise code_gen.syntax_error(
                 "Can only pass a single argument when checking dict length", node
             )
         code_gen.visit(node.args[0])
-        code_gen.emit("FAST_LEN", FAST_LEN_DICT)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         signed = False
         code_gen.emit("INT_BOX", int(signed))
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.visit(test)
-        code_gen.emit("FAST_LEN", FAST_LEN_DICT)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         code_gen.emit("POP_JUMP_IF_NONZERO" if is_if_true else "POP_JUMP_IF_ZERO", next)
 
 
@@ -2896,7 +2934,6 @@ class UnionType(GenericClass):
         type_args = self._simplify_args(index)
         if len(type_args) == 1 and not type_args[0].is_generic_parameter:
             return type_args[0]
-        type_arg_names = tuple(arg.type_name for arg in index)
         type_name = UnionTypeName(self.type_name.module, self.type_name.name, type_args)
         ThisUnionType = type(self)
         if type_name.opt_type is not None:
@@ -2955,7 +2992,8 @@ class UnionInstance(Object[UnionType]):
     def bind_attr(
         self, node: ast.Attribute, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> None:
-        cb = lambda el: el.instance.bind_attr(node, visitor, type_ctx)
+        def cb(el: Class) -> None:
+            return el.instance.bind_attr(node, visitor, type_ctx)
         self._generic_bind(
             node,
             cb,
@@ -2966,20 +3004,23 @@ class UnionInstance(Object[UnionType]):
     def bind_call(
         self, node: ast.Call, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> NarrowingEffect:
-        cb = lambda el: el.instance.bind_call(node, visitor, type_ctx)
+        def cb(el: Class) -> NarrowingEffect:
+            return el.instance.bind_call(node, visitor, type_ctx)
         self._generic_bind(node, cb, "call", visitor)
         return NO_EFFECT
 
     def bind_subscr(
         self, node: ast.Subscript, type: Value, visitor: TypeBinder
     ) -> None:
-        cb = lambda el: el.instance.bind_subscr(node, type, visitor)
+        def cb(el: Class) -> None:
+            return el.instance.bind_subscr(node, type, visitor)
         self._generic_bind(node, cb, "subscript", visitor)
 
     def bind_unaryop(
         self, node: ast.UnaryOp, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> None:
-        cb = lambda el: el.instance.bind_unaryop(node, visitor, type_ctx)
+        def cb(el: Class) -> None:
+            return el.instance.bind_unaryop(node, visitor, type_ctx)
         self._generic_bind(
             node,
             cb,
@@ -3030,6 +3071,23 @@ class OptionalInstance(UnionInstance):
 
 
 class ArrayInstance(Object["ArrayClass"]):
+    def _seq_type(self) -> int:
+        idx = self.klass.index
+        if not isinstance(idx, CIntType):
+            # should never happen
+            raise SyntaxError(f"Invalid Array type: {idx}")
+        size = idx.size
+        if size == 0:
+            return SEQ_ARRAY_INT8 if idx.signed else SEQ_ARRAY_UINT8
+        elif size == 1:
+            return SEQ_ARRAY_INT16 if idx.signed else SEQ_ARRAY_UINT16
+        elif size == 2:
+            return SEQ_ARRAY_INT32 if idx.signed else SEQ_ARRAY_UINT32
+        elif size == 3:
+            return SEQ_ARRAY_INT64 if idx.signed else SEQ_ARRAY_UINT64
+        else:
+            raise SyntaxError(f"Invalid Array size: {size}")
+
     def bind_subscr(
         self, node: ast.Subscript, type: Value, visitor: TypeBinder
     ) -> None:
@@ -3040,12 +3098,12 @@ class ArrayInstance(Object["ArrayClass"]):
         visitor.set_type(node, self.klass.index.instance)
 
     def emit_subscr(
-        self, node: ast.Subscript, aug_flag: bool, code_gen: Static37CodeGenerator
+        self, node: ast.Subscript, aug_flag: bool, code_gen: Static38CodeGenerator
     ) -> None:
         index_type = code_gen.get_type(node.slice)
         is_del = isinstance(node.ctx, ast.Del)
         index_is_python_int = INT_TYPE.can_assign_from(index_type.klass)
-        index_is_primitive_int = isinstance(index_type.klass, IntType)
+        index_is_primitive_int = isinstance(index_type.klass, CIntType)
 
         # ARRAY_{GET,SET} support only integer indices and don't support del;
         # otherwise defer to the usual bytecode
@@ -3058,40 +3116,35 @@ class ArrayInstance(Object["ArrayClass"]):
 
         if index_is_python_int:
             # If the index is not a primitive, unbox its value to an int64, our implementation of
-            # ARRAY_GET/ARRAY_SET expects the index to be a primitive int.
+            # SEQUENCE_{GET/SET} expects the index to be a primitive int.
             code_gen.emit("INT_UNBOX", INT64_TYPE.instance.as_oparg())
 
-        oparg = self.klass.index.instance.as_oparg()
         if isinstance(node.ctx, ast.Store) and not aug_flag:
-            code_gen.emit("ARRAY_SET", oparg)
+            code_gen.emit("SEQUENCE_SET", self._seq_type())
         elif isinstance(node.ctx, ast.Load) or aug_flag:
             if aug_flag:
                 code_gen.emit("DUP_TOP_TWO")
-            idx = self.klass.index
-            if isinstance(idx, IntType):
-                code_gen.emit("ARRAY_GET", oparg)
-            else:
-                # Should never happen, but it's good to keep pyre happy
-                raise code_gen.syntax_error(f"Invalid type of array: {idx}", node)
+            code_gen.emit("SEQUENCE_GET", self._seq_type())
 
     def emit_store_subscr(
-        self, node: ast.Subscript, code_gen: Static37CodeGenerator
+        self, node: ast.Subscript, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.emit("ROT_THREE")
-        code_gen.emit("ARRAY_SET")
+        code_gen.emit("SEQUENCE_SET", self._seq_type())
 
     def __repr__(self) -> str:
         return f"Array[{self.klass.index.name!r}]"
 
+    def get_fast_len_type(self) -> int:
+        return FAST_LEN_ARRAY | ((not self.klass.is_exact) << 4)
 
-class ArrayExactInstance(ArrayInstance):
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if len(node.args) != 1:
             raise code_gen.syntax_error(
                 "Can only pass a single argument when checking array length", node
             )
         code_gen.visit(node.args[0])
-        code_gen.emit("FAST_LEN", FAST_LEN_COMMON_SEQUENCE)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         signed = False
         code_gen.emit("INT_BOX", int(signed))
 
@@ -3109,9 +3162,7 @@ class ArrayClass(GenericClass):
         pytype: Optional[Type[object]] = None,
     ) -> None:
         default_bases: List[TypeRef] = [RESOLVED_OBJECT_TYPE]
-        default_instance: Object[Class] = (
-            ArrayExactInstance(self) if is_exact else ArrayInstance(self)
-        )
+        default_instance: Object[Class] = ArrayInstance(self)
         super().__init__(
             name,
             bases or default_bases,
@@ -3157,11 +3208,7 @@ class CheckedDict(GenericClass):
         pytype: Optional[Type[object]] = None,
     ) -> None:
         if instance is None:
-            instance = (
-                CheckedDictExactInstance(self)
-                if is_exact
-                else CheckedDictInstance(self)
-            )
+            instance = CheckedDictInstance(self)
         super().__init__(
             name,
             bases,
@@ -3182,7 +3229,7 @@ class CheckedDictInstance(Object[CheckedDict]):
         visitor.set_type(node, self.klass.gen_name.args[1].instance)
 
     def emit_subscr(
-        self, node: ast.Subscript, aug_flag: bool, code_gen: Static37CodeGenerator
+        self, node: ast.Subscript, aug_flag: bool, code_gen: Static38CodeGenerator
     ) -> None:
         if isinstance(node.ctx, ast.Load):
             code_gen.visit(node.value)
@@ -3202,23 +3249,24 @@ class CheckedDictInstance(Object[CheckedDict]):
         else:
             code_gen.defaultVisit(node, aug_flag)
 
+    def get_fast_len_type(self) -> int:
+        return FAST_LEN_DICT | ((not self.klass.is_exact) << 4)
 
-class CheckedDictExactInstance(CheckedDictInstance):
-    def emit_len(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_len(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if len(node.args) != 1:
             raise code_gen.syntax_error(
                 "Can only pass a single argument when checking dict length", node
             )
         code_gen.visit(node.args[0])
-        code_gen.emit("FAST_LEN", FAST_LEN_DICT)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         signed = False
         code_gen.emit("INT_BOX", int(signed))
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.visit(test)
-        code_gen.emit("FAST_LEN", FAST_LEN_DICT)
+        code_gen.emit("FAST_LEN", self.get_fast_len_type())
         code_gen.emit("POP_JUMP_IF_NONZERO" if is_if_true else "POP_JUMP_IF_ZERO", next)
 
 
@@ -3250,7 +3298,7 @@ class CastFunction(Object[Class]):
         visitor.set_type(node, cast_type.instance)
         return NO_EFFECT
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         code_gen.visit(node.args[1])
         code_gen.emit("CAST", code_gen.get_type(node).klass.type_descr)
 
@@ -3260,7 +3308,32 @@ TYPED_INT_8BIT = 0
 TYPED_INT_16BIT = 1
 TYPED_INT_32BIT = 2
 TYPED_INT_64BIT = 3
-TYPED_OBJECT = 255
+TYPED_OBJECT = 0xFF
+TYPED_ARRAY = 0x80
+
+TYPED_INT_UNSIGNED = 0
+TYPED_INT_SIGNED = 1
+
+TYPED_INT8: int = (TYPED_INT_8BIT << 1) | TYPED_INT_SIGNED
+TYPED_INT16: int = (TYPED_INT_16BIT << 1) | TYPED_INT_SIGNED
+TYPED_INT32: int = (TYPED_INT_32BIT << 1) | TYPED_INT_SIGNED
+TYPED_INT64: int = (TYPED_INT_64BIT << 1) | TYPED_INT_SIGNED
+
+TYPED_UINT8: int = (TYPED_INT_8BIT << 1) | TYPED_INT_UNSIGNED
+TYPED_UINT16: int = (TYPED_INT_16BIT << 1) | TYPED_INT_UNSIGNED
+TYPED_UINT32: int = (TYPED_INT_32BIT << 1) | TYPED_INT_UNSIGNED
+TYPED_UINT64: int = (TYPED_INT_64BIT << 1) | TYPED_INT_UNSIGNED
+
+SEQ_LIST: int = 0
+SEQ_TUPLE: int = 1
+SEQ_ARRAY_INT8: int = (TYPED_INT8 << 4) | TYPED_ARRAY
+SEQ_ARRAY_INT16: int = (TYPED_INT16 << 4) | TYPED_ARRAY
+SEQ_ARRAY_INT32: int = (TYPED_INT32 << 4) | TYPED_ARRAY
+SEQ_ARRAY_INT64: int = (TYPED_INT64 << 4) | TYPED_ARRAY
+SEQ_ARRAY_UINT8: int = (TYPED_UINT8 << 4) | TYPED_ARRAY
+SEQ_ARRAY_UINT16: int = (TYPED_UINT16 << 4) | TYPED_ARRAY
+SEQ_ARRAY_UINT32: int = (TYPED_UINT32 << 4) | TYPED_ARRAY
+SEQ_ARRAY_UINT64: int = (TYPED_UINT64 << 4) | TYPED_ARRAY
 
 PRIM_OP_EQ = 0
 PRIM_OP_NE = 1
@@ -3291,16 +3364,20 @@ PRIM_OP_AND = 13
 PRIM_OP_NEG = 0
 PRIM_OP_INV = 1
 
-FAST_LEN_COMMON_SEQUENCE = 0
+FAST_LEN_INEXACT: int = 1 << 4
+FAST_LEN_LIST = 0
 FAST_LEN_DICT = 1
 FAST_LEN_SET = 2
+FAST_LEN_TUPLE = 3
+FAST_LEN_ARRAY = 4
 
-class Primitive(Value, Generic[TClass]):
+
+class CInstance(Value, Generic[TClass]):
     pass
 
 
-class IntInstance(Primitive["IntType"]):
-    def __init__(self, klass: IntType, size: int, signed: bool) -> None:
+class CIntInstance(CInstance["CIntType"]):
+    def __init__(self, klass: CIntType, size: int, signed: bool) -> None:
         super().__init__(klass)
         self.size = size
         self.signed = signed
@@ -3377,7 +3454,7 @@ class IntInstance(Primitive["IntType"]):
     def validate_mixed_math(self, other: Value) -> Optional[Value]:
         if other is self:
             return self
-        elif isinstance(other, IntInstance):
+        elif isinstance(other, CIntInstance):
             if self.signed == other.signed:
                 # signs match, we can just treat this as a comparison of the larger type
                 if self.size > other.size:
@@ -3392,7 +3469,7 @@ class IntInstance(Primitive["IntType"]):
 
                 if new_size <= TYPED_INT_64BIT:
                     # signs don't match, but we can promote to the next highest data type
-                    return INT_TYPES[new_size].instance
+                    return SIGNED_CINT_TYPES[new_size].instance
 
         return None
 
@@ -3434,7 +3511,7 @@ class IntInstance(Primitive["IntType"]):
         visitor: TypeBinder,
         type_ctx: Optional[Class],
     ) -> bool:
-        if not isinstance(visitor.get_type(left), IntInstance):
+        if not isinstance(visitor.get_type(left), CIntInstance):
             try:
                 visitor.visit(left, type_ctx or INT64_VALUE)
             except TypedSyntaxError:
@@ -3455,17 +3532,17 @@ class IntInstance(Primitive["IntType"]):
 
         return False
 
-    def emit_compare(self, op: cmpop, code_gen: Static37CodeGenerator) -> None:
+    def emit_compare(self, op: cmpop, code_gen: Static38CodeGenerator) -> None:
         code_gen.emit("INT_COMPARE_OP", self.get_op_id(op))
 
-    def emit_binop(self, node: ast.BinOp, code_gen: Static37CodeGenerator) -> None:
+    def emit_binop(self, node: ast.BinOp, code_gen: Static38CodeGenerator) -> None:
         code_gen.update_lineno(node)
         code_gen.visit(node.left)
         code_gen.visit(node.right)
         code_gen.emit("INT_BINARY_OP", self.get_op_id(node.op))
 
     def emit_augassign(
-        self, node: ast.AugAssign, code_gen: Static37CodeGenerator
+        self, node: ast.AugAssign, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.set_lineno(node)
         aug_node = wrap_aug(node.target)
@@ -3475,7 +3552,7 @@ class IntInstance(Primitive["IntType"]):
         code_gen.visit(aug_node, "store")
 
     def emit_augname(
-        self, node: AugName, code_gen: Static37CodeGenerator, mode: str
+        self, node: AugName, code_gen: Static38CodeGenerator, mode: str
     ) -> None:
         if mode == "load":
             code_gen.emit("LOAD_LOCAL", (node.id, ("__static__", self.klass.name)))
@@ -3508,7 +3585,7 @@ class IntInstance(Primitive["IntType"]):
         visitor.set_type(node, self)
 
     def emit_constant(
-        self, node: ast.Constant, code_gen: Static37CodeGenerator
+        self, node: ast.Constant, code_gen: Static38CodeGenerator
     ) -> None:
         if node.value < 0:
             code_gen.emit("INT_LOAD_CONST", -node.value)
@@ -3523,7 +3600,7 @@ class IntInstance(Primitive["IntType"]):
         self.validate_int(node.n, node, visitor)
         visitor.set_type(node, self)
 
-    def emit_num(self, node: ast.Num, code_gen: Static37CodeGenerator) -> None:
+    def emit_num(self, node: ast.Num, code_gen: Static38CodeGenerator) -> None:
         # pyre-fixme[6]: `>` is not supported for operand types `complex` and `int`.
         if node.n > 0x7FFFFFFF:
             code_gen.emit("LOAD_CONST", node.n)
@@ -3531,7 +3608,7 @@ class IntInstance(Primitive["IntType"]):
         else:
             code_gen.emit("INT_LOAD_CONST", node.n)
 
-    def emit_name(self, node: ast.Name, code_gen: Static37CodeGenerator) -> None:
+    def emit_name(self, node: ast.Name, code_gen: Static38CodeGenerator) -> None:
         if isinstance(node.ctx, ast.Load):
             code_gen.emit("LOAD_LOCAL", (node.id, ("__static__", self.klass.name)))
         elif isinstance(node.ctx, ast.Store):
@@ -3540,13 +3617,13 @@ class IntInstance(Primitive["IntType"]):
             raise TypedSyntaxError("unsupported op")
 
     def emit_jumpif(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.visit(test)
         code_gen.emit("POP_JUMP_IF_NONZERO" if is_if_true else "POP_JUMP_IF_ZERO", next)
 
     def emit_jumpif_pop(
-        self, test: AST, next: Block, is_if_true: bool, code_gen: Static37CodeGenerator
+        self, test: AST, next: Block, is_if_true: bool, code_gen: Static38CodeGenerator
     ) -> None:
         code_gen.visit(test)
         code_gen.emit(
@@ -3591,15 +3668,15 @@ class IntInstance(Primitive["IntType"]):
         visitor.set_type(node, self)
         return True
 
-    def emit_box(self, node: expr, code_gen: Static37CodeGenerator) -> None:
+    def emit_box(self, node: expr, code_gen: Static38CodeGenerator) -> None:
         code_gen.visit(node)
         type = code_gen.get_type(node)
-        if isinstance(type, IntInstance):
+        if isinstance(type, CIntInstance):
             code_gen.emit("INT_BOX", int(type.signed))
         else:
             raise RuntimeError("unsupported box type: " + type.name)
 
-    def emit_unbox(self, node: expr, code_gen: Static37CodeGenerator) -> None:
+    def emit_unbox(self, node: expr, code_gen: Static38CodeGenerator) -> None:
         code_gen.visit(node)
         code_gen.emit("INT_UNBOX", self.as_oparg())
 
@@ -3612,7 +3689,7 @@ class IntInstance(Primitive["IntType"]):
             assert isinstance(node.op, ast.Not)
             visitor.set_type(node, BOOL_TYPE.instance)
 
-    def emit_unaryop(self, node: ast.UnaryOp, code_gen: Static37CodeGenerator) -> None:
+    def emit_unaryop(self, node: ast.UnaryOp, code_gen: Static38CodeGenerator) -> None:
         code_gen.update_lineno(node)
         if isinstance(node.op, ast.USub):
             code_gen.visit(node.operand)
@@ -3626,8 +3703,8 @@ class IntInstance(Primitive["IntType"]):
             raise NotImplementedError()
 
 
-class IntType(PrimitiveType):
-    instance: IntInstance
+class CIntType(CType):
+    instance: CIntInstance
 
     def __init__(
         self, size: int, signed: bool, name_override: Optional[str] = None
@@ -3641,7 +3718,7 @@ class IntType(PrimitiveType):
         super().__init__(
             TypeName("__static__", name),
             [],
-            IntInstance(self, size, signed),
+            CIntInstance(self, size, signed),
         )
 
     @property
@@ -3649,7 +3726,7 @@ class IntType(PrimitiveType):
         return self.type_name.name
 
     def can_assign_from(self, src: Class) -> bool:
-        if isinstance(src, IntType):
+        if isinstance(src, CIntType):
             if src.size <= self.size and src.signed == self.signed:
                 # assignment to same or larger size, with same sign
                 # is allowed
@@ -3675,7 +3752,7 @@ class IntType(PrimitiveType):
 
         return super().bind_call(node, visitor, type_ctx)
 
-    def emit_call(self, node: ast.Call, code_gen: Static37CodeGenerator) -> None:
+    def emit_call(self, node: ast.Call, code_gen: Static38CodeGenerator) -> None:
         if len(node.args) != 1:
             raise code_gen.syntax_error(
                 f"{self.name} requires a single argument ({len(node.args)} given)", node
@@ -3687,7 +3764,7 @@ class IntType(PrimitiveType):
             return self.instance.emit_constant(arg, code_gen)
         elif isinstance(arg, Num):
             return self.instance.emit_num(arg, code_gen)
-        elif isinstance(arg_type, IntInstance):
+        elif isinstance(arg_type, CIntInstance):
             code_gen.visit(arg)
             if self.size < arg_type.size:
                 if self.signed and arg_type.signed:
@@ -3701,11 +3778,11 @@ class IntType(PrimitiveType):
             return super().emit_call(node, code_gen)
 
 
-class DoubleInstance(Primitive["DoubleType"]):
+class DoubleInstance(CInstance["DoubleType"]):
     pass
 
 
-class DoubleType(PrimitiveType):
+class DoubleType(CType):
     def __init__(self) -> None:
         super().__init__(
             TypeName("__static__", "double"),
@@ -3714,19 +3791,21 @@ class DoubleType(PrimitiveType):
         )
 
 
-INT8_TYPE = IntType(TYPED_INT_8BIT, True)
-INT16_TYPE = IntType(TYPED_INT_16BIT, True)
-INT32_TYPE = IntType(TYPED_INT_32BIT, True)
-INT64_TYPE = IntType(TYPED_INT_64BIT, True)
+CBOOL_TYPE = CIntType(TYPED_INT_8BIT, True, name_override="cbool")
 
-UINT8_TYPE = IntType(TYPED_INT_8BIT, False)
-UINT16_TYPE = IntType(TYPED_INT_16BIT, False)
-UINT32_TYPE = IntType(TYPED_INT_32BIT, False)
-UINT64_TYPE = IntType(TYPED_INT_64BIT, False)
+INT8_TYPE = CIntType(TYPED_INT_8BIT, True)
+INT16_TYPE = CIntType(TYPED_INT_16BIT, True)
+INT32_TYPE = CIntType(TYPED_INT_32BIT, True)
+INT64_TYPE = CIntType(TYPED_INT_64BIT, True)
+
+UINT8_TYPE = CIntType(TYPED_INT_8BIT, False)
+UINT16_TYPE = CIntType(TYPED_INT_16BIT, False)
+UINT32_TYPE = CIntType(TYPED_INT_32BIT, False)
+UINT64_TYPE = CIntType(TYPED_INT_64BIT, False)
 
 INT64_VALUE = INT64_TYPE.instance
 
-CHAR_TYPE = IntType(TYPED_INT_8BIT, True, name_override="char")
+CHAR_TYPE = CIntType(TYPED_INT_8BIT, True, name_override="char")
 DOUBLE_TYPE = DoubleType()
 ARRAY_TYPE = ArrayClass(
     GenericTypeName("__static__", "Array", (GenericParameter("T", 0),))
@@ -3749,10 +3828,14 @@ ALLOWED_ARRAY_TYPES: List[Class] = [
     FLOAT_TYPE,
 ]
 
-INT_TYPES = [INT8_TYPE, INT16_TYPE, INT32_TYPE, INT64_TYPE]
-UNSIGNED_INT_TYPES: List[IntType] = [UINT8_TYPE, UINT16_TYPE, UINT32_TYPE, UINT64_TYPE]
-ALL_INT_TYPES: Sequence[IntType] = INT_TYPES + UNSIGNED_INT_TYPES
-
+SIGNED_CINT_TYPES = [INT8_TYPE, INT16_TYPE, INT32_TYPE, INT64_TYPE]
+UNSIGNED_CINT_TYPES: List[CIntType] = [
+    UINT8_TYPE,
+    UINT16_TYPE,
+    UINT32_TYPE,
+    UINT64_TYPE,
+]
+ALL_CINT_TYPES: Sequence[CIntType] = SIGNED_CINT_TYPES + UNSIGNED_CINT_TYPES
 
 EXACT_TYPES: Mapping[Class, Class] = {
     ARRAY_TYPE: ARRAY_EXACT_TYPE,
@@ -3941,7 +4024,7 @@ class LocalsBranch:
                     )
                 continue
 
-        for key, value in local_types.items():
+        for key in local_types.keys():
             # If a value isn't definitely assigned we can safely turn it
             # back into the declared type
             if key not in entry_locals and key in self.scope.decl_types:
@@ -4127,7 +4210,7 @@ class TypeBinder(GenericVisitor):
             )
 
         self.decl_types[target.id] = decl_type = TypeDeclaration(type, target)
-        if isinstance(type, PrimitiveType):
+        if isinstance(type, CType):
             self.check_primitive_scope(target)
         return decl_type
 
@@ -4167,7 +4250,7 @@ class TypeBinder(GenericVisitor):
     def set_param(self, arg: ast.arg, arg_type: Class, scope: BindingScope) -> None:
         scope.local_types[arg.arg] = arg_type.instance
         scope.decl_types[arg.arg] = TypeDeclaration(arg_type, arg)
-        if isinstance(arg_type, IntType):
+        if isinstance(arg_type, CIntType):
             raise TypedSyntaxError("Cannot use primitives in function arguments")
         self.set_type(arg, arg_type.instance)
 
@@ -4228,7 +4311,7 @@ class TypeBinder(GenericVisitor):
             if ann:
                 self.visit(ann)
 
-            self.set_param(vararg, DYNAMIC_TYPE, scope)
+            self.set_param(vararg, TUPLE_EXACT_TYPE, scope)
 
         for arg in node.args.kwonlyargs:
             ann = arg.annotation
@@ -4245,8 +4328,7 @@ class TypeBinder(GenericVisitor):
             ann = kwarg.annotation
             if ann:
                 self.visit(ann)
-
-            self.set_param(kwarg, DYNAMIC_TYPE, scope)
+            self.set_param(kwarg, DICT_EXACT_TYPE, scope)
 
         returns = node.returns
         if returns:
@@ -4289,7 +4371,6 @@ class TypeBinder(GenericVisitor):
         self.scopes.pop()
 
     def set_type(self, node: AST, type: Value) -> None:
-        existing = self.cur_mod.types.get(node)
         self.cur_mod.types[node] = type
 
     def get_type(self, node: AST) -> Value:
@@ -4301,14 +4382,13 @@ class TypeBinder(GenericVisitor):
         var_scope = cur_scope.check_name(node.id)
         if var_scope != SC_LOCAL or isinstance(self.scope, Module):
             raise self.syntax_error(
-                f"cannot use primitives in global or closure scope", node
+                "cannot use primitives in global or closure scope", node
             )
 
     def visitAnnAssign(self, node: AnnAssign) -> None:
         self.visit(node.annotation)
 
         target = node.target
-        cur_scope = self.symbols.scopes[self.scope]
         comp_type = self.cur_mod.resolve_annotation(node.annotation) or DYNAMIC_TYPE
         if isinstance(target, Name):
             self.declare_local(target, comp_type)
@@ -4661,7 +4741,6 @@ class TypeBinder(GenericVisitor):
     def visitDictComp(
         self, node: DictComp, type_ctx: Optional[Class] = None
     ) -> NarrowingEffect:
-        first = node.generators[0].iter
         self.visit(node.generators[0].iter)
 
         scope = BindingScope(node)
@@ -4963,13 +5042,12 @@ class TypeBinder(GenericVisitor):
         if mod_name == "__static__":
             for alias in node.names:
                 name = alias.name
-                asname = alias.asname
                 if name == "*":
                     raise TypedSyntaxError("from __static__ import * is disallowed")
                 elif name not in self.symtable.statics.children:
                     raise TypedSyntaxError(f"unsupported static import {name}")
 
-    def visit_until_return(self, nodes: List[stmt]) -> bool:
+    def visit_until_return(self, nodes: List[ast.stmt]) -> bool:
         for stmt in nodes:
             self.visit(stmt)
             if stmt in self.returns:
@@ -5092,13 +5170,13 @@ class TypeBinder(GenericVisitor):
         )
 
 
-class PyFlowGraph37Static(PyFlowGraph37):
-    opcode: Opcode = opcode37static.opcode
+class PyFlowGraph38Static(PyFlowGraph38):
+    opcode: Opcode = opcode38static.opcode
 
 
-class Static37CodeGenerator(Python37CodeGenerator):
+class Static38CodeGenerator(Python38CodeGenerator):
+    flow_graph = PyFlowGraph38Static
     _default_cache: Dict[Type[ast.AST], typingCallable[[...], None]] = {}
-    flow_graph = PyFlowGraph37Static
 
     def __init__(
         self,
@@ -5120,12 +5198,12 @@ class Static37CodeGenerator(Python37CodeGenerator):
 
     def make_child_codegen(
         self, tree: AST, graph: PyFlowGraph
-    ) -> Static37CodeGenerator:
-        graph.setFlag(CO_STATICALLY_COMPILED)
+    ) -> Static38CodeGenerator:
+        graph.setFlag(self.consts.CO_STATICALLY_COMPILED)
         if self.cur_mod.noframe:
-            graph.setFlag(CO_NO_FRAME)
+            graph.setFlag(self.consts.CO_NO_FRAME)
         elif self.cur_mod.tinyframe:
-            graph.setFlag(CO_TINY_FRAME)
+            graph.setFlag(self.consts.CO_TINY_FRAME)
         return StaticCodeGenerator(
             self,
             tree,
@@ -5148,7 +5226,7 @@ class Static37CodeGenerator(Python37CodeGenerator):
         optimize: int,
         peephole_enabled: bool = True,
         ast_optimizer_enabled: bool = True,
-    ) -> Static37CodeGenerator:
+    ) -> Static38CodeGenerator:
         # TODO: Parsing here should really be that we run declaration visitor over all nodes,
         # and then perform post processing on the symbol table, and then proceed to analysis
         # and compilation
@@ -5168,7 +5246,7 @@ class Static37CodeGenerator(Python37CodeGenerator):
         graph = cls.flow_graph(
             module_name, filename, s.scopes[tree], peephole_enabled=peephole_enabled
         )
-        graph.setFlag(CO_STATICALLY_COMPILED)
+        graph.setFlag(cls.consts.CO_STATICALLY_COMPILED)
 
         type_binder = TypeBinder(s, filename, symtable, module_name)
         type_binder.visit(tree)
@@ -5406,35 +5484,47 @@ class Static37CodeGenerator(Python37CodeGenerator):
     def visitSubscript(self, node: ast.Subscript, aug_flag: bool = False) -> None:
         self.get_type(node.value).emit_subscr(node, aug_flag, self)
 
-    def visitReturn(self, node: Return) -> None:
-        func = self.tree
-        if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            raise self.syntax_error("'return' outside function", node)
-        elif self.scope.coroutine and self.scope.generator and node.value:
-            raise self.syntax_error("'return' with value in async generator", node)
-
-        self.set_lineno(node)
+    def get_expected_returntype(self, node: ast.Return) -> Optional[Class]:
         expected = None
+        func = self.tree
+        value = node.value
+        self.checkReturn(node)
         if isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
             func_returns = func.returns
             if func_returns:
                 expected = self.cur_mod.resolve_annotation(func_returns)
-        value = node.value
         if value:
             return_type = self.get_type(value) or DYNAMIC
-            if isinstance(return_type, Primitive):
+            if isinstance(return_type, CInstance):
                 # We need better JIT typing support before we can start returning primitives from
                 # functions.
                 raise self.syntax_error(
                     f"Cannot return primitive type: {return_type.klass.name}", node
                 )
-            else:
-                self.visit(value)
+        return expected
 
-            if expected is not None and self.get_type(value) is DYNAMIC:
-                self.emit("CAST", expected.type_descr)
+    def _visitReturnValue(self, value: ast.AST, expected: Optional[Class]) -> None:
+        self.visit(value)
+        if expected is not None and self.get_type(value) is DYNAMIC:
+            self.emit("CAST", expected.type_descr)
+
+    def visitReturn(self, node: ast.Return) -> None:
+        expected = self.get_expected_returntype(node)
+        self.set_lineno(node)
+        value = node.value
+        is_return_constant = isinstance(value, ast.Constant)
+
+        if value:
+            if not is_return_constant:
+                self._visitReturnValue(value, expected)
+                self.unwind_setup_entries(preserve_tos=True)
+            else:
+                self.unwind_setup_entries(preserve_tos=False)
+                self._visitReturnValue(value, expected)
         else:
+            self.unwind_setup_entries(preserve_tos=False)
             self.emit("LOAD_CONST", None)
+
         self.emit("RETURN_VALUE")
 
     def visitDictComp(self, node: DictComp) -> None:
@@ -5538,7 +5628,7 @@ class Static37CodeGenerator(Python37CodeGenerator):
         if meth is None:
             className = klass.__name__
             meth = getattr(
-                super(Static37CodeGenerator, Static37CodeGenerator),
+                super(Static38CodeGenerator, Static38CodeGenerator),
                 "visit" + className,
                 StaticCodeGenerator.generic_visit,
             )
@@ -5563,7 +5653,7 @@ class Static37CodeGenerator(Python37CodeGenerator):
         self,
         node: Union[ast.Lambda, ast.FunctionDef],
         body: Union[List[ast.stmt], ast.expr],
-        gen: Static37CodeGenerator,
+        gen: Static38CodeGenerator,
     ) -> None:
         arg_checks = []
         cellvars = gen.graph.cellvars
@@ -5600,15 +5690,4 @@ class Static37CodeGenerator(Python37CodeGenerator):
         super().processBody(node, body, gen)
 
 
-class PyFlowGraph38Static(PyFlowGraph38):
-    opcode: Opcode = opcode38static.opcode
-
-
-class Static38CodeGenerator(Static37CodeGenerator, Python38CodeGenerator):
-    flow_graph = PyFlowGraph38Static  # pyre-ignore[15]
-
-
-if sys.version_info >= (3, 8):
-    StaticCodeGenerator = Static38CodeGenerator
-else:
-    StaticCodeGenerator = Static37CodeGenerator
+StaticCodeGenerator = Static38CodeGenerator

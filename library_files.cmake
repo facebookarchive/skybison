@@ -60,6 +60,8 @@ compiler/__init__.py
 compiler/__main__.py
 compiler/config.py
 compiler/consts.py
+compiler/consts36.py
+compiler/consts38.py
 compiler/future.py
 compiler/misc.py
 compiler/opcode36.py

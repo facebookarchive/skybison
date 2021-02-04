@@ -195,7 +195,7 @@ opcode.stack_effects.update(
     YIELD_VALUE=0,
     YIELD_FROM=-1,
     POP_BLOCK=0,
-    POP_EXCEPT=0,  #  -3 except if bad bytecode
+    POP_EXCEPT=0,  # -3 except if bad bytecode
     END_FINALLY=-1,  # or -2 or -3 if exception occurred
     STORE_NAME=-1,
     DELETE_NAME=0,
