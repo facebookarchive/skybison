@@ -2552,6 +2552,28 @@ HANDLER_INLINE Continue Interpreter::doPopBlock(Thread* thread, word) {
   return Continue::NEXT;
 }
 
+HANDLER_INLINE Continue Interpreter::doEndAsyncFor(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  Runtime* runtime = thread->runtime();
+  RawObject exc = thread->stackPop();
+  DCHECK(runtime->isInstanceOfType(exc) &&
+             exc.rawCast<RawType>().isBaseExceptionSubclass(),
+         "Expected BaseException subclass");
+  // Check if TOS is StopIteration type or a subclass of it.
+  if (typeIsSubclass(exc, runtime->typeAt(LayoutId::kStopAsyncIteration))) {
+    TryBlock block = frame->blockStackPop();
+    unwindExceptHandler(thread, block);
+    thread->stackPop();
+    frame->setVirtualPC(frame->virtualPC() + arg);
+    return Continue::NEXT;
+  }
+
+  thread->setPendingExceptionType(exc);
+  thread->setPendingExceptionValue(thread->stackPop());
+  thread->setPendingExceptionTraceback(thread->stackPop());
+  return Continue::UNWIND;
+}
+
 HANDLER_INLINE Continue Interpreter::doEndFinally(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);

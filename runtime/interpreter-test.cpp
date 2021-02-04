@@ -3624,6 +3624,54 @@ TEST_F(InterpreterTest, PopFinallyWithNonExceptHandlerRaisesSystemError) {
                             "popped block is not an except handler"));
 }
 
+TEST_F(InterpreterTest, EndAsyncForWithExceptionRaises) {
+  HandleScope scope(thread_);
+  const byte bytecode[] = {
+      LOAD_CONST,    0,  // exc_traceback
+      LOAD_CONST,    1,  // exc_value
+      LOAD_CONST,    2,  // exc_type
+      END_ASYNC_FOR, 0,
+  };
+  Object exc_traceback(&scope, runtime_->newTraceback());
+  Object exc_type(&scope, runtime_->typeAt(LayoutId::kUserWarning));
+  Object exc_value(&scope, runtime_->newStrFromCStr("exc message"));
+  Tuple consts(&scope,
+               runtime_->newTupleWith3(exc_traceback, exc_value, exc_type));
+  Code code(&scope, newEmptyCode());
+  code.setConsts(*consts);
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  EXPECT_TRUE(
+      raisedWithStr(runCode(code), LayoutId::kUserWarning, "exc message"));
+}
+
+TEST_F(InterpreterTest, EndAsyncForWithStopAsyncIterationContinues) {
+  HandleScope scope(thread_);
+  const byte bytecode[] = {
+      LOAD_CONST,    5,                     // dummy
+      SETUP_FINALLY, 10, LOAD_CONST,    0,  // exc_traceback
+      LOAD_CONST,    1,                     // exc_value
+      LOAD_CONST,    2,                     // exc_type
+      LOAD_CONST,    3,                     // stop_async_iteration
+      RAISE_VARARGS, 1,  END_ASYNC_FOR, 4, LOAD_CONST, 5,  // dummy
+      RETURN_VALUE,  0,  LOAD_CONST,    4,                 // 42
+      RETURN_VALUE,  0,
+  };
+  Object exc_traceback(&scope, runtime_->newTraceback());
+  Object exc_value(&scope, runtime_->newStrFromCStr("exc message"));
+  Object exc_type(&scope, runtime_->typeAt(LayoutId::kUserWarning));
+  Object stop_async_iteration(&scope,
+                              runtime_->typeAt(LayoutId::kStopAsyncIteration));
+  Object value(&scope, runtime_->newInt(42));
+  Object dummy(&scope, runtime_->newInt(-7));
+  Tuple consts(&scope,
+               runtime_->newTupleWithN(6, &exc_traceback, &exc_value, &exc_type,
+                                       &stop_async_iteration, &value, &dummy));
+  Code code(&scope, newEmptyCode());
+  code.setConsts(*consts);
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  EXPECT_TRUE(isIntEqualsWord(runCode(code), 42));
+}
+
 TEST_F(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

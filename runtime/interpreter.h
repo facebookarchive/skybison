@@ -387,6 +387,7 @@ class Interpreter {
   static Continue doCompareOpAnamorphic(Thread* thread, word arg);
   static Continue doDeleteAttr(Thread* thread, word arg);
   static Continue doDeleteSubscr(Thread* thread, word arg);
+  static Continue doEndAsyncFor(Thread* thread, word arg);
   static Continue doEndFinally(Thread* thread, word arg);
   static Continue doForIter(Thread* thread, word arg);
   static Continue doForIterAnamorphic(Thread* thread, word arg);
