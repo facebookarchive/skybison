@@ -1,3 +1,5 @@
+#include "capi-trampolines.h"
+
 #include "capi-handles.h"
 #include "capi.h"
 #include "dict-builtins.h"

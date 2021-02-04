@@ -1,9 +1,11 @@
 #include <memory>
 
+#include "cpython-data.h"
 #include "gtest/gtest.h"
 
 #include "capi-handles.h"
 #include "dict-builtins.h"
+#include "function-utils.h"
 #include "runtime.h"
 #include "test-utils.h"
 
@@ -27,9 +29,8 @@ static RawObject newFunctionNoArgs(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   PyCFunction function_ptr = capiFunctionNoArgs;
-  return runtime->newExtensionFunction(thread, name,
-                                       reinterpret_cast<void*>(function_ptr),
-                                       ExtensionMethodType::kMethNoArgs);
+  return newExtensionFunction(
+      thread, name, reinterpret_cast<void*>(function_ptr), METH_NOARGS);
 }
 
 TEST_F(MethodTrampolinesTest, NoArgs) {
@@ -169,9 +170,8 @@ static RawObject newFunctionOneArg(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   PyCFunction function_ptr = capiFunctionOneArg;
-  return runtime->newExtensionFunction(thread, name,
-                                       reinterpret_cast<void*>(function_ptr),
-                                       ExtensionMethodType::kMethO);
+  return newExtensionFunction(thread, name,
+                              reinterpret_cast<void*>(function_ptr), METH_O);
 }
 
 TEST_F(MethodTrampolinesTest, OneArg) {
@@ -323,9 +323,8 @@ static RawObject newFunctionVarArgs(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   PyCFunction function_ptr = capiFunctionVarArgs;
-  return runtime->newExtensionFunction(thread, name,
-                                       reinterpret_cast<void*>(function_ptr),
-                                       ExtensionMethodType::kMethVarArgs);
+  return newExtensionFunction(
+      thread, name, reinterpret_cast<void*>(function_ptr), METH_VARARGS);
 }
 
 TEST_F(MethodTrampolinesTest, VarArgs) {
@@ -451,9 +450,9 @@ static RawObject newFunctionKeywordsNullKwargs(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   PyCFunctionWithKeywords function_ptr = capiFunctionKeywordsNullKwargs;
-  return runtime->newExtensionFunction(
-      thread, name, reinterpret_cast<void*>(function_ptr),
-      ExtensionMethodType::kMethVarArgsAndKeywords);
+  return newExtensionFunction(thread, name,
+                              reinterpret_cast<void*>(function_ptr),
+                              METH_VARARGS | METH_KEYWORDS);
 }
 
 TEST_F(MethodTrampolinesTest, Keywords) {
@@ -505,9 +504,9 @@ static RawObject newFunctionKeywords(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   PyCFunctionWithKeywords function_ptr = capiFunctionKeywords;
-  return runtime->newExtensionFunction(
-      thread, name, reinterpret_cast<void*>(function_ptr),
-      ExtensionMethodType::kMethVarArgsAndKeywords);
+  return newExtensionFunction(thread, name,
+                              reinterpret_cast<void*>(function_ptr),
+                              METH_VARARGS | METH_KEYWORDS);
 }
 
 TEST_F(MethodTrampolinesTest, KeywordsKw) {
@@ -592,9 +591,8 @@ static RawObject newExtensionFunctionFast(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   _PyCFunctionFast function_ptr = capiFunctionFast;
-  return runtime->newExtensionFunction(thread, name,
-                                       reinterpret_cast<void*>(function_ptr),
-                                       ExtensionMethodType::kMethFastCall);
+  return newExtensionFunction(
+      thread, name, reinterpret_cast<void*>(function_ptr), METH_FASTCALL);
 }
 
 TEST_F(MethodTrampolinesTest, Fast) {
@@ -723,9 +721,9 @@ static RawObject newExtensionFunctionFastWithKeywordsNullKwnames(
   Object name(&scope, runtime->newStrFromCStr("foo"));
   _PyCFunctionFastWithKeywords function_ptr =
       capiFunctionFastWithKeywordsNullKwnames;
-  return runtime->newExtensionFunction(
-      thread, name, reinterpret_cast<void*>(function_ptr),
-      ExtensionMethodType::kMethFastCallAndKeywords);
+  return newExtensionFunction(thread, name,
+                              reinterpret_cast<void*>(function_ptr),
+                              METH_FASTCALL | METH_KEYWORDS);
 }
 
 TEST_F(MethodTrampolinesTest, FastWithKeywords) {
@@ -785,9 +783,9 @@ static RawObject newExtensionFunctionFastWithKeywords(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr("foo"));
   _PyCFunctionFastWithKeywords function_ptr = capiFunctionFastWithKeywords;
-  return runtime->newExtensionFunction(
-      thread, name, reinterpret_cast<void*>(function_ptr),
-      ExtensionMethodType::kMethFastCallAndKeywords);
+  return newExtensionFunction(thread, name,
+                              reinterpret_cast<void*>(function_ptr),
+                              METH_FASTCALL | METH_KEYWORDS);
 }
 
 TEST_F(MethodTrampolinesTest, FastWithKeywordsKw) {

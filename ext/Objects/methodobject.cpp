@@ -4,32 +4,6 @@
 
 namespace py {
 
-RawObject newCFunction(Thread* thread, PyMethodDef* method, const Object& name,
-                       const Object& self, const Object& module_name) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function function(&scope,
-                    runtime->newExtensionFunction(
-                        thread, name, reinterpret_cast<void*>(method->ml_meth),
-                        methodTypeFromMethodFlags(method->ml_flags)));
-  if (method->ml_doc != nullptr) {
-    function.setDoc(runtime->newStrFromCStr(method->ml_doc));
-  }
-  if (runtime->isInstanceOfStr(*module_name)) {
-    function.setModuleName(*module_name);
-  }
-  return runtime->newBoundMethod(function, self);
-}
-
-static RawObject getExtensionFunction(RawObject object) {
-  if (!object.isBoundMethod()) return Error::notFound();
-  RawObject function_obj = BoundMethod::cast(object).function();
-  if (!function_obj.isFunction()) return Error::notFound();
-  RawFunction function = Function::cast(function_obj);
-  if (!function.isExtension()) return Error::notFound();
-  return function;
-}
-
 PY_EXPORT int PyCFunction_Check_Func(PyObject* obj) {
   return !getExtensionFunction(ApiHandle::fromPyObject(obj)->asObject())
               .isErrorNotFound();

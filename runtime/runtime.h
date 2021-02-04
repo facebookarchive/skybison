@@ -26,16 +26,6 @@ struct ListEntry {
   ListEntry* next;
 };
 
-enum class ExtensionMethodType {
-  kMethVarArgs = 1 << 0,
-  kMethKeywords = 1 << 1,  // only used with kMethVarArgs or kMethFastCall
-  kMethVarArgsAndKeywords = kMethVarArgs | kMethKeywords,
-  kMethNoArgs = 1 << 2,
-  kMethO = 1 << 3,
-  kMethFastCall = 1 << 7,
-  kMethFastCallAndKeywords = kMethFastCall | kMethKeywords,
-};
-
 enum LayoutTypeTransition {
   kFrom = 0,
   kTo = 1,
@@ -137,11 +127,14 @@ class Runtime {
   RawObject emptyFrozenSet();
   RawObject newFrozenSet();
 
+  RawObject newFunction(Thread* thread, const Object& name, const Object& code,
+                        word flags, word argcount, word total_args,
+                        word total_vars, const Object& stacksize_or_builtin,
+                        Function::Entry entry, Function::Entry entry_kw,
+                        Function::Entry entry_ex);
+
   RawObject newFunctionWithCode(Thread* thread, const Object& qualname,
                                 const Code& code, const Object& module_obj);
-
-  RawObject newExtensionFunction(Thread* thread, const Object& name,
-                                 void* function, ExtensionMethodType type);
 
   RawObject newExceptionState();
 
@@ -934,12 +927,6 @@ class Runtime {
   RawObject createLargeBytes(word length);
   RawObject createMutableBytes(word length);
   RawObject createTuple(word length);
-
-  RawObject newFunction(Thread* thread, const Object& name, const Object& code,
-                        word flags, word argcount, word total_args,
-                        word total_vars, const Object& stacksize_or_builtin,
-                        Function::Entry entry, Function::Entry entry_kw,
-                        Function::Entry entry_ex);
 
   // Generic attribute deletion code used for class objects
   // TODO(T55871582): Remove code paths that can raise from the Runtime

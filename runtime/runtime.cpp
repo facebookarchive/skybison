@@ -811,55 +811,6 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   return *function;
 }
 
-RawObject Runtime::newExtensionFunction(Thread* thread, const Object& name,
-                                        void* function,
-                                        ExtensionMethodType type) {
-  HandleScope scope(thread);
-  Function::Entry entry;
-  Function::Entry entry_kw;
-  Function::Entry entry_ex;
-  switch (type) {
-    case ExtensionMethodType::kMethNoArgs:
-      entry = methodTrampolineNoArgs;
-      entry_kw = methodTrampolineNoArgsKw;
-      entry_ex = methodTrampolineNoArgsEx;
-      break;
-    case ExtensionMethodType::kMethO:
-      entry = methodTrampolineOneArg;
-      entry_kw = methodTrampolineOneArgKw;
-      entry_ex = methodTrampolineOneArgEx;
-      break;
-    case ExtensionMethodType::kMethVarArgs:
-      entry = methodTrampolineVarArgs;
-      entry_kw = methodTrampolineVarArgsKw;
-      entry_ex = methodTrampolineVarArgsEx;
-      break;
-    case ExtensionMethodType::kMethVarArgsAndKeywords:
-      entry = methodTrampolineKeywords;
-      entry_kw = methodTrampolineKeywordsKw;
-      entry_ex = methodTrampolineKeywordsEx;
-      break;
-    case ExtensionMethodType::kMethFastCall:
-      entry = methodTrampolineFast;
-      entry_kw = methodTrampolineFastKw;
-      entry_ex = methodTrampolineFastEx;
-      break;
-    case ExtensionMethodType::kMethFastCallAndKeywords:
-      entry = methodTrampolineFastWithKeywords;
-      entry_kw = methodTrampolineFastWithKeywordsKw;
-      entry_ex = methodTrampolineFastWithKeywordsEx;
-      break;
-    default:
-      UNIMPLEMENTED("Unsupported MethodDef type");
-  }
-  Object code(&scope, newIntFromCPtr(function));
-  Object none(&scope, NoneType::object());
-  word flags = Function::Flags::kExtension;
-  return newFunction(thread, name, code, flags, /*argcount=*/-1,
-                     /*total_args=*/-1, /*total_vars=*/-1,
-                     /*stacksize_or_builtin=*/none, entry, entry_kw, entry_ex);
-}
-
 RawObject Runtime::newExceptionState() {
   return createInstance<RawExceptionState>(this);
 }

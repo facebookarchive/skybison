@@ -935,7 +935,10 @@ add_library(
   ext/Internal/capi-handles.h
   ext/Internal/capi-state.cpp
   ext/Internal/capi-state.h
-  ext/Internal/trampolines.cpp
+  ext/Internal/capi-trampolines.cpp
+  ext/Internal/capi-trampolines.h
+  ext/Internal/function-utils.cpp
+  ext/Internal/function-utils.h
   ext/Modules/_datetimemodule.cpp
   ext/Modules/_parsermodule.cpp
   ext/Modules/_sre/_sre.cpp
@@ -957,8 +960,6 @@ add_library(
   ext/Objects/floatobject.cpp
   ext/Objects/frameobject.cpp
   ext/Objects/funcobject.cpp
-  ext/Objects/function-utils.cpp
-  ext/Objects/function-utils.h
   ext/Objects/genobject.cpp
   ext/Objects/iterobject.cpp
   ext/Objects/listobject.cpp

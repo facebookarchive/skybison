@@ -14,23 +14,6 @@ PY_EXPORT PyTypeObject* PyDictProxy_Type_Ptr() {
       thread, thread->runtime()->typeAt(LayoutId::kMappingProxy)));
 }
 
-RawObject newClassMethod(Thread* thread, PyMethodDef* method,
-                         const Object& name, const Object& type) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newExtensionFunction(
-                                thread, name, bit_cast<void*>(method->ml_meth),
-                                methodTypeFromMethodFlags(method->ml_flags)));
-  if (method->ml_doc != nullptr) {
-    function.setDoc(runtime->newStrFromCStr(method->ml_doc));
-  }
-  Object result(
-      &scope, thread->invokeFunction2(ID(builtins), ID(_descrclassmethod), type,
-                                      function));
-  DCHECK(!result.isError(), "failed to create classmethod descriptor");
-  return *result;
-}
-
 PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
                                            PyMethodDef* method) {
   Thread* thread = Thread::current();
@@ -61,22 +44,6 @@ PY_EXPORT PyObject* PyDescr_NewGetSet(PyTypeObject* /* e */,
 PY_EXPORT PyObject* PyDescr_NewMember(PyTypeObject* /* e */,
                                       PyMemberDef* /* r */) {
   UNIMPLEMENTED("PyDescr_NewMember");
-}
-
-RawObject newMethod(Thread* thread, PyMethodDef* method, const Object& name,
-                    const Object& /*type*/) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newExtensionFunction(
-                                thread, name, bit_cast<void*>(method->ml_meth),
-                                methodTypeFromMethodFlags(method->ml_flags)));
-  if (method->ml_doc != nullptr) {
-    function.setDoc(runtime->newStrFromCStr(method->ml_doc));
-  }
-  // TODO(T62932301): We currently return the plain function here which means
-  // we do not check the `self` parameter to be a proper subtype of `type`.
-  // Should we wrap this with a new descriptor type?
-  return *function;
 }
 
 PY_EXPORT PyObject* PyDescr_NewMethod(PyTypeObject* type, PyMethodDef* method) {
