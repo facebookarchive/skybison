@@ -206,6 +206,7 @@ typedef struct {
     PyObject *ops;
     PyObject *optional_vars;
     PyObject *orelse;
+    PyObject *posonlyargs;
     PyObject *returns;
     PyObject *right;
     PyObject *s;
@@ -429,6 +430,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->ops);
     Py_CLEAR(astmodulestate(module)->optional_vars);
     Py_CLEAR(astmodulestate(module)->orelse);
+    Py_CLEAR(astmodulestate(module)->posonlyargs);
     Py_CLEAR(astmodulestate(module)->returns);
     Py_CLEAR(astmodulestate(module)->right);
     Py_CLEAR(astmodulestate(module)->s);
@@ -651,6 +653,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->ops);
     Py_VISIT(astmodulestate(module)->optional_vars);
     Py_VISIT(astmodulestate(module)->orelse);
+    Py_VISIT(astmodulestate(module)->posonlyargs);
     Py_VISIT(astmodulestate(module)->returns);
     Py_VISIT(astmodulestate(module)->right);
     Py_VISIT(astmodulestate(module)->s);
@@ -746,6 +749,7 @@ static int init_identifiers(void)
     if ((state->ops = PyUnicode_InternFromString("ops")) == NULL) return 0;
     if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return 0;
     if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return 0;
+    if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
     if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
     if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
     if ((state->s = PyUnicode_InternFromString("s")) == NULL) return 0;
@@ -1039,6 +1043,7 @@ static char *ExceptHandler_fields[]={
 };
 static PyObject* ast2obj_arguments(void*);
 static char *arguments_fields[]={
+    "posonlyargs",
     "args",
     "vararg",
     "kwonlyargs",
@@ -1782,7 +1787,7 @@ static int init_types(void)
                                           ExceptHandler_fields, 3);
     if (!state->ExceptHandler_type) return 0;
     state->arguments_type = make_type("arguments", state->AST_type,
-                                      arguments_fields, 6);
+                                      arguments_fields, 7);
     if (!state->arguments_type) return 0;
     if (!add_attributes(state->arguments_type, NULL, 0)) return 0;
     state->arg_type = make_type("arg", state->AST_type, arg_fields, 2);
@@ -3113,13 +3118,15 @@ ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, arg_ty vararg, asdl_seq * kwonlyargs, asdl_seq *
-          kw_defaults, arg_ty kwarg, asdl_seq * defaults, PyArena *arena)
+arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty vararg, asdl_seq *
+          kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg, asdl_seq *
+          defaults, PyArena *arena)
 {
     arguments_ty p;
     p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
+    p->posonlyargs = posonlyargs;
     p->args = args;
     p->vararg = vararg;
     p->kwonlyargs = kwonlyargs;
@@ -4522,6 +4529,12 @@ ast2obj_arguments(void* _o)
     tp = (PyTypeObject *)astmodulestate_global->arguments_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
+    value = ast2obj_list(o->posonlyargs, ast2obj_arg);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->posonlyargs, value) ==
+        -1)
+        goto failed;
+    Py_DECREF(value);
     value = ast2obj_list(o->args, ast2obj_arg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->args, value) == -1)
@@ -8658,6 +8671,7 @@ int
 obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
 {
     PyObject* tmp = NULL;
+    asdl_seq* posonlyargs;
     asdl_seq* args;
     arg_ty vararg;
     asdl_seq* kwonlyargs;
@@ -8665,6 +8679,37 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     arg_ty kwarg;
     asdl_seq* defaults;
 
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->posonlyargs, &tmp) <
+        0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"posonlyargs\" missing from arguments");
+        return 1;
+    }
+    else {
+        int res;
+        Py_ssize_t len;
+        Py_ssize_t i;
+        if (!PyList_Check(tmp)) {
+            PyErr_Format(PyExc_TypeError, "arguments field \"posonlyargs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            goto failed;
+        }
+        len = PyList_GET_SIZE(tmp);
+        posonlyargs = _Py_asdl_seq_new(len, arena);
+        if (posonlyargs == NULL) goto failed;
+        for (i = 0; i < len; i++) {
+            arg_ty val;
+            res = obj2ast_arg(PyList_GET_ITEM(tmp, i), &val, arena);
+            if (res != 0) goto failed;
+            if (len != PyList_GET_SIZE(tmp)) {
+                PyErr_SetString(PyExc_RuntimeError, "arguments field \"posonlyargs\" changed size during iteration");
+                goto failed;
+            }
+            asdl_seq_SET(posonlyargs, i, val);
+        }
+        Py_CLEAR(tmp);
+    }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->args, &tmp) < 0) {
         return 1;
     }
@@ -8813,8 +8858,8 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     }
-    *out = arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults,
-                     arena);
+    *out = arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg,
+                     defaults, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);

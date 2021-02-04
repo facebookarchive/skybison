@@ -1344,7 +1344,7 @@ ast_for_arguments(struct compiling *c, const node *n)
 
     if (TYPE(n) == parameters) {
         if (NCH(n) == 2) /* () as argument list */
-            return arguments(NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
+            return arguments(NULL, NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
         n = CHILD(n, 1);
     }
     assert(TYPE(n) == typedargslist || TYPE(n) == varargslist);
@@ -1476,7 +1476,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(NULL, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -1700,7 +1700,7 @@ ast_for_lambdef(struct compiling *c, const node *n)
     expr_ty expression;
 
     if (NCH(n) == 3) {
-        args = arguments(NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
+        args = arguments(NULL, NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
         if (!args)
             return NULL;
         expression = ast_for_expr(c, CHILD(n, 2));
