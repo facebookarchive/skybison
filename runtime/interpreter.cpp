@@ -4706,8 +4706,8 @@ HANDLER_INLINE Continue Interpreter::doSetAdd(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doMapAdd(Thread* thread, word arg) {
   HandleScope scope(thread);
-  Object key(&scope, thread->stackPop());
   Object value(&scope, thread->stackPop());
+  Object key(&scope, thread->stackPop());
   Dict dict(&scope, Dict::cast(thread->stackPeek(arg - 1)));
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return Continue::UNWIND;

@@ -225,6 +225,11 @@ class PyroFlowGraph(PyFlowGraph37):
 class PyroCodeGenerator(Python37CodeGenerator):
     flow_graph = PyroFlowGraph
 
+    def compile_dictcomp_element(self, elt, val):
+        # For Py38+, the order of evaluation was reversed.
+        self.visit(elt)
+        self.visit(val)
+
     @classmethod
     def optimize_tree(cls, optimize: int, tree: ast.AST):
         return AstOptimizerPyro(optimize=optimize > 0).visit(tree)
