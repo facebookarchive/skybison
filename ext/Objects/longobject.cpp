@@ -4,6 +4,7 @@
 #include "cpython-func.h"
 
 #include "capi-handles.h"
+#include "float-builtins.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "objects.h"
@@ -215,15 +216,11 @@ PY_EXPORT long long PyLong_AsLongLongAndOverflow(PyObject* pylong,
 
 PY_EXPORT PyObject* PyLong_FromDouble(double value) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object float_obj(&scope, runtime->newFloat(value));
-  Object result(&scope, thread->invokeMethod1(float_obj, ID(__int__)));
-  if (result.isError()) {
-    DCHECK(!result.isErrorNotFound(), "could not call float.__int__");
+  RawObject result = intFromDouble(thread, value);
+  if (result.isErrorException()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread, result);
 }
 
 PY_EXPORT PyObject* PyLong_FromString(const char* str, char** pend, int base) {
