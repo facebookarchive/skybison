@@ -1113,6 +1113,17 @@ TEST_F(ThreadTest,
   EXPECT_EQ(thread_->pendingStopIterationValue(), obj1);
 }
 
+TEST_F(ThreadTest, RaiseWithTypePreservesTraceback) {
+  HandleScope scope(thread_);
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kBaseException));
+  BaseException exc(&scope, runtime_->newInstance(layout));
+  Object tb(&scope, runtime_->newTraceback());
+  exc.setTraceback(*tb);
+  thread_->raiseWithType(runtime_->typeOf(*exc), *exc);
+  Object pending_exc_tb(&scope, thread_->pendingExceptionTraceback());
+  EXPECT_EQ(tb, pending_exc_tb);
+}
+
 // MRO tests
 
 TEST_F(ThreadTest, LoadBuildTypeVerifyMro) {

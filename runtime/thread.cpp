@@ -526,6 +526,10 @@ RawObject Thread::raiseWithType(RawObject type, RawObject value) {
   Type type_obj(&scope, type);
   Object value_obj(&scope, value);
   Object traceback_obj(&scope, NoneType::object());
+  // If raise is called with an exception instance use the original traceback
+  if (runtime()->isInstanceOfBaseException(*value_obj)) {
+    traceback_obj = value_obj.rawCast<RawBaseException>().traceback();
+  }
 
   value_obj = chainExceptionContext(type_obj, value_obj);
   if (value_obj.isErrorException()) return Error::exception();

@@ -165,6 +165,7 @@ test/test_compiler/test_unparse.py
 test/test_compiler/test_visitor.py
 test/test_coroutines.py
 test/test_dict.py
+test/test_exception.py
 test/test_hmac.py
 test/test_normalization.py
 test/test_peepholer.py
