@@ -26,13 +26,14 @@ PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-static char* bytesAsString(ApiHandle* handle, const Bytes& bytes) {
-  if (void* cache = handle->cache()) return static_cast<char*>(cache);
+static char* bytesAsString(Runtime* runtime, ApiHandle* handle,
+                           const Bytes& bytes) {
+  if (void* cache = handle->cache(runtime)) return static_cast<char*>(cache);
   word len = bytes.length();
   auto cache = static_cast<byte*>(std::malloc(len + 1));
   bytes.copyTo(cache, len);
   cache[len] = '\0';
-  handle->setCache(cache);
+  handle->setCache(runtime, cache);
   return reinterpret_cast<char*>(cache);
 }
 
@@ -47,7 +48,7 @@ PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
     return nullptr;
   }
   Bytes bytes(&scope, bytesUnderlying(*obj));
-  return bytesAsString(handle, bytes);
+  return bytesAsString(runtime, handle, bytes);
 }
 
 PY_EXPORT int PyBytes_AsStringAndSize(PyObject* pybytes, char** buffer,
@@ -61,13 +62,14 @@ PY_EXPORT int PyBytes_AsStringAndSize(PyObject* pybytes, char** buffer,
   HandleScope scope(thread);
   ApiHandle* handle = ApiHandle::fromPyObject(pybytes);
   Object obj(&scope, handle->asObject());
-  if (!thread->runtime()->isInstanceOfBytes(*obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*obj)) {
     thread->raiseBadArgument();
     return -1;
   }
 
   Bytes bytes(&scope, bytesUnderlying(*obj));
-  char* str = bytesAsString(handle, bytes);
+  char* str = bytesAsString(runtime, handle, bytes);
 
   if (length != nullptr) {
     *length = bytes.length();

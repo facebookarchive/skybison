@@ -162,9 +162,9 @@ word moduleExecDef(Thread* thread, const Module& module, PyModuleDef* def) {
 
   ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
   if (def->m_size >= 0) {
-    if (handle->cache() == nullptr) {
-      handle->setCache(std::calloc(def->m_size, 1));
-      if (!handle->cache()) {
+    if (handle->cache(runtime) == nullptr) {
+      handle->setCache(runtime, std::calloc(def->m_size, 1));
+      if (!handle->cache(runtime)) {
         thread->raiseMemoryError();
         return -1;
       }

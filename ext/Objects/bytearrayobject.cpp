@@ -19,13 +19,13 @@ PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfBytearray(*obj),
          "argument to PyByteArray_AsString is not a bytearray");
-  if (void* cache = handle->cache()) std::free(cache);
+  if (void* cache = handle->cache(runtime)) std::free(cache);
   Bytearray array(&scope, *obj);
   word len = array.numItems();
   auto buffer = static_cast<byte*>(std::malloc(len + 1));
   array.copyTo(buffer, len);
   buffer[len] = '\0';
-  handle->setCache(buffer);
+  handle->setCache(runtime, buffer);
   return reinterpret_cast<char*>(buffer);
 }
 

@@ -235,33 +235,33 @@ TEST_F(CApiHandlesTest, Cache) {
   HandleScope scope(thread_);
 
   auto handle1 = ApiHandle::newReference(thread_, runtime_->newTuple(1));
-  EXPECT_EQ(handle1->cache(), nullptr);
+  EXPECT_EQ(handle1->cache(runtime_), nullptr);
 
   Str str(&scope,
           runtime_->newStrFromCStr("this is too long for a RawSmallStr"));
   auto handle2 = ApiHandle::newReference(thread_, *str);
-  EXPECT_EQ(handle2->cache(), nullptr);
+  EXPECT_EQ(handle2->cache(runtime_), nullptr);
 
   void* buffer1 = std::malloc(16);
-  handle1->setCache(buffer1);
-  EXPECT_EQ(handle1->cache(), buffer1);
-  EXPECT_EQ(handle2->cache(), nullptr);
+  handle1->setCache(runtime_, buffer1);
+  EXPECT_EQ(handle1->cache(runtime_), buffer1);
+  EXPECT_EQ(handle2->cache(runtime_), nullptr);
 
   void* buffer2 = std::malloc(16);
-  handle2->setCache(buffer2);
-  EXPECT_EQ(handle2->cache(), buffer2);
-  EXPECT_EQ(handle1->cache(), buffer1);
+  handle2->setCache(runtime_, buffer2);
+  EXPECT_EQ(handle2->cache(runtime_), buffer2);
+  EXPECT_EQ(handle1->cache(runtime_), buffer1);
 
-  handle1->setCache(buffer2);
-  handle2->setCache(buffer1);
-  EXPECT_EQ(handle1->cache(), buffer2);
-  EXPECT_EQ(handle2->cache(), buffer1);
+  handle1->setCache(runtime_, buffer2);
+  handle2->setCache(runtime_, buffer1);
+  EXPECT_EQ(handle1->cache(runtime_), buffer2);
+  EXPECT_EQ(handle2->cache(runtime_), buffer1);
 
   Object key(&scope, handle1->asObject());
-  handle1->dispose();
+  handle1->dispose(runtime_);
   IdentityDict* caches = capiCaches(runtime_);
   EXPECT_FALSE(caches->includes(*key));
-  EXPECT_EQ(handle2->cache(), buffer1);
+  EXPECT_EQ(handle2->cache(runtime_), buffer1);
 }
 
 TEST_F(CApiHandlesTest, VisitReferences) {

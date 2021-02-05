@@ -608,7 +608,9 @@ PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
   Str str(&scope, strUnderlying(*obj));
   word length = str.length();
   if (size != nullptr) *size = length;
-  if (void* cache = handle->cache()) return static_cast<char*>(cache);
+  if (void* cache = handle->cache(runtime)) {
+    return static_cast<char*>(cache);
+  }
 
   word surr_index = strFindSurrogateCodepoint(str, 0);
   if (surr_index != -1) {
@@ -629,7 +631,7 @@ PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   str.copyTo(result, length);
   result[length] = '\0';
-  handle->setCache(result);
+  handle->setCache(runtime, result);
   return reinterpret_cast<char*>(result);
 }
 
@@ -2210,21 +2212,21 @@ PY_EXPORT int PyUnicode_KIND_Func(PyObject* obj) {
 // behavior from CPython, where changing the data in the buffer changes the
 // string object.
 PY_EXPORT void* PyUnicode_DATA_Func(PyObject* str) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   ApiHandle* handle = ApiHandle::fromPyObject(str);
-  if (void* cache = handle->cache()) {
+  if (void* cache = handle->cache(runtime)) {
     return static_cast<char*>(cache);
   }
-  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, handle->asObject());
-  DCHECK(thread->runtime()->isInstanceOfStr(*obj),
-         "str should be a str instance");
+  DCHECK(runtime->isInstanceOfStr(*obj), "str should be a str instance");
   Str str_obj(&scope, strUnderlying(*obj));
   word length = str_obj.length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   str_obj.copyTo(result, length);
   result[length] = '\0';
-  handle->setCache(result);
+  handle->setCache(runtime, result);
   return reinterpret_cast<char*>(result);
 }
 

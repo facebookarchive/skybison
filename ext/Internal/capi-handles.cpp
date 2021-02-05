@@ -435,7 +435,7 @@ void ApiHandle::clearNotReferencedHandles(Runtime* runtime,
   handles->rehash(handles->numIndices());
 }
 
-void ApiHandle::disposeHandles(IdentityDict* handles) {
+void ApiHandle::disposeHandles(Runtime* runtime, IdentityDict* handles) {
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
@@ -444,7 +444,7 @@ void ApiHandle::disposeHandles(IdentityDict* handles) {
 
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
-    handle->dispose();
+    handle->dispose(runtime);
   }
 }
 
@@ -471,30 +471,24 @@ RawNativeProxy ApiHandle::asNativeProxy() {
   return RawObject{reference_}.rawCast<RawNativeProxy>();
 }
 
-void* ApiHandle::cache() {
+void* ApiHandle::cache(Runtime* runtime) {
   // Only managed objects can have a cached value
   DCHECK(!isImmediate(this), "immediate handles do not have caches");
   if (!isManaged(this)) return nullptr;
 
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
   IdentityDict* caches = capiCaches(runtime);
   RawObject obj = asObject();
   return caches->at(obj);
 }
 
-void ApiHandle::setCache(void* value) {
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
+void ApiHandle::setCache(Runtime* runtime, void* value) {
   IdentityDict* caches = capiCaches(runtime);
   RawObject obj = asObject();
   caches->atPut(obj, value);
 }
 
-void ApiHandle::dispose() {
+void ApiHandle::dispose(Runtime* runtime) {
   DCHECK(isManaged(this), "Dispose should only be called on managed handles");
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
 
   // TODO(T46009838): If a module handle is being disposed, this should register
   // a weakref to call the module's m_free once's the module is collected
@@ -524,7 +518,7 @@ void capiHandlesClearNotReferenced(Runtime* runtime) {
 }
 
 void capiHandlesDispose(Runtime* runtime) {
-  ApiHandle::disposeHandles(capiHandles(runtime));
+  ApiHandle::disposeHandles(runtime, capiHandles(runtime));
 }
 
 void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }
@@ -548,7 +542,8 @@ RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name) {
 }
 
 bool objectHasHandleCache(Thread* thread, RawObject obj) {
-  return ApiHandle::borrowedReference(thread, obj)->cache() != nullptr;
+  return ApiHandle::borrowedReference(thread, obj)->cache(thread->runtime()) !=
+         nullptr;
 }
 
 void* objectNewReference(Thread* thread, RawObject obj) {

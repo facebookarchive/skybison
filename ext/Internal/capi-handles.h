@@ -125,7 +125,7 @@ class ApiHandle : public PyObject {
   // WARNING: This function should be called for shutdown.
   // Dispose all handles, without trying to cleanly deallocate the object for
   // runtime shutdown.
-  static void disposeHandles(IdentityDict* api_handles);
+  static void disposeHandles(Runtime* runtime, IdentityDict* api_handles);
 
   // Visit all reference_ members of live ApiHandles.
   static void visitReferences(IdentityDict* handles, PointerVisitor* visitor);
@@ -138,11 +138,11 @@ class ApiHandle : public PyObject {
 
   // Each ApiHandle can have one pointer to cached data, which will be freed
   // when the handle is destroyed.
-  void* cache();
-  void setCache(void* value);
+  void* cache(Runtime* runtime);
+  void setCache(Runtime* runtime, void* value);
 
   // Remove the ApiHandle from the dictionary and free its memory
-  void dispose();
+  void dispose(Runtime* runtime);
 
   // Returns true if the PyObject* is an immediate ApiHandle or ApiHandle.
   // Otherwise returns false since the PyObject* is an extension object.
