@@ -38,6 +38,8 @@ RawObject initializeSys(Thread* thread, const Str& executable,
                         const List& python_path, const Tuple& flags_data,
                         const List& warnoptions);
 
+void setPycachePrefix(Thread* thread, const Object& pycache_prefix);
+
 // Internal equivalents to PySys_Write(Stdout|Stderr): Write a formatted string
 // to sys.stdout or sys.stderr, or stdout or stderr if writing to the Python
 // streams fails. No more than 1000 characters will be written; if the output is

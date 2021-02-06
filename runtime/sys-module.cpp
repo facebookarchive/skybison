@@ -187,6 +187,13 @@ RawObject initializeSys(Thread* thread, const Str& executable,
                                  flags_data, warnoptions);
 }
 
+void setPycachePrefix(Thread* thread, const Object& pycache_prefix) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Module module(&scope, runtime->findModuleById(ID(sys)));
+  moduleAtPutById(thread, module, ID(pycache_prefix), pycache_prefix);
+}
+
 static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,
                       const char* format, va_list va) {
   HandleScope scope(thread);

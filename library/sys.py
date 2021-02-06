@@ -304,6 +304,9 @@ ps1 = ">>> "
 ps2 = "... "
 
 
+pycache_prefix = None
+
+
 # TODO(T62600497): Enforce the recursion limit
 def setrecursionlimit(limit):
     _builtin()

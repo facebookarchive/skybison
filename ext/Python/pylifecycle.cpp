@@ -309,6 +309,14 @@ static void initializeSysFromGlobals(Thread* thread) {
   }
   warn_options.release();
 
+  const char* pycache_prefix_cstr =
+      Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONPYCACHEPREFIX");
+  if (pycache_prefix_cstr != nullptr) {
+    Str pycache_prefix_str(&scope,
+                           runtime->newStrFromCStr(pycache_prefix_cstr));
+    setPycachePrefix(thread, pycache_prefix_str);
+  }
+
   MutableTuple data(
       &scope, runtime->newMutableTuple(static_cast<word>(SysFlag::kNumFlags)));
   data.atPut(static_cast<word>(SysFlag::kDebug),

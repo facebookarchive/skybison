@@ -720,6 +720,7 @@ class Runtime;
   V(print_file_and_line)                                                       \
   V(property)                                                                  \
   V(proxy)                                                                     \
+  V(pycache_prefix)                                                            \
   V(range)                                                                     \
   V(range_iterator)                                                            \
   V(read)                                                                      \
