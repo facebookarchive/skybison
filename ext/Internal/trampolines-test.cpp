@@ -15,13 +15,13 @@ namespace testing {
 using MethodTrampolinesTest = RuntimeFixture;
 
 static PyObject* capiFunctionNoArgs(PyObject* self, PyObject* args) {
-  Thread* thread = Thread::current();
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = Thread::current()->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
   EXPECT_EQ(args, nullptr);
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1230));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1230));
 }
 
 static RawObject newFunctionNoArgs(Thread* thread) {
@@ -154,15 +154,15 @@ TEST_F(MethodTrampolinesTest, NoArgsExWithKeywordArgRaisesTypeError) {
 }
 
 static PyObject* capiFunctionOneArg(PyObject* self, PyObject* arg) {
-  Thread* thread = Thread::current();
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = Thread::current()->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
   EXPECT_TRUE(ApiHandle::hasExtensionReference(arg));
   EXPECT_TRUE(
       isFloatEqualsDouble(ApiHandle::fromPyObject(arg)->asObject(), 42.5));
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1231));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1231));
 }
 
 static RawObject newFunctionOneArg(Thread* thread) {
@@ -304,7 +304,8 @@ TEST_F(MethodTrampolinesTest, OneArgExWithKeywordArgRaisesTypeError) {
 static PyObject* capiFunctionVarArgs(PyObject* self, PyObject* args) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = thread->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
@@ -315,7 +316,7 @@ static PyObject* capiFunctionVarArgs(PyObject* self, PyObject* args) {
   EXPECT_EQ(args_tuple.length(), 2);
   EXPECT_TRUE(isIntEqualsWord(args_tuple.at(0), 88));
   EXPECT_TRUE(isIntEqualsWord(args_tuple.at(1), 33));
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1239));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1239));
 }
 
 static RawObject newFunctionVarArgs(Thread* thread) {
@@ -430,7 +431,8 @@ static PyObject* capiFunctionKeywordsNullKwargs(PyObject* self, PyObject* args,
                                                 PyObject* kwargs) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = thread->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
@@ -442,7 +444,7 @@ static PyObject* capiFunctionKeywordsNullKwargs(PyObject* self, PyObject* args,
   EXPECT_TRUE(isIntEqualsWord(args_tuple.at(0), 17));
   EXPECT_TRUE(isIntEqualsWord(args_tuple.at(1), -8));
   EXPECT_EQ(kwargs, nullptr);
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1237));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1237));
 }
 
 static RawObject newFunctionKeywordsNullKwargs(Thread* thread) {
@@ -477,7 +479,8 @@ static PyObject* capiFunctionKeywords(PyObject* self, PyObject* args,
                                       PyObject* kwargs) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = thread->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
@@ -496,7 +499,7 @@ static PyObject* capiFunctionKeywords(PyObject* self, PyObject* args,
   EXPECT_EQ(kwargs_dict.numItems(), 1);
   EXPECT_TRUE(
       isStrEqualsCStr(dictAtById(thread, kwargs_dict, ID(key)), "value"));
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1237));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1237));
 }
 
 static RawObject newFunctionKeywords(Thread* thread) {
@@ -571,8 +574,8 @@ TEST_F(MethodTrampolinesTest, KeywordsExWithoutSelfRaisesTypeError) {
 
 static PyObject* capiFunctionFast(PyObject* self, PyObject* const* args,
                                   Py_ssize_t nargs) {
-  Thread* thread = Thread::current();
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = Thread::current()->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
@@ -583,7 +586,7 @@ static PyObject* capiFunctionFast(PyObject* self, PyObject* const* args,
       isFloatEqualsDouble(ApiHandle::fromPyObject(args[0])->asObject(), -13.));
   EXPECT_TRUE(
       isFloatEqualsDouble(ApiHandle::fromPyObject(args[1])->asObject(), 0.125));
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1236));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1236));
 }
 
 static RawObject newExtensionFunctionFast(Thread* thread) {
@@ -698,8 +701,8 @@ static PyObject* capiFunctionFastWithKeywordsNullKwnames(PyObject* self,
                                                          PyObject* const* args,
                                                          Py_ssize_t nargs,
                                                          PyObject* kwnames) {
-  Thread* thread = Thread::current();
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = Thread::current()->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
@@ -711,7 +714,7 @@ static PyObject* capiFunctionFastWithKeywordsNullKwnames(PyObject* self,
   EXPECT_TRUE(
       isFloatEqualsDouble(ApiHandle::fromPyObject(args[1])->asObject(), -8.8));
   EXPECT_EQ(kwnames, nullptr);
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1238));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1238));
 }
 
 static RawObject newExtensionFunctionFastWithKeywordsNullKwnames(
@@ -752,7 +755,8 @@ static PyObject* capiFunctionFastWithKeywords(PyObject* self,
                                               PyObject* kwnames) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  thread->runtime()->collectGarbage();
+  Runtime* runtime = thread->runtime();
+  runtime->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(self)->asObject(),
                               "the self argument"));
@@ -775,7 +779,7 @@ static PyObject* capiFunctionFastWithKeywords(PyObject* self,
                               "foo_value"));
   EXPECT_TRUE(isStrEqualsCStr(ApiHandle::fromPyObject(args[3])->asObject(),
                               "bar_value"));
-  return ApiHandle::newReference(thread, SmallInt::fromWord(1238));
+  return ApiHandle::newReference(runtime, SmallInt::fromWord(1238));
 }
 
 static RawObject newExtensionFunctionFastWithKeywords(Thread* thread) {

@@ -11,9 +11,9 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyListIter_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kListIterator)));
+      runtime, runtime->typeAt(LayoutId::kListIterator)));
 }
 
 PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
@@ -25,20 +25,20 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
 
   Runtime* runtime = thread->runtime();
   if (size == 0) {
-    return ApiHandle::newReference(thread, runtime->newList());
+    return ApiHandle::newReference(runtime, runtime->newList());
   }
 
   HandleScope scope(thread);
   List list(&scope, runtime->newList());
   list.setItems(runtime->newMutableTuple(size));
   list.setNumItems(size);
-  return ApiHandle::newReference(thread, *list);
+  return ApiHandle::newReference(runtime, *list);
 }
 
 PY_EXPORT PyTypeObject* PyList_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kList)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kList)));
 }
 
 PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {
@@ -66,11 +66,11 @@ PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
   List list(&scope, *list_obj);
   word length = list.numItems();
   if (length == 0) {
-    return ApiHandle::newReference(thread, runtime->emptyTuple());
+    return ApiHandle::newReference(runtime, runtime->emptyTuple());
   }
   MutableTuple result(&scope, runtime->newMutableTuple(length));
   result.replaceFromWith(0, Tuple::cast(list.items()), length);
-  return ApiHandle::newReference(thread, result.becomeImmutable());
+  return ApiHandle::newReference(runtime, result.becomeImmutable());
 }
 
 PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
@@ -88,7 +88,7 @@ PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
                          "index out of bounds in PyList_GetItem");
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, list.at(i));
+  return ApiHandle::borrowedReference(runtime, list.at(i));
 }
 
 PY_EXPORT int PyList_Reverse(PyObject* pylist) {
@@ -119,7 +119,7 @@ PY_EXPORT int PyList_SET_ITEM_Func(PyObject* pylist, Py_ssize_t i,
   List list(&scope, *list_obj);
   DCHECK_INDEX(i, list.numItems());
   list.atPut(i, item == nullptr ? NoneType::object()
-                                : ApiHandle::stealReference(thread, item));
+                                : ApiHandle::stealReference(item));
   return 0;
 }
 
@@ -128,9 +128,8 @@ PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
-  Object newitem(&scope, item == nullptr
-                             ? NoneType::object()
-                             : ApiHandle::stealReference(thread, item));
+  Object newitem(&scope, item == nullptr ? NoneType::object()
+                                         : ApiHandle::stealReference(item));
   if (!runtime->isInstanceOfList(*list_obj)) {
     thread->raiseBadInternalCall();
     return -1;
@@ -189,7 +188,8 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
   } else if (high > length) {
     high = length;
   }
-  return ApiHandle::newReference(thread, listSlice(thread, list, low, high, 1));
+  return ApiHandle::newReference(runtime,
+                                 listSlice(thread, list, low, high, 1));
 }
 
 PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,

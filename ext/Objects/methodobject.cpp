@@ -26,7 +26,8 @@ PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* method, PyObject* self,
                              ? ApiHandle::fromPyObject(module_name)->asObject()
                              : NoneType::object());
   return ApiHandle::newReference(
-      thread, newCFunction(thread, method, name, self_obj, module_name_obj));
+      thread->runtime(),
+      newCFunction(thread, method, name, self_obj, module_name_obj));
 }
 
 PY_EXPORT int PyCFunction_GetFlags(PyObject* /* p */) {
@@ -59,7 +60,7 @@ PY_EXPORT PyObject* PyCFunction_GetSelf(PyObject* obj) {
   if (self.isUnbound()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, *self);
+  return ApiHandle::borrowedReference(thread->runtime(), *self);
 }
 
 PY_EXPORT PyObject* PyCFunction_Call(PyObject* /* c */, PyObject* /* s */,

@@ -12,9 +12,9 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyBytesIter_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kBytesIterator)));
+      runtime, runtime->typeAt(LayoutId::kBytesIterator)));
 }
 
 PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
@@ -107,7 +107,7 @@ PY_EXPORT void PyBytes_Concat(PyObject** pyobj, PyObject* newpart) {
 
   Bytes self(&scope, bytesUnderlying(*obj));
   Bytes other(&scope, bytesUnderlying(*newpart_obj));
-  *pyobj = ApiHandle::newReference(thread,
+  *pyobj = ApiHandle::newReference(runtime,
                                    runtime->bytesConcat(thread, self, other));
   obj_handle->decref();
 }
@@ -180,7 +180,7 @@ PY_EXPORT PyObject* _PyBytes_DecodeEscape(const char* c_str, Py_ssize_t size,
   if (invalid_index > -1) {
     *first_invalid_escape = c_str + invalid_index;
   }
-  return ApiHandle::newReference(thread, result.at(0));
+  return ApiHandle::newReference(runtime, result.at(0));
 }
 
 PY_EXPORT PyObject* PyBytes_FromFormat(const char* format, ...) {
@@ -334,7 +334,7 @@ PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
       format = next;
     }
   }
-  return ApiHandle::newReference(thread, bytearrayAsBytes(thread, writer));
+  return ApiHandle::newReference(runtime, bytearrayAsBytes(thread, writer));
 }
 
 PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
@@ -355,7 +355,7 @@ PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
   Object result(&scope,
                 thread->invokeFunction1(ID(builtins), ID(_bytes_new), obj));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
@@ -369,9 +369,10 @@ PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
   if (str == nullptr && size > 0) {
     UNIMPLEMENTED("mutable, uninitialized bytes");
   }
+  Runtime* runtime = thread->runtime();
   return ApiHandle::newReference(
-      thread, thread->runtime()->newBytesWithAll(
-                  {reinterpret_cast<const byte*>(str), size}));
+      runtime,
+      runtime->newBytesWithAll({reinterpret_cast<const byte*>(str), size}));
 }
 
 PY_EXPORT PyObject* PyBytes_FromString(const char* str) {
@@ -383,17 +384,18 @@ PY_EXPORT PyObject* PyBytes_FromString(const char* str) {
     return nullptr;
   }
 
+  Runtime* runtime = thread->runtime();
   return ApiHandle::newReference(
-      thread,
-      thread->runtime()->newBytesWithAll(
-          {reinterpret_cast<const byte*>(str), static_cast<word>(size)}));
+      runtime, runtime->newBytesWithAll({reinterpret_cast<const byte*>(str),
+                                         static_cast<word>(size)}));
 }
 
 PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  if (!thread->runtime()->isInstanceOfBytes(*obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*obj)) {
     thread->raiseBadArgument();
     return nullptr;
   }
@@ -401,7 +403,7 @@ PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
   Object result(&scope, smartquotes ? bytesReprSmartQuotes(thread, self)
                                     : bytesReprSingleQuotes(thread, self));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
@@ -421,9 +423,9 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
 }
 
 PY_EXPORT PyTypeObject* PyBytes_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kBytes)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kBytes)));
 }
 
 PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
@@ -437,7 +439,7 @@ PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
   Object iterable(&scope, ApiHandle::fromPyObject(iter)->asObject());
   Object result(&scope, thread->invokeMethodStatic2(LayoutId::kBytes, ID(join),
                                                     obj, iterable));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr : ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
@@ -458,7 +460,7 @@ PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
   if (bytes.length() == newsize) return 0;
   // we don't check here that Py_REFCNT(*pyobj) == 1
   *pyobj = ApiHandle::newReference(
-      thread, runtime->bytesCopyWithSize(thread, bytes, newsize));
+      runtime, runtime->bytesCopyWithSize(thread, bytes, newsize));
   handle->decref();
   return 0;
 }
@@ -522,18 +524,18 @@ PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
   word size = writer->ptr - start;
   if (size == 0) {
     _PyBytesWriter_Dealloc(writer);
-    return ApiHandle::newReference(thread, writer->use_bytearray
-                                               ? runtime->newBytearray()
-                                               : Bytes::empty());
+    return ApiHandle::newReference(runtime, writer->use_bytearray
+                                                ? runtime->newBytearray()
+                                                : Bytes::empty());
   }
   if (writer->use_bytearray) {
     HandleScope scope(thread);
     Bytearray result(&scope, runtime->newBytearray());
     runtime->bytearrayExtend(thread, result, View<byte>{start, size});
-    return ApiHandle::newReference(thread, *result);
+    return ApiHandle::newReference(runtime, *result);
   }
   PyObject* result = ApiHandle::newReference(
-      thread, runtime->newBytesWithAll(View<byte>{start, size}));
+      runtime, runtime->newBytesWithAll(View<byte>{start, size}));
   _PyBytesWriter_Dealloc(writer);
   return result;
 }

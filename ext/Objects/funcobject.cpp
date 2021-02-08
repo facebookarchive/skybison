@@ -11,7 +11,7 @@ PY_EXPORT PyObject* PyClassMethod_New(PyObject* callable) {
   Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
   ClassMethod result(&scope, runtime->newClassMethod());
   result.setFunction(*callable_obj);
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyStaticMethod_New(PyObject* callable) {
@@ -22,25 +22,25 @@ PY_EXPORT PyObject* PyStaticMethod_New(PyObject* callable) {
   Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
   StaticMethod result(&scope, runtime->newStaticMethod());
   result.setFunction(*callable_obj);
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyTypeObject* PyClassMethod_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kClassMethod)));
+      runtime, runtime->typeAt(LayoutId::kClassMethod)));
 }
 
 PY_EXPORT PyTypeObject* PyFunction_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kFunction)));
+      runtime, runtime->typeAt(LayoutId::kFunction)));
 }
 
 PY_EXPORT PyTypeObject* PyStaticMethod_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kStaticMethod)));
+      runtime, runtime->typeAt(LayoutId::kStaticMethod)));
 }
 
 PY_EXPORT PyObject* _PyCFunction_FastCallDict(PyObject* /* c */,

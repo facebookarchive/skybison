@@ -52,8 +52,8 @@ PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
 // Converting from signed ints.
 
 PY_EXPORT PyObject* PyLong_FromLong(long ival) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread, thread->runtime()->newInt(ival));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newInt(ival));
 }
 
 PY_EXPORT PyObject* PyLong_FromLongLong(long long ival) {
@@ -76,9 +76,8 @@ PY_EXPORT PyObject* PyLong_FromSsize_t(Py_ssize_t ival) {
 PY_EXPORT PyObject* PyLong_FromUnsignedLong(unsigned long ival) {
   static_assert(sizeof(ival) <= sizeof(uword),
                 "Unsupported unsigned long type");
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread,
-                                 thread->runtime()->newIntFromUnsigned(ival));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newIntFromUnsigned(ival));
 }
 
 PY_EXPORT PyObject* PyLong_FromUnsignedLongLong(unsigned long long ival) {
@@ -220,7 +219,7 @@ PY_EXPORT PyObject* PyLong_FromDouble(double value) {
   if (result.isErrorException()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, result);
+  return ApiHandle::newReference(thread->runtime(), result);
 }
 
 PY_EXPORT PyObject* PyLong_FromString(const char* str, char** pend, int base) {
@@ -240,7 +239,7 @@ PY_EXPORT PyObject* PyLong_FromString(const char* str, char** pend, int base) {
     DCHECK(!result.isErrorNotFound(), "could not call _int_new_from_str");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
@@ -323,9 +322,9 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
 }
 
 PY_EXPORT PyTypeObject* PyLong_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kInt)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kInt)));
 }
 
 PY_EXPORT PyObject* _PyLong_DivmodNear(PyObject* a, PyObject* b) {
@@ -350,7 +349,7 @@ PY_EXPORT PyObject* _PyLong_DivmodNear(PyObject* a, PyObject* b) {
                          "integer division or modulo by zero");
     return nullptr;
   }
-  return ApiHandle::newReference(thread,
+  return ApiHandle::newReference(runtime,
                                  runtime->newTupleWith2(quotient, remainder));
 }
 
@@ -371,7 +370,7 @@ PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
   endian endianness = little_endian ? endian::little : endian::big;
   Object result(&scope,
                 runtime->bytesToInt(thread, source, endianness, is_signed));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr : ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* _PyLong_GCD(PyObject* a, PyObject* b) {
@@ -388,7 +387,7 @@ PY_EXPORT PyObject* _PyLong_GCD(PyObject* a, PyObject* b) {
   Int dividend(&scope, intUnderlying(*dividend_obj));
   Int divisor(&scope, intUnderlying(*divisor_obj));
 
-  return ApiHandle::newReference(thread, intGCD(thread, dividend, divisor));
+  return ApiHandle::newReference(runtime, intGCD(thread, dividend, divisor));
 }
 
 PY_EXPORT PyLongObject* _PyLong_FromNbInt(PyObject*) {
@@ -396,7 +395,8 @@ PY_EXPORT PyLongObject* _PyLong_FromNbInt(PyObject*) {
 }
 
 PY_EXPORT PyObject* _PyLong_One_Ptr() {
-  return ApiHandle::borrowedReference(Thread::current(), SmallInt::fromWord(1));
+  return ApiHandle::borrowedReference(Thread::current()->runtime(),
+                                      SmallInt::fromWord(1));
 }
 
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {
@@ -409,7 +409,8 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
 }
 
 PY_EXPORT PyObject* _PyLong_Zero_Ptr() {
-  return ApiHandle::borrowedReference(Thread::current(), SmallInt::fromWord(0));
+  return ApiHandle::borrowedReference(Thread::current()->runtime(),
+                                      SmallInt::fromWord(0));
 }
 
 }  // namespace py

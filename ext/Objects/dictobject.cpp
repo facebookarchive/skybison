@@ -14,39 +14,39 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyDictItems_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDictItems)));
+      runtime, runtime->typeAt(LayoutId::kDictItems)));
 }
 
 PY_EXPORT PyTypeObject* PyDictIterItem_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDictItemIterator)));
+      runtime, runtime->typeAt(LayoutId::kDictItemIterator)));
 }
 
 PY_EXPORT PyTypeObject* PyDictIterKey_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDictKeyIterator)));
+      runtime, runtime->typeAt(LayoutId::kDictKeyIterator)));
 }
 
 PY_EXPORT PyTypeObject* PyDictIterValue_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDictValueIterator)));
+      runtime, runtime->typeAt(LayoutId::kDictValueIterator)));
 }
 
 PY_EXPORT PyTypeObject* PyDictKeys_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDictKeys)));
+      runtime, runtime->typeAt(LayoutId::kDictKeys)));
 }
 
 PY_EXPORT PyTypeObject* PyDictValues_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDictValues)));
+      runtime, runtime->typeAt(LayoutId::kDictValues)));
 }
 
 PY_EXPORT int PyDict_CheckExact_Func(PyObject* obj) {
@@ -125,21 +125,22 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
 }
 
 PY_EXPORT PyTypeObject* PyDict_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kDict)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kDict)));
 }
 
 PY_EXPORT PyObject* PyDict_New() {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread, thread->runtime()->newDict());
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newDict());
 }
 
 static PyObject* getItem(Thread* thread, const Object& dict_obj,
                          const Object& key) {
   HandleScope scope(thread);
   // For historical reasons, PyDict_GetItem supresses all errors that may occur.
-  if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
@@ -157,7 +158,7 @@ static PyObject* getItem(Thread* thread, const Object& dict_obj,
   if (result.isErrorNotFound()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, *result);
+  return ApiHandle::borrowedReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
@@ -175,7 +176,7 @@ PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
   word hash = SmallInt::truncate(pyhash);
   Object value(&scope, dictAt(thread, dict, key_obj, hash));
   if (value.isError()) return nullptr;
-  return ApiHandle::borrowedReference(thread, *value);
+  return ApiHandle::borrowedReference(runtime, *value);
 }
 
 PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
@@ -228,12 +229,13 @@ PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
   }
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(thread, dictCopy(thread, dict));
+  return ApiHandle::newReference(runtime, dictCopy(thread, dict));
 }
 
 PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
@@ -284,7 +286,7 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
   if (value.isError()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, *value);
+  return ApiHandle::borrowedReference(runtime, *value);
 }
 
 PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
@@ -299,7 +301,7 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   Dict dict(&scope, *dict_obj);
   word len = dict.numItems();
   if (len == 0) {
-    return ApiHandle::newReference(thread, runtime->newList());
+    return ApiHandle::newReference(runtime, runtime->newList());
   }
 
   List result(&scope, runtime->newList());
@@ -311,7 +313,7 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   }
   result.setItems(*items);
   result.setNumItems(len);
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
@@ -324,7 +326,7 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(thread, dictKeys(thread, dict));
+  return ApiHandle::newReference(runtime, dictKeys(thread, dict));
 }
 
 PY_EXPORT int PyDict_Merge(PyObject* left, PyObject* right,
@@ -360,7 +362,8 @@ PY_EXPORT int _PyDict_Next(PyObject* dict, Py_ssize_t* ppos, PyObject** pkey,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(dict)->asObject());
-  if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
     return 0;
   }
   Dict dict_dict(&scope, *dict_obj);
@@ -377,8 +380,10 @@ PY_EXPORT int _PyDict_Next(PyObject* dict, Py_ssize_t* ppos, PyObject** pkey,
     return 0;
   }
   // At this point, we will always have a valid bucket index.
-  if (pkey != nullptr) *pkey = ApiHandle::borrowedReference(thread, *key);
-  if (pvalue != nullptr) *pvalue = ApiHandle::borrowedReference(thread, *value);
+  if (pkey != nullptr) *pkey = ApiHandle::borrowedReference(runtime, *key);
+  if (pvalue != nullptr) {
+    *pvalue = ApiHandle::borrowedReference(runtime, *value);
+  }
   if (phash != nullptr) *phash = hash;
   return true;
 }
@@ -419,7 +424,7 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   Dict dict(&scope, *dict_obj);
   word len = dict.numItems();
   if (len == 0) {
-    return ApiHandle::newReference(thread, runtime->newList());
+    return ApiHandle::newReference(runtime, runtime->newList());
   }
 
   List result(&scope, runtime->newList());
@@ -430,7 +435,7 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   }
   result.setItems(*values);
   result.setNumItems(len);
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* obj, void*) {
@@ -445,7 +450,7 @@ PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* obj, void*) {
                          "This object has no __dict__");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *dict);
+  return ApiHandle::newReference(runtime, *dict);
 }
 
 }  // namespace py

@@ -99,15 +99,15 @@ class ApiHandle : public PyObject {
  public:
   // Returns a handle for a managed object.  Increments the reference count of
   // the handle.
-  static ApiHandle* newReference(Thread* thread, RawObject obj);
+  static ApiHandle* newReference(Runtime* runtime, RawObject obj);
 
   // Returns a handle for a managed object.  Does not affect the reference count
   // of the handle.
-  static ApiHandle* borrowedReference(Thread* thread, RawObject obj);
+  static ApiHandle* borrowedReference(Runtime* runtime, RawObject obj);
 
   // Returns the managed object associated with the handle.  Decrements the
   // reference count of handle.
-  static RawObject stealReference(Thread* thread, PyObject* py_obj);
+  static RawObject stealReference(PyObject* py_obj);
 
   // Returns the managed object associated with the handle checking for
   static RawObject checkFunctionResult(Thread* thread, PyObject* result);
@@ -168,7 +168,7 @@ class ApiHandle : public PyObject {
  private:
   // Returns an owned handle for a managed object. If a handle does not already
   // exist, a new handle is created.
-  static ApiHandle* ensure(Thread* thread, RawObject obj);
+  static ApiHandle* ensure(Runtime* runtime, RawObject obj);
 
   // Create a new runtime instance based on this ApiHandle
   RawObject asInstance(RawObject type);

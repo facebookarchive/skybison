@@ -14,7 +14,8 @@ PY_EXPORT PyObject* PyImport_GetModule(PyObject* name) {
   DCHECK(name != nullptr, "name is expected to be non null");
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object modules(&scope, thread->runtime()->modules());
+  Runtime* runtime = thread->runtime();
+  Object modules(&scope, runtime->modules());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   if (modules.isDict()) {
     Dict modules_dict(&scope, *modules);
@@ -25,7 +26,7 @@ PY_EXPORT PyObject* PyImport_GetModule(PyObject* name) {
     if (result.isError()) {
       return nullptr;
     }
-    return ApiHandle::newReference(thread, *result);
+    return ApiHandle::newReference(runtime, *result);
   }
   Object result(&scope, objectGetItem(thread, modules, name_obj));
   if (result.isErrorException()) {
@@ -34,12 +35,12 @@ PY_EXPORT PyObject* PyImport_GetModule(PyObject* name) {
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
-  Thread* thread = Thread::current();
-  return ApiHandle::borrowedReference(thread, thread->runtime()->modules());
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::borrowedReference(runtime, runtime->modules());
 }
 
 PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
@@ -82,7 +83,7 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
                             ID(_frozen_importlib), ID(__import__), name_obj,
                             globals_obj, locals_obj, fromlist_obj, level_obj));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyImport_AddModule(const char* name) {
@@ -105,7 +106,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   word hash = SmallInt::cast(*hash_obj).value();
   Object module(&scope, dictAt(thread, modules_dict, name_obj, hash));
   if (!module.isErrorNotFound()) {
-    return ApiHandle::borrowedReference(thread, *module);
+    return ApiHandle::borrowedReference(runtime, *module);
   }
 
   Module new_module(&scope, runtime->newModule(name_obj));
@@ -113,7 +114,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   if (objectSetItem(thread, modules, name_obj, new_module).isErrorException()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, *new_module);
+  return ApiHandle::borrowedReference(runtime, *new_module);
 }
 
 PY_EXPORT int PyImport_AppendInittab(const char* /* e */,
@@ -194,13 +195,13 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
     // dictAt can return Error::notFound, and we should not raise an exception
     // in that case
     if (result.isError()) return nullptr;
-    return ApiHandle::newReference(thread, *result);
+    return ApiHandle::newReference(runtime, *result);
   }
   result = objectGetItem(thread, modules, name_obj);
   // Don't filter out KeyError; PyImport_GetModule clears them, but
   // PyImport_Import re-raises
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT int PyImport_ImportFrozenModule(const char* name) {

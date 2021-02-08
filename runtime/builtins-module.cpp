@@ -671,8 +671,8 @@ RawObject FUNC(builtins, id)(Thread* thread, Arguments args) {
   // TODO(emacs): Either determine that this function is used so little that it
   // does not matter or add a section to the GC to clean up handles created by
   // id().
-  return thread->runtime()->newIntFromCPtr(
-      objectNewReference(thread, args.get(0)));
+  Runtime* runtime = thread->runtime();
+  return runtime->newIntFromCPtr(objectNewReference(runtime, args.get(0)));
 }
 
 RawObject FUNC(builtins, oct)(Thread* thread, Arguments args) {

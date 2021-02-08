@@ -72,7 +72,7 @@ PY_EXPORT PyObject* _Py_Mangle(PyObject* pyprivateobj, PyObject* pyident) {
   result.byteAtPut(0, '_');
   result.replaceFromWithStrStartAt(1, *privateobj, length0, begin);
   result.replaceFromWithStr(1 + length0, *ident, ident_length);
-  return ApiHandle::newReference(thread, result.becomeStr());
+  return ApiHandle::newReference(runtime, result.becomeStr());
 }
 
 PY_EXPORT PyCodeObject* PyNode_Compile(_node* node, const char* filename) {
@@ -136,7 +136,7 @@ PY_EXPORT PyCodeObject* PyAST_CompileObject(_mod* mod, PyObject* pyfilename,
                 compile(thread, ast, filename, mode_id, flags, optimize));
   if (result.isErrorException()) return nullptr;
   return reinterpret_cast<PyCodeObject*>(
-      ApiHandle::newReference(thread, *result));
+      ApiHandle::newReference(thread->runtime(), *result));
 }
 
 PY_EXPORT int PyCompile_OpcodeStackEffect(int /*opcode*/, int /*oparg*/) {

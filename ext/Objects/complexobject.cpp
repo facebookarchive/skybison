@@ -104,9 +104,9 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
 }
 
 PY_EXPORT PyObject* PyComplex_FromCComplex(Py_complex cmp) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(
-      thread, thread->runtime()->newComplex(cmp.real, cmp.imag));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime,
+                                 runtime->newComplex(cmp.real, cmp.imag));
 }
 
 PY_EXPORT double PyComplex_ImagAsDouble(PyObject* pycomplex) {
@@ -136,15 +136,14 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
 }
 
 PY_EXPORT PyTypeObject* PyComplex_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kComplex)));
+      runtime, runtime->typeAt(LayoutId::kComplex)));
 }
 
 PY_EXPORT PyObject* PyComplex_FromDoubles(double real, double imag) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread,
-                                 thread->runtime()->newComplex(real, imag));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newComplex(real, imag));
 }
 
 }  // namespace py

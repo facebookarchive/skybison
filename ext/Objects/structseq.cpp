@@ -20,8 +20,9 @@ PY_EXPORT PyObject* PyStructSequence_GET_ITEM_Func(PyObject* structseq,
   HandleScope scope(thread);
   Object structseq_obj(&scope, ApiHandle::fromPyObject(structseq)->asObject());
   Object result(&scope, structseqGetItem(thread, structseq_obj, pos));
-  return result.isUnbound() ? nullptr
-                            : ApiHandle::newReference(thread, *result);
+  return result.isUnbound()
+             ? nullptr
+             : ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
@@ -53,7 +54,7 @@ PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
   Type type(&scope, ApiHandle::fromPyTypeObject(pytype)->asObject());
   Object result(&scope, structseqNew(thread, type));
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
@@ -79,7 +80,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
                                          desc->n_in_sequence, flags));
   if (result.isErrorException()) return nullptr;
   return reinterpret_cast<PyTypeObject*>(
-      ApiHandle::newReference(thread, *result));
+      ApiHandle::newReference(runtime, *result));
 }
 
 }  // namespace py

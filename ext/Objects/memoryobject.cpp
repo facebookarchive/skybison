@@ -19,7 +19,7 @@ PY_EXPORT PyObject* PyMemoryView_FromMemory(char* memory, Py_ssize_t size,
   Runtime* runtime = thread->runtime();
   Object none(&scope, NoneType::object());
   return ApiHandle::newReference(
-      thread,
+      runtime,
       runtime->newMemoryViewFromCPtr(
           thread, none, memory, size,
           flags == PyBUF_READ ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
@@ -34,7 +34,7 @@ PY_EXPORT PyObject* PyMemoryView_FromObject(PyObject* obj) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyMemoryView_GetContiguous(PyObject* /* j */, int /* e */,
@@ -43,9 +43,9 @@ PY_EXPORT PyObject* PyMemoryView_GetContiguous(PyObject* /* j */, int /* e */,
 }
 
 PY_EXPORT PyTypeObject* PyMemoryView_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kMemoryView)));
+      runtime, runtime->typeAt(LayoutId::kMemoryView)));
 }
 
 }  // namespace py

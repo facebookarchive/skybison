@@ -21,7 +21,7 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (iterable == nullptr) {
-    return ApiHandle::newReference(thread, runtime->emptyFrozenSet());
+    return ApiHandle::newReference(runtime, runtime->emptyFrozenSet());
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
@@ -30,19 +30,19 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *set);
+  return ApiHandle::newReference(runtime, *set);
 }
 
 PY_EXPORT PyTypeObject* PyFrozenSet_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kFrozenSet)));
+      runtime, runtime->typeAt(LayoutId::kFrozenSet)));
 }
 
 PY_EXPORT PyTypeObject* PySetIter_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kSetIterator)));
+      runtime, runtime->typeAt(LayoutId::kSetIterator)));
 }
 
 PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
@@ -80,7 +80,8 @@ PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
-  if (!thread->runtime()->isInstanceOfSetBase(*set_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSetBase(*set_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
@@ -91,7 +92,7 @@ PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
   if (!setNextItemHash(set, ppos, &value, phash)) {
     return false;
   }
-  *pkey = ApiHandle::borrowedReference(thread, *value);
+  *pkey = ApiHandle::borrowedReference(runtime, *value);
   return true;
 }
 
@@ -155,7 +156,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (iterable == nullptr) {
-    return ApiHandle::newReference(thread, runtime->newSet());
+    return ApiHandle::newReference(runtime, runtime->newSet());
   }
 
   HandleScope scope(thread);
@@ -167,7 +168,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
     return nullptr;
   }
 
-  return ApiHandle::newReference(thread, *set);
+  return ApiHandle::newReference(runtime, *set);
 }
 
 PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
@@ -182,7 +183,7 @@ PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
   Set set(&scope, *set_obj);
   Object result(&scope, setPop(thread, set));
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
@@ -201,9 +202,9 @@ PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
 }
 
 PY_EXPORT PyTypeObject* PySet_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kSet)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kSet)));
 }
 
 }  // namespace py

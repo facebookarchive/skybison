@@ -4293,7 +4293,7 @@ RawObject FUNC(_builtins, _set_member_integral_unsigned)(Thread*,
 
 RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread,
                                                 Arguments args) {
-  objectSetMember(thread, args.get(0), args.get(1));
+  objectSetMember(thread->runtime(), args.get(0), args.get(1));
   return NoneType::object();
 }
 

@@ -35,7 +35,8 @@ static PyObject* doUnaryOp(SymbolId op, PyObject* obj) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->invokeFunction1(ID(operator), op, object));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr
+                          : ApiHandle::newReference(thread->runtime(), *result);
 }
 
 static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
@@ -47,7 +48,8 @@ static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
   Object result(&scope,
                 thread->invokeFunction2(ID(operator), op, left_obj, right_obj));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr
+                          : ApiHandle::newReference(thread->runtime(), *result);
 }
 
 static Py_ssize_t objectLength(PyObject* pyobj) {
@@ -234,7 +236,7 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *next);
+  return ApiHandle::newReference(thread->runtime(), *next);
 }
 
 // Mapping Protocol
@@ -260,11 +262,12 @@ PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* obj, const char* key) {
     return nullError(thread);
   }
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object key_obj(&scope, thread->runtime()->newStrFromCStr(key));
+  Object key_obj(&scope, runtime->newStrFromCStr(key));
   Object result(&scope, objectGetItem(thread, object, key_obj));
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT int PyMapping_HasKey(PyObject* obj, PyObject* key) {
@@ -360,10 +363,10 @@ static PyObject* smallIntAdd(PyObject* left, PyObject* right) {
   RawObject left_obj = ApiHandle::fromPyObject(left)->asObject();
   RawObject right_obj = ApiHandle::fromPyObject(right)->asObject();
   if (left_obj.isSmallInt() && right_obj.isSmallInt()) {
-    Thread* thread = Thread::current();
+    Runtime* runtime = Thread::current()->runtime();
     return ApiHandle::newReference(
-        thread, thread->runtime()->newInt(SmallInt::cast(left_obj).value() +
-                                          SmallInt::cast(right_obj).value()));
+        runtime, runtime->newInt(SmallInt::cast(left_obj).value() +
+                                 SmallInt::cast(right_obj).value()));
   }
   return nullptr;
 }
@@ -434,7 +437,8 @@ PY_EXPORT PyObject* PyNumber_Float(PyObject* obj) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object flt(&scope, thread->invokeFunction1(ID(builtins), ID(float), object));
-  return flt.isError() ? nullptr : ApiHandle::newReference(thread, *flt);
+  return flt.isError() ? nullptr
+                       : ApiHandle::newReference(thread->runtime(), *flt);
 }
 
 PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* left, PyObject* right) {
@@ -450,7 +454,8 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(item)->asObject());
   Object index(&scope, intFromIndex(thread, obj));
-  return index.isError() ? nullptr : ApiHandle::newReference(thread, *index);
+  return index.isError() ? nullptr
+                         : ApiHandle::newReference(thread->runtime(), *index);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* left, PyObject* right) {
@@ -533,7 +538,7 @@ PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyNumber_Lshift(PyObject* left, PyObject* right) {
@@ -653,14 +658,14 @@ PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
 
   Object result(&scope, Interpreter::callEx(thread, flags));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 static PyObject* makeInterpreterCall(Thread* thread, word nargs) {
   HandleScope scope(thread);
   Object result(&scope, Interpreter::call(thread, nargs));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
@@ -676,7 +681,7 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
   if (nargs == 1) {
     PyObject* value = makeValueFromFormat(&format, va, build_value_flags);
     if (!PyTuple_Check(value)) {
-      thread->stackPush(ApiHandle::stealReference(thread, value));
+      thread->stackPush(ApiHandle::stealReference(value));
       return makeInterpreterCall(thread, nargs);
     }
     // If the only argument passed is a tuple, splat the tuple as positional
@@ -691,7 +696,7 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
   for (const char* f = format; *f != '\0';) {
     PyObject* value = makeValueFromFormat(&f, va, build_value_flags);
     if (value == nullptr) break;
-    thread->stackPush(ApiHandle::stealReference(thread, value));
+    thread->stackPush(ApiHandle::stealReference(value));
   }
 
   return makeInterpreterCall(thread, nargs);
@@ -744,7 +749,7 @@ static PyObject* callWithObjArgs(Thread* thread, const Object& callable,
   HandleScope scope(thread);
   Object result(&scope, Interpreter::call(thread, nargs));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
@@ -865,9 +870,10 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
   HandleScope scope(thread);
   thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
   Object result(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
   if (args != nullptr) {
     Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
-    if (!thread->runtime()->isInstanceOfTuple(*args_obj)) {
+    if (!runtime->isInstanceOfTuple(*args_obj)) {
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "argument list must be a tuple");
       return nullptr;
@@ -879,7 +885,7 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
     result = Interpreter::call(thread, 0);
   }
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT int PyObject_CheckBuffer_Func(PyObject* pyobj) {
@@ -936,15 +942,15 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
   thread->stackPush(ApiHandle::fromPyObject(callable)->asObject());
   DCHECK(n_args == 0 || pyargs != nullptr, "Args array must not be nullptr");
   Object result(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
   if (kwargs != nullptr) {
-    Tuple args(&scope, thread->runtime()->newTuple(n_args));
+    Tuple args(&scope, runtime->newTuple(n_args));
     for (Py_ssize_t i = 0; i < n_args; i++) {
       args.atPut(i, ApiHandle::fromPyObject(pyargs[i])->asObject());
     }
     thread->stackPush(*args);
     Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    DCHECK(thread->runtime()->isInstanceOfDict(*kwargs_obj),
-           "kwargs must be a dict");
+    DCHECK(runtime->isInstanceOfDict(*kwargs_obj), "kwargs must be a dict");
     thread->stackPush(*kwargs_obj);
     // TODO(T30925218): Protect against native stack overflow.
     result = Interpreter::callEx(thread, CallFunctionExFlag::VAR_KEYWORDS);
@@ -956,7 +962,7 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
     result = Interpreter::call(thread, n_args);
   }
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,
@@ -980,7 +986,7 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 static int raiseBufferError(Thread* thread, const Object& obj) {
@@ -1033,7 +1039,7 @@ PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object result(&scope, objectGetItem(thread, object, key_obj));
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
@@ -1044,7 +1050,7 @@ PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT int PyObject_IsInstance(PyObject* instance, PyObject* cls) {
@@ -1143,10 +1149,9 @@ PY_EXPORT PyTypeObject* Py_TYPE_Func(PyObject* pyobj) {
     return nullptr;
   }
 
-  HandleScope scope(thread);
-  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  return reinterpret_cast<PyTypeObject*>(
-      ApiHandle::borrowedReference(thread, thread->runtime()->typeOf(*obj)));
+  Runtime* runtime = thread->runtime();
+  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
+      runtime, runtime->typeOf(ApiHandle::fromPyObject(pyobj)->asObject())));
 }
 
 PY_EXPORT void Py_SET_TYPE_Func(PyObject* obj, PyTypeObject* type) {
@@ -1168,9 +1173,9 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
     return nullError(thread);
   }
 
+  Runtime* runtime = thread->runtime();
   return ApiHandle::newReference(
-      thread,
-      thread->runtime()->typeOf(ApiHandle::fromPyObject(pyobj)->asObject()));
+      runtime, runtime->typeOf(ApiHandle::fromPyObject(pyobj)->asObject()));
 }
 
 PY_EXPORT const char* PyObject_TypeName(PyObject* /* obj */) {
@@ -1344,13 +1349,13 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
 
+  Runtime* runtime = thread->runtime();
   if (seq_obj.isList() || seq_obj.isTuple()) {
-    return ApiHandle::newReference(thread, *seq_obj);
+    return ApiHandle::newReference(runtime, *seq_obj);
   }
   Object iter(&scope, Interpreter::createIterator(thread, seq_obj));
   if (iter.isError()) {
     Object given(&scope, thread->pendingExceptionType());
-    Runtime* runtime = thread->runtime();
     Object exc(&scope, runtime->typeAt(LayoutId::kTypeError));
     if (givenExceptionMatches(thread, given, exc)) {
       thread->setPendingExceptionValue(runtime->newStrFromCStr(msg));
@@ -1363,7 +1368,7 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT Py_ssize_t PySequence_Fast_GET_SIZE_Func(PyObject* seq) {
@@ -1382,18 +1387,19 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
     return nullError(thread);
   }
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   if (seq_obj.isTuple()) {
     // Fast path: return `tuple`'s element directly.
     RawTuple tuple = Tuple::cast(*seq_obj);
     if (0 <= idx && idx < tuple.length()) {
-      return ApiHandle::newReference(thread, tuple.at(idx));
+      return ApiHandle::newReference(runtime, tuple.at(idx));
     }
   } else if (seq_obj.isList()) {
     // Fast path: return `list`'s element directly.
     RawList list = List::cast(*seq_obj);
     if (0 <= idx && idx < list.numItems()) {
-      return ApiHandle::newReference(thread, list.at(idx));
+      return ApiHandle::newReference(runtime, list.at(idx));
     }
   }
   Object idx_obj(&scope, thread->runtime()->newInt(idx));
@@ -1405,7 +1411,7 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PySequence_ITEM_Func(PyObject* seq, Py_ssize_t i) {
@@ -1414,12 +1420,12 @@ PY_EXPORT PyObject* PySequence_ITEM_Func(PyObject* seq, Py_ssize_t i) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  DCHECK(thread->runtime()->isSequence(thread, seq_obj),
-         "seq must be a sequence");
-  Object idx(&scope, thread->runtime()->newInt(i));
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isSequence(thread, seq_obj), "seq must be a sequence");
+  Object idx(&scope, runtime->newInt(i));
   Object result(&scope, thread->invokeMethod2(seq_obj, ID(__getitem__), idx));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
@@ -1438,7 +1444,7 @@ PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT int PySequence_In(PyObject* pyseq, PyObject* pyobj) {
@@ -1472,7 +1478,8 @@ PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* left, PyObject* right) {
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
   Object result(&scope, thread->invokeFunction2(ID(operator), ID(iconcat),
                                                 left_obj, right_obj));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr
+                          : ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* seq, Py_ssize_t count) {
@@ -1481,11 +1488,12 @@ PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* seq, Py_ssize_t count) {
     return nullError(thread);
   }
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object sequence(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object count_obj(&scope, thread->runtime()->newInt(count));
+  Object count_obj(&scope, runtime->newInt(count));
   Object result(&scope, thread->invokeFunction2(ID(operator), ID(irepeat),
                                                 sequence, count_obj));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr : ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT Py_ssize_t PySequence_Length(PyObject* pyobj) {
@@ -1500,7 +1508,8 @@ PY_EXPORT PyObject* PySequence_List(PyObject* seq) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   RawObject result = thread->invokeFunction1(ID(builtins), ID(list), seq_obj);
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
+  return result.isError() ? nullptr
+                          : ApiHandle::newReference(thread->runtime(), result);
 }
 
 PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
@@ -1582,15 +1591,16 @@ PY_EXPORT PyObject* PySequence_Tuple(PyObject* seq) {
   }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Runtime* runtime = thread->runtime();
   if (seq_obj.isTuple()) {
-    return ApiHandle::newReference(thread, *seq_obj);
+    return ApiHandle::newReference(runtime, *seq_obj);
   }
   Object result(&scope,
                 thread->invokeFunction1(ID(builtins), ID(tuple), seq_obj));
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 }  // namespace py

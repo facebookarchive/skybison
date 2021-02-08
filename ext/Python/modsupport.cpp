@@ -31,7 +31,7 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
   }
   Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
   Module module(&scope, *module_obj);
-  Object value(&scope, ApiHandle::stealReference(thread, obj));
+  Object value(&scope, ApiHandle::stealReference(obj));
   moduleAtPut(thread, module, name_obj, value);
   return 0;
 }

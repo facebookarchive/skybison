@@ -19,14 +19,13 @@ PY_EXPORT PyObject* PyMethod_Function(PyObject* obj) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread,
+  return ApiHandle::borrowedReference(thread->runtime(),
                                       BoundMethod::cast(*method).function());
 }
 
 PY_EXPORT PyObject* PyMethod_GET_FUNCTION_Func(PyObject* obj) {
-  Thread* thread = Thread::current();
   return ApiHandle::borrowedReference(
-      thread,
+      Thread::current()->runtime(),
       BoundMethod::cast(ApiHandle::fromPyObject(obj)->asObject()).function());
 }
 
@@ -40,8 +39,9 @@ PY_EXPORT PyObject* PyMethod_New(PyObject* callable, PyObject* self) {
   HandleScope scope(thread);
   Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
   Object self_obj(&scope, ApiHandle::fromPyObject(self)->asObject());
+  Runtime* runtime = thread->runtime();
   return ApiHandle::newReference(
-      thread, thread->runtime()->newBoundMethod(callable_obj, self_obj));
+      runtime, runtime->newBoundMethod(callable_obj, self_obj));
 }
 
 PY_EXPORT PyObject* PyMethod_Self(PyObject* obj) {
@@ -52,21 +52,20 @@ PY_EXPORT PyObject* PyMethod_Self(PyObject* obj) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread,
+  return ApiHandle::borrowedReference(thread->runtime(),
                                       BoundMethod::cast(*method).self());
 }
 
 PY_EXPORT PyObject* PyMethod_GET_SELF_Func(PyObject* obj) {
-  Thread* thread = Thread::current();
   return ApiHandle::borrowedReference(
-      thread,
+      Thread::current()->runtime(),
       BoundMethod::cast(ApiHandle::fromPyObject(obj)->asObject()).self());
 }
 
 PY_EXPORT PyTypeObject* PyMethod_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kBoundMethod)));
+      runtime, runtime->typeAt(LayoutId::kBoundMethod)));
 }
 
 }  // namespace py

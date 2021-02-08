@@ -87,7 +87,7 @@ PY_EXPORT PyObject* _PyCodec_LookupTextEncoding(const char* encoding,
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyCodec_LookupError(const char* /* e */) {

@@ -513,7 +513,7 @@ void HeapProfiler::writeApiHandleRoot(RawObject obj) {
   // ApiHandle address
   // TODO(emacs): Propagate the ApiHandle pointer through to this function
   // instead of looking it up again.
-  void* handle = objectBorrowedReference(thread_, obj);
+  void* handle = objectBorrowedReference(thread_->runtime(), obj);
   sub.writeObjectId(reinterpret_cast<uword>(handle));
 }
 

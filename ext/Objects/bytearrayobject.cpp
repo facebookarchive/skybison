@@ -5,9 +5,9 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyByteArrayIter_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kBytearrayIterator)));
+      runtime, runtime->typeAt(LayoutId::kBytearrayIterator)));
 }
 
 PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
@@ -56,7 +56,7 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
   if (result.isError()) return nullptr;
   result = thread->invokeFunction2(ID(operator), ID(iconcat), result, right);
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
@@ -71,7 +71,7 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
 
   Runtime* runtime = thread->runtime();
   if (size == 0) {
-    return ApiHandle::newReference(thread, runtime->newBytearray());
+    return ApiHandle::newReference(runtime, runtime->newBytearray());
   }
 
   HandleScope scope(thread);
@@ -83,19 +83,20 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
     runtime->bytearrayExtend(thread, result,
                              {reinterpret_cast<const byte*>(str), size});
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
   Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   if (obj == nullptr) {
-    return ApiHandle::newReference(thread, thread->runtime()->newBytearray());
+    return ApiHandle::newReference(runtime, runtime->newBytearray());
   }
   HandleScope scope(thread);
   Object src(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope,
                 thread->invokeFunction1(ID(builtins), ID(bytearray), src));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr : ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
@@ -131,9 +132,9 @@ PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
 }
 
 PY_EXPORT PyTypeObject* PyByteArray_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kBytearray)));
+      runtime, runtime->typeAt(LayoutId::kBytearray)));
 }
 
 }  // namespace py

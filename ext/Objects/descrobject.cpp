@@ -9,9 +9,9 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyDictProxy_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kMappingProxy)));
+      runtime, runtime->typeAt(LayoutId::kMappingProxy)));
 }
 
 PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
@@ -23,7 +23,7 @@ PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
       &scope,
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
   return ApiHandle::newReference(
-      thread, newClassMethod(thread, method, name, type_obj));
+      thread->runtime(), newClassMethod(thread, method, name, type_obj));
 }
 
 PY_EXPORT PyObject* PyDictProxy_New(PyObject* mapping) {
@@ -33,7 +33,7 @@ PY_EXPORT PyObject* PyDictProxy_New(PyObject* mapping) {
   Object result(&scope, thread->invokeFunction1(ID(builtins), ID(mappingproxy),
                                                 mapping_obj));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyDescr_NewGetSet(PyTypeObject* /* e */,
@@ -53,14 +53,14 @@ PY_EXPORT PyObject* PyDescr_NewMethod(PyTypeObject* type, PyMethodDef* method) {
   Object type_obj(
       &scope,
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
-  return ApiHandle::newReference(thread,
+  return ApiHandle::newReference(thread->runtime(),
                                  newMethod(thread, method, name, type_obj));
 }
 
 PY_EXPORT PyTypeObject* PyProperty_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kProperty)));
+      runtime, runtime->typeAt(LayoutId::kProperty)));
 }
 
 PY_EXPORT PyObject* PyWrapper_New(PyObject* /* d */, PyObject* /* f */) {

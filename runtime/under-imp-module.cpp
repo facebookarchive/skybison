@@ -179,7 +179,7 @@ RawObject FUNC(_imp, exec_builtin)(Thread* thread, Arguments args) {
   if (def == nullptr) {
     return runtime->newInt(0);
   }
-  if (objectHasHandleCache(thread, *module)) {
+  if (objectHasHandleCache(runtime, *module)) {
     return runtime->newInt(0);
   }
   return runtime->newInt(moduleExecDef(thread, module, def));

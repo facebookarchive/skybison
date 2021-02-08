@@ -40,7 +40,7 @@ PY_EXPORT PyObject* PySys_GetObject(const char* name) {
   Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
   Object result(&scope, moduleAt(module, name_obj));
   if (result.isErrorNotFound()) return nullptr;
-  return ApiHandle::borrowedReference(thread, *result);
+  return ApiHandle::borrowedReference(runtime, *result);
 }
 
 PY_EXPORT void PySys_AddWarnOption(const wchar_t* /* s */) {

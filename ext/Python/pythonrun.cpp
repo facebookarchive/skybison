@@ -107,14 +107,14 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
   if (!result.isError() && flags) {
     flags->cf_flags |= (code.flags() & PyCF_MASK);
   }
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
+  return result.isError() ? nullptr : ApiHandle::newReference(runtime, result);
 }
 
 static PyObject* moduleProxy(PyObject* module_obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Module module(&scope, ApiHandle::fromPyObject(module_obj)->asObject());
-  return ApiHandle::borrowedReference(thread, module.moduleProxy());
+  return ApiHandle::borrowedReference(thread->runtime(), module.moduleProxy());
 }
 
 // A PyRun_InteractiveOneObject() auxiliary function that does not print the
@@ -291,7 +291,7 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
       setMainLoader(thread, module, filename, ID(SourceFileLoader));
     }
     PyObject* module_proxy =
-        ApiHandle::borrowedReference(thread, module.moduleProxy());
+        ApiHandle::borrowedReference(runtime, module.moduleProxy());
     result = PyRun_FileExFlags(fp, filename, Py_file_input, module_proxy,
                                module_proxy, closeit, flags);
   }
@@ -434,7 +434,7 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   }
   Module module(&scope, *module_obj);
   RawObject result = thread->exec(code_code, module, implicit_globals);
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
+  return result.isError() ? nullptr : ApiHandle::newReference(runtime, result);
 }
 
 PY_EXPORT PyObject* PyRun_FileFlags(FILE* fp, const char* filename, int start,
@@ -454,7 +454,7 @@ PY_EXPORT PyObject* PyRun_StringFlags(const char* str, int start,
                                       PyCompilerFlags* flags) {
   Thread* thread = Thread::current();
   PyObject* filename = ApiHandle::borrowedReference(
-      thread, Runtime::internStrFromCStr(thread, "<string>"));
+      thread->runtime(), Runtime::internStrFromCStr(thread, "<string>"));
 
   PyArena* arena = PyArena_New();
   if (arena == nullptr) return nullptr;

@@ -321,9 +321,7 @@ static void freeHandle(Runtime* runtime, ApiHandle* handle) {
   *free_handles = node;
 }
 
-ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
-  Runtime* runtime = thread->runtime();
-
+ApiHandle* ApiHandle::ensure(Runtime* runtime, RawObject obj) {
   // Get the PyObject pointer from extension instances
   if (runtime->isInstanceOfNativeProxy(obj)) {
     ApiHandle* result = static_cast<ApiHandle*>(
@@ -362,28 +360,26 @@ static bool isEncodeableAsImmediate(RawObject obj) {
   return !obj.isSmallStr() && !obj.isSmallBytes();
 }
 
-ApiHandle* ApiHandle::newReference(Thread* thread, RawObject obj) {
+ApiHandle* ApiHandle::newReference(Runtime* runtime, RawObject obj) {
   if (!obj.isHeapObject() && isEncodeableAsImmediate(obj)) {
     return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
   }
-  return ApiHandle::ensure(thread, obj);
+  return ApiHandle::ensure(runtime, obj);
 }
 
-ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
+ApiHandle* ApiHandle::borrowedReference(Runtime* runtime, RawObject obj) {
   if (!obj.isHeapObject() && isEncodeableAsImmediate(obj)) {
     return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
   }
-  ApiHandle* result = ApiHandle::ensure(thread, obj);
+  ApiHandle* result = ApiHandle::ensure(runtime, obj);
   result->decref();
   return result;
 }
 
-RawObject ApiHandle::stealReference(Thread* thread, PyObject* py_obj) {
-  HandleScope scope(thread);
+RawObject ApiHandle::stealReference(PyObject* py_obj) {
   ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
-  Object obj(&scope, handle->asObject());
   handle->decref();
-  return *obj;
+  return handle->asObject();
 }
 
 RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
@@ -393,7 +389,7 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
     return thread->raiseWithFmt(LayoutId::kSystemError,
                                 "NULL return without exception set");
   }
-  RawObject result_obj = ApiHandle::stealReference(thread, result);
+  RawObject result_obj = ApiHandle::stealReference(result);
   if (has_pending_exception) {
     // TODO(T53569173): set the currently pending exception as the cause of the
     // newly raised SystemError
@@ -523,8 +519,8 @@ void capiHandlesDispose(Runtime* runtime) {
 
 void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }
 
-void* objectBorrowedReference(Thread* thread, RawObject obj) {
-  return ApiHandle::borrowedReference(thread, obj);
+void* objectBorrowedReference(Runtime* runtime, RawObject obj) {
+  return ApiHandle::borrowedReference(runtime, obj);
 }
 
 RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name) {
@@ -541,19 +537,18 @@ RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name) {
                               "Object attribute '%S' is nullptr", &name_str);
 }
 
-bool objectHasHandleCache(Thread* thread, RawObject obj) {
-  return ApiHandle::borrowedReference(thread, obj)->cache(thread->runtime()) !=
-         nullptr;
+bool objectHasHandleCache(Runtime* runtime, RawObject obj) {
+  return ApiHandle::borrowedReference(runtime, obj)->cache(runtime) != nullptr;
 }
 
-void* objectNewReference(Thread* thread, RawObject obj) {
-  return ApiHandle::newReference(thread, obj);
+void* objectNewReference(Runtime* runtime, RawObject obj) {
+  return ApiHandle::newReference(runtime, obj);
 }
 
-void objectSetMember(Thread* thread, RawObject old_ptr, RawObject new_val) {
+void objectSetMember(Runtime* runtime, RawObject old_ptr, RawObject new_val) {
   ApiHandle** old = reinterpret_cast<ApiHandle**>(Int::cast(old_ptr).asCPtr());
   (*old)->decref();
-  *old = ApiHandle::newReference(thread, new_val);
+  *old = ApiHandle::newReference(runtime, new_val);
 }
 
 }  // namespace py

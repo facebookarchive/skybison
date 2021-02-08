@@ -26,14 +26,15 @@ PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
   if (step != nullptr) {
     step_obj = ApiHandle::fromPyObject(step)->asObject();
   }
+  Runtime* runtime = thread->runtime();
   return ApiHandle::newReference(
-      thread, thread->runtime()->newSlice(start_obj, stop_obj, step_obj));
+      runtime, runtime->newSlice(start_obj, stop_obj, step_obj));
 }
 
 PY_EXPORT PyTypeObject* PySlice_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kSlice)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kSlice)));
 }
 
 PY_EXPORT Py_ssize_t PySlice_AdjustIndices(Py_ssize_t length,

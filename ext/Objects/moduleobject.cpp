@@ -78,7 +78,7 @@ PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
 
   // TODO(eelizondo): Check m_slots
   // TODO(eelizondo): Set md_state
-  return ApiHandle::newReference(thread, *module);
+  return ApiHandle::newReference(runtime, *module);
 }
 
 PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
@@ -101,12 +101,13 @@ PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfModule(*module_obj)) {
     thread->raiseBadArgument();
     return nullptr;
   }
   Module module(&scope, *module_obj);
-  return ApiHandle::borrowedReference(thread, module.moduleProxy());
+  return ApiHandle::borrowedReference(runtime, module.moduleProxy());
 }
 
 PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
@@ -125,7 +126,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
     thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *name);
+  return ApiHandle::newReference(runtime, *name);
 }
 
 PY_EXPORT void* PyModule_GetState(PyObject* mod) {
@@ -160,7 +161,7 @@ word moduleExecDef(Thread* thread, const Module& module, PyModuleDef* def) {
     return -1;
   }
 
-  ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
+  ApiHandle* handle = ApiHandle::borrowedReference(runtime, *module);
   if (def->m_size >= 0) {
     if (handle->cache(runtime) == nullptr) {
       handle->setCache(runtime, std::calloc(def->m_size, 1));
@@ -250,7 +251,7 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
     thread->raiseWithFmt(LayoutId::kSystemError, "module filename missing");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *filename);
+  return ApiHandle::newReference(runtime, *filename);
 }
 
 PY_EXPORT const char* PyModule_GetName(PyObject* pymodule) {
@@ -267,15 +268,15 @@ PY_EXPORT PyObject* PyModule_New(const char* c_name) {
   HandleScope scope(thread);
 
   Str name(&scope, runtime->newStrFromCStr(c_name));
-  return ApiHandle::newReference(thread, runtime->newModule(name));
+  return ApiHandle::newReference(runtime, runtime->newModule(name));
 }
 
 PY_EXPORT PyObject* PyModule_NewObject(PyObject* name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  return ApiHandle::newReference(thread,
-                                 thread->runtime()->newModule(name_obj));
+  Runtime* runtime = thread->runtime();
+  return ApiHandle::newReference(runtime, runtime->newModule(name_obj));
 }
 
 PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
@@ -296,9 +297,9 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
 }
 
 PY_EXPORT PyTypeObject* PyModule_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kModule)));
+      runtime, runtime->typeAt(LayoutId::kModule)));
 }
 
 static RawObject initializeModule(Thread* thread, ExtensionModuleInitFunc init,

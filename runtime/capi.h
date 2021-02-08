@@ -83,19 +83,19 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
 word numTrackedApiHandles(Runtime* runtime);
 
 // Return a borrowed reference to the object.
-void* objectBorrowedReference(Thread* thread, RawObject obj);
+void* objectBorrowedReference(Runtime* runtime, RawObject obj);
 
 RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name);
 
 // Check if a borrowed reference to the object has a non-null cache.
 // WARNING: This function should only be used in the GC.
-bool objectHasHandleCache(Thread* thread, RawObject obj);
+bool objectHasHandleCache(Runtime* runtime, RawObject obj);
 
 // Pin a handle for the object until the runtime exits.
 // WARNING: This function should only be used in builtins.id()
-void* objectNewReference(Thread* thread, RawObject obj);
+void* objectNewReference(Runtime* runtime, RawObject obj);
 
-void objectSetMember(Thread* thread, RawObject old_ptr, RawObject new_val);
+void objectSetMember(Runtime* runtime, RawObject old_ptr, RawObject new_val);
 
 // Return the type's tp_basicsize. Use only with extension types.
 uword typeGetBasicSize(const Type& type);

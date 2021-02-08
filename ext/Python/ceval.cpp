@@ -13,8 +13,9 @@ PY_EXPORT PyObject* PyEval_GetBuiltins() {
   // first and then use the Runtime-cached builtins
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Module builtins(&scope, thread->runtime()->findModuleById(ID(builtins)));
-  return ApiHandle::borrowedReference(thread, builtins.moduleProxy());
+  Runtime* runtime = thread->runtime();
+  Module builtins(&scope, runtime->findModuleById(ID(builtins)));
+  return ApiHandle::borrowedReference(runtime, builtins.moduleProxy());
 }
 
 PY_EXPORT PyObject* PyEval_GetGlobals() { UNIMPLEMENTED("PyEval_GetGlobals"); }
@@ -88,7 +89,7 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
       return nullptr;
     }
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyEval_EvalCodeEx(PyObject* /* o */, PyObject* /* s */,
@@ -233,7 +234,7 @@ PY_EXPORT PyObject* PyEval_CallObjectWithKeywords(PyObject* callable,
   // TODO(T30925218): Protect against native stack overflow.
   Object result(&scope, Interpreter::callEx(thread, flags));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* _PyEval_EvalFrameDefault(PyFrameObject* /* f */,

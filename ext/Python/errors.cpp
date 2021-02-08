@@ -29,7 +29,8 @@ PY_EXPORT PyObject* PyErr_Occurred() {
   if (!thread->hasPendingException()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, thread->pendingExceptionType());
+  return ApiHandle::borrowedReference(thread->runtime(),
+                                      thread->pendingExceptionType());
 }
 
 PY_EXPORT PyObject* PyErr_Format(PyObject* exception, const char* format, ...) {
@@ -102,23 +103,25 @@ PY_EXPORT int PyErr_ExceptionMatches(PyObject* exc) {
 
 PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
   Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   DCHECK(pexc != nullptr, "pexc is null");
   if (thread->pendingExceptionType().isNoneType()) {
     *pexc = nullptr;
   } else {
-    *pexc = ApiHandle::newReference(thread, thread->pendingExceptionType());
+    *pexc = ApiHandle::newReference(runtime, thread->pendingExceptionType());
   }
   DCHECK(pval != nullptr, "pval is null");
   if (thread->pendingExceptionValue().isNoneType()) {
     *pval = nullptr;
   } else {
-    *pval = ApiHandle::newReference(thread, thread->pendingExceptionValue());
+    *pval = ApiHandle::newReference(runtime, thread->pendingExceptionValue());
   }
   DCHECK(ptb != nullptr, "ptb is null");
   if (thread->pendingExceptionTraceback().isNoneType()) {
     *ptb = nullptr;
   } else {
-    *ptb = ApiHandle::newReference(thread, thread->pendingExceptionTraceback());
+    *ptb =
+        ApiHandle::newReference(runtime, thread->pendingExceptionTraceback());
   }
   thread->clearPendingException();
 }
@@ -144,10 +147,11 @@ PY_EXPORT void PyErr_GetExcInfo(PyObject** p_type, PyObject** p_value,
     *p_traceback = nullptr;
     return;
   }
+  Runtime* runtime = thread->runtime();
   ExceptionState caught_exc_state(&scope, *caught_exc_state_obj);
-  *p_type = ApiHandle::newReference(thread, caught_exc_state.type());
-  *p_value = ApiHandle::newReference(thread, caught_exc_state.value());
-  *p_traceback = ApiHandle::newReference(thread, caught_exc_state.traceback());
+  *p_type = ApiHandle::newReference(runtime, caught_exc_state.type());
+  *p_value = ApiHandle::newReference(runtime, caught_exc_state.value());
+  *p_traceback = ApiHandle::newReference(runtime, caught_exc_state.traceback());
 }
 
 PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {
@@ -190,7 +194,7 @@ PY_EXPORT PyObject* PyErr_NewException(const char* name, PyObject* base_or_null,
     DCHECK(!type.isErrorNotFound(), "missing _exception_new");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *type);
+  return ApiHandle::newReference(runtime, *type);
 }
 
 PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* name, const char* doc,
@@ -235,7 +239,7 @@ PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* name, const char* doc,
     DCHECK(!type.isErrorNotFound(), "missing _exception_new");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *type);
+  return ApiHandle::newReference(runtime, *type);
 }
 
 PY_EXPORT void PyErr_NormalizeException(PyObject** exc, PyObject** val,
@@ -253,19 +257,20 @@ PY_EXPORT void PyErr_NormalizeException(PyObject** exc, PyObject** val,
                             : NoneType::object());
   Object tb_orig(&scope, *tb_obj);
   normalizeException(thread, &exc_obj, &val_obj, &tb_obj);
+  Runtime* runtime = thread->runtime();
   if (*exc_obj != *exc_orig) {
     PyObject* tmp = *exc;
-    *exc = ApiHandle::newReference(thread, *exc_obj);
+    *exc = ApiHandle::newReference(runtime, *exc_obj);
     Py_XDECREF(tmp);
   }
   if (*val_obj != *val_orig) {
     PyObject* tmp = *val;
-    *val = ApiHandle::newReference(thread, *val_obj);
+    *val = ApiHandle::newReference(runtime, *val_obj);
     Py_XDECREF(tmp);
   }
   if (*tb_obj != *tb_orig) {
     PyObject* tmp = *tb;
-    *tb = ApiHandle::newReference(thread, *tb_obj);
+    *tb = ApiHandle::newReference(runtime, *tb_obj);
     Py_XDECREF(tmp);
   }
 }
@@ -297,17 +302,15 @@ PY_EXPORT void PyErr_SetExcInfo(PyObject* type, PyObject* value,
                                 PyObject* traceback) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object type_obj(&scope, type == nullptr
-                              ? NoneType::object()
-                              : ApiHandle::stealReference(thread, type));
+  Object type_obj(&scope, type == nullptr ? NoneType::object()
+                                          : ApiHandle::stealReference(type));
   thread->setCaughtExceptionType(*type_obj);
-  Object value_obj(&scope, value == nullptr
-                               ? NoneType::object()
-                               : ApiHandle::stealReference(thread, value));
+  Object value_obj(&scope, value == nullptr ? NoneType::object()
+                                            : ApiHandle::stealReference(value));
   thread->setCaughtExceptionValue(*value_obj);
-  Object traceback_obj(&scope, traceback == nullptr ? NoneType::object()
-                                                    : ApiHandle::stealReference(
-                                                          thread, traceback));
+  Object traceback_obj(&scope, traceback == nullptr
+                                   ? NoneType::object()
+                                   : ApiHandle::stealReference(traceback));
   thread->setCaughtExceptionTraceback(*traceback_obj);
 }
 
@@ -653,7 +656,7 @@ PY_EXPORT PyObject* PyErr_ProgramTextObject(PyObject* filename, int lineno) {
   if (result == Str::empty()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,

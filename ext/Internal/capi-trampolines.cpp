@@ -15,8 +15,9 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
+  PyObject* self_obj = self.isUnbound()
+                           ? nullptr
+                           : ApiHandle::newReference(thread->runtime(), *self);
   PyObject* pyresult = (*method)(self_obj, nullptr);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
   if (self_obj != nullptr) {
@@ -134,9 +135,10 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
+  Runtime* runtime = thread->runtime();
   PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
-  PyObject* arg_obj = ApiHandle::newReference(thread, *arg);
+      self.isUnbound() ? nullptr : ApiHandle::newReference(runtime, *self);
+  PyObject* arg_obj = ApiHandle::newReference(runtime, *arg);
   PyObject* pyresult = (*method)(self_obj, arg_obj);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
   if (self_obj != nullptr) {
@@ -216,9 +218,10 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
+  Runtime* runtime = thread->runtime();
   PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
-  PyObject* varargs_obj = ApiHandle::newReference(thread, *varargs);
+      self.isUnbound() ? nullptr : ApiHandle::newReference(runtime, *self);
+  PyObject* varargs_obj = ApiHandle::newReference(runtime, *varargs);
   PyObject* pyresult = (*method)(self_obj, varargs_obj);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
   if (self_obj != nullptr) {
@@ -305,12 +308,13 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   ternaryfunc method = bit_cast<ternaryfunc>(address.asCPtr());
+  Runtime* runtime = thread->runtime();
   PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
-  PyObject* args_obj = ApiHandle::newReference(thread, *args);
+      self.isUnbound() ? nullptr : ApiHandle::newReference(runtime, *self);
+  PyObject* args_obj = ApiHandle::newReference(runtime, *args);
   PyObject* kwargs_obj = nullptr;
   if (*kwargs != NoneType::object()) {
-    kwargs_obj = ApiHandle::newReference(thread, *kwargs);
+    kwargs_obj = ApiHandle::newReference(runtime, *kwargs);
   }
   PyObject* pyresult = (*method)(self_obj, args_obj, kwargs_obj);
   Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
@@ -405,8 +409,9 @@ static RawObject callMethFast(Thread* thread, const Function& function,
                               word num_args) {
   _PyCFunctionFast method =
       bit_cast<_PyCFunctionFast>(Int::cast(function.code()).asCPtr());
-  PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
+  PyObject* self_obj = self.isUnbound()
+                           ? nullptr
+                           : ApiHandle::newReference(thread->runtime(), *self);
   PyObject* pyresult = (*method)(self_obj, args, num_args);
   RawObject result = ApiHandle::checkFunctionResult(thread, pyresult);
   if (self_obj != nullptr) {
@@ -427,9 +432,10 @@ RawObject methodTrampolineFast(Thread* thread, word nargs) {
 
   word num_positional = nargs - 1;
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[num_positional]);
+  Runtime* runtime = thread->runtime();
   for (word i = 0; i < num_positional; i++) {
     fastcall_args[nargs - i - 2] =
-        ApiHandle::newReference(thread, thread->stackPeek(i));
+        ApiHandle::newReference(runtime, thread->stackPeek(i));
   }
   Object result(&scope, callMethFast(thread, function, self,
                                      fastcall_args.get(), num_positional));
@@ -458,9 +464,10 @@ RawObject methodTrampolineFastKw(Thread* thread, word nargs) {
   Object self(&scope, thread->stackPeek(nargs));
   word num_positional = nargs - 1;
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[num_positional]);
+  Runtime* runtime = thread->runtime();
   for (word i = 0; i < num_positional; i++) {
     fastcall_args[i] =
-        ApiHandle::newReference(thread, thread->stackPeek(nargs - i - 1));
+        ApiHandle::newReference(runtime, thread->stackPeek(nargs - i - 1));
   }
   Object result(&scope, callMethFast(thread, function, self,
                                      fastcall_args.get(), nargs - 1));
@@ -500,8 +507,9 @@ RawObject methodTrampolineFastEx(Thread* thread, word flags) {
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[num_positional]);
 
   // Set the positional arguments
+  Runtime* runtime = thread->runtime();
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::newReference(thread, args.at(i + 1));
+    fastcall_args[i] = ApiHandle::newReference(runtime, args.at(i + 1));
   }
 
   Object result(&scope, callMethFast(thread, function, self,
@@ -518,9 +526,10 @@ static RawObject callMethFastWithKeywordsWithKwargs(
     PyObject* const* args, word num_args, const Object& kw_names) {
   _PyCFunctionFastWithKeywords method = bit_cast<_PyCFunctionFastWithKeywords>(
       Int::cast(function.code()).asCPtr());
+  Runtime* runtime = thread->runtime();
   PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
-  ApiHandle* kw_names_obj = ApiHandle::newReference(thread, *kw_names);
+      self.isUnbound() ? nullptr : ApiHandle::newReference(runtime, *self);
+  ApiHandle* kw_names_obj = ApiHandle::newReference(runtime, *kw_names);
   PyObject* pyresult = (*method)(self_obj, args, num_args, kw_names_obj);
   RawObject result = ApiHandle::checkFunctionResult(thread, pyresult);
   kw_names_obj->decref();
@@ -537,8 +546,9 @@ static RawObject callMethFastWithKeywords(Thread* thread,
                                           word num_args) {
   _PyCFunctionFastWithKeywords method = bit_cast<_PyCFunctionFastWithKeywords>(
       Int::cast(function.code()).asCPtr());
-  PyObject* self_obj =
-      self.isUnbound() ? nullptr : ApiHandle::newReference(thread, *self);
+  PyObject* self_obj = self.isUnbound()
+                           ? nullptr
+                           : ApiHandle::newReference(thread->runtime(), *self);
   PyObject* pyresult = (*method)(self_obj, args, num_args, nullptr);
   RawObject result = ApiHandle::checkFunctionResult(thread, pyresult);
   if (self_obj != nullptr) {
@@ -558,9 +568,10 @@ RawObject methodTrampolineFastWithKeywords(Thread* thread, word nargs) {
   Object self(&scope, thread->stackPeek(nargs - 1));
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs - 1]);
+  Runtime* runtime = thread->runtime();
   for (word i = 0; i < nargs - 1; i++) {
     fastcall_args[nargs - i - 2] =
-        ApiHandle::newReference(thread, thread->stackPeek(i));
+        ApiHandle::newReference(runtime, thread->stackPeek(i));
   }
   word num_positional = nargs - 1;
   Object result(&scope,
@@ -584,9 +595,10 @@ RawObject methodTrampolineFastWithKeywordsKw(Thread* thread, word nargs) {
   Object self(&scope, thread->stackPeek(nargs));
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs - 1]);
+  Runtime* runtime = thread->runtime();
   for (word i = 0; i < nargs - 1; i++) {
     fastcall_args[i] =
-        ApiHandle::newReference(thread, thread->stackPeek(nargs - i - 1));
+        ApiHandle::newReference(runtime, thread->stackPeek(nargs - i - 1));
   }
   Tuple kw_names(&scope, thread->stackPeek(0));
   word num_positional = nargs - kw_names.length() - 1;
@@ -630,7 +642,7 @@ RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, word flags) {
 
   // Set the positional arguments
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::newReference(thread, args.at(i + 1));
+    fastcall_args[i] = ApiHandle::newReference(runtime, args.at(i + 1));
   }
 
   // Set the keyword arguments
@@ -644,7 +656,7 @@ RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, word flags) {
          dictNextItem(kw_args, &dict_i, &key, &value); arg_i++) {
       kw_names.atPut(arg_i, *key);
       fastcall_args[num_positional + arg_i] =
-          ApiHandle::newReference(thread, *value);
+          ApiHandle::newReference(runtime, *value);
     }
   }
 

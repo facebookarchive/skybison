@@ -7,21 +7,21 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyAsyncGen_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kAsyncGenerator)));
+      runtime, runtime->typeAt(LayoutId::kAsyncGenerator)));
 }
 
 PY_EXPORT PyTypeObject* PyCoro_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kCoroutine)));
+      runtime, runtime->typeAt(LayoutId::kCoroutine)));
 }
 
 PY_EXPORT PyTypeObject* PyGen_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kGenerator)));
+      runtime, runtime->typeAt(LayoutId::kGenerator)));
 }
 
 }  // namespace py

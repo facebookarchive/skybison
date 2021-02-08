@@ -31,9 +31,9 @@ static const int kMaxLongLongChars = 19;  // len(str(2**63-1))
 static const int kOverallocateFactor = 4;
 
 PY_EXPORT PyTypeObject* PyUnicodeIter_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kStrIterator)));
+      runtime, runtime->typeAt(LayoutId::kStrIterator)));
 }
 
 static RawObject symbolFromError(Thread* thread, const char* error) {
@@ -70,10 +70,11 @@ PY_EXPORT void _PyUnicodeWriter_Dealloc(_PyUnicodeWriter* writer) {
 PY_EXPORT PyObject* _PyUnicodeWriter_Finish(_PyUnicodeWriter* writer) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str str(&scope, thread->runtime()->newStrFromUTF32(View<int32_t>(
+  Runtime* runtime = thread->runtime();
+  Str str(&scope, runtime->newStrFromUTF32(View<int32_t>(
                       static_cast<int32_t*>(writer->data), writer->pos)));
   PyMem_Free(writer->data);
-  return ApiHandle::newReference(thread, *str);
+  return ApiHandle::newReference(runtime, *str);
 }
 
 PY_EXPORT void _PyUnicodeWriter_Init(_PyUnicodeWriter* writer) {
@@ -567,9 +568,8 @@ PY_EXPORT int PyUnicode_Check_Func(PyObject* obj) {
 }
 
 PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread,
-                                 thread->runtime()->newStrFromCStr(c_string));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newStrFromCStr(c_string));
 }
 
 // Look for a surrogate codepoint in str[start:]. Note that start is a byte
@@ -653,8 +653,9 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
     UNIMPLEMENTED("_PyUnicode_New");
   }
   const byte* data = reinterpret_cast<const byte*>(u);
+  Runtime* runtime = thread->runtime();
   return ApiHandle::newReference(
-      thread, thread->runtime()->newStrWithAll(View<byte>(data, size)));
+      runtime, runtime->newStrWithAll(View<byte>(data, size)));
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* unicode) {
@@ -667,7 +668,7 @@ PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar) {
   // Since CPython optimizes for empty string, we must do so as well to make
   // sure we don't fail if maxchar is invalid
   if (size == 0) {
-    return ApiHandle::newReference(thread, Str::empty());
+    return ApiHandle::newReference(thread->runtime(), Str::empty());
   }
   if (maxchar > kMaxUnicode) {
     thread->raiseWithFmt(LayoutId::kSystemError,
@@ -727,7 +728,7 @@ PY_EXPORT PyObject* _PyUnicode_AsASCIIString(PyObject* unicode,
     return nullptr;
   }
   Tuple tuple(&scope, *tuple_obj);
-  return ApiHandle::newReference(thread, tuple.at(0));
+  return ApiHandle::newReference(runtime, tuple.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_AsASCIIString(PyObject* unicode) {
@@ -782,7 +783,7 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
     return nullptr;
   }
   if (runtime->isInstanceOfBytes(*result)) {
-    return ApiHandle::newReference(thread, *result);
+    return ApiHandle::newReference(runtime, *result);
   }
   if (runtime->isInstanceOfBytearray(*result)) {
     // Equivalent to calling PyErr_WarnFormat
@@ -803,7 +804,7 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
       }
     }
     Bytearray result_bytearray(&scope, *result);
-    return ApiHandle::newReference(thread,
+    return ApiHandle::newReference(runtime,
                                    bytearrayAsBytes(thread, result_bytearray));
   }
   thread->raiseWithFmt(LayoutId::kTypeError,
@@ -838,7 +839,7 @@ PY_EXPORT PyObject* _PyUnicode_AsLatin1String(PyObject* unicode,
     return nullptr;
   }
   Tuple tuple(&scope, *tuple_obj);
-  return ApiHandle::newReference(thread, tuple.at(0));
+  return ApiHandle::newReference(runtime, tuple.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_AsLatin1String(PyObject* unicode) {
@@ -1068,7 +1069,7 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
     return nullptr;
   }
   return ApiHandle::newReference(
-      thread, runtime->strConcat(thread, left_str, right_str));
+      runtime, runtime->strConcat(thread, left_str, right_str));
 }
 
 PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
@@ -1121,7 +1122,7 @@ PY_EXPORT PyObject* PyUnicode_Decode(const char* c_str, Py_ssize_t size,
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
@@ -1143,7 +1144,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
     return nullptr;
   }
   Tuple result(&scope, *result_obj);
-  return ApiHandle::newReference(thread, result.at(0));
+  return ApiHandle::newReference(runtime, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeCharmap(const char* /* s */,
@@ -1162,16 +1163,15 @@ PY_EXPORT PyObject* PyUnicode_DecodeCodePageStateful(int /* e */,
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeFSDefault(const char* c_str) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread,
-                                 thread->runtime()->newStrFromCStr(c_str));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newStrFromCStr(c_str));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeFSDefaultAndSize(const char* c_str,
                                                      Py_ssize_t size) {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   View<byte> str(reinterpret_cast<const byte*>(c_str), size);
-  return ApiHandle::newReference(thread, thread->runtime()->newStrWithAll(str));
+  return ApiHandle::newReference(runtime, runtime->newStrWithAll(str));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* c_str, Py_ssize_t size,
@@ -1191,7 +1191,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* c_str, Py_ssize_t size,
     return nullptr;
   }
   Tuple result(&scope, *result_obj);
-  return ApiHandle::newReference(thread, result.at(0));
+  return ApiHandle::newReference(runtime, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeLocale(const char* str,
@@ -1329,7 +1329,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
     if (consumed != nullptr) {
       *consumed = size;
     }
-    return ApiHandle::newReference(thread,
+    return ApiHandle::newReference(runtime,
                                    runtime->newStrWithAll({byte_str, size}));
   }
   Object bytes(&scope, runtime->newBytesWithAll(View<byte>({byte_str, size})));
@@ -1349,7 +1349,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
   if (consumed != nullptr) {
     *consumed = Int::cast(result.at(1)).asWord();
   }
-  return ApiHandle::newReference(thread, result.at(0));
+  return ApiHandle::newReference(runtime, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* c_str,
@@ -1385,7 +1385,8 @@ PY_EXPORT PyObject* _PyUnicode_DecodeUnicodeEscape(
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
+  Runtime* runtime = thread->runtime();
+  Object bytes(&scope, runtime->newBytesWithAll(View<byte>(
                            reinterpret_cast<const byte*>(c_str), size)));
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object result_obj(
@@ -1405,7 +1406,7 @@ PY_EXPORT PyObject* _PyUnicode_DecodeUnicodeEscape(
   if (invalid_index > -1) {
     *first_invalid_escape = c_str + invalid_index;
   }
-  return ApiHandle::newReference(thread, result.at(0));
+  return ApiHandle::newReference(runtime, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeCodePage(int /* e */, PyObject* /* e */,
@@ -1488,7 +1489,7 @@ PY_EXPORT PyObject* _PyUnicode_EncodeUTF16(PyObject* unicode,
     return nullptr;
   }
   Tuple tuple(&scope, *tuple_obj);
-  return ApiHandle::newReference(thread, tuple.at(0));
+  return ApiHandle::newReference(runtime, tuple.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeUTF16(const Py_UNICODE* unicode,
@@ -1521,7 +1522,7 @@ PY_EXPORT PyObject* _PyUnicode_EncodeUTF32(PyObject* unicode,
     return nullptr;
   }
   Tuple tuple(&scope, *tuple_obj);
-  return ApiHandle::newReference(thread, tuple.at(0));
+  return ApiHandle::newReference(runtime, tuple.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE* unicode,
@@ -1578,7 +1579,7 @@ PY_EXPORT int PyUnicode_FSConverter(PyObject* arg, void* addr) {
     return 0;
   }
   *reinterpret_cast<PyObject**>(addr) =
-      ApiHandle::newReference(thread, *output);
+      ApiHandle::newReference(runtime, *output);
   return Py_CLEANUP_SUPPORTED;
 }
 
@@ -1769,7 +1770,8 @@ PY_EXPORT PyObject* PyUnicode_FromOrdinal(int ordinal) {
                          "chr() arg not in range(0x110000)");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, SmallStr::fromCodePoint(ordinal));
+  return ApiHandle::newReference(thread->runtime(),
+                                 SmallStr::fromCodePoint(ordinal));
 }
 
 PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
@@ -1783,8 +1785,9 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
   RawObject result = size == -1
                          ? newStrFromWideChar(thread, buffer)
                          : newStrFromWideCharWithLength(thread, buffer, size);
-  return result.isErrorException() ? nullptr
-                                   : ApiHandle::newReference(thread, result);
+  return result.isErrorException()
+             ? nullptr
+             : ApiHandle::newReference(thread->runtime(), result);
 }
 
 PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
@@ -1815,7 +1818,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* pyobj) {
 PY_EXPORT PyObject* PyUnicode_InternFromString(const char* c_str) {
   DCHECK(c_str != nullptr, "c_str must not be nullptr");
   Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread,
+  return ApiHandle::newReference(thread->runtime(),
                                  Runtime::internStrFromCStr(thread, c_str));
 }
 
@@ -1838,7 +1841,7 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** obj_ptr) {
   Object result(&scope, Runtime::internStr(thread, obj));
   if (result != obj) {
     Py_DECREF(pobj);
-    *obj_ptr = ApiHandle::newReference(thread, *result);
+    *obj_ptr = ApiHandle::newReference(thread->runtime(), *result);
   }
 }
 
@@ -1865,7 +1868,8 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   // An optimization to rule out non-str values here to use the further
   // optimization of `strJoinWithTupleOrList`.
-  if (!thread->runtime()->isInstanceOfStr(*sep_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*sep_obj)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "separator: expected str instance,"
                          "'%T' found",
@@ -1887,7 +1891,7 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
@@ -1906,7 +1910,7 @@ PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
@@ -1925,7 +1929,7 @@ PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
@@ -1936,7 +1940,8 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
-  Object maxsplit_obj(&scope, thread->runtime()->newInt(maxsplit));
+  Runtime* runtime = thread->runtime();
+  Object maxsplit_obj(&scope, runtime->newInt(maxsplit));
   Object result(&scope,
                 thread->invokeMethodStatic3(LayoutId::kStr, ID(rsplit), str_obj,
                                             sep_obj, maxsplit_obj));
@@ -1946,7 +1951,7 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* obj, Py_ssize_t index) {
@@ -2000,7 +2005,7 @@ PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
   Str substr_str(&scope, strUnderlying(*substr_obj));
   Str replstr_str(&scope, strUnderlying(*replstr_obj));
   return ApiHandle::newReference(
-      thread,
+      runtime,
       runtime->strReplace(thread, str_str, substr_str, replstr_str, maxcount));
 }
 
@@ -2021,7 +2026,8 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
-  Object maxsplit_obj(&scope, thread->runtime()->newInt(maxsplit));
+  Runtime* runtime = thread->runtime();
+  Object maxsplit_obj(&scope, runtime->newInt(maxsplit));
   Object result(&scope,
                 thread->invokeMethodStatic3(LayoutId::kStr, ID(split), str_obj,
                                             sep_obj, maxsplit_obj));
@@ -2031,20 +2037,21 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* str, int keepends) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
-  if (!thread->runtime()->isInstanceOfStr(*str_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*str_obj)) {
     thread->raiseWithFmt(LayoutId::kTypeError, "must be str, not '%T'",
                          &str_obj);
     return nullptr;
   }
   Str str_str(&scope, strUnderlying(*str_obj));
-  return ApiHandle::newReference(thread,
+  return ApiHandle::newReference(runtime,
                                  strSplitlines(thread, str_str, keepends));
 }
 
@@ -2056,20 +2063,20 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
     thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
     return nullptr;
   }
+  Runtime* runtime = thread->runtime();
   if (end <= start) {
-    return ApiHandle::newReference(thread, Str::empty());
+    return ApiHandle::newReference(runtime, Str::empty());
   }
   HandleScope scope(thread);
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
   Object obj(&scope, handle->asObject());
-  Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfStr(*obj),
          "PyUnicode_Substring requires a 'str' instance");
   Str self(&scope, strUnderlying(*obj));
   word len = self.length();
   word start_index = thread->strOffset(self, start);
   if (start_index == len) {
-    return ApiHandle::newReference(thread, Str::empty());
+    return ApiHandle::newReference(runtime, Str::empty());
   }
   word end_index = thread->strOffset(self, end);
   if (end_index == len) {
@@ -2079,7 +2086,7 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
     }
   }
   return ApiHandle::newReference(
-      thread, strSubstr(thread, self, start_index, end_index - start_index));
+      runtime, strSubstr(thread, self, start_index, end_index - start_index));
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_Tailmatch(PyObject* str, PyObject* substr,
@@ -2127,9 +2134,9 @@ PY_EXPORT PyObject* PyUnicode_Translate(PyObject* /* r */, PyObject* /* g */,
 }
 
 PY_EXPORT PyTypeObject* PyUnicode_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kStr)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kStr)));
 }
 
 PY_EXPORT int PyUnicode_WriteChar(PyObject* /* e */, Py_ssize_t /* x */,
@@ -2149,20 +2156,20 @@ PY_EXPORT Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject* /* unicode */,
 template <typename T>
 static PyObject* decodeUnicodeToString(Thread* thread, const void* src,
                                        word size) {
+  Runtime* runtime = thread->runtime();
   DCHECK(src != nullptr, "Must pass in a non-null buffer");
   const T* cp = static_cast<const T*>(src);
   if (size == 1) {
-    return ApiHandle::newReference(thread, SmallStr::fromCodePoint(cp[0]));
+    return ApiHandle::newReference(runtime, SmallStr::fromCodePoint(cp[0]));
   }
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   // TODO(T41785453): Remove the StrArray intermediary
   StrArray array(&scope, runtime->newStrArray());
   runtime->strArrayEnsureCapacity(thread, array, size);
   for (word i = 0; i < size; ++i) {
     runtime->strArrayAddCodePoint(thread, array, cp[i]);
   }
-  return ApiHandle::newReference(thread, runtime->strFromStrArray(array));
+  return ApiHandle::newReference(runtime, runtime->strFromStrArray(array));
 }
 
 PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,
@@ -2173,7 +2180,7 @@ PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,
     return nullptr;
   }
   if (size == 0) {
-    return ApiHandle::newReference(thread, Str::empty());
+    return ApiHandle::newReference(thread->runtime(), Str::empty());
   }
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
@@ -2196,8 +2203,9 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
 
   Thread* thread = Thread::current();
   RawObject result = newStrFromWideCharWithLength(thread, code_units, size);
-  return result.isErrorException() ? nullptr
-                                   : ApiHandle::newReference(thread, result);
+  return result.isErrorException()
+             ? nullptr
+             : ApiHandle::newReference(thread->runtime(), result);
 }
 
 PY_EXPORT int PyUnicode_KIND_Func(PyObject* obj) {
@@ -2417,7 +2425,7 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
     word length = str.length();
     MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
     result.replaceFromWithStr(0, *str, length);
-    return ApiHandle::newReference(thread, result.becomeImmutable());
+    return ApiHandle::newReference(runtime, result.becomeImmutable());
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object tuple_obj(&scope, thread->invokeFunction2(
@@ -2426,7 +2434,7 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
     return nullptr;
   }
   Tuple tuple(&scope, *tuple_obj);
-  return ApiHandle::newReference(thread, tuple.at(0));
+  return ApiHandle::newReference(runtime, tuple.at(0));
 }
 
 PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,

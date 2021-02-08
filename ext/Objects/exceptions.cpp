@@ -7,9 +7,8 @@
 namespace py {
 
 static PyObject* typeObjectHandle(LayoutId id) {
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  return ApiHandle::borrowedReference(thread, runtime->typeAt(id));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::borrowedReference(runtime, runtime->typeAt(id));
 }
 
 PY_EXPORT PyObject* PyExc_BaseException_Ptr() {
@@ -312,7 +311,7 @@ PY_EXPORT PyObject* PyException_GetCause(PyObject* self) {
   if (cause.isUnbound()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *cause);
+  return ApiHandle::newReference(thread->runtime(), *cause);
 }
 
 PY_EXPORT PyObject* PyException_GetContext(PyObject* self) {
@@ -324,7 +323,7 @@ PY_EXPORT PyObject* PyException_GetContext(PyObject* self) {
   if (context.isUnbound()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *context);
+  return ApiHandle::newReference(thread->runtime(), *context);
 }
 
 PY_EXPORT void PyException_SetContext(PyObject* self, PyObject* context) {
@@ -369,7 +368,7 @@ PY_EXPORT PyObject* PyException_GetTraceback(PyObject* self) {
   Object tb(&scope, exc.tracebackOrUnbound());
   if (tb.isUnbound()) return nullptr;
 
-  return ApiHandle::newReference(thread, exc.traceback());
+  return ApiHandle::newReference(thread->runtime(), exc.traceback());
 }
 
 PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
@@ -394,7 +393,7 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
     }
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyUnicodeDecodeError_GetEncoding(PyObject* exc) {

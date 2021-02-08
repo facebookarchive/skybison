@@ -10,14 +10,14 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PyTupleIter_Type_Ptr() {
-  Thread* thread = Thread::current();
+  Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kTupleIterator)));
+      runtime, runtime->typeAt(LayoutId::kTupleIterator)));
 }
 
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread, thread->runtime()->newTuple(length));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newTuple(length));
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
@@ -51,9 +51,8 @@ PY_EXPORT int PyTuple_SET_ITEM_Func(PyObject* pytuple, Py_ssize_t pos,
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
-  Object newitem(&scope, pyitem == nullptr
-                             ? NoneType::object()
-                             : ApiHandle::stealReference(thread, pyitem));
+  Object newitem(&scope, pyitem == nullptr ? NoneType::object()
+                                           : ApiHandle::stealReference(pyitem));
   if (!runtime->isInstanceOfTuple(*tupleobj)) {
     thread->raiseBadInternalCall();
     return -1;
@@ -77,9 +76,8 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
-  Object newitem(&scope, pyitem == nullptr
-                             ? NoneType::object()
-                             : ApiHandle::stealReference(thread, pyitem));
+  Object newitem(&scope, pyitem == nullptr ? NoneType::object()
+                                           : ApiHandle::stealReference(pyitem));
   if (!runtime->isInstanceOfTuple(*tupleobj)) {
     thread->raiseBadInternalCall();
     return -1;
@@ -97,9 +95,9 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 }
 
 PY_EXPORT PyTypeObject* PyTuple_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kTuple)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kTuple)));
 }
 
 PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
@@ -117,7 +115,7 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
     return nullptr;
   }
 
-  return ApiHandle::borrowedReference(thread, tuple.at(pos));
+  return ApiHandle::borrowedReference(runtime, tuple.at(pos));
 }
 
 PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
@@ -134,7 +132,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
     tuple.atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
-  return ApiHandle::newReference(thread, *tuple);
+  return ApiHandle::newReference(runtime, *tuple);
 }
 
 PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
@@ -164,10 +162,10 @@ PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
     high = len;
   }
   if (low == 0 && high == len && tuple_obj.isTuple()) {
-    return ApiHandle::newReference(thread, *tuple);
+    return ApiHandle::newReference(runtime, *tuple);
   }
   return ApiHandle::newReference(
-      thread, runtime->tupleSubseq(thread, tuple, low, high - low));
+      runtime, runtime->tupleSubseq(thread, tuple, low, high - low));
 }
 
 }  // namespace py

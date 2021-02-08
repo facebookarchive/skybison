@@ -24,7 +24,7 @@ PY_EXPORT PyObject* _PyNamespace_New(PyObject* kwds) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 }  // namespace py

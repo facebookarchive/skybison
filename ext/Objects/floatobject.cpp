@@ -14,8 +14,8 @@
 namespace py {
 
 PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(thread, thread->runtime()->newFloat(fval));
+  Runtime* runtime = Thread::current()->runtime();
+  return ApiHandle::newReference(runtime, runtime->newFloat(fval));
 }
 
 PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
@@ -55,9 +55,9 @@ PY_EXPORT double PyFloat_GetMax() { return DBL_MAX; }
 PY_EXPORT double PyFloat_GetMin() { return DBL_MIN; }
 
 PY_EXPORT PyTypeObject* PyFloat_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kFloat)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kFloat)));
 }
 
 // _PyFloat_{Pack,Unpack}{2,4,8}.  See floatobject.h.

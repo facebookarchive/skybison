@@ -29,9 +29,9 @@
 namespace py {
 
 PY_EXPORT PyTypeObject* PySuper_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kSuper)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kSuper)));
 }
 
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
@@ -90,7 +90,7 @@ Func getNativeFunc(Thread* thread) {
 
 ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
   auto func = getNativeFunc<unaryfunc>(thread);
-  PyObject* o = ApiHandle::newReference(thread, args.get(0));
+  PyObject* o = ApiHandle::newReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(o);
   Py_DECREF(o);
   return ApiHandle::checkFunctionResult(thread, result);
@@ -101,7 +101,7 @@ ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
 template <class cfunc, class RetFunc>
 RawObject wrapIntegralfunc(Thread* thread, Arguments args, RetFunc ret) {
   auto func = getNativeFunc<cfunc>(thread);
-  PyObject* o = ApiHandle::newReference(thread, args.get(0));
+  PyObject* o = ApiHandle::newReference(thread->runtime(), args.get(0));
   auto result = func(o);
   Py_DECREF(o);
   if (result == -1 && thread->hasPendingException()) return Error::exception();
@@ -127,26 +127,30 @@ ALIGN_16 RawObject wrapInquirypred(Thread* thread, Arguments args) {
 
 ALIGN_16 RawObject wrapBinaryfunc(Thread* thread, Arguments args) {
   auto func = getNativeFunc<binaryfunc>(thread);
-  PyObject* o1 = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* o2 = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* o1 = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* o2 = ApiHandle::borrowedReference(runtime, args.get(1));
   PyObject* result = (*func)(o1, o2);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
 ALIGN_16 RawObject wrapBinaryfuncSwapped(Thread* thread, Arguments args) {
   auto func = getNativeFunc<binaryfunc>(thread);
-  PyObject* o1 = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* o2 = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* o1 = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* o2 = ApiHandle::borrowedReference(runtime, args.get(1));
   PyObject* result = (*func)(o2, o1);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapTernaryfuncImpl(Thread* thread, Arguments args, bool swap) {
   auto func = getNativeFunc<ternaryfunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(swap ? 1 : 0));
+  Runtime* runtime = thread->runtime();
+  PyObject* self =
+      ApiHandle::borrowedReference(runtime, args.get(swap ? 1 : 0));
   PyObject* value =
-      ApiHandle::borrowedReference(thread, args.get(swap ? 0 : 1));
-  PyObject* mod = ApiHandle::borrowedReference(thread, args.get(2));
+      ApiHandle::borrowedReference(runtime, args.get(swap ? 0 : 1));
+  PyObject* mod = ApiHandle::borrowedReference(runtime, args.get(2));
   PyObject* result = (*func)(self, value, mod);
   return ApiHandle::checkFunctionResult(thread, result);
 }
@@ -168,8 +172,9 @@ ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
   auto func = getNativeFunc<ternaryfunc>(thread);
 
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+  if (!runtime->isInstanceOfType(*self_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'__new__' requires 'type' but got '%T'",
                                 &self_obj);
@@ -182,11 +187,11 @@ ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
                                 "'__new__' requires '%S' but got '%T'",
                                 &expected_type_name, &self_obj);
   }
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* varargs = ApiHandle::borrowedReference(thread, args.get(1));
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* varargs = ApiHandle::borrowedReference(runtime, args.get(1));
   PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
                          ? nullptr
-                         : ApiHandle::borrowedReference(thread, args.get(2));
+                         : ApiHandle::borrowedReference(runtime, args.get(2));
   PyObject* result = (*func)(self, varargs, kwargs);
   return ApiHandle::checkFunctionResult(thread, result);
 }
@@ -214,11 +219,12 @@ ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
   if (!checkSelfWithSlotType(thread, self_obj)) {
     return Error::exception();
   }
-  PyObject* self = ApiHandle::newReference(thread, *self_obj);
-  PyObject* varargs = ApiHandle::newReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::newReference(runtime, *self_obj);
+  PyObject* varargs = ApiHandle::newReference(runtime, args.get(1));
   PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
                          ? nullptr
-                         : ApiHandle::newReference(thread, args.get(2));
+                         : ApiHandle::newReference(runtime, args.get(2));
   PyObject* result = (*func)(self, varargs, kwargs);
   Py_DECREF(self);
   Py_DECREF(varargs);
@@ -229,17 +235,19 @@ ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
 ALIGN_16 RawObject wrapSetattr(Thread* thread, Arguments args) {
   auto func = getNativeFunc<setattrofunc>(thread);
 
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* name = ApiHandle::borrowedReference(thread, args.get(1));
-  PyObject* value = ApiHandle::borrowedReference(thread, args.get(2));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* name = ApiHandle::borrowedReference(runtime, args.get(1));
+  PyObject* value = ApiHandle::borrowedReference(runtime, args.get(2));
   if (func(self, name, value) < 0) return Error::exception();
   return NoneType::object();
 }
 
 ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
   auto func = getNativeFunc<setattrofunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* name = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* name = ApiHandle::borrowedReference(runtime, args.get(1));
   if (func(self, name, nullptr) < 0) return Error::exception();
   return NoneType::object();
 }
@@ -247,15 +255,16 @@ ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
 template <CompareOp op>
 ALIGN_16 RawObject wrapRichcompare(Thread* thread, Arguments args) {
   auto func = getNativeFunc<richcmpfunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* other = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* other = ApiHandle::borrowedReference(runtime, args.get(1));
   PyObject* result = (*func)(self, other, op);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
 ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
   auto func = getNativeFunc<unaryfunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(self);
   if (result == nullptr && !thread->hasPendingException()) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
@@ -265,14 +274,15 @@ ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
 
 ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
   auto func = getNativeFunc<descrgetfunc>(thread);
-  PyObject* self = ApiHandle::newReference(thread, args.get(0));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::newReference(runtime, args.get(0));
   PyObject* obj = nullptr;
   if (!args.get(1).isNoneType()) {
-    obj = ApiHandle::newReference(thread, args.get(1));
+    obj = ApiHandle::newReference(runtime, args.get(1));
   }
   PyObject* type = nullptr;
   if (!args.get(2).isNoneType()) {
-    type = ApiHandle::newReference(thread, args.get(2));
+    type = ApiHandle::newReference(runtime, args.get(2));
   }
   if (obj == nullptr && type == nullptr) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -287,44 +297,48 @@ ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
 
 ALIGN_16 RawObject wrapDescrSet(Thread* thread, Arguments args) {
   auto func = getNativeFunc<descrsetfunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* obj = ApiHandle::borrowedReference(thread, args.get(1));
-  PyObject* value = ApiHandle::borrowedReference(thread, args.get(2));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* obj = ApiHandle::borrowedReference(runtime, args.get(1));
+  PyObject* value = ApiHandle::borrowedReference(runtime, args.get(2));
   if (func(self, obj, value) < 0) return Error::exception();
   return NoneType::object();
 }
 
 ALIGN_16 RawObject wrapDescrDelete(Thread* thread, Arguments args) {
   auto func = getNativeFunc<descrsetfunc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* obj = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* obj = ApiHandle::borrowedReference(runtime, args.get(1));
   if (func(self, obj, nullptr) < 0) return Error::exception();
   return NoneType::object();
 }
 
 ALIGN_16 RawObject wrapInit(Thread* thread, Arguments args) {
   auto func = getNativeFunc<initproc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* varargs = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* varargs = ApiHandle::borrowedReference(runtime, args.get(1));
   PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
                          ? nullptr
-                         : ApiHandle::borrowedReference(thread, args.get(2));
+                         : ApiHandle::borrowedReference(runtime, args.get(2));
   if (func(self, varargs, kwargs) < 0) return Error::exception();
   return NoneType::object();
 }
 
 ALIGN_16 RawObject wrapDel(Thread* thread, Arguments args) {
   auto func = getNativeFunc<destructor>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
   func(self);
   return NoneType::object();
 }
 
 ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
   auto func = getNativeFunc<objobjargproc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* key = ApiHandle::borrowedReference(thread, args.get(1));
-  PyObject* value = ApiHandle::borrowedReference(thread, args.get(2));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* key = ApiHandle::borrowedReference(runtime, args.get(1));
+  PyObject* value = ApiHandle::borrowedReference(runtime, args.get(2));
   int res = func(self, key, value);
   if (res == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
@@ -332,8 +346,9 @@ ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
 
 ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
   auto func = getNativeFunc<objobjproc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* value = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* value = ApiHandle::borrowedReference(runtime, args.get(1));
   int res = func(self, value);
   if (res == -1 && thread->hasPendingException()) return Error::exception();
   return Bool::fromBool(res);
@@ -341,8 +356,9 @@ ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
 
 ALIGN_16 RawObject wrapDelitem(Thread* thread, Arguments args) {
   auto func = getNativeFunc<objobjargproc>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* key = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* key = ApiHandle::borrowedReference(runtime, args.get(1));
   int res = func(self, key, nullptr);
   if (res == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
@@ -367,7 +383,7 @@ ALIGN_16 RawObject wrapIndexargfunc(Thread* thread, Arguments args) {
   auto func = getNativeFunc<ssizeargfunc>(thread);
 
   HandleScope scope(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
   Object arg(&scope, args.get(1));
   arg = makeIndex(thread, arg);
   if (arg.isError()) return *arg;
@@ -402,7 +418,7 @@ ALIGN_16 RawObject wrapSqItem(Thread* thread, Arguments args) {
   Object arg(&scope, args.get(1));
   arg = normalizeIndex(thread, self, arg);
   if (arg.isError()) return *arg;
-  PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
+  PyObject* py_self = ApiHandle::borrowedReference(thread->runtime(), *self);
   PyObject* result = (*func)(py_self, Int::cast(*arg).asWord());
   return ApiHandle::checkFunctionResult(thread, result);
 }
@@ -415,8 +431,9 @@ ALIGN_16 RawObject wrapSqSetitem(Thread* thread, Arguments args) {
   Object arg(&scope, args.get(1));
   arg = normalizeIndex(thread, self, arg);
   if (arg.isError()) return *arg;
-  PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
-  PyObject* py_value = ApiHandle::borrowedReference(thread, args.get(2));
+  Runtime* runtime = thread->runtime();
+  PyObject* py_self = ApiHandle::borrowedReference(runtime, *self);
+  PyObject* py_value = ApiHandle::borrowedReference(runtime, args.get(2));
   int result = func(py_self, Int::cast(*arg).asWord(), py_value);
   if (result == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
@@ -430,7 +447,7 @@ ALIGN_16 RawObject wrapSqDelitem(Thread* thread, Arguments args) {
   Object arg(&scope, args.get(1));
   arg = normalizeIndex(thread, self, arg);
   if (arg.isError()) return *arg;
-  PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
+  PyObject* py_self = ApiHandle::borrowedReference(thread->runtime(), *self);
   int result = func(py_self, Int::cast(*arg).asWord(), nullptr);
   if (result == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
@@ -876,7 +893,7 @@ PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
   // If the type doesn't require NativeData, we don't need to allocate or
   // create a NativeProxy for the instance
   if (!type.hasNativeData()) {
-    return ApiHandle::newReference(thread, *instance);
+    return ApiHandle::newReference(runtime, *instance);
   }
 
   PyObject* result = allocatePyObject(type, 0);
@@ -922,7 +939,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   }
   Object result(&scope, Interpreter::callEx(thread, flags));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(runtime, *result);
 }
 
 // Return a default slot wrapper for the given slot, or abort if it's not yet
@@ -990,7 +1007,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
     return defaultSlot(slot_id);
   }
   if (isObjectSlotId(slot_id)) {
-    return ApiHandle::borrowedReference(thread,
+    return ApiHandle::borrowedReference(thread->runtime(),
                                         typeSlotObjectAt(type, slot_id));
   }
 
@@ -1268,15 +1285,16 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
 
 static ALIGN_16 RawObject getterWrapper(Thread* thread, Arguments args) {
   auto func = getNativeFunc<getter>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(self, nullptr);
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
 static ALIGN_16 RawObject setterWrapper(Thread* thread, Arguments args) {
   auto func = getNativeFunc<setter>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* value = ApiHandle::borrowedReference(thread, args.get(1));
+  Runtime* runtime = thread->runtime();
+  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
+  PyObject* value = ApiHandle::borrowedReference(runtime, args.get(1));
   if (func(self, value, nullptr) < 0) return Error::exception();
   return NoneType::object();
 }
@@ -1909,7 +1927,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (typeInheritSlots(thread, type).isError()) return nullptr;
 
-  return ApiHandle::newReference(thread, *type);
+  return ApiHandle::newReference(runtime, *type);
 }
 
 PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
@@ -1930,8 +1948,8 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
     // objects of its type, we don't need to INCREF the type object if it
     // doesn't have NativeData.
     Layout layout(&scope, type.instanceLayout());
-    return ApiHandle::newReference(thread,
-                                   thread->runtime()->newInstance(layout));
+    Runtime* runtime = thread->runtime();
+    return ApiHandle::newReference(runtime, runtime->newInstance(layout));
   }
   PyObject* result = allocatePyObject(type, nitems);
   if (result == nullptr) {
@@ -1993,9 +2011,9 @@ PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
 }
 
 PY_EXPORT PyTypeObject* PyType_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kType)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kType)));
 }
 
 PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
@@ -2010,14 +2028,15 @@ PY_EXPORT const char* _PyType_Name(PyTypeObject* type) {
     return nullptr;
   }
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object obj(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
-  if (!thread->runtime()->isInstanceOfType(*obj)) {
+  if (!runtime->isInstanceOfType(*obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
   Type type_obj(&scope, *obj);
   return PyUnicode_AsUTF8(
-      ApiHandle::borrowedReference(thread, type_obj.name()));
+      ApiHandle::borrowedReference(runtime, type_obj.name()));
 }
 
 PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
@@ -2033,7 +2052,7 @@ PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
   if (res.isErrorNotFound()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, *res);
+  return ApiHandle::borrowedReference(thread->runtime(), *res);
 }
 
 uword typeGetBasicSize(const Type& type) {

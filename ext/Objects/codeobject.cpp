@@ -81,7 +81,7 @@ PY_EXPORT PyCodeObject* PyCode_NewWithPosOnlyArgs(
   }
 
   return reinterpret_cast<PyCodeObject*>(ApiHandle::newReference(
-      thread,
+      runtime,
       runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
                        stacksize, flags, code_obj, consts_obj, names_obj,
                        varnames_obj, freevars_obj, cellvars_obj, filename_obj,
@@ -111,28 +111,28 @@ PY_EXPORT PyCodeObject* PyCode_NewEmpty(const char* filename,
   Object filename_obj(&scope, Runtime::internStrFromCStr(thread, filename));
   Object name_obj(&scope, Runtime::internStrFromCStr(thread, funcname));
   return reinterpret_cast<PyCodeObject*>(ApiHandle::newReference(
-      thread, runtime->newCode(/*argcount=*/0,
-                               /*posonlyargcount=*/0,
-                               /*kwonlyargcount=*/0,
-                               /*nlocals=*/0,
-                               /*stacksize=*/0,
-                               /*flags=*/0,
-                               /*code=*/empty_bytes,
-                               /*consts=*/empty_tuple,
-                               /*names=*/empty_tuple,
-                               /*varnames=*/empty_tuple,
-                               /*freevars=*/empty_tuple,
-                               /*cellvars=*/empty_tuple,
-                               /*filename=*/filename_obj,
-                               /*name=*/name_obj,
-                               /*firstlineno=*/firstlineno,
-                               /*lnotab=*/empty_bytes)));
+      runtime, runtime->newCode(/*argcount=*/0,
+                                /*posonlyargcount=*/0,
+                                /*kwonlyargcount=*/0,
+                                /*nlocals=*/0,
+                                /*stacksize=*/0,
+                                /*flags=*/0,
+                                /*code=*/empty_bytes,
+                                /*consts=*/empty_tuple,
+                                /*names=*/empty_tuple,
+                                /*varnames=*/empty_tuple,
+                                /*freevars=*/empty_tuple,
+                                /*cellvars=*/empty_tuple,
+                                /*filename=*/filename_obj,
+                                /*name=*/name_obj,
+                                /*firstlineno=*/firstlineno,
+                                /*lnotab=*/empty_bytes)));
 }
 
 PY_EXPORT PyTypeObject* PyCode_Type_Ptr() {
-  Thread* thread = Thread::current();
-  return reinterpret_cast<PyTypeObject*>(ApiHandle::borrowedReference(
-      thread, thread->runtime()->typeAt(LayoutId::kCode)));
+  Runtime* runtime = Thread::current()->runtime();
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kCode)));
 }
 
 PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
@@ -147,15 +147,15 @@ PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
 }
 
 PY_EXPORT PyObject* PyCode_GetName_Func(PyObject* code) {
-  Thread* thread = Thread::current();
   return ApiHandle::newReference(
-      thread, Code::cast(ApiHandle::fromPyObject(code)->asObject()).name());
+      Thread::current()->runtime(),
+      Code::cast(ApiHandle::fromPyObject(code)->asObject()).name());
 }
 
 PY_EXPORT PyObject* PyCode_GetFreevars_Func(PyObject* code) {
-  Thread* thread = Thread::current();
   return ApiHandle::newReference(
-      thread, Code::cast(ApiHandle::fromPyObject(code)->asObject()).freevars());
+      Thread::current()->runtime(),
+      Code::cast(ApiHandle::fromPyObject(code)->asObject()).freevars());
 }
 
 static RawObject constantKey(Thread* thread, const Object& obj) {
@@ -231,7 +231,7 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
     if (result.isError()) return *result;
     return runtime->newTupleWith2(result, obj);
   }
-  PyObject* ptr = ApiHandle::borrowedReference(thread, *obj);
+  PyObject* ptr = ApiHandle::borrowedReference(runtime, *obj);
   Object obj_id(&scope, runtime->newInt(reinterpret_cast<word>(ptr)));
   return runtime->newTupleWith2(obj_id, obj);
 }
@@ -245,7 +245,7 @@ PY_EXPORT PyObject* _PyCode_ConstantKey(PyObject* op) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  return ApiHandle::newReference(thread->runtime(), *result);
 }
 
 }  // namespace py
