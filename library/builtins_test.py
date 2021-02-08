@@ -4743,8 +4743,6 @@ class DunderSlotsTests(unittest.TestCase):
 
         self.assertIn("__dict__", C.__dict__)
 
-    # TODO(T84104305): Add test for descriptor.__get__(None, None)
-
     def test_slot_descriptor_dunder_get_with_none_returns_type(self):
         class C:
             __slots__ = "a"
@@ -4776,6 +4774,45 @@ class DunderSlotsTests(unittest.TestCase):
         descriptor = C.__dict__["a"]
         instance = C()
         self.assertEqual(descriptor.__get__(instance, None), 10)
+
+    def test_slot_descriptor_dunder_get_with_none_instance_and_none_owner_raises_type_error(
+        self,
+    ):
+        class C:
+            __slots__ = "a"
+
+        descriptor = C.__dict__["a"]
+
+        with self.assertRaises(TypeError) as context:
+            descriptor.__get__(None, None)
+        self.assertEqual(
+            str(context.exception),
+            "__get__(None, None) is invalid",
+        )
+
+    def test_slot_descriptor_dunder_delete_returns_none(self):
+        class C:
+            __slots__ = "a"
+
+            def __init__(self):
+                self.a = 10
+
+        descriptor = C.__dict__["a"]
+        instance = C()
+        self.assertEqual(descriptor.__delete__(instance), None)
+
+    def test_slot_descriptor_dunder_delete_none_raises_type_error(self):
+        class C:
+            __slots__ = "a"
+
+        descriptor = C.__dict__["a"]
+
+        with self.assertRaises(TypeError) as context:
+            descriptor.__delete__(None)
+        self.assertEqual(
+            str(context.exception),
+            "descriptor 'a' for 'C' objects doesn't apply to 'NoneType' object",
+        )
 
     def test_dunder_slots_creates_type_attributes(self):
         class C:

@@ -215,7 +215,9 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     }
     if (type_attr.isSlotDescriptor()) {
       SlotDescriptor slot_descriptor(&scope, *type_attr);
-      Object result(&scope, slotDescriptorGet(thread, slot_descriptor, object));
+      Object owner(&scope, NoneType::object());
+      Object result(&scope,
+                    slotDescriptorGet(thread, slot_descriptor, object, owner));
       if (!result.isErrorException() && location_out != nullptr) {
         // Cache slot_descriptor at success only to avoid type checking
         // afterwards. However, unbound check should be performed when

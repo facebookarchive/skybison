@@ -115,9 +115,13 @@ static RawObject slotDescriptorRaiseTypeError(
 
 RawObject slotDescriptorGet(Thread* thread,
                             const SlotDescriptor& slot_descriptor,
-                            const Object& instance_obj) {
+                            const Object& instance_obj,
+                            const Object& owner_obj) {
   if (instance_obj.isNoneType()) {
-    // TODO(T84104305): If owner is none, raise TypeError
+    if (owner_obj.isNoneType()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__get__(None, None) is invalid");
+    }
     return *slot_descriptor;
   }
   HandleScope scope(thread);
@@ -143,9 +147,14 @@ RawObject METH(slot_descriptor, __delete__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   SlotDescriptor slot_descriptor(&scope, args.get(0));
   Object instance_obj(&scope, args.get(1));
-  // TODO(T84104305): Get owner parameter and pass to slotDescriptorGet
-  Object existing_value(
-      &scope, slotDescriptorGet(thread, slot_descriptor, instance_obj));
+  Type instance_type(&scope,
+                     thread->runtime()->typeAt(instance_obj.layoutId()));
+  if (!typeIsSubclass(*instance_type, slot_descriptor.type())) {
+    return slotDescriptorRaiseTypeError(thread, slot_descriptor, instance_obj);
+  }
+  Object owner_obj(&scope, NoneType::object());
+  Object existing_value(&scope, slotDescriptorGet(thread, slot_descriptor,
+                                                  instance_obj, owner_obj));
   if (existing_value.isErrorException()) {
     return *existing_value;
   }
@@ -158,7 +167,8 @@ RawObject METH(slot_descriptor, __get__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   SlotDescriptor slot_descriptor(&scope, args.get(0));
   Object instance(&scope, args.get(1));
-  return slotDescriptorGet(thread, slot_descriptor, instance);
+  Object owner(&scope, args.get(2));
+  return slotDescriptorGet(thread, slot_descriptor, instance, owner);
 }
 
 RawObject slotDescriptorSet(Thread* thread,
