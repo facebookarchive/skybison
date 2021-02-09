@@ -44,6 +44,8 @@ constexpr Register kReturnRegs[] = {RAX, RDX};
 constexpr Register kCallerSavedRegs[] = {RAX, RCX, RDX, RDI, RSI,
                                          R8,  R9,  R10, R11};
 
+constexpr Register kScratchRegs[] = {RAX, RDX, R8, R9, R10, R11};
+
 // During normal execution, the following values are live:
 
 // Current bytecode, a RawMutableBytes.
@@ -116,6 +118,18 @@ const Interpreter::OpcodeHandler kCppHandlers[] = {
 
 static const int kMaxNargs = 8;
 
+struct EmitEnv;
+
+class WARN_UNUSED ScratchReg : public VirtualRegister {
+ public:
+  ScratchReg(EmitEnv* env);
+  ScratchReg(EmitEnv* env, Register reg);
+  ~ScratchReg();
+
+ private:
+  EmitEnv* env_;
+};
+
 // Environment shared by all emit functions.
 struct EmitEnv {
   Assembler as;
@@ -183,6 +197,21 @@ class HandlerSizer {
   word start_cursor_;
 };
 
+ScratchReg::ScratchReg(EmitEnv* env) : VirtualRegister("scratch"), env_(env) {
+  env_->register_state.allocate(this, kScratchRegs);
+}
+
+ScratchReg::ScratchReg(EmitEnv* env, Register reg)
+    : VirtualRegister("scratch"), env_(env) {
+  env_->register_state.assign(this, reg);
+}
+
+ScratchReg::~ScratchReg() {
+  if (isAssigned()) {
+    env_->register_state.free(this);
+  }
+}
+
 // Shorthand for the Immediate corresponding to a Bool value.
 Immediate boolImmediate(bool value) {
   return Immediate(Bool::fromBool(value).raw());
@@ -200,7 +229,7 @@ int32_t heapObjectDisp(int32_t offset) {
 
 // Load the next opcode, advance PC, and jump to the appropriate handler.
 void emitNextOpcode(EmitEnv* env) {
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
   __ movzbl(r_scratch,
             Address(env->bytecode, env->pc, TIMES_1, heapObjectDisp(0)));
   env->register_state.assign(&env->oparg, kOpargReg);
@@ -298,10 +327,10 @@ bool mayChangeFramePC(Bytecode bc) {
 
 template <typename FPtr>
 void emitCall(EmitEnv* env, FPtr function) {
-  // TODO(bsimmers): Augment Assembler so we can use the 0xe8 call opcode when
-  // possible (this will also have implications on our allocation strategy).
-  __ movq(RAX, Immediate(reinterpret_cast<int64_t>(function)));
-  __ call(RAX);
+  ScratchReg r_function(env);
+  // TODO(T84334712) Use call with immediate instead of movq+call.
+  __ movq(r_function, Immediate(reinterpret_cast<int64_t>(function)));
+  __ call(r_function);
   env->register_state.clobber(kCallerSavedRegs);
 }
 
@@ -311,7 +340,7 @@ void emitCallReg(EmitEnv* env, Register function) {
 }
 
 void emitHandleContinue(EmitEnv* env, bool may_change_frame_pc) {
-  Register r_result = kReturnRegs[0];
+  ScratchReg r_result(env, kReturnRegs[0]);
 
   Label handle_flow;
   static_assert(static_cast<int>(Interpreter::Continue::NEXT) == 0,
@@ -390,8 +419,9 @@ static void emitJumpIfNotBothSmallInt(EmitEnv* env, Register value0,
   emitJumpIfNotSmallInt(env, scratch, target);
 }
 
-static void emitJumpIfImmediate(EmitEnv* env, Register r_scratch, Register obj,
-                                Label* target, bool is_near_jump) {
+static void emitJumpIfImmediate(EmitEnv* env, Register obj, Label* target,
+                                bool is_near_jump) {
+  ScratchReg r_scratch(env);
   // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
   // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
   __ leal(r_scratch,
@@ -405,8 +435,7 @@ static void emitJumpIfImmediate(EmitEnv* env, Register r_scratch, Register obj,
 // Writes to r_dst.
 void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
   Label not_heap_object;
-  emitJumpIfImmediate(env, r_dst, r_obj, &not_heap_object,
-                      Assembler::kNearJump);
+  emitJumpIfImmediate(env, r_obj, &not_heap_object, Assembler::kNearJump);
 
   // It is a HeapObject.
   static_assert(RawHeader::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
@@ -436,11 +465,11 @@ void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
 }
 
 void emitJumpIfNotHeapObjectWithLayoutId(EmitEnv* env, Register r_obj,
-                                         Register r_scratch, LayoutId layout_id,
-                                         Label* target) {
-  emitJumpIfImmediate(env, r_scratch, r_obj, target, Assembler::kNearJump);
+                                         LayoutId layout_id, Label* target) {
+  emitJumpIfImmediate(env, r_obj, target, Assembler::kNearJump);
 
   // It is a HeapObject.
+  ScratchReg r_scratch(env);
   static_assert(RawHeader::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
                 "expected layout id in lower 32 bits");
   __ movl(r_scratch,
@@ -468,7 +497,8 @@ void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
 // r_scratch.
 void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
                              Register r_layout_id, Register r_caches,
-                             Register r_index, Register r_scratch) {
+                             Register r_index) {
+  ScratchReg r_scratch(env);
   // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerEntry,
   // without modifying r_index.
   static_assert(kIcPointersPerEntry == 2, "Unexpected kIcPointersPerEntry");
@@ -498,7 +528,8 @@ void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
 
 void emitIcLookupMonomorphic(EmitEnv* env, Label* not_found, Register r_dst,
                              Register r_layout_id, Register r_caches,
-                             Register r_index, Register r_scratch) {
+                             Register r_index) {
+  ScratchReg r_scratch(env);
   // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerEntry,
   // without modifying r_index.
   static_assert(kIcPointersPerEntry == 2, "Unexpected kIcPointersPerEntry");
@@ -516,8 +547,8 @@ void emitIcLookupMonomorphic(EmitEnv* env, Label* not_found, Register r_dst,
 //
 // Writes to r_space and r_scratch.
 void emitPushBoundMethod(EmitEnv* env, Label* slow_path, Register r_self,
-                         Register r_function, Register r_space,
-                         Register r_scratch) {
+                         Register r_function, Register r_space) {
+  ScratchReg r_scratch(env);
   __ movq(r_space, Address(env->thread, Thread::runtimeOffset()));
   __ movq(r_space,
           Address(r_space, Runtime::heapOffset() + Heap::spaceOffset()));
@@ -577,10 +608,10 @@ void emitLoadOverflowTuple(EmitEnv* env, Register r_dst, Register r_layout_id,
 // next at that location, and jumps to next at the end of the overflow attribute
 // case.
 //
-// Writes to r_offset and r_scratch.
+// Writes to r_offset.
 void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
                         Label* next, Register r_obj, Register r_offset,
-                        Register r_layout_id, Register r_scratch) {
+                        Register r_layout_id) {
   Label is_overflow;
   emitConvertFromSmallInt(env, r_offset);
   __ testq(r_offset, r_offset);
@@ -591,6 +622,7 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
   emitNextOpcode(env);
 
   __ bind(&is_overflow);
+  ScratchReg r_scratch(env);
   emitLoadOverflowTuple(env, r_scratch, r_layout_id, r_obj);
   // The real tuple index is -offset - 1, which is the same as ~offset.
   __ notq(r_offset);
@@ -600,10 +632,11 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
 
 template <>
 void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
-  Register r_right = RAX;
-  Register r_left = RDX;
-  Register r_result = RDI;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
   Label slow_path;
+
   __ popq(r_right);
   __ popq(r_left);
   emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
@@ -627,10 +660,11 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
 
 template <>
 void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
-  Register r_right = RAX;
-  Register r_left = RDX;
-  Register r_result = RDI;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
   Label slow_path;
+
   __ popq(r_right);
   __ popq(r_left);
   emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
@@ -652,10 +686,11 @@ void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
 
 template <>
 void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
-  Register r_right = RAX;
-  Register r_left = R8;
-  Register r_result = RDI;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
   Label slow_path;
+
   __ popq(r_right);
   __ popq(r_left);
   emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
@@ -679,10 +714,11 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
 
 template <>
 void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
-  Register r_right = RAX;
-  Register r_left = R8;
-  Register r_result = RDI;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
   Label slow_path;
+
   __ popq(r_right);
   __ popq(r_left);
   emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
@@ -704,7 +740,8 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
 
 // Push r_list[r_index_smallint] into the stack.
 static void emitPushListAt(EmitEnv* env, Register r_list,
-                           Register r_index_smallint, Register r_scratch) {
+                           Register r_index_smallint) {
+  ScratchReg r_scratch(env);
   __ movq(r_scratch, Address(r_list, heapObjectDisp(List::kItemsOffset)));
   // r_index is a SmallInt, so r_key already stores the index value * 2.
   // Therefore, applying TIMES_4 will compute index * 8.
@@ -715,15 +752,15 @@ static void emitPushListAt(EmitEnv* env, Register r_list,
 
 template <>
 void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
-  Register r_container = RAX;
-  Register r_key = R8;
-  Register r_layout_id = RDI;
+  ScratchReg r_container(env);
+  ScratchReg r_key(env);
   Label slow_path;
+
   __ popq(r_key);
   __ popq(r_container);
   // if (container.isList() && key.isSmallInt()) {
-  emitJumpIfNotHeapObjectWithLayoutId(env, r_container, r_layout_id,
-                                      LayoutId::kList, &slow_path);
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_container, LayoutId::kList,
+                                      &slow_path);
   emitJumpIfNotSmallInt(env, r_key, &slow_path);
 
   // if (0 <= index && index < length) {
@@ -734,7 +771,7 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   __ jcc(ABOVE_EQUAL, &slow_path, Assembler::kNearJump);
 
   // Push list.at(index)
-  emitPushListAt(env, r_container, r_key, /*r_scratch=*/r_container);
+  emitPushListAt(env, r_container, r_key);
   emitNextOpcode(env);
 
   __ bind(&slow_path);
@@ -750,11 +787,11 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
 
 template <>
 void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
-  Register r_receiver = RAX;
-  Register r_layout_id = R8;
-  Register r_key = R10;
-  Register r_scratch = R9;
-  Register r_caches = RDX;
+  ScratchReg r_receiver(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_caches(env);
+  ScratchReg r_key(env);
+
   Label slow_path;
   __ popq(r_key);
   __ popq(r_receiver);
@@ -762,7 +799,7 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
   env->register_state.assign(&env->callable, kCallableReg);
   emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id, r_caches,
-                          kOpargReg, r_scratch);
+                          kOpargReg);
 
   // Call __getitem__(receiver, key)
   __ pushq(env->callable);
@@ -780,15 +817,17 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
 
 template <>
 void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
-  Register r_container = RAX;
-  Register r_key = R8;
-  Register r_layout_id = RDI;
-  Label slow_path_non_list, slow_path;
+  ScratchReg r_container(env);
+  ScratchReg r_key(env);
+  ScratchReg r_layout_id(env);
+  Label slow_path_non_list;
+  Label slow_path;
+
   __ popq(r_key);
   __ popq(r_container);
   // if (container.isList() && key.isSmallInt()) {
-  emitJumpIfNotHeapObjectWithLayoutId(env, r_container, r_layout_id,
-                                      LayoutId::kList, &slow_path_non_list);
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_container, LayoutId::kList,
+                                      &slow_path_non_list);
   emitJumpIfNotSmallInt(env, r_key, &slow_path);
 
   // Re-use r_layout_id to store the value (right hand side).
@@ -828,21 +867,20 @@ void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
 // TODO(T59397957): Split this into two opcodes.
 template <>
 void emitHandler<LOAD_ATTR_INSTANCE>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = RDI;
-  Register r_scratch2 = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg, r_scratch2);
+                          env->oparg);
 
   Label next;
   emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
-                     r_layout_id, r_scratch2);
+                     r_layout_id);
 
   __ bind(&slow_path);
   __ pushq(r_base);
@@ -851,18 +889,19 @@ void emitHandler<LOAD_ATTR_INSTANCE>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = RDI;
-  Register r_scratch2 = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
   __ popq(r_base);
-  emitGetLayoutId(env, r_layout_id, r_base);
-  __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg, r_scratch2);
-  emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches, R8);
+  {
+    ScratchReg r_layout_id(env);
+    emitGetLayoutId(env, r_layout_id, r_base);
+    __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
+    emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                            env->oparg);
+  }
+  emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches);
   emitNextOpcode(env);
 
   __ bind(&slow_path);
@@ -872,26 +911,28 @@ void emitHandler<LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = RDI;
-  Register r_scratch2 = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
-  __ popq(r_base);
-  emitGetLayoutId(env, r_layout_id, r_base);
-  __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg, r_scratch2);
-
   Label is_function;
   Label next;
-  emitJumpIfNotSmallInt(env, r_scratch, &is_function);
-  emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
-                     r_layout_id, r_scratch2);
+
+  __ popq(r_base);
+  {
+    ScratchReg r_layout_id(env);
+    emitGetLayoutId(env, r_layout_id, r_base);
+    __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
+    emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                            env->oparg);
+
+    emitJumpIfNotSmallInt(env, r_scratch, &is_function);
+    emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
+                       r_layout_id);
+  }
 
   __ bind(&is_function);
-  emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches, R8);
+  emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches);
   __ jmp(&next, Assembler::kNearJump);
 
   __ bind(&slow_path);
@@ -901,17 +942,17 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_caches(env);
+
   Label slow_path;
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
   env->register_state.assign(&env->callable, kCallableReg);
   emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id, r_caches,
-                          kOpargReg, r_scratch);
+                          kOpargReg);
   // Call getter(receiver)
   __ pushq(env->callable);
   __ pushq(r_base);
@@ -926,7 +967,8 @@ void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_CONST>(EmitEnv* env) {
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
+
   __ movq(r_scratch, Address(env->frame, Frame::kLocalsOffsetOffset));
   __ movq(r_scratch, Address(env->frame, r_scratch, TIMES_1,
                              Frame::kFunctionOffsetFromLocals * kPointerSize));
@@ -942,8 +984,8 @@ void emitHandler<LOAD_CONST>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_DEREF>(EmitEnv* env) {
-  Register r_locals_offset = RAX;
-  Register r_n_locals = RDX;
+  ScratchReg r_locals_offset(env);
+  ScratchReg r_n_locals(env);
 
   // r_n_locals = frame->code()->nlocals();
   __ movq(r_locals_offset, Address(kFrameReg, Frame::kLocalsOffsetOffset));
@@ -954,21 +996,23 @@ void emitHandler<LOAD_DEREF>(EmitEnv* env) {
   __ movq(r_n_locals,
           Address(r_n_locals, heapObjectDisp(Code::kNlocalsOffset)));
 
-  // r_idx = code.nlocals() + arg;
-  static_assert(kPointerSize == 8, "kPointerSize is expected to be 8");
-  static_assert(Object::kSmallIntTagBits == 1,
-                "kSmallIntTagBits is expected to be 1");
-  // nlocals already shifted by 1 as a SmallInt, so nlocals << 2 makes it
-  // word-aligned.
-  __ shll(r_n_locals, Immediate(2));
-  Register r_idx = RDX;
-  __ leaq(r_idx, Address(r_n_locals, kOpargReg, TIMES_8, 0));
+  {
+    ScratchReg r_idx(env);
+    // r_idx = code.nlocals() + arg;
+    static_assert(kPointerSize == 8, "kPointerSize is expected to be 8");
+    static_assert(Object::kSmallIntTagBits == 1,
+                  "kSmallIntTagBits is expected to be 1");
+    // nlocals already shifted by 1 as a SmallInt, so nlocals << 2 makes it
+    // word-aligned.
+    __ shll(r_n_locals, Immediate(2));
+    __ leaq(r_idx, Address(r_n_locals, kOpargReg, TIMES_8, 0));
 
-  // cell = frame->local(r_idx) == *(locals() - r_idx - 1);
-  // See Frame::local.
-  Register r_cell_value = RDX;
-  __ subq(r_locals_offset, r_idx);
+    // cell = frame->local(r_idx) == *(locals() - r_idx - 1);
+    // See Frame::local.
+    __ subq(r_locals_offset, r_idx);
+  }
   // Object value(&scope, cell.value());
+  ScratchReg r_cell_value(env);
   __ movq(r_cell_value,
           Address(kFrameReg, r_locals_offset, TIMES_1, -kPointerSize));
   __ movq(r_cell_value,
@@ -986,17 +1030,17 @@ void emitHandler<LOAD_DEREF>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = RDI;
-  Register r_scratch2 = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
+
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg, r_scratch2);
+                          env->oparg);
 
   // Only functions are cached.
   __ pushq(r_scratch);
@@ -1010,17 +1054,17 @@ void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = RDI;
-  Register r_scratch2 = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
+
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg, r_scratch2);
+                          env->oparg);
 
   // Only functions are cached.
   __ pushq(r_scratch);
@@ -1034,17 +1078,17 @@ void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
 
 template <>
 void emitHandler<STORE_ATTR_INSTANCE>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_cache_value = RDI;
-  Register r_scratch = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_cache_value(env);
+  ScratchReg r_caches(env);
   Label slow_path;
+
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id, r_caches,
-                          env->oparg, r_scratch);
+                          env->oparg);
   emitConvertFromSmallInt(env, r_cache_value);
   __ popq(Address(r_base, r_cache_value, TIMES_1, heapObjectDisp(0)));
   emitNextOpcode(env);
@@ -1056,17 +1100,18 @@ void emitHandler<STORE_ATTR_INSTANCE>(EmitEnv* env) {
 
 template <>
 void emitHandler<STORE_ATTR_INSTANCE_OVERFLOW>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_cache_value = RDI;
-  Register r_scratch = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_cache_value(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
+
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id, r_caches,
-                          env->oparg, r_scratch);
+                          env->oparg);
   emitConvertFromSmallInt(env, r_cache_value);
   emitLoadOverflowTuple(env, r_scratch, r_layout_id, r_base);
   // The real tuple index is -offset - 1, which is the same as ~offset.
@@ -1081,22 +1126,22 @@ void emitHandler<STORE_ATTR_INSTANCE_OVERFLOW>(EmitEnv* env) {
 
 template <>
 void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
-  Register r_base = RAX;
-  Register r_layout_id = R8;
-  Register r_scratch = RDI;
-  Register r_scratch2 = R9;
-  Register r_caches = RDX;
+  ScratchReg r_base(env);
+  ScratchReg r_layout_id(env);
+  ScratchReg r_scratch(env);
+  ScratchReg r_caches(env);
   Label slow_path;
+
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg, r_scratch2);
+                          env->oparg);
 
   Label next;
   // We only cache SmallInt values for STORE_ATTR.
   emitAttrWithOffset(env, &Assembler::popq, &next, r_base, r_scratch,
-                     r_layout_id, r_scratch2);
+                     r_layout_id);
 
   __ bind(&slow_path);
   __ pushq(r_base);
@@ -1104,44 +1149,50 @@ void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
 }
 
 static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
-  Register r_total_vars = R8;
-  Register r_initial_size = R9;
-  Register r_max_size = RAX;
+  ScratchReg r_initial_size(env);
 
-  __ movq(r_total_vars, Address(env->callable,
-                                heapObjectDisp(RawFunction::kTotalVarsOffset)));
-  static_assert(kPointerSize == 8, "unexpected size");
-  static_assert(Object::kSmallIntTag == 0 && Object::kSmallIntTagBits == 1,
-                "unexpected tag");
-  // Note: SmallInt::cast(r_total_vars).value() * kPointerSize
-  //    <=> r_total_vars * 4!
-  __ leaq(r_initial_size, Address(r_total_vars, TIMES_4, Frame::kSize));
-  __ movq(r_max_size,
-          Address(env->callable,
-                  heapObjectDisp(RawFunction::kStacksizeOrBuiltinOffset)));
-  // Same reasoning as above.
-  __ leaq(r_max_size, Address(r_initial_size, r_max_size, TIMES_4, 0));
+  {
+    ScratchReg r_total_vars(env);
+    __ movq(
+        r_total_vars,
+        Address(env->callable, heapObjectDisp(RawFunction::kTotalVarsOffset)));
+    static_assert(kPointerSize == 8, "unexpected size");
+    static_assert(Object::kSmallIntTag == 0 && Object::kSmallIntTagBits == 1,
+                  "unexpected tag");
+    // Note: SmallInt::cast(r_total_vars).value() * kPointerSize
+    //    <=> r_total_vars * 4!
+    __ leaq(r_initial_size, Address(r_total_vars, TIMES_4, Frame::kSize));
+  }
+  {
+    ScratchReg r_max_size(env);
+    __ movq(r_max_size,
+            Address(env->callable,
+                    heapObjectDisp(RawFunction::kStacksizeOrBuiltinOffset)));
+    // Same reasoning as above.
+    __ leaq(r_max_size, Address(r_initial_size, r_max_size, TIMES_4, 0));
 
-  // if (sp - max_size >= thread->start_) { goto stack_overflow; }
-  Register r_scratch = r_max_size;
-  __ negq(r_scratch);
-  __ addq(r_scratch, RSP);
-  __ cmpq(r_scratch, Address(env->thread, Thread::limitOffset()));
-  env->register_state.check(env->call_interpreted_slow_path_assignment);
-  __ jcc(BELOW, stack_overflow, Assembler::kFarJump);
+    // if (sp - max_size >= thread->start_) { goto stack_overflow; }
+    __ negq(r_max_size);
+    __ addq(r_max_size, RSP);
+    __ cmpq(r_max_size, Address(env->thread, Thread::limitOffset()));
+    env->register_state.check(env->call_interpreted_slow_path_assignment);
+    __ jcc(BELOW, stack_overflow, Assembler::kFarJump);
+  }
 
   __ subq(RSP, r_initial_size);
 
   // Setup the new frame:
-
-  // locals_offset = initial_size + (function.totalArgs() * kPointerSize)
-  // Note that the involved registers contain smallints.
-  Register r_locals_offset = r_total_vars;
-  __ movq(r_scratch, Address(env->callable,
-                             heapObjectDisp(RawFunction::kTotalArgsOffset)));
-  __ leaq(r_locals_offset, Address(r_initial_size, r_scratch, TIMES_4, 0));
-  // new_frame.setLocalsOffset(locals_offset)
-  __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
+  {
+    // locals_offset = initial_size + (function.totalArgs() * kPointerSize)
+    // Note that the involved registers contain smallints.
+    ScratchReg r_scratch(env);
+    ScratchReg r_locals_offset(env);
+    __ movq(r_scratch, Address(env->callable,
+                               heapObjectDisp(RawFunction::kTotalArgsOffset)));
+    __ leaq(r_locals_offset, Address(r_initial_size, r_scratch, TIMES_4, 0));
+    // new_frame.setLocalsOffset(locals_offset)
+    __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
+  }
   // new_frame.setBlockStackDepth(0)
   __ movq(Address(RSP, Frame::kBlockStackDepthReturnModeOffset), Immediate(0));
   // new_frame.setPreviousFrame(kFrameReg)
@@ -1153,6 +1204,7 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
                   heapObjectDisp(RawFunction::kRewrittenBytecodeOffset)));
   __ movq(Address(RSP, Frame::kBytecodeOffset), env->bytecode);
   // new_frame.setCaches(callable.caches())
+  ScratchReg r_scratch(env);
   __ movq(r_scratch,
           Address(env->callable, heapObjectDisp(RawFunction::kCachesOffset)));
   __ movq(Address(RSP, Frame::kCachesOffset), r_scratch);
@@ -1167,43 +1219,47 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
 
 void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
                          Label* prepare_callable_immediate) {
-  Register r_scratch = RAX;
-
   __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kBoundMethod)
                                  << RawHeader::kLayoutIdOffset));
   Label slow_path;
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kFarJump);
 
-  // RCX = callable_idx = kOpArgReg
-  // frame->insertValueAt(callable_idx, BoundMethod::cast(callable).function());
-  Register r_oparg_saved = R8;
-  Register r_saved_callable = R9;
-  Register r_saved_bc = R10;
-  __ movl(r_oparg_saved, env->oparg);
-  __ movq(r_saved_callable, env->callable);
-  __ movq(r_saved_bc, kBCReg);
-  static_assert(kBCReg == RCX, "rcx used as arg to repmovsq");
-  // Use `rep movsq` to copy RCX words from RSI to RDI.
-  __ movl(RCX, env->oparg);
-  __ movq(RSI, RSP);
-  __ subq(RSP, Immediate(kPointerSize));
-  __ movq(RDI, RSP);
-  __ repMovsq();
-  // restore and increment kOparg.
-  env->register_state.assign(&env->oparg, kOpargReg);
-  __ leaq(env->oparg, Address(r_oparg_saved, 1));
-  // Insert bound_method.function() and bound_method.self().
-  __ movq(r_scratch, Address(r_saved_callable,
-                             heapObjectDisp(RawBoundMethod::kSelfOffset)));
-  __ movq(Address(RSP, env->oparg, TIMES_8, -kPointerSize), r_scratch);
-  env->register_state.assign(&env->callable, kCallableReg);
-  __ movq(env->callable,
-          Address(r_saved_callable,
-                  heapObjectDisp(RawBoundMethod::kFunctionOffset)));
-  __ movq(Address(RSP, env->oparg, TIMES_8, 0), env->callable);
+  {
+    ScratchReg r_self(env);
+    ScratchReg r_oparg_saved(env);
+    ScratchReg r_saved_callable(env);
+    ScratchReg r_saved_bc(env);
+    __ movl(r_oparg_saved, env->oparg);
+    __ movq(r_saved_callable, env->callable);
+    __ movq(r_saved_bc, env->bytecode);
 
-  emitJumpIfNotHeapObjectWithLayoutId(env, env->callable, r_scratch,
-                                      LayoutId::kFunction, &slow_path);
+    // frame->insertValueAt(callable_idx,
+    // BoundMethod::cast(callable).function()); Use `rep movsq` to copy RCX
+    // words from RSI to RDI.
+    ScratchReg r_words(env, RCX);
+    __ movl(r_words, env->oparg);
+    ScratchReg r_src(env, RSI);
+    __ movq(r_src, RSP);
+    __ subq(RSP, Immediate(kPointerSize));
+    ScratchReg r_dst(env, RDI);
+    __ movq(r_dst, RSP);
+    __ repMovsq();
+    // restore and increment kOparg.
+    env->register_state.assign(&env->oparg, kOpargReg);
+    __ leaq(env->oparg, Address(r_oparg_saved, 1));
+    // Insert bound_method.function() and bound_method.self().
+    __ movq(r_self, Address(r_saved_callable,
+                            heapObjectDisp(RawBoundMethod::kSelfOffset)));
+    __ movq(Address(RSP, r_oparg_saved, TIMES_8, 0), r_self);
+    env->register_state.assign(&env->callable, kCallableReg);
+    __ movq(env->callable,
+            Address(r_saved_callable,
+                    heapObjectDisp(RawBoundMethod::kFunctionOffset)));
+    __ movq(Address(RSP, env->oparg, TIMES_8, 0), env->callable);
+  }
+
+  emitJumpIfNotHeapObjectWithLayoutId(env, env->callable, LayoutId::kFunction,
+                                      &slow_path);
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -1213,11 +1269,15 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   __ bind(prepare_callable_immediate);
   __ bind(&slow_path);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  __ movq(kArgRegs[0], env->thread);
-  CHECK(kArgRegs[1] == env->oparg, "mismatch");
-  __ movq(kArgRegs[2], env->oparg);
-  emitCall<Interpreter::PrepareCallableResult (*)(Thread*, word, word)>(
-      env, Interpreter::prepareCallableCallDunderCall);
+  {
+    ScratchReg arg0(env, kArgRegs[0]);
+    __ movq(arg0, env->thread);
+    CHECK(kArgRegs[1] == env->oparg, "mismatch");
+    ScratchReg arg2(env, kArgRegs[2]);
+    __ movq(arg2, env->oparg);
+    emitCall<Interpreter::PrepareCallableResult (*)(Thread*, word, word)>(
+        env, Interpreter::prepareCallableCallDunderCall);
+  }
   __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
@@ -1247,27 +1307,30 @@ static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
 }
 
 void emitCallTrampoline(EmitEnv* env) {
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
+
   // Function::cast(callable).entry()(thread, nargs);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ movq(r_scratch,
           Address(env->callable, heapObjectDisp(RawFunction::kEntryOffset)));
-  __ movq(kArgRegs[0], env->thread);
+  ScratchReg r_arg0(env, kArgRegs[0]);
+  __ movq(r_arg0, env->thread);
   CHECK(kArgRegs[1] == env->oparg, "register mismatch");
   static_assert(std::is_same<Function::Entry, RawObject (*)(Thread*, word)>(),
                 "type mismatch");
   emitCallReg(env, r_scratch);
-  // if (kReturnRegs[0].isErrorException()) return UNWIND;
-  __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
+  ScratchReg r_result(env, kReturnRegs[0]);
+  // if (result.isErrorException()) return UNWIND;
+  __ cmpl(r_result, Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
-  __ pushq(kReturnRegs[0]);
+  __ pushq(r_result);
   emitNextOpcode(env);
 }
 
 void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
-  const Register r_scratch = RAX;
-  const Register r_flags = RDX;
+  ScratchReg r_scratch(env);
+  ScratchReg r_flags(env);
 
   // Check whether the call is interpreted.
   __ movl(r_flags,
@@ -1300,8 +1363,10 @@ void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
 
 static void emitCallInterpretedSlowPath(EmitEnv* env) {
   // Interpreter::callInterpreted(thread, nargs, function)
-  __ movq(kArgRegs[2], env->callable);
-  __ movq(kArgRegs[0], env->thread);
+  ScratchReg r_arg2(env, kArgRegs[2]);
+  __ movq(r_arg2, env->callable);
+  ScratchReg r_arg0(env, kArgRegs[0]);
+  __ movq(r_arg0, env->thread);
   CHECK(kArgRegs[1] == env->oparg, "reg mismatch");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCall<Interpreter::Continue (*)(Thread*, word, RawFunction)>(
@@ -1311,7 +1376,7 @@ static void emitCallInterpretedSlowPath(EmitEnv* env) {
 }
 
 void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
-  const Register r_intrinsic = RDX;
+  ScratchReg r_intrinsic(env);
   // if (function.intrinsic() != nullptr)
   __ movq(r_intrinsic, Address(env->callable,
                                heapObjectDisp(RawFunction::kIntrinsicOffset)));
@@ -1322,14 +1387,16 @@ void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ pushq(env->callable);
   __ pushq(env->oparg);
-  __ movq(kArgRegs[0], env->thread);
+  ScratchReg r_arg0(env, kArgRegs[0]);
+  __ movq(r_arg0, env->thread);
   emitCallReg(env, r_intrinsic);
+  ScratchReg r_result(env, kReturnRegs[0]);
   env->register_state.assign(&env->oparg, kOpargReg);
   __ popq(env->oparg);
   env->register_state.assign(&env->callable, kCallableReg);
   __ popq(env->callable);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
-  __ testb(kReturnRegs[0], kReturnRegs[0]);
+  __ testb(r_result, r_result);
   Label next_opcode;
   __ jcc(NOT_ZERO, &next_opcode, Assembler::kFarJump);
 
@@ -1337,7 +1404,6 @@ void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
 }
 
 void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
-  Register r_code = RCX;
   Label stack_overflow;
   Label unwind;
 
@@ -1364,23 +1430,30 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
     __ movq(env->frame, RSP);
   }
 
-  __ movq(r_code,
-          Address(env->callable,
-                  heapObjectDisp(RawFunction::kStacksizeOrBuiltinOffset)));
+  // r_code = Function::cast(callable).code().code().asCPtr()
+  {
+    ScratchReg r_code(env);
+    __ movq(r_code,
+            Address(env->callable,
+                    heapObjectDisp(RawFunction::kStacksizeOrBuiltinOffset)));
 
-  // function = Function::cast(callable).stacksizeOrBuiltin().asAlignedCPtr()
-  // ((BuiltinFunction)function) (thread, Arguments(frame->locals()));
-  emitSaveInterpreterState(env, kVMStack | kVMFrame);
-  static_assert(sizeof(Arguments) == kPointerSize, "Arguments changed");
-  static_assert(
-      std::is_same<BuiltinFunction, RawObject (*)(Thread*, Arguments)>(),
-      "type mismatch");
-  __ movq(kArgRegs[0], env->thread);
-  __ leaq(kArgRegs[1], Address(env->frame, locals_offset));
-  __ call(r_code);
+    // function = Function::cast(callable).stacksizeOrBuiltin().asAlignedCPtr()
+    // result = ((BuiltinFunction)scratch) (thread, Arguments(frame->locals()));
+    emitSaveInterpreterState(env, kVMStack | kVMFrame);
+    static_assert(sizeof(Arguments) == kPointerSize, "Arguments changed");
+    static_assert(
+        std::is_same<BuiltinFunction, RawObject (*)(Thread*, Arguments)>(),
+        "type mismatch");
+    ScratchReg arg0(env, kArgRegs[0]);
+    __ movq(arg0, env->thread);
+    ScratchReg arg1(env, kArgRegs[1]);
+    __ leaq(arg1, Address(env->frame, locals_offset));
+    emitCallReg(env, r_code);
+  }
+  ScratchReg r_result(env, kReturnRegs[0]);
 
-  // if (kReturnRegs[0].isErrorException()) return UNWIND;
-  __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
+  // if (return.isErrorException()) return UNWIND;
+  __ cmpl(r_result, Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &unwind, Assembler::kFarJump);
 
   // thread->popFrame()
@@ -1391,7 +1464,7 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
 
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   // thread->stackPush(result)
-  __ pushq(kReturnRegs[0]);
+  __ pushq(r_result);
   emitNextOpcode(env);
 
   __ bind(&unwind);
@@ -1411,12 +1484,12 @@ void emitCallHandler(EmitEnv* env) {
   __ movq(env->callable, Address(RSP, env->oparg, TIMES_8, 0));
   // Check whether callable is a heap object.
   static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
-  Register r_layout_id = RAX;
   Label prepare_callable_immediate;
-  emitJumpIfImmediate(env, r_layout_id, env->callable,
-                      &prepare_callable_immediate, Assembler::kFarJump);
+  emitJumpIfImmediate(env, env->callable, &prepare_callable_immediate,
+                      Assembler::kFarJump);
   // Check whether callable is a function.
   static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
+  ScratchReg r_layout_id(env);
   __ movl(r_layout_id,
           Address(env->callable, heapObjectDisp(RawHeapObject::kHeaderOffset)));
   __ andl(r_layout_id,
@@ -1457,20 +1530,26 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
 
   // thread->removeValueAt(arg + 1)
   __ bind(&remove_value_and_call);
-  Register r_saved_rdi = R8;
-  Register r_saved_rsi = R9;
-  Register r_saved_bc = R10;
+  ScratchReg r_saved_rdi(env);
   __ movq(r_saved_rdi, RDI);
+  ScratchReg r_saved_rsi(env);
   __ movq(r_saved_rsi, RSI);
+  ScratchReg r_saved_bc(env);
   __ movq(r_saved_bc, kBCReg);
   static_assert(kBCReg == RCX, "rcx used as arg to repmovsq");
   // Use `rep movsq` to copy RCX words from RSI to RDI.
-  __ std();
-  __ leaq(RCX, Address(env->oparg, 1));
-  __ leaq(RSI, Address(RSP, env->oparg, TIMES_8, 0));
-  __ leaq(RDI, Address(RSI, kPointerSize));
-  __ repMovsq();
-  __ cld();
+  {
+    __ std();
+    ScratchReg r_num_words(env, RCX);
+    __ leaq(r_num_words, Address(env->oparg, 1));
+    CHECK(env->oparg == RSI, "mismatching register");
+    __ leaq(RSI, Address(RSP, env->oparg, TIMES_8, 0));
+    env->oparg.free();
+    ScratchReg r_dst(env, RDI);
+    __ leaq(r_dst, Address(RSI, kPointerSize));
+    __ repMovsq();
+    __ cld();
+  }
   __ addq(RSP, Immediate(kPointerSize));
   __ movq(RDI, r_saved_rdi);
   __ movq(RSI, r_saved_rsi);
@@ -1492,40 +1571,48 @@ static void emitOriginalArg(EmitEnv* env, Register r_output) {
 
 template <>
 void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
-  Register r_iter = RAX;
-  Register r_scratch = RDX;
-  Register r_index = RDI;
-  Register r_container = R8;
-  Register r_num_items = R9;
-  Label slow_path;
-  __ popq(r_iter);
-  emitJumpIfNotHeapObjectWithLayoutId(env, r_iter, r_scratch,
-                                      LayoutId::kListIterator, &slow_path);
-  __ movq(r_index, Address(r_iter, heapObjectDisp(ListIterator::kIndexOffset)));
-  __ movq(r_container,
-          Address(r_iter, heapObjectDisp(ListIterator::kIterableOffset)));
-  __ movq(r_num_items,
-          Address(r_container, heapObjectDisp(List::kNumItemsOffset)));
-  __ cmpq(r_index, r_num_items);
-  Label terminate;
-  __ jcc(GREATER_EQUAL, &terminate, Assembler::kNearJump);
-  // r_index < r_num_items.
-  __ pushq(r_iter);
-  // Push list.at(index).
-  emitPushListAt(env, r_container, r_index, r_scratch);
-  __ addq(r_index, smallIntImmediate(1));
-  __ movq(Address(r_iter, heapObjectDisp(ListIterator::kIndexOffset)), r_index);
+  ScratchReg r_iter(env);
   Label next_opcode;
-  __ bind(&next_opcode);
-  emitNextOpcode(env);
+  Label slow_path;
+  Label terminate;
 
-  __ bind(&terminate);
-  // r_index >= r_num_items.
-  // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(), arg))
-  Register r_original_arg = RAX;
-  emitOriginalArg(env, r_original_arg);
-  __ addq(kPCReg, r_original_arg);
-  __ jmp(&next_opcode, Assembler::kNearJump);
+  {
+    ScratchReg r_index(env);
+    ScratchReg r_num_items(env);
+    ScratchReg r_container(env);
+
+    __ popq(r_iter);
+    emitJumpIfNotHeapObjectWithLayoutId(env, r_iter, LayoutId::kListIterator,
+                                        &slow_path);
+    __ movq(r_index,
+            Address(r_iter, heapObjectDisp(ListIterator::kIndexOffset)));
+    __ movq(r_container,
+            Address(r_iter, heapObjectDisp(ListIterator::kIterableOffset)));
+    // if (r_index >= r_num_items) goto terminate;
+    __ movq(r_num_items,
+            Address(r_container, heapObjectDisp(List::kNumItemsOffset)));
+    __ cmpq(r_index, r_num_items);
+    __ jcc(GREATER_EQUAL, &terminate, Assembler::kNearJump);
+    // r_index < r_num_items.
+    __ pushq(r_iter);
+    // Push list.at(index).
+    emitPushListAt(env, r_container, r_index);
+    __ addq(r_index, smallIntImmediate(1));
+    __ movq(Address(r_iter, heapObjectDisp(ListIterator::kIndexOffset)),
+            r_index);
+    __ bind(&next_opcode);
+    emitNextOpcode(env);
+  }
+
+  {
+    ScratchReg r_original_arg(env);
+    __ bind(&terminate);
+    // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
+    // arg))
+    emitOriginalArg(env, r_original_arg);
+    __ addq(kPCReg, r_original_arg);
+    __ jmp(&next_opcode, Assembler::kNearJump);
+  }
 
   __ bind(&slow_path);
   __ pushq(r_iter);
@@ -1534,47 +1621,56 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
 
 template <>
 void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
-  Register r_iter = RAX;
-  Register r_scratch = RDX;
-  Register r_length = RDI;
-  Register r_next = R8;
-  Label slow_path;
-  __ popq(r_iter);
-  emitJumpIfNotHeapObjectWithLayoutId(env, r_iter, r_scratch,
-                                      LayoutId::kRangeIterator, &slow_path);
-  __ movq(r_length,
-          Address(r_iter, heapObjectDisp(RangeIterator::kLengthOffset)));
-  __ cmpq(r_length, smallIntImmediate(0));
-  Label terminate;
-  __ jcc(EQUAL, &terminate, Assembler::kNearJump);
-
-  // if length > 0, push iter back and the current value of next.
-  __ pushq(r_iter);
-  __ movq(r_next, Address(r_iter, heapObjectDisp(RangeIterator::kNextOffset)));
-  __ pushq(r_next);
-  // if length > 1 decrement next.
-  __ cmpq(r_length, smallIntImmediate(1));
-  Label dec_length;
-  __ jcc(EQUAL, &dec_length, Assembler::kNearJump);
-  // iter.setNext(next + step);
-  __ addq(r_next, Address(r_iter, heapObjectDisp(RangeIterator::kStepOffset)));
-  __ movq(Address(r_iter, heapObjectDisp(RangeIterator::kNextOffset)), r_next);
-  // iter.setLength(length - 1);
-  __ bind(&dec_length);
-  __ subq(r_length, smallIntImmediate(1));
-  __ movq(Address(r_iter, heapObjectDisp(RangeIterator::kLengthOffset)),
-          r_length);
+  ScratchReg r_iter(env);
   Label next_opcode;
-  __ bind(&next_opcode);
-  emitNextOpcode(env);
+  Label slow_path;
+  Label terminate;
 
-  __ bind(&terminate);
-  // length == 0.
-  // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(), arg))
-  Register r_original_arg = RAX;
-  emitOriginalArg(env, r_original_arg);
-  __ addq(kPCReg, r_original_arg);
-  __ jmp(&next_opcode, Assembler::kNearJump);
+  {
+    ScratchReg r_length(env);
+    ScratchReg r_next(env);
+
+    __ popq(r_iter);
+    emitJumpIfNotHeapObjectWithLayoutId(env, r_iter, LayoutId::kRangeIterator,
+                                        &slow_path);
+    __ movq(r_length,
+            Address(r_iter, heapObjectDisp(RangeIterator::kLengthOffset)));
+    __ cmpq(r_length, smallIntImmediate(0));
+    __ jcc(EQUAL, &terminate, Assembler::kNearJump);
+
+    // if length > 0, push iter back and the current value of next.
+    __ pushq(r_iter);
+    __ movq(r_next,
+            Address(r_iter, heapObjectDisp(RangeIterator::kNextOffset)));
+    __ pushq(r_next);
+    // if length > 1 decrement next.
+    __ cmpq(r_length, smallIntImmediate(1));
+    Label dec_length;
+    __ jcc(EQUAL, &dec_length, Assembler::kNearJump);
+    // iter.setNext(next + step);
+    __ addq(r_next,
+            Address(r_iter, heapObjectDisp(RangeIterator::kStepOffset)));
+    __ movq(Address(r_iter, heapObjectDisp(RangeIterator::kNextOffset)),
+            r_next);
+    // iter.setLength(length - 1);
+    __ bind(&dec_length);
+    __ subq(r_length, smallIntImmediate(1));
+    __ movq(Address(r_iter, heapObjectDisp(RangeIterator::kLengthOffset)),
+            r_length);
+    __ bind(&next_opcode);
+    emitNextOpcode(env);
+  }
+
+  {
+    ScratchReg r_original_arg(env);
+    __ bind(&terminate);
+    // length == 0.
+    // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
+    // arg))
+    emitOriginalArg(env, r_original_arg);
+    __ addq(kPCReg, r_original_arg);
+    __ jmp(&next_opcode, Assembler::kNearJump);
+  }
 
   __ bind(&slow_path);
   __ pushq(r_iter);
@@ -1583,7 +1679,7 @@ void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_BOOL>(EmitEnv* env) {
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
 
   __ leaq(r_scratch, Address(kOpargReg, TIMES_2, Bool::kBoolTag));
   __ pushq(r_scratch);
@@ -1592,7 +1688,7 @@ void emitHandler<LOAD_BOOL>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
 
   __ movq(r_scratch, Address(env->frame, kOpargReg, TIMES_8, Frame::kSize));
   __ cmpl(r_scratch, Immediate(Error::notFound().raw()));
@@ -1616,23 +1712,28 @@ void emitHandler<STORE_FAST_REVERSE>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_IMMEDIATE>(EmitEnv* env) {
-  __ movsbq(RAX, env->oparg);
-  __ pushq(RAX);
+  ScratchReg r_scratch(env);
+
+  __ movsbq(r_scratch, env->oparg);
+  __ pushq(r_scratch);
   emitNextOpcode(env);
 }
 
 template <>
 void emitHandler<LOAD_GLOBAL_CACHED>(EmitEnv* env) {
-  __ movq(RAX, Address(env->frame, Frame::kCachesOffset));
-  __ movq(RAX, Address(RAX, env->oparg, TIMES_8, heapObjectDisp(0)));
-  __ pushq(Address(RAX, heapObjectDisp(RawValueCell::kValueOffset)));
+  ScratchReg r_scratch(env);
+
+  __ movq(r_scratch, Address(env->frame, Frame::kCachesOffset));
+  __ movq(r_scratch,
+          Address(r_scratch, env->oparg, TIMES_8, heapObjectDisp(0)));
+  __ pushq(Address(r_scratch, heapObjectDisp(RawValueCell::kValueOffset)));
   emitNextOpcode(env);
 }
 
 template <>
 void emitHandler<UNARY_NOT>(EmitEnv* env) {
   Label slow_path;
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
 
   // Handle RawBools directly; fall back to C++ for other types
   __ popq(r_scratch);
@@ -1652,9 +1753,9 @@ void emitHandler<UNARY_NOT>(EmitEnv* env) {
 }
 
 static void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
+  ScratchReg r_scratch(env);
   Label jump;
   Label next;
-  Register r_scratch = RAX;
 
   Label* true_target = jump_value ? &jump : &next;
   Label* false_target = jump_value ? &next : &jump;
@@ -1692,7 +1793,7 @@ void emitHandler<POP_JUMP_IF_TRUE>(EmitEnv* env) {
 void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
   Label next;
   Label slow_path;
-  Register r_scratch = RAX;
+  ScratchReg r_scratch(env);
 
   // Handle RawBools directly; fall back to C++ for other types.
   __ popq(r_scratch);
@@ -1742,22 +1843,27 @@ void emitHandler<DUP_TOP>(EmitEnv* env) {
 
 template <>
 void emitHandler<ROT_TWO>(EmitEnv* env) {
-  __ popq(RAX);
+  ScratchReg r_scratch(env);
+
+  __ popq(r_scratch);
   __ pushq(Address(RSP, 0));
-  __ movq(Address(RSP, 8), RAX);
+  __ movq(Address(RSP, 8), r_scratch);
   emitNextOpcode(env);
 }
 
 template <>
 void emitHandler<POP_TOP>(EmitEnv* env) {
-  __ popq(RAX);
+  ScratchReg r_scratch(env);
+
+  __ popq(r_scratch);
   emitNextOpcode(env);
 }
 
 template <>
 void emitHandler<EXTENDED_ARG>(EmitEnv* env) {
+  ScratchReg r_scratch(env);
+
   __ shll(env->oparg, Immediate(8));
-  Register r_scratch = RAX;
   __ movzbl(r_scratch,
             Address(env->bytecode, env->pc, TIMES_1, heapObjectDisp(0)));
   __ movb(env->oparg,
@@ -1772,22 +1878,28 @@ void emitHandler<EXTENDED_ARG>(EmitEnv* env) {
 }
 
 void emitCompareIs(EmitEnv* env, bool eq_value) {
-  __ popq(R8);
-  __ popq(R9);
-  __ movl(RAX, boolImmediate(eq_value));
-  __ movl(RDI, boolImmediate(!eq_value));
-  __ cmpq(R8, R9);
-  __ cmovnel(RAX, RDI);
-  __ pushq(RAX);
+  ScratchReg r_lhs(env);
+  ScratchReg r_rhs(env);
+  ScratchReg r_eq_value(env);
+  ScratchReg r_neq_value(env);
+
+  __ popq(r_rhs);
+  __ popq(r_lhs);
+  __ movl(r_eq_value, boolImmediate(eq_value));
+  __ movl(r_neq_value, boolImmediate(!eq_value));
+  __ cmpq(r_rhs, r_lhs);
+  __ cmovnel(r_eq_value, r_neq_value);
+  __ pushq(r_eq_value);
   emitNextOpcode(env);
 }
 
 static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
-  Register r_right = RAX;
-  Register r_left = RDI;
-  Register r_true = RDX;
-  Register r_result = R8;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_true(env);
+  ScratchReg r_result(env);
   Label slow_path;
+
   __ popq(r_right);
   __ popq(r_left);
   // Use the fast path only when both arguments are SmallInt.
@@ -1873,10 +1985,11 @@ void emitHandler<COMPARE_IS_NOT>(EmitEnv* env) {
 
 template <>
 void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
-  Register r_right = RAX;
-  Register r_left = RDX;
-  Register r_result = RDI;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
   Label slow_path;
+
   __ popq(r_right);
   __ popq(r_left);
   emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
@@ -1900,9 +2013,9 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
 
 template <>
 void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
-  Register r_right = RAX;
-  Register r_left = RDX;
-  Register r_result = RDI;
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
@@ -1928,8 +2041,7 @@ void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
 template <>
 void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Label slow_path;
-  Register r_return_value = RAX;
-  Register r_scratch = RDX;
+  ScratchReg r_return_value(env);
 
   // Go to slow_path if frame->returnMode() != Frame::kNormal;
   // frame->blockStackDepth() should always be 0 here.
@@ -1940,13 +2052,17 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(r_return_value);
 
-  // RSP = frame->frameEnd()
-  //     = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
-  // (The +1 is because we have to point behind the field)
-  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffsetOffset));
-  __ leaq(RSP, Address(kFrameReg, r_scratch, TIMES_1,
-                       (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
-  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+  {
+    ScratchReg r_scratch(env);
+    // RSP = frame->frameEnd()
+    //     = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
+    // (The +1 is because we have to point behind the field)
+    __ movq(r_scratch, Address(env->frame, Frame::kLocalsOffsetOffset));
+    __ leaq(RSP,
+            Address(env->frame, r_scratch, TIMES_1,
+                    (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
+    __ movq(env->frame, Address(env->frame, Frame::kPreviousFrameOffset));
+  }
 
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   __ pushq(r_return_value);
@@ -1958,15 +2074,16 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
       -(Interpreter::kNumContinues -
         static_cast<int>(Interpreter::Continue::RETURN)) *
       kHandlerSize;
-  __ leaq(RAX, Address(env->handlers_base, handler_offset));
+  ScratchReg r_scratch(env);
+  __ leaq(r_scratch, Address(env->handlers_base, handler_offset));
   env->register_state.check(env->return_handler_assignment);
-  __ jmp(RAX);
+  __ jmp(r_scratch);
 }
 
 template <>
 void emitHandler<POP_BLOCK>(EmitEnv* env) {
-  Register r_depth = RAX;
-  Register r_block = R9;
+  ScratchReg r_depth(env);
+  ScratchReg r_block(env);
 
   // frame->blockstack()->pop()
   static_assert(Frame::kBlockStackDepthMask == 0xffffffff,
@@ -2097,9 +2214,10 @@ word emitHandlerTable(EmitEnv* env) {
     __ movq(kArgRegs[0], env->thread);
 
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::unwind);
-    // Check RAX.isErrorError()
-    __ cmpl(kReturnRegs[0], Immediate(Error::error().raw()));
-    env->register_state.assign(&env->return_value, kReturnRegs[0]);
+    ScratchReg r_result(env, kReturnRegs[0]);
+    // Check result.isErrorError()
+    __ cmpl(r_result, Immediate(Error::error().raw()));
+    env->register_state.assign(&env->return_value, r_result);
     env->register_state.check(env->do_return_assignment);
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
@@ -2115,9 +2233,10 @@ word emitHandlerTable(EmitEnv* env) {
     HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], env->thread);
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::handleReturn);
-    // Check RAX.isErrorError()
-    __ cmpl(kReturnRegs[0], Immediate(Error::error().raw()));
-    env->register_state.assign(&env->return_value, kReturnRegs[0]);
+    ScratchReg r_result(env, kReturnRegs[0]);
+    // Check result.isErrorError()
+    __ cmpl(r_result, Immediate(Error::error().raw()));
+    env->register_state.assign(&env->return_value, r_result);
     env->register_state.check(env->do_return_assignment);
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
@@ -2131,8 +2250,8 @@ word emitHandlerTable(EmitEnv* env) {
     env->current_handler = "YIELD pseudo-handler";
     env->register_state.resetTo(env->return_handler_assignment);
     HandlerSizer sizer(env, kHandlerSize);
-    // RAX = thread->stackPop()
-    Register r_scratch_top = R8;
+    // result = thread->stackPop()
+    ScratchReg r_scratch_top(env, RDX);
     __ movq(r_scratch_top, Address(env->thread, Thread::stackPointerOffset()));
     env->register_state.assign(&env->return_value, kReturnRegs[0]);
     __ movq(env->return_value, Address(r_scratch_top, 0));
