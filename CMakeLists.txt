@@ -601,6 +601,8 @@ add_library(
   runtime/range-builtins.h
   runtime/ref-builtins.cpp
   runtime/ref-builtins.h
+  runtime/register-state.cpp
+  runtime/register-state.h
   runtime/runtime.cpp
   runtime/runtime.h
   runtime/scavenger.cpp

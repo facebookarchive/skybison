@@ -30,6 +30,7 @@ enum Register {
   R14 = 14,
   R15 = 15,
   kNoRegister = -1,  // Signals an illegal register.
+  kNumRegisters = 16,
 };
 
 enum XmmRegister {
