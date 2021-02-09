@@ -1020,12 +1020,6 @@ RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
 
-RawObject Runtime::emptyMutableBytes() { return empty_mutable_bytes_; }
-
-RawObject Runtime::emptySlice() { return empty_slice_; }
-
-RawObject Runtime::emptyTuple() { return empty_tuple_; }
-
 RawObject Runtime::newMutableTuple(word length) {
   DCHECK(length > 0, "use emptyTuple() for MutableTuple with length 0");
   word size = MutableTuple::allocationSize(length);

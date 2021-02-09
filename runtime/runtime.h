@@ -1089,6 +1089,12 @@ class Runtime {
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
 
+inline RawObject Runtime::emptyMutableBytes() { return empty_mutable_bytes_; }
+
+inline RawObject Runtime::emptySlice() { return empty_slice_; }
+
+inline RawObject Runtime::emptyTuple() { return empty_tuple_; }
+
 inline RawObject Runtime::internStr(Thread* thread, const Object& str) {
   if (str.isSmallStr()) {
     return *str;
