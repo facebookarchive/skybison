@@ -199,7 +199,7 @@ static const BuiltinAttribute kCoroutineAttributes[] = {
      AttributeFlags::kHidden},
     {ID(__name__), RawAsyncGenerator::kNameOffset, AttributeFlags::kReadOnly},
     {ID(__qualname__), RawCoroutine::kQualnameOffset},
-    {ID(cr_running), RawCoroutine::kRunningOffset, AttributeFlags::kHidden},
+    {ID(cr_running), RawCoroutine::kRunningOffset, AttributeFlags::kReadOnly},
     {ID(_coroutine__await), RawCoroutine::kAwaitOffset,
      AttributeFlags::kHidden},
     {ID(_coroutine__origin), RawCoroutine::kOriginOffset,

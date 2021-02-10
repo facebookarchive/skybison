@@ -311,6 +311,29 @@ TEST_F(NoneBuiltinsTest, BuiltinBaseIsNone) {
 }
 
 TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithHiddenAttributeReturnsErrorNotFound) {
+  HandleScope scope(thread_);
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
+  BuiltinAttribute attrs[] = {
+      {ID(__globals__), 0, AttributeFlags::kHidden},
+  };
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
+                                   LayoutId::kObject, attrs,
+                                   /*size=*/kPointerSize,
+                                   /*basetype=*/true));
+  Layout layout(&scope, type.instanceLayout());
+  runtime_->layoutAtPut(layout_id, *layout);
+  Instance instance(&scope, runtime_->newInstance(layout));
+  Str attribute_name(&scope,
+                     Runtime::internStrFromCStr(thread_, "__globals__"));
+  EXPECT_TRUE(
+      instanceDelAttr(thread_, instance, attribute_name).isErrorNotFound());
+  EXPECT_EQ(instance.layoutId(), layout.id());
+  runtime_->layoutAtPut(layout_id, *previous_layout);
+}
+
+TEST_F(ObjectBuiltinsTest,
        InstanceDelAttrWithInObjectAttributeDeletesAttribute) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
@@ -506,6 +529,29 @@ instance.foo = 42
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 42));
 }
 
+TEST_F(ObjectBuiltinsTest,
+       InstanceGetattributeWithHiddenAttributeReturnsErrorNotFound) {
+  HandleScope scope(thread_);
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
+  BuiltinAttribute attrs[] = {
+      {ID(__globals__), 0, AttributeFlags::kHidden},
+  };
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
+                                   LayoutId::kObject, attrs,
+                                   /*size=*/kPointerSize,
+                                   /*basetype=*/true));
+  Layout layout(&scope, type.instanceLayout());
+  runtime_->layoutAtPut(layout_id, *layout);
+  Instance instance(&scope, runtime_->newInstance(layout));
+  Str attribute_name(&scope,
+                     Runtime::internStrFromCStr(thread_, "__globals__"));
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, attribute_name)
+                  .isErrorNotFound());
+  EXPECT_EQ(instance.layoutId(), layout.id());
+  runtime_->layoutAtPut(layout_id, *previous_layout);
+}
+
 TEST_F(
     ObjectBuiltinsTest,
     InstanceGetAttributeWithNonExistentAttributeDictOverflowReturnsErrorNotFound) {
@@ -614,6 +660,32 @@ def instance(): pass
   ASSERT_FALSE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 4711));
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceSetAttrWithHiddenAttributeRaisesAttributeError) {
+  HandleScope scope(thread_);
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
+  BuiltinAttribute attrs[] = {
+      {ID(__globals__), 0, AttributeFlags::kHidden},
+  };
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
+                                   LayoutId::kObject, attrs,
+                                   /*size=*/kPointerSize,
+                                   /*basetype=*/true));
+  Layout layout(&scope, type.instanceLayout());
+  runtime_->layoutAtPut(layout_id, *layout);
+  Instance instance(&scope, runtime_->newInstance(layout));
+  Str attribute_name(&scope,
+                     Runtime::internStrFromCStr(thread_, "__globals__"));
+  Object value(&scope, runtime_->newInt(4711));
+  EXPECT_TRUE(
+      raisedWithStr(instanceSetAttr(thread_, instance, attribute_name, value),
+                    LayoutId::kAttributeError,
+                    "'UserWarning.__globals__' attribute cannot be set"));
+  EXPECT_EQ(instance.layoutId(), layout.id());
+  runtime_->layoutAtPut(layout_id, *previous_layout);
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributeReturnsInstanceValue) {

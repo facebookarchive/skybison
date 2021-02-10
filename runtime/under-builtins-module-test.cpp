@@ -12,6 +12,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 #include "trampolines.h"
+#include "type-builtins.h"
 
 namespace py {
 namespace testing {
@@ -881,6 +882,31 @@ instance.foo = "bar"
   Str foo(&scope, runtime_->newStrFromCStr("foo"));
   EXPECT_TRUE(listContains(result, hello));
   EXPECT_TRUE(listContains(result, foo));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectKeysWithHiddenAttributesDoesNotReturnKey) {
+  HandleScope scope(thread_);
+  LayoutId layout_id = LayoutId::kUserWarning;
+  Object previous_layout(&scope, runtime_->layoutAt(layout_id));
+  BuiltinAttribute attrs[] = {
+      {ID(__globals__), 0, AttributeFlags::kHidden},
+  };
+  Type type(&scope, addBuiltinType(thread_, ID(UserWarning), layout_id,
+                                   LayoutId::kObject, attrs,
+                                   /*size=*/kPointerSize,
+                                   /*basetype=*/true));
+  Layout layout(&scope, type.instanceLayout());
+  runtime_->layoutAtPut(layout_id, *layout);
+  Instance instance(&scope, runtime_->newInstance(layout));
+  Object result_obj(&scope,
+                    runBuiltin(FUNC(_builtins, _object_keys), instance));
+  ASSERT_TRUE(result_obj.isList());
+  List result(&scope, *result_obj);
+  Str dunder_globals(&scope, runtime_->newStrFromCStr("__globals__"));
+  EXPECT_FALSE(listContains(result, dunder_globals));
+  EXPECT_EQ(instance.layoutId(), layout.id());
+  runtime_->layoutAtPut(layout_id, *previous_layout);
 }
 
 TEST_F(UnderBuiltinsModuleTest,

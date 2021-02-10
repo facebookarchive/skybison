@@ -3898,6 +3898,8 @@ RawObject FUNC(_builtins, _object_keys)(Thread* thread, Arguments args) {
     Tuple pair(&scope, in_object.at(i));
     Object name(&scope, pair.at(0));
     if (name.isNoneType()) continue;
+    AttributeInfo info(pair.at(1));
+    if (info.isHidden()) continue;
     runtime->listAdd(thread, result, name);
   }
   // Add overflow attributes

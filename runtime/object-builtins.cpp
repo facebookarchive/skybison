@@ -46,6 +46,10 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
     return Error::notFound();
   }
 
+  if (info.isHidden()) {
+    return Error::notFound();
+  }
+
   if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%S' attribute is read-only", &name);
@@ -77,6 +81,9 @@ RawObject instanceGetAttributeSetLocation(Thread* thread,
   Layout layout(&scope, runtime->layoutOf(*instance));
   AttributeInfo info;
   if (Runtime::layoutFindAttribute(*layout, name, &info)) {
+    if (info.isHidden()) {
+      return Error::notFound();
+    }
     if (info.isInObject()) {
       if (location_out != nullptr) {
         *location_out = SmallInt::fromWord(info.offset());
@@ -163,6 +170,10 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   } else if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%T.%S' attribute is read-only", &instance,
+                                &name);
+  } else if (info.isHidden()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "'%T.%S' attribute cannot be set", &instance,
                                 &name);
   }
   DCHECK(!thread->runtime()->isInstanceOfType(*instance),

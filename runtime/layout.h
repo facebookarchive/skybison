@@ -25,12 +25,11 @@ enum AttributeFlags {
   kReadOnly = 1 << 3,
 
   // Attribute is hidden from managed code but visible to tooling.
-  // TODO(T61532692): Add infrastructure to actually hide the attribute
-  kHidden = kReadOnly,
+  kHidden = 1 << 4,
 
   // When set, this attribute should be initialized to Unbound to mark it as
   // undefined when accessed before initizliation by the user.
-  kInitWithUnbound = 1 << 4,
+  kInitWithUnbound = 1 << 5,
 };
 
 // AttributeInfo packs attribute metadata into a SmallInt.
@@ -73,6 +72,8 @@ class AttributeInfo {
   bool isDeleted() { return hasFlag(AttributeFlags::kDeleted); }
 
   bool isFixedOffset() { return hasFlag(AttributeFlags::kFixedOffset); }
+
+  bool isHidden() { return hasFlag(AttributeFlags::kHidden); }
 
   bool isReadOnly() { return hasFlag(AttributeFlags::kReadOnly); }
 
