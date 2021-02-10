@@ -136,7 +136,7 @@ TEST_F(LargeBytesTest, FindByteNonZeroStartReturnsIndex) {
 TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);
-  Bytes src(&scope, runtime_->newBytesWithAll(src_bytes));
+  LargeBytes src(&scope, runtime_->newBytesWithAll(src_bytes));
   byte result[8] = {0};
   src.copyToStartAt(result, 7, 20);
   EXPECT_STREQ(reinterpret_cast<char*>(result), "patrick");
@@ -1066,16 +1066,16 @@ TEST_F(StringTest, CopyToStartAtWithLargeStrCopiesBytes) {
   Str str(&scope, runtime_->newStrFromCStr("Hello world!"));
 
   byte actual0[5];
-  str.copyToStartAt(actual0, 5, 3);
+  LargeStr::cast(*str).copyToStartAt(actual0, 5, 3);
   EXPECT_EQ(std::memcmp(actual0, "lo", 2), 0);
 
   byte actual1[3];
-  str.copyToStartAt(actual1, 3, 4);
+  LargeStr::cast(*str).copyToStartAt(actual1, 3, 4);
   EXPECT_EQ(std::memcmp(actual1, "o w", 3), 0);
 
   // zero-sized copies should do nothing.
   str.copyToStartAt(nullptr, 0, 0);
-  str.copyToStartAt(nullptr, 0, 12);
+  LargeStr::cast(*str).copyToStartAt(nullptr, 0, 12);
 }
 
 TEST_F(StringTest, CopyToStartAtWithSmallStrCopiesBytes) {

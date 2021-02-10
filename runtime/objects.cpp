@@ -11,33 +11,31 @@
 
 namespace py {
 
-template <typename T, typename F>
-static inline word offset(T src, F at, word len, word index, word count) {
+static inline word offset(const byte* data, word len, word index, word count) {
   if (count >= 0) {
     while (count-- && index < len) {
-      index += UTF8::numChars((src->*at)(index));
+      index += UTF8::numChars(data[index]);
     }
     return Utils::minimum(index, len);
   }
   while (count < 0) {
     index--;
     if (index < 0) return -1;
-    if (UTF8::isLeadByte((src->*at)(index))) count++;
+    if (UTF8::isLeadByte(data[index])) count++;
   }
   return index;
 }
 
-template <typename T, typename F>
-static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
-                                      word* char_length) {
+static inline int32_t decodeCodePoint(const byte* data, word src_length,
+                                      word index, word* char_length) {
   DCHECK_INDEX(index, src_length);
-  byte b0 = (src->*at)(index);
+  byte b0 = data[index];
   if (b0 <= kMaxASCII) {
     *char_length = 1;
     return b0;
   }
   DCHECK_INDEX(index + 1, src_length);
-  byte b1 = (src->*at)(index + 1) & byte{0x3F};
+  byte b1 = data[index + 1] & byte{0x3F};
   // 0b110xxxxx begins a sequence with one continuation byte.
   if (b0 < 0xE0) {
     DCHECK(b0 >= 0xC, "unexpected continuation byte");
@@ -45,7 +43,7 @@ static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
     return ((b0 & 0x1F) << 6) | b1;
   }
   DCHECK_INDEX(index + 2, src_length);
-  byte b2 = (src->*at)(index + 2) & byte{0x3F};
+  byte b2 = data[index + 2] & byte{0x3F};
   // 0b1110xxxx starts a sequence with two continuation bytes.
   if (b0 < 0xF0) {
     *char_length = 3;
@@ -54,7 +52,7 @@ static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
   // 0b11110xxx starts a sequence with three continuation bytes.
   DCHECK((b0 & 0xF8) == 0xF0, "invalid code unit");
   DCHECK_INDEX(index + 2, src_length);
-  byte b3 = (src->*at)(index + 3) & byte{0x3F};
+  byte b3 = data[index + 3] & byte{0x3F};
   *char_length = 4;
   return ((b0 & 0x7) << 18) | (b1 << 12) | (b2 << 6) | b3;
 }
@@ -62,8 +60,8 @@ static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
 // RawSmallData
 
 int32_t RawSmallData::codePointAt(word index, word* char_length) const {
-  return decodeCodePoint(this, &RawSmallData::byteAt, length(), index,
-                         char_length);
+  const byte* data = smallDataData(this);
+  return decodeCodePoint(data, length(), index, char_length);
 }
 
 word RawSmallData::codePointLength() const {
@@ -106,7 +104,8 @@ bool RawSmallData::isASCII() const {
 
 word RawSmallData::offsetByCodePoints(word index, word count) const {
   // TODO(T64961042): operate directly on the word
-  return offset(this, &RawSmallData::byteAt, length(), index, count);
+  const byte* data = smallDataData(this);
+  return offset(data, length(), index, count);
 }
 
 char* RawSmallData::toCStr() const {
@@ -347,9 +346,13 @@ word RawCode::offsetToLineNum(word offset) const {
 
 // RawDataArray
 
+static inline const byte* dataArrayData(RawDataArray obj) {
+  return reinterpret_cast<const byte*>(obj.address());
+}
+
 int32_t RawDataArray::codePointAt(word index, word* char_length) const {
-  return decodeCodePoint(this, &RawDataArray::byteAt, length(), index,
-                         char_length);
+  const byte* data = dataArrayData(*this);
+  return decodeCodePoint(data, length(), index, char_length);
 }
 
 word RawDataArray::codePointLength() const {
@@ -369,7 +372,7 @@ word RawDataArray::codePointLength() const {
   word length = this->length();
   word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
   word result = length;
-  const uword* data = reinterpret_cast<const uword*>(address());
+  const uword* data = reinterpret_cast<const uword*>(dataArrayData(*this));
   uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
   uword mask_7 = mask_0 << 7;       // 0x808080...
   for (word i = 0; i < size_in_words; i++) {
@@ -397,15 +400,14 @@ bool RawDataArray::equalsBytes(View<byte> bytes) const {
   if (bytes.length() != length) {
     return false;
   }
-  return std::memcmp(reinterpret_cast<const void*>(address()), bytes.data(),
-                     length) == 0;
+  return std::memcmp(dataArrayData(*this), bytes.data(), length) == 0;
 }
 
 word RawDataArray::findByte(byte value, word start, word length) const {
   DCHECK_BOUND(start, this->length());
   DCHECK_BOUND(start + length, this->length());
-  word result = Utils::memoryFindChar(
-      reinterpret_cast<byte*>(address() + start), length, value);
+  word result =
+      Utils::memoryFindChar(dataArrayData(*this) + start, length, value);
   if (result != -1) result += start;
   return result;
 }
@@ -414,7 +416,7 @@ bool RawDataArray::includesByte(byte b) const {
   DCHECK(b != 0, "Due to padding bytes, cannot check for 0.");
   word length = this->length();
   word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
-  const uword* data = reinterpret_cast<const uword*>(address());
+  const uword* data = reinterpret_cast<const uword*>(dataArrayData(*this));
   uword mask = (~uword{0} / 0xFF) * b;
   for (word i = 0; i < size_in_words; i++) {
     uword block = data[i];
@@ -429,7 +431,7 @@ bool RawDataArray::isASCII() const {
   // Depends on invariants specified in RawLargeStr::codePointLength
   word length = this->length();
   word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
-  const uword* data = reinterpret_cast<const uword*>(address());
+  const uword* data = reinterpret_cast<const uword*>(dataArrayData(*this));
   uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
   for (word i = 0; i < size_in_words; i++) {
     // Read an entire word of code units.
@@ -440,7 +442,8 @@ bool RawDataArray::isASCII() const {
 }
 
 word RawDataArray::offsetByCodePoints(word index, word count) const {
-  return offset(this, &RawDataArray::byteAt, length(), index, count);
+  const byte* data = dataArrayData(*this);
+  return offset(data, length(), index, count);
 }
 
 char* RawDataArray::toCStr() const {
@@ -466,8 +469,8 @@ word RawLargeStr::compare(RawObject that) const {
   word this_length = length();
   word that_length = RawLargeStr::cast(that).length();
   word length = Utils::minimum(this_length, that_length);
-  auto s1 = reinterpret_cast<void*>(address());
-  auto s2 = reinterpret_cast<void*>(RawLargeStr::cast(that).address());
+  const byte* s1 = dataArrayData(*this);
+  const byte* s2 = dataArrayData(RawLargeStr::cast(that));
   word result = std::memcmp(s1, s2, length);
   return result != 0 ? result : this_length - that_length;
 }
@@ -480,8 +483,8 @@ bool RawLargeStr::equals(RawObject that) const {
   if (length() != that_str.length()) {
     return false;
   }
-  auto s1 = reinterpret_cast<void*>(address());
-  auto s2 = reinterpret_cast<void*>(that_str.address());
+  const byte* s1 = dataArrayData(*this);
+  const byte* s2 = dataArrayData(that_str);
   return std::memcmp(s1, s2, length()) == 0;
 }
 
@@ -529,7 +532,7 @@ bool RawLargeStr::includes(RawObject that) const {
     return false;
   }
 
-  const byte* haystack = reinterpret_cast<const byte*>(address());
+  const byte* haystack = dataArrayData(*this);
 
   if (needle_len == 1) {
     byte ch = SmallStr::cast(that).byteAt(0);
@@ -542,7 +545,7 @@ bool RawLargeStr::includes(RawObject that) const {
     SmallStr::cast(that).copyTo(buffer, needle_len);
     needle = buffer;
   } else {
-    needle = reinterpret_cast<const byte*>(LargeStr::cast(that).address());
+    needle = dataArrayData(LargeStr::cast(that));
   }
 
   word needle_last = needle_len - 1;
@@ -592,13 +595,13 @@ word RawLargeStr::occurrencesOf(RawObject that) const {
     needle = buffer;
   } else {
     RawLargeStr str = RawLargeStr::cast(that);
-    needle = reinterpret_cast<byte*>(str.address());
+    needle = dataArrayData(str);
     needle_len = str.length();
   }
   DCHECK(needle != nullptr, "needle cannot be null");
   DCHECK(needle_len >= 0, "needle length must be non-negative");
   word haystack_len = length();
-  byte* haystack = reinterpret_cast<byte*>(address());
+  const byte* haystack = dataArrayData(*this);
   if (haystack_len < needle_len) {
     return 0;
   }
@@ -822,7 +825,7 @@ void RawMutableBytes::replaceFromWithStrStartAt(word dst_start, RawStr src,
 RawObject RawMutableBytes::becomeImmutable() const {
   word len = length();
   if (len <= SmallBytes::kMaxLength) {
-    return SmallBytes::fromBytes({reinterpret_cast<byte*>(address()), len});
+    return SmallBytes::fromBytes({dataArrayData(*this), len});
   }
   setHeader(header().withLayoutId(LayoutId::kLargeBytes));
   return *this;
@@ -832,7 +835,7 @@ RawObject RawMutableBytes::becomeStr() const {
   DCHECK(bytesIsValidStr(RawBytes::cast(*this)), "must contain valid utf-8");
   word len = length();
   if (len <= SmallStr::kMaxLength) {
-    return SmallStr::fromBytes({reinterpret_cast<byte*>(address()), len});
+    return SmallStr::fromBytes({dataArrayData(*this), len});
   }
   setHeader(header().withLayoutId(LayoutId::kLargeStr));
   return *this;
@@ -956,13 +959,13 @@ word RawStr::compareCStr(const char* c_str) const {
 
 int32_t RawStrArray::codePointAt(word index, word* char_length) const {
   RawMutableBytes buffer = RawMutableBytes::cast(items());
-  return decodeCodePoint(&buffer, &RawMutableBytes::byteAt, numItems(), index,
-                         char_length);
+  return decodeCodePoint(dataArrayData(buffer), numItems(), index, char_length);
 }
 
 word RawStrArray::offsetByCodePoints(word index, word count) const {
   RawMutableBytes buffer = RawMutableBytes::cast(items());
-  return offset(&buffer, &RawMutableBytes::byteAt, numItems(), index, count);
+  const byte* data = dataArrayData(buffer);
+  return offset(data, numItems(), index, count);
 }
 
 void RawStrArray::rotateCodePoint(word first, word last) const {

@@ -788,6 +788,8 @@ class RawSmallData : public RawObject {
   // Constants.
   static const word kMaxLength = kWordSize - 1;
 
+  static const word kDataOffset = 1;
+
  protected:
   explicit RawSmallData(uword raw);
 };
@@ -4884,6 +4886,13 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
 
 // RawSmallData
 
+// Access data within a SmallData reference.  This gives direct low-level
+// access. It is only apropriate to use in code to build up higher abstractions.
+inline const byte* smallDataData(const RawSmallData* obj) {
+  static_assert(endian::native == endian::little, "big endian not implemented");
+  return reinterpret_cast<const byte*>(obj) + RawSmallData::kDataOffset;
+}
+
 inline RawSmallData::RawSmallData(uword raw) : RawObject(raw) {}
 
 inline word RawSmallData::length() const {
@@ -4892,29 +4901,25 @@ inline word RawSmallData::length() const {
 
 inline byte RawSmallData::byteAt(word index) const {
   DCHECK_INDEX(index, length());
-  return raw() >> (kBitsPerByte * (index + 1));
+  return smallDataData(this)[index];
 }
 
 inline void RawSmallData::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
-  for (word i = 0; i < length; i++) {
-    *dst++ = byteAt(i);
-  }
+  std::memcpy(dst, smallDataData(this), length);
 }
 
 inline void RawSmallData::copyToStartAt(byte* dst, word length,
                                         word index) const {
-  DCHECK_BOUND(index + length, this->length());
-  for (word i = index; i < length + index; i++) {
-    *dst++ = byteAt(i);
-  }
+  DCHECK_BOUND(index, this->length());
+  DCHECK_BOUND(length, this->length() - index);
+  std::memcpy(dst, smallDataData(this) + index, length);
 }
 
 inline uint16_t RawSmallData::uint16At(word index) const {
   uint16_t result;
   DCHECK_INDEX(index, length() - word{sizeof(result) - 1});
-  const byte buffer[] = {byteAt(index), byteAt(index + 1)};
-  std::memcpy(&result, buffer, sizeof(result));
+  std::memcpy(&result, smallDataData(this) + index, sizeof(result));
   return result;
 }
 
@@ -4922,9 +4927,7 @@ inline uint32_t RawSmallData::uint32At(word index) const {
   uint32_t result;
   DCHECK(kMaxLength >= sizeof(result), "SmallBytes cannot fit uint32_t");
   DCHECK_INDEX(index, length() - word{sizeof(result) - 1});
-  const byte buffer[] = {byteAt(index), byteAt(index + 1), byteAt(index + 2),
-                         byteAt(index + 3)};
-  std::memcpy(&result, buffer, sizeof(result));
+  std::memcpy(&result, smallDataData(this) + index, sizeof(result));
   return result;
 }
 

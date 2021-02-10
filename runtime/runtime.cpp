@@ -1957,14 +1957,14 @@ static void writeStr(word fd, RawStr str) {
 
   word start = 0;
   word length = str.length();
-  for (word end = buffer_length; end < length;
-       start = end, end += buffer_length) {
-    str.copyToStartAt(buffer, buffer_length, start);
+  while (length > buffer_length) {
+    LargeStr::cast(str).copyToStartAt(buffer, buffer_length, start);
     File::write(fd, buffer, buffer_length);
+    start += buffer_length;
+    length -= buffer_length;
   }
-  word final_size = length - start;
-  str.copyToStartAt(buffer, final_size, start);
-  File::write(fd, buffer, final_size);
+  str.copyToStartAt(buffer, length, start);
+  File::write(fd, buffer, length);
 }
 
 RawObject Runtime::printTraceback(Thread* thread, word fd) {
@@ -2583,12 +2583,11 @@ RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
   }
   HandleScope scope(thread);
   MutableBytes copy(&scope, newMutableBytesUninitialized(new_length));
-  byte* dst = reinterpret_cast<byte*>(copy.address());
   if (old_length < new_length) {
-    original.copyTo(dst, old_length);
-    std::memset(dst + old_length, 0, new_length - old_length);
+    copy.replaceFromWithBytes(0, *original, old_length);
+    copy.replaceFromWithByte(old_length, 0, new_length - old_length);
   } else {
-    original.copyTo(dst, new_length);
+    copy.replaceFromWith(0, LargeBytes::cast(*original), new_length);
   }
   return copy.becomeImmutable();
 }
