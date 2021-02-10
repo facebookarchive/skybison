@@ -1330,17 +1330,17 @@ void emitCallTrampoline(EmitEnv* env) {
 
 void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
   ScratchReg r_scratch(env);
-  ScratchReg r_flags(env);
 
   // Check whether the call is interpreted.
-  __ movl(r_flags,
+  __ movl(r_scratch,
           Address(env->callable, heapObjectDisp(RawFunction::kFlagsOffset)));
-  __ testl(r_flags, smallIntImmediate(Function::Flags::kInterpreted));
+  __ testl(r_scratch, smallIntImmediate(Function::Flags::kInterpreted));
   env->register_state.check(env->call_trampoline_assignment);
   __ jcc(ZERO, &env->call_trampoline, Assembler::kFarJump);
 
-  // We do not support freevar/cellvar setup in the assembly interpreter.
-  __ testl(r_flags, smallIntImmediate(Function::Flags::kNofree));
+  // We only support "SimpleCall" functions. This implies `kNofree` is set
+  // `kwonlyargcount==0` and no varargs/varkeyargs.
+  __ testl(r_scratch, smallIntImmediate(Function::Flags::kSimpleCall));
   env->register_state.check(env->call_interpreted_slow_path_assignment);
   __ jcc(ZERO, &env->call_interpreted_slow_path, Assembler::kFarJump);
 
@@ -1351,9 +1351,6 @@ void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
   __ cmpl(r_scratch, env->oparg);
   env->register_state.check(env->call_interpreted_slow_path_assignment);
   __ jcc(NOT_EQUAL, &env->call_interpreted_slow_path, Assembler::kFarJump);
-  __ testl(r_flags, smallIntImmediate(Function::Flags::kSimpleCall));
-  env->register_state.check(env->call_interpreted_slow_path_assignment);
-  __ jcc(ZERO, &env->call_interpreted_slow_path, Assembler::kFarJump);
 
   emitPushCallFrame(env, &env->call_interpreted_slow_path);
 
