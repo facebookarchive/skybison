@@ -138,7 +138,7 @@ RawObject FUNC(_io, _BytesIO_truncate)(Thread* thread, Arguments args) {
     bytes_io.setNumItems(size);
     bytes_io.setPos(size);
   }
-  return runtime->newInt(size);
+  return SmallInt::fromWord(size);
 }
 
 RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Arguments args) {
@@ -334,7 +334,7 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
           return thread->raiseWithFmt(LayoutId::kValueError,
                                       "raw stream has been detached");
         }
-        Object name(&scope, thread->runtime()->symbols()->at(ID(read)));
+        Object name(&scope, runtime->symbols()->at(ID(read)));
         return objectRaiseAttributeError(thread, raw_file, name);
       }
     }
@@ -1365,7 +1365,7 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (*value == Str::empty()) {
-    return runtime->newInt(0);
+    return SmallInt::fromWord(0);
   }
 
   Str writenl(&scope, string_io.writenl());
@@ -1439,7 +1439,7 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
     buffer.replaceFromWithStr(start, *value, val_len);
   }
   string_io.setPos(new_len);
-  return runtime->newInt(original_val_len);
+  return SmallInt::fromWord(original_val_len);
 }
 
 static bool isValidStringIONewline(const Object& newline) {
@@ -1451,12 +1451,12 @@ static bool isValidStringIONewline(const Object& newline) {
 
 RawObject METH(StringIO, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+  if (!runtime->isInstanceOfStringIO(*self)) {
     return thread->raiseRequiresType(self, ID(StringIO));
   }
   Object newline(&scope, args.get(2));
-  Runtime* runtime = thread->runtime();
   if (newline != NoneType::object()) {
     if (!runtime->isInstanceOfStr(*newline)) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1474,7 +1474,7 @@ RawObject METH(StringIO, __init__)(Thread* thread, Arguments args) {
   string_io.setClosed(false);
   string_io.setPos(0);
   string_io.setReadnl(*newline);
-  string_io.setSeennl(runtime->newInt(0));
+  string_io.setSeennl(SmallInt::fromWord(0));
   if (newline == NoneType::object()) {
     string_io.setReadtranslate(true);
     string_io.setReaduniversal(true);
@@ -1698,7 +1698,8 @@ RawObject METH(StringIO, readline)(Thread* thread, Arguments args) {
 RawObject METH(StringIO, truncate)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStringIO(*self)) {
     return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
@@ -1707,7 +1708,6 @@ RawObject METH(StringIO, truncate)(Thread* thread, Arguments args) {
                                 "I/O operation on closed file.");
   }
   Object size_obj(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
   word size;
   if (size_obj.isNoneType()) {
     size = string_io.pos();
@@ -1728,18 +1728,19 @@ RawObject METH(StringIO, truncate)(Thread* thread, Arguments args) {
   }
   MutableBytes buffer(&scope, string_io.buffer());
   if (size < buffer.length()) {
-    MutableBytes new_buffer(
-        &scope, thread->runtime()->newMutableBytesUninitialized(size));
+    MutableBytes new_buffer(&scope,
+                            runtime->newMutableBytesUninitialized(size));
     new_buffer.replaceFromWith(0, *buffer, size);
     string_io.setBuffer(*new_buffer);
   }
-  return runtime->newInt(size);
+  return SmallInt::fromWord(size);
 }
 
 RawObject METH(StringIO, write)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+  if (!runtime->isInstanceOfStringIO(*self)) {
     return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
@@ -1748,7 +1749,7 @@ RawObject METH(StringIO, write)(Thread* thread, Arguments args) {
                                 "I/O operation on closed file.");
   }
   Object value(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfStr(*value)) {
+  if (!runtime->isInstanceOfStr(*value)) {
     return thread->raiseRequiresType(value, ID(str));
   }
   Str str(&scope, strUnderlying(*value));
