@@ -211,7 +211,7 @@ RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
         return runtime->newInt(cptr[offset.asWord()]);
       }
       if (value.isUnbound()) {
-        return runtime->newInt(0);
+        return SmallInt::fromWord(0);
       }
       return *value;
     case 'L':
@@ -223,7 +223,7 @@ RawObject FUNC(_ctypes, _SimpleCData_value_to_type)(Thread* thread,
         return runtime->newInt(cptr[offset.asWord()]);
       }
       if (value.isUnbound()) {
-        return runtime->newInt(0);
+        return SmallInt::fromWord(0);
       }
       return *value;
     default:

@@ -165,22 +165,22 @@ RawObject FUNC(_imp, exec_builtin)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   Object module_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfModule(*module_obj)) {
-    return runtime->newInt(0);
+    return SmallInt::fromWord(0);
   }
   Module module(&scope, *module_obj);
   Object module_def_obj(&scope, module.def());
   if (!module_def_obj.isInt()) {
     CHECK(!runtime->isInstanceOfInt(*module_def_obj),
           "module_def must be an exact int as it's a C Ptr");
-    return runtime->newInt(0);
+    return SmallInt::fromWord(0);
   }
   Int module_def(&scope, *module_def_obj);
   PyModuleDef* def = static_cast<PyModuleDef*>(module_def.asCPtr());
   if (def == nullptr) {
-    return runtime->newInt(0);
+    return SmallInt::fromWord(0);
   }
   if (objectHasHandleCache(runtime, *module)) {
-    return runtime->newInt(0);
+    return SmallInt::fromWord(0);
   }
   return runtime->newInt(moduleExecDef(thread, module, def));
 }

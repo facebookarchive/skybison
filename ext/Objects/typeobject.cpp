@@ -1202,7 +1202,7 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     }
     case T_PYSSIZET: {
       Int num_bytes(&scope, runtime->newInt(sizeof(Py_ssize_t)));
-      Int min_value(&scope, runtime->newInt(0));
+      Int min_value(&scope, SmallInt::fromWord(0));
       Int max_value(&scope,
                     runtime->newInt(std::numeric_limits<Py_ssize_t>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("Py_ssize_t"));
