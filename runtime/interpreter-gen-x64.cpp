@@ -1171,7 +1171,7 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
     // Same reasoning as above.
     __ leaq(r_max_size, Address(r_initial_size, r_max_size, TIMES_4, 0));
 
-    // if (sp - max_size >= thread->start_) { goto stack_overflow; }
+    // if (sp - max_size < thread->limit_) { goto stack_overflow; }
     __ negq(r_max_size);
     __ addq(r_max_size, RSP);
     __ cmpq(r_max_size, Address(env->thread, Thread::limitOffset()));
@@ -1412,7 +1412,7 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
   word locals_offset = Frame::kSize + nargs * kPointerSize;
   {
     // RSP -= Frame::kSize;
-    // if (RSP >= thread->start_) { goto stack_overflow; }
+    // if (RSP < thread->limit_) { goto stack_overflow; }
     __ subq(RSP, Immediate(Frame::kSize));
     __ cmpq(RSP, Address(env->thread, Thread::limitOffset()));
     env->register_state.check(env->call_trampoline_assignment);

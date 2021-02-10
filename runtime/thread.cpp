@@ -192,6 +192,7 @@ bool Thread::handleInterrupt(word size) {
     return true;
   }
   if (interrupt_flags & kReinitInterpreter) {
+    clearInterrupt(kReinitInterpreter);
     runtime_->interpreter()->setupThread(this);
   }
   return false;
