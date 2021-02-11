@@ -8,6 +8,8 @@
 
 namespace py {
 
+static const word kMaxStackArguments = 6;
+
 // method no args
 
 static RawObject callMethNoArgs(Thread* thread, const Function& function,
@@ -429,20 +431,30 @@ RawObject methodTrampolineFast(Thread* thread, word nargs) {
     return result;
   }
   Object self(&scope, thread->stackPeek(nargs - 1));
-
   word num_positional = nargs - 1;
-  std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[num_positional]);
+
+  PyObject* small_array[kMaxStackArguments];
+  PyObject** args;
+  if (num_positional <= kMaxStackArguments) {
+    args = small_array;
+  } else {
+    args = reinterpret_cast<PyObject**>(
+        std::malloc(num_positional * sizeof(args[0])));
+  }
   Runtime* runtime = thread->runtime();
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[nargs - i - 2] =
+    args[nargs - i - 2] =
         ApiHandle::newReference(runtime, thread->stackPeek(i));
   }
-  Object result(&scope, callMethFast(thread, function, self,
-                                     fastcall_args.get(), num_positional));
+  Object result(&scope,
+                callMethFast(thread, function, self, args, num_positional));
   for (word i = 0; i < num_positional; i++) {
-    ApiHandle::fromPyObject(fastcall_args[nargs - i - 2])->decref();
+    ApiHandle::fromPyObject(args[nargs - i - 2])->decref();
   }
   thread->stackDrop(nargs + 1);
+  if (args != small_array) {
+    std::free(args);
+  }
   return *result;
 }
 
@@ -460,21 +472,30 @@ RawObject methodTrampolineFastKw(Thread* thread, word nargs) {
     thread->stackDrop(nargs + 2);
     return result;
   }
-
   Object self(&scope, thread->stackPeek(nargs));
   word num_positional = nargs - 1;
-  std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[num_positional]);
+
+  PyObject* small_array[kMaxStackArguments];
+  PyObject** args;
+  if (num_positional <= kMaxStackArguments) {
+    args = small_array;
+  } else {
+    args = reinterpret_cast<PyObject**>(
+        std::malloc(num_positional * sizeof(args[0])));
+  }
   Runtime* runtime = thread->runtime();
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] =
+    args[i] =
         ApiHandle::newReference(runtime, thread->stackPeek(nargs - i - 1));
   }
-  Object result(&scope, callMethFast(thread, function, self,
-                                     fastcall_args.get(), nargs - 1));
+  Object result(&scope, callMethFast(thread, function, self, args, nargs - 1));
   for (word i = 0; i < num_positional; i++) {
-    ApiHandle::fromPyObject(fastcall_args[i])->decref();
+    ApiHandle::fromPyObject(args[i])->decref();
   }
   thread->stackDrop(nargs + 2);
+  if (args != small_array) {
+    std::free(args);
+  }
   return *result;
 }
 
@@ -495,29 +516,40 @@ RawObject methodTrampolineFastEx(Thread* thread, word flags) {
     }
   }
 
-  Tuple args(&scope, thread->stackPeek(has_varkeywords));
-  word args_length = args.length();
+  Tuple args_tuple(&scope, thread->stackPeek(has_varkeywords));
+  word args_length = args_tuple.length();
   if (args_length == 0) {
     RawObject result = raiseTypeErrorMustBeBound(thread, function);
     thread->stackDrop(has_varkeywords + 2);
     return result;
   }
-  Object self(&scope, args.at(0));
+  Object self(&scope, args_tuple.at(0));
   word num_positional = args_length - 1;
-  std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[num_positional]);
+
+  PyObject* small_array[kMaxStackArguments];
+  PyObject** args;
+  if (num_positional <= kMaxStackArguments) {
+    args = small_array;
+  } else {
+    args = reinterpret_cast<PyObject**>(
+        std::malloc(num_positional * sizeof(args[0])));
+  }
 
   // Set the positional arguments
   Runtime* runtime = thread->runtime();
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::newReference(runtime, args.at(i + 1));
+    args[i] = ApiHandle::newReference(runtime, args_tuple.at(i + 1));
   }
 
-  Object result(&scope, callMethFast(thread, function, self,
-                                     fastcall_args.get(), num_positional));
+  Object result(&scope,
+                callMethFast(thread, function, self, args, num_positional));
   for (word i = 0; i < num_positional; i++) {
-    ApiHandle::fromPyObject(fastcall_args[i])->decref();
+    ApiHandle::fromPyObject(args[i])->decref();
   }
   thread->stackDrop(has_varkeywords + 2);
+  if (args != small_array) {
+    std::free(args);
+  }
   return *result;
 }
 
