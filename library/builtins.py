@@ -3901,7 +3901,8 @@ class frozenset(bootstrap=True):
         _unimplemented()
 
     def __reduce__(self):
-        _unimplemented()
+        _frozenset_guard(self)
+        return (_type(self), ([*self],), getattr(self, "__dict__", None))
 
     def __repr__(self):
         _frozenset_guard(self)
@@ -5808,7 +5809,8 @@ class set(bootstrap=True):
         _unimplemented()
 
     def __reduce__(self):
-        _unimplemented()
+        _set_guard(self)
+        return (_type(self), ([*self],), getattr(self, "__dict__", None))
 
     def __repr__(self):
         _set_guard(self)

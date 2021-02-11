@@ -2,6 +2,7 @@
 import ast
 import builtins
 import contextlib
+import copy
 import errno
 import math
 import sys
@@ -5499,6 +5500,17 @@ class ExecTests(unittest.TestCase):
 
 
 class FrozensetTests(unittest.TestCase):
+    def test_deepcopy_with_frozenset_returns_frozenset(self):
+        s = frozenset([1, 2, 3])
+        self.assertEqual(s, copy.deepcopy(s))
+
+    def test_deepcopy_with_frozenset_subclass_returns_subclass(self):
+        class C(frozenset):
+            pass
+
+        s = C([1, 2, 3])
+        self.assertEqual(s, copy.deepcopy(s))
+
     def test_dunder_and_with_non_frozenset_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.__and__(set(), frozenset())
@@ -5586,6 +5598,36 @@ class FrozensetTests(unittest.TestCase):
         right = C()
         self.assertIs(type(left | right), frozenset)
         self.assertIs(type(left | left), frozenset)
+
+    def test_dunder_reduce_with_frozenset_returns_tuple(self):
+        a_frozenset = frozenset({1, 2, 3})
+        result = a_frozenset.__reduce__()
+        cls, value, state = result
+        self.assertEqual(type(result), tuple)
+        self.assertEqual(type(cls), type)
+        self.assertEqual(cls, frozenset)
+        self.assertEqual(type(value), tuple)
+        self.assertEqual(len(value), 1)
+        self.assertEqual(value[0], [1, 2, 3])
+        self.assertEqual(state, None)
+
+    def test_dunder_reduce_with_frozenset_subclass_returns_tuple(self):
+        class C(frozenset):
+            pass
+
+        c = C({1, 2, 3})
+        c.test_value = "test_value"
+        result = c.__reduce__()
+        cls, value, state = result
+        self.assertEqual(type(result), tuple)
+        self.assertEqual(type(cls), type)
+        self.assertEqual(cls, C)
+        self.assertEqual(type(value), tuple)
+        self.assertEqual(len(value), 1)
+        self.assertEqual(type(value[0]), list)
+        self.assertEqual(value[0], [1, 2, 3])
+        self.assertEqual(len(state), 1)
+        self.assertEqual(state["test_value"], "test_value")
 
     def test_dunder_repr_with_non_frozenset_self_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -10424,6 +10466,47 @@ class SeqTests(unittest.TestCase):
 
 
 class SetTests(unittest.TestCase):
+    def test_deepcopy_with_set_returns_set(self):
+        s = {1, 2, 3}
+        self.assertEqual(s, copy.deepcopy(s))
+
+    def test_deepcopy_with_set_subclass_returns_subclass(self):
+        class SubSet(set):
+            pass
+
+        s = SubSet({1, 2, 3})
+        self.assertEqual(s, copy.deepcopy(s))
+
+    def test_dunder_reduce_with_set_returns_tuple(self):
+        s = set({1, 2, 3})
+        result = s.__reduce__()
+        cls, value, state = result
+        self.assertEqual(type(result), tuple)
+        self.assertIsInstance(cls, type)
+        self.assertEqual(cls, set)
+        self.assertEqual(type(value), tuple)
+        self.assertEqual(len(value), 1)
+        self.assertEqual(value[0], [1, 2, 3])
+        self.assertEqual(state, None)
+
+    def test_dunder_reduce_with_set_subclass_returns_tuple(self):
+        class SubSet(set):
+            pass
+
+        s = SubSet({1, 2, 3})
+        s.test_value = "test_value"
+        result = s.__reduce__()
+        cls, value, state = result
+        self.assertEqual(type(result), tuple)
+        self.assertIsInstance(cls, type)
+        self.assertEqual(cls, SubSet)
+        self.assertEqual(type(value), tuple)
+        self.assertEqual(len(value), 1)
+        self.assertEqual(type(value[0]), list)
+        self.assertEqual(value[0], [1, 2, 3])
+        self.assertEqual(len(state), 1)
+        self.assertEqual(state["test_value"], "test_value")
+
     def test_set_add_then_remove_adds_then_add_adds_elements(self):
         s = set()
         for x in range(100):
