@@ -3407,6 +3407,10 @@ class dict_keys(bootstrap=True):
         _dict_keys_guard(self)
         return _dictview_or(self, other)
 
+    def __rand__(self, other):
+        _dict_keys_guard(self)
+        return _dictview_and(self, other)
+
     def __repr__(self):
         _dict_keys_guard(self)
         if _repr_enter(self):

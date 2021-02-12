@@ -410,6 +410,14 @@ class DictTests(unittest.TestCase):
 class DictItemsTests(unittest.TestCase):
     DictItemsType = type({}.items())
 
+    def binary_and_with_set_returns_set(self):
+        a = {"a", "b", "c"}
+        b = {"a": 1, "b": 2, "d": 3}
+        c = {"a", "b"}
+        d = b.keys()
+        self.assertEqual(a & d, c)
+        self.assertEqual(d & a, c)
+
     def test_dunder_and_with_non_dict_items_lhs_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             self.DictItemsType.__and__({}.keys(), [])
@@ -827,6 +835,44 @@ class DictKeysTests(unittest.TestCase):
 
         instance = C()
         self.assertIs({instance: "world"}.keys().__eq__({instance}), True)
+
+    def test_dunder_rand_with_non_dict_keys_lhs_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.DictKeysType.__rand__({}.items(), [])
+        self.assertIn(
+            "'__rand__' requires a 'dict_keys' object but received a 'dict_items'",
+            str(context.exception),
+        )
+
+    def test_dunder_rand_with_non_iterable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            {"hello": "world", "foo": "bar"}.keys().__rand__(5)
+        self.assertEqual("'int' object is not iterable", str(context.exception))
+
+    def test_dunder_rand_with_iterable_returns_set_with_intersection(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        result = mapping.keys().__rand__(["hello", "fizz"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {"hello"})
+
+    def test_dunder_rand_with_no_rhs_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {"hello": "world"}.keys().__rand__()
+
+    def test_dunder_rand_with_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__rand__(())
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_rand_with_empty_lhs_and_non_empty_rhs_returns_empty_set(self):
+        result = {}.keys().__rand__(["hello"])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
+
+    def test_dunder_rand_with_non_empty_lhs_and_empty_rhs_returns_empty_set(self):
+        result = {"hello": "world"}.keys().__rand__([])
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, set())
 
     def test_dunder_repr_with_non_dict_keys_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
