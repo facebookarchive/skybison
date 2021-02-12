@@ -12010,6 +12010,68 @@ class TupleTests(unittest.TestCase):
         self.assertEqual(result, 1)
         instance.__eq__.assert_called_once()
 
+    def test_count_with_non_tuple_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            tuple.count("foo", 3)
+
+    def test_count_with_empty_returns_zero(self):
+        result = ().count(3)
+        self.assertEqual(result, 0)
+
+    def test_count_with_no_matches_returns_zero(self):
+        result = (2, 4, 6, 8).count(3)
+        self.assertEqual(result, 0)
+
+    def test_count_with_mixed_elements(self):
+        t = (2, [1], 6, 8)
+        self.assertEqual(t.count(3), 0)
+        self.assertEqual(t.count(2), 1)
+
+    def test_count_with_identical_elements(self):
+        N = 5
+        t = (2,) * N
+        self.assertEqual(t.count(3), 0)
+        self.assertEqual(t.count(2), N)
+
+    def test_count_with_equivalent_objects(self):
+        o = object()
+        self.assertEqual(().count(o), 0)
+        self.assertEqual((o,).count(o), 1)
+        self.assertEqual((o, o).count(o), 2)
+
+    def test_count_with_incomparable_elements_raises(self):
+        class MyException(Exception):
+            pass
+
+        class NoCompare:
+            def __eq__(self, other):
+                raise MyException("oops")
+
+        # Create an object that doesn't support __eq__
+        # The exception should pass through the count
+        bad = NoCompare()
+
+        with self.assertRaises(MyException):
+            (1, 2, bad, 3).count(3)
+
+        with self.assertRaises(MyException):
+            (1, 2, 3, 4).count(bad)
+
+        self.assertEqual((bad,).count(bad), 1)
+
+    def test_count_with_nan(self):
+        nan = float("nan")
+        self.assertEqual(().count(nan), 0)
+        self.assertEqual((nan,).count(nan), 1)
+
+    def test_count_does_not_call_dunder_iter(self):
+        class NoIterTuple(tuple):
+            def __iter__(self):
+                raise NotImplementedError("no iter")
+
+        t = NoIterTuple((1, 2, 3, 4, 3, 2, 1))
+        self.assertEqual(t.count(3), 2)
+
 
 class TypeTests(unittest.TestCase):
     def test_abstract_methods_get_with_builtin_type_raises_attribute_error(self):

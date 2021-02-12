@@ -6735,8 +6735,17 @@ class tuple(bootstrap=True):
 
     __rmul__ = __mul__
 
-    def count(self, other):
-        _unimplemented()
+    def count(self, value):
+        _tuple_guard(self)
+        i = 0
+        length = _tuple_len(self)
+        result = 0
+        while i < length:
+            item = _tuple_getitem(self, i)
+            if item is value or item == value:
+                result += 1
+            i += 1
+        return result
 
     def index(self, other, start=_Unbound, stop=_Unbound):
         _tuple_guard(self)
