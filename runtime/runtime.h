@@ -467,22 +467,6 @@ class Runtime {
   // Always grows the sequence.
   static word newCapacity(word curr_capacity, word min_capacity);
 
-  // Copies the prefix of specified length of a bytes-like object to a
-  // certain position of a MutableBytes Object
-  void mutableBytesReplaceFromByteslike(Thread* thread, const MutableBytes& dst,
-                                        word dst_start, const Object& src,
-                                        word count);
-
-  // Copies a specified segment of a bytes-like object to a certain position of
-  // a MutableBytes Object
-  void mutableBytesReplaceFromByteslikeStartAt(Thread* thread,
-                                               const MutableBytes& dst,
-                                               word dst_start,
-                                               const Object& src, word count,
-                                               word src_start);
-
-  word byteslikeLength(Thread* thread, const Object& src);
-
   // Ensures that the byte array has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
   void bytearrayEnsureCapacity(Thread* thread, const Bytearray& array,
