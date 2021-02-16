@@ -7,6 +7,7 @@
 #include "builtins.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
@@ -1064,7 +1065,8 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Arguments args) {
   word start = SmallInt::cast(args.get(1)).value();
   word stop = SmallInt::cast(args.get(2)).value();
   word step = SmallInt::cast(args.get(3)).value();
-  Object src_obj(&scope, args.get(4));
+  Byteslike src(&scope, thread, args.get(4));
+  DCHECK(src.isValid(), "argument must be a byteslike");
 
   // Make sure that the degenerate case of a slice assignment where start is
   // greater than stop inserts before the start and not the stop. For example,
@@ -1074,12 +1076,12 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Arguments args) {
   }
 
   Runtime* runtime = thread->runtime();
-  word src_length = runtime->byteslikeLength(thread, src_obj);
+  word src_length = src.length();
 
   if (step == 1) {
     word growth = src_length - (stop - start);
     word new_length = self.numItems() + growth;
-    if (self == src_obj) {
+    if (self == args.get(4)) {
       // Rare case when replacing lhs with elements of rhs when lhs == rhs.
       // Will always have growth >= 0.
       if (growth == 0) {
@@ -1088,11 +1090,9 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Arguments args) {
       runtime->bytearrayEnsureCapacity(thread, self, new_length);
       self.setNumItems(new_length);
       MutableBytes dst_bytes(&scope, self.items());
-      runtime->mutableBytesReplaceFromByteslike(thread, dst_bytes, start,
-                                                src_obj, src_length);
-      runtime->mutableBytesReplaceFromByteslikeStartAt(
-          thread, dst_bytes, start + src_length, src_obj, src_length - stop,
-          start + stop);
+      dst_bytes.replaceFromWith(start, *dst_bytes, src_length);
+      dst_bytes.replaceFromWithStartAt(start + src_length, *dst_bytes,
+                                       src_length - stop, start + stop);
       return NoneType::object();
     }
     if (growth == 0) {
@@ -1119,17 +1119,9 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Arguments args) {
     }
     MutableBytes dst_bytes(&scope, self.items());
     // Copy new elements into the middle
-    runtime->mutableBytesReplaceFromByteslike(thread, dst_bytes, start, src_obj,
-                                              src_length);
+    dst_bytes.replaceFromWithByteslike(start, src, src_length);
     return NoneType::object();
   }
-
-  // Copy the underlying bytes of src_obj to src_bytes
-  MutableBytes src_bytes(&scope,
-                         runtime->newMutableBytesUninitialized(src_length));
-  runtime->mutableBytesReplaceFromByteslike(thread, src_bytes, 0, src_obj,
-                                            src_length);
-  src_bytes.becomeImmutable();
 
   word slice_length = Slice::length(start, stop, step);
   if (slice_length != src_length) {
@@ -1142,7 +1134,7 @@ RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Arguments args) {
   MutableBytes dst_bytes(&scope, self.items());
   for (word dst_idx = start, src_idx = 0; src_idx < src_length;
        dst_idx += step, src_idx++) {
-    dst_bytes.byteAtPut(dst_idx, src_bytes.byteAt(src_idx));
+    dst_bytes.byteAtPut(dst_idx, src.byteAt(src_idx));
   }
   return NoneType::object();
 }
