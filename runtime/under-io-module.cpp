@@ -2,6 +2,7 @@
 
 #include "builtins.h"
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "file.h"
 #include "frame.h"
 #include "globals.h"
@@ -1055,25 +1056,6 @@ static void bytesIOEnsureCapacity(Thread* thread, const BytesIO& bytes_io,
   bytes_io.setBuffer(*new_buffer);
 }
 
-static RawObject bytesIOWrite(Thread* thread, const BytesIO& bytes_io,
-                              const Object& value) {
-  Runtime* runtime = thread->runtime();
-  word pos = bytes_io.pos();
-  word val_len = runtime->byteslikeLength(thread, value);
-  word new_pos = pos + val_len;
-  bytesIOEnsureCapacity(thread, bytes_io, new_pos);
-
-  HandleScope scope(thread);
-  MutableBytes buffer(&scope, bytes_io.buffer());
-  runtime->mutableBytesReplaceFromByteslike(thread, buffer, pos, value,
-                                            val_len);
-  if (new_pos > bytes_io.numItems()) {
-    bytes_io.setNumItems(new_pos);
-  }
-  bytes_io.setPos(new_pos);
-  return runtime->newInt(val_len);
-}
-
 RawObject METH(BytesIO, __init__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1091,18 +1073,19 @@ RawObject METH(BytesIO, __init__)(Thread* thread, Arguments args) {
     return NoneType::object();
   }
 
-  if (!runtime->isByteslike(*initial_bytes)) {
+  Byteslike byteslike(&scope, thread, *initial_bytes);
+  if (!byteslike.isValid()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "a bytes-like object is required, not '%T'",
                                 &initial_bytes);
   }
-  word bytes_len = runtime->byteslikeLength(thread, initial_bytes);
-  MutableBytes buffer(&scope, runtime->newMutableBytesUninitialized(bytes_len));
-  runtime->mutableBytesReplaceFromByteslike(thread, buffer, 0, initial_bytes,
-                                            bytes_len);
+  word byteslike_length = byteslike.length();
+  MutableBytes buffer(&scope,
+                      runtime->newMutableBytesUninitialized(byteslike_length));
+  buffer.replaceFromWithByteslike(0, byteslike, byteslike_length);
   bytes_io.setBuffer(*buffer);
   bytes_io.setClosed(false);
-  bytes_io.setNumItems(bytes_len);
+  bytes_io.setNumItems(byteslike_length);
   bytes_io.setPos(0);
   return NoneType::object();
 }
@@ -1183,14 +1166,26 @@ RawObject METH(BytesIO, write)(Thread* thread, Arguments args) {
                                 "I/O operation on closed file.");
   }
 
-  Object value(&scope, args.get(1));
-  if (!runtime->isByteslike(*value)) {
+  Object value_obj(&scope, args.get(1));
+  Byteslike value(&scope, thread, *value_obj);
+  if (!value.isValid()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "a bytes-like object is required, not '%T'",
-                                &value);
+                                &value_obj);
   }
 
-  return bytesIOWrite(thread, bytes_io, value);
+  word pos = bytes_io.pos();
+  word value_length = value.length();
+  word new_pos = pos + value_length;
+  bytesIOEnsureCapacity(thread, bytes_io, new_pos);
+
+  MutableBytes::cast(bytes_io.buffer())
+      .replaceFromWithByteslike(pos, value, value_length);
+  if (new_pos > bytes_io.numItems()) {
+    bytes_io.setNumItems(new_pos);
+  }
+  bytes_io.setPos(new_pos);
+  return SmallInt::fromWord(value_length);
 }
 
 static const BuiltinAttribute kFileIOAttributes[] = {
