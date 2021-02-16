@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "frame.h"
 #include "runtime.h"
 #include "thread.h"
@@ -805,6 +806,28 @@ void RawMutableBytes::replaceFromWithAll(word dst_start, View<byte> src) const {
   DCHECK_BOUND(dst_start + src.length(), length());
   byte* dst = reinterpret_cast<byte*>(address());
   std::memcpy(dst + dst_start, src.data(), src.length());
+}
+
+void RawMutableBytes::replaceFromWithByteslike(word dst_start,
+                                               const Byteslike& byteslike,
+                                               word count) const {
+  DCHECK_BOUND(count, byteslike.length());
+  DCHECK_BOUND(dst_start, length() - count);
+  byte* dst = reinterpret_cast<byte*>(address() + dst_start);
+  const byte* src = reinterpret_cast<const byte*>(byteslike.address());
+  std::memcpy(dst, src, count);
+}
+
+void RawMutableBytes::replaceFromWithByteslikeStartAt(
+    word dst_start, const Byteslike& byteslike, word count,
+    word src_start) const {
+  DCHECK(count >= 0, "count must not be negative");
+  DCHECK_BOUND(src_start, byteslike.length() - count);
+  DCHECK_BOUND(dst_start, length() - count);
+  byte* dst = reinterpret_cast<byte*>(address() + dst_start);
+  const byte* src =
+      reinterpret_cast<const byte*>(byteslike.address() + src_start);
+  std::memcpy(dst, src, count);
 }
 
 void RawMutableBytes::replaceFromWithStr(word index, RawStr src,

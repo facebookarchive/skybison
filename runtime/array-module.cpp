@@ -11,10 +11,6 @@
 
 namespace py {
 
-RawObject FUNC(array, _array_check)(Thread* thread, Arguments args) {
-  return Bool::fromBool(thread->runtime()->isInstanceOfArray(args.get(0)));
-}
-
 static word itemSize(byte typecode) {
   switch (typecode) {
     case 'b':
@@ -41,6 +37,16 @@ static word itemSize(byte typecode) {
     default:
       return -1;
   }
+}
+
+word arrayByteLength(RawArray array) {
+  byte typecode = SmallStr::cast(array.typecode()).byteAt(0);
+  word item_size = itemSize(typecode);
+  return array.length() * item_size;
+}
+
+RawObject FUNC(array, _array_check)(Thread* thread, Arguments args) {
+  return Bool::fromBool(thread->runtime()->isInstanceOfArray(args.get(0)));
 }
 
 RawObject FUNC(array, _array_new)(Thread* thread, Arguments args) {

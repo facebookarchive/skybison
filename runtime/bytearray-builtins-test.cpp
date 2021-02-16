@@ -338,9 +338,8 @@ TEST_F(BytearrayBuiltinsTest, DunderIaddWithNonBytesLikeRaisesTypeError) {
 array = bytearray(b'')
 array += None
 )";
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, test), LayoutId::kTypeError,
-                    "can only concatenate bytearray or bytes to bytearray"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, test), LayoutId::kTypeError,
+                            "can't concat NoneType to bytearray"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderIaddWithBytearrayOtherConcatenatesToSelf) {

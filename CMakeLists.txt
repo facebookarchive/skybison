@@ -521,6 +521,8 @@ add_library(
   runtime/bytecode.h
   runtime/bytes-builtins.cpp
   runtime/bytes-builtins.h
+  runtime/byteslike.cpp
+  runtime/byteslike.h
   runtime/capi.h
   runtime/code-builtins.cpp
   runtime/code-builtins.h
@@ -1141,6 +1143,7 @@ add_library(
   runtime/bytearray-builtins-test.cpp
   runtime/bytecode-test.cpp
   runtime/bytes-builtins-test.cpp
+  runtime/byteslike-test.cpp
   runtime/code-builtins-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp

@@ -2,6 +2,7 @@
 
 #include "builtins.h"
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
@@ -156,23 +157,21 @@ RawObject METH(bytearray, __iadd__)(Thread* thread, Arguments args) {
     return thread->raiseRequiresType(self_obj, ID(bytearray));
   }
   Bytearray self(&scope, *self_obj);
+
   Object other_obj(&scope, args.get(1));
-  word other_len;
-  if (runtime->isInstanceOfBytearray(*other_obj)) {
-    Bytearray array(&scope, *other_obj);
-    other_len = array.numItems();
-    other_obj = array.items();
-  } else if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(*other_obj));
-    other_len = bytes.length();
-    other_obj = *bytes;
-  } else {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "can only concatenate bytearray or bytes to bytearray");
+  Byteslike other(&scope, thread, *other_obj);
+  if (!other.isValid()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "can't concat %T to %T",
+                                &other_obj, &self);
   }
-  Bytes other(&scope, *other_obj);
-  runtime->bytearrayIadd(thread, self, other, other_len);
+
+  word num_items = self.numItems();
+  word other_length = other.length();
+  word new_length = num_items + other_length;
+  runtime->bytearrayEnsureCapacity(thread, self, new_length);
+  MutableBytes::cast(self.items())
+      .replaceFromWithByteslike(num_items, other, other_length);
+  self.setNumItems(new_length);
   return *self;
 }
 

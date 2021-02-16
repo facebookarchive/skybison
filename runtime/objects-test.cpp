@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include "byteslike.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "test-utils.h"
@@ -173,6 +174,40 @@ TEST_F(MutableBytesTest, IndexOfAnyWithNeedleNoMatchReturnsHaystackLength) {
   EXPECT_EQ(src.indexOfAny(needle, 0), src_length);
   EXPECT_EQ(src.indexOfAny(needle, 5), src_length);
   EXPECT_EQ(src.indexOfAny(needle, 9), src_length);
+}
+
+TEST_F(MutableBytesTest, ReplaceFromWithByteslikeReplacesBytes) {
+  HandleScope scope(thread_);
+  const byte bytes[] = "hello world";
+  Object value(&scope, runtime_->newBytesWithAll(bytes));
+  Byteslike byteslike(&scope, thread_, *value);
+  ASSERT_TRUE(byteslike.isValid());
+  MutableBytes mutable_bytes(&scope,
+                             runtime_->newMutableBytesUninitialized(11));
+  mutable_bytes.replaceFromWithByteslike(0, byteslike, 5);
+  mutable_bytes.replaceFromWithByteslike(5, byteslike, 2);
+  mutable_bytes.replaceFromWithByteslike(11, byteslike, 0);
+  mutable_bytes.replaceFromWithByteslike(7, byteslike, 3);
+  mutable_bytes.byteAtPut(10, '\0');
+  const byte expected[] = "hellohehel";
+  EXPECT_TRUE(isMutableBytesEqualsBytes(mutable_bytes, expected));
+}
+
+TEST_F(MutableBytesTest, ReplaceFromWithByteslikeStartAtReplacesBytes) {
+  HandleScope scope(thread_);
+  const byte bytes[] = "hello world";
+  Object value(&scope, runtime_->newBytesWithAll(bytes));
+  Byteslike byteslike(&scope, thread_, *value);
+  ASSERT_TRUE(byteslike.isValid());
+  MutableBytes mutable_bytes(&scope,
+                             runtime_->newMutableBytesUninitialized(10));
+  mutable_bytes.replaceFromWithByteslikeStartAt(0, byteslike, 5, 0);
+  mutable_bytes.replaceFromWithByteslikeStartAt(2, byteslike, 4, 1);
+  mutable_bytes.replaceFromWithByteslikeStartAt(6, byteslike, 4, 8);
+  mutable_bytes.replaceFromWithByteslikeStartAt(7, byteslike, 0, 11);
+  mutable_bytes.replaceFromWithByteslikeStartAt(10, byteslike, 0, 0);
+  const byte expected[] = "heellorld";
+  EXPECT_TRUE(isMutableBytesEqualsBytes(mutable_bytes, expected));
 }
 
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {

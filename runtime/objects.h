@@ -21,6 +21,7 @@
 
 namespace py {
 
+class Byteslike;
 class Frame;
 template <typename T>
 class Handle;
@@ -1534,6 +1535,12 @@ class RawMutableBytes : public RawLargeBytes {
 
   // Replace the bytes from dst_start with count bytes from src
   void replaceFromWithBytes(word dst_start, RawBytes src, word count) const;
+
+  void replaceFromWithByteslike(word dst_start, const Byteslike& byteslike,
+                                word count) const;
+  void replaceFromWithByteslikeStartAt(word dst_start,
+                                       const Byteslike& byteslike, word count,
+                                       word src_start) const;
 
   // Replace the bytes from dst_start with count bytes of value
   void replaceFromWithByte(word dst_start, byte value, word count) const;
