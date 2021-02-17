@@ -935,6 +935,8 @@ target_link_libraries(
 add_library(
   extension
   OBJECT
+  ext/Internal/bytearrayobject-utils.h
+  ext/Internal/bytesobject-utils.h
   ext/Internal/capi-handles.cpp
   ext/Internal/capi-handles.h
   ext/Internal/capi-state.cpp

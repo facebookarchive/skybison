@@ -5,6 +5,8 @@
 #include "cpython-func.h"
 
 #include "attributedict.h"
+#include "bytearrayobject-utils.h"
+#include "bytesobject-utils.h"
 #include "capi-handles.h"
 #include "capi.h"
 #include "exception-builtins.h"
@@ -997,36 +999,46 @@ static int raiseBufferError(Thread* thread, const Object& obj) {
 
 PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
-  char* buffer;
-  Py_ssize_t length;
-  if (PyBytes_Check(obj)) {
-    if (PyBytes_AsStringAndSize(obj, &buffer, &length) < 0) return -1;
-  } else if (PyByteArray_Check(obj)) {
-    // TODO(T54579154): This creates a copy of the object which does not stay in
-    // sync. We should have a way to pin the memory to allow direct access.
-    buffer = PyByteArray_AsString(obj);
-    if (buffer == nullptr) return -1;
-    length = PyByteArray_Size(obj);
-  } else {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
-    Runtime* runtime = thread->runtime();
-    if (runtime->isByteslike(*obj_obj)) {
-      Type type(&scope, runtime->typeOf(*obj_obj));
-      // TODO(T38246066): Add support for other builtin byteslike types using
-      // Runtime::isByteslike
-      UNIMPLEMENTED("PyObject_GetBuffer() for builtin byteslike type '%s'",
-                    Str::cast(type.name()).toCStr());
+
+  Thread* thread = Thread::current();
+  ApiHandle* handle = ApiHandle::fromPyObject(obj);
+  HandleScope scope(thread);
+  Object obj_obj(&scope, handle->asObject());
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*obj_obj)) {
+    Bytes bytes(&scope, bytesUnderlying(*obj_obj));
+    char* buffer = bytesAsString(runtime, handle, bytes);
+    if (buffer == nullptr) {
+      return -1;
     }
-    Type type(&scope, runtime->typeOf(*obj_obj));
-    if (type.isBuiltin()) return raiseBufferError(thread, obj_obj);
-    if (!typeHasSlots(type)) return raiseBufferError(thread, obj_obj);
-    void* slot = typeSlotAt(type, Py_bf_getbuffer);
-    if (slot == nullptr) return raiseBufferError(thread, obj_obj);
-    return reinterpret_cast<getbufferproc>(slot)(obj, view, flags);
+    return PyBuffer_FillInfo(view, handle, buffer, bytes.length(),
+                             /*readonly=*/1, flags);
   }
-  return PyBuffer_FillInfo(view, obj, buffer, length, /*readonly=*/1, flags);
+  if (runtime->isInstanceOfBytearray(*obj_obj)) {
+    // TODO(T54579154): This creates a copy of the object which does not stay
+    // in sync. We should have a way to pin the memory to allow direct access.
+    Bytearray array(&scope, *obj_obj);
+    char* buffer = bytearrayAsString(runtime, handle, array);
+    if (buffer == nullptr) {
+      return -1;
+    }
+    return PyBuffer_FillInfo(view, handle, buffer, array.numItems(),
+                             /*readonly=*/1, flags);
+  }
+  if (runtime->isByteslike(*obj_obj)) {
+    Type type(&scope, runtime->typeOf(*obj_obj));
+    // TODO(T38246066): Add support for other builtin byteslike types using
+    // Runtime::isByteslike
+    UNIMPLEMENTED("PyObject_GetBuffer() for builtin byteslike type '%s'",
+                  Str::cast(type.name()).toCStr());
+  }
+  // We must be dealing with a buffer protocol or an incompatible type.
+  Type type(&scope, runtime->typeOf(*obj_obj));
+  if (type.isBuiltin()) return raiseBufferError(thread, obj_obj);
+  if (!typeHasSlots(type)) return raiseBufferError(thread, obj_obj);
+  void* slot = typeSlotAt(type, Py_bf_getbuffer);
+  if (slot == nullptr) return raiseBufferError(thread, obj_obj);
+  return reinterpret_cast<getbufferproc>(slot)(handle, view, flags);
 }
 
 PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {

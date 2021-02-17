@@ -5,6 +5,7 @@
 
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "bytesobject-utils.h"
 #include "capi-handles.h"
 #include "runtime.h"
 #include "utils.h"
@@ -26,8 +27,7 @@ PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-static char* bytesAsString(Runtime* runtime, ApiHandle* handle,
-                           const Bytes& bytes) {
+char* bytesAsString(Runtime* runtime, ApiHandle* handle, const Bytes& bytes) {
   if (void* cache = handle->cache(runtime)) return static_cast<char*>(cache);
   word len = bytes.length();
   auto cache = static_cast<byte*>(std::malloc(len + 1));

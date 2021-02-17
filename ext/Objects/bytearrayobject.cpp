@@ -1,4 +1,5 @@
 #include "bytearray-builtins.h"
+#include "bytearrayobject-utils.h"
 #include "capi-handles.h"
 #include "runtime.h"
 
@@ -10,6 +11,17 @@ PY_EXPORT PyTypeObject* PyByteArrayIter_Type_Ptr() {
       runtime, runtime->typeAt(LayoutId::kBytearrayIterator)));
 }
 
+char* bytearrayAsString(Runtime* runtime, ApiHandle* handle,
+                        const Bytearray& array) {
+  if (void* cache = handle->cache(runtime)) std::free(cache);
+  word len = array.numItems();
+  auto buffer = static_cast<byte*>(std::malloc(len + 1));
+  array.copyTo(buffer, len);
+  buffer[len] = '\0';
+  handle->setCache(runtime, buffer);
+  return reinterpret_cast<char*>(buffer);
+}
+
 PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   DCHECK(pyobj != nullptr, "null argument to PyByteArray_AsString");
   Thread* thread = Thread::current();
@@ -19,14 +31,8 @@ PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfBytearray(*obj),
          "argument to PyByteArray_AsString is not a bytearray");
-  if (void* cache = handle->cache(runtime)) std::free(cache);
   Bytearray array(&scope, *obj);
-  word len = array.numItems();
-  auto buffer = static_cast<byte*>(std::malloc(len + 1));
-  array.copyTo(buffer, len);
-  buffer[len] = '\0';
-  handle->setCache(runtime, buffer);
-  return reinterpret_cast<char*>(buffer);
+  return bytearrayAsString(runtime, handle, array);
 }
 
 PY_EXPORT int PyByteArray_CheckExact_Func(PyObject* pyobj) {
