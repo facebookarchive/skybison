@@ -1025,6 +1025,24 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
     return PyBuffer_FillInfo(view, handle, buffer, array.numItems(),
                              /*readonly=*/1, flags);
   }
+  if (obj_obj.isMemoryView()) {
+    MemoryView memoryview(&scope, *obj_obj);
+    Object buffer(&scope, memoryview.buffer());
+    // A MemoryView's underlying buffer is either a bytes object or a raw
+    // pointer.
+    if (runtime->isInstanceOfBytes(*buffer)) {
+      Bytes bytes(&scope, bytesUnderlying(*obj_obj));
+      // We use the memoryview handle's cache directly to store the buffer.
+      char* underlying_buffer = bytesAsString(runtime, handle, bytes);
+      if (underlying_buffer == nullptr) {
+        return -1;
+      }
+      return PyBuffer_FillInfo(view, handle, underlying_buffer,
+                               memoryview.length(),
+                               /*readonly=*/1, flags);
+    }
+    UNIMPLEMENTED("PyObject_GetBuffer() for raw pointer backed memoryview.");
+  }
   if (runtime->isByteslike(*obj_obj)) {
     Type type(&scope, runtime->typeOf(*obj_obj));
     // TODO(T38246066): Add support for other builtin byteslike types using

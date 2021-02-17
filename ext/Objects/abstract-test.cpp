@@ -1862,6 +1862,51 @@ TEST_F(AbstractExtensionApiTest,
 }
 
 TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithBytesMemoryViewReturnsBuffer) {
+  Py_buffer buffer;
+  PyObjectPtr bytes(PyBytes_FromStringAndSize("hello\0world", 11));
+  PyObjectPtr memoryview(PyMemoryView_FromObject(bytes));
+  Py_ssize_t old_memoryview_refcnt = Py_REFCNT(memoryview);
+  Py_ssize_t old_bytes_refcnt = Py_REFCNT(bytes);
+
+  ASSERT_EQ(PyObject_GetBuffer(memoryview, &buffer, 0), 0);
+
+  // Getting the underlying buffer increments references to the underlying
+  // buffer, not the memoryview object itself.
+  EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt + 1);
+  EXPECT_EQ(Py_REFCNT(bytes), old_bytes_refcnt);
+  ASSERT_EQ(buffer.len, 11);
+  EXPECT_EQ(std::memcmp(buffer.buf, "hello\0world", 11), 0);
+
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt);
+  EXPECT_EQ(Py_REFCNT(bytes), old_bytes_refcnt);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithBytearrayMemoryViewReturnsBuffer) {
+  Py_buffer buffer;
+  PyObjectPtr bytearray(PyByteArray_FromStringAndSize("hello\0world", 11));
+  PyObjectPtr memoryview_unsliced(PyMemoryView_FromObject(bytearray));
+  PyObjectPtr memoryview(PySequence_GetSlice(memoryview_unsliced, 0, 10));
+  Py_ssize_t old_memoryview_refcnt = Py_REFCNT(memoryview);
+  Py_ssize_t old_bytearray_refcnt = Py_REFCNT(bytearray);
+
+  ASSERT_EQ(PyObject_GetBuffer(memoryview, &buffer, 0), 0);
+
+  EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt + 1);
+  EXPECT_EQ(Py_REFCNT(bytearray), old_bytearray_refcnt);
+  ASSERT_EQ(buffer.len, 10);
+  EXPECT_EQ(std::memcmp(buffer.buf, "hello\0worl", 10), 0);
+
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt);
+  EXPECT_EQ(Py_REFCNT(bytearray), old_bytearray_refcnt);
+}
+
+TEST_F(AbstractExtensionApiTest,
        PyObjectGetBufferWithNonBufferExtensionObjectRaisesTypeError) {
   PyType_Slot slots[] = {
       {0, nullptr},
