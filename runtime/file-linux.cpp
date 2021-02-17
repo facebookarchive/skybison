@@ -39,7 +39,7 @@ int File::open(const char* path, int flags, int mode) {
 }
 
 ssize_t File::read(int fd, void* buffer, size_t count) {
-  int result = TEMP_FAILURE_RETRY(::read(fd, buffer, count));
+  ssize_t result = TEMP_FAILURE_RETRY(::read(fd, buffer, count));
   return result < 0 ? -errno : result;
 }
 
@@ -49,7 +49,7 @@ int File::setNoInheritable(int fd) {
 }
 
 int64_t File::seek(int fd, int64_t offset, int whence) {
-  int result = ::lseek(fd, offset, whence);
+  off_t result = ::lseek(fd, offset, whence);
   return result < 0 ? -errno : result;
 }
 
