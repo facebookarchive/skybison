@@ -4,6 +4,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "array-module.h"
 #include "attributedict.h"
 #include "bytearrayobject-utils.h"
 #include "bytesobject-utils.h"
@@ -1049,12 +1050,24 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
                              memoryview.length(),
                              /*readonly=*/1, flags);
   }
-  if (runtime->isByteslike(*obj_obj)) {
-    Type type(&scope, runtime->typeOf(*obj_obj));
-    // TODO(T38246066): Add support for other builtin byteslike types using
-    // Runtime::isByteslike
-    UNIMPLEMENTED("PyObject_GetBuffer() for builtin byteslike type '%s'",
-                  Str::cast(type.name()).toCStr());
+  if (runtime->isInstanceOfArray(*obj_obj)) {
+    Array array(&scope, *obj_obj);
+    word length = arrayByteLength(*array);
+    // We create a copy of the array's buffer and place it in the API handle's
+    // cache to ensure it gets reaped.
+    if (void* cache = handle->cache(runtime)) {
+      std::free(cache);
+    }
+    byte* buffer = static_cast<byte*>(std::malloc(length + 1));
+    if (buffer == nullptr) {
+      return -1;
+    }
+    MutableBytes::cast(array.buffer()).copyTo(buffer, length);
+    handle->setCache(runtime, buffer);
+
+    return PyBuffer_FillInfo(view, handle, reinterpret_cast<char*>(buffer),
+                             length,
+                             /*readonly=*/1, flags);
   }
   // We must be dealing with a buffer protocol or an incompatible type.
   Type type(&scope, runtime->typeOf(*obj_obj));

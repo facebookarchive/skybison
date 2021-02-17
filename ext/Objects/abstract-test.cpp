@@ -1925,6 +1925,56 @@ TEST_F(AbstractExtensionApiTest,
 }
 
 TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithByteFormattedArrayReturnsBuffer) {
+  PyRun_SimpleString(R"(
+import array
+result = array.array('b', b'hello')
+)");
+  PyObjectPtr array(mainModuleGet("result"));
+  Py_ssize_t old_array_refcnt = Py_REFCNT(array);
+
+  Py_buffer buffer;
+  EXPECT_EQ(PyObject_GetBuffer(array, &buffer, 0), 0);
+
+  EXPECT_EQ(Py_REFCNT(array), old_array_refcnt + 1);
+  ASSERT_EQ(buffer.len, 5);
+  EXPECT_EQ(std::memcmp(buffer.buf, "hello", 5), 0);
+
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(array), old_array_refcnt);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithQuadArrayReturnsBuffer) {
+  PyRun_SimpleString(R"(
+import array
+result = array.array('Q')
+result.append(0xdeadbeef12345678)
+)");
+  PyObjectPtr array(mainModuleGet("result"));
+  Py_ssize_t old_array_refcnt = Py_REFCNT(array);
+
+  Py_buffer buffer;
+  EXPECT_EQ(PyObject_GetBuffer(array, &buffer, 0), 0);
+
+  EXPECT_EQ(Py_REFCNT(array), old_array_refcnt + 1);
+  char* underlying_buffer = reinterpret_cast<char*>(buffer.buf);
+  ASSERT_EQ(buffer.len, 8);
+  EXPECT_EQ(underlying_buffer[0], '\x78');
+  EXPECT_EQ(underlying_buffer[1], '\x56');
+  EXPECT_EQ(underlying_buffer[2], '\x34');
+  EXPECT_EQ(underlying_buffer[3], '\x12');
+  EXPECT_EQ(underlying_buffer[4], '\xef');
+  EXPECT_EQ(underlying_buffer[5], '\xbe');
+  EXPECT_EQ(underlying_buffer[6], '\xad');
+  EXPECT_EQ(underlying_buffer[7], '\xde');
+
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(array), old_array_refcnt);
+}
+
+TEST_F(AbstractExtensionApiTest,
        PyObjectGetBufferWithNonBufferExtensionObjectRaisesTypeError) {
   PyType_Slot slots[] = {
       {0, nullptr},
