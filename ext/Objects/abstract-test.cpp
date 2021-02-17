@@ -1907,6 +1907,24 @@ TEST_F(AbstractExtensionApiTest,
 }
 
 TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithFromMemoryMemoryViewReturnsBuffer) {
+  char memory[6] = "hello";
+  PyObjectPtr memoryview(
+      PyMemoryView_FromMemory(reinterpret_cast<char*>(memory), 6, PyBUF_READ));
+  Py_ssize_t old_memoryview_refcnt = Py_REFCNT(memoryview);
+  Py_buffer buffer;
+  EXPECT_EQ(PyObject_GetBuffer(memoryview, &buffer, 0), 0);
+
+  EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt + 1);
+  ASSERT_EQ(buffer.len, 6);
+  EXPECT_EQ(std::memcmp(buffer.buf, "hello", 6), 0);
+
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt);
+}
+
+TEST_F(AbstractExtensionApiTest,
        PyObjectGetBufferWithNonBufferExtensionObjectRaisesTypeError) {
   PyType_Slot slots[] = {
       {0, nullptr},

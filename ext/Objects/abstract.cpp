@@ -1041,7 +1041,13 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
                                memoryview.length(),
                                /*readonly=*/1, flags);
     }
-    UNIMPLEMENTED("PyObject_GetBuffer() for raw pointer backed memoryview.");
+
+    Pointer underlying_pointer(&scope, *buffer);
+    char* underlying_buffer =
+        reinterpret_cast<char*>(underlying_pointer.cptr());
+    return PyBuffer_FillInfo(view, handle, underlying_buffer,
+                             memoryview.length(),
+                             /*readonly=*/1, flags);
   }
   if (runtime->isByteslike(*obj_obj)) {
     Type type(&scope, runtime->typeOf(*obj_obj));
