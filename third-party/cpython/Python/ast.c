@@ -3214,31 +3214,28 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 /* Create a string of the form "a.b.c" */
                 int i;
                 size_t len;
-                char *s;
-                PyObject *bytes;
-                _PyBytesWriter writer;
+                char *s, *orig_s;
 
                 len = 0;
                 for (i = 0; i < NCH(n); i += 2)
-                    /* length of string plus one for the dot */
+                    /* length of string plus one for the dot or nul */
                     len += strlen(STR(CHILD(n, i))) + 1;
-                len--; /* the last name doesn't have a dot */
-                _PyBytesWriter_Init(&writer);
-                s = _PyBytesWriter_Alloc(&writer, len);
+                s = PyMem_Malloc(len);
+                if (s == NULL) {
+                  PyErr_NoMemory();
+                  return NULL;
+                }
+                orig_s = s;
                 for (i = 0; i < NCH(n); i += 2) {
                     char *sch = STR(CHILD(n, i));
-                    strcpy(s, STR(CHILD(n, i)));
+                    strcpy(s, sch);
                     s += strlen(sch);
                     *s++ = '.';
                 }
                 --s;
                 *s = '\0';
-                bytes = _PyBytesWriter_Finish(&writer, s);
-                _PyBytesWriter_Dealloc(&writer);
-                str = PyUnicode_DecodeUTF8(PyBytes_AS_STRING(bytes),
-                                           PyBytes_GET_SIZE(bytes),
-                                           NULL);
-                Py_DECREF(bytes);
+                str = PyUnicode_FromString(orig_s);
+                PyMem_Free(orig_s);
                 if (!str)
                     return NULL;
                 PyUnicode_InternInPlace(&str);
