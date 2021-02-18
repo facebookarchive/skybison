@@ -4363,9 +4363,9 @@ class int(bootstrap=True):
             if _str_check(x):
                 return _int_new_from_str(cls, x.strip(), 10)
             if _bytes_check(x):
-                return _int_new_from_bytes(cls, x.strip(), 10)
+                return _int_new_from_bytes(cls, x, 10)
             if _bytearray_check(x):
-                return _int_new_from_bytearray(cls, x.strip(), 10)
+                return _int_new_from_bytearray(cls, x, 10)
             raise TypeError(
                 f"int() argument must be a string, a bytes-like object "
                 f"or a number, not {_type(x).__name__}"
@@ -4376,9 +4376,9 @@ class int(bootstrap=True):
         if _str_check(x):
             return _int_new_from_str(cls, x.strip(), base)
         if _bytes_check(x):
-            return _int_new_from_bytes(cls, x.strip(), base)
+            return _int_new_from_bytes(cls, x, base)
         if _bytearray_check(x):
-            return _int_new_from_bytearray(cls, x.strip(), base)
+            return _int_new_from_bytearray(cls, x, base)
         raise TypeError("int() can't convert non-string with explicit base")
 
     def __or__(self, n: int) -> int:

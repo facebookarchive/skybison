@@ -3029,10 +3029,21 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
                               word base) {
   DCHECK_BOUND(length, bytes.length());
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
-  // Functions the same as intFromString
-  word idx = 0;
+  if (length <= 0) return Error::error();
+
+  // Clamp the length at the last whitespace character.
+  word idx = length;
+  byte b = bytes.byteAt(--idx);
+  while (ASCII::isSpace(b)) {
+    if (idx <= 0) return Error::error();
+    b = bytes.byteAt(--idx);
+  }
+  length = idx + 1;
+
+  // Start the index from the first non-zero whitespace character.
+  idx = 0;
   if (idx >= length) return Error::error();
-  byte b = bytes.byteAt(idx++);
+  b = bytes.byteAt(idx++);
   while (ASCII::isSpace(b)) {
     if (idx >= length) return Error::error();
     b = bytes.byteAt(idx++);

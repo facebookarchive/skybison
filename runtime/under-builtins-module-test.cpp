@@ -1368,6 +1368,39 @@ TEST_F(UnderBuiltinsModuleTest,
       "invalid literal for int() with base 0: b'1__000'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromBytesWithWhitespaceOnLeftReturnsInt) {
+  HandleScope scope(thread_);
+  const byte src[] = " \t\n\t\v-123";
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(-123));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromBytesWithWhitespaceOnRightReturnsInt) {
+  HandleScope scope(thread_);
+  const byte src[] = "-234 \t \f \n\t";
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(-234));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromBytesWithWhitespaceOnLeftAndRightReturnsInt) {
+  HandleScope scope(thread_);
+  const byte src[] = "  \n\t\r\n  +345 \t  \n\t";
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(345));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromIntWithBoolReturnsSmallInt) {
   HandleScope scope(thread_);
   Object type(&scope, runtime_->typeAt(LayoutId::kInt));
