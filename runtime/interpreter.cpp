@@ -352,7 +352,10 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
       Runtime* runtime = thread->runtime();
       RawType value_type = runtime->typeOf(*value);
       if (value_type.hasFlag(Type::Flag::kHasObjectDunderHash)) {
-        result = runtime->hash(*value);
+        // At this point we already handled all immediate value types, as well
+        // as LargeStr and LargeBytes, so we can directly call
+        // `Runtime::identityHash` instead of `Runtime::hash`.
+        result = runtime->identityHash(*value);
       } else if (value_type.hasFlag(Type::Flag::kHasStrDunderHash) &&
                  runtime->isInstanceOfStr(*value)) {
         result = strHash(thread, strUnderlying(*value));

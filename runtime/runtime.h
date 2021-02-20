@@ -343,6 +343,8 @@ class Runtime {
   // implement `xxxHash()` functions.
   word valueHash(RawObject object);
 
+  word identityHash(RawObject object);
+
   word bytesHash(View<byte> array);
 
   uword random();
@@ -903,8 +905,6 @@ class Runtime {
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
-
-  word identityHash(RawObject object);
 
   word siphash24(View<byte> array);
 
