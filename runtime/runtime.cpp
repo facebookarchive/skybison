@@ -322,14 +322,10 @@ void Runtime::appendBuiltinAttributes(Thread* thread,
   }
 }
 
-template <typename T>
-static inline RawObject createInstance(Runtime* runtime) {
-  return runtime->newInstanceWithSize(ObjectLayoutId<T>::value, T::kSize);
-}
-
 RawObject Runtime::newBytearray() {
   HandleScope scope(Thread::current());
-  Bytearray result(&scope, createInstance<RawBytearray>(this));
+  Bytearray result(&scope,
+                   newInstanceWithSize(LayoutId::kBytearray, Bytearray::kSize));
   result.setItems(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
@@ -338,7 +334,9 @@ RawObject Runtime::newBytearray() {
 RawObject Runtime::newBytearrayIterator(Thread* thread,
                                         const Bytearray& bytearray) {
   HandleScope scope(thread);
-  BytearrayIterator result(&scope, createInstance<RawBytearrayIterator>(this));
+  BytearrayIterator result(&scope,
+                           newInstanceWithSize(LayoutId::kBytearrayIterator,
+                                               BytearrayIterator::kSize));
   result.setIterable(*bytearray);
   result.setIndex(0);
   return *result;
@@ -420,13 +418,16 @@ RawObject Runtime::newBytesWithAll(View<byte> array) {
 
 RawObject Runtime::newBytesIterator(Thread* thread, const Bytes& bytes) {
   HandleScope scope(thread);
-  BytesIterator result(&scope, createInstance<RawBytesIterator>(this));
+  BytesIterator result(&scope, newInstanceWithSize(LayoutId::kBytesIterator,
+                                                   BytesIterator::kSize));
   result.setIndex(0);
   result.setIterable(*bytes);
   return *result;
 }
 
-RawObject Runtime::newTraceback() { return createInstance<RawTraceback>(this); }
+RawObject Runtime::newTraceback() {
+  return newInstanceWithSize(LayoutId::kTraceback, Traceback::kSize);
+}
 
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
@@ -444,7 +445,8 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
 RawObject Runtime::newTypeProxy(const Type& type) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  TypeProxy result(&scope, createInstance<RawTypeProxy>(this));
+  TypeProxy result(&scope,
+                   newInstanceWithSize(LayoutId::kTypeProxy, TypeProxy::kSize));
   result.setType(*type);
   return *result;
 }
@@ -597,7 +599,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
     flags &= ~Code::Flags::kNofree;
   }
 
-  Code result(&scope, createInstance<RawCode>(this));
+  Code result(&scope, newInstanceWithSize(LayoutId::kCode, Code::kSize));
   result.setArgcount(argcount);
   result.setPosonlyargcount(posonlyargcount);
   result.setKwonlyargcount(kwonlyargcount);
@@ -685,7 +687,8 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
   DCHECK(isInstanceOfStr(*name), "expected str");
 
   HandleScope scope(thread);
-  Function function(&scope, createInstance<RawFunction>(this));
+  Function function(&scope,
+                    newInstanceWithSize(LayoutId::kFunction, Function::kSize));
   function.setCode(*code);
   function.setFlags(flags);
   function.setArgcount(argcount);
@@ -812,21 +815,26 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
 }
 
 RawObject Runtime::newExceptionState() {
-  return createInstance<RawExceptionState>(this);
+  return newInstanceWithSize(LayoutId::kExceptionState, ExceptionState::kSize);
 }
 
-RawObject Runtime::newCoroutine() { return createInstance<RawCoroutine>(this); }
+RawObject Runtime::newCoroutine() {
+  return newInstanceWithSize(LayoutId::kCoroutine, Coroutine::kSize);
+}
 
 RawObject Runtime::newFrameProxy(Thread* thread, const Object& function,
                                  const Object& lasti) {
   HandleScope scope(thread);
-  FrameProxy result(&scope, createInstance<RawFrameProxy>(this));
+  FrameProxy result(
+      &scope, newInstanceWithSize(LayoutId::kFrameProxy, FrameProxy::kSize));
   result.setFunction(*function);
   result.setLasti(*lasti);
   return *result;
 }
 
-RawObject Runtime::newGenerator() { return createInstance<RawGenerator>(this); }
+RawObject Runtime::newGenerator() {
+  return newInstanceWithSize(LayoutId::kGenerator, Generator::kSize);
+}
 
 RawObject Runtime::newGeneratorFrame(const Function& function) {
   DCHECK(function.isGeneratorLike(), "expected a generator-like code object");
@@ -877,7 +885,7 @@ RawObject Runtime::newQualname(Thread* thread, const Type& type,
 
 RawObject Runtime::newDeque() {
   HandleScope scope(Thread::current());
-  Deque deque(&scope, createInstance<RawDeque>(this));
+  Deque deque(&scope, newInstanceWithSize(LayoutId::kDeque, Deque::kSize));
   deque.setItems(SmallInt::fromWord(0));
   deque.setLeft(0);
   deque.setNumItems(0);
@@ -887,7 +895,8 @@ RawObject Runtime::newDeque() {
 
 RawObject Runtime::newDequeIterator(const Deque& deque, word index) {
   HandleScope scope(Thread::current());
-  DequeIterator iter(&scope, createInstance<RawDequeIterator>(this));
+  DequeIterator iter(&scope, newInstanceWithSize(LayoutId::kDequeIterator,
+                                                 DequeIterator::kSize));
   iter.setIndex(index);
   iter.setIterable(*deque);
   iter.setState(deque.state());
@@ -897,7 +906,8 @@ RawObject Runtime::newDequeIterator(const Deque& deque, word index) {
 RawObject Runtime::newDequeReverseIterator(const Deque& deque, word index) {
   HandleScope scope(Thread::current());
   DequeReverseIterator iter(&scope,
-                            createInstance<RawDequeReverseIterator>(this));
+                            newInstanceWithSize(LayoutId::kDequeReverseIterator,
+                                                DequeReverseIterator::kSize));
   iter.setIndex(index);
   iter.setIterable(*deque);
   iter.setState(deque.state());
@@ -906,7 +916,7 @@ RawObject Runtime::newDequeReverseIterator(const Deque& deque, word index) {
 
 RawObject Runtime::newList() {
   HandleScope scope(Thread::current());
-  List result(&scope, createInstance<RawList>(this));
+  List result(&scope, newInstanceWithSize(LayoutId::kList, List::kSize));
   result.setNumItems(0);
   result.setItems(empty_tuple_);
   return *result;
@@ -914,7 +924,9 @@ RawObject Runtime::newList() {
 
 RawObject Runtime::newListIterator(const Object& list) {
   HandleScope scope(Thread::current());
-  ListIterator list_iterator(&scope, createInstance<RawListIterator>(this));
+  ListIterator list_iterator(
+      &scope,
+      newInstanceWithSize(LayoutId::kListIterator, ListIterator::kSize));
   list_iterator.setIndex(0);
   list_iterator.setIterable(*list);
   return *list_iterator;
@@ -922,7 +934,8 @@ RawObject Runtime::newListIterator(const Object& list) {
 
 RawObject Runtime::newSeqIterator(const Object& sequence) {
   HandleScope scope(Thread::current());
-  SeqIterator iter(&scope, createInstance<RawSeqIterator>(this));
+  SeqIterator iter(
+      &scope, newInstanceWithSize(LayoutId::kSeqIterator, SeqIterator::kSize));
   iter.setIndex(0);
   iter.setIterable(*sequence);
   return *iter;
@@ -931,7 +944,7 @@ RawObject Runtime::newSeqIterator(const Object& sequence) {
 RawObject Runtime::newModule(const Object& name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Module result(&scope, createInstance<RawModule>(this));
+  Module result(&scope, newInstanceWithSize(LayoutId::kModule, Module::kSize));
   attributeDictInit(thread, result);
   result.setDef(newIntFromCPtr(nullptr));
   result.setId(reserveModuleId());
@@ -943,7 +956,8 @@ RawObject Runtime::newModule(const Object& name) {
 RawObject Runtime::newModuleProxy(const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  ModuleProxy result(&scope, createInstance<RawModuleProxy>(this));
+  ModuleProxy result(
+      &scope, newInstanceWithSize(LayoutId::kModuleProxy, ModuleProxy::kSize));
   result.setModule(*module);
   return *result;
 }
@@ -951,7 +965,8 @@ RawObject Runtime::newModuleProxy(const Module& module) {
 RawObject Runtime::newSlotDescriptor(const Type& type, const Object& name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  SlotDescriptor result(&scope, createInstance<RawSlotDescriptor>(this));
+  SlotDescriptor result(&scope, newInstanceWithSize(LayoutId::kSlotDescriptor,
+                                                    SlotDescriptor::kSize));
   result.setType(*type);
   result.setName(*name);
   return *result;
@@ -961,7 +976,8 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& obj,
                                  const Object& buffer, word length,
                                  ReadOnly read_only) {
   HandleScope scope(thread);
-  MemoryView result(&scope, createInstance<RawMemoryView>(this));
+  MemoryView result(
+      &scope, newInstanceWithSize(LayoutId::kMemoryView, MemoryView::kSize));
   result.setBuffer(*buffer);
   result.setObject(*obj);
   result.setLength(length);
@@ -985,7 +1001,7 @@ RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, const Object& obj,
 
 RawObject Runtime::newMmap() {
   HandleScope scope(Thread::current());
-  Mmap result(&scope, createInstance<RawMmap>(this));
+  Mmap result(&scope, newInstanceWithSize(LayoutId::kMmap, Mmap::kSize));
   result.setAccess(0);
   result.setData(NoneType::object());
   result.setFd(NoneType::object());
@@ -1145,7 +1161,8 @@ RawObject Runtime::newPointer(void* cptr, word length) {
 RawObject Runtime::newProperty(const Object& getter, const Object& setter,
                                const Object& deleter) {
   HandleScope scope(Thread::current());
-  Property new_prop(&scope, createInstance<RawProperty>(this));
+  Property new_prop(&scope,
+                    newInstanceWithSize(LayoutId::kProperty, Property::kSize));
   new_prop.setGetter(*getter);
   new_prop.setSetter(*setter);
   new_prop.setDeleter(*deleter);
@@ -1155,7 +1172,7 @@ RawObject Runtime::newProperty(const Object& getter, const Object& setter,
 RawObject Runtime::newRange(const Object& start, const Object& stop,
                             const Object& step) {
   HandleScope scope(Thread::current());
-  Range result(&scope, createInstance<RawRange>(this));
+  Range result(&scope, newInstanceWithSize(LayoutId::kRange, Range::kSize));
   result.setStart(*start);
   result.setStop(*stop);
   result.setStep(*step);
@@ -1165,7 +1182,9 @@ RawObject Runtime::newRange(const Object& start, const Object& stop,
 RawObject Runtime::newLongRangeIterator(const Int& start, const Int& stop,
                                         const Int& step) {
   HandleScope scope(Thread::current());
-  LongRangeIterator result(&scope, createInstance<RawLongRangeIterator>(this));
+  LongRangeIterator result(&scope,
+                           newInstanceWithSize(LayoutId::kLongRangeIterator,
+                                               LongRangeIterator::kSize));
   result.setNext(*start);
   result.setStop(*stop);
   result.setStep(*step);
@@ -1174,7 +1193,8 @@ RawObject Runtime::newLongRangeIterator(const Int& start, const Int& stop,
 
 RawObject Runtime::newRangeIterator(word start, word step, word length) {
   HandleScope scope(Thread::current());
-  RangeIterator result(&scope, createInstance<RawRangeIterator>(this));
+  RangeIterator result(&scope, newInstanceWithSize(LayoutId::kRangeIterator,
+                                                   RangeIterator::kSize));
   result.setNext(start);
   result.setStep(step);
   result.setLength(length);
@@ -1183,7 +1203,8 @@ RawObject Runtime::newRangeIterator(word start, word step, word length) {
 
 RawObject Runtime::newSetIterator(const Object& set) {
   HandleScope scope(Thread::current());
-  SetIterator result(&scope, createInstance<RawSetIterator>(this));
+  SetIterator result(
+      &scope, newInstanceWithSize(LayoutId::kSetIterator, SetIterator::kSize));
   result.setIterable(*set);
   result.setIndex(0);
   result.setConsumedCount(0);
@@ -1196,7 +1217,7 @@ RawObject Runtime::newSlice(const Object& start, const Object& stop,
     return emptySlice();
   }
   HandleScope scope(Thread::current());
-  Slice slice(&scope, createInstance<RawSlice>(this));
+  Slice slice(&scope, newInstanceWithSize(LayoutId::kSlice, Slice::kSize));
   slice.setStart(*start);
   slice.setStop(*stop);
   slice.setStep(*step);
@@ -1204,12 +1225,13 @@ RawObject Runtime::newSlice(const Object& start, const Object& stop,
 }
 
 RawObject Runtime::newStaticMethod() {
-  return createInstance<RawStaticMethod>(this);
+  return newInstanceWithSize(LayoutId::kStaticMethod, StaticMethod::kSize);
 }
 
 RawObject Runtime::newStrArray() {
   HandleScope scope(Thread::current());
-  StrArray result(&scope, createInstance<RawStrArray>(this));
+  StrArray result(&scope,
+                  newInstanceWithSize(LayoutId::kStrArray, StrArray::kSize));
   result.setItems(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
@@ -2033,7 +2055,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_tuple_ = createTuple(0);
   empty_frozen_set_ = newFrozenSet();
   empty_mutable_bytes_ = createMutableBytes(0);
-  empty_slice_ = createInstance<RawSlice>(this);
+  empty_slice_ = newInstanceWithSize(LayoutId::kSlice, Slice::kSize);
   {
     uword address;
     CHECK(heap()->allocate(Ellipsis::allocationSize(), Header::kSize, &address),
@@ -2959,7 +2981,9 @@ RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
 
 RawObject Runtime::newDictItemIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictItemIterator result(&scope, createInstance<RawDictItemIterator>(this));
+  DictItemIterator result(&scope,
+                          newInstanceWithSize(LayoutId::kDictItemIterator,
+                                              DictItemIterator::kSize));
   result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
@@ -2970,7 +2994,8 @@ RawObject Runtime::newDictItemIterator(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictItems(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictItems result(&scope, createInstance<RawDictItems>(this));
+  DictItems result(&scope,
+                   newInstanceWithSize(LayoutId::kDictItems, DictItems::kSize));
   result.setDict(*dict);
   return *result;
 }
@@ -2979,7 +3004,8 @@ RawObject Runtime::newDictItems(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictKeyIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictKeyIterator result(&scope, createInstance<RawDictKeyIterator>(this));
+  DictKeyIterator result(&scope, newInstanceWithSize(LayoutId::kDictKeyIterator,
+                                                     DictKeyIterator::kSize));
   result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
@@ -2990,7 +3016,8 @@ RawObject Runtime::newDictKeyIterator(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictKeys(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictKeys result(&scope, createInstance<RawDictKeys>(this));
+  DictKeys result(&scope,
+                  newInstanceWithSize(LayoutId::kDictKeys, DictKeys::kSize));
   result.setDict(*dict);
   return *result;
 }
@@ -2999,7 +3026,9 @@ RawObject Runtime::newDictKeys(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictValueIterator(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictValueIterator result(&scope, createInstance<RawDictValueIterator>(this));
+  DictValueIterator result(&scope,
+                           newInstanceWithSize(LayoutId::kDictValueIterator,
+                                               DictValueIterator::kSize));
   result.setIndex(0);
   result.setIterable(*dict);
   result.setNumFound(0);
@@ -3010,7 +3039,8 @@ RawObject Runtime::newDictValueIterator(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newDictValues(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
-  DictValues result(&scope, createInstance<RawDictValues>(this));
+  DictValues result(
+      &scope, newInstanceWithSize(LayoutId::kDictValues, DictValues::kSize));
   result.setDict(*dict);
   return *result;
 }
@@ -3019,7 +3049,7 @@ RawObject Runtime::newDictValues(Thread* thread, const Dict& dict) {
 
 RawObject Runtime::newSet() {
   HandleScope scope(Thread::current());
-  Set result(&scope, createInstance<RawSet>(this));
+  Set result(&scope, newInstanceWithSize(LayoutId::kSet, Set::kSize));
   result.setNumItems(0);
   result.setNumFilled(0);
   result.setData(empty_tuple_);
@@ -3028,7 +3058,8 @@ RawObject Runtime::newSet() {
 
 RawObject Runtime::newFrozenSet() {
   HandleScope scope(Thread::current());
-  FrozenSet result(&scope, createInstance<RawFrozenSet>(this));
+  FrozenSet result(&scope,
+                   newInstanceWithSize(LayoutId::kFrozenSet, FrozenSet::kSize));
   result.setNumItems(0);
   result.setNumFilled(0);
   result.setData(empty_tuple_);
@@ -3048,12 +3079,15 @@ RawObject Runtime::tupleSubseq(Thread* thread, const Tuple& tuple, word start,
   return result.becomeImmutable();
 }
 
-RawObject Runtime::newValueCell() { return createInstance<RawValueCell>(this); }
+RawObject Runtime::newValueCell() {
+  return newInstanceWithSize(LayoutId::kValueCell, ValueCell::kSize);
+}
 
 RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
                                const Object& prev, const Object& next) {
   HandleScope scope(thread);
-  WeakLink link(&scope, createInstance<RawWeakLink>(this));
+  WeakLink link(&scope,
+                newInstanceWithSize(LayoutId::kWeakLink, WeakLink::kSize));
   link.setReferent(*referent);
   link.setCallback(NoneType::object());
   link.setPrev(*prev);
@@ -3063,7 +3097,7 @@ RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
 
 RawObject Runtime::newWeakRef(Thread* thread, const Object& referent) {
   HandleScope scope(thread);
-  WeakRef ref(&scope, createInstance<RawWeakRef>(this));
+  WeakRef ref(&scope, newInstanceWithSize(LayoutId::kWeakRef, WeakRef::kSize));
   ref.setReferent(*referent);
   return *ref;
 }
@@ -3459,17 +3493,22 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   array.setItems(*new_bytes);
 }
 
-RawObject Runtime::newCell() { return createInstance<RawCell>(this); }
-
-RawObject Runtime::newClassMethod() {
-  return createInstance<RawClassMethod>(this);
+RawObject Runtime::newCell() {
+  return newInstanceWithSize(LayoutId::kCell, Cell::kSize);
 }
 
-RawObject Runtime::newSuper() { return createInstance<RawSuper>(this); }
+RawObject Runtime::newClassMethod() {
+  return newInstanceWithSize(LayoutId::kClassMethod, ClassMethod::kSize);
+}
+
+RawObject Runtime::newSuper() {
+  return newInstanceWithSize(LayoutId::kSuper, Super::kSize);
+}
 
 RawObject Runtime::newStrIterator(const Object& str) {
   HandleScope scope(Thread::current());
-  StrIterator result(&scope, createInstance<RawStrIterator>(this));
+  StrIterator result(
+      &scope, newInstanceWithSize(LayoutId::kStrIterator, StrIterator::kSize));
   result.setIndex(0);
   result.setIterable(*str);
   return *result;
@@ -3477,7 +3516,8 @@ RawObject Runtime::newStrIterator(const Object& str) {
 
 RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
   HandleScope scope(Thread::current());
-  TupleIterator result(&scope, createInstance<RawTupleIterator>(this));
+  TupleIterator result(&scope, newInstanceWithSize(LayoutId::kTupleIterator,
+                                                   TupleIterator::kSize));
   result.setIndex(0);
   result.setIterable(*tuple);
   result.setLength(length);
@@ -3486,7 +3526,8 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
 
 RawObject Runtime::newContext(const Dict& data) {
   HandleScope scope(Thread::current());
-  Context result(&scope, createInstance<RawContext>(this));
+  Context result(&scope,
+                 newInstanceWithSize(LayoutId::kContext, Context::kSize));
   result.setData(*data);
   result.setPrevContext(NoneType::object());
   return *result;
@@ -3494,7 +3535,8 @@ RawObject Runtime::newContext(const Dict& data) {
 
 RawObject Runtime::newContextVar(const Str& name, const Object& default_value) {
   HandleScope scope(Thread::current());
-  ContextVar result(&scope, createInstance<RawContextVar>(this));
+  ContextVar result(
+      &scope, newInstanceWithSize(LayoutId::kContextVar, ContextVar::kSize));
   result.setName(*name);
   result.setDefaultValue(*default_value);
   return *result;
@@ -3503,7 +3545,7 @@ RawObject Runtime::newContextVar(const Str& name, const Object& default_value) {
 RawObject Runtime::newToken(const Context& ctx, const ContextVar& var,
                             const Object& old_value) {
   HandleScope scope(Thread::current());
-  Token result(&scope, createInstance<RawToken>(this));
+  Token result(&scope, newInstanceWithSize(LayoutId::kToken, Token::kSize));
   result.setContext(*ctx);
   result.setVar(*var);
   result.setOldValue(*old_value);

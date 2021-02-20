@@ -263,18 +263,6 @@ enum class LayoutId : word {
   kSentinelId = kLastBuiltinId + 1,
 };
 
-// Map from type to its corresponding LayoutId:
-// ObjectLayoutId<RawSmallInt>::value == LayoutId::kSmallInt, etc.
-template <typename T>
-struct ObjectLayoutId;
-#define CASE(ty)                                                               \
-  template <>                                                                  \
-  struct ObjectLayoutId<class Raw##ty> {                                       \
-    static constexpr LayoutId value = LayoutId::k##ty;                         \
-  };
-CLASS_NAMES(CASE)
-#undef CASE
-
 // Add functionality common to all RawObject subclasses, split into two parts
 // since some types manually define cast() but want everything else.
 #define RAW_OBJECT_COMMON_NO_CAST(ty)                                          \
@@ -1810,21 +1798,6 @@ class RawUserBytesBase : public RawInstance {
 
 RawBytes bytesUnderlying(RawObject object);
 
-class RawUserComplexBase : public RawInstance {
- public:
-  // Getters and setters.
-  RawObject value() const;
-  void setValue(RawObject value) const;
-
-  // RawLayout
-  static const int kValueOffset = RawHeapObject::kSize;
-  static const int kSize = kValueOffset + kPointerSize;
-
-  RAW_OBJECT_COMMON_NO_CAST(UserComplexBase);
-};
-
-RawComplex complexUnderlying(RawObject object);
-
 class RawUserFloatBase : public RawInstance {
  public:
   // Getters and setters.
@@ -1886,6 +1859,21 @@ class RawComplex : public RawHeapObject {
 
   RAW_OBJECT_COMMON(Complex);
 };
+
+class RawUserComplexBase : public RawInstance {
+ public:
+  // Getters and setters.
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // RawLayout
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserComplexBase);
+};
+
+RawComplex complexUnderlying(RawObject object);
 
 class RawNativeProxy : public RawInstance {
  public:
