@@ -867,22 +867,25 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Arguments args) {
   if (!runtime->isInstanceOfBytearray(*self_obj)) {
     return raiseRequiresFromCaller(thread, args, ID(bytearray));
   }
+  Bytearray self(&scope, *self_obj);
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
-    Bytearray self(&scope, *self_obj);
-    word index = intUnderlying(*key).asWordSaturated();
-    if (!SmallInt::isValid(index)) {
+    key = intUnderlying(*key);
+    if (key.isLargeInt()) {
       return thread->raiseWithFmt(LayoutId::kIndexError,
                                   "cannot fit '%T' into an index-sized integer",
                                   &key);
     }
+    word index = Int::cast(*key).asWord();
     word length = self.numItems();
-    if (index < 0) {
-      index += length;
-    }
     if (index < 0 || index >= length) {
-      return thread->raiseWithFmt(LayoutId::kIndexError,
-                                  "bytearray index out of range");
+      if (index < 0) {
+        index += length;
+      }
+      if (index < 0 || index >= length) {
+        return thread->raiseWithFmt(LayoutId::kIndexError,
+                                    "bytearray index out of range");
+      }
     }
     return SmallInt::fromWord(self.byteAt(index));
   }
@@ -892,7 +895,6 @@ RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Arguments args) {
     return Unbound::object();
   }
 
-  Bytearray self(&scope, *self_obj);
   word result_len = Slice::adjustIndices(self.numItems(), &start, &stop, 1);
   if (result_len == 0) {
     return runtime->newBytearray();
@@ -1303,22 +1305,26 @@ RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Arguments args) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return raiseRequiresFromCaller(thread, args, ID(bytes));
   }
+  Bytes self(&scope, bytesUnderlying(*self_obj));
 
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
-    word index = intUnderlying(args.get(1)).asWordSaturated();
-    if (!SmallInt::isValid(index)) {
+    key = intUnderlying(*key);
+    if (key.isLargeInt()) {
       return thread->raiseWithFmt(LayoutId::kIndexError,
                                   "cannot fit '%T' into an index-sized integer",
                                   &key);
     }
-    Bytes self(&scope, bytesUnderlying(*self_obj));
+    word index = Int::cast(*key).asWord();
     word length = self.length();
-    if (index < 0) {
-      index += length;
-    }
     if (index < 0 || index >= length) {
-      return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
+      if (index < 0) {
+        index += length;
+      }
+      if (index < 0 || index >= length) {
+        return thread->raiseWithFmt(LayoutId::kIndexError,
+                                    "index out of range");
+      }
     }
     return SmallInt::fromWord(self.byteAt(index));
   }
@@ -1328,7 +1334,6 @@ RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Arguments args) {
     return Unbound::object();
   }
 
-  Bytes self(&scope, bytesUnderlying(*self_obj));
   word result_len = Slice::adjustIndices(self.length(), &start, &stop, 1);
   return bytesSubseq(thread, self, start, result_len);
 }
