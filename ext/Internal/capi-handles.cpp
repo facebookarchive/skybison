@@ -29,9 +29,9 @@ struct IndexProbe {
 
 // Compute hash value suitable for `RawObject::operator==` (aka `a is b`)
 // equality tests.
-static uword handleHash(RawObject obj) {
+static inline uword handleHash(RawObject obj) {
   if (obj.isHeapObject()) {
-    return HeapObject::cast(obj).address() >> kObjectAlignmentLog2;
+    return obj.raw() >> kObjectAlignmentLog2;
   }
   return obj.raw();
 }
