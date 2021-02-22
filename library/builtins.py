@@ -6256,13 +6256,16 @@ class str(bootstrap=True):
             end = _index(end)
         return _str_find(self, sub, start, end)
 
-    def format(*args, **kwargs):  # noqa: B902
+    @_positional_only(1)
+    def format(self, *args, **kwargs):  # noqa: B902
+        _str_guard(self)
+
         global _formatter
         if not _formatter:
             import string
 
             _formatter = string.Formatter()
-        return _formatter.format(*args, **kwargs)
+        return _formatter.format(self, *args, **kwargs)
 
     def format_map(self, mapping):
         _unimplemented()
