@@ -592,11 +592,7 @@ def _int_guard(obj):
     _builtin()
 
 
-def _int_new_from_bytearray(cls, x, base):
-    _builtin()
-
-
-def _int_new_from_bytes(cls, x, base):
+def _int_new_from_byteslike(cls, x, base):
     _builtin()
 
 

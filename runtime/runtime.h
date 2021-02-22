@@ -521,12 +521,6 @@ class Runtime {
                          const Bytes& old_bytes, word old_len,
                          const Bytes& new_bytes, word new_len, word max_count);
 
-  // Returns the repr-string for a bytes object.  The caller must provide the
-  // size of the resulting string, accounting for escaping, and the correct
-  // delimiter character, which is either a single- or double-quote.
-  RawObject bytesRepr(Thread* thread, const Bytes& bytes, word result_length,
-                      byte delimiter);
-
   // Returns a new Bytes that contains the specified slice of bytes.
   RawObject bytesSlice(Thread* thread, const Bytes& bytes, word start,
                        word stop, word step);
@@ -543,6 +537,12 @@ class Runtime {
   RawObject bytesTranslate(Thread* thread, const Bytes& bytes, word length,
                            const Bytes& table, word table_len, const Bytes& del,
                            word del_len);
+
+  // Returns the repr-string for a byteslike object. The caller must provide the
+  // size of the resulting string, accounting for escaping, and the correct
+  // delimiter character, which is either a single- or double-quote.
+  RawObject byteslikeRepr(Thread* thread, const Byteslike& byteslike,
+                          word result_length, byte delimiter);
 
   // Ensures that the list has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.

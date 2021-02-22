@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import array
 import unittest
 
 from test_support import pyro_only, supports_38_feature
@@ -116,6 +117,18 @@ class IntTests(unittest.TestCase):
         self.assertEqual(int.__new__(int, b"23", 8), 0o23)
         self.assertEqual(int.__new__(int, b"abc", 16), 0xABC)
         self.assertEqual(int.__new__(int, b"0xabc", 0), 0xABC)
+
+    def test_dunder_new_with_array_returns_int(self):
+        self.assertEqual(int.__new__(int, array.array("b", b"-23")), -23)
+
+    def test_dunder_new_with_invalid_array_raises_value_error(self):
+        array_with_invalid_characters = array.array("i", [ord("3"), ord("4")])
+        with self.assertRaises(ValueError) as context:
+            int.__new__(int, array_with_invalid_characters)
+        self.assertEqual(
+            str(context.exception),
+            "invalid literal for int() with base 10: b'3\\x00\\x00\\x004\\x00\\x00\\x00'",
+        )
 
     def test_dunder_new_strips_whitespace(self):
         self.assertEqual(int.__new__(int, " \t\n123\n\t "), 123)

@@ -65,4 +65,8 @@ inline bool Byteslike::isValid() const {
 
 inline word Byteslike::length() const { return length_; }
 
+// Converts byteslike into a string representation.
+// Scans bytes to select an appropriate delimiter (single or double quotes).
+RawObject byteslikeReprSmartQuotes(Thread* thread, const Byteslike& byteslike);
+
 }  // namespace py

@@ -19,6 +19,7 @@
 #include "bytearray-builtins.h"
 #include "bytecode.h"
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "capi.h"
 #include "code-builtins.h"
 #include "complex-builtins.h"
@@ -2738,15 +2739,15 @@ RawObject Runtime::bytesReplace(Thread* thread, const Bytes& src,
   return result.becomeImmutable();
 }
 
-static void writeBytesRepr(const Bytes& bytes, byte* dst, word result_length,
-                           byte delimiter) {
+static void writeByteslikeRepr(const Byteslike& byteslike, byte* dst,
+                               word result_length, byte delimiter) {
   byte* ptr = dst;
   *ptr++ = 'b';
   *ptr++ = delimiter;
 
-  word length = bytes.length();
+  word length = byteslike.length();
   for (word i = 0; i < length; i++) {
-    byte current = bytes.byteAt(i);
+    byte current = byteslike.byteAt(i);
     if (current == delimiter || current == '\\') {
       *ptr++ = '\\';
       *ptr++ = current;
@@ -2772,18 +2773,18 @@ static void writeBytesRepr(const Bytes& bytes, byte* dst, word result_length,
   DCHECK(ptr - dst == result_length, "precalculated repr length was incorrect");
 }
 
-RawObject Runtime::bytesRepr(Thread* thread, const Bytes& bytes,
-                             word result_length, byte delimiter) {
+RawObject Runtime::byteslikeRepr(Thread* thread, const Byteslike& byteslike,
+                                 word result_length, byte delimiter) {
   if (result_length <= SmallStr::kMaxLength) {
     byte buffer[SmallStr::kMaxLength];
-    writeBytesRepr(bytes, buffer, result_length, delimiter);
+    writeByteslikeRepr(byteslike, buffer, result_length, delimiter);
     return SmallStr::fromBytes({buffer, result_length});
   }
 
   HandleScope scope(thread);
   LargeStr result(&scope, createLargeStr(result_length));
-  writeBytesRepr(bytes, reinterpret_cast<byte*>(result.address()),
-                 result_length, delimiter);
+  writeByteslikeRepr(byteslike, reinterpret_cast<byte*>(result.address()),
+                     result_length, delimiter);
   return *result;
 }
 

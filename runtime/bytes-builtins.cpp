@@ -2,6 +2,7 @@
 
 #include "builtins.h"
 #include "bytearray-builtins.h"
+#include "byteslike.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "runtime.h"
@@ -97,11 +98,13 @@ word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
 }
 
 RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes) {
+  HandleScope scope(thread);
+  Byteslike byteslike(&scope, thread, *bytes);
   // Precalculate the length of the result to minimize allocation.
-  word length = bytes.length();
+  word length = byteslike.length();
   word result_length = length + 3;  // b''
   for (word i = 0; i < length; i++) {
-    byte current = bytes.byteAt(i);
+    byte current = byteslike.byteAt(i);
     switch (current) {
       case '\t':
       case '\n':
@@ -121,51 +124,8 @@ RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "bytes object is too large to make repr");
   }
-  return thread->runtime()->bytesRepr(thread, bytes, result_length, '\'');
-}
-
-RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& bytes) {
-  // Precalculate the length of the result to minimize allocation.
-  word length = bytes.length();
-  word num_single_quotes = 0;
-  bool has_double_quotes = false;
-  word result_length = length + 3;  // b''
-  for (word i = 0; i < length; i++) {
-    byte current = bytes.byteAt(i);
-    switch (current) {
-      case '\'':
-        num_single_quotes++;
-        break;
-      case '"':
-        has_double_quotes = true;
-        break;
-      case '\t':
-      case '\n':
-      case '\r':
-      case '\\':
-        result_length++;
-        break;
-      default:
-        if (!ASCII::isPrintable(current)) {
-          result_length += 3;
-        }
-    }
-  }
-
-  byte delimiter = '\'';
-  if (num_single_quotes > 0) {
-    if (has_double_quotes) {
-      result_length += num_single_quotes;
-    } else {
-      delimiter = '"';
-    }
-  }
-
-  if (result_length > SmallInt::kMaxValue) {
-    return thread->raiseWithFmt(LayoutId::kOverflowError,
-                                "bytes object is too large to make repr");
-  }
-  return thread->runtime()->bytesRepr(thread, bytes, result_length, delimiter);
+  return thread->runtime()->byteslikeRepr(thread, byteslike, result_length,
+                                          '\'');
 }
 
 // Returns the index of the first byte in bytes that is not in chars.
@@ -668,8 +628,8 @@ RawObject METH(bytes, __repr__)(Thread* thread, Arguments args) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, ID(bytes));
   }
-  Bytes self(&scope, bytesUnderlying(*self_obj));
-  return bytesReprSmartQuotes(thread, self);
+  Byteslike self(&scope, thread, *self_obj);
+  return byteslikeReprSmartQuotes(thread, self);
 }
 
 RawObject METH(bytes, hex)(Thread* thread, Arguments args) {

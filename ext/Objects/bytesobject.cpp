@@ -5,6 +5,7 @@
 
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "bytesobject-utils.h"
 #include "capi-handles.h"
 #include "runtime.h"
@@ -399,9 +400,14 @@ PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
     thread->raiseBadArgument();
     return nullptr;
   }
+  if (smartquotes) {
+    Byteslike self_byteslike(&scope, thread, *obj);
+    Object result(&scope, byteslikeReprSmartQuotes(thread, self_byteslike));
+    if (result.isError()) return nullptr;
+    return ApiHandle::newReference(runtime, *result);
+  }
   Bytes self(&scope, bytesUnderlying(*obj));
-  Object result(&scope, smartquotes ? bytesReprSmartQuotes(thread, self)
-                                    : bytesReprSingleQuotes(thread, self));
+  Object result(&scope, bytesReprSingleQuotes(thread, self));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(runtime, *result);
 }

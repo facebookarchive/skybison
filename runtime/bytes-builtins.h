@@ -31,10 +31,6 @@ word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
 // Converts bytes into a string representation with single quote delimiters.
 RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& bytes);
 
-// Converts bytes into a string representation.
-// Scans bytes to select an appropriate delimiter (single or double quotes).
-RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& bytes);
-
 // Split bytes into logical lines using \r, \n, or \r\n markers.
 // keepends == true keeps the newline characters, keepends == false does not.
 // Returns a list with a bytes objects for each line.

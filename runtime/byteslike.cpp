@@ -3,6 +3,7 @@
 #include "array-module.h"
 #include "handles.h"
 #include "runtime.h"
+#include "unicode.h"
 
 namespace py {
 
@@ -103,6 +104,47 @@ inline void Byteslike::initWithSmallData(RawSmallBytes bytes, word length) {
   d_.small.reference = reinterpret_cast<uword>(data) + Object::kHeapObjectTag;
   next_ = nullptr;
   length_ = length;
+}
+
+RawObject byteslikeReprSmartQuotes(Thread* thread, const Byteslike& byteslike) {
+  // Precalculate the length of the result to minimize allocation.
+  word length = byteslike.length();
+  word num_single_quotes = 0;
+  bool has_double_quotes = false;
+  word result_length = length + 3;  // b''
+  for (word i = 0; i < length; i++) {
+    byte current = byteslike.byteAt(i);
+    switch (current) {
+      case '\'':
+        num_single_quotes++;
+        break;
+      case '"':
+        has_double_quotes = true;
+        break;
+      case '\t':
+      case '\n':
+      case '\r':
+      case '\\':
+        result_length++;
+        break;
+      default:
+        if (!ASCII::isPrintable(current)) {
+          result_length += 3;
+        }
+    }
+  }
+
+  byte delimiter = '\'';
+  if (num_single_quotes > 0) {
+    if (has_double_quotes) {
+      result_length += num_single_quotes;
+    } else {
+      delimiter = '"';
+    }
+  }
+
+  return thread->runtime()->byteslikeRepr(thread, byteslike, result_length,
+                                          delimiter);
 }
 
 }  // namespace py

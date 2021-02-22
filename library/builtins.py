@@ -129,8 +129,7 @@ from _builtins import (
     _int_check_exact,
     _int_from_bytes,
     _int_guard,
-    _int_new_from_bytearray,
-    _int_new_from_bytes,
+    _int_new_from_byteslike,
     _int_new_from_int,
     _int_new_from_str,
     _iter,
@@ -4362,10 +4361,8 @@ class int(bootstrap=True):
                 )
             if _str_check(x):
                 return _int_new_from_str(cls, x.strip(), 10)
-            if _bytes_check(x):
-                return _int_new_from_bytes(cls, x, 10)
-            if _bytearray_check(x):
-                return _int_new_from_bytearray(cls, x, 10)
+            if _byteslike_check(x):
+                return _int_new_from_byteslike(cls, x, 10)
             raise TypeError(
                 f"int() argument must be a string, a bytes-like object "
                 f"or a number, not {_type(x).__name__}"
@@ -4375,10 +4372,8 @@ class int(bootstrap=True):
             raise ValueError("int() base must be >= 2 and <= 36")
         if _str_check(x):
             return _int_new_from_str(cls, x.strip(), base)
-        if _bytes_check(x):
-            return _int_new_from_bytes(cls, x, base)
-        if _bytearray_check(x):
-            return _int_new_from_bytearray(cls, x, base)
+        if _byteslike_check(x):
+            return _int_new_from_byteslike(cls, x, base)
         raise TypeError("int() can't convert non-string with explicit base")
 
     def __or__(self, n: int) -> int:

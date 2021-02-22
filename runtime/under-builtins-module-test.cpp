@@ -8,6 +8,7 @@
 #include "bytearray-builtins.h"
 #include "dict-builtins.h"
 #include "int-builtins.h"
+#include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
@@ -1083,20 +1084,20 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytearrayWithZeroBaseReturnsCodeLiteral) {
+       UnderIntNewFromByteslikeWithZeroBaseReturnsCodeLiteral) {
   HandleScope scope(thread_);
   const byte view[] = {'0', 'x', 'b', 'a', '5', 'e'};
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytearray array(&scope, runtime_->newBytearray());
   runtime_->bytearrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytearray),
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_byteslike),
                                    type, array, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xba5e));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytearrayWithInvalidByteRaisesValueError) {
+       UnderIntNewFromByteslikeWithInvalidByteInBytearrayRaisesValueError) {
   HandleScope scope(thread_);
   const byte view[] = {'$'};
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
@@ -1104,12 +1105,12 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->bytearrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytearray), type, array, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytearrayWithInvalidLiteraRaisesValueError) {
+       UnderIntNewFromByteslikeWithInvalidLiteraRaisesValueError) {
   HandleScope scope(thread_);
   const byte view[] = {'a'};
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
@@ -1117,36 +1118,36 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->bytearrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytearray), type, array, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'a'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithInvalidByteRaisesValueError) {
+       UnderIntNewFromByteslikeWithInvalidByteRaisesValueError) {
   HandleScope scope(thread_);
   const byte view[] = {'$'};
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithInvalidLiteralRaisesValueError) {
+       UnderIntNewFromByteslikeWithInvalidLiteralRaisesValueError) {
   HandleScope scope(thread_);
   const byte view[] = {'8', '6'};
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(7));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 7: b'86'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithBytesSubclassReturnsSmallInt) {
+       UnderIntNewFromByteslikeWithBytesSubclassReturnsSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo(bytes): pass
@@ -1156,43 +1157,44 @@ foo = Foo(b"42")
   Object type(&scope, runtime_->typeAt(LayoutId::kInt));
   Object bytes(&scope, mainModuleAt(runtime_, "foo"));
   Object base(&scope, SmallInt::fromWord(21));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(86));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(86));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithZero) {
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromByteslikeWithZero) {
   HandleScope scope(thread_);
   const byte src[] = {'0'};
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll(src));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
-                                   bytes, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_byteslike),
+                                   type, bytes, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLargeInt) {
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromByteslikeWithLargeInt) {
   HandleScope scope(thread_);
   const byte src[] = "1844674407370955161500";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
-                                   bytes, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_byteslike),
+                                   type, bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
   const uword digits[] = {0xffffffffffffff9c, 0x63};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLargeInt2) {
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromByteslikeWithLargeInt2) {
   HandleScope scope(thread_);
   const byte src[] = "46116860184273879030";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
-                                   bytes, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_byteslike),
+                                   type, bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
   const uword digits[] = {0x7ffffffffffffff6, 0x2};
@@ -1200,25 +1202,26 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLargeInt2) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithLargeIntWithInvalidDigitRaisesValueError) {
+       UnderIntNewFromByteslikeWithLargeIntWithInvalidDigitRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "461168601$84273879030";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 10: b'461168601$84273879030'"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLeadingPlusReturnsInt) {
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromByteslikeWithLeadingPlusReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "+46116860184273879030";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Int result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type,
                                 bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
@@ -1227,25 +1230,25 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLeadingPlusReturnsInt) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithDoubleLeadingPlusRaisesValueError) {
+       UnderIntNewFromByteslikeWithDoubleLeadingPlusRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "++1";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'++1'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithLeadingNegAndSpaceReturnsInt) {
+       UnderIntNewFromByteslikeWithLeadingNegAndSpaceReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "   -46116860184273879030";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Int result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type,
                                 bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
@@ -1254,151 +1257,189 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithDoubleLeadingNegRaisesValueError) {
+       UnderIntNewFromByteslikeWithDoubleLeadingNegRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "--1";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'--1'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithHexPrefixAndBaseZeroReturnsInt) {
+       UnderIntNewFromByteslikeWithHexPrefixAndBaseZeroReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "0x1f";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(31));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(31));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithHexPrefixAndBaseSixteenReturnsInt) {
+       UnderIntNewFromByteslikeWithHexPrefixAndBaseSixteenReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "0x1f";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(16));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(31));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(31));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithHexPrefixAndBaseNineRaisesValueError) {
+       UnderIntNewFromByteslikeWithHexPrefixAndBaseNineRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "0x1f";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(9));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 9: b'0x1f'"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithBaseThreeReturnsInt) {
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromByteslikeWithBaseThreeReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "221";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(3));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(25));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(25));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithUnderscoreReturnsInt) {
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromByteslikeWithUnderscoreReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "1_000_000";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(1000000));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(1000000));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithLeadingUnderscoreRaisesValueError) {
+       UnderIntNewFromByteslikeWithLeadingUnderscoreRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "_1";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 0: b'_1'"));
 }
 
-TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithLeadingUnderscoreAndPrefixAndBaseReturnsInt) {
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderIntNewFromByteslikeWithLeadingUnderscoreAndPrefixAndBaseReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "0b_1";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(2));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(1));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(1));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithTrailingUnderscoreRaisesValueError) {
+       UnderIntNewFromByteslikeWithTrailingUnderscoreRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "1_000_";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 0: b'1_000_'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithDoubleUnderscoreRaisesValueError) {
+       UnderIntNewFromByteslikeWithDoubleUnderscoreRaisesValueError) {
   HandleScope scope(thread_);
   const byte src[] = "1__000";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 0: b'1__000'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithWhitespaceOnLeftReturnsInt) {
+       UnderIntNewFromByteslikeWithWhitespaceOnLeftReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = " \t\n\t\v-123";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(-123));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(-123));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithWhitespaceOnRightReturnsInt) {
+       UnderIntNewFromByteslikeWithWhitespaceOnRightReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "-234 \t \f \n\t";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(-234));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(-234));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromBytesWithWhitespaceOnLeftAndRightReturnsInt) {
+       UnderIntNewFromByteslikeWithWhitespaceOnLeftAndRightReturnsInt) {
   HandleScope scope(thread_);
   const byte src[] = "  \n\t\r\n  +345 \t  \n\t";
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
-            SmallInt::fromWord(345));
+  EXPECT_EQ(
+      runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type, bytes, base),
+      SmallInt::fromWord(345));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromByteslikeWithMemoryviewReturnsInt) {
+  HandleScope scope(thread_);
+  const byte bytes[] = {'-', '1', '2'};
+  MemoryView memoryview(&scope, newMemoryView(bytes, "b"));
+  MemoryView memoryview_slice(
+      &scope, memoryviewGetslice(thread_, memoryview, /*start=*/1, /*stop=*/2,
+                                 /*step=*/1));
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type,
+                       memoryview_slice, base),
+            SmallInt::fromWord(1));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromByteslikeWithMemoryviewSliceReturnsInt) {
+  HandleScope scope(thread_);
+  const byte bytes[] = {'-', '1', '2'};
+  Object memoryview(&scope, newMemoryView(bytes, "b"));
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_byteslike), type,
+                       memoryview, base),
+            SmallInt::fromWord(-12));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromIntWithBoolReturnsSmallInt) {

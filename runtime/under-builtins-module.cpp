@@ -3030,28 +3030,28 @@ static word inferBase(byte second_byte) {
   }
 }
 
-static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
-                              word base) {
-  DCHECK_BOUND(length, bytes.length());
+static RawObject intFromByteslike(Thread* thread, const Byteslike& byteslike,
+                                  word length, word base) {
+  DCHECK_BOUND(length, byteslike.length());
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   if (length <= 0) return Error::error();
 
   // Clamp the length at the last whitespace character.
   word idx = length;
-  byte b = bytes.byteAt(--idx);
+  byte b = byteslike.byteAt(--idx);
   while (ASCII::isSpace(b)) {
     if (idx <= 0) return Error::error();
-    b = bytes.byteAt(--idx);
+    b = byteslike.byteAt(--idx);
   }
   length = idx + 1;
 
   // Start the index from the first non-zero whitespace character.
   idx = 0;
   if (idx >= length) return Error::error();
-  b = bytes.byteAt(idx++);
+  b = byteslike.byteAt(idx++);
   while (ASCII::isSpace(b)) {
     if (idx >= length) return Error::error();
-    b = bytes.byteAt(idx++);
+    b = byteslike.byteAt(idx++);
   }
   word sign = 1;
   switch (b) {
@@ -3060,18 +3060,18 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
       // fall through
     case '+':
       if (idx >= length) return Error::error();
-      b = bytes.byteAt(idx++);
+      b = byteslike.byteAt(idx++);
       break;
   }
 
   word inferred_base = 10;
   if (b == '0') {
     if (idx >= length) return SmallInt::fromWord(0);
-    inferred_base = inferBase(bytes.byteAt(idx));
+    inferred_base = inferBase(byteslike.byteAt(idx));
     if (base == 0) base = inferred_base;
     if (inferred_base != 10 && base == inferred_base) {
       if (++idx >= length) return Error::error();
-      b = bytes.byteAt(idx++);
+      b = byteslike.byteAt(idx++);
     }
   } else if (base == 0) {
     base = 10;
@@ -3089,14 +3089,14 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
       if (idx == num_start && inferred_base == 10) return Error::error();
       // No trailing underscores
       if (idx >= length) return Error::error();
-      b = bytes.byteAt(idx++);
+      b = byteslike.byteAt(idx++);
     }
     word digit_val = digitValue(b, base);
     if (digit_val == -1) return Error::error();
     digit = Int::cast(SmallInt::fromWord(digit_val));
     result = runtime->intAdd(thread, result, digit);
     if (idx >= length) break;
-    b = bytes.byteAt(idx++);
+    b = byteslike.byteAt(idx++);
     result = runtime->intMultiply(thread, result, base_obj);
   }
   if (sign < 0) {
@@ -3105,32 +3105,16 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
   return *result;
 }
 
-RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread,
+RawObject FUNC(_builtins, _int_new_from_byteslike)(Thread* thread,
                                                    Arguments args) {
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  Bytearray array(&scope, args.get(1));
-  Bytes bytes(&scope, array.items());
+  Byteslike byteslike(&scope, thread, args.get(1));
   word base = intUnderlying(args.get(2)).asWord();
-  Object result(&scope, intFromBytes(thread, bytes, array.numItems(), base));
+  Object result(&scope,
+                intFromByteslike(thread, byteslike, byteslike.length(), base));
   if (result.isError()) {
-    Bytes truncated(&scope, bytearrayAsBytes(thread, array));
-    Str repr(&scope, bytesReprSmartQuotes(thread, truncated));
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "invalid literal for int() with base %w: %S",
-                                base, &repr);
-  }
-  return intOrUserSubclass(thread, type, result);
-}
-
-RawObject FUNC(_builtins, _int_new_from_bytes)(Thread* thread, Arguments args) {
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
-  Bytes bytes(&scope, bytesUnderlying(args.get(1)));
-  word base = intUnderlying(args.get(2)).asWord();
-  Object result(&scope, intFromBytes(thread, bytes, bytes.length(), base));
-  if (result.isError()) {
-    Str repr(&scope, bytesReprSmartQuotes(thread, bytes));
+    Str repr(&scope, byteslikeReprSmartQuotes(thread, byteslike));
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "invalid literal for int() with base %w: %S",
                                 base, &repr);
