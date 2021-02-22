@@ -539,6 +539,20 @@ class StrTests(unittest.TestCase):
         result = str.format("{b[1][2]}", a=(1, 2, 3), b=(4, (5, 6, 7), 6))
         self.assertEqual(result, "7")
 
+    def test_format_with_self_keyword(self):
+        result = "be {self}".format(self="yourself")
+        self.assertEqual(result, "be yourself")
+
+    def test_format_with_no_positional_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.format(self="not_self")
+
+    def test_format_with_mistyped_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.format(1, self="not_self")
+        # Ensure that the error message mentions the int being formatted.
+        self.assertTrue("int" in str(context.exception))
+
     def test_isalnum_with_ascii_char_returns_bool(self):
         self.assertEqual(
             "".join(str(int(chr(x).isalnum())) for x in range(128)),
