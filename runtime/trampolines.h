@@ -25,12 +25,6 @@ RawObject interpreterTrampoline(Thread* thread, word nargs) ALIGN_16;
 RawObject interpreterTrampolineKw(Thread* thread, word nargs) ALIGN_16;
 RawObject interpreterTrampolineEx(Thread* thread, word flags) ALIGN_16;
 
-// Entry points for interpreted functions with either cell variables or free
-// variables.
-RawObject interpreterClosureTrampoline(Thread* thread, word nargs) ALIGN_16;
-RawObject interpreterClosureTrampolineKw(Thread* thread, word nargs) ALIGN_16;
-RawObject interpreterClosureTrampolineEx(Thread* thread, word flags) ALIGN_16;
-
 // Entry points for co-routine and generator functions.
 RawObject generatorTrampoline(Thread* thread, word nargs) ALIGN_16;
 RawObject generatorTrampolineKw(Thread* thread, word nargs) ALIGN_16;

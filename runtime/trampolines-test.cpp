@@ -743,7 +743,7 @@ result = foo(-2)
 )")
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
-  ASSERT_EQ(foo.entry(), &interpreterClosureTrampoline);
+  ASSERT_EQ(foo.entry(), &interpreterTrampoline);
   // Ensure that cellvar was populated.
   Code code(&scope, foo.code());
   ASSERT_TRUE(!code.cell2arg().isNoneType());

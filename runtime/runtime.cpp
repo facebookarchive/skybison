@@ -746,15 +746,9 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     stacksize++;
     stacksize_or_builtin = SmallInt::fromWord(stacksize);
   } else {
-    if (code.hasFreevarsOrCellvars()) {
-      entry = interpreterClosureTrampoline;
-      entry_kw = interpreterClosureTrampolineKw;
-      entry_ex = interpreterClosureTrampolineEx;
-    } else {
-      entry = interpreterTrampoline;
-      entry_kw = interpreterTrampolineKw;
-      entry_ex = interpreterTrampolineEx;
-    }
+    entry = interpreterTrampoline;
+    entry_kw = interpreterTrampolineKw;
+    entry_ex = interpreterTrampolineEx;
     flags |= Function::Flags::kInterpreted;
     // HACK: Reserve one extra stack slot for the case where we need to unwrap a
     // bound method.

@@ -624,9 +624,13 @@ RawObject interpreterTrampoline(Thread* thread, word nargs) {
   if (error.isErrorException()) {
     return error;
   }
-  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+  Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
     thread->stackDrop(nargs + 1);
     return Error::exception();
+  }
+  if (function.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(thread, callee_frame);
   }
   return Interpreter::execute(thread);
 }
@@ -640,9 +644,13 @@ RawObject interpreterTrampolineKw(Thread* thread, word nargs) {
   if (error.isErrorException()) {
     return error;
   }
-  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+  Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
     thread->stackDrop(nargs + 2);
     return Error::exception();
+  }
+  if (function.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(thread, callee_frame);
   }
   return Interpreter::execute(thread);
 }
@@ -657,63 +665,14 @@ RawObject interpreterTrampolineEx(Thread* thread, word flags) {
   if (error.isErrorException()) {
     return error;
   }
-  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
-    thread->stackDrop(function_offset + 1);
-    return Error::exception();
-  }
-  return Interpreter::execute(thread);
-}
-
-RawObject interpreterClosureTrampoline(Thread* thread, word nargs) {
-  HandleScope scope(thread);
-  Function function(&scope, thread->stackPeek(nargs));
-  RawObject error = preparePositionalCall(thread, nargs, *function);
-  if (error.isErrorException()) {
-    return error;
-  }
-  Frame* callee_frame = thread->pushCallFrame(*function);
-  if (UNLIKELY(callee_frame == nullptr)) {
-    thread->stackDrop(nargs + 1);
-    return Error::exception();
-  }
-  processFreevarsAndCellvars(thread, callee_frame);
-  return Interpreter::execute(thread);
-}
-
-RawObject interpreterClosureTrampolineKw(Thread* thread, word nargs) {
-  HandleScope scope(thread);
-  // The argument does not include the hidden keyword dictionary argument.  Add
-  // one to skip the keyword dictionary to get to the function object.
-  Function function(&scope, thread->stackPeek(nargs + 1));
-  RawObject error = prepareKeywordCall(thread, nargs, *function);
-  if (error.isErrorException()) {
-    return error;
-  }
-  Frame* callee_frame = thread->pushCallFrame(*function);
-  if (UNLIKELY(callee_frame == nullptr)) {
-    thread->stackDrop(nargs + 2);
-    return Error::exception();
-  }
-  processFreevarsAndCellvars(thread, callee_frame);
-  return Interpreter::execute(thread);
-}
-
-RawObject interpreterClosureTrampolineEx(Thread* thread, word flags) {
-  HandleScope scope(thread);
-  // The argument is either zero when there is one argument and one when there
-  // are two arguments.  Skip over these arguments to read the function object.
-  word function_offset = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  Function function(&scope, thread->stackPeek(function_offset));
-  RawObject error = prepareExplodeCall(thread, flags, *function);
-  if (error.isErrorException()) {
-    return error;
-  }
   Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
     thread->stackDrop(function_offset + 1);
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, callee_frame);
+  if (function.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(thread, callee_frame);
+  }
   return Interpreter::execute(thread);
 }
 
