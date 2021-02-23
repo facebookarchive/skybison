@@ -76,6 +76,16 @@ class IntTests(unittest.TestCase):
         foo.__int__ = "not callable"
         self.assertEqual(int.__new__(int, foo), 0)
 
+    @supports_38_feature
+    def test_dunder_new_uses_type_dunder_index(self):
+        class Foo:
+            def __index__(self):
+                return 1
+
+        foo = Foo()
+        foo.__index__ = "not callable"
+        self.assertEqual(int.__new__(int, foo), 1)
+
     def test_dunder_new_uses_type_dunder_trunc(self):
         class Foo:
             def __trunc__(self):
@@ -84,6 +94,21 @@ class IntTests(unittest.TestCase):
         foo = Foo()
         foo.__trunc__ = "not callable"
         self.assertEqual(int.__new__(int, foo), 0)
+
+    @supports_38_feature
+    def test_dunder_new_uses_type_dunder_trunc_dunder_index(self):
+        class Num:
+            def __index__(self):
+                return 5
+
+        class Foo:
+            def __trunc__(self):
+                return Num()
+
+        foo = Foo()
+        foo.__trunc__ = "not callable"
+        result = int.__new__(int, foo)
+        self.assertEqual(result, 5)
 
     def test_dunder_new_with_raising_trunc_propagates_error(self):
         class Desc:

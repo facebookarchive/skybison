@@ -3767,6 +3767,24 @@ class ComplexTests(unittest.TestCase):
         c = complex(C())
         self.assertEqual(c, 1 + 0j)
 
+    @supports_38_feature
+    def test_dunder_new_with_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 21
+
+        result = complex.__new__(complex, C())
+        self.assertEqual(result, 21 + 0j)
+
+    @supports_38_feature
+    def test_dunder_new_with_dunder_index_for_imaginary_bit(self):
+        class C:
+            def __index__(self):
+                return 21
+
+        result = complex.__new__(complex, 1.0, C())
+        self.assertEqual(result, 1.0 + 21.0j)
+
     def test_dunder_new_with_non_complex_dunder_complex(self):
         class C:
             def __complex__(self):

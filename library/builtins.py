@@ -3036,12 +3036,18 @@ class complex(bootstrap=True):
             elif not _complex_checkexact(real):
                 # NOTE: type(real) could a subclass of complex, so coerce it here
                 real = _complex_new(complex, real.real, real.imag)
-        if not _object_type_hasattr(real, "__float__"):
+        if not _object_type_hasattr(real, "__float__") and not _object_type_hasattr(
+            real, "__index__"
+        ):
             raise TypeError(
                 "complex() first argument must be a string or a number, "
                 f"not '{_type(real).__name__}'"
             )
-        if imag is not _Unbound and not _object_type_hasattr(imag, "__float__"):
+        if (
+            imag is not _Unbound
+            and not _object_type_hasattr(imag, "__float__")
+            and not _object_type_hasattr(imag, "__index__")
+        ):
             raise TypeError(
                 "complex() second argument must be a number, "
                 f"not '{_type(imag).__name__}'"
@@ -3723,6 +3729,10 @@ class float(bootstrap=True):
                 "be removed in a future version of Python.",
                 DeprecationWarning,
             )
+        if _object_type_hasattr(arg, "__index__"):
+            # Indexes return integers, which implement `__float__`.
+            value = _index(arg).__float__()
+            return _float_new_from_float(cls, value)
         if _str_check(arg):
             return _float_new_from_str(cls, arg)
         if _byteslike_check(arg):
@@ -4347,6 +4357,8 @@ class int(bootstrap=True):
                 return _int_new_from_int(cls, x)
             if _object_type_hasattr(x, "__int__"):
                 return _int_new_from_int(cls, _int(x))
+            if _object_type_hasattr(x, "__index__"):
+                return _int_new_from_int(cls, _index(x))
             dunder_trunc = _object_type_getattr(x, "__trunc__")
             if dunder_trunc is not _Unbound:
                 result = dunder_trunc()
@@ -4356,6 +4368,8 @@ class int(bootstrap=True):
                     return _int_new_from_int(cls, result)
                 if _object_type_hasattr(result, "__int__"):
                     return _int_new_from_int(cls, _int(result))
+                if _object_type_hasattr(result, "__index__"):
+                    return _int_new_from_int(cls, _index(result))
                 raise TypeError(
                     f"__trunc__ returned non-Integral (type {_type(result).__name__})"
                 )

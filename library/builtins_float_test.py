@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import unittest
 
+from test_support import supports_38_feature
+
 
 class FloatTests(unittest.TestCase):
     def test_dunder_divmod_raises_type_error(self):
@@ -274,6 +276,31 @@ class FloatTests(unittest.TestCase):
         c = C()
         self.assertEqual(c, 0.0)
         self.assertEqual(float(c), 1.0)
+
+    @supports_38_feature
+    def test_dunder_new_calls_type_index(self):
+        class C:
+            def __index__(self):
+                return 42
+
+        c = C()
+        c.__index__ = "not callable"
+        result = float.__new__(float, c)
+        self.assertEqual(result, 42.0)
+
+    @supports_38_feature
+    def test_dunder_new_calls_float_when_index_and_float_exist(self):
+        class C:
+            def __float__(self):
+                return 41.0
+
+            def __index__(self):
+                return 42
+
+        c = C()
+        c.__index__ = "not callable"
+        result = float.__new__(float, c)
+        self.assertEqual(result, 41.0)
 
     def test_dunder_new_with_str_subclass_calls_dunder_float(self):
         class C(str):
