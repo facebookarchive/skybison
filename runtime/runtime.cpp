@@ -738,15 +738,9 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     stacksize_or_builtin = code.code();
     DCHECK(stacksize == 0, "expected zero stacksize");
   } else if (code.isGeneratorLike()) {
-    if (code.hasFreevarsOrCellvars()) {
-      entry = generatorClosureTrampoline;
-      entry_kw = generatorClosureTrampolineKw;
-      entry_ex = generatorClosureTrampolineEx;
-    } else {
-      entry = generatorTrampoline;
-      entry_kw = generatorTrampolineKw;
-      entry_ex = generatorTrampolineEx;
-    }
+    entry = generatorTrampoline;
+    entry_kw = generatorTrampolineKw;
+    entry_ex = generatorTrampolineEx;
     // HACK: Reserve one extra stack slot for the case where we need to unwrap a
     // bound method.
     stacksize++;

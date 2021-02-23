@@ -36,12 +36,6 @@ RawObject generatorTrampoline(Thread* thread, word nargs) ALIGN_16;
 RawObject generatorTrampolineKw(Thread* thread, word nargs) ALIGN_16;
 RawObject generatorTrampolineEx(Thread* thread, word flags) ALIGN_16;
 
-// Entry points for co-routine and generator functions with either cell
-// variables or free variables.
-RawObject generatorClosureTrampoline(Thread* thread, word nargs) ALIGN_16;
-RawObject generatorClosureTrampolineKw(Thread* thread, word nargs) ALIGN_16;
-RawObject generatorClosureTrampolineEx(Thread* thread, word flags) ALIGN_16;
-
 // Aborts immediately when called
 RawObject unimplementedTrampoline(Thread* thread, word) ALIGN_16;
 
