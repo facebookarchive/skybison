@@ -3292,6 +3292,12 @@ class dict(bootstrap=True):
     def values(self):
         _builtin()
 
+    def __reversed__(self):
+        _dict_guard(self)
+        # CPython's reversed() implementation for keys() ignores subclasses, so we explicitly
+        # mimic that behavior.
+        return dict.keys(self).__reversed__()
+
 
 def _dictview_and(self, other):
     result = set(self)
@@ -3435,6 +3441,12 @@ class dict_keys(bootstrap=True):
     def __xor__(self, other):
         _dict_keys_guard(self)
         return _dictview_xor(self, other)
+
+    def __reversed__(self):
+        _dict_keys_guard(self)
+        # TODO(T85439110): Properly implement `dict_reversekeyiterator` instead of this approach.
+        keys = list(self).__reversed__()
+        return iter(keys)
 
 
 class dict_valueiterator(bootstrap=True):

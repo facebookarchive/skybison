@@ -3,6 +3,8 @@ import collections
 import unittest
 from unittest.mock import Mock, call
 
+from test_support import supports_38_feature
+
 
 class DictTests(unittest.TestCase):
     def test_repr_returns_string(self):
@@ -1135,6 +1137,60 @@ class DictValuesTests(unittest.TestCase):
         mapping = collections.OrderedDict({"hello": "world", "foo": "bar"})
         reversed_values = reversed(mapping.values())
         self.assertEqual(list(reversed_values), ["bar", "world"])
+
+    @supports_38_feature
+    def test_reversed_returns_reversed_keys(self):
+        mapping = {"hello": "world", "foo": "bar"}
+        reversed_keys = reversed(mapping)
+        self.assertEqual(list(reversed_keys), ["foo", "hello"])
+
+    @supports_38_feature
+    def test_reversed_of_keys_returns_reversed_keys(self):
+        mapping = {"hello": "world", "foo": "bar", "marco": "polo"}
+        self.assertEqual(list(mapping.keys()), ["hello", "foo", "marco"])
+        reversed_keys = reversed(mapping.keys())
+        self.assertEqual(list(reversed_keys), ["marco", "foo", "hello"])
+
+    @supports_38_feature
+    def test_reverse_keys_of_dictionary_built_with_setitem(self):
+        d = {}
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["a"] = 100
+        self.assertEqual(list(d.keys()), ["a", "b", "c"])
+        reversed_keys = reversed(d.keys())
+        self.assertEqual(list(reversed_keys), ["c", "b", "a"])
+
+    @supports_38_feature
+    def test_reverse_of_dictonary_subclass_implementing_iter_ignores_subclass(self):
+        class C(dict):
+            def __iter__(self):
+                return iter([1, 2, 3])
+
+        d = C({"a": "b", "c": "d"})
+        reversed_keys = reversed(d)
+        self.assertEqual(list(reversed_keys), ["c", "a"])
+
+    @supports_38_feature
+    def test_reverse_of_dictonary_subclass_implementing_keys_ignores_keys(self):
+        class C(dict):
+            def keys(self):
+                return iter([1, 2, 3])
+
+        d = C({"a": "b", "c": "d"})
+        reversed_keys = reversed(d)
+        self.assertEqual(list(reversed_keys), ["c", "a"])
+
+    @supports_38_feature
+    def test_reverse_of_non_dict_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            dict.__reversed__(None)
+
+    @supports_38_feature
+    def test_reverse_of_non_dict_keys_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type({}.keys()).__reversed__(None)
 
 
 if __name__ == "__main__":
