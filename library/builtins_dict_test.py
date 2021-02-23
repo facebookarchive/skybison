@@ -72,9 +72,10 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             dict.copy(None)
         self.assertIn(
-            "'copy' requires a 'dict' object but received a 'NoneType'",
+            "NoneType",
             str(context.exception),
         )
+        self.assertIn("copy", str(context.exception))
 
     def test_dunder_hash_is_none(self):
         self.assertIs(dict.__hash__, None)
@@ -344,7 +345,8 @@ class DictTests(unittest.TestCase):
     def test_popitem_with_non_dict_raise_type_error(self):
         with self.assertRaises(TypeError) as context:
             dict.popitem(None)
-        self.assertIn("'popitem' requires a 'dict' object", str(context.exception))
+        self.assertIn("popitem", str(context.exception))
+        self.assertIn("dict", str(context.exception))
 
     def test_popitem_with_empty_dict_raises_key_error(self):
         d = {}
