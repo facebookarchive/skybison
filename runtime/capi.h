@@ -111,4 +111,14 @@ bool typeHasSlots(const Type& type);
 // Inherit slots defined by a C Extension
 RawObject typeInheritSlots(Thread* thread, const Type& type);
 
+// NOTE: THIS FUNCTION IS A HACK. It is slow. Do not use this function. It is
+// here to serve Cython modules that occasionally create Python memoryviews
+// from buffer protocol objects. It is much better practice to instead use
+// builtin types where possible.
+//
+// Call bf_getbuffer, copy data into a Bytes, and call bf_releasebuffer.
+// Assumes the object is not builtin.
+// Raises TypeError if slots are not defined.
+RawObject newBytesFromBuffer(Thread* thread, const Object& obj);
+
 }  // namespace py

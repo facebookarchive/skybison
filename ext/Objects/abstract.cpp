@@ -91,6 +91,42 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
 
 // Buffer Protocol
 
+static RawObject raiseBufferError(Thread* thread, const Object& obj) {
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &obj);
+}
+
+RawObject newBytesFromBuffer(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(*obj));
+  if (!typeHasSlots(type)) {
+    return raiseBufferError(thread, obj);
+  }
+  void* get_slot = typeSlotAt(type, Py_bf_getbuffer);
+  if (get_slot == nullptr) {
+    return raiseBufferError(thread, obj);
+  }
+  Py_buffer view;
+  int flags = PyBUF_SIMPLE;
+  ApiHandle* handle = ApiHandle::borrowedReference(runtime, *obj);
+  int get_result =
+      reinterpret_cast<getbufferproc>(get_slot)(handle, &view, flags);
+  if (get_result != 0) {
+    return Error::exception();
+  }
+  DCHECK(view.readonly, "writable buffers not supported");
+  DCHECK(view.ndim == 1, "multi-dimensional buffers not supported");
+  Bytes result(&scope, runtime->newBytesWithAll(
+                           {reinterpret_cast<byte*>(view.buf), view.len}));
+  void* release_slot = typeSlotAt(type, Py_bf_releasebuffer);
+  // The release slot may not be defined. That's allowed.
+  if (release_slot != nullptr) {
+    reinterpret_cast<releasebufferproc>(release_slot)(handle, &view);
+  }
+  return *result;
+}
+
 PY_EXPORT int PyBuffer_FillInfo(Py_buffer* view, PyObject* exporter, void* buf,
                                 Py_ssize_t len, int readonly, int flags) {
   if (view == nullptr) {
@@ -992,12 +1028,6 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   return ApiHandle::newReference(thread->runtime(), *result);
 }
 
-static int raiseBufferError(Thread* thread, const Object& obj) {
-  thread->raiseWithFmt(LayoutId::kTypeError,
-                       "a bytes-like object is required, not '%T'", &obj);
-  return -1;
-}
-
 PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
 
@@ -1071,10 +1101,19 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
   }
   // We must be dealing with a buffer protocol or an incompatible type.
   Type type(&scope, runtime->typeOf(*obj_obj));
-  if (type.isBuiltin()) return raiseBufferError(thread, obj_obj);
-  if (!typeHasSlots(type)) return raiseBufferError(thread, obj_obj);
+  if (type.isBuiltin()) {
+    raiseBufferError(thread, obj_obj);
+    return -1;
+  }
+  if (!typeHasSlots(type)) {
+    raiseBufferError(thread, obj_obj);
+    return -1;
+  }
   void* slot = typeSlotAt(type, Py_bf_getbuffer);
-  if (slot == nullptr) return raiseBufferError(thread, obj_obj);
+  if (slot == nullptr) {
+    raiseBufferError(thread, obj_obj);
+    return -1;
+  }
   return reinterpret_cast<getbufferproc>(slot)(handle, view, flags);
 }
 

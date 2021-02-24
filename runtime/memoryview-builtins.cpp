@@ -635,8 +635,16 @@ RawObject METH(memoryview, __new__)(Thread* thread, Arguments args) {
     result.setFormat(SmallStr::fromCodePoint('B'));
     return *result;
   }
-  return thread->raiseWithFmt(LayoutId::kTypeError,
-                              "memoryview: a bytes-like object is required");
+  // Handle a buffer protocol object. Ideally we would skip an intermediate
+  // copy, but for now we make one copy of the data into a bytes.
+  // TODO(T85440357): Point directly to the buffer protocol object or
+  // bufferinfo from the memoryview.
+  Object bytes(&scope, newBytesFromBuffer(thread, object));
+  if (bytes.isError()) {
+    return *bytes;
+  }
+  return runtime->newMemoryView(
+      thread, object, bytes, Bytes::cast(*bytes).length(), ReadOnly::ReadOnly);
 }
 
 }  // namespace py

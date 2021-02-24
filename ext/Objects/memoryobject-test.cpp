@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "Python.h"
 #include "gtest/gtest.h"
 
@@ -31,6 +33,69 @@ TEST_F(MemoryViewExtensionApiTest, FromObjectWithMemoryViewReturnsMemoryView) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyMemoryView_Check(result));
   EXPECT_NE(result.get(), view.get());
+}
+
+TEST_F(MemoryViewExtensionApiTest,
+       FromObjectWithBufferProtocolReturnsMemoryView) {
+  static char contents[] = "hello world";
+  static Py_ssize_t contents_len = std::strlen(contents);
+  getbufferproc getbuffer_func = [](PyObject* obj, Py_buffer* view, int flags) {
+    return PyBuffer_FillInfo(view, obj, ::strdup(contents), contents_len,
+                             /*readonly=*/1, flags);
+  };
+  releasebufferproc releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    std::free(view->buf);
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  PyObjectPtr instance(PyObject_CallFunction(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr view(PyMemoryView_FromObject(instance));
+  ASSERT_NE(view, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyMemoryView_Check(view));
+}
+
+TEST_F(MemoryViewExtensionApiTest,
+       DunderNewWithBufferProtocolReturnsMemoryView) {
+  static char contents[] = "hello world";
+  static Py_ssize_t contents_len = std::strlen(contents);
+  getbufferproc getbuffer_func = [](PyObject* obj, Py_buffer* view, int flags) {
+    return PyBuffer_FillInfo(view, obj, ::strdup(contents), contents_len,
+                             /*readonly=*/1, flags);
+  };
+  releasebufferproc releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    std::free(view->buf);
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  PyObjectPtr instance(PyObject_CallFunction(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr view(PyObject_CallFunction(
+      reinterpret_cast<PyObject*>(&PyMemoryView_Type), "O", instance.get()));
+  ASSERT_NE(view, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyMemoryView_Check(view));
 }
 
 TEST_F(MemoryViewExtensionApiTest, FromMemoryReturnsMemoryView) {

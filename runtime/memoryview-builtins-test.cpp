@@ -482,7 +482,7 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithUnsupportedObjectRaisesTypeError) {
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(METH(memoryview, __new__), type, none));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
-                            "memoryview: a bytes-like object is required"));
+                            "a bytes-like object is required, not 'NoneType'"));
 }
 
 TEST_F(MemoryViewBuiltinsTest, DunderNewWithInvalidTypeRaisesTypeError) {
