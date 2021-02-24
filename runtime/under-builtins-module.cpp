@@ -1371,8 +1371,7 @@ RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Arguments args) {
   Object elt(&scope, NoneType::object());
   for (word i = 0; i < length; i++) {
     elt = tuple.at(i);
-    if (!runtime->isInstanceOfBytes(*elt) &&
-        !runtime->isInstanceOfBytearray(*elt)) {
+    if (!runtime->isByteslike(*elt)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "sequence item %w: expected a bytes-like object, %T found", i, &elt);

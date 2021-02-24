@@ -573,6 +573,23 @@ dc = Foo(b"DC")
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderBytesJoinWithMemoryViewReturnsBytes) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Bytes self(&scope, runtime_->newBytes(1, ' '));
+  Bytes src1(&scope, newBytesFromCStr(thread_, "hello"));
+  MemoryView obj1(&scope,
+                  runtime_->newMemoryView(thread_, src1, src1, src1.length(),
+                                          ReadOnly::ReadOnly));
+  Bytes src2(&scope, newBytesFromCStr(thread_, "world"));
+  MemoryView obj2(&scope,
+                  runtime_->newMemoryView(thread_, src2, src2, src2.length(),
+                                          ReadOnly::ReadOnly));
+  Tuple iter(&scope, runtime_->newTupleWith2(obj1, obj2));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hello world"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderCodeSetFilenameSetsFilename) {
   HandleScope scope(thread_);
   Code code(&scope, testing::newEmptyCode());

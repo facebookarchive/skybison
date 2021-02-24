@@ -527,6 +527,21 @@ class BytesTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_join_with_bytes_returns_bytes(self):
+        result = b",".join((b"hello", b"world"))
+        self.assertIs(type(result), bytes)
+        self.assertEqual(result, b"hello,world")
+
+    def test_join_with_bytearray_returns_bytes(self):
+        result = b",".join((bytearray(b"hello"), bytearray(b"world")))
+        self.assertIs(type(result), bytes)
+        self.assertEqual(result, b"hello,world")
+
+    def test_join_with_memoryview_returns_bytes(self):
+        result = b",".join((memoryview(b"hello"), memoryview(b"world")))
+        self.assertIs(type(result), bytes)
+        self.assertEqual(result, b"hello,world")
+
     def test_lower_with_non_bytes_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytes.lower("not a bytes")

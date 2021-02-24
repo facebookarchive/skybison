@@ -144,6 +144,10 @@ RawCode newEmptyCode();
 
 RawFunction newEmptyFunction();
 
+RawBytes newBytesFromCStr(Thread* thread, const char* str);
+
+RawBytearray newBytearrayFromCStr(Thread* thread, const char* str);
+
 // Helper for creating weakrefs with the callback as a BoundMethod.
 RawObject newWeakRefWithCallback(Runtime* runtime, Thread* thread,
                                  const Object& referent,

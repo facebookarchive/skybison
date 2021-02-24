@@ -326,6 +326,21 @@ RawFunction newEmptyFunction() {
       runtime->newFunctionWithCode(thread, qualname, code, main));
 }
 
+RawBytes newBytesFromCStr(Thread* thread, const char* str) {
+  return Bytes::cast(thread->runtime()->newBytesWithAll(
+      View<byte>(reinterpret_cast<const byte*>(str), std::strlen(str))));
+}
+
+RawBytearray newBytearrayFromCStr(Thread* thread, const char* str) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Bytearray result(&scope, runtime->newBytearray());
+  runtime->bytearrayExtend(
+      thread, result,
+      View<byte>(reinterpret_cast<const byte*>(str), std::strlen(str)));
+  return *result;
+}
+
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
   return runtime->newIntWithDigits(View<uword>(digits.data(), digits.length()));
 }

@@ -2599,14 +2599,8 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
   Object item(&scope, Unbound::object());
   for (word index = 0; index < src_length; index++) {
     item = src.at(index);
-    if (isInstanceOfBytes(*item)) {
-      Bytes bytes(&scope, bytesUnderlying(*item));
-      result_length += bytes.length();
-    } else {
-      DCHECK(isInstanceOfBytearray(*item), "source is not bytes-like");
-      Bytearray array(&scope, *item);
-      result_length += array.numItems();
-    }
+    Byteslike object(&scope, thread, src.at(index));
+    result_length += object.length();
   }
 
   // second pass to accumulate concatenation
@@ -2626,19 +2620,9 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
       sep.copyTo(dst, sep_length);
       dst += sep_length;
     }
-    item = src.at(src_index);
-    Bytes bytes(&scope, Bytes::empty());
-    word length;
-    if (isInstanceOfBytes(*item)) {
-      bytes = bytesUnderlying(*item);
-      length = bytes.length();
-    } else {
-      DCHECK(isInstanceOfBytearray(*item), "source is not bytes-like");
-      Bytearray array(&scope, *item);
-      bytes = array.items();
-      length = array.numItems();
-    }
-    bytes.copyTo(dst, length);
+    Byteslike object(&scope, thread, src.at(src_index));
+    word length = object.length();
+    object.copyTo(dst, length);
     dst += length;
   }
   DCHECK(dst == end, "unexpected number of bytes written");
