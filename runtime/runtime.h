@@ -431,14 +431,6 @@ class Runtime {
 
   word reserveModuleId();
 
-  SymbolId binaryOperationSelector(Interpreter::BinaryOp op);
-  SymbolId swappedBinaryOperationSelector(Interpreter::BinaryOp op);
-
-  SymbolId inplaceOperationSelector(Interpreter::BinaryOp op);
-
-  SymbolId comparisonSelector(CompareOp op);
-  SymbolId swappedComparisonSelector(CompareOp op);
-
   RawObject buildClass() { return build_class_; }
 
   RawObject displayHook() { return display_hook_; }

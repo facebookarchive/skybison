@@ -81,27 +81,6 @@ static const SymbolId kRequiredModules[] = {
     ID(_builtins), ID(builtins), ID(operator),
     ID(_codecs),   ID(_signal),  ID(_frozen_importlib_external)};
 
-static const SymbolId kBinaryOperationSelector[] = {
-    ID(__add__),     ID(__sub__),      ID(__mul__),    ID(__matmul__),
-    ID(__truediv__), ID(__floordiv__), ID(__mod__),    ID(__divmod__),
-    ID(__pow__),     ID(__lshift__),   ID(__rshift__), ID(__and__),
-    ID(__xor__),     ID(__or__)};
-
-static const SymbolId kSwappedBinaryOperationSelector[] = {
-    ID(__radd__),     ID(__rsub__),      ID(__rmul__),    ID(__rmatmul__),
-    ID(__rtruediv__), ID(__rfloordiv__), ID(__rmod__),    ID(__rdivmod__),
-    ID(__rpow__),     ID(__rlshift__),   ID(__rrshift__), ID(__rand__),
-    ID(__rxor__),     ID(__ror__)};
-
-static const SymbolId kInplaceOperationSelector[] = {
-    ID(__iadd__),     ID(__isub__),      ID(__imul__),    ID(__imatmul__),
-    ID(__itruediv__), ID(__ifloordiv__), ID(__imod__),    SymbolId::kMaxId,
-    ID(__ipow__),     ID(__ilshift__),   ID(__irshift__), ID(__iand__),
-    ID(__ixor__),     ID(__ior__)};
-
-static const SymbolId kComparisonSelector[] = {
-    ID(__lt__), ID(__le__), ID(__eq__), ID(__ne__), ID(__gt__), ID(__ge__)};
-
 word Runtime::next_module_index_ = 0;
 
 wchar_t Runtime::exec_prefix_[PATH_MAX + 1] = L"";
@@ -2406,33 +2385,6 @@ word Runtime::reserveModuleId() {
   // we run out.
   CHECK(max_module_id_ < RawModule::kMaxModuleId, "exceeded module ID space");
   return ++max_module_id_;
-}
-
-SymbolId Runtime::binaryOperationSelector(Interpreter::BinaryOp op) {
-  return kBinaryOperationSelector[static_cast<int>(op)];
-}
-
-SymbolId Runtime::swappedBinaryOperationSelector(Interpreter::BinaryOp op) {
-  return kSwappedBinaryOperationSelector[static_cast<int>(op)];
-}
-
-SymbolId Runtime::inplaceOperationSelector(Interpreter::BinaryOp op) {
-  DCHECK(op != Interpreter::BinaryOp::DIVMOD,
-         "DIVMOD is not a valid inplace op");
-  return kInplaceOperationSelector[static_cast<int>(op)];
-}
-
-SymbolId Runtime::comparisonSelector(CompareOp op) {
-  DCHECK(op >= CompareOp::LT, "invalid compare op");
-  DCHECK(op <= CompareOp::GE, "invalid compare op");
-  return kComparisonSelector[op];
-}
-
-SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
-  DCHECK(op >= CompareOp::LT, "invalid compare op");
-  DCHECK(op <= CompareOp::GE, "invalid compare op");
-  CompareOp swapped_op = kSwappedCompareOp[op];
-  return comparisonSelector(swapped_op);
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {

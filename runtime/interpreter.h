@@ -276,6 +276,14 @@ class Interpreter {
   static void storeAttrWithLocation(Thread* thread, RawObject receiver,
                                     RawObject location, RawObject value);
 
+  static SymbolId binaryOperationSelector(BinaryOp op);
+  static SymbolId swappedBinaryOperationSelector(BinaryOp op);
+
+  static SymbolId inplaceOperationSelector(BinaryOp op);
+
+  static SymbolId comparisonSelector(CompareOp op);
+  static SymbolId swappedComparisonSelector(CompareOp op);
+
   // Unwind the stack for a pending exception. A return value that is not
   // `Error::error()` indicates that we should exit the interpreter loop and
   // return that value.

@@ -324,8 +324,6 @@ const word kCodeUnitSize = 2;
 
 extern const char* const kBytecodeNames[];
 
-extern const CompareOp kSwappedCompareOp[];
-
 struct BytecodeOp {
   Bytecode bc;
   int32_t arg;

@@ -11,8 +11,6 @@ const char* const kBytecodeNames[] = {
 #undef NAME
 };
 
-const CompareOp kSwappedCompareOp[] = {GT, GE, EQ, NE, LT, LE};
-
 BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index) {
   word i = *index;
   Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));

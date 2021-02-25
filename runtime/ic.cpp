@@ -220,9 +220,8 @@ void icInsertBinaryOpDependencies(Thread* thread, const Function& dependent,
                                   LayoutId left_layout_id,
                                   LayoutId right_layout_id,
                                   Interpreter::BinaryOp op) {
-  Runtime* runtime = thread->runtime();
-  SymbolId left_operator_id = runtime->binaryOperationSelector(op);
-  SymbolId right_operator_id = runtime->swappedBinaryOperationSelector(op);
+  SymbolId left_operator_id = Interpreter::binaryOperationSelector(op);
+  SymbolId right_operator_id = Interpreter::swappedBinaryOperationSelector(op);
   insertBinaryOpDependencies(thread, dependent, left_layout_id,
                              left_operator_id, right_layout_id,
                              right_operator_id);
@@ -231,9 +230,8 @@ void icInsertBinaryOpDependencies(Thread* thread, const Function& dependent,
 void icInsertCompareOpDependencies(Thread* thread, const Function& dependent,
                                    LayoutId left_layout_id,
                                    LayoutId right_layout_id, CompareOp op) {
-  Runtime* runtime = thread->runtime();
-  SymbolId left_operator_id = runtime->comparisonSelector(op);
-  SymbolId right_operator_id = runtime->swappedComparisonSelector(op);
+  SymbolId left_operator_id = Interpreter::comparisonSelector(op);
+  SymbolId right_operator_id = Interpreter::swappedComparisonSelector(op);
   insertBinaryOpDependencies(thread, dependent, left_layout_id,
                              left_operator_id, right_layout_id,
                              right_operator_id);
@@ -246,11 +244,12 @@ void icInsertInplaceOpDependencies(Thread* thread, const Function& dependent,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object inplace_op_name(
-      &scope, runtime->symbols()->at(runtime->inplaceOperationSelector(op)));
+      &scope,
+      runtime->symbols()->at(Interpreter::inplaceOperationSelector(op)));
   insertDependencyForTypeLookupInMro(thread, left_layout_id, inplace_op_name,
                                      dependent);
-  SymbolId left_operator_id = runtime->binaryOperationSelector(op);
-  SymbolId right_operator_id = runtime->swappedBinaryOperationSelector(op);
+  SymbolId left_operator_id = Interpreter::binaryOperationSelector(op);
+  SymbolId right_operator_id = Interpreter::swappedBinaryOperationSelector(op);
   insertBinaryOpDependencies(thread, dependent, left_layout_id,
                              left_operator_id, right_layout_id,
                              right_operator_id);
@@ -850,7 +849,7 @@ RawObject IcIterator::leftMethodName() const {
   SymbolId method;
   if (isBinaryOpOrInplaceOp(bytecode_op_.bc)) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
-    method = runtime_->binaryOperationSelector(binary_op);
+    method = Interpreter::binaryOperationSelector(binary_op);
   } else {
     DCHECK(bytecode_op_.bc == COMPARE_OP_MONOMORPHIC ||
                bytecode_op_.bc == COMPARE_OP_POLYMORPHIC ||
@@ -858,7 +857,7 @@ RawObject IcIterator::leftMethodName() const {
            "binop cache must be for BINARY_OP_*, INPLACE_OP_*, or "
            "COMPARE_OP_*");
     CompareOp compare_op = static_cast<CompareOp>(arg);
-    method = runtime_->comparisonSelector(compare_op);
+    method = Interpreter::comparisonSelector(compare_op);
   }
   return runtime_->symbols()->at(method);
 }
@@ -870,7 +869,7 @@ RawObject IcIterator::rightMethodName() const {
   SymbolId method;
   if (isBinaryOpOrInplaceOp(bytecode_op_.bc)) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
-    method = runtime_->swappedBinaryOperationSelector(binary_op);
+    method = Interpreter::swappedBinaryOperationSelector(binary_op);
   } else {
     DCHECK(bytecode_op_.bc == COMPARE_OP_MONOMORPHIC ||
                bytecode_op_.bc == COMPARE_OP_POLYMORPHIC ||
@@ -878,7 +877,7 @@ RawObject IcIterator::rightMethodName() const {
            "binop cache must be for BINARY_OP_*, INPLACE_OP_*, or "
            "COMPARE_OP_*");
     CompareOp compare_op = static_cast<CompareOp>(arg);
-    method = runtime_->swappedComparisonSelector(compare_op);
+    method = Interpreter::swappedComparisonSelector(compare_op);
   }
   return runtime_->symbols()->at(method);
 }
@@ -890,7 +889,7 @@ RawObject IcIterator::inplaceMethodName() const {
          "should only be called for INPLACE_OP_*");
   int32_t arg = originalArg(*function_, bytecode_op_.arg);
   Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
-  SymbolId method = runtime_->inplaceOperationSelector(binary_op);
+  SymbolId method = Interpreter::inplaceOperationSelector(binary_op);
   return runtime_->symbols()->at(method);
 }
 
