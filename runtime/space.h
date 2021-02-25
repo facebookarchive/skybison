@@ -17,16 +17,7 @@ class Space {
     return Utils::roundUp(size, kObjectAlignment);
   }
 
-  uword allocate(word size) {
-    word rounded = roundAllocationSize(size);
-    word free = end() - fill();
-    if (rounded > free) {
-      return 0;
-    }
-    uword result = fill_;
-    fill_ += rounded;
-    return result;
-  }
+  bool allocate(word size, uword* result);
 
   void protect();
 
@@ -61,5 +52,16 @@ class Space {
 
   DISALLOW_COPY_AND_ASSIGN(Space);
 };
+
+inline bool Space::allocate(word size, uword* result) {
+  word rounded = roundAllocationSize(size);
+  word free = end() - fill();
+  if (rounded > free) {
+    return false;
+  }
+  *result = fill_;
+  fill_ += rounded;
+  return true;
+}
 
 }  // namespace py

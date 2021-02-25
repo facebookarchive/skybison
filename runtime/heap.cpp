@@ -13,6 +13,12 @@ Heap::Heap(word size) { space_ = new Space(size); }
 
 Heap::~Heap() { delete space_; }
 
+NEVER_INLINE bool Heap::allocateRetry(word size, uword* address_out) {
+  // Since the allocation failed, invoke the garbage collector and retry.
+  collectGarbage();
+  return space_->allocate(size, address_out);
+}
+
 bool Heap::contains(uword address) { return space_->contains(address); }
 
 void Heap::collectGarbage() { Thread::current()->runtime()->collectGarbage(); }

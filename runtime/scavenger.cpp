@@ -300,7 +300,8 @@ RawObject Scavenger::transport(RawObject old_object) {
   DCHECK(from_object.header().isHeader(),
          "object must have a header and must not forward");
   word size = from_object.size();
-  uword address = to_->allocate(size);
+  uword address = 0;
+  to_->allocate(size, &address);
   auto dst = reinterpret_cast<void*>(address);
   auto src = reinterpret_cast<void*>(from_object.baseAddress());
   std::memcpy(dst, src, size);

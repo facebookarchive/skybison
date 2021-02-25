@@ -12,7 +12,8 @@ TEST(SpaceTest, Allocate) {
   EXPECT_FALSE(space.isAllocated(space.fill()));
   EXPECT_FALSE(space.contains(space.end()));
 
-  uword address = space.allocate(10 * kPointerSize);
+  uword address;
+  EXPECT_TRUE(space.allocate(10 * kPointerSize, &address));
   EXPECT_TRUE(space.isAllocated(address));
   EXPECT_FALSE(space.isAllocated(space.fill()));
 

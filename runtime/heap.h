@@ -14,7 +14,7 @@ class Heap {
 
   // Returns true if allocation succeeded and writes output address + offset to
   // *address. Returns false otherwise.
-  bool allocate(word size, word offset, uword* address);
+  bool allocate(word size, uword* address_out);
   void collectGarbage();
 
   bool contains(uword address);
@@ -29,29 +29,20 @@ class Heap {
   void visitAllObjects(HeapObjectVisitor* visitor);
 
  private:
+  bool allocateRetry(word size, uword* address_out);
+
   Space* space_;
 };
 
-// Left in the header for inling into Runtime::newXXX functions.
-inline bool Heap::allocate(word size, word offset, uword* address) {
+inline bool Heap::allocate(word size, uword* address_out) {
   DCHECK(space_ != nullptr, "garbage collection is disabled");
   DCHECK(size >= RawHeapObject::kMinimumSize, "allocation %ld too small", size);
   DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
-  // Try allocating.  If the allocation fails, invoke the garbage collector and
-  // retry the allocation.
-  for (word attempt = 0; attempt < 2 && size < space_->size(); attempt++) {
-    uword result = space_->allocate(size);
-    if (result != 0) {
-      // Allocation succeeded return the address as an object.
-      *address = result + offset;
-      return true;
-    }
-    if (attempt == 0) {
-      // Allocation failed, garbage collect and retry the allocation.
-      collectGarbage();
-    }
+
+  if (UNLIKELY(!space_->allocate(size, address_out))) {
+    return allocateRetry(size, address_out);
   }
-  return false;
+  return true;
 }
 
 }  // namespace py

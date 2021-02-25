@@ -18,13 +18,13 @@ TEST(HeapTestNoFixture, AllocateObjects) {
 
   // Allocate the first half of the heap.
   uword address1;
-  bool result1 = heap.allocate(size / 2, 0, &address1);
+  bool result1 = heap.allocate(size / 2, &address1);
   ASSERT_TRUE(result1);
   EXPECT_TRUE(heap.contains(address1));
 
   // Allocate the second half of the heap.
   uword address2;
-  bool result2 = heap.allocate(size / 2, 0, &address2);
+  bool result2 = heap.allocate(size / 2, &address2);
   ASSERT_TRUE(result2);
   EXPECT_TRUE(heap.contains(address2));
 }
@@ -34,8 +34,8 @@ static RawObject createLargeStr(Heap* heap, word length) {
          "string len %ld is too small to be a large string", length);
   word size = LargeStr::allocationSize(length);
   uword address;
-  CHECK(heap->allocate(size, LargeStr::headerSize(length), &address),
-        "out of memory");
+  CHECK(heap->allocate(size, &address), "out of memory");
+  address += LargeStr::headerSize(length);
   return LargeStr::cast(
       DataArray::initialize(address, length, LayoutId::kLargeStr));
 }
@@ -54,13 +54,13 @@ TEST_F(HeapTest, AllocateFails) {
 
   // Try over allocating.
   uword address2;
-  bool result2 = heap->allocate(free_space, 0, &address2);
+  bool result2 = heap->allocate(free_space, &address2);
   ASSERT_FALSE(result2);
 
   // Allocate the second half of the heap.
   word second_half = heap->space()->end() - heap->space()->fill();
   uword address3;
-  bool result3 = heap->allocate(second_half, 0, &address3);
+  bool result3 = heap->allocate(second_half, &address3);
   ASSERT_TRUE(result3);
   EXPECT_TRUE(heap->contains(address3));
 
