@@ -5368,7 +5368,8 @@ Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
   RawObject right = thread->stackPeek(0);
   if (left.isStr() && right.isStr()) {
     thread->stackDrop(1);
-    thread->stackSetTop(Bool::fromBool(Str::cast(left).equals(right)));
+    thread->stackSetTop(
+        Bool::fromBool(Str::cast(left).equals(Str::cast(right))));
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_EQ_STR);
@@ -5381,7 +5382,8 @@ Continue Interpreter::doCompareNeStr(Thread* thread, word arg) {
   RawObject right = thread->stackPeek(0);
   if (left.isStr() && right.isStr()) {
     thread->stackDrop(1);
-    thread->stackSetTop(Bool::fromBool(!Str::cast(left).equals(right)));
+    thread->stackSetTop(
+        Bool::fromBool(!Str::cast(left).equals(Str::cast(right))));
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_NE_STR);

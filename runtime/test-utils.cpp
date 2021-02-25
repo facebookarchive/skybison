@@ -640,9 +640,9 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *str2) << "'";
   }
-  Str s1(&scope, *str1);
-  if (!s1.equals(*str2)) {
-    Str s2(&scope, *str2);
+  Str s1(&scope, strUnderlying(*str1));
+  Str s2(&scope, strUnderlying(*str2));
+  if (!s1.equals(*s2)) {
     unique_c_ptr<char> s2_ptr(s2.toCStr());
     return ::testing::AssertionFailure()
            << "is not equal to '" << s2_ptr.get() << "'";

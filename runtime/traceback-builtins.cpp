@@ -252,13 +252,13 @@ RawObject tracebackWrite(Thread* thread, const Traceback& traceback,
     filename = tracebackFilename(thread, current);
     lineno = tracebackLineno(thread, current);
     function_name = tracebackFunctionName(thread, current);
-    bool filename_changed = last_filename.isNoneType() ||
-                            filename.isNoneType() ||
-                            !Str::cast(*last_filename).equals(*filename);
+    bool filename_changed =
+        last_filename.isNoneType() || filename.isNoneType() ||
+        !Str::cast(*last_filename).equals(Str::cast(*filename));
     bool lineno_changed = last_lineno.isNoneType() || lineno != last_lineno;
     bool function_name_changed =
         last_function_name.isNoneType() || function_name.isNoneType() ||
-        !Str::cast(*last_function_name).equals(*function_name);
+        !Str::cast(*last_function_name).equals(Str::cast(*function_name));
     if (filename_changed || lineno_changed || function_name_changed) {
       if (count > kTracebackRecursiveCutoff) {
         line = lineRepeated(thread, count);

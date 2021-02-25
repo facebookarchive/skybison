@@ -396,12 +396,44 @@ word RawDataArray::codePointLength() const {
   return result;
 }
 
+word RawDataArray::compare(RawDataArray that) const {
+  word this_length = length();
+  word that_length = that.length();
+  word length = Utils::minimum(this_length, that_length);
+  const void* s1 = reinterpret_cast<const void*>(address());
+  const void* s2 = reinterpret_cast<const void*>(that.address());
+  word result = std::memcmp(s1, s2, length);
+  return result != 0 ? result : this_length - that_length;
+}
+
+bool RawDataArray::equals(RawDataArray that) const {
+  word len = this->length();
+  if (len != that.length()) {
+    return false;
+  }
+  const void* s1 = reinterpret_cast<const void*>(address());
+  const void* s2 = reinterpret_cast<const void*>(that.address());
+  return std::memcmp(s1, s2, len) == 0;
+}
+
 bool RawDataArray::equalsBytes(View<byte> bytes) const {
   word length = this->length();
   if (bytes.length() != length) {
     return false;
   }
   return std::memcmp(dataArrayData(*this), bytes.data(), length) == 0;
+}
+
+bool RawDataArray::equalsCStr(const char* c_str) const {
+  const char* cp = c_str;
+  const word len = length();
+  for (word i = 0; i < len; i++, cp++) {
+    byte ch = static_cast<byte>(*cp);
+    if (ch == '\0' || ch != byteAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
 }
 
 word RawDataArray::findByte(byte value, word start, word length) const {
@@ -465,41 +497,6 @@ RawObject RawLargeBytes::becomeStr() const {
 }
 
 // RawLargeStr
-
-word RawLargeStr::compare(RawObject that) const {
-  word this_length = length();
-  word that_length = RawLargeStr::cast(that).length();
-  word length = Utils::minimum(this_length, that_length);
-  const byte* s1 = dataArrayData(*this);
-  const byte* s2 = dataArrayData(RawLargeStr::cast(that));
-  word result = std::memcmp(s1, s2, length);
-  return result != 0 ? result : this_length - that_length;
-}
-
-bool RawLargeStr::equals(RawObject that) const {
-  if (!that.isLargeStr()) {
-    return false;
-  }
-  auto that_str = RawLargeStr::cast(that);
-  if (length() != that_str.length()) {
-    return false;
-  }
-  const byte* s1 = dataArrayData(*this);
-  const byte* s2 = dataArrayData(that_str);
-  return std::memcmp(s1, s2, length()) == 0;
-}
-
-bool RawLargeStr::equalsCStr(const char* c_str) const {
-  const char* cp = c_str;
-  const word len = length();
-  for (word i = 0; i < len; i++, cp++) {
-    byte ch = static_cast<byte>(*cp);
-    if (ch == '\0' || ch != byteAt(i)) {
-      return false;
-    }
-  }
-  return *cp == '\0';
-}
 
 static bool includes1(const byte* haystack, word haystack_len, byte needle) {
   const uword* p = reinterpret_cast<const uword*>(haystack);

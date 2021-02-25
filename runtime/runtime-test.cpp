@@ -1140,7 +1140,7 @@ TEST_F(RuntimeStrTest, NewStrFromUTF32WithSmallNonASCIIReturnsString) {
   HandleScope scope(thread_);
   const int32_t codepoints[] = {0xC4};
   Str unicode(&scope, runtime_->newStrFromUTF32(codepoints));
-  EXPECT_TRUE(unicode.equals(SmallStr::fromCodePoint(0xC4)));
+  EXPECT_TRUE(unicode.equals(Str::cast(SmallStr::fromCodePoint(0xC4))));
 }
 
 TEST_F(RuntimeStrTest, NewStrFromUTF32WithLargeNonASCIIReturnsString) {

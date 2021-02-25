@@ -816,10 +816,10 @@ class Symbols {
 
   void visit(PointerVisitor* visitor);
 
-  RawObject at(SymbolId id) {
+  RawStr at(SymbolId id) {
     int index = static_cast<int>(id);
     DCHECK_INDEX(index, static_cast<int>(SymbolId::kMaxId));
-    return symbols_[index];
+    return RawStr::cast(symbols_[index]);
   }
 
   static const char* predefinedSymbolAt(SymbolId id);

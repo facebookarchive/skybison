@@ -522,7 +522,7 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Arguments args) {
       // a string for `__qualname__`.
     } else {
       qualname = typeRemoveById(thread, type, ID(__qualname__));
-      DCHECK(qualname.isStr() && Str::cast(*qualname).equals(*name),
+      DCHECK(qualname.isStr() && Str::cast(*qualname).equals(Str::cast(*name)),
              "unexpected __qualname__ attribute");
     }
     type.setQualname(*qualname);

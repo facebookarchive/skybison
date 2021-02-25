@@ -464,7 +464,7 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithMemoryViewReturnsMemoryView) {
   MemoryView result(&scope, *result_obj);
   EXPECT_NE(result, view);
   EXPECT_EQ(view.buffer(), result.buffer());
-  EXPECT_TRUE(Str::cast(view.format()).equals(result.format()));
+  EXPECT_TRUE(Str::cast(view.format()).equals(Str::cast(result.format())));
   EXPECT_EQ(view.readOnly(), result.readOnly());
   EXPECT_EQ(result.start(), 0);
   Tuple shape(&scope, result.shape());

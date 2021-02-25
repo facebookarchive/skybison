@@ -586,9 +586,9 @@ class RawStr : public RawObject {
   void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Equality checks.
-  word compare(RawObject that) const;
+  word compare(RawStr that) const;
   word compareCStr(const char* c_str) const;
-  bool equals(RawObject that) const;
+  bool equals(RawStr that) const;
   bool equalsCStr(const char* c_str) const;
 
   bool includes(RawObject that) const;
@@ -1439,7 +1439,10 @@ class RawDataArray : public RawHeapObject {
   // Copy length bytes from this to dst, starting at the given index
   void copyToStartAt(byte* dst, word length, word index) const;
 
+  word compare(RawDataArray that) const;
+  bool equals(RawDataArray that) const;
   bool equalsBytes(View<byte> bytes) const;
+  bool equalsCStr(const char* c_str) const;
 
   // Returns the index at which value is found in this[start:start+length] (not
   // including end), or -1 if not found.
@@ -1483,11 +1486,6 @@ class RawLargeBytes : public RawDataArray {
 
 class RawLargeStr : public RawDataArray {
  public:
-  // Equality checks.
-  word compare(RawObject that) const;
-  bool equals(RawObject that) const;
-  bool equalsCStr(const char* c_str) const;
-
   bool includes(RawObject that) const;
 
   word occurrencesOf(RawObject that) const;
@@ -7050,7 +7048,7 @@ inline word RawStr::length() const {
   return RawLargeStr::cast(*this).length();
 }
 
-inline word RawStr::compare(RawObject that) const {
+inline word RawStr::compare(RawStr that) const {
   if (*this == that) {
     return 0;
   }
@@ -7064,10 +7062,10 @@ inline word RawStr::compare(RawObject that) const {
     }
     return RawSmallStr::cast(*this).compare(that);
   }
-  if (that.isSmallStr()) {
+  if (that.isImmediateObjectNotSmallInt()) {
     return -RawSmallStr::cast(that).compare(*this);
   }
-  return RawLargeStr::cast(*this).compare(that);
+  return RawLargeStr::cast(*this).compare(RawLargeStr::cast(that));
 }
 
 inline void RawStr::copyTo(byte* dst, word length) const {
@@ -7096,10 +7094,11 @@ inline word RawStr::codePointLength() const {
 
 inline RawStr RawStr::empty() { return RawSmallStr::empty().rawCast<RawStr>(); }
 
-inline bool RawStr::equals(RawObject that) const {
+inline bool RawStr::equals(RawStr that) const {
   if (*this == that) return true;
   if (isImmediateObjectNotSmallInt()) return false;
-  return RawLargeStr::cast(*this).equals(that);
+  if (that.isImmediateObjectNotSmallInt()) return false;
+  return RawLargeStr::cast(*this).equals(RawLargeStr::cast(that));
 }
 
 inline bool RawStr::equalsCStr(const char* c_str) const {

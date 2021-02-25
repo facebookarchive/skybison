@@ -317,8 +317,9 @@ void Runtime::appendBuiltinAttributes(Thread* thread,
                        attributes.get(i).flags | AttributeFlags::kInObject |
                            AttributeFlags::kFixedOffset);
     SymbolId symbol_id = attributes.get(i).name;
-    name = symbol_id == SymbolId::kInvalid ? NoneType::object()
-                                           : symbols()->at(symbol_id);
+    name = symbol_id == SymbolId::kInvalid
+               ? NoneType::object()
+               : static_cast<RawObject>(symbols()->at(symbol_id));
     dst.atPut(start_index + i, layoutNewAttribute(name, info));
   }
 }
@@ -2941,7 +2942,7 @@ RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
     }
   } else if (o0.isLargeStr()) {
     if (o1.isLargeStr()) {
-      return Bool::fromBool(LargeStr::cast(o0).equals(o1));
+      return Bool::fromBool(LargeStr::cast(o0).equals(LargeStr::cast(o1)));
     }
     if (!o1.isHeapObject()) {
       return Bool::falseObj();

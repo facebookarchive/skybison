@@ -77,7 +77,7 @@ inline bool internSetAdd(Thread* thread, RawMutableTuple data,
       *result = *str;
       return true;
     }
-    if (LargeStr::cast(slot).equals(*str)) {
+    if (LargeStr::cast(slot).equals(LargeStr::cast(*str))) {
       *result = slot;
       return false;
     }
