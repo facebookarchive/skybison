@@ -11705,6 +11705,14 @@ class TupleTests(unittest.TestCase):
         t = (1, 2, 3)
         self.assertIs(tuple.__getitem__(t, slice(10)), t)
 
+    def test_dunder_getitem_with_extended_empty_slice_neg_step_returns_empty(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(1, 2, -1)), ())
+
+    def test_dunder_getitem_with_extended_empty_slice_pos_step_returns_empty(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(2, 1, 2)), ())
+
     def test_dunder_gt_with_non_tuple_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             tuple.__gt__(None, ())

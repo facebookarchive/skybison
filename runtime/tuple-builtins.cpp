@@ -35,7 +35,11 @@ RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
 
   HandleScope scope(thread);
   word length = Slice::length(start, stop, step);
-  MutableTuple items(&scope, thread->runtime()->newMutableTuple(length));
+  Runtime* runtime = thread->runtime();
+  if (length == 0) {
+    return runtime->emptyTuple();
+  }
+  MutableTuple items(&scope, runtime->newMutableTuple(length));
   for (word i = 0, index = start; i < length; i++, index += step) {
     items.atPut(i, tuple.at(index));
   }

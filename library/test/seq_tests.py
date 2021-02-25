@@ -200,8 +200,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(u[::-1], self.type2test([4, 3, 2, 1, 0]))
         self.assertEqual(u[::-2], self.type2test([4, 2, 0]))
         self.assertEqual(u[3::-2], self.type2test([3, 1]))
-        # TODO(T85429607): Pyro must return empty tuple on extend slice
-        # self.assertEqual(u[3:3:-2], self.type2test([]))
+        self.assertEqual(u[3:3:-2], self.type2test([]))
         self.assertEqual(u[3:2:-2], self.type2test([3]))
         self.assertEqual(u[3:1:-2], self.type2test([3]))
         self.assertEqual(u[3:0:-2], self.type2test([3, 1]))
@@ -209,8 +208,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(u[100:-100:], self.type2test([]))
         self.assertEqual(u[-100:100:], u)
         self.assertEqual(u[100:-100:-1], u[::-1])
-        # TODO(T85429607): Pyro must return empty tuple on extend slice
-        # self.assertEqual(u[-100:100:-1], self.type2test([]))
+        self.assertEqual(u[-100:100:-1], self.type2test([]))
         self.assertEqual(u[-100:100:2], self.type2test([0, 2, 4]))
 
         # Test extreme cases with long ints
