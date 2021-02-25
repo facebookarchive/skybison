@@ -24,6 +24,13 @@ word bytesHash(Thread* thread, RawObject object);
 // Converts the bytes into a string, mapping each byte to two hex characters.
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length);
 
+// Concatenates an iterable of bytes-like objects with a separator. Returns
+// Bytes or MutableBytes, depending on `sep`'s type.
+//
+// Raises TypeError if any of the items in `src` are not byteslike.
+RawObject bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
+                    const Tuple& src, word src_length);
+
 // Like `bytesFind`, but returns the last starting index in [start, end) or -1.
 word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end);

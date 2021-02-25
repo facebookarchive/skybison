@@ -492,11 +492,6 @@ class Runtime {
   // Returns a new Bytes from the first `length` int-like elements in the tuple.
   RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
 
-  // Concatenates an iterable of bytes-like objects with a separator. Returns
-  // Bytes or MutableBytes, depending on `sep`'s type.
-  RawObject bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
-                      const Tuple& src, word src_length);
-
   // Creates a new Bytes or MutableBytes (depending on `source`'s type)
   // containing the first `length` bytes of the `source` repeated `count` times.
   // Specifies `length` explicitly to allow for Bytearrays with extra allocated

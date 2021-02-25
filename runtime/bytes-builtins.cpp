@@ -80,6 +80,78 @@ RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   return result.becomeStr();
 }
 
+static RawObject smallBytesJoin(Thread* thread, const Bytes& sep,
+                                word sep_length, const Tuple& src,
+                                word src_length, word result_length) {
+  HandleScope scope(thread);
+  byte buffer[SmallBytes::kMaxLength];
+  byte* dst = buffer;
+  for (word src_index = 0; src_index < src_length; src_index++) {
+    if (src_index > 0) {
+      sep.copyTo(dst, sep_length);
+      dst += sep_length;
+    }
+    Byteslike object(&scope, thread, src.at(src_index));
+    word length = object.length();
+    object.copyTo(dst, length);
+    dst += length;
+  }
+  DCHECK(dst == buffer + result_length, "unexpected number of bytes written");
+  return SmallBytes::fromBytes({buffer, result_length});
+}
+
+RawObject bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
+                    const Tuple& src, word src_length) {
+  DCHECK_BOUND(src_length, src.length());
+  bool is_mutable = sep.isMutableBytes();
+  Runtime* runtime = thread->runtime();
+  if (src_length == 0) {
+    if (is_mutable) {
+      return runtime->emptyMutableBytes();
+    }
+    return Bytes::empty();
+  }
+  HandleScope scope(thread);
+
+  // first pass to accumulate length and check types
+  word result_length = sep_length * (src_length - 1);
+  Object item(&scope, Unbound::object());
+  for (word index = 0; index < src_length; index++) {
+    item = src.at(index);
+    Byteslike object(&scope, thread, *item);
+    if (!object.isValid()) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "sequence item %w: expected a bytes-like object, '%T' found", index,
+          &item);
+    }
+    result_length += object.length();
+  }
+
+  // second pass to accumulate concatenation
+  if (result_length <= SmallBytes::kMaxLength && !is_mutable) {
+    return smallBytesJoin(thread, sep, sep_length, src, src_length,
+                          result_length);
+  }
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  word dst_offset = 0;
+  for (word src_index = 0;;) {
+    Byteslike object(&scope, thread, src.at(src_index));
+    word length = object.length();
+    result.replaceFromWithByteslike(dst_offset, object, length);
+    dst_offset += length;
+
+    src_index++;
+    if (src_index >= src_length) break;
+
+    result.replaceFromWithBytes(dst_offset, *sep, sep_length);
+    dst_offset += sep_length;
+  }
+  DCHECK(dst_offset == result_length, "offset must match expected length");
+  return is_mutable ? *result : result.becomeImmutable();
+}
+
 word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end) {
   DCHECK_BOUND(haystack_len, haystack.length());

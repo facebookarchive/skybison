@@ -1232,22 +1232,14 @@ RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Arguments args) {
     // Collect items into list in Python and call again
     return Unbound::object();
   }
-  Object elt(&scope, NoneType::object());
-  for (word i = 0; i < length; i++) {
-    elt = tuple.at(i);
-    if (!runtime->isInstanceOfBytes(*elt) &&
-        !runtime->isInstanceOfBytearray(*elt)) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "sequence item %w: expected a bytes-like object, '%T' found", i,
-          &elt);
-    }
+  Object joined(&scope,
+                bytesJoin(thread, sep_bytes, sep.numItems(), tuple, length));
+  if (joined.isErrorException()) {
+    return *joined;
   }
-  Bytes joined(&scope, runtime->bytesJoin(thread, sep_bytes, sep.numItems(),
-                                          tuple, length));
   Bytearray result(&scope, runtime->newBytearray());
   result.setItems(*joined);
-  result.setNumItems(joined.length());
+  result.setNumItems(Bytes::cast(*joined).length());
   return *result;
 }
 
@@ -1368,16 +1360,7 @@ RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Arguments args) {
     // Collect items into list in Python and call again
     return Unbound::object();
   }
-  Object elt(&scope, NoneType::object());
-  for (word i = 0; i < length; i++) {
-    elt = tuple.at(i);
-    if (!runtime->isByteslike(*elt)) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "sequence item %w: expected a bytes-like object, %T found", i, &elt);
-    }
-  }
-  return runtime->bytesJoin(thread, self, self.length(), tuple, length);
+  return bytesJoin(thread, self, self.length(), tuple, length);
 }
 
 RawObject FUNC(_builtins, _bytes_len)(Thread*, Arguments args) {

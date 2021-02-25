@@ -487,45 +487,6 @@ TEST_F(RuntimeBytearrayTest, Extend) {
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "Hello"));
 }
 
-TEST_F(RuntimeBytesTest, BytesJoinWithBytesReturnsBytes) {
-  HandleScope scope(thread_);
-  Bytes sep(&scope, newBytesFromCStr(thread_, ","));
-  Bytes obj1(&scope, newBytesFromCStr(thread_, "hello"));
-  Bytes obj2(&scope, newBytesFromCStr(thread_, "world"));
-  Tuple src(&scope, runtime_->newTupleWith2(obj1, obj2));
-  Bytes result(&scope, runtime_->bytesJoin(thread_, sep, sep.length(), src,
-                                           src.length()));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
-}
-
-TEST_F(RuntimeBytesTest, BytesJoinWithBytearrayReturnsBytes) {
-  HandleScope scope(thread_);
-  Bytes sep(&scope, newBytesFromCStr(thread_, ","));
-  Bytearray obj1(&scope, newBytearrayFromCStr(thread_, "hello"));
-  Bytearray obj2(&scope, newBytearrayFromCStr(thread_, "world"));
-  Tuple src(&scope, runtime_->newTupleWith2(obj1, obj2));
-  Bytes result(&scope, runtime_->bytesJoin(thread_, sep, sep.length(), src,
-                                           src.length()));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
-}
-
-TEST_F(RuntimeBytesTest, BytesJoinWithMemoryviewReturnsBytes) {
-  HandleScope scope(thread_);
-  Bytes sep(&scope, newBytesFromCStr(thread_, ","));
-  Bytes src1(&scope, newBytesFromCStr(thread_, "hello"));
-  MemoryView obj1(&scope,
-                  runtime_->newMemoryView(thread_, src1, src1, src1.length(),
-                                          ReadOnly::ReadOnly));
-  Bytes src2(&scope, newBytesFromCStr(thread_, "world"));
-  MemoryView obj2(&scope,
-                  runtime_->newMemoryView(thread_, src2, src2, src2.length(),
-                                          ReadOnly::ReadOnly));
-  Tuple src(&scope, runtime_->newTupleWith2(obj1, obj2));
-  Bytes result(&scope, runtime_->bytesJoin(thread_, sep, sep.length(), src,
-                                           src.length()));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
-}
-
 TEST_F(RuntimeBytesTest, BytesReplaceWithSmallBytesAndNegativeReplacesAll) {
   HandleScope scope(thread_);
   const byte src[] = {'1', '2', '2'};

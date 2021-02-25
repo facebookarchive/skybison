@@ -1416,6 +1416,45 @@ TEST_F(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 }
 
+TEST_F(BytesBuiltinsTest, JoinWithBytesReturnsBytes) {
+  HandleScope scope(thread_);
+  Bytes sep(&scope, newBytesFromCStr(thread_, ","));
+  Bytes obj1(&scope, newBytesFromCStr(thread_, "hello"));
+  Bytes obj2(&scope, newBytesFromCStr(thread_, "world"));
+  Tuple src(&scope, runtime_->newTupleWith2(obj1, obj2));
+  Bytes result(&scope,
+               bytesJoin(thread_, sep, sep.length(), src, src.length()));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
+}
+
+TEST_F(BytesBuiltinsTest, JoinWithBytearrayReturnsBytes) {
+  HandleScope scope(thread_);
+  Bytes sep(&scope, newBytesFromCStr(thread_, ","));
+  Bytearray obj1(&scope, newBytearrayFromCStr(thread_, "hello"));
+  Bytearray obj2(&scope, newBytearrayFromCStr(thread_, "world"));
+  Tuple src(&scope, runtime_->newTupleWith2(obj1, obj2));
+  Bytes result(&scope,
+               bytesJoin(thread_, sep, sep.length(), src, src.length()));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
+}
+
+TEST_F(BytesBuiltinsTest, JoinWithMemoryviewReturnsBytes) {
+  HandleScope scope(thread_);
+  Bytes sep(&scope, newBytesFromCStr(thread_, ","));
+  Bytes src1(&scope, newBytesFromCStr(thread_, "hello"));
+  MemoryView obj1(&scope,
+                  runtime_->newMemoryView(thread_, src1, src1, src1.length(),
+                                          ReadOnly::ReadOnly));
+  Bytes src2(&scope, newBytesFromCStr(thread_, "world"));
+  MemoryView obj2(&scope,
+                  runtime_->newMemoryView(thread_, src2, src2, src2.length(),
+                                          ReadOnly::ReadOnly));
+  Tuple src(&scope, runtime_->newTupleWith2(obj1, obj2));
+  Bytes result(&scope,
+               bytesJoin(thread_, sep, sep.length(), src, src.length()));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
+}
+
 TEST_F(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(runtime_, "bytes.hex(1)"), LayoutId::kTypeError,
@@ -1644,7 +1683,7 @@ TEST_F(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
 TEST_F(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "b' '.join([1])"), LayoutId::kTypeError,
-      "sequence item 0: expected a bytes-like object, int found"));
+      "sequence item 0: expected a bytes-like object, 'int' found"));
 }
 
 TEST_F(BytesBuiltinsTest, JoinWithIterableReturnsBytes) {

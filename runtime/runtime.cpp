@@ -2536,54 +2536,6 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
              : result.becomeImmutable();
 }
 
-RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
-                             const Tuple& src, word src_length) {
-  DCHECK_BOUND(src_length, src.length());
-  bool is_mutable = sep.isMutableBytes();
-  if (src_length == 0) {
-    if (is_mutable) {
-      return empty_mutable_bytes_;
-    }
-    return Bytes::empty();
-  }
-  HandleScope scope(thread);
-
-  // first pass to accumulate length and check types
-  word result_length = sep_length * (src_length - 1);
-  Object item(&scope, Unbound::object());
-  for (word index = 0; index < src_length; index++) {
-    item = src.at(index);
-    Byteslike object(&scope, thread, src.at(index));
-    result_length += object.length();
-  }
-
-  // second pass to accumulate concatenation
-  MutableBytes result(&scope, empty_mutable_bytes_);
-  byte buffer[SmallBytes::kMaxLength];
-  byte* dst = nullptr;
-  bool is_small_bytes = result_length <= SmallBytes::kMaxLength && !is_mutable;
-  if (is_small_bytes) {
-    dst = buffer;
-  } else {
-    result = newMutableBytesUninitialized(result_length);
-    dst = reinterpret_cast<byte*>(MutableBytes::cast(*result).address());
-  }
-  const byte* const end = dst + result_length;
-  for (word src_index = 0; src_index < src_length; src_index++) {
-    if (src_index > 0) {
-      sep.copyTo(dst, sep_length);
-      dst += sep_length;
-    }
-    Byteslike object(&scope, thread, src.at(src_index));
-    word length = object.length();
-    object.copyTo(dst, length);
-    dst += length;
-  }
-  DCHECK(dst == end, "unexpected number of bytes written");
-  return is_small_bytes ? SmallBytes::fromBytes({buffer, result_length})
-                        : (is_mutable ? *result : result.becomeImmutable());
-}
-
 RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
                                word count) {
   DCHECK_BOUND(length, source.length());
