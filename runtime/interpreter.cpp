@@ -1287,9 +1287,8 @@ RawObject Interpreter::unwind(Thread* thread) {
         unwindExceptHandler(thread, block);
         continue;
       }
+      DCHECK(block.kind() == TryBlock::kFinally, "expected finally block");
       thread->stackDrop(thread->valueStackSize() - block.level());
-
-      if (block.kind() != TryBlock::kFinally) continue;
 
       // Push a handler block and save the current caught exception, if any.
       frame->blockStackPush(

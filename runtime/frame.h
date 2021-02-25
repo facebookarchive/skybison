@@ -16,16 +16,16 @@ namespace py {
 //
 // Name    Size    Description
 // ----------------------------------------------------
-// Kind    2       The kind of block this entry represents.
+// (kSmallIntTag 1)
+// Kind    1       The kind of block this entry represents.
 // Handler 30      Where to jump to find the handler
-// Level   25      Value stack level to pop to
+// Level   32      Value stack level to pop to
 class TryBlock {
  public:
   // cpython stores the opcode that pushed the block as the block kind, but only
   // 4 opcodes actually push blocks. Store the same information with fewer bits.
   enum Kind {
     kExceptHandler,
-    kExcept,
     kFinally,
   };
 
@@ -50,21 +50,20 @@ class TryBlock {
   word level() const;
 
   static const int kKindOffset = RawObject::kSmallIntTagBits;
-  static const int kKindSize = 2;
+  static const int kKindSize = 1;
   static const uword kKindMask = (1 << kKindSize) - 1;
 
   static const int kHandlerOffset = kKindOffset + kKindSize;  // 9
   static const int kHandlerSize = 30;
-  static const uword kHandlerMask = (1 << kHandlerSize) - 1;
+  static const uword kHandlerMask = (uword{1} << kHandlerSize) - 1;
 
   static const int kLevelOffset = kHandlerOffset + kHandlerSize;  // 39
-  static const int kLevelSize = 25;
-  static const uword kLevelMask = (1 << kLevelSize) - 1;
+  static const int kLevelSize = 32;
+  static const uword kLevelMask = (uword{1} << kLevelSize) - 1;
 
   static const int kSize = kLevelOffset + kLevelSize;
 
-  static_assert(kSize <= kBitsPerByte * sizeof(uword),
-                "TryBlock must fit into a uword");
+  static_assert(kSize <= kBitsPerWord, "TryBlock must fit into a word");
 
  private:
   uword value_;

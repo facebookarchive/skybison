@@ -226,8 +226,8 @@ TEST_F(ThreadTest, OverlappingFrames) {
 }
 
 TEST_F(ThreadTest, EncodeTryBlock) {
-  TryBlock block(TryBlock::kExcept, 200, 300);
-  EXPECT_EQ(block.kind(), TryBlock::kExcept);
+  TryBlock block(TryBlock::kExceptHandler, 200, 300);
+  EXPECT_EQ(block.kind(), TryBlock::kExceptHandler);
   EXPECT_EQ(block.handler(), 200);
   EXPECT_EQ(block.level(), 300);
 
@@ -327,7 +327,7 @@ TEST_F(ThreadTest, ManipulateBlockStack) {
   TryBlock pushed1(TryBlock::kFinally, 100, 10);
   frame->blockStackPush(pushed1);
 
-  TryBlock pushed2(TryBlock::kExcept, 200, 20);
+  TryBlock pushed2(TryBlock::kExceptHandler, 200, 20);
   frame->blockStackPush(pushed2);
 
   TryBlock popped2 = frame->blockStackPop();
