@@ -871,6 +871,50 @@ c = C()
   EXPECT_TRUE(a_foo.dependencyLink().isNoneType());
 }
 
+TEST_F(IcTest, IcEvictCacheWithPolymorphicCacheEvictsCache) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class A: pass
+
+class B: pass
+
+a = A()
+b = B()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type a_type(&scope, mainModuleAt(runtime_, "A"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
+  Type b_type(&scope, mainModuleAt(runtime_, "B"));
+  Object b(&scope, mainModuleAt(runtime_, "b"));
+
+  Object a_value(&scope, runtime_->newInt(88));
+  Object b_value(&scope, runtime_->newInt(99));
+  Object name(&scope, Str::empty());
+  Function dependent(&scope, testingFunctionCachingAttributes(thread_, name));
+  MutableTuple caches(&scope, dependent.caches());
+  ASSERT_EQ(
+      icUpdateAttr(thread_, caches, 1, a.layoutId(), a_value, name, dependent),
+      ICState::kMonomorphic);
+  EXPECT_EQ(
+      icUpdateAttr(thread_, caches, 1, b.layoutId(), b_value, name, dependent),
+      ICState::kPolymorphic);
+  bool is_found;
+  EXPECT_EQ(icLookupPolymorphic(*caches, 1, a.layoutId(), &is_found), *a_value);
+  EXPECT_TRUE(is_found);
+  EXPECT_EQ(icLookupPolymorphic(*caches, 1, b.layoutId(), &is_found), *b_value);
+  EXPECT_TRUE(is_found);
+  icEvictCache(thread_, dependent, a_type, name,
+               AttributeKind::kDataDescriptor);
+  EXPECT_TRUE(icLookupPolymorphic(*caches, 1, a.layoutId(), &is_found)
+                  .isErrorNotFound());
+  EXPECT_FALSE(is_found);
+  icEvictCache(thread_, dependent, b_type, name,
+               AttributeKind::kDataDescriptor);
+  EXPECT_TRUE(icLookupPolymorphic(*caches, 1, b.layoutId(), &is_found)
+                  .isErrorNotFound());
+  EXPECT_FALSE(is_found);
+}
+
 // Verify if IcInvalidateCachesForTypeAttr calls
 // DeleteCachesForTypeAttrInDependent with all dependents.
 TEST_F(IcTest, IcInvalidateCachesForTypeAttrProcessesAllDependents) {

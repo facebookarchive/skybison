@@ -283,17 +283,10 @@ class IcIterator {
   void next() {
     if (polymorphic_cache_index_ >= 0) {
       // We're currently iterating through a polymorphic cache.
-      RawMutableTuple polymorphic_cache =
-          MutableTuple::cast(caches_.at(cache_index_ + kIcEntryValueOffset));
-      polymorphic_cache_index_ += kIcPointersPerEntry;
-      for (; polymorphic_cache_index_ < kIcPointersPerPolyCache;
-           polymorphic_cache_index_ += kIcPointersPerEntry) {
-        if (!polymorphic_cache.at(polymorphic_cache_index_ + kIcEntryKeyOffset)
-                 .isNoneType()) {
-          return;
-        }
-      }
-      polymorphic_cache_index_ = -1;
+      polymorphic_cache_index_ = findNextFilledPolymorphicCacheIndex(
+          caches_, cache_index_,
+          polymorphic_cache_index_ + kIcPointersPerEntry);
+      if (polymorphic_cache_index_ >= 0) return;
     }
 
     cache_index_ = findNextFilledCacheIndex(
@@ -314,7 +307,10 @@ class IcIterator {
           findNextFilledCacheIndex(caches_, cache_index_, end_cache_index_);
       if (cache_index_ >= 0) {
         if (caches_.at(cache_index_ + kIcEntryKeyOffset).isUnbound()) {
-          polymorphic_cache_index_ = 0;
+          // We found a polymorphic_cache
+          polymorphic_cache_index_ =
+              findNextFilledPolymorphicCacheIndex(caches_, cache_index_, 0);
+          if (polymorphic_cache_index_ < 0) continue;
         }
         return;
       }
@@ -433,6 +429,24 @@ class IcIterator {
     for (; cache_index < end_cache_index; cache_index += kIcPointersPerEntry) {
       if (!caches.at(cache_index + kIcEntryKeyOffset).isNoneType()) {
         return cache_index;
+      }
+    }
+    return -1;
+  }
+
+  static word findNextFilledPolymorphicCacheIndex(
+      const MutableTuple& caches, word cache_index,
+      word polymorphic_cache_index) {
+    DCHECK(caches.at(cache_index + kIcEntryKeyOffset).isUnbound(),
+           "should only be called with index of polymorphic cache");
+
+    RawMutableTuple polymorphic_cache =
+        MutableTuple::cast(caches.at(cache_index + kIcEntryValueOffset));
+    for (; polymorphic_cache_index < kIcPointersPerPolyCache;
+         polymorphic_cache_index += kIcPointersPerEntry) {
+      if (!polymorphic_cache.at(polymorphic_cache_index + kIcEntryKeyOffset)
+               .isNoneType()) {
+        return polymorphic_cache_index;
       }
     }
     return -1;
