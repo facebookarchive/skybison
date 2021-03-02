@@ -194,13 +194,6 @@ TEST_F(ConfigExtensionApiTest, ImportAtexitReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
-TEST_F(ConfigExtensionApiTest, ImportAudioopReturnsModule) {
-  PyObjectPtr module(PyImport_ImportModule("audioop"));
-  ASSERT_NE(module, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyModule_Check(module));
-}
-
 TEST_F(ConfigExtensionApiTest, ImportBinasciiReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("binascii"));
   ASSERT_NE(module, nullptr);

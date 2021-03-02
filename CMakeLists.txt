@@ -787,7 +787,6 @@ add_library(
   ${CPYTHON_DIR}/Modules/_struct.c
   ${CPYTHON_DIR}/Modules/addrinfo.h
   ${CPYTHON_DIR}/Modules/atexitmodule.c
-  ${CPYTHON_DIR}/Modules/audioop.c
   ${CPYTHON_DIR}/Modules/binascii.c
   ${CPYTHON_DIR}/Modules/clinic/_bz2module.c.h
   ${CPYTHON_DIR}/Modules/clinic/_cursesmodule.c.h
