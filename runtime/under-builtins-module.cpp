@@ -5939,21 +5939,49 @@ RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread,
 }
 
 RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Arguments) {
+  HandleScope scope(thread);
+
+  // Environment override?
+  const char* pyro_raise_on_unimplemented =
+      std::getenv("PYRO_RAISE_ON_UNIMPLEMENTED");
+  bool raise_instead_of_abort =
+      (pyro_raise_on_unimplemented != nullptr &&
+       ::strcmp(pyro_raise_on_unimplemented, "1") == 0);
+
+  // If sys.PYRO_RAISE_ON_UNIMPLEMENTED is set to a true value
+  if (!raise_instead_of_abort) {
+    Object sys_dot_pyro_raise_on_unimplemented(
+        &scope, thread->runtime()->lookupNameInModule(
+                    thread, ID(sys), ID(PYRO_RAISE_ON_UNIMPLEMENTED)));
+    if (!sys_dot_pyro_raise_on_unimplemented.isError()) {
+      Object o(&scope, Interpreter::isTrue(
+                           thread, *sys_dot_pyro_raise_on_unimplemented));
+      raise_instead_of_abort = (!o.isError()) && (*o == Bool::trueObj());
+    }
+  }
+
+  if (raise_instead_of_abort) {
+    return thread->raiseWithFmt(LayoutId::kNotImplementedError,
+                                "overrode _unimplemented abort");
+  }
   thread->runtime()->printTraceback(thread, File::kStderr);
 
   // Attempt to identify the calling function.
-  HandleScope scope(thread);
   Object function_obj(&scope,
                       thread->currentFrame()->previousFrame()->function());
   if (!function_obj.isError()) {
     Function function(&scope, *function_obj);
     Str function_name(&scope, function.name());
     unique_c_ptr<char> name_cstr(function_name.toCStr());
-    fprintf(stderr, "\n'_unimplemented' called in function '%s'.\n",
+    fprintf(stderr, "\n'_unimplemented' called in function '%s'\n",
             name_cstr.get());
   } else {
     fputs("\n'_unimplemented' called.\n", stderr);
   }
+  fputs(
+      "\nuse env PYRO_RAISE_ON_UNIMPLEMENTED=1 or"
+      "\nsys.PYRO_RAISE_ON_UNIMPLEMENTED=True to raise instead of abort.\n",
+      stderr);
 
   std::abort();
 }

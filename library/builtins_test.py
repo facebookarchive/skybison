@@ -5,6 +5,7 @@ import contextlib
 import copy
 import errno
 import math
+import os
 import sys
 import types
 import typing
@@ -13306,6 +13307,47 @@ class ZipTests(unittest.TestCase):
         self.assertTupleEqual(
             tuple(zip(range(4), range(10), range(3))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
         )
+
+
+@unittest.skipUnless(sys.implementation.name == "pyro", "pyro specific _uninitialized")
+class TestUnimplemented(unittest.TestCase):
+    def test_unimplemented_raises_with_env_variable(self):
+        @contextlib.contextmanager
+        def temporary_env(name, value):
+            previous_value = os.getenv(name)
+            os.putenv(name, value)
+            try:
+                yield
+            finally:
+                if previous_value is None:
+                    os.unsetenv(name)
+                else:
+                    os.putenv(name, previous_value)
+
+        with temporary_env("PYRO_RAISE_ON_UNIMPLEMENTED", "1"):
+            with self.assertRaises(NotImplementedError):
+                ImportError().__reduce__()
+
+    def test_unimplemented_raises_with_system_variable(self):
+        class temporary_sysvar:
+            def __init__(self, name, value):
+                self._name = name
+                self._value = value
+                self._empty = object()
+
+            def __enter__(self):
+                self._previous_value = getattr(sys, self._name, self._empty)
+                setattr(sys, self._name, self._value)
+
+            def __exit__(self, exctype, excinst, exctb):
+                if self._previous_value is self._empty:
+                    delattr(sys, self._name)
+                else:
+                    setattr(sys, self._name, self._previous_value)
+
+        with temporary_sysvar("PYRO_RAISE_ON_UNIMPLEMENTED", True):
+            with self.assertRaises(NotImplementedError):
+                ImportError().__reduce__()
 
 
 if __name__ == "__main__":

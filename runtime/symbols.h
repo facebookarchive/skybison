@@ -72,6 +72,7 @@ class Runtime;
   V(PROT_EXEC)                                                                 \
   V(PROT_READ)                                                                 \
   V(PROT_WRITE)                                                                \
+  V(PYRO_RAISE_ON_UNIMPLEMENTED)                                               \
   V(RTLD_GLOBAL)                                                               \
   V(RTLD_LOCAL)                                                                \
   V(RecursionError)                                                            \
