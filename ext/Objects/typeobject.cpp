@@ -870,9 +870,7 @@ PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
   Tuple type_mro(&scope, type.mro());
   word i = 0;
   Type superclass(&scope, type_mro.at(i++));
-  while (typeHasSlots(superclass) &&
-         typeSlotAt(superclass, Py_tp_new) ==
-             reinterpret_cast<void*>(&superclassTpNew)) {
+  while (typeHasSlots(superclass)) {
     superclass = type_mro.at(i++);
   }
   Object dunder_new(&scope,
