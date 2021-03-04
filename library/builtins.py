@@ -6173,7 +6173,8 @@ class str(bootstrap=True):
         return self
 
     def _mod_check_single_arg(self, value):
-        """Helper function used by the compiler when transforming some
+        """$intrinsic$
+        Helper function used by the compiler when transforming some
         printf-style formatting to f-strings."""
         if _tuple_check(value):
             len = _tuple_len(value)
@@ -6185,14 +6186,16 @@ class str(bootstrap=True):
         return (value,)
 
     def _mod_convert_number_int(self, value):
-        """Helper function used by the compiler when transforming some
+        """$intrinsic$
+        Helper function used by the compiler when transforming some
         printf-style formatting to f-strings."""
         if not _number_check(value):
             raise TypeError(f"format requires a number, not {_type(value).__name__}")
         return _int(value)
 
     def _mod_convert_number_index(self, value):
-        """Helper function used by the compiler when transforming some
+        """$intrinsic$
+        Helper function used by the compiler when transforming some
         printf-style formatting to f-strings."""
         if not _number_check(value):
             raise TypeError(f"format requires an integer, not {_type(value).__name__}")

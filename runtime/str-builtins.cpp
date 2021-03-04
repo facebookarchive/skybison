@@ -1398,6 +1398,47 @@ RawObject METH(str, __repr__)(Thread* thread, Arguments args) {
   return buf.becomeStr();
 }
 
+bool METH(str, _mod_convert_number_int_intrinsic)(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  RawObject arg = thread->stackTop();
+  if (runtime->isInstanceOfInt(arg)) {
+    thread->stackDrop(2);
+    thread->stackSetTop(arg);
+    return true;
+  }
+  return false;
+}
+
+bool METH(str, _mod_convert_number_index_intrinsic)(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  RawObject arg = thread->stackTop();
+  if (runtime->isInstanceOfInt(arg)) {
+    thread->stackDrop(2);
+    thread->stackSetTop(arg);
+    return true;
+  }
+  return false;
+}
+
+bool METH(str, _mod_check_single_arg_intrinsic)(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  RawObject arg = thread->stackTop();
+  if (runtime->isInstanceOfTuple(arg)) {
+    RawTuple arg_tuple = tupleUnderlying(arg);
+    if (arg_tuple.length() != 1) return false;
+    thread->stackDrop(2);
+    thread->stackSetTop(arg_tuple);
+    return true;
+  }
+  RawMutableTuple result = MutableTuple::cast(runtime->newMutableTuple(1));
+  // Note that we need to re-fetch stackTop() since newMutableTuple() may
+  // have triggered GC.
+  result.atPut(0, thread->stackTop());
+  thread->stackDrop(2);
+  thread->stackSetTop(result.becomeImmutable());
+  return true;
+}
+
 RawObject METH(str, isalnum)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
