@@ -118,7 +118,7 @@ class AstOptimizerPyro(AstOptimizer38):
                         return None
                     ch = format_string[i]
                     i += 1
-            spec_str = None
+            spec_str = ""
             if i - 1 - spec_begin > 0:
                 spec_str = format_string[spec_begin : i - 1]
 
@@ -145,16 +145,25 @@ class AstOptimizerPyro(AstOptimizer38):
                     # Need to explicitly specify alignment because `%5s`
                     # aligns right, while `f"{x:5}"` aligns left.
                     spec_str = ">" + spec_str
-                format_spec = ast.Str(spec_str) if spec_str is not None else None
+                format_spec = ast.Str(spec_str) if spec_str else None
                 formatted = ast.FormattedValue(value, ord(ch), format_spec)
                 strings.append(formatted)
             elif ch in "diu":
-                # Rewrite "%d" % (x,) to f"{''._mod_convert_number(x)}".
+                # Rewrite "%d" % (x,) to f"{''._mod_convert_number_int(x)}".
                 # Calling a method on the empty string is a hack to access a
                 # well-known function regardless of the surrounding
                 # environment.
-                converted = create_conversion_call("_mod_convert_number", value)
-                format_spec = ast.Str(spec_str) if spec_str is not None else None
+                converted = create_conversion_call("_mod_convert_number_int", value)
+                format_spec = ast.Str(spec_str) if spec_str else None
+                formatted = ast.FormattedValue(converted, -1, format_spec)
+                strings.append(formatted)
+            elif ch in "xXo":
+                # Rewrite "%x" % (v,) to f"{''._mod_convert_number_index(v):x}".
+                # Calling a method on the empty string is a hack to access a
+                # well-known function regardless of the surrounding
+                # environment.
+                converted = create_conversion_call("_mod_convert_number_index", value)
+                format_spec = ast.Str(spec_str + ch)
                 formatted = ast.FormattedValue(converted, -1, format_spec)
                 strings.append(formatted)
             else:

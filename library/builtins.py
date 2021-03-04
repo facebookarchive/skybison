@@ -6184,12 +6184,19 @@ class str(bootstrap=True):
             return value
         return (value,)
 
-    def _mod_convert_number(self, value):
+    def _mod_convert_number_int(self, value):
         """Helper function used by the compiler when transforming some
         printf-style formatting to f-strings."""
         if not _number_check(value):
             raise TypeError(f"format requires a number, not {_type(value).__name__}")
         return _int(value)
+
+    def _mod_convert_number_index(self, value):
+        """Helper function used by the compiler when transforming some
+        printf-style formatting to f-strings."""
+        if not _number_check(value):
+            raise TypeError(f"format requires an integer, not {_type(value).__name__}")
+        return _index(value)
 
     def capitalize(self):
         _str_guard(self)

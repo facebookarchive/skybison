@@ -129,7 +129,7 @@ class PrintfTransformTests(unittest.TestCase):
     def test_percent_d_i_u(self):
         expected = """\
   1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number)
+              2 LOAD_METHOD              0 (_mod_convert_number_int)
               4 LOAD_NAME                1 (x)
               6 CALL_METHOD              1
               8 FORMAT_VALUE             0
@@ -151,6 +151,63 @@ class PrintfTransformTests(unittest.TestCase):
             eval(code2, locals={"x": -13}), str.__mod__("%u", (-13,))  # noqa: P204
         )
 
+    def test_percent_o(self):
+        expected = """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_METHOD              0 (_mod_convert_number_index)
+              4 LOAD_NAME                1 (x)
+              6 CALL_METHOD              1
+              8 LOAD_CONST               1 ('5o')
+             10 FORMAT_VALUE             4 (with format)
+             12 RETURN_VALUE
+"""
+        code0 = compile("'%5o' % (x,)", "", "eval")
+        self.assertEqual(dis_str(code0), expected)
+
+    def test_percent_o_eval(self):
+        code0 = compile("'%5o' % (x,)", "", "eval")
+        self.assertEqual(
+            eval(code0, locals={"x": -17}), str.__mod__("%5o", (-17,))  # noqa: P204
+        )
+
+    def test_percent_x(self):
+        expected = """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_METHOD              0 (_mod_convert_number_index)
+              4 LOAD_NAME                1 (x)
+              6 CALL_METHOD              1
+              8 LOAD_CONST               1 ('03x')
+             10 FORMAT_VALUE             4 (with format)
+             12 RETURN_VALUE
+"""
+        code0 = compile("'%03x' % (x,)", "", "eval")
+        self.assertEqual(dis_str(code0), expected)
+
+    def test_percent_x_eval(self):
+        code0 = compile("'%03x' % (x,)", "", "eval")
+        self.assertEqual(
+            eval(code0, locals={"x": -11}), str.__mod__("%03x", (-11,))  # noqa: P204
+        )
+
+    def test_percent_X(self):
+        expected = """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_METHOD              0 (_mod_convert_number_index)
+              4 LOAD_NAME                1 (x)
+              6 CALL_METHOD              1
+              8 LOAD_CONST               1 ('03X')
+             10 FORMAT_VALUE             4 (with format)
+             12 RETURN_VALUE
+"""
+        code0 = compile("'%03X' % (x,)", "", "eval")
+        self.assertEqual(dis_str(code0), expected)
+
+    def test_percent_X_eval(self):
+        code0 = compile("'%03X' % (x,)", "", "eval")
+        self.assertEqual(
+            eval(code0, locals={"x": -11}), str.__mod__("%03X", (-11,))  # noqa: P204
+        )
+
     def test_percent_d_calls_dunder_int(self):
         class C:
             def __int__(self):
@@ -159,6 +216,18 @@ class PrintfTransformTests(unittest.TestCase):
         code = compile("'%d' % (x,)", "", "eval")
         self.assertNotIn("BINARY_MOD", dis_str(code))
         self.assertEqual(eval(code, None, {"x": C()}), "7")  # noqa: P204
+
+    def test_percent_x_calls_dunder_index(self):
+        class C:
+            def __int__(self):
+                return None
+
+            def __index__(self):
+                return 9
+
+        code = compile("'%x' % (x,)", "", "eval")
+        self.assertNotIn("BINARY_MOD", dis_str(code))
+        self.assertEqual(eval(code, None, {"x": C()}), "9")  # noqa: P204
 
     def test_percent_d_raises_type_error(self):
         class C:
@@ -212,7 +281,7 @@ class PrintfTransformTests(unittest.TestCase):
             dis_str(code),
             """\
   1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number)
+              2 LOAD_METHOD              0 (_mod_convert_number_int)
               4 LOAD_NAME                1 (x)
               6 CALL_METHOD              1
               8 LOAD_CONST               1 ('05')
