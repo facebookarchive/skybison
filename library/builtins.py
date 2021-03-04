@@ -5735,10 +5735,10 @@ class reversed(metaclass=_non_heaptype):
         return self.remaining
 
     def __reduce__(self):
-        _unimplemented()
+        return type(self), (self.seq,), self.remaining
 
-    def __setstate__(self):
-        _unimplemented()
+    def __setstate__(self, remaining):
+        self.remaining = remaining
 
 
 def round(number, ndigits=None):
@@ -6647,7 +6647,12 @@ class tuple(bootstrap=True):
         )
 
     def __getnewargs__(self):
-        _unimplemented()
+        _tuple_guard(self)
+        # ground tuples return their own value
+        if _tuple_check_exact(self):
+            return (self,)
+        # non-ground tuples return a new tuple of values
+        return (tuple(_tuple_getitem(self, i) for i in range(_tuple_len(self))),)
 
     def __gt__(self, other):
         _tuple_guard(self)
@@ -6797,6 +6802,12 @@ class tuple_iterator(bootstrap=True):
         _builtin()
 
     def __next__(self):
+        _builtin()
+
+    def __reduce__(self):
+        _builtin()
+
+    def __setstate__(self, state):
         _builtin()
 
 

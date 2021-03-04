@@ -6,6 +6,7 @@ import copy
 import errno
 import math
 import os
+import pickle
 import sys
 import types
 import typing
@@ -54,6 +55,10 @@ class Super:
 
 
 class Child(Super):
+    pass
+
+
+class TupleSubclass(tuple):
     pass
 
 
@@ -12098,6 +12103,318 @@ class TupleTests(unittest.TestCase):
 
         t = NoIterTuple((1, 2, 3, 4, 3, 2, 1))
         self.assertEqual(t.count(3), 2)
+
+    def test_tuple_pickles(self, protocol=None):
+        t = (11, 22, 33)
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(t, protocol)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled = pickle.loads(pickled)
+        self.assertEqual(t, unpickled)
+        # Type must precisely be a tuple
+        self.assertIs(type(unpickled), tuple)
+
+    def test_tuple_pickles_proto_0(self):
+        self.test_tuple_pickles(0)
+
+    def test_tuple_pickles_proto_1(self):
+        self.test_tuple_pickles(1)
+
+    def test_tuple_pickles_proto_2(self):
+        self.test_tuple_pickles(2)
+
+    def test_tuple_pickles_proto_3(self):
+        self.test_tuple_pickles(3)
+
+    @unittest.skipIf(
+        True, "TODO(T85833587): Test needs _object_reduce_getstate implemented"
+    )
+    def test_tuple_subclass_pickles(self):
+        t = TupleSubclass((11, 22, 33))
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(t)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled = pickle.loads(pickled)
+        self.assertEqual(t, unpickled)
+        # Type must precisely be a T
+        self.assertIs(type(unpickled), TupleSubclass)
+
+    def test_tuple_iter_pickles(self, protocol=None):
+        t = (11, 22, 33)
+        it = iter(t)
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(it, protocol)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled_iterator = pickle.loads(pickled)
+        self.assertIs(type(unpickled_iterator), type(it))
+        items = tuple(unpickled_iterator)
+        self.assertEqual(t, items)
+
+    def test_tuple_iter_pickles_proto_0(self):
+        self.test_tuple_iter_pickles(0)
+
+    def test_tuple_iter_pickles_proto_1(self):
+        self.test_tuple_iter_pickles(1)
+
+    def test_tuple_iter_pickles_proto_2(self):
+        self.test_tuple_iter_pickles(2)
+
+    def test_tuple_iter_pickles_proto_3(self):
+        self.test_tuple_iter_pickles(3)
+
+    def test_tuple_iter_reduce_raises_with_iter_builtin_missing(self):
+        class remove_builtins_iter:
+            def __enter__(self):
+                self._saveiter = __builtins__.iter
+                del __builtins__.iter
+
+            def __exit__(self, type, value, traceback):
+                __builtins__.iter = self._saveiter
+
+        t = TupleSubclass((11, 22, 33))
+        it = iter(t)
+        with remove_builtins_iter():
+            with self.assertRaises(AttributeError):
+                it.__reduce__()
+
+    def test_tuple_subclass_iter_pickles(self, protocol=None):
+        t = TupleSubclass((11, 22, 33))
+        it = iter(t)
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(it, protocol)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled_iterator = pickle.loads(pickled)
+        self.assertIs(type(unpickled_iterator), type(it))
+        items = tuple(unpickled_iterator)
+        self.assertEqual(tuple(it), items)
+        self.assertEqual(t, items)
+
+    def test_tuple_subclass_iter_pickles_proto_0(self):
+        self.test_tuple_subclass_iter_pickles(0)
+
+    def test_tuple_subclass_iter_pickles_proto_1(self):
+        self.test_tuple_subclass_iter_pickles(1)
+
+    def test_tuple_subclass_iter_pickles_proto_2(self):
+        self.test_tuple_subclass_iter_pickles(2)
+
+    def test_tuple_subclass_iter_pickles_proto_3(self):
+        self.test_tuple_subclass_iter_pickles(3)
+
+    def test_tuple_reversed_pickles(self, protocol=None):
+        t = (11, 22, 33)
+        it = reversed(t)
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(it, protocol)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled_iterator = pickle.loads(pickled)
+        items = tuple(unpickled_iterator)
+        self.assertEqual(tuple(it), items)
+
+    def test_tuple_reversed_pickles_proto_0(self):
+        self.test_tuple_reversed_pickles(0)
+
+    def test_tuple_reversed_pickles_proto_1(self):
+        self.test_tuple_reversed_pickles(1)
+
+    def test_tuple_reversed_pickles_proto_2(self):
+        self.test_tuple_reversed_pickles(2)
+
+    def test_tuple_reversed_pickles_proto_3(self):
+        self.test_tuple_reversed_pickles(3)
+
+    def test_tuple_used_iter_pickles(self, protocol=None):
+        t = (11, 22, 33)
+        it = iter(t)
+        self.assertEqual(it.__next__(), 11)
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(it, protocol)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled_iterator = pickle.loads(pickled)
+        self.assertIs(type(unpickled_iterator), type(it))
+        items = tuple(unpickled_iterator)
+        self.assertEqual(t[1:], items)
+
+    def test_tuple_used_iter_pickles_proto_0(self):
+        self.test_tuple_used_iter_pickles(0)
+
+    def test_tuple_used_iter_pickles_proto_1(self):
+        self.test_tuple_used_iter_pickles(1)
+
+    def test_tuple_used_iter_pickles_proto_2(self):
+        self.test_tuple_used_iter_pickles(2)
+
+    def test_tuple_used_iter_pickles_proto_3(self):
+        self.test_tuple_used_iter_pickles(3)
+
+    def test_tuple_subclass_used_iter_pickles(self, protocol=None):
+        t = TupleSubclass((11, 22, 33))
+        it = iter(t)
+        self.assertEqual(it.__next__(), 11)
+        # @lint-ignore PYTHONPICKLEISBAD
+        pickled = pickle.dumps(it, protocol)
+        # @lint-ignore PYTHONPICKLEISBAD
+        unpickled_iterator = pickle.loads(pickled)
+        self.assertIs(type(unpickled_iterator), type(it))
+        items = tuple(unpickled_iterator)
+        self.assertEqual(t[1:], items)
+
+    def test_tuple_subclass_used_iter_pickles_proto_0(self):
+        self.test_tuple_subclass_used_iter_pickles(0)
+
+    def test_tuple_subclass_used_iter_pickles_proto_1(self):
+        self.test_tuple_subclass_used_iter_pickles(1)
+
+    def test_tuple_subclass_used_iter_pickles_proto_2(self):
+        self.test_tuple_subclass_used_iter_pickles(2)
+
+    def test_tuple_subclass_used_iter_pickles_proto_3(self):
+        self.test_tuple_subclass_used_iter_pickles(3)
+
+    def test_tuple_iter_raises_on_bad_setstate(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        with self.assertRaises(TypeError):
+            it.__setstate__("hello")
+
+    def test_getnewargs_with_ground_tuple(self):
+        t = (11, 22, 33)
+        result = t.__getnewargs__()
+        self.assertEqual(result, (t,))
+        self.assertIs(result[0], t)
+
+    def test_getnewargs_with_tuple_subclass_does_not_call_iter(self):
+        class T(tuple):
+            def __iter__(self):
+                raise NotImplementedError("bad")
+
+        t = T((11, 22, 33))
+        result = t.__getnewargs__()
+        self.assertEqual(result, (t,))
+        self.assertIsNot(result[0], t)
+
+    def test_tupleiter_setstate_returns_None(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        self.assertIs(it.__setstate__(0), None)
+
+    def test_tupleiter_setstate_accepts_in_range(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        it.__setstate__(0)
+        self.assertEqual(it.__reduce__()[2], 0)
+        it.__setstate__(1)
+        self.assertEqual(it.__reduce__()[2], 1)
+        it.__setstate__(2)
+        self.assertEqual(it.__reduce__()[2], 2)
+        it.__setstate__(3)
+        self.assertEqual(it.__reduce__()[2], 3)
+
+    def test_tupleiter_setstate_accepts_negative(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        it.__setstate__(-1)
+        self.assertEqual(it.__reduce__()[2], 0)
+
+    def test_tupleiter_setstate_accepts_past_end(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        it.__setstate__(4)
+        self.assertEqual(it.__reduce__()[2], 3)
+
+    def test_tupleiter_setstate_accepts_past_end_with_large_int(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        it.__setstate__(sys.maxsize)
+        self.assertEqual(it.__reduce__()[2], 3)
+
+    def test_tupleiter_setstate_accepts_past_end_with_very_negative_int(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        verynegative = (-sys.maxsize) - 1
+        it.__setstate__(verynegative)
+        self.assertEqual(it.__reduce__()[2], 0)
+
+    def test_tupleiter_setstate_overflows_with_huge(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        huge = 2 ** 1000
+        with self.assertRaises(OverflowError):
+            it.__setstate__(huge)
+
+    def test_tupleiter_setstate_overflows_with_neghuge(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        neghuge = -(2 ** 1000)
+        with self.assertRaises(OverflowError):
+            it.__setstate__(neghuge)
+
+    def test_tupleiter_setstate_raises_on_noninteger(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        with self.assertRaises(TypeError):
+            it.__setstate__("hello")
+
+    def test_tupleiter_setstate_does_not_accept_interger_convertable(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        with self.assertRaises(TypeError):
+            it.__setstate__(1.0)
+
+    def test_tupleiter_setstate_accepts_interger_subclass(self):
+        class T(int):
+            pass
+
+        t = (11, 22, 33)
+        it = iter(t)
+        n = T(1)
+        it.__setstate__(n)
+        self.assertEqual(it.__reduce__()[2], n)
+        self.assertIs(type(it.__reduce__()[2]), int)
+
+    def test_tupleiter_reduce_with_ground_tuple(self):
+        t = (11, 22, 33)
+        it = iter(t)
+        reduction = it.__reduce__()
+        self.assertEqual(reduction, (iter, (t,), 0))
+        self.assertIs(reduction[0], iter)
+        self.assertIs(type(reduction[1]), tuple)
+        self.assertIs(type(reduction[1][0]), tuple)
+        self.assertIs(type(reduction[2]), int)
+
+    def test_tupleiter_reduce_with_empty_tuple(self):
+        t = ()
+        it = iter(t)
+        reduction = it.__reduce__()
+        self.assertEqual(reduction, (iter, (t,), 0))
+        self.assertIs(reduction[0], iter)
+        self.assertIs(type(reduction[1]), tuple)
+        self.assertIs(type(reduction[1][0]), tuple)
+
+    def test_tupleiter_reduce_with_tuple_subclass(self):
+        class T(tuple):
+            pass
+
+        ground = (11, 22, 33)
+        t = T(ground)
+        it = iter(t)
+        reduction = it.__reduce__()
+        self.assertEqual(reduction, (iter, (t,), 0))
+        self.assertIs(reduction[0], iter)
+        self.assertIs(type(reduction[1]), tuple)
+        self.assertIs(type(reduction[2]), int)
+
+    def test_tupleiter_reduce_with_empty_tuple_subclass(self):
+        class T(tuple):
+            pass
+
+        ground = (11, 22, 33)
+        t = T(ground)
+        it = iter(t)
+        reduction = it.__reduce__()
+        self.assertEqual(reduction, (iter, (t,), 0))
+        self.assertIs(reduction[0], iter)
+        self.assertIs(type(reduction[1]), tuple)
 
 
 class TypeTests(unittest.TestCase):

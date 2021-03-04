@@ -660,6 +660,7 @@ class Runtime;
   V(issubclass)                                                                \
   V(isub)                                                                      \
   V(items)                                                                     \
+  V(iter)                                                                      \
   V(iterator)                                                                  \
   V(itruediv)                                                                  \
   V(ixor)                                                                      \

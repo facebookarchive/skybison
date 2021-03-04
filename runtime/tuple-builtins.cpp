@@ -257,4 +257,66 @@ RawObject METH(tuple_iterator, __length_hint__)(Thread* thread,
   return SmallInt::fromWord(tuple.length() - tuple_iterator.index());
 }
 
+RawObject METH(tuple_iterator, __reduce__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isTupleIterator()) {
+    return thread->raiseRequiresType(self, ID(tuple_iterator));
+  }
+  TupleIterator tuple_iterator(&scope, *self);
+  Tuple tuple(&scope, tuple_iterator.iterable());
+
+  // __reduce__ returns a 3-tuple
+  // * A callable object to recreate the tuple iterator
+  // * A tuple of arguments to pass to the recreate function
+  // * An argument to be passed to __setstate__ (see below)
+  Runtime* runtime = thread->runtime();
+  Object iter(&scope,
+              runtime->lookupNameInModule(thread, ID(builtins), ID(iter)));
+  if (iter.isError()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "expected __builtins__.iter to exist");
+  }
+  Object index(&scope, SmallInt::fromWord(tuple_iterator.index()));
+  Object newargs(&scope, runtime->newTupleWith1(tuple));
+  return runtime->newTupleWith3(iter, newargs, index);
+}
+
+RawObject METH(tuple_iterator, __setstate__)(Thread* thread, Arguments args) {
+  // tupleiter check
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isTupleIterator()) {
+    return thread->raiseRequiresType(self, ID(tuple_iterator));
+  }
+  TupleIterator tuple_iterator(&scope, *self);
+
+  // Argument must be an integer
+  if (!thread->runtime()->isInstanceOfInt(args.get(1))) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "an integer is required");
+  }
+
+  // cpython restricted to ints that fit in ssize_t
+  Int idx(&scope, intUnderlying(args.get(1)));
+  OptInt<ssize_t> idx_opt = idx.asInt<ssize_t>();
+  if (idx_opt.error != CastError::None) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+
+  // cpython underflows to 0 and overflows to length
+  if (idx_opt.value <= 0) {
+    tuple_iterator.setIndex(0);
+  } else {
+    Tuple tuple(&scope, tuple_iterator.iterable());
+    word length = tuple.length();
+    if (idx_opt.value > length) {
+      tuple_iterator.setIndex(length);
+    } else {
+      tuple_iterator.setIndex(idx_opt.value);
+    }
+  }
+  return NoneType::object();
+}
+
 }  // namespace py

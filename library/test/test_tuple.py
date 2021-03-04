@@ -187,8 +187,6 @@ class TupleTest(seq_tests.CommonTest):
         check(10)       # check our checking code
         check(1000000)
 
-    # TODO(T85429607): __reduce_ex__ for pyro tuple iter
-    @unittest.skip("__reduce_ex__ for tuple iter needed")
     def test_iterator_pickle(self):
         # Userlist iterators don't support pickling yet since
         # they are based on generators.
@@ -205,8 +203,6 @@ class TupleTest(seq_tests.CommonTest):
             d = pickle.dumps(it, proto)
             self.assertEqual(self.type2test(it), self.type2test(data)[1:])
 
-    # TODO(T85378980): __reduce_ex__ for pyro tuple iter
-    @unittest.skip("__reduce_ex__ for reverse tuple iter needed")
     def test_reversed_pickle(self):
         data = self.type2test([4, 5, 6, 7])
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
