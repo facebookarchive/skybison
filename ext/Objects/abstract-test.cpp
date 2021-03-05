@@ -1436,6 +1436,69 @@ TEST_F(AbstractExtensionApiTest, PyNumberSubtractWithIntsReturnsInt) {
   EXPECT_EQ(PyLong_AsLong(result), 8);
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithBinaryFormatsAsBinary) {
+  PyObjectPtr x(PyLong_FromLong(10));  // 0b1010
+  PyObjectPtr result(PyNumber_ToBase(x, 2));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0b1010"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithOctalFormatsAsOctal) {
+  PyObjectPtr x(PyLong_FromLong(520));  // 0o1010
+  PyObjectPtr result(PyNumber_ToBase(x, 8));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0o1010"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithDecimalFormatsAsDecimal) {
+  PyObjectPtr x(PyLong_FromLong(12345));
+  PyObjectPtr result(PyNumber_ToBase(x, 10));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "12345"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithHexFormatsAsHex) {
+  PyObjectPtr x(PyLong_FromLong(0xdeadbeef));
+  PyObjectPtr result(PyNumber_ToBase(x, 16));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0xdeadbeef"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseSupportsIndex) {
+  PyRun_SimpleString(R"(
+class C:
+  def __index__(self):
+    return 42
+c = C()
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr result(PyNumber_ToBase(c, 8));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0o52"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseSupportsIntSubclass) {
+  PyRun_SimpleString(R"(
+class C(int):
+  pass
+c = C(33)
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr result(PyNumber_ToBase(c, 16));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0x21"), 0);
+}
+
+// TODO(T86150154): Remove the Pyro suffix from this test once CPython is
+// on 3.8.
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithInvalidBaseRaisesPyro) {
+  PyObjectPtr x(PyLong_FromLong(0xdeadbeef));
+  PyObjectPtr result(PyNumber_ToBase(x, 15));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+  EXPECT_EQ(result, nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberTrueDivideWithNonIntRaisesTypeError) {
   PyObjectPtr x(PyUnicode_FromString("foo"));
   PyObjectPtr y(PyLong_FromLong(2));

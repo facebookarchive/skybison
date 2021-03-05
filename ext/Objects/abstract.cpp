@@ -11,6 +11,7 @@
 #include "capi-handles.h"
 #include "capi.h"
 #include "exception-builtins.h"
+#include "formatter.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
@@ -624,8 +625,35 @@ PY_EXPORT PyObject* PyNumber_Subtract(PyObject* left, PyObject* right) {
   return doBinaryOp(ID(sub), left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_ToBase(PyObject* /* n */, int /* e */) {
-  UNIMPLEMENTED("PyNumber_ToBase");
+PY_EXPORT PyObject* PyNumber_ToBase(PyObject* n, int base) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object n_object(&scope, ApiHandle::fromPyObject(n)->asObject());
+  Object n_int(&scope, intFromIndex(thread, n_object));
+  if (n_object.isError()) {
+    return nullptr;
+  }
+  Int number(&scope, intUnderlying(*n_int));
+  Object formatted(&scope, NoneType::object());
+  switch (base) {
+    case 2:
+      formatted = formatIntBinarySimple(thread, number);
+      break;
+    case 8:
+      formatted = formatIntOctalSimple(thread, number);
+      break;
+    case 10:
+      formatted = formatIntDecimalSimple(thread, number);
+      break;
+    case 16:
+      formatted = formatIntHexadecimalSimple(thread, number);
+      break;
+    default:
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "PyNumber_ToBase: base must be 2, 8, 10 or 16");
+      return nullptr;
+  }
+  return ApiHandle::newReference(thread->runtime(), *formatted);
 }
 
 PY_EXPORT PyObject* PyNumber_TrueDivide(PyObject* left, PyObject* right) {
