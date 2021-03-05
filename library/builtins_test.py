@@ -12104,27 +12104,31 @@ class TupleTests(unittest.TestCase):
         t = NoIterTuple((1, 2, 3, 4, 3, 2, 1))
         self.assertEqual(t.count(3), 2)
 
-    def test_tuple_pickles(self, protocol=None):
+    def pickle_with_tuple_returns_bytes(self, protocol):
         t = (11, 22, 33)
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(t, protocol)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled = pickle.loads(pickled)
         self.assertEqual(t, unpickled)
         # Type must precisely be a tuple
         self.assertIs(type(unpickled), tuple)
 
-    def test_tuple_pickles_proto_0(self):
-        self.test_tuple_pickles(0)
+    def test_pickle_with_tuple_and_default_protocol_returns_bytes(self):
+        self.pickle_with_tuple_returns_bytes(None)
 
-    def test_tuple_pickles_proto_1(self):
-        self.test_tuple_pickles(1)
+    def test_pickle_with_tuple_and_protocol_0_returns_bytes(self):
+        self.pickle_with_tuple_returns_bytes(0)
 
-    def test_tuple_pickles_proto_2(self):
-        self.test_tuple_pickles(2)
+    def test_pickle_with_tuple_and_protocol_1_returns_bytes(self):
+        self.pickle_with_tuple_returns_bytes(1)
 
-    def test_tuple_pickles_proto_3(self):
-        self.test_tuple_pickles(3)
+    def test_pickle_with_tuple_and_protocol_2_returns_bytes(self):
+        self.pickle_with_tuple_returns_bytes(2)
+
+    def test_pickle_with_tuple_and_protocol_3_returns_bytes(self):
+        self.pickle_with_tuple_returns_bytes(3)
 
     @unittest.skipIf(
         True, "TODO(T85833587): Test needs _object_reduce_getstate implemented"
@@ -12133,36 +12137,41 @@ class TupleTests(unittest.TestCase):
         t = TupleSubclass((11, 22, 33))
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(t)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled = pickle.loads(pickled)
         self.assertEqual(t, unpickled)
         # Type must precisely be a T
         self.assertIs(type(unpickled), TupleSubclass)
 
-    def test_tuple_iter_pickles(self, protocol=None):
+    def pickle_with_tuple_iterator_returns_bytes(self, protocol):
         t = (11, 22, 33)
         it = iter(t)
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(it, protocol)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled_iterator = pickle.loads(pickled)
         self.assertIs(type(unpickled_iterator), type(it))
         items = tuple(unpickled_iterator)
         self.assertEqual(t, items)
 
-    def test_tuple_iter_pickles_proto_0(self):
-        self.test_tuple_iter_pickles(0)
+    def test_pickle_with_tuple_iterator_protocol_default_returns_bytes(self):
+        self.pickle_with_tuple_iterator_returns_bytes(None)
 
-    def test_tuple_iter_pickles_proto_1(self):
-        self.test_tuple_iter_pickles(1)
+    def test_pickle_with_tuple_iterator_protocol_0_returns_bytes(self):
+        self.pickle_with_tuple_iterator_returns_bytes(0)
 
-    def test_tuple_iter_pickles_proto_2(self):
-        self.test_tuple_iter_pickles(2)
+    def test_pickle_with_tuple_iterator_protocol_1_returns_bytes(self):
+        self.pickle_with_tuple_iterator_returns_bytes(1)
 
-    def test_tuple_iter_pickles_proto_3(self):
-        self.test_tuple_iter_pickles(3)
+    def test_pickle_with_tuple_iterator_protocol_2_returns_bytes(self):
+        self.pickle_with_tuple_iterator_returns_bytes(2)
 
-    def test_tuple_iter_reduce_raises_with_iter_builtin_missing(self):
+    def test_pickle_with_tuple_iterator_protocol_3_returns_bytes(self):
+        self.pickle_with_tuple_iterator_returns_bytes(3)
+
+    def test_tupliter_reduce_with_iter_builtin_missing_raises_attribute_error(self):
         class remove_builtins_iter:
             def __enter__(self):
                 self._saveiter = __builtins__.iter
@@ -12177,11 +12186,12 @@ class TupleTests(unittest.TestCase):
             with self.assertRaises(AttributeError):
                 it.__reduce__()
 
-    def test_tuple_subclass_iter_pickles(self, protocol=None):
+    def pickle_tuple_iterator_with_subclass_iter_returns_bytes(self, protocol):
         t = TupleSubclass((11, 22, 33))
         it = iter(t)
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(it, protocol)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled_iterator = pickle.loads(pickled)
         self.assertIs(type(unpickled_iterator), type(it))
@@ -12189,101 +12199,128 @@ class TupleTests(unittest.TestCase):
         self.assertEqual(tuple(it), items)
         self.assertEqual(t, items)
 
-    def test_tuple_subclass_iter_pickles_proto_0(self):
-        self.test_tuple_subclass_iter_pickles(0)
+    def test_pickle_with_tuple_iterator_subclass_and_default_protocol_returns_bytes(
+        self,
+    ):
+        self.pickle_tuple_iterator_with_subclass_iter_returns_bytes(None)
 
-    def test_tuple_subclass_iter_pickles_proto_1(self):
-        self.test_tuple_subclass_iter_pickles(1)
+    def test_pickle_with_tuple_iterator_subclass_and_protocol_0_returns_bytes(self):
+        self.pickle_tuple_iterator_with_subclass_iter_returns_bytes(0)
 
-    def test_tuple_subclass_iter_pickles_proto_2(self):
-        self.test_tuple_subclass_iter_pickles(2)
+    def test_pickle_with_tuple_iterator_subclass_and_protocol_1_returns_bytes(self):
+        self.pickle_tuple_iterator_with_subclass_iter_returns_bytes(1)
 
-    def test_tuple_subclass_iter_pickles_proto_3(self):
-        self.test_tuple_subclass_iter_pickles(3)
+    def test_pickle_with_tuple_iterator_subclass_and_protocol_2_returns_bytes(self):
+        self.pickle_tuple_iterator_with_subclass_iter_returns_bytes(2)
 
-    def test_tuple_reversed_pickles(self, protocol=None):
+    def test_pickle_with_tuple_iterator_subclass_and_protocol_3_returns_bytes(self):
+        self.pickle_tuple_iterator_with_subclass_iter_returns_bytes(3)
+
+    def pickle_with_reversedtuple_returns_bytes(self, protocol):
         t = (11, 22, 33)
         it = reversed(t)
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(it, protocol)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled_iterator = pickle.loads(pickled)
         items = tuple(unpickled_iterator)
         self.assertEqual(tuple(it), items)
 
-    def test_tuple_reversed_pickles_proto_0(self):
-        self.test_tuple_reversed_pickles(0)
+    def test_pickle_with_reversedtuple_and_default_protocol_returns_bytes(self):
+        self.pickle_with_reversedtuple_returns_bytes(None)
 
-    def test_tuple_reversed_pickles_proto_1(self):
-        self.test_tuple_reversed_pickles(1)
+    def test_pickle_with_reversedtuple_and_protocol_0_returns_bytes(self):
+        self.pickle_with_reversedtuple_returns_bytes(0)
 
-    def test_tuple_reversed_pickles_proto_2(self):
-        self.test_tuple_reversed_pickles(2)
+    def test_pickle_with_reversedtuple_and_protocol_1_returns_bytes(self):
+        self.pickle_with_reversedtuple_returns_bytes(1)
 
-    def test_tuple_reversed_pickles_proto_3(self):
-        self.test_tuple_reversed_pickles(3)
+    def test_pickle_with_reversedtuple_and_protocol_2_returns_bytes(self):
+        self.pickle_with_reversedtuple_returns_bytes(2)
 
-    def test_tuple_used_iter_pickles(self, protocol=None):
+    def test_pickle_with_reversedtuple_and_protocol_3_returns_bytes(self):
+        self.pickle_with_reversedtuple_returns_bytes(3)
+
+    def pickle_with_used_tuple_iterator_returns_bytes(self, protocol):
         t = (11, 22, 33)
         it = iter(t)
         self.assertEqual(it.__next__(), 11)
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(it, protocol)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled_iterator = pickle.loads(pickled)
         self.assertIs(type(unpickled_iterator), type(it))
         items = tuple(unpickled_iterator)
         self.assertEqual(t[1:], items)
 
-    def test_tuple_used_iter_pickles_proto_0(self):
-        self.test_tuple_used_iter_pickles(0)
+    def test_pickle_with_used_tuple_iterator_and_default_protocol_returns_bytes(self):
+        self.pickle_with_used_tuple_iterator_returns_bytes(None)
 
-    def test_tuple_used_iter_pickles_proto_1(self):
-        self.test_tuple_used_iter_pickles(1)
+    def test_pickle_with_used_tuple_iterator_and_protocol_0_returns_bytes(self):
+        self.pickle_with_used_tuple_iterator_returns_bytes(0)
 
-    def test_tuple_used_iter_pickles_proto_2(self):
-        self.test_tuple_used_iter_pickles(2)
+    def test_pickle_with_used_tuple_iterator_and_protocol_1_returns_bytes(self):
+        self.pickle_with_used_tuple_iterator_returns_bytes(1)
 
-    def test_tuple_used_iter_pickles_proto_3(self):
-        self.test_tuple_used_iter_pickles(3)
+    def test_pickle_with_used_tuple_iterator_and_protocol_2_returns_bytes(self):
+        self.pickle_with_used_tuple_iterator_returns_bytes(2)
 
-    def test_tuple_subclass_used_iter_pickles(self, protocol=None):
+    def test_pickle_with_used_tuple_iterator_and_protocol_3_returns_bytes(self):
+        self.pickle_with_used_tuple_iterator_returns_bytes(3)
+
+    def pickle_with_used_tuplesubclass_iter_returns_bytes(self, protocol):
         t = TupleSubclass((11, 22, 33))
         it = iter(t)
         self.assertEqual(it.__next__(), 11)
         # @lint-ignore PYTHONPICKLEISBAD
         pickled = pickle.dumps(it, protocol)
+        self.assertIs(type(pickled), bytes)
         # @lint-ignore PYTHONPICKLEISBAD
         unpickled_iterator = pickle.loads(pickled)
         self.assertIs(type(unpickled_iterator), type(it))
         items = tuple(unpickled_iterator)
         self.assertEqual(t[1:], items)
 
-    def test_tuple_subclass_used_iter_pickles_proto_0(self):
-        self.test_tuple_subclass_used_iter_pickles(0)
+    def test_pickle_with_used_tuplesubclass_iter_and_default_protocol_returns_bytes(
+        self,
+    ):
+        self.pickle_with_used_tuplesubclass_iter_returns_bytes(None)
 
-    def test_tuple_subclass_used_iter_pickles_proto_1(self):
-        self.test_tuple_subclass_used_iter_pickles(1)
+    def test_pickle_with_used_tuplesubclass_iter_and_protocol_0_returns_bytes(
+        self,
+    ):
+        self.pickle_with_used_tuplesubclass_iter_returns_bytes(0)
 
-    def test_tuple_subclass_used_iter_pickles_proto_2(self):
-        self.test_tuple_subclass_used_iter_pickles(2)
+    def test_pickle_with_used_tuplesubclass_iter_and_protocol_1_returns_bytes(
+        self,
+    ):
+        self.pickle_with_used_tuplesubclass_iter_returns_bytes(1)
 
-    def test_tuple_subclass_used_iter_pickles_proto_3(self):
-        self.test_tuple_subclass_used_iter_pickles(3)
+    def test_pickle_with_used_tuplesubclass_iter_and_protocol_2_returns_bytes(
+        self,
+    ):
+        self.pickle_with_used_tuplesubclass_iter_returns_bytes(2)
 
-    def test_tuple_iter_raises_on_bad_setstate(self):
+    def test_pickle_with_used_tuplesubclass_iter_and_protocol_3_returns_bytes(
+        self,
+    ):
+        self.pickle_with_used_tuplesubclass_iter_returns_bytes(3)
+
+    def test_tuple_iterator_setstate_with_noninteger_raises_type_error(self):
         t = (11, 22, 33)
         it = iter(t)
         with self.assertRaises(TypeError):
             it.__setstate__("hello")
 
-    def test_getnewargs_with_ground_tuple(self):
+    def test_getnewargs_with_ground_tuple_returns_tuple_of_self(self):
         t = (11, 22, 33)
         result = t.__getnewargs__()
         self.assertEqual(result, (t,))
         self.assertIs(result[0], t)
 
-    def test_getnewargs_with_tuple_subclass_does_not_call_iter(self):
+    def test_getnewargs_with_tuple_subclass_without_iter_returns_tuple(self):
         class T(tuple):
             def __iter__(self):
                 raise NotImplementedError("bad")
@@ -12292,87 +12329,90 @@ class TupleTests(unittest.TestCase):
         result = t.__getnewargs__()
         self.assertEqual(result, (t,))
         self.assertIsNot(result[0], t)
+        self.assertIs(type(result[0]), tuple)
 
-    def test_tupleiter_setstate_returns_None(self):
+    def test_tuple_iterator_setstate_with_int_returns_none(self):
         t = (11, 22, 33)
         it = iter(t)
-        self.assertIs(it.__setstate__(0), None)
+        self.assertIsNone(it.__setstate__(0))
 
-    def test_tupleiter_setstate_accepts_in_range(self):
+    def test_tuple_iterator_setstate_with_int_in_range_returns_none(self):
         t = (11, 22, 33)
         it = iter(t)
-        it.__setstate__(0)
+        self.assertIsNone(it.__setstate__(0))
         self.assertEqual(it.__reduce__()[2], 0)
-        it.__setstate__(1)
+        self.assertIsNone(it.__setstate__(1))
         self.assertEqual(it.__reduce__()[2], 1)
-        it.__setstate__(2)
+        self.assertIsNone(it.__setstate__(2))
         self.assertEqual(it.__reduce__()[2], 2)
-        it.__setstate__(3)
+        self.assertIsNone(it.__setstate__(3))
         self.assertEqual(it.__reduce__()[2], 3)
 
-    def test_tupleiter_setstate_accepts_negative(self):
+    def test_tuple_iterator_setstate_with_negative_int_returns_none(self):
         t = (11, 22, 33)
         it = iter(t)
-        it.__setstate__(-1)
+        self.assertIsNone(it.__setstate__(-1))
         self.assertEqual(it.__reduce__()[2], 0)
 
-    def test_tupleiter_setstate_accepts_past_end(self):
+    def test_tuple_iterator_setstate_with_int_greater_than_size_returns_none(self):
         t = (11, 22, 33)
         it = iter(t)
-        it.__setstate__(4)
+        self.assertIsNone(it.__setstate__(4))
         self.assertEqual(it.__reduce__()[2], 3)
 
-    def test_tupleiter_setstate_accepts_past_end_with_large_int(self):
+    def test_tuple_iterator_setstate_with_largest_native_int_returns_none(self):
         t = (11, 22, 33)
         it = iter(t)
-        it.__setstate__(sys.maxsize)
+        self.assertIsNone(it.__setstate__(sys.maxsize))
         self.assertEqual(it.__reduce__()[2], 3)
 
-    def test_tupleiter_setstate_accepts_past_end_with_very_negative_int(self):
+    def test_tuple_iterator_setstate_with_most_negative_native_int_returns_none(self):
         t = (11, 22, 33)
         it = iter(t)
         verynegative = (-sys.maxsize) - 1
-        it.__setstate__(verynegative)
+        self.assertIsNone(it.__setstate__(verynegative))
         self.assertEqual(it.__reduce__()[2], 0)
 
-    def test_tupleiter_setstate_overflows_with_huge(self):
+    def test_tuple_iterator_setstate_with_large_int_raises_overflow_error(self):
         t = (11, 22, 33)
         it = iter(t)
-        huge = 2 ** 1000
+        large = 2 ** 1000
         with self.assertRaises(OverflowError):
-            it.__setstate__(huge)
+            it.__setstate__(large)
 
-    def test_tupleiter_setstate_overflows_with_neghuge(self):
+    def test_tuple_iterator_setstate_with_negative_large_int_raises_overflow_error(
+        self,
+    ):
         t = (11, 22, 33)
         it = iter(t)
-        neghuge = -(2 ** 1000)
+        negative_large = -(2 ** 1000)
         with self.assertRaises(OverflowError):
-            it.__setstate__(neghuge)
+            it.__setstate__(negative_large)
 
-    def test_tupleiter_setstate_raises_on_noninteger(self):
+    def test_tuple_iterator_setstate_with_noninteger_raises_type_error(self):
         t = (11, 22, 33)
         it = iter(t)
         with self.assertRaises(TypeError):
             it.__setstate__("hello")
 
-    def test_tupleiter_setstate_does_not_accept_interger_convertable(self):
+    def test_tuple_iterator_setstate_with_integer_convertable_raises_type_error(self):
         t = (11, 22, 33)
         it = iter(t)
         with self.assertRaises(TypeError):
             it.__setstate__(1.0)
 
-    def test_tupleiter_setstate_accepts_interger_subclass(self):
+    def test_tuple_iterator_setstate_with_int_subclass_returns_none(self):
         class T(int):
             pass
 
         t = (11, 22, 33)
         it = iter(t)
         n = T(1)
-        it.__setstate__(n)
+        self.assertIsNone(it.__setstate__(n))
         self.assertEqual(it.__reduce__()[2], n)
         self.assertIs(type(it.__reduce__()[2]), int)
 
-    def test_tupleiter_reduce_with_ground_tuple(self):
+    def test_tuple_iterator_reduce_with_ground_tuple_returns_tuple(self):
         t = (11, 22, 33)
         it = iter(t)
         reduction = it.__reduce__()
@@ -12382,7 +12422,7 @@ class TupleTests(unittest.TestCase):
         self.assertIs(type(reduction[1][0]), tuple)
         self.assertIs(type(reduction[2]), int)
 
-    def test_tupleiter_reduce_with_empty_tuple(self):
+    def test_tuple_iterator_reduce_with_empty_tuple_returns_tuple(self):
         t = ()
         it = iter(t)
         reduction = it.__reduce__()
@@ -12391,7 +12431,7 @@ class TupleTests(unittest.TestCase):
         self.assertIs(type(reduction[1]), tuple)
         self.assertIs(type(reduction[1][0]), tuple)
 
-    def test_tupleiter_reduce_with_tuple_subclass(self):
+    def test_tuple_iterator_reduce_with_tuple_subclass_returns_tuple(self):
         class T(tuple):
             pass
 
@@ -12404,7 +12444,7 @@ class TupleTests(unittest.TestCase):
         self.assertIs(type(reduction[1]), tuple)
         self.assertIs(type(reduction[2]), int)
 
-    def test_tupleiter_reduce_with_empty_tuple_subclass(self):
+    def test_tuple_iterator_reduce_with_empty_tuple_subclass_returns_tuple(self):
         class T(tuple):
             pass
 
