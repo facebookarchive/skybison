@@ -951,8 +951,20 @@ PY_EXPORT int PyObject_CheckReadBuffer(PyObject* /* j */) {
   UNIMPLEMENTED("PyObject_CheckReadBuffer");
 }
 
-PY_EXPORT int PyObject_DelItem(PyObject* /* o */, PyObject* /* y */) {
-  UNIMPLEMENTED("PyObject_DelItem");
+PY_EXPORT int PyObject_DelItem(PyObject* obj, PyObject* key) {
+  Thread* thread = Thread::current();
+  if (obj == nullptr || key == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Object result(&scope, objectDelItem(thread, object, key_obj));
+  if (result.isErrorException()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PyObject_DelItemString(PyObject* /* o */, const char* /* y */) {

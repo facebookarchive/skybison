@@ -3497,6 +3497,53 @@ c = C()
   EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
 }
 
+TEST_F(AbstractExtensionApiTest, ObjectDelItemWithNullObjRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_DelItem(nullptr, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectDelItemWithNullKeyRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_DelItem(obj, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectDelItemCallsDunderDelItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __delitem__(self, key):
+    global sideeffect
+    sideeffect = 10
+
+c = C()
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_DelItem(c, key), 0);
+  PyObjectPtr sideeffect(mainModuleGet("sideeffect"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectDelItemPropagatesDelItemException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __delitem__(self, key):
+    raise TypeError
+
+c = C()
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_DelItem(c, key), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceSizeWithNullRaisesSystemError) {
   EXPECT_EQ(PySequence_Size(nullptr), -1);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
