@@ -967,8 +967,21 @@ PY_EXPORT int PyObject_DelItem(PyObject* obj, PyObject* key) {
   return 0;
 }
 
-PY_EXPORT int PyObject_DelItemString(PyObject* /* o */, const char* /* y */) {
-  UNIMPLEMENTED("PyObject_DelItemString");
+PY_EXPORT int PyObject_DelItemString(PyObject* obj, const char* key) {
+  Thread* thread = Thread::current();
+  if (obj == nullptr || key == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object key_obj(&scope, runtime->newStrFromCStr(key));
+  Object result(&scope, objectDelItem(thread, object, key_obj));
+  if (result.isErrorException()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT PyObject* _PyObject_CallNoArg(PyObject* callable) {
