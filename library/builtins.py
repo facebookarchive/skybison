@@ -3387,6 +3387,10 @@ class dict_items(bootstrap=True):
         _dict_items_guard(self)
         return _dictview_xor(self, other)
 
+    def __reversed__(self):
+        _dict_items_guard(self)
+        return iter(list(self).__reversed__())
+
 
 class dict_keyiterator(bootstrap=True):
     def __iter__(self):

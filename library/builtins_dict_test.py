@@ -740,6 +740,39 @@ class DictItemsTests(unittest.TestCase):
         self.assertIsInstance(result, set)
         self.assertEqual(result, {("hello", "world")})
 
+    @supports_38_feature
+    def test_reversed_of_items_returns_reversed_items(self):
+        mapping = {"hello": "world", "foo": "bar", "marco": "polo"}
+        self.assertEqual(
+            list(mapping.items()),
+            [("hello", "world"), ("foo", "bar"), ("marco", "polo")],
+        )
+        reversed_keys = reversed(mapping.items())
+        self.assertEqual(
+            list(reversed_keys), [("marco", "polo"), ("foo", "bar"), ("hello", "world")]
+        )
+
+    @supports_38_feature
+    def test_reversed_items_of_dictionary_built_with_setitem(self):
+        d = {}
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["a"] = 100
+        self.assertEqual(list(d.items()), [("a", 100), ("b", 2), ("c", 3)])
+        self.assertEqual(list(reversed(d.items())), [("c", 3), ("b", 2), ("a", 100)])
+
+    @supports_38_feature
+    def test_reversed_items_of_wrong_type_raises_type_error(self):
+        keys = {}.keys()
+        item_type = type({}.items())
+        with self.assertRaises(TypeError) as context:
+            item_type.__reversed__(keys)
+        self.assertIn(
+            "'__reversed__' requires a 'dict_items' object but received a 'dict_keys'",
+            str(context.exception),
+        )
+
 
 class DictKeysTests(unittest.TestCase):
     DictKeysType = type({}.keys())
