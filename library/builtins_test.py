@@ -13707,5 +13707,21 @@ class TestUnimplemented(unittest.TestCase):
                 ImportError().__reduce__()
 
 
+class FrameTests(unittest.TestCase):
+    def test_clear_clears_locals(self):
+        def inner():
+            try:
+                raise Exception("test")
+            except Exception as e:
+                return e.__traceback__.tb_frame
+
+        frame = inner()
+        self.assertIsNot(frame, None)
+        # Ensure that frame.clear() exists.
+        # TODO(T86451971): Properly test behavior once we implement it. For now, we just test that
+        # clear() doesn't raise.
+        frame.clear()
+
+
 if __name__ == "__main__":
     unittest.main()

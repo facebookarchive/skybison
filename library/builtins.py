@@ -4043,6 +4043,10 @@ def hash(obj) -> int:
 
 # TODO(T63894279): Hide private names.
 class frame(bootstrap=True):
+    def clear(self):
+        # TODO(T86451971): Implement once we start saving local variables.
+        pass
+
     @_property
     def f_builtins(self):
         builtins = self._function.__module_object__.__builtins__
