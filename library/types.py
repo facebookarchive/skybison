@@ -8,7 +8,7 @@ Define names for built-in types that aren't directly accessible as a builtin.
 """
 import sys
 
-from _builtins import _set_function_flag_iterable_coroutine, _unimplemented
+from _builtins import _set_function_flag_iterable_coroutine
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
@@ -22,6 +22,13 @@ CodeType = type(_f.__code__)
 MappingProxyType = type(type.__dict__)
 SimpleNamespace = type(sys.implementation)
 
+def _cell_factory():
+    a = 1
+    def f():
+        nonlocal a
+    return f.__closure__[0]
+CellType = type(_cell_factory())
+
 def _g():
     yield 1
 GeneratorType = type(_g())
@@ -30,7 +37,6 @@ async def _c(): pass
 _c = _c()
 CoroutineType = type(_c)
 _c.close()  # Prevent ResourceWarning
-_c = None
 
 async def _ag():
     yield
@@ -44,9 +50,14 @@ MethodType = type(_C()._m)
 BuiltinFunctionType = type(len)
 BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 
-ModuleType = type(sys)
+# We intentionally comment these types out as Pyro doesn't have special types for these.
+# WrapperDescriptorType = type(object.__init__)
+# MethodWrapperType = type(object().__str__)
+# MethodDescriptorType = type(str.join)
+# ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
 Union = type(int | str)
+ModuleType = type(sys)
 
 try:
     raise TypeError
@@ -56,6 +67,7 @@ except TypeError:
     FrameType = type(tb.tb_frame)
     tb = None; del tb
 
+# For Jython, the following two types are identical
 GetSetDescriptorType = property
 MemberDescriptorType = property
 
@@ -201,9 +213,6 @@ class DynamicClassAttribute:
         return result
 
 
-import collections.abc as _collections_abc
-import functools as _functools
-
 class _GeneratorWrapper:
     # TODO: Implement this in C.
     def __init__(self, gen):
@@ -264,21 +273,18 @@ def coroutine(func):
             _set_function_flag_iterable_coroutine(func)
             # # TODO: Implement this in C.
             # co = func.__code__
-            # func.__code__ = CodeType(
-            #     co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
-            #     co.co_stacksize,
-            #     co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
-            #     co.co_code,
-            #     co.co_consts, co.co_names, co.co_varnames, co.co_filename,
-            #     co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-            #     co.co_cellvars)
+            # # 0x100 == CO_ITERABLE_COROUTINE
+            # func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
             return func
 
+    import _collections_abc
     # The following code is primarily to support functions that
     # return generator-like objects (for instance generators
     # compiled with Cython).
 
-    @_functools.wraps(func)
+    # Delay functools and _collections_abc import for speeding up types import.
+    import functools
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
         if (coro.__class__ is CoroutineType or
