@@ -56,6 +56,16 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
+    # NOTE: When modifying "purelib" scheme, update site._get_path() too.
+    'nt_user': {
+        'stdlib': '{userbase}/{implementation}{py_version_nodot}',
+        'platstdlib': '{userbase}/{implementation}{py_version_nodot}',
+        'purelib': '{userbase}/{implementation}{py_version_nodot}/site-packages',
+        'platlib': '{userbase}/{implementation}{py_version_nodot}/site-packages',
+        'include': '{userbase}/{implementation}{py_version_nodot}/Include',
+        'scripts': '{userbase}/{implementation}{py_version_nodot}/Scripts',
+        'data': '{userbase}',
+        },
     'posix_user': {
         'stdlib': '{userbase}/lib/{implementation}{py_version_short}',
         'platstdlib': '{userbase}/lib/{implementation}{py_version_short}',
@@ -114,7 +124,7 @@ if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
 def _is_python_source_dir(d):
-    for fn in ("Setup.dist", "Setup.local"):
+    for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(d, "Modules", fn)):
             return True
     return False
@@ -407,7 +417,7 @@ def _generate_posix_vars():
         pprint.pprint(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
-    with open('pybuilddir.txt', 'w', encoding='ascii') as f:
+    with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 
 def _init_posix(vars):
@@ -555,7 +565,6 @@ def get_config_vars(*args):
             _CONFIG_VARS['INCLUDEPY'] = get_path('include')
         if not "LIBDEST" in _CONFIG_VARS:
             _CONFIG_VARS['LIBDEST'] = get_path('stdlib')
-
         # For backward compatibility, see issue19555
         SO = _CONFIG_VARS.get('EXT_SUFFIX')
         if SO is not None:
@@ -633,6 +642,10 @@ def get_platform():
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
             return 'win-amd64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
+        if '(arm64)' in sys.version.lower():
+            return 'win-arm64'
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
