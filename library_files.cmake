@@ -182,10 +182,6 @@ typing.py
 typing_test.py
 unicodedata.py
 unicodedata_test.py
-unittest/case.py
-unittest/loader.py
-unittest/runner.py
-unittest/signals.py
 unittest_test.py
 warnings_test.py
 weakref_test.py

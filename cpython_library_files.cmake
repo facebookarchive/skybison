@@ -1926,9 +1926,13 @@ turtledemo/two_canvases.py
 turtledemo/yinyang.py
 unittest/__init__.py
 unittest/__main__.py
+unittest/case.py
+unittest/loader.py
 unittest/main.py
 unittest/mock.py
 unittest/result.py
+unittest/runner.py
+unittest/signals.py
 unittest/suite.py
 unittest/test/__init__.py
 unittest/test/__main__.py
