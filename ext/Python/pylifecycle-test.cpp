@@ -40,6 +40,7 @@ TEST_F(PylifecycleExtensionApiTest, GetsigGetsCurrentSignalHandler) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
+  resetPythonEnv();
   Py_DontWriteBytecodeFlag = 1;
   Py_IgnoreEnvironmentFlag = 0;
   Py_InspectFlag = 13;
@@ -75,6 +76,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant0) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
+  resetPythonEnv();
   Py_DontWriteBytecodeFlag = 0;
   Py_IgnoreEnvironmentFlag = 1;
   Py_InspectFlag = 0;
@@ -110,6 +112,7 @@ TEST(PylifecycleExtensionApiTestNoFixture, InitializeSetsSysFlagsVariant1) {
 }
 
 TEST(PylifecycleExtensionApiTestNoFixture, IsInitialized) {
+  resetPythonEnv();
   EXPECT_FALSE(Py_IsInitialized());
 
   Py_Initialize();
@@ -166,6 +169,7 @@ TEST_F(PylifecycleExtensionApiTest, SetProgramNameSetsName) {
 
 TEST(PylifecycleExtensionApiTestNoFixture,
      IsFinalizingReturnsFalseBeforeAndAfterFinalizePyro) {
+  resetPythonEnv();
   Py_Initialize();
   ASSERT_EQ(_Py_IsFinalizing(), 0);
   ASSERT_EQ(Py_FinalizeEx(), 0);
