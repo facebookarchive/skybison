@@ -38,6 +38,10 @@ set(CMAKE_SHARED_LINKER_FLAGS
 # for two targets and confusing the compilation database used by clang-tidy.
 option(ENABLE_CPYTHON_TESTS "Add cpython-tests target" ON)
 
+# Add an option to copy pre-built freeze_modules.py output instead of running
+# Python to avoid circular dependencies in the third-party2 build.
+option(USE_PRECOMPILED_FROZEN_MODULES "Use pre-compiled frozen modules" OFF)
+
 # Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
 if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
@@ -432,15 +436,36 @@ set(
   ${FROZEN_MODULE_OUTPUT_DIR}/builtins.h
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.cpp
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.h)
-add_custom_command(
-  OUTPUT
-  ${FROZEN_MODULE_OUTPUT}
-  COMMAND
-  ${PYTHON} util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
-    ${FROZEN_MODULE_INPUT}
-  WORKING_DIRECTORY
-  ${CMAKE_SOURCE_DIR}
-  DEPENDS util/freeze_modules.py ${FROZEN_MODULE_INPUT})
+if (USE_PRECOMPILED_FROZEN_MODULES)
+  set(
+    PRECOMPILED_FROZEN_MODULE_INPUT_DIR
+    ${CMAKE_SOURCE_DIR}/precompiled_frozen_modules)
+  set(
+    PRECOMPILED_FROZEN_MODULE_INPUT
+    ${PRECOMPILED_FROZEN_MODULE_INPUT_DIR}/builtins.cpp
+    ${PRECOMPILED_FROZEN_MODULE_INPUT_DIR}/builtins.h
+    ${PRECOMPILED_FROZEN_MODULE_INPUT_DIR}/frozen-modules.cpp
+    ${PRECOMPILED_FROZEN_MODULE_INPUT_DIR}/frozen-modules.h)
+  add_custom_command(
+    OUTPUT
+    ${FROZEN_MODULE_OUTPUT}
+    COMMAND
+    ${CMAKE_COMMAND} -E copy_if_different
+      ${PRECOMPILED_FROZEN_MODULE_INPUT} ${FROZEN_MODULE_OUTPUT_DIR}
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
+    DEPENDS ${PRECOMPILED_FROZEN_MODULE_INPUT})
+else()
+  add_custom_command(
+    OUTPUT
+    ${FROZEN_MODULE_OUTPUT}
+    COMMAND
+    ${PYTHON} util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
+      ${FROZEN_MODULE_INPUT}
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
+    DEPENDS util/freeze_modules.py ${FROZEN_MODULE_INPUT})
+endif()
 # This target is built in util/run_clang_tidy.py:create_compile_commands() to
 # ensure all generated files are present when clang-tidy runs.
 add_custom_target(
