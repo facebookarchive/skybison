@@ -51,8 +51,6 @@ python_binary(
         "server.py",
     ],
     main_module = "pyro.benchmarks.server",
-    par_style = "xar",
-    py_version = ">=3",
     deps = [
         ":run",
         ":server_handler",
@@ -67,12 +65,30 @@ python_binary(
         "client.py",
     ],
     main_module = "pyro.benchmarks.client",
-    par_style = "xar",
-    py_version = ">=3",
     deps = [
         ":fbpkg_handler",
         ":rpc-py3-clients",
         ":run",
+        "//libfb/py/pyinit:pyinit",
+        "//servicerouter/client/py3:get_client",
+    ],
+)
+
+python_binary(
+    name = "format_results",
+    srcs = [
+        "format_results.py",
+    ],
+    main_module = "pyro.benchmarks.format_results",
+)
+
+python_binary(
+    name = "upload_to_phab",
+    srcs = [
+        "upload_to_phab.py",
+    ],
+    main_module = "pyro.benchmarks.upload_to_phab",
+    deps = [
         "//ci_experiences/signalhub/if:signal_hub_thrift-py3-types",
         "//ci_experiences/signalhub/utils:signal_hub_service_util",
         "//everstore/client/py:everstore_client",
@@ -80,7 +96,6 @@ python_binary(
         "//phabricator:new_phabricator_graphql_helpers",
         "//phabricator:phabricator_authentication",
         "//phabricator:phabricator_graphql_client",
-        "//servicerouter/client/py3:get_client",
     ],
 )
 
