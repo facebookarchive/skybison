@@ -4677,6 +4677,7 @@ result = self.fastcall(*[1234], *{})
 }
 
 TEST(TypeExtensionApiTestNoFixture, DeallocSlotCalledDuringFinalize) {
+  resetPythonEnv();
   Py_Initialize();
 
   static bool destroyed;
