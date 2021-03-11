@@ -961,7 +961,20 @@ int emptyClear(PyObject*) { return 0; }
 
 int emptyTraverse(PyObject*, visitproc, void*) { return 0; }
 
-void emptyDealloc(PyObject*) { return; }
+static void builtinDealloc(PyObject* self) {
+  // This function is called for instances of non-heaptypes (most builtin types)
+  // or subclasses of them. There is nothing to deallocate/free for
+  // instances of builtin types. However subclasses may have extra data
+  // allocated that needs to be freed with `PyObject_Del`.
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self_obj(&scope, ApiHandle::fromPyObject(self)->asObject());
+  Type type(&scope, runtime->typeOf(*self_obj));
+  if (type.hasNativeData()) {
+    PyObject_Del(self);
+  }
+}
 
 PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
   Thread* thread = Thread::current();
@@ -988,7 +1001,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
       return reinterpret_cast<void*>(&emptyTraverse);
     }
     if (slot_id == Py_tp_dealloc) {
-      return reinterpret_cast<void*>(&emptyDealloc);
+      return reinterpret_cast<void*>(&builtinDealloc);
     }
     thread->raiseBadInternalCall();
     return nullptr;
@@ -1407,51 +1420,46 @@ RawObject addGetSet(Thread* thread, const Type& type) {
 // The default tp_dealloc slot for all C Types. This loosely follows CPython's
 // subtype_dealloc.
 static void subtypeDealloc(PyObject* self) {
-  PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(self));
-  Py_DECREF(type);  // Borrow the reference
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self_obj(&scope, ApiHandle::fromPyObject(self)->asObject());
+  Type type(&scope, runtime->typeOf(*self_obj));
 
-  DCHECK(PyType_GetFlags(type) & Py_TPFLAGS_HEAPTYPE,
-         "subtypeDealloc requires an instance from a heap allocated C "
-         "extension type");
+  DCHECK(type.isCPythonHeaptype(), "must be called with heaptype");
 
-  auto finalize_func =
-      reinterpret_cast<destructor>(PyType_GetSlot(type, Py_tp_finalize));
+  void* finalize_func = typeSlotAt(type, Py_tp_finalize);
   if (finalize_func != nullptr) {
     if (PyObject_CallFinalizerFromDealloc(self) < 0) {
-      return;  // Resurrected
+      // Resurrected
+      return;
     }
   }
 
-  auto del_func = reinterpret_cast<destructor>(PyType_GetSlot(type, Py_tp_del));
+  destructor del_func =
+      reinterpret_cast<destructor>(typeSlotAt(type, Py_tp_del));
   if (del_func != nullptr) {
     (*del_func)(self);
     if (Py_REFCNT(self) > 1) {
-      return;  // Resurrected
+      // Resurrected
+      return;
     }
   }
-
-  // Find the nearest base with a different tp_dealloc
-  PyTypeObject* base_type = type;
   destructor base_dealloc = subtypeDealloc;
+  Type base_type(&scope, *type);
   while (base_dealloc == subtypeDealloc) {
-    base_type =
-        reinterpret_cast<PyTypeObject*>(PyType_GetSlot(base_type, Py_tp_base));
-    if (Type::cast(ApiHandle::fromPyTypeObject(base_type)->asObject())
-            .hasNativeData()) {
-      base_dealloc = reinterpret_cast<destructor>(
-          PyType_GetSlot(base_type, Py_tp_dealloc));
+    base_type = typeSlotObjectAt(base_type, Py_tp_base);
+    if (typeHasSlots(base_type)) {
+      base_dealloc =
+          reinterpret_cast<destructor>(typeSlotAt(base_type, Py_tp_dealloc));
     } else {
       base_dealloc = reinterpret_cast<destructor>(PyObject_Del);
     }
   }
-
-  // Extract the type; tp_del may have changed it
-  type = reinterpret_cast<PyTypeObject*>(PyObject_Type(self));
-  Py_DECREF(type);  // Borrow the reference
+  type = runtime->typeOf(*self_obj);
   (*base_dealloc)(self);
-  if (PyType_GetFlags(type) & Py_TPFLAGS_HEAPTYPE &&
-      !(PyType_GetFlags(base_type) & Py_TPFLAGS_HEAPTYPE)) {
-    Py_DECREF(type);
+  if (type.isCPythonHeaptype() && !base_type.isCPythonHeaptype()) {
+    ApiHandle::borrowedReference(runtime, *type)->decref();
   }
 }
 
@@ -1697,12 +1705,6 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
          "sizeof(PyObject) is the minimum size required for an extension "
          "instance");
 
-  // tp_dealloc -> subtypeDealloc
-  if (typeSlotAt(type, Py_tp_dealloc) == nullptr) {
-    typeSlotAtPut(thread, type, Py_tp_dealloc,
-                  reinterpret_cast<void*>(&subtypeDealloc));
-  }
-
   // tp_repr -> PyObject_Repr
   if (typeSlotAt(type, Py_tp_repr) == nullptr) {
     typeSlotAtPut(thread, type, Py_tp_repr,
@@ -1913,6 +1915,12 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (has_default_dealloc) {
     type.setFlags(
         static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDefaultDealloc));
+  }
+
+  // If no custom tp_dealloc is defined set subtypeDealloc
+  if (typeSlotAt(type, Py_tp_dealloc) == nullptr) {
+    typeSlotAtPut(thread, type, Py_tp_dealloc,
+                  reinterpret_cast<void*>(&subtypeDealloc));
   }
 
   if (addOperators(thread, type).isError()) return nullptr;

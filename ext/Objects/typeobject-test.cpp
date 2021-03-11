@@ -4247,7 +4247,7 @@ r3 = baz.t_object
   EXPECT_FALSE(PyList_Check(r3));
 }
 
-TEST_F(TypeExtensionApiTest, CTypeWithSlotsInheritsFromBuiltinType) {
+TEST_F(TypeExtensionApiTest, CTypeWithSlotsBuiltinBaseTpNewCreatesNewInstance) {
   static PyType_Slot base_slots[1];
   base_slots[0] = {0, nullptr};
   static PyType_Spec base_spec;
@@ -4283,6 +4283,38 @@ TEST_F(TypeExtensionApiTest, CTypeWithSlotsInheritsFromBuiltinType) {
   PyObjectPtr instance(_PyObject_CallNoArg(type));
   ASSERT_NE(instance, nullptr);
   ASSERT_EQ(Py_TYPE(instance.get()), type.asTypeObject());
+}
+
+TEST_F(TypeExtensionApiTest,
+       CTypeWithSlotsBuiltinBaseTpDeallocFreesInstancePyro) {
+  destructor dealloc_func = [](PyObject* o) {
+    PyTypeObject* tp = Py_TYPE(o);
+    // Call the base type Py_tp_dealloc slot
+    destructor base_dealloc = reinterpret_cast<destructor>(PyType_GetSlot(
+        reinterpret_cast<PyTypeObject*>(PyExc_Exception), Py_tp_dealloc));
+    (*base_dealloc)(o);
+    Py_DECREF(tp);
+  };
+
+  static PyType_Slot slots[2];
+  slots[0] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
+  slots[1] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, PyExc_Exception));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  Py_ssize_t type_refcnt = Py_REFCNT(type);
+  PyObject* instance = _PyObject_CallNoArg(type);
+  ASSERT_NE(instance, nullptr);
+  ASSERT_EQ(Py_TYPE(instance), type.asTypeObject());
+  ASSERT_EQ(Py_REFCNT(type), type_refcnt + 1);
+  Py_DECREF(instance);
+  collectGarbage();
+  ASSERT_EQ(Py_REFCNT(type), type_refcnt);
 }
 
 TEST_F(TypeExtensionApiTest, CTypeInheritsFromManagedType) {
