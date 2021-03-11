@@ -113,9 +113,6 @@ itertools.py
 itertools_test.py
 json/__init__.py
 json/decoder.py
-json/encoder.py
-json/scanner.py
-json/tool.py
 marshal.py
 marshal_test.py
 mmap.py
