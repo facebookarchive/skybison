@@ -554,11 +554,6 @@ class Interpreter {
   static Continue tailcallMethod1(Thread* thread, RawObject method,
                                   RawObject self);
 
-  // Call method with 2 parameters at the end of an opcode handler. See
-  // `tailcallMethod1()`.
-  static Continue tailcallMethod2(Thread* thread, RawObject method,
-                                  RawObject self, RawObject arg1);
-
   // Call callable with `arg` parameters at the end of an opcode handler. Use
   // this when the number of parameters is more than 2.
   static Continue tailcall(Thread* thread, word arg);
@@ -605,9 +600,6 @@ class Interpreter {
 
   using BinaryOpFallbackHandler = Continue (*)(Thread* thread, word arg,
                                                BinaryOpFlags flags);
-  static Continue cachedBinaryOpImpl(Thread* thread, word arg,
-                                     OpcodeHandler update_cache,
-                                     BinaryOpFallbackHandler fallback);
 
   static Continue binaryOp(Thread* thread, word arg, RawObject method,
                            BinaryOpFlags flags, RawObject left, RawObject right,

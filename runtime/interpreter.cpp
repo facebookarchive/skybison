@@ -661,20 +661,6 @@ Continue Interpreter::tailcallMethod1(Thread* thread, RawObject method,
   return tailcall(thread, nargs);
 }
 
-HANDLER_INLINE
-Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
-                                      RawObject self, RawObject arg1) {
-  word nargs = 1;
-  thread->stackPush(method);
-  if (method.isFunction()) {
-    thread->stackPush(self);
-    nargs++;
-    return tailcallFunction(thread, nargs, method);
-  }
-  thread->stackPush(arg1);
-  return tailcall(thread, nargs);
-}
-
 HANDLER_INLINE Continue Interpreter::tailcall(Thread* thread, word arg) {
   return handleCall(thread, arg, arg, preparePositionalCall, &Function::entry);
 }
@@ -5247,35 +5233,6 @@ HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
   if (result.isError()) return Continue::UNWIND;
   thread->stackPush(isTrue(thread, result));
   return Continue::NEXT;
-}
-
-HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
-    Thread* thread, word arg, OpcodeHandler update_cache,
-    BinaryOpFallbackHandler fallback) {
-  Frame* frame = thread->currentFrame();
-  RawObject left_raw = thread->stackPeek(1);
-  RawObject right_raw = thread->stackPeek(0);
-  LayoutId left_layout_id = left_raw.layoutId();
-  LayoutId right_layout_id = right_raw.layoutId();
-  BinaryOpFlags flags = kBinaryOpNone;
-  RawObject method =
-      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
-                               left_layout_id, right_layout_id, &flags);
-  if (method.isErrorNotFound()) {
-    return update_cache(thread, arg);
-  }
-
-  // Fast-path: Call cached method and return if possible.
-  RawObject result =
-      binaryOperationWithMethod(thread, method, flags, left_raw, right_raw);
-  if (result.isErrorException()) return Continue::UNWIND;
-  if (!result.isNotImplementedType()) {
-    thread->stackDrop(1);
-    thread->stackSetTop(result);
-    return Continue::NEXT;
-  }
-
-  return fallback(thread, arg, flags);
 }
 
 Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
