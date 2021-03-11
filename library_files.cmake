@@ -116,7 +116,6 @@ json/decoder.py
 json/encoder.py
 json/scanner.py
 json/tool.py
-logging/__init__.py
 marshal.py
 marshal_test.py
 mmap.py

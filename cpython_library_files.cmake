@@ -712,6 +712,7 @@ lib2to3/tests/test_refactor.py
 lib2to3/tests/test_util.py
 linecache.py
 locale.py
+logging/__init__.py
 logging/config.py
 logging/handlers.py
 lzma.py
