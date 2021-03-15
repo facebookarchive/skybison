@@ -10,6 +10,12 @@ namespace testing {
 
 using DateTimeExtensionApiTest = ExtensionApi;
 
+TEST_F(DateTimeExtensionApiTest, PyDateTimeAPIReturnsStructIfFound) {
+  ASSERT_EQ(PyDateTimeAPI, nullptr);
+  PyDateTime_IMPORT;
+  ASSERT_NE(PyDateTimeAPI, nullptr);
+}
+
 TEST_F(DateTimeExtensionApiTest, PyDateTimeCheckWithDateTimeObjectReturnsTrue) {
   PyRun_SimpleString(R"(
 import datetime
@@ -78,6 +84,69 @@ TEST_F(DateTimeExtensionApiTest, PyDateFromDateReturnsDateObject) {
   PyObjectPtr result(PyDate_FromDate(1, 2, 3));
   ASSERT_NE(result, nullptr);
   EXPECT_TRUE(PyDate_Check(result));
+}
+
+TEST_F(DateTimeExtensionApiTest, PyDeltaCheckWithDeltaObjectReturnsTrue) {
+  PyRun_SimpleString(R"(
+import datetime
+instance = datetime.date(1, 2, 3) - datetime.date(1, 2, 3)
+)");
+  PyObjectPtr instance(mainModuleGet("instance"));
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_TRUE(PyDelta_Check(instance));
+}
+
+TEST_F(DateTimeExtensionApiTest, PyDeltaCheckWithDeltaSubclassReturnsTrue) {
+  PyRun_SimpleString(R"(
+import datetime
+class C(datetime.timedelta):
+    pass
+instance = C(1, 2, 3)
+)");
+  PyObjectPtr instance(mainModuleGet("instance"));
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_TRUE(PyDelta_Check(instance));
+}
+
+TEST_F(DateTimeExtensionApiTest, PyDeltaCheckWithNonDeltaReturnsFalse) {
+  PyObjectPtr instance(PyLong_FromLong(100));
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_FALSE(PyDelta_Check(instance));
+}
+
+TEST_F(DateTimeExtensionApiTest, PyDateTimeGETsEveryUnitOfTime) {
+  PyRun_SimpleString(R"(
+import datetime
+instance = datetime.datetime(1990, 2, 3, 4, 5, 6, 10000)
+)");
+  PyObject* instance = mainModuleGet("instance");
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_EQ(PyDateTime_GET_YEAR(instance), 1990);
+  EXPECT_EQ(PyDateTime_GET_MONTH(instance), 2);
+  EXPECT_EQ(PyDateTime_GET_DAY(instance), 3);
+  EXPECT_EQ(PyDateTime_DATE_GET_HOUR(instance), 4);
+  EXPECT_EQ(PyDateTime_DATE_GET_MINUTE(instance), 5);
+  EXPECT_EQ(PyDateTime_DATE_GET_SECOND(instance), 6);
+  EXPECT_EQ(PyDateTime_DATE_GET_MICROSECOND(instance), 10000);
+  Py_DECREF(instance);
+}
+
+TEST_F(DateTimeExtensionApiTest, PyDeltaGETsEveryUnitOfTime) {
+  PyRun_SimpleString(R"(
+import datetime
+instance = datetime.timedelta(1, 2, 3)
+)");
+  PyObject* instance = mainModuleGet("instance");
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_EQ(PyDateTime_DELTA_GET_DAYS(instance), 1);
+  EXPECT_EQ(PyDateTime_DELTA_GET_SECONDS(instance), 2);
+  EXPECT_EQ(PyDateTime_DELTA_GET_MICROSECONDS(instance), 3);
+  Py_DECREF(instance);
 }
 
 }  // namespace testing
