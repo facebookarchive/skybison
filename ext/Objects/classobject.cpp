@@ -7,6 +7,14 @@ PY_EXPORT int PyMethod_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isBoundMethod();
 }
 
+PY_EXPORT int PyInstanceMethod_Check(PyObject* /* c */) {
+  UNIMPLEMENTED("PyInstanceMethod_Check");
+}
+
+PY_EXPORT PyObject* PyInstanceMethod_GET_FUNCTION_Func(PyObject* /* c */) {
+  UNIMPLEMENTED("PyInstanceMethod_GET_FUNCTION_Func");
+}
+
 PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* /* c */) {
   UNIMPLEMENTED("PyInstanceMethod_New");
 }

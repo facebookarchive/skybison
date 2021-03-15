@@ -303,6 +303,7 @@ PyAPI_FUNC_DECL(PyObject* PyCFunction_Call(PyObject*, PyObject*, PyObject*));
 PyAPI_FUNC_DECL(int PyCFunction_GetFlags(PyObject*));
 PyAPI_FUNC_DECL(PyCFunction PyCFunction_GetFunction(PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyCFunction_GetSelf(PyObject*));
+PyAPI_FUNC_DECL(PyObject* PyCFunction_GET_SELF_Func(PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyCFunction_New(PyMethodDef*, PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyCFunction_NewEx(PyMethodDef*, PyObject*,
                                             PyObject*));
@@ -529,6 +530,8 @@ PyAPI_FUNC_DECL(PyObject* PyImport_ImportModuleLevelObject(PyObject*, PyObject*,
                                                            int));
 PyAPI_FUNC_DECL(PyObject* PyImport_ImportModuleNoBlock(const char*));
 PyAPI_FUNC_DECL(PyObject* PyImport_ReloadModule(PyObject*));
+PyAPI_FUNC_DECL(int PyInstanceMethod_Check(PyObject*));
+PyAPI_FUNC_DECL(PyObject* PyInstanceMethod_GET_FUNCTION_Func(PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyInstanceMethod_New(PyObject*));
 PyAPI_FUNC_DECL(void PyInterpreterState_Clear(PyInterpreterState*));
 PyAPI_FUNC_DECL(void PyInterpreterState_Delete(PyInterpreterState*));
@@ -1504,12 +1507,17 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 #define PyBytes_AS_STRING(op) PyBytes_AsString((PyObject*)op)
 #define PyBytes_GET_SIZE(op) PyBytes_Size((PyObject*)op)
 
+#define PyCFunction_GET_SELF(op) PyCFunction_GET_SELF_Func((PyObject*)op)
+
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE_Func((PyObject*)op)
 
 #define PyEval_CallObject(func, arg)                                           \
   PyEval_CallObjectWithKeywords(func, arg, (PyObject*)NULL)
 
 #define PyFloat_AS_DOUBLE(op) PyFloat_AsDouble((PyObject*)op)
+
+#define PyInstanceMethod_GET_FUNCTION(op)                                      \
+  (PyInstanceMethod_GET_FUNCTION_Func((PyObject*)op))
 
 #define PyList_GET_ITEM(op, i) PyList_GetItem((PyObject*)op, i)
 #define PyList_GET_SIZE(op) PyList_Size((PyObject*)op)
