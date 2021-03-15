@@ -1477,6 +1477,20 @@ c = C()
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0o52"), 0);
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberToBasePropagatesIndexException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __index__(self):
+    raise ValueError
+c = C()
+)");
+  PyObjectPtr c(mainModuleGet("c"));
+  PyObjectPtr result(PyNumber_ToBase(c, 8));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+  EXPECT_EQ(result, nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberToBaseSupportsIntSubclass) {
   PyRun_SimpleString(R"(
 class C(int):

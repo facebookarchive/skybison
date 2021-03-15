@@ -629,11 +629,11 @@ PY_EXPORT PyObject* PyNumber_ToBase(PyObject* n, int base) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object n_object(&scope, ApiHandle::fromPyObject(n)->asObject());
-  Object n_int(&scope, intFromIndex(thread, n_object));
+  n_object = intFromIndex(thread, n_object);
   if (n_object.isError()) {
     return nullptr;
   }
-  Int number(&scope, intUnderlying(*n_int));
+  Int number(&scope, intUnderlying(*n_object));
   Object formatted(&scope, NoneType::object());
   switch (base) {
     case 2:
