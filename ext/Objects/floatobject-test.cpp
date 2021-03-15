@@ -1,5 +1,6 @@
 #include <cfloat>
 #include <cmath>
+#include <cstring>
 
 #include "Python.h"
 #include "gtest/gtest.h"
@@ -11,6 +12,193 @@ namespace py {
 namespace testing {
 
 using FloatExtensionApiTest = ExtensionApi;
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithUnicodeReturnsFloat) {
+  const char* str = "15.5";
+  PyObjectPtr pyunicode(PyUnicode_FromString(str));
+  PyObjectPtr flt(PyFloat_FromString(pyunicode));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 15.5);
+}
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithBytesReturnsFloat) {
+  const char* str = "25.5";
+  PyObjectPtr pybytes(PyBytes_FromString(str));
+  PyObjectPtr flt(PyFloat_FromString(pybytes));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 25.5);
+}
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithMemoryViewReturnsFloat) {
+  const char* str = "5.5";
+  PyObjectPtr memory_view(
+      PyMemoryView_FromMemory(const_cast<char*>(str), 3, PyBUF_READ));
+  PyObjectPtr flt(PyFloat_FromString(memory_view));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 5.5);
+}
+
+// TODO(T57022841): Needs PyFloatFromStringWithByteArrayReturnsFloat
+// when bytearray support is added to float()
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithUserBufferReturnsFloat) {
+  static char contents[] = "45.5";
+  static Py_ssize_t contents_len = std::strlen(contents);
+  getbufferproc mocked_getbuffer_func = [](PyObject* obj, Py_buffer* view,
+                                           int flags) {
+    return PyBuffer_FillInfo(view, obj, contents, contents_len, /*readonly=*/1,
+                             flags);
+  };
+  releasebufferproc mocked_releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    view->buf = nullptr;
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(mocked_getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(mocked_releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr buf_type(PyType_FromSpec(&spec));
+  ASSERT_NE(buf_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(buf_type));
+
+  PyObjectPtr instance(PyObject_CallFunction(buf_type, nullptr));
+  ASSERT_TRUE(PyObject_CheckBuffer(instance.get()));
+
+  PyObjectPtr flt(PyFloat_FromString(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 45.5);
+}
+
+TEST_F(FloatExtensionApiTest,
+       PyFloatFromStringWithNonNullTermUserBufferReturnsFloat) {
+  static char contents[] = "55.5 not null terminated";
+  static Py_ssize_t contents_len = 4;  // Not the whole string
+  getbufferproc mocked_getbuffer_func = [](PyObject* obj, Py_buffer* view,
+                                           int flags) {
+    return PyBuffer_FillInfo(view, obj, contents, contents_len, /*readonly*/ 1,
+                             flags);
+  };
+  releasebufferproc mocked_releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    view->buf = nullptr;
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(mocked_getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(mocked_releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr buf_type(PyType_FromSpec(&spec));
+  ASSERT_NE(buf_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(buf_type));
+
+  PyObjectPtr instance(PyObject_CallFunction(buf_type, nullptr));
+  ASSERT_TRUE(PyObject_CheckBuffer(instance.get()));
+
+  PyObjectPtr flt(PyFloat_FromString(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 55.5);
+}
+
+TEST_F(FloatExtensionApiTest,
+       PyFloatFromStringWithEmbededNullTermUserBufferRaisesValueError) {
+  static char contents[] = "55.5\0 embeded null";
+  static Py_ssize_t contents_len = 18;  // Include the null and more...
+  getbufferproc mocked_getbuffer_func = [](PyObject* obj, Py_buffer* view,
+                                           int flags) {
+    return PyBuffer_FillInfo(view, obj, contents, contents_len, /*readonly*/ 1,
+                             flags);
+  };
+  releasebufferproc mocked_releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    view->buf = nullptr;
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(mocked_getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(mocked_releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr buf_type(PyType_FromSpec(&spec));
+  ASSERT_NE(buf_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(buf_type));
+
+  PyObjectPtr instance(PyObject_CallFunction(buf_type, nullptr));
+  ASSERT_TRUE(PyObject_CheckBuffer(instance.get()));
+
+  PyObjectPtr flt(PyFloat_FromString(instance));
+  EXPECT_FALSE(flt);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(FloatExtensionApiTest,
+       PyFloatFromStringWithUserBufferAndRaisingGetBufferRaisesTypeError) {
+  getbufferproc mocked_getbuffer_func = [](PyObject*, Py_buffer*, int) {
+    PyErr_Format(PyExc_NotImplementedError, "not implemented");
+    return -1;
+  };
+  releasebufferproc mocked_releasebuffer_func = [](PyObject*, Py_buffer* view) {
+    view->buf = nullptr;
+    view->obj = nullptr;
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(mocked_getbuffer_func)},
+      {Py_bf_releasebuffer, reinterpret_cast<void*>(mocked_releasebuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr buf_type(PyType_FromSpec(&spec));
+  ASSERT_NE(buf_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(buf_type));
+
+  PyObjectPtr instance(PyObject_CallFunction(buf_type, nullptr));
+  ASSERT_TRUE(PyObject_CheckBuffer(instance.get()));
+
+  PyObjectPtr flt(PyFloat_FromString(instance));
+  EXPECT_FALSE(flt);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithIntRaisesTypeError) {
+  PyObjectPtr integer(PyLong_FromLong(100));
+  EXPECT_EQ(PyFloat_FromString(integer), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithFloatRaisesTypeError) {
+  PyObjectPtr flt(PyFloat_FromDouble(1.5));
+  EXPECT_EQ(PyFloat_FromString(flt), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(FloatExtensionApiTest, PyFloatFromStringWithNoneRaisesTypeError) {
+  EXPECT_EQ(PyFloat_FromString(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
 
 TEST_F(FloatExtensionApiTest, FromDoubleReturnsFloat) {
   const double val = 15.4;
