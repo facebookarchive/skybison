@@ -56,8 +56,6 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* obj) {
   Runtime* runtime = thread->runtime();
   ApiHandle* handle = ApiHandle::fromPyObject(obj);
   Object object(&scope, handle->asObject());
-  void* getbuf;
-  void* releasebuf;
 
   // First, handle all string like items here
   if (runtime->isInstanceOfStr(*object) ||
@@ -66,8 +64,9 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* obj) {
     object = thread->invokeFunction1(ID(builtins), ID(float), object);
     return object.isError() ? nullptr
                             : ApiHandle::newReference(runtime, *object);
-    // NOLINTNEXTLINE
-  } else if (object.isMemoryView()) {
+  }
+
+  if (object.isMemoryView()) {
     // Memoryviews are buffer like, but can be converted to bytes and then to a
     // float
     MemoryView memoryview(&scope, *object);
@@ -78,43 +77,25 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* obj) {
       object = thread->invokeFunction1(ID(builtins), ID(float), bytes);
       return object.isError() ? nullptr
                               : ApiHandle::newReference(runtime, *object);
-      // NOLINTNEXTLINE
-    } else {
-      Pointer underlying_pointer(&scope, *buffer);
-      word length = memoryview.length();
-      unique_c_ptr<char> copy(::strndup(
-          reinterpret_cast<const char*>(underlying_pointer.cptr()), length));
-
-      object = floatFromDigits(thread, copy.get(), length);
-      return object.isError() ? nullptr
-                              : ApiHandle::newReference(runtime, *object);
     }
-  } else {
-    // Maybe it otherwise supports the buffer protocol
-    Type type(&scope, runtime->typeOf(*object));
-    if (!type.isBuiltin() && typeHasSlots(type) &&
-        (getbuf = typeSlotAt(type, Py_bf_getbuffer)) &&
-        (releasebuf = typeSlotAt(type, Py_bf_releasebuffer))) {
-      Py_buffer view = {nullptr, nullptr};
-      int status =
-          reinterpret_cast<getbufferproc>(getbuf)(handle, &view, PyBUF_SIMPLE);
-      if (status == 0) {
-        unique_c_ptr<char> copy(
-            ::strndup(reinterpret_cast<const char*>(view.buf), view.len));
-        object = floatFromDigits(thread, copy.get(), view.len);
-        reinterpret_cast<releasebufferproc>(releasebuf)(obj, &view);
-        return object.isError() ? nullptr
-                                : ApiHandle::newReference(runtime, *object);
-      }
+    Pointer underlying_pointer(&scope, *buffer);
+    word length = memoryview.length();
+    unique_c_ptr<char> copy(::strndup(
+        reinterpret_cast<const char*>(underlying_pointer.cptr()), length));
 
-      // cpython wants us to return TypeError if the getbuffer fails,
-      // so clear the current error and return the type error below
-      thread->clearPendingException();
-    }
+    object = floatFromDigits(thread, copy.get(), length);
+    return object.isError() ? nullptr
+                            : ApiHandle::newReference(runtime, *object);
+  }
+  // Maybe it otherwise supports the buffer protocol
+  Object bytes(&scope, newBytesFromBuffer(thread, object));
+  if (!bytes.isError()) {
+    object = thread->invokeFunction1(ID(builtins), ID(float), bytes);
+    return object.isError() ? nullptr
+                            : ApiHandle::newReference(runtime, *object);
   }
 
-  // This is the actual cpython type error even though the c-api does not
-  // actually support passing a number as obj here
+  thread->clearPendingException();
   thread->raiseWithFmt(
       LayoutId::kTypeError,
       "float() argument must be a string or a number, not '%T'", &object);

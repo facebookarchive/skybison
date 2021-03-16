@@ -79,6 +79,36 @@ TEST_F(FloatExtensionApiTest, PyFloatFromStringWithUserBufferReturnsFloat) {
 }
 
 TEST_F(FloatExtensionApiTest,
+       PyFloatFromStringWithUserBufferAndOnlyGetbufferReturnsFloat) {
+  static char contents[] = "45.5";
+  static Py_ssize_t contents_len = std::strlen(contents);
+  getbufferproc mocked_getbuffer_func = [](PyObject* obj, Py_buffer* view,
+                                           int flags) {
+    return PyBuffer_FillInfo(view, obj, contents, contents_len, /*readonly=*/1,
+                             flags);
+  };
+  PyType_Slot slots[] = {
+      {Py_bf_getbuffer, reinterpret_cast<void*>(mocked_getbuffer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr buf_type(PyType_FromSpec(&spec));
+  ASSERT_NE(buf_type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(buf_type));
+
+  PyObjectPtr instance(PyObject_CallFunction(buf_type, nullptr));
+  ASSERT_TRUE(PyObject_CheckBuffer(instance.get()));
+
+  PyObjectPtr flt(PyFloat_FromString(instance));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 45.5);
+}
+
+TEST_F(FloatExtensionApiTest,
        PyFloatFromStringWithNonNullTermUserBufferReturnsFloat) {
   static char contents[] = "55.5 not null terminated";
   static Py_ssize_t contents_len = 4;  // Not the whole string
