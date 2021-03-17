@@ -3244,6 +3244,33 @@ TEST_F(TypeExtensionApiTest,
   PyErr_Clear();
 }
 
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesWithoutBasetypeIsRejectedAsBase) {
+  static PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, &PyType_Type));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type.get(), nullptr);
+  PyObjectPtr main(Borrowed(PyImport_AddModule("__main__")));
+  Py_INCREF(type.get());
+  PyModule_AddObject(main, "Bar", type);
+  PyObjectPtr main_dict(Borrowed(PyModule_GetDict(main)));
+  EXPECT_EQ(
+      PyRun_String("class C(Bar): pass", Py_file_input, main_dict, main_dict),
+      nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+  PyObject* exc_type;
+  PyObject* exc_value;
+  PyObject* exc_traceback;
+  PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+  EXPECT_TRUE(isUnicodeEqualsCStr(exc_value,
+                                  "type 'Bar' is not an acceptable base type"));
+}
+
 TEST_F(
     TypeExtensionApiTest,
     FromSpecWithBasesWithNonZeroSizeBaseAndZeroBasicSizeAndItemSetsCustomTpNewPyro) {
