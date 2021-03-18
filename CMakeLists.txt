@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(python LANGUAGES C CXX VERSION 3.7.4)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(NOT CMAKE_TOOLCHAIN_FILE)
   message(SEND_ERROR "
@@ -146,7 +147,7 @@ list(FILTER CPYTHON_FILES EXCLUDE REGEX "/#.*#$")
 list(FILTER CPYTHON_FILES EXCLUDE REGEX "/__pycache__/")
 
 set(CPYTHON_CONFIGURE_FLAGS)
-set(CPYTHON_CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILDTYPE}}")
+set(CPYTHON_CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILDTYPE}} -fPIC")
 set(CPYTHON_CPPFLAGS)
 set(CPYTHON_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
@@ -946,6 +947,7 @@ target_link_libraries(
   PUBLIC
   capi-headers
   PRIVATE
+  extension
   expat
   util
   ${BZIP2_LIBRARIES}
@@ -958,7 +960,7 @@ target_link_libraries(
 
 add_library(
   extension
-  OBJECT
+  STATIC
   ext/Internal/bytearrayobject-utils.h
   ext/Internal/bytesobject-utils.h
   ext/Internal/capi-handles.cpp
@@ -1116,8 +1118,7 @@ set(EXECUTABLE_SYMLINKS
   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python)
 add_executable(
   ${EXECUTABLE}
-  main.cpp
-  $<TARGET_OBJECTS:extension>)
+  main.cpp)
 add_custom_target(python DEPENDS ${EXECUTABLE})
 foreach(file ${EXECUTABLE_SYMLINKS})
   add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
@@ -1135,6 +1136,7 @@ target_include_directories(
 target_link_libraries(
   ${EXECUTABLE}
   PRIVATE
+  extension
   capi-headers
   runtime
   modules)
@@ -1331,7 +1333,6 @@ target_include_directories(
 add_executable(
   python-tests
   python-tests.cpp
-  $<TARGET_OBJECTS:extension>
   $<TARGET_OBJECTS:runtime-tests>
   $<TARGET_OBJECTS:extension-tests>)
 target_compile_options(
@@ -1341,6 +1342,7 @@ target_compile_options(
 target_link_libraries(
   python-tests
   PRIVATE
+  extension
   benchmark
   gtest
   runtime)
