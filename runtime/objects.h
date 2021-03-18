@@ -279,7 +279,12 @@ enum class LayoutId : word {
   }                                                                            \
   RAW_OBJECT_COMMON_NO_CAST(ty)
 
-inline bool isInstanceLayout(LayoutId id);
+const int kObjectAlignmentLog2 = 4;  // bits
+const int kObjectAlignment = word{1} << kObjectAlignmentLog2;
+
+bool isInstanceLayout(LayoutId id);
+
+word roundAllocationSize(word size);
 
 class RawObject {
  public:
@@ -3955,6 +3960,10 @@ class RawStringIO : public RawUnderTextIOBase {
 
 // RawObject
 
+inline word roundAllocationSize(word size) {
+  return Utils::roundUp(size, kObjectAlignment);
+}
+
 inline bool isInstanceLayout(LayoutId id) {
   return id > LayoutId::kLastNonInstance;
 }
@@ -5077,7 +5086,7 @@ inline word RawHeapObject::size() const {
       result += count * kPointerSize;
       break;
   }
-  return Utils::roundUp(result, kPointerSize);
+  return roundAllocationSize(result);
 }
 
 inline word RawHeapObject::headerSize(word count) {
@@ -5473,7 +5482,7 @@ inline void RawTypeProxy::setType(RawObject type) const {
 inline word RawDataArray::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
-  return Utils::roundUp(size, kPointerSize);
+  return roundAllocationSize(size);
 }
 
 inline byte RawDataArray::byteAt(word index) const {
@@ -5612,7 +5621,7 @@ inline word RawTuple::length() const { return headerCountOrOverflow(); }
 inline word RawTuple::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length * kPointerSize;
-  return Utils::roundUp(size, kPointerSize);
+  return roundAllocationSize(size);
 }
 
 inline RawObject RawTuple::initialize(uword address, word length) {
@@ -5970,7 +5979,7 @@ inline word RawLargeInt::numDigits() const {
 
 inline word RawLargeInt::allocationSize(word num_digits) {
   word size = headerSize(num_digits * kWordSize) + num_digits * kWordSize;
-  return Utils::roundUp(size, kPointerSize);
+  return roundAllocationSize(size);
 }
 
 inline RawObject RawLargeInt::initialize(uword address, word num_digits) {
@@ -5980,7 +5989,9 @@ inline RawObject RawLargeInt::initialize(uword address, word num_digits) {
 
 // RawFloat
 
-inline word RawFloat::allocationSize() { return RawHeader::kSize + kSize; }
+inline word RawFloat::allocationSize() {
+  return roundAllocationSize(RawHeader::kSize + kSize);
+}
 
 inline double RawFloat::value() const {
   return *reinterpret_cast<double*>(address() + kValueOffset);
@@ -5996,7 +6007,9 @@ inline RawObject RawFloat::initialize(uword address, double value) {
 
 // RawComplex
 
-inline word RawComplex::allocationSize() { return RawHeader::kSize + kSize; }
+inline word RawComplex::allocationSize() {
+  return roundAllocationSize(RawHeader::kSize + kSize);
+}
 
 inline double RawComplex::real() const {
   return *reinterpret_cast<double*>(address() + kRealOffset);
@@ -6169,7 +6182,9 @@ inline void RawRange::setStep(RawObject value) const {
 
 // RawPointer
 
-inline word RawPointer::allocationSize() { return RawHeader::kSize + kSize; }
+inline word RawPointer::allocationSize() {
+  return roundAllocationSize(RawHeader::kSize + kSize);
+}
 
 inline void* RawPointer::cptr() const {
   return *reinterpret_cast<void**>(address() + kCPtrOffset);
@@ -6782,7 +6797,7 @@ inline void RawFunction::setDict(RawObject dict) const {
 inline word RawInstance::allocationSize(word num_attr) {
   DCHECK(num_attr >= 0, "invalid number of attributes %ld", num_attr);
   word size = headerSize(num_attr) + num_attr * kPointerSize;
-  return Utils::roundUp(size, kPointerSize);
+  return roundAllocationSize(size);
 }
 
 // RawList
@@ -7195,7 +7210,9 @@ inline bool RawValueCell::isPlaceholder() const { return *this == value(); }
 
 // RawEllipsis
 
-inline word RawEllipsis::allocationSize() { return RawHeader::kSize; }
+inline word RawEllipsis::allocationSize() {
+  return roundAllocationSize(RawHeader::kSize);
+}
 
 inline RawObject RawEllipsis::initialize(uword address) {
   return initializeHeader(address, /*count=*/0,

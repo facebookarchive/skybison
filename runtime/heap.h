@@ -35,9 +35,7 @@ class Heap {
 };
 
 inline bool Heap::allocate(word size, uword* address_out) {
-  DCHECK(space_ != nullptr, "garbage collection is disabled");
   DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
-
   if (UNLIKELY(!space_->allocate(size, address_out))) {
     return allocateRetry(size, address_out);
   }

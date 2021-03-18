@@ -555,8 +555,7 @@ void emitPushBoundMethod(EmitEnv* env, Label* slow_path, Register r_self,
 
   __ movq(r_scratch, Address(r_space, Space::fillOffset()));
   int num_attrs = BoundMethod::kSize / kPointerSize;
-  __ addq(r_scratch, Immediate(Space::roundAllocationSize(
-                         Instance::allocationSize(num_attrs))));
+  __ addq(r_scratch, Immediate(Instance::allocationSize(num_attrs)));
   __ cmpq(r_scratch, Address(r_space, Space::endOffset()));
   __ jcc(GREATER, slow_path, Assembler::kFarJump);
   __ xchgq(r_scratch, Address(r_space, Space::fillOffset()));

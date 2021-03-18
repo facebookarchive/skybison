@@ -90,8 +90,8 @@ class FailingMultiClass(UnicodeDecodeError, UnicodeEncodeError):
 TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
   const word heap_size = 32 * kMiB;
   const word array_length = 1024;
-  const word allocation_size = Utils::roundUp(
-      array_length + HeapObject::headerSize(array_length), kPointerSize);
+  const word allocation_size =
+      roundAllocationSize(array_length + HeapObject::headerSize(array_length));
   const word total_allocation_size = heap_size * 10;
   RandomState random_seed = randomStateFromSeed(0);
   std::unique_ptr<Runtime> runtime(
@@ -891,14 +891,13 @@ TEST_F(RuntimeTest, LargeBytesSizeRoundedUpToPointerSizeMultiple) {
   HandleScope scope(thread_);
 
   LargeBytes len10(&scope, runtime_->newBytes(10, 0));
-  EXPECT_EQ(len10.size(), Utils::roundUp(kPointerSize + 10, kPointerSize));
+  EXPECT_EQ(len10.size(), roundAllocationSize(kPointerSize + 10));
 
   LargeBytes len254(&scope, runtime_->newBytes(254, 0));
-  EXPECT_EQ(len254.size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
+  EXPECT_EQ(len254.size(), roundAllocationSize(kPointerSize + 254));
 
   LargeBytes len255(&scope, runtime_->newBytes(255, 0));
-  EXPECT_EQ(len255.size(),
-            Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+  EXPECT_EQ(len255.size(), roundAllocationSize(kPointerSize * 2 + 255));
 }
 
 TEST_F(RuntimeTest, NewPointerReturnsEmptyPointer) {
@@ -952,14 +951,14 @@ TEST_F(RuntimeTest, NewStr) {
   EXPECT_EQ(s254.length(), 254);
   ASSERT_TRUE(s254.isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s254).size(),
-            Utils::roundUp(kPointerSize + 254, kPointerSize));
+            roundAllocationSize(kPointerSize + 254));
 
   const byte bytes255[255] = {0};
   Str s255(&scope, runtime_->newStrWithAll(bytes255));
   EXPECT_EQ(s255.length(), 255);
   ASSERT_TRUE(s255.isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s255).size(),
-            Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+            roundAllocationSize(kPointerSize * 2 + 255));
 
   const byte bytes300[300] = {0};
   Str s300(&scope, runtime_->newStrWithAll(bytes300));
