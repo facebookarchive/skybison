@@ -19,7 +19,7 @@ static int count(const byte* array, byte ch, int length) {
 
 TEST(OsTest, allocateUseAndFreeOnePage) {
   // Allocate a page of memory.
-  byte* page = OS::allocateMemory(OS::kPageSize);
+  byte* page = OS::allocateMemory(OS::kPageSize, nullptr);
   ASSERT_NE(page, nullptr);
 
   // Read from every allocated byte.
@@ -43,7 +43,7 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   const int size = 17 * kKiB;
 
   // Allocate the pages.
-  byte* page = OS::allocateMemory(size);
+  byte* page = OS::allocateMemory(size, nullptr);
   ASSERT_NE(page, nullptr);
 
   // Read from every allocated byte.

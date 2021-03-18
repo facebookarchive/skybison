@@ -29,9 +29,9 @@ class OS {
   static const Signal kStandardSignals[];
   static const Signal kPlatformSignals[];
 
-  // Allocate a page-sized chunk of memory. If allocated_size is not nullptr,
-  // the rounded-up size will be written to it.
-  static byte* allocateMemory(word size, word* allocated_size = nullptr);
+  // Allocate a page-sized chunk of memory initialized to zero. If
+  // allocated_size is not nullptr, the rounded-up size will be written to it.
+  static byte* allocateMemory(word size, word* allocated_size);
 
   // Returns whether the user has access to the specified path with the given
   // mode (which represents a bit mask of flags for the file existing, being

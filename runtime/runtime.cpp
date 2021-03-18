@@ -328,7 +328,6 @@ RawObject Runtime::createLargeBytes(word length) {
   word size = LargeBytes::allocationSize(length);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += LargeBytes::headerSize(length);
   return LargeBytes::cast(
       DataArray::initialize(address, length, LayoutId::kLargeBytes));
 }
@@ -338,7 +337,6 @@ RawObject Runtime::createLargeInt(word num_digits) {
   word size = LargeInt::allocationSize(num_digits);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += LargeInt::headerSize(num_digits);
   return LargeInt::cast(LargeInt::initialize(address, num_digits));
 }
 
@@ -348,7 +346,6 @@ RawObject Runtime::createLargeStr(word length) {
   word size = LargeStr::allocationSize(length);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += LargeStr::headerSize(length);
   return LargeStr::cast(
       DataArray::initialize(address, length, LayoutId::kLargeStr));
 }
@@ -358,7 +355,6 @@ RawObject Runtime::createMutableBytes(word length) {
   word size = MutableBytes::allocationSize(length);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += MutableBytes::headerSize(length);
   return MutableBytes::cast(
       DataArray::initialize(address, length, LayoutId::kMutableBytes));
 }
@@ -367,7 +363,6 @@ RawObject Runtime::createTuple(word length) {
   word size = Tuple::allocationSize(length);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += HeapObject::headerSize(length);
   return Tuple::cast(Tuple::initialize(address, length));
 }
 
@@ -833,15 +828,13 @@ RawObject Runtime::newInstance(const Layout& layout) {
   return instance;
 }
 
-inline USED RawObject Runtime::newInstanceWithSize(LayoutId layout_id,
-                                                   word object_size) {
+ALWAYS_INLINE USED RawObject Runtime::newInstanceWithSize(LayoutId layout_id,
+                                                          word object_size) {
   word num_attributes = object_size / kPointerSize;
   word allocation_size = Instance::allocationSize(num_attributes);
   uword address;
   CHECK(heap()->allocate(allocation_size, &address), "out of memory");
-  address += HeapObject::headerSize(num_attributes);
-  return Instance::cast(Instance::initialize(address, num_attributes, layout_id,
-                                             NoneType::object()));
+  return Instance::initializeWithNone(address, num_attributes, layout_id);
 }
 
 RawObject Runtime::newQualname(Thread* thread, const Type& type,
@@ -1009,7 +1002,6 @@ RawObject Runtime::newMutableTuple(word length) {
   word size = MutableTuple::allocationSize(length);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += HeapObject::headerSize(length);
   return MutableTuple::cast(MutableTuple::initialize(address, length));
 }
 
@@ -1086,17 +1078,13 @@ RawObject Runtime::newIntFromUnsigned(uword value) {
 
 RawObject Runtime::newFloat(double value) {
   uword address;
-  CHECK(heap()->allocate(Float::kSize + Header::kSize, &address),
-        "out of memory");
-  address += Header::kSize;
+  CHECK(heap()->allocate(Float::allocationSize(), &address), "out of memory");
   return Float::cast(Float::initialize(address, value));
 }
 
 RawObject Runtime::newComplex(double real, double imag) {
   uword address;
-  CHECK(heap()->allocate(Complex::kSize + Header::kSize, &address),
-        "out of memory");
-  address += Header::kSize;
+  CHECK(heap()->allocate(Complex::allocationSize(), &address), "out of memory");
   return Complex::cast(Complex::initialize(address, real, imag));
 }
 
@@ -1121,9 +1109,7 @@ RawObject Runtime::newIntWithDigits(View<uword> digits) {
 
 RawObject Runtime::newPointer(void* cptr, word length) {
   uword address;
-  CHECK(heap()->allocate(Pointer::kSize + Header::kSize, &address),
-        "out of memory");
-  address += Header::kSize;
+  CHECK(heap()->allocate(Pointer::allocationSize(), &address), "out of memory");
   return Pointer::cast(Pointer::initialize(address, cptr, length));
 }
 
@@ -2029,7 +2015,6 @@ void Runtime::initializePrimitiveInstances() {
     uword address;
     CHECK(heap()->allocate(Ellipsis::allocationSize(), &address),
           "out of memory");
-    address += Header::kSize;
     ellipsis_ = Ellipsis::cast(Ellipsis::initialize(address));
   }
 }
@@ -2789,9 +2774,7 @@ RawObject Runtime::newDict() {
   word size = Instance::allocationSize(num_attributes);
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
-  address += HeapObject::headerSize(num_attributes);
-  return Instance::cast(Instance::initialize(
-      address, num_attributes, LayoutId::kDict, SmallInt::fromWord(0)));
+  return Instance::initializeWithZero(address, num_attributes, LayoutId::kDict);
 }
 
 RawObject Runtime::newDictWithSize(word initial_size) {

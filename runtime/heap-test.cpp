@@ -35,7 +35,6 @@ static RawObject createLargeStr(Heap* heap, word length) {
   word size = LargeStr::allocationSize(length);
   uword address;
   CHECK(heap->allocate(size, &address), "out of memory");
-  address += LargeStr::headerSize(length);
   return LargeStr::cast(
       DataArray::initialize(address, length, LayoutId::kLargeStr));
 }

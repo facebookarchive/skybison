@@ -953,13 +953,14 @@ class RawHeapObject : public RawObject {
   RawHeader header() const;
   void setHeader(RawHeader header) const;
   word headerOverflow() const;
-  void setHeaderAndOverflow(word count, word hash, LayoutId id,
-                            ObjectFormat format) const;
   word headerCountOrOverflow() const;
   word size() const;
 
   // Construction.
   static RawHeapObject fromAddress(uword address);
+
+  static RawHeapObject initializeHeader(uword address, word count, word hash,
+                                        LayoutId id, ObjectFormat format);
 
   // Sizing
   static word headerSize(word count);
@@ -998,8 +999,10 @@ class RawInstance : public RawHeapObject {
   RAW_OBJECT_COMMON(Instance);
 
   // Instance initialization should only done by the Runtime.
-  static RawObject initialize(uword address, word num_attributes,
-                              LayoutId layout_id, RawObject value);
+  static RawObject initializeWithNone(uword address, word num_attributes,
+                                      LayoutId layout_id);
+  static RawObject initializeWithZero(uword address, word num_attributes,
+                                      LayoutId layout_id);
 };
 
 class RawBaseException : public RawInstance {
@@ -1748,6 +1751,7 @@ class RawFloat : public RawHeapObject {
 
   // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, double value);
+  static word allocationSize();
 
   RAW_OBJECT_COMMON(Float);
 };
@@ -1854,6 +1858,7 @@ class RawComplex : public RawHeapObject {
 
   // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, double real, double imag);
+  static word allocationSize();
 
   RAW_OBJECT_COMMON(Complex);
 };
@@ -1921,6 +1926,7 @@ class RawPointer : public RawHeapObject {
 
   // Instance initialization should only done by the Runtime.
   static RawObject initialize(uword address, void* cptr, word length);
+  static word allocationSize();
 
   RAW_OBJECT_COMMON(Pointer);
 };
@@ -5037,15 +5043,18 @@ inline word RawHeapObject::headerOverflow() const {
       ->value();
 }
 
-inline void RawHeapObject::setHeaderAndOverflow(word count, word hash,
-                                                LayoutId id,
-                                                ObjectFormat format) const {
+inline RawHeapObject RawHeapObject::initializeHeader(uword address, word count,
+                                                     word hash, LayoutId id,
+                                                     ObjectFormat format) {
   if (count > RawHeader::kCountMax) {
-    *reinterpret_cast<RawSmallInt*>(address() + kHeaderOverflowOffset) =
-        RawSmallInt::fromWord(count);
+    *reinterpret_cast<RawSmallInt*>(address) = RawSmallInt::fromWord(count);
+    address += kPointerSize;
     count = RawHeader::kCountOverflowFlag;
   }
-  setHeader(RawHeader::from(count, hash, id, format));
+  *reinterpret_cast<RawHeader*>(address) =
+      RawHeader::from(count, hash, id, format);
+  address += kPointerSize;
+  return fromAddress(address);
 }
 
 inline RawHeapObject RawHeapObject::fromAddress(uword address) {
@@ -5083,21 +5092,31 @@ inline word RawHeapObject::headerSize(word count) {
   return result;
 }
 
-inline RawObject RawInstance::initialize(uword address, word num_attributes,
-                                         LayoutId layout_id, RawObject value) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeaderAndOverflow(num_attributes, 0, layout_id,
-                           ObjectFormat::kObjects);
+static inline RawObject initializeWithObjectImpl(uword address, word count,
+                                                 LayoutId layout_id,
+                                                 int memset_byte) {
+  RawHeapObject result = RawHeapObject::initializeHeader(
+      address, count, /*hash=*/0, layout_id, ObjectFormat::kObjects);
   word start = RawHeapObject::kSize;
-  word size = num_attributes * kPointerSize;
-  if (LIKELY(value == RawNoneType::object())) {
-    std::memset(reinterpret_cast<byte*>(address + start), -1, size - start);
-  } else {
-    for (word offset = start; offset < size; offset += kPointerSize) {
-      *reinterpret_cast<RawObject*>(address + offset) = value;
-    }
-  }
-  return raw;
+  word size = count * kPointerSize;
+  std::memset(reinterpret_cast<byte*>(result.address() + start), memset_byte,
+              size - start);
+  return result;
+}
+
+inline RawObject RawInstance::initializeWithNone(uword address,
+                                                 word num_attributes,
+                                                 LayoutId layout_id) {
+  return initializeWithObjectImpl(address, num_attributes, layout_id, -1);
+}
+
+inline RawObject RawInstance::initializeWithZero(uword address,
+                                                 word num_attributes,
+                                                 LayoutId layout_id) {
+  // No memset necessary here, as the memory is guaranteed to be zero already.
+  return RawHeapObject::initializeHeader(address, /*count=*/num_attributes,
+                                         /*hash=*/0, layout_id,
+                                         ObjectFormat::kObjects);
 }
 
 inline bool RawHeapObject::isRoot() const {
@@ -5509,9 +5528,8 @@ inline uint64_t RawDataArray::uint64At(word index) const {
 
 inline RawObject RawDataArray::initialize(uword address, word length,
                                           LayoutId layout_id) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeaderAndOverflow(length, 0, layout_id, ObjectFormat::kData);
-  return raw;
+  return initializeHeader(address, /*count=*/length, /*hash=*/0, layout_id,
+                          ObjectFormat::kData);
 }
 
 // RawLargeBytes
@@ -5592,11 +5610,7 @@ inline void RawMutableTuple::swap(word i, word j) const {
 }
 
 inline RawObject RawMutableTuple::initialize(uword address, word length) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeaderAndOverflow(length, 0, LayoutId::kMutableTuple,
-                           ObjectFormat::kObjects);
-  std::memset(reinterpret_cast<byte*>(address), -1, length * kWordSize);
-  return RawHeapObject::fromAddress(address);
+  return initializeWithObjectImpl(address, length, LayoutId::kMutableTuple, -1);
 }
 
 // RawTuple
@@ -5610,10 +5624,7 @@ inline word RawTuple::allocationSize(word length) {
 }
 
 inline RawObject RawTuple::initialize(uword address, word length) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeaderAndOverflow(length, 0, LayoutId::kTuple, ObjectFormat::kObjects);
-  std::memset(reinterpret_cast<byte*>(address), -1, length * kWordSize);
-  return RawHeapObject::fromAddress(address);
+  return initializeWithObjectImpl(address, length, LayoutId::kTuple, -1);
 }
 
 inline RawObject RawTuple::at(word index) const {
@@ -5966,32 +5977,35 @@ inline word RawLargeInt::numDigits() const {
 }
 
 inline word RawLargeInt::allocationSize(word num_digits) {
-  word size = headerSize(num_digits) + num_digits * kPointerSize;
+  word size = headerSize(num_digits * kWordSize) + num_digits * kWordSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 inline RawObject RawLargeInt::initialize(uword address, word num_digits) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeaderAndOverflow(num_digits * kWordSize, 0, LayoutId::kLargeInt,
-                           ObjectFormat::kData);
-  return raw;
+  return initializeHeader(address, num_digits * kWordSize, 0,
+                          LayoutId::kLargeInt, ObjectFormat::kData);
 }
 
 // RawFloat
+
+inline word RawFloat::allocationSize() { return RawHeader::kSize + kSize; }
 
 inline double RawFloat::value() const {
   return *reinterpret_cast<double*>(address() + kValueOffset);
 }
 
 inline RawObject RawFloat::initialize(uword address, double value) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeader(RawHeader::from(RawFloat::kSize, 0, LayoutId::kFloat,
-                                ObjectFormat::kData));
-  *reinterpret_cast<double*>(address + kValueOffset) = value;
+  RawHeapObject raw =
+      initializeHeader(address, /*count=*/RawFloat::kSize,
+                       /*hash=*/0, LayoutId::kFloat, ObjectFormat::kData);
+  *reinterpret_cast<double*>(raw.address() + kValueOffset) = value;
   return raw;
 }
 
 // RawComplex
+
+inline word RawComplex::allocationSize() { return RawHeader::kSize + kSize; }
+
 inline double RawComplex::real() const {
   return *reinterpret_cast<double*>(address() + kRealOffset);
 }
@@ -6002,11 +6016,11 @@ inline double RawComplex::imag() const {
 
 inline RawObject RawComplex::initialize(uword address, double real,
                                         double imag) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeader(RawHeader::from(RawComplex::kSize, 0, LayoutId::kComplex,
-                                ObjectFormat::kData));
-  *reinterpret_cast<double*>(address + kRealOffset) = real;
-  *reinterpret_cast<double*>(address + kImagOffset) = imag;
+  RawHeapObject raw =
+      initializeHeader(address, /*count=*/RawComplex::kSize,
+                       /*hash=*/0, LayoutId::kComplex, ObjectFormat::kData);
+  *reinterpret_cast<double*>(raw.address() + kRealOffset) = real;
+  *reinterpret_cast<double*>(raw.address() + kImagOffset) = imag;
   return raw;
 }
 
@@ -6163,6 +6177,8 @@ inline void RawRange::setStep(RawObject value) const {
 
 // RawPointer
 
+inline word RawPointer::allocationSize() { return RawHeader::kSize + kSize; }
+
 inline void* RawPointer::cptr() const {
   return *reinterpret_cast<void**>(address() + kCPtrOffset);
 }
@@ -6181,11 +6197,11 @@ inline void RawPointer::setLength(word new_length) const {
 
 inline RawObject RawPointer::initialize(uword address, void* cptr,
                                         word length) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeader(RawHeader::from(RawPointer::kSize, 0, LayoutId::kPointer,
-                                ObjectFormat::kData));
-  *reinterpret_cast<void**>(address + kCPtrOffset) = cptr;
-  *reinterpret_cast<word*>(address + kLengthOffset) = length;
+  RawHeapObject raw =
+      initializeHeader(address, /*count=*/RawPointer::kSize,
+                       /*hash=*/0, LayoutId::kPointer, ObjectFormat::kData);
+  *reinterpret_cast<void**>(raw.address() + kCPtrOffset) = cptr;
+  *reinterpret_cast<word*>(raw.address() + kLengthOffset) = length;
   return raw;
 }
 
@@ -7190,10 +7206,8 @@ inline bool RawValueCell::isPlaceholder() const { return *this == value(); }
 inline word RawEllipsis::allocationSize() { return kMinimumSize; }
 
 inline RawObject RawEllipsis::initialize(uword address) {
-  RawHeapObject raw = RawHeapObject::fromAddress(address);
-  raw.setHeader(
-      RawHeader::from(0, 0, LayoutId::kEllipsis, ObjectFormat::kObjects));
-  return raw;
+  return initializeHeader(address, /*count=*/0,
+                          /*hash=*/0, LayoutId::kEllipsis, ObjectFormat::kData);
 }
 
 // RawSetBase
