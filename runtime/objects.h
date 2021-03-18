@@ -971,14 +971,10 @@ class RawHeapObject : public RawObject {
   RawObject forward() const;
   void forwardTo(RawObject object) const;
 
-  static const uword kIsForwarded = static_cast<uword>(-3);
-
   // Layout.
   static const int kHeaderOffset = -kPointerSize;
   static const int kHeaderOverflowOffset = kHeaderOffset - kPointerSize;
   static const int kSize = kHeaderOffset + kPointerSize;
-
-  static const word kMinimumSize = kPointerSize * 2;
 
   RAW_OBJECT_COMMON(HeapObject);
 };
@@ -5081,7 +5077,7 @@ inline word RawHeapObject::size() const {
       result += count * kPointerSize;
       break;
   }
-  return Utils::maximum(Utils::roundUp(result, kPointerSize), kMinimumSize);
+  return Utils::roundUp(result, kPointerSize);
 }
 
 inline word RawHeapObject::headerSize(word count) {
@@ -5124,22 +5120,18 @@ inline bool RawHeapObject::isRoot() const {
 }
 
 inline bool RawHeapObject::isForwarding() const {
-  return *reinterpret_cast<uword*>(address() + kHeaderOffset) == kIsForwarded;
+  // In case of forwarded objects the header was replaced with a reference
+  // to the forwarded HeapObject.
+  return !reinterpret_cast<RawObject*>(address() + kHeaderOffset)->isHeader();
 }
 
 inline RawObject RawHeapObject::forward() const {
-  // When a heap object is forwarding, its second word is the forwarding
-  // address.
-  return *reinterpret_cast<RawObject*>(address() + kHeaderOffset +
-                                       kPointerSize);
+  return *reinterpret_cast<RawObject*>(address() + kHeaderOffset);
 }
 
 inline void RawHeapObject::forwardTo(RawObject object) const {
-  // Overwrite the header with the forwarding marker.
-  *reinterpret_cast<uword*>(address() + kHeaderOffset) = kIsForwarded;
-  // Overwrite the second word with the forwarding addressing.
-  *reinterpret_cast<RawObject*>(address() + kHeaderOffset + kPointerSize) =
-      object;
+  // Overwrite the header with the forwarding address.
+  *reinterpret_cast<RawObject*>(address() + kHeaderOffset) = object;
 }
 
 inline RawObject RawInstance::instanceVariableAt(word offset) const {
@@ -5481,7 +5473,7 @@ inline void RawTypeProxy::setType(RawObject type) const {
 inline word RawDataArray::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
-  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
+  return Utils::roundUp(size, kPointerSize);
 }
 
 inline byte RawDataArray::byteAt(word index) const {
@@ -5620,7 +5612,7 @@ inline word RawTuple::length() const { return headerCountOrOverflow(); }
 inline word RawTuple::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length * kPointerSize;
-  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
+  return Utils::roundUp(size, kPointerSize);
 }
 
 inline RawObject RawTuple::initialize(uword address, word length) {
@@ -5978,7 +5970,7 @@ inline word RawLargeInt::numDigits() const {
 
 inline word RawLargeInt::allocationSize(word num_digits) {
   word size = headerSize(num_digits * kWordSize) + num_digits * kWordSize;
-  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
+  return Utils::roundUp(size, kPointerSize);
 }
 
 inline RawObject RawLargeInt::initialize(uword address, word num_digits) {
@@ -6790,7 +6782,7 @@ inline void RawFunction::setDict(RawObject dict) const {
 inline word RawInstance::allocationSize(word num_attr) {
   DCHECK(num_attr >= 0, "invalid number of attributes %ld", num_attr);
   word size = headerSize(num_attr) + num_attr * kPointerSize;
-  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
+  return Utils::roundUp(size, kPointerSize);
 }
 
 // RawList
@@ -7203,7 +7195,7 @@ inline bool RawValueCell::isPlaceholder() const { return *this == value(); }
 
 // RawEllipsis
 
-inline word RawEllipsis::allocationSize() { return kMinimumSize; }
+inline word RawEllipsis::allocationSize() { return RawHeader::kSize; }
 
 inline RawObject RawEllipsis::initialize(uword address) {
   return initializeHeader(address, /*count=*/0,
