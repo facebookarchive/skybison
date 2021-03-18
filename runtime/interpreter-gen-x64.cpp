@@ -796,16 +796,16 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   __ popq(r_key);
   __ popq(r_receiver);
   emitGetLayoutId(env, r_layout_id, r_receiver);
-  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   env->register_state.assign(&env->callable, kCallableReg);
   emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id, r_caches,
-                          kOpargReg);
+                          env->oparg);
 
   // Call __getitem__(receiver, key)
   __ pushq(env->callable);
   __ pushq(r_receiver);
   __ pushq(r_key);
-  __ movq(kOpargReg, Immediate(2));
+  __ movq(env->oparg, Immediate(2));
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -949,14 +949,14 @@ void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
-  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   env->register_state.assign(&env->callable, kCallableReg);
   emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id, r_caches,
-                          kOpargReg);
+                          env->oparg);
   // Call getter(receiver)
   __ pushq(env->callable);
   __ pushq(r_base);
-  __ movq(kOpargReg, Immediate(1));
+  __ movq(env->oparg, Immediate(1));
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -988,8 +988,8 @@ void emitHandler<LOAD_DEREF>(EmitEnv* env) {
   ScratchReg r_n_locals(env);
 
   // r_n_locals = frame->code()->nlocals();
-  __ movq(r_locals_offset, Address(kFrameReg, Frame::kLocalsOffsetOffset));
-  __ movq(r_n_locals, Address(kFrameReg, r_locals_offset, TIMES_1,
+  __ movq(r_locals_offset, Address(env->frame, Frame::kLocalsOffsetOffset));
+  __ movq(r_n_locals, Address(env->frame, r_locals_offset, TIMES_1,
                               Frame::kFunctionOffsetFromLocals * kPointerSize));
   __ movq(r_n_locals,
           Address(r_n_locals, heapObjectDisp(RawFunction::kCodeOffset)));
@@ -1005,7 +1005,7 @@ void emitHandler<LOAD_DEREF>(EmitEnv* env) {
     // nlocals already shifted by 1 as a SmallInt, so nlocals << 2 makes it
     // word-aligned.
     __ shll(r_n_locals, Immediate(2));
-    __ leaq(r_idx, Address(r_n_locals, kOpargReg, TIMES_8, 0));
+    __ leaq(r_idx, Address(r_n_locals, env->oparg, TIMES_8, 0));
 
     // cell = frame->local(r_idx) == *(locals() - r_idx - 1);
     // See Frame::local.
@@ -1014,7 +1014,7 @@ void emitHandler<LOAD_DEREF>(EmitEnv* env) {
   // Object value(&scope, cell.value());
   ScratchReg r_cell_value(env);
   __ movq(r_cell_value,
-          Address(kFrameReg, r_locals_offset, TIMES_1, -kPointerSize));
+          Address(env->frame, r_locals_offset, TIMES_1, -kPointerSize));
   __ movq(r_cell_value,
           Address(r_cell_value, heapObjectDisp(Cell::kValueOffset)));
   __ cmpl(r_cell_value, Immediate(Unbound::object().raw()));
@@ -1454,10 +1454,10 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
   __ jcc(EQUAL, &unwind, Assembler::kFarJump);
 
   // thread->popFrame()
-  __ leaq(RSP, Address(kFrameReg,
+  __ leaq(RSP, Address(env->frame,
                        locals_offset + (Frame::kFunctionOffsetFromLocals + 1) *
                                            kPointerSize));
-  __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
+  __ movq(env->frame, Address(env->frame, Frame::kPreviousFrameOffset));
 
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   // thread->stackPush(result)
@@ -1532,8 +1532,8 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   ScratchReg r_saved_rsi(env);
   __ movq(r_saved_rsi, RSI);
   ScratchReg r_saved_bc(env);
-  __ movq(r_saved_bc, kBCReg);
-  static_assert(kBCReg == RCX, "rcx used as arg to repmovsq");
+  __ movq(r_saved_bc, env->bytecode);
+  CHECK(env->bytecode == RCX, "rcx used as arg to repmovsq");
   // Use `rep movsq` to copy RCX words from RSI to RDI.
   {
     __ std();
@@ -1550,19 +1550,20 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ addq(RSP, Immediate(kPointerSize));
   __ movq(RDI, r_saved_rdi);
   __ movq(RSI, r_saved_rsi);
-  __ movq(kBCReg, r_saved_bc);
+  env->register_state.assign(&env->bytecode, kBCReg);
+  __ movq(env->bytecode, r_saved_bc);
   __ jmp(&env->call_handler, Assembler::kFarJump);
 }
 
 // Loads result of originalArg() (bytecode.h) in `r_output`.
 static void emitOriginalArg(EmitEnv* env, Register r_output) {
-  __ movq(r_output, Address(kFrameReg, Frame::kLocalsOffsetOffset));
-  __ movq(r_output, Address(kFrameReg, r_output, TIMES_1,
+  __ movq(r_output, Address(env->frame, Frame::kLocalsOffsetOffset));
+  __ movq(r_output, Address(env->frame, r_output, TIMES_1,
                             Frame::kFunctionOffsetFromLocals * kPointerSize));
   __ movq(
       r_output,
       Address(r_output, heapObjectDisp(Function::kOriginalArgumentsOffset)));
-  __ movq(r_output, Address(r_output, kOpargReg, TIMES_8, heapObjectDisp(0)));
+  __ movq(r_output, Address(r_output, env->oparg, TIMES_8, heapObjectDisp(0)));
   emitConvertFromSmallInt(env, r_output);
 }
 
@@ -1607,7 +1608,7 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
     // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
     // arg))
     emitOriginalArg(env, r_original_arg);
-    __ addq(kPCReg, r_original_arg);
+    __ addq(env->pc, r_original_arg);
     __ jmp(&next_opcode, Assembler::kNearJump);
   }
 
@@ -1665,7 +1666,7 @@ void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
     // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
     // arg))
     emitOriginalArg(env, r_original_arg);
-    __ addq(kPCReg, r_original_arg);
+    __ addq(env->pc, r_original_arg);
     __ jmp(&next_opcode, Assembler::kNearJump);
   }
 
@@ -1678,7 +1679,7 @@ template <>
 void emitHandler<LOAD_BOOL>(EmitEnv* env) {
   ScratchReg r_scratch(env);
 
-  __ leaq(r_scratch, Address(kOpargReg, TIMES_2, Bool::kBoolTag));
+  __ leaq(r_scratch, Address(env->oparg, TIMES_2, Bool::kBoolTag));
   __ pushq(r_scratch);
   emitNextOpcode(env);
 }
@@ -1687,7 +1688,7 @@ template <>
 void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
   ScratchReg r_scratch(env);
 
-  __ movq(r_scratch, Address(env->frame, kOpargReg, TIMES_8, Frame::kSize));
+  __ movq(r_scratch, Address(env->frame, env->oparg, TIMES_8, Frame::kSize));
   __ cmpl(r_scratch, Immediate(Error::notFound().raw()));
   env->register_state.check(env->handler_assignment);
   __ jcc(EQUAL, genericHandlerLabel(env), Assembler::kFarJump);
@@ -2027,8 +2028,8 @@ void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
-  __ movq(kArgRegs[0], kThreadReg);
-  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  __ movq(kArgRegs[0], env->thread);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCall<Interpreter::Continue (*)(Thread*, word)>(
       env, Interpreter::inplaceOpUpdateCache);
