@@ -11,7 +11,7 @@ class ForkTest(unittest.TestCase):
         if pid == 0:
             # Child
             time.sleep(1)
-            return
+            os._exit(0)
         else:
             # Parent
             # Ensure that the pid exists.
@@ -21,6 +21,50 @@ class ForkTest(unittest.TestCase):
             # Ensure process is reaped.
             with self.assertRaises(OSError):
                 os.kill(pid, 0)
+
+    def test_register_before_fork(self):
+        self.x = 0
+
+        def f():
+            self.x = 1
+
+        os.register_at_fork(before=f)
+        self.assertEqual(self.x, 0)
+        pid = os.fork()
+        if pid == 0:
+            self.assertEqual(self.x, 1)
+            os._exit(0)
+        else:
+            self.assertEqual(self.x, 1)
+
+    def test_register_after_fork_parent(self):
+        self.x = 0
+
+        def f():
+            self.x = 1
+
+        os.register_at_fork(after_in_parent=f)
+        self.assertEqual(self.x, 0)
+        pid = os.fork()
+        if pid == 0:
+            self.assertEqual(self.x, 0)
+            os._exit(0)
+        else:
+            self.assertEqual(self.x, 1)
+
+    def test_register_after_fork_child(self):
+        self.x = 0
+
+        def f():
+            self.x = 1
+
+        os.register_at_fork(after_in_child=f)
+        self.assertEqual(self.x, 0)
+        pid = os.fork()
+        if pid == 0:
+            os._exit(0)
+        else:
+            self.assertEqual(self.x, 0)
 
 
 if __name__ == "__main__":
