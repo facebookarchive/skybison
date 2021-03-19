@@ -101,6 +101,7 @@ encodings_test.py
 faulthandler.py
 faulthandler_test.py
 fcntl_test.py
+fork_test.py
 gc.py
 grp_test.py
 hashlib_test.py

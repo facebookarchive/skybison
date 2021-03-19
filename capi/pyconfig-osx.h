@@ -323,7 +323,7 @@
 #define HAVE_FLOCK 1
 
 /* Define to 1 if you have the `fork' function. */
-/* #define HAVE_FORK 1 */
+#define HAVE_FORK 1
 
 /* Define to 1 if you have the `forkpty' function. */
 #define HAVE_FORKPTY 1

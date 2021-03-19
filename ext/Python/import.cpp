@@ -252,7 +252,9 @@ PY_EXPORT PyObject* PyImport_ReloadModule(PyObject* /* m */) {
 
 PY_EXPORT void _PyImport_AcquireLock() { importAcquireLock(Thread::current()); }
 
-PY_EXPORT void _PyImport_ReInitLock() { UNIMPLEMENTED("_PyImport_ReInitLock"); }
+PY_EXPORT void _PyImport_ReInitLock() {
+  // TODO(T87097565): Implement instead of making it a noop
+}
 
 PY_EXPORT int _PyImport_ReleaseLock() {
   return importReleaseLock(Thread::current()) ? 1 : -1;

@@ -123,7 +123,9 @@ PY_EXPORT PyObject* PyEval_GetLocals() { UNIMPLEMENTED("PyEval_GetLocals"); }
 
 PY_EXPORT void PyEval_InitThreads() { UNIMPLEMENTED("PyEval_InitThreads"); }
 
-PY_EXPORT void PyEval_ReInitThreads() { UNIMPLEMENTED("PyEval_ReInitThreads"); }
+PY_EXPORT void PyEval_ReInitThreads() {
+  // TODO(T87097565): Implement instead of making it a noop
+}
 
 PY_EXPORT void PyEval_ReleaseLock() { UNIMPLEMENTED("PyEval_ReleaseLock"); }
 
