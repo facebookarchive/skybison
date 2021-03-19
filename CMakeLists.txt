@@ -1133,13 +1133,31 @@ target_include_directories(
   ${EXECUTABLE}
   PRIVATE
   runtime)
-target_link_libraries(
-  ${EXECUTABLE}
-  PRIVATE
-  extension
-  capi-headers
-  runtime
-  modules)
+
+# Not all of the C-API symbols are used directly, instruct the linker to not
+# strip them away just because they are unused. Apple's `ld` doesn't have the
+# --whole-archive option, so use their flavor of the flag.
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  target_link_libraries(
+    ${EXECUTABLE}
+    PRIVATE
+    -Wl,-all_load
+    extension
+    -Wl,-noall_load
+    capi-headers
+    runtime
+    modules)
+else()
+  target_link_libraries(
+    ${EXECUTABLE}
+    PRIVATE
+    -Wl,--whole-archive
+    extension
+    -Wl,--no-whole-archive
+    capi-headers
+    runtime
+    modules)
+endif()
 set_target_properties(
   ${EXECUTABLE}
   PROPERTIES
