@@ -180,3 +180,6 @@ class array(bootstrap=True):
 
     def tounicode(self):
         _unimplemented()
+
+
+typecodes = "bBuhHiIlLqQfd"
