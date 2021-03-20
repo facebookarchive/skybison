@@ -1,0 +1,3 @@
+usdt:./build-debugopt/bin/python:python:InvalidateInlineCache_* {
+  @ic_miss[probe]++;
+}
