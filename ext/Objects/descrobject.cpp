@@ -14,6 +14,10 @@ PY_EXPORT PyTypeObject* PyDictProxy_Type_Ptr() {
       runtime, runtime->typeAt(LayoutId::kMappingProxy)));
 }
 
+PY_EXPORT PyObject* PyDescr_NAME_Func(PyObject*) {
+  UNIMPLEMENTED("PyDescr_NAME");
+}
+
 PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
                                            PyMethodDef* method) {
   Thread* thread = Thread::current();

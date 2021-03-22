@@ -55,6 +55,11 @@ PY_EXPORT void PySys_AddXOption(const wchar_t* /* s */) {
   UNIMPLEMENTED("PySys_AddXOption");
 }
 
+PY_EXPORT int PySys_Audit(const char* /* event */, const char* /* argFormat */,
+                          ...) {
+  return 0;  // TODO(T86943617): implement
+}
+
 PY_EXPORT void PySys_FormatStderr(const char* /* t */, ...) {
   UNIMPLEMENTED("PySys_FormatStderr");
 }

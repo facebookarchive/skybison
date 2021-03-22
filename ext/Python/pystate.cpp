@@ -144,6 +144,10 @@ PY_EXPORT int _PyState_AddModule(PyObject* module, PyModuleDef* def) {
   return moduleListAdd(thread, module, def);
 }
 
+PY_EXPORT PyThreadState* _PyThreadState_GET_Func(void) {
+  UNIMPLEMENTED("_PyThreadState_GET");
+}
+
 PY_EXPORT void _PyThreadState_Init(PyThreadState* /* e */) {
   UNIMPLEMENTED("_PyThreadState_Init");
 }
@@ -156,6 +160,10 @@ PY_EXPORT PyInterpreterState* PyInterpreterState_Head() {
   UNIMPLEMENTED("PyInterpreterState_Head");
 }
 
+PY_EXPORT PyInterpreterState* PyInterpreterState_Main() {
+  UNIMPLEMENTED("PyInterpreterState_Main");
+}
+
 PY_EXPORT PyInterpreterState* PyInterpreterState_Next(
     PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Next");
@@ -164,6 +172,10 @@ PY_EXPORT PyInterpreterState* PyInterpreterState_Next(
 PY_EXPORT PyThreadState* PyInterpreterState_ThreadHead(
     PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_ThreadHead");
+}
+
+PY_EXPORT PyInterpreterState* _PyInterpreterState_Get(void) {
+  UNIMPLEMENTED("_PyInterpreterState_Get");
 }
 
 PY_EXPORT void _PyState_ClearModules() {

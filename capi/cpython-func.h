@@ -356,6 +356,7 @@ PyAPI_FUNC_DECL(PyObject* PyComplex_FromCComplex(Py_complex));
 PyAPI_FUNC_DECL(PyObject* PyComplex_FromDoubles(double, double));
 PyAPI_FUNC_DECL(double PyComplex_ImagAsDouble(PyObject*));
 PyAPI_FUNC_DECL(double PyComplex_RealAsDouble(PyObject*));
+PyAPI_FUNC_DECL(PyObject* PyDescr_NAME_Func(PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyDescr_NewClassMethod(PyTypeObject*, PyMethodDef*));
 PyAPI_FUNC_DECL(PyObject* PyDescr_NewGetSet(PyTypeObject*, PyGetSetDef*));
 PyAPI_FUNC_DECL(PyObject* PyDescr_NewMember(PyTypeObject*,
@@ -536,6 +537,7 @@ PyAPI_FUNC_DECL(PyObject* PyInstanceMethod_New(PyObject*));
 PyAPI_FUNC_DECL(void PyInterpreterState_Clear(PyInterpreterState*));
 PyAPI_FUNC_DECL(void PyInterpreterState_Delete(PyInterpreterState*));
 PyAPI_FUNC_DECL(PyInterpreterState* PyInterpreterState_Head(void));
+PyAPI_FUNC_DECL(PyInterpreterState* PyInterpreterState_Main(void));
 PyAPI_FUNC_DECL(
     PyInterpreterState* PyInterpreterState_Next(PyInterpreterState*));
 PyAPI_FUNC_DECL(
@@ -849,6 +851,7 @@ PyAPI_FUNC_DECL(void PyStructSequence_SetItem(PyObject*, Py_ssize_t,
 PyAPI_FUNC_DECL(void PySys_AddWarnOption(const wchar_t*));
 PyAPI_FUNC_DECL(void PySys_AddWarnOptionUnicode(PyObject*));
 PyAPI_FUNC_DECL(void PySys_AddXOption(const wchar_t*));
+PyAPI_FUNC_DECL(int PySys_Audit(const char*, const char*, ...));
 PyAPI_FUNC_DECL(void PySys_FormatStderr(const char*, ...));
 PyAPI_FUNC_DECL(void PySys_FormatStdout(const char*, ...));
 PyAPI_FUNC_DECL(PyObject* PySys_GetObject(const char*));
@@ -1210,6 +1213,7 @@ PyAPI_FUNC_DECL(void _PyGILState_Reinit(void));
 PyAPI_FUNC_DECL(void _PyImport_AcquireLock(void));
 PyAPI_FUNC_DECL(void _PyImport_ReInitLock(void));
 PyAPI_FUNC_DECL(int _PyImport_ReleaseLock(void));
+PyAPI_FUNC_DECL(PyInterpreterState* _PyInterpreterState_Get(void));
 PyAPI_FUNC_DECL(int _PyLong_AsByteArray(PyLongObject*, unsigned char*, size_t,
                                         int, int));
 PyAPI_FUNC_DECL(int _PyLong_AsInt(PyObject*));
@@ -1267,6 +1271,7 @@ PyAPI_FUNC_DECL(void _PySignal_AfterFork(void));
 PyAPI_FUNC_DECL(int _PyState_AddModule(PyObject*, struct PyModuleDef*));
 PyAPI_FUNC_DECL(void _PyState_ClearModules(void));
 PyAPI_FUNC_DECL(size_t _PySys_GetSizeOf(PyObject*));
+PyAPI_FUNC_DECL(PyThreadState* _PyThreadState_GET_Func(void));
 PyAPI_FUNC_DECL(int _PyThreadState_GetRecursionDepth(PyThreadState*));
 PyAPI_FUNC_DECL(void _PyThreadState_Init(PyThreadState*));
 PyAPI_FUNC_DECL(PyThreadState* _PyThreadState_Prealloc(PyInterpreterState*));
@@ -1524,6 +1529,8 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 
 #define PyCFunction_GET_SELF(op) PyCFunction_GET_SELF_Func((PyObject*)op)
 
+#define PyDescr_NAME(op) PyDescr_NAME_Func((PyObject*)op)
+
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE_Func((PyObject*)op)
 
 #define PyEval_CallObject(func, arg)                                           \
@@ -1593,6 +1600,8 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
   do {                                                                         \
     (void)Py_BUILD_ASSERT_EXPR(cond);                                          \
   } while (0)
+
+#define _PyThreadState_GET() _PyThreadState_GET_Func()
 
 #define _Py_SIZE_ROUND_DOWN(n, a) ((size_t)(n) & ~(size_t)((a)-1))
 #define _Py_SIZE_ROUND_UP(n, a)                                                \
