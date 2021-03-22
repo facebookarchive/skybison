@@ -394,9 +394,39 @@ PY_EXPORT PyLongObject* _PyLong_FromNbInt(PyObject*) {
   UNIMPLEMENTED("_PyLong_FromNbInt");
 }
 
+PY_EXPORT PyObject* _PyLong_Lshift(PyObject* a, size_t shiftby) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(a)->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfInt(*obj), "_PyLong_Lshift requires an int");
+  Int num(&scope, intUnderlying(*obj));
+  if (num.isZero()) {
+    return ApiHandle::newReference(runtime, SmallInt::fromWord(0));
+  }
+  Int shift(&scope, runtime->newIntFromUnsigned(shiftby));
+  return ApiHandle::newReference(runtime,
+                                 runtime->intBinaryLshift(thread, num, shift));
+}
+
 PY_EXPORT PyObject* _PyLong_One_Ptr() {
   return ApiHandle::borrowedReference(Thread::current()->runtime(),
                                       SmallInt::fromWord(1));
+}
+
+PY_EXPORT PyObject* _PyLong_Rshift(PyObject* a, size_t shiftby) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(a)->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfInt(*obj), "_PyLong_Rshift requires an int");
+  Int num(&scope, intUnderlying(*obj));
+  if (num.isZero()) {
+    return ApiHandle::newReference(runtime, SmallInt::fromWord(0));
+  }
+  Int shift(&scope, runtime->newIntFromUnsigned(shiftby));
+  return ApiHandle::newReference(runtime,
+                                 runtime->intBinaryRshift(thread, num, shift));
 }
 
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {

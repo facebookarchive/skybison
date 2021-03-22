@@ -1221,7 +1221,9 @@ PyAPI_FUNC_DECL(PyObject* _PyLong_FromByteArray(const unsigned char*, size_t,
 PyAPI_FUNC_DECL(PyLongObject* _PyLong_FromNbInt(PyObject*));
 PyAPI_FUNC_DECL(PyObject* _PyLong_FromTime_t(time_t));
 PyAPI_FUNC_DECL(PyObject* _PyLong_GCD(PyObject*, PyObject*));
+PyAPI_FUNC_DECL(PyObject* _PyLong_Lshift(PyObject*, size_t));
 PyAPI_FUNC_DECL(size_t _PyLong_NumBits(PyObject*));
+PyAPI_FUNC_DECL(PyObject* _PyLong_Rshift(PyObject*, size_t));
 PyAPI_FUNC_DECL(int _PyLong_Sign(PyObject*));
 PyAPI_FUNC_DECL(char* _PyMem_RawStrdup(const char*));
 PyAPI_FUNC_DECL(char* _PyMem_Strdup(const char*));
