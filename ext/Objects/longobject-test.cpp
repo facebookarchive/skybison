@@ -677,6 +677,24 @@ x = X(0xface)
   EXPECT_EQ(dst[2], 0xce);
 }
 
+TEST_F(LongExtensionApiTest, CopyWithIntReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(42));
+  PyObjectPtr result(_PyLong_Copy(x.asLongObject()));
+  EXPECT_TRUE(PyLong_CheckExact(result));
+  EXPECT_TRUE(isLongEqualsLong(result, 42));
+}
+
+TEST_F(LongExtensionApiTest, CopyWithIntSubclassReturnsExactInt) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+x = X(42)
+)");
+  PyObjectPtr x(mainModuleGet("x"));
+  PyObjectPtr result(_PyLong_Copy(x.asLongObject()));
+  EXPECT_TRUE(PyLong_CheckExact(result));
+  EXPECT_TRUE(isLongEqualsLong(result, 42));
+}
+
 TEST_F(LongExtensionApiTest, DivmodNearWithNonIntDividendRaisesTypeError) {
   PyObjectPtr a(PyUnicode_FromString("not an int"));
   PyObjectPtr b(PyLong_FromLong(0));

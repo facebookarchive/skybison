@@ -328,6 +328,16 @@ PY_EXPORT PyTypeObject* PyLong_Type_Ptr() {
       ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kInt)));
 }
 
+PY_EXPORT PyObject* _PyLong_Copy(PyLongObject* longobj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  PyObject* pyobj = reinterpret_cast<PyObject*>(longobj);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfInt(*obj), "_PyLong_Copy requires an int");
+  return ApiHandle::newReference(runtime, intUnderlying(*obj));
+}
+
 PY_EXPORT PyObject* _PyLong_DivmodNear(PyObject* a, PyObject* b) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
