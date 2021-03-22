@@ -100,8 +100,8 @@ PY_EXPORT PyObject* PyLong_FromSize_t(size_t ival) {
 // When overflow == nullptr, an exception will be raised and -1 is returned if
 // the value doesn't fit in T.
 template <typename T>
-static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
-  Thread* thread = Thread::current();
+static T asInt(Thread* thread, PyObject* pylong, const char* type_name,
+               int* overflow) {
   if (pylong == nullptr) {
     thread->raiseBadInternalCall();
     return -1;
@@ -171,46 +171,47 @@ PY_EXPORT size_t _PyLong_NumBits(PyObject* pylong) {
 // Converting to signed ints.
 
 PY_EXPORT int _PyLong_AsInt(PyObject* pylong) {
-  return asInt<int>(pylong, "int", nullptr);
+  return asInt<int>(Thread::current(), pylong, "int", nullptr);
 }
 
 PY_EXPORT long PyLong_AsLong(PyObject* pylong) {
-  return asInt<long>(pylong, "long", nullptr);
+  return asInt<long>(Thread::current(), pylong, "long", nullptr);
 }
 
 PY_EXPORT long long PyLong_AsLongLong(PyObject* val) {
-  return asInt<long long>(val, "long long", nullptr);
+  return asInt<long long>(Thread::current(), val, "long long", nullptr);
 }
 
 PY_EXPORT pid_t PyLong_AsPid(PyObject* val) {
-  return asInt<pid_t>(val, "pid_t", nullptr);
+  return asInt<pid_t>(Thread::current(), val, "pid_t", nullptr);
 }
 
 PY_EXPORT Py_ssize_t PyLong_AsSsize_t(PyObject* val) {
-  return asInt<Py_ssize_t>(val, "ssize_t", nullptr);
+  return asInt<Py_ssize_t>(Thread::current(), val, "ssize_t", nullptr);
 }
 
 // Converting to unsigned ints.
 
 PY_EXPORT unsigned long PyLong_AsUnsignedLong(PyObject* val) {
-  return asInt<unsigned long>(val, "unsigned long", nullptr);
+  return asInt<unsigned long>(Thread::current(), val, "unsigned long", nullptr);
 }
 
 PY_EXPORT unsigned long long PyLong_AsUnsignedLongLong(PyObject* val) {
-  return asInt<unsigned long long>(val, "unsigned long long", nullptr);
+  return asInt<unsigned long long>(Thread::current(), val, "unsigned long long",
+                                   nullptr);
 }
 
 PY_EXPORT size_t PyLong_AsSize_t(PyObject* val) {
-  return asInt<size_t>(val, "size_t", nullptr);
+  return asInt<size_t>(Thread::current(), val, "size_t", nullptr);
 }
 
 PY_EXPORT long PyLong_AsLongAndOverflow(PyObject* pylong, int* overflow) {
-  return asInt<long>(pylong, "", overflow);
+  return asInt<long>(Thread::current(), pylong, "", overflow);
 }
 
 PY_EXPORT long long PyLong_AsLongLongAndOverflow(PyObject* pylong,
                                                  int* overflow) {
-  return asInt<long long>(pylong, "", overflow);
+  return asInt<long long>(Thread::current(), pylong, "", overflow);
 }
 
 PY_EXPORT PyObject* PyLong_FromDouble(double value) {
@@ -436,6 +437,46 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   DCHECK(thread->runtime()->isInstanceOfInt(*obj), "requires an integer");
   Int value(&scope, intUnderlying(*obj));
   return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
+}
+
+template <typename T>
+static T unsignedConverter(PyObject* obj, void* ptr, const char* type_name) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (thread->runtime()->isInstanceOfInt(*object)) {
+    Int num(&scope, intUnderlying(*object));
+    if (num.isNegative()) {
+      thread->raiseWithFmt(LayoutId::kValueError, "value must be positive");
+      return 0;
+    }
+  }
+  T result = asInt<T>(thread, obj, type_name, nullptr);
+  if (result == static_cast<T>(-1) && thread->hasPendingException()) {
+    return 0;
+  }
+  *reinterpret_cast<T*>(ptr) = result;
+  return 1;
+}
+
+PY_EXPORT int _PyLong_Size_t_Converter(PyObject* obj, void* ptr) {
+  return unsignedConverter<size_t>(obj, ptr, "size_t");
+}
+
+PY_EXPORT int _PyLong_UnsignedInt_Converter(PyObject* obj, void* ptr) {
+  return unsignedConverter<unsigned int>(obj, ptr, "unsigned int");
+}
+
+PY_EXPORT int _PyLong_UnsignedLong_Converter(PyObject* obj, void* ptr) {
+  return unsignedConverter<unsigned long>(obj, ptr, "unsigned long");
+}
+
+PY_EXPORT int _PyLong_UnsignedLongLong_Converter(PyObject* obj, void* ptr) {
+  return unsignedConverter<unsigned long long>(obj, ptr, "unsigned long long");
+}
+
+PY_EXPORT int _PyLong_UnsignedShort_Converter(PyObject* obj, void* ptr) {
+  return unsignedConverter<unsigned short>(obj, ptr, "unsigned short");
 }
 
 PY_EXPORT PyObject* _PyLong_Zero_Ptr() {
