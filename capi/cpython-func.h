@@ -1122,6 +1122,10 @@ PyAPI_FUNC_DECL(struct symtable* Py_SymtableStringObject(const char* str,
 PyAPI_FUNC_DECL(size_t Py_UNICODE_strlen(const Py_UNICODE*));
 PyAPI_FUNC_DECL(char* Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*));
 PyAPI_FUNC_DECL(PyObject* Py_VaBuildValue(const char*, va_list));
+PyAPI_FUNC_DECL(void _PyArg_BadArgument(const char*, const char*, const char*,
+                                        PyObject*));
+PyAPI_FUNC_DECL(int _PyArg_CheckPositional(const char*, Py_ssize_t, Py_ssize_t,
+                                           Py_ssize_t));
 PyAPI_FUNC_DECL(void _PyArg_Fini(void));
 PyAPI_FUNC_DECL(int _PyArg_NoKeywords(const char* funcname, PyObject* kw));
 PyAPI_FUNC_DECL(int _PyArg_NoPositional(const char* funcname, PyObject* args));
@@ -1146,6 +1150,9 @@ PyAPI_FUNC_DECL(int _PyArg_ParseTupleAndKeywords_SizeT(PyObject*, PyObject*,
 PyAPI_FUNC_DECL(int _PyArg_ParseTuple_SizeT(PyObject* args, const char* format,
                                             ...));
 PyAPI_FUNC_DECL(int _PyArg_Parse_SizeT(PyObject*, const char*, ...));
+PyAPI_FUNC_DECL(PyObject* const* _PyArg_UnpackKeywords(
+    PyObject* const*, Py_ssize_t, PyObject*, PyObject*, struct _PyArg_Parser*,
+    int, int, int, PyObject**));
 PyAPI_FUNC_DECL(int _PyArg_UnpackStack(PyObject* const*, Py_ssize_t,
                                        const char*, Py_ssize_t, Py_ssize_t,
                                        ...));
