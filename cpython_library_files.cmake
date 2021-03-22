@@ -1182,7 +1182,6 @@ test/sample_doctest_no_docstrings.py
 test/sample_doctest_no_doctests.py
 test/secp384r1.pem
 test/selfsigned_pythontestdotnet.pem
-test/seq_tests.py
 test/sgml_input.html
 test/signalinterproctester.py
 test/sndhdrdata/README
@@ -1783,7 +1782,6 @@ test/test_traceback.py
 test/test_tracemalloc.py
 test/test_ttk_guionly.py
 test/test_ttk_textonly.py
-test/test_tuple.py
 test/test_turtle.py
 test/test_typechecks.py
 test/test_types.py
