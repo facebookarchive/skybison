@@ -121,7 +121,9 @@ PY_EXPORT const char* PyEval_GetFuncName(PyObject* /* c */) {
 
 PY_EXPORT PyObject* PyEval_GetLocals() { UNIMPLEMENTED("PyEval_GetLocals"); }
 
-PY_EXPORT void PyEval_InitThreads() { UNIMPLEMENTED("PyEval_InitThreads"); }
+PY_EXPORT void PyEval_InitThreads() {
+  // TODO(T66337218): Implement this when there is actual threading support.
+}
 
 PY_EXPORT void PyEval_ReInitThreads() {
   // TODO(T87097565): Implement instead of making it a noop
