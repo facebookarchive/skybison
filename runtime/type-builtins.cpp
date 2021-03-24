@@ -1,7 +1,5 @@
 #include "type-builtins.h"
 
-#include "cpython-data.h"
-
 #include "attributedict.h"
 #include "builtins.h"
 #include "bytecode.h"
@@ -560,10 +558,7 @@ static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type) {
   return computeFixedAttributeBaseImpl(thread, bases, true);
 }
 
-// Returns the most generic base among `bases` that captures inherited
-// attributes with a fixed offset (either from __slots__ or builtin types)
-// Note that this simulates `best_base` from CPython's typeobject.c.
-static RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
+RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases) {
   return computeFixedAttributeBaseImpl(thread, bases, false);
 }
 
@@ -659,13 +654,11 @@ static void setSlotAttributes(Thread* thread, const MutableTuple& dst,
 }
 
 static RawObject typeComputeLayout(Thread* thread, const Type& type,
+                                   const Type& fixed_attr_base,
                                    bool enable_overflow, const Object& slots) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple bases(&scope, type.bases());
-  Object fixed_attr_base_obj(&scope, computeFixedAttributeBase(thread, bases));
-  if (fixed_attr_base_obj.isErrorException()) return *fixed_attr_base_obj;
-  Type fixed_attr_base(&scope, *fixed_attr_base_obj);
 
   // Create new layout.
   DCHECK(type.instanceLayout().isNoneType(),
@@ -752,6 +745,10 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setName(*name);
   type.setBases(*bases);
+
+  Object fixed_attr_base_obj(&scope, computeFixedAttributeBase(thread, bases));
+  if (fixed_attr_base_obj.isErrorException()) return *fixed_attr_base_obj;
+  Type fixed_attr_base(&scope, *fixed_attr_base_obj);
 
   // Determine metaclass.mro method. Set `mro_method` to `None` if it is the
   // default `type.mro`.
@@ -882,7 +879,7 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
 
   if (bases_have_type_slots) {
     if (inherit_slots) {
-      result = typeInheritSlots(thread, type);
+      result = typeInheritSlots(thread, type, fixed_attr_base);
       if (result.isErrorException()) return *result;
     }
   }
@@ -954,7 +951,8 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
                                                         ID(_type_dunder_call)));
   type.setCtor(*type_dunder_call);
 
-  result = typeComputeLayout(thread, type, add_instance_dict, slots_obj);
+  result = typeComputeLayout(thread, type, fixed_attr_base, add_instance_dict,
+                             slots_obj);
   if (result.isErrorException()) return *result;
 
   return *type;
@@ -1135,19 +1133,6 @@ RawObject METH(type, __basicsize__)(Thread* thread, Arguments args) {
     return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type self(&scope, *self_obj);
-  if (!self.hasNativeData()) {
-    if (self.isCPythonHeaptype()) {
-      // If self is a heap type here, there are two possibiliities:
-      // It either had a __basicsize__ of 0, which means we've already set a
-      // default __basicsize__ of sizeof(PyObject)
-      // Or someone created a heap type with just enough space for a
-      // PyObject_HEAD and no additional data.
-      // It should be safe to return sizeof(PyObject) in both cases.
-      return runtime->newInt(sizeof(PyObject));
-    }
-    Str name(&scope, strUnderlying(self.name()));
-    UNIMPLEMENTED("'__basicsize__' for type '%s'", name.toCStr());
-  }
   uword basicsize = typeGetBasicSize(self);
   return runtime->newIntFromUnsigned(basicsize);
 }

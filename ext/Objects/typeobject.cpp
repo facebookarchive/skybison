@@ -1778,41 +1778,45 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
   return NoneType::object();
 }
 
-RawObject typeInheritSlots(Thread* thread, const Type& type) {
+RawObject typeInheritSlots(Thread* thread, const Type& type, const Type& base) {
   HandleScope scope(thread);
-  Type base_type(&scope, Tuple::cast(type.mro()).at(1));
 
   if (!typeHasSlots(type)) {
     typeSlotsAllocate(thread, type);
-    unsigned long flags =
-        typeHasSlots(base_type) ? typeSlotUWordAt(base_type, kSlotFlags) : 0;
+    unsigned long flags = typeGetFlags(base);
+    if (type.hasFlag(Type::Flag::kHasCycleGC)) flags |= Py_TPFLAGS_HAVE_GC;
+    if (type.hasFlag(Type::Flag::kIsBasetype)) flags |= Py_TPFLAGS_BASETYPE;
+    if (type.hasFlag(Type::Flag::kIsCPythonHeaptype)) {
+      flags |= Py_TPFLAGS_HEAPTYPE;
+    }
     typeSlotUWordAtPut(thread, type, kSlotFlags, flags);
-    typeSlotUWordAtPut(thread, type, kSlotBasicSize, 0);
+    uword basicsize = typeGetBasicSize(base);
+    typeSlotUWordAtPut(thread, type, kSlotBasicSize, basicsize);
     typeSlotUWordAtPut(thread, type, kSlotItemSize, 0);
-    typeSlotObjectAtPut(type, Py_tp_base, *base_type);
+    typeSlotObjectAtPut(type, Py_tp_base, *base);
   }
 
   // Inherit special slots from dominant base
-  if (typeHasSlots(base_type)) {
-    inheritGCFlagsAndSlots(thread, type, base_type);
+  if (typeHasSlots(base)) {
+    inheritGCFlagsAndSlots(thread, type, base);
     if (typeSlotAt(type, Py_tp_new) == nullptr) {
-      copySlot(thread, type, base_type, Py_tp_new);
+      copySlot(thread, type, base, Py_tp_new);
     }
-    inheritNonFunctionSlots(thread, type, base_type);
+    inheritNonFunctionSlots(thread, type, base);
   }
 
   // Inherit slots from the MRO
   Tuple mro(&scope, type.mro());
   for (word i = 1; i < mro.length(); i++) {
-    Type base(&scope, mro.at(i));
-    // Skip inheritance if base does not define slots
-    if (!typeHasSlots(base)) continue;
-    inheritSlots(thread, type, base);
+    Type mro_entry(&scope, mro.at(i));
+    // Skip inheritance if mro_entry does not define slots
+    if (!typeHasSlots(mro_entry)) continue;
+    inheritSlots(thread, type, mro_entry);
   }
 
   // Inherit all the default slots that would have been inherited
   // through the base object type in CPython
-  Object result(&scope, addDefaultsForRequiredSlots(thread, type, base_type));
+  Object result(&scope, addDefaultsForRequiredSlots(thread, type, base));
   if (result.isError()) return *result;
 
   return NoneType::object();
@@ -1879,6 +1883,17 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (spec->flags & Py_TPFLAGS_BASETYPE) {
     flags |= Type::Flag::kIsBasetype;
   }
+
+  Object fixed_attr_base_obj(&scope,
+                             computeFixedAttributeBase(thread, bases_obj));
+  if (fixed_attr_base_obj.isErrorException()) return nullptr;
+  Type fixed_attr_base(&scope, *fixed_attr_base_obj);
+
+  word base_size = typeGetBasicSize(fixed_attr_base);
+  if (spec->basicsize > base_size) {
+    flags |= Type::Flag::kIsFixedAttributeBase;
+  }
+
   // TODO(T53922464) Check for `__dictoffset__` tp_members and set accordingly.
   bool add_instance_dict = true;
   Type metaclass(&scope, runtime->typeAt(LayoutId::kType));
@@ -1893,7 +1908,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   typeSlotsAllocate(thread, type);
 
   typeSlotObjectAtPut(type, Py_tp_bases, *bases_obj);
-  typeSlotObjectAtPut(type, Py_tp_base, Tuple::cast(type.mro()).at(1));
+  typeSlotObjectAtPut(type, Py_tp_base, *fixed_attr_base);
   unsigned long extension_flags =
       spec->flags | Py_TPFLAGS_READY | Py_TPFLAGS_HEAPTYPE;
   typeSlotUWordAtPut(thread, type, kSlotFlags, extension_flags);
@@ -1923,7 +1938,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (addGetSet(thread, type).isError()) return nullptr;
 
-  if (typeInheritSlots(thread, type).isError()) return nullptr;
+  if (typeInheritSlots(thread, type, fixed_attr_base).isError()) return nullptr;
 
   return ApiHandle::newReference(runtime, *type);
 }
@@ -2054,16 +2069,19 @@ PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
 }
 
 uword typeGetBasicSize(const Type& type) {
-  return typeSlotUWordAt(type, kSlotBasicSize);
+  if (typeHasSlots(type)) {
+    return typeSlotUWordAt(type, kSlotBasicSize);
+  }
+  DCHECK(!type.hasNativeData(), "Types with native data should have slots");
+  // Return just the size needed for a pure `PyObject`/`PyObject_HEAD`.
+  return sizeof(PyObject);
 }
 
 uword typeGetFlags(const Type& type) {
   if (typeHasSlots(type)) {
     return typeSlotUWordAt(type, kSlotFlags);
   }
-  uword result = Py_TPFLAGS_READY;
-  // TODO(T71637829): Check if the type allows subclassing and set
-  // Py_TPFLAGS_BASETYPE appropriately.
+  uword result = Py_TPFLAGS_READY | Py_TPFLAGS_DEFAULT;
   Type::Flag internal_flags = type.flags();
   if (internal_flags & Type::Flag::kHasCycleGC) {
     result |= Py_TPFLAGS_HAVE_GC;

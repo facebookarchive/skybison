@@ -109,7 +109,7 @@ uword typeGetFlags(const Type& type);
 bool typeHasSlots(const Type& type);
 
 // Inherit slots defined by a C Extension
-RawObject typeInheritSlots(Thread* thread, const Type& type);
+RawObject typeInheritSlots(Thread* thread, const Type& type, const Type& base);
 
 // NOTE: THIS FUNCTION IS A HACK. It is slow. Do not use this function. It is
 // here to serve Cython modules that occasionally create Python memoryviews

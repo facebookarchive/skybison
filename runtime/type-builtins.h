@@ -26,6 +26,11 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   LayoutId layout_id, LayoutId builtin_base,
                                   LayoutId superclass_id, bool basetype);
 
+// Returns the most generic base among `bases` that captures inherited
+// attributes with a fixed offset (either from __slots__ or builtin types)
+// Note that this simulates `best_base` from CPython's typeobject.c.
+RawObject computeFixedAttributeBase(Thread* thread, const Tuple& bases);
+
 RawObject findBuiltinTypeWithName(Thread* thread, const Object& name);
 
 RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type);

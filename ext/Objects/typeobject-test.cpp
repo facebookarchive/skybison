@@ -5103,6 +5103,47 @@ TEST_F(TypeExtensionApiTest, CallDunderIndexReturnsStr) {
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "<index 42 \xf0\x9f\x91\x8d>"));
 }
 
+TEST_F(TypeExtensionApiTest, MultipleInheritanceWithBaseWithoutSlotsWorks) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  int size = sizeof(PyObject) + 17;
+  spec = {
+      "foo.N", size, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, slots,
+  };
+  PyObjectPtr ext_type(PyType_FromSpec(&spec));
+  moduleSet("__main__", "N", ext_type);
+  EXPECT_EQ(PyRun_SimpleString(R"(
+class A:
+  pass
+class C(A, N):
+  pass
+class D(C):
+  pass
+c = C()
+d = D()
+  )"),
+            0);
+  PyObjectPtr a(mainModuleGet("A"));
+  PyObjectPtr c(mainModuleGet("C"));
+  EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(c.get())) &
+              Py_TPFLAGS_DEFAULT);
+  EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(c.get())) &
+              Py_TPFLAGS_BASETYPE);
+  PyObjectPtr c_size(PyObject_GetAttrString(c.get(), "__basicsize__"));
+  EXPECT_TRUE(PyLong_AsLong(c_size) >= size);
+
+  PyObjectPtr mro(PyObject_GetAttrString(c.get(), "__mro__"));
+  EXPECT_TRUE(PyTuple_Check(mro));
+  EXPECT_EQ(PyTuple_GetItem(mro, 0), c.get());
+  EXPECT_EQ(PyTuple_GetItem(mro, 1), a.get());
+  EXPECT_EQ(PyTuple_GetItem(mro, 2), ext_type.get());
+
+  PyObjectPtr base(PyObject_GetAttrString(c.get(), "__base__"));
+  EXPECT_EQ(base.get(), ext_type.get());
+}
+
 struct TpSlotRefcntTestObject {
   PyObject_HEAD
   int initial_refcnt;
