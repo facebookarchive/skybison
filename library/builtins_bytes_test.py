@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+import warnings
 from unittest.mock import Mock
 
 
@@ -1029,6 +1030,797 @@ class BytesTests(unittest.TestCase):
         dst = src.upper()
         self.assertIsInstance(dst, bytes)
         self.assertEqual(dst, b"A1!B2@C3#D4$E5%F6^G7&H8*I9(J0)")
+
+
+class BytesModTests(unittest.TestCase):
+    def test_empty_format_returns_empty_bytes(self):
+        self.assertEqual(bytes.__mod__(b"", ()), b"")
+
+    def test_simple_string_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"foo bar (}", ()), b"foo bar (}")
+
+    def test_with_non_tuple_args_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%s", b"foo"), b"foo")
+        self.assertEqual(bytes.__mod__(b"%d", 42), b"42")
+
+    def test_with_named_args_returns_bytes(self):
+        self.assertEqual(
+            bytes.__mod__(b"%(foo)s %(bar)d", {b"foo": b"ho", b"bar": 42}), b"ho 42"
+        )
+        self.assertEqual(bytes.__mod__(b"%()x", {b"": 123}), b"7b")
+        self.assertEqual(bytes.__mod__(b")%(((()) ()))d(", {b"((()) ())": 99}), b")99(")
+        self.assertEqual(bytes.__mod__(b"%(%s)d", {b"%s": -5}), b"-5")
+
+    def test_with_custom_mapping_returns_bytes(self):
+        class C:
+            def __getitem__(self, key):
+                return b"getitem called with " + key
+
+        self.assertEqual(bytes.__mod__(b"%(foo)s", C()), b"getitem called with foo")
+
+    def test_without_mapping_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%(foo)s", None)
+        self.assertEqual(str(context.exception), "format requires a mapping")
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%(foo)s", "foobar")
+        self.assertEqual(str(context.exception), "format requires a mapping")
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%(foo)s", ("foobar",))
+        self.assertEqual(str(context.exception), "format requires a mapping")
+
+    def test_with_mapping_does_not_raise_type_error(self):
+        # The following must not raise
+        # "not all arguments converted during string formatting".
+        self.assertEqual(bytes.__mod__(b"foo", {"bar": 42}), b"foo")
+
+    def test_positional_after_named_arg_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%(foo)s %s", {b"foo": b"bar"})
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_c_format_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%c", ("x",))
+        self.assertEqual(
+            str(context.exception),
+            "%c requires an integer in range(256) or a single byte",
+        )
+        self.assertEqual(bytes.__mod__(b"%c", ("\U0001f44d",)), b"\U0001f44d")
+        self.assertEqual(bytes.__mod__(b"%c", (76,)), b"L")
+        self.assertEqual(bytes.__mod__(b"%c", (0x1F40D,)), b"\U0001f40d")
+
+    def test_c_format_with_non_int_returns_bytes(self):
+        class C:
+            def __index__(self):
+                return 42
+
+        self.assertEqual(bytes.__mod__(b"%c", (C(),)), b"*")
+
+    def test_c_format_raises_overflow_error(self):
+        import sys
+
+        with self.assertRaises(OverflowError) as context:
+            bytes.__mod__(b"%c", (sys.maxunicode + 1,))
+
+        self.assertEqual(str(context.exception), "%c arg not in range(256)")
+        with self.assertRaises(OverflowError) as context:
+            bytes.__mod__(b"%c", (-1,))
+        self.assertEqual(str(context.exception), "%c arg not in range(256)")
+
+    def test_c_format_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%c", (None,))
+        self.assertEqual(
+            str(context.exception),
+            "%c requires an integer in range(256) or a single byte",
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%c", ("ab",))
+        self.assertEqual(
+            str(context.exception),
+            "%c requires an integer in range(256) or a single byte",
+        )
+        with self.assertRaises(OverflowError) as context:
+            bytes.__mod__(b"%c", (123456789012345678901234567890,))
+        self.assertEqual(str(context.exception), "%c arg not in range(256)")
+
+    def test_s_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%s", (b"foo",)), b"foo")
+
+        class C:
+            def __bytes__(self):
+                return b"bytes called"
+
+        r = bytes.__mod__(b"%s", (C(),))
+        self.assertEqual(r, b"bytes called")
+
+    def test_s_format_propagates_errors(self):
+        class C:
+            def __bytes__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%s", (C(),))
+
+    def test_r_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%r", (42,)), b"42")
+        self.assertEqual(bytes.__mod__(b"%r", ("foo",)), b"'foo'")
+        self.assertEqual(
+            bytes.__mod__(b"%r", ({"foo": "\U0001d4eb\U0001d4ea\U0001d4fb"},)),
+            b"{'foo': '\U0001d4eb\U0001d4ea\U0001d4fb'}",
+        )
+
+        class C:
+            def __repr__(self):
+                return "repr called"
+
+            __str__ = None
+
+        self.assertEqual(bytes.__mod__(b"%r", (C(),)), b"repr called")
+
+    def test_r_format_propagates_errors(self):
+        class C:
+            def __repr__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%r", (C(),))
+
+    def test_a_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%a", (42,)), b"42")
+        self.assertEqual(bytes.__mod__(b"%a", ("foo",)), b"'foo'")
+
+        class C:
+            def __repr__(self):
+                return "repr called"
+
+            __str__ = None
+
+        self.assertEqual(bytes.__mod__(b"%a", (C(),)), b"repr called")
+        # TODO(T39861344, T38702699): We should have a test with some non-ascii
+        # characters here proving that they are escaped. Unfortunately
+        # builtins.ascii() does not work in that case yet.
+
+    def test_a_format_propagates_errors(self):
+        class C:
+            def __repr__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%a", (C(),))
+
+    def test_diu_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%d", (0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%d", (-1,)), b"-1")
+        self.assertEqual(bytes.__mod__(b"%d", (42,)), b"42")
+        self.assertEqual(bytes.__mod__(b"%i", (0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%i", (-1,)), b"-1")
+        self.assertEqual(bytes.__mod__(b"%i", (42,)), b"42")
+        self.assertEqual(bytes.__mod__(b"%u", (0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%u", (-1,)), b"-1")
+        self.assertEqual(bytes.__mod__(b"%u", (42,)), b"42")
+
+    def test_diu_format_with_largeint_returns_bytes(self):
+        self.assertEqual(
+            bytes.__mod__(b"%d", (-123456789012345678901234567890,)),
+            b"-123456789012345678901234567890",
+        )
+        self.assertEqual(
+            bytes.__mod__(b"%i", (-123456789012345678901234567890,)),
+            b"-123456789012345678901234567890",
+        )
+        self.assertEqual(
+            bytes.__mod__(b"%u", (-123456789012345678901234567890,)),
+            b"-123456789012345678901234567890",
+        )
+
+    def test_diu_format_with_non_int_returns_bytes(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise UserWarning()
+
+        self.assertEqual(bytes.__mod__(b"%d", (C(),)), b"42")
+        self.assertEqual(bytes.__mod__(b"%i", (C(),)), b"42")
+        self.assertEqual(bytes.__mod__(b"%u", (C(),)), b"42")
+
+    def test_diu_format_raises_typeerrors(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%d", (None,))
+        self.assertEqual(
+            str(context.exception), "%d format: a number is required, not NoneType"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%i", (None,))
+        self.assertEqual(
+            str(context.exception), "%d format: a number is required, not NoneType"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%u", (None,))
+        self.assertEqual(
+            str(context.exception), "%u format: a number is required, not NoneType"
+        )
+
+    def test_diu_format_propagates_errors(self):
+        class C:
+            def __int__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%d", (C(),))
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%i", (C(),))
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%u", (C(),))
+
+    def test_diu_format_reraises_typerrors(self):
+        class C:
+            def __int__(self):
+                raise TypeError("foobar")
+
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%d", (C(),))
+        self.assertEqual(
+            str(context.exception), "%d format: a number is required, not C"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%i", (C(),))
+        self.assertEqual(
+            str(context.exception), "%d format: a number is required, not C"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%u", (C(),))
+        self.assertEqual(
+            str(context.exception), "%u format: a number is required, not C"
+        )
+
+    def test_xX_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%x", (0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%x", (-123,)), b"-7b")
+        self.assertEqual(bytes.__mod__(b"%x", (42,)), b"2a")
+        self.assertEqual(bytes.__mod__(b"%X", (0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%X", (-123,)), b"-7B")
+        self.assertEqual(bytes.__mod__(b"%X", (42,)), b"2A")
+
+    def test_xX_format_with_largeint_returns_bytes(self):
+        self.assertEqual(
+            bytes.__mod__(b"%x", (-123456789012345678901234567890,)),
+            b"-18ee90ff6c373e0ee4e3f0ad2",
+        )
+        self.assertEqual(
+            bytes.__mod__(b"%X", (-123456789012345678901234567890,)),
+            b"-18EE90FF6C373E0EE4E3F0AD2",
+        )
+
+    def test_xX_format_with_non_int_returns_bytes(self):
+        class C:
+            def __float__(self):
+                return 3.3
+
+            def __index__(self):
+                return 77
+
+        self.assertEqual(bytes.__mod__(b"%x", (C(),)), b"4d")
+        self.assertEqual(bytes.__mod__(b"%X", (C(),)), b"4D")
+
+    def test_xX_format_raises_typeerrors(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%x", (None,))
+        self.assertEqual(
+            str(context.exception), "%x format: an integer is required, not NoneType"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%X", (None,))
+        self.assertEqual(
+            str(context.exception), "%X format: an integer is required, not NoneType"
+        )
+
+    def test_xX_format_propagates_errors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%x", (C(),))
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%X", (C(),))
+
+    def test_xX_format_reraises_typerrors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise TypeError("foobar")
+
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%x", (C(),))
+        self.assertEqual(
+            str(context.exception), "%x format: an integer is required, not C"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%X", (C(),))
+        self.assertEqual(
+            str(context.exception), "%X format: an integer is required, not C"
+        )
+
+    def test_o_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%o", (0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%o", (-123,)), b"-173")
+        self.assertEqual(bytes.__mod__(b"%o", (42,)), b"52")
+
+    def test_o_format_with_largeint_returns_bytes(self):
+        self.assertEqual(
+            bytes.__mod__(b"%o", (-123456789012345678901234567890)),
+            b"-143564417755415637016711617605322",
+        )
+
+    def test_o_format_with_non_int_returns_bytes(self):
+        class C:
+            def __float__(self):
+                return 3.3
+
+            def __index__(self):
+                return 77
+
+        self.assertEqual(bytes.__mod__(b"%o", (C(),)), b"115")
+
+    def test_o_format_raises_typeerrors(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%o", (None,))
+        self.assertEqual(
+            str(context.exception), "%o format: an integer is required, not NoneType"
+        )
+
+    def test_o_format_propagates_errors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            bytes.__mod__(b"%o", (C(),))
+
+    def test_o_format_reraises_typerrors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise TypeError("foobar")
+
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%o", (C(),))
+        self.assertEqual(
+            str(context.exception), "%o format: an integer is required, not C"
+        )
+
+    def test_f_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%f", (0.0,)), b"0.000000")
+        self.assertEqual(bytes.__mod__(b"%f", (-0.0,)), b"-0.000000")
+        self.assertEqual(bytes.__mod__(b"%f", (1.0,)), b"1.000000")
+        self.assertEqual(bytes.__mod__(b"%f", (-1.0,)), b"-1.000000")
+        self.assertEqual(bytes.__mod__(b"%f", (42.125,)), b"42.125000")
+
+        self.assertEqual(bytes.__mod__(b"%f", (1e3,)), b"1000.000000")
+        self.assertEqual(bytes.__mod__(b"%f", (1e6,)), b"1000000.000000")
+        self.assertEqual(
+            bytes.__mod__(b"%f", (1e40,)),
+            b"10000000000000000303786028427003666890752.000000",
+        )
+
+    def test_F_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%F", (42.125,)), b"42.125000")
+
+    def test_e_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%e", (0.0,)), b"0.000000e+00")
+        self.assertEqual(bytes.__mod__(b"%e", (-0.0,)), b"-0.000000e+00")
+        self.assertEqual(bytes.__mod__(b"%e", (1.0,)), b"1.000000e+00")
+        self.assertEqual(bytes.__mod__(b"%e", (-1.0,)), b"-1.000000e+00")
+        self.assertEqual(bytes.__mod__(b"%e", (42.125,)), b"4.212500e+01")
+
+        self.assertEqual(bytes.__mod__(b"%e", (1e3,)), b"1.000000e+03")
+        self.assertEqual(bytes.__mod__(b"%e", (1e6,)), b"1.000000e+06")
+        self.assertEqual(bytes.__mod__(b"%e", (1e40,)), b"1.000000e+40")
+
+    def test_E_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%E", (1.0,)), b"1.000000E+00")
+
+    def test_g_format_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%g", (0.0,)), b"0")
+        self.assertEqual(bytes.__mod__(b"%g", (-1.0,)), b"-1")
+        self.assertEqual(bytes.__mod__(b"%g", (0.125,)), b"0.125")
+        self.assertEqual(bytes.__mod__(b"%g", (3.5,)), b"3.5")
+
+    def test_eEfFgG_format_with_inf_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%e", (float("inf"),)), b"inf")
+        self.assertEqual(bytes.__mod__(b"%E", (float("inf"),)), b"INF")
+        self.assertEqual(bytes.__mod__(b"%f", (float("inf"),)), b"inf")
+        self.assertEqual(bytes.__mod__(b"%F", (float("inf"),)), b"INF")
+        self.assertEqual(bytes.__mod__(b"%g", (float("inf"),)), b"inf")
+        self.assertEqual(bytes.__mod__(b"%G", (float("inf"),)), b"INF")
+
+        self.assertEqual(bytes.__mod__(b"%e", (-float("inf"),)), b"-inf")
+        self.assertEqual(bytes.__mod__(b"%E", (-float("inf"),)), b"-INF")
+        self.assertEqual(bytes.__mod__(b"%f", (-float("inf"),)), b"-inf")
+        self.assertEqual(bytes.__mod__(b"%F", (-float("inf"),)), b"-INF")
+        self.assertEqual(bytes.__mod__(b"%g", (-float("inf"),)), b"-inf")
+        self.assertEqual(bytes.__mod__(b"%G", (-float("inf"),)), b"-INF")
+
+    def test_eEfFgG_format_with_nan_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%e", (float("nan"),)), b"nan")
+        self.assertEqual(bytes.__mod__(b"%E", (float("nan"),)), b"NAN")
+        self.assertEqual(bytes.__mod__(b"%f", (float("nan"),)), b"nan")
+        self.assertEqual(bytes.__mod__(b"%F", (float("nan"),)), b"NAN")
+        self.assertEqual(bytes.__mod__(b"%g", (float("nan"),)), b"nan")
+        self.assertEqual(bytes.__mod__(b"%G", (float("nan"),)), b"NAN")
+
+        self.assertEqual(bytes.__mod__(b"%e", (float("-nan"),)), b"nan")
+        self.assertEqual(bytes.__mod__(b"%E", (float("-nan"),)), b"NAN")
+        self.assertEqual(bytes.__mod__(b"%f", (float("-nan"),)), b"nan")
+        self.assertEqual(bytes.__mod__(b"%F", (float("-nan"),)), b"NAN")
+        self.assertEqual(bytes.__mod__(b"%g", (float("-nan"),)), b"nan")
+        self.assertEqual(bytes.__mod__(b"%G", (float("-nan"),)), b"NAN")
+
+    def test_f_format_with_precision_returns_bytes(self):
+        number = 1.23456789123456789
+        self.assertEqual(bytes.__mod__(b"%.0f", number), b"1")
+        self.assertEqual(bytes.__mod__(b"%.1f", number), b"1.2")
+        self.assertEqual(bytes.__mod__(b"%.2f", number), b"1.23")
+        self.assertEqual(bytes.__mod__(b"%.3f", number), b"1.235")
+        self.assertEqual(bytes.__mod__(b"%.4f", number), b"1.2346")
+        self.assertEqual(bytes.__mod__(b"%.5f", number), b"1.23457")
+        self.assertEqual(bytes.__mod__(b"%.6f", number), b"1.234568")
+        self.assertEqual(bytes.__mod__(b"%f", number), b"1.234568")
+
+        self.assertEqual(bytes.__mod__(b"%.17f", number), b"1.23456789123456789")
+        self.assertEqual(
+            bytes.__mod__(b"%.25f", number), b"1.2345678912345678934769921"
+        )
+        self.assertEqual(
+            bytes.__mod__(b"%.60f", number),
+            b"1.234567891234567893476992139767389744520187377929687500000000",
+        )
+
+    def test_eEfFgG_format_with_precision_returns_bytes(self):
+        number = 1.23456789123456789
+        self.assertEqual(bytes.__mod__(b"%.0e", number), b"1e+00")
+        self.assertEqual(bytes.__mod__(b"%.0E", number), b"1E+00")
+        self.assertEqual(bytes.__mod__(b"%.0f", number), b"1")
+        self.assertEqual(bytes.__mod__(b"%.0F", number), b"1")
+        self.assertEqual(bytes.__mod__(b"%.0g", number), b"1")
+        self.assertEqual(bytes.__mod__(b"%.0G", number), b"1")
+        self.assertEqual(bytes.__mod__(b"%.4e", number), b"1.2346e+00")
+        self.assertEqual(bytes.__mod__(b"%.4E", number), b"1.2346E+00")
+        self.assertEqual(bytes.__mod__(b"%.4f", number), b"1.2346")
+        self.assertEqual(bytes.__mod__(b"%.4F", number), b"1.2346")
+        self.assertEqual(bytes.__mod__(b"%.4g", number), b"1.235")
+        self.assertEqual(bytes.__mod__(b"%.4G", number), b"1.235")
+        self.assertEqual(bytes.__mod__(b"%e", number), b"1.234568e+00")
+        self.assertEqual(bytes.__mod__(b"%E", number), b"1.234568E+00")
+        self.assertEqual(bytes.__mod__(b"%f", number), b"1.234568")
+        self.assertEqual(bytes.__mod__(b"%F", number), b"1.234568")
+        self.assertEqual(bytes.__mod__(b"%g", number), b"1.23457")
+        self.assertEqual(bytes.__mod__(b"%G", number), b"1.23457")
+
+    def test_g_format_with_flags_and_width_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%5g", 7.0), b"    7")
+        self.assertEqual(bytes.__mod__(b"%5g", 7.2), b"  7.2")
+        self.assertEqual(bytes.__mod__(b"% 5g", 7.2), b"  7.2")
+        self.assertEqual(bytes.__mod__(b"%+5g", 7.2), b" +7.2")
+        self.assertEqual(bytes.__mod__(b"%5g", -7.2), b" -7.2")
+        self.assertEqual(bytes.__mod__(b"% 5g", -7.2), b" -7.2")
+        self.assertEqual(bytes.__mod__(b"%+5g", -7.2), b" -7.2")
+
+        self.assertEqual(bytes.__mod__(b"%-5g", 7.0), b"7    ")
+        self.assertEqual(bytes.__mod__(b"%-5g", 7.2), b"7.2  ")
+        self.assertEqual(bytes.__mod__(b"%- 5g", 7.2), b" 7.2 ")
+        self.assertEqual(bytes.__mod__(b"%-+5g", 7.2), b"+7.2 ")
+        self.assertEqual(bytes.__mod__(b"%-5g", -7.2), b"-7.2 ")
+        self.assertEqual(bytes.__mod__(b"%- 5g", -7.2), b"-7.2 ")
+        self.assertEqual(bytes.__mod__(b"%-+5g", -7.2), b"-7.2 ")
+
+        self.assertEqual(bytes.__mod__(b"%#g", 7.0), b"7.00000")
+
+        self.assertEqual(bytes.__mod__(b"%#- 7.2g", float("-nan")), b" nan   ")
+        self.assertEqual(bytes.__mod__(b"%#- 7.2g", float("inf")), b" inf   ")
+        self.assertEqual(bytes.__mod__(b"%#- 7.2g", float("-inf")), b"-inf   ")
+
+    def test_eEfFgG_format_with_flags_and_width_returns_bytes(self):
+        number = 1.23456789123456789
+        self.assertEqual(bytes.__mod__(b"% -#12.3e", number), b" 1.235e+00  ")
+        self.assertEqual(bytes.__mod__(b"% -#12.3E", number), b" 1.235E+00  ")
+        self.assertEqual(bytes.__mod__(b"% -#12.3f", number), b" 1.235      ")
+        self.assertEqual(bytes.__mod__(b"% -#12.3F", number), b" 1.235      ")
+        self.assertEqual(bytes.__mod__(b"% -#12.3g", number), b" 1.23       ")
+        self.assertEqual(bytes.__mod__(b"% -#12.3G", number), b" 1.23       ")
+
+    def test_ef_format_with_non_float_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%e", (None,))
+        self.assertEqual(
+            str(context.exception), "float argument required, not NoneType"
+        )
+
+        class C:
+            def __float__(self):
+                return "not a float"
+
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%f", (C(),))
+        self.assertEqual(str(context.exception), "float argument required, not C")
+
+    def test_efg_format_with_non_float_returns_bytes(self):
+        class A(float):
+            pass
+
+        self.assertEqual(
+            bytes.__mod__(b"%e", (A(9.625),)), bytes.__mod__(b"%e", (9.625,))
+        )
+
+        class C:
+            def __float__(self):
+                return 3.5
+
+        self.assertEqual(bytes.__mod__(b"%f", (C(),)), bytes.__mod__(b"%f", (3.5,)))
+
+        class D:
+            def __float__(self):
+                return A(-12.75)
+
+        warnings.filterwarnings(
+            action="ignore",
+            category=DeprecationWarning,
+            message=".*__float__ returned non-float.*",
+            module=__name__,
+        )
+        self.assertEqual(bytes.__mod__(b"%g", (D(),)), bytes.__mod__(b"%g", (-12.75,)))
+
+    def test_percent_format_returns_percent(self):
+        self.assertEqual(bytes.__mod__(b"%%", ()), b"%")
+
+    def test_escaped_percent_with_characters_between_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%0.0%", ())
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%*.%", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%d %*.%", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%.*%", (88,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%0#*.42%", (1234,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_escaped_percent_with_characters_between_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.__mod__(b"%*.%", (42, 1))
+        self.assertEqual(
+            str(context.exception), "unsupported format character '%' (0x25) at index 3"
+        )
+
+    def test_flags_get_accepted(self):
+        self.assertEqual(bytes.__mod__(b"%-s", b""), b"")
+        self.assertEqual(bytes.__mod__(b"%+s", b""), b"")
+        self.assertEqual(bytes.__mod__(b"% s", b""), b"")
+        self.assertEqual(bytes.__mod__(b"%#s", b""), b"")
+        self.assertEqual(bytes.__mod__(b"%0s", b""), b"")
+        self.assertEqual(bytes.__mod__(b"%#-#0+ -s", b""), b"")
+
+    def test_string_format_with_width_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%5s", b"oh"), b"   oh")
+        self.assertEqual(bytes.__mod__(b"%-5s", b"ah"), b"ah   ")
+        self.assertEqual(bytes.__mod__(b"%05s", b"uh"), b"   uh")
+        self.assertEqual(bytes.__mod__(b"%-# 5s", b"eh"), b"eh   ")
+
+        self.assertEqual(bytes.__mod__(b"%0s", b"foo"), b"foo")
+        self.assertEqual(bytes.__mod__(b"%-0s", b"foo"), b"foo")
+        self.assertEqual(bytes.__mod__(b"%10s", b"hello world"), b"hello world")
+        self.assertEqual(bytes.__mod__(b"%-10s", b"hello world"), b"hello world")
+
+    def test_string_format_with_width_star_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%*s", (7, b"foo")), b"    foo")
+        self.assertEqual(bytes.__mod__(b"%*s", (-7, b"bar")), b"bar    ")
+        self.assertEqual(bytes.__mod__(b"%-*s", (7, b"baz")), b"baz    ")
+        self.assertEqual(bytes.__mod__(b"%-*s", (-7, b"bam")), b"bam    ")
+
+    def test_string_format_with_precision_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%.3s", b"python"), b"pyt")
+        self.assertEqual(bytes.__mod__(b"%.0s", b"python"), b"")
+        self.assertEqual(bytes.__mod__(b"%.10s", b"python"), b"python")
+
+    def test_string_format_with_precision_star_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%.*s", (3, b"monty")), b"mon")
+        self.assertEqual(bytes.__mod__(b"%.*s", (0, b"monty")), b"")
+        self.assertEqual(bytes.__mod__(b"%.*s", (-4, b"monty")), b"")
+
+    def test_string_format_with_width_and_precision_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%8.3s", (b"foobar",)), b"     foo")
+        self.assertEqual(bytes.__mod__(b"%-8.3s", (b"foobar",)), b"foo     ")
+        self.assertEqual(bytes.__mod__(b"%*.3s", (8, b"foobar")), b"     foo")
+        self.assertEqual(bytes.__mod__(b"%*.3s", (-8, b"foobar")), b"foo     ")
+        self.assertEqual(bytes.__mod__(b"%8.*s", (3, b"foobar")), b"     foo")
+        self.assertEqual(bytes.__mod__(b"%-8.*s", (3, b"foobar")), b"foo     ")
+        self.assertEqual(bytes.__mod__(b"%*.*s", (8, 3, b"foobar")), b"     foo")
+        self.assertEqual(bytes.__mod__(b"%-*.*s", (8, 3, b"foobar")), b"foo     ")
+
+    def test_s_r_a_c_formats_accept_flags_width_precision_return_strings(self):
+        self.assertEqual(bytes.__mod__(b"%-*.3s", (8, b"foobar")), b"foo     ")
+        self.assertEqual(bytes.__mod__(b"%-*.3r", (8, b"foobar")), b"b'f     ")
+        self.assertEqual(bytes.__mod__(b"%-*.3a", (8, b"foobar")), b"b'f     ")
+        self.assertEqual(bytes.__mod__(b"%-*.3c", (8, 94)), b"^       ")
+
+    def test_number_format_with_sign_flag_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%+d", (42,)), b"+42")
+        self.assertEqual(bytes.__mod__(b"%+d", (-42,)), b"-42")
+        self.assertEqual(bytes.__mod__(b"% d", (17,)), b" 17")
+        self.assertEqual(bytes.__mod__(b"% d", (-17,)), b"-17")
+        self.assertEqual(bytes.__mod__(b"%+ d", (42,)), b"+42")
+        self.assertEqual(bytes.__mod__(b"%+ d", (-42,)), b"-42")
+        self.assertEqual(bytes.__mod__(b"% +d", (17,)), b"+17")
+        self.assertEqual(bytes.__mod__(b"% +d", (-17,)), b"-17")
+
+    def test_number_format_alt_flag_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%#d", (23,)), b"23")
+        self.assertEqual(bytes.__mod__(b"%#x", (23,)), b"0x17")
+        self.assertEqual(bytes.__mod__(b"%#X", (23,)), b"0X17")
+        self.assertEqual(bytes.__mod__(b"%#o", (23,)), b"0o27")
+
+    def test_number_format_with_width_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%5d", (123,)), b"  123")
+        self.assertEqual(bytes.__mod__(b"%5d", (-8,)), b"   -8")
+        self.assertEqual(bytes.__mod__(b"%-5d", (123,)), b"123  ")
+        self.assertEqual(bytes.__mod__(b"%-5d", (-8,)), b"-8   ")
+
+        self.assertEqual(bytes.__mod__(b"%05d", (123,)), b"00123")
+        self.assertEqual(bytes.__mod__(b"%05d", (-8,)), b"-0008")
+        self.assertEqual(bytes.__mod__(b"%-05d", (123,)), b"123  ")
+        self.assertEqual(bytes.__mod__(b"%0-5d", (-8,)), b"-8   ")
+
+        self.assertEqual(bytes.__mod__(b"%#7x", (42,)), b"   0x2a")
+        self.assertEqual(bytes.__mod__(b"%#7x", (-42,)), b"  -0x2a")
+
+        self.assertEqual(bytes.__mod__(b"%5d", (123456,)), b"123456")
+        self.assertEqual(bytes.__mod__(b"%-5d", (-123456,)), b"-123456")
+
+    def test_number_format_with_precision_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%.5d", (123,)), b"00123")
+        self.assertEqual(bytes.__mod__(b"%.5d", (-123,)), b"-00123")
+        self.assertEqual(bytes.__mod__(b"%.5d", (1234567,)), b"1234567")
+        self.assertEqual(bytes.__mod__(b"%#.5x", (99,)), b"0x00063")
+
+    def test_number_format_with_width_precision_flags_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%8.3d", (12,)), b"     012")
+        self.assertEqual(bytes.__mod__(b"%8.3d", (-7,)), b"    -007")
+        self.assertEqual(bytes.__mod__(b"%05.3d", (12,)), b"00012")
+        self.assertEqual(bytes.__mod__(b"%+05.3d", (12,)), b"+0012")
+        self.assertEqual(bytes.__mod__(b"% 05.3d", (12,)), b" 0012")
+        self.assertEqual(bytes.__mod__(b"% 05.3x", (19,)), b" 0013")
+
+        self.assertEqual(bytes.__mod__(b"%-8.3d", (12,)), b"012     ")
+        self.assertEqual(bytes.__mod__(b"%-8.3d", (-7,)), b"-007    ")
+        self.assertEqual(bytes.__mod__(b"%- 8.3d", (66,)), b" 066    ")
+
+    def test_width_and_precision_star_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%*d", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%.*d", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%*.*d", (42,))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%*.*d", (1, 2))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_negative_precision_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.__mod__(b"%.-2s", "foo")
+        self.assertEqual(
+            str(context.exception), "unsupported format character '-' (0x2d) at index 2"
+        )
+
+    def test_two_specifiers_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%s%s", (b"foo", b"bar")), b"foobar")
+        self.assertEqual(bytes.__mod__(b",%s%s", (b"foo", b"bar")), b",foobar")
+        self.assertEqual(bytes.__mod__(b"%s,%s", (b"foo", b"bar")), b"foo,bar")
+        self.assertEqual(bytes.__mod__(b"%s%s,", (b"foo", b"bar")), b"foobar,")
+        self.assertEqual(
+            bytes.__mod__(b",%s..%s---", (b"foo", b"bar")), b",foo..bar---"
+        )
+        self.assertEqual(
+            bytes.__mod__(b",%s...%s--", (b"foo", b"bar")), b",foo...bar--"
+        )
+        self.assertEqual(
+            bytes.__mod__(b",,%s.%s---", (b"foo", b"bar")), b",,foo.bar---"
+        )
+        self.assertEqual(
+            bytes.__mod__(b",,%s...%s-", (b"foo", b"bar")), b",,foo...bar-"
+        )
+        self.assertEqual(
+            bytes.__mod__(b",,,%s..%s-", (b"foo", b"bar")), b",,,foo..bar-"
+        )
+        self.assertEqual(
+            bytes.__mod__(b",,,%s.%s--", (b"foo", b"bar")), b",,,foo.bar--"
+        )
+
+    def test_mixed_specifiers_with_percents_returns_bytes(self):
+        self.assertEqual(bytes.__mod__(b"%%%s%%%s%%", (b"foo", b"bar")), b"%foo%bar%")
+
+    def test_mixed_specifiers_returns_bytes(self):
+        self.assertEqual(
+            bytes.__mod__(b"a %d %g %s", (123, 3.14, b"baz")), b"a 123 3.14 baz"
+        )
+
+    def test_specifier_missing_format_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.__mod__(b"%", ())
+        self.assertEqual(str(context.exception), "incomplete format")
+        with self.assertRaises(ValueError) as context:
+            bytes.__mod__(b"%(foo)", {b"foo": None})
+        self.assertEqual(str(context.exception), "incomplete format")
+
+    def test_unknown_specifier_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.__mod__(b"try %Y", (42,))
+        self.assertEqual(
+            str(context.exception), "unsupported format character 'Y' (0x59) at index 5"
+        )
+
+    def test_too_few_args_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%s%s", (b"foo",))
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_too_many_args_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"hello", 42)
+        self.assertEqual(
+            str(context.exception),
+            "not all arguments converted during bytes formatting",
+        )
+        with self.assertRaises(TypeError) as context:
+            bytes.__mod__(b"%d%s", (1, b"foo", 3))
+        self.assertEqual(
+            str(context.exception),
+            "not all arguments converted during bytes formatting",
+        )
 
 
 if __name__ == "__main__":

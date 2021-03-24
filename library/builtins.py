@@ -2355,8 +2355,9 @@ class bytes(bootstrap=True):
     def __lt__(self, other):
         _builtin()
 
-    def __mod__(self, n):
-        _unimplemented()
+    def __mod__(self, other):
+        _bytes_guard(self)
+        return _bytes_mod_format(self, other)
 
     def __mul__(self, n: int) -> bytes:
         _builtin()
@@ -7036,4 +7037,5 @@ import sys as _sys
 import zipimport as _zipimport
 from _codecs import decode as _decode, encode as _encode
 
-from _str_mod import format as _str_mod_format
+from _str_mod import bytes_format as _bytes_mod_format
+from _str_mod import str_format as _str_mod_format
