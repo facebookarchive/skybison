@@ -1712,7 +1712,7 @@ void Runtime::initializeSignals(Thread* thread, const Module& under_signal) {
 void Runtime::finalizeSignals(Thread* thread) {
   if (signal_callbacks_.isNoneType()) return;
 
-  stack_t altstack;
+  stack_t altstack = {};
   altstack.ss_size = SIGSTKSZ;
   altstack.ss_flags = SS_DISABLE;
   CHECK(::sigaltstack(&altstack, nullptr) == 0,
