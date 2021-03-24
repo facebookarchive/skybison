@@ -2,6 +2,7 @@
 
 #include "cpython-data.h"
 #include "cpython-func.h"
+#include "cpython-types.h"
 
 #include "capi-handles.h"
 #include "runtime.h"
@@ -10,6 +11,11 @@ namespace py {
 
 PY_EXPORT PyObject* PyFile_GetLine(PyObject* /* f */, int /* n */) {
   UNIMPLEMENTED("PyFile_GetLine");
+}
+
+PY_EXPORT int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction, void*) {
+  // TODO(T87346777): add hook to io.open_code()
+  UNIMPLEMENTED("PyFile_SetOpenCodeHook");
 }
 
 PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {

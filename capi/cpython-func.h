@@ -482,6 +482,8 @@ PyAPI_FUNC_DECL(void PyException_SetCause(PyObject*, PyObject*));
 PyAPI_FUNC_DECL(void PyException_SetContext(PyObject*, PyObject*));
 PyAPI_FUNC_DECL(int PyException_SetTraceback(PyObject*, PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyFile_GetLine(PyObject*, int));
+PyAPI_FUNC_DECL(int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook,
+                                           void* userData));
 PyAPI_FUNC_DECL(int PyFile_WriteObject(PyObject*, PyObject*, int));
 PyAPI_FUNC_DECL(int PyFile_WriteString(const char*, PyObject*));
 PyAPI_FUNC_DECL(double PyFloat_AsDouble(PyObject*));

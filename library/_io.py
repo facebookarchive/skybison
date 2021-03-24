@@ -2185,3 +2185,7 @@ def open(  # noqa: C901
     except Exception:
         result.close()
         raise
+
+
+def open_code(path):
+    return open(path, "rb")

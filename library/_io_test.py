@@ -9,7 +9,7 @@ import unittest
 import unittest.mock
 from unittest.mock import Mock
 
-from test_support import pyro_only
+from test_support import pyro_only, supports_38_feature
 
 
 try:
@@ -2001,6 +2001,12 @@ class OpenTests(unittest.TestCase):
 
             with open(full_path, "r") as fp:
                 self.assertEqual(fp.read(), "foobar")
+
+    @supports_38_feature
+    def test_open_code_returns_buffered_reader(self):
+        fd = _getfd()
+        with _io.open_code(fd) as result:
+            self.assertIsInstance(result, _io.BufferedReader)
 
 
 @pyro_only

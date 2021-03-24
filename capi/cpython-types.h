@@ -417,6 +417,7 @@ typedef struct _ts PyThreadState;
 
 typedef void (*PyOS_sighandler_t)(int);
 typedef void (*PyCapsule_Destructor)(PyObject*);
+typedef PyObject* (*Py_OpenCodeHookFunction)(PyObject*, void*);
 typedef int (*Py_tracefunc)(PyObject*, PyFrameObject*, int, PyObject*);
 
 typedef int64_t _PyTime_t;
