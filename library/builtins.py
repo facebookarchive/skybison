@@ -4173,7 +4173,7 @@ class instance_proxy(bootstrap=True):
             return NotImplemented
         if len(self) != len(other):
             return False
-        for key, value in self.items():
+        for key, value in instance_proxy.items(self):
             other_value = other.get(key, _Unbound)
             if other_value is _Unbound or (
                 value is not other_value and value != other_value
@@ -4196,13 +4196,13 @@ class instance_proxy(bootstrap=True):
         self._instance = instance
 
     def __iter__(self):
-        return self.keys().__iter__()
+        return instance_proxy.keys(self).__iter__()
 
     def __len__(self):
-        return len(self.keys())
+        return len(instance_proxy.keys(self))
 
     def __reduce__(self):
-        return dict, (), None, None, iter(self.items())
+        return dict, (), None, None, instance_proxy.items(self).__iter__()
 
     def __repr__(self):
         return _mapping_repr("instance_proxy({", self, "})")
@@ -4242,7 +4242,7 @@ class instance_proxy(bootstrap=True):
         instance = self._instance
         _instance_guard(instance)
         result = []
-        for key in self.keys():
+        for key in _object_keys(instance):
             value = _instance_getattr(instance, key)
             assert value is not _Unbound
             _list_append(result, (key, value))
@@ -4268,7 +4268,7 @@ class instance_proxy(bootstrap=True):
     def popitem(self):
         instance = self._instance
         _instance_guard(instance)
-        keys = self.keys()
+        keys = _object_keys(instance)
         if not keys:
             raise KeyError("dictionary is empty")
         key = keys[-1]
@@ -4823,7 +4823,11 @@ class list(bootstrap=True):
         _builtin()
 
     def __init__(self, iterable=()):
-        self.extend(iterable)
+        result = _list_extend(self, iterable)
+        if result is not _Unbound:
+            return
+        for item in iterable:
+            _list_append(self, item)
 
     def __iter__(self):
         _builtin()

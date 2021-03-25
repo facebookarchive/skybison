@@ -114,6 +114,35 @@ class ListTests(unittest.TestCase):
         self.assertIs(result, orig)
         self.assertEqual(result, [1, 2, 3, 1, 2, 3])
 
+    def test_dunder_init_with_list_returns_list(self):
+        li = list.__new__(list)
+        self.assertEqual(li, [])
+        list.__init__(li, [4, "a"])
+        self.assertEqual(li, [4, "a"])
+
+    def test_dunder_init_with_tuple_returns_list(self):
+        li = list.__new__(list)
+        self.assertEqual(li, [])
+        list.__init__(li, (5.5, (), 42))
+        self.assertEqual(li, [5.5, (), 42])
+
+    def test_dunder_init_with_generator_returns_list(self):
+        li = list.__new__(list)
+        self.assertEqual(li, [])
+        list.__init__(li, range(3, -5, -2))
+        self.assertEqual(li, [3, 1, -1, -3])
+
+    def test_dunder_init_does_not_call_extend_or_append(self):
+        class C(list):
+            def extend(self, x):
+                raise Exception("must not be called")
+
+            def append(self, x):
+                raise Exception("must not be called")
+
+        c = C(range(4))
+        self.assertEqual(c, [0, 1, 2, 3])
+
     def test_dunder_ne_returns_not_eq(self):
         orig = [1, 2, 3]
         self.assertTrue(orig.__ne__([1, 2]))
