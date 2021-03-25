@@ -873,6 +873,36 @@ class StrTests(unittest.TestCase):
             str.isupper(None)
         self.assertIn("'isupper' requires a 'str' object", str(context.exception))
 
+    def test_index_returns_int(self):
+        self.assertEqual(str.index("", ""), 0)
+        self.assertEqual(str.index("hello world", ""), 0)
+        self.assertEqual(str.index("hello world", "h"), 0)
+        self.assertEqual(str.index("hello world", "he"), 0)
+        self.assertEqual(str.index("hello world", "hel"), 0)
+        self.assertEqual(str.index("hello world", "hello world"), 0)
+        self.assertEqual(str.index("hello world", "l"), 2)
+        self.assertEqual(str.index("hello world", "lo"), 3)
+        self.assertEqual(str.index("hello world", "orld"), 7)
+        self.assertEqual(str.index("hello world", "ld"), 9)
+        self.assertEqual(str.index("hello world", "d"), 10)
+
+    def test_index_raises_value_error(self):
+        with self.assertRaisesRegex(ValueError, "substring not found"):
+            str.index("", "x")
+        with self.assertRaisesRegex(ValueError, "substring not found"):
+            str.index("hello world", "elo")
+
+    def test_index_does_not_call_find(self):
+        class C(str):
+            def find(self, a, b, c):
+                raise Exception("must not be called")
+
+        self.assertEqual(str.index(C("monty python"), C("ty p")), 3)
+
+    def test_index_with_non_str_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.index(b"", "")
+
     def test_join_with_raising_descriptor_dunder_iter_raises_type_error(self):
         class Desc:
             def __get__(self, obj, type):
@@ -1001,28 +1031,29 @@ class StrTests(unittest.TestCase):
         test = "a b"
         self.assertRaises(TypeError, test.replace, 32, "")
 
-    def test_rindex_with_bytes_self_raises_type_error(self):
+    def test_rindex_with_non_str_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.rindex(b"", "")
 
     def test_rindex_with_subsequence_returns_last_in_range(self):
         haystack = "-a-a--a--"
         needle = "a"
-        self.assertEqual(haystack.rindex(needle, 1, 6), 3)
+        self.assertEqual(str.rindex(haystack, needle, 1, 6), 3)
 
     def test_rindex_with_missing_raises_value_error(self):
-        haystack = "abc"
-        needle = "d"
-        with self.assertRaises(ValueError) as context:
-            haystack.rindex(needle)
-        self.assertEqual(str(context.exception), "substring not found")
+        with self.assertRaisesRegex(ValueError, "substring not found"):
+            str.rindex("abc", "d")
 
     def test_rindex_outside_of_bounds_raises_value_error(self):
-        haystack = "abc"
-        needle = "c"
-        with self.assertRaises(ValueError) as context:
-            haystack.rindex(needle, 0, 2)
-        self.assertEqual(str(context.exception), "substring not found")
+        with self.assertRaisesRegex(ValueError, "substring not found"):
+            str.rindex("abc", "c", 0, 2)
+
+    def test_rindex_does_not_call_rfind(self):
+        class C(str):
+            def rfind(self, a, b, c):
+                raise Exception("must not be called")
+
+        self.assertEqual(str.rindex(C("hello hello"), C("ell")), 7)
 
     def test_rjust_returns_justified_string(self):
         self.assertEqual(str.rjust("abc", -1), "abc")

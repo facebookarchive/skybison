@@ -6320,9 +6320,9 @@ class str(bootstrap=True):
         _unimplemented()
 
     def index(self, sub, start=None, end=None):
-        res = self.find(sub, start, end)
+        res = str.find(self, sub, start, end)
         if res < 0:
-            raise ValueError(f"substring {sub} not found")
+            raise ValueError("substring not found")
         return res
 
     def isalnum(self):
@@ -6454,7 +6454,7 @@ class str(bootstrap=True):
         return _str_rfind(self, sub, start, end)
 
     def rindex(self, sub, start=None, end=None):
-        res = self.rfind(sub, start, end)
+        res = str.rfind(self, sub, start, end)
         if res < 0:
             raise ValueError("substring not found")
         return res
