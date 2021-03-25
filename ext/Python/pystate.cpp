@@ -145,7 +145,7 @@ PY_EXPORT int _PyState_AddModule(PyObject* module, PyModuleDef* def) {
 }
 
 PY_EXPORT PyThreadState* _PyThreadState_GET_Func(void) {
-  UNIMPLEMENTED("_PyThreadState_GET");
+  return reinterpret_cast<PyThreadState*>(Thread::current());
 }
 
 PY_EXPORT void _PyThreadState_Init(PyThreadState* /* e */) {
