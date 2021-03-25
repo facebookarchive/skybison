@@ -735,9 +735,9 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
       continue;
     }
     if (op.bc == LOAD_GLOBAL) {
-      bytecode.byteAtPut(i - 2, LOAD_GLOBAL_CACHED);
+      bytecode.byteAtPut(i - kCodeUnitSize, LOAD_GLOBAL_CACHED);
     } else if (op.bc == STORE_GLOBAL) {
-      bytecode.byteAtPut(i - 2, STORE_GLOBAL_CACHED);
+      bytecode.byteAtPut(i - kCodeUnitSize, STORE_GLOBAL_CACHED);
     }
   }
 }
@@ -792,13 +792,13 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
         case LOAD_GLOBAL_CACHED:
           original_bc = LOAD_GLOBAL;
           if (op.bc != original_bc && op.arg == name_index_found) {
-            bytecode.byteAtPut(i - 2, original_bc);
+            bytecode.byteAtPut(i - kCodeUnitSize, original_bc);
           }
           break;
         case STORE_GLOBAL_CACHED:
           original_bc = STORE_GLOBAL;
           if (op.bc != original_bc && op.arg == name_index_found) {
-            bytecode.byteAtPut(i - 2, original_bc);
+            bytecode.byteAtPut(i - kCodeUnitSize, original_bc);
           }
           break;
         default:
