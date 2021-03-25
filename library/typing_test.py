@@ -2,14 +2,9 @@
 import sys
 import unittest
 from typing import Dict, Generic, List, NamedTuple, Optional, TypeVar, Union
-from unittest import skipIf
 
 
 class TypingTests(unittest.TestCase):
-    @skipIf(
-        sys.implementation.name == "cpython" and sys.version_info[:2] < (3, 7),
-        "requires at least CPython 3.7",
-    )
     def test_generic_subclass_with_metaclass(self):
         class M(type):
             pass

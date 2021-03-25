@@ -4633,10 +4633,6 @@ class DirTests(unittest.TestCase):
         self.assertEqual(dir(c), ["1", "2"])
 
 
-@unittest.skipIf(
-    sys.implementation.name == "cpython" and sys.version_info < (3, 7),
-    "requires at least CPython 3.7",
-)
 class DunderBuildClassTests(unittest.TestCase):
     def test_bases_updated_with_dunder_mro_entries(self):
         observed_bases = []
@@ -9155,10 +9151,6 @@ class ObjectTests(unittest.TestCase):
         self.assertIn("__doc__", f)
         self.assertIn("foo", f)
 
-    @unittest.skipIf(
-        sys.implementation.name == "cpython" and sys.version_info < (3, 7),
-        "requires at least CPython 3.7",
-    )
     def test_dunder_class_getitem_becomes_classmethod(self):
         class C:
             def __class_getitem__(cls, item):
