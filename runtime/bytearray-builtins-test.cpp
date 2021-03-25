@@ -1117,7 +1117,7 @@ TEST_F(BytearrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
           .isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isBytes());
-  Bytes actual(&scope, *result);
+  LargeBytes actual(&scope, *result);
   EXPECT_EQ(actual.byteAt('a'), '1');
   EXPECT_EQ(actual.byteAt('b'), '2');
   EXPECT_EQ(actual.byteAt('c'), '3');
