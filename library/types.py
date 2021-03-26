@@ -278,6 +278,7 @@ def coroutine(func):
             return func
 
     import _collections_abc
+    
     # The following code is primarily to support functions that
     # return generator-like objects (for instance generators
     # compiled with Cython).
