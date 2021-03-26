@@ -2381,7 +2381,7 @@ PY_EXPORT PyObject* const* _PyArg_UnpackKeywords(
       const char* keyword = i >= posonly ? parser->keywords[i] : nullptr;
       PyErr_Format(PyExc_TypeError,
                    "%.200s%s missing required "
-                   "argument '%U' (pos %d)",
+                   "argument '%s' (pos %d)",
                    (parser->fname == nullptr) ? "function" : parser->fname,
                    (parser->fname == nullptr) ? "" : "()", keyword, i + 1);
       return nullptr;
@@ -2405,7 +2405,7 @@ PY_EXPORT PyObject* const* _PyArg_UnpackKeywords(
       if (current_arg != nullptr) {
         // arg present in tuple and in dict
         PyErr_Format(PyExc_TypeError,
-                     "argument for %.200s%s given by name ('%U') "
+                     "argument for %.200s%s given by name ('%s') "
                      "and position (%d)",
                      (parser->fname == nullptr) ? "function" : parser->fname,
                      (parser->fname == nullptr) ? "" : "()", keyword, i + 1);
