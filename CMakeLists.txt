@@ -528,7 +528,7 @@ set_target_properties(
 
 add_library(
   runtime
-  STATIC
+  OBJECT
   runtime/array-module.cpp
   runtime/array-module.h
   runtime/assembler-utils.cpp
@@ -730,7 +730,7 @@ target_include_directories(runtime PRIVATE ${FROZEN_MODULE_OUTPUT_DIR}
 
 add_library(
   expat
-  STATIC
+  OBJECT
   ${CPYTHON_DIR}/Modules/expat/ascii.h
   ${CPYTHON_DIR}/Modules/expat/asciitab.h
   ${CPYTHON_DIR}/Modules/expat/expat_config.h
@@ -767,7 +767,7 @@ target_link_libraries(
 
 add_library(
   extension-modules
-  STATIC
+  OBJECT
   ${CPYTHON_DIR}/Modules/_bisectmodule.c
   ${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c
   ${CPYTHON_DIR}/Modules/_blake2/blake2module.c
@@ -960,7 +960,7 @@ target_link_libraries(
 
 add_library(
   extension
-  STATIC
+  OBJECT
   ext/Internal/bytearrayobject-utils.h
   ext/Internal/bytesobject-utils.h
   ext/Internal/capi-handles.cpp
@@ -1100,7 +1100,7 @@ add_custom_target(copy_library DEPENDS ${ALL_LIBRARY_FILES})
 
 add_library(
   modules
-  STATIC
+  OBJECT
   ext/Modules/config.cpp)
 add_dependencies(modules copy_library)
 target_compile_options(
@@ -1122,6 +1122,17 @@ else()
   set(SET_WHOLE_ARCHIVE_FLAG -Wl,-whole-archive)
   set(UNSET_WHOLE_ARCHIVE_FLAG -Wl,-no-whole-archive)
 endif()
+
+add_library(pyruntime
+  STATIC)
+target_link_libraries(
+  pyruntime
+  PRIVATE
+  extension
+  runtime
+  modules
+  extension-modules
+  expat)
 
 set(EXECUTABLE python${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 set(EXECUTABLE_SYMLINKS
@@ -1148,11 +1159,8 @@ target_link_libraries(
     ${EXECUTABLE}
     PRIVATE
     ${SET_WHOLE_ARCHIVE_FLAG}
-    extension
-    ${UNSET_WHOLE_ARCHIVE_FLAG}
-    capi-headers
-    runtime
-    modules)
+    pyruntime
+    ${UNSET_WHOLE_ARCHIVE_FLAG})
 set_target_properties(
   ${EXECUTABLE}
   PROPERTIES
@@ -1166,8 +1174,7 @@ add_executable(
 target_link_libraries(
   test_lldb_support
   PRIVATE
-  runtime
-  modules)
+  pyruntime)
 target_include_directories(
   test_lldb_support
   PRIVATE
@@ -1355,10 +1362,9 @@ target_compile_options(
 target_link_libraries(
   python-tests
   PRIVATE
-  extension
   benchmark
   gtest
-  runtime)
+  pyruntime)
 
 if (ENABLE_CPYTHON_TESTS)
   add_executable(
@@ -1421,6 +1427,9 @@ foreach(file ${LIBRARY_FILES})
   get_filename_component(dest_dir lib/${IMPLEMENTATION_DIR}/${file} DIRECTORY)
   install(FILES ${src_file} DESTINATION ${dest_dir})
 endforeach()
+
+install(TARGETS pyruntime DESTINATION lib)
+
 # TODO(T68707629) Stop filtering modules with unsupported encodings.
 # TODO(T68705525) stop filtering those test_xxx files with \\N sequences.
 install(CODE "
