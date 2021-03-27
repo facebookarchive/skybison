@@ -215,7 +215,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
            << entry_asm << R"(
   (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
   (in-object) "_function__caches" = mutabletuple(None, None, None, None)
-  (in-object) "_function__original_arguments" = (None, 0)
+  (in-object) "_function__original_arguments" = (0, 0)
   (in-object) "_function__dict" = {"funcattr0": 4}
   (in-object) "_function__intrinsic" = 37280
   overflow dict: {"funcattr0": 4}

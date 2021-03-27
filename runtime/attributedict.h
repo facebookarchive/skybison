@@ -10,8 +10,8 @@ class Thread;
 const int kAttributeBucketNumWords = 2;
 const int kAttributeBucketKeyOffset = 0;
 const int kAttributeBucketValueOffset = 1;
-const RawObject kAttributeDictEmptyKey = NoneType::object();
-const RawObject kAttributeDictTombstoneKey = Unbound::object();
+const RawObject kAttributeDictEmptyKey = SmallInt::fromWord(0);
+const RawObject kAttributeDictTombstoneKey = NoneType::object();
 
 RawObject attributeAt(RawAttributeDict attrs, RawObject name);
 

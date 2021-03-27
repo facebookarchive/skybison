@@ -290,6 +290,7 @@ void dictAllocateArrays(Thread* thread, const Dict& dict, word num_indices) {
   Runtime* runtime = thread->runtime();
   dict.setData(runtime->newMutableTuple(sizeOfDataTuple(num_indices) *
                                         kItemNumPointers));
+  MutableTuple::cast(dict.data()).fill(NoneType::object());
   dict.setIndices(
       runtime->mutableBytesWith(indexOffset(num_indices), kMaxByte));
   dict.setFirstEmptyItemIndex(0);
@@ -339,6 +340,7 @@ static void dictEnsureCapacity(Thread* thread, const Dict& dict) {
   MutableTuple new_data(
       &scope, runtime->newMutableTuple(sizeOfDataTuple(new_num_indices) *
                                        kItemNumPointers));
+  new_data.fill(NoneType::object());
   MutableBytes new_indices(&scope, runtime->mutableBytesWith(
                                        indexOffset(new_num_indices), kMaxByte));
 

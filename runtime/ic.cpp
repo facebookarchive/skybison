@@ -68,6 +68,7 @@ ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word index,
     HandleScope scope(thread);
     MutableTuple polymorphic_cache(
         &scope, runtime->newMutableTuple(kIcPointersPerPolyCache));
+    polymorphic_cache.fill(NoneType::object());
     polymorphic_cache.atPut(kIcEntryKeyOffset,
                             caches.at(i + kIcEntryKeyOffset));
     polymorphic_cache.atPut(kIcEntryValueOffset,
@@ -679,6 +680,7 @@ ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word index,
     HandleScope scope(thread);
     MutableTuple polymorphic_cache(
         &scope, thread->runtime()->newMutableTuple(kIcPointersPerPolyCache));
+    polymorphic_cache.fill(NoneType::object());
     polymorphic_cache.atPut(kIcEntryKeyOffset,
                             caches.at(i + kIcEntryKeyOffset));
     polymorphic_cache.atPut(kIcEntryValueOffset,

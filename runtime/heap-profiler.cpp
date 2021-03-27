@@ -235,7 +235,7 @@ void HeapProfiler::writeClassDump(RawLayout layout) {
   for (word i = 0; i < num_in_object; i++) {
     // allocated on the layout for an attribute
     RawObject name = Tuple::cast(in_object.at(i)).at(0);
-    if (name.isNoneType()) {
+    if (name == SmallInt::fromWord(0)) {
       sub.writeObjectId(cStringId(kInvalid));
     } else {
       sub.writeObjectId(stringId(Str::cast(name)));

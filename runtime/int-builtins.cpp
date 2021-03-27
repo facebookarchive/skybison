@@ -186,8 +186,9 @@ void initializeIntTypes(Thread* thread) {
     // value as an index into the class table.  Replicate the layout object for
     // SmallInt to all locations that decode to a SmallInt tag.
     for (word i = 2; i < (1 << Object::kImmediateTagBits); i += 2) {
-      DCHECK(runtime->layoutAt(static_cast<LayoutId>(i)) == NoneType::object(),
-             "list collision");
+      DCHECK(
+          runtime->layoutAt(static_cast<LayoutId>(i)) == SmallInt::fromWord(0),
+          "list collision");
       runtime->layoutAtPut(static_cast<LayoutId>(i), *layout);
     }
   }

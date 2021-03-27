@@ -403,7 +403,7 @@ class C:
   ASSERT_FALSE(runFromCStr(runtime_, "del C").isError());
   // This collection should kill C.
   runtime_->collectGarbage();
-  EXPECT_TRUE(runtime_->layoutAt(c_layout_id).isNoneType());
+  EXPECT_TRUE(runtime_->layoutAt(c_layout_id) == SmallInt::fromWord(0));
 }
 
 TEST_F(ScavengerTest, CollectGarbagePreservesTypeWithoutNormalReferences) {

@@ -43,7 +43,6 @@ void typeSlotsAllocate(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   word length = kNumInternalSlots + kLastSlot + 1;
   MutableTuple slots(&scope, thread->runtime()->newMutableTuple(length));
-  slots.fill(SmallInt::fromWord(0));
   type.setSlots(*slots);
 }
 

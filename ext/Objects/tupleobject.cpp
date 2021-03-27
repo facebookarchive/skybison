@@ -20,9 +20,9 @@ PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   if (length == 0) {
     return ApiHandle::newReference(runtime, runtime->emptyTuple());
   }
-  return ApiHandle::newReference(
-      runtime,
-      MutableTuple::cast(runtime->newMutableTuple(length)).becomeImmutable());
+  RawMutableTuple tuple = MutableTuple::cast(runtime->newMutableTuple(length));
+  tuple.fill(NoneType::object());
+  return ApiHandle::newReference(runtime, tuple.becomeImmutable());
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {

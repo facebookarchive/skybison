@@ -52,6 +52,7 @@ RawObject structseqNew(Thread* thread, const Type& type) {
     result.setValue(runtime->emptyTuple());
   } else {
     MutableTuple fields(&scope, runtime->newMutableTuple(num_fields));
+    fields.fill(NoneType::object());
     result.setValue(fields.becomeImmutable());
   }
   return *result;

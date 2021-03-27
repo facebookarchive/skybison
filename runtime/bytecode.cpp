@@ -197,8 +197,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerEntry);
   if (!function.hasOptimizedOrNewlocals()) {
     if (num_global_caches > 0) {
-      function.setCaches(
-          runtime->newMutableTuple(num_global_caches * kIcPointersPerEntry));
+      MutableTuple caches(&scope, runtime->newMutableTuple(
+                                      num_global_caches * kIcPointersPerEntry));
+      caches.fill(NoneType::object());
+      function.setCaches(*caches);
     }
     function.setOriginalArguments(runtime->emptyTuple());
     return;
@@ -225,8 +227,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     // Populate global variable caches unconditionally since the interpreter
     // assumes their existence.
     if (num_global_caches > 0) {
-      function.setCaches(
-          runtime->newMutableTuple(num_global_caches * kIcPointersPerEntry));
+      MutableTuple caches(&scope, runtime->newMutableTuple(
+                                      num_global_caches * kIcPointersPerEntry));
+      caches.fill(NoneType::object());
+      function.setCaches(*caches);
     }
     function.setOriginalArguments(runtime->emptyTuple());
     return;
@@ -265,8 +269,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   }
 
   if (num_caches > 0) {
-    function.setCaches(
-        runtime->newMutableTuple(num_caches * kIcPointersPerEntry));
+    MutableTuple caches(
+        &scope, runtime->newMutableTuple(num_caches * kIcPointersPerEntry));
+    caches.fill(NoneType::object());
+    function.setCaches(*caches);
     function.setOriginalArguments(
         MutableTuple::cast(*original_arguments).becomeImmutable());
   }

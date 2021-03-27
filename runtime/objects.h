@@ -5094,22 +5094,17 @@ inline word RawHeapObject::headerSize(word count) {
   return result;
 }
 
-static inline RawObject initializeWithObjectImpl(uword address, word count,
-                                                 LayoutId layout_id,
-                                                 int memset_byte) {
-  RawHeapObject result = RawHeapObject::initializeHeader(
-      address, count, /*hash=*/0, layout_id, ObjectFormat::kObjects);
-  word start = RawHeapObject::kSize;
-  word size = count * kPointerSize;
-  std::memset(reinterpret_cast<byte*>(result.address() + start), memset_byte,
-              size - start);
-  return result;
-}
-
 inline RawObject RawInstance::initializeWithNone(uword address,
                                                  word num_attributes,
                                                  LayoutId layout_id) {
-  return initializeWithObjectImpl(address, num_attributes, layout_id, -1);
+  RawHeapObject result = RawHeapObject::initializeHeader(
+      address, /*count=*/num_attributes, /*hash=*/0, layout_id,
+      ObjectFormat::kObjects);
+  word start = RawHeapObject::kSize;
+  word size = num_attributes * kPointerSize;
+  std::memset(reinterpret_cast<byte*>(result.address() + start), -1,
+              size - start);
+  return result;
 }
 
 inline RawObject RawInstance::initializeWithZero(uword address,
@@ -5614,7 +5609,8 @@ inline void RawMutableTuple::swap(word i, word j) const {
 }
 
 inline RawObject RawMutableTuple::initialize(uword address, word length) {
-  return initializeWithObjectImpl(address, length, LayoutId::kMutableTuple, -1);
+  return initializeHeader(address, /*count=*/length, /*hash=*/0,
+                          LayoutId::kMutableTuple, ObjectFormat::kObjects);
 }
 
 // RawTuple

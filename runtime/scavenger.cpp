@@ -141,7 +141,7 @@ void Scavenger::processLayouts() {
             end = layouts_.length();
        i < end; ++i) {
     RawObject layout = layouts_.at(i);
-    if (layout.isNoneType()) continue;
+    if (layout == SmallInt::fromWord(0)) continue;
     RawHeapObject heap_obj = HeapObject::cast(layout);
     if (to_->contains(heap_obj.address())) continue;
 
@@ -149,7 +149,7 @@ void Scavenger::processLayouts() {
       DCHECK(heap_obj.forward().isLayout(), "Bad Layout forwarded value");
       layouts_.atPut(i, heap_obj.forward());
     } else {
-      layouts_.atPut(i, NoneType::object());
+      layouts_.atPut(i, SmallInt::fromWord(0));
     }
   }
 
@@ -166,7 +166,7 @@ void Scavenger::processLayouts() {
   for (word i = 0; i < length; i += LayoutTypeTransition::kTransitionSize) {
     RawObject from_obj =
         layout_type_transitions_.at(i + LayoutTypeTransition::kFrom);
-    if (from_obj.isNoneType()) continue;
+    if (from_obj == SmallInt::fromWord(0)) continue;
 
     RawHeapObject from = HeapObject::cast(from_obj);
     RawHeapObject to = HeapObject::cast(
@@ -190,11 +190,11 @@ void Scavenger::processLayouts() {
       // Remove the transition edge of the from or result layouts have been
       // collected.
       layout_type_transitions_.atPut(i + LayoutTypeTransition::kFrom,
-                                     NoneType::object());
+                                     SmallInt::fromWord(0));
       layout_type_transitions_.atPut(i + LayoutTypeTransition::kTo,
-                                     NoneType::object());
+                                     SmallInt::fromWord(0));
       layout_type_transitions_.atPut(i + LayoutTypeTransition::kResult,
-                                     NoneType::object());
+                                     SmallInt::fromWord(0));
     }
   }
 
@@ -205,8 +205,8 @@ void Scavenger::processLayouts() {
 static inline word getLeftMostNoneObjectIndex(RawTuple layout_type_transitions,
                                               word left, word right) {
   while (left < right &&
-         !layout_type_transitions.at(left + LayoutTypeTransition::kFrom)
-              .isNoneType()) {
+         layout_type_transitions.at(left + LayoutTypeTransition::kFrom) !=
+             SmallInt::fromWord(0)) {
     left += LayoutTypeTransition::kTransitionSize;
   }
   return left;
@@ -215,8 +215,8 @@ static inline word getLeftMostNoneObjectIndex(RawTuple layout_type_transitions,
 static inline word getRightMostValidObjectIndex(
     RawTuple layout_type_transitions, word left, word right) {
   while (left < right &&
-         layout_type_transitions.at(right + LayoutTypeTransition::kFrom)
-             .isNoneType()) {
+         layout_type_transitions.at(right + LayoutTypeTransition::kFrom) ==
+             SmallInt::fromWord(0)) {
     right -= LayoutTypeTransition::kTransitionSize;
   }
   return right;

@@ -399,7 +399,7 @@ TEST_F(LayoutTest, DeleteInObjectAttribute) {
   ASSERT_EQ(inobject.length(), 1);
   ASSERT_TRUE(inobject.at(0).isTuple());
   entry = inobject.at(0);
-  EXPECT_EQ(entry.at(0), NoneType::object());
+  EXPECT_EQ(entry.at(0), SmallInt::fromWord(0));
   ASSERT_TRUE(entry.at(1).isSmallInt());
   EXPECT_EQ(AttributeInfo(entry.at(1)).flags(), 2);
 

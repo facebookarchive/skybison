@@ -207,6 +207,7 @@ static RawTuple setGrow(Thread* thread, const SetBase& set) {
     new_length = Runtime::kInitialSetCapacity * kNumPointers;
   }
   MutableTuple new_data(&scope, thread->runtime()->newMutableTuple(new_length));
+  new_data.fill(NoneType::object());
   // Re-insert items
   Object value(&scope, NoneType::object());
   for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
@@ -838,6 +839,7 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
                               : runtime->newFrozenSet());
   Tuple data(&scope, set.data());
   MutableTuple new_data(&scope, runtime->newMutableTuple(data.length()));
+  new_data.fill(NoneType::object());
   Object value(&scope, NoneType::object());
   for (word i = 0, hash; setNextItemHash(set, &i, &value, &hash);) {
     word dst_index = i - kNumPointers;

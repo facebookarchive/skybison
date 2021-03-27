@@ -1700,7 +1700,12 @@ TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
   dst.replaceFromWith(0, *src, 2);
-  EXPECT_PYLIST_EQ(dst, {0, 1, Value::none(), Value::none(), Value::none()});
+  ASSERT_EQ(dst.numItems(), 5);
+  EXPECT_TRUE(isIntEqualsWord(dst.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 1));
+  EXPECT_EQ(dst.at(2), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
@@ -1711,7 +1716,12 @@ TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
   dst.replaceFromWith(1, *src, 2);
-  EXPECT_PYLIST_EQ(dst, {Value::none(), 0, 1, Value::none(), Value::none()});
+  ASSERT_EQ(dst.numItems(), 5);
+  EXPECT_EQ(dst.at(0), SmallInt::fromWord(0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(2), 1));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
@@ -1722,8 +1732,12 @@ TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
   dst.replaceFromWith(0, *src, 0);
-  EXPECT_PYLIST_EQ(dst, {Value::none(), Value::none(), Value::none(),
-                         Value::none(), Value::none()});
+  ASSERT_EQ(dst.numItems(), 5);
+  EXPECT_EQ(dst.at(0), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(1), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(2), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
@@ -1734,7 +1748,12 @@ TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
   dst.replaceFromWith(0, *src, 5);
-  EXPECT_PYLIST_EQ(dst, {0, 1, 2, 3, 4});
+  ASSERT_EQ(dst.numItems(), 5);
+  EXPECT_TRUE(isIntEqualsWord(dst.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(3), 3));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(4), 4));
 }
 
 TEST_F(ListTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
@@ -1745,7 +1764,12 @@ TEST_F(ListTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
   dst.replaceFromWithStartAt(0, *src, 2, 2);
-  EXPECT_PYLIST_EQ(dst, {2, 3, Value::none(), Value::none(), Value::none()});
+  ASSERT_EQ(dst.numItems(), 5);
+  EXPECT_TRUE(isIntEqualsWord(dst.at(0), 2));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 3));
+  EXPECT_EQ(dst.at(2), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(ListTest, ReplaceFromWithStartAtWithSelfNoop) {
@@ -1797,9 +1821,9 @@ TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   dst.replaceFromWith(0, *src_items, 2);
   EXPECT_TRUE(isIntEqualsWord(dst.at(0), 0));
   EXPECT_TRUE(isIntEqualsWord(dst.at(1), 1));
-  EXPECT_TRUE(dst.at(2).isNoneType());
-  EXPECT_TRUE(dst.at(3).isNoneType());
-  EXPECT_TRUE(dst.at(4).isNoneType());
+  EXPECT_EQ(dst.at(2), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
@@ -1808,11 +1832,11 @@ TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(1, *src_items, 2);
-  EXPECT_TRUE(dst.at(0).isNoneType());
+  EXPECT_EQ(dst.at(0), SmallInt::fromWord(0));
   EXPECT_TRUE(isIntEqualsWord(dst.at(1), 0));
   EXPECT_TRUE(isIntEqualsWord(dst.at(2), 1));
-  EXPECT_TRUE(dst.at(3).isNoneType());
-  EXPECT_TRUE(dst.at(4).isNoneType());
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(MutableTupleTest, ReplaceFromWithCopiesZeroElements) {
@@ -1821,11 +1845,11 @@ TEST_F(MutableTupleTest, ReplaceFromWithCopiesZeroElements) {
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 0);
-  EXPECT_TRUE(dst.at(0).isNoneType());
-  EXPECT_TRUE(dst.at(1).isNoneType());
-  EXPECT_TRUE(dst.at(2).isNoneType());
-  EXPECT_TRUE(dst.at(3).isNoneType());
-  EXPECT_TRUE(dst.at(4).isNoneType());
+  EXPECT_EQ(dst.at(0), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(1), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(2), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(MutableTupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
@@ -1874,9 +1898,9 @@ TEST_F(MutableTupleTest,
   dst.replaceFromWithStartAt(0, *src, 2, 2);
   EXPECT_TRUE(isIntEqualsWord(dst.at(0), 2));
   EXPECT_TRUE(isIntEqualsWord(dst.at(1), 3));
-  EXPECT_TRUE(dst.at(2).isNoneType());
-  EXPECT_TRUE(dst.at(3).isNoneType());
-  EXPECT_TRUE(dst.at(4).isNoneType());
+  EXPECT_EQ(dst.at(2), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(3), SmallInt::fromWord(0));
+  EXPECT_EQ(dst.at(4), SmallInt::fromWord(0));
 }
 
 TEST_F(MutableTupleTest, SwapSwapsElementsAtIndices) {

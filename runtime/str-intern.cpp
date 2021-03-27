@@ -23,13 +23,13 @@ RawObject internSetGrow(Thread* thread, RawMutableTuple data_raw,
   MutableTuple new_data(&scope, runtime->newMutableTuple(new_capacity));
   for (word i = 0, length = old_data.length(); i < length; i++) {
     RawObject slot = old_data.at(i);
-    if (slot.isNoneType()) {
+    if (slot == SmallInt::fromWord(0)) {
       continue;
     }
     word hash = LargeStr::cast(slot).header().hashCode();
     word index = hash & mask;
     word num_probes = 0;
-    while (!new_data.at(index).isNoneType()) {
+    while (new_data.at(index) != SmallInt::fromWord(0)) {
       num_probes++;
       index = (index + num_probes) & mask;
     }
@@ -55,7 +55,7 @@ bool internSetContains(RawMutableTuple data, RawLargeStr str) {
     if (slot == str) {
       return true;
     }
-    if (slot.isNoneType()) {
+    if (slot == SmallInt::fromWord(0)) {
       return false;
     }
     num_probes++;

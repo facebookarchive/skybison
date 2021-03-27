@@ -40,7 +40,7 @@ inline bool internSetAddFromAll(Thread* thread, RawMutableTuple data,
   word num_probes = 0;
   for (;;) {
     RawObject slot = data.at(index);
-    if (slot.isNoneType()) {
+    if (slot == SmallInt::fromWord(0)) {
       RawLargeStr new_str = LargeStr::cast(runtime->newStrWithAll(bytes));
       new_str.setHeader(new_str.header().withHashCode(hash));
       data.atPut(index, new_str);
@@ -72,7 +72,7 @@ inline bool internSetAdd(Thread* thread, RawMutableTuple data,
       *result = *str;
       return false;
     }
-    if (slot.isNoneType()) {
+    if (slot == SmallInt::fromWord(0)) {
       data.atPut(index, *str);
       *result = *str;
       return true;

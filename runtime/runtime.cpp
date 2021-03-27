@@ -220,7 +220,7 @@ RawObject Runtime::layoutAtSafe(LayoutId layout_id) {
     return Error::notFound();
   }
   RawObject result = Tuple::cast(layouts_).at(id);
-  if (result.isNoneType()) return Error::notFound();
+  if (result == SmallInt::fromWord(0)) return Error::notFound();
   return result;
 }
 
@@ -604,6 +604,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   // Create mapping between cells and arguments if needed
   if (result.numCellvars() > 0) {
     MutableTuple cell2arg(&scope, newMutableTuple(result.numCellvars()));
+    cell2arg.fill(NoneType::object());
     bool value_set = false;
     for (word i = 0; i < result.numCellvars(); i++) {
       for (word j = 0; j < result.totalArgs(); j++) {
@@ -3564,7 +3565,7 @@ RawObject Runtime::layoutSetDescribedType(Thread* thread, const Layout& from,
   HandleScope scope(thread);
   MutableTuple transitions(&scope, layout_type_transitions_);
   word length = transitions.length();
-  word first_none = length;
+  word first_free = length;
   for (word i = 0; i < length; i += LayoutTypeTransition::kTransitionSize) {
     RawObject found_from = transitions.at(i + LayoutTypeTransition::kFrom);
     if (found_from == from &&
@@ -3572,9 +3573,9 @@ RawObject Runtime::layoutSetDescribedType(Thread* thread, const Layout& from,
       // The transition exists; return the result layout
       return transitions.at(i + LayoutTypeTransition::kResult);
     }
-    if (first_none == length && found_from.isNoneType()) {
+    if (first_free == length && found_from == SmallInt::fromWord(0)) {
       // There's an empty slot we can use to store the transition
-      first_none = i;
+      first_free = i;
     }
   }
 
@@ -3583,7 +3584,7 @@ RawObject Runtime::layoutSetDescribedType(Thread* thread, const Layout& from,
   result.setDescribedType(*to);
 
   // If needed, grow the table
-  word index = first_none;
+  word index = first_free;
   word needed_length = index + LayoutTypeTransition::kTransitionSize;
   if (needed_length > length) {
     word new_length = newCapacity(length, /*min_capacity=*/needed_length);
@@ -3609,14 +3610,14 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
   DCHECK(length > 0, "length must be positive");
   Runtime* runtime = thread->runtime();
   MutableTuple entries_new(&scope, runtime->newMutableTuple(length));
-  Object none(&scope, NoneType::object());
+  Object zero(&scope, SmallInt::fromWord(0));
   Tuple entry(&scope, runtime->emptyTuple());
   for (word i = 0; i < length; i++) {
     entry = entries_old.at(i);
     if (entry.at(0) == name) {
       AttributeInfo old_info(entry.at(1));
       AttributeInfo info(old_info.offset(), AttributeFlags::kDeleted);
-      entry = runtime->layoutNewAttribute(/*name=*/none, info);
+      entry = runtime->layoutNewAttribute(/*name=*/zero, info);
     }
     entries_new.atPut(i, *entry);
   }

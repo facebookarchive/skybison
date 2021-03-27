@@ -199,7 +199,7 @@ class Runtime {
   // Returns the singleton empty tuple. Guaranteed to not allocate.
   RawObject emptyTuple();
 
-  // Return a new, None-initialized, mutable tuple of the given length.
+  // Return a new, zero-initialized, mutable tuple of the given length.
   RawObject newMutableTuple(word length);
 
   // Return a new tuple containing the specified arguments.

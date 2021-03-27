@@ -3413,10 +3413,7 @@ RawObject FUNC(_builtins, _list_new)(Thread* thread, Arguments args) {
     MutableTuple items(&scope, runtime->newMutableTuple(size));
     result.setItems(*items);
     result.setNumItems(size);
-    Object value(&scope, args.get(1));
-    if (!value.isNoneType()) {
-      items.fill(*value);
-    }
+    items.fill(args.get(1));
   }
   return *result;
 }
@@ -3882,7 +3879,7 @@ RawObject FUNC(_builtins, _object_keys)(Thread* thread, Arguments args) {
     for (word i = 0, length = overflow.length(); i < length; i++) {
       Tuple pair(&scope, overflow.at(i));
       Object name(&scope, pair.at(0));
-      if (name.isNoneType()) continue;
+      if (name == SmallInt::fromWord(0)) continue;
       runtime->listAdd(thread, result, name);
     }
   } else if (layout.hasDictOverflow()) {
@@ -4521,8 +4518,10 @@ RawObject FUNC(_builtins, _structseq_new_type)(Thread* thread, Arguments args) {
     Object field_name(&scope, NoneType::object());
     for (word i = 0; i < num_fields; i++) {
       field_name = field_names.at(i);
-      if (field_name.isNoneType()) continue;
-      field_names_interned.atPut(i, Runtime::internStr(thread, field_name));
+      if (!field_name.isNoneType()) {
+        field_name = Runtime::internStr(thread, field_name);
+      }
+      field_names_interned.atPut(i, *field_name);
     }
     field_names = field_names_interned.becomeImmutable();
   }

@@ -19,6 +19,7 @@ TEST_F(
   HandleScope scope(thread_);
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(2 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   bool is_found;
   EXPECT_TRUE(icLookupMonomorphic(*caches, 1, LayoutId::kSmallInt, &is_found)
                   .isErrorNotFound());
@@ -29,6 +30,7 @@ TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
   MutableTuple caches(&scope, runtime_->newMutableTuple(kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   BinaryOpFlags flags;
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
                                LayoutId::kSmallInt, &flags)
@@ -38,6 +40,7 @@ TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
 TEST_F(IcTest, IcLookupGlobalVar) {
   HandleScope scope(thread_);
   MutableTuple caches(&scope, runtime_->newMutableTuple(2));
+  caches.fill(NoneType::object());
   ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
   caches.atPut(0, *cache);
@@ -50,6 +53,7 @@ TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
   HandleScope scope(thread_);
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(1 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object value(&scope, runtime_->newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
@@ -66,6 +70,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
   HandleScope scope(thread_);
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(1 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object value(&scope, runtime_->newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
@@ -90,6 +95,7 @@ TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
   HandleScope scope(thread_);
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(1 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object int_value(&scope, runtime_->newInt(88));
   Object str_value(&scope, runtime_->newInt(99));
   Object name(&scope, Str::empty());
@@ -113,6 +119,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
   HandleScope scope(thread_);
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(1 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object int_value(&scope, runtime_->newInt(88));
   Object str_value(&scope, runtime_->newInt(99));
   Object name(&scope, Str::empty());
@@ -159,6 +166,7 @@ c = C()
   // to the existing ValueCell in B. A won't be affected since it's not visited
   // during MRO traversal.
   MutableTuple caches(&scope, runtime_->newMutableTuple(4));
+  caches.fill(NoneType::object());
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Object value(&scope, SmallInt::fromWord(1234));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
@@ -187,6 +195,7 @@ TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
   HandleScope scope(thread_);
   Str instance(&scope, runtime_->newStrFromCStr("str instance"));
   MutableTuple caches(&scope, runtime_->newMutableTuple(4));
+  caches.fill(NoneType::object());
   Object value(&scope, SmallInt::fromWord(1234));
   Object dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
   Function dependent(&scope, newEmptyFunction());
@@ -709,6 +718,7 @@ static RawObject testingFunctionCachingAttributes(
 
   MutableTuple caches(&scope,
                       runtime->newMutableTuple(2 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   function.setCaches(*caches);
 
   return *function;
@@ -1270,6 +1280,7 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
   HandleScope scope(thread_);
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(2 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object value(&scope, runtime_->newStrFromCStr("this is a random value"));
   EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1285,6 +1296,7 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
 
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(2 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object value(&scope, runtime_->newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1304,6 +1316,7 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
 
   MutableTuple caches(&scope,
                       runtime_->newMutableTuple(2 * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   Object value(&scope, runtime_->newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1426,6 +1439,7 @@ static RawObject testingFunction(Thread* thread) {
 
   code.setNames(newTupleWithNone(2));
   MutableTuple caches(&scope, runtime->newMutableTuple(2));
+  caches.fill(NoneType::object());
   function.setCaches(*caches);
   return *function;
 }
@@ -1739,6 +1753,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   Object value(&scope, NoneType::object());
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   // Caches for LOAD_ATTR_ANAMORPHIC at PC 2.
   value = SmallInt::fromWord(10);
   icUpdateAttr(thread_, caches, 0, LayoutId::kBool, value, name, dependent);
@@ -1867,6 +1882,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
 
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
 
   // Caches for COMPARE_OP_ANAMORPHIC at 2.
   word compare_op_cached_index =
@@ -1950,6 +1966,7 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
 
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
+  caches.fill(NoneType::object());
 
   // Caches for BINARY_OP_ANAMORPHIC at 2.
   word inplace_op_cached_index =
@@ -2079,6 +2096,7 @@ TEST_F(IcTest,
                                                kBinaryOpReflected));
   Object entry_value(&scope, runtime_->newStrFromCStr("value"));
   MutableTuple caches(&scope, runtime_->newMutableTuple(kIcPointersPerEntry));
+  caches.fill(NoneType::object());
   caches.atPut(kIcEntryKeyOffset, *entry_key);
   caches.atPut(kIcEntryValueOffset, *entry_value);
 
