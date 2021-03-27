@@ -770,53 +770,70 @@ void strInternInTuple(Thread* thread, const Object& items) {
 
 static bool allNameChars(const Str& str) {
   for (word i = 0; i < str.length(); i++) {
-    if (!std::isalnum(str.byteAt(i))) {
+    if (!ASCII::isAlnum(str.byteAt(i))) {
       return false;
     }
   }
   return true;
 }
 
-bool strInternConstants(Thread* thread, const Object& items) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfTuple(*items), "items must be a tuple instance");
-  Tuple tuple(&scope, tupleUnderlying(*items));
-  Object obj(&scope, NoneType::object());
-  Object result(&scope, NoneType::object());
-  bool modified = false;
-  for (word i = 0; i < tuple.length(); i++) {
-    obj = tuple.at(i);
-
-    if (obj.isStr()) {
-      Str str(&scope, *obj);
-      if (allNameChars(str)) {
-        // if all name chars, intern in place
-        result = Runtime::internStr(thread, str);
-        if (result.isError()) continue;
-        if (result != obj) {
-          tuple.atPut(i, *result);
-          modified = true;
-        }
-      }
-    } else if (obj.isTuple()) {
-      strInternConstants(thread, obj);
-    } else if (obj.isFrozenSet()) {
-      FrozenSet set(&scope, *obj);
-      Tuple seq(&scope, runtime->newTuple(set.numItems()));
-      Object value(&scope, NoneType::object());
-      for (word j = 0, idx = 0; setNextItem(set, &idx, &value); j++) {
-        seq.atPut(j, *value);
-      }
-      if (strInternConstants(thread, seq)) {
-        obj = setUpdate(thread, set, seq);
-        if (obj.isError()) continue;
-        tuple.atPut(i, *obj);
-        modified = true;
+static bool strInternConstant(Thread* thread, Object* object) {
+  if (object->isStr()) {
+    HandleScope scope(thread);
+    Str str(&scope, **object);
+    if (allNameChars(str)) {
+      str = Runtime::internStr(thread, str);
+      if (str != *object) {
+        *object = *str;
+        return true;
       }
     }
+    return false;
   }
-  return modified;
+  if (object->isTuple()) {
+    HandleScope scope(thread);
+    Tuple tuple(&scope, **object);
+    Object item(&scope, NoneType::object());
+    bool modified = false;
+    for (word i = 0, length = tuple.length(); i < length; i++) {
+      item = tuple.at(i);
+      if (strInternConstant(thread, &item)) {
+        modified = true;
+        tuple.atPut(i, *item);
+      }
+    }
+    if (!modified) return false;
+    *object = *tuple;
+    return true;
+  }
+  if (object->isFrozenSet()) {
+    HandleScope scope(thread);
+    FrozenSet set(&scope, **object);
+    FrozenSet new_set(&scope, thread->runtime()->newFrozenSet());
+    Object value(&scope, NoneType::object());
+    Object hash(&scope, NoneType::object());
+    bool modified = false;
+    for (word j = 0, idx = 0; setNextItem(set, &idx, &value); j++) {
+      if (strInternConstant(thread, &value)) {
+        modified = true;
+      }
+      hash = Interpreter::hash(thread, value);
+      if (hash.isErrorException()) return false;
+      setAdd(thread, new_set, value, SmallInt::cast(*hash).value());
+    }
+    if (!modified) return false;
+    *object = *new_set;
+    return true;
+  }
+  return false;
+}
+
+bool strInternConstants(Thread* thread, const Object& items) {
+  HandleScope scope(thread);
+  DCHECK(thread->runtime()->isInstanceOfTuple(*items),
+         "items must be a tuple instance");
+  Object tuple(&scope, tupleUnderlying(*items));
+  return strInternConstant(thread, &tuple);
 }
 
 word strFind(const Str& haystack, const Str& needle) {
