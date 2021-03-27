@@ -40,7 +40,7 @@ TEST_F(CApiHandlesTest, BorrowedApiHandles) {
   HandleScope scope(thread_);
 
   // Create a new object and a new reference to that object.
-  Object obj(&scope, runtime_->newTuple(10));
+  Object obj(&scope, runtime_->newList());
   ApiHandle* new_ref = ApiHandle::newReference(runtime_, *obj);
   word refcnt = new_ref->refcnt();
 
@@ -234,7 +234,7 @@ TEST_F(CApiHandlesTest,
 TEST_F(CApiHandlesTest, Cache) {
   HandleScope scope(thread_);
 
-  auto handle1 = ApiHandle::newReference(runtime_, runtime_->newTuple(1));
+  auto handle1 = ApiHandle::newReference(runtime_, runtime_->newList());
   EXPECT_EQ(handle1->cache(runtime_), nullptr);
 
   Str str(&scope,

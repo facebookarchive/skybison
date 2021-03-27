@@ -202,9 +202,6 @@ class Runtime {
   // Return a new, None-initialized, mutable tuple of the given length.
   RawObject newMutableTuple(word length);
 
-  // Return a new, None-initialized tuple of the given length.
-  RawObject newTuple(word length);
-
   // Return a new tuple containing the specified arguments.
   RawObject newTupleWith1(const Object& item1);
   RawObject newTupleWith2(const Object& item1, const Object& item2);
@@ -897,7 +894,6 @@ class Runtime {
 
   RawObject createLargeBytes(word length);
   RawObject createMutableBytes(word length);
-  RawObject createTuple(word length);
 
   // Generic attribute deletion code used for class objects
   // TODO(T55871582): Remove code paths that can raise from the Runtime

@@ -359,13 +359,6 @@ RawObject Runtime::createMutableBytes(word length) {
       DataArray::initialize(address, length, LayoutId::kMutableBytes));
 }
 
-RawObject Runtime::createTuple(word length) {
-  word size = Tuple::allocationSize(length);
-  uword address;
-  CHECK(heap()->allocate(size, &address), "out of memory");
-  return Tuple::cast(Tuple::initialize(address, length));
-}
-
 RawObject Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
   if (length <= SmallBytes::kMaxLength) {
@@ -1003,13 +996,6 @@ RawObject Runtime::newMutableTuple(word length) {
   uword address;
   CHECK(heap()->allocate(size, &address), "out of memory");
   return MutableTuple::cast(MutableTuple::initialize(address, length));
-}
-
-RawObject Runtime::newTuple(word length) {
-  if (length == 0) {
-    return emptyTuple();
-  }
-  return createTuple(length);
 }
 
 RawObject Runtime::newTupleWith1(const Object& item1) {
@@ -2006,8 +1992,16 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
   return NoneType::object();
 }
 
+static RawTuple newEmptyTuple(Heap* heap) {
+  word size = MutableTuple::allocationSize(0);
+  uword address;
+  CHECK(heap->allocate(size, &address), "out of memory");
+  return Tuple::cast(MutableTuple::cast(MutableTuple::initialize(address, 0))
+                         .becomeImmutable());
+}
+
 void Runtime::initializePrimitiveInstances() {
-  empty_tuple_ = createTuple(0);
+  empty_tuple_ = newEmptyTuple(heap());
   empty_frozen_set_ = newFrozenSet();
   empty_mutable_bytes_ = createMutableBytes(0);
   empty_slice_ = newInstanceWithSize(LayoutId::kSlice, Slice::kSize);

@@ -197,6 +197,17 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
   EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 2)));
 }
 
+TEST_F(CodeExtensionApiTest, ConstantKeyWithEmptyTupleReturnsTwoTuple) {
+  PyObjectPtr obj(PyTuple_New(0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  PyObjectPtr new_tuple(borrow(PyTuple_GetItem(result, 0)));
+  EXPECT_EQ(PyTuple_Size(new_tuple), 0);
+}
+
 TEST_F(CodeExtensionApiTest, ConstantKeyWithFrozenSetReturnsTwoTuple) {
   PyObjectPtr zero(PyLong_FromLong(0));
   PyObjectPtr one(PyLong_FromLong(1));

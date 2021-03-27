@@ -2619,7 +2619,7 @@ TEST_F(InterpreterTest, DoDeleteSubscrDoesntPushToStack) {
   Tuple consts(&scope, runtime_->newTupleWith3(obj1, list, obj3));
   code.setConsts(*consts);
 
-  Tuple varnames(&scope, runtime_->newTuple(0));
+  Tuple varnames(&scope, runtime_->emptyTuple());
   code.setVarnames(*varnames);
   code.setNlocals(0);
   const byte bytecode[] = {
@@ -2651,7 +2651,7 @@ seq = Sequence()
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
   code.setConsts(*consts);
 
-  Tuple varnames(&scope, runtime_->newTuple(0));
+  Tuple varnames(&scope, runtime_->emptyTuple());
   code.setVarnames(*varnames);
   code.setNlocals(0);
   const byte bytecode[] = {
@@ -3381,7 +3381,7 @@ sys.displayhook = my_displayhook
   )")
                    .isError());
 
-  Object unique(&scope, runtime_->newTuple(1));  // unique object
+  Object unique(&scope, runtime_->newList());  // unique object
 
   Code code(&scope, newEmptyCode());
   Object none(&scope, NoneType::object());
@@ -3420,7 +3420,7 @@ sys.displayhook = my_displayhook
   Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
   code.setConsts(*consts);
 
-  Tuple varnames(&scope, runtime_->newTuple(0));
+  Tuple varnames(&scope, runtime_->emptyTuple());
   code.setVarnames(*varnames);
   code.setNlocals(0);
   // This bytecode loads 42 onto the stack, along with a value to print.
@@ -3728,12 +3728,10 @@ manager = M()
 
   Code code(&scope, newEmptyCode());
   code.setNlocals(0);
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, mainModuleAt(runtime_, "manager"));
-  code.setConsts(*consts);
-  Tuple names(&scope, runtime_->newTuple(1));
-  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(*names);
+  Object manager(&scope, mainModuleAt(runtime_, "manager"));
+  code.setConsts(runtime_->newTupleWith1(manager));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(runtime_->newTupleWith1(name));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
@@ -3754,12 +3752,10 @@ manager = M()
 
   Code code(&scope, newEmptyCode());
   code.setNlocals(0);
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, mainModuleAt(runtime_, "manager"));
-  code.setConsts(*consts);
-  Tuple names(&scope, runtime_->newTuple(1));
-  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(*names);
+  Object manager(&scope, mainModuleAt(runtime_, "manager"));
+  code.setConsts(runtime_->newTupleWith1(manager));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(runtime_->newTupleWith1(name));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
@@ -3787,12 +3783,10 @@ manager = M()
 
   Code code(&scope, newEmptyCode());
   code.setNlocals(0);
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, mainModuleAt(runtime_, "manager"));
-  code.setConsts(*consts);
-  Tuple names(&scope, runtime_->newTuple(1));
-  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(*names);
+  Object manager(&scope, mainModuleAt(runtime_, "manager"));
+  code.setConsts(runtime_->newTupleWith1(manager));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(runtime_->newTupleWith1(name));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
@@ -3819,12 +3813,10 @@ manager = M()
 
   Code code(&scope, newEmptyCode());
   code.setNlocals(0);
-  Tuple consts(&scope, runtime_->newTuple(1));
-  consts.atPut(0, mainModuleAt(runtime_, "manager"));
-  code.setConsts(*consts);
-  Tuple names(&scope, runtime_->newTuple(1));
-  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(*names);
+  Object manager(&scope, mainModuleAt(runtime_, "manager"));
+  code.setConsts(runtime_->newTupleWith1(manager));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
+  code.setNames(runtime_->newTupleWith1(name));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 

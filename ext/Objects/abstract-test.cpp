@@ -2202,6 +2202,16 @@ def func(*args, **kwargs):
   }
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectFastCallDictWithNoArgsCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(mainModuleGet("func"));
+  PyObjectPtr result(_PyObject_FastCallDict(func, nullptr, 0, nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(){}"));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectFastCallDictWithoutKeywordArgsCalls) {
   PyRun_SimpleString(R"(
 def func(*args, **kwargs):

@@ -23,7 +23,7 @@ using UnderBuiltinsModuleDeathTest = RuntimeFixture;
 
 TEST_F(UnderBuiltinsModuleTest, UnderAnysetCheckWithNonSetReturnsFalse) {
   HandleScope scope(thread_);
-  Object obj(&scope, runtime_->newTuple(1));
+  Object obj(&scope, newTupleWithNone(1));
   Object result(&scope, runBuiltin(FUNC(_builtins, _anyset_check), obj));
   EXPECT_EQ(result, Bool::falseObj());
 }
@@ -3130,7 +3130,7 @@ TEST_F(UnderBuiltinsModuleTest,
 
 TEST_F(UnderBuiltinsModuleTest, UnderTupleCheckExactWithExactTupleReturnsTrue) {
   HandleScope scope(thread_);
-  Object obj(&scope, runtime_->newTuple(0));
+  Object obj(&scope, runtime_->emptyTuple());
   EXPECT_EQ(runBuiltin(FUNC(_builtins, _tuple_check_exact), obj),
             Bool::trueObj());
 }

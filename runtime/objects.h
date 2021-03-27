@@ -1639,17 +1639,14 @@ class RawTuple : public RawHeapObject {
 
   bool contains(RawObject object) const;
 
-  // Fill tuple with `None`. Initialization should only be done by the Runtime.
-  static RawObject initialize(uword address, word length);
-
-  // Sizing. Sizing should only be done by the Runtime.
-  static word allocationSize(word length);
-
   RAW_OBJECT_COMMON(Tuple);
 };
 
 class RawMutableTuple : public RawTuple {
  public:
+  // Sizing. Sizing should only be done by the Runtime.
+  static word allocationSize(word length);
+
   // Finalizes this object and turns it into an immutable Tuple.
   RawObject becomeImmutable() const;
 
@@ -5599,6 +5596,12 @@ inline void RawArray::setTypecode(RawObject new_typecode) const {
 
 // RawMutableTuple
 
+inline word RawMutableTuple::allocationSize(word length) {
+  DCHECK(length >= 0, "invalid length %ld", length);
+  word size = headerSize(length) + length * kPointerSize;
+  return roundAllocationSize(size);
+}
+
 inline RawObject RawMutableTuple::becomeImmutable() const {
   setHeader(header().withLayoutId(LayoutId::kTuple));
   return *this;
@@ -5617,16 +5620,6 @@ inline RawObject RawMutableTuple::initialize(uword address, word length) {
 // RawTuple
 
 inline word RawTuple::length() const { return headerCountOrOverflow(); }
-
-inline word RawTuple::allocationSize(word length) {
-  DCHECK(length >= 0, "invalid length %ld", length);
-  word size = headerSize(length) + length * kPointerSize;
-  return roundAllocationSize(size);
-}
-
-inline RawObject RawTuple::initialize(uword address, word length) {
-  return initializeWithObjectImpl(address, length, LayoutId::kTuple, -1);
-}
 
 inline RawObject RawTuple::at(word index) const {
   DCHECK_INDEX(index, length());

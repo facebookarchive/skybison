@@ -242,11 +242,19 @@ RawObject methodTrampolineVarArgs(Thread* thread, word nargs) {
     return result;
   }
   Object self(&scope, thread->stackPeek(nargs - 1));
-  Tuple varargs(&scope, thread->runtime()->newTuple(nargs - 1));
-  for (word i = 0; i < nargs - 1; i++) {
-    varargs.atPut(nargs - i - 2, thread->stackPeek(i));
+  Object varargs_obj(&scope, NoneType::object());
+  word num_varargs = nargs - 1;
+  if (num_varargs > 0) {
+    MutableTuple varargs(&scope,
+                         thread->runtime()->newMutableTuple(num_varargs));
+    for (word i = 0; i < num_varargs; i++) {
+      varargs.atPut(num_varargs - i - 1, thread->stackPeek(i));
+    }
+    varargs_obj = varargs.becomeImmutable();
+  } else {
+    varargs_obj = thread->runtime()->emptyTuple();
   }
-  RawObject result = callMethVarArgs(thread, function, self, varargs);
+  RawObject result = callMethVarArgs(thread, function, self, varargs_obj);
   thread->stackDrop(nargs + 1);
   return result;
 }
@@ -266,11 +274,19 @@ RawObject methodTrampolineVarArgsKw(Thread* thread, word nargs) {
     return result;
   }
   Object self(&scope, thread->stackPeek(nargs));
-  Tuple varargs(&scope, thread->runtime()->newTuple(nargs - 1));
-  for (word i = 0; i < nargs - 1; i++) {
-    varargs.atPut(i, thread->stackPeek(nargs - i - 1));
+  Object varargs_obj(&scope, NoneType::object());
+  word num_varargs = nargs - 1;
+  if (num_varargs > 0) {
+    MutableTuple varargs(&scope,
+                         thread->runtime()->newMutableTuple(num_varargs));
+    for (word i = 0; i < num_varargs; i++) {
+      varargs.atPut(i, thread->stackPeek(num_varargs - i));
+    }
+    varargs_obj = varargs.becomeImmutable();
+  } else {
+    varargs_obj = thread->runtime()->emptyTuple();
   }
-  RawObject result = callMethVarArgs(thread, function, self, varargs);
+  RawObject result = callMethVarArgs(thread, function, self, varargs_obj);
   thread->stackDrop(nargs + 2);
   return result;
 }
@@ -340,13 +356,20 @@ RawObject methodTrampolineKeywords(Thread* thread, word nargs) {
     return result;
   }
   Object self(&scope, thread->stackPeek(nargs - 1));
-  Tuple varargs(&scope, runtime->newTuple(nargs - 1));
-  for (word i = 0; i < nargs - 1; i++) {
-    varargs.atPut(nargs - i - 2, thread->stackPeek(i));
+  Object varargs_obj(&scope, NoneType::object());
+  word num_varargs = nargs - 1;
+  if (num_varargs > 0) {
+    MutableTuple varargs(&scope, runtime->newMutableTuple(num_varargs));
+    for (word i = 0; i < num_varargs; i++) {
+      varargs.atPut(num_varargs - i - 1, thread->stackPeek(i));
+    }
+    varargs_obj = varargs.becomeImmutable();
+  } else {
+    varargs_obj = runtime->emptyTuple();
   }
   Object keywords(&scope, NoneType::object());
   RawObject result =
-      callMethKeywords(thread, function, self, varargs, keywords);
+      callMethKeywords(thread, function, self, varargs_obj, keywords);
   thread->stackDrop(nargs + 1);
   return result;
 }
@@ -373,12 +396,18 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, word nargs) {
     return result;
   }
   word num_positional = nargs - num_keywords - 1;
-  Tuple args(&scope, runtime->newTuple(num_positional));
-  for (word i = 0; i < num_positional; i++) {
-    args.atPut(i, thread->stackPeek(nargs - i - 1));
+  Object args_obj(&scope, NoneType::object());
+  if (num_positional > 0) {
+    MutableTuple args(&scope, runtime->newMutableTuple(num_positional));
+    for (word i = 0; i < num_positional; i++) {
+      args.atPut(i, thread->stackPeek(nargs - i - 1));
+    }
+    args_obj = args.becomeImmutable();
+  } else {
+    args_obj = runtime->emptyTuple();
   }
   Object self(&scope, thread->stackPeek(nargs));
-  RawObject result = callMethKeywords(thread, function, self, args, kwargs);
+  RawObject result = callMethKeywords(thread, function, self, args_obj, kwargs);
   thread->stackDrop(nargs + 2);
   return result;
 }
@@ -651,7 +680,6 @@ RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, word flags) {
   word num_keywords = 0;
 
   // Get the keyword arguments
-  Tuple kw_names(&scope, runtime->emptyTuple());
   if (has_varkeywords) {
     Object kw_args_obj(&scope, thread->stackTop());
     if (!kw_args_obj.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -678,17 +706,21 @@ RawObject methodTrampolineFastWithKeywordsEx(Thread* thread, word flags) {
   }
 
   // Set the keyword arguments
+  Tuple kw_names(&scope, runtime->emptyTuple());
   if (has_varkeywords) {
     Dict kw_args(&scope, thread->stackTop());
 
-    Object key(&scope, NoneType::object());
-    Object value(&scope, NoneType::object());
-    kw_names = runtime->newTuple(num_keywords);
-    for (word dict_i = 0, arg_i = 0;
-         dictNextItem(kw_args, &dict_i, &key, &value); arg_i++) {
-      kw_names.atPut(arg_i, *key);
-      fastcall_args[num_positional + arg_i] =
-          ApiHandle::newReference(runtime, *value);
+    if (num_keywords > 0) {
+      Object key(&scope, NoneType::object());
+      Object value(&scope, NoneType::object());
+      kw_names = runtime->newMutableTuple(num_keywords);
+      for (word dict_i = 0, arg_i = 0;
+           dictNextItem(kw_args, &dict_i, &key, &value); arg_i++) {
+        MutableTuple::cast(*kw_names).atPut(arg_i, *key);
+        fastcall_args[num_positional + arg_i] =
+            ApiHandle::newReference(runtime, *value);
+      }
+      MutableTuple::cast(*kw_names).becomeImmutable();
     }
   }
 

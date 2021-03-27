@@ -371,6 +371,14 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
   return *result;
 }
 
+RawTuple newTupleWithNone(word length) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  MutableTuple tuple(&scope, thread->runtime()->newMutableTuple(length));
+  tuple.fill(NoneType::object());
+  return Tuple::cast(tuple.becomeImmutable());
+}
+
 RawObject newWeakRefWithCallback(Runtime* runtime, Thread* thread,
                                  const Object& referent,
                                  const Object& callback) {

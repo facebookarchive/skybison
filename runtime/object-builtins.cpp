@@ -64,8 +64,8 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), NoneType::object());
   } else {
-    Tuple overflow(&scope,
-                   instance.instanceVariableAt(new_layout.overflowOffset()));
+    MutableTuple overflow(
+        &scope, instance.instanceVariableAt(new_layout.overflowOffset()));
     overflow.atPut(info.offset(), NoneType::object());
   }
 
@@ -121,8 +121,7 @@ void instanceGrowOverflow(Thread* thread, const Instance& instance,
   DCHECK(overflow.length() < length, "unexpected overflow");
   MutableTuple new_overflow(&scope, thread->runtime()->newMutableTuple(length));
   new_overflow.replaceFromWith(0, *overflow, overflow.length());
-  instance.instanceVariableAtPut(layout.overflowOffset(),
-                                 new_overflow.becomeImmutable());
+  instance.instanceVariableAtPut(layout.overflowOffset(), *new_overflow);
 }
 
 static RawObject instanceSetAttrSetLocation(Thread* thread,
@@ -185,7 +184,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
       *location_out = SmallInt::fromWord(info.offset());
     }
   } else {
-    Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()))
+    MutableTuple::cast(instance.instanceVariableAt(layout.overflowOffset()))
         .atPut(info.offset(), *value);
     if (location_out != nullptr) {
       *location_out = SmallInt::fromWord(-info.offset() - 1);
@@ -559,15 +558,16 @@ static void addObjectType(Thread* thread) {
   type.setFlagsAndBuiltinBase(Type::Flag::kIsBasetype, LayoutId::kObject);
 
   // Manually create `__getattribute__` method to avoid bootstrap problems.
-  Tuple parameter_names(&scope, runtime->newTuple(2));
+  MutableTuple parameter_names(&scope, runtime->newMutableTuple(2));
   parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
   parameter_names.atPut(1, runtime->symbols()->at(ID(name)));
   Object name(&scope, runtime->symbols()->at(ID(__getattribute__)));
-  Code code(
-      &scope,
-      runtime->newBuiltinCode(
-          /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
-          /*flags=*/0, METH(object, __getattribute__), parameter_names, name));
+  Object parameter_names_tuple(&scope, parameter_names.becomeImmutable());
+  Code code(&scope,
+            runtime->newBuiltinCode(
+                /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
+                /*flags=*/0, METH(object, __getattribute__),
+                parameter_names_tuple, name));
   Object qualname(
       &scope, Runtime::internStrFromCStr(thread, "object.__getattribute__"));
   Object module_obj(&scope, NoneType::object());

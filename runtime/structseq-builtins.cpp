@@ -47,7 +47,13 @@ RawObject structseqNew(Thread* thread, const Type& type) {
   UserTupleBase result(&scope, runtime->newInstance(layout));
   Int n_sequence_fields(&scope,
                         typeAtById(thread, type, ID(n_sequence_fields)));
-  result.setValue(runtime->newTuple(n_sequence_fields.asWord()));
+  word num_fields = n_sequence_fields.asWord();
+  if (num_fields == 0) {
+    result.setValue(runtime->emptyTuple());
+  } else {
+    MutableTuple fields(&scope, runtime->newMutableTuple(num_fields));
+    result.setValue(fields.becomeImmutable());
+  }
   return *result;
 }
 
@@ -74,8 +80,8 @@ RawObject structseqNewType(Thread* thread, const Str& name,
   dictAtPutById(thread, dict, ID(__module__), module_name);
 
   // Create type
-  Tuple bases(&scope, runtime->newTuple(1));
-  bases.atPut(0, runtime->typeAt(LayoutId::kTuple));
+  Object base(&scope, runtime->typeAt(LayoutId::kTuple));
+  Tuple bases(&scope, runtime->newTupleWith1(base));
   Type metaclass(&scope, runtime->typeAt(LayoutId::kType));
   Type type(&scope, typeNew(thread, metaclass, type_name, bases, dict, flags,
                             /*inherit_slots=*/true,

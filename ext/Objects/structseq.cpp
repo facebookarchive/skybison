@@ -67,16 +67,17 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
        field++) {
     num_fields++;
   }
-  Tuple field_names(&scope, runtime->newTuple(num_fields));
+  MutableTuple field_names(&scope, runtime->newMutableTuple(num_fields));
   for (word i = 0; i < num_fields; i++) {
     const char* field_name = desc->fields[i].name;
     field_names.atPut(i, field_name == PyStructSequence_UnnamedField
                              ? NoneType::object()
                              : Runtime::internStrFromCStr(thread, field_name));
   }
+  Tuple field_names_tuple(&scope, field_names.becomeImmutable());
   Str name(&scope, runtime->newStrFromCStr(desc->name));
   word flags = Type::Flag::kIsCPythonHeaptype;
-  Object result(&scope, structseqNewType(thread, name, field_names,
+  Object result(&scope, structseqNewType(thread, name, field_names_tuple,
                                          desc->n_in_sequence, flags));
   if (result.isErrorException()) return nullptr;
   return reinterpret_cast<PyTypeObject*>(

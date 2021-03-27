@@ -205,30 +205,37 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
   }
   if (obj.isTuple()) {
     Tuple tuple(&scope, *obj);
-    Tuple result(&scope, runtime->newTuple(tuple.length()));
-    Object item(&scope, NoneType::object());
-    Object item_key(&scope, NoneType::object());
-    for (word i = 0; i < tuple.length(); i++) {
-      item = tuple.at(i);
-      item_key = constantKey(thread, item);
-      if (item_key.isError()) return *item_key;
-      result.atPut(i, *item_key);
+    Object result_obj(&scope, NoneType::object());
+    word length = tuple.length();
+    if (length > 0) {
+      MutableTuple result(&scope, runtime->newMutableTuple(length));
+      Object item(&scope, NoneType::object());
+      Object item_key(&scope, NoneType::object());
+      for (word i = 0; i < length; i++) {
+        item = tuple.at(i);
+        item_key = constantKey(thread, item);
+        if (item_key.isError()) return *item_key;
+        result.atPut(i, *item_key);
+      }
+      result_obj = result.becomeImmutable();
+    } else {
+      result_obj = runtime->emptyTuple();
     }
-    return runtime->newTupleWith2(result, obj);
+    return runtime->newTupleWith2(result_obj, obj);
   }
   if (obj.isFrozenSet()) {
     FrozenSet set(&scope, *obj);
-    Tuple seq(&scope, runtime->newTuple(set.numItems()));
+    FrozenSet result(&scope, runtime->newFrozenSet());
     Object item(&scope, NoneType::object());
     Object item_key(&scope, NoneType::object());
+    Object hash_obj(&scope, NoneType::object());
     for (word j = 0, idx = 0; setNextItem(set, &idx, &item); j++) {
       item_key = constantKey(thread, item);
       if (item_key.isError()) return *item_key;
-      seq.atPut(j, *item_key);
+      hash_obj = Interpreter::hash(thread, item_key);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      setAdd(thread, result, item_key, SmallInt::cast(*hash_obj).value());
     }
-    FrozenSet result(&scope, runtime->newFrozenSet());
-    result = setUpdate(thread, result, seq);
-    if (result.isError()) return *result;
     return runtime->newTupleWith2(result, obj);
   }
   PyObject* ptr = ApiHandle::borrowedReference(runtime, *obj);

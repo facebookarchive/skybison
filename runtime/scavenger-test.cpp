@@ -13,7 +13,7 @@ using ScavengerTest = RuntimeFixture;
 
 TEST_F(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   HandleScope scope(thread_);
-  Tuple array(&scope, runtime_->newTuple(10));
+  Tuple array(&scope, newTupleWithNone(10));
   WeakRef ref(&scope, runtime_->newWeakRef(thread_, array));
   runtime_->collectGarbage();
   EXPECT_EQ(ref.referent(), *array);
@@ -32,7 +32,7 @@ TEST_F(ScavengerTest, ClearWeakReference) {
   Object none(&scope, NoneType::object());
   Object ref(&scope, *none);
   {
-    Tuple array(&scope, runtime_->newTuple(10));
+    Tuple array(&scope, newTupleWithNone(10));
     WeakRef ref_inner(&scope, runtime_->newWeakRef(Thread::current(), array));
     ref = *ref_inner;
     runtime_->collectGarbage();
@@ -48,10 +48,10 @@ TEST_F(ScavengerTest, ClearWeakLinkReferences) {
   Object link0(&scope, *none);
   Object link1(&scope, *none);
   Object link2(&scope, *none);
-  Tuple referent1(&scope, runtime_->newTuple(11));
+  Tuple referent1(&scope, newTupleWithNone(11));
   {
-    Tuple referent0(&scope, runtime_->newTuple(10));
-    Tuple referent2(&scope, runtime_->newTuple(11));
+    Tuple referent0(&scope, newTupleWithNone(10));
+    Tuple referent2(&scope, newTupleWithNone(11));
     WeakLink link0_inner(&scope,
                          runtime_->newWeakLink(thread_, referent0, none, none));
     WeakLink link1_inner(
@@ -157,13 +157,13 @@ def g(ref, c=4):
   Object ref1(&scope, *none);
   Object ref2(&scope, *none);
   {
-    Tuple array1(&scope, runtime_->newTuple(10));
+    Tuple array1(&scope, newTupleWithNone(10));
     Function func_f(&scope, mainModuleAt(runtime_, "f"));
     WeakRef ref1_inner(
         &scope, newWeakRefWithCallback(runtime_, thread_, array1, func_f));
     ref1 = *ref1_inner;
 
-    Tuple array2(&scope, runtime_->newTuple(10));
+    Tuple array2(&scope, newTupleWithNone(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
     WeakRef ref2_inner(
         &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
@@ -204,13 +204,13 @@ def g(ref, c=4):
 )")
                    .isError());
 
-  Tuple array1(&scope, runtime_->newTuple(10));
+  Tuple array1(&scope, newTupleWithNone(10));
   Function func_f(&scope, mainModuleAt(runtime_, "f"));
   WeakRef ref1(&scope,
                newWeakRefWithCallback(runtime_, thread_, array1, func_f));
   Object ref2(&scope, NoneType::object());
   {
-    Tuple array2(&scope, runtime_->newTuple(10));
+    Tuple array2(&scope, newTupleWithNone(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
     WeakRef ref2_inner(
         &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
@@ -254,7 +254,7 @@ def g(ref, b=2):
   Object ref1(&scope, NoneType::object());
   Object ref2(&scope, NoneType::object());
   {
-    Tuple array1(&scope, runtime_->newTuple(10));
+    Tuple array1(&scope, newTupleWithNone(10));
     Str name(&scope, runtime_->newStrFromCStr("collect"));
     Object empty_tuple(&scope, runtime_->emptyTuple());
     Code code(&scope,
@@ -270,7 +270,7 @@ def g(ref, b=2):
         &scope, newWeakRefWithCallback(runtime_, thread_, array1, collect));
     ref1 = *ref1_inner;
 
-    Tuple array2(&scope, runtime_->newTuple(10));
+    Tuple array2(&scope, newTupleWithNone(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
     WeakRef ref2_inner(
         &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));
@@ -314,13 +314,13 @@ def g(ref, c=4):
   Object ref1(&scope, NoneType::object());
   Object ref2(&scope, NoneType::object());
   {
-    Tuple array1(&scope, runtime_->newTuple(10));
+    Tuple array1(&scope, newTupleWithNone(10));
     Function func_f(&scope, mainModuleAt(runtime_, "f"));
     WeakRef ref1_inner(
         &scope, newWeakRefWithCallback(runtime_, thread_, array1, func_f));
     ref1 = *ref1_inner;
 
-    Tuple array2(&scope, runtime_->newTuple(10));
+    Tuple array2(&scope, newTupleWithNone(10));
     Function func_g(&scope, mainModuleAt(runtime_, "g"));
     WeakRef ref2_inner(
         &scope, newWeakRefWithCallback(runtime_, thread_, array2, func_g));

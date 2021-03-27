@@ -1160,7 +1160,7 @@ TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
-  Object obj(&scope, runtime_->newTuple(5));
+  Object obj(&scope, newTupleWithNone(5));
   setHashAndAdd(thread, set, obj);
   Set set2(&scope, runBuiltin(METH(set, copy), set));
   bool has_object = false;
@@ -1222,7 +1222,7 @@ TEST_F(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   FrozenSet set(&scope, runtime_->newFrozenSet());
-  Object obj(&scope, runtime_->newTuple(5));
+  Object obj(&scope, newTupleWithNone(5));
   setHashAndAdd(thread, set, obj);
   FrozenSet set2(&scope, runBuiltin(METH(frozenset, copy), set));
   bool has_object = false;

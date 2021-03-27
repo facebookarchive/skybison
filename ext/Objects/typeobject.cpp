@@ -740,9 +740,15 @@ static RawObject newExtCode(Thread* thread, const Object& name,
 
   // TODO(T41024929): Many of the slot parameters should be positional only,
   // but we cannot express this in code objects (yet).
-  Tuple varnames(&scope, runtime->newTuple(num_parameters));
-  for (word i = 0; i < num_parameters; i++) {
-    varnames.atPut(i, runtime->symbols()->at(parameters[i]));
+  Object varnames_obj(&scope, NoneType::object());
+  if (num_parameters > 0) {
+    MutableTuple varnames(&scope, runtime->newMutableTuple(num_parameters));
+    for (word i = 0; i < num_parameters; i++) {
+      varnames.atPut(i, runtime->symbols()->at(parameters[i]));
+    }
+    varnames_obj = varnames.becomeImmutable();
+  } else {
+    varnames_obj = runtime->emptyTuple();
   }
 
   word argcount = num_parameters - ((flags & Code::Flags::kVarargs) != 0) -
@@ -751,13 +757,13 @@ static RawObject newExtCode(Thread* thread, const Object& name,
 
   Object filename(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
-  Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, runtime->newIntFromCPtr(slot_value));
+  Object ptr(&scope, runtime->newIntFromCPtr(slot_value));
+  Tuple consts(&scope, runtime->newTupleWith1(ptr));
   return runtime->newCode(argcount, /*posonlyargcount=*/num_parameters,
                           /*kwonlyargcount=*/0,
                           /*nlocals=*/num_parameters,
                           /*stacksize=*/0, flags, code_code, consts,
-                          /*names=*/empty_tuple, varnames,
+                          /*names=*/empty_tuple, varnames_obj,
                           /*freevars=*/empty_tuple, /*cellvars=*/empty_tuple,
                           filename, name, /*firstlineno=*/0, lnotab);
 }
@@ -811,7 +817,8 @@ RawObject addOperators(Thread* thread, const Type& type) {
                                                          globals));
       slotWrapperFunctionSetType(func, type);
       if (slot.id == Py_nb_power) {
-        func.setDefaults(runtime->newTuple(1));
+        Object none(&scope, NoneType::object());
+        func.setDefaults(runtime->newTupleWith1(none));
       }
 
       // __new__ is the one special-case static method, so wrap it
@@ -1037,8 +1044,6 @@ static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr(member.name));
-  Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, runtime->newInt(member.offset));
   Int offset(&scope, runtime->newInt(member.offset));
   switch (member.type) {
     case T_BOOL:

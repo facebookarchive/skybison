@@ -17,7 +17,12 @@ PY_EXPORT PyTypeObject* PyTupleIter_Type_Ptr() {
 
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Runtime* runtime = Thread::current()->runtime();
-  return ApiHandle::newReference(runtime, runtime->newTuple(length));
+  if (length == 0) {
+    return ApiHandle::newReference(runtime, runtime->emptyTuple());
+  }
+  return ApiHandle::newReference(
+      runtime,
+      MutableTuple::cast(runtime->newMutableTuple(length)).becomeImmutable());
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
@@ -121,18 +126,20 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
 PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
+  if (n == 0) {
+    return ApiHandle::newReference(runtime, runtime->emptyTuple());
+  }
 
-  PyObject* item;
+  HandleScope scope(thread);
   va_list vargs;
   va_start(vargs, n);
-  Tuple tuple(&scope, runtime->newTuple(n));
+  MutableTuple tuple(&scope, runtime->newMutableTuple(n));
   for (Py_ssize_t i = 0; i < n; i++) {
-    item = va_arg(vargs, PyObject*);
+    PyObject* item = va_arg(vargs, PyObject*);
     tuple.atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
-  return ApiHandle::newReference(runtime, *tuple);
+  return ApiHandle::newReference(runtime, tuple.becomeImmutable());
 }
 
 PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,

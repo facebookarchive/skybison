@@ -70,7 +70,7 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
 
   code.setCode(runtime_->newBytesWithAll(bytecode));
   word global_names_length = 600;
-  Tuple names(&scope, runtime_->newTuple(global_names_length));
+  Tuple names(&scope, newTupleWithNone(global_names_length));
   code.setNames(*names);
 
   Module module(&scope, findMainModule(runtime_));
@@ -135,7 +135,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   // Not immediate since it doesn't fit in byte.
   Object obj3(&scope, SmallInt::fromWord(64));
   // Not immediate since it's a heap object.
-  Object obj4(&scope, runtime_->newTuple(4));
+  Object obj4(&scope, runtime_->newList());
   Tuple consts(&scope,
                runtime_->newTupleWithN(5, &obj0, &obj1, &obj2, &obj3, &obj4));
   code.setConsts(*consts);
@@ -468,7 +468,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       STORE_NAME,  3, DELETE_NAME,  4, LOAD_ATTR, 9, LOAD_NAME,     5,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setNames(runtime_->newTuple(12));
+  code.setNames(newTupleWithNone(12));
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));

@@ -440,10 +440,10 @@ B__le__ = B.__le__
 TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
   HandleScope scope(thread_);
   ValueCell value_cell(&scope, runtime_->newValueCell());
-  Object dependent0(&scope, runtime_->newTuple(4));
-  Object dependent1(&scope, runtime_->newTuple(5));
-  Object dependent2(&scope, runtime_->newTuple(6));
-  Object dependent3(&scope, runtime_->newTuple(7));
+  Object dependent0(&scope, newTupleWithNone(4));
+  Object dependent1(&scope, newTupleWithNone(5));
+  Object dependent2(&scope, newTupleWithNone(6));
+  Object dependent3(&scope, newTupleWithNone(7));
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
@@ -1424,7 +1424,7 @@ static RawObject testingFunction(Thread* thread) {
                     runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
-  code.setNames(runtime->newTuple(2));
+  code.setNames(newTupleWithNone(2));
   MutableTuple caches(&scope, runtime->newMutableTuple(2));
   function.setCaches(*caches);
   return *function;
@@ -1995,9 +1995,9 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
 TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadHead) {
   HandleScope scope(thread_);
   ValueCell value_cell(&scope, runtime_->newValueCell());
-  Object dependent1(&scope, runtime_->newTuple(1));
-  Object dependent2(&scope, runtime_->newTuple(2));
-  Object dependent3(&scope, runtime_->newTuple(3));
+  Object dependent1(&scope, newTupleWithNone(1));
+  Object dependent2(&scope, newTupleWithNone(2));
+  Object dependent3(&scope, newTupleWithNone(3));
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
@@ -2021,9 +2021,9 @@ TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadHead) {
 TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadMiddleNode) {
   HandleScope scope(thread_);
   ValueCell value_cell(&scope, runtime_->newValueCell());
-  Object dependent1(&scope, runtime_->newTuple(1));
-  Object dependent2(&scope, runtime_->newTuple(2));
-  Object dependent3(&scope, runtime_->newTuple(3));
+  Object dependent1(&scope, newTupleWithNone(1));
+  Object dependent2(&scope, newTupleWithNone(2));
+  Object dependent3(&scope, newTupleWithNone(3));
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
@@ -2048,9 +2048,9 @@ TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadMiddleNode) {
 TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadTailNode) {
   HandleScope scope(thread_);
   ValueCell value_cell(&scope, runtime_->newValueCell());
-  Object dependent1(&scope, runtime_->newTuple(1));
-  Object dependent2(&scope, runtime_->newTuple(2));
-  Object dependent3(&scope, runtime_->newTuple(3));
+  Object dependent1(&scope, newTupleWithNone(1));
+  Object dependent2(&scope, newTupleWithNone(2));
+  Object dependent3(&scope, newTupleWithNone(3));
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);

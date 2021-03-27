@@ -101,12 +101,12 @@ RawObject processDefaultArguments(Thread* thread, word nargs,
     }
     // Put extra positional args into the varargs tuple.
     word len = -n_missing_args;
-    Tuple tuple(&scope, runtime->newTuple(len));
+    MutableTuple tuple(&scope, runtime->newMutableTuple(len));
     for (word i = (len - 1); i >= 0; i--) {
       tuple.atPut(i, thread->stackPop());
     }
     nargs -= len;
-    varargs_param = *tuple;
+    varargs_param = tuple.becomeImmutable();
   }
 
   // If there are any keyword-only args, there must be defaults for them
@@ -319,10 +319,9 @@ RawObject prepareKeywordCall(Thread* thread, word nargs,
     if (function.hasVarargs()) {
       // If we have more positional than expected, add the remainder to a tuple,
       // remove from the stack and close up the hole.
-      word excess =
-          Utils::maximum<word>(0, num_positional_args - function.argcount());
-      Tuple varargs(&scope, runtime->newTuple(excess));
+      word excess = num_positional_args - function.argcount();
       if (excess > 0) {
+        MutableTuple varargs(&scope, runtime->newMutableTuple(excess));
         // Point to the leftmost excess argument
         RawObject* p = (thread->stackPointer() + num_keyword_args + excess) - 1;
         // Copy the excess to the * tuple
@@ -338,8 +337,10 @@ RawObject prepareKeywordCall(Thread* thread, word nargs,
         thread->stackDrop(excess);
         nargs -= excess;
         num_positional_args -= excess;
+        tmp_varargs = varargs.becomeImmutable();
+      } else {
+        tmp_varargs = runtime->emptyTuple();
       }
-      tmp_varargs = *varargs;
     }
     if (function.hasVarkeyargs()) {
       // Too many positional args passed?
@@ -390,10 +391,16 @@ RawObject prepareKeywordCall(Thread* thread, word nargs,
       thread->stackDrop(num_keyword_args);  // Pop all of the old keyword values
       num_keyword_args = saved_keyword_list.numItems();
       // Replace the old keywords list with a new one.
-      keywords = runtime->newTuple(num_keyword_args);
-      for (word i = 0; i < num_keyword_args; i++) {
-        thread->stackPush(saved_values.at(i));
-        keywords.atPut(i, saved_keyword_list.at(i));
+      if (num_keyword_args > 0) {
+        MutableTuple new_keywords(&scope,
+                                  runtime->newMutableTuple(num_keyword_args));
+        for (word i = 0; i < num_keyword_args; i++) {
+          thread->stackPush(saved_values.at(i));
+          new_keywords.atPut(i, saved_keyword_list.at(i));
+        }
+        keywords = new_keywords.becomeImmutable();
+      } else {
+        keywords = runtime->emptyTuple();
       }
       tmp_dict = *dict;
     }
@@ -409,7 +416,8 @@ RawObject prepareKeywordCall(Thread* thread, word nargs,
     // Too few args passed.  Can we supply default args to make it work?
     // First, normalize & pad keywords and stack arguments
     word name_tuple_size = expected_args - num_positional_args;
-    Tuple padded_keywords(&scope, thread->runtime()->newTuple(name_tuple_size));
+    MutableTuple padded_keywords(
+        &scope, thread->runtime()->newMutableTuple(name_tuple_size));
     for (word i = 0; i < num_keyword_args; i++) {
       padded_keywords.atPut(i, keywords.at(i));
     }
@@ -419,7 +427,7 @@ RawObject prepareKeywordCall(Thread* thread, word nargs,
       nargs++;
       padded_keywords.atPut(i, Error::error());
     }
-    keywords = *padded_keywords;
+    keywords = padded_keywords.becomeImmutable();
   }
   // Now we've got the right number.  Do they match up?
   RawObject res = checkArgs(thread, function, kw_arg_base, keywords, varnames,

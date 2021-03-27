@@ -909,24 +909,6 @@ TEST_F(RuntimeTest, NewPointerReturnsEmptyPointer) {
   EXPECT_EQ(pointer.length(), -1);
 }
 
-TEST_F(RuntimeTest, NewTuple) {
-  HandleScope scope(thread_);
-
-  Tuple a0(&scope, runtime_->newTuple(0));
-  EXPECT_EQ(a0.length(), 0);
-
-  Tuple a1(&scope, runtime_->newTuple(1));
-  ASSERT_EQ(a1.length(), 1);
-  EXPECT_EQ(a1.at(0), NoneType::object());
-
-  Object obj(&scope, SmallInt::fromWord(42));
-  Tuple a2(&scope, runtime_->newTupleWith1(obj));
-  EXPECT_TRUE(isIntEqualsWord(a2.at(0), 42));
-
-  Tuple a300(&scope, runtime_->newTuple(300));
-  ASSERT_EQ(a300.length(), 300);
-}
-
 TEST_F(RuntimeTest, NewStr) {
   HandleScope scope(thread_);
   Str empty0(&scope, runtime_->newStrWithAll(View<byte>(nullptr, 0)));
@@ -1816,28 +1798,6 @@ i = IS()
   Object i(&scope, mainModuleAt(runtime_, "i"));
   EXPECT_TRUE(runtime_->isInstanceOfUserIntBase(*i));
   EXPECT_FALSE(runtime_->isInstanceOfUserStrBase(*i));
-}
-
-TEST_F(RuntimeTupleTest, Create) {
-  RawObject obj0 = runtime_->newTuple(0);
-  ASSERT_TRUE(obj0.isTuple());
-  RawTuple array0 = Tuple::cast(obj0);
-  EXPECT_EQ(array0.length(), 0);
-
-  RawObject obj1 = runtime_->newTuple(1);
-  ASSERT_TRUE(obj1.isTuple());
-  RawTuple array1 = Tuple::cast(obj1);
-  EXPECT_EQ(array1.length(), 1);
-
-  RawObject obj7 = runtime_->newTuple(7);
-  ASSERT_TRUE(obj7.isTuple());
-  RawTuple array7 = Tuple::cast(obj7);
-  EXPECT_EQ(array7.length(), 7);
-
-  RawObject obj8 = runtime_->newTuple(8);
-  ASSERT_TRUE(obj8.isTuple());
-  RawTuple array8 = Tuple::cast(obj8);
-  EXPECT_EQ(array8.length(), 8);
 }
 
 TEST_F(RuntimeSetTest, EmptySetInvariants) {
@@ -3069,8 +3029,8 @@ TEST_F(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
 TEST_F(RuntimeTest,
        NewCodeWithArgcountGreaterThanVarnamesLengthRaisesValueError) {
   HandleScope scope(thread_);
-  Tuple varnames(&scope, runtime_->newTuple(1));
-  Tuple cellvars(&scope, runtime_->newTuple(2));
+  Tuple varnames(&scope, newTupleWithNone(1));
+  Tuple cellvars(&scope, newTupleWithNone(2));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
@@ -3087,8 +3047,8 @@ TEST_F(RuntimeTest,
 TEST_F(RuntimeTest,
        NewCodeWithKwonlyargcountGreaterThanVarnamesLengthRaisesValueError) {
   HandleScope scope(thread_);
-  Tuple varnames(&scope, runtime_->newTuple(1));
-  Tuple cellvars(&scope, runtime_->newTuple(2));
+  Tuple varnames(&scope, newTupleWithNone(1));
+  Tuple cellvars(&scope, newTupleWithNone(2));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
@@ -3105,8 +3065,8 @@ TEST_F(RuntimeTest,
 TEST_F(RuntimeTest,
        NewCodeWithTotalArgsGreaterThanVarnamesLengthRaisesValueError) {
   HandleScope scope(thread_);
-  Tuple varnames(&scope, runtime_->newTuple(1));
-  Tuple cellvars(&scope, runtime_->newTuple(2));
+  Tuple varnames(&scope, newTupleWithNone(1));
+  Tuple cellvars(&scope, newTupleWithNone(2));
   Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
@@ -3123,7 +3083,7 @@ TEST_F(RuntimeTest,
 TEST_F(RuntimeTest, NewWeakLink) {
   HandleScope scope(thread_);
 
-  Tuple referent(&scope, runtime_->newTuple(2));
+  Object referent(&scope, runtime_->newList());
   Object prev(&scope, runtime_->newInt(2));
   Object next(&scope, runtime_->newInt(3));
   WeakLink link(&scope, runtime_->newWeakLink(thread_, referent, prev, next));

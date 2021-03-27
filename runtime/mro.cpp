@@ -147,8 +147,7 @@ RawObject computeMro(Thread* thread, const Type& type) {
   }
 
   // Copy the mro to an array of exact size. (new_mro_length is an upper bound).
-  Tuple new_mro_immutable(&scope, new_mro.becomeImmutable());
-  return runtime->tupleSubseq(thread, new_mro_immutable, 0, next_idx);
+  return runtime->tupleSubseq(thread, new_mro, 0, next_idx);
 }
 
 }  // namespace py

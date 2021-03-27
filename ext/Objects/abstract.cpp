@@ -1036,11 +1036,17 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
   Object result(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   if (kwargs != nullptr) {
-    Tuple args(&scope, runtime->newTuple(n_args));
-    for (Py_ssize_t i = 0; i < n_args; i++) {
-      args.atPut(i, ApiHandle::fromPyObject(pyargs[i])->asObject());
+    Object args_obj(&scope, NoneType::object());
+    if (n_args > 0) {
+      MutableTuple args(&scope, runtime->newMutableTuple(n_args));
+      for (Py_ssize_t i = 0; i < n_args; i++) {
+        args.atPut(i, ApiHandle::fromPyObject(pyargs[i])->asObject());
+      }
+      args_obj = args.becomeImmutable();
+    } else {
+      args_obj = runtime->emptyTuple();
     }
-    thread->stackPush(*args);
+    thread->stackPush(*args_obj);
     Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
     DCHECK(runtime->isInstanceOfDict(*kwargs_obj), "kwargs must be a dict");
     thread->stackPush(*kwargs_obj);

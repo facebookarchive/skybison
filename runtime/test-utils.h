@@ -167,6 +167,8 @@ RawLargeInt newLargeIntWithDigits(View<uword> digits);
 RawObject newMemoryView(View<byte> bytes, const char* format,
                         ReadOnly read_only = ReadOnly::ReadOnly);
 
+RawTuple newTupleWithNone(word length);
+
 // Helper to create set objects.
 // Equivalent to evaluating "set(range(start, stop))" in Python.
 RawObject setFromRange(word start, word stop);
