@@ -113,6 +113,7 @@ class UserVisibleFrameVisitor : public FrameVisitor {
       lasti = SmallInt::fromWord(frame->virtualPC());
     }
     heap_frame_ = thread_->runtime()->newFrameProxy(thread_, function, lasti);
+    FrameProxy::cast(*heap_frame_).setLocals(frameLocals(thread_, frame));
     if (result_.isNoneType()) {
       // The head of the linked list is returned as the result.
       result_ = *heap_frame_;

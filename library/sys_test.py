@@ -399,6 +399,8 @@ class SysTests(unittest.TestCase):
         frame = sys._getframe(0)
         self.assertTrue(frame.f_globals is not None)
         self.assertEqual(frame.f_globals["__name__"], "__main__")
+        self.assertTrue(frame.f_locals is not None)
+        self.assertEqual(frame.f_locals["self"], self)
         builtins = __builtins__
         if isinstance(builtins, ModuleType):
             builtins = builtins.__dict__
@@ -408,6 +410,39 @@ class SysTests(unittest.TestCase):
     def test_under_getframe_with_noninteger_raises_typeerror(self):
         with self.assertRaises(TypeError):
             sys._getframe(None)
+
+    def test_under_getframe_returns_frame_with_locals(self):
+        def baz():
+            return sys._getframe(1).f_locals
+
+        def bar():
+            foo = 1  # noqa: F841
+            return baz()
+
+        bar_locals = bar()
+        self.assertEqual(len(bar_locals), 2)
+        self.assertEqual(bar_locals["foo"], 1)
+        self.assertEqual(bar_locals["baz"], baz)
+
+    def test_under_getframe_from_function_cannot_modify_locals(self):
+        def baz():
+            sys._getframe(1).f_locals["foo"] = "wrong"
+
+        def bar():
+            foo = "correct"
+            baz()
+            return foo
+
+        self.assertEqual(bar(), "correct")
+
+    def test_under_getframe_from_global_scope_gets_locals(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        module.sys = sys
+        module.temp = "wrong"
+        exec("sys._getframe(0).f_locals['temp'] = 'correct'", module.__dict__)
+        self.assertEqual(module.temp, "correct")
 
     def test_under_getframe_with_high_depth_raises_valueerror(self):
         with self.assertRaises(ValueError) as context:
