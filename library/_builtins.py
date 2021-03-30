@@ -1110,6 +1110,10 @@ def _super(cls):
     _builtin()
 
 
+def _super_ctor(cls, type=_Unbound, type_or_obj=_Unbound):
+    _builtin()
+
+
 def _traceback_frame_get(self):
     _builtin()
 

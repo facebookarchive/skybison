@@ -432,6 +432,11 @@ static void pickBuiltinTypeCtorFunction(Thread* thread, const Type& type) {
       ctor = moduleAtById(thread, under_builtins, ID(_str_array_ctor));
       break;
     }
+    case LayoutId::kSuper: {
+      Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+      ctor = moduleAtById(thread, under_builtins, ID(_super_ctor));
+      break;
+    }
     default: {
       if (typeAtById(thread, type, ID(__init__)).isErrorNotFound()) {
         // Use __new__ as _ctor if __init__ is undefined.

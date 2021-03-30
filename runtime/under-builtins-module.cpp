@@ -27,6 +27,7 @@
 #include "str-builtins.h"
 #include "strarray-builtins.h"
 #include "structseq-builtins.h"
+#include "super-builtins.h"
 #include "traceback-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
@@ -5401,6 +5402,20 @@ RawObject FUNC(_builtins, _super)(Thread* thread, Arguments args) {
   result.setObject(*cls);
   result.setObjectType(*cls);
   return *result;
+}
+
+RawObject FUNC(_builtins, _super_ctor)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kSuper),
+         "super.__new__(X): X is not 'super'");
+  Super self(&scope, runtime->newSuper());
+  Object type(&scope, args.get(1));
+  Object type_or_obj(&scope, args.get(2));
+  Frame* frame = thread->currentFrame();
+  // frame is for _super_ctor, previous frame is caller of super()
+  DCHECK(!frame->isSentinel(), "_super_ctor must have a frame");
+  return superInit(thread, self, type, type_or_obj, frame->previousFrame());
 }
 
 RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread,

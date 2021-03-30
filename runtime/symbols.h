@@ -502,6 +502,7 @@ class Runtime;
   V(_structseq_field_names)                                                    \
   V(_structseq_new)                                                            \
   V(_structseq_repr)                                                           \
+  V(_super_ctor)                                                               \
   V(_telling)                                                                  \
   V(_thread)                                                                   \
   V(_traceback__function)                                                      \

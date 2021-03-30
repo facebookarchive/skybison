@@ -97,39 +97,18 @@ RawObject METH(super, __new__)(Thread* thread, Arguments) {
   return thread->runtime()->newSuper();
 }
 
-RawObject METH(super, __init__)(Thread* thread, Arguments args) {
-  // only support idiomatic usage for now
-  // super() -> same as super(__class__, <first argument>)
-  // super(type, obj) -> bound super object; requires isinstance(obj, type)
-  // super(type, type2) -> bound super object; requires issubclass(type2, type)
+RawObject superInit(Thread* thread, const Super& super, const Object& arg0,
+                    const Object& arg1, Frame* frame) {
   HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  if (!self_obj.isSuper()) {
-    return thread->raiseRequiresType(self_obj, ID(super));
-  }
-  Super super(&scope, *self_obj);
+  Runtime* runtime = thread->runtime();
   Object type(&scope, NoneType::object());
   Object obj(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
-  if (args.get(1).isUnbound()) {
-    Frame* frame = thread->currentFrame();
-    // frame is for __init__, previous frame is __call__
-    // this will break if it's not invoked through __call__
-    if (frame->isSentinel()) {
-      return thread->raiseWithFmt(LayoutId::kRuntimeError,
-                                  "super(): no current frame");
-    }
-    Frame* caller_frame = frame->previousFrame();
-    if (caller_frame->isSentinel()) {
-      return thread->raiseWithFmt(LayoutId::kRuntimeError,
-                                  "super(): no current frame");
-    }
-    caller_frame = caller_frame->previousFrame();
-    if (!caller_frame->code().isCode()) {
+  if (arg0.isUnbound()) {
+    if (!frame->code().isCode()) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): no code object");
     }
-    Code code(&scope, caller_frame->code());
+    Code code(&scope, frame->code());
     if (code.argcount() == 0) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): no arguments");
@@ -138,7 +117,7 @@ RawObject METH(super, __init__)(Thread* thread, Arguments args) {
     RawObject cell = Error::notFound();
     for (word i = 0, length = free_vars.length(); i < length; i++) {
       if (free_vars.at(i) == runtime->symbols()->at(ID(__class__))) {
-        cell = caller_frame->local(code.nlocals() + code.numCellvars() + i);
+        cell = frame->local(code.nlocals() + code.numCellvars() + i);
         break;
       }
     }
@@ -147,24 +126,24 @@ RawObject METH(super, __init__)(Thread* thread, Arguments args) {
                                   "super(): __class__ cell not found");
     }
     type = Cell::cast(cell).value();
-    obj = caller_frame->local(0);
+    obj = frame->local(0);
     // The parameter value may have been moved into a value cell.
     if (obj.isNoneType() && !code.cell2arg().isNoneType()) {
       Tuple cell2arg(&scope, code.cell2arg());
       for (word i = 0, length = cell2arg.length(); i < length; i++) {
         if (cell2arg.at(i) == SmallInt::fromWord(0)) {
-          obj = Cell::cast(caller_frame->local(code.nlocals() + i)).value();
+          obj = Cell::cast(frame->local(code.nlocals() + i)).value();
           break;
         }
       }
     }
   } else {
-    if (args.get(2).isUnbound()) {
+    if (arg1.isUnbound()) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "super() expected 2 arguments");
     }
-    type = args.get(1);
-    obj = args.get(2);
+    type = *arg0;
+    obj = *arg1;
   }
   if (!runtime->isInstanceOfType(*type)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -185,6 +164,36 @@ RawObject METH(super, __init__)(Thread* thread, Arguments args) {
     }
   }
   super.setObjectType(*obj_type_obj);
+  return *super;
+}
+
+RawObject METH(super, __init__)(Thread* thread, Arguments args) {
+  // only support idiomatic usage for now
+  // super() -> same as super(__class__, <first argument>)
+  // super(type, obj) -> bound super object; requires isinstance(obj, type)
+  // super(type, type2) -> bound super object; requires issubclass(type2, type)
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isSuper()) {
+    return thread->raiseRequiresType(self_obj, ID(super));
+  }
+  Super super(&scope, *self_obj);
+  Object arg0(&scope, args.get(1));
+  Object arg1(&scope, args.get(2));
+  Frame* frame = thread->currentFrame();
+  if (arg0.isUnbound()) {
+    // frame is for __init__, previous frame is __call__
+    // this will break if it's not invoked through __call__
+    DCHECK(!frame->isSentinel(), "super.__init__ must have a frame");
+    Frame* caller_frame = frame->previousFrame();
+    if (caller_frame->isSentinel()) {
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "super(): no current frame");
+    }
+    frame = caller_frame->previousFrame();
+  }
+  Object result(&scope, superInit(thread, super, arg0, arg1, frame));
+  if (result.isErrorException()) return *result;
   return NoneType::object();
 }
 
