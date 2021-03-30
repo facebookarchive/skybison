@@ -389,6 +389,7 @@ class Runtime;
   V(_instance_dunder_dict_set)                                                 \
   V(_int)                                                                      \
   V(_int_ctor)                                                                 \
+  V(_int_ctor_obj)                                                             \
   V(_int_new_from_str)                                                         \
   V(_io)                                                                       \
   V(_iterator__index)                                                          \
@@ -493,6 +494,7 @@ class Runtime;
   V(_str_array__num_items)                                                     \
   V(_str_array_ctor)                                                           \
   V(_str_ctor)                                                                 \
+  V(_str_ctor_obj)                                                             \
   V(_str_iterator__index)                                                      \
   V(_str_iterator__iterable)                                                   \
   V(_string_at_addr)                                                           \
@@ -526,6 +528,7 @@ class Runtime;
   V(_type__qualname)                                                           \
   V(_type__slots)                                                              \
   V(_type__subclasses)                                                         \
+  V(_type_ctor)                                                                \
   V(_type_dunder_call)                                                         \
   V(_type_proxy__type)                                                         \
   V(_unicode_escape_decode_stateful)                                           \

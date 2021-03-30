@@ -1243,7 +1243,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
     __ movq(r_saved_callable, env->callable);
     __ movq(r_saved_bc, env->bytecode);
 
-    // frame->insertValueAt(callable_idx,
+    // thread->stackInsertAt(callable_idx,
     // BoundMethod::cast(callable).function()); Use `rep movsq` to copy RCX
     // words from RSI to RDI.
     ScratchReg r_words(env, RCX);
@@ -1517,6 +1517,62 @@ template <>
 void emitHandler<CALL_FUNCTION>(EmitEnv* env) {
   // The CALL_FUNCTION handler is generated out-of-line after the handler table.
   __ jmp(&env->call_handler, Assembler::kFarJump);
+}
+
+template <>
+void emitHandler<CALL_FUNCTION_TYPE_NEW>(EmitEnv* env) {
+  ScratchReg r_receiver(env);
+  ScratchReg r_ctor(env);
+  Label slow_path;
+
+  // r_receiver = thread->stackAt(callable_idx);
+  __ movq(r_receiver, Address(RSP, env->oparg, TIMES_8, 0));
+  // if (!r_receiver.isType()) goto slow_path;
+  emitJumpIfNotHeapObjectWithLayoutId(env, r_receiver, LayoutId::kType,
+                                      &slow_path);
+  {
+    ScratchReg r_caches(env);
+    ScratchReg r_layout_id(env);
+
+    __ movq(r_layout_id,
+            Address(r_receiver, heapObjectDisp(Type::kInstanceLayoutIdOffset)));
+    __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
+    emitIcLookupMonomorphic(env, &slow_path, r_ctor, r_layout_id, r_caches);
+  }
+  // Use `rep movsq` to copy RCX words from RSI to RDI.
+  {
+    ScratchReg r_saved_bc(env);
+    ScratchReg r_saved_oparg(env);
+
+    __ movq(r_saved_bc, env->bytecode);
+    __ movq(r_saved_oparg, env->oparg);
+
+    ScratchReg r_words(env, RCX);
+    __ movl(r_words, env->oparg);
+    ScratchReg r_src(env, RSI);
+    __ movq(r_src, RSP);
+    __ subq(RSP, Immediate(kPointerSize));
+    ScratchReg r_dst(env, RDI);
+    __ movq(r_dst, RSP);
+    __ repMovsq();
+    // Restore and increment kOpargReg (nargs)
+    env->register_state.assign(&env->oparg, kOpargReg);
+    __ leaq(env->oparg, Address(r_saved_oparg, 1));
+    // Insert cached type as cls argument to cached __new__ function
+    __ movq(Address(RSP, r_saved_oparg, TIMES_8, 0), r_receiver);
+    // Restore bytecode
+    env->register_state.assign(&env->bytecode, kBCReg);
+    __ movq(env->bytecode, r_saved_bc);
+    // Put the cached ctor function as the callable
+    env->register_state.assign(&env->callable, kCallableReg);
+    __ movq(env->callable, r_ctor);
+    __ movq(Address(RSP, env->oparg, TIMES_8, 0), env->callable);
+  }
+  env->register_state.check(env->function_entry_assignment);
+  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+
+  __ bind(&slow_path);
+  emitJumpToGenericHandler(env);
 }
 
 template <>

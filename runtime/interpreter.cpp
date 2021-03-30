@@ -4477,8 +4477,82 @@ HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doCallFunctionAnamorphic(Thread* thread,
                                                               word arg) {
   Frame* frame = thread->currentFrame();
+  RawObject callable = thread->stackPeek(arg);
+  // TODO(T87427456): Also rewrite if callable is a metaclass that does not
+  // override __call__
+  if (callable.isType()) {
+    word cache = currentCacheIndex(frame);
+    return callFunctionTypeNewUpdateCache(thread, arg, cache);
+  }
   rewriteCurrentBytecode(frame, CALL_FUNCTION);
   return doCallFunction(thread, arg);
+}
+
+Continue Interpreter::callFunctionTypeNewUpdateCache(Thread* thread, word arg,
+                                                     word cache) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  word callable_idx = arg;
+  Type receiver(&scope, thread->stackPeek(callable_idx));
+  Function dependent(&scope, frame->function());
+  MutableTuple caches(&scope, frame->caches());
+  Object ctor(&scope, receiver.ctor());
+  if (arg == 1) {
+    Runtime* runtime = thread->runtime();
+    switch (receiver.instanceLayoutId()) {
+      case LayoutId::kStr:
+        ctor = runtime->lookupNameInModule(thread, ID(_builtins),
+                                           ID(_str_ctor_obj));
+        DCHECK(!ctor.isError(), "cannot find _str_ctor_obj");
+        break;
+      case LayoutId::kType:
+        ctor =
+            runtime->lookupNameInModule(thread, ID(_builtins), ID(_type_ctor));
+        DCHECK(!ctor.isError(), "cannot find _type_ctor");
+        break;
+      case LayoutId::kInt:
+        ctor = runtime->lookupNameInModule(thread, ID(_builtins),
+                                           ID(_int_ctor_obj));
+        DCHECK(!ctor.isError(), "cannot find _int_ctor_obj");
+        break;
+      default:
+        break;
+    }
+  }
+  icUpdateCallFunctionTypeNew(thread, caches, cache, receiver, ctor, dependent);
+  return doCallFunctionTypeNew(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doCallFunctionTypeNew(Thread* thread,
+                                                           word arg) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  word callable_idx = arg;
+  Object receiver(&scope, thread->stackPeek(callable_idx));
+  if (!receiver.isType()) {
+    EVENT_CACHE(CALL_FUNCTION_TYPE_NEW);
+    rewriteCurrentBytecode(frame, CALL_FUNCTION);
+    return doCallFunction(thread, arg);
+  }
+  MutableTuple caches(&scope, frame->caches());
+  word cache = currentCacheIndex(frame);
+  bool is_found;
+  Object ctor(&scope, icLookupMonomorphic(
+                          *caches, cache,
+                          Type::cast(*receiver).instanceLayoutId(), &is_found));
+  if (!is_found) {
+    EVENT_CACHE(CALL_FUNCTION_TYPE_NEW);
+    rewriteCurrentBytecode(frame, CALL_FUNCTION);
+    return doCallFunction(thread, arg);
+  }
+  // TODO(Txxx): Separate into two opcodes. Normal type.ctor() functions take
+  // cls as the first parameter, but specialized cached ctors such as
+  // _str_ctor_obj need only take one argument: the arg to be converted. Avoid
+  // the stack shuffle in the fast case.
+  DCHECK(ctor.isFunction(), "cached is expected to be a function");
+  thread->stackSetAt(callable_idx, *ctor);
+  thread->stackInsertAt(callable_idx, *receiver);
+  return tailcallFunction(thread, arg + 1, *ctor);
 }
 
 HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {

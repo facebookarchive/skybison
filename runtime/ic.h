@@ -63,6 +63,11 @@ void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word cache,
                       const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent);
 
+void icUpdateCallFunctionTypeNew(Thread* thread, const MutableTuple& caches,
+                                 word cache, const Object& receiver,
+                                 const Object& constructor,
+                                 const Function& dependent);
+
 // Insert dependent into dependentLink of the given value_cell. Returns true if
 // depdent didn't exist in dependencyLink, and false otherwise.
 bool icInsertDependentToValueCellDependencyLink(Thread* thread,
@@ -322,6 +327,7 @@ class IcIterator {
       case BINARY_SUBSCR_ANAMORPHIC:
       case BINARY_SUBSCR_MONOMORPHIC:
       case BINARY_SUBSCR_POLYMORPHIC:
+      case CALL_FUNCTION_TYPE_NEW:
       case FOR_ITER_MONOMORPHIC:
       case FOR_ITER_POLYMORPHIC:
       case FOR_ITER_ANAMORPHIC:

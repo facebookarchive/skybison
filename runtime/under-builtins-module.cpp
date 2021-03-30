@@ -2952,6 +2952,37 @@ RawObject FUNC(_builtins, _int_ctor)(Thread* thread, Arguments args) {
                                  base);
 }
 
+RawObject FUNC(_builtins, _int_ctor_obj)(Thread* thread, Arguments args) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kInt), "unexpected cls");
+  RawObject x_raw = args.get(1);
+  LayoutId x_layout_id = x_raw.layoutId();
+  switch (x_layout_id) {
+    case LayoutId::kSmallInt:
+      return x_raw;
+    case LayoutId::kBool:
+      return SmallInt::fromWord(Bool::cast(x_raw).value());
+    case LayoutId::kFloat:
+      return intFromDouble(thread, Float::cast(x_raw).value());
+    case LayoutId::kSmallStr: {
+      RawObject result =
+          positiveIntFromSmallStrWithBase10(SmallStr::cast(x_raw));
+      if (!result.isNoneType()) {
+        return result;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  HandleScope scope(thread);
+  Type cls(&scope, args.get(0));
+  Object x(&scope, x_raw);
+  Object base(&scope, Unbound::object());
+  return thread->invokeFunction3(ID(_builtins), ID(_type_dunder_call), cls, x,
+                                 base);
+}
+
 static RawObject intOrUserSubclass(Thread* thread, const Type& type,
                                    const Object& value) {
   DCHECK(value.isSmallInt() || value.isLargeInt(),
@@ -4746,6 +4777,33 @@ RawObject FUNC(_builtins, _str_ctor)(Thread* thread, Arguments args) {
   return Interpreter::call4(thread, str_dunder_new, cls, obj, encoding, errors);
 }
 
+RawObject FUNC(_builtins, _str_ctor_obj)(Thread* thread, Arguments args) {
+  {
+    // Warning: This code is using `RawXXX` variables for performance! This is
+    // despite the fact that we call functions that do potentially perform
+    // memory allocations. Be careful not to break this invariant if you change
+    // the code!
+    DCHECK(args.get(0) == thread->runtime()->typeAt(LayoutId::kStr),
+           "expected cls==str");
+    RawObject obj_raw = args.get(1);
+    if (obj_raw.isStr()) {
+      return obj_raw;
+    }
+  }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type str_type(&scope, runtime->typeAt(LayoutId::kStr));
+  Object dunder_new(&scope, runtime->symbols()->at(ID(__new__)));
+  Function str_dunder_new(&scope,
+                          typeGetAttribute(thread, str_type, dunder_new));
+  Object cls(&scope, args.get(0));
+  Object obj(&scope, args.get(1));
+  Object encoding(&scope, Unbound::object());
+  Object errors(&scope, Unbound::object());
+  // TODO(T76654356): Use Thread::invokeMethodStatic.
+  return Interpreter::call4(thread, str_dunder_new, cls, obj, encoding, errors);
+}
+
 RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object start_obj(&scope, args.get(2));
@@ -5507,6 +5565,12 @@ RawObject FUNC(_builtins, _tuple_new)(Thread* thread, Arguments args) {
 
 RawObject FUNC(_builtins, _type)(Thread* thread, Arguments args) {
   return thread->runtime()->typeOf(args.get(0));
+}
+
+RawObject FUNC(_builtins, _type_ctor)(Thread* thread, Arguments args) {
+  DCHECK(args.get(0) == thread->runtime()->typeAt(LayoutId::kType),
+         "expected cls==type");
+  return thread->runtime()->typeOf(args.get(1));
 }
 
 RawObject FUNC(_builtins, _type_abstractmethods_del)(Thread* thread,

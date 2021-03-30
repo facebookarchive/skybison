@@ -354,6 +354,7 @@ class Interpreter {
   static Continue doCallFunctionKw(Thread* thread, word arg);
   static Continue doCallMethod(Thread* thread, word arg);
   static Continue doCallFunctionAnamorphic(Thread* thread, word arg);
+  static Continue doCallFunctionTypeNew(Thread* thread, word arg);
   static Continue doCompareInAnamorphic(Thread* thread, word arg);
   static Continue doCompareInStr(Thread* thread, word arg);
   static Continue doCompareInTuple(Thread* thread, word arg);
@@ -596,6 +597,8 @@ class Interpreter {
   static Continue loadAttrUpdateCache(Thread* thread, word arg, word cache);
   static Continue storeAttrUpdateCache(Thread* thread, word arg, word cache);
   static Continue storeSubscr(Thread* thread, RawObject set_item_method);
+  static Continue callFunctionTypeNewUpdateCache(Thread* thread, word arg,
+                                                 word cache);
 
   static Continue loadMethodUpdateCache(Thread* thread, word arg, word cache);
 

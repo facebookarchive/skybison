@@ -134,6 +134,38 @@ void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word cache,
   insertDependencyForTypeLookupInMro(thread, layout_id, selector, dependent);
 }
 
+static void icInsertConstructorDependencies(Thread* thread, LayoutId layout_id,
+                                            const Function& dependent) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object dunder_new(&scope, runtime->symbols()->at(ID(__new__)));
+  insertDependencyForTypeLookupInMro(thread, layout_id, dunder_new, dependent);
+  Object dunder_init(&scope, runtime->symbols()->at(ID(__init__)));
+  insertDependencyForTypeLookupInMro(thread, layout_id, dunder_init, dependent);
+}
+
+void icUpdateCallFunctionTypeNew(Thread* thread, const MutableTuple& caches,
+                                 word cache, const Object& receiver,
+                                 const Object& constructor,
+                                 const Function& dependent) {
+  DCHECK(icIsCacheEmpty(caches, cache), "cache must be empty\n");
+  word index = cache * kIcPointersPerEntry;
+  HandleScope scope(thread);
+  Type type(&scope, *receiver);
+  word id = static_cast<word>(type.instanceLayoutId());
+  caches.atPut(index + kIcEntryKeyOffset, SmallInt::fromWord(id));
+  caches.atPut(index + kIcEntryValueOffset, *constructor);
+  MutableBytes bytecode(&scope, dependent.rewrittenBytecode());
+  word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
+  DCHECK(bytecode.byteAt(pc) == CALL_FUNCTION_ANAMORPHIC,
+         "current opcode must be CALL_FUNCTION_ANAMORPHIC");
+  bytecode.byteAtPut(pc, CALL_FUNCTION_TYPE_NEW);
+  if (!type.isBuiltin()) {
+    icInsertConstructorDependencies(thread, static_cast<LayoutId>(id),
+                                    dependent);
+  }
+}
+
 void icRemoveDeadWeakLinks(RawValueCell cell) {
   DCHECK(!cell.dependencyLink().isNoneType(),
          "unlink should not be called with an empty list");
@@ -823,6 +855,9 @@ bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
     case BINARY_SUBSCR_MONOMORPHIC:
     case BINARY_SUBSCR_POLYMORPHIC:
       return attr_name == runtime_->symbols()->at(ID(__getitem__));
+    case CALL_FUNCTION_TYPE_NEW:
+      return attr_name == runtime_->symbols()->at(ID(__new__)) ||
+             attr_name == runtime_->symbols()->at(ID(__init__));
     case STORE_SUBSCR_ANAMORPHIC:
       return attr_name == runtime_->symbols()->at(ID(__setitem__));
     default:

@@ -721,6 +721,100 @@ static void testBinaryOpRewrite(const Function& function,
   EXPECT_TRUE(functionMatchesRef2(function, reference, arg0, arg1));
 }
 
+TEST_F(InterpreterTest, CallFunctionAnamorphicRewritesToCallFunctionTypeNew) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __new__(cls):
+    return object.__new__(cls)
+def foo(fn):
+  return fn()
+def non_type():
+  return 5
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION_ANAMORPHIC));
+
+  Type type(&scope, mainModuleAt(runtime_, "C"));
+  Object expected(&scope, Interpreter::call1(thread_, function, type));
+  EXPECT_FALSE(expected.isError());
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION_TYPE_NEW));
+  EXPECT_EQ(expected.layoutId(), type.instanceLayoutId());
+
+  Object non_type(&scope, mainModuleAt(runtime_, "non_type"));
+  expected = Interpreter::call1(thread_, function, non_type);
+  EXPECT_FALSE(expected.isError());
+  EXPECT_TRUE(isIntEqualsWord(*expected, 5));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+}
+
+TEST_F(InterpreterTest,
+       CallFunctionTypeNewWithNewDunderNewRewritesToCallFunction) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __new__(cls):
+    return object.__new__(cls)
+def foo(fn):
+  return fn()
+def new_new(cls):
+  return 5
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION_ANAMORPHIC));
+
+  Type type(&scope, mainModuleAt(runtime_, "C"));
+  Object expected(&scope, Interpreter::call1(thread_, function, type));
+  EXPECT_FALSE(expected.isError());
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION_TYPE_NEW));
+  EXPECT_EQ(expected.layoutId(), type.instanceLayoutId());
+
+  // Invalidate cache
+  Object new_new(&scope, mainModuleAt(runtime_, "new_new"));
+  typeAtPutById(thread_, type, ID(__new__), new_new);
+
+  // Cache miss
+  expected = Interpreter::call1(thread_, function, type);
+  EXPECT_FALSE(expected.isError());
+  EXPECT_TRUE(isIntEqualsWord(*expected, 5));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+}
+
+TEST_F(InterpreterTest,
+       CallFunctionTypeNewWithNewDunderInitRewritesToCallFunction) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self):
+    pass
+def foo(fn):
+  return fn()
+def new_init(self):
+  pass
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION_ANAMORPHIC));
+
+  Type type(&scope, mainModuleAt(runtime_, "C"));
+  Object expected(&scope, Interpreter::call1(thread_, function, type));
+  EXPECT_FALSE(expected.isError());
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION_TYPE_NEW));
+  EXPECT_EQ(expected.layoutId(), type.instanceLayoutId());
+
+  // Invalidate cache
+  Object new_init(&scope, mainModuleAt(runtime_, "new_init"));
+  typeAtPutById(thread_, type, ID(__new__), new_init);
+
+  // Cache miss
+  expected = Interpreter::call1(thread_, function, type);
+  EXPECT_FALSE(expected.isError());
+  EXPECT_EQ(expected.layoutId(), type.instanceLayoutId());
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+}
+
 TEST_F(InterpreterTest, BinaryOpAnamorphicRewritesToBinaryAddSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, R"(

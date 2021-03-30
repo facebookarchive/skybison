@@ -192,7 +192,7 @@ namespace py {
   V(UNUSED_BYTECODE_173, 173, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_174, 174, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_175, 175, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_176, 176, doInvalidBytecode)                               \
+  V(CALL_FUNCTION_TYPE_NEW, 176, doCallFunctionTypeNew)                        \
   V(CALL_FUNCTION_ANAMORPHIC, 177, doCallFunctionAnamorphic)                   \
   V(COMPARE_NE_STR, 178, doCompareNeStr)                                       \
   V(FOR_ITER_GENERATOR, 179, doForIterGenerator)                               \
@@ -377,6 +377,7 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case COMPARE_OP_MONOMORPHIC:
     case COMPARE_OP_POLYMORPHIC:
     case COMPARE_OP_ANAMORPHIC:
+    case CALL_FUNCTION_TYPE_NEW:
     case FOR_ITER_MONOMORPHIC:
     case FOR_ITER_POLYMORPHIC:
     case FOR_ITER_ANAMORPHIC:

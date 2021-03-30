@@ -583,6 +583,10 @@ def _int_ctor(cls, x=_Unbound, base=_Unbound):
     _builtin()
 
 
+def _int_ctor_obj(cls, x):
+    _builtin()
+
+
 def _int_from_bytes(cls, bytes, byteorder_big, signed):
     _builtin()
 
@@ -992,6 +996,10 @@ def _str_ctor(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):
     _builtin()
 
 
+def _str_ctor_obj(cls, obj):
+    _builtin()
+
+
 def _str_encode(self, encoding):
     _builtin()
 
@@ -1153,6 +1161,10 @@ def _tuple_new(cls, old_tuple):
 
 def _type(obj):
     "$intrinsic$"
+    _builtin()
+
+
+def _type_ctor(cls, obj):
     _builtin()
 
 
