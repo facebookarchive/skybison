@@ -3933,20 +3933,13 @@ RawObject FUNC(_builtins, _os_write)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object fd_obj(&scope, args.get(0));
   CHECK(fd_obj.isSmallInt(), "fd must be small int");
-  Object bytes_obj(&scope, args.get(1));
-  Bytes bytes_buf(&scope, Bytes::empty());
-  size_t count;
-  // TODO(T55505775): Add support for more byteslike types instead of switching
-  // on bytes/bytearray
-  if (bytes_obj.isBytearray()) {
-    bytes_buf = Bytearray::cast(*bytes_obj).items();
-    count = Bytearray::cast(*bytes_obj).numItems();
-  } else {
-    bytes_buf = *bytes_obj;
-    count = bytes_buf.length();
-  }
+  Object byteslike_obj(&scope, args.get(1));
+  Byteslike byteslike_buf(&scope, thread, *byteslike_obj);
+  DCHECK(byteslike_buf.isValid(), "bytes-like object is invalid");
+  size_t count = byteslike_buf.length();
   std::unique_ptr<byte[]> buffer(new byte[count]);
-  bytes_buf.copyTo(buffer.get(), count);
+  // TODO(T87798648): We should avoid copies for LargeBytes/DataArray.
+  byteslike_buf.copyTo(buffer.get(), count);
   int fd = SmallInt::cast(*fd_obj).value();
   ssize_t result = File::write(fd, buffer.get(), count);
   if (result < 0) {

@@ -2725,6 +2725,28 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
   ::close(fds[0]);
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeMemoryView) {
+  HandleScope scope(thread_);
+  int fds[2];
+  int result = ::pipe(fds);
+  ASSERT_EQ(result, 0);
+  Int fd(&scope, SmallInt::fromWord(fds[1]));
+  const byte bytes[] = "hello_there";
+  MemoryView memoryview(&scope, newMemoryView(bytes, "b"));
+  MemoryView memoryview_slice(
+      &scope, memoryviewGetslice(thread_, memoryview, /*start=*/0, /*stop=*/5,
+                                 /*step=*/1));
+  Object result_obj(
+      &scope, runBuiltin(FUNC(_builtins, _os_write), fd, memoryview_slice));
+  EXPECT_TRUE(isIntEqualsWord(*result_obj, 5));
+  ::close(fds[1]);  // Send EOF
+  std::unique_ptr<char[]> buf(new char[6]{0});
+  result = ::read(fds[0], buf.get(), 5);
+  EXPECT_EQ(result, 5);
+  EXPECT_STREQ(buf.get(), "hello");
+  ::close(fds[0]);
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderStrCompareDigestWithNonASCIIRaisesTypeError) {
   HandleScope scope(thread_);
