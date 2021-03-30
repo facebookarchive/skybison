@@ -13,13 +13,19 @@ class LockType:
 
     def acquire(self, blocking=True, timeout=-1):
         if self._locked:
-            # This would block indefinitely, let's abort instead...
+            if not blocking:
+                return False
+            # No implementation of timeout
             _unimplemented()
         self._locked = True
+        return True
 
     __enter__ = acquire
 
     acquire_lock = acquire
+
+    def locked(self):
+        return self._locked
 
     def release(self):
         if not self._locked:

@@ -1,8 +1,46 @@
 #!/usr/bin/env python3
 import unittest
-from threading import Condition, Event
+from threading import Condition, Event, Lock
 
 from test_support import pyro_only
+
+
+class LockTests(unittest.TestCase):
+    def test_lock_acquire_and_release_locks_and_releases(self):
+        lock = Lock()
+        self.assertFalse(lock.locked())
+        self.assertTrue(lock.acquire())
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertFalse(lock.locked())
+
+    def test_lock_as_context_manager_locks_and_releases(self):
+        lock = Lock()
+        self.assertFalse(lock.locked())
+        with lock:
+            self.assertTrue(lock.locked())
+        self.assertFalse(lock.locked())
+
+    def test_lock_acquire_nonblocking_locks(self):
+        lock = Lock()
+        self.assertFalse(lock.locked())
+        self.assertTrue(lock.acquire(False))
+        self.assertTrue(lock.locked())
+        lock.release()
+
+    def test_lock_acquire_nonblocking_does_not_lock(self):
+        lock = Lock()
+        self.assertTrue(lock.acquire())
+        self.assertTrue(lock.locked())
+        self.assertFalse(lock.acquire(False))
+        self.assertTrue(lock.locked())
+        lock.release()
+
+        self.assertTrue(lock.acquire(False))
+        self.assertTrue(lock.locked())
+        self.assertFalse(lock.acquire(False))
+        self.assertTrue(lock.locked())
+        lock.release()
 
 
 class ConditionTests(unittest.TestCase):
