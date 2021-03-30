@@ -793,8 +793,7 @@ void initializeExceptionTypes(Thread* thread) {
                 kPointerSize;
     type = addBuiltinType(thread, spec.name, spec.layout_id, spec.superclass_id,
                           spec.attributes, size, /*basetype=*/true);
-    layout = type.instanceLayout();
-    runtime->layoutSetTupleOverflow(*layout);
+    builtinTypeEnableTupleOverflow(thread, type);
   }
 }
 

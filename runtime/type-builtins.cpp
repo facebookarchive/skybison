@@ -63,6 +63,13 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   superclass_id, flags);
 }
 
+void builtinTypeEnableTupleOverflow(Thread* thread, const Type& type) {
+  DCHECK(type.mro().isNoneType(),
+         "Enabling overflow is unsafe after initialization");
+  thread->runtime()->layoutSetTupleOverflow(
+      Layout::cast(type.instanceLayout()));
+}
+
 RawObject findBuiltinTypeWithName(Thread* thread, const Object& name) {
   DCHECK(Runtime::isInternedStr(thread, name), "must be interned str");
   HandleScope scope(thread);

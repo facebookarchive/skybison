@@ -1037,7 +1037,6 @@ static const BuiltinAttribute kBytesIOAttributes[] = {
     {ID(_BytesIO__num_items), RawBytesIO::kNumItemsOffset,
      AttributeFlags::kReadOnly},
     {ID(_pos), RawBytesIO::kPosOffset},
-    {ID(__dict__), RawBytesIO::kDictOffset},
 };
 
 static void bytesIOEnsureCapacity(Thread* thread, const BytesIO& bytes_io,
@@ -1349,7 +1348,6 @@ static const BuiltinAttribute kStringIOAttributes[] = {
     {ID(_seennl), RawStringIO::kSeennlOffset},
     {ID(_writenl), RawStringIO::kWritenlOffset},
     {ID(_writetranslate), RawStringIO::kWritetranslateOffset},
-    {ID(__dict__), RawStringIO::kDictOffset},
 };
 
 enum NewlineFound { kLF = 0x1, kCR = 0x2, kCRLF = 0x4 };
@@ -1773,9 +1771,12 @@ static const BuiltinAttribute kTextIOWrapperAttributes[] = {
 };
 
 void initializeUnderIOTypes(Thread* thread) {
-  addBuiltinType(thread, ID(_IOBase), LayoutId::kUnderIOBase,
-                 /*superclass_id=*/LayoutId::kObject, kUnderIOBaseAttributes,
-                 UnderIOBase::kSize, /*basetype=*/true);
+  HandleScope scope(thread);
+  Type type(&scope, addBuiltinType(thread, ID(_IOBase), LayoutId::kUnderIOBase,
+                                   /*superclass_id=*/LayoutId::kObject,
+                                   kUnderIOBaseAttributes, UnderIOBase::kSize,
+                                   /*basetype=*/true));
+  builtinTypeEnableTupleOverflow(thread, type);
 
   addBuiltinType(thread, ID(IncrementalNewlineDecoder),
                  LayoutId::kIncrementalNewlineDecoder,
@@ -1791,46 +1792,54 @@ void initializeUnderIOTypes(Thread* thread) {
                  /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes,
                  UnderBufferedIOBase::kSize, /*basetype=*/true);
 
-  addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
-                 /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
-                 kBytesIOAttributes, BytesIO::kSize, /*basetype=*/true);
+  type = addBuiltinType(thread, ID(BytesIO), LayoutId::kBytesIO,
+                        /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
+                        kBytesIOAttributes, BytesIO::kSize, /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 
   addBuiltinType(thread, ID(_BufferedIOMixin), LayoutId::kUnderBufferedIOMixin,
                  /*superclass_id=*/LayoutId::kUnderBufferedIOBase,
                  kUnderBufferedIOMixinAttributes, UnderBufferedIOMixin::kSize,
                  /*basetype=*/true);
 
-  addBuiltinType(thread, ID(BufferedRandom), LayoutId::kBufferedRandom,
-                 /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
-                 kBufferedRandomAttributes, BufferedRandom::kSize,
-                 /*basetype=*/true);
+  type = addBuiltinType(thread, ID(BufferedRandom), LayoutId::kBufferedRandom,
+                        /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
+                        kBufferedRandomAttributes, BufferedRandom::kSize,
+                        /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 
-  addBuiltinType(thread, ID(BufferedReader), LayoutId::kBufferedReader,
-                 /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
-                 kBufferedReaderAttributes, BufferedReader::kSize,
-                 /*basetype=*/true);
+  type = addBuiltinType(thread, ID(BufferedReader), LayoutId::kBufferedReader,
+                        /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
+                        kBufferedReaderAttributes, BufferedReader::kSize,
+                        /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 
-  addBuiltinType(thread, ID(BufferedWriter), LayoutId::kBufferedWriter,
-                 /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
-                 kBufferedWriterAttributes, BufferedWriter::kSize,
-                 /*basetype=*/true);
+  type = addBuiltinType(thread, ID(BufferedWriter), LayoutId::kBufferedWriter,
+                        /*superclass_id=*/LayoutId::kUnderBufferedIOMixin,
+                        kBufferedWriterAttributes, BufferedWriter::kSize,
+                        /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 
-  addBuiltinType(thread, ID(FileIO), LayoutId::kFileIO,
-                 /*superclass_id=*/LayoutId::kUnderRawIOBase, kFileIOAttributes,
-                 FileIO::kSize, /*basetype=*/true);
+  type = addBuiltinType(thread, ID(FileIO), LayoutId::kFileIO,
+                        /*superclass_id=*/LayoutId::kUnderRawIOBase,
+                        kFileIOAttributes, FileIO::kSize, /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 
   addBuiltinType(thread, ID(_TextIOBase), LayoutId::kUnderTextIOBase,
                  /*superclass_id=*/LayoutId::kUnderIOBase, kNoAttributes,
                  RawUnderTextIOBase::kSize, /*basetype=*/true);
 
-  addBuiltinType(thread, ID(TextIOWrapper), LayoutId::kTextIOWrapper,
-                 /*superclass_id=*/LayoutId::kUnderTextIOBase,
-                 kTextIOWrapperAttributes, TextIOWrapper::kSize,
-                 /*basetype=*/true);
+  type = addBuiltinType(thread, ID(TextIOWrapper), LayoutId::kTextIOWrapper,
+                        /*superclass_id=*/LayoutId::kUnderTextIOBase,
+                        kTextIOWrapperAttributes, TextIOWrapper::kSize,
+                        /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 
-  addBuiltinType(thread, ID(StringIO), LayoutId::kStringIO,
-                 /*superclass_id=*/LayoutId::kUnderTextIOBase,
-                 kStringIOAttributes, StringIO::kSize, /*basetype=*/true);
+  type =
+      addBuiltinType(thread, ID(StringIO), LayoutId::kStringIO,
+                     /*superclass_id=*/LayoutId::kUnderTextIOBase,
+                     kStringIOAttributes, StringIO::kSize, /*basetype=*/true);
+  builtinTypeEnableTupleOverflow(thread, type);
 }
 
 }  // namespace py

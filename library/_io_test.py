@@ -113,6 +113,11 @@ class _IOBaseTests(unittest.TestCase):
         f = _io._IOBase()
         self.assertFalse(f.seekable())
 
+    def test_supports_arbitrary_attributes(self):
+        f = _io._IOBase()
+        f.hello_world = 42
+        self.assertEqual(f.hello_world, 42)
+
     def test_tell_raises_unsupported_operation(self):
         f = _io._IOBase()
         self.assertRaises(_io.UnsupportedOperation, f.tell)
@@ -551,6 +556,12 @@ class BufferedRandomTests(unittest.TestCase):
             buffered.seek(0)
             self.assertEqual(buffered.tell(), 0)
 
+    def test_supports_arbitrary_attributes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io)
+            buffered.bonjour = -99
+            self.assertEqual(buffered.bonjour, -99)
+
     def test_tell_returns_current_position(self):
         with _io.BytesIO(b"hello") as bytes_io:
             buffered = _io.BufferedRandom(bytes_io)
@@ -651,6 +662,12 @@ class BufferedWriterTests(unittest.TestCase):
             with _io.BufferedWriter(bytes_io) as writer:
                 self.assertEqual(writer.seek(10), 42)
                 bytes_io.seek.assert_called_once()
+
+    def test_supports_arbitrary_attributes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as buffered_io:
+                buffered_io.guten_tag = 5.5
+                self.assertEqual(buffered_io.guten_tag, 5.5)
 
     def test_tell_counts_buffered_bytes(self):
         with _io.BytesIO(b"hello") as bytes_io:
@@ -1684,6 +1701,11 @@ with open('{fifo}', 'wb') as f:
         with _io.FileIO(_getfd(), mode="w") as f:
             self.assertFalse(f.seekable())
 
+    def test_supports_arbitrary_attributes(self):
+        with _io.FileIO(_getfd(), mode="r") as f:
+            f.good_morning = 333
+            self.assertEqual(f.good_morning, 333)
+
     def test_tell_with_closed_file_raises_value_error(self):
         f = _io.FileIO(_getfd(), mode="r")
         f.close()
@@ -2648,6 +2670,12 @@ class BufferedReaderTests(unittest.TestCase):
             buffered.seek(0)
             self.assertEqual(buffered.tell(), 0)
 
+    def test_supports_arbitrary_attributes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io)
+            buffered.buenos_dias = 1234
+            self.assertEqual(buffered.buenos_dias, 1234)
+
 
 class TextIOWrapperTests(unittest.TestCase):
     def _sample(self):
@@ -2925,6 +2953,11 @@ class TextIOWrapperTests(unittest.TestCase):
                 bytes_io.readable.assert_called_once()
                 text_io.readable()
                 self.assertEqual(bytes_io.readable.call_count, 2)
+
+    def test_supports_arbitrary_attributes(self):
+        text_io = self._sample()
+        text_io.heya = ()
+        self.assertEqual(text_io.heya, ())
 
     def test_writable_with_non_TextIOWrapper_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -3761,6 +3794,11 @@ class StringIOTests(unittest.TestCase):
             # closed property, this method call should raise a ValueError
             c.readlines()
         self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_supports_arbitrary_attributes(self):
+        string_io = _io.StringIO()
+        string_io.here_comes_the_sun = "and I say it's alright"
+        self.assertEqual(string_io.here_comes_the_sun, "and I say it's alright")
 
     def test_tell_with_open_returns_position(self):
         string_io = _io.StringIO()

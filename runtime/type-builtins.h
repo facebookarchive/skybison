@@ -26,6 +26,8 @@ RawObject addImmediateBuiltinType(Thread* thread, SymbolId name,
                                   LayoutId layout_id, LayoutId builtin_base,
                                   LayoutId superclass_id, bool basetype);
 
+void builtinTypeEnableTupleOverflow(Thread* thread, const Type& type);
+
 // Returns the most generic base among `bases` that captures inherited
 // attributes with a fixed offset (either from __slots__ or builtin types)
 // Note that this simulates `best_base` from CPython's typeobject.c.

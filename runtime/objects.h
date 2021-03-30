@@ -3727,15 +3727,12 @@ class RawBytesIO : public RawUnderBufferedIOBase {
   void setNumItems(word num_items) const;
   word pos() const;
   void setPos(word pos) const;
-  RawObject dict() const;
-  void setDict(RawObject dict) const;
 
   // Layout
   static const int kBufferOffset = RawUnderBufferedIOBase::kSize;
   static const int kNumItemsOffset = kBufferOffset + kPointerSize;
   static const int kPosOffset = kNumItemsOffset + kPointerSize;
-  static const int kDictOffset = kPosOffset + kPointerSize;
-  static const int kSize = kDictOffset + kPointerSize;
+  static const int kSize = kPosOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(BytesIO);
 };
@@ -3944,8 +3941,7 @@ class RawStringIO : public RawUnderTextIOBase {
   static const int kSeennlOffset = kReaduniversalOffset + kPointerSize;
   static const int kWritenlOffset = kSeennlOffset + kPointerSize;
   static const int kWritetranslateOffset = kWritenlOffset + kPointerSize;
-  static const int kDictOffset = kWritetranslateOffset + kPointerSize;
-  static const int kSize = kDictOffset + kPointerSize;
+  static const int kSize = kWritetranslateOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(StringIO);
 };
