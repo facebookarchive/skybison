@@ -700,8 +700,8 @@ static RawObject testingFunctionCachingAttributes(
   Code code(&scope, newEmptyCode());
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
-  rewritten_bytecode.byteAtPut(0, LOAD_ATTR_ANAMORPHIC);
-  rewritten_bytecode.byteAtPut(1, 1);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 0, LOAD_ATTR_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 0, 1);
 
   Module module(&scope, findMainModule(runtime));
   Function function(&scope,
@@ -1421,16 +1421,16 @@ static RawObject testingFunction(Thread* thread) {
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  MutableBytes rewritten_bytecode(&scope,
-                                  runtime->newMutableBytesUninitialized(8));
-  rewritten_bytecode.byteAtPut(0, LOAD_GLOBAL);
-  rewritten_bytecode.byteAtPut(1, 0);
-  rewritten_bytecode.byteAtPut(2, STORE_GLOBAL);
-  rewritten_bytecode.byteAtPut(3, 1);
-  rewritten_bytecode.byteAtPut(4, LOAD_GLOBAL);
-  rewritten_bytecode.byteAtPut(5, 0);
-  rewritten_bytecode.byteAtPut(6, STORE_GLOBAL);
-  rewritten_bytecode.byteAtPut(7, 1);
+  MutableBytes rewritten_bytecode(
+      &scope, runtime->newMutableBytesUninitialized(4 * kCodeUnitSize));
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 0, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 0, 0);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 1, STORE_GLOBAL);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 1, 1);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 2, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 2, 0);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 3, STORE_GLOBAL);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 3, 1);
 
   Module module(&scope, findMainModule(runtime));
   Function function(&scope,
@@ -1504,14 +1504,14 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {
   icUpdateGlobalVar(thread_, function, 0, cache);
 
   EXPECT_EQ(caches.at(0), cache);
-  EXPECT_EQ(rewritten_bytecode.byteAt(0), LOAD_GLOBAL_CACHED);
-  EXPECT_EQ(rewritten_bytecode.byteAt(2), STORE_GLOBAL);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 0), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 1), STORE_GLOBAL);
 
   icUpdateGlobalVar(thread_, function, 1, another_cache);
 
   EXPECT_EQ(caches.at(0), cache);
-  EXPECT_EQ(rewritten_bytecode.byteAt(0), LOAD_GLOBAL_CACHED);
-  EXPECT_EQ(rewritten_bytecode.byteAt(2), STORE_GLOBAL_CACHED);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 0), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 1), STORE_GLOBAL_CACHED);
 }
 
 TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
@@ -1519,17 +1519,17 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
   Function function(&scope, testingFunction(thread_));
   MutableTuple caches(&scope, function.caches());
 
-  MutableBytes rewritten_bytecode(&scope,
-                                  runtime_->newMutableBytesUninitialized(8));
+  MutableBytes rewritten_bytecode(
+      &scope, runtime_->newMutableBytesUninitialized(4 * kCodeUnitSize));
   // TODO(T45440363): Replace the argument of EXTENDED_ARG for a non-zero value.
-  rewritten_bytecode.byteAtPut(0, EXTENDED_ARG);
-  rewritten_bytecode.byteAtPut(1, 0);
-  rewritten_bytecode.byteAtPut(2, LOAD_GLOBAL);
-  rewritten_bytecode.byteAtPut(3, 0);
-  rewritten_bytecode.byteAtPut(4, EXTENDED_ARG);
-  rewritten_bytecode.byteAtPut(5, 0);
-  rewritten_bytecode.byteAtPut(6, STORE_GLOBAL);
-  rewritten_bytecode.byteAtPut(7, 1);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 0, EXTENDED_ARG);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 0, 0);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 1, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 1, 0);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 2, EXTENDED_ARG);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 2, 0);
+  rewrittenBytecodeOpAtPut(rewritten_bytecode, 3, STORE_GLOBAL);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 3, 1);
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   ValueCell cache(&scope, runtime_->newValueCell());
@@ -1540,14 +1540,14 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
   icUpdateGlobalVar(thread_, function, 0, cache);
 
   EXPECT_EQ(caches.at(0), cache);
-  EXPECT_EQ(rewritten_bytecode.byteAt(2), LOAD_GLOBAL_CACHED);
-  EXPECT_EQ(rewritten_bytecode.byteAt(6), STORE_GLOBAL);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 1), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 3), STORE_GLOBAL);
 
   icUpdateGlobalVar(thread_, function, 1, another_cache);
 
   EXPECT_EQ(caches.at(0), cache);
-  EXPECT_EQ(rewritten_bytecode.byteAt(2), LOAD_GLOBAL_CACHED);
-  EXPECT_EQ(rewritten_bytecode.byteAt(6), STORE_GLOBAL_CACHED);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 1), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 3), STORE_GLOBAL_CACHED);
 }
 
 TEST_F(IcTest, IcUpdateGlobalVarCreatesDependencyLink) {
@@ -1705,27 +1705,28 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
 
 TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(20));
-  bytecode.byteAtPut(0, LOAD_GLOBAL);
-  bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, LOAD_ATTR_ANAMORPHIC);
-  bytecode.byteAtPut(3, 0);
-  bytecode.byteAtPut(4, LOAD_GLOBAL);
-  bytecode.byteAtPut(5, 100);
-  bytecode.byteAtPut(6, LOAD_METHOD_ANAMORPHIC);
-  bytecode.byteAtPut(7, 1);
-  bytecode.byteAtPut(8, LOAD_GLOBAL);
-  bytecode.byteAtPut(9, 100);
-  bytecode.byteAtPut(10, LOAD_ATTR_ANAMORPHIC);
-  bytecode.byteAtPut(11, 2);
-  bytecode.byteAtPut(12, STORE_ATTR_ANAMORPHIC);
-  bytecode.byteAtPut(13, 3);
-  bytecode.byteAtPut(14, FOR_ITER_ANAMORPHIC);
-  bytecode.byteAtPut(15, 4);
-  bytecode.byteAtPut(16, BINARY_SUBSCR_ANAMORPHIC);
-  bytecode.byteAtPut(17, 5);
-  bytecode.byteAtPut(18, LOAD_GLOBAL);
-  bytecode.byteAtPut(19, 100);
+  MutableBytes bytecode(
+      &scope, runtime_->newMutableBytesUninitialized(10 * kCodeUnitSize));
+  rewrittenBytecodeOpAtPut(bytecode, 0, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 0, 100);
+  rewrittenBytecodeOpAtPut(bytecode, 1, LOAD_ATTR_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 1, 0);
+  rewrittenBytecodeOpAtPut(bytecode, 2, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 2, 100);
+  rewrittenBytecodeOpAtPut(bytecode, 3, LOAD_METHOD_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 3, 1);
+  rewrittenBytecodeOpAtPut(bytecode, 4, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 4, 100);
+  rewrittenBytecodeOpAtPut(bytecode, 5, LOAD_ATTR_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 5, 2);
+  rewrittenBytecodeOpAtPut(bytecode, 6, STORE_ATTR_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 6, 3);
+  rewrittenBytecodeOpAtPut(bytecode, 7, FOR_ITER_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 7, 4);
+  rewrittenBytecodeOpAtPut(bytecode, 8, BINARY_SUBSCR_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 8, 5);
+  rewrittenBytecodeOpAtPut(bytecode, 9, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 9, 100);
 
   word num_caches = 6;
   Object obj1(&scope, SmallInt::fromWord(0));
@@ -1864,15 +1865,16 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
 
 TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(8));
-  bytecode.byteAtPut(0, LOAD_GLOBAL);
-  bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, COMPARE_OP_ANAMORPHIC);
-  bytecode.byteAtPut(3, 0);
-  bytecode.byteAtPut(4, BINARY_OP_ANAMORPHIC);
-  bytecode.byteAtPut(5, 1);
-  bytecode.byteAtPut(6, LOAD_GLOBAL);
-  bytecode.byteAtPut(7, 100);
+  MutableBytes bytecode(
+      &scope, runtime_->newMutableBytesUninitialized(4 * kCodeUnitSize));
+  rewrittenBytecodeOpAtPut(bytecode, 0, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 0, 100);
+  rewrittenBytecodeOpAtPut(bytecode, 1, COMPARE_OP_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 1, 0);
+  rewrittenBytecodeOpAtPut(bytecode, 2, BINARY_OP_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 2, 1);
+  rewrittenBytecodeOpAtPut(bytecode, 3, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 3, 100);
 
   word num_caches = 2;
   Object ge(&scope, SmallInt::fromWord(CompareOp::GE));
@@ -1951,13 +1953,14 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
 
 TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(8));
-  bytecode.byteAtPut(0, LOAD_GLOBAL);
-  bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, INPLACE_OP_ANAMORPHIC);
-  bytecode.byteAtPut(3, 0);
-  bytecode.byteAtPut(4, LOAD_GLOBAL);
-  bytecode.byteAtPut(5, 100);
+  MutableBytes bytecode(
+      &scope, runtime_->newMutableBytesUninitialized(4 * kCodeUnitSize));
+  rewrittenBytecodeOpAtPut(bytecode, 0, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 0, 100);
+  rewrittenBytecodeOpAtPut(bytecode, 1, INPLACE_OP_ANAMORPHIC);
+  rewrittenBytecodeArgAtPut(bytecode, 1, 0);
+  rewrittenBytecodeOpAtPut(bytecode, 2, LOAD_GLOBAL);
+  rewrittenBytecodeArgAtPut(bytecode, 2, 100);
 
   word num_caches = 1;
   Object mul(&scope,

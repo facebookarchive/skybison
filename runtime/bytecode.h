@@ -320,6 +320,7 @@ enum CallFunctionExFlag {
 };
 
 // Size of opcode + argument in bytecode (called `_Py_CODEUNIT` in cpython).
+const word kCompilerCodeUnitSize = 2;
 const word kCodeUnitSize = 2;
 
 extern const char* const kBytecodeNames[];
@@ -330,6 +331,30 @@ struct BytecodeOp {
 };
 
 BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index);
+
+// Return the opcode in the bytes object at the given opcode index. For
+// example, in the following code:
+//   LOAD_ATTR,   arg,
+//   LOAD_GLOBAL, arg,
+// bytecodeAt(..., 0) would return LOAD_ATTR and
+// bytecodeAt(..., 1) would return LOAD_GLOBAL.
+word bytecodeLength(const Bytes& bytecode);
+Bytecode bytecodeOpAt(const Bytes& bytecode, word index);
+byte bytecodeArgAt(const Bytes& bytecode, word index);
+
+// Return the opcode in the rewritten bytes object at the given opcode index.
+// For example, in the following code:
+//   LOAD_ATTR,   arg,
+//   LOAD_GLOBAL_CACHED, arg,
+// rewrittenBytecodeAt(..., 0) would return LOAD_ATTR and
+// rewrittenBytecodeAt(..., 1) would return LOAD_GLOBAL_CACHED.
+word rewrittenBytecodeLength(const MutableBytes& bytecode);
+Bytecode rewrittenBytecodeOpAt(const MutableBytes& bytecode, word index);
+void rewrittenBytecodeOpAtPut(const MutableBytes& bytecode, word index,
+                              Bytecode op);
+byte rewrittenBytecodeArgAt(const MutableBytes& bytecode, word index);
+void rewrittenBytecodeArgAtPut(const MutableBytes& bytecode, word index,
+                               byte arg);
 
 inline bool isByteCodeWithCache(const Bytecode bc) {
   // TODO(T45720638): Add all caching opcodes here once they are supported for

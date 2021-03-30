@@ -20,11 +20,13 @@ static bool dumpSimple(std::ostream& os, RawObject value);
 
 static std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
                                   const char* indent) {
-  for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
-    byte op = bytecode.byteAt(i);
-    byte arg = bytecode.byteAt(i + 1);
+  word num_opcodes = bytecodeLength(bytecode);
+  for (word i = 0; i < num_opcodes; i++) {
+    byte op = static_cast<byte>(bytecodeOpAt(bytecode, i));
+    byte arg = bytecodeArgAt(bytecode, i);
     std::ios_base::fmtflags saved_flags = os.flags();
-    os << indent << "  " << std::setw(4) << std::hex << i << ' ';
+    os << indent << "  " << std::setw(4) << std::hex
+       << i * kCompilerCodeUnitSize << ' ';
     os.flags(saved_flags);
     os << kBytecodeNames[op] << " " << static_cast<unsigned>(arg) << '\n';
   }
@@ -34,11 +36,13 @@ static std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
 static std::ostream& dumpMutableBytecode(std::ostream& os,
                                          const MutableBytes& bytecode,
                                          const char* indent) {
-  for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
-    byte op = bytecode.byteAt(i);
-    byte arg = bytecode.byteAt(i + 1);
+  word num_opcodes = rewrittenBytecodeLength(bytecode);
+  for (word i = 0; i < num_opcodes; i++) {
+    byte op = rewrittenBytecodeOpAt(bytecode, i);
+    byte arg = rewrittenBytecodeArgAt(bytecode, i);
     std::ios_base::fmtflags saved_flags = os.flags();
-    os << indent << "  " << std::setw(4) << std::hex << i << ' ';
+    os << indent << "  " << std::setw(4) << std::hex << i * kCodeUnitSize
+       << ' ';
     os.flags(saved_flags);
     os << kBytecodeNames[op] << " " << static_cast<unsigned>(arg) << '\n';
   }

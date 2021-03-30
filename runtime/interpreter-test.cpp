@@ -664,7 +664,7 @@ TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
       isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), BINARY_SUB_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), BINARY_SUB_SMALLINT);
 
   // Updated opcode returns the same value.
   EXPECT_TRUE(
@@ -821,16 +821,16 @@ l = [1,2,3]
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt zero(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, zero), 1));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_LIST);
 
   SmallInt one(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, one), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_LIST);
 }
 
 TEST_F(InterpreterTest,
@@ -849,16 +849,16 @@ l = L()
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Object l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(12));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 24));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 
   SmallInt key2(&scope, SmallInt::fromWord(13));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key2), 26));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest,
@@ -880,17 +880,17 @@ b = B()
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Object a(&scope, mainModuleAt(runtime_, "a"));
   SmallInt key_a(&scope, SmallInt::fromWord(6));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, a, key_a), 12));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 
   Object b(&scope, mainModuleAt(runtime_, "b"));
   SmallInt key_b(&scope, SmallInt::fromWord(12));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, b, key_b), 36));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_POLYMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_POLYMORPHIC);
 }
 
 TEST_F(
@@ -907,17 +907,17 @@ s = "abc"
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_DICT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_DICT);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Object s(&scope, mainModuleAt(runtime_, "s"));
   EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, s, key), "b"));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -934,17 +934,17 @@ s = "abc"
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Object s(&scope, mainModuleAt(runtime_, "s"));
   EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, s, key), "b"));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -961,17 +961,17 @@ large_int = 2**64
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when the key is not SmallInt.
   LargeInt large_int(&scope, mainModuleAt(runtime_, "large_int"));
   EXPECT_TRUE(Interpreter::call2(thread_, foo, l, large_int).isError());
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -987,18 +987,18 @@ l = [1,2,3]
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when the key is negative.
   SmallInt negative(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call2(thread_, foo, l, negative), 3));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, StoreSubscrWithDictRewritesToStoreSubscrDict) {
@@ -1013,16 +1013,16 @@ d = {}
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   SmallInt zero(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, zero), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_DICT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_DICT);
 
   SmallInt one(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, one), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_DICT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_DICT);
 }
 
 TEST_F(InterpreterTest,
@@ -1039,17 +1039,17 @@ b = bytearray(b"0000")
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_DICT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_DICT);
 
   // Revert back to caching __getitem__ when a non-dict is observed.
   Object b(&scope, mainModuleAt(runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, b, key), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, StoreSubscrWithListAndSmallInt) {
@@ -1064,16 +1064,16 @@ l = [1,2,3]
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt zero(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, zero), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_LIST);
 
   SmallInt one(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, one), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_LIST);
 }
 
 TEST_F(InterpreterTest,
@@ -1090,17 +1090,17 @@ d = {1: -1}
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -1118,17 +1118,17 @@ large_int = 2**64
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when the key is not SmallInt.
   LargeInt large_int(&scope, mainModuleAt(runtime_, "large_int"));
   EXPECT_TRUE(Interpreter::call2(thread_, foo, l, large_int).isError());
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -1145,18 +1145,18 @@ l = [1,2,3]
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when the key is negative.
   SmallInt negative(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call2(thread_, foo, l, negative), 5));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, BinarySubscrWithTupleAndSmallInt) {
@@ -1170,16 +1170,16 @@ l = (1,2,3)
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Tuple l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt zero(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, zero), 1));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_TUPLE);
 
   SmallInt one(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, one), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_TUPLE);
 }
 
 TEST_F(
@@ -1196,17 +1196,17 @@ d = {1: -1}
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Tuple l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_TUPLE);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), -1));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -1223,17 +1223,17 @@ large_int = 2**64
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Tuple l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_TUPLE);
 
   // Revert back to caching __getitem__ when the key is not SmallInt.
   LargeInt large_int(&scope, mainModuleAt(runtime_, "large_int"));
   EXPECT_TRUE(Interpreter::call2(thread_, foo, l, large_int).isError());
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(
@@ -1249,18 +1249,18 @@ l = (1,2,3)
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_ANAMORPHIC);
 
   Tuple l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 2));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_TUPLE);
 
   // Revert back to caching __getitem__ when the key is negative.
   SmallInt negative(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call2(thread_, foo, l, negative), 3));
-  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), BINARY_SUBSCR_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, InplaceOpCachedInsertsDependencyForThreeAttributes) {
@@ -1572,7 +1572,7 @@ TEST_F(InterpreterTest, InplaceAddWithSmallIntsRewritesOpcode) {
       isIntEqualsWord(Interpreter::call0(thread_, function), left + right));
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), INPLACE_ADD_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), INPLACE_ADD_SMALLINT);
 
   // Updated opcode returns the same value.
   EXPECT_TRUE(
@@ -1589,12 +1589,12 @@ def foo(a, b):
                    .isError());
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), INPLACE_OP_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), INPLACE_OP_ANAMORPHIC);
 
   SmallInt left(&scope, SmallInt::fromWord(7));
   SmallInt right(&scope, SmallInt::fromWord(-13));
 
-  rewritten.byteAtPut(4, INPLACE_ADD_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, INPLACE_ADD_SMALLINT);
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(-13);
   // 7 + (-13)
@@ -1612,17 +1612,17 @@ def foo(a, b):
                    .isError());
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), INPLACE_OP_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), INPLACE_OP_ANAMORPHIC);
 
   LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
   SmallInt right(&scope, SmallInt::fromWord(13));
 
-  rewritten.byteAtPut(4, INPLACE_ADD_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, INPLACE_ADD_SMALLINT);
   // LARGE_SMALL_INT += SMALL_INT
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
                       SmallInt::kMaxValue + 1 + 13));
-  EXPECT_EQ(rewritten.byteAt(4), INPLACE_OP_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), INPLACE_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, InplaceSubtractWithSmallIntsRewritesOpcode) {
@@ -1650,7 +1650,7 @@ TEST_F(InterpreterTest, InplaceSubtractWithSmallIntsRewritesOpcode) {
       isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), INPLACE_SUB_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), INPLACE_SUB_SMALLINT);
 
   // Updated opcode returns the same value.
   EXPECT_TRUE(
@@ -1667,12 +1667,12 @@ def foo(a, b):
                    .isError());
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), INPLACE_OP_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), INPLACE_OP_ANAMORPHIC);
 
   SmallInt left(&scope, SmallInt::fromWord(7));
   SmallInt right(&scope, SmallInt::fromWord(-13));
 
-  rewritten.byteAtPut(4, INPLACE_SUB_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, INPLACE_SUB_SMALLINT);
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(-13);
   // 7 - (-13)
@@ -1690,17 +1690,17 @@ def foo(a, b):
                    .isError());
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), INPLACE_OP_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), INPLACE_OP_ANAMORPHIC);
 
   LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
   SmallInt right(&scope, SmallInt::fromWord(13));
 
-  rewritten.byteAtPut(4, INPLACE_SUB_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, INPLACE_SUB_SMALLINT);
   // LARGE_SMALL_INT -= SMALL_INT
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call2(thread_, function, left, right),
                       SmallInt::kMaxValue + 1 - 13));
-  EXPECT_EQ(rewritten.byteAt(4), INPLACE_OP_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), INPLACE_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterDeathTest, InvalidOpcode) {
@@ -1807,7 +1807,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_STR);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_IN_STR);
 
   // Updated opcode returns the same value.
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
@@ -1836,7 +1836,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_DICT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_IN_DICT);
 
   // Updated opcode returns the same value.
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
@@ -1863,7 +1863,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_IN_TUPLE);
 
   // Updated opcode returns the same value.
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
@@ -1893,7 +1893,7 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithListRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_IN_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_IN_LIST);
 
   // Updated opcode returns the same value.
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
@@ -2060,7 +2060,7 @@ TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_EQ_STR);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_EQ_STR);
 
   // Updated opcode returns the same value.
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
@@ -2091,7 +2091,7 @@ TEST_F(InterpreterTest, CompareOpWithNeOperatorWithStrsRewritesToCompareNeStr) {
   EXPECT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_NE_STR);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_NE_STR);
 
   // Updated opcode returns the same value.
   EXPECT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
@@ -2100,7 +2100,8 @@ TEST_F(InterpreterTest, CompareOpWithNeOperatorWithStrsRewritesToCompareNeStr) {
   // is observed by evaluating `str_obj` != `tuple_obj`.
   consts.atPut(0, runtime_->emptyTuple());
   EXPECT_EQ(Interpreter::call0(thread_, function), Bool::trueObj());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_OP_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2),
+            COMPARE_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
@@ -2130,7 +2131,7 @@ TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
 
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_LT_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten_bytecode, 2), COMPARE_LT_SMALLINT);
 
   // Updated opcode returns the same value.
   ASSERT_EQ(Interpreter::call0(thread_, function), Bool::falseObj());
@@ -2145,12 +2146,12 @@ def foo(a, b):
                    .isError());
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), COMPARE_OP_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_OP_ANAMORPHIC);
 
   SmallInt left(&scope, SmallInt::fromWord(7));
   SmallInt right(&scope, SmallInt::fromWord(-13));
 
-  rewritten.byteAtPut(4, COMPARE_EQ_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_EQ_SMALLINT);
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(-13);
   // 7 == -13
@@ -2161,9 +2162,9 @@ def foo(a, b):
   right = SmallInt::fromWord(7);
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_EQ_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_EQ_SMALLINT);
 
-  rewritten.byteAtPut(4, COMPARE_NE_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_NE_SMALLINT);
   left = SmallInt::fromWord(7);
   right = SmallInt::fromWord(7);
   // 7 != 7
@@ -2174,9 +2175,9 @@ def foo(a, b):
   // 7 != -13
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_NE_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_NE_SMALLINT);
 
-  rewritten.byteAtPut(4, COMPARE_GT_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_GT_SMALLINT);
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(10);
   // 10 > 10
@@ -2187,9 +2188,9 @@ def foo(a, b):
   // 10 > -10
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_GT_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_GT_SMALLINT);
 
-  rewritten.byteAtPut(4, COMPARE_GE_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_GE_SMALLINT);
   left = SmallInt::fromWord(-10);
   right = SmallInt::fromWord(10);
   // -10 >= 10
@@ -2205,9 +2206,9 @@ def foo(a, b):
   // 11 > = 10
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_GE_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_GE_SMALLINT);
 
-  rewritten.byteAtPut(4, COMPARE_LT_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_LT_SMALLINT);
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(-10);
   // 10 < -10
@@ -2218,9 +2219,9 @@ def foo(a, b):
   // -10 < 10
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_LT_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_LT_SMALLINT);
 
-  rewritten.byteAtPut(4, COMPARE_LE_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_LE_SMALLINT);
   left = SmallInt::fromWord(10);
   right = SmallInt::fromWord(-10);
   // 10 <= -10
@@ -2236,7 +2237,7 @@ def foo(a, b):
   // 9 <= 10
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_LE_SMALLINT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_LE_SMALLINT);
 }
 
 TEST_F(InterpreterTest, CompareOpWithSmallIntsRevertsBackToCompareOp) {
@@ -2248,16 +2249,16 @@ def foo(a, b):
                    .isError());
   Function function(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, function.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(4), COMPARE_OP_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_OP_ANAMORPHIC);
 
   LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
   LargeInt right(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
 
-  rewritten.byteAtPut(4, COMPARE_EQ_SMALLINT);
+  rewrittenBytecodeOpAtPut(rewritten, 2, COMPARE_EQ_SMALLINT);
   // LARGE_SMALL_INT == SMALL_INT
   EXPECT_EQ(Interpreter::call2(thread_, function, left, right),
             Bool::trueObj());
-  EXPECT_EQ(rewritten.byteAt(4), COMPARE_OP_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 2), COMPARE_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, CompareOpSetMethodSetsMethod) {
@@ -5364,17 +5365,17 @@ d = {1: -1}
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes rewritten(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(rewritten.byteAt(6), STORE_SUBSCR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_ANAMORPHIC);
 
   List l(&scope, mainModuleAt(runtime_, "l"));
   SmallInt key(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, l, key), 100));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_LIST);
 
   // Revert back to caching __getitem__ when a non-list is observed.
   Dict d(&scope, mainModuleAt(runtime_, "d"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call2(thread_, foo, d, key), 100));
-  EXPECT_EQ(rewritten.byteAt(6), STORE_SUBSCR_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(rewritten, 3), STORE_SUBSCR_MONOMORPHIC);
 }
 
 // TODO(bsimmers) Rewrite these exception tests to ensure that the specific
@@ -5645,37 +5646,37 @@ user_obj = C()
                    .isError());
   Function foo(&scope, mainModuleAt(runtime_, "foo"));
   MutableBytes bytecode(&scope, foo.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(4), FOR_ITER_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_ANAMORPHIC);
 
   Object arg(&scope, mainModuleAt(runtime_, "list_obj"));
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_LIST);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_LIST);
 
   arg = mainModuleAt(runtime_, "dict_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_DICT);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_DICT);
 
   arg = mainModuleAt(runtime_, "tuple_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_TUPLE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_TUPLE);
 
   arg = mainModuleAt(runtime_, "range_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 9));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_RANGE);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_RANGE);
 
   arg = mainModuleAt(runtime_, "str_obj");
   Str s(&scope, runtime_->newStrFromCStr(""));
   EXPECT_TRUE(isStrEqualsCStr(Interpreter::call2(thread_, foo, arg, s), "45"));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_STR);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_STR);
 
   arg = mainModuleAt(runtime_, "gen_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 12));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_GENERATOR);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_GENERATOR);
 
   // Resetting the opcode.
   arg = mainModuleAt(runtime_, "user_obj");
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call1(thread_, foo, arg), 400));
-  EXPECT_EQ(bytecode.byteAt(4), FOR_ITER_MONOMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 2), FOR_ITER_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, FormatValueCallsDunderStr) {
@@ -6507,8 +6508,8 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 4), CALL_METHOD);
 
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 70));
 }
@@ -6529,20 +6530,22 @@ def test():
                    .isError());
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 4), CALL_METHOD);
 
   Object c(&scope, mainModuleAt(runtime_, "c"));
   LayoutId layout_id = c.layoutId();
   MutableTuple caches(&scope, test_function.caches());
   // Cache miss.
   ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookupAttr(*caches, rewrittenBytecodeArgAt(bytecode, 1), layout_id)
+          .isErrorNotFound());
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 30));
 
   // Still cache miss.
   ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookupAttr(*caches, rewrittenBytecodeArgAt(bytecode, 1), layout_id)
+          .isErrorNotFound());
 }
 
 TEST_F(InterpreterTest, LoadMethodCachedCachingFunctionFollowedByCallMethod) {
@@ -6563,20 +6566,22 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_METHOD);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 4), CALL_METHOD);
 
   // Cache miss.
   Object c(&scope, mainModuleAt(runtime_, "c"));
   LayoutId layout_id = c.layoutId();
   MutableTuple caches(&scope, test_function.caches());
   ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookupAttr(*caches, rewrittenBytecodeArgAt(bytecode, 1), layout_id)
+          .isErrorNotFound());
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 70));
 
   // Cache hit.
   ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isFunction());
+      icLookupAttr(*caches, rewrittenBytecodeArgAt(bytecode, 1), layout_id)
+          .isFunction());
   EXPECT_TRUE(isIntEqualsWord(Interpreter::call0(thread_, test_function), 70));
 }
 
@@ -6596,11 +6601,11 @@ call_foo(c)
                    .isError());
   Function call_foo(&scope, mainModuleAt(runtime_, "call_foo"));
   MutableBytes bytecode(&scope, call_foo.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
-  ASSERT_EQ(bytecode.byteAt(4), CALL_METHOD);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 2), CALL_METHOD);
 
   MutableTuple caches(&scope, call_foo.caches());
-  EXPECT_TRUE(icIsCacheEmpty(caches, bytecode.byteAt(3)));
+  EXPECT_TRUE(icIsCacheEmpty(caches, rewrittenBytecodeArgAt(bytecode, 1)));
 }
 
 TEST_F(InterpreterTest, LoadMethodUpdatesOpcodeWithCaching) {
@@ -6625,14 +6630,14 @@ d = D()
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Object d(&scope, mainModuleAt(runtime_, "d"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_ANAMORPHIC);
   ASSERT_TRUE(
       isIntEqualsWord(Interpreter::call1(thread_, test_function, c), 4));
-  EXPECT_EQ(bytecode.byteAt(2), LOAD_METHOD_INSTANCE_FUNCTION);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_INSTANCE_FUNCTION);
 
   ASSERT_TRUE(
       isIntEqualsWord(Interpreter::call1(thread_, test_function, d), -4));
-  EXPECT_EQ(bytecode.byteAt(2), LOAD_METHOD_POLYMORPHIC);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_METHOD_POLYMORPHIC);
 }
 
 TEST_F(InterpreterTest, DoLoadImmediate) {
@@ -6647,8 +6652,9 @@ result = test()
   Function test_function(&scope, mainModuleAt(runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   // Verify that rewriting replaces LOAD_CONST for LOAD_IMMEDIATE.
-  EXPECT_EQ(bytecode.byteAt(0), LOAD_IMMEDIATE);
-  EXPECT_EQ(bytecode.byteAt(1), static_cast<byte>(NoneType::object().raw()));
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 0), LOAD_IMMEDIATE);
+  EXPECT_EQ(rewrittenBytecodeArgAt(bytecode, 0),
+            static_cast<byte>(NoneType::object().raw()));
   EXPECT_TRUE(mainModuleAt(runtime_, "result").isNoneType());
 }
 
@@ -6705,7 +6711,7 @@ c = C()
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Function cache_attribute(&scope, mainModuleAt(runtime_, "cache_attribute"));
   MutableBytes bytecode(&scope, cache_attribute.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_ATTR_ANAMORPHIC);
   Tuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerEntry);
 
@@ -6714,7 +6720,7 @@ c = C()
   ASSERT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, cache_attribute, c),
                               "instance attribute"));
   ASSERT_EQ(icCurrentState(*caches, 1), ICState::kMonomorphic);
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_ATTR_INSTANCE);
 
   // Invalidate the cache.
   Function invalidate_attribute(&scope,
@@ -6722,13 +6728,13 @@ c = C()
   ASSERT_TRUE(
       Interpreter::call1(thread_, invalidate_attribute, c).isNoneType());
   ASSERT_EQ(icCurrentState(*caches, 1), ICState::kAnamorphic);
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE);
+  ASSERT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_ATTR_INSTANCE);
 
   // Load the cache again.
   EXPECT_TRUE(isStrEqualsCStr(Interpreter::call1(thread_, cache_attribute, c),
                               "descriptor attribute"));
   EXPECT_EQ(icCurrentState(*caches, 1), ICState::kMonomorphic);
-  EXPECT_EQ(bytecode.byteAt(2), LOAD_ATTR_INSTANCE_PROPERTY);
+  EXPECT_EQ(rewrittenBytecodeOpAt(bytecode, 1), LOAD_ATTR_INSTANCE_PROPERTY);
 }
 
 TEST_F(InterpreterTest, StoreAttrCachedInsertsExecutingFunctionAsDependent) {

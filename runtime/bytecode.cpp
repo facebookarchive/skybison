@@ -13,15 +13,57 @@ const char* const kBytecodeNames[] = {
 
 BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index) {
   word i = *index;
-  Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-  int32_t arg = bytecode.byteAt(i++);
+  Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));
+  int32_t arg = bytecode.byteAt(i + 1);
+  i += kCodeUnitSize;
   while (bc == Bytecode::EXTENDED_ARG) {
-    bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-    arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
+    bc = static_cast<Bytecode>(bytecode.byteAt(i));
+    arg = (arg << kBitsPerByte) | bytecode.byteAt(i + 1);
+    i += kCodeUnitSize;
   }
   DCHECK(i - *index <= 8, "EXTENDED_ARG-encoded arg must fit in int32_t");
   *index = i;
   return BytecodeOp{bc, arg};
+}
+
+const word kOpcodeOffset = 0;
+const word kArgOffset = 1;
+
+word bytecodeLength(const Bytes& bytecode) {
+  return bytecode.length() / kCompilerCodeUnitSize;
+}
+
+Bytecode bytecodeOpAt(const Bytes& bytecode, word index) {
+  return static_cast<Bytecode>(
+      bytecode.byteAt(index * kCompilerCodeUnitSize + kOpcodeOffset));
+}
+
+byte bytecodeArgAt(const Bytes& bytecode, word index) {
+  return bytecode.byteAt(index * kCompilerCodeUnitSize + kArgOffset);
+}
+
+word rewrittenBytecodeLength(const MutableBytes& bytecode) {
+  return bytecode.length() / kCodeUnitSize;
+}
+
+Bytecode rewrittenBytecodeOpAt(const MutableBytes& bytecode, word index) {
+  return static_cast<Bytecode>(
+      bytecode.byteAt(index * kCodeUnitSize + kOpcodeOffset));
+}
+
+void rewrittenBytecodeOpAtPut(const MutableBytes& bytecode, word index,
+                              Bytecode op) {
+  bytecode.byteAtPut(index * kCodeUnitSize + kOpcodeOffset,
+                     static_cast<byte>(op));
+}
+
+byte rewrittenBytecodeArgAt(const MutableBytes& bytecode, word index) {
+  return bytecode.byteAt(index * kCodeUnitSize + kArgOffset);
+}
+
+void rewrittenBytecodeArgAtPut(const MutableBytes& bytecode, word index,
+                               byte arg) {
+  bytecode.byteAtPut(index * kCodeUnitSize + kArgOffset, arg);
 }
 
 int8_t opargFromObject(RawObject object) {
