@@ -271,7 +271,7 @@ class IcIterator {
         caches_(scope, function.caches()),
         function_(scope, function),
         names_(scope, Code::cast(function.code()).names()),
-        bytecode_index_(0),
+        codeunit_index_(0),
         cache_index_(0),
         end_cache_index_(0),
         polymorphic_cache_index_(-1) {
@@ -296,9 +296,9 @@ class IcIterator {
     }
 
     // Find the next caching opcode.
-    word bytecode_length = bytecode_.length();
-    while (bytecode_index_ < bytecode_length) {
-      BytecodeOp op = nextBytecodeOp(bytecode_, &bytecode_index_);
+    word num_opcodes = rewrittenBytecodeLength(bytecode_);
+    while (codeunit_index_ < num_opcodes) {
+      BytecodeOp op = nextBytecodeOp(bytecode_, &codeunit_index_);
       if (!isByteCodeWithCache(op.bc)) continue;
       bytecode_op_ = op;
       cache_index_ = bytecode_op_.arg * kIcPointersPerEntry;
@@ -476,7 +476,7 @@ class IcIterator {
   Function function_;
   Tuple names_;
 
-  word bytecode_index_;
+  word codeunit_index_;
   BytecodeOp bytecode_op_;
   word cache_index_;
   word end_cache_index_;

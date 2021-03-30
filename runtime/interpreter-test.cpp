@@ -675,7 +675,8 @@ static bool containsBytecode(const Function& function, Bytecode bc) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  for (word i = 0, length = bytecode.length(); i < length;) {
+  for (word i = 0, num_opcodes = rewrittenBytecodeLength(bytecode);
+       i < num_opcodes;) {
     BytecodeOp bco = nextBytecodeOp(bytecode, &i);
     if (bco.bc == bc) {
       return true;

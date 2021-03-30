@@ -13,13 +13,13 @@ const char* const kBytecodeNames[] = {
 
 BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index) {
   word i = *index;
-  Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));
-  int32_t arg = bytecode.byteAt(i + 1);
-  i += kCodeUnitSize;
+  Bytecode bc = rewrittenBytecodeOpAt(bytecode, i);
+  int32_t arg = rewrittenBytecodeArgAt(bytecode, i);
+  i++;
   while (bc == Bytecode::EXTENDED_ARG) {
-    bc = static_cast<Bytecode>(bytecode.byteAt(i));
-    arg = (arg << kBitsPerByte) | bytecode.byteAt(i + 1);
-    i += kCodeUnitSize;
+    bc = rewrittenBytecodeOpAt(bytecode, i);
+    arg = (arg << kBitsPerByte) | rewrittenBytecodeArgAt(bytecode, i);
+    i++;
   }
   DCHECK(i - *index <= 8, "EXTENDED_ARG-encoded arg must fit in int32_t");
   *index = i;
@@ -250,9 +250,9 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   word num_caches = num_global_caches;
   // Scan bytecode to figure out how many caches we need.
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  word bytecode_length = bytecode.length();
+  word num_opcodes = bytecode.length() / kCodeUnitSize;
   bool use_load_fast_reverse_unchecked = true;
-  for (word i = 0; i < bytecode_length;) {
+  for (word i = 0; i < num_opcodes;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     if (op.bc == DELETE_FAST) {
       use_load_fast_reverse_unchecked = false;
@@ -281,32 +281,34 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   if (num_caches > 0) {
     original_arguments = runtime->newMutableTuple(num_caches);
   }
-  for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
+  for (word i = 0, cache = num_global_caches; i < num_opcodes;) {
     word begin = i;
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
+    word previous_index = i - 1;
     RewrittenOp rewritten =
         rewriteOperation(function, op, use_load_fast_reverse_unchecked);
     if (rewritten.bc == UNUSED_BYTECODE_0) continue;
     if (rewritten.needs_inline_cache) {
-      for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
-        bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
-        bytecode.byteAtPut(j + 1, 0);
+      for (word j = begin; j < previous_index; j++) {
+        rewrittenBytecodeOpAtPut(bytecode, j, Bytecode::EXTENDED_ARG);
+        rewrittenBytecodeArgAtPut(bytecode, j, 0);
       }
-      bytecode.byteAtPut(i - kCodeUnitSize, static_cast<byte>(rewritten.bc));
-      bytecode.byteAtPut(i - kCodeUnitSize + 1, static_cast<byte>(cache));
+      rewrittenBytecodeOpAtPut(bytecode, previous_index, rewritten.bc);
+      rewrittenBytecodeArgAtPut(bytecode, previous_index,
+                                static_cast<byte>(cache));
 
       // Remember original arg.
       MutableTuple::cast(*original_arguments)
           .atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
     } else if (rewritten.arg != op.arg || rewritten.bc != op.bc) {
-      for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
-        bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
-        bytecode.byteAtPut(j + 1, 0);
+      for (word j = begin; j < previous_index; j++) {
+        rewrittenBytecodeOpAtPut(bytecode, j, Bytecode::EXTENDED_ARG);
+        rewrittenBytecodeArgAtPut(bytecode, j, 0);
       }
-      bytecode.byteAtPut(i - kCodeUnitSize, static_cast<byte>(rewritten.bc));
-      bytecode.byteAtPut(i - kCodeUnitSize + 1,
-                         static_cast<byte>(rewritten.arg));
+      rewrittenBytecodeOpAtPut(bytecode, previous_index, rewritten.bc);
+      rewrittenBytecodeArgAtPut(bytecode, previous_index,
+                                static_cast<byte>(rewritten.arg));
     }
   }
 

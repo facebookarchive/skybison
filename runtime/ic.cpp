@@ -729,17 +729,17 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
 
   // Update all global variable access to the cached value in the function.
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  word bytecode_length = bytecode.length();
+  word num_opcodes = rewrittenBytecodeLength(bytecode);
   byte target_arg = static_cast<byte>(index);
-  for (word i = 0; i < bytecode_length;) {
+  for (word i = 0; i < num_opcodes;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     if (op.arg != target_arg) {
       continue;
     }
     if (op.bc == LOAD_GLOBAL) {
-      bytecode.byteAtPut(i - kCodeUnitSize, LOAD_GLOBAL_CACHED);
+      rewrittenBytecodeOpAtPut(bytecode, i - 1, LOAD_GLOBAL_CACHED);
     } else if (op.bc == STORE_GLOBAL) {
-      bytecode.byteAtPut(i - kCodeUnitSize, STORE_GLOBAL_CACHED);
+      rewrittenBytecodeOpAtPut(bytecode, i - 1, STORE_GLOBAL_CACHED);
     }
   }
 }
@@ -777,8 +777,8 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
       }
     }
     bytecode = Function::cast(*function).rewrittenBytecode();
-    word bytecode_length = bytecode.length();
-    for (word i = 0; i < bytecode_length;) {
+    word num_opcodes = rewrittenBytecodeLength(bytecode);
+    for (word i = 0; i < num_opcodes;) {
       BytecodeOp op = nextBytecodeOp(bytecode, &i);
       Bytecode original_bc = op.bc;
       switch (op.bc) {
@@ -794,13 +794,13 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
         case LOAD_GLOBAL_CACHED:
           original_bc = LOAD_GLOBAL;
           if (op.bc != original_bc && op.arg == name_index_found) {
-            bytecode.byteAtPut(i - kCodeUnitSize, original_bc);
+            rewrittenBytecodeOpAtPut(bytecode, i - 1, original_bc);
           }
           break;
         case STORE_GLOBAL_CACHED:
           original_bc = STORE_GLOBAL;
           if (op.bc != original_bc && op.arg == name_index_found) {
-            bytecode.byteAtPut(i - kCodeUnitSize, original_bc);
+            rewrittenBytecodeOpAtPut(bytecode, i - 1, original_bc);
           }
           break;
         default:
