@@ -321,13 +321,18 @@ enum CallFunctionExFlag {
 
 // Size of opcode + argument in bytecode (called `_Py_CODEUNIT` in cpython).
 const word kCompilerCodeUnitSize = 2;
-const word kCodeUnitSize = 2;
+const word kCodeUnitSize = 4;
+// TODO(T84723098): Remove kCodeUnitScale and kCodeUnitScaleLog2 and all the
+// places that scale PCs
+const word kCodeUnitScale = kCodeUnitSize / kCompilerCodeUnitSize;
+const word kCodeUnitScaleLog2 = 1;
 
 extern const char* const kBytecodeNames[];
 
 struct BytecodeOp {
   Bytecode bc;
   int32_t arg;
+  uint16_t cache;
 };
 
 BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index);
@@ -355,6 +360,9 @@ void rewrittenBytecodeOpAtPut(const MutableBytes& bytecode, word index,
 byte rewrittenBytecodeArgAt(const MutableBytes& bytecode, word index);
 void rewrittenBytecodeArgAtPut(const MutableBytes& bytecode, word index,
                                byte arg);
+uint16_t rewrittenBytecodeCacheAt(const MutableBytes& bytecode, word index);
+void rewrittenBytecodeCacheAtPut(const MutableBytes& bytecode, word index,
+                                 uint16_t cache);
 
 inline bool isByteCodeWithCache(const Bytecode bc) {
   // TODO(T45720638): Add all caching opcodes here once they are supported for

@@ -147,9 +147,9 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
        2 LOAD_ATTR 0
        4 RETURN_VALUE 0
   Rewritten bytecode:
-     0 LOAD_CONST 0
-     2 LOAD_ATTR_ANAMORPHIC 1
-     4 RETURN_VALUE 0
+     0 [   0] LOAD_CONST 0
+     4 [   0] LOAD_ATTR_ANAMORPHIC 1
+     8 [   0] RETURN_VALUE 0
 )");
 }
 
@@ -213,7 +213,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "_function__entry_ex" = 100
   (in-object) "_function__entry_asm" = )"
            << entry_asm << R"(
-  (in-object) "_function__rewritten_bytecode" = b'd\x00\xff\x01S\x00'
+  (in-object) "_function__rewritten_bytecode" = b'd\x00\x00\x00\xff\x01\x00\x00S\x00\x00\x00'
   (in-object) "_function__caches" = mutabletuple(None, None, None, None)
   (in-object) "_function__original_arguments" = (0, 0)
   (in-object) "_function__dict" = {"funcattr0": 4}
@@ -753,7 +753,7 @@ def func(arg0, arg1):
 
   Frame* root = thread_->currentFrame();
   ASSERT_TRUE(root->isSentinel());
-  root->setVirtualPC(8);
+  root->setVirtualPC(8 * kCodeUnitScale);
   thread_->stackPush(NoneType::object());
   thread_->stackPush(*builtin);
   thread_->pushNativeFrame(0);
@@ -764,7 +764,7 @@ def func(arg0, arg1):
   thread_->stackPush(runtime_->emptyTuple());
   thread_->stackPush(runtime_->newDict());
   Frame* frame1 = thread_->pushCallFrame(*function);
-  frame1->setVirtualPC(42);
+  frame1->setVirtualPC(42 * kCodeUnitScale);
   frame1->setLocal(3, runtime_->newStrFromCStr("bar foo"));
   frame1->setLocal(4, runtime_->newInt(88));
   frame1->setLocal(5, runtime_->newInt(-99));  // cellvar0
@@ -777,13 +777,13 @@ def func(arg0, arg1):
   thread_->stackPush(runtime_->newInt(-9));
   thread_->stackPush(runtime_->newInt(17));
   Frame* frame2 = thread_->pushCallFrame(*func);
-  frame2->setVirtualPC(4);
+  frame2->setVirtualPC(4 * kCodeUnitScale);
   frame2->setLocal(2, runtime_->newStrFromCStr("world"));
 
   std::stringstream ss;
   ss << thread_->currentFrame();
   EXPECT_EQ(ss.str(), R"(- initial frame
-  pc: 8
+  pc: 16
   stack:
     0: None
 - function: <function "test._bytearray_check">
@@ -791,7 +791,7 @@ def func(arg0, arg1):
   pc: n/a (native)
 - function: <function "footype.baz">
   code: "name0"
-  pc: 42 ("filename0":0)
+  pc: 84 ("filename0":0)
   locals:
     0 "argument0": "foo bar"
     1 "varargs": ()
@@ -806,7 +806,7 @@ def func(arg0, arg1):
     0: "baz bam"
 - function: <function "func">
   code: "func"
-  pc: 4 ("<test string>":4)
+  pc: 8 ("<test string>":4)
   locals:
     0 "arg0": -9
     1 "arg1": 17

@@ -930,6 +930,8 @@ class Runtime {
 
   word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 
+  RawObject expandBytecode(Thread* thread, const Bytes& bytecode);
+
   // Clear all active handle scopes
   void clearHandleScopes();
 

@@ -40,9 +40,11 @@ static std::ostream& dumpMutableBytecode(std::ostream& os,
   for (word i = 0; i < num_opcodes; i++) {
     byte op = rewrittenBytecodeOpAt(bytecode, i);
     byte arg = rewrittenBytecodeArgAt(bytecode, i);
+    uint16_t cache = rewrittenBytecodeCacheAt(bytecode, i);
     std::ios_base::fmtflags saved_flags = os.flags();
     os << indent << "  " << std::setw(4) << std::hex << i * kCodeUnitSize
        << ' ';
+    os << "[" << std::setw(4) << std::hex << cache << "] ";
     os.flags(saved_flags);
     os << kBytecodeNames[op] << " " << static_cast<unsigned>(arg) << '\n';
   }

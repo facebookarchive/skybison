@@ -330,6 +330,7 @@ word RawBytes::compare(RawBytes that) const {
 // RawCode
 
 word RawCode::offsetToLineNum(word offset) const {
+  offset /= kCodeUnitScale;
   // See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
   // for details about the line number table format
   RawBytes table = Bytes::cast(lnotab());

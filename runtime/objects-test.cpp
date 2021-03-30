@@ -289,15 +289,15 @@ def func():
 
   // a = 1
   EXPECT_EQ(code.offsetToLineNum(0), 3);
-  EXPECT_EQ(code.offsetToLineNum(2), 3);
+  EXPECT_EQ(code.offsetToLineNum(2 * kCodeUnitScale), 3);
 
   // b = 2
-  EXPECT_EQ(code.offsetToLineNum(4), 4);
-  EXPECT_EQ(code.offsetToLineNum(6), 4);
+  EXPECT_EQ(code.offsetToLineNum(4 * kCodeUnitScale), 4);
+  EXPECT_EQ(code.offsetToLineNum(6 * kCodeUnitScale), 4);
 
   // print(a, b)
   for (word i = 8; i < Bytes::cast(code.code()).length(); i++) {
-    EXPECT_EQ(code.offsetToLineNum(i), 5);
+    EXPECT_EQ(code.offsetToLineNum(i * kCodeUnitScale), 5);
   }
 }
 

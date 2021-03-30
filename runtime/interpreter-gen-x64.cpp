@@ -1607,7 +1607,8 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
     // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
     // arg))
     emitOriginalArg(env, r_original_arg);
-    __ addq(env->pc, r_original_arg);
+    static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+    __ leaq(env->pc, Address(env->pc, r_original_arg, TIMES_2, 0));
     __ jmp(&next_opcode, Assembler::kNearJump);
   }
 
@@ -1665,7 +1666,8 @@ void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
     // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
     // arg))
     emitOriginalArg(env, r_original_arg);
-    __ addq(env->pc, r_original_arg);
+    static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+    __ leaq(env->pc, Address(env->pc, r_original_arg, TIMES_2, 0));
     __ jmp(&next_opcode, Assembler::kNearJump);
   }
 
@@ -1772,7 +1774,8 @@ static void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
 
   __ bind(&jump);
   env->register_state.assign(&env->pc, kPCReg);
-  __ movq(env->pc, env->oparg);
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
   __ bind(&next);
   emitNextOpcode(env);
 }
@@ -1800,7 +1803,8 @@ void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
   __ pushq(r_scratch);
   env->register_state.assign(&env->pc, kPCReg);
-  __ movl(env->pc, env->oparg);
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
   __ bind(&next);
   emitNextOpcode(env);
 
@@ -1822,13 +1826,15 @@ void emitHandler<JUMP_IF_TRUE_OR_POP>(EmitEnv* env) {
 template <>
 void emitHandler<JUMP_ABSOLUTE>(EmitEnv* env) {
   env->register_state.assign(&env->pc, kPCReg);
-  __ movl(env->pc, env->oparg);
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
   emitNextOpcode(env);
 }
 
 template <>
 void emitHandler<JUMP_FORWARD>(EmitEnv* env) {
-  __ addl(env->pc, env->oparg);
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
   emitNextOpcode(env);
 }
 

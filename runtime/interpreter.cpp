@@ -2534,7 +2534,7 @@ HANDLER_INLINE Continue Interpreter::doEndAsyncFor(Thread* thread, word arg) {
     TryBlock block = frame->blockStackPop();
     unwindExceptHandler(thread, block);
     thread->stackPop();
-    frame->setVirtualPC(frame->virtualPC() + arg);
+    frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
     return Continue::NEXT;
   }
 
@@ -2618,7 +2618,7 @@ HANDLER_INLINE Continue Interpreter::doCallFinally(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word next_pc = frame->virtualPC();
   thread->stackPush(SmallInt::fromWord(next_pc));
-  frame->setVirtualPC(next_pc + arg);
+  frame->setVirtualPC(next_pc + arg * kCodeUnitScale);
   return Continue::NEXT;
 }
 
@@ -2781,7 +2781,7 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       thread->stackPop();
-      frame->setVirtualPC(frame->virtualPC() + arg);
+      frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
       return Continue::NEXT;
     }
     return Continue::UNWIND;
@@ -2828,7 +2828,7 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
     if (thread->clearPendingStopIteration()) {
       thread->stackPop();
       frame->setVirtualPC(frame->virtualPC() +
-                          originalArg(frame->function(), arg));
+                          originalArg(frame->function(), arg) * kCodeUnitScale);
       return Continue::NEXT;
     }
     return Continue::UNWIND;
@@ -2858,7 +2858,7 @@ HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
   if (idx >= underlying.numItems()) {
     thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg));
+                        originalArg(frame->function(), arg) * kCodeUnitScale);
   } else {
     thread->stackPush(underlying.at(idx));
     iter.setIndex(idx + 1);
@@ -2889,7 +2889,7 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
     iter.setIndex(i);
     thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg));
+                        originalArg(frame->function(), arg) * kCodeUnitScale);
   }
   return Continue::NEXT;
 }
@@ -2910,7 +2910,7 @@ HANDLER_INLINE Continue Interpreter::doForIterGenerator(Thread* thread,
     if (thread->clearPendingStopIteration()) {
       thread->stackPop();
       frame->setVirtualPC(frame->virtualPC() +
-                          originalArg(frame->function(), arg));
+                          originalArg(frame->function(), arg) * kCodeUnitScale);
       return Continue::NEXT;
     }
     return Continue::UNWIND;
@@ -2932,7 +2932,7 @@ HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   if (idx == iter.length()) {
     thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg));
+                        originalArg(frame->function(), arg) * kCodeUnitScale);
   } else {
     RawTuple underlying = iter.iterable().rawCast<RawTuple>();
     RawObject item = underlying.at(idx);
@@ -2955,7 +2955,7 @@ HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
   if (length == 0) {
     thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg));
+                        originalArg(frame->function(), arg) * kCodeUnitScale);
   } else {
     iter.setLength(length - 1);
     word next = iter.next();
@@ -2982,7 +2982,7 @@ HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
   if (byte_offset == underlying.length()) {
     thread->stackPop();
     frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg));
+                        originalArg(frame->function(), arg) * kCodeUnitScale);
   } else {
     word num_bytes = 0;
     word code_point = underlying.codePointAt(byte_offset, &num_bytes);
@@ -4052,7 +4052,7 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doJumpForward(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  frame->setVirtualPC(frame->virtualPC() + arg);
+  frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
   return Continue::NEXT;
 }
 
@@ -4062,7 +4062,7 @@ HANDLER_INLINE Continue Interpreter::doJumpIfFalseOrPop(Thread* thread,
   RawObject value = thread->stackTop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::falseObj())) {
-    frame->setVirtualPC(arg);
+    frame->setVirtualPC(arg * kCodeUnitScale);
     return Continue::NEXT;
   }
   if (value == Bool::trueObj()) {
@@ -4079,7 +4079,7 @@ HANDLER_INLINE Continue Interpreter::doJumpIfTrueOrPop(Thread* thread,
   RawObject value = thread->stackTop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::trueObj())) {
-    frame->setVirtualPC(arg);
+    frame->setVirtualPC(arg * kCodeUnitScale);
     return Continue::NEXT;
   }
   if (value == Bool::falseObj()) {
@@ -4092,7 +4092,7 @@ HANDLER_INLINE Continue Interpreter::doJumpIfTrueOrPop(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doJumpAbsolute(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  frame->setVirtualPC(arg);
+  frame->setVirtualPC(arg * kCodeUnitScale);
   return Continue::NEXT;
 }
 
@@ -4102,7 +4102,7 @@ HANDLER_INLINE Continue Interpreter::doPopJumpIfFalse(Thread* thread,
   RawObject value = thread->stackPop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::falseObj())) {
-    frame->setVirtualPC(arg);
+    frame->setVirtualPC(arg * kCodeUnitScale);
     return Continue::NEXT;
   }
   if (value == Bool::trueObj()) {
@@ -4117,7 +4117,7 @@ HANDLER_INLINE Continue Interpreter::doPopJumpIfTrue(Thread* thread, word arg) {
   RawObject value = thread->stackPop();
   value = isTrue(thread, value);
   if (LIKELY(value == Bool::trueObj())) {
-    frame->setVirtualPC(arg);
+    frame->setVirtualPC(arg * kCodeUnitScale);
     return Continue::NEXT;
   }
   if (value == Bool::falseObj()) {
@@ -4189,7 +4189,7 @@ HANDLER_INLINE Continue Interpreter::doLoadGlobalCached(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doSetupFinally(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word stack_depth = thread->valueStackSize();
-  word handler_pc = frame->virtualPC() + arg;
+  word handler_pc = frame->virtualPC() + arg * kCodeUnitScale;
   frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   return Continue::NEXT;
 }
@@ -4636,7 +4636,7 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
 
   word stack_depth = thread->valueStackSize();
   Frame* frame = thread->currentFrame();
-  word handler_pc = frame->virtualPC() + arg;
+  word handler_pc = frame->virtualPC() + arg * kCodeUnitScale;
   frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   thread->stackPush(*result);
   return Continue::NEXT;
@@ -4852,7 +4852,7 @@ HANDLER_INLINE Continue Interpreter::doSetupAsyncWith(Thread* thread,
   HandleScope scope(thread);
   Object result(&scope, thread->stackPop());
   word stack_depth = thread->valueStackSize();
-  word handler_pc = frame->virtualPC() + arg;
+  word handler_pc = frame->virtualPC() + arg * kCodeUnitScale;
   frame->blockStackPush(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   thread->stackPush(*result);
   return Continue::NEXT;
@@ -6062,11 +6062,10 @@ RawObject CppInterpreter::interpreterLoop(Thread* thread) {
     Frame* current_frame = thread->currentFrame();
     word pc = current_frame->virtualPC();
     static_assert(endian::native == endian::little, "big endian unsupported");
-    static_assert(kCodeUnitSize == sizeof(uint16_t), "matching type");
-    arg = current_frame->bytecode().uint16At(pc);
+    static_assert(kCodeUnitSize == sizeof(uint32_t), "matching type");
+    bc = static_cast<Bytecode>(current_frame->bytecode().byteAt(pc));
+    arg = current_frame->bytecode().byteAt(pc + 1);
     current_frame->setVirtualPC(pc + kCodeUnitSize);
-    bc = static_cast<Bytecode>(arg & 0xFF);
-    arg >>= 8;
     return dispatch_table[bc];
   };
 
@@ -6077,7 +6076,7 @@ extendedArg:
     Frame* current_frame = thread->currentFrame();
     word pc = current_frame->virtualPC();
     static_assert(endian::native == endian::little, "big endian unsupported");
-    static_assert(kCodeUnitSize == sizeof(uint16_t), "matching type");
+    static_assert(kCodeUnitSize == sizeof(uint32_t), "matching type");
     uint16_t bytes_at = current_frame->bytecode().uint16At(pc);
     current_frame->setVirtualPC(pc + kCodeUnitSize);
     bc = static_cast<Bytecode>(bytes_at & 0xFF);

@@ -12,9 +12,10 @@ using BytecodeTest = RuntimeFixture;
 
 TEST_F(BytecodeTest, NextBytecodeOpReturnsNextBytecodeOpPair) {
   HandleScope scope(thread_);
-  byte bytecode_raw[] = {
-      NOP,          99, EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe, LOAD_GLOBAL, 10,
-      EXTENDED_ARG, 1,  EXTENDED_ARG, 2,    EXTENDED_ARG, 3,    LOAD_ATTR,   4};
+  byte bytecode_raw[] = {NOP,          99,   0, 0, EXTENDED_ARG, 0xca, 0, 0,
+                         LOAD_ATTR,    0xfe, 0, 0, LOAD_GLOBAL,  10,   0, 0,
+                         EXTENDED_ARG, 1,    0, 0, EXTENDED_ARG, 2,    0, 0,
+                         EXTENDED_ARG, 3,    0, 0, LOAD_ATTR,    4,    0, 0};
   Bytes original_bytecode(&scope, runtime_->newBytesWithAll(bytecode_raw));
   MutableBytes bytecode(
       &scope, runtime_->mutableBytesFromBytes(thread_, original_bytecode));
@@ -57,16 +58,30 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  byte bytecode[258 * 2];
-  for (int i = 0; i < 256; i++) {
-    bytecode[i * 2] = LOAD_ATTR;
-    bytecode[(i * 2) + 1] = i * 3;
+  static const int cache_limit = 65536;
+  byte bytecode[(cache_limit + 2) * kCompilerCodeUnitSize];
+  std::memset(bytecode, 0, sizeof bytecode);
+  for (int i = 0; i < cache_limit; i++) {
+    bytecode[i * kCompilerCodeUnitSize] = LOAD_ATTR;
+    bytecode[(i * kCompilerCodeUnitSize) + 1] = i * 3;
   }
   // LOAD_GLOBAL 527 == 4 * 128 + 15.
-  bytecode[256 * 2] = EXTENDED_ARG;
-  bytecode[256 * 2 + 1] = 4;
-  bytecode[257 * 2] = LOAD_GLOBAL;
-  bytecode[257 * 2 + 1] = 15;
+  bytecode[cache_limit * kCompilerCodeUnitSize] = EXTENDED_ARG;
+  bytecode[cache_limit * kCompilerCodeUnitSize + 1] = 4;
+  bytecode[(cache_limit + 1) * kCompilerCodeUnitSize] = LOAD_GLOBAL;
+  bytecode[(cache_limit + 1) * kCompilerCodeUnitSize + 1] = 15;
+
+  byte rewritten_bytecode[(cache_limit + 2) * kCodeUnitSize];
+  std::memset(rewritten_bytecode, 0, sizeof rewritten_bytecode);
+  for (int i = 0; i < cache_limit; i++) {
+    rewritten_bytecode[i * kCodeUnitSize] = LOAD_ATTR;
+    rewritten_bytecode[(i * kCodeUnitSize) + 1] = i * 3;
+  }
+  // LOAD_GLOBAL 527 == 4 * 128 + 15.
+  rewritten_bytecode[cache_limit * kCodeUnitSize] = EXTENDED_ARG;
+  rewritten_bytecode[cache_limit * kCodeUnitSize + 1] = 4;
+  rewritten_bytecode[(cache_limit + 1) * kCodeUnitSize] = LOAD_GLOBAL;
+  rewritten_bytecode[(cache_limit + 1) * kCodeUnitSize + 1] = 15;
 
   code.setCode(runtime_->newBytesWithAll(bytecode));
   word global_names_length = 600;
@@ -78,9 +93,10 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
   // newFunctionWithCode() calls rewriteBytecode().
-  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  Object rewritten_bytecode_obj(&scope, function.rewrittenBytecode());
   // The bytecode hasn't changed.
-  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));
+  EXPECT_TRUE(
+      isMutableBytesEqualsBytes(rewritten_bytecode_obj, rewritten_bytecode));
   // The cache for LOAD_GLOBAL was populated.
   EXPECT_GT(Tuple::cast(function.caches()).length(), 527);
 }
@@ -90,9 +106,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {
-      NOP,          99,        EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
-      NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
-      EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
+      NOP,          99,  EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
+      NOP,          106, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
+      EXTENDED_ARG, 3,   LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
   Module module(&scope, findMainModule(runtime_));
@@ -101,9 +117,42 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      NOP,          99,        EXTENDED_ARG,         0, LOAD_ATTR_ANAMORPHIC, 0,
-      NOP,          LOAD_ATTR, EXTENDED_ARG,         0, EXTENDED_ARG,         0,
-      EXTENDED_ARG, 0,         LOAD_ATTR_ANAMORPHIC, 1, LOAD_ATTR_ANAMORPHIC, 2,
+      NOP,
+      99,
+      0,
+      0,
+      EXTENDED_ARG,
+      0,
+      0,
+      0,
+      LOAD_ATTR_ANAMORPHIC,
+      0,
+      0,
+      0,
+      NOP,
+      106,
+      0,
+      0,
+      EXTENDED_ARG,
+      0,
+      0,
+      0,
+      EXTENDED_ARG,
+      0,
+      0,
+      0,
+      EXTENDED_ARG,
+      0,
+      0,
+      0,
+      LOAD_ATTR_ANAMORPHIC,
+      1,
+      0,
+      0,
+      LOAD_ATTR_ANAMORPHIC,
+      2,
+      0,
+      0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -145,11 +194,26 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
   byte expected[] = {
-      LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(NoneType::object())),
-      LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(SmallInt::fromWord(0))),
-      LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(Str::empty())),
-      LOAD_CONST,     3,
-      LOAD_CONST,     4,
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(NoneType::object())),
+      0,
+      0,
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(SmallInt::fromWord(0))),
+      0,
+      0,
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(Str::empty())),
+      0,
+      0,
+      LOAD_CONST,
+      3,
+      0,
+      0,
+      LOAD_CONST,
+      4,
+      0,
+      0,
   };
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -173,10 +237,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstToLoadBool) {
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
   byte expected[] = {
-      LOAD_BOOL,
-      0x80,
-      LOAD_BOOL,
-      0,
+      LOAD_BOOL, 0x80, 0, 0, LOAD_BOOL, 0, 0, 0,
   };
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -187,9 +248,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {
-      NOP,          99,          EXTENDED_ARG, 0xca, LOAD_METHOD,  0xfe,
-      NOP,          LOAD_METHOD, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
-      EXTENDED_ARG, 3,           LOAD_METHOD,  4,    LOAD_METHOD,  77,
+      NOP,          99,  EXTENDED_ARG, 0xca, LOAD_METHOD,  0xfe,
+      NOP,          160, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
+      EXTENDED_ARG, 3,   LOAD_METHOD,  4,    LOAD_METHOD,  77,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
   Module module(&scope, findMainModule(runtime_));
@@ -200,22 +261,40 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
   byte expected[] = {
       NOP,
       99,
+      0,
+      0,
       EXTENDED_ARG,
+      0,
+      0,
       0,
       LOAD_METHOD_ANAMORPHIC,
       0,
+      0,
+      0,
       NOP,
-      LOAD_METHOD,
-      EXTENDED_ARG,
+      160,
+      0,
       0,
       EXTENDED_ARG,
       0,
+      0,
+      0,
       EXTENDED_ARG,
+      0,
+      0,
+      0,
+      EXTENDED_ARG,
+      0,
+      0,
       0,
       LOAD_METHOD_ANAMORPHIC,
       1,
+      0,
+      0,
       LOAD_METHOD_ANAMORPHIC,
       2,
+      0,
+      0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -243,7 +322,12 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
                     runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
-  byte expected[] = {STORE_ATTR_ANAMORPHIC, 0};
+  byte expected[] = {
+      STORE_ATTR_ANAMORPHIC,
+      0,
+      0,
+      0,
+  };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
@@ -289,13 +373,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      BINARY_OP_ANAMORPHIC, 0,  BINARY_OP_ANAMORPHIC, 1,
-      BINARY_OP_ANAMORPHIC, 2,  BINARY_OP_ANAMORPHIC, 3,
-      BINARY_OP_ANAMORPHIC, 4,  BINARY_OP_ANAMORPHIC, 5,
-      BINARY_OP_ANAMORPHIC, 6,  BINARY_OP_ANAMORPHIC, 7,
-      BINARY_OP_ANAMORPHIC, 8,  BINARY_OP_ANAMORPHIC, 9,
-      BINARY_OP_ANAMORPHIC, 10, BINARY_OP_ANAMORPHIC, 11,
-      BINARY_OP_ANAMORPHIC, 12,
+      BINARY_OP_ANAMORPHIC, 0,  0, 0, BINARY_OP_ANAMORPHIC, 1,  0, 0,
+      BINARY_OP_ANAMORPHIC, 2,  0, 0, BINARY_OP_ANAMORPHIC, 3,  0, 0,
+      BINARY_OP_ANAMORPHIC, 4,  0, 0, BINARY_OP_ANAMORPHIC, 5,  0, 0,
+      BINARY_OP_ANAMORPHIC, 6,  0, 0, BINARY_OP_ANAMORPHIC, 7,  0, 0,
+      BINARY_OP_ANAMORPHIC, 8,  0, 0, BINARY_OP_ANAMORPHIC, 9,  0, 0,
+      BINARY_OP_ANAMORPHIC, 10, 0, 0, BINARY_OP_ANAMORPHIC, 11, 0, 0,
+      BINARY_OP_ANAMORPHIC, 12, 0, 0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -367,13 +451,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      INPLACE_OP_ANAMORPHIC, 0,  INPLACE_OP_ANAMORPHIC, 1,
-      INPLACE_OP_ANAMORPHIC, 2,  INPLACE_OP_ANAMORPHIC, 3,
-      INPLACE_OP_ANAMORPHIC, 4,  INPLACE_OP_ANAMORPHIC, 5,
-      INPLACE_OP_ANAMORPHIC, 6,  INPLACE_OP_ANAMORPHIC, 7,
-      INPLACE_OP_ANAMORPHIC, 8,  INPLACE_OP_ANAMORPHIC, 9,
-      INPLACE_OP_ANAMORPHIC, 10, INPLACE_OP_ANAMORPHIC, 11,
-      INPLACE_OP_ANAMORPHIC, 12,
+      INPLACE_OP_ANAMORPHIC, 0,  0, 0, INPLACE_OP_ANAMORPHIC, 1,  0, 0,
+      INPLACE_OP_ANAMORPHIC, 2,  0, 0, INPLACE_OP_ANAMORPHIC, 3,  0, 0,
+      INPLACE_OP_ANAMORPHIC, 4,  0, 0, INPLACE_OP_ANAMORPHIC, 5,  0, 0,
+      INPLACE_OP_ANAMORPHIC, 6,  0, 0, INPLACE_OP_ANAMORPHIC, 7,  0, 0,
+      INPLACE_OP_ANAMORPHIC, 8,  0, 0, INPLACE_OP_ANAMORPHIC, 9,  0, 0,
+      INPLACE_OP_ANAMORPHIC, 10, 0, 0, INPLACE_OP_ANAMORPHIC, 11, 0, 0,
+      INPLACE_OP_ANAMORPHIC, 12, 0, 0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -427,26 +511,48 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
   byte expected[] = {
       COMPARE_OP_ANAMORPHIC,
       0,
+      0,
+      0,
       COMPARE_OP_ANAMORPHIC,
       1,
+      0,
+      0,
       COMPARE_OP_ANAMORPHIC,
       2,
+      0,
+      0,
       COMPARE_OP_ANAMORPHIC,
       3,
+      0,
+      0,
       COMPARE_OP_ANAMORPHIC,
       4,
+      0,
+      0,
       COMPARE_OP_ANAMORPHIC,
       5,
+      0,
+      0,
       COMPARE_IN_ANAMORPHIC,
       6,
+      0,
+      0,
       COMPARE_OP,
       CompareOp::NOT_IN,
+      0,
+      0,
       COMPARE_IS,
+      0,
+      0,
       0,
       COMPARE_IS_NOT,
       0,
+      0,
+      0,
       COMPARE_OP,
       CompareOp::EXC_MATCH,
+      0,
+      0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -477,22 +583,38 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
   byte expected[] = {
       LOAD_GLOBAL,
       0,
+      0,
+      0,
       STORE_GLOBAL,
       1,
+      0,
+      0,
       // Note that LOAD_ATTR's cache index starts at 6 to reserve the first 6
       // cache lines for 12 global variables.
       LOAD_ATTR_ANAMORPHIC,
       6,
+      0,
+      0,
       DELETE_GLOBAL,
       2,
+      0,
+      0,
       STORE_NAME,
       3,
+      0,
+      0,
       DELETE_NAME,
       4,
+      0,
+      0,
       LOAD_ATTR_ANAMORPHIC,
       7,
+      0,
+      0,
       LOAD_NAME,
       5,
+      0,
+      0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -539,8 +661,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      LOAD_FAST_REVERSE,  2, LOAD_FAST_REVERSE,  3, LOAD_FAST_REVERSE,  3,
-      STORE_FAST_REVERSE, 2, STORE_FAST_REVERSE, 3, STORE_FAST_REVERSE, 4,
+      LOAD_FAST_REVERSE,  2, 0, 0, LOAD_FAST_REVERSE,  3, 0, 0,
+      LOAD_FAST_REVERSE,  3, 0, 0, STORE_FAST_REVERSE, 2, 0, 0,
+      STORE_FAST_REVERSE, 3, 0, 0, STORE_FAST_REVERSE, 4, 0, 0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -585,9 +708,9 @@ TEST_F(BytecodeTest,
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      LOAD_FAST_REVERSE,           2, LOAD_FAST_REVERSE,  3,
-      LOAD_FAST_REVERSE_UNCHECKED, 4, STORE_FAST_REVERSE, 2,
-      STORE_FAST_REVERSE,          3, STORE_FAST_REVERSE, 4,
+      LOAD_FAST_REVERSE,           2, 0, 0, LOAD_FAST_REVERSE,  3, 0, 0,
+      LOAD_FAST_REVERSE_UNCHECKED, 4, 0, 0, STORE_FAST_REVERSE, 2, 0, 0,
+      STORE_FAST_REVERSE,          3, 0, 0, STORE_FAST_REVERSE, 4, 0, 0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -633,9 +756,10 @@ TEST_F(
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      LOAD_FAST_REVERSE,  2, LOAD_FAST_REVERSE,  3, LOAD_FAST_REVERSE,  4,
-      STORE_FAST_REVERSE, 2, STORE_FAST_REVERSE, 3, STORE_FAST_REVERSE, 4,
-      DELETE_FAST,        0,
+      LOAD_FAST_REVERSE,  2, 0, 0, LOAD_FAST_REVERSE,  3, 0, 0,
+      LOAD_FAST_REVERSE,  4, 0, 0, STORE_FAST_REVERSE, 2, 0, 0,
+      STORE_FAST_REVERSE, 3, 0, 0, STORE_FAST_REVERSE, 4, 0, 0,
+      DELETE_FAST,        0, 0, 0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -649,9 +773,9 @@ TEST_F(BytecodeTest,
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {
-      NOP,          99,        EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
-      NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
-      EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
+      NOP,          99,  EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
+      NOP,          106, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
+      EXTENDED_ARG, 3,   LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(code.flags() & ~Code::Flags::kOptimized &
@@ -660,8 +784,15 @@ TEST_F(BytecodeTest,
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
+  byte expected[] = {
+      NOP,          99,   0, 0, EXTENDED_ARG, 0xca, 0, 0,
+      LOAD_ATTR,    0xfe, 0, 0, NOP,          106,  0, 0,
+      EXTENDED_ARG, 1,    0, 0, EXTENDED_ARG, 2,    0, 0,
+      EXTENDED_ARG, 3,    0, 0, LOAD_ATTR,    4,    0, 0,
+      LOAD_ATTR,    77,   0, 0,
+  };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 }
 
 }  // namespace testing

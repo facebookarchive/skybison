@@ -15,6 +15,7 @@ BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index) {
   word i = *index;
   Bytecode bc = rewrittenBytecodeOpAt(bytecode, i);
   int32_t arg = rewrittenBytecodeArgAt(bytecode, i);
+  uint16_t cache = rewrittenBytecodeCacheAt(bytecode, i);
   i++;
   while (bc == Bytecode::EXTENDED_ARG) {
     bc = rewrittenBytecodeOpAt(bytecode, i);
@@ -23,11 +24,12 @@ BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index) {
   }
   DCHECK(i - *index <= 8, "EXTENDED_ARG-encoded arg must fit in int32_t");
   *index = i;
-  return BytecodeOp{bc, arg};
+  return BytecodeOp{bc, arg, cache};
 }
 
 const word kOpcodeOffset = 0;
 const word kArgOffset = 1;
+const word kCacheOffset = 2;
 
 word bytecodeLength(const Bytes& bytecode) {
   return bytecode.length() / kCompilerCodeUnitSize;
@@ -64,6 +66,15 @@ byte rewrittenBytecodeArgAt(const MutableBytes& bytecode, word index) {
 void rewrittenBytecodeArgAtPut(const MutableBytes& bytecode, word index,
                                byte arg) {
   bytecode.byteAtPut(index * kCodeUnitSize + kArgOffset, arg);
+}
+
+uint16_t rewrittenBytecodeCacheAt(const MutableBytes& bytecode, word index) {
+  return bytecode.uint16At(index * kCodeUnitSize + kCacheOffset);
+}
+
+void rewrittenBytecodeCacheAtPut(const MutableBytes& bytecode, word index,
+                                 uint16_t cache) {
+  bytecode.uint16AtPut(index * kCodeUnitSize + kCacheOffset, cache);
 }
 
 int8_t opargFromObject(RawObject object) {
@@ -250,7 +261,7 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   word num_caches = num_global_caches;
   // Scan bytecode to figure out how many caches we need.
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  word num_opcodes = bytecode.length() / kCodeUnitSize;
+  word num_opcodes = rewrittenBytecodeLength(bytecode);
   bool use_load_fast_reverse_unchecked = true;
   for (word i = 0; i < num_opcodes;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);

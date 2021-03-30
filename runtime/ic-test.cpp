@@ -1681,25 +1681,29 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
   ValueCell another_cache(&scope, runtime_->newValueCell());
   another_cache.setValue(SmallInt::fromWord(123));
 
-  byte original_expected[] = {LOAD_GLOBAL, 0, STORE_GLOBAL, 1,
-                              LOAD_GLOBAL, 0, STORE_GLOBAL, 1};
+  byte original_expected[] = {LOAD_GLOBAL, 0, 0, 0, STORE_GLOBAL, 1, 0, 0,
+                              LOAD_GLOBAL, 0, 0, 0, STORE_GLOBAL, 1, 0, 0};
   ASSERT_TRUE(isMutableBytesEqualsBytes(bytecode, original_expected));
 
   icUpdateGlobalVar(thread_, function, 0, cache);
-  byte cached_expected0[] = {LOAD_GLOBAL_CACHED, 0, STORE_GLOBAL, 1,
-                             LOAD_GLOBAL_CACHED, 0, STORE_GLOBAL, 1};
+  byte cached_expected0[] = {
+      LOAD_GLOBAL_CACHED, 0, 0, 0, STORE_GLOBAL, 1, 0, 0,
+      LOAD_GLOBAL_CACHED, 0, 0, 0, STORE_GLOBAL, 1, 0, 0};
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, cached_expected0));
 
   icUpdateGlobalVar(thread_, function, 1, another_cache);
-  byte cached_expected1[] = {LOAD_GLOBAL_CACHED, 0, STORE_GLOBAL_CACHED, 1,
-                             LOAD_GLOBAL_CACHED, 0, STORE_GLOBAL_CACHED, 1};
+  byte cached_expected1[] = {
+      LOAD_GLOBAL_CACHED, 0, 0, 0, STORE_GLOBAL_CACHED, 1, 0, 0,
+      LOAD_GLOBAL_CACHED, 0, 0, 0, STORE_GLOBAL_CACHED, 1, 0, 0};
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, cached_expected1));
 
   icInvalidateGlobalVar(thread_, cache);
 
   // Only invalidated cache's opcode gets reverted to the original one.
-  byte invalidated_expected[] = {LOAD_GLOBAL, 0, STORE_GLOBAL_CACHED, 1,
-                                 LOAD_GLOBAL, 0, STORE_GLOBAL_CACHED, 1};
+  byte invalidated_expected[] = {
+      LOAD_GLOBAL, 0, 0, 0, STORE_GLOBAL_CACHED, 1, 0, 0,
+      LOAD_GLOBAL, 0, 0, 0, STORE_GLOBAL_CACHED, 1, 0, 0,
+  };
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, invalidated_expected));
 }
 

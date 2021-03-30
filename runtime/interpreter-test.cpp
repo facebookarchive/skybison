@@ -2467,8 +2467,8 @@ TEST_F(InterpreterTest, DoStoreFastStoresValue) {
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
   code.setConsts(*consts);
   code.setNlocals(2);
-  const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
-                           LOAD_FAST,  1, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, 0, 0, STORE_FAST,   1, 0, 0,
+                           LOAD_FAST,  1, 0, 0, RETURN_VALUE, 0, 0, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   EXPECT_TRUE(isIntEqualsWord(runCodeNoBytecodeRewriting(code), 1111));
@@ -2486,13 +2486,15 @@ TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
   code.setConsts(*consts);
   code.setNlocals(4);
   const byte bytecode[] = {
-      LOAD_CONST,        0, STORE_FAST,   0, LOAD_CONST,        1,
-      STORE_FAST,        1, LOAD_CONST,   2, STORE_FAST,        2,
-      LOAD_CONST,        3, STORE_FAST,   3, LOAD_FAST_REVERSE, 3,  // 1
-      LOAD_FAST_REVERSE, 2,                                         // 22
-      LOAD_FAST_REVERSE, 0,                                         // 4444
-      LOAD_FAST_REVERSE, 1,                                         // 333
-      BUILD_TUPLE,       4, RETURN_VALUE, 0,
+      LOAD_CONST,        0, 0, 0, STORE_FAST,   0, 0, 0,
+      LOAD_CONST,        1, 0, 0, STORE_FAST,   1, 0, 0,
+      LOAD_CONST,        2, 0, 0, STORE_FAST,   2, 0, 0,
+      LOAD_CONST,        3, 0, 0, STORE_FAST,   3, 0, 0,
+      LOAD_FAST_REVERSE, 3, 0, 0,  // 1
+      LOAD_FAST_REVERSE, 2, 0, 0,  // 22
+      LOAD_FAST_REVERSE, 0, 0, 0,  // 4444
+      LOAD_FAST_REVERSE, 1, 0, 0,  // 333
+      BUILD_TUPLE,       4, 0, 0, RETURN_VALUE, 0, 0, 0,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
@@ -2521,8 +2523,9 @@ TEST_F(InterpreterTest,
   code.setVarnames(*varnames);
   code.setNlocals(3);
   const byte bytecode[] = {
-      LOAD_CONST,  0, STORE_FAST,        0, LOAD_CONST,   0, STORE_FAST, 2,
-      DELETE_FAST, 2, LOAD_FAST_REVERSE, 0, RETURN_VALUE, 0,
+      LOAD_CONST,   0, 0, 0, STORE_FAST,  0, 0, 0, LOAD_CONST,        0, 0, 0,
+      STORE_FAST,   2, 0, 0, DELETE_FAST, 2, 0, 0, LOAD_FAST_REVERSE, 0, 0, 0,
+      RETURN_VALUE, 0, 0, 0,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
@@ -2543,15 +2546,15 @@ TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
   code.setConsts(*consts);
   code.setNlocals(4);
   const byte bytecode[] = {
-      LOAD_CONST,  0, STORE_FAST_REVERSE, 0,
-      LOAD_CONST,  1, STORE_FAST_REVERSE, 1,
-      LOAD_CONST,  2, STORE_FAST_REVERSE, 3,
-      LOAD_CONST,  3, STORE_FAST_REVERSE, 2,
-      LOAD_FAST,   0,  // 333
-      LOAD_FAST,   1,  // 4444
-      LOAD_FAST,   2,  // 22
-      LOAD_FAST,   3,  // 1
-      BUILD_TUPLE, 4, RETURN_VALUE,       0,
+      LOAD_CONST,  0, 0, 0, STORE_FAST_REVERSE, 0, 0, 0,
+      LOAD_CONST,  1, 0, 0, STORE_FAST_REVERSE, 1, 0, 0,
+      LOAD_CONST,  2, 0, 0, STORE_FAST_REVERSE, 3, 0, 0,
+      LOAD_CONST,  3, 0, 0, STORE_FAST_REVERSE, 2, 0, 0,
+      LOAD_FAST,   0, 0, 0,  // 333
+      LOAD_FAST,   1, 0, 0,  // 4444
+      LOAD_FAST,   2, 0, 0,  // 22
+      LOAD_FAST,   3, 0, 0,  // 1
+      BUILD_TUPLE, 4, 0, 0, RETURN_VALUE,       0, 0, 0,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
@@ -3493,7 +3496,7 @@ TEST_F(InterpreterTest, CallFinallyPushesNextPC) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   Object result(&scope, runCode(code));
   // Address of LOAD_CONST
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, kCodeUnitSize));
 }
 
 TEST_F(InterpreterTest, CallFinallyJumpsWithArgDelta) {
