@@ -9,13 +9,6 @@ namespace testing {
 
 using UnderWarningsExtensionApiTest = ExtensionApi;
 
-TEST_F(UnderWarningsExtensionApiTest, ResourceWarningIsIgnored) {
-  CaptureStdStreams streams;
-  EXPECT_EQ(PyErr_ResourceWarning(nullptr, 0, "%d", 0), 0);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(streams.err(), "");
-}
-
 TEST_F(UnderWarningsExtensionApiTest,
        WarnFormatWithNullCategoryPrintsRuntimeWarning) {
   CaptureStdStreams streams;

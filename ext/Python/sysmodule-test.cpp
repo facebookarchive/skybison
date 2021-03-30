@@ -209,7 +209,7 @@ TEST_F(SysModuleExtensionApiTest,
   char* abs_realpath = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
-  PyMem_Free(arg1);
+  PyMem_RawFree(arg1);
   std::free(abs_realpath);
 }
 
@@ -236,7 +236,7 @@ TEST_F(SysModuleExtensionApiTest, SetArgvWithLocalPathAddsPathStringToSysPath) {
 
   result = ::chdir(cwd);
   ASSERT_EQ(result, 0);
-  PyMem_Free(arg1);
+  PyMem_RawFree(arg1);
   std::free(abs_path);
   std::free(cwd);
 }
@@ -265,7 +265,7 @@ TEST_F(SysModuleExtensionApiTest, SetArgvWithRelativePathAddsPathToSysPath) {
 
   result = ::chdir(cwd);
   ASSERT_EQ(result, 0);
-  PyMem_Free(arg1);
+  PyMem_RawFree(arg1);
   std::free(cwd);
   std::free(abs_path);
 }
@@ -303,7 +303,7 @@ TEST_F(SysModuleExtensionApiTest,
   char* abs_realpath = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
-  PyMem_Free(arg1);
+  PyMem_RawFree(arg1);
   std::free(abs_realpath);
 }
 
@@ -330,7 +330,7 @@ TEST_F(SysModuleExtensionApiTest,
   char* abs_realpath = ::realpath(tmpdir1.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
-  PyMem_Free(arg1);
+  PyMem_RawFree(arg1);
   std::free(abs_realpath);
 }
 
@@ -356,7 +356,7 @@ TEST_F(SysModuleExtensionApiTest,
   char* abs_realpath = ::realpath(tmpdir.path().c_str(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
 
-  PyMem_Free(arg1);
+  PyMem_RawFree(arg1);
   std::free(abs_realpath);
 }
 

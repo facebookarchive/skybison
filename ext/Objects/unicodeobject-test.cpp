@@ -2785,7 +2785,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithEmptyStrReturnsZero) {
                                 /*surrogateescape=*/0));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, L"");
-  PyMem_Free(result);
+  PyMem_RawFree(result);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrReturnsZero) {
@@ -2803,7 +2803,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrReturnsZero) {
   EXPECT_EQ('l', result[2]);
   EXPECT_EQ('l', result[3]);
   EXPECT_EQ('o', result[4]);
-  PyMem_Free(result);
+  PyMem_RawFree(result);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExDecodesUpToSizeBytes) {
@@ -2818,7 +2818,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExDecodesUpToSizeBytes) {
   EXPECT_EQ('h', result[0]);
   EXPECT_EQ('e', result[1]);
   EXPECT_EQ('l', result[2]);
-  PyMem_Free(result);
+  PyMem_RawFree(result);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrSetsWlen) {
@@ -2838,7 +2838,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrSetsWlen) {
   EXPECT_EQ('l', result[3]);
   EXPECT_EQ('o', result[4]);
   EXPECT_EQ(wlen, size_t{5});
-  PyMem_Free(result);
+  PyMem_RawFree(result);
 }
 
 TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithEmptyStrReturnsZero) {
@@ -2871,7 +2871,7 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithRawMallocReturnsZero) {
                                 /*surrogateescape=*/0));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, "hello");
-  PyMem_Free(result);
+  PyMem_RawFree(result);
 }
 
 TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithLatin1ReturnsZero) {

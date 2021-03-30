@@ -732,8 +732,9 @@ TEST_F(BytesWriterExtensionApiTest, AllocSetsUpBuffer) {
   _PyBytesWriter writer;
   _PyBytesWriter_Init(&writer);
   EXPECT_NE(_PyBytesWriter_Alloc(&writer, size), nullptr);
-  EXPECT_GT(writer.allocated, size);
+  EXPECT_GE(writer.allocated, size);
   EXPECT_EQ(writer.min_size, size);
+  _PyBytesWriter_Dealloc(&writer);
 }
 
 TEST_F(BytesWriterExtensionApiTest,

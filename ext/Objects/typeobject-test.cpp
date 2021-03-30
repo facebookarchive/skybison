@@ -3095,13 +3095,17 @@ TEST_F(TypeExtensionApiTest,
 
 TEST_F(TypeExtensionApiTest,
        ExceptionSubclassWithNonZeroConstructorCreatesExceptionSubclass) {
+  PyObjectPtr basicsize(
+      PyObject_GetAttrString(PyExc_Exception, "__basicsize__"));
+  ASSERT_TRUE(PyLong_Check(basicsize));
+  int size = _PyLong_AsInt(basicsize);
+
   PyType_Slot slots[] = {
       {0, nullptr},
   };
   static PyType_Spec spec;
   spec = {
-      "foo.Foo", sizeof(PyObject), 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-      slots,
+      "foo.Foo", size, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, slots,
   };
   PyObjectPtr bases(PyTuple_Pack(1, PyExc_Exception));
   PyObjectPtr subclass(PyType_FromSpecWithBases(&spec, bases));
