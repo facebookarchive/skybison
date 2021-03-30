@@ -3,6 +3,7 @@ import _io
 import array
 import mmap
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -1412,7 +1413,7 @@ class FileIOTests(unittest.TestCase):
 
     def test_dunder_repr_with_closefd_and_name_returns_name_in_result(self):
         def opener(fn, flags):
-            return 1
+            return os.open(fn, os.O_CREAT | os.O_WRONLY, 0o666)
 
         with _io.FileIO("foo", mode="r", opener=opener) as f:
             self.assertEqual(
@@ -1533,6 +1534,25 @@ class FileIOTests(unittest.TestCase):
         result = f.readall()
         self.assertIsInstance(result, bytes)
         self.assertEqual(result, b"foo" * 1000)
+
+    def test_readall_with_fifo_file_returns_all_bytes(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            fifo = f"{tempdir}/fifo"
+            os.mkfifo(fifo)
+            exe = sys.executable
+            src = f"""
+import time
+with open('{fifo}', 'wb') as f:
+    f.write(b'hello...')
+    f.flush()
+    time.sleep(0.5)
+    f.write(b'bye')
+"""
+            p = subprocess.Popen([exe, "-c", src])
+            with open(fifo, "rb", buffering=False) as f:
+                result = f.readall()
+            self.assertEqual(result, b"hello...bye")
+            p.wait()
 
     # TODO(T53182806): Test FileIO.readinto once memoryview.__setitem__ is done
     def test_readinto_with_non_FileIO_self_raises_type_error(self):

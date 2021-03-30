@@ -1224,12 +1224,6 @@ RawObject METH(FileIO, readall)(Thread* thread, Arguments args) {
 
   if (end > 0 && pos >= 0 && end >= pos) {
     buffer_size = end - pos + 1;
-    std::unique_ptr<byte[]> buffer(new byte[buffer_size]{0});
-    word result = File::read(fd, buffer.get(), buffer_size);
-    if (result < 0) {  // OSError from File::read
-      return thread->raiseOSErrorFromErrno(-result);
-    }
-    return runtime->newBytesWithAll(View<byte>(buffer.get(), result));
   }
   // OSError from getting File::seek or File::size, or end < pos
   // read buffer by buffer
@@ -1247,9 +1241,12 @@ RawObject METH(FileIO, readall)(Thread* thread, Arguments args) {
       return thread->raiseOSErrorFromErrno(-result_len);
     }
     total_len += result_len;
-    // Here if result_len < read_len, it is EOF for our case, as pyro and
-    // cpython do not support non-blocking FileIO
-    if (result_len < read_size) {  // OSError or EOF
+    // From the glibc manual: "If read returns at least one character, there
+    // is no way you can tell whether end-of-file was reached. But if you did
+    // reach the end, the next read will return zero."
+    // Therefore, we can't stop when the result_len is less than read_len, as
+    // we still don't know if there's more input that we're blocked on.
+    if (result_len == 0) {
       if (total_len == 0) {
         return Bytes::empty();
       }
@@ -1264,7 +1261,9 @@ RawObject METH(FileIO, readall)(Thread* thread, Arguments args) {
       return result.becomeImmutable();
     }
     result_array.setNumItems(total_len);
-    buffer_size *= 2;
+    if (total_len == buffer_size) {
+      buffer_size *= 2;
+    }
   }
 }
 
